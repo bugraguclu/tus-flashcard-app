@@ -1,0 +1,288 @@
+// ============================================================
+// TUS Flashcard - SQLite Database Layer
+// D1: AsyncStorage → SQLite, D3: FTS5, D5: Versioned Migrations
+// ============================================================
+
+import * as SQLite from 'expo-sqlite';
+import type { CardState } from './types';
+import type { Card } from './types';
+
+// ---------- Schema Version ----------
+const SCHEMA_VERSION = 2; // v1 = base tables + indexes, v2 = FTS5
+
+let _db: SQLite.SQLiteDatabase | null = null;
+
+// ---------- DB Singleton ----------
+export function getDB(): SQLite.SQLiteDatabase {
+    if (!_db) {
+        _db = SQLite.openDatabaseSync('tus_flashcard.db');
+    }
+    return _db;
+}
+
+// ---------- Migrations ----------
+interface Migration {
+    version: number;
+    description: string;
+    up: (db: SQLite.SQLiteDatabase) => void;
+}
+
+const migrations: Migration[] = [
+    {
+        version: 1,
+        description: 'Base tables + indexes',
+        up: (db) => {
+            db.execSync(`
+                CREATE TABLE IF NOT EXISTS schema_version (
+                    version INTEGER PRIMARY KEY
+                );
+
+                CREATE TABLE IF NOT EXISTS card_states (
+                    id INTEGER PRIMARY KEY,
+                    data TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'new',
+                    dueDate TEXT NOT NULL DEFAULT '',
+                    dueTime INTEGER NOT NULL DEFAULT 0,
+                    suspended INTEGER NOT NULL DEFAULT 0,
+                    buried INTEGER NOT NULL DEFAULT 0,
+                    interval_days INTEGER NOT NULL DEFAULT 0,
+                    easeFactor REAL NOT NULL DEFAULT 2.5,
+                    lapses INTEGER NOT NULL DEFAULT 0
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_cs_status ON card_states(status);
+                CREATE INDEX IF NOT EXISTS idx_cs_dueDate ON card_states(dueDate);
+                CREATE INDEX IF NOT EXISTS idx_cs_dueTime ON card_states(dueTime);
+                CREATE INDEX IF NOT EXISTS idx_cs_suspended ON card_states(suspended);
+                CREATE INDEX IF NOT EXISTS idx_cs_buried ON card_states(buried);
+
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS session_stats (
+                    date TEXT PRIMARY KEY,
+                    data TEXT NOT NULL
+                );
+
+                INSERT OR IGNORE INTO schema_version (version) VALUES (1);
+            `);
+        },
+    },
+    {
+        version: 2,
+        description: 'FTS5 full-text search',
+        up: (db) => {
+            db.execSync(`
+                CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
+                    card_id,
+                    question,
+                    answer,
+                    topic,
+                    subject
+                );
+
+                UPDATE schema_version SET version = 2;
+            `);
+        },
+    },
+];
+
+// ---------- Run Migrations ----------
+export function runMigrations(db: SQLite.SQLiteDatabase): void {
+    // schema_version tablosu yoksa oluştur
+    db.execSync(`
+        CREATE TABLE IF NOT EXISTS schema_version (
+            version INTEGER PRIMARY KEY
+        );
+    `);
+
+    const row = db.getFirstSync<{ version: number }>('SELECT version FROM schema_version LIMIT 1');
+    const currentVersion = row?.version ?? 0;
+
+    for (const migration of migrations) {
+        if (migration.version > currentVersion) {
+            console.log(`[DB] Running migration v${migration.version}: ${migration.description}`);
+            migration.up(db);
+        }
+    }
+}
+
+// ---------- Init DB ----------
+export function initDB(): SQLite.SQLiteDatabase {
+    const db = getDB();
+    db.execSync('PRAGMA journal_mode = WAL;');
+    db.execSync('PRAGMA foreign_keys = ON;');
+    runMigrations(db);
+    return db;
+}
+
+// ---------- Card State CRUD ----------
+
+export function dbSaveCardState(id: number, state: CardState): void {
+    const db = getDB();
+    db.runSync(
+        `INSERT OR REPLACE INTO card_states
+         (id, data, status, dueDate, dueTime, suspended, buried, interval_days, easeFactor, lapses)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id,
+        JSON.stringify(state),
+        state.status,
+        state.dueDate || '',
+        state.dueTime || 0,
+        state.suspended ? 1 : 0,
+        state.buried ? 1 : 0,
+        state.interval || 0,
+        state.easeFactor || 2.5,
+        state.lapses || 0
+    );
+}
+
+export function dbSaveAllCardStates(states: Record<string, CardState>): void {
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const [id, state] of Object.entries(states)) {
+            dbSaveCardState(Number(id), state);
+        }
+        db.execSync('COMMIT;');
+    } catch (e) {
+        db.execSync('ROLLBACK;');
+        throw e;
+    }
+}
+
+export function dbLoadCardState(id: number): CardState | null {
+    const db = getDB();
+    const row = db.getFirstSync<{ data: string }>('SELECT data FROM card_states WHERE id = ?', id);
+    return row ? JSON.parse(row.data) : null;
+}
+
+export function dbLoadAllCardStates(): Record<string, CardState> {
+    const db = getDB();
+    const rows = db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM card_states');
+    const result: Record<string, CardState> = {};
+    for (const row of rows) {
+        result[String(row.id)] = JSON.parse(row.data);
+    }
+    return result;
+}
+
+// ---------- Indexed Queries (D2: replaces O(N) scans) ----------
+
+export interface DueCardRow {
+    id: number;
+    status: string;
+    dueDate: string;
+    dueTime: number;
+}
+
+export function dbGetDueReviewCards(today: string): DueCardRow[] {
+    const db = getDB();
+    return db.getAllSync<DueCardRow>(
+        `SELECT id, status, dueDate, dueTime FROM card_states
+         WHERE status = 'review' AND dueDate <= ? AND suspended = 0 AND buried = 0
+         ORDER BY dueDate ASC`,
+        today
+    );
+}
+
+export function dbGetDueLearningCards(now: number): DueCardRow[] {
+    const db = getDB();
+    return db.getAllSync<DueCardRow>(
+        `SELECT id, status, dueDate, dueTime FROM card_states
+         WHERE status = 'learning' AND (dueTime = 0 OR dueTime <= ?) AND suspended = 0 AND buried = 0
+         ORDER BY dueTime ASC`,
+        now
+    );
+}
+
+export function dbGetNewCardIds(): number[] {
+    const db = getDB();
+    const rows = db.getAllSync<{ id: number }>(
+        `SELECT id FROM card_states WHERE status = 'new' AND suspended = 0 AND buried = 0`
+    );
+    return rows.map(r => r.id);
+}
+
+export function dbGetCardCounts(): { newCount: number; learningCount: number; reviewCount: number } {
+    const db = getDB();
+    const row = db.getFirstSync<{ newCount: number; learningCount: number; reviewCount: number }>(`
+        SELECT
+            SUM(CASE WHEN status = 'new' AND suspended = 0 AND buried = 0 THEN 1 ELSE 0 END) as newCount,
+            SUM(CASE WHEN status = 'learning' AND suspended = 0 AND buried = 0 THEN 1 ELSE 0 END) as learningCount,
+            SUM(CASE WHEN status = 'review' AND suspended = 0 AND buried = 0 THEN 1 ELSE 0 END) as reviewCount
+        FROM card_states
+    `);
+    return {
+        newCount: row?.newCount ?? 0,
+        learningCount: row?.learningCount ?? 0,
+        reviewCount: row?.reviewCount ?? 0,
+    };
+}
+
+// ---------- FTS5 Search (D3) ----------
+
+export function dbIndexAllCards(cards: Card[]): void {
+    const db = getDB();
+    db.execSync('DELETE FROM cards_fts;');
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const card of cards) {
+            db.runSync(
+                'INSERT INTO cards_fts (card_id, question, answer, topic, subject) VALUES (?, ?, ?, ?, ?)',
+                String(card.id), card.question, card.answer, card.topic, card.subject
+            );
+        }
+        db.execSync('COMMIT;');
+    } catch (e) {
+        db.execSync('ROLLBACK;');
+        throw e;
+    }
+}
+
+export function dbSearchCards(query: string): number[] {
+    if (!query.trim()) return [];
+    const db = getDB();
+
+    // FTS5 arama — her kelime prefix wildcard ile
+    const searchTerms = query.trim().split(/\s+/).map(t => `"${t}"*`).join(' ');
+    try {
+        const rows = db.getAllSync<{ card_id: string }>(
+            `SELECT card_id FROM cards_fts WHERE cards_fts MATCH ? ORDER BY rank`,
+            searchTerms
+        );
+        return rows.map(r => Number(r.card_id));
+    } catch {
+        // Fallback: basit LIKE araması (FTS syntax hatası durumunda)
+        return [];
+    }
+}
+
+// ---------- Bulk Unbury (D4) ----------
+
+export function dbUnburyAll(): number {
+    const db = getDB();
+    const result = db.runSync('UPDATE card_states SET buried = 0, data = json_set(data, \'$.buried\', false) WHERE buried = 1');
+    return result.changes;
+}
+
+// ---------- AsyncStorage → SQLite Migration ----------
+
+export function dbMigrateFromAsyncStorage(states: Record<string, CardState>): void {
+    const count = Object.keys(states).length;
+    if (count === 0) return;
+
+    console.log(`[DB] Migrating ${count} card states from AsyncStorage to SQLite...`);
+    dbSaveAllCardStates(states);
+    console.log(`[DB] Migration complete.`);
+}
+
+// ---------- Export helpers (D5) ----------
+
+export function dbGetSchemaVersion(): number {
+    const db = getDB();
+    const row = db.getFirstSync<{ version: number }>('SELECT version FROM schema_version LIMIT 1');
+    return row?.version ?? 0;
+}

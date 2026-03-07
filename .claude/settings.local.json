@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:faqs.ankiweb.net)",
+      "WebFetch(domain:docs.ankiweb.net)",
+      "WebFetch(domain:juliensobczak.com)",
+      "WebFetch(domain:borretti.me)",
+      "WebFetch(domain:eggrain.blog)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:eikowagenknecht.com)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}
