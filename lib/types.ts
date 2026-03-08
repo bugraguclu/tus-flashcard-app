@@ -59,7 +59,7 @@ export interface IntervalPreview {
 
 export type Grade = 1 | 2 | 3 | 4; // Tekrar=1, Zor=2, İyi=3, Kolay=4
 
-export type AlgorithmType = 'ANKI_V3' | 'FSRS' | 'SM2' | 'EXPERIMENTAL';
+export type AlgorithmType = 'ANKI_V3';
 
 export interface SchedulerEngine {
     name: string;

@@ -4,7 +4,7 @@
 // ============================================================
 
 import type { Note, NoteType, AnkiCard, CardType, CardQueue, CardFlag } from './models';
-import { generateGuid, checksumField, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
+import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
 import { extractClozeNumbers, shouldGenerateCard } from './templates';
 import { getDB } from './db';
 import { TUS_CARDS } from './data';
@@ -46,7 +46,7 @@ export function createNote(
     deckId: number,
     tags: string[] = []
 ): { note: Note; cards: AnkiCard[] } {
-    const now = Date.now();
+    const now = uniqueId();
     const sfld = fields[noteType.sortFieldIdx] || fields[0] || '';
 
     const note: Note = {
@@ -70,7 +70,7 @@ export function createNote(
 /** Generate cards for a note based on its note type */
 export function generateCardsForNote(note: Note, noteType: NoteType, deckId: number): AnkiCard[] {
     const cards: AnkiCard[] = [];
-    const now = Date.now();
+    const now = uniqueId();
 
     if (noteType.kind === 'cloze') {
         // One card per cloze number
@@ -392,32 +392,43 @@ export function removeTagFromNote(noteId: number, tag: string): void {
     saveNote(note);
 }
 
-// ---- Search (Anki query language subset) ----
+// ---- Search (uses FTS5 index when available) ----
 
 export function searchNotes(query: string): Note[] {
-    const allNotes = getAllNotes();
     const q = query.trim().toLowerCase();
-    if (!q) return allNotes;
+    if (!q) return getAllNotes();
 
-    return allNotes.filter(note => {
-        // Simple text search across fields and tags
-        const fieldsText = note.fields.join(' ').toLowerCase();
-        const tagsText = note.tags.join(' ').toLowerCase();
+    // Tag search: in-memory filtering
+    if (q.startsWith('tag:')) {
+        const tagQuery = q.slice(4);
+        return getAllNotes().filter(note =>
+            note.tags.some(t => t.toLowerCase().includes(tagQuery))
+        );
+    }
 
-        // Parse simple query syntax
-        if (q.startsWith('tag:')) {
-            const tagQuery = q.slice(4);
-            return tagsText.includes(tagQuery);
-        }
-        if (q.startsWith('is:new') || q.startsWith('is:learn') || q.startsWith('is:review') || q.startsWith('is:suspended')) {
-            // Would need to check cards - simplified for now
-            return true;
-        }
-        if (q.startsWith('deck:')) {
-            // Would need to check cards' deckId
-            return true;
-        }
+    // Text search: use FTS5 index for speed
+    const db = getDB();
+    const sanitized = q.replace(/[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\s]/g, ' ').trim();
+    if (!sanitized) return getAllNotes();
 
-        return fieldsText.includes(q) || tagsText.includes(q);
-    });
+    const searchTerms = sanitized.split(/\s+/).map(t => `"${t}"*`).filter(t => t !== '""*').join(' ');
+    try {
+        const rows = db.getAllSync<{ card_id: string }>(
+            'SELECT card_id FROM cards_fts WHERE cards_fts MATCH ? ORDER BY rank',
+            searchTerms
+        );
+        if (rows.length === 0) return [];
+        const matchedIds = new Set(rows.map(r => Number(r.card_id)));
+        return getAllNotes().filter(note => {
+            const oldCardId = Math.floor(note.id / 1000);
+            if (matchedIds.has(oldCardId)) return true;
+            return note.fields.some(f => f.toLowerCase().includes(q));
+        });
+    } catch {
+        // Fallback: simple text search if FTS5 fails
+        return getAllNotes().filter(note =>
+            note.fields.some(f => f.toLowerCase().includes(q)) ||
+            note.tags.some(t => t.toLowerCase().includes(q))
+        );
+    }
 }

@@ -125,10 +125,10 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
         }
     );
 
-    // 6. Regular field substitution: {{FieldName}}
+    // 6. Regular field substitution: {{FieldName}} — HTML escaped to prevent XSS
     result = result.replace(
         /\{\{(\w+)\}\}/g,
-        (_match, field) => ctx.fields[field] || ''
+        (_match, field) => escapeHtml(ctx.fields[field] || '')
     );
 
     return result;

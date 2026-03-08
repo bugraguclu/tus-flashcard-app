@@ -315,25 +315,42 @@ export interface GraveEntry {
 }
 
 // ---- Helpers ----
+
+// Monotonic ID counter to prevent Date.now() collisions
+let _lastId = 0;
+export function uniqueId(): number {
+    const now = Date.now();
+    _lastId = now > _lastId ? now : _lastId + 1;
+    return _lastId;
+}
+
 export function generateGuid(): string {
+    // Use expo-crypto getRandomValues for cryptographic randomness
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const bytes = new Uint8Array(10);
+    // globalThis.crypto is available in React Native (Hermes) via expo-crypto polyfill
+    if (typeof globalThis.crypto?.getRandomValues === 'function') {
+        globalThis.crypto.getRandomValues(bytes);
+    } else {
+        // Fallback for environments without crypto
+        for (let i = 0; i < 10; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
     let result = '';
     for (let i = 0; i < 10; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+        result += chars.charAt(bytes[i] % chars.length);
     }
     return result;
 }
 
 export function checksumField(field: string): number {
-    // Simple hash for duplicate detection (like Anki's csum)
-    let hash = 0;
+    // FNV-1a 32-bit hash — better distribution than djb2 for duplicate detection
+    let hash = 0x811c9dc5; // FNV offset basis
     const str = field.trim();
     for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193); // FNV prime
     }
-    return Math.abs(hash);
+    return Math.abs(hash | 0);
 }
 
 /** Parse deck hierarchy: "A::B::C" → ["A", "A::B", "A::B::C"] */

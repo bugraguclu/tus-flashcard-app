@@ -4,7 +4,7 @@
 // ============================================================
 
 import type { Deck, DeckConfig, AnkiCard } from './models';
-import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getDeckChildren, getParentDeckName } from './models';
+import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getDeckChildren, getParentDeckName, uniqueId } from './models';
 import { getDB } from './db';
 
 // ---- Deck CRUD ----
@@ -64,11 +64,12 @@ export function renameDeck(id: number, newName: string): void {
 }
 
 export function createDeck(name: string, configId?: number): Deck {
+    const now = uniqueId();
     const deck: Deck = {
-        id: Date.now(),
+        id: now,
         name,
         configId: configId || 1,
-        mod: Math.floor(Date.now() / 1000),
+        mod: Math.floor(now / 1000),
         usn: -1,
         description: '',
         collapsed: false,
@@ -86,11 +87,12 @@ export function createDeck(name: string, configId?: number): Deck {
 }
 
 export function createFilteredDeck(name: string, searchQuery: string, limit?: number): Deck {
+    const now = uniqueId();
     const deck: Deck = {
-        id: Date.now(),
+        id: now,
         name,
         configId: 1,
-        mod: Math.floor(Date.now() / 1000),
+        mod: Math.floor(now / 1000),
         usn: -1,
         description: 'Filtered deck',
         collapsed: false,

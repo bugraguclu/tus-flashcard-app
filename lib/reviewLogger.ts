@@ -5,6 +5,7 @@
 
 import type { ReviewLog, AnkiCard } from './models';
 import { getDB } from './db';
+import { uniqueId } from './models';
 
 /** Log a review event */
 export function logReview(
@@ -17,7 +18,7 @@ export function logReview(
     reviewType: 0 | 1 | 2 | 3 | 4 // learn, review, relearn, filtered, manual
 ): ReviewLog {
     const entry: ReviewLog = {
-        id: Date.now(),
+        id: uniqueId(),
         cardId: card.id,
         usn: -1,
         ease,
@@ -127,43 +128,51 @@ export function getReviewStats(startMs: number, endMs: number): ReviewStats {
     return stats;
 }
 
-/** Get daily review counts for chart (last N days) */
+/** Get daily review counts for chart (last N days) — single GROUP BY query */
 export function getDailyReviewCounts(days: number): { date: string; count: number; timeMs: number }[] {
+    const db = getDB();
+    const startMs = Date.now() - days * 86400000;
+
+    const rows = db.getAllSync<{ date: string; count: number; timeMs: number }>(
+        `SELECT date(id/1000, 'unixepoch', 'localtime') as date,
+                COUNT(*) as count,
+                COALESCE(SUM(time), 0) as timeMs
+         FROM revlog WHERE id >= ?
+         GROUP BY date ORDER BY date`,
+        startMs
+    );
+
+    // Fill gaps for days with no reviews
+    const rowMap = new Map(rows.map(r => [r.date, r]));
     const result: { date: string; count: number; timeMs: number }[] = [];
     const now = new Date();
-
     for (let i = days - 1; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        d.setHours(0, 0, 0, 0);
-        const startMs = d.getTime();
-        const endMs = startMs + 86400000;
-
-        const db = getDB();
-        const row = db.getFirstSync<{ cnt: number; totalTime: number }>(
-            'SELECT COUNT(*) as cnt, COALESCE(SUM(time), 0) as totalTime FROM revlog WHERE id >= ? AND id < ?',
-            startMs, endMs
-        );
-
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
-
-        result.push({
-            date: `${yyyy}-${mm}-${dd}`,
-            count: row?.cnt || 0,
-            timeMs: row?.totalTime || 0,
-        });
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        result.push(rowMap.get(dateStr) || { date: dateStr, count: 0, timeMs: 0 });
     }
-
     return result;
 }
 
-/** Get future due card counts (for projection chart) */
+/** Get future due card counts (for projection chart) — single GROUP BY query */
 export function getFutureDueCounts(days: number): { date: string; count: number }[] {
     const db = getDB();
+
+    const rows = db.getAllSync<{ due: number; cnt: number }>(
+        `SELECT due, COUNT(*) as cnt FROM anki_cards
+         WHERE queue = 2 AND due <= ?
+         GROUP BY due ORDER BY due`,
+        days
+    );
+
+    const dueMap = new Map(rows.map(r => [r.due, r.cnt]));
     const result: { date: string; count: number }[] = [];
     const now = new Date();
+    let cumulative = 0;
 
     for (let i = 0; i < days; i++) {
         const d = new Date(now);
@@ -171,22 +180,9 @@ export function getFutureDueCounts(days: number): { date: string; count: number 
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
-        const dateStr = `${yyyy}-${mm}-${dd}`;
-
-        // Count review cards due on this date
-        // Cards store due as days since creation epoch - simplified to dueDate
-        const row = db.getFirstSync<{ cnt: number }>(
-            `SELECT COUNT(*) as cnt FROM anki_cards
-             WHERE queue = 2 AND due <= ?`,
-            i // days from now
-        );
-
-        result.push({
-            date: dateStr,
-            count: row?.cnt || 0,
-        });
+        cumulative += dueMap.get(i) || 0;
+        result.push({ date: `${yyyy}-${mm}-${dd}`, count: cumulative });
     }
-
     return result;
 }
 
@@ -212,26 +208,23 @@ export function getEaseDistribution(): { ease: number; count: number }[] {
     return rows.map(r => ({ ease: r.ease / 10, count: r.cnt }));
 }
 
-/** Get hourly breakdown of reviews */
+/** Get hourly breakdown of reviews — SQL GROUP BY instead of loading all */
 export function getHourlyBreakdown(): { hour: number; count: number; correct: number }[] {
-    const reviews = getReviewsInRange(0, Date.now());
-    const hourMap = new Map<number, { count: number; correct: number }>();
+    const db = getDB();
+    const rows = db.getAllSync<{ hour: number; count: number; correct: number }>(
+        `SELECT CAST(strftime('%H', id/1000, 'unixepoch', 'localtime') AS INTEGER) as hour,
+                COUNT(*) as count,
+                SUM(CASE WHEN ease >= 2 THEN 1 ELSE 0 END) as correct
+         FROM revlog GROUP BY hour ORDER BY hour`
+    );
 
+    // Fill all 24 hours (some may have no reviews)
+    const hourMap = new Map(rows.map(r => [r.hour, r]));
+    const result: { hour: number; count: number; correct: number }[] = [];
     for (let h = 0; h < 24; h++) {
-        hourMap.set(h, { count: 0, correct: 0 });
+        result.push(hourMap.get(h) || { hour: h, count: 0, correct: 0 });
     }
-
-    for (const r of reviews) {
-        const hour = new Date(r.id).getHours();
-        const entry = hourMap.get(hour)!;
-        entry.count++;
-        if (r.ease >= 2) entry.correct++;
-    }
-
-    return Array.from(hourMap.entries()).map(([hour, data]) => ({
-        hour,
-        ...data,
-    }));
+    return result;
 }
 
 /** Get button press distribution */

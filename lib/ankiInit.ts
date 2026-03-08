@@ -57,15 +57,19 @@ export function initAnkiData(): { initialized: boolean; notesCreated: number; ca
     return { initialized: true, notesCreated, cardsCreated };
 }
 
-/** Reset Anki data (for testing) */
+/** Reset Anki data (for testing) — uses transaction for atomicity */
 export function resetAnkiData(): void {
     const db = getDB();
-    db.execSync('DELETE FROM notes;');
-    db.execSync('DELETE FROM anki_cards;');
-    db.execSync('DELETE FROM decks;');
-    db.execSync('DELETE FROM deck_configs;');
-    db.execSync('DELETE FROM note_types;');
-    db.execSync('DELETE FROM revlog;');
-    db.execSync("DELETE FROM settings WHERE key = 'tus_anki_initialized';");
+    db.execSync(`
+        BEGIN TRANSACTION;
+        DELETE FROM notes;
+        DELETE FROM anki_cards;
+        DELETE FROM decks;
+        DELETE FROM deck_configs;
+        DELETE FROM note_types;
+        DELETE FROM revlog;
+        DELETE FROM settings WHERE key = 'tus_anki_initialized';
+        COMMIT;
+    `);
     console.log('[AnkiInit] All Anki data reset.');
 }

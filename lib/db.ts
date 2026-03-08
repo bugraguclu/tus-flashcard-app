@@ -332,8 +332,10 @@ export function dbSearchCards(query: string): number[] {
     if (!query.trim()) return [];
     const db = getDB();
 
-    // FTS5 arama — her kelime prefix wildcard ile
-    const searchTerms = query.trim().split(/\s+/).map(t => `"${t}"*`).join(' ');
+    // FTS5 arama — sanitize input, her kelime prefix wildcard ile
+    const sanitized = query.trim().replace(/[^\w\u00C0-\u024F\u0400-\u04FF\s]/g, ' ');
+    if (!sanitized.trim()) return [];
+    const searchTerms = sanitized.split(/\s+/).filter(Boolean).map(t => `"${t}"*`).join(' ');
     try {
         const rows = db.getAllSync<{ card_id: string }>(
             `SELECT card_id FROM cards_fts WHERE cards_fts MATCH ? ORDER BY rank`,

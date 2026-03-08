@@ -145,8 +145,16 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 export async function resetAllData(): Promise<void> {
     await Promise.all([
         AsyncStorage.removeItem(KEYS.CARD_STATES),
-        AsyncStorage.removeItem(KEYS.SESSION_STATS)
+        AsyncStorage.removeItem(KEYS.SESSION_STATS),
+        AsyncStorage.removeItem(KEYS.CUSTOM_CARDS),
+        AsyncStorage.removeItem(KEYS.SETTINGS),
     ]);
+    // Also clear SQLite card_states
+    try {
+        const { getDB } = require('./db');
+        const db = getDB();
+        db.execSync('DELETE FROM card_states;');
+    } catch { /* DB might not be initialized */ }
 }
 
 // --- Export All (D5: versioned + compact) ---
@@ -174,9 +182,55 @@ export async function exportAllData(): Promise<string> {
 }
 
 // --- Import All (D5: validation + SQLite sync) ---
+const MAX_IMPORT_SIZE = 50 * 1024 * 1024; // 50 MB limit
+
+/** Sanitize imported object to prevent prototype pollution */
+function sanitizeObject<T>(obj: T): T {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(sanitizeObject) as unknown as T;
+    const clean: Record<string, unknown> = Object.create(null);
+    for (const key of Object.keys(obj as Record<string, unknown>)) {
+        if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+        clean[key] = sanitizeObject((obj as Record<string, unknown>)[key]);
+    }
+    return clean as T;
+}
+
+/** Validate and clamp imported settings to safe ranges */
+function validateSettings(settings: Record<string, unknown>): Record<string, unknown> {
+    const validated = { ...DEFAULT_SETTINGS, ...settings };
+    // Clamp numeric values to safe ranges
+    validated.dailyNewLimit = Math.max(0, Math.min(9999, Number(validated.dailyNewLimit) || 20));
+    validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
+    validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
+    validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
+    validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval) || 0.7));
+    validated.desiredRetention = Math.max(0.5, Math.min(0.99, Number(validated.desiredRetention) || 0.9));
+    // Validate learningSteps array
+    if (Array.isArray(validated.learningSteps)) {
+        validated.learningSteps = validated.learningSteps
+            .filter((s: unknown) => typeof s === 'number' && s > 0 && s <= 10080)
+            .slice(0, 20);
+        if (validated.learningSteps.length === 0) validated.learningSteps = [1, 10];
+    } else {
+        validated.learningSteps = [1, 10];
+    }
+    validated.algorithm = 'ANKI_V3' as AlgorithmType;
+    return validated;
+}
+
 export async function importAllData(jsonString: string): Promise<boolean> {
     try {
-        const data = JSON.parse(jsonString);
+        // S2: Size limit to prevent memory exhaustion
+        if (jsonString.length > MAX_IMPORT_SIZE) {
+            console.error(`Import: Dosya çok büyük (${(jsonString.length / 1024 / 1024).toFixed(1)} MB > 50 MB limit)`);
+            return false;
+        }
+
+        let data = JSON.parse(jsonString);
+
+        // S2: Prototype pollution prevention
+        data = sanitizeObject(data);
 
         // Validation: version kontrolü
         if (!data.version || typeof data.version !== 'number') {
@@ -200,6 +254,11 @@ export async function importAllData(jsonString: string): Promise<boolean> {
         if (data.settings && typeof data.settings !== 'object') {
             console.error('Import: settings bir obje değil');
             return false;
+        }
+
+        // S8: Validate and clamp settings
+        if (data.settings) {
+            data.settings = validateSettings(data.settings);
         }
 
         // AsyncStorage'a yaz (backward compat)

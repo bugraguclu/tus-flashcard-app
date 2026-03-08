@@ -32,8 +32,9 @@ export default function StudyScreen() {
     const [totalCards, setTotalCards] = useState(0);
     const [nextLearningDue, setNextLearningDue] = useState<number | null>(null);
     const [countdown, setCountdown] = useState('');
+    const [queueStats, setQueueStats] = useState({ newCount: 0, learningCount: 0, reviewCount: 0 });
 
-    const getAllCards = useCallback(() => [...TUS_CARDS, ...customCards], [customCards]);
+    const allCards = useMemo(() => [...TUS_CARDS, ...customCards], [customCards]);
 
     const getCardState = useCallback((cardId: number): CardState => {
         if (cardStates[cardId]) return cardStates[cardId];
@@ -51,7 +52,7 @@ export default function StudyScreen() {
     const buildQueue = useCallback(() => {
         const today = todayLocalYMD();
         const now = Date.now();
-        let cards = getAllCards();
+        let cards = allCards;
         if (selectedSubject) cards = cards.filter(c => c.subject === selectedSubject);
         if (selectedTopic) cards = cards.filter(c => c.topic === selectedTopic);
 
@@ -81,6 +82,9 @@ export default function StudyScreen() {
 
         setNextLearningDue(earliestPendingDue);
 
+        // F3: Compute stats inline — no separate iteration needed
+        setQueueStats({ newCount: newCards.length, learningCount: learningCards.length, reviewCount: reviewWithDue.length });
+
         const newCardsToShow = newCards.slice(0, Math.max(0, settings.dailyNewLimit - (sessionStats.newCardsToday || 0)));
         // QW1: Precomputed dueDate — sort comparator'da getCardState() yok
         reviewWithDue.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
@@ -91,7 +95,7 @@ export default function StudyScreen() {
         setTotalCards(q.length);
         setCurrentCard(q.length > 0 ? q[0] : null);
         setShowingAnswer(false);
-    }, [getAllCards, getCardState, selectedSubject, selectedTopic, settings, sessionStats]);
+    }, [allCards, getCardState, selectedSubject, selectedTopic, settings, sessionStats]);
 
     useEffect(() => {
         async function load() {
@@ -236,23 +240,8 @@ export default function StudyScreen() {
         setCurrentCard(newQueue.length > 0 ? newQueue[0] : null);
     }, [currentCard, cardStates, queue, getCardState]);
 
-    // İstatistikler
-    // QW4: useMemo — sadece bağımlılıklar değiştiğinde yeniden hesapla
-    const stats = useMemo(() => {
-        const today = todayLocalYMD();
-        let cards = getAllCards();
-        if (selectedSubject) cards = cards.filter(c => c.subject === selectedSubject);
-        if (selectedTopic) cards = cards.filter(c => c.topic === selectedTopic);
-        let newCount = 0, learningCount = 0, reviewCount = 0;
-        cards.forEach(card => {
-            const cs = getCardState(card.id);
-            if (cs.suspended || cs.buried) return;
-            if (cs.status === 'new') newCount++;
-            else if (cs.status === 'learning') learningCount++;
-            else if (cs.status === 'review' && cs.dueDate <= today) reviewCount++;
-        });
-        return { newCount, learningCount, reviewCount };
-    }, [getAllCards, getCardState, selectedSubject, selectedTopic, cardStates]);
+    // F3: Stats are now computed inside buildQueue — no separate iteration
+    const stats = queueStats;
 
     const getPreview = useCallback(() => {
         if (!currentCard) return null;
