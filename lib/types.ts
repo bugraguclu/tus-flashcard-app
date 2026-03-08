@@ -27,9 +27,11 @@ export interface CardState {
     suspended: boolean;
     buried: boolean;
 
-    // SM-2 specific
+    // SM-2 / Anki specific
     easeFactor: number;
     learningStep: number;
+    relearningStep: number;
+    lastReviewedAtMs: number;
 
     // FSRS specific
     stability: number;
@@ -57,7 +59,7 @@ export interface IntervalPreview {
 
 export type Grade = 1 | 2 | 3 | 4; // Tekrar=1, Zor=2, İyi=3, Kolay=4
 
-export type AlgorithmType = 'FSRS' | 'SM2' | 'EXPERIMENTAL';
+export type AlgorithmType = 'ANKI_V3' | 'FSRS' | 'SM2' | 'EXPERIMENTAL';
 
 export interface SchedulerEngine {
     name: string;

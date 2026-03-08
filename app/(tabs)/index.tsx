@@ -30,6 +30,8 @@ export default function StudyScreen() {
     const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalCards, setTotalCards] = useState(0);
+    const [nextLearningDue, setNextLearningDue] = useState<number | null>(null);
+    const [countdown, setCountdown] = useState('');
 
     const getAllCards = useCallback(() => [...TUS_CARDS, ...customCards], [customCards]);
 
@@ -38,7 +40,7 @@ export default function StudyScreen() {
         const scheduler = getScheduler(settings.algorithm);
         return {
             interval: 0, repetition: 0, dueDate: todayLocalYMD(), dueTime: 0,
-            status: 'new', suspended: false, buried: false,
+            status: 'new' as const, suspended: false, buried: false,
             easeFactor: settings.startingEase, learningStep: 0,
             relearningStep: -1, lastReviewedAtMs: 0,
             stability: 0, difficulty: 0, elapsedDays: 0, lapses: 0,
@@ -56,17 +58,28 @@ export default function StudyScreen() {
         const learningCards: Card[] = [];
         const reviewWithDue: { card: Card; dueDate: string }[] = [];
         const newCards: Card[] = [];
+        let earliestPendingDue: number | null = null;
 
         cards.forEach(card => {
             const cs = getCardState(card.id);
             if (cs.suspended || cs.buried) return;
-            if (cs.status === 'new') newCards.push(card);
-            else if (cs.status === 'learning') {
-                if (!cs.dueTime || cs.dueTime <= now) learningCards.push(card);
+            if (cs.status === 'new') {
+                newCards.push(card);
+            } else if (cs.status === 'learning') {
+                if (!cs.dueTime || cs.dueTime <= now) {
+                    learningCards.push(card);
+                } else {
+                    // Track earliest pending learning card for timer
+                    if (!earliestPendingDue || cs.dueTime < earliestPendingDue) {
+                        earliestPendingDue = cs.dueTime;
+                    }
+                }
             } else if (cs.status === 'review' && cs.dueDate <= today) {
                 reviewWithDue.push({ card, dueDate: cs.dueDate });
             }
         });
+
+        setNextLearningDue(earliestPendingDue);
 
         const newCardsToShow = newCards.slice(0, Math.max(0, settings.dailyNewLimit - (sessionStats.newCardsToday || 0)));
         // QW1: Precomputed dueDate — sort comparator'da getCardState() yok
@@ -91,6 +104,38 @@ export default function StudyScreen() {
     }, []);
 
     useEffect(() => { if (!loading) buildQueue(); }, [loading, selectedSubject, selectedTopic, cardStates]);
+
+    // Timer: Rebuild queue when next learning card becomes due
+    useEffect(() => {
+        if (!nextLearningDue) return;
+        const delay = Math.max(500, nextLearningDue - Date.now() + 300);
+        const timer = setTimeout(() => {
+            buildQueue();
+        }, delay);
+        return () => clearTimeout(timer);
+    }, [nextLearningDue]);
+
+    // Countdown timer for waiting UI
+    useEffect(() => {
+        if (!nextLearningDue || currentCard) {
+            setCountdown('');
+            return;
+        }
+        const update = () => {
+            const remaining = Math.max(0, nextLearningDue - Date.now());
+            if (remaining <= 0) {
+                buildQueue();
+                return;
+            }
+            const totalSec = Math.ceil(remaining / 1000);
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            setCountdown(min > 0 ? `${min}:${String(sec).padStart(2, '0')}` : `${sec}sn`);
+        };
+        update();
+        const timer = setInterval(update, 1000);
+        return () => clearInterval(timer);
+    }, [nextLearningDue, currentCard]);
 
     // Cevap ver
     const answerCard = useCallback(async (grade: Grade) => {
@@ -130,8 +175,10 @@ export default function StudyScreen() {
         setSessionStats(newStats);
         await saveSessionStats(newStats);
 
+        // Remove answered card from queue — DON'T push learning cards back.
+        // Learning cards with future dueTime will be picked up by the timer
+        // when their wait period expires (just like Anki does).
         const newQueue = queue.slice(1);
-        if (result.isLearning) newQueue.push(currentCard);
         setQueue(newQueue);
         setShowingAnswer(false);
         setCurrentCard(newQueue.length > 0 ? newQueue[0] : null);
@@ -360,6 +407,18 @@ export default function StudyScreen() {
                             </Text>
                         </View>
                     </View>
+                ) : nextLearningDue ? (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyIcon}>⏳</Text>
+                        <Text style={styles.emptyTitle}>Kart Bekleniyor</Text>
+                        <Text style={styles.countdownText}>{countdown}</Text>
+                        <Text style={styles.emptyDesc}>
+                            Öğrenme kartları bekleme süresinde. Süre dolduğunda otomatik olarak gösterilecek.
+                        </Text>
+                        <Text style={styles.emptySub}>
+                            Bugün <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> kart tekrar edildi.
+                        </Text>
+                    </View>
                 ) : (
                     <View style={styles.emptyState}>
                         <Text style={styles.emptyIcon}>🎉</Text>
@@ -519,6 +578,7 @@ const styles = StyleSheet.create({
     // Empty state
     emptyState: { alignItems: 'center', padding: 40 },
     emptyIcon: { fontSize: 56, marginBottom: Spacing.md },
+    countdownText: { fontSize: 48, fontWeight: '700', color: Colors.accent, marginBottom: Spacing.md, fontVariant: ['tabular-nums'] as any },
     emptyTitle: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.accent, marginBottom: Spacing.sm },
     emptyDesc: { fontSize: FontSize.lg, color: Colors.textSecondary, textAlign: 'center' },
     emptySub: { fontSize: FontSize.md, color: Colors.textSecondary, marginTop: Spacing.sm },
