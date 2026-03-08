@@ -23,6 +23,16 @@ export default function RootLayout() {
                         headerTintColor: Colors.accent,
                     }}
                 />
+                <Stack.Screen
+                    name="card-info"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'Kart Bilgisi',
+                        headerStyle: { backgroundColor: Colors.bgSecondary },
+                        headerTintColor: Colors.accent,
+                    }}
+                />
             </Stack>
         </>
     );

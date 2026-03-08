@@ -16,6 +16,7 @@ import { TUS_SUBJECTS, TUS_CARDS } from '../../lib/data';
 import { loadAllCardStates, loadCustomCards, loadSettings, DEFAULT_SETTINGS } from '../../lib/storage';
 import { initDB, dbLoadAllCardStates, dbSaveAllCardStates, dbIndexAllCards } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
+import { initAnkiData } from '../../lib/ankiInit';
 import type { CardState, AppSettings } from '../../lib/types';
 
 // -- Context: Sidebar seçimi ve veriyi paylaşmak için --
@@ -92,6 +93,16 @@ export default function TabLayout() {
                 const allCards = [...TUS_CARDS, ...customCards];
                 dbIndexAllCards(allCards);
                 console.log(`[App] FTS indexed ${allCards.length} cards.`);
+
+                // Anki data initialization (notes, decks, note types)
+                try {
+                    const ankiResult = initAnkiData();
+                    if (ankiResult.initialized) {
+                        console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
+                    }
+                } catch (e) {
+                    console.warn('[App] Anki init error:', e);
+                }
 
                 // D4: Daily maintenance (auto-unbury)
                 const { unburiedCount, didRun } = runDailyMaintenance();

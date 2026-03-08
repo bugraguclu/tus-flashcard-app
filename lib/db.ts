@@ -8,7 +8,7 @@ import type { CardState } from './types';
 import type { Card } from './types';
 
 // ---------- Schema Version ----------
-const SCHEMA_VERSION = 2; // v1 = base tables + indexes, v2 = FTS5
+const SCHEMA_VERSION = 3; // v1 = base tables + indexes, v2 = FTS5, v3 = Anki-compatible model
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -84,6 +84,92 @@ const migrations: Migration[] = [
                 );
 
                 UPDATE schema_version SET version = 2;
+            `);
+        },
+    },
+    {
+        version: 3,
+        description: 'Anki-compatible data model (notes, decks, revlog, note_types)',
+        up: (db) => {
+            db.execSync(`
+                -- Note Types (Anki: notetypes)
+                CREATE TABLE IF NOT EXISTS note_types (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    data TEXT NOT NULL
+                );
+
+                -- Notes (Anki: notes) — content layer
+                CREATE TABLE IF NOT EXISTS notes (
+                    id INTEGER PRIMARY KEY,
+                    noteTypeId INTEGER NOT NULL,
+                    sfld TEXT NOT NULL DEFAULT '',
+                    csum INTEGER NOT NULL DEFAULT 0,
+                    tags TEXT NOT NULL DEFAULT '',
+                    data TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_notes_noteTypeId ON notes(noteTypeId);
+                CREATE INDEX IF NOT EXISTS idx_notes_csum ON notes(csum);
+
+                -- Cards (Anki: cards) — scheduling layer
+                CREATE TABLE IF NOT EXISTS anki_cards (
+                    id INTEGER PRIMARY KEY,
+                    noteId INTEGER NOT NULL,
+                    deckId INTEGER NOT NULL,
+                    ord INTEGER NOT NULL DEFAULT 0,
+                    type INTEGER NOT NULL DEFAULT 0,
+                    queue INTEGER NOT NULL DEFAULT 0,
+                    due INTEGER NOT NULL DEFAULT 0,
+                    ivl INTEGER NOT NULL DEFAULT 0,
+                    factor INTEGER NOT NULL DEFAULT 0,
+                    reps INTEGER NOT NULL DEFAULT 0,
+                    lapses INTEGER NOT NULL DEFAULT 0,
+                    flags INTEGER NOT NULL DEFAULT 0,
+                    data TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_ac_noteId ON anki_cards(noteId);
+                CREATE INDEX IF NOT EXISTS idx_ac_deckId ON anki_cards(deckId);
+                CREATE INDEX IF NOT EXISTS idx_ac_queue ON anki_cards(queue);
+                CREATE INDEX IF NOT EXISTS idx_ac_type ON anki_cards(type);
+                CREATE INDEX IF NOT EXISTS idx_ac_due ON anki_cards(due);
+
+                -- Decks (Anki: decks)
+                CREATE TABLE IF NOT EXISTS decks (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE,
+                    data TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_decks_name ON decks(name);
+
+                -- Deck Configs (Anki: deck_config)
+                CREATE TABLE IF NOT EXISTS deck_configs (
+                    id INTEGER PRIMARY KEY,
+                    data TEXT NOT NULL
+                );
+
+                -- Review Log (Anki: revlog)
+                CREATE TABLE IF NOT EXISTS revlog (
+                    id INTEGER PRIMARY KEY,
+                    cardId INTEGER NOT NULL,
+                    usn INTEGER NOT NULL DEFAULT -1,
+                    ease INTEGER NOT NULL,
+                    ivl INTEGER NOT NULL,
+                    lastIvl INTEGER NOT NULL,
+                    factor INTEGER NOT NULL,
+                    time INTEGER NOT NULL,
+                    type INTEGER NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_revlog_cardId ON revlog(cardId);
+                CREATE INDEX IF NOT EXISTS idx_revlog_usn ON revlog(usn);
+
+                -- Graves (sync deletion tracking)
+                CREATE TABLE IF NOT EXISTS graves (
+                    oid INTEGER NOT NULL,
+                    type INTEGER NOT NULL,
+                    usn INTEGER NOT NULL DEFAULT -1
+                );
+
+                UPDATE schema_version SET version = 3;
             `);
         },
     },
