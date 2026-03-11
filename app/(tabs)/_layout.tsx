@@ -12,12 +12,21 @@ import {
 } from 'react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { TUS_SUBJECTS, TUS_CARDS } from '../../lib/data';
-import { loadAllCardStates, loadCustomCards, loadSettings, DEFAULT_SETTINGS } from '../../lib/storage';
-import { initDB, dbLoadAllCardStates, dbSaveAllCardStates, dbIndexAllCards } from '../../lib/db';
+import { TUS_SUBJECTS } from '../../lib/data';
+import {
+    loadAllCardStates,
+    loadCustomCards,
+    loadSettings,
+    saveCustomCards,
+    DEFAULT_SETTINGS,
+    clearLegacyCardStates,
+} from '../../lib/storage';
+import { initDB, dbIndexAllCards } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
 import { initAnkiData } from '../../lib/ankiInit';
-import type { CardState, AppSettings } from '../../lib/types';
+import { getSearchIndexCards } from '../../lib/noteManager';
+import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../../lib/legacyMigration';
+import type { AppSettings } from '../../lib/types';
 
 // -- Context: Sidebar seçimi ve veriyi paylaşmak için --
 type AppContextType = {
@@ -25,8 +34,6 @@ type AppContextType = {
     setSelectedSubject: (s: string | null) => void;
     selectedTopic: string | null;
     setSelectedTopic: (t: string | null) => void;
-    cardStates: Record<string, CardState>;
-    setCardStates: React.Dispatch<React.SetStateAction<Record<string, CardState>>>;
     settings: AppSettings;
     refreshData: () => Promise<void>;
 };
@@ -35,8 +42,6 @@ export const AppContext = createContext<AppContextType>({
     setSelectedSubject: () => { },
     selectedTopic: null,
     setSelectedTopic: () => { },
-    cardStates: {},
-    setCardStates: () => { },
     settings: DEFAULT_SETTINGS,
     refreshData: async () => { },
 });
@@ -48,7 +53,6 @@ export default function TabLayout() {
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
-    const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
@@ -63,8 +67,7 @@ export default function TabLayout() {
     }, []);
 
     const refreshData = useCallback(async () => {
-        const [cs, s] = await Promise.all([loadAllCardStates(), loadSettings()]);
-        setCardStates(cs);
+        const s = await loadSettings();
         setSettings(s);
     }, []);
 
@@ -73,36 +76,35 @@ export default function TabLayout() {
         async function startup() {
             try {
                 // D1: SQLite DB init + migrations
-                const db = initDB();
+                initDB();
                 console.log('[App] SQLite DB initialized.');
 
-                // AsyncStorage'dan SQLite'a migration (ilk kez)
+                // Build base Anki entities (decks, notes, cards) on first launch.
+                const ankiResult = initAnkiData();
+                if (ankiResult.initialized) {
+                    console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
+                }
+
+                // One-shot migration from legacy AsyncStorage custom cards to canonical notes/anki_cards.
+                const legacyCustomCards = await loadCustomCards();
+                const customMigration = migrateLegacyCustomCardsToAnki(legacyCustomCards);
+                if (!customMigration.alreadyMigrated) {
+                    console.log(`[App] Legacy custom cards migration: ${customMigration.migratedCards} migrated.`);
+                    await saveCustomCards([]);
+                }
+
+                // One-shot migration from legacy AsyncStorage card states to canonical anki_cards.
                 const asyncStates = await loadAllCardStates();
-                const dbStates = dbLoadAllCardStates();
-                const asyncCount = Object.keys(asyncStates).length;
-                const dbCount = Object.keys(dbStates).length;
-
-                if (asyncCount > 0 && dbCount === 0) {
-                    // AsyncStorage'da veri var ama SQLite'da yok → migrate
-                    console.log(`[App] Migrating ${asyncCount} card states to SQLite...`);
-                    dbSaveAllCardStates(asyncStates);
+                const migrationResult = migrateLegacyCardStatesToAnki(asyncStates, await loadSettings());
+                if (!migrationResult.alreadyMigrated) {
+                    console.log(`[App] Legacy card state migration: ${migrationResult.migratedCards} migrated, ${migrationResult.skippedCards} skipped.`);
+                    await clearLegacyCardStates();
                 }
 
-                // D3: FTS indexing
-                const customCards = await loadCustomCards();
-                const allCards = [...TUS_CARDS, ...customCards];
-                dbIndexAllCards(allCards);
-                console.log(`[App] FTS indexed ${allCards.length} cards.`);
-
-                // Anki data initialization (notes, decks, note types)
-                try {
-                    const ankiResult = initAnkiData();
-                    if (ankiResult.initialized) {
-                        console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
-                    }
-                } catch (e) {
-                    console.warn('[App] Anki init error:', e);
-                }
+                // Rebuild FTS index from canonical notes/cards.
+                const searchableCards = getSearchIndexCards();
+                dbIndexAllCards(searchableCards);
+                console.log(`[App] FTS indexed ${searchableCards.length} cards.`);
 
                 // D4: Daily maintenance (auto-unbury)
                 const { unburiedCount, didRun } = runDailyMaintenance();
@@ -286,7 +288,7 @@ export default function TabLayout() {
         <AppContext.Provider value={{
             selectedSubject, setSelectedSubject,
             selectedTopic, setSelectedTopic,
-            cardStates, setCardStates, settings, refreshData,
+            settings, refreshData,
         }}>
             <View style={styles.container}>
                 {/* Mobile hamburger */}

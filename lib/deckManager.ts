@@ -204,26 +204,40 @@ export function saveDeckConfig(config: DeckConfig): void {
 
 // ---- Card Counts per Deck ----
 
-export function getCardCountsByDeck(today: string): Map<number, { new: number; learn: number; review: number; total: number }> {
+export function getCardCountsByDeck(nowMs: number = Date.now()): Map<number, { new: number; learn: number; review: number; total: number }> {
     const db = getDB();
-    const rows = db.getAllSync<{ deckId: number; type: number; queue: number; due: number }>(
-        'SELECT deckId, type, queue, due FROM anki_cards'
+    const rows = db.getAllSync<{ deckId: number; queue: number; due: number }>(
+        'SELECT deckId, queue, due FROM anki_cards'
     );
 
+    const today = Math.floor(new Date(new Date(nowMs).setHours(0, 0, 0, 0)).getTime() / 86400000);
     const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
 
     for (const row of rows) {
         if (!counts.has(row.deckId)) {
             counts.set(row.deckId, { new: 0, learn: 0, review: 0, total: 0 });
         }
-        const c = counts.get(row.deckId)!;
-        c.total++;
 
-        if (row.queue === -1 || row.queue === -2 || row.queue === -3) continue; // suspended/buried
+        const entry = counts.get(row.deckId)!;
+        entry.total += 1;
 
-        if (row.queue === 0) c.new++;
-        else if (row.queue === 1 || row.queue === 3) c.learn++;
-        else if (row.queue === 2) c.review++;
+        if (row.queue === -1 || row.queue === -2 || row.queue === -3) {
+            continue;
+        }
+
+        if (row.queue === 0) {
+            entry.new += 1;
+            continue;
+        }
+
+        if ((row.queue === 1 || row.queue === 3) && row.due <= nowMs) {
+            entry.learn += 1;
+            continue;
+        }
+
+        if (row.queue === 2 && row.due <= today) {
+            entry.review += 1;
+        }
     }
 
     return counts;

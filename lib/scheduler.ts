@@ -368,47 +368,54 @@ const AnkiV3Engine: SchedulerEngine = {
 
     schedule: (cs: CardState, grade: Grade, settings: AppSettings): ScheduleResult => {
         const now = Date.now();
-        const isLearning = cs.status === 'new' || (cs.learningStep >= 0 && (cs.relearningStep === undefined || cs.relearningStep < 0));
+        const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
+        const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
+
+        if (isRelearning) return ankiV3Relearning(cs, grade, settings, now);
         if (isLearning) return ankiV3Learning(cs, grade, settings, now);
-        if (cs.relearningStep !== undefined && cs.relearningStep >= 0) return ankiV3Relearning(cs, grade, settings, now);
         return ankiV3Review(cs, grade, settings, now);
     },
 
     previewIntervals: (cs: CardState, settings: AppSettings): IntervalPreview => {
-        const steps = settings.learningSteps;
-        const isLearning = cs.status === 'new' || (cs.learningStep >= 0 && (cs.relearningStep === undefined || cs.relearningStep < 0));
-        if (isLearning) {
+        const learningSteps = settings.learningSteps;
+        const lapseSteps = settings.lapseSteps;
+        const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
+        const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
+
+        if (isLearning && !isRelearning) {
             const step = cs.learningStep || 0;
-            const curMin = steps[step] || 1;
-            const nextMin = steps[step + 1] ?? null;
+            const curMin = learningSteps[step] || 1;
+            const nextMin = learningSteps[step + 1] ?? null;
             let hardMin: number;
             if (nextMin !== null) { hardMin = Math.round((curMin + nextMin) / 2); }
             else { hardMin = Math.round(curMin * 1.5); }
             return {
-                again: formatMinutes(steps[0] || 1),
+                again: formatMinutes(learningSteps[0] || 1),
                 hard: formatMinutes(hardMin),
                 good: nextMin !== null ? formatMinutes(nextMin) : `${settings.graduatingInterval} gun`,
                 easy: `${settings.easyInterval} gun`,
-                againMinutes: steps[0] || 1,
+                againMinutes: learningSteps[0] || 1,
                 hardMinutes: hardMin,
             };
         }
-        if (cs.relearningStep !== undefined && cs.relearningStep >= 0) {
+
+        if (isRelearning) {
             const step = cs.relearningStep;
-            const curMin = steps[step] || 1;
-            const nextMin = steps[step + 1] ?? null;
+            const curMin = lapseSteps[step] || lapseSteps[0] || 1;
+            const nextMin = lapseSteps[step + 1] ?? null;
             let hardMin: number;
             if (nextMin !== null) { hardMin = Math.round((curMin + nextMin) / 2); }
             else { hardMin = Math.round(curMin * 1.5); }
             return {
-                again: formatMinutes(steps[0] || 1),
+                again: formatMinutes(lapseSteps[0] || 1),
                 hard: formatMinutes(hardMin),
                 good: nextMin !== null ? formatMinutes(nextMin) : `${cs.interval || 1} gun`,
                 easy: `${Math.max(cs.interval || 1, 1)} gun`,
-                againMinutes: steps[0] || 1,
+                againMinutes: lapseSteps[0] || 1,
                 hardMinutes: hardMin,
             };
         }
+
         // Review preview
         const ef = cs.easeFactor || 2.5;
         const cur = cs.interval || 1;
@@ -419,11 +426,11 @@ const AnkiV3Engine: SchedulerEngine = {
         const iGood = Math.max(iHard + 1, rawGood);
         const iEasy = Math.max(iGood + 1, rawEasy);
         return {
-            again: formatMinutes(steps[0] || 1),
+            again: formatMinutes(lapseSteps[0] || 1),
             hard: formatDays(iHard),
             good: formatDays(iGood),
             easy: formatDays(iEasy),
-            againMinutes: steps[0] || 1,
+            againMinutes: lapseSteps[0] || 1,
         };
     },
 };
@@ -475,9 +482,9 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
 }
 
 function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, now: number): ScheduleResult {
-    const steps = settings.learningSteps;
+    const steps = settings.lapseSteps;
     const step = cs.relearningStep;
-    const curMin = steps[step] || 1;
+    const curMin = steps[step] || steps[0] || 1;
     const nextMin = steps[step + 1] ?? null;
 
     if (grade === 1) {
@@ -519,13 +526,13 @@ function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, no
 function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: number): ScheduleResult {
     const ef = cs.easeFactor || settings.startingEase;
     const cur = Math.max(1, cs.interval || 1);
-    const steps = settings.learningSteps;
+    const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
         const newInterval = Math.max(1, Math.round(cur * settings.lapseNewInterval));
         const newEase = Math.max(1.3, ef - 0.20);
         return {
-            interval: 0, isLearning: true, minutesUntilDue: steps[0] || 1,
+            interval: 0, isLearning: true, minutesUntilDue: lapseSteps[0] || 1,
             stateUpdates: {
                 interval: newInterval, easeFactor: newEase, relearningStep: 0, learningStep: -1,
                 lapses: (cs.lapses || 0) + 1, status: 'learning', lastReviewedAtMs: now
@@ -580,7 +587,7 @@ const engines: Record<AlgorithmType, SchedulerEngine> = {
 };
 
 export function getScheduler(type: AlgorithmType = 'ANKI_V3'): SchedulerEngine {
-    return AnkiV3Engine;
+    return engines[type] || AnkiV3Engine;
 }
 
 export function getAvailableAlgorithms(): { type: AlgorithmType; name: string; description: string }[] {

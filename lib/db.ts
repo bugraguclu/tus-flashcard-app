@@ -8,7 +8,7 @@ import type { CardState } from './types';
 import type { Card } from './types';
 
 // ---------- Schema Version ----------
-const SCHEMA_VERSION = 3; // v1 = base tables + indexes, v2 = FTS5, v3 = Anki-compatible model
+const SCHEMA_VERSION = 4; // v1 = base, v2 = FTS5, v3 = Anki core tables, v4 = sync-ready metadata columns
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -25,6 +25,11 @@ interface Migration {
     version: number;
     description: string;
     up: (db: SQLite.SQLiteDatabase) => void;
+}
+
+function hasColumn(db: SQLite.SQLiteDatabase, table: string, column: string): boolean {
+    const rows = db.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
+    return rows.some((row) => row.name === column);
 }
 
 const migrations: Migration[] = [
@@ -171,6 +176,34 @@ const migrations: Migration[] = [
 
                 UPDATE schema_version SET version = 3;
             `);
+        },
+    },
+    {
+        version: 4,
+        description: 'Sync-ready metadata columns (updated_at, usn, tombstone)',
+        up: (db) => {
+            const tableSpecs = [
+                { table: 'notes', columns: ['updated_at', 'usn', 'tombstone'] },
+                { table: 'anki_cards', columns: ['updated_at', 'usn', 'tombstone'] },
+                { table: 'decks', columns: ['updated_at', 'usn', 'tombstone'] },
+                { table: 'note_types', columns: ['updated_at', 'usn', 'tombstone'] },
+            ];
+
+            for (const spec of tableSpecs) {
+                if (!hasColumn(db, spec.table, 'updated_at')) {
+                    db.execSync(`ALTER TABLE ${spec.table} ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;`);
+                }
+                if (!hasColumn(db, spec.table, 'usn')) {
+                    db.execSync(`ALTER TABLE ${spec.table} ADD COLUMN usn INTEGER NOT NULL DEFAULT -1;`);
+                }
+                if (!hasColumn(db, spec.table, 'tombstone')) {
+                    db.execSync(`ALTER TABLE ${spec.table} ADD COLUMN tombstone INTEGER NOT NULL DEFAULT 0;`);
+                }
+                db.execSync(`CREATE INDEX IF NOT EXISTS idx_${spec.table}_tombstone ON ${spec.table}(tombstone);`);
+                db.execSync(`CREATE INDEX IF NOT EXISTS idx_${spec.table}_updated_at ON ${spec.table}(updated_at);`);
+            }
+
+            db.execSync('UPDATE schema_version SET version = 4;');
         },
     },
 ];
@@ -332,20 +365,42 @@ export function dbSearchCards(query: string): number[] {
     if (!query.trim()) return [];
     const db = getDB();
 
-    // FTS5 arama — sanitize input, her kelime prefix wildcard ile
     const sanitized = query.trim().replace(/[^\w\u00C0-\u024F\u0400-\u04FF\s]/g, ' ');
     if (!sanitized.trim()) return [];
-    const searchTerms = sanitized.split(/\s+/).filter(Boolean).map(t => `"${t}"*`).join(' ');
+
+    const searchTerms = sanitized
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((term) => `"${term}"*`)
+        .join(' ');
+
     try {
         const rows = db.getAllSync<{ card_id: string }>(
             `SELECT card_id FROM cards_fts WHERE cards_fts MATCH ? ORDER BY rank`,
-            searchTerms
+            searchTerms,
         );
-        return rows.map(r => Number(r.card_id));
+        return rows.map((row) => Number(row.card_id));
     } catch {
-        // Fallback: basit LIKE araması (FTS syntax hatası durumunda)
         return [];
     }
+}
+
+export function dbUpsertFtsCard(card: { id: number; question: string; answer: string; topic: string; subject: string }): void {
+    const db = getDB();
+    db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(card.id));
+    db.runSync(
+        'INSERT INTO cards_fts (card_id, question, answer, topic, subject) VALUES (?, ?, ?, ?, ?)',
+        String(card.id),
+        card.question,
+        card.answer,
+        card.topic,
+        card.subject,
+    );
+}
+
+export function dbDeleteFtsCard(cardId: number): void {
+    const db = getDB();
+    db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
 }
 
 // ---------- Bulk Unbury (D4) ----------

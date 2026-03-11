@@ -71,13 +71,14 @@ export interface SchedulerEngine {
 
 export interface AppSettings {
     dailyNewLimit: number;
-    learningSteps: number[];       // minutes
+    learningSteps: number[];       // minutes for new cards
+    lapseSteps: number[];          // minutes for relearning after a lapse
     graduatingInterval: number;    // days
     easyInterval: number;          // days
     startingEase: number;
     lapseNewInterval: number;
     algorithm: AlgorithmType;
-    desiredRetention: number;      // FSRS: 0.9 = 90%
+    desiredRetention: number;
 }
 
 export interface SessionStats {

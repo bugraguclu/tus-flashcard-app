@@ -18,6 +18,7 @@ const KEYS = {
 export const DEFAULT_SETTINGS: AppSettings = {
     dailyNewLimit: 20,
     learningSteps: [1, 10],
+    lapseSteps: [10],
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
@@ -61,11 +62,11 @@ export async function loadAllCardStates(): Promise<Record<string, CardState>> {
         const allKeys = await AsyncStorage.getAllKeys();
         const perCardKeys = allKeys.filter((k: string) => k.startsWith(CARD_STATE_PREFIX));
 
-        // Blob (eski format uyumluluğu)
+        // Legacy blob snapshot.
         const blobData = await AsyncStorage.getItem(KEYS.CARD_STATES);
         const states: Record<string, CardState> = blobData ? JSON.parse(blobData) : {};
 
-        // Per-card keys ile üzerine yaz (daha güncel)
+        // Per-card values override the blob because they are newer.
         if (perCardKeys.length > 0) {
             const pairs = await AsyncStorage.multiGet(perCardKeys);
             for (const [key, value] of pairs) {
@@ -79,6 +80,15 @@ export async function loadAllCardStates(): Promise<Record<string, CardState>> {
         return states;
     } catch {
         return {};
+    }
+}
+
+export async function clearLegacyCardStates(): Promise<void> {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const perCardKeys = allKeys.filter((k: string) => k.startsWith(CARD_STATE_PREFIX));
+    const keys = [KEYS.CARD_STATES, ...perCardKeys];
+    if (keys.length > 0) {
+        await AsyncStorage.multiRemove(keys);
     }
 }
 
@@ -149,39 +159,38 @@ export async function resetAllData(): Promise<void> {
         AsyncStorage.removeItem(KEYS.CUSTOM_CARDS),
         AsyncStorage.removeItem(KEYS.SETTINGS),
     ]);
-    // Also clear SQLite card_states
+
     try {
         const { getDB } = require('./db');
+        const { initAnkiData } = require('./ankiInit');
+        const { dbIndexAllCards } = require('./db');
+        const { getSearchIndexCards } = require('./noteManager');
+
         const db = getDB();
-        db.execSync('DELETE FROM card_states;');
-    } catch { /* DB might not be initialized */ }
+        db.execSync(`
+            BEGIN TRANSACTION;
+            DELETE FROM revlog;
+            DELETE FROM anki_cards;
+            DELETE FROM notes;
+            DELETE FROM decks;
+            DELETE FROM deck_configs;
+            DELETE FROM note_types;
+            DELETE FROM graves;
+            DELETE FROM card_states;
+            DELETE FROM cards_fts;
+            DELETE FROM session_stats;
+            DELETE FROM settings;
+            COMMIT;
+        `);
+
+        initAnkiData();
+        dbIndexAllCards(getSearchIndexCards());
+    } catch {
+        /* Database may not be initialized yet. */
+    }
 }
 
-// --- Export All (D5: versioned + compact) ---
-export async function exportAllData(): Promise<string> {
-    const [cardStates, customCards, settings, sessionStats] = await Promise.all([
-        loadAllCardStates(),
-        loadCustomCards(),
-        loadSettings(),
-        loadSessionStats(),
-    ]);
-
-    let schemaVersion = 0;
-    try { schemaVersion = dbGetSchemaVersion(); } catch { /* DB might not be initialized */ }
-
-    return JSON.stringify({
-        version: 4,
-        schema_version: schemaVersion,
-        exportDate: new Date().toISOString(),
-        cardCount: Object.keys(cardStates).length,
-        cardStates,
-        customCards,
-        settings,
-        sessionStats,
-    });
-}
-
-// --- Import All (D5: validation + SQLite sync) ---
+// --- Export All (canonical SQLite model) ---
 const MAX_IMPORT_SIZE = 50 * 1024 * 1024; // 50 MB limit
 
 /** Sanitize imported object to prevent prototype pollution */
@@ -196,92 +205,260 @@ function sanitizeObject<T>(obj: T): T {
     return clean as T;
 }
 
-/** Validate and clamp imported settings to safe ranges */
+function sanitizeStepArray(value: unknown, fallback: number[]): number[] {
+    if (!Array.isArray(value)) return fallback;
+    const clean = value
+        .map((entry) => Number(entry))
+        .filter((entry) => Number.isFinite(entry) && entry > 0 && entry <= 10080)
+        .slice(0, 20);
+
+    return clean.length > 0 ? clean : fallback;
+}
+
 function validateSettings(settings: Record<string, unknown>): Record<string, unknown> {
     const validated = { ...DEFAULT_SETTINGS, ...settings };
-    // Clamp numeric values to safe ranges
     validated.dailyNewLimit = Math.max(0, Math.min(9999, Number(validated.dailyNewLimit) || 20));
     validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
     validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
     validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval) || 0.7));
     validated.desiredRetention = Math.max(0.5, Math.min(0.99, Number(validated.desiredRetention) || 0.9));
-    // Validate learningSteps array
-    if (Array.isArray(validated.learningSteps)) {
-        validated.learningSteps = validated.learningSteps
-            .filter((s: unknown) => typeof s === 'number' && s > 0 && s <= 10080)
-            .slice(0, 20);
-        if (validated.learningSteps.length === 0) validated.learningSteps = [1, 10];
-    } else {
-        validated.learningSteps = [1, 10];
-    }
+    validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
+    validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
     validated.algorithm = 'ANKI_V3' as AlgorithmType;
     return validated;
 }
 
+export async function exportAllData(): Promise<string> {
+    const [settings, sessionStats] = await Promise.all([loadSettings(), loadSessionStats()]);
+
+    let schemaVersion = 0;
+    let tables = {
+        note_types: [] as any[],
+        notes: [] as any[],
+        anki_cards: [] as any[],
+        decks: [] as any[],
+        deck_configs: [] as any[],
+        revlog: [] as any[],
+        graves: [] as any[],
+    };
+
+    try {
+        const { getDB } = require('./db');
+        const db = getDB();
+
+        schemaVersion = dbGetSchemaVersion();
+        tables = {
+            note_types: db.getAllSync('SELECT * FROM note_types ORDER BY id'),
+            notes: db.getAllSync('SELECT * FROM notes ORDER BY id'),
+            anki_cards: db.getAllSync('SELECT * FROM anki_cards ORDER BY id'),
+            decks: db.getAllSync('SELECT * FROM decks ORDER BY id'),
+            deck_configs: db.getAllSync('SELECT * FROM deck_configs ORDER BY id'),
+            revlog: db.getAllSync('SELECT * FROM revlog ORDER BY id'),
+            graves: db.getAllSync('SELECT * FROM graves'),
+        };
+    } catch {
+        // If DB is not ready, fallback to metadata-only export.
+    }
+
+    return JSON.stringify({
+        version: 5,
+        schema_version: schemaVersion,
+        exportDate: new Date().toISOString(),
+        canonical: true,
+        settings,
+        sessionStats,
+        tables,
+    });
+}
+
+function isCanonicalImport(data: any): boolean {
+    return Boolean(data?.canonical && data?.tables && typeof data.tables === 'object');
+}
+
+function importCanonicalTables(data: any): void {
+    const { initDB, getDB } = require('./db');
+    const { dbIndexAllCards } = require('./db');
+    const { getSearchIndexCards } = require('./noteManager');
+
+    initDB();
+    const db = getDB();
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        db.execSync(`
+            DELETE FROM revlog;
+            DELETE FROM anki_cards;
+            DELETE FROM notes;
+            DELETE FROM decks;
+            DELETE FROM deck_configs;
+            DELETE FROM note_types;
+            DELETE FROM graves;
+            DELETE FROM cards_fts;
+        `);
+
+        for (const row of data.tables.note_types || []) {
+            db.runSync(
+                'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
+                row.id,
+                row.name,
+                row.data,
+                row.updated_at ?? 0,
+                row.usn ?? -1,
+                row.tombstone ?? 0,
+            );
+        }
+
+        for (const row of data.tables.notes || []) {
+            db.runSync(
+                'INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                row.id,
+                row.noteTypeId,
+                row.sfld,
+                row.csum,
+                row.tags,
+                row.data,
+                row.updated_at ?? 0,
+                row.usn ?? -1,
+                row.tombstone ?? 0,
+            );
+        }
+
+        for (const row of data.tables.anki_cards || []) {
+            db.runSync(
+                `INSERT INTO anki_cards
+                 (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data, updated_at, usn, tombstone)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                row.id,
+                row.noteId,
+                row.deckId,
+                row.ord,
+                row.type,
+                row.queue,
+                row.due,
+                row.ivl,
+                row.factor,
+                row.reps,
+                row.lapses,
+                row.flags,
+                row.data,
+                row.updated_at ?? 0,
+                row.usn ?? -1,
+                row.tombstone ?? 0,
+            );
+        }
+
+        for (const row of data.tables.decks || []) {
+            db.runSync(
+                'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
+                row.id,
+                row.name,
+                row.data,
+                row.updated_at ?? 0,
+                row.usn ?? -1,
+                row.tombstone ?? 0,
+            );
+        }
+
+        for (const row of data.tables.deck_configs || []) {
+            db.runSync('INSERT INTO deck_configs (id, data) VALUES (?, ?)', row.id, row.data);
+        }
+
+        for (const row of data.tables.revlog || []) {
+            db.runSync(
+                'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                row.id,
+                row.cardId,
+                row.usn,
+                row.ease,
+                row.ivl,
+                row.lastIvl,
+                row.factor,
+                row.time,
+                row.type,
+            );
+        }
+
+        for (const row of data.tables.graves || []) {
+            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, ?, ?)', row.oid, row.type, row.usn);
+        }
+
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    dbIndexAllCards(getSearchIndexCards());
+}
+
 export async function importAllData(jsonString: string): Promise<boolean> {
     try {
-        // S2: Size limit to prevent memory exhaustion
         if (jsonString.length > MAX_IMPORT_SIZE) {
             console.error(`Import: Dosya çok büyük (${(jsonString.length / 1024 / 1024).toFixed(1)} MB > 50 MB limit)`);
             return false;
         }
 
         let data = JSON.parse(jsonString);
-
-        // S2: Prototype pollution prevention
         data = sanitizeObject(data);
 
-        // Validation: version kontrolü
         if (!data.version || typeof data.version !== 'number') {
             console.error('Import: Geçersiz version alanı');
             return false;
         }
 
-        // Validation: cardStates obje mi?
-        if (data.cardStates && typeof data.cardStates !== 'object') {
-            console.error('Import: cardStates bir obje değil');
-            return false;
-        }
-
-        // Validation: customCards dizi mi?
-        if (data.customCards && !Array.isArray(data.customCards)) {
-            console.error('Import: customCards bir dizi değil');
-            return false;
-        }
-
-        // Validation: settings obje mi?
         if (data.settings && typeof data.settings !== 'object') {
             console.error('Import: settings bir obje değil');
             return false;
         }
 
-        // S8: Validate and clamp settings
         if (data.settings) {
             data.settings = validateSettings(data.settings);
         }
 
-        // AsyncStorage'a yaz (backward compat)
         const pairs: [string, string][] = [];
-        if (data.cardStates) pairs.push([KEYS.CARD_STATES, JSON.stringify(data.cardStates)]);
-        if (data.customCards) pairs.push([KEYS.CUSTOM_CARDS, JSON.stringify(data.customCards)]);
         if (data.settings) pairs.push([KEYS.SETTINGS, JSON.stringify(data.settings)]);
         if (data.sessionStats) pairs.push([KEYS.SESSION_STATS, JSON.stringify(data.sessionStats)]);
+        if (pairs.length > 0) {
+            await AsyncStorage.multiSet(pairs);
+        }
 
-        await AsyncStorage.multiSet(pairs);
+        if (isCanonicalImport(data)) {
+            importCanonicalTables(data);
+            await clearLegacyCardStates();
+            await saveCustomCards([]);
+            return true;
+        }
 
-        // SQLite'a da sync et
+        // Legacy import fallback (pre-canonical export format)
+        if (data.cardStates && typeof data.cardStates !== 'object') {
+            console.error('Import: cardStates bir obje değil');
+            return false;
+        }
+
+        if (data.customCards && !Array.isArray(data.customCards)) {
+            console.error('Import: customCards bir dizi değil');
+            return false;
+        }
+
+        const legacyPairs: [string, string][] = [];
+        if (data.cardStates) legacyPairs.push([KEYS.CARD_STATES, JSON.stringify(data.cardStates)]);
+        if (data.customCards) legacyPairs.push([KEYS.CUSTOM_CARDS, JSON.stringify(data.customCards)]);
+        if (legacyPairs.length > 0) {
+            await AsyncStorage.multiSet(legacyPairs);
+        }
+
         if (data.cardStates) {
             try {
                 dbSaveAllCardStates(data.cardStates);
-            } catch (e) {
-                console.warn('Import: SQLite sync hatası (AsyncStorage\'a yazıldı):', e);
+            } catch (error) {
+                console.warn('Import: SQLite sync hatası (legacy fallback):', error);
             }
         }
 
         return true;
-    } catch (e) {
-        console.error('Import hatası:', e);
+    } catch (error) {
+        console.error('Import hatası:', error);
         return false;
     }
 }

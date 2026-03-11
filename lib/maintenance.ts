@@ -4,7 +4,8 @@
 // ============================================================
 
 import { todayLocalYMD } from './scheduler';
-import { dbUnburyAll, getDB } from './db';
+import { getDB } from './db';
+import { unburyAllCards } from './noteManager';
 
 const LAST_MAINTENANCE_KEY = 'tus_last_maintenance';
 
@@ -27,8 +28,8 @@ export function runDailyMaintenance(): { unburiedCount: number; didRun: boolean 
 
     console.log(`[Maintenance] Running daily maintenance for ${today}...`);
 
-    // D4-a: Auto-unbury — gömülü kartları aç
-    const unburiedCount = dbUnburyAll();
+    // Auto-unbury canonical Anki cards (queue -2/-3 -> active queue).
+    const unburiedCount = unburyAllCards();
     if (unburiedCount > 0) {
         console.log(`[Maintenance] Unburied ${unburiedCount} cards.`);
     }

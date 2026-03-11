@@ -240,3 +240,13 @@ export function getButtonDistribution(): { ease: number; label: string; count: n
         count: r.cnt,
     }));
 }
+
+export function deleteLastReviewForCard(cardId: number): void {
+    const db = getDB();
+    const row = db.getFirstSync<{ id: number }>(
+        'SELECT id FROM revlog WHERE cardId = ? ORDER BY id DESC LIMIT 1',
+        cardId,
+    );
+    if (!row) return;
+    db.runSync('DELETE FROM revlog WHERE id = ?', row.id);
+}

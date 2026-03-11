@@ -1,80 +1,44 @@
-// ============================================================
-// TUS Flashcard - Deck List Screen (Anki-style)
-// Ana sayfa: Tüm desteleri hiyerarşik listele
-// Her destede New (mavi), Learning (turuncu), Review (yeşil) sayaçları
-// ============================================================
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
-    View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView,
-    TextInput, Alert, Platform,
+    View,
+    Text,
+    ScrollView,
+    TouchableOpacity,
+    StyleSheet,
+    SafeAreaView,
+    TextInput,
+    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import type { Deck, DeckConfig, DeckTreeNode } from '../../lib/models';
-import { DEFAULT_DECKS, DEFAULT_DECK_CONFIG, getDeckDisplayName } from '../../lib/models';
-import { useApp } from './_layout';
+import {
+    getAllDecks,
+    getCardCountsByDeck,
+    buildDeckTree,
+    createDeck,
+    type DeckTreeNode,
+} from '../../lib/deckManager';
+import { getDeckDisplayName } from '../../lib/models';
 
 export default function DecksScreen() {
     const router = useRouter();
-    const { settings, refreshData } = useApp();
     const [expandedDecks, setExpandedDecks] = useState<Set<string>>(new Set(['TUS']));
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [newDeckName, setNewDeckName] = useState('');
+    const [refreshToken, setRefreshToken] = useState(0);
 
-    // Mock deck data (will be replaced with real DB data after full integration)
-    const decks = useMemo(() => DEFAULT_DECKS, []);
-
-    // Build tree manually from flat deck list
     const deckTree = useMemo(() => {
-        const sorted = [...decks].sort((a, b) => a.name.localeCompare(b.name));
-        const nodes: DeckTreeNode[] = sorted.map(d => ({
-            deck: d,
-            children: [],
-            depth: d.name.split('::').length - 1,
-            newCount: Math.floor(Math.random() * 10), // placeholder
-            learnCount: Math.floor(Math.random() * 5),
-            reviewCount: Math.floor(Math.random() * 15),
-            totalCards: 10,
-        }));
+        const decks = getAllDecks();
+        const counts = getCardCountsByDeck();
+        return buildDeckTree(decks, counts);
+    }, [refreshToken]);
 
-        // Link children
-        const nodeMap = new Map<string, DeckTreeNode>();
-        nodes.forEach(n => nodeMap.set(n.deck.name, n));
-
-        const roots: DeckTreeNode[] = [];
-        for (const node of nodes) {
-            const parts = node.deck.name.split('::');
-            if (parts.length <= 1) {
-                roots.push(node);
-            } else {
-                const parentName = parts.slice(0, -1).join('::');
-                const parent = nodeMap.get(parentName);
-                if (parent) {
-                    parent.children.push(node);
-                } else {
-                    roots.push(node);
-                }
-            }
-        }
-
-        // Aggregate counts
-        function aggregate(n: DeckTreeNode): void {
-            for (const child of n.children) {
-                aggregate(child);
-                n.newCount += child.newCount;
-                n.learnCount += child.learnCount;
-                n.reviewCount += child.reviewCount;
-                n.totalCards += child.totalCards;
-            }
-        }
-        roots.forEach(aggregate);
-
-        return roots;
-    }, [decks]);
+    const refresh = useCallback(() => {
+        setRefreshToken((value) => value + 1);
+    }, []);
 
     const toggleExpand = (deckName: string) => {
-        setExpandedDecks(prev => {
+        setExpandedDecks((prev) => {
             const next = new Set(prev);
             if (next.has(deckName)) next.delete(deckName);
             else next.add(deckName);
@@ -83,36 +47,38 @@ export default function DecksScreen() {
     };
 
     const handleStudy = (deckName: string) => {
-        // Navigate to study with selected deck
         router.push({ pathname: '/', params: { deck: deckName } } as any);
     };
 
     const handleAddDeck = () => {
-        if (!newDeckName.trim()) return;
-        Alert.alert('✅', `Deste "${newDeckName}" oluşturuldu.`);
-        setNewDeckName('');
-        setShowAddDeck(false);
+        const name = newDeckName.trim();
+        if (!name) return;
+
+        try {
+            createDeck(name);
+            setNewDeckName('');
+            setShowAddDeck(false);
+            refresh();
+            Alert.alert('✅', `Deste "${name}" oluşturuldu.`);
+        } catch {
+            Alert.alert('Hata', 'Deste oluşturulamadı.');
+        }
     };
 
     const renderDeckNode = (node: DeckTreeNode): React.ReactNode => {
         const isExpanded = expandedDecks.has(node.deck.name);
         const hasChildren = node.children.length > 0;
         const displayName = getDeckDisplayName(node.deck.name);
-        const totalDue = node.newCount + node.learnCount + node.reviewCount;
 
         return (
             <View key={node.deck.id}>
                 <TouchableOpacity
                     style={[styles.deckRow, { paddingLeft: 16 + node.depth * 24 }]}
-                    onPress={() => hasChildren ? toggleExpand(node.deck.name) : handleStudy(node.deck.name)}
+                    onPress={() => (hasChildren ? toggleExpand(node.deck.name) : handleStudy(node.deck.name))}
                     onLongPress={() => handleStudy(node.deck.name)}
                 >
-                    {/* Expand/collapse arrow */}
                     {hasChildren ? (
-                        <TouchableOpacity
-                            style={styles.expandBtn}
-                            onPress={() => toggleExpand(node.deck.name)}
-                        >
+                        <TouchableOpacity style={styles.expandBtn} onPress={() => toggleExpand(node.deck.name)}>
                             <Text style={styles.expandArrow}>{isExpanded ? '▾' : '▸'}</Text>
                         </TouchableOpacity>
                     ) : (
@@ -121,52 +87,43 @@ export default function DecksScreen() {
                         </View>
                     )}
 
-                    {/* Deck name */}
                     <Text style={styles.deckName} numberOfLines={1}>{displayName}</Text>
 
-                    {/* Card counts */}
                     <View style={styles.countsRow}>
                         <Text style={[styles.countBadge, styles.countNew]}>{node.newCount}</Text>
                         <Text style={[styles.countBadge, styles.countLearn]}>{node.learnCount}</Text>
                         <Text style={[styles.countBadge, styles.countReview]}>{node.reviewCount}</Text>
                     </View>
 
-                    {/* Gear icon */}
-                    <TouchableOpacity style={styles.gearBtn}>
+                    <TouchableOpacity style={styles.gearBtn} onPress={() => Alert.alert('Deste', node.deck.name)}>
                         <Text style={styles.gearText}>⚙️</Text>
                     </TouchableOpacity>
                 </TouchableOpacity>
 
-                {/* Children */}
-                {isExpanded && node.children.map(child => renderDeckNode(child))}
+                {isExpanded && node.children.map((child) => renderDeckNode(child))}
             </View>
         );
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.title}>Desteler</Text>
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerBtn} onPress={() => setShowAddDeck(!showAddDeck)}>
                         <Text style={styles.headerBtnText}>+ Deste</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/browser' as any)}>
-                        <Text style={styles.headerBtnText}>🗂️</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerBtn} onPress={() => router.push('/stats' as any)}>
-                        <Text style={styles.headerBtnText}>📊</Text>
+                    <TouchableOpacity style={styles.headerBtn} onPress={refresh}>
+                        <Text style={styles.headerBtnText}>↻</Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Add Deck Input */}
             {showAddDeck && (
                 <View style={styles.addDeckRow}>
                     <TextInput
                         style={styles.addDeckInput}
-                        placeholder="Deste adı (ör: TUS::Anatomi::Nöroanatomi)"
+                        placeholder="Deste adı (örn: TUS::Anatomi::Sinir)"
                         placeholderTextColor={Colors.textMuted}
                         value={newDeckName}
                         onChangeText={setNewDeckName}
@@ -179,7 +136,6 @@ export default function DecksScreen() {
                 </View>
             )}
 
-            {/* Column Headers */}
             <View style={styles.columnHeaders}>
                 <Text style={styles.columnLabel}>Deste</Text>
                 <View style={styles.countsRow}>
@@ -190,15 +146,11 @@ export default function DecksScreen() {
                 <View style={{ width: 36 }} />
             </View>
 
-            {/* Deck List */}
             <ScrollView style={styles.deckList} showsVerticalScrollIndicator={false}>
-                {deckTree.map(node => renderDeckNode(node))}
-
-                {/* Bottom spacing */}
+                {deckTree.map((node) => renderDeckNode(node))}
                 <View style={{ height: 80 }} />
             </ScrollView>
 
-            {/* Bottom Bar */}
             <View style={styles.bottomBar}>
                 <TouchableOpacity style={styles.bottomBtn} onPress={() => router.push('/editor' as any)}>
                     <Text style={styles.bottomBtnIcon}>+</Text>
@@ -212,7 +164,7 @@ export default function DecksScreen() {
                     <Text style={styles.bottomBtnIcon}>📊</Text>
                     <Text style={styles.bottomBtnText}>İstatistik</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.bottomBtn}>
+                <TouchableOpacity style={styles.bottomBtn} onPress={() => Alert.alert('Sync', 'Sync henüz uygulanmadı.') }>
                     <Text style={styles.bottomBtnIcon}>🔄</Text>
                     <Text style={styles.bottomBtnText}>Sync</Text>
                 </TouchableOpacity>
@@ -283,7 +235,14 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: Colors.border,
     },
-    columnLabel: { flex: 1, fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted, letterSpacing: 0.5, textTransform: 'uppercase' },
+    columnLabel: {
+        flex: 1,
+        fontSize: FontSize.xs,
+        fontWeight: '600',
+        color: Colors.textMuted,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+    },
     columnCount: { fontSize: FontSize.xs, fontWeight: '700', width: 48, textAlign: 'center' },
 
     deckList: { flex: 1 },

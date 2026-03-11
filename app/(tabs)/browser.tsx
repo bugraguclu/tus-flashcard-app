@@ -1,21 +1,24 @@
-// ============================================================
-// TUS Flashcard - Kart Tarayıcı Ekranı
-// ============================================================
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-    View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, FlatList,
+    View,
+    Text,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    StyleSheet,
+    SafeAreaView,
+    FlatList,
 } from 'react-native';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { TUS_SUBJECTS, TUS_CARDS } from '../../lib/data';
-import { loadAllCardStates, saveCardState, loadCustomCards, loadSettings, DEFAULT_SETTINGS } from '../../lib/storage';
-import { getToday } from '../../lib/scheduler';
-import type { Card, CardState, AppSettings } from '../../lib/types';
+import { TUS_SUBJECTS } from '../../lib/data';
+import { dbSearchCards } from '../../lib/db';
+import { useApp } from './_layout';
+import { getBrowserCards, setCardSuspended, type StudyCard } from '../../lib/studyRepository';
 
 export default function BrowserScreen() {
-    const [cardStates, setCardStates] = useState<Record<string, CardState>>({});
-    const [customCards, setCustomCards] = useState<Card[]>([]);
-    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+    const { settings } = useApp();
+
+    const [allCards, setAllCards] = useState<StudyCard[]>([]);
     const [rawQuery, setRawQuery] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -23,129 +26,123 @@ export default function BrowserScreen() {
     const [loading, setLoading] = useState(true);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // QW3: Debounce search input (200ms)
+    const reload = useCallback(() => {
+        const cards = getBrowserCards(settings);
+        setAllCards(cards);
+        setLoading(false);
+    }, [settings]);
+
+    useEffect(() => {
+        reload();
+    }, [reload]);
+
     const handleSearch = useCallback((text: string) => {
         setRawQuery(text);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => setSearchQuery(text), 200);
     }, []);
 
-    useEffect(() => {
-        async function load() {
-            const [cs, cc, s] = await Promise.all([
-                loadAllCardStates(), loadCustomCards(), loadSettings(),
-            ]);
-            setCardStates(cs); setCustomCards(cc); setSettings(s);
-            setLoading(false);
-        }
-        load();
-    }, []);
-
-    // QW3: useMemo for allCards and filteredCards
-    const allCards = useMemo(() => [...TUS_CARDS, ...customCards], [customCards]);
-
     const filteredCards = useMemo(() => {
-        const q = searchQuery.trim().toLowerCase();
-        return allCards.filter(card => {
-            if (selectedSubject && card.subject !== selectedSubject) return false;
-            if (!q) return true;
-            return (
-                card.question.toLowerCase().includes(q) ||
-                card.answer.toLowerCase().includes(q) ||
-                card.topic.toLowerCase().includes(q)
-            );
-        });
+        const query = searchQuery.trim();
+        let cards = allCards;
+
+        if (selectedSubject) {
+            cards = cards.filter((card) => card.subject === selectedSubject);
+        }
+
+        if (!query) {
+            return cards;
+        }
+
+        const ids = dbSearchCards(query);
+        if (ids.length > 0) {
+            const idSet = new Set(ids);
+            return cards.filter((card) => idSet.has(card.cardId));
+        }
+
+        const lower = query.toLowerCase();
+        return cards.filter((card) => (
+            card.question.toLowerCase().includes(lower)
+            || card.answer.toLowerCase().includes(lower)
+            || card.topic.toLowerCase().includes(lower)
+        ));
     }, [allCards, selectedSubject, searchQuery]);
 
-    const getCardState = (cardId: number): CardState | null => cardStates[cardId] || null;
+    const toggleSuspend = useCallback((cardId: number, isSuspended: boolean) => {
+        setCardSuspended(cardId, !isSuspended);
+        reload();
+    }, [reload]);
 
-    const toggleSuspend = async (cardId: number) => {
-        const cs = cardStates[cardId] || {
-            interval: 0, repetition: 0, dueDate: '', dueTime: 0,
-            status: 'new' as const, suspended: false, buried: false,
-            easeFactor: settings.startingEase, learningStep: 0,
-            relearningStep: -1, lastReviewedAtMs: 0,
-            stability: 0, difficulty: 0, elapsedDays: 0, lapses: 0,
-        };
-        const updated = { ...cs, suspended: !cs.suspended };
-        const newStates = { ...cardStates, [cardId]: updated };
-        setCardStates(newStates);
-        await saveCardState(cardId, updated);
-    };
+    const subject = (id: string) => TUS_SUBJECTS.find((s) => s.id === id);
 
-    const subject = (id: string) => TUS_SUBJECTS.find(s => s.id === id);
+    const renderCard = ({ item }: { item: StudyCard }) => {
+        const isExpanded = expandedCard === item.cardId;
+        const sub = subject(item.subject);
 
-    const renderCard = ({ item: card }: { item: Card }) => {
-        const cs = getCardState(card.id);
-        const isExpanded = expandedCard === card.id;
-        const sub = subject(card.subject);
-        const statusColor = !cs || cs.status === 'new' ? Colors.badgeNew
-            : cs.status === 'learning' ? Colors.badgeLearn
+        const statusColor = item.state.status === 'new'
+            ? Colors.badgeNew
+            : item.state.status === 'learning'
+                ? Colors.badgeLearn
                 : Colors.badgeReview;
-        const statusBg = !cs || cs.status === 'new' ? Colors.badgeNewBg
-            : cs.status === 'learning' ? Colors.badgeLearnBg
+
+        const statusBg = item.state.status === 'new'
+            ? Colors.badgeNewBg
+            : item.state.status === 'learning'
+                ? Colors.badgeLearnBg
                 : Colors.badgeReviewBg;
 
         return (
             <TouchableOpacity
-                style={[styles.cardItem, cs?.suspended && styles.cardSuspended]}
-                onPress={() => setExpandedCard(isExpanded ? null : card.id)}
+                style={[styles.cardItem, item.state.suspended && styles.cardSuspended]}
+                onPress={() => setExpandedCard(isExpanded ? null : item.cardId)}
                 activeOpacity={0.7}
             >
                 <View style={styles.cardItemHeader}>
                     <Text style={styles.cardIcon}>{sub?.icon || '📝'}</Text>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.cardQuestion} numberOfLines={isExpanded ? undefined : 2}>
-                            {card.question}
+                            {item.question}
                         </Text>
                         <View style={styles.cardMeta}>
-                            <Text style={styles.cardTopic}>{sub?.name} · {card.topic}</Text>
+                            <Text style={styles.cardTopic}>{sub?.name || item.subject} · {item.topic}</Text>
                             <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
                                 <Text style={[styles.statusDotText, { color: statusColor }]}>
-                                    {!cs || cs.status === 'new' ? 'Yeni' : cs.status === 'learning' ? 'Öğren' : 'Tekrar'}
+                                    {item.state.status === 'new' ? 'Yeni' : item.state.status === 'learning' ? 'Öğren' : 'Tekrar'}
                                 </Text>
                             </View>
                         </View>
                     </View>
-                    {cs?.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
+                    {item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
                 </View>
 
                 {isExpanded && (
                     <View style={styles.expandedContent}>
                         <View style={styles.answerBox}>
                             <Text style={styles.answerLabel}>CEVAP</Text>
-                            <Text style={styles.answerContent}>{card.answer}</Text>
+                            <Text style={styles.answerContent}>{item.answer}</Text>
                         </View>
 
-                        {cs && (
-                            <View style={styles.cardDetails}>
-                                <View style={styles.detailRow}>
-                                    <Text style={styles.detailLabel}>Aralık</Text>
-                                    <Text style={styles.detailValue}>{cs.interval} gün</Text>
-                                </View>
-                                <View style={styles.detailRow}>
-                                    <Text style={styles.detailLabel}>Ease</Text>
-                                    <Text style={styles.detailValue}>{cs.easeFactor.toFixed(2)}</Text>
-                                </View>
-                                <View style={styles.detailRow}>
-                                    <Text style={styles.detailLabel}>Tekrar Tarihi</Text>
-                                    <Text style={styles.detailValue}>{cs.dueDate}</Text>
-                                </View>
-                                {cs.stability > 0 && (
-                                    <View style={styles.detailRow}>
-                                        <Text style={styles.detailLabel}>FSRS Stability</Text>
-                                        <Text style={styles.detailValue}>{cs.stability.toFixed(1)}</Text>
-                                    </View>
-                                )}
+                        <View style={styles.cardDetails}>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Interval</Text>
+                                <Text style={styles.detailValue}>{item.state.interval} gün</Text>
                             </View>
-                        )}
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Ease</Text>
+                                <Text style={styles.detailValue}>{item.state.easeFactor.toFixed(2)}</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Due</Text>
+                                <Text style={styles.detailValue}>{item.state.status === 'learning' ? 'Learning queue' : item.state.dueDate}</Text>
+                            </View>
+                        </View>
 
                         <TouchableOpacity
-                            style={[styles.suspendBtn, cs?.suspended ? styles.suspendBtnActive : null]}
-                            onPress={() => toggleSuspend(card.id)}
+                            style={[styles.suspendBtn, item.state.suspended && styles.suspendBtnActive]}
+                            onPress={() => toggleSuspend(item.cardId, item.state.suspended)}
                         >
                             <Text style={styles.suspendBtnText}>
-                                {cs?.suspended ? '▶️ Sürdür' : '⏸️ Askıya Al'}
+                                {item.state.suspended ? '▶️ Sürdür' : '⏸️ Askıya Al'}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -161,7 +158,6 @@ export default function BrowserScreen() {
                 <Text style={styles.subtitle}>{filteredCards.length} kart</Text>
             </View>
 
-            {/* Arama */}
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
@@ -172,7 +168,6 @@ export default function BrowserScreen() {
                 />
             </View>
 
-            {/* Ders filtresi */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
                 <TouchableOpacity
                     style={[styles.filterChip, !selectedSubject && styles.filterChipActive]}
@@ -180,26 +175,27 @@ export default function BrowserScreen() {
                 >
                     <Text style={[styles.filterChipText, !selectedSubject && styles.filterChipTextActive]}>Tümü</Text>
                 </TouchableOpacity>
-                {TUS_SUBJECTS.map(s => (
+                {TUS_SUBJECTS.map((item) => (
                     <TouchableOpacity
-                        key={s.id}
-                        style={[styles.filterChip, selectedSubject === s.id && styles.filterChipActive]}
-                        onPress={() => setSelectedSubject(selectedSubject === s.id ? null : s.id)}
+                        key={item.id}
+                        style={[styles.filterChip, selectedSubject === item.id && styles.filterChipActive]}
+                        onPress={() => setSelectedSubject(selectedSubject === item.id ? null : item.id)}
                     >
-                        <Text style={[styles.filterChipText, selectedSubject === s.id && styles.filterChipTextActive]}>
-                            {s.icon} {s.name}
+                        <Text style={[styles.filterChipText, selectedSubject === item.id && styles.filterChipTextActive]}>
+                            {item.icon} {item.name}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </ScrollView>
 
-            {/* Kart Listesi */}
             <FlatList
                 data={filteredCards}
                 renderItem={renderCard}
-                keyExtractor={item => String(item.id)}
+                keyExtractor={(item) => String(item.cardId)}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                refreshing={loading}
+                onRefresh={reload}
             />
         </SafeAreaView>
     );
@@ -272,7 +268,11 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.md,
     },
     answerLabel: {
-        fontSize: 9, fontWeight: '700', letterSpacing: 1, color: Colors.accent, marginBottom: 4,
+        fontSize: 9,
+        fontWeight: '700',
+        letterSpacing: 1,
+        color: Colors.accent,
+        marginBottom: 4,
         textTransform: 'uppercase',
     },
     answerContent: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22 },

@@ -7,7 +7,9 @@ import type { Note, NoteType, AnkiCard, CardType, CardQueue, CardFlag } from './
 import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
 import { extractClozeNumbers, shouldGenerateCard } from './templates';
 import { getDB } from './db';
-import { TUS_CARDS } from './data';
+import { TUS_CARDS, TUS_SUBJECTS } from './data';
+
+const SUBJECT_TAGS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
 
 // ---- Note CRUD ----
 
@@ -217,11 +219,11 @@ export function burySiblings(card: AnkiCard): number {
     return buriedCount;
 }
 
-/** Unbury all scheduler-buried cards */
+/** Unbury all buried cards for the new day rollover. */
 export function unburyAllCards(): number {
     const db = getDB();
     const buried = db.getAllSync<{ data: string }>(
-        'SELECT data FROM anki_cards WHERE queue = -3'
+        'SELECT data FROM anki_cards WHERE queue IN (-2, -3)'
     );
     let count = 0;
     for (const row of buried) {
@@ -357,6 +359,91 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
     }
 
     return { notesCreated, cardsCreated };
+}
+
+export interface SearchIndexCard {
+    id: number;
+    question: string;
+    answer: string;
+    topic: string;
+    subject: string;
+}
+
+export function getSearchIndexCards(): SearchIndexCard[] {
+    const db = getDB();
+    const rows = db.getAllSync<{ cardId: number; noteData: string }>(
+        `SELECT c.id AS cardId, n.data AS noteData
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId`
+    );
+
+    return rows.map((row) => {
+        const note: Note = JSON.parse(row.noteData);
+        const subject = note.tags.find((tag) => SUBJECT_TAGS.has(tag)) ?? 'custom';
+        const topic = note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General';
+        const question = note.fields[0] || note.sfld || '';
+        const answer = note.fields[1] || '';
+
+        return {
+            id: row.cardId,
+            subject,
+            topic,
+            question,
+            answer,
+        };
+    });
+}
+
+export function createTusCard(input: {
+    subject: string;
+    topic: string;
+    question: string;
+    answer: string;
+}): { note: Note; card: AnkiCard } {
+    const noteType = getNoteType(4) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === 4)!;
+    const deckId = subjectToDeckId(input.subject);
+    const tags = [input.subject, input.topic.replace(/\s+/g, '-')];
+
+    const { note, cards } = createNote(
+        noteType,
+        [input.question, input.answer, input.topic],
+        deckId,
+        tags,
+    );
+
+    return { note, card: cards[0] };
+}
+
+export function updateTusCardByCardId(
+    cardId: number,
+    input: { subject: string; topic: string; question: string; answer: string },
+): { note: Note; card: AnkiCard } | null {
+    const card = getAnkiCard(cardId);
+    if (!card) return null;
+
+    const note = getNote(card.noteId);
+    if (!note) return null;
+
+    note.fields = [input.question, input.answer, input.topic];
+    note.sfld = input.question;
+    note.csum = checksumField(input.question);
+    note.tags = [input.subject, input.topic.replace(/\s+/g, '-')];
+    note.mod = Math.floor(Date.now() / 1000);
+    note.usn = -1;
+    saveNote(note);
+
+    card.deckId = subjectToDeckId(input.subject);
+    card.mod = Math.floor(Date.now() / 1000);
+    card.usn = -1;
+    saveAnkiCard(card);
+
+    return { note, card };
+}
+
+export function deleteTusCardByCardId(cardId: number): void {
+    const card = getAnkiCard(cardId);
+    if (!card) return;
+    deleteNote(card.noteId);
 }
 
 // ---- Tag Management ----
