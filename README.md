@@ -15,8 +15,15 @@ This codebase now uses **SQLite as the canonical persistence model** and follows
   - `learningSteps` for new cards
   - `lapseSteps` for relearning after lapse
 - `lapseNewInterval` is applied for review Again behavior
+- Queue policy options are supported:
+  - `queueOrder`: `learning-review-new` or `learning-new-review`
+  - `newCardOrder`: `sequential` or `random`
+- Deck config values are wired into runtime scheduling (`deck_configs` → scheduler inputs)
 - Every answer updates persistent card state in `anki_cards`
 - Every answer writes a log record into `revlog`
+- Undo is transaction-safe for card snapshot + review log entry rollback
+- Sibling bury behavior is applied from deck config flags
+- Leech detection/action is applied from deck config (`threshold` + `suspend/tag`)
 
 ### ✅ Canonical Data Model (SQLite)
 The runtime uses these canonical tables:
@@ -27,7 +34,7 @@ The runtime uses these canonical tables:
 - `note_types`
 - `revlog`
 
-Legacy AsyncStorage card-state flow is only kept for one-shot migration compatibility.
+Legacy AsyncStorage/card_states flow is only kept for one-shot migration/import compatibility (not as the runtime source of truth).
 
 ### ✅ Migration / Maintenance
 - One-shot migration from legacy AsyncStorage `card_states` to canonical `anki_cards`

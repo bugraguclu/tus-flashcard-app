@@ -71,12 +71,15 @@ export interface SchedulerEngine {
 
 export interface AppSettings {
     dailyNewLimit: number;
+    dailyReviewLimit: number;
     learningSteps: number[];       // minutes for new cards
     lapseSteps: number[];          // minutes for relearning after a lapse
     graduatingInterval: number;    // days
     easyInterval: number;          // days
     startingEase: number;
     lapseNewInterval: number;
+    queueOrder: 'learning-review-new' | 'learning-new-review';
+    newCardOrder: 'sequential' | 'random';
     algorithm: AlgorithmType;
     desiredRetention: number;
 }

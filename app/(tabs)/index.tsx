@@ -11,17 +11,17 @@ import {
     answerStudyCard,
     getAnkiCardSnapshot,
     getStudyQueue,
-    restoreAnkiCardSnapshot,
     setCardBuried,
     setCardSuspended,
+    undoAnswer,
     type StudyCard,
 } from '../../lib/studyRepository';
-import { deleteLastReviewForCard } from '../../lib/reviewLogger';
 
 type QueueStats = { newCount: number; learningCount: number; reviewCount: number };
 
 type UndoEntry = {
     cardId: number;
+    reviewLogId: number;
     previousSnapshot: AnkiCard;
     previousStats: SessionStats;
 };
@@ -136,6 +136,7 @@ export default function StudyScreen() {
             ...prev.slice(-29),
             {
                 cardId: currentCard.cardId,
+                reviewLogId: result.reviewLogId,
                 previousSnapshot: snapshot,
                 previousStats: sessionStats,
             },
@@ -152,8 +153,7 @@ export default function StudyScreen() {
         const undo = undoStack[undoStack.length - 1];
         setUndoStack((prev) => prev.slice(0, -1));
 
-        restoreAnkiCardSnapshot(undo.previousSnapshot);
-        deleteLastReviewForCard(undo.cardId);
+        undoAnswer(undo.previousSnapshot, undo.reviewLogId);
 
         setSessionStats(undo.previousStats);
         await saveSessionStats(undo.previousStats);

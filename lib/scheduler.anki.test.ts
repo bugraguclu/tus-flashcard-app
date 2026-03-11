@@ -4,12 +4,15 @@ import type { AppSettings, CardState, Grade } from './types';
 
 const defaultSettings: AppSettings = {
     dailyNewLimit: 20,
+    dailyReviewLimit: 200,
     learningSteps: [1, 10],
     lapseSteps: [10],
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
     lapseNewInterval: 0.7,
+    queueOrder: 'learning-review-new',
+    newCardOrder: 'sequential',
     algorithm: 'ANKI_V3',
     desiredRetention: 0.9,
 };

@@ -7,6 +7,7 @@ import type { CardState, SessionStats, AppSettings, AlgorithmType } from './type
 import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
 import { dbSaveAllCardStates, dbGetSchemaVersion } from './db';
+import { getDeckConfig, saveDeckConfig } from './deckManager';
 
 const KEYS = {
     CARD_STATES: 'tus_card_states_v2',
@@ -17,12 +18,15 @@ const KEYS = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
     dailyNewLimit: 20,
+    dailyReviewLimit: 200,
     learningSteps: [1, 10],
     lapseSteps: [10],
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
     lapseNewInterval: 0.7,
+    queueOrder: 'learning-review-new',
+    newCardOrder: 'sequential',
     algorithm: 'ANKI_V3' as AlgorithmType,
     desiredRetention: 0.9,
 };
@@ -134,18 +138,67 @@ export async function saveSessionStats(stats: SessionStats): Promise<void> {
     }
 }
 
+function syncDefaultDeckConfig(settings: AppSettings): void {
+    try {
+        const config = getDeckConfig(1);
+        config.newPerDay = settings.dailyNewLimit;
+        config.maxReviewsPerDay = settings.dailyReviewLimit;
+        config.learningSteps = [...settings.learningSteps];
+        config.relearningSteps = [...settings.lapseSteps];
+        config.graduatingIvl = settings.graduatingInterval;
+        config.easyIvl = settings.easyInterval;
+        config.startingEase = Math.round(settings.startingEase * 1000);
+        config.newIvlPercent = settings.lapseNewInterval;
+        config.insertionOrder = settings.newCardOrder;
+        config.desiredRetention = settings.desiredRetention;
+        config.mod = Math.floor(Date.now() / 1000);
+        config.usn = -1;
+        saveDeckConfig(config);
+    } catch {
+        // DB may not be initialized yet.
+    }
+}
+
+function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
+    try {
+        const config = getDeckConfig(1);
+        return {
+            ...base,
+            dailyNewLimit: config.newPerDay,
+            dailyReviewLimit: config.maxReviewsPerDay,
+            learningSteps: config.learningSteps?.length ? [...config.learningSteps] : base.learningSteps,
+            lapseSteps: config.relearningSteps?.length ? [...config.relearningSteps] : base.lapseSteps,
+            graduatingInterval: config.graduatingIvl,
+            easyInterval: config.easyIvl,
+            startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
+            lapseNewInterval: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseNewInterval,
+            newCardOrder: config.insertionOrder || base.newCardOrder,
+            desiredRetention: config.desiredRetention || base.desiredRetention,
+        };
+    } catch {
+        return base;
+    }
+}
+
 // --- Settings ---
 export async function loadSettings(): Promise<AppSettings> {
     try {
         const data = await AsyncStorage.getItem(KEYS.SETTINGS);
-        if (data) return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
-    } catch { }
-    return { ...DEFAULT_SETTINGS };
+        if (data) {
+            const parsed = { ...DEFAULT_SETTINGS, ...JSON.parse(data) } as AppSettings;
+            return hydrateSettingsFromDeckConfig(parsed);
+        }
+    } catch {
+        // ignore and fallback to defaults
+    }
+
+    return hydrateSettingsFromDeckConfig({ ...DEFAULT_SETTINGS });
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
     try {
         await AsyncStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
+        syncDefaultDeckConfig(settings);
     } catch (e) {
         console.error('Settings kayıt hatası:', e);
     }
@@ -218,6 +271,7 @@ function sanitizeStepArray(value: unknown, fallback: number[]): number[] {
 function validateSettings(settings: Record<string, unknown>): Record<string, unknown> {
     const validated = { ...DEFAULT_SETTINGS, ...settings };
     validated.dailyNewLimit = Math.max(0, Math.min(9999, Number(validated.dailyNewLimit) || 20));
+    validated.dailyReviewLimit = Math.max(0, Math.min(9999, Number(validated.dailyReviewLimit) || 200));
     validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
     validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
@@ -225,6 +279,8 @@ function validateSettings(settings: Record<string, unknown>): Record<string, unk
     validated.desiredRetention = Math.max(0.5, Math.min(0.99, Number(validated.desiredRetention) || 0.9));
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
+    validated.queueOrder = validated.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new';
+    validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
     validated.algorithm = 'ANKI_V3' as AlgorithmType;
     return validated;
 }

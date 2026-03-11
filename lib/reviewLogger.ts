@@ -241,6 +241,11 @@ export function getButtonDistribution(): { ease: number; label: string; count: n
     }));
 }
 
+export function deleteReviewById(reviewId: number): void {
+    const db = getDB();
+    db.runSync('DELETE FROM revlog WHERE id = ?', reviewId);
+}
+
 export function deleteLastReviewForCard(cardId: number): void {
     const db = getDB();
     const row = db.getFirstSync<{ id: number }>(
@@ -248,5 +253,5 @@ export function deleteLastReviewForCard(cardId: number): void {
         cardId,
     );
     if (!row) return;
-    db.runSync('DELETE FROM revlog WHERE id = ?', row.id);
+    deleteReviewById(row.id);
 }

@@ -5,7 +5,7 @@
 // Dersler açılır - alt başlık (topic) seçilebilir
 // ============================================================
 
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext, useMemo } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Pressable, Linking,
     Platform,
@@ -121,14 +121,22 @@ export default function TabLayout() {
         startup();
     }, []);
 
-    // Kart sayıları
+    const searchableCards = useMemo(() => {
+        try {
+            return getSearchIndexCards();
+        } catch {
+            return [];
+        }
+    }, [pathname, selectedSubject, selectedTopic, sidebarOpen]);
+
+    // Sidebar counters from canonical cards.
     const getSubjectCount = (subjectId: string) =>
-        TUS_CARDS.filter(c => c.subject === subjectId).length;
+        searchableCards.filter((card) => card.subject === subjectId).length;
 
     const getTopicCount = (subjectId: string, topic: string) =>
-        TUS_CARDS.filter(c => c.subject === subjectId && c.topic === topic).length;
+        searchableCards.filter((card) => card.subject === subjectId && card.topic === topic).length;
 
-    const totalCards = TUS_CARDS.length;
+    const totalCards = searchableCards.length;
 
     const navigate = (path: string) => {
         router.push(path as any);

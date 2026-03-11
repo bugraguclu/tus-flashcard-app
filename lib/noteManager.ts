@@ -28,9 +28,18 @@ export function getNote(id: number): Note | null {
 export function saveNote(note: Note): void {
     const db = getDB();
     db.runSync(
-        'INSERT OR REPLACE INTO notes (id, noteTypeId, sfld, csum, tags, data) VALUES (?, ?, ?, ?, ?, ?)',
-        note.id, note.noteTypeId, note.sfld, note.csum,
-        note.tags.join(' '), JSON.stringify(note)
+        `INSERT OR REPLACE INTO notes
+         (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        note.id,
+        note.noteTypeId,
+        note.sfld,
+        note.csum,
+        note.tags.join(' '),
+        JSON.stringify(note),
+        Date.now(),
+        note.usn ?? -1,
+        0,
     );
 }
 
@@ -161,12 +170,24 @@ export function saveAnkiCard(card: AnkiCard): void {
     const db = getDB();
     db.runSync(
         `INSERT OR REPLACE INTO anki_cards
-         (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        card.id, card.noteId, card.deckId, card.ord,
-        card.type, card.queue, card.due, card.ivl,
-        card.factor, card.reps, card.lapses, card.flags,
-        JSON.stringify(card)
+         (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data, updated_at, usn, tombstone)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        card.id,
+        card.noteId,
+        card.deckId,
+        card.ord,
+        card.type,
+        card.queue,
+        card.due,
+        card.ivl,
+        card.factor,
+        card.reps,
+        card.lapses,
+        card.flags,
+        JSON.stringify(card),
+        Date.now(),
+        card.usn ?? -1,
+        0,
     );
 }
 
@@ -279,8 +300,14 @@ export function getNoteType(id: number): NoteType | null {
 export function saveNoteType(nt: NoteType): void {
     const db = getDB();
     db.runSync(
-        'INSERT OR REPLACE INTO note_types (id, name, data) VALUES (?, ?, ?)',
-        nt.id, nt.name, JSON.stringify(nt)
+        `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        nt.id,
+        nt.name,
+        JSON.stringify(nt),
+        Date.now(),
+        -1,
+        0,
     );
 }
 
@@ -506,10 +533,12 @@ export function searchNotes(query: string): Note[] {
         );
         if (rows.length === 0) return [];
         const matchedIds = new Set(rows.map(r => Number(r.card_id)));
-        return getAllNotes().filter(note => {
-            const oldCardId = Math.floor(note.id / 1000);
-            if (matchedIds.has(oldCardId)) return true;
-            return note.fields.some(f => f.toLowerCase().includes(q));
+        return getAllNotes().filter((note) => {
+            const noteCards = getCardsForNote(note.id);
+            if (noteCards.some((card) => matchedIds.has(card.id))) {
+                return true;
+            }
+            return note.fields.some((field) => field.toLowerCase().includes(q));
         });
     } catch {
         // Fallback: simple text search if FTS5 fails

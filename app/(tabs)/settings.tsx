@@ -128,6 +128,69 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Günlük Review Limiti</Text>
+                        <View style={styles.inputRow}>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('dailyReviewLimit', Math.max(20, settings.dailyReviewLimit - 20))}
+                            >
+                                <Text style={styles.stepBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.inputValue}>{settings.dailyReviewLimit}</Text>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('dailyReviewLimit', settings.dailyReviewLimit + 20)}
+                            >
+                                <Text style={styles.stepBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Queue Sırası</Text>
+                        <View style={styles.inputRow}>
+                            <TouchableOpacity
+                                style={[styles.optionBtn, settings.queueOrder === 'learning-review-new' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'learning-review-new')}
+                            >
+                                <Text style={[styles.optionText, settings.queueOrder === 'learning-review-new' && styles.optionTextActive]}>
+                                    Learning → Review → New
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.optionBtn, settings.queueOrder === 'learning-new-review' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'learning-new-review')}
+                            >
+                                <Text style={[styles.optionText, settings.queueOrder === 'learning-new-review' && styles.optionTextActive]}>
+                                    Learning → New → Review
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>New Card Order</Text>
+                        <View style={styles.inputRow}>
+                            <TouchableOpacity
+                                style={[styles.optionBtn, settings.newCardOrder === 'sequential' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('newCardOrder', 'sequential')}
+                            >
+                                <Text style={[styles.optionText, settings.newCardOrder === 'sequential' && styles.optionTextActive]}>
+                                    Sequential
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.optionBtn, settings.newCardOrder === 'random' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('newCardOrder', 'random')}
+                            >
+                                <Text style={[styles.optionText, settings.newCardOrder === 'random' && styles.optionTextActive]}>
+                                    Random
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
                         <Text style={styles.settingLabel}>Learning Steps (dakika)</Text>
                         <View style={styles.inputRow}>
                             {[[1, 10], [1, 10, 60], [5, 20], [1, 5, 15]].map((steps, index) => (

@@ -30,8 +30,13 @@ export function getDeckByName(name: string): Deck | null {
 export function saveDeck(deck: Deck): void {
     const db = getDB();
     db.runSync(
-        'INSERT OR REPLACE INTO decks (id, name, data) VALUES (?, ?, ?)',
-        deck.id, deck.name, JSON.stringify(deck)
+        'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
+        deck.id,
+        deck.name,
+        JSON.stringify(deck),
+        Date.now(),
+        deck.usn ?? -1,
+        0,
     );
 }
 
@@ -192,6 +197,14 @@ export function getDeckConfig(id: number): DeckConfig {
     const db = getDB();
     const row = db.getFirstSync<{ data: string }>('SELECT data FROM deck_configs WHERE id = ?', id);
     return row ? JSON.parse(row.data) : { ...DEFAULT_DECK_CONFIG };
+}
+
+export function getDeckConfigForDeck(deckId: number): DeckConfig {
+    const deck = getDeck(deckId);
+    if (!deck) {
+        return getDeckConfig(DEFAULT_DECK_CONFIG.id);
+    }
+    return getDeckConfig(deck.configId || DEFAULT_DECK_CONFIG.id);
 }
 
 export function saveDeckConfig(config: DeckConfig): void {
