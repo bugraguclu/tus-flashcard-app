@@ -577,23 +577,27 @@ export function deleteTusCardByCardId(cardId: number): void {
 
 export function getAllTags(): string[] {
     const db = getDB();
-    const rows = db.getAllSync<{ tags: string }>(
-        "SELECT tags FROM notes WHERE tags IS NOT NULL AND TRIM(tags) != ''",
+
+    // Extract distinct space-separated tags fully in SQL to avoid JS-side full-table splitting.
+    const rows = db.getAllSync<{ tag: string }>(
+        `WITH RECURSIVE split(tag, rest) AS (
+            SELECT '', TRIM(tags) || ' '
+            FROM notes
+            WHERE tags IS NOT NULL AND TRIM(tags) != ''
+            UNION ALL
+            SELECT
+                TRIM(SUBSTR(rest, 1, INSTR(rest, ' ') - 1)),
+                LTRIM(SUBSTR(rest, INSTR(rest, ' ') + 1))
+            FROM split
+            WHERE rest != ''
+        )
+        SELECT DISTINCT tag
+        FROM split
+        WHERE tag != ''
+        ORDER BY tag COLLATE NOCASE`,
     );
 
-    const tagSet = new Set<string>();
-    for (const row of rows) {
-        const tags = (row.tags || '')
-            .split(/\s+/)
-            .map((tag) => tag.trim())
-            .filter(Boolean);
-
-        for (const tag of tags) {
-            tagSet.add(tag);
-        }
-    }
-
-    return Array.from(tagSet).sort();
+    return rows.map((row) => row.tag);
 }
 
 export function addTagToNote(noteId: number, tag: string): void {

@@ -30,6 +30,8 @@ const DB_SETTINGS_KEYS = {
     LEGACY_SESSION_STATS_MIGRATED: 'tus_legacy_session_stats_migrated_v1',
 };
 
+let legacySessionStatsMigrationPromise: Promise<void> | null = null;
+
 // Legacy per-card state keys used by old builds.
 const CARD_STATE_PREFIX = 'tus_cs:';
 
@@ -197,19 +199,31 @@ async function migrateLegacySessionStatsIfNeeded(today: string): Promise<void> {
         return;
     }
 
-    try {
-        const raw = await AsyncStorage.getItem(KEYS.SESSION_STATS);
-        if (raw) {
-            const parsed = JSON.parse(raw) as SessionStats;
-            const date = typeof parsed.date === 'string' && parsed.date.trim() ? parsed.date : today;
-            saveSessionStatsToDb(date, parsed);
-        }
-    } catch (error) {
-        console.warn('[Storage] Legacy session stats migration failed:', error);
+    if (!legacySessionStatsMigrationPromise) {
+        legacySessionStatsMigrationPromise = (async () => {
+            if (getDbSetting(DB_SETTINGS_KEYS.LEGACY_SESSION_STATS_MIGRATED) === 'true') {
+                return;
+            }
+
+            try {
+                const raw = await AsyncStorage.getItem(KEYS.SESSION_STATS);
+                if (raw) {
+                    const parsed = JSON.parse(raw) as SessionStats;
+                    const date = typeof parsed.date === 'string' && parsed.date.trim() ? parsed.date : today;
+                    saveSessionStatsToDb(date, parsed);
+                }
+            } catch (error) {
+                console.warn('[Storage] Legacy session stats migration failed:', error);
+            }
+
+            await AsyncStorage.removeItem(KEYS.SESSION_STATS);
+            setDbSetting(DB_SETTINGS_KEYS.LEGACY_SESSION_STATS_MIGRATED, 'true');
+        })().finally(() => {
+            legacySessionStatsMigrationPromise = null;
+        });
     }
 
-    await AsyncStorage.removeItem(KEYS.SESSION_STATS);
-    setDbSetting(DB_SETTINGS_KEYS.LEGACY_SESSION_STATS_MIGRATED, 'true');
+    await legacySessionStatsMigrationPromise;
 }
 
 // --- Session Stats (SQLite canonical) ---

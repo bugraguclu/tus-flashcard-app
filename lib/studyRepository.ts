@@ -86,28 +86,92 @@ interface QueueCardRow {
     noteTypeData: string | null;
 }
 
-function pickFieldByNames(note: Note, noteType: NoteType | null, names: string[], fallbackIndex: number): string {
-    if (noteType) {
-        const lowered = names.map((name) => name.toLowerCase());
-        const idx = noteType.fields.findIndex((field) => lowered.includes(field.name.toLowerCase()));
-        if (idx >= 0 && note.fields[idx]) {
-            return note.fields[idx];
-        }
+const SPECIAL_TEMPLATE_FIELDS = new Set(['FrontSide', 'Tags', 'Type', 'Deck', 'Card']);
+
+function buildNoteTypeFieldMap(note: Note, noteType: NoteType | null): Map<string, string> {
+    const fieldMap = new Map<string, string>();
+    if (!noteType) return fieldMap;
+
+    noteType.fields.forEach((field, index) => {
+        fieldMap.set(field.name, note.fields[index] ?? '');
+    });
+
+    return fieldMap;
+}
+
+function extractTemplateFieldRefs(template: string): string[] {
+    const refs: string[] = [];
+    const regex = /\{\{(?:#|\^|\/)?(?:cloze:|type:)?([A-Za-z0-9_]+)\}\}/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(template)) !== null) {
+        const name = match[1];
+        if (SPECIAL_TEMPLATE_FIELDS.has(name)) continue;
+        if (!refs.includes(name)) refs.push(name);
     }
 
-    return note.fields[fallbackIndex] || '';
+    return refs;
+}
+
+function firstNonEmptyFieldName(fieldNames: string[], fieldMap: Map<string, string>): string | null {
+    for (const name of fieldNames) {
+        const value = fieldMap.get(name);
+        if (value && value.trim().length > 0) {
+            return name;
+        }
+    }
+    return null;
 }
 
 function parseNotePayload(note: Note, noteType: NoteType | null): { subject: string; topic: string; question: string; answer: string } {
     const subjectFromTag = note.tags.find((tag) => KNOWN_SUBJECTS.has(tag));
     const subject = subjectFromTag ?? 'custom';
 
-    const question = pickFieldByNames(note, noteType, ['Soru', 'Front', 'Question', 'Text'], 0) || note.sfld || '';
-    const answer = pickFieldByNames(note, noteType, ['Cevap', 'Back', 'Answer', 'Extra'], 1);
+    if (!noteType) {
+        const question = note.fields[0] ?? note.sfld ?? '';
+        const answer = note.fields[1] ?? '';
+        const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
+        const topic = note.fields[2] || topicFromTag || 'General';
+        return { subject, topic, question, answer };
+    }
 
-    const topicFromField = pickFieldByNames(note, noteType, ['Kaynak', 'Topic', 'Source', 'Category'], 2);
+    const fieldMap = buildNoteTypeFieldMap(note, noteType);
+    const orderedFieldNames = noteType.fields.map((field) => field.name);
+    const primaryTemplate = noteType.templates[0];
+
+    const questionRefs = extractTemplateFieldRefs(primaryTemplate?.qfmt ?? '');
+    const answerRefs = extractTemplateFieldRefs(primaryTemplate?.afmt ?? '');
+
+    const questionFieldName = firstNonEmptyFieldName(
+        [...questionRefs, ...orderedFieldNames],
+        fieldMap,
+    );
+    const question = questionFieldName
+        ? (fieldMap.get(questionFieldName) ?? '')
+        : (note.sfld || note.fields[0] || '');
+
+    let answerFieldName = firstNonEmptyFieldName(
+        [
+            ...answerRefs.filter((name) => name !== questionFieldName),
+            ...orderedFieldNames.filter((name) => name !== questionFieldName),
+        ],
+        fieldMap,
+    );
+
+    if (!answerFieldName) {
+        answerFieldName = firstNonEmptyFieldName([...answerRefs, ...orderedFieldNames], fieldMap);
+    }
+
+    const answer = answerFieldName
+        ? (fieldMap.get(answerFieldName) ?? '')
+        : (note.fields[1] || '');
+
+    const topicFieldName = firstNonEmptyFieldName(
+        orderedFieldNames.filter((name) => name !== questionFieldName && name !== answerFieldName),
+        fieldMap,
+    );
     const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
-    const topic = topicFromField || topicFromTag || 'General';
+    const topic = (topicFieldName ? fieldMap.get(topicFieldName) : '') || topicFromTag || 'General';
 
     return { subject, topic, question, answer };
 }

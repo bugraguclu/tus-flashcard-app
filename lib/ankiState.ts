@@ -172,7 +172,6 @@ export function ankiCardToCardState(
     card: AnkiCard,
     settings: AppSettings,
     nowMs: number = Date.now(),
-    options: DecodeLeftOptions = {},
 ): CardState {
     const todayNumber = localDayNumber(nowMs, settings.dayRolloverHour);
 
@@ -186,7 +185,7 @@ export function ankiCardToCardState(
 
     const isRelearning = card.type === 3;
     const learnSteps = isRelearning ? settings.lapseSteps : settings.learningSteps;
-    const { remainingTotal } = decodeAnkiLeft(card.left, options);
+    const { remainingTotal } = decodeAnkiLeft(card.left);
     const inferredStep = learnSteps.length > 0
         ? Math.max(0, Math.min(learnSteps.length - 1, learnSteps.length - Math.max(remainingTotal, 1)))
         : 0;

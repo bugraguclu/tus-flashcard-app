@@ -251,6 +251,11 @@ export function getCardCountsByDeck(
     const db = getDB();
     const today = localDayNumber(nowMs, rolloverHour);
 
+    // NOTE: `due` has queue-specific semantics in Anki:
+    // - queue=1 (intraday learning): epoch milliseconds
+    // - queue=3 (interday learning): study day number
+    // - queue=2 (review): study day number
+    // This query intentionally compares queue=1 against `nowMs` and queue=3/2 against `today`.
     const rows = db.getAllSync<{
         deckId: number;
         totalCount: number;
