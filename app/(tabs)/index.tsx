@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, FontSize, Shadows } from '../../constants/theme';
 import { TUS_SUBJECTS } from '../../lib/data';
 import { getScheduler } from '../../lib/scheduler';
@@ -7,6 +8,13 @@ import { loadSessionStats, saveSessionStats } from '../../lib/storage';
 import { useApp } from './_layout';
 import type { Grade, SessionStats } from '../../lib/types';
 import type { AnkiCard } from '../../lib/models';
+import {
+    getAnkiCard,
+    getNote,
+    getNoteType,
+} from '../../lib/noteManager';
+import { getDeck } from '../../lib/deckManager';
+import CardWebView from '../../components/CardWebView';
 import {
     answerStudyCard,
     getAnkiCardSnapshot,
@@ -28,6 +36,8 @@ type UndoEntry = {
 
 export default function StudyScreen() {
     const { selectedSubject, selectedTopic, settings } = useApp();
+    const params = useLocalSearchParams();
+    const selectedDeckName = typeof params.deck === 'string' ? params.deck : null;
 
     const [sessionStats, setSessionStats] = useState<SessionStats>({
         reviewed: 0,
@@ -52,6 +62,7 @@ export default function StudyScreen() {
             settings,
             selectedSubject,
             selectedTopic,
+            selectedDeckName,
             newCardsStudiedToday: sessionStats.newCardsToday || 0,
         });
 
@@ -61,7 +72,7 @@ export default function StudyScreen() {
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
         setShowingAnswer(false);
-    }, [settings, selectedSubject, selectedTopic, sessionStats.newCardsToday]);
+    }, [settings, selectedSubject, selectedTopic, selectedDeckName, sessionStats.newCardsToday]);
 
     useEffect(() => {
         async function load() {
@@ -178,6 +189,18 @@ export default function StudyScreen() {
         return scheduler.previewIntervals(currentCard.state, settings);
     }, [currentCard, settings]);
 
+    const renderPayload = useMemo(() => {
+        if (!currentCard) return null;
+        const card = getAnkiCard(currentCard.cardId);
+        if (!card) return null;
+        const note = getNote(card.noteId);
+        if (!note) return null;
+        const noteType = getNoteType(note.noteTypeId);
+        if (!noteType) return null;
+        const deck = getDeck(card.deckId);
+        return { card, note, noteType, deck };
+    }, [currentCard?.cardId]);
+
     if (loading) {
         return (
             <View style={styles.container}>
@@ -267,12 +290,32 @@ export default function StudyScreen() {
 
                         <View style={styles.cardBody}>
                             <Text style={styles.cardLabel}>SORU</Text>
-                            <Text style={styles.questionText}>{currentCard.question}</Text>
+                            {renderPayload ? (
+                                <CardWebView
+                                    noteType={renderPayload.noteType}
+                                    note={renderPayload.note}
+                                    card={renderPayload.card}
+                                    deck={renderPayload.deck}
+                                    side="question"
+                                />
+                            ) : (
+                                <Text style={styles.questionText}>{currentCard.question}</Text>
+                            )}
 
                             {showingAnswer ? (
                                 <View style={styles.answerSection}>
                                     <Text style={[styles.cardLabel, { color: Colors.accent }]}>CEVAP</Text>
-                                    <Text style={styles.answerText}>{currentCard.answer}</Text>
+                                    {renderPayload ? (
+                                        <CardWebView
+                                            noteType={renderPayload.noteType}
+                                            note={renderPayload.note}
+                                            card={renderPayload.card}
+                                            deck={renderPayload.deck}
+                                            side="answer"
+                                        />
+                                    ) : (
+                                        <Text style={styles.answerText}>{currentCard.answer}</Text>
+                                    )}
                                 </View>
                             ) : (
                                 <TouchableOpacity

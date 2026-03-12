@@ -80,6 +80,11 @@ export interface AppSettings {
     lapseNewInterval: number;
     queueOrder: 'learning-review-new' | 'learning-new-review';
     newCardOrder: 'sequential' | 'random';
+    hardIntervalMultiplier: number;
+    easyBonus: number;
+    intervalModifier: number;
+    maxInterval: number;
+    dayRolloverHour: number;
     algorithm: AlgorithmType;
     desiredRetention: number;
 }

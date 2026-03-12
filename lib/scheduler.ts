@@ -8,29 +8,38 @@ import type {
     AppSettings,
 } from './types';
 
-// Local-day helpers (Anki-style day handling)
-function todayLocalYMD(now?: Date): string {
-    const d = now || new Date();
+const HOUR_MS = 3600000;
+
+function toRolloverShiftedDate(input: Date, rolloverHour: number): Date {
+    return new Date(input.getTime() - rolloverHour * HOUR_MS);
+}
+
+// Local-day helpers with configurable rollover hour (Anki-like day boundary)
+function todayLocalYMD(now?: Date, rolloverHour: number = 4): string {
+    const d = toRolloverShiftedDate(now || new Date(), rolloverHour);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
 
-function addDaysLocalYMD(days: number, baseDate?: Date): string {
-    const d = baseDate ? new Date(baseDate.getTime()) : new Date();
-    d.setDate(d.getDate() + days);
-    return todayLocalYMD(d);
+function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: number = 4): string {
+    const shifted = toRolloverShiftedDate(baseDate ? new Date(baseDate.getTime()) : new Date(), rolloverHour);
+    shifted.setDate(shifted.getDate() + days);
+    const yyyy = shifted.getFullYear();
+    const mm = String(shifted.getMonth() + 1).padStart(2, '0');
+    const dd = String(shifted.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
 }
 
-function startOfLocalDayMs(date?: Date): number {
-    const d = date ? new Date(date.getTime()) : new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.getTime();
+function startOfLocalDayMs(date?: Date, rolloverHour: number = 4): number {
+    const shifted = toRolloverShiftedDate(date ? new Date(date.getTime()) : new Date(), rolloverHour);
+    shifted.setHours(0, 0, 0, 0);
+    return shifted.getTime() + rolloverHour * HOUR_MS;
 }
 
-function getToday(): string {
-    return todayLocalYMD();
+function getToday(rolloverHour: number = 4): string {
+    return todayLocalYMD(undefined, rolloverHour);
 }
 
 function formatDays(days: number): string {
@@ -58,16 +67,37 @@ function hashSeed(text: string): number {
     return Math.abs(h);
 }
 
-function applyFuzz(interval: number, seedHint: number = 0): number {
+function applyFuzz(interval: number, seedHint: number = 0, rolloverHour: number = 4): number {
     if (interval <= 2) return interval;
 
-    const fuzzRange = interval < 7 ? 1
-        : interval < 30 ? Math.max(2, Math.round(interval * 0.15))
+    const fuzzRange = interval < 7
+        ? 1
+        : interval < 30
+            ? Math.max(2, Math.round(interval * 0.15))
             : Math.max(3, Math.round(interval * 0.05));
 
-    const seed = hashSeed(`${todayLocalYMD()}-${interval}-${seedHint}`);
+    const seed = hashSeed(`${todayLocalYMD(undefined, rolloverHour)}-${interval}-${seedHint}`);
     const delta = (seed % (2 * fuzzRange + 1)) - fuzzRange;
     return Math.max(1, interval + delta);
+}
+
+function clampInterval(interval: number, settings: AppSettings): number {
+    return Math.max(1, Math.min(settings.maxInterval, Math.round(interval)));
+}
+
+function computeReviewIntervals(cs: CardState, settings: AppSettings): { hard: number; good: number; easy: number } {
+    const cur = Math.max(1, cs.interval || 1);
+    const ef = cs.easeFactor || settings.startingEase;
+
+    const hardBase = Math.max(cur + 1, Math.round(cur * settings.hardIntervalMultiplier * settings.intervalModifier));
+    const goodBase = Math.max(hardBase + 1, Math.round(cur * ef * settings.intervalModifier));
+    const easyBase = Math.max(goodBase + 1, Math.round(cur * ef * settings.easyBonus * settings.intervalModifier));
+
+    return {
+        hard: clampInterval(hardBase, settings),
+        good: clampInterval(goodBase, settings),
+        easy: clampInterval(easyBase, settings),
+    };
 }
 
 const AnkiV3Engine: SchedulerEngine = {
@@ -122,32 +152,24 @@ const AnkiV3Engine: SchedulerEngine = {
             const curMin = lapseSteps[step] || lapseSteps[0] || 1;
             const nextMin = lapseSteps[step + 1] ?? null;
             const hardMin = nextMin !== null ? Math.round((curMin + nextMin) / 2) : Math.round(curMin * 1.5);
+            const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
 
             return {
                 again: formatMinutes(lapseSteps[0] || 1),
                 hard: formatMinutes(hardMin),
-                good: nextMin !== null ? formatMinutes(nextMin) : `${Math.max(cs.interval || 1, 1)} gün`,
-                easy: `${Math.max(cs.interval || 1, 1)} gün`,
+                good: nextMin !== null ? formatMinutes(nextMin) : `${relearnInterval} gün`,
+                easy: `${relearnInterval} gün`,
                 againMinutes: lapseSteps[0] || 1,
                 hardMinutes: hardMin,
             };
         }
 
-        const ef = cs.easeFactor || settings.startingEase;
-        const cur = cs.interval || 1;
-        const rawHard = Math.max(cur + 1, Math.round(cur * 1.2));
-        const rawGood = Math.round(cur * ef);
-        const rawEasy = Math.round(cur * ef * 1.3);
-
-        const iHard = Math.max(1, rawHard);
-        const iGood = Math.max(iHard + 1, rawGood);
-        const iEasy = Math.max(iGood + 1, rawEasy);
-
+        const preview = computeReviewIntervals(cs, settings);
         return {
             again: formatMinutes(lapseSteps[0] || 1),
-            hard: formatDays(iHard),
-            good: formatDays(iGood),
-            easy: formatDays(iEasy),
+            hard: formatDays(preview.hard),
+            good: formatDays(preview.good),
+            easy: formatDays(preview.easy),
             againMinutes: lapseSteps[0] || 1,
         };
     },
@@ -188,7 +210,7 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
             };
         }
 
-        const gradInterval = settings.graduatingInterval;
+        const gradInterval = clampInterval(settings.graduatingInterval, settings);
         return {
             interval: gradInterval,
             isLearning: false,
@@ -203,7 +225,7 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
         };
     }
 
-    const easyInt = settings.easyInterval;
+    const easyInt = clampInterval(settings.easyInterval, settings);
     return {
         interval: easyInt,
         isLearning: false,
@@ -254,29 +276,29 @@ function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, no
             };
         }
 
-        const lapseInterval = Math.max(1, cs.interval || 1);
+        const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
         return {
-            interval: lapseInterval,
+            interval: relearnInterval,
             isLearning: false,
             stateUpdates: {
                 relearningStep: -1,
                 learningStep: -1,
                 status: 'review',
-                interval: lapseInterval,
+                interval: relearnInterval,
                 lastReviewedAtMs: now,
             },
         };
     }
 
-    const lapseInterval = Math.max(1, cs.interval || 1);
+    const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
     return {
-        interval: lapseInterval,
+        interval: relearnInterval,
         isLearning: false,
         stateUpdates: {
             relearningStep: -1,
             learningStep: -1,
             status: 'review',
-            interval: lapseInterval,
+            interval: relearnInterval,
             lastReviewedAtMs: now,
         },
     };
@@ -288,8 +310,9 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
     const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
-        const newInterval = Math.max(1, Math.round(cur * settings.lapseNewInterval));
+        const newInterval = clampInterval(Math.max(1, Math.round(cur * settings.lapseNewInterval)), settings);
         const newEase = Math.max(1.3, ef - 0.20);
+
         return {
             interval: 0,
             isLearning: true,
@@ -306,10 +329,11 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
         };
     }
 
+    const preview = computeReviewIntervals(cs, settings);
+
     if (grade === 2) {
-        const rawHard = Math.max(cur + 1, Math.round(cur * 1.2));
         const newEase = Math.max(1.3, ef - 0.15);
-        const iHard = Math.max(1, applyFuzz(rawHard, cs.repetition || 0));
+        const iHard = clampInterval(applyFuzz(preview.hard, cs.repetition || 0, settings.dayRolloverHour), settings);
 
         return {
             interval: iHard,
@@ -327,9 +351,7 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
     }
 
     if (grade === 3) {
-        const rawGood = Math.round(cur * ef);
-        const hardBase = Math.max(cur + 1, Math.round(cur * 1.2));
-        const iGood = Math.max(hardBase + 1, applyFuzz(rawGood, cs.repetition || 0));
+        const iGood = clampInterval(applyFuzz(preview.good, cs.repetition || 0, settings.dayRolloverHour), settings);
 
         return {
             interval: iGood,
@@ -346,10 +368,7 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
         };
     }
 
-    const rawEasy = Math.round(cur * ef * 1.3);
-    const hardBase = Math.max(cur + 1, Math.round(cur * 1.2));
-    const goodBase = Math.max(hardBase + 1, Math.round(cur * ef));
-    const iEasy = Math.max(goodBase + 1, applyFuzz(rawEasy, cs.repetition || 0));
+    const iEasy = clampInterval(applyFuzz(preview.easy, cs.repetition || 0, settings.dayRolloverHour), settings);
     const newEase = Math.max(1.3, ef + 0.15);
 
     return {

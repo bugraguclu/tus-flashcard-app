@@ -27,6 +27,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     lapseNewInterval: 0.7,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
+    hardIntervalMultiplier: 1.2,
+    easyBonus: 1.3,
+    intervalModifier: 1.0,
+    maxInterval: 36500,
+    dayRolloverHour: 4,
     algorithm: 'ANKI_V3' as AlgorithmType,
     desiredRetention: 0.9,
 };
@@ -150,6 +155,10 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
         config.startingEase = Math.round(settings.startingEase * 1000);
         config.newIvlPercent = settings.lapseNewInterval;
         config.insertionOrder = settings.newCardOrder;
+        config.hardIvl = settings.hardIntervalMultiplier;
+        config.easyBonus = settings.easyBonus;
+        config.ivlModifier = settings.intervalModifier;
+        config.maxIvl = settings.maxInterval;
         config.desiredRetention = settings.desiredRetention;
         config.mod = Math.floor(Date.now() / 1000);
         config.usn = -1;
@@ -173,6 +182,10 @@ function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
             startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
             lapseNewInterval: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseNewInterval,
             newCardOrder: config.insertionOrder || base.newCardOrder,
+            hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,
+            easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
+            intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
+            maxInterval: config.maxIvl > 0 ? config.maxIvl : base.maxInterval,
             desiredRetention: config.desiredRetention || base.desiredRetention,
         };
     } catch {
@@ -276,6 +289,11 @@ function validateSettings(settings: Record<string, unknown>): Record<string, unk
     validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
     validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval) || 0.7));
+    validated.hardIntervalMultiplier = Math.max(1.0, Math.min(2.0, Number(validated.hardIntervalMultiplier) || 1.2));
+    validated.easyBonus = Math.max(1.0, Math.min(2.0, Number(validated.easyBonus) || 1.3));
+    validated.intervalModifier = Math.max(0.1, Math.min(3.0, Number(validated.intervalModifier) || 1.0));
+    validated.maxInterval = Math.max(1, Math.min(36500, Number(validated.maxInterval) || 36500));
+    validated.dayRolloverHour = Math.max(0, Math.min(23, Number(validated.dayRolloverHour) || 4));
     validated.desiredRetention = Math.max(0.5, Math.min(0.99, Number(validated.desiredRetention) || 0.9));
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);

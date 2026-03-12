@@ -19,7 +19,7 @@ import {
     isLeech,
     saveAnkiCard,
 } from './noteManager';
-import { getDeckConfigForDeck } from './deckManager';
+import { getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { deleteReviewById, logReview } from './reviewLogger';
 
 export interface StudyCard {
@@ -50,6 +50,7 @@ export interface StudyQueueParams {
     settings: AppSettings;
     selectedSubject?: string | null;
     selectedTopic?: string | null;
+    selectedDeckName?: string | null;
     newCardsStudiedToday?: number;
 }
 
@@ -80,7 +81,45 @@ function parseNotePayload(note: Note): { subject: string; topic: string; questio
     return { subject, topic, question, answer };
 }
 
-function buildScopeClause(selectedSubject?: string | null, selectedTopic?: string | null): { sql: string; params: Array<string | number> } {
+function buildFilteredSearchClause(searchQuery: string): { sql: string; params: Array<string | number> } {
+    const terms = searchQuery.trim().split(/\s+/).filter(Boolean);
+    const clauses: string[] = [];
+    const params: Array<string | number> = [];
+
+    for (const term of terms) {
+        if (term.startsWith('tag:')) {
+            const tag = term.slice(4);
+            if (tag) {
+                clauses.push('n.tags LIKE ?');
+                params.push(`%${tag}%`);
+            }
+            continue;
+        }
+
+        if (term.startsWith('deck:')) {
+            const deckName = term.slice(5);
+            if (deckName) {
+                clauses.push('(d.name = ? OR d.name LIKE ?)');
+                params.push(deckName, `${deckName}::%`);
+            }
+            continue;
+        }
+
+        clauses.push('(n.sfld LIKE ? OR n.data LIKE ? OR n.tags LIKE ?)');
+        params.push(`%${term}%`, `%${term}%`, `%${term}%`);
+    }
+
+    return {
+        sql: clauses.length > 0 ? ` AND ${clauses.join(' AND ')}` : '',
+        params,
+    };
+}
+
+function buildScopeClause(
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+): { sql: string; params: Array<string | number> } {
     const clauses: string[] = [];
     const params: Array<string | number> = [];
 
@@ -94,6 +133,20 @@ function buildScopeClause(selectedSubject?: string | null, selectedTopic?: strin
         params.push(`%${selectedTopic}%`);
     }
 
+    if (selectedDeckName) {
+        const selectedDeck = getDeckByName(selectedDeckName);
+        if (selectedDeck?.isFiltered && selectedDeck.searchQuery) {
+            const filtered = buildFilteredSearchClause(selectedDeck.searchQuery);
+            if (filtered.sql) {
+                clauses.push(filtered.sql.replace(/^\s*AND\s+/i, ''));
+                params.push(...filtered.params);
+            }
+        } else {
+            clauses.push('(d.name = ? OR d.name LIKE ?)');
+            params.push(selectedDeckName, `${selectedDeckName}::%`);
+        }
+    }
+
     return {
         sql: clauses.length > 0 ? ` AND ${clauses.join(' AND ')}` : '',
         params,
@@ -105,15 +158,17 @@ function loadRowsByQueue(
     queueParams: Array<string | number>,
     selectedSubject?: string | null,
     selectedTopic?: string | null,
+    selectedDeckName?: string | null,
     orderBy: string = 'c.id ASC',
 ): Array<{ card: AnkiCard; note: Note }> {
     const db = getDB();
-    const scope = buildScopeClause(selectedSubject, selectedTopic);
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
 
     const rows = db.getAllSync<CardNoteRow>(
         `SELECT c.data AS cardData, n.data AS noteData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
+         JOIN decks d ON d.id = c.deckId
          WHERE ${queueSql}${scope.sql}
          ORDER BY ${orderBy}`,
         ...queueParams,
@@ -130,15 +185,17 @@ function loadNextLearningDue(
     nowMs: number,
     selectedSubject?: string | null,
     selectedTopic?: string | null,
+    selectedDeckName?: string | null,
 ): number | null {
     const db = getDB();
-    const scope = buildScopeClause(selectedSubject, selectedTopic);
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
 
     const row = db.getFirstSync<{ nextDue: number | null }>(
         `SELECT MIN(c.due) AS nextDue
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
-         WHERE c.queue IN (1, 3) AND c.due > ?${scope.sql}`,
+         JOIN decks d ON d.id = c.deckId
+         WHERE c.queue = 1 AND c.due > ?${scope.sql}`,
         nowMs,
         ...scope.params,
     );
@@ -163,6 +220,10 @@ function resolveSettingsForDeck(deckId: number, base: AppSettings, cache: Map<nu
         startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
         lapseNewInterval: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseNewInterval,
         newCardOrder: config.insertionOrder === 'random' ? 'random' : 'sequential',
+        hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,
+        easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
+        intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
+        maxInterval: config.maxIvl > 0 ? config.maxIvl : base.maxInterval,
         desiredRetention: config.desiredRetention > 0 ? config.desiredRetention : base.desiredRetention,
     };
 
@@ -272,14 +333,25 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): voi
 
 export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const nowMs = Date.now();
-    const today = localDayNumber(nowMs);
+    const today = localDayNumber(nowMs, params.settings.dayRolloverHour);
     const settingsCache = new Map<number, AppSettings>();
 
-    const learningRows = loadRowsByQueue(
-        'c.queue IN (1, 3) AND c.due <= ?',
+    // Anki priority: intraday learning (queue=1) before interday learning (queue=3).
+    const intradayLearningRows = loadRowsByQueue(
+        'c.queue = 1 AND c.due <= ?',
         [nowMs],
         params.selectedSubject,
         params.selectedTopic,
+        params.selectedDeckName,
+        'c.due ASC',
+    );
+
+    const interdayLearningRows = loadRowsByQueue(
+        'c.queue = 3 AND c.due <= ?',
+        [today],
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
         'c.due ASC',
     );
 
@@ -288,6 +360,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         [today],
         params.selectedSubject,
         params.selectedTopic,
+        params.selectedDeckName,
         'c.due ASC',
     );
 
@@ -296,15 +369,22 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         [],
         params.selectedSubject,
         params.selectedTopic,
+        params.selectedDeckName,
         'c.id ASC',
     );
 
-    let learningCards = toStudyCards(learningRows, params.settings, nowMs);
+    const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs);
+    const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs);
+    const learningCards = [...intradayLearningCards, ...interdayLearningCards];
+
     let reviewCards = toStudyCards(reviewRows, params.settings, nowMs);
     let newCards = toStudyCards(newRows, params.settings, nowMs);
 
     if (params.settings.newCardOrder === 'random') {
-        newCards = deterministicShuffle(newCards, `${todayLocalYMD()}-${newCards.length}`);
+        newCards = deterministicShuffle(
+            newCards,
+            `${todayLocalYMD(undefined, params.settings.dayRolloverHour)}-${newCards.length}`,
+        );
     }
 
     const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
@@ -327,7 +407,12 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         cards = [...learningCards, ...reviewCardsForQueue, ...newCardsForQueue];
     }
 
-    const nextLearningDue = loadNextLearningDue(nowMs, params.selectedSubject, params.selectedTopic);
+    const nextLearningDue = loadNextLearningDue(
+        nowMs,
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
+    );
 
     return {
         cards,
@@ -408,13 +493,13 @@ export function answerStudyCard(
 
     if (scheduleResult.isLearning) {
         nextState.status = 'learning';
-        nextState.dueDate = todayLocalYMD(new Date(nowMs));
+        nextState.dueDate = todayLocalYMD(new Date(nowMs), cardSettings.dayRolloverHour);
         nextState.dueTime = scheduleResult.minutesUntilDue
             ? nowMs + scheduleResult.minutesUntilDue * 60000
             : nowMs + 60000;
     } else {
         nextState.status = 'review';
-        nextState.dueDate = addDaysLocalYMD(scheduleResult.interval, new Date(nowMs));
+        nextState.dueDate = addDaysLocalYMD(scheduleResult.interval, new Date(nowMs), cardSettings.dayRolloverHour);
         nextState.dueTime = 0;
     }
 
@@ -510,6 +595,6 @@ export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSe
 }
 
 export function getBrowserCards(settings: AppSettings): StudyCard[] {
-    const rows = loadRowsByQueue('1 = 1', [], undefined, undefined, 'c.id ASC');
+    const rows = loadRowsByQueue('1 = 1', [], undefined, undefined, undefined, 'c.id ASC');
     return toStudyCards(rows, settings, Date.now());
 }

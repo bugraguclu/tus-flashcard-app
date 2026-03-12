@@ -125,10 +125,10 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
         }
     );
 
-    // 6. Regular field substitution: {{FieldName}} — HTML escaped to prevent XSS
+    // 6. Regular field substitution: {{FieldName}} — allow HTML in note fields
     result = result.replace(
         /\{\{(\w+)\}\}/g,
-        (_match, field) => escapeHtml(ctx.fields[field] || '')
+        (_match, field) => ctx.fields[field] || ''
     );
 
     return result;
@@ -149,7 +149,7 @@ export function renderCardHtml(
     // Build field map
     const fields: Record<string, string> = {};
     noteType.fields.forEach((f, i) => {
-        fields[f.name] = note.fields[i] || '';
+        fields[f.name] = normalizeFieldHtml(note.fields[i] || '');
     });
 
     const clozeOrd = noteType.kind === 'cloze'
@@ -221,6 +221,15 @@ export function countCardsForNote(noteType: NoteType, note: Note): number {
 }
 
 // ---- Helpers ----
+
+function normalizeFieldHtml(text: string): string {
+    let result = text;
+    result = result.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+    result = result.replace(/\[sound:([^\]]+)\]/gi, (_match, filename) => {
+        return `<audio controls src="${filename}"></audio>`;
+    });
+    return result;
+}
 
 function escapeHtml(text: string): string {
     return text
