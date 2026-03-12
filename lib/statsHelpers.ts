@@ -71,3 +71,37 @@ export function aggregateBuckets(cards: AnkiCard[]): CardBuckets {
 
     return result;
 }
+
+/** SQL-based aggregation - avoids loading all cards into memory */
+export function aggregateBucketsSql(): CardBuckets {
+    try {
+        const { getDB } = require('./db') as typeof import('./db');
+        const db = getDB();
+        const rows = db.getAllSync<{ queue: number; ivl: number; cnt: number }>(
+            `SELECT queue, ivl, COUNT(*) as cnt FROM anki_cards GROUP BY queue, CASE
+                WHEN queue = 2 AND ivl >= 90 THEN 3
+                WHEN queue = 2 AND ivl >= 21 THEN 2
+                WHEN queue = 2 THEN 1
+                ELSE 0
+            END`,
+        );
+
+        const result: CardBuckets = { ...DEFAULT_BUCKETS };
+        for (const row of rows) {
+            if (row.queue === -1) { result.suspendedCount += row.cnt; continue; }
+            if (row.queue === -2 || row.queue === -3) { result.buriedCount += row.cnt; continue; }
+            if (row.queue === 0) { result.newCount += row.cnt; continue; }
+            if (row.queue === 1 || row.queue === 3) { result.learningCount += row.cnt; continue; }
+            if (row.queue === 2) {
+                result.reviewCount += row.cnt;
+                if (row.ivl >= 90) result.masteredCount += row.cnt;
+                else if (row.ivl >= 21) result.matureCount += row.cnt;
+                else result.youngCount += row.cnt;
+            }
+        }
+        return result;
+    } catch (e) {
+        console.warn('[StatsHelpers] aggregateBucketsSql failed:', e);
+        return { ...DEFAULT_BUCKETS };
+    }
+}

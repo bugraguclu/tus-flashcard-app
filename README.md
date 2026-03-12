@@ -1,93 +1,50 @@
 # TusAnkiM
 
-TUS-focused flashcard app built with Expo + React Native.
+TUS (Tipta Uzmanlik Sinavi) odakli flashcard uygulamasi. Expo + React Native ile gelistirilmistir. iOS, Android ve Web destekler.
 
-This codebase now uses **SQLite as the canonical persistence model** and follows an Anki-like scheduling pipeline (new → learning/relearning → review).
+## Ozellikler
 
----
+### Scheduler
+- **ANKI_V3** scheduler: Again / Hard / Good / Easy
+- Learning steps, lapse steps, graduating interval ayarlari
+- Queue order: `learning-review-new` veya `learning-new-review`
+- New card order: `sequential` veya `random`
+- Deck-bazli config destegi
+- Leech detection & sibling bury
+- Transaction-safe undo
 
-## Current Status (Implemented)
+### Veri Modeli (SQLite)
+- `notes`, `anki_cards`, `decks`, `deck_configs`, `note_types`, `revlog`
+- FTS5 full-text search
+- Legacy AsyncStorage'dan otomatik migration
 
-### ✅ Scheduler / Review
-- Single active scheduler: **ANKI_V3**
-- Button flow: **Again / Hard / Good / Easy**
-- Separate step definitions:
-  - `learningSteps` for new cards
-  - `lapseSteps` for relearning after lapse
-- `lapseNewInterval` is applied for review Again behavior
-- Queue policy options are supported:
-  - `queueOrder`: `learning-review-new` or `learning-new-review`
-  - `newCardOrder`: `sequential` or `random`
-- Deck config values are wired into runtime scheduling (`deck_configs` → scheduler inputs)
-- Every answer updates persistent card state in `anki_cards`
-- Every answer writes a log record into `revlog`
-- Undo is transaction-safe for card snapshot + review log entry rollback
-- Sibling bury behavior is applied from deck config flags
-- Leech detection/action is applied from deck config (`threshold` + `suspend/tag`)
+### UI
+- Responsive layout (sidebar on desktop, hamburger on mobile)
+- Dark mode destegi (sistem temasina gore otomatik)
+- Haptic feedback (iOS/Android)
+- Cross-platform confirm/alert dialoglari
+- Error boundary ile crash korunmasi
+- Startup loading screen
 
-### ✅ Canonical Data Model (SQLite)
-The runtime uses these canonical tables:
-- `notes`
-- `anki_cards`
-- `decks`
-- `deck_configs`
-- `note_types`
-- `revlog`
+### Istatistikler
+- Gunluk tekrar, dogruluk, calisma suresi (revlog-bazli)
+- Ders bazli ilerleme
+- Kart dagilimi: New / Learning / Review / Young / Mature / Mastered
+- SQL-bazli aggregation (performans icin)
 
-Legacy AsyncStorage/card_states flow is only kept for one-shot migration/import compatibility (not as the runtime source of truth).
-
-### ✅ Migration / Maintenance
-- One-shot migration from legacy AsyncStorage `card_states` to canonical `anki_cards`
-- One-shot migration for legacy custom cards into canonical notes/cards
-- Daily maintenance supports unbury flow on canonical queues
-- Reset clears canonical study data and re-initializes base Anki entities
-
-### ✅ Search / Browser
-- FTS5-backed search is wired to canonical cards
-- Browser screen reads from canonical study repository
-
-### ✅ Stats
-- Stats classification is separated for:
-  - `new`
-  - `learning`
-  - `review`
-  - `young`
-  - `mature`
-  - `mastered`
-- Review cards are not all treated as mastered
-
-### ✅ Type/Test Baseline
-- TypeScript check (`tsc --noEmit`) passes
-- Scheduler + stats helper tests pass via Vitest
-
----
-
-## Not Implemented Yet (Planned)
-
-### 🔜 APKG Import
-- No production APKG import pipeline yet
-- Planned as a dedicated import layer that maps package data into canonical tables
-
-### 🔜 Sync Backend
-- No production sync server/client yet
-- Schema groundwork exists (sync-ready metadata columns such as `updated_at`, `usn`, `tombstone`)
-
-### 🔜 FSRS Runtime
-- FSRS is not active in runtime scheduling
-- Current production scheduler is ANKI_V3 only
-
----
+### Import/Export
+- JSON import/export
+- Canonical table-level backup & restore
 
 ## Tech Stack
-- Expo (React Native)
+- Expo 54 (React Native 0.81)
 - TypeScript
 - expo-router
 - expo-sqlite (WAL mode)
+- expo-haptics
 - Vitest
 
----
-
-## Development
+## Gelistirme
 
 ```bash
 npm install
@@ -96,8 +53,27 @@ npx tsc --noEmit
 npx expo start --web
 ```
 
----
+## Yapi
 
-## Notes
-- This repository prioritizes a stable local Anki-like pipeline first.
-- APKG import and sync are intentionally staged after local parity and persistence correctness.
+```
+app/
+  _layout.tsx          # Root layout + Error Boundary
+  (tabs)/
+    _layout.tsx        # Tab layout + Sidebar + AppContext
+    index.tsx          # Study screen
+    browser.tsx        # Card browser (FTS search)
+    decks.tsx          # Deck hierarchy
+    settings.tsx       # App settings
+    stats.tsx          # Statistics + import/export
+    sidebar.tsx        # Navigation sidebar
+lib/
+  studyRepository.ts   # Study queue + answer processing
+  scheduler.ts         # ANKI_V3 scheduling engine
+  storage.ts           # Settings, session stats, import/export
+  noteManager.ts       # Note/Card CRUD
+  deckManager.ts       # Deck hierarchy + config
+  reviewLogger.ts      # Review logging + statistics queries
+  db.ts                # SQLite schema + migrations
+  settingsResolver.ts  # Shared deck config -> settings resolver
+  confirm.ts           # Cross-platform confirm/alert helper
+```

@@ -219,7 +219,8 @@ export function saveAnkiCard(card: AnkiCard): void {
             const existingParsed = JSON.parse(existing.data) as Record<string, unknown>;
             serializedData = JSON.stringify({ ...existingParsed, ...card });
             dataChanged = serializedData !== existing.data;
-        } catch {
+        } catch (e) {
+            console.warn('[NoteManager] operation failed:', e);
             serializedData = JSON.stringify(card);
             dataChanged = true;
         }
@@ -662,7 +663,8 @@ export function searchNotes(query: string): Note[] {
         );
 
         return rows.map((row) => JSON.parse(row.noteData) as Note);
-    } catch {
+    } catch (e) {
+        console.warn('[NoteManager] operation failed:', e);
         const like = `%${lower}%`;
         const rows = db.getAllSync<{ data: string }>(
             `SELECT data FROM notes

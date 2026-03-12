@@ -1,8 +1,12 @@
 // ============================================================
-// TUS Flashcard - Theme Constants (Doğal Tema)
+// TUS Flashcard - Theme Constants (Light + Dark)
 // ============================================================
 
-export const Colors = {
+import { useColorScheme } from 'react-native';
+
+export type ColorScheme = typeof LightColors;
+
+const LightColors = {
     bgPrimary: '#e8f5f0',
     bgSecondary: '#f4faf7',
     bgCard: '#ffffff',
@@ -38,6 +42,52 @@ export const Colors = {
     white: '#ffffff',
     transparent: 'transparent',
 };
+
+const DarkColors: ColorScheme = {
+    bgPrimary: '#1a2520',
+    bgSecondary: '#212e28',
+    bgCard: '#2a3832',
+    bgSidebar: '#1e2b25',
+    bgInput: '#253028',
+    border: '#3a4f46',
+    borderLight: '#33453c',
+
+    textPrimary: '#e0ede7',
+    textSecondary: '#a8c2b6',
+    textMuted: '#7a9a8c',
+
+    accent: '#4db88a',
+    accentLight: '#2a3f34',
+    accentHover: '#5ccf9c',
+
+    btnAgain: '#e05545',
+    btnAgainBg: '#3a2525',
+    btnHard: '#e8a020',
+    btnHardBg: '#3a3020',
+    btnGood: '#3aad60',
+    btnGoodBg: '#253828',
+    btnEasy: '#4a9ad0',
+    btnEasyBg: '#253040',
+
+    badgeNew: '#4a9ad0',
+    badgeNewBg: '#253040',
+    badgeLearn: '#e8a020',
+    badgeLearnBg: '#3a3020',
+    badgeReview: '#3aad60',
+    badgeReviewBg: '#253828',
+
+    white: '#ffffff',
+    transparent: 'transparent',
+};
+
+// Default export for backward compatibility — light theme
+export const Colors = LightColors;
+
+/** Hook that returns the correct color palette based on system theme */
+export function useThemeColors(): ColorScheme {
+    const scheme = useColorScheme();
+    return scheme === 'dark' ? DarkColors : LightColors;
+}
 
 export const Spacing = {
     xs: 4,

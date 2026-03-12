@@ -24,6 +24,7 @@ import {
 } from './noteManager';
 import { getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { deleteReviewById, logReview } from './reviewLogger';
+import { resolveSettingsFromConfig } from './settingsResolver';
 
 export interface StudyCard {
     cardId: number;
@@ -261,9 +262,9 @@ function loadRowsByQueue(
     const db = getDB();
     const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
     const cardDataSelect = includeCardBlob ? 'c.data' : 'NULL';
-    const limitSql = Number.isFinite(limit) && (limit as number) > 0
-        ? ` LIMIT ${Math.floor(limit as number)}`
-        : '';
+    const hasLimit = Number.isFinite(limit) && (limit as number) > 0;
+    const limitSql = hasLimit ? ' LIMIT ?' : '';
+    const limitParams: number[] = hasLimit ? [Math.floor(limit as number)] : [];
 
     return db.getAllSync<QueueCardRow>(
         `SELECT
@@ -291,6 +292,7 @@ function loadRowsByQueue(
          ORDER BY ${orderBy}${limitSql}`,
         ...queueParams,
         ...scope.params,
+        ...limitParams,
     );
 }
 
@@ -370,23 +372,7 @@ function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?: Map<n
     }
 
     const config = getDeckConfigForDeck(deckId);
-    const resolved: AppSettings = {
-        ...base,
-        dailyNewLimit: config.newPerDay,
-        dailyReviewLimit: config.maxReviewsPerDay,
-        learningSteps: config.learningSteps?.length > 0 ? [...config.learningSteps] : base.learningSteps,
-        lapseSteps: config.relearningSteps?.length > 0 ? [...config.relearningSteps] : base.lapseSteps,
-        graduatingInterval: config.graduatingIvl,
-        easyInterval: config.easyIvl,
-        startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
-        lapseNewInterval: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseNewInterval,
-        newCardOrder: config.insertionOrder === 'random' ? 'random' : 'sequential',
-        hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,
-        easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
-        intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
-        maxInterval: config.maxIvl > 0 ? config.maxIvl : base.maxInterval,
-        desiredRetention: config.desiredRetention > 0 ? config.desiredRetention : base.desiredRetention,
-    };
+    const resolved = resolveSettingsFromConfig(config, base);
 
     cache?.set(deckId, resolved);
     return resolved;
@@ -899,7 +885,31 @@ export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSe
     return getStudyCardById(ankiCardIdFromLegacyCardId(legacyCardId), settings);
 }
 
-export function getBrowserCards(settings: AppSettings): StudyCard[] {
-    const rows = loadRowsByQueue('1 = 1', [], undefined, undefined, undefined, 'c.id ASC', false);
+export function getBrowserCards(settings: AppSettings, limit?: number, offset?: number): StudyCard[] {
+    const db = getDB();
+    const hasLimit = Number.isFinite(limit) && (limit as number) > 0;
+    const hasOffset = Number.isFinite(offset) && (offset as number) > 0;
+    const limitSql = hasLimit ? ` LIMIT ${Math.floor(limit as number)}` : '';
+    const offsetSql = hasOffset ? ` OFFSET ${Math.floor(offset as number)}` : '';
+
+    const rows = db.getAllSync<QueueCardRow>(
+        `SELECT
+            c.id AS cardId, c.noteId AS noteId, c.deckId AS deckId,
+            c.ord AS ord, c.type AS type, c.queue AS queue,
+            c.due AS due, c.ivl AS ivl, c.factor AS factor,
+            c.reps AS reps, c.lapses AS lapses, c.left AS left,
+            c.flags AS flags, NULL AS cardData,
+            n.data AS noteData, nt.data AS noteTypeData
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         ORDER BY c.id ASC${limitSql}${offsetSql}`,
+    );
     return toStudyCards(rows, settings, Date.now());
+}
+
+export function getBrowserCardCount(): number {
+    const db = getDB();
+    const row = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM anki_cards');
+    return row?.cnt || 0;
 }

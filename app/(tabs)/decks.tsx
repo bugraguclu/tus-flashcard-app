@@ -7,7 +7,6 @@ import {
     StyleSheet,
     SafeAreaView,
     TextInput,
-    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
@@ -19,6 +18,7 @@ import {
     type DeckTreeNode,
 } from '../../lib/deckManager';
 import { getDeckDisplayName } from '../../lib/models';
+import { alert } from '../../lib/confirm';
 import { useApp } from './_layout';
 
 export default function DecksScreen() {
@@ -61,9 +61,10 @@ export default function DecksScreen() {
             setNewDeckName('');
             setShowAddDeck(false);
             refresh();
-            Alert.alert('✅', `Deste "${name}" oluşturuldu.`);
-        } catch {
-            Alert.alert('Hata', 'Deste oluşturulamadı.');
+            alert('✅', `Deste "${name}" oluşturuldu.`);
+        } catch (e) {
+            console.warn('[Decks] createDeck failed:', e);
+            alert('Hata', 'Deste oluşturulamadı.');
         }
     };
 
@@ -97,7 +98,7 @@ export default function DecksScreen() {
                         <Text style={[styles.countBadge, styles.countReview]}>{node.reviewCount}</Text>
                     </View>
 
-                    <TouchableOpacity style={styles.gearBtn} onPress={() => Alert.alert('Deste', node.deck.name)}>
+                    <TouchableOpacity style={styles.gearBtn} onPress={() => alert('Deste', node.deck.name)}>
                         <Text style={styles.gearText}>⚙️</Text>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -166,7 +167,7 @@ export default function DecksScreen() {
                     <Text style={styles.bottomBtnIcon}>📊</Text>
                     <Text style={styles.bottomBtnText}>İstatistik</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.bottomBtn} onPress={() => Alert.alert('Sync', 'Sync henüz uygulanmadı.') }>
+                <TouchableOpacity style={styles.bottomBtn} onPress={() => alert('Sync', 'Sync henüz uygulanmadı.') }>
                     <Text style={styles.bottomBtnIcon}>🔄</Text>
                     <Text style={styles.bottomBtnText}>Sync</Text>
                 </TouchableOpacity>

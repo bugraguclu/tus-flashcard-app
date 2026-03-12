@@ -74,6 +74,17 @@ export function getReviewsInRange(startMs: number, endMs: number): ReviewLog[] {
     );
 }
 
+/** Get today's total study time in milliseconds (sum of review times) */
+export function getTodayStudyTimeMs(rolloverHour: number = 4): number {
+    const db = getDB();
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+    const row = db.getFirstSync<{ total: number }>(
+        'SELECT COALESCE(SUM(time), 0) as total FROM revlog WHERE id >= ?',
+        startMs,
+    );
+    return row?.total || 0;
+}
+
 /** Get today's review count */
 export function getTodayReviewCount(rolloverHour: number = 4): number {
     const db = getDB();

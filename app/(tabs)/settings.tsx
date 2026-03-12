@@ -6,14 +6,16 @@ import {
     TouchableOpacity,
     StyleSheet,
     SafeAreaView,
-    Alert,
     Platform,
 } from 'react-native';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import { loadSettings, saveSettings, resetAllData, exportAllData, DEFAULT_SETTINGS } from '../../lib/storage';
+import { confirm, alert } from '../../lib/confirm';
+import { useApp } from './_layout';
 import type { AppSettings } from '../../lib/types';
 
 export default function SettingsScreen() {
+    const { refreshData } = useApp();
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
@@ -27,6 +29,7 @@ export default function SettingsScreen() {
         const updated = { ...settings, [key]: value };
         setSettings(updated);
         saveSettings(updated);
+        refreshData();
         setSaved(true);
         setTimeout(() => setSaved(false), 1500);
     };
@@ -43,30 +46,25 @@ export default function SettingsScreen() {
                 anchor.click();
                 URL.revokeObjectURL(url);
             } else {
-                Alert.alert('Dışa aktarma', 'Yedek verisi üretildi.');
+                alert('Dışa aktarma', 'Yedek verisi üretildi.');
             }
-        } catch {
-            Alert.alert('Hata', 'Dışa aktarma başarısız.');
+        } catch (e) {
+            console.warn('[Settings] export failed:', e);
+            alert('Hata', 'Dışa aktarma başarısız.');
         }
     };
 
     const handleReset = () => {
-        Alert.alert(
-            '⚠️ İlerlemeyi Sıfırla',
+        confirm(
+            'İlerlemeyi Sıfırla',
             'Bu işlem tüm çalışma verisini sıfırlar. Geri alınamaz.',
-            [
-                { text: 'İptal', style: 'cancel' },
-                {
-                    text: 'Sıfırla',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await resetAllData();
-                        saveSettings(DEFAULT_SETTINGS);
-                        setSettings(DEFAULT_SETTINGS);
-                        Alert.alert('✅ Sıfırlandı', 'Tüm ilerleme temizlendi.');
-                    },
-                },
-            ],
+            async () => {
+                await resetAllData();
+                saveSettings(DEFAULT_SETTINGS);
+                setSettings(DEFAULT_SETTINGS);
+                refreshData();
+                alert('Sıfırlandı', 'Tüm ilerleme temizlendi.');
+            },
         );
     };
 

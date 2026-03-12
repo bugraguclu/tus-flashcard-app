@@ -6,7 +6,6 @@ import {
     StyleSheet,
     SafeAreaView,
     TouchableOpacity,
-    Alert,
     TextInput,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -14,9 +13,10 @@ import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constant
 import { TUS_SUBJECTS } from '../../lib/data';
 import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSessionStats, loadSettings } from '../../lib/storage';
 import { getBrowserCards } from '../../lib/studyRepository';
-import { getAllAnkiCards } from '../../lib/noteManager';
-import { aggregateBuckets } from '../../lib/statsHelpers';
+import { aggregateBucketsSql } from '../../lib/statsHelpers';
 import { todayLocalYMD } from '../../lib/scheduler';
+import { getTodayStudyTimeMs } from '../../lib/reviewLogger';
+import { confirm, alert } from '../../lib/confirm';
 import type { AppSettings, SessionStats } from '../../lib/types';
 
 export default function StatsScreen() {
@@ -44,7 +44,7 @@ export default function StatsScreen() {
     }, []);
 
     const cards = useMemo(() => getBrowserCards(settings), [settings]);
-    const bucketTotals = useMemo(() => aggregateBuckets(getAllAnkiCards()), [settings]);
+    const bucketTotals = useMemo(() => aggregateBucketsSql(), [settings]);
 
     const subjectStats = useMemo(() => {
         const today = todayLocalYMD();
@@ -105,41 +105,42 @@ export default function StatsScreen() {
     const accuracy = sessionStats.reviewed > 0
         ? Math.round((sessionStats.correct / sessionStats.reviewed) * 100)
         : 0;
-    const studyMinutes = Math.round((Date.now() - sessionStats.startTime) / 60000);
+    const studyMinutes = useMemo(() => {
+        try {
+            return Math.round(getTodayStudyTimeMs(settings.dayRolloverHour) / 60000);
+        } catch (e) {
+            console.warn('[Stats] studyMinutes calculation failed:', e);
+            return 0;
+        }
+    }, [sessionStats.reviewed, settings.dayRolloverHour]);
 
     const handleExport = async () => {
         try {
             const data = await exportAllData();
             await Clipboard.setStringAsync(data);
-            Alert.alert('✅ Başarılı', 'Yedek verisi panoya kopyalandı.');
-        } catch {
-            Alert.alert('Hata', 'Dışa aktarma başarısız oldu.');
+            alert('Başarılı', 'Yedek verisi panoya kopyalandı.');
+        } catch (e) {
+            console.warn('[Stats] export failed:', e);
+            alert('Hata', 'Dışa aktarma başarısız oldu.');
         }
     };
 
     const handleImport = async () => {
         if (!importData.trim()) {
-            Alert.alert('Hata', 'Lütfen içe aktarılacak JSON verisini yapıştırın.');
+            alert('Hata', 'Lütfen içe aktarılacak JSON verisini yapıştırın.');
             return;
         }
 
-        Alert.alert('⚠️ Uyarı', 'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?', [
-            { text: 'İptal', style: 'cancel' },
-            {
-                text: 'İçe Aktar',
-                style: 'destructive',
-                onPress: async () => {
-                    const success = await importAllData(importData);
-                    if (success) {
-                        Alert.alert('✅ Başarılı', 'Veriler içe aktarıldı. Uygulamayı yeniden açın.');
-                        setImportData('');
-                        setShowImport(false);
-                    } else {
-                        Alert.alert('❌ Hata', 'Geçersiz veri formatı.');
-                    }
-                },
-            },
-        ]);
+        confirm('Uyarı', 'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?', async () => {
+            const success = await importAllData(importData);
+            if (success) {
+                alert('Başarılı', 'Veriler içe aktarıldı. Uygulamayı yeniden açın.');
+                setImportData('');
+                setShowImport(false);
+            } else {
+                alert('Hata', 'Geçersiz veri formatı.');
+            }
+        });
     };
 
     if (loading) {

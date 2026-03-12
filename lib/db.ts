@@ -312,7 +312,8 @@ export function dbSearchCards(query: string): number[] {
             searchTerms,
         );
         return rows.map((row) => Number(row.card_id));
-    } catch {
+    } catch (e) {
+        console.warn('[DB] operation failed:', e);
         return [];
     }
 }

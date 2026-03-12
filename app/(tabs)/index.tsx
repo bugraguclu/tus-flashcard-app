@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, FontSize, Shadows } from '../../constants/theme';
 import { TUS_SUBJECTS } from '../../lib/data';
@@ -185,6 +185,13 @@ export default function StudyScreen() {
 
     const answerCard = useCallback(async (grade: Grade) => {
         if (!currentCard) return;
+
+        if (Platform.OS !== 'web') {
+            try {
+                const Haptics = require('expo-haptics');
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch { /* haptics unavailable */ }
+        }
 
         const elapsed = Math.max(0, Date.now() - answerStartedAt);
         const result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);

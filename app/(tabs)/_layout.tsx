@@ -46,12 +46,13 @@ export default function TabLayout() {
         setDataVersion((prev) => prev + 1);
     }, []);
 
-    const { startupError } = useAppStartup(refreshData, bumpDataVersion);
+    const { startupError, isLoading } = useAppStartup(refreshData, bumpDataVersion);
 
     const searchableCards = useMemo(() => {
         try {
             return getSearchIndexCards();
-        } catch {
+        } catch (e) {
+            console.warn('[Layout] getSearchIndexCards failed:', e);
             return [];
         }
     }, [dataVersion]);
@@ -101,6 +102,15 @@ export default function TabLayout() {
         setExpandedSubject(null);
         navigate('/');
     };
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <Text style={styles.loadingEmoji}>🧠</Text>
+                <Text style={styles.loadingText}>TusAnkiM yükleniyor...</Text>
+            </View>
+        );
+    }
 
     return (
         <AppContext.Provider
@@ -164,6 +174,14 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.bgPrimary },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: Colors.bgPrimary,
+    },
+    loadingEmoji: { fontSize: 48, marginBottom: 12 },
+    loadingText: { fontSize: FontSize.lg, color: Colors.textMuted, fontWeight: '500' },
     appLayout: { flex: 1, flexDirection: 'row' },
 
     mobileHeader: {

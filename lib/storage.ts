@@ -10,6 +10,7 @@ import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
 import { getDeckConfig, saveDeckConfig } from './deckManager';
+import { resolveSettingsFromConfig } from './settingsResolver';
 import {
     migrateLegacyCardStatesToAnki,
     migrateLegacyCustomCardsToAnki,
@@ -60,7 +61,8 @@ function getDbSetting(key: string): string | null {
         const db = getDB();
         const row = db.getFirstSync('SELECT value FROM settings WHERE key = ?', key) as { value?: string } | null;
         return typeof row?.value === 'string' ? row.value : null;
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] getDbSetting failed:', e);
         return null;
     }
 }
@@ -69,7 +71,8 @@ function setDbSetting(key: string, value: string): void {
     try {
         const db = getDB();
         db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] setDbSetting failed:', e);
         // DB may not be initialized yet.
     }
 }
@@ -93,7 +96,8 @@ export async function loadCardStates(): Promise<Record<string, CardState>> {
         }
 
         return states;
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] loadCardStates failed:', e);
         return {};
     }
 }
@@ -137,7 +141,8 @@ export async function loadCustomCards(): Promise<Card[]> {
     try {
         const data = await AsyncStorage.getItem(KEYS.CUSTOM_CARDS);
         return data ? JSON.parse(data) : [];
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] loadCustomCards failed:', e);
         return [];
     }
 }
@@ -176,7 +181,8 @@ function loadSessionStatsFromDb(date: string): SessionStats | null {
             ...parsed,
             date,
         };
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] loadSessionStatsFromDb failed:', e);
         return null;
     }
 }
@@ -268,7 +274,8 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
         config.mod = Math.floor(Date.now() / 1000);
         config.usn = -1;
         saveDeckConfig(config);
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] syncDefaultDeckConfig failed:', e);
         // DB may not be initialized yet.
     }
 }
@@ -276,24 +283,9 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
 function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
     try {
         const config = getDeckConfig(1);
-        return {
-            ...base,
-            dailyNewLimit: config.newPerDay,
-            dailyReviewLimit: config.maxReviewsPerDay,
-            learningSteps: config.learningSteps?.length ? [...config.learningSteps] : base.learningSteps,
-            lapseSteps: config.relearningSteps?.length ? [...config.relearningSteps] : base.lapseSteps,
-            graduatingInterval: config.graduatingIvl,
-            easyInterval: config.easyIvl,
-            startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
-            lapseNewInterval: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseNewInterval,
-            newCardOrder: config.insertionOrder || base.newCardOrder,
-            hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,
-            easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
-            intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
-            maxInterval: config.maxIvl > 0 ? config.maxIvl : base.maxInterval,
-            desiredRetention: config.desiredRetention || base.desiredRetention,
-        };
-    } catch {
+        return resolveSettingsFromConfig(config, base);
+    } catch (e) {
+        console.warn('[Storage] hydrateSettingsFromDeckConfig failed:', e);
         return base;
     }
 }
@@ -310,7 +302,8 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             algorithm: 'ANKI_V3',
         };
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] loadAppSettingsMeta failed:', e);
         return {};
     }
 }
@@ -378,7 +371,8 @@ export async function resetAllData(): Promise<void> {
         initAnkiData();
         saveSettings({ ...DEFAULT_SETTINGS });
         dbIndexAllCards(getSearchIndexCards());
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] resetAllData DB cleanup failed:', e);
         /* Database may not be initialized yet. */
     }
 }
@@ -460,7 +454,8 @@ export async function exportAllData(): Promise<string> {
             graves: db.getAllSync('SELECT * FROM graves'),
             session_stats: db.getAllSync('SELECT * FROM session_stats ORDER BY date'),
         };
-    } catch {
+    } catch (e) {
+        console.warn('[Storage] exportAllData DB access failed:', e);
         // If DB is not ready, fallback to metadata-only export.
     }
 

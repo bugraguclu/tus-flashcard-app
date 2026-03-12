@@ -12,7 +12,8 @@ export async function ensureMediaDir(): Promise<string> {
         if (!info.exists) {
             await FileSystem.makeDirectoryAsync(MEDIA_DIR, { intermediates: true });
         }
-    } catch {
+    } catch (e) {
+        console.warn('[MediaStore] getMediaBaseUrl failed:', e);
         await FileSystem.makeDirectoryAsync(MEDIA_DIR, { intermediates: true });
     }
 

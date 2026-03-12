@@ -15,6 +15,7 @@ import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '.
 
 export function useAppStartup(refreshData: () => void, bumpDataVersion: () => void) {
     const [startupError, setStartupError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
@@ -88,6 +89,7 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
                 }
             } finally {
                 if (!cancelled) {
+                    setIsLoading(false);
                     refreshData();
                 }
             }
@@ -100,5 +102,5 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
         };
     }, [bumpDataVersion, refreshData]);
 
-    return { startupError };
+    return { startupError, isLoading };
 }

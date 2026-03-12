@@ -7,11 +7,11 @@ import {
     ScrollView,
     StyleSheet,
     SafeAreaView,
-    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { TUS_SUBJECTS } from '../lib/data';
+import { confirm, alert } from '../lib/confirm';
 import {
     createTusCard,
     updateTusCardByCardId,
@@ -76,7 +76,7 @@ export default function EditorScreen() {
 
     const handleSave = () => {
         if (!question.trim() || !answer.trim()) {
-            Alert.alert('Hata', 'Soru ve cevap alanları boş olamaz.');
+            alert('Hata', 'Soru ve cevap alanları boş olamaz.');
             return;
         }
 
@@ -90,7 +90,7 @@ export default function EditorScreen() {
                 });
 
                 if (!updated) {
-                    Alert.alert('Hata', 'Kart güncellenemedi.');
+                    alert('Hata', 'Kart güncellenemedi.');
                     return;
                 }
 
@@ -102,9 +102,7 @@ export default function EditorScreen() {
                     answer: answer.trim(),
                 });
 
-                Alert.alert('✅ Başarılı', 'Kart güncellendi.', [
-                    { text: 'Tamam', onPress: () => router.back() },
-                ]);
+                alert('Başarılı', 'Kart güncellendi.', () => router.back());
             } else {
                 const created = createTusCard({
                     subject,
@@ -121,37 +119,28 @@ export default function EditorScreen() {
                     answer: answer.trim(),
                 });
 
-                Alert.alert('✅ Başarılı', 'Kart kaydedildi.', [
-                    { text: 'Tamam', onPress: () => router.back() },
-                ]);
+                alert('Başarılı', 'Kart kaydedildi.', () => router.back());
             }
-        } catch {
-            Alert.alert('Hata', 'Kart kaydedilemedi.');
+        } catch (e) {
+            console.warn('[Editor] save failed:', e);
+            alert('Hata', 'Kart kaydedilemedi.');
         }
     };
 
     const handleDelete = () => {
         if (!routeCardId) return;
 
-        Alert.alert('Uyarı', 'Bu kartı silmek istediğinize emin misiniz?', [
-            { text: 'İptal', style: 'cancel' },
-            {
-                text: 'Sil',
-                style: 'destructive',
-                onPress: () => {
-                    try {
-                        deleteTusCardByCardId(routeCardId);
-                        dbDeleteFtsCard(routeCardId);
-                        rebuildSearchIndex();
-                        Alert.alert('🗑️ Silindi', 'Kart başarıyla silindi.', [
-                            { text: 'Tamam', onPress: () => router.back() },
-                        ]);
-                    } catch {
-                        Alert.alert('Hata', 'Kart silinemedi.');
-                    }
-                },
-            },
-        ]);
+        confirm('Uyarı', 'Bu kartı silmek istediğinize emin misiniz?', () => {
+            try {
+                deleteTusCardByCardId(routeCardId);
+                dbDeleteFtsCard(routeCardId);
+                rebuildSearchIndex();
+                alert('Silindi', 'Kart başarıyla silindi.', () => router.back());
+            } catch (e) {
+                console.warn('[Editor] delete failed:', e);
+                alert('Hata', 'Kart silinemedi.');
+            }
+        });
     };
 
     return (

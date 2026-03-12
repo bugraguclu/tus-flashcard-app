@@ -1,36 +1,51 @@
 {
   "expo": {
-    "name": "tus-flashcard-app",
-    "slug": "tus-flashcard-app",
+    "name": "TusAnkiM",
+    "slug": "tusankim",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#e8f5f0"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tusankim.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Kart oluştururken fotoğraf çekmek için kamera erişimi gereklidir.",
+        "NSPhotoLibraryUsageDescription": "Kartlara görsel eklemek için fotoğraf kitaplığı erişimi gereklidir."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#e8f5f0"
       },
+      "package": "com.tusankim.app",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "scheme": "tus-flashcard",
+    "scheme": "tusankim",
     "plugins": [
       "expo-sqlite",
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-haptics"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "tusankim"
+      }
+    }
   }
 }
