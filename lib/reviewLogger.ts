@@ -8,6 +8,21 @@ import { getDB } from './db';
 import { uniqueId } from './models';
 import { dayNumberToYmd, localDayNumber } from './ankiState';
 
+const HOUR_MS = 3600000;
+
+function startOfStudyDayMs(atMs: number, rolloverHour: number): number {
+    const shifted = new Date(atMs - rolloverHour * HOUR_MS);
+    return new Date(
+        shifted.getFullYear(),
+        shifted.getMonth(),
+        shifted.getDate(),
+        rolloverHour,
+        0,
+        0,
+        0,
+    ).getTime();
+}
+
 /** Log a review event */
 export function logReview(
     card: AnkiCard,
@@ -62,11 +77,10 @@ export function getReviewsInRange(startMs: number, endMs: number): ReviewLog[] {
 /** Get today's review count */
 export function getTodayReviewCount(rolloverHour: number = 4): number {
     const db = getDB();
-    const today = localDayNumber(Date.now(), rolloverHour);
-    const startOfStudyDayMs = today * 86400000;
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
     const row = db.getFirstSync<{ cnt: number }>(
         'SELECT COUNT(*) as cnt FROM revlog WHERE id >= ?',
-        startOfStudyDayMs,
+        startMs,
     );
     return row?.cnt || 0;
 }
@@ -161,9 +175,11 @@ export function getDailyReviewCounts(days: number): { date: string; count: numbe
 
 /** Get future due card counts (for projection chart) — single GROUP BY query */
 export function getFutureDueCounts(days: number, rolloverHour: number = 4): { date: string; count: number }[] {
+    if (days <= 0) return [];
+
     const db = getDB();
     const today = localDayNumber(Date.now(), rolloverHour);
-    const maxDueDay = today + Math.max(0, days - 1);
+    const maxDueDay = today + days - 1;
 
     const rows = db.getAllSync<{ due: number; cnt: number }>(
         `SELECT due, COUNT(*) as cnt FROM anki_cards
@@ -172,15 +188,19 @@ export function getFutureDueCounts(days: number, rolloverHour: number = 4): { da
         maxDueDay,
     );
 
-    const dueMap = new Map(rows.map(r => [r.due, r.cnt]));
+    const dueMap = new Map(rows.map((row) => [row.due, row.cnt]));
     const result: { date: string; count: number }[] = [];
     let cumulative = 0;
 
     for (let i = 0; i < days; i++) {
         const dueDay = today + i;
         cumulative += dueMap.get(dueDay) || 0;
-        result.push({ date: dayNumberToYmd(dueDay, rolloverHour), count: cumulative });
+        result.push({
+            date: dayNumberToYmd(dueDay, rolloverHour),
+            count: cumulative,
+        });
     }
+
     return result;
 }
 

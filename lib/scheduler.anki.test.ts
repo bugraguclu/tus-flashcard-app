@@ -13,6 +13,11 @@ const defaultSettings: AppSettings = {
     lapseNewInterval: 0.7,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
+    hardIntervalMultiplier: 1.2,
+    easyBonus: 1.3,
+    intervalModifier: 1.0,
+    maxInterval: 36500,
+    dayRolloverHour: 4,
     algorithm: 'ANKI_V3',
     desiredRetention: 0.9,
 };

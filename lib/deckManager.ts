@@ -47,25 +47,51 @@ export function deleteDeck(id: number): void {
 }
 
 export function renameDeck(id: number, newName: string): void {
+    const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
 
-    const oldPrefix = deck.name + '::';
-    const allDecks = getAllDecks();
+    const oldPrefix = `${deck.name}::`;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const nowMs = Date.now();
 
-    // Rename the deck itself
-    deck.name = newName;
-    deck.mod = Math.floor(Date.now() / 1000);
-    saveDeck(deck);
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        const rows = db.getAllSync<{ id: number; name: string; data: string }>(
+            `SELECT id, name, data
+             FROM decks
+             WHERE id = ? OR name LIKE ?
+             ORDER BY LENGTH(name) ASC`,
+            id,
+            `${oldPrefix}%`,
+        );
 
-    // Rename all children
-    for (const child of allDecks) {
-        if (child.name.startsWith(oldPrefix)) {
-            const newChildName = newName + '::' + child.name.slice(oldPrefix.length);
-            child.name = newChildName;
-            child.mod = Math.floor(Date.now() / 1000);
-            saveDeck(child);
+        for (const row of rows) {
+            const parsed = JSON.parse(row.data) as Deck;
+            const resolvedName = row.id === id
+                ? newName
+                : `${newName}::${row.name.slice(oldPrefix.length)}`;
+
+            parsed.name = resolvedName;
+            parsed.mod = nowSec;
+            parsed.usn = -1;
+
+            db.runSync(
+                `UPDATE decks
+                 SET name = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0
+                 WHERE id = ?`,
+                resolvedName,
+                JSON.stringify(parsed),
+                nowMs,
+                parsed.usn,
+                row.id,
+            );
         }
+
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
     }
 }
 
@@ -218,13 +244,16 @@ export function saveDeckConfig(config: DeckConfig): void {
 
 // ---- Card Counts per Deck ----
 
-export function getCardCountsByDeck(nowMs: number = Date.now()): Map<number, { new: number; learn: number; review: number; total: number }> {
+export function getCardCountsByDeck(
+    nowMs: number = Date.now(),
+    rolloverHour: number = 4,
+): Map<number, { new: number; learn: number; review: number; total: number }> {
     const db = getDB();
     const rows = db.getAllSync<{ deckId: number; queue: number; due: number }>(
-        'SELECT deckId, queue, due FROM anki_cards'
+        'SELECT deckId, queue, due FROM anki_cards',
     );
 
-    const today = localDayNumber(nowMs, 4);
+    const today = localDayNumber(nowMs, rolloverHour);
     const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
 
     for (const row of rows) {
@@ -244,7 +273,12 @@ export function getCardCountsByDeck(nowMs: number = Date.now()): Map<number, { n
             continue;
         }
 
-        if ((row.queue === 1 || row.queue === 3) && row.due <= nowMs) {
+        if (row.queue === 1 && row.due <= nowMs) {
+            entry.learn += 1;
+            continue;
+        }
+
+        if (row.queue === 3 && row.due <= today) {
             entry.learn += 1;
             continue;
         }

@@ -4,35 +4,51 @@ import type { AnkiCard } from './models';
 const DAY_MS = 86400000;
 const HOUR_MS = 3600000;
 
-export function localDayNumber(atMs: number = Date.now(), rolloverHour: number = 4): number {
-    const now = new Date(atMs);
-    const rolloverBoundary = new Date(atMs);
-    rolloverBoundary.setHours(rolloverHour, 0, 0, 0);
-
-    if (now < rolloverBoundary) {
-        rolloverBoundary.setDate(rolloverBoundary.getDate() - 1);
-    }
-
-    return Math.floor(rolloverBoundary.getTime() / DAY_MS);
+function localStudyDayDate(atMs: number, rolloverHour: number): Date {
+    const shifted = new Date(atMs - rolloverHour * HOUR_MS);
+    return new Date(shifted.getFullYear(), shifted.getMonth(), shifted.getDate());
 }
 
-export function dayNumberToYmd(dayNumber: number, rolloverHour: number = 4): string {
-    const d = new Date(dayNumber * DAY_MS + rolloverHour * HOUR_MS);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
+export function localDayNumber(atMs: number = Date.now(), rolloverHour: number = 4): number {
+    const d = localStudyDayDate(atMs, rolloverHour);
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS);
+}
+
+export function dayNumberToYmd(dayNumber: number, _rolloverHour: number = 4): string {
+    const d = new Date(dayNumber * DAY_MS);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
 
-export function ymdToLocalDayNumber(ymd: string, fallback: number, rolloverHour: number = 4): number {
+export function ymdToLocalDayNumber(ymd: string, fallback: number, _rolloverHour: number = 4): number {
     if (!ymd) return fallback;
-    const parts = ymd.split('-').map(Number);
-    if (parts.length !== 3 || parts.some(Number.isNaN)) return fallback;
 
-    const [yyyy, mm, dd] = parts;
-    const d = new Date(yyyy, mm - 1, dd, rolloverHour, 0, 0, 0);
-    if (Number.isNaN(d.getTime())) return fallback;
-    return localDayNumber(d.getTime(), rolloverHour);
+    const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return fallback;
+
+    const yyyy = Number(match[1]);
+    const mm = Number(match[2]);
+    const dd = Number(match[3]);
+
+    if (!Number.isInteger(yyyy) || !Number.isInteger(mm) || !Number.isInteger(dd)) {
+        return fallback;
+    }
+
+    const utcMs = Date.UTC(yyyy, mm - 1, dd);
+    const check = new Date(utcMs);
+
+    // Reject impossible dates (e.g. 2026-02-31).
+    if (
+        check.getUTCFullYear() !== yyyy
+        || check.getUTCMonth() !== mm - 1
+        || check.getUTCDate() !== dd
+    ) {
+        return fallback;
+    }
+
+    return Math.floor(utcMs / DAY_MS);
 }
 
 export function ankiCardIdFromLegacyCardId(legacyCardId: number): number {
@@ -44,21 +60,52 @@ export function legacyCardIdFromAnkiCardId(ankiCardId: number): number {
 }
 
 function decodeRemaining(left: number): { remainingTotal: number; remainingToday: number } {
-    if (left <= 0) return { remainingTotal: 0, remainingToday: 0 };
+    if (!Number.isFinite(left) || left <= 0) {
+        return { remainingTotal: 0, remainingToday: 0 };
+    }
 
-    const remainingTotal = Math.max(0, Math.floor(left / 1000));
-    const remainingToday = Math.max(0, left - remainingTotal * 1000);
+    const value = Math.max(0, Math.floor(left));
 
-    return {
-        remainingTotal,
-        remainingToday: Math.min(remainingToday, remainingTotal),
-    };
+    // Anki encoding: left = totalRemaining + todayRemaining * 1000
+    const ankiTotal = value % 1000;
+    const ankiToday = Math.floor(value / 1000);
+
+    if (ankiTotal > 0 && ankiToday <= ankiTotal) {
+        return {
+            remainingTotal: ankiTotal,
+            remainingToday: Math.max(0, ankiToday),
+        };
+    }
+
+    // Legacy fallback from earlier app versions:
+    // left = totalRemaining * 1000 + todayRemaining
+    const legacyTotal = Math.floor(value / 1000);
+    const legacyToday = value % 1000;
+    if (legacyTotal > 0) {
+        return {
+            remainingTotal: legacyTotal,
+            remainingToday: Math.max(0, Math.min(legacyToday, legacyTotal)),
+        };
+    }
+
+    // Very old fallback where only low bits were stored.
+    if (legacyToday > 0) {
+        return {
+            remainingTotal: legacyToday,
+            remainingToday: 0,
+        };
+    }
+
+    return { remainingTotal: 0, remainingToday: 0 };
 }
 
 function encodeRemaining(remainingTotal: number, remainingToday: number): number {
-    const total = Math.max(0, remainingTotal);
-    const today = Math.max(0, Math.min(remainingToday, total));
-    return total * 1000 + today;
+    const total = Math.max(0, Math.floor(remainingTotal));
+    if (total <= 0) return 0;
+
+    const today = Math.max(0, Math.min(total, Math.floor(remainingToday)));
+    // Anki encoding: total + today * 1000
+    return total + today * 1000;
 }
 
 function nextRolloverMs(nowMs: number, rolloverHour: number): number {
@@ -80,21 +127,29 @@ function computeRemainingToday(
     nowMs: number,
     rolloverHour: number,
 ): number {
-    if (steps.length === 0) return 0;
+    if (steps.length === 0) return 1;
 
+    const remainingTotal = Math.max(1, steps.length - stepIndex);
     const rollMs = nextRolloverMs(nowMs, rolloverHour);
-    let simulatedDue = Math.max(firstDueMs, nowMs);
+
+    // firstDueMs is the due time for the current step.
+    let reviewDueMs = Math.max(firstDueMs, nowMs);
     let count = 0;
 
-    for (let i = stepIndex; i < steps.length; i++) {
-        if (simulatedDue <= rollMs) {
+    for (let offset = 0; offset < remainingTotal; offset++) {
+        if (reviewDueMs <= rollMs) {
             count += 1;
         }
 
-        simulatedDue += (steps[i] || 0) * 60000;
+        const nextStepIdx = stepIndex + offset + 1;
+        if (nextStepIdx >= steps.length) {
+            break;
+        }
+
+        reviewDueMs += Math.max(0, steps[nextStepIdx] || 0) * 60000;
     }
 
-    return Math.max(1, count);
+    return Math.max(1, Math.min(remainingTotal, count));
 }
 
 export function ankiCardToCardState(card: AnkiCard, settings: AppSettings, nowMs: number = Date.now()): CardState {
@@ -117,9 +172,11 @@ export function ankiCardToCardState(card: AnkiCard, settings: AppSettings, nowMs
 
     const dueDate = status === 'review'
         ? dayNumberToYmd(card.due || todayNumber, settings.dayRolloverHour)
-        : dayNumberToYmd(todayNumber, settings.dayRolloverHour);
+        : status === 'learning' && card.queue === 3
+            ? dayNumberToYmd(card.due || todayNumber, settings.dayRolloverHour)
+            : dayNumberToYmd(todayNumber, settings.dayRolloverHour);
 
-    const dueTime = status === 'learning' && card.queue >= 0
+    const dueTime = status === 'learning' && card.queue === 1
         ? (card.due || nowMs)
         : 0;
 
@@ -186,18 +243,53 @@ export function cardStateToAnkiCard(
             : Math.max(0, state.learningStep || 0);
 
         const remainingTotal = steps.length > 0 ? Math.max(1, steps.length - stepIndex) : 1;
-        const dueTime = state.dueTime > 0 ? state.dueTime : nowMs + 60000;
-        const remainingToday = computeRemainingToday(
-            steps,
-            stepIndex,
-            dueTime,
-            nowMs,
-            settings.dayRolloverHour,
-        );
+        const todayDay = localDayNumber(nowMs, settings.dayRolloverHour);
+
+        let queue: 1 | 3;
+        let due: number;
+        let remainingToday: number;
+
+        if (state.dueTime > 0) {
+            const dueTime = state.dueTime;
+            const dueDay = localDayNumber(dueTime, settings.dayRolloverHour);
+            queue = dueDay > todayDay ? 3 : 1;
+            due = queue === 3 ? dueDay : dueTime;
+            remainingToday = computeRemainingToday(
+                steps,
+                stepIndex,
+                dueTime,
+                nowMs,
+                settings.dayRolloverHour,
+            );
+        } else {
+            const dueDayFromDate = ymdToLocalDayNumber(
+                state.dueDate,
+                todayDay,
+                settings.dayRolloverHour,
+            );
+
+            if (dueDayFromDate > todayDay) {
+                queue = 3;
+                due = dueDayFromDate;
+                remainingToday = 1;
+            } else {
+                const fallbackDueTime = nowMs + 60000;
+                const dueDay = localDayNumber(fallbackDueTime, settings.dayRolloverHour);
+                queue = dueDay > todayDay ? 3 : 1;
+                due = queue === 3 ? dueDay : fallbackDueTime;
+                remainingToday = computeRemainingToday(
+                    steps,
+                    stepIndex,
+                    fallbackDueTime,
+                    nowMs,
+                    settings.dayRolloverHour,
+                );
+            }
+        }
 
         updated.type = relearning ? 3 : 1;
-        updated.queue = 1;
-        updated.due = dueTime;
+        updated.queue = queue;
+        updated.due = due;
         updated.left = encodeRemaining(remainingTotal, remainingToday);
         return updated;
     }

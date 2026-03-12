@@ -20,6 +20,7 @@ import {
     saveCustomCards,
     DEFAULT_SETTINGS,
     clearLegacyCardStates,
+    migrateLegacySettingsIfNeeded,
 } from '../../lib/storage';
 import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
@@ -85,17 +86,37 @@ export default function TabLayout() {
                     console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
                 }
 
+                // One-shot migration from legacy AsyncStorage settings into SQLite source of truth.
+                const settingsMigration = await migrateLegacySettingsIfNeeded();
+                if (settingsMigration.migrated) {
+                    console.log('[App] Legacy settings migrated to SQLite config.');
+                }
+
+                const db = getDB();
+
                 // One-shot migration from legacy AsyncStorage custom cards to canonical notes/anki_cards.
-                const legacyCustomCards = await loadCustomCards();
-                const customMigration = migrateLegacyCustomCardsToAnki(legacyCustomCards);
-                if (!customMigration.alreadyMigrated) {
-                    console.log(`[App] Legacy custom cards migration: ${customMigration.migratedCards} migrated.`);
-                    await saveCustomCards([]);
+                const customMigrated = db.getFirstSync<{ value: string }>(
+                    'SELECT value FROM settings WHERE key = ?',
+                    'tus_legacy_custom_cards_migrated_v1',
+                )?.value === 'true';
+
+                if (!customMigrated) {
+                    const legacyCustomCards = await loadCustomCards();
+                    const customMigration = migrateLegacyCustomCardsToAnki(legacyCustomCards);
+                    if (!customMigration.alreadyMigrated) {
+                        console.log(`[App] Legacy custom cards migration: ${customMigration.migratedCards} migrated.`);
+                        await saveCustomCards([]);
+                    }
                 }
 
                 // One-shot migration from legacy AsyncStorage card states to canonical anki_cards.
-                const asyncStates = await loadCardStates();
-                if (Object.keys(asyncStates).length > 0) {
+                const cardStatesMigrated = db.getFirstSync<{ value: string }>(
+                    'SELECT value FROM settings WHERE key = ?',
+                    'tus_legacy_card_state_migrated_v1',
+                )?.value === 'true';
+
+                if (!cardStatesMigrated) {
+                    const asyncStates = await loadCardStates();
                     const migrationResult = migrateLegacyCardStatesToAnki(asyncStates, await loadSettings());
                     if (!migrationResult.alreadyMigrated) {
                         console.log(`[App] Legacy card state migration: ${migrationResult.migratedCards} migrated, ${migrationResult.skippedCards} skipped.`);
@@ -104,7 +125,6 @@ export default function TabLayout() {
                 }
 
                 // Rebuild FTS index only if empty.
-                const db = getDB();
                 const ftsRow = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards_fts');
                 if (!ftsRow?.cnt) {
                     const searchableCards = getSearchIndexCards();
@@ -133,7 +153,7 @@ export default function TabLayout() {
         } catch {
             return [];
         }
-    }, [pathname, selectedSubject, selectedTopic]);
+    }, [pathname]);
 
     // Sidebar counters from canonical cards.
     const getSubjectCount = (subjectId: string) =>

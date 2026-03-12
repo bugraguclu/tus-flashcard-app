@@ -224,12 +224,29 @@ export function countCardsForNote(noteType: NoteType, note: Note): number {
 
 function normalizeFieldHtml(text: string): string {
     let result = text;
+
+    // Remove script blocks entirely.
     result = result.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-    result = result.replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    result = result.replace(/(href|src)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi, '$1="#"');
+
+    // Remove inline event handlers like onclick=..., onerror=..., onLoad=...
+    result = result.replace(/\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+
+    // Neutralize javascript: URLs in href/src (quoted or unquoted, mixed-case, whitespace obfuscation).
+    result = result.replace(
+        /(href|src)\s*=\s*(?:(['"])([\s\S]*?)\2|([^\s>]+))/gi,
+        (_match, attr, quote, quotedValue, bareValue) => {
+            const rawValue = String(quotedValue ?? bareValue ?? '').trim();
+            const normalized = rawValue.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+            const safeValue = normalized.startsWith('javascript:') ? '#' : rawValue;
+            const q = quote || '"';
+            return `${attr}=${q}${safeValue}${q}`;
+        },
+    );
+
     result = result.replace(/\[sound:([^\]]+)\]/gi, (_match, filename) => {
-        return `<audio controls src="${filename}"></audio>`;
+        return `<audio controls src="${escapeHtml(filename)}"></audio>`;
     });
+
     return result;
 }
 

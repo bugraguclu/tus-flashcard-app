@@ -6,6 +6,10 @@ import { createTusCard, getAnkiCard, saveAnkiCard } from './noteManager';
 const LEGACY_MIGRATION_KEY = 'tus_legacy_card_state_migrated_v1';
 const LEGACY_CUSTOM_CARDS_MIGRATION_KEY = 'tus_legacy_custom_cards_migrated_v1';
 
+interface MigrationOptions {
+    force?: boolean;
+}
+
 export interface LegacyMigrationResult {
     migratedCards: number;
     skippedCards: number;
@@ -28,14 +32,17 @@ function hasMeaningfulLegacyProgress(state: CardState): boolean {
     );
 }
 
-export function migrateLegacyCustomCardsToAnki(customCards: Card[]): LegacyCustomCardsMigrationResult {
+export function migrateLegacyCustomCardsToAnki(
+    customCards: Card[],
+    options: MigrationOptions = {},
+): LegacyCustomCardsMigrationResult {
     const db = getDB();
     const migrationFlag = db.getFirstSync<{ value: string }>(
         'SELECT value FROM settings WHERE key = ?',
         LEGACY_CUSTOM_CARDS_MIGRATION_KEY,
     );
 
-    if (migrationFlag?.value === 'true') {
+    if (!options.force && migrationFlag?.value === 'true') {
         return { migratedCards: 0, alreadyMigrated: true };
     }
 
@@ -71,6 +78,7 @@ export function migrateLegacyCustomCardsToAnki(customCards: Card[]): LegacyCusto
 export function migrateLegacyCardStatesToAnki(
     legacyStates: Record<string, CardState>,
     settings: AppSettings,
+    options: MigrationOptions = {},
 ): LegacyMigrationResult {
     const db = getDB();
     const migrationFlag = db.getFirstSync<{ value: string }>(
@@ -78,7 +86,7 @@ export function migrateLegacyCardStatesToAnki(
         LEGACY_MIGRATION_KEY,
     );
 
-    if (migrationFlag?.value === 'true') {
+    if (!options.force && migrationFlag?.value === 'true') {
         return { migratedCards: 0, skippedCards: 0, alreadyMigrated: true };
     }
 
@@ -88,7 +96,7 @@ export function migrateLegacyCardStatesToAnki(
     db.execSync('BEGIN TRANSACTION;');
     try {
         for (const [legacyId, state] of Object.entries(legacyStates)) {
-            if (!hasMeaningfulLegacyProgress(state)) {
+            if (!options.force && !hasMeaningfulLegacyProgress(state)) {
                 skippedCards++;
                 continue;
             }
@@ -100,8 +108,8 @@ export function migrateLegacyCardStatesToAnki(
                 continue;
             }
 
-            // Avoid overriding progress already written by canonical flow.
-            if (card.reps > 0 || card.type !== 0 || card.queue !== 0) {
+            // Avoid overriding progress already written by canonical flow unless forced import.
+            if (!options.force && (card.reps > 0 || card.type !== 0 || card.queue !== 0)) {
                 skippedCards++;
                 continue;
             }

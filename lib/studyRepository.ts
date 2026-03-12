@@ -15,6 +15,7 @@ import {
     buryCard,
     getAnkiCard,
     getCardsForNote,
+    getNote,
     handleLeech,
     isLeech,
     saveAnkiCard,
@@ -64,8 +65,20 @@ export interface ReviewResult {
 
 const KNOWN_SUBJECTS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
 
-interface CardNoteRow {
-    cardData: string;
+interface QueueCardRow {
+    cardId: number;
+    noteId: number;
+    deckId: number;
+    ord: number;
+    type: number;
+    queue: number;
+    due: number;
+    ivl: number;
+    factor: number;
+    reps: number;
+    lapses: number;
+    flags: number;
+    cardData: string | null;
     noteData: string;
 }
 
@@ -161,12 +174,28 @@ function loadRowsByQueue(
     selectedTopic?: string | null,
     selectedDeckName?: string | null,
     orderBy: string = 'c.id ASC',
-): Array<{ card: AnkiCard; note: Note }> {
+    includeCardBlob: boolean = true,
+): QueueCardRow[] {
     const db = getDB();
     const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const cardDataSelect = includeCardBlob ? 'c.data' : 'NULL';
 
-    const rows = db.getAllSync<CardNoteRow>(
-        `SELECT c.data AS cardData, n.data AS noteData
+    return db.getAllSync<QueueCardRow>(
+        `SELECT
+            c.id AS cardId,
+            c.noteId AS noteId,
+            c.deckId AS deckId,
+            c.ord AS ord,
+            c.type AS type,
+            c.queue AS queue,
+            c.due AS due,
+            c.ivl AS ivl,
+            c.factor AS factor,
+            c.reps AS reps,
+            c.lapses AS lapses,
+            c.flags AS flags,
+            ${cardDataSelect} AS cardData,
+            n.data AS noteData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          JOIN decks d ON d.id = c.deckId
@@ -175,11 +204,31 @@ function loadRowsByQueue(
         ...queueParams,
         ...scope.params,
     );
+}
 
-    return rows.map((row) => ({
-        card: JSON.parse(row.cardData) as AnkiCard,
-        note: JSON.parse(row.noteData) as Note,
-    }));
+function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
+    return {
+        id: row.cardId,
+        noteId: row.noteId,
+        deckId: row.deckId,
+        ord: row.ord,
+        mod: Math.floor(nowMs / 1000),
+        usn: -1,
+        type: row.type as AnkiCard['type'],
+        queue: row.queue as AnkiCard['queue'],
+        due: row.due,
+        ivl: row.ivl,
+        factor: row.factor,
+        reps: row.reps,
+        lapses: row.lapses,
+        left: 0,
+        odue: 0,
+        odid: 0,
+        flags: row.flags as AnkiCard['flags'],
+        stability: 0,
+        difficulty: 0,
+        lastReview: 0,
+    };
 }
 
 function loadNextLearningDue(
@@ -204,8 +253,8 @@ function loadNextLearningDue(
     return row?.nextDue ?? null;
 }
 
-function resolveSettingsForDeck(deckId: number, base: AppSettings, cache: Map<number, AppSettings>): AppSettings {
-    if (cache.has(deckId)) {
+function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?: Map<number, AppSettings>): AppSettings {
+    if (cache?.has(deckId)) {
         return cache.get(deckId)!;
     }
 
@@ -228,7 +277,7 @@ function resolveSettingsForDeck(deckId: number, base: AppSettings, cache: Map<nu
         desiredRetention: config.desiredRetention > 0 ? config.desiredRetention : base.desiredRetention,
     };
 
-    cache.set(deckId, resolved);
+    cache?.set(deckId, resolved);
     return resolved;
 }
 
@@ -237,6 +286,7 @@ function makeStudyCard(
     note: Note,
     settings: AppSettings,
     nowMs: number,
+    includeRawCard: boolean,
 ): StudyCard {
     const payload = parseNotePayload(note);
 
@@ -250,15 +300,42 @@ function makeStudyCard(
         question: payload.question,
         answer: payload.answer,
         state: ankiCardToCardState(card, settings, nowMs),
-        rawCard: card,
+        rawCard: includeRawCard ? card : undefined,
     };
 }
 
-function toStudyCards(items: Array<{ card: AnkiCard; note: Note }>, baseSettings: AppSettings, nowMs: number): StudyCard[] {
-    const settingsCache = new Map<number, AppSettings>();
-    return items.map((item) => {
-        const cardSettings = resolveSettingsForDeck(item.card.deckId, baseSettings, settingsCache);
-        return makeStudyCard(item.card, item.note, cardSettings, nowMs);
+function toStudyCards(
+    rows: QueueCardRow[],
+    baseSettings: AppSettings,
+    nowMs: number,
+    options: { includeRawCard?: boolean; settingsCache?: Map<number, AppSettings> } = {},
+): StudyCard[] {
+    const settingsCache = options.settingsCache ?? new Map<number, AppSettings>();
+
+    return rows.map((row) => {
+        const note = JSON.parse(row.noteData) as Note;
+
+        // Parse full card blob only for learning queues (left/decode needed)
+        // or when caller explicitly needs a full raw card object.
+        const needsFullCard = options.includeRawCard
+            || row.queue === 1
+            || row.queue === 3
+            || row.type === 1
+            || row.type === 3;
+
+        let card: AnkiCard;
+        if (needsFullCard) {
+            if (row.cardData) {
+                card = JSON.parse(row.cardData) as AnkiCard;
+            } else {
+                card = getAnkiCard(row.cardId) ?? makeShallowCardFromRow(row, nowMs);
+            }
+        } else {
+            card = makeShallowCardFromRow(row, nowMs);
+        }
+
+        const cardSettings = resolveSettingsForDeck(card.deckId, baseSettings, settingsCache);
+        return makeStudyCard(card, note, cardSettings, nowMs, Boolean(options.includeRawCard));
     });
 }
 
@@ -364,6 +441,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         params.selectedTopic,
         params.selectedDeckName,
         'c.due ASC',
+        false,
     );
 
     const newRows = loadRowsByQueue(
@@ -373,14 +451,15 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         params.selectedTopic,
         params.selectedDeckName,
         'c.id ASC',
+        false,
     );
 
-    const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs);
-    const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs);
+    const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs, { settingsCache });
+    const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
     const learningCards = [...intradayLearningCards, ...interdayLearningCards];
 
-    let reviewCards = toStudyCards(reviewRows, params.settings, nowMs);
-    let newCards = toStudyCards(newRows, params.settings, nowMs);
+    let reviewCards = toStudyCards(reviewRows, params.settings, nowMs, { settingsCache });
+    let newCards = toStudyCards(newRows, params.settings, nowMs, { settingsCache });
 
     if (params.settings.newCardOrder === 'random') {
         newCards = deterministicShuffle(
@@ -429,8 +508,22 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
 
 export function getStudyCardById(cardId: number, settings: AppSettings): StudyCard | null {
     const db = getDB();
-    const row = db.getFirstSync<CardNoteRow>(
-        `SELECT c.data AS cardData, n.data AS noteData
+    const row = db.getFirstSync<QueueCardRow>(
+        `SELECT
+            c.id AS cardId,
+            c.noteId AS noteId,
+            c.deckId AS deckId,
+            c.ord AS ord,
+            c.type AS type,
+            c.queue AS queue,
+            c.due AS due,
+            c.ivl AS ivl,
+            c.factor AS factor,
+            c.reps AS reps,
+            c.lapses AS lapses,
+            c.flags AS flags,
+            c.data AS cardData,
+            n.data AS noteData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          WHERE c.id = ?`,
@@ -439,15 +532,7 @@ export function getStudyCardById(cardId: number, settings: AppSettings): StudyCa
 
     if (!row) return null;
 
-    const card = JSON.parse(row.cardData) as AnkiCard;
-    const note = JSON.parse(row.noteData) as Note;
-    const cardSettings = resolveSettingsForDeck(card.deckId, settings, new Map<number, AppSettings>());
-
-    return makeStudyCard(card, note, cardSettings, Date.now());
-}
-
-export function getAnkiCardSnapshot(cardId: number): AnkiCard | null {
-    return getAnkiCard(cardId);
+    return toStudyCards([row], settings, Date.now(), { includeRawCard: true })[0] ?? null;
 }
 
 export function undoAnswer(snapshot: AnkiCard, reviewLogId: number): void {
@@ -471,25 +556,26 @@ export function answerStudyCard(
     answerTimeMs: number,
 ): ReviewResult {
     const nowMs = Date.now();
-    const current = getStudyCardById(cardId, settings);
 
-    if (!current) {
+    const currentAnkiCard = getAnkiCard(cardId);
+    if (!currentAnkiCard) {
         throw new Error(`Card not found: ${cardId}`);
     }
 
-    const currentAnkiCard = current.rawCard;
-    if (!currentAnkiCard) {
-        throw new Error(`Anki card missing: ${cardId}`);
+    const note = getNote(currentAnkiCard.noteId);
+    if (!note) {
+        throw new Error(`Note not found for card: ${cardId}`);
     }
 
-    const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings, new Map<number, AppSettings>());
+    const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings);
+    const currentState = ankiCardToCardState(currentAnkiCard, cardSettings, nowMs);
     const deckConfig = getDeckConfig(currentAnkiCard.deckId);
 
     const scheduler = getScheduler(cardSettings.algorithm);
-    const scheduleResult = scheduler.schedule(current.state, grade, cardSettings);
+    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings);
 
     const nextState: CardState = {
-        ...current.state,
+        ...currentState,
         ...scheduleResult.stateUpdates,
     };
 
@@ -542,23 +628,29 @@ export function answerStudyCard(
         throw error;
     }
 
-    const updatedStudyCard = getStudyCardById(cardId, settings);
-    if (!updatedStudyCard) {
-        throw new Error(`Updated card not found: ${cardId}`);
-    }
+    const updatedStudyCard = makeStudyCard(updatedAnkiCard, note, cardSettings, nowMs, true);
 
     return {
         updatedCard: updatedStudyCard,
         previousAnkiCard: currentAnkiCard,
-        wasNewCard: current.state.status === 'new',
+        wasNewCard: currentState.status === 'new',
         reviewLogId,
     };
 }
 
 function restoreQueueFromType(card: AnkiCard): AnkiCard['queue'] {
     if (card.type === 0) return 0;
-    if (card.type === 1) return 1;
     if (card.type === 2) return 2;
+
+    if (card.type === 1 || card.type === 3) {
+        const today = localDayNumber(Date.now(), 4);
+        const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
+        if (looksLikeDayNumber && card.due > today) {
+            return 3;
+        }
+        return 1;
+    }
+
     return 1;
 }
 
@@ -588,7 +680,7 @@ export function getCardState(cardId: number, settings: AppSettings): CardState {
         return makeDefaultCardState(settings);
     }
 
-    const cardSettings = resolveSettingsForDeck(card.deckId, settings, new Map<number, AppSettings>());
+    const cardSettings = resolveSettingsForDeck(card.deckId, settings);
     return ankiCardToCardState(card, cardSettings, Date.now());
 }
 
@@ -597,6 +689,6 @@ export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSe
 }
 
 export function getBrowserCards(settings: AppSettings): StudyCard[] {
-    const rows = loadRowsByQueue('1 = 1', [], undefined, undefined, undefined, 'c.id ASC');
+    const rows = loadRowsByQueue('1 = 1', [], undefined, undefined, undefined, 'c.id ASC', false);
     return toStudyCards(rows, settings, Date.now());
 }

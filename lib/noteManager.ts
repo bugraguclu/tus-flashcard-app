@@ -6,6 +6,7 @@
 import type { Note, NoteType, AnkiCard, CardType, CardQueue, CardFlag } from './models';
 import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
 import { extractClozeNumbers, shouldGenerateCard } from './templates';
+import { localDayNumber } from './ankiState';
 import { getDB } from './db';
 import { TUS_CARDS, TUS_SUBJECTS } from './data';
 
@@ -47,6 +48,16 @@ export function deleteNote(id: number): void {
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
+        const cardRows = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id);
+        const cardIds = cardRows.map((row) => row.id);
+
+        if (cardIds.length > 0) {
+            const numericPlaceholders = cardIds.map(() => '?').join(', ');
+            const textPlaceholders = cardIds.map(() => '?').join(', ');
+            db.runSync(`DELETE FROM revlog WHERE cardId IN (${numericPlaceholders})`, ...cardIds);
+            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${textPlaceholders})`, ...cardIds.map(String));
+        }
+
         db.runSync('DELETE FROM anki_cards WHERE noteId = ?', id);
         db.runSync('DELETE FROM notes WHERE id = ?', id);
         db.execSync('COMMIT;');
@@ -111,14 +122,25 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
     return cards;
 }
 
+function generateUniqueCardId(): number {
+    const db = getDB();
+    let candidate = uniqueId();
+
+    while (db.getFirstSync<{ id: number }>('SELECT id FROM anki_cards WHERE id = ? LIMIT 1', candidate)) {
+        candidate += 1;
+    }
+
+    return candidate;
+}
+
 function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
-    const now = uniqueId();
+    const id = generateUniqueCardId();
     const card: AnkiCard = {
-        id: now,
+        id,
         noteId: note.id,
         deckId,
         ord,
-        mod: Math.floor(now / 1000),
+        mod: Math.floor(id / 1000),
         usn: -1,
         type: 0,     // new
         queue: 0,     // new
@@ -205,14 +227,26 @@ export function suspendCard(cardId: number): void {
     saveAnkiCard(card);
 }
 
+function restoreQueueFromType(card: AnkiCard): CardQueue {
+    if (card.type === 0) return 0;
+    if (card.type === 2) return 2;
+
+    if (card.type === 1 || card.type === 3) {
+        const today = localDayNumber(Date.now(), 4);
+        const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
+        if (looksLikeDayNumber && card.due > today) {
+            return 3;
+        }
+        return 1;
+    }
+
+    return 1;
+}
+
 export function unsuspendCard(cardId: number): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
-    // Restore queue based on type
-    if (card.type === 0) card.queue = 0;
-    else if (card.type === 1) card.queue = 1;
-    else if (card.type === 2) card.queue = 2;
-    else if (card.type === 3) card.queue = 1;
+    card.queue = restoreQueueFromType(card);
     card.mod = Math.floor(Date.now() / 1000);
     saveAnkiCard(card);
 }
@@ -255,10 +289,7 @@ export function unburyAllCards(): number {
     let count = 0;
     for (const row of buried) {
         const card: AnkiCard = JSON.parse(row.data);
-        if (card.type === 0) card.queue = 0;
-        else if (card.type === 1) card.queue = 1;
-        else if (card.type === 2) card.queue = 2;
-        else if (card.type === 3) card.queue = 1;
+        card.queue = restoreQueueFromType(card);
         saveAnkiCard(card);
         count++;
     }
@@ -516,22 +547,39 @@ export function removeTagFromNote(noteId: number, tag: string): void {
 
 export function searchNotes(query: string): Note[] {
     const q = query.trim().toLowerCase();
-    if (!q) return getAllNotes();
+    const db = getDB();
 
-    // Tag search: in-memory filtering
-    if (q.startsWith('tag:')) {
-        const tagQuery = q.slice(4);
-        return getAllNotes().filter(note =>
-            note.tags.some(t => t.toLowerCase().includes(tagQuery))
-        );
+    if (!q) {
+        const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
+        return rows.map((row) => JSON.parse(row.data) as Note);
     }
 
-    // Text search: use FTS5 index for speed
-    const db = getDB();
-    const sanitized = q.replace(/[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\s]/g, ' ').trim();
-    if (!sanitized) return getAllNotes();
+    if (q.startsWith('tag:')) {
+        const tagQuery = q.slice(4).trim();
+        if (!tagQuery) {
+            const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
+            return rows.map((row) => JSON.parse(row.data) as Note);
+        }
 
-    const searchTerms = sanitized.split(/\s+/).map(t => `"${t}"*`).filter(t => t !== '""*').join(' ');
+        const rows = db.getAllSync<{ data: string }>(
+            'SELECT data FROM notes WHERE LOWER(tags) LIKE ? ORDER BY id',
+            `%${tagQuery}%`,
+        );
+        return rows.map((row) => JSON.parse(row.data) as Note);
+    }
+
+    const sanitized = q.replace(/[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\s]/g, ' ').trim();
+    if (!sanitized) {
+        const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
+        return rows.map((row) => JSON.parse(row.data) as Note);
+    }
+
+    const searchTerms = sanitized
+        .split(/\s+/)
+        .map((term) => `"${term}"*`)
+        .filter((term) => term !== '""*')
+        .join(' ');
+
     try {
         const rows = db.getAllSync<{ noteData: string }>(
             `SELECT DISTINCT n.data AS noteData
@@ -543,13 +591,18 @@ export function searchNotes(query: string): Note[] {
             searchTerms,
         );
 
-        if (rows.length === 0) return [];
         return rows.map((row) => JSON.parse(row.noteData) as Note);
     } catch {
-        // Fallback: simple text search if FTS5 fails
-        return getAllNotes().filter(note =>
-            note.fields.some(f => f.toLowerCase().includes(q)) ||
-            note.tags.some(t => t.toLowerCase().includes(q))
+        const like = `%${q}%`;
+        const rows = db.getAllSync<{ data: string }>(
+            `SELECT data FROM notes
+             WHERE LOWER(sfld) LIKE ? OR LOWER(data) LIKE ? OR LOWER(tags) LIKE ?
+             ORDER BY id`,
+            like,
+            like,
+            like,
         );
+
+        return rows.map((row) => JSON.parse(row.data) as Note);
     }
 }

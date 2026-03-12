@@ -1,13 +1,19 @@
 // ============================================================
-// TUS Flashcard - Storage Layer (AsyncStorage)
+// TUS Flashcard - Storage Layer
+// Canonical source: SQLite (Anki tables + deck config)
+// AsyncStorage is used only for session stats + legacy import/migration.
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, AppSettings, AlgorithmType } from './types';
 import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
-import { dbSaveAllCardStates, dbGetSchemaVersion } from './db';
+import { dbGetSchemaVersion } from './db';
 import { getDeckConfig, saveDeckConfig } from './deckManager';
+import {
+    migrateLegacyCardStatesToAnki,
+    migrateLegacyCustomCardsToAnki,
+} from './legacyMigration';
 
 const KEYS = {
     CARD_STATES: 'tus_card_states_v2',
@@ -15,6 +21,14 @@ const KEYS = {
     SESSION_STATS: 'tus_stats_v2',
     SETTINGS: 'tus_settings_v2',
 };
+
+const DB_SETTINGS_KEYS = {
+    APP_SETTINGS_META: 'tus_app_settings_meta_v1',
+    LEGACY_SETTINGS_MIGRATED: 'tus_legacy_settings_migrated_v1',
+};
+
+// Legacy per-card state keys used by old builds.
+const CARD_STATE_PREFIX = 'tus_cs:';
 
 export const DEFAULT_SETTINGS: AppSettings = {
     dailyNewLimit: 20,
@@ -36,53 +50,42 @@ export const DEFAULT_SETTINGS: AppSettings = {
     desiredRetention: 0.9,
 };
 
-// --- Card States ---
-export async function loadCardStates(): Promise<Record<string, CardState>> {
+function getDbSetting(key: string): string | null {
     try {
-        const data = await AsyncStorage.getItem(KEYS.CARD_STATES);
-        return data ? JSON.parse(data) : {};
+        const { getDB } = require('./db');
+        const db = getDB();
+        const row = db.getFirstSync('SELECT value FROM settings WHERE key = ?', key) as { value?: string } | null;
+        return typeof row?.value === 'string' ? row.value : null;
     } catch {
-        return {};
+        return null;
     }
 }
 
-export async function saveCardStates(states: Record<string, CardState>): Promise<void> {
+function setDbSetting(key: string, value: string): void {
     try {
-        await AsyncStorage.setItem(KEYS.CARD_STATES, JSON.stringify(states));
-    } catch (e) {
-        console.error('Card states kayıt hatası:', e);
+        const { getDB } = require('./db');
+        const db = getDB();
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
+    } catch {
+        // DB may not be initialized yet.
     }
 }
 
-// QW5: Per-card incremental persistence — tek kart kaydet (blob yok)
-const CARD_STATE_PREFIX = 'tus_cs:';
-
-export async function saveCardState(id: number, state: CardState): Promise<void> {
-    try {
-        await AsyncStorage.setItem(`${CARD_STATE_PREFIX}${id}`, JSON.stringify(state));
-    } catch (e) {
-        console.error(`Card state ${id} kayıt hatası:`, e);
-    }
-}
-
-// Hibrit load: önce blob, sonra per-card key'ler ile birleştir
-export async function loadAllCardStates(): Promise<Record<string, CardState>> {
+// --- Legacy Card States (AsyncStorage migration source only) ---
+export async function loadCardStates(): Promise<Record<string, CardState>> {
     try {
         const allKeys = await AsyncStorage.getAllKeys();
         const perCardKeys = allKeys.filter((k: string) => k.startsWith(CARD_STATE_PREFIX));
 
-        // Legacy blob snapshot.
         const blobData = await AsyncStorage.getItem(KEYS.CARD_STATES);
         const states: Record<string, CardState> = blobData ? JSON.parse(blobData) : {};
 
-        // Per-card values override the blob because they are newer.
         if (perCardKeys.length > 0) {
             const pairs = await AsyncStorage.multiGet(perCardKeys);
             for (const [key, value] of pairs) {
-                if (value) {
-                    const id = key.replace(CARD_STATE_PREFIX, '');
-                    states[id] = JSON.parse(value);
-                }
+                if (!value) continue;
+                const id = key.replace(CARD_STATE_PREFIX, '');
+                states[id] = JSON.parse(value);
             }
         }
 
@@ -101,7 +104,32 @@ export async function clearLegacyCardStates(): Promise<void> {
     }
 }
 
-// --- Custom Cards ---
+// --- Legacy Settings (AsyncStorage -> SQLite one-shot migration) ---
+export async function migrateLegacySettingsIfNeeded(): Promise<{ migrated: boolean }> {
+    if (getDbSetting(DB_SETTINGS_KEYS.LEGACY_SETTINGS_MIGRATED) === 'true') {
+        return { migrated: false };
+    }
+
+    let migrated = false;
+
+    try {
+        const legacyRaw = await AsyncStorage.getItem(KEYS.SETTINGS);
+        if (legacyRaw) {
+            const parsed = validateSettings(JSON.parse(legacyRaw) as Record<string, unknown>);
+            await saveSettings(parsed);
+            migrated = true;
+        }
+    } catch (error) {
+        console.warn('[Storage] Legacy settings migration failed:', error);
+    }
+
+    await AsyncStorage.removeItem(KEYS.SETTINGS);
+    setDbSetting(DB_SETTINGS_KEYS.LEGACY_SETTINGS_MIGRATED, 'true');
+
+    return { migrated };
+}
+
+// --- Legacy Custom Cards (AsyncStorage migration source only) ---
 export async function loadCustomCards(): Promise<Card[]> {
     try {
         const data = await AsyncStorage.getItem(KEYS.CUSTOM_CARDS);
@@ -119,7 +147,7 @@ export async function saveCustomCards(cards: Card[]): Promise<void> {
     }
 }
 
-// --- Session Stats ---
+// --- Session Stats (still AsyncStorage) ---
 export async function loadSessionStats(): Promise<SessionStats> {
     try {
         const data = await AsyncStorage.getItem(KEYS.SESSION_STATS);
@@ -128,7 +156,10 @@ export async function loadSessionStats(): Promise<SessionStats> {
             const today = todayLocalYMD();
             if (parsed.date === today) return parsed;
         }
-    } catch { }
+    } catch {
+        // ignore
+    }
+
     return { reviewed: 0, correct: 0, wrong: 0, startTime: Date.now(), newCardsToday: 0 };
 }
 
@@ -193,25 +224,51 @@ function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
     }
 }
 
-// --- Settings ---
-export async function loadSettings(): Promise<AppSettings> {
+function loadAppSettingsMeta(): Partial<AppSettings> {
     try {
-        const data = await AsyncStorage.getItem(KEYS.SETTINGS);
-        if (data) {
-            const parsed = { ...DEFAULT_SETTINGS, ...JSON.parse(data) } as AppSettings;
-            return hydrateSettingsFromDeckConfig(parsed);
-        }
-    } catch {
-        // ignore and fallback to defaults
-    }
+        const raw = getDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META);
+        if (!raw) return {};
 
-    return hydrateSettingsFromDeckConfig({ ...DEFAULT_SETTINGS });
+        const parsed = JSON.parse(raw) as Partial<AppSettings>;
+
+        return {
+            queueOrder: parsed.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new',
+            dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
+            algorithm: 'ANKI_V3',
+        };
+    } catch {
+        return {};
+    }
+}
+
+function persistAppSettingsMeta(settings: AppSettings): void {
+    const meta = {
+        queueOrder: settings.queueOrder,
+        dayRolloverHour: settings.dayRolloverHour,
+        algorithm: settings.algorithm,
+    };
+
+    setDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META, JSON.stringify(meta));
+}
+
+// --- Settings (source of truth: SQLite deck config + SQLite settings metadata) ---
+export async function loadSettings(): Promise<AppSettings> {
+    const fromDeck = hydrateSettingsFromDeckConfig({ ...DEFAULT_SETTINGS });
+    const meta = loadAppSettingsMeta();
+
+    return {
+        ...fromDeck,
+        queueOrder: meta.queueOrder ?? fromDeck.queueOrder,
+        dayRolloverHour: meta.dayRolloverHour ?? fromDeck.dayRolloverHour,
+        algorithm: meta.algorithm ?? fromDeck.algorithm,
+    };
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
     try {
-        await AsyncStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
-        syncDefaultDeckConfig(settings);
+        const validated = validateSettings(settings as unknown as Record<string, unknown>);
+        syncDefaultDeckConfig(validated);
+        persistAppSettingsMeta(validated);
     } catch (e) {
         console.error('Settings kayıt hatası:', e);
     }
@@ -220,7 +277,7 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 // --- Reset ---
 export async function resetAllData(): Promise<void> {
     await Promise.all([
-        AsyncStorage.removeItem(KEYS.CARD_STATES),
+        clearLegacyCardStates(),
         AsyncStorage.removeItem(KEYS.SESSION_STATS),
         AsyncStorage.removeItem(KEYS.CUSTOM_CARDS),
         AsyncStorage.removeItem(KEYS.SETTINGS),
@@ -242,7 +299,6 @@ export async function resetAllData(): Promise<void> {
             DELETE FROM deck_configs;
             DELETE FROM note_types;
             DELETE FROM graves;
-            DELETE FROM card_states;
             DELETE FROM cards_fts;
             DELETE FROM session_stats;
             DELETE FROM settings;
@@ -250,13 +306,14 @@ export async function resetAllData(): Promise<void> {
         `);
 
         initAnkiData();
+        await saveSettings({ ...DEFAULT_SETTINGS });
         dbIndexAllCards(getSearchIndexCards());
     } catch {
         /* Database may not be initialized yet. */
     }
 }
 
-// --- Export All (canonical SQLite model) ---
+// --- Export / Import ---
 const MAX_IMPORT_SIZE = 50 * 1024 * 1024; // 50 MB limit
 
 /** Sanitize imported object to prevent prototype pollution */
@@ -281,8 +338,8 @@ function sanitizeStepArray(value: unknown, fallback: number[]): number[] {
     return clean.length > 0 ? clean : fallback;
 }
 
-function validateSettings(settings: Record<string, unknown>): Record<string, unknown> {
-    const validated = { ...DEFAULT_SETTINGS, ...settings };
+function validateSettings(settings: Record<string, unknown>): AppSettings {
+    const validated = { ...DEFAULT_SETTINGS, ...settings } as AppSettings;
     validated.dailyNewLimit = Math.max(0, Math.min(9999, Number(validated.dailyNewLimit) || 20));
     validated.dailyReviewLimit = Math.max(0, Math.min(9999, Number(validated.dailyReviewLimit) || 200));
     validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
@@ -299,7 +356,7 @@ function validateSettings(settings: Record<string, unknown>): Record<string, unk
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
     validated.queueOrder = validated.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new';
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
-    validated.algorithm = 'ANKI_V3' as AlgorithmType;
+    validated.algorithm = 'ANKI_V3';
     return validated;
 }
 
@@ -488,13 +545,11 @@ export async function importAllData(jsonString: string): Promise<boolean> {
 
         if (data.settings) {
             data.settings = validateSettings(data.settings);
+            await saveSettings(data.settings);
         }
 
-        const pairs: [string, string][] = [];
-        if (data.settings) pairs.push([KEYS.SETTINGS, JSON.stringify(data.settings)]);
-        if (data.sessionStats) pairs.push([KEYS.SESSION_STATS, JSON.stringify(data.sessionStats)]);
-        if (pairs.length > 0) {
-            await AsyncStorage.multiSet(pairs);
+        if (data.sessionStats) {
+            await AsyncStorage.setItem(KEYS.SESSION_STATS, JSON.stringify(data.sessionStats));
         }
 
         if (isCanonicalImport(data)) {
@@ -515,20 +570,17 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             return false;
         }
 
-        const legacyPairs: [string, string][] = [];
-        if (data.cardStates) legacyPairs.push([KEYS.CARD_STATES, JSON.stringify(data.cardStates)]);
-        if (data.customCards) legacyPairs.push([KEYS.CUSTOM_CARDS, JSON.stringify(data.customCards)]);
-        if (legacyPairs.length > 0) {
-            await AsyncStorage.multiSet(legacyPairs);
+        if (data.customCards) {
+            migrateLegacyCustomCardsToAnki(data.customCards as Card[], { force: true });
         }
 
         if (data.cardStates) {
-            try {
-                dbSaveAllCardStates(data.cardStates);
-            } catch (error) {
-                console.warn('Import: SQLite sync hatası (legacy fallback):', error);
-            }
+            const settings = await loadSettings();
+            migrateLegacyCardStatesToAnki(data.cardStates as Record<string, CardState>, settings, { force: true });
         }
+
+        await clearLegacyCardStates();
+        await saveCustomCards([]);
 
         return true;
     } catch (error) {

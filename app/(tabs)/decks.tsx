@@ -19,9 +19,11 @@ import {
     type DeckTreeNode,
 } from '../../lib/deckManager';
 import { getDeckDisplayName } from '../../lib/models';
+import { useApp } from './_layout';
 
 export default function DecksScreen() {
     const router = useRouter();
+    const { settings } = useApp();
     const [expandedDecks, setExpandedDecks] = useState<Set<string>>(new Set(['TUS']));
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [newDeckName, setNewDeckName] = useState('');
@@ -29,9 +31,9 @@ export default function DecksScreen() {
 
     const deckTree = useMemo(() => {
         const decks = getAllDecks();
-        const counts = getCardCountsByDeck();
+        const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour);
         return buildDeckTree(decks, counts);
-    }, [refreshToken]);
+    }, [refreshToken, settings.dayRolloverHour]);
 
     const refresh = useCallback(() => {
         setRefreshToken((value) => value + 1);

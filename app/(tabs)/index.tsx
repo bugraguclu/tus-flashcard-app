@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, FontSize, Shadows } from '../../constants/theme';
@@ -17,7 +17,6 @@ import { getDeck } from '../../lib/deckManager';
 import CardWebView from '../../components/CardWebView';
 import {
     answerStudyCard,
-    getAnkiCardSnapshot,
     getStudyQueue,
     setCardBuried,
     setCardSuspended,
@@ -57,13 +56,18 @@ export default function StudyScreen() {
     const [queueStats, setQueueStats] = useState<QueueStats>({ newCount: 0, learningCount: 0, reviewCount: 0 });
     const [answerStartedAt, setAnswerStartedAt] = useState<number>(Date.now());
 
-    const buildQueue = useCallback(() => {
+    const sessionStatsRef = useRef(sessionStats);
+    useEffect(() => {
+        sessionStatsRef.current = sessionStats;
+    }, [sessionStats]);
+
+    const buildQueue = useCallback((newCardsStudiedToday?: number) => {
         const result = getStudyQueue({
             settings,
             selectedSubject,
             selectedTopic,
             selectedDeckName,
-            newCardsStudiedToday: sessionStats.newCardsToday || 0,
+            newCardsStudiedToday: newCardsStudiedToday ?? sessionStatsRef.current.newCardsToday ?? 0,
         });
 
         setQueue(result.cards);
@@ -72,7 +76,7 @@ export default function StudyScreen() {
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
         setShowingAnswer(false);
-    }, [settings, selectedSubject, selectedTopic, selectedDeckName, sessionStats.newCardsToday]);
+    }, [settings, selectedSubject, selectedTopic, selectedDeckName]);
 
     useEffect(() => {
         async function load() {
@@ -129,9 +133,6 @@ export default function StudyScreen() {
     const answerCard = useCallback(async (grade: Grade) => {
         if (!currentCard) return;
 
-        const snapshot = getAnkiCardSnapshot(currentCard.cardId);
-        if (!snapshot) return;
-
         const elapsed = Math.max(0, Date.now() - answerStartedAt);
         const result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);
 
@@ -148,14 +149,14 @@ export default function StudyScreen() {
             {
                 cardId: currentCard.cardId,
                 reviewLogId: result.reviewLogId,
-                previousSnapshot: snapshot,
+                previousSnapshot: result.previousAnkiCard,
                 previousStats: sessionStats,
             },
         ]);
 
         setSessionStats(nextStats);
         await saveSessionStats(nextStats);
-        buildQueue();
+        buildQueue(nextStats.newCardsToday);
     }, [currentCard, answerStartedAt, settings, sessionStats, buildQueue]);
 
     const undoLast = useCallback(async () => {
@@ -168,7 +169,7 @@ export default function StudyScreen() {
 
         setSessionStats(undo.previousStats);
         await saveSessionStats(undo.previousStats);
-        buildQueue();
+        buildQueue(undo.previousStats.newCardsToday);
     }, [undoStack, buildQueue]);
 
     const handleSuspend = useCallback(() => {
@@ -182,6 +183,46 @@ export default function StudyScreen() {
         setCardBuried(currentCard.cardId, true);
         buildQueue();
     }, [currentCard, buildQueue]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const isEditableTarget = (target: EventTarget | null): boolean => {
+            if (!(target instanceof HTMLElement)) return false;
+            const tag = target.tagName.toLowerCase();
+            return tag === 'input' || tag === 'textarea' || target.isContentEditable;
+        };
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (isEditableTarget(event.target)) return;
+
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+                event.preventDefault();
+                void undoLast();
+                return;
+            }
+
+            if (!currentCard) return;
+
+            if (event.code === 'Space') {
+                if (!showingAnswer) {
+                    event.preventDefault();
+                    setShowingAnswer(true);
+                }
+                return;
+            }
+
+            if (!showingAnswer) return;
+
+            if (event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4') {
+                event.preventDefault();
+                void answerCard(Number(event.key) as Grade);
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [answerCard, currentCard, showingAnswer, undoLast]);
 
     const getPreview = useCallback(() => {
         if (!currentCard) return null;
