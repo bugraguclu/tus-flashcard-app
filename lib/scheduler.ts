@@ -9,6 +9,7 @@ import type {
 } from './types';
 
 const HOUR_MS = 3600000;
+const DAY_MS = 86400000;
 
 function toRolloverShiftedDate(input: Date, rolloverHour: number): Date {
     return new Date(input.getTime() - rolloverHour * HOUR_MS);
@@ -31,7 +32,6 @@ function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: number = 4
     const dd = String(shifted.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
-
 
 function getToday(rolloverHour: number = 4): string {
     return todayLocalYMD(undefined, rolloverHour);
@@ -62,18 +62,27 @@ function hashSeed(text: string): number {
     return Math.abs(h);
 }
 
-function applyFuzz(interval: number, seedHint: number = 0, rolloverHour: number = 4): number {
-    if (interval <= 2) return interval;
+function fuzzRangeForInterval(interval: number): number {
+    if (interval < 2.5) return 0;
+    if (interval < 7) return 1;
+    if (interval < 30) return Math.max(2, Math.round(interval * 0.15));
+    return Math.max(4, Math.round(interval * 0.05));
+}
 
-    const fuzzRange = interval < 7
-        ? 1
-        : interval < 30
-            ? Math.max(2, Math.round(interval * 0.15))
-            : Math.max(3, Math.round(interval * 0.05));
+function applyFuzz(
+    interval: number,
+    cardId: number | undefined,
+    nowMs: number,
+    rolloverHour: number = 4,
+): number {
+    const rounded = Math.max(1, Math.round(interval));
+    const fuzzRange = fuzzRangeForInterval(interval);
+    if (fuzzRange <= 0) return rounded;
 
-    const seed = hashSeed(`${todayLocalYMD(undefined, rolloverHour)}-${interval}-${seedHint}`);
+    // Deterministic Anki-like fuzz seed: study-day + card id.
+    const seed = hashSeed(`${todayLocalYMD(new Date(nowMs), rolloverHour)}-${cardId ?? 0}`);
     const delta = (seed % (2 * fuzzRange + 1)) - fuzzRange;
-    return Math.max(1, interval + delta);
+    return Math.max(1, rounded + delta);
 }
 
 function clampInterval(interval: number, settings: AppSettings): number {
@@ -84,7 +93,8 @@ function computeReviewIntervals(cs: CardState, settings: AppSettings): { hard: n
     const cur = Math.max(1, cs.interval || 1);
     const ef = cs.easeFactor || settings.startingEase;
 
-    const hardBase = Math.max(cur + 1, Math.round(cur * settings.hardIntervalMultiplier * settings.intervalModifier));
+    // Anki hard interval path does not use global interval modifier.
+    const hardBase = Math.max(cur + 1, Math.round(cur * settings.hardIntervalMultiplier));
     const goodBase = Math.max(hardBase + 1, Math.round(cur * ef * settings.intervalModifier));
     const easyBase = Math.max(goodBase + 1, Math.round(cur * ef * settings.easyBonus * settings.intervalModifier));
 
@@ -93,6 +103,29 @@ function computeReviewIntervals(cs: CardState, settings: AppSettings): { hard: n
         good: clampInterval(goodBase, settings),
         easy: clampInterval(easyBase, settings),
     };
+}
+
+function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): number {
+    const relearnGood = clampInterval(Math.max(1, cs.interval || 1), settings);
+    return clampInterval(
+        Math.max(
+            relearnGood + 1,
+            Math.round(relearnGood * settings.easyBonus * settings.intervalModifier),
+        ),
+        settings,
+    );
+}
+
+function computeElapsedDays(lastReviewedAtMs: number, nowMs: number, rolloverHour: number): number {
+    if (!lastReviewedAtMs || lastReviewedAtMs <= 0) return 0;
+
+    const nowDay = toRolloverShiftedDate(new Date(nowMs), rolloverHour);
+    const prevDay = toRolloverShiftedDate(new Date(lastReviewedAtMs), rolloverHour);
+
+    nowDay.setHours(0, 0, 0, 0);
+    prevDay.setHours(0, 0, 0, 0);
+
+    return Math.max(0, Math.round((nowDay.getTime() - prevDay.getTime()) / DAY_MS));
 }
 
 const AnkiV3Engine: SchedulerEngine = {
@@ -110,14 +143,15 @@ const AnkiV3Engine: SchedulerEngine = {
         lastReviewedAtMs: 0,
     }),
 
-    schedule: (cs: CardState, grade: Grade, settings: AppSettings): ScheduleResult => {
-        const now = Date.now();
+    schedule: (cs: CardState, grade: Grade, settings: AppSettings, nowMs?: number): ScheduleResult => {
+        const now = typeof nowMs === 'number' ? nowMs : Date.now();
+        const elapsedDays = computeElapsedDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
 
-        if (isRelearning) return ankiV3Relearning(cs, grade, settings, now);
-        if (isLearning) return ankiV3Learning(cs, grade, settings, now);
-        return ankiV3Review(cs, grade, settings, now);
+        if (isRelearning) return ankiV3Relearning(cs, grade, settings, now, elapsedDays);
+        if (isLearning) return ankiV3Learning(cs, grade, settings, now, elapsedDays);
+        return ankiV3Review(cs, grade, settings, now, elapsedDays);
     },
 
     previewIntervals: (cs: CardState, settings: AppSettings): IntervalPreview => {
@@ -148,12 +182,13 @@ const AnkiV3Engine: SchedulerEngine = {
             const nextMin = lapseSteps[step + 1] ?? null;
             const hardMin = nextMin !== null ? Math.round((curMin + nextMin) / 2) : Math.round(curMin * 1.5);
             const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
+            const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
 
             return {
                 again: formatMinutes(lapseSteps[0] || 1),
                 hard: formatMinutes(hardMin),
                 good: nextMin !== null ? formatMinutes(nextMin) : `${relearnInterval} gün`,
-                easy: `${relearnInterval} gün`,
+                easy: `${relearnEasyInterval} gün`,
                 againMinutes: lapseSteps[0] || 1,
                 hardMinutes: hardMin,
             };
@@ -170,7 +205,13 @@ const AnkiV3Engine: SchedulerEngine = {
     },
 };
 
-function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now: number): ScheduleResult {
+function ankiV3Learning(
+    cs: CardState,
+    grade: Grade,
+    settings: AppSettings,
+    now: number,
+    elapsedDays: number,
+): ScheduleResult {
     const steps = settings.learningSteps;
     const step = cs.learningStep || 0;
     const curMin = steps[step] || 1;
@@ -181,7 +222,13 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
             interval: 0,
             isLearning: true,
             minutesUntilDue: steps[0] || 1,
-            stateUpdates: { learningStep: 0, relearningStep: -1, status: 'learning', lastReviewedAtMs: now },
+            stateUpdates: {
+                learningStep: 0,
+                relearningStep: -1,
+                status: 'learning',
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
         };
     }
 
@@ -191,7 +238,13 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
             interval: 0,
             isLearning: true,
             minutesUntilDue: delayMin,
-            stateUpdates: { learningStep: step, relearningStep: -1, status: 'learning', lastReviewedAtMs: now },
+            stateUpdates: {
+                learningStep: step,
+                relearningStep: -1,
+                status: 'learning',
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
         };
     }
 
@@ -201,7 +254,13 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
                 interval: 0,
                 isLearning: true,
                 minutesUntilDue: nextMin,
-                stateUpdates: { learningStep: step + 1, relearningStep: -1, status: 'learning', lastReviewedAtMs: now },
+                stateUpdates: {
+                    learningStep: step + 1,
+                    relearningStep: -1,
+                    status: 'learning',
+                    lastReviewedAtMs: now,
+                    elapsedDays,
+                },
             };
         }
 
@@ -216,6 +275,7 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
                 interval: gradInterval,
                 repetition: (cs.repetition || 0) + 1,
                 lastReviewedAtMs: now,
+                elapsedDays,
             },
         };
     }
@@ -232,11 +292,18 @@ function ankiV3Learning(cs: CardState, grade: Grade, settings: AppSettings, now:
             easeFactor: Math.max(1.3, (cs.easeFactor || settings.startingEase) + 0.15),
             repetition: (cs.repetition || 0) + 1,
             lastReviewedAtMs: now,
+            elapsedDays,
         },
     };
 }
 
-function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, now: number): ScheduleResult {
+function ankiV3Relearning(
+    cs: CardState,
+    grade: Grade,
+    settings: AppSettings,
+    now: number,
+    elapsedDays: number,
+): ScheduleResult {
     const steps = settings.lapseSteps;
     const step = cs.relearningStep;
     const curMin = steps[step] || steps[0] || 1;
@@ -247,7 +314,13 @@ function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, no
             interval: 0,
             isLearning: true,
             minutesUntilDue: steps[0] || 1,
-            stateUpdates: { relearningStep: 0, learningStep: -1, status: 'learning', lastReviewedAtMs: now },
+            stateUpdates: {
+                relearningStep: 0,
+                learningStep: -1,
+                status: 'learning',
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
         };
     }
 
@@ -257,7 +330,13 @@ function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, no
             interval: 0,
             isLearning: true,
             minutesUntilDue: delayMin,
-            stateUpdates: { relearningStep: step, learningStep: -1, status: 'learning', lastReviewedAtMs: now },
+            stateUpdates: {
+                relearningStep: step,
+                learningStep: -1,
+                status: 'learning',
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
         };
     }
 
@@ -267,7 +346,13 @@ function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, no
                 interval: 0,
                 isLearning: true,
                 minutesUntilDue: nextMin,
-                stateUpdates: { relearningStep: step + 1, learningStep: -1, status: 'learning', lastReviewedAtMs: now },
+                stateUpdates: {
+                    relearningStep: step + 1,
+                    learningStep: -1,
+                    status: 'learning',
+                    lastReviewedAtMs: now,
+                    elapsedDays,
+                },
             };
         }
 
@@ -281,25 +366,34 @@ function ankiV3Relearning(cs: CardState, grade: Grade, settings: AppSettings, no
                 status: 'review',
                 interval: relearnInterval,
                 lastReviewedAtMs: now,
+                elapsedDays,
             },
         };
     }
 
-    const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
+    const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
     return {
-        interval: relearnInterval,
+        interval: relearnEasyInterval,
         isLearning: false,
         stateUpdates: {
             relearningStep: -1,
             learningStep: -1,
             status: 'review',
-            interval: relearnInterval,
+            interval: relearnEasyInterval,
+            easeFactor: Math.max(1.3, (cs.easeFactor || settings.startingEase) + 0.15),
             lastReviewedAtMs: now,
+            elapsedDays,
         },
     };
 }
 
-function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: number): ScheduleResult {
+function ankiV3Review(
+    cs: CardState,
+    grade: Grade,
+    settings: AppSettings,
+    now: number,
+    elapsedDays: number,
+): ScheduleResult {
     const ef = cs.easeFactor || settings.startingEase;
     const cur = Math.max(1, cs.interval || 1);
     const lapseSteps = settings.lapseSteps;
@@ -320,6 +414,7 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
                 lapses: (cs.lapses || 0) + 1,
                 status: 'learning',
                 lastReviewedAtMs: now,
+                elapsedDays,
             },
         };
     }
@@ -328,7 +423,10 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
 
     if (grade === 2) {
         const newEase = Math.max(1.3, ef - 0.15);
-        const iHard = clampInterval(applyFuzz(preview.hard, cs.repetition || 0, settings.dayRolloverHour), settings);
+        const iHard = clampInterval(
+            applyFuzz(preview.hard, cs.cardId, now, settings.dayRolloverHour),
+            settings,
+        );
 
         return {
             interval: iHard,
@@ -341,12 +439,16 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
                 repetition: (cs.repetition || 0) + 1,
                 status: 'review',
                 lastReviewedAtMs: now,
+                elapsedDays,
             },
         };
     }
 
     if (grade === 3) {
-        const iGood = clampInterval(applyFuzz(preview.good, cs.repetition || 0, settings.dayRolloverHour), settings);
+        const iGood = clampInterval(
+            applyFuzz(preview.good, cs.cardId, now, settings.dayRolloverHour),
+            settings,
+        );
 
         return {
             interval: iGood,
@@ -359,11 +461,15 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
                 repetition: (cs.repetition || 0) + 1,
                 status: 'review',
                 lastReviewedAtMs: now,
+                elapsedDays,
             },
         };
     }
 
-    const iEasy = clampInterval(applyFuzz(preview.easy, cs.repetition || 0, settings.dayRolloverHour), settings);
+    const iEasy = clampInterval(
+        applyFuzz(preview.easy, cs.cardId, now, settings.dayRolloverHour),
+        settings,
+    );
     const newEase = Math.max(1.3, ef + 0.15);
 
     return {
@@ -377,6 +483,7 @@ function ankiV3Review(cs: CardState, grade: Grade, settings: AppSettings, now: n
             repetition: (cs.repetition || 0) + 1,
             status: 'review',
             lastReviewedAtMs: now,
+            elapsedDays,
         },
     };
 }

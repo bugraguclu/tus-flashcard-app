@@ -5,6 +5,8 @@ import {
     ankiCardToCardState,
     cardStateToAnkiCard,
     dayNumberToYmd,
+    decodeAnkiLeft,
+    encodeAnkiLeft,
     localDayNumber,
     ymdToLocalDayNumber,
 } from './ankiState';
@@ -66,13 +68,54 @@ describe('ankiState edge cases', () => {
         expect(state.relearningStep).toBe(-1);
     });
 
-    it('falls back to legacy left encoding when needed', () => {
-        // Legacy app encoding was total*1000 + today.
-        const now = Date.now();
-        const card = makeCard({ left: 3002, queue: 1, type: 1, due: now + 60_000 });
-        const state = ankiCardToCardState(card, settings, now);
+    it('supports explicit legacy left fallback only when gated', () => {
+        expect(decodeAnkiLeft(3000)).toEqual({
+            remainingTotal: 0,
+            remainingToday: 0,
+            usedLegacyFallback: false,
+        });
 
-        expect(state.learningStep).toBe(0);
+        expect(decodeAnkiLeft(3000, { allowLegacyFallback: true })).toEqual({
+            remainingTotal: 3,
+            remainingToday: 0,
+            usedLegacyFallback: true,
+        });
+    });
+
+    it('left encode/decode round-trips with Anki format', () => {
+        const encoded = encodeAnkiLeft(3, 2);
+        expect(encoded).toBe(2003);
+
+        const decoded = decodeAnkiLeft(encoded);
+        expect(decoded.remainingTotal).toBe(3);
+        expect(decoded.remainingToday).toBe(2);
+    });
+
+    it('keeps CardState <-> AnkiCard round-trip stable for review cards', () => {
+        const now = new Date(2026, 2, 12, 10, 0, 0, 0).getTime();
+        const dueDay = localDayNumber(now, settings.dayRolloverHour) + 5;
+
+        const card = makeCard({
+            id: 5000,
+            type: 2,
+            queue: 2,
+            due: dueDay,
+            ivl: 12,
+            reps: 8,
+            left: 0,
+            lastReview: now - 2 * 86400000,
+        });
+
+        const state = ankiCardToCardState(card, settings, now);
+        const roundTrip = cardStateToAnkiCard(card, state, settings, now);
+
+        expect(state.cardId).toBe(card.id);
+        expect(roundTrip.id).toBe(card.id);
+        expect(roundTrip.queue).toBe(2);
+        expect(roundTrip.type).toBe(2);
+        expect(roundTrip.due).toBe(card.due);
+        expect(roundTrip.ivl).toBe(card.ivl);
+        expect(roundTrip.reps).toBe(card.reps);
     });
 
     it('keeps day-number conversion consistent around rollover', () => {

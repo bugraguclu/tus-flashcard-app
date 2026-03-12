@@ -19,16 +19,14 @@ export default function SettingsScreen() {
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        loadSettings().then((value) => {
-            setSettings(value);
-            setLoading(false);
-        });
+        setSettings(loadSettings());
+        setLoading(false);
     }, []);
 
     const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
         const updated = { ...settings, [key]: value };
         setSettings(updated);
-        await saveSettings(updated);
+        saveSettings(updated);
         setSaved(true);
         setTimeout(() => setSaved(false), 1500);
     };
@@ -63,7 +61,7 @@ export default function SettingsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         await resetAllData();
-                        await saveSettings(DEFAULT_SETTINGS);
+                        saveSettings(DEFAULT_SETTINGS);
                         setSettings(DEFAULT_SETTINGS);
                         Alert.alert('✅ Sıfırlandı', 'Tüm ilerleme temizlendi.');
                     },

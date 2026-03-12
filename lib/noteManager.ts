@@ -7,7 +7,7 @@ import type { Note, NoteType, AnkiCard, CardFlag } from './models';
 import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
 import { extractClozeNumbers, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
-import { getDB } from './db';
+import { buildFtsPrefixQuery, getDB } from './db';
 import { TUS_CARDS, TUS_SUBJECTS } from './data';
 
 const SUBJECT_TAGS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
@@ -122,15 +122,27 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
     return cards;
 }
 
+const MAX_CARD_ID_ATTEMPTS = 512;
+
 function generateUniqueCardId(): number {
     const db = getDB();
     let candidate = uniqueId();
 
-    while (db.getFirstSync<{ id: number }>('SELECT id FROM anki_cards WHERE id = ? LIMIT 1', candidate)) {
+    for (let attempt = 0; attempt < MAX_CARD_ID_ATTEMPTS; attempt++) {
+        const exists = db.getFirstSync<{ id: number }>(
+            'SELECT id FROM anki_cards WHERE id = ? LIMIT 1',
+            candidate,
+        );
+
+        if (!exists) {
+            return candidate;
+        }
+
         candidate += 1;
     }
 
-    return candidate;
+    console.error(`[NoteManager] Failed to generate unique card id after ${MAX_CARD_ID_ATTEMPTS} attempts.`);
+    throw new Error('Unable to generate a unique card id. Please retry.');
 }
 
 function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
@@ -196,11 +208,78 @@ export function getCardsForDeck(deckId: number): AnkiCard[] {
 
 export function saveAnkiCard(card: AnkiCard): void {
     const db = getDB();
+    const nowMs = Date.now();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = ?', card.id);
+
+    let serializedData = JSON.stringify(card);
+    let dataChanged = true;
+
+    if (existing?.data) {
+        try {
+            const existingParsed = JSON.parse(existing.data) as Record<string, unknown>;
+            serializedData = JSON.stringify({ ...existingParsed, ...card });
+            dataChanged = serializedData !== existing.data;
+        } catch {
+            serializedData = JSON.stringify(card);
+            dataChanged = true;
+        }
+    }
+
+    if (!existing) {
+        db.runSync(
+            `INSERT INTO anki_cards
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            card.id,
+            card.noteId,
+            card.deckId,
+            card.ord,
+            card.type,
+            card.queue,
+            card.due,
+            card.ivl,
+            card.factor,
+            card.reps,
+            card.lapses,
+            card.flags,
+            serializedData,
+            nowMs,
+            card.usn ?? -1,
+            0,
+        );
+        return;
+    }
+
+    if (dataChanged) {
+        db.runSync(
+            `UPDATE anki_cards
+             SET noteId = ?, deckId = ?, ord = ?, type = ?, queue = ?, due = ?, ivl = ?, factor = ?,
+                 reps = ?, lapses = ?, flags = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0
+             WHERE id = ?`,
+            card.noteId,
+            card.deckId,
+            card.ord,
+            card.type,
+            card.queue,
+            card.due,
+            card.ivl,
+            card.factor,
+            card.reps,
+            card.lapses,
+            card.flags,
+            serializedData,
+            nowMs,
+            card.usn ?? -1,
+            card.id,
+        );
+        return;
+    }
+
     db.runSync(
-        `INSERT OR REPLACE INTO anki_cards
-         (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data, updated_at, usn, tombstone)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        card.id,
+        `UPDATE anki_cards
+         SET noteId = ?, deckId = ?, ord = ?, type = ?, queue = ?, due = ?, ivl = ?, factor = ?,
+             reps = ?, lapses = ?, flags = ?, updated_at = ?, usn = ?, tombstone = 0
+         WHERE id = ?`,
         card.noteId,
         card.deckId,
         card.ord,
@@ -212,10 +291,9 @@ export function saveAnkiCard(card: AnkiCard): void {
         card.reps,
         card.lapses,
         card.flags,
-        JSON.stringify(card),
-        Date.now(),
+        nowMs,
         card.usn ?? -1,
-        0,
+        card.id,
     );
 }
 
@@ -228,10 +306,10 @@ export function suspendCard(cardId: number): void {
 }
 
 
-export function unsuspendCard(cardId: number): void {
+export function unsuspendCard(cardId: number, rolloverHour: number = 4): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
-    card.queue = restoreQueueFromType(card);
+    card.queue = restoreQueueFromType(card, rolloverHour);
     card.mod = Math.floor(Date.now() / 1000);
     saveAnkiCard(card);
 }
@@ -266,7 +344,7 @@ export function burySiblings(card: AnkiCard): number {
 }
 
 /** Unbury all buried cards for the new day rollover. */
-export function unburyAllCards(): number {
+export function unburyAllCards(rolloverHour: number = 4): number {
     const db = getDB();
     const buried = db.getAllSync<{ data: string }>(
         'SELECT data FROM anki_cards WHERE queue IN (-2, -3)'
@@ -274,7 +352,7 @@ export function unburyAllCards(): number {
     let count = 0;
     for (const row of buried) {
         const card: AnkiCard = JSON.parse(row.data);
-        card.queue = restoreQueueFromType(card);
+        card.queue = restoreQueueFromType(card, rolloverHour);
         saveAnkiCard(card);
         count++;
     }
@@ -499,14 +577,22 @@ export function deleteTusCardByCardId(cardId: number): void {
 
 export function getAllTags(): string[] {
     const db = getDB();
-    const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes');
+    const rows = db.getAllSync<{ tags: string }>(
+        "SELECT tags FROM notes WHERE tags IS NOT NULL AND TRIM(tags) != ''",
+    );
+
     const tagSet = new Set<string>();
     for (const row of rows) {
-        const note: Note = JSON.parse(row.data);
-        for (const tag of note.tags) {
+        const tags = (row.tags || '')
+            .split(/\s+/)
+            .map((tag) => tag.trim())
+            .filter(Boolean);
+
+        for (const tag of tags) {
             tagSet.add(tag);
         }
     }
+
     return Array.from(tagSet).sort();
 }
 
@@ -531,16 +617,17 @@ export function removeTagFromNote(noteId: number, tag: string): void {
 // ---- Search (uses FTS5 index when available) ----
 
 export function searchNotes(query: string): Note[] {
-    const q = query.trim().toLowerCase();
     const db = getDB();
+    const raw = query.trim();
+    const lower = raw.toLowerCase();
 
-    if (!q) {
+    if (!raw) {
         const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
         return rows.map((row) => JSON.parse(row.data) as Note);
     }
 
-    if (q.startsWith('tag:')) {
-        const tagQuery = q.slice(4).trim();
+    if (lower.startsWith('tag:')) {
+        const tagQuery = lower.slice(4).trim();
         if (!tagQuery) {
             const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
             return rows.map((row) => JSON.parse(row.data) as Note);
@@ -553,17 +640,11 @@ export function searchNotes(query: string): Note[] {
         return rows.map((row) => JSON.parse(row.data) as Note);
     }
 
-    const sanitized = q.replace(/[^a-zA-Z0-9\u00C0-\u024F\u0400-\u04FF\s]/g, ' ').trim();
-    if (!sanitized) {
+    const searchTerms = buildFtsPrefixQuery(raw);
+    if (!searchTerms) {
         const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
         return rows.map((row) => JSON.parse(row.data) as Note);
     }
-
-    const searchTerms = sanitized
-        .split(/\s+/)
-        .map((term) => `"${term}"*`)
-        .filter((term) => term !== '""*')
-        .join(' ');
 
     try {
         const rows = db.getAllSync<{ noteData: string }>(
@@ -578,7 +659,7 @@ export function searchNotes(query: string): Note[] {
 
         return rows.map((row) => JSON.parse(row.noteData) as Note);
     } catch {
-        const like = `%${q}%`;
+        const like = `%${lower}%`;
         const rows = db.getAllSync<{ data: string }>(
             `SELECT data FROM notes
              WHERE LOWER(sfld) LIKE ? OR LOWER(data) LIKE ? OR LOWER(tags) LIKE ?

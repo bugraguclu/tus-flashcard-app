@@ -18,6 +18,10 @@ export interface Subject {
 }
 
 export interface CardState {
+    // Bridge identifier used at CardState↔AnkiCard boundary.
+    // TODO(boundary): when CardState is fully retired from hot paths, remove this.
+    cardId?: number;
+
     // Common fields
     interval: number;
     repetition: number;
@@ -64,8 +68,8 @@ export type AlgorithmType = 'ANKI_V3';
 export interface SchedulerEngine {
     name: string;
     description: string;
-    schedule: (cardState: CardState, grade: Grade, settings: AppSettings) => ScheduleResult;
-    previewIntervals: (cardState: CardState, settings: AppSettings) => IntervalPreview;
+    schedule: (cardState: CardState, grade: Grade, settings: AppSettings, nowMs?: number) => ScheduleResult;
+    previewIntervals: (cardState: CardState, settings: AppSettings, nowMs?: number) => IntervalPreview;
     initCardState: (settings: AppSettings) => Partial<CardState>;
 }
 

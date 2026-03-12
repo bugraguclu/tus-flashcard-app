@@ -5,7 +5,7 @@
 import * as SQLite from 'expo-sqlite';
 
 // ---------- Schema Version ----------
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -61,7 +61,8 @@ const migrations: Migration[] = [
                     question,
                     answer,
                     topic,
-                    subject
+                    subject,
+                    tokenize = 'unicode61 remove_diacritics 2'
                 );
             `);
         },
@@ -179,6 +180,23 @@ const migrations: Migration[] = [
             `);
         },
     },
+    {
+        version: 6,
+        description: 'Rebuild FTS with unicode61/remove_diacritics tokenizer',
+        up: (db) => {
+            db.execSync('DROP TABLE IF EXISTS cards_fts;');
+            db.execSync(`
+                CREATE VIRTUAL TABLE cards_fts USING fts5(
+                    card_id,
+                    question,
+                    answer,
+                    topic,
+                    subject,
+                    tokenize = 'unicode61 remove_diacritics 2'
+                );
+            `);
+        },
+    },
 ];
 
 // ---------- Run Migrations ----------
@@ -206,7 +224,8 @@ export function runMigrations(db: SQLite.SQLiteDatabase): void {
             currentVersion = migration.version;
         } catch (error) {
             db.execSync('ROLLBACK;');
-            throw error;
+            const reason = error instanceof Error ? error.message : String(error);
+            throw new Error(`SQLite migration v${migration.version} failed (${migration.description}): ${reason}`);
         }
     }
 }
@@ -227,6 +246,34 @@ export interface SearchableCard {
     answer: string;
     topic: string;
     subject: string;
+}
+
+const FTS_CONTROL_RE = /[\u0000-\u001F\u007F]/g;
+const FTS_SYNTAX_RE = /["*():]/g;
+const FTS_RESERVED_RE = /^(AND|OR|NOT|NEAR)$/i;
+
+export function sanitizeFtsToken(raw: string): string {
+    const cleaned = raw
+        .replace(FTS_CONTROL_RE, '')
+        .replace(FTS_SYNTAX_RE, '')
+        .trim();
+
+    if (!cleaned) return '';
+    if (FTS_RESERVED_RE.test(cleaned)) return '';
+    return cleaned;
+}
+
+export function buildFtsPrefixQuery(query: string): string {
+    const tokens = query
+        .normalize('NFC')
+        .trim()
+        .split(/\s+/)
+        .map((token) => sanitizeFtsToken(token))
+        .filter(Boolean);
+
+    return tokens
+        .map((token) => `"${token.replace(/"/g, '""')}"*`)
+        .join(' ');
 }
 
 export function dbIndexAllCards(cards: SearchableCard[]): void {
@@ -256,14 +303,8 @@ export function dbSearchCards(query: string): number[] {
     if (!query.trim()) return [];
     const db = getDB();
 
-    const sanitized = query.trim().replace(/[^\w\u00C0-\u024F\u0400-\u04FF\s]/g, ' ');
-    if (!sanitized.trim()) return [];
-
-    const searchTerms = sanitized
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((term) => `"${term}"*`)
-        .join(' ');
+    const searchTerms = buildFtsPrefixQuery(query);
+    if (!searchTerms) return [];
 
     try {
         const rows = db.getAllSync<{ card_id: string }>(

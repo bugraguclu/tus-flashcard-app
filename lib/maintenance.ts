@@ -6,13 +6,15 @@
 import { todayLocalYMD } from './scheduler';
 import { getDB } from './db';
 import { unburyAllCards } from './noteManager';
+import { loadSettings } from './storage';
 
 const LAST_MAINTENANCE_KEY = 'tus_last_maintenance';
 
 // Günde 1 kez çalışır: buried kartları aç, session stats sıfırla
 export function runDailyMaintenance(): { unburiedCount: number; didRun: boolean } {
     const db = getDB();
-    const today = todayLocalYMD();
+    const settings = loadSettings();
+    const today = todayLocalYMD(undefined, settings.dayRolloverHour);
 
     // Son bakım tarihini kontrol et
     const row = db.getFirstSync<{ value: string }>(
@@ -29,7 +31,7 @@ export function runDailyMaintenance(): { unburiedCount: number; didRun: boolean 
     console.log(`[Maintenance] Running daily maintenance for ${today}...`);
 
     // Auto-unbury canonical Anki cards (queue -2/-3 -> active queue).
-    const unburiedCount = unburyAllCards();
+    const unburiedCount = unburyAllCards(settings.dayRolloverHour);
     if (unburiedCount > 0) {
         console.log(`[Maintenance] Unburied ${unburiedCount} cards.`);
     }

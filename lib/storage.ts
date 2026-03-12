@@ -1,30 +1,33 @@
 // ============================================================
 // TUS Flashcard - Storage Layer
-// Canonical source: SQLite (Anki tables + deck config)
-// AsyncStorage is used only for session stats + legacy import/migration.
+// Canonical source: SQLite (Anki tables + deck config + app/session metadata)
+// AsyncStorage is used only for legacy import/migration sources.
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, AppSettings, AlgorithmType } from './types';
 import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
-import { dbGetSchemaVersion } from './db';
+import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
 import { getDeckConfig, saveDeckConfig } from './deckManager';
 import {
     migrateLegacyCardStatesToAnki,
     migrateLegacyCustomCardsToAnki,
 } from './legacyMigration';
+import { initAnkiData } from './ankiInit';
+import { getSearchIndexCards } from './noteManager';
 
 const KEYS = {
     CARD_STATES: 'tus_card_states_v2',
     CUSTOM_CARDS: 'tus_custom_cards_v2',
-    SESSION_STATS: 'tus_stats_v2',
-    SETTINGS: 'tus_settings_v2',
+    SESSION_STATS: 'tus_stats_v2', // legacy AsyncStorage key (migration source only)
+    SETTINGS: 'tus_settings_v2', // legacy AsyncStorage key (migration source only)
 };
 
 const DB_SETTINGS_KEYS = {
     APP_SETTINGS_META: 'tus_app_settings_meta_v1',
     LEGACY_SETTINGS_MIGRATED: 'tus_legacy_settings_migrated_v1',
+    LEGACY_SESSION_STATS_MIGRATED: 'tus_legacy_session_stats_migrated_v1',
 };
 
 // Legacy per-card state keys used by old builds.
@@ -52,7 +55,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 function getDbSetting(key: string): string | null {
     try {
-        const { getDB } = require('./db');
         const db = getDB();
         const row = db.getFirstSync('SELECT value FROM settings WHERE key = ?', key) as { value?: string } | null;
         return typeof row?.value === 'string' ? row.value : null;
@@ -63,7 +65,6 @@ function getDbSetting(key: string): string | null {
 
 function setDbSetting(key: string, value: string): void {
     try {
-        const { getDB } = require('./db');
         const db = getDB();
         db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
     } catch {
@@ -116,7 +117,7 @@ export async function migrateLegacySettingsIfNeeded(): Promise<{ migrated: boole
         const legacyRaw = await AsyncStorage.getItem(KEYS.SETTINGS);
         if (legacyRaw) {
             const parsed = validateSettings(JSON.parse(legacyRaw) as Record<string, unknown>);
-            await saveSettings(parsed);
+            saveSettings(parsed);
             migrated = true;
         }
     } catch (error) {
@@ -147,28 +148,87 @@ export async function saveCustomCards(cards: Card[]): Promise<void> {
     }
 }
 
-// --- Session Stats (still AsyncStorage) ---
-export async function loadSessionStats(): Promise<SessionStats> {
+function defaultSessionStats(date?: string): SessionStats {
+    return {
+        reviewed: 0,
+        correct: 0,
+        wrong: 0,
+        startTime: Date.now(),
+        newCardsToday: 0,
+        ...(date ? { date } : {}),
+    };
+}
+
+function loadSessionStatsFromDb(date: string): SessionStats | null {
     try {
-        const data = await AsyncStorage.getItem(KEYS.SESSION_STATS);
-        if (data) {
-            const parsed = JSON.parse(data);
-            const today = todayLocalYMD();
-            if (parsed.date === today) return parsed;
-        }
+        const db = getDB();
+        const row = db.getFirstSync<{ data: string }>(
+            'SELECT data FROM session_stats WHERE date = ?',
+            date,
+        );
+        if (!row?.data) return null;
+
+        const parsed = JSON.parse(row.data) as SessionStats;
+        return {
+            ...defaultSessionStats(date),
+            ...parsed,
+            date,
+        };
     } catch {
-        // ignore
+        return null;
+    }
+}
+
+function saveSessionStatsToDb(date: string, stats: SessionStats): void {
+    const db = getDB();
+    db.runSync(
+        'INSERT OR REPLACE INTO session_stats (date, data) VALUES (?, ?)',
+        date,
+        JSON.stringify({
+            ...defaultSessionStats(date),
+            ...stats,
+            date,
+        }),
+    );
+}
+
+async function migrateLegacySessionStatsIfNeeded(today: string): Promise<void> {
+    if (getDbSetting(DB_SETTINGS_KEYS.LEGACY_SESSION_STATS_MIGRATED) === 'true') {
+        return;
     }
 
-    return { reviewed: 0, correct: 0, wrong: 0, startTime: Date.now(), newCardsToday: 0 };
+    try {
+        const raw = await AsyncStorage.getItem(KEYS.SESSION_STATS);
+        if (raw) {
+            const parsed = JSON.parse(raw) as SessionStats;
+            const date = typeof parsed.date === 'string' && parsed.date.trim() ? parsed.date : today;
+            saveSessionStatsToDb(date, parsed);
+        }
+    } catch (error) {
+        console.warn('[Storage] Legacy session stats migration failed:', error);
+    }
+
+    await AsyncStorage.removeItem(KEYS.SESSION_STATS);
+    setDbSetting(DB_SETTINGS_KEYS.LEGACY_SESSION_STATS_MIGRATED, 'true');
+}
+
+// --- Session Stats (SQLite canonical) ---
+export async function loadSessionStats(): Promise<SessionStats> {
+    const settings = loadSettings();
+    const today = todayLocalYMD(undefined, settings.dayRolloverHour);
+
+    const existing = loadSessionStatsFromDb(today);
+    if (existing) return existing;
+
+    await migrateLegacySessionStatsIfNeeded(today);
+    return loadSessionStatsFromDb(today) ?? defaultSessionStats(today);
 }
 
 export async function saveSessionStats(stats: SessionStats): Promise<void> {
     try {
-        await AsyncStorage.setItem(KEYS.SESSION_STATS, JSON.stringify({
-            ...stats,
-            date: todayLocalYMD(),
-        }));
+        const settings = loadSettings();
+        const date = todayLocalYMD(undefined, settings.dayRolloverHour);
+        saveSessionStatsToDb(date, stats);
     } catch (e) {
         console.error('Stats kayıt hatası:', e);
     }
@@ -252,7 +312,7 @@ function persistAppSettingsMeta(settings: AppSettings): void {
 }
 
 // --- Settings (source of truth: SQLite deck config + SQLite settings metadata) ---
-export async function loadSettings(): Promise<AppSettings> {
+export function loadSettings(): AppSettings {
     const fromDeck = hydrateSettingsFromDeckConfig({ ...DEFAULT_SETTINGS });
     const meta = loadAppSettingsMeta();
 
@@ -264,7 +324,7 @@ export async function loadSettings(): Promise<AppSettings> {
     };
 }
 
-export async function saveSettings(settings: AppSettings): Promise<void> {
+export function saveSettings(settings: AppSettings): void {
     try {
         const validated = validateSettings(settings as unknown as Record<string, unknown>);
         syncDefaultDeckConfig(validated);
@@ -284,12 +344,8 @@ export async function resetAllData(): Promise<void> {
     ]);
 
     try {
-        const { getDB } = require('./db');
-        const { initAnkiData } = require('./ankiInit');
-        const { dbIndexAllCards } = require('./db');
-        const { getSearchIndexCards } = require('./noteManager');
-
         const db = getDB();
+
         db.execSync(`
             BEGIN TRANSACTION;
             DELETE FROM revlog;
@@ -306,7 +362,7 @@ export async function resetAllData(): Promise<void> {
         `);
 
         initAnkiData();
-        await saveSettings({ ...DEFAULT_SETTINGS });
+        saveSettings({ ...DEFAULT_SETTINGS });
         dbIndexAllCards(getSearchIndexCards());
     } catch {
         /* Database may not be initialized yet. */
@@ -361,7 +417,8 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
 }
 
 export async function exportAllData(): Promise<string> {
-    const [settings, sessionStats] = await Promise.all([loadSettings(), loadSessionStats()]);
+    const settings = loadSettings();
+    const sessionStats = await loadSessionStats();
 
     let schemaVersion = 0;
     let tables = {
@@ -372,10 +429,10 @@ export async function exportAllData(): Promise<string> {
         deck_configs: [] as any[],
         revlog: [] as any[],
         graves: [] as any[],
+        session_stats: [] as any[],
     };
 
     try {
-        const { getDB } = require('./db');
         const db = getDB();
 
         schemaVersion = dbGetSchemaVersion();
@@ -387,13 +444,14 @@ export async function exportAllData(): Promise<string> {
             deck_configs: db.getAllSync('SELECT * FROM deck_configs ORDER BY id'),
             revlog: db.getAllSync('SELECT * FROM revlog ORDER BY id'),
             graves: db.getAllSync('SELECT * FROM graves'),
+            session_stats: db.getAllSync('SELECT * FROM session_stats ORDER BY date'),
         };
     } catch {
         // If DB is not ready, fallback to metadata-only export.
     }
 
     return JSON.stringify({
-        version: 5,
+        version: 6,
         schema_version: schemaVersion,
         exportDate: new Date().toISOString(),
         canonical: true,
@@ -408,10 +466,6 @@ function isCanonicalImport(data: any): boolean {
 }
 
 function importCanonicalTables(data: any): void {
-    const { initDB, getDB } = require('./db');
-    const { dbIndexAllCards } = require('./db');
-    const { getSearchIndexCards } = require('./noteManager');
-
     initDB();
     const db = getDB();
 
@@ -426,6 +480,7 @@ function importCanonicalTables(data: any): void {
             DELETE FROM note_types;
             DELETE FROM graves;
             DELETE FROM cards_fts;
+            DELETE FROM session_stats;
         `);
 
         for (const row of data.tables.note_types || []) {
@@ -514,6 +569,10 @@ function importCanonicalTables(data: any): void {
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, ?, ?)', row.oid, row.type, row.usn);
         }
 
+        for (const row of data.tables.session_stats || []) {
+            db.runSync('INSERT INTO session_stats (date, data) VALUES (?, ?)', row.date, row.data);
+        }
+
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -545,11 +604,11 @@ export async function importAllData(jsonString: string): Promise<boolean> {
 
         if (data.settings) {
             data.settings = validateSettings(data.settings);
-            await saveSettings(data.settings);
+            saveSettings(data.settings);
         }
 
         if (data.sessionStats) {
-            await AsyncStorage.setItem(KEYS.SESSION_STATS, JSON.stringify(data.sessionStats));
+            await saveSessionStats(data.sessionStats as SessionStats);
         }
 
         if (isCanonicalImport(data)) {
@@ -575,7 +634,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
         }
 
         if (data.cardStates) {
-            const settings = await loadSettings();
+            const settings = loadSettings();
             migrateLegacyCardStatesToAnki(data.cardStates as Record<string, CardState>, settings, { force: true });
         }
 

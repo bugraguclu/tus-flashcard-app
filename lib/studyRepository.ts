@@ -1,7 +1,7 @@
 import { TUS_SUBJECTS } from './data';
 import { getDB } from './db';
 import type { CardState, AppSettings, Grade } from './types';
-import type { AnkiCard, Note, DeckConfig } from './models';
+import type { AnkiCard, Note, DeckConfig, NoteType } from './models';
 import {
     ankiCardIdFromLegacyCardId,
     ankiCardToCardState,
@@ -17,6 +17,7 @@ import {
     getAnkiCard,
     getCardsForNote,
     getNote,
+    getNoteType,
     handleLeech,
     isLeech,
     saveAnkiCard,
@@ -82,15 +83,29 @@ interface QueueCardRow {
     flags: number;
     cardData: string | null;
     noteData: string;
+    noteTypeData: string | null;
 }
 
-function parseNotePayload(note: Note): { subject: string; topic: string; question: string; answer: string } {
+function pickFieldByNames(note: Note, noteType: NoteType | null, names: string[], fallbackIndex: number): string {
+    if (noteType) {
+        const lowered = names.map((name) => name.toLowerCase());
+        const idx = noteType.fields.findIndex((field) => lowered.includes(field.name.toLowerCase()));
+        if (idx >= 0 && note.fields[idx]) {
+            return note.fields[idx];
+        }
+    }
+
+    return note.fields[fallbackIndex] || '';
+}
+
+function parseNotePayload(note: Note, noteType: NoteType | null): { subject: string; topic: string; question: string; answer: string } {
     const subjectFromTag = note.tags.find((tag) => KNOWN_SUBJECTS.has(tag));
     const subject = subjectFromTag ?? 'custom';
 
-    const question = note.fields[0] ?? note.sfld ?? '';
-    const answer = note.fields[1] ?? '';
-    const topicFromField = note.fields[2] ?? '';
+    const question = pickFieldByNames(note, noteType, ['Soru', 'Front', 'Question', 'Text'], 0) || note.sfld || '';
+    const answer = pickFieldByNames(note, noteType, ['Cevap', 'Back', 'Answer', 'Extra'], 1);
+
+    const topicFromField = pickFieldByNames(note, noteType, ['Kaynak', 'Topic', 'Source', 'Category'], 2);
     const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
     const topic = topicFromField || topicFromTag || 'General';
 
@@ -177,10 +192,14 @@ function loadRowsByQueue(
     selectedDeckName?: string | null,
     orderBy: string = 'c.id ASC',
     includeCardBlob: boolean = true,
+    limit?: number,
 ): QueueCardRow[] {
     const db = getDB();
     const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
     const cardDataSelect = includeCardBlob ? 'c.data' : 'NULL';
+    const limitSql = Number.isFinite(limit) && (limit as number) > 0
+        ? ` LIMIT ${Math.floor(limit as number)}`
+        : '';
 
     return db.getAllSync<QueueCardRow>(
         `SELECT
@@ -198,15 +217,40 @@ function loadRowsByQueue(
             c.left AS left,
             c.flags AS flags,
             ${cardDataSelect} AS cardData,
-            n.data AS noteData
+            n.data AS noteData,
+            nt.data AS noteTypeData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
          JOIN decks d ON d.id = c.deckId
          WHERE ${queueSql}${scope.sql}
-         ORDER BY ${orderBy}`,
+         ORDER BY ${orderBy}${limitSql}`,
         ...queueParams,
         ...scope.params,
     );
+}
+
+function countRowsByQueue(
+    queueSql: string,
+    queueParams: Array<string | number>,
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+): number {
+    const db = getDB();
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+
+    const row = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN decks d ON d.id = c.deckId
+         WHERE ${queueSql}${scope.sql}`,
+        ...queueParams,
+        ...scope.params,
+    );
+
+    return row?.cnt || 0;
 }
 
 function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
@@ -287,11 +331,13 @@ function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?: Map<n
 function makeStudyCard(
     card: AnkiCard,
     note: Note,
+    noteType: NoteType | null,
     settings: AppSettings,
     nowMs: number,
     includeRawCard: boolean,
+    stateOverride?: CardState,
 ): StudyCard {
-    const payload = parseNotePayload(note);
+    const payload = parseNotePayload(note, noteType);
 
     return {
         cardId: card.id,
@@ -302,7 +348,8 @@ function makeStudyCard(
         topic: payload.topic,
         question: payload.question,
         answer: payload.answer,
-        state: ankiCardToCardState(card, settings, nowMs),
+        // TODO(boundary): remove CardState materialization from queue path once scheduler works directly on AnkiCard.
+        state: stateOverride ?? ankiCardToCardState(card, settings, nowMs),
         rawCard: includeRawCard ? card : undefined,
     };
 }
@@ -317,6 +364,7 @@ function toStudyCards(
 
     return rows.map((row) => {
         const note = JSON.parse(row.noteData) as Note;
+        const noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
 
         // Parse full card blob only for learning queues (left/decode needed)
         // or when caller explicitly needs a full raw card object.
@@ -338,7 +386,14 @@ function toStudyCards(
         }
 
         const cardSettings = resolveSettingsForDeck(card.deckId, baseSettings, settingsCache);
-        return makeStudyCard(card, note, cardSettings, nowMs, Boolean(options.includeRawCard));
+        return makeStudyCard(
+            card,
+            note,
+            noteType,
+            cardSettings,
+            nowMs,
+            Boolean(options.includeRawCard),
+        );
     });
 }
 
@@ -407,7 +462,8 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): voi
             continue;
         }
 
-        if ((sibling.queue === 1 || sibling.queue === 3) && config.buryInterdayLearningSiblings) {
+        // Anki bury-interday-learning applies to day-learning queue (3), not intraday queue (1).
+        if (sibling.queue === 3 && config.buryInterdayLearningSiblings) {
             buryCard(sibling.id, true);
         }
     }
@@ -417,6 +473,39 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const nowMs = Date.now();
     const today = localDayNumber(nowMs, params.settings.dayRolloverHour);
     const settingsCache = new Map<number, AppSettings>();
+
+    const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
+    const reviewLimit = Math.max(0, params.settings.dailyReviewLimit);
+
+    // Count with SQL first (scales better than loading full queue).
+    const intradayLearningCount = countRowsByQueue(
+        'c.queue = 1 AND c.due <= ?',
+        [nowMs],
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
+    );
+    const interdayLearningCount = countRowsByQueue(
+        'c.queue = 3 AND c.due <= ?',
+        [today],
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
+    );
+    const reviewCount = countRowsByQueue(
+        'c.queue = 2 AND c.due <= ?',
+        [today],
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
+    );
+    const newCount = countRowsByQueue(
+        'c.queue = 0',
+        [],
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
+    );
 
     // Anki priority: intraday learning (queue=1) before interday learning (queue=3).
     const intradayLearningRows = loadRowsByQueue(
@@ -437,25 +526,34 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         'c.due ASC',
     );
 
-    const reviewRows = loadRowsByQueue(
-        'c.queue = 2 AND c.due <= ?',
-        [today],
-        params.selectedSubject,
-        params.selectedTopic,
-        params.selectedDeckName,
-        'c.due ASC',
-        false,
-    );
+    const reviewFetchLimit = reviewLimit > 0 ? Math.max(reviewLimit * 4, reviewLimit + 100) : 0;
+    const newFetchLimit = availableNewLimit > 0 ? Math.max(availableNewLimit * 4, availableNewLimit + 100) : 0;
 
-    const newRows = loadRowsByQueue(
-        'c.queue = 0',
-        [],
-        params.selectedSubject,
-        params.selectedTopic,
-        params.selectedDeckName,
-        'c.id ASC',
-        false,
-    );
+    const reviewRows = reviewFetchLimit > 0
+        ? loadRowsByQueue(
+            'c.queue = 2 AND c.due <= ?',
+            [today],
+            params.selectedSubject,
+            params.selectedTopic,
+            params.selectedDeckName,
+            'c.due ASC',
+            false,
+            reviewFetchLimit,
+        )
+        : [];
+
+    const newRows = newFetchLimit > 0
+        ? loadRowsByQueue(
+            'c.queue = 0',
+            [],
+            params.selectedSubject,
+            params.selectedTopic,
+            params.selectedDeckName,
+            'c.id ASC',
+            false,
+            newFetchLimit,
+        )
+        : [];
 
     const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs, { settingsCache });
     const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
@@ -467,22 +565,70 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     if (params.settings.newCardOrder === 'random') {
         newCards = deterministicShuffle(
             newCards,
-            `${todayLocalYMD(undefined, params.settings.dayRolloverHour)}-${newCards.length}`,
+            `${todayLocalYMD(undefined, params.settings.dayRolloverHour)}-${newCount}`,
         );
     }
 
-    const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
-    const reviewLimit = Math.max(0, params.settings.dailyReviewLimit);
-
-    const reviewCardsForQueue = applyPerDeckLimit(reviewCards, reviewLimit, (card) => {
+    let reviewCardsForQueue = applyPerDeckLimit(reviewCards, reviewLimit, (card) => {
         const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
         return cardSettings.dailyReviewLimit;
     });
 
-    const newCardsForQueue = applyPerDeckLimit(newCards, availableNewLimit, (card) => {
+    let newCardsForQueue = applyPerDeckLimit(newCards, availableNewLimit, (card) => {
         const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
         return cardSettings.dailyNewLimit;
     });
+
+    // Fallback for strict per-deck limits: if limited fetch under-fills, do one full fetch.
+    if (reviewCardsForQueue.length < Math.min(reviewLimit, reviewCount) && reviewRows.length < reviewCount) {
+        reviewCards = toStudyCards(
+            loadRowsByQueue(
+                'c.queue = 2 AND c.due <= ?',
+                [today],
+                params.selectedSubject,
+                params.selectedTopic,
+                params.selectedDeckName,
+                'c.due ASC',
+                false,
+            ),
+            params.settings,
+            nowMs,
+            { settingsCache },
+        );
+        reviewCardsForQueue = applyPerDeckLimit(reviewCards, reviewLimit, (card) => {
+            const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
+            return cardSettings.dailyReviewLimit;
+        });
+    }
+
+    if (newCardsForQueue.length < Math.min(availableNewLimit, newCount) && newRows.length < newCount) {
+        newCards = toStudyCards(
+            loadRowsByQueue(
+                'c.queue = 0',
+                [],
+                params.selectedSubject,
+                params.selectedTopic,
+                params.selectedDeckName,
+                'c.id ASC',
+                false,
+            ),
+            params.settings,
+            nowMs,
+            { settingsCache },
+        );
+
+        if (params.settings.newCardOrder === 'random') {
+            newCards = deterministicShuffle(
+                newCards,
+                `${todayLocalYMD(undefined, params.settings.dayRolloverHour)}-${newCount}`,
+            );
+        }
+
+        newCardsForQueue = applyPerDeckLimit(newCards, availableNewLimit, (card) => {
+            const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
+            return cardSettings.dailyNewLimit;
+        });
+    }
 
     let cards: StudyCard[];
     if (params.settings.queueOrder === 'learning-new-review') {
@@ -501,9 +647,9 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     return {
         cards,
         stats: {
-            newCount: newCards.length,
-            learningCount: learningCards.length,
-            reviewCount: reviewCards.length,
+            newCount,
+            learningCount: intradayLearningCount + interdayLearningCount,
+            reviewCount,
         },
         nextLearningDue,
     };
@@ -527,9 +673,11 @@ export function getStudyCardById(cardId: number, settings: AppSettings): StudyCa
             c.left AS left,
             c.flags AS flags,
             c.data AS cardData,
-            n.data AS noteData
+            n.data AS noteData,
+            nt.data AS noteTypeData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
          WHERE c.id = ?`,
         cardId,
     );
@@ -573,14 +721,16 @@ export function answerStudyCard(
 
     const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings);
     const currentState = ankiCardToCardState(currentAnkiCard, cardSettings, nowMs);
+    const noteType = getNoteType(note.noteTypeId);
     const deckConfig = getDeckConfig(currentAnkiCard.deckId);
 
     const scheduler = getScheduler(cardSettings.algorithm);
-    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings);
+    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
 
     const nextState: CardState = {
         ...currentState,
         ...scheduleResult.stateUpdates,
+        cardId: currentAnkiCard.id,
     };
 
     if (scheduleResult.isLearning) {
@@ -632,7 +782,15 @@ export function answerStudyCard(
         throw error;
     }
 
-    const updatedStudyCard = makeStudyCard(updatedAnkiCard, note, cardSettings, nowMs, true);
+    const updatedStudyCard = makeStudyCard(
+        updatedAnkiCard,
+        note,
+        noteType,
+        cardSettings,
+        nowMs,
+        true,
+        nextState,
+    );
 
     return {
         updatedCard: updatedStudyCard,
@@ -643,21 +801,21 @@ export function answerStudyCard(
 }
 
 
-export function setCardSuspended(cardId: number, suspended: boolean): void {
+export function setCardSuspended(cardId: number, suspended: boolean, rolloverHour: number = 4): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
 
-    card.queue = suspended ? -1 : restoreQueueFromType(card);
+    card.queue = suspended ? -1 : restoreQueueFromType(card, rolloverHour);
     card.mod = Math.floor(Date.now() / 1000);
     card.usn = -1;
     saveAnkiCard(card);
 }
 
-export function setCardBuried(cardId: number, buried: boolean): void {
+export function setCardBuried(cardId: number, buried: boolean, rolloverHour: number = 4): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
 
-    card.queue = buried ? -2 : restoreQueueFromType(card);
+    card.queue = buried ? -2 : restoreQueueFromType(card, rolloverHour);
     card.mod = Math.floor(Date.now() / 1000);
     card.usn = -1;
     saveAnkiCard(card);

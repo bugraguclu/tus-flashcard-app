@@ -34,7 +34,8 @@ export default function StatsScreen() {
 
     useEffect(() => {
         async function load() {
-            const [stats, appSettings] = await Promise.all([loadSessionStats(), loadSettings()]);
+            const stats = await loadSessionStats();
+            const appSettings = loadSettings();
             setSessionStats(stats);
             setSettings(appSettings);
             setLoading(false);

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, FontSize, Shadows } from '../../constants/theme';
 import { TUS_SUBJECTS } from '../../lib/data';
-import { getScheduler } from '../../lib/scheduler';
+import { getScheduler, todayLocalYMD } from '../../lib/scheduler';
 import { loadSessionStats, saveSessionStats } from '../../lib/storage';
 import { useApp } from './_layout';
 import type { Grade, SessionStats } from '../../lib/types';
@@ -34,7 +34,7 @@ type UndoEntry = {
 };
 
 export default function StudyScreen() {
-    const { selectedSubject, selectedTopic, settings } = useApp();
+    const { selectedSubject, selectedTopic, settings, bumpDataVersion } = useApp();
     const params = useLocalSearchParams();
     const selectedDeckName = typeof params.deck === 'string' ? params.deck : null;
 
@@ -50,18 +50,20 @@ export default function StudyScreen() {
     const [showingAnswer, setShowingAnswer] = useState(false);
     const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
     const [loading, setLoading] = useState(true);
-    const [totalCards, setTotalCards] = useState(0);
     const [nextLearningDue, setNextLearningDue] = useState<number | null>(null);
     const [countdown, setCountdown] = useState('');
     const [queueStats, setQueueStats] = useState<QueueStats>({ newCount: 0, learningCount: 0, reviewCount: 0 });
     const [answerStartedAt, setAnswerStartedAt] = useState<number>(Date.now());
 
     const sessionStatsRef = useRef(sessionStats);
+    const answersSinceRefreshRef = useRef(0);
+    const scheduledRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
         sessionStatsRef.current = sessionStats;
     }, [sessionStats]);
 
-    const buildQueue = useCallback((newCardsStudiedToday?: number) => {
+    const buildQueue = useCallback((newCardsStudiedToday?: number, resetCounter: boolean = true) => {
         const result = getStudyQueue({
             settings,
             selectedSubject,
@@ -72,11 +74,25 @@ export default function StudyScreen() {
 
         setQueue(result.cards);
         setCurrentCard(result.cards.length > 0 ? result.cards[0] : null);
-        setTotalCards(result.cards.length);
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
         setShowingAnswer(false);
+
+        if (resetCounter) {
+            answersSinceRefreshRef.current = 0;
+        }
     }, [settings, selectedSubject, selectedTopic, selectedDeckName]);
+
+    const scheduleFullRefresh = useCallback((delayMs: number, newCardsStudiedToday?: number) => {
+        if (scheduledRefreshRef.current) {
+            clearTimeout(scheduledRefreshRef.current);
+        }
+
+        scheduledRefreshRef.current = setTimeout(() => {
+            buildQueue(newCardsStudiedToday);
+            scheduledRefreshRef.current = null;
+        }, delayMs);
+    }, [buildQueue]);
 
     useEffect(() => {
         async function load() {
@@ -91,6 +107,24 @@ export default function StudyScreen() {
         if (!loading) {
             buildQueue();
         }
+    }, [loading, buildQueue]);
+
+    useEffect(() => () => {
+        if (scheduledRefreshRef.current) {
+            clearTimeout(scheduledRefreshRef.current);
+            scheduledRefreshRef.current = null;
+        }
+    }, []);
+
+    // Periodic fallback refresh to keep queue/stat drift bounded.
+    useEffect(() => {
+        if (loading) return;
+
+        const timer = setInterval(() => {
+            buildQueue(undefined, false);
+        }, 45000);
+
+        return () => clearInterval(timer);
     }, [loading, buildQueue]);
 
     useEffect(() => {
@@ -130,6 +164,25 @@ export default function StudyScreen() {
         return () => clearInterval(timer);
     }, [nextLearningDue, currentCard, buildQueue]);
 
+    const statusToQueueBucket = (status: StudyCard['state']['status']): keyof QueueStats => {
+        if (status === 'new') return 'newCount';
+        if (status === 'learning') return 'learningCount';
+        return 'reviewCount';
+    };
+
+    const isCardDueNow = (card: StudyCard, nowMs: number): boolean => {
+        if (card.state.status === 'learning') {
+            return Boolean(card.state.dueTime && card.state.dueTime <= nowMs);
+        }
+
+        if (card.state.status === 'review') {
+            const today = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
+            return card.state.dueDate <= today;
+        }
+
+        return true;
+    };
+
     const answerCard = useCallback(async (grade: Grade) => {
         if (!currentCard) return;
 
@@ -156,8 +209,61 @@ export default function StudyScreen() {
 
         setSessionStats(nextStats);
         await saveSessionStats(nextStats);
-        buildQueue(nextStats.newCardsToday);
-    }, [currentCard, answerStartedAt, settings, sessionStats, buildQueue]);
+
+        // Incremental queue update: pop current card, optionally reinsert if still due now.
+        const nowMs = Date.now();
+        setQueue((prevQueue) => {
+            const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
+            const shouldReinsert = isCardDueNow(result.updatedCard, nowMs);
+            const nextQueue = shouldReinsert ? [...withoutCurrent, result.updatedCard] : withoutCurrent;
+
+            setCurrentCard(nextQueue[0] ?? null);
+
+            const futureLearningDue = nextQueue
+                .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
+                .map((card) => card.state.dueTime)
+                .filter((value): value is number => Boolean(value));
+
+            if (result.updatedCard.state.status === 'learning' && result.updatedCard.state.dueTime > nowMs) {
+                futureLearningDue.push(result.updatedCard.state.dueTime);
+            }
+
+            setNextLearningDue(futureLearningDue.length > 0 ? Math.min(...futureLearningDue) : null);
+            return nextQueue;
+        });
+
+        setQueueStats((prev) => {
+            const next = { ...prev };
+            const currentBucket = statusToQueueBucket(currentCard.state.status);
+            next[currentBucket] = Math.max(0, next[currentBucket] - 1);
+
+            if (isCardDueNow(result.updatedCard, nowMs)) {
+                const nextBucket = statusToQueueBucket(result.updatedCard.state.status);
+                next[nextBucket] += 1;
+            }
+
+            return next;
+        });
+
+        setShowingAnswer(false);
+        bumpDataVersion();
+
+        answersSinceRefreshRef.current += 1;
+        if (answersSinceRefreshRef.current >= 8 || queue.length <= 1) {
+            buildQueue(nextStats.newCardsToday);
+        } else {
+            scheduleFullRefresh(15000, nextStats.newCardsToday);
+        }
+    }, [
+        currentCard,
+        answerStartedAt,
+        settings,
+        sessionStats,
+        buildQueue,
+        bumpDataVersion,
+        queue.length,
+        scheduleFullRefresh,
+    ]);
 
     const undoLast = useCallback(async () => {
         if (undoStack.length === 0) return;
@@ -169,20 +275,23 @@ export default function StudyScreen() {
 
         setSessionStats(undo.previousStats);
         await saveSessionStats(undo.previousStats);
+        bumpDataVersion();
         buildQueue(undo.previousStats.newCardsToday);
-    }, [undoStack, buildQueue]);
+    }, [undoStack, buildQueue, bumpDataVersion]);
 
     const handleSuspend = useCallback(() => {
         if (!currentCard) return;
-        setCardSuspended(currentCard.cardId, true);
+        setCardSuspended(currentCard.cardId, true, settings.dayRolloverHour);
+        bumpDataVersion();
         buildQueue();
-    }, [currentCard, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
 
     const handleBury = useCallback(() => {
         if (!currentCard) return;
-        setCardBuried(currentCard.cardId, true);
+        setCardBuried(currentCard.cardId, true, settings.dayRolloverHour);
+        bumpDataVersion();
         buildQueue();
-    }, [currentCard, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

@@ -24,6 +24,7 @@ const defaultSettings: AppSettings = {
 
 function makeNewCard(): CardState {
     return {
+        cardId: 101,
         interval: 0,
         repetition: 0,
         dueDate: '2026-03-11',
@@ -44,6 +45,7 @@ function makeNewCard(): CardState {
 
 function makeReviewCard(overrides: Partial<CardState> = {}): CardState {
     return {
+        cardId: 202,
         interval: 10,
         repetition: 4,
         dueDate: '2026-03-11',
@@ -111,6 +113,21 @@ describe('ANKI_V3 scheduler', () => {
         expect(resultGood.stateUpdates.interval).toBe(7);
     });
 
+    it('relearning Easy graduates to a larger interval than Good', () => {
+        const card = makeReviewCard({
+            status: 'learning',
+            learningStep: -1,
+            relearningStep: 0,
+            interval: 10,
+        });
+
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const good = engine.schedule(card, 3 as Grade, defaultSettings, now).interval;
+        const easy = engine.schedule(card, 4 as Grade, defaultSettings, now).interval;
+
+        expect(easy).toBeGreaterThan(good);
+    });
+
     it('keeps review interval ordering hard < good < easy', () => {
         const card = makeReviewCard({ interval: 12, easeFactor: 2.3 });
         const hard = engine.schedule(card, 2 as Grade, defaultSettings).interval;
@@ -122,10 +139,52 @@ describe('ANKI_V3 scheduler', () => {
         expect(easy).toBeGreaterThan(good);
     });
 
+    it('does not apply intervalModifier on Hard, but applies it on Good/Easy', () => {
+        const card = makeReviewCard({ interval: 20, easeFactor: 2.5, cardId: 314 });
+        const lowModifier = { ...defaultSettings, intervalModifier: 0.5, hardIntervalMultiplier: 1.2 };
+        const neutralModifier = { ...defaultSettings, intervalModifier: 1.0, hardIntervalMultiplier: 1.2 };
+
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+
+        const hardWithLowModifier = engine.schedule(card, 2 as Grade, lowModifier, now).interval;
+        const hardWithNeutralModifier = engine.schedule(card, 2 as Grade, neutralModifier, now).interval;
+        const goodWithLowModifier = engine.schedule(card, 3 as Grade, lowModifier, now).interval;
+        const goodWithNeutralModifier = engine.schedule(card, 3 as Grade, neutralModifier, now).interval;
+
+        expect(hardWithLowModifier).toBe(hardWithNeutralModifier);
+        expect(goodWithLowModifier).toBeLessThan(goodWithNeutralModifier);
+    });
+
+    it('uses deterministic fuzz based on study day + card id', () => {
+        const baseCard = makeReviewCard({ interval: 30, easeFactor: 2.5, cardId: 42 });
+        const now = new Date(2026, 2, 12, 13, 0, 0, 0).getTime();
+
+        const first = engine.schedule(baseCard, 3 as Grade, defaultSettings, now).interval;
+        const second = engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 60_000).interval;
+        expect(first).toBe(second);
+
+        const differentCards = [77, 78, 79].map((cardId) => (
+            engine.schedule({ ...baseCard, cardId }, 3 as Grade, defaultSettings, now).interval
+        ));
+        const nextDay = engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 24 * 3600 * 1000).interval;
+
+        expect(differentCards.some((value) => value !== first)).toBe(true);
+        expect(nextDay).not.toBe(first);
+    });
+
     it('never drops ease below 1.3', () => {
         const card = makeReviewCard({ easeFactor: 1.3 });
         const result = engine.schedule(card, 1 as Grade, defaultSettings);
         expect(result.stateUpdates.easeFactor).toBe(1.3);
+    });
+
+    it('tracks elapsedDays from previous review at answer time', () => {
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const lastReview = now - 3 * 86400000;
+        const card = makeReviewCard({ lastReviewedAtMs: lastReview, cardId: 333 });
+
+        const result = engine.schedule(card, 3 as Grade, defaultSettings, now);
+        expect(result.stateUpdates.elapsedDays).toBe(3);
     });
 
     it('preview uses relearning step durations', () => {

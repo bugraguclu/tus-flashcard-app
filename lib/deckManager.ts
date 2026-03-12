@@ -249,43 +249,40 @@ export function getCardCountsByDeck(
     rolloverHour: number = 4,
 ): Map<number, { new: number; learn: number; review: number; total: number }> {
     const db = getDB();
-    const rows = db.getAllSync<{ deckId: number; queue: number; due: number }>(
-        'SELECT deckId, queue, due FROM anki_cards',
+    const today = localDayNumber(nowMs, rolloverHour);
+
+    const rows = db.getAllSync<{
+        deckId: number;
+        totalCount: number;
+        newCount: number;
+        learnCount: number;
+        reviewCount: number;
+    }>(
+        `SELECT
+            deckId,
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN queue = 0 THEN 1 ELSE 0 END) AS newCount,
+            SUM(CASE
+                    WHEN queue = 1 AND due <= ? THEN 1
+                    WHEN queue = 3 AND due <= ? THEN 1
+                    ELSE 0
+                END) AS learnCount,
+            SUM(CASE WHEN queue = 2 AND due <= ? THEN 1 ELSE 0 END) AS reviewCount
+         FROM anki_cards
+         GROUP BY deckId`,
+        nowMs,
+        today,
+        today,
     );
 
-    const today = localDayNumber(nowMs, rolloverHour);
     const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
-
     for (const row of rows) {
-        if (!counts.has(row.deckId)) {
-            counts.set(row.deckId, { new: 0, learn: 0, review: 0, total: 0 });
-        }
-
-        const entry = counts.get(row.deckId)!;
-        entry.total += 1;
-
-        if (row.queue === -1 || row.queue === -2 || row.queue === -3) {
-            continue;
-        }
-
-        if (row.queue === 0) {
-            entry.new += 1;
-            continue;
-        }
-
-        if (row.queue === 1 && row.due <= nowMs) {
-            entry.learn += 1;
-            continue;
-        }
-
-        if (row.queue === 3 && row.due <= today) {
-            entry.learn += 1;
-            continue;
-        }
-
-        if (row.queue === 2 && row.due <= today) {
-            entry.review += 1;
-        }
+        counts.set(row.deckId, {
+            new: Number(row.newCount) || 0,
+            learn: Number(row.learnCount) || 0,
+            review: Number(row.reviewCount) || 0,
+            total: Number(row.totalCount) || 0,
+        });
     }
 
     return counts;

@@ -16,7 +16,7 @@ import { useApp } from './_layout';
 import { getBrowserCards, setCardSuspended, type StudyCard } from '../../lib/studyRepository';
 
 export default function BrowserScreen() {
-    const { settings } = useApp();
+    const { settings, bumpDataVersion } = useApp();
 
     const [allCards, setAllCards] = useState<StudyCard[]>([]);
     const [rawQuery, setRawQuery] = useState('');
@@ -69,9 +69,10 @@ export default function BrowserScreen() {
     }, [allCards, selectedSubject, searchQuery]);
 
     const toggleSuspend = useCallback((cardId: number, isSuspended: boolean) => {
-        setCardSuspended(cardId, !isSuspended);
+        setCardSuspended(cardId, !isSuspended, settings.dayRolloverHour);
+        bumpDataVersion();
         reload();
-    }, [reload]);
+    }, [reload, bumpDataVersion, settings.dayRolloverHour]);
 
     const subject = (id: string) => TUS_SUBJECTS.find((s) => s.id === id);
 

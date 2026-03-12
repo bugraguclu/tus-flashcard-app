@@ -59,52 +59,61 @@ export function legacyCardIdFromAnkiCardId(ankiCardId: number): number {
     return Math.floor(ankiCardId / 1000);
 }
 
-function decodeRemaining(left: number): { remainingTotal: number; remainingToday: number } {
+export interface DecodeLeftOptions {
+    /**
+     * Only enable for explicit legacy migration paths.
+     * Canonical runtime should keep this false and decode using Anki semantics only.
+     */
+    allowLegacyFallback?: boolean;
+}
+
+export interface DecodedLeft {
+    remainingTotal: number;
+    remainingToday: number;
+    usedLegacyFallback: boolean;
+}
+
+export function decodeAnkiLeft(left: number, options: DecodeLeftOptions = {}): DecodedLeft {
     if (!Number.isFinite(left) || left <= 0) {
-        return { remainingTotal: 0, remainingToday: 0 };
+        return { remainingTotal: 0, remainingToday: 0, usedLegacyFallback: false };
     }
 
     const value = Math.max(0, Math.floor(left));
 
-    // Anki encoding: left = totalRemaining + todayRemaining * 1000
-    const ankiTotal = value % 1000;
-    const ankiToday = Math.floor(value / 1000);
+    // Canonical Anki encoding: left = totalRemaining + todayRemaining * 1000
+    const total = value % 1000;
+    const today = Math.floor(value / 1000);
 
-    if (ankiTotal > 0 && ankiToday <= ankiTotal) {
+    if (total > 0) {
         return {
-            remainingTotal: ankiTotal,
-            remainingToday: Math.max(0, ankiToday),
+            remainingTotal: total,
+            remainingToday: Math.max(0, Math.min(today, total)),
+            usedLegacyFallback: false,
         };
     }
 
-    // Legacy fallback from earlier app versions:
-    // left = totalRemaining * 1000 + todayRemaining
-    const legacyTotal = Math.floor(value / 1000);
-    const legacyToday = value % 1000;
-    if (legacyTotal > 0) {
-        return {
-            remainingTotal: legacyTotal,
-            remainingToday: Math.max(0, Math.min(legacyToday, legacyTotal)),
-        };
+    // Legacy fallback (explicitly gated): left = totalRemaining * 1000 + todayRemaining
+    if (options.allowLegacyFallback) {
+        const legacyTotal = Math.floor(value / 1000);
+        const legacyToday = value % 1000;
+
+        if (legacyTotal > 0) {
+            return {
+                remainingTotal: legacyTotal,
+                remainingToday: Math.max(0, Math.min(legacyToday, legacyTotal)),
+                usedLegacyFallback: true,
+            };
+        }
     }
 
-    // Very old fallback where only low bits were stored.
-    if (legacyToday > 0) {
-        return {
-            remainingTotal: legacyToday,
-            remainingToday: 0,
-        };
-    }
-
-    return { remainingTotal: 0, remainingToday: 0 };
+    return { remainingTotal: 0, remainingToday: 0, usedLegacyFallback: false };
 }
 
-function encodeRemaining(remainingTotal: number, remainingToday: number): number {
+export function encodeAnkiLeft(remainingTotal: number, remainingToday: number): number {
     const total = Math.max(0, Math.floor(remainingTotal));
     if (total <= 0) return 0;
 
     const today = Math.max(0, Math.min(total, Math.floor(remainingToday)));
-    // Anki encoding: total + today * 1000
     return total + today * 1000;
 }
 
@@ -152,7 +161,19 @@ function computeRemainingToday(
     return Math.max(1, Math.min(remainingTotal, count));
 }
 
-export function ankiCardToCardState(card: AnkiCard, settings: AppSettings, nowMs: number = Date.now()): CardState {
+function elapsedStudyDays(lastReviewMs: number, nowMs: number, rolloverHour: number): number {
+    if (!lastReviewMs || lastReviewMs <= 0) return 0;
+    const previousDay = localDayNumber(lastReviewMs, rolloverHour);
+    const currentDay = localDayNumber(nowMs, rolloverHour);
+    return Math.max(0, currentDay - previousDay);
+}
+
+export function ankiCardToCardState(
+    card: AnkiCard,
+    settings: AppSettings,
+    nowMs: number = Date.now(),
+    options: DecodeLeftOptions = {},
+): CardState {
     const todayNumber = localDayNumber(nowMs, settings.dayRolloverHour);
 
     const suspended = card.queue === -1;
@@ -165,7 +186,7 @@ export function ankiCardToCardState(card: AnkiCard, settings: AppSettings, nowMs
 
     const isRelearning = card.type === 3;
     const learnSteps = isRelearning ? settings.lapseSteps : settings.learningSteps;
-    const { remainingTotal } = decodeRemaining(card.left);
+    const { remainingTotal } = decodeAnkiLeft(card.left, options);
     const inferredStep = learnSteps.length > 0
         ? Math.max(0, Math.min(learnSteps.length - 1, learnSteps.length - Math.max(remainingTotal, 1)))
         : 0;
@@ -181,6 +202,7 @@ export function ankiCardToCardState(card: AnkiCard, settings: AppSettings, nowMs
         : 0;
 
     return {
+        cardId: card.id,
         interval: card.ivl || 0,
         repetition: card.reps || 0,
         dueDate,
@@ -194,7 +216,7 @@ export function ankiCardToCardState(card: AnkiCard, settings: AppSettings, nowMs
         lastReviewedAtMs: card.lastReview || 0,
         stability: card.stability || 0,
         difficulty: card.difficulty || 0,
-        elapsedDays: 0,
+        elapsedDays: elapsedStudyDays(card.lastReview || 0, nowMs, settings.dayRolloverHour),
         lapses: card.lapses || 0,
     };
 }
@@ -207,6 +229,7 @@ export function cardStateToAnkiCard(
 ): AnkiCard {
     const updated: AnkiCard = {
         ...card,
+        id: state.cardId ?? card.id,
         ivl: Math.max(0, Math.round(state.interval || 0)),
         reps: Math.max(0, Math.round(state.repetition || 0)),
         lapses: Math.max(0, Math.round(state.lapses || 0)),
@@ -290,7 +313,7 @@ export function cardStateToAnkiCard(
         updated.type = relearning ? 3 : 1;
         updated.queue = queue;
         updated.due = due;
-        updated.left = encodeRemaining(remainingTotal, remainingToday);
+        updated.left = encodeAnkiLeft(remainingTotal, remainingToday);
         return updated;
     }
 
@@ -308,6 +331,7 @@ export function cardStateToAnkiCard(
 
 export function makeDefaultCardState(settings: AppSettings): CardState {
     return {
+        cardId: undefined,
         interval: 0,
         repetition: 0,
         dueDate: dayNumberToYmd(localDayNumber(Date.now(), settings.dayRolloverHour), settings.dayRolloverHour),
@@ -327,12 +351,16 @@ export function makeDefaultCardState(settings: AppSettings): CardState {
 }
 
 /** Infer the correct active queue value from card type and due. */
-export function restoreQueueFromType(card: AnkiCard): AnkiCard['queue'] {
+export function restoreQueueFromType(
+    card: AnkiCard,
+    rolloverHour: number = 4,
+    nowMs: number = Date.now(),
+): AnkiCard['queue'] {
     if (card.type === 0) return 0;
     if (card.type === 2) return 2;
 
     if (card.type === 1 || card.type === 3) {
-        const today = localDayNumber(Date.now(), 4);
+        const today = localDayNumber(nowMs, rolloverHour);
         const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
         if (looksLikeDayNumber && card.due > today) {
             return 3;
