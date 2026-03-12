@@ -325,3 +325,20 @@ export function makeDefaultCardState(settings: AppSettings): CardState {
         lapses: 0,
     };
 }
+
+/** Infer the correct active queue value from card type and due. */
+export function restoreQueueFromType(card: AnkiCard): AnkiCard['queue'] {
+    if (card.type === 0) return 0;
+    if (card.type === 2) return 2;
+
+    if (card.type === 1 || card.type === 3) {
+        const today = localDayNumber(Date.now(), 4);
+        const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
+        if (looksLikeDayNumber && card.due > today) {
+            return 3;
+        }
+        return 1;
+    }
+
+    return 1;
+}

@@ -260,5 +260,7 @@ function escapeHtml(text: string): string {
 }
 
 function wrapInCardHtml(body: string, css: string): string {
-    return `<style>${css}</style><div class="card">${body}</div>`;
+    // Prevent CSS breakout via </style> injection.
+    const safeCss = css.replace(/<\/style/gi, '<\\/style');
+    return `<style>${safeCss}</style><div class="card">${body}</div>`;
 }

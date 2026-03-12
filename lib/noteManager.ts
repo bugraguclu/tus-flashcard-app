@@ -3,10 +3,10 @@
 // Note CRUD + automatic Card generation (Anki-compatible)
 // ============================================================
 
-import type { Note, NoteType, AnkiCard, CardType, CardQueue, CardFlag } from './models';
+import type { Note, NoteType, AnkiCard, CardFlag } from './models';
 import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
 import { extractClozeNumbers, shouldGenerateCard } from './templates';
-import { localDayNumber } from './ankiState';
+import { restoreQueueFromType } from './ankiState';
 import { getDB } from './db';
 import { TUS_CARDS, TUS_SUBJECTS } from './data';
 
@@ -227,21 +227,6 @@ export function suspendCard(cardId: number): void {
     saveAnkiCard(card);
 }
 
-function restoreQueueFromType(card: AnkiCard): CardQueue {
-    if (card.type === 0) return 0;
-    if (card.type === 2) return 2;
-
-    if (card.type === 1 || card.type === 3) {
-        const today = localDayNumber(Date.now(), 4);
-        const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
-        if (looksLikeDayNumber && card.due > today) {
-            return 3;
-        }
-        return 1;
-    }
-
-    return 1;
-}
 
 export function unsuspendCard(cardId: number): void {
     const card = getAnkiCard(cardId);

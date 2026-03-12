@@ -144,30 +144,31 @@ export function getReviewStats(startMs: number, endMs: number): ReviewStats {
 }
 
 /** Get daily review counts for chart (last N days) — single GROUP BY query */
-export function getDailyReviewCounts(days: number): { date: string; count: number; timeMs: number }[] {
+export function getDailyReviewCounts(days: number, rolloverHour: number = 4): { date: string; count: number; timeMs: number }[] {
     const db = getDB();
     const startMs = Date.now() - days * 86400000;
 
+    // Shift review timestamps by rolloverHour so that SQL date() groups
+    // align with study-day boundaries instead of midnight.
+    const shiftSec = rolloverHour * 3600;
+
     const rows = db.getAllSync<{ date: string; count: number; timeMs: number }>(
-        `SELECT date(id/1000, 'unixepoch', 'localtime') as date,
+        `SELECT date(id/1000 - ?, 'unixepoch', 'localtime') as date,
                 COUNT(*) as count,
                 COALESCE(SUM(time), 0) as timeMs
          FROM revlog WHERE id >= ?
          GROUP BY date ORDER BY date`,
-        startMs
+        shiftSec,
+        startMs,
     );
 
     // Fill gaps for days with no reviews
     const rowMap = new Map(rows.map(r => [r.date, r]));
     const result: { date: string; count: number; timeMs: number }[] = [];
-    const now = new Date();
+    const today = localDayNumber(Date.now(), rolloverHour);
+
     for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const dateStr = dayNumberToYmd(today - i, rolloverHour);
         result.push(rowMap.get(dateStr) || { date: dateStr, count: 0, timeMs: 0 });
     }
     return result;

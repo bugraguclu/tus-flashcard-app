@@ -9,6 +9,7 @@ import {
     legacyCardIdFromAnkiCardId,
     makeDefaultCardState,
     localDayNumber,
+    restoreQueueFromType,
 } from './ankiState';
 import { addDaysLocalYMD, getScheduler, todayLocalYMD } from './scheduler';
 import {
@@ -77,6 +78,7 @@ interface QueueCardRow {
     factor: number;
     reps: number;
     lapses: number;
+    left: number;
     flags: number;
     cardData: string | null;
     noteData: string;
@@ -193,6 +195,7 @@ function loadRowsByQueue(
             c.factor AS factor,
             c.reps AS reps,
             c.lapses AS lapses,
+            c.left AS left,
             c.flags AS flags,
             ${cardDataSelect} AS cardData,
             n.data AS noteData
@@ -221,7 +224,7 @@ function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
         factor: row.factor,
         reps: row.reps,
         lapses: row.lapses,
-        left: 0,
+        left: row.left || 0,
         odue: 0,
         odid: 0,
         flags: row.flags as AnkiCard['flags'],
@@ -521,6 +524,7 @@ export function getStudyCardById(cardId: number, settings: AppSettings): StudyCa
             c.factor AS factor,
             c.reps AS reps,
             c.lapses AS lapses,
+            c.left AS left,
             c.flags AS flags,
             c.data AS cardData,
             n.data AS noteData
@@ -638,21 +642,6 @@ export function answerStudyCard(
     };
 }
 
-function restoreQueueFromType(card: AnkiCard): AnkiCard['queue'] {
-    if (card.type === 0) return 0;
-    if (card.type === 2) return 2;
-
-    if (card.type === 1 || card.type === 3) {
-        const today = localDayNumber(Date.now(), 4);
-        const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
-        if (looksLikeDayNumber && card.due > today) {
-            return 3;
-        }
-        return 1;
-    }
-
-    return 1;
-}
 
 export function setCardSuspended(cardId: number, suspended: boolean): void {
     const card = getAnkiCard(cardId);

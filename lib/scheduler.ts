@@ -32,11 +32,6 @@ function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: number = 4
     return `${yyyy}-${mm}-${dd}`;
 }
 
-function startOfLocalDayMs(date?: Date, rolloverHour: number = 4): number {
-    const shifted = toRolloverShiftedDate(date ? new Date(date.getTime()) : new Date(), rolloverHour);
-    shifted.setHours(0, 0, 0, 0);
-    return shifted.getTime() + rolloverHour * HOUR_MS;
-}
 
 function getToday(rolloverHour: number = 4): string {
     return todayLocalYMD(undefined, rolloverHour);
@@ -408,5 +403,4 @@ export {
     getToday,
     todayLocalYMD,
     addDaysLocalYMD,
-    startOfLocalDayMs,
 };
