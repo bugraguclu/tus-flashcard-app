@@ -10,8 +10,9 @@ class AppErrorBoundary extends React.Component<
 > {
     state = { hasError: false, error: '' };
 
-    static getDerivedStateFromError(error: Error) {
-        return { hasError: true, error: error.message };
+    static getDerivedStateFromError(error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return { hasError: true, error: msg };
     }
 
     componentDidCatch(error: Error) {

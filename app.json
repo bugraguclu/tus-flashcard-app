@@ -39,8 +39,7 @@
     "scheme": "tusankim",
     "plugins": [
       "expo-sqlite",
-      "expo-router",
-      "expo-haptics"
+      "expo-router"
     ],
     "extra": {
       "eas": {

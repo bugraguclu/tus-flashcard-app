@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import {
     loadCardStates,
     loadCustomCards,
@@ -22,6 +23,13 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
 
         async function startup() {
             try {
+                if (Platform.OS === 'web') {
+                    if (!cancelled) {
+                        setStartupError('Bu uygulama iOS ve Android için tasarlanmıştır. Web tarayıcısında SQLite desteği bulunmamaktadır.');
+                    }
+                    return;
+                }
+
                 initDB();
                 console.log('[App] SQLite DB initialized.');
 
@@ -82,7 +90,9 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
                     bumpDataVersion();
                 }
             } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
+                const message = error instanceof Error
+                    ? (error.message || error.toString())
+                    : (typeof error === 'object' ? JSON.stringify(error) : String(error));
                 console.warn('[App] Startup error:', error);
                 if (!cancelled) {
                     setStartupError(message);

@@ -159,12 +159,16 @@ export default function TabLayout() {
 
                     <View style={[styles.mainContent, isWide && styles.mainContentWithSidebar]}>
                         {startupError ? (
-                            <View style={styles.startupErrorBanner}>
-                                <Text style={styles.startupErrorTitle}>⚠️ Başlangıç Hatası</Text>
-                                <Text style={styles.startupErrorText}>{startupError}</Text>
+                            <View style={styles.startupErrorContainer}>
+                                <Text style={styles.startupErrorIcon}>📱</Text>
+                                <Text style={styles.startupErrorTitle}>{startupError}</Text>
+                                <Text style={styles.startupErrorText}>
+                                    Lütfen uygulamayı iOS veya Android cihazınızdan kullanın.
+                                </Text>
                             </View>
-                        ) : null}
-                        <Slot />
+                        ) : (
+                            <Slot />
+                        )}
                     </View>
                 </View>
             </View>
@@ -211,24 +215,26 @@ const styles = StyleSheet.create({
     mainContent: { flex: 1 },
     mainContentWithSidebar: { marginLeft: SIDEBAR_WIDTH },
 
-    startupErrorBanner: {
-        marginHorizontal: Spacing.lg,
-        marginTop: Spacing.md,
-        marginBottom: Spacing.sm,
-        padding: Spacing.md,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#efc5c0',
-        backgroundColor: '#fff2f0',
+    startupErrorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: Spacing.xl,
+    },
+    startupErrorIcon: {
+        fontSize: 48,
+        marginBottom: Spacing.md,
     },
     startupErrorTitle: {
-        fontSize: FontSize.sm,
+        fontSize: FontSize.lg,
         fontWeight: '700',
-        color: '#b42318',
-        marginBottom: 4,
+        color: Colors.textPrimary,
+        textAlign: 'center',
+        marginBottom: Spacing.sm,
     },
     startupErrorText: {
-        fontSize: FontSize.sm,
-        color: '#b42318',
+        fontSize: FontSize.md,
+        color: Colors.textMuted,
+        textAlign: 'center',
     },
 });

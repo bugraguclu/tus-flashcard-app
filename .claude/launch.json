@@ -3,21 +3,15 @@
   "configurations": [
     {
       "name": "expo-web",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/expo/bin/cli", "start", "--web", "--port", "8081"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
       "port": 8081
     },
     {
-      "name": "expo-ios",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/expo/bin/cli", "start", "--ios", "--port", "8082"],
+      "name": "expo-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--port", "8082"],
       "port": 8082
-    },
-    {
-      "name": "expo-android",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/expo/bin/cli", "start", "--android", "--port", "8083"],
-      "port": 8083
     }
   ]
 }
