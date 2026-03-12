@@ -223,7 +223,14 @@ export function runMigrations(db: SQLite.SQLiteDatabase): void {
     for (const migration of migrations) {
         if (migration.version > currentVersion) {
             console.log(`[DB] Running migration v${migration.version}: ${migration.description}`);
-            migration.up(db);
+            db.execSync('BEGIN TRANSACTION;');
+            try {
+                migration.up(db);
+                db.execSync('COMMIT;');
+            } catch (error) {
+                db.execSync('ROLLBACK;');
+                throw error;
+            }
         }
     }
 }

@@ -225,6 +225,8 @@ export function countCardsForNote(noteType: NoteType, note: Note): number {
 function normalizeFieldHtml(text: string): string {
     let result = text;
     result = result.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+    result = result.replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    result = result.replace(/(href|src)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi, '$1="#"');
     result = result.replace(/\[sound:([^\]]+)\]/gi, (_match, filename) => {
         return `<audio controls src="${filename}"></audio>`;
     });

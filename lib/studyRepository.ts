@@ -32,6 +32,7 @@ export interface StudyCard {
     question: string;
     answer: string;
     state: CardState;
+    rawCard?: AnkiCard;
 }
 
 export interface QueueStats {
@@ -249,6 +250,7 @@ function makeStudyCard(
         question: payload.question,
         answer: payload.answer,
         state: ankiCardToCardState(card, settings, nowMs),
+        rawCard: card,
     };
 }
 
@@ -475,7 +477,7 @@ export function answerStudyCard(
         throw new Error(`Card not found: ${cardId}`);
     }
 
-    const currentAnkiCard = getAnkiCard(cardId);
+    const currentAnkiCard = current.rawCard;
     if (!currentAnkiCard) {
         throw new Error(`Anki card missing: ${cardId}`);
     }

@@ -6,6 +6,7 @@
 import type { Deck, DeckConfig, AnkiCard } from './models';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getDeckChildren, getParentDeckName, uniqueId } from './models';
 import { getDB } from './db';
+import { localDayNumber } from './ankiState';
 
 // ---- Deck CRUD ----
 
@@ -223,7 +224,7 @@ export function getCardCountsByDeck(nowMs: number = Date.now()): Map<number, { n
         'SELECT deckId, queue, due FROM anki_cards'
     );
 
-    const today = Math.floor(new Date(new Date(nowMs).setHours(0, 0, 0, 0)).getTime() / 86400000);
+    const today = localDayNumber(nowMs, 4);
     const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
 
     for (const row of rows) {

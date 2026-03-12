@@ -5,8 +5,15 @@ const DAY_MS = 86400000;
 const HOUR_MS = 3600000;
 
 export function localDayNumber(atMs: number = Date.now(), rolloverHour: number = 4): number {
-    const shiftedMs = atMs - rolloverHour * HOUR_MS;
-    return Math.floor(shiftedMs / DAY_MS);
+    const now = new Date(atMs);
+    const rolloverBoundary = new Date(atMs);
+    rolloverBoundary.setHours(rolloverHour, 0, 0, 0);
+
+    if (now < rolloverBoundary) {
+        rolloverBoundary.setDate(rolloverBoundary.getDate() - 1);
+    }
+
+    return Math.floor(rolloverBoundary.getTime() / DAY_MS);
 }
 
 export function dayNumberToYmd(dayNumber: number, rolloverHour: number = 4): string {
@@ -40,15 +47,11 @@ function decodeRemaining(left: number): { remainingTotal: number; remainingToday
     if (left <= 0) return { remainingTotal: 0, remainingToday: 0 };
 
     const remainingTotal = Math.max(0, Math.floor(left / 1000));
-    const remainingToday = Math.max(0, left % 1000);
-
-    if (remainingTotal === 0) {
-        return { remainingTotal: remainingToday, remainingToday };
-    }
+    const remainingToday = Math.max(0, left - remainingTotal * 1000);
 
     return {
         remainingTotal,
-        remainingToday: Math.min(remainingToday || remainingTotal, remainingTotal),
+        remainingToday: Math.min(remainingToday, remainingTotal),
     };
 }
 

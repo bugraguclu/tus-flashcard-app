@@ -14,14 +14,14 @@ import { Slot, usePathname, useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import { TUS_SUBJECTS } from '../../lib/data';
 import {
-    loadAllCardStates,
+    loadCardStates,
     loadCustomCards,
     loadSettings,
     saveCustomCards,
     DEFAULT_SETTINGS,
     clearLegacyCardStates,
 } from '../../lib/storage';
-import { initDB, dbIndexAllCards } from '../../lib/db';
+import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
 import { initAnkiData } from '../../lib/ankiInit';
 import { getSearchIndexCards } from '../../lib/noteManager';
@@ -94,17 +94,23 @@ export default function TabLayout() {
                 }
 
                 // One-shot migration from legacy AsyncStorage card states to canonical anki_cards.
-                const asyncStates = await loadAllCardStates();
-                const migrationResult = migrateLegacyCardStatesToAnki(asyncStates, await loadSettings());
-                if (!migrationResult.alreadyMigrated) {
-                    console.log(`[App] Legacy card state migration: ${migrationResult.migratedCards} migrated, ${migrationResult.skippedCards} skipped.`);
-                    await clearLegacyCardStates();
+                const asyncStates = await loadCardStates();
+                if (Object.keys(asyncStates).length > 0) {
+                    const migrationResult = migrateLegacyCardStatesToAnki(asyncStates, await loadSettings());
+                    if (!migrationResult.alreadyMigrated) {
+                        console.log(`[App] Legacy card state migration: ${migrationResult.migratedCards} migrated, ${migrationResult.skippedCards} skipped.`);
+                        await clearLegacyCardStates();
+                    }
                 }
 
-                // Rebuild FTS index from canonical notes/cards.
-                const searchableCards = getSearchIndexCards();
-                dbIndexAllCards(searchableCards);
-                console.log(`[App] FTS indexed ${searchableCards.length} cards.`);
+                // Rebuild FTS index only if empty.
+                const db = getDB();
+                const ftsRow = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards_fts');
+                if (!ftsRow?.cnt) {
+                    const searchableCards = getSearchIndexCards();
+                    dbIndexAllCards(searchableCards);
+                    console.log(`[App] FTS indexed ${searchableCards.length} cards.`);
+                }
 
                 // D4: Daily maintenance (auto-unbury)
                 const { unburiedCount, didRun } = runDailyMaintenance();
@@ -127,7 +133,7 @@ export default function TabLayout() {
         } catch {
             return [];
         }
-    }, [pathname, selectedSubject, selectedTopic, sidebarOpen]);
+    }, [pathname, selectedSubject, selectedTopic]);
 
     // Sidebar counters from canonical cards.
     const getSubjectCount = (subjectId: string) =>

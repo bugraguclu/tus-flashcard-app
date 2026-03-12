@@ -45,9 +45,15 @@ export function saveNote(note: Note): void {
 
 export function deleteNote(id: number): void {
     const db = getDB();
-    // Delete all cards for this note first
-    db.runSync('DELETE FROM anki_cards WHERE noteId = ?', id);
-    db.runSync('DELETE FROM notes WHERE id = ?', id);
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        db.runSync('DELETE FROM anki_cards WHERE noteId = ?', id);
+        db.runSync('DELETE FROM notes WHERE id = ?', id);
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
 }
 
 /** Create a new note and generate its cards */
@@ -81,7 +87,6 @@ export function createNote(
 /** Generate cards for a note based on its note type */
 export function generateCardsForNote(note: Note, noteType: NoteType, deckId: number): AnkiCard[] {
     const cards: AnkiCard[] = [];
-    const now = uniqueId();
 
     if (noteType.kind === 'cloze') {
         // One card per cloze number
@@ -90,14 +95,14 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
         const clozeNumbers = extractClozeNumbers(text);
 
         for (const clozeNum of clozeNumbers) {
-            const card = createCardForNote(note, deckId, clozeNum - 1, now);
+            const card = createCardForNote(note, deckId, clozeNum - 1);
             cards.push(card);
         }
     } else {
         // Standard: one card per template
         for (let i = 0; i < noteType.templates.length; i++) {
             if (shouldGenerateCard(noteType, note, i)) {
-                const card = createCardForNote(note, deckId, i, now);
+                const card = createCardForNote(note, deckId, i);
                 cards.push(card);
             }
         }
@@ -106,9 +111,10 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
     return cards;
 }
 
-function createCardForNote(note: Note, deckId: number, ord: number, now: number): AnkiCard {
+function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
+    const now = uniqueId();
     const card: AnkiCard = {
-        id: now + ord, // slightly offset IDs
+        id: now,
         noteId: note.id,
         deckId,
         ord,
@@ -527,19 +533,18 @@ export function searchNotes(query: string): Note[] {
 
     const searchTerms = sanitized.split(/\s+/).map(t => `"${t}"*`).filter(t => t !== '""*').join(' ');
     try {
-        const rows = db.getAllSync<{ card_id: string }>(
-            'SELECT card_id FROM cards_fts WHERE cards_fts MATCH ? ORDER BY rank',
-            searchTerms
+        const rows = db.getAllSync<{ noteData: string }>(
+            `SELECT DISTINCT n.data AS noteData
+             FROM notes n
+             JOIN anki_cards c ON c.noteId = n.id
+             JOIN cards_fts f ON f.card_id = CAST(c.id AS TEXT)
+             WHERE cards_fts MATCH ?
+             ORDER BY bm25(cards_fts)`,
+            searchTerms,
         );
+
         if (rows.length === 0) return [];
-        const matchedIds = new Set(rows.map(r => Number(r.card_id)));
-        return getAllNotes().filter((note) => {
-            const noteCards = getCardsForNote(note.id);
-            if (noteCards.some((card) => matchedIds.has(card.id))) {
-                return true;
-            }
-            return note.fields.some((field) => field.toLowerCase().includes(q));
-        });
+        return rows.map((row) => JSON.parse(row.noteData) as Note);
     } catch {
         // Fallback: simple text search if FTS5 fails
         return getAllNotes().filter(note =>
