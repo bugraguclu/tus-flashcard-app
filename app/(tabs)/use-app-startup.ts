@@ -8,7 +8,7 @@ import {
     clearLegacyCardStates,
     migrateLegacySettingsIfNeeded,
 } from '../../lib/storage';
-import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
+import { initDB, initWebDb, dbIndexAllCards, getDB } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
 import { initAnkiData } from '../../lib/ankiInit';
 import { getSearchIndexCards } from '../../lib/noteManager';
@@ -23,13 +23,7 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
 
         async function startup() {
             try {
-                if (Platform.OS === 'web') {
-                    if (!cancelled) {
-                        setStartupError('Bu uygulama iOS ve Android için tasarlanmıştır. Web tarayıcısında SQLite desteği bulunmamaktadır.');
-                    }
-                    return;
-                }
-
+                await initWebDb();
                 initDB();
                 console.log('[App] SQLite DB initialized.');
 

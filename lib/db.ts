@@ -1,30 +1,59 @@
 // ============================================================
 // TUS Flashcard - SQLite Database Layer
+// Platform-aware: expo-sqlite on native, sql.js on web
 // ============================================================
 
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
+import type { WebSQLiteDatabase } from './webDb';
 
 // ---------- Schema Version ----------
 const SCHEMA_VERSION = 6;
 
-let _db: SQLite.SQLiteDatabase | null = null;
+// ---------- Unified DB Interface ----------
+// Both expo-sqlite and our web wrapper implement these methods.
+interface DBHandle {
+    execSync(sql: string): void;
+    runSync(sql: string, ...params: any[]): any;
+    getAllSync<T = any>(sql: string, ...params: any[]): T[];
+    getFirstSync<T = any>(sql: string, ...params: any[]): T | null;
+}
+
+let _db: DBHandle | null = null;
 
 // ---------- DB Singleton ----------
-export function getDB(): SQLite.SQLiteDatabase {
+export function getDB(): DBHandle {
     if (!_db) {
-        _db = SQLite.openDatabaseSync('tus_flashcard.db');
+        if (Platform.OS === 'web') {
+            // On web, the DB must be pre-initialized via initWebDb() before any getDB() call.
+            const { getWebDatabase } = require('./webDb') as typeof import('./webDb');
+            const webDb = getWebDatabase();
+            if (!webDb) {
+                throw new Error('Web database not initialized. Call initWebDb() first.');
+            }
+            _db = webDb;
+        } else {
+            const SQLite = require('expo-sqlite') as typeof import('expo-sqlite');
+            _db = SQLite.openDatabaseSync('tus_flashcard.db');
+        }
     }
     return _db;
+}
+
+/** Initialize web database (async, must be called before any DB access on web) */
+export async function initWebDb(): Promise<void> {
+    if (Platform.OS !== 'web') return;
+    const { initWebDatabase } = require('./webDb') as typeof import('./webDb');
+    _db = await initWebDatabase();
 }
 
 // ---------- Migrations ----------
 interface Migration {
     version: number;
     description: string;
-    up: (db: SQLite.SQLiteDatabase) => void;
+    up: (db: DBHandle) => void;
 }
 
-function hasColumn(db: SQLite.SQLiteDatabase, table: string, column: string): boolean {
+function hasColumn(db: DBHandle, table: string, column: string): boolean {
     const rows = db.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
     return rows.some((row) => row.name === column);
 }
@@ -200,7 +229,7 @@ const migrations: Migration[] = [
 ];
 
 // ---------- Run Migrations ----------
-export function runMigrations(db: SQLite.SQLiteDatabase): void {
+export function runMigrations(db: DBHandle): void {
     db.execSync(`
         CREATE TABLE IF NOT EXISTS schema_version (
             version INTEGER PRIMARY KEY
@@ -231,9 +260,12 @@ export function runMigrations(db: SQLite.SQLiteDatabase): void {
 }
 
 // ---------- Init DB ----------
-export function initDB(): SQLite.SQLiteDatabase {
+export function initDB(): DBHandle {
     const db = getDB();
-    db.execSync('PRAGMA journal_mode = WAL;');
+    if (Platform.OS !== 'web') {
+        // WAL mode and foreign keys are native-only pragmas
+        db.execSync('PRAGMA journal_mode = WAL;');
+    }
     db.execSync('PRAGMA foreign_keys = ON;');
     runMigrations(db);
     return db;
@@ -313,7 +345,7 @@ export function dbSearchCards(query: string): number[] {
         );
         return rows.map((row) => Number(row.card_id));
     } catch (e) {
-        console.warn('[DB] operation failed:', e);
+        console.warn('[DB] FTS search failed, falling back:', e);
         return [];
     }
 }

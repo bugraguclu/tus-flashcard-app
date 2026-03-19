@@ -167,9 +167,9 @@ export default function DecksScreen() {
                     <Text style={styles.bottomBtnIcon}>📊</Text>
                     <Text style={styles.bottomBtnText}>İstatistik</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.bottomBtn} onPress={() => alert('Sync', 'Sync henüz uygulanmadı.') }>
-                    <Text style={styles.bottomBtnIcon}>🔄</Text>
-                    <Text style={styles.bottomBtnText}>Sync</Text>
+                <TouchableOpacity style={styles.bottomBtn} onPress={() => router.push('/settings' as any)}>
+                    <Text style={styles.bottomBtnIcon}>⚙️</Text>
+                    <Text style={styles.bottomBtnText}>Ayarlar</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
