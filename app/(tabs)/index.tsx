@@ -64,6 +64,11 @@ export default function StudyScreen() {
     }, [sessionStats]);
 
     const buildQueue = useCallback((newCardsStudiedToday?: number, resetCounter: boolean = true) => {
+        if (scheduledRefreshRef.current) {
+            clearTimeout(scheduledRefreshRef.current);
+            scheduledRefreshRef.current = null;
+        }
+
         const result = getStudyQueue({
             settings,
             selectedSubject,
@@ -196,12 +201,13 @@ export default function StudyScreen() {
         const elapsed = Math.max(0, Date.now() - answerStartedAt);
         const result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);
 
+        const prevStats = sessionStatsRef.current;
         const nextStats: SessionStats = {
-            ...sessionStats,
-            reviewed: sessionStats.reviewed + 1,
-            correct: grade >= 3 ? sessionStats.correct + 1 : sessionStats.correct,
-            wrong: grade < 3 ? sessionStats.wrong + 1 : sessionStats.wrong,
-            newCardsToday: result.wasNewCard ? (sessionStats.newCardsToday || 0) + 1 : sessionStats.newCardsToday,
+            ...prevStats,
+            reviewed: prevStats.reviewed + 1,
+            correct: grade >= 3 ? prevStats.correct + 1 : prevStats.correct,
+            wrong: grade < 3 ? prevStats.wrong + 1 : prevStats.wrong,
+            newCardsToday: result.wasNewCard ? (prevStats.newCardsToday || 0) + 1 : prevStats.newCardsToday,
         };
 
         setUndoStack((prev) => [
@@ -210,10 +216,11 @@ export default function StudyScreen() {
                 cardId: currentCard.cardId,
                 reviewLogId: result.reviewLogId,
                 previousSnapshot: result.previousAnkiCard,
-                previousStats: sessionStats,
+                previousStats: { ...prevStats },
             },
         ]);
 
+        sessionStatsRef.current = nextStats;
         setSessionStats(nextStats);
         await saveSessionStats(nextStats);
 
@@ -265,7 +272,6 @@ export default function StudyScreen() {
         currentCard,
         answerStartedAt,
         settings,
-        sessionStats,
         buildQueue,
         bumpDataVersion,
         queue.length,
@@ -280,6 +286,7 @@ export default function StudyScreen() {
 
         undoAnswer(undo.previousSnapshot, undo.reviewLogId);
 
+        sessionStatsRef.current = undo.previousStats;
         setSessionStats(undo.previousStats);
         await saveSessionStats(undo.previousStats);
         bumpDataVersion();

@@ -41,8 +41,8 @@ export default function CardWebView({ noteType, note, card, deck, side }: CardWe
             originWhitelist={['*']}
             source={{ html, baseUrl: getMediaBaseUrl() }}
             style={styles.webView}
-            javaScriptEnabled
-            domStorageEnabled
+            javaScriptEnabled={false}
+            domStorageEnabled={false}
             automaticallyAdjustContentInsets
         />
     );

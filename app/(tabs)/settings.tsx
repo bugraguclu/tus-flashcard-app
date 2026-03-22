@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -15,23 +15,41 @@ import { useApp } from './_layout';
 import type { AppSettings } from '../../lib/types';
 
 export default function SettingsScreen() {
-    const { refreshData } = useApp();
+    const { refreshData, bumpDataVersion } = useApp();
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
+    const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         setSettings(loadSettings());
         setLoading(false);
+
+        return () => {
+            if (savedTimerRef.current) {
+                clearTimeout(savedTimerRef.current);
+                savedTimerRef.current = null;
+            }
+        };
     }, []);
 
-    const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-        const updated = { ...settings, [key]: value };
-        setSettings(updated);
-        saveSettings(updated);
-        refreshData();
+    const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+        setSettings((prev) => {
+            const updated = { ...prev, [key]: value };
+            saveSettings(updated);
+            refreshData();
+            bumpDataVersion();
+            return updated;
+        });
+
         setSaved(true);
-        setTimeout(() => setSaved(false), 1500);
+        if (savedTimerRef.current) {
+            clearTimeout(savedTimerRef.current);
+        }
+        savedTimerRef.current = setTimeout(() => {
+            setSaved(false);
+            savedTimerRef.current = null;
+        }, 1500);
     };
 
     const handleExport = async () => {
@@ -63,6 +81,7 @@ export default function SettingsScreen() {
                 saveSettings(DEFAULT_SETTINGS);
                 setSettings(DEFAULT_SETTINGS);
                 refreshData();
+                bumpDataVersion();
                 alert('Sıfırlandı', 'Tüm ilerleme temizlendi.');
             },
         );

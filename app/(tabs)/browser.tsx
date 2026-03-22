@@ -16,7 +16,7 @@ import { useApp } from './_layout';
 import { getBrowserCards, setCardSuspended, type StudyCard } from '../../lib/studyRepository';
 
 export default function BrowserScreen() {
-    const { settings, bumpDataVersion } = useApp();
+    const { settings, bumpDataVersion, dataVersion } = useApp();
 
     const [allCards, setAllCards] = useState<StudyCard[]>([]);
     const [rawQuery, setRawQuery] = useState('');
@@ -34,7 +34,14 @@ export default function BrowserScreen() {
 
     useEffect(() => {
         reload();
-    }, [reload]);
+    }, [reload, dataVersion]);
+
+    useEffect(() => () => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = null;
+        }
+    }, []);
 
     const handleSearch = useCallback((text: string) => {
         setRawQuery(text);

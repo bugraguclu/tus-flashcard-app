@@ -57,16 +57,35 @@ export default function TabLayout() {
         }
     }, [dataVersion]);
 
+    const { subjectCounts, topicCounts } = useMemo(() => {
+        const nextSubjectCounts = new Map<string, number>();
+        const nextTopicCounts = new Map<string, Map<string, number>>();
+
+        for (const card of searchableCards) {
+            nextSubjectCounts.set(card.subject, (nextSubjectCounts.get(card.subject) ?? 0) + 1);
+
+            let perTopic = nextTopicCounts.get(card.subject);
+            if (!perTopic) {
+                perTopic = new Map<string, number>();
+                nextTopicCounts.set(card.subject, perTopic);
+            }
+            perTopic.set(card.topic, (perTopic.get(card.topic) ?? 0) + 1);
+        }
+
+        return {
+            subjectCounts: nextSubjectCounts,
+            topicCounts: nextTopicCounts,
+        };
+    }, [searchableCards]);
+
     const getSubjectCount = useCallback(
-        (subjectId: string) => searchableCards.filter((card) => card.subject === subjectId).length,
-        [searchableCards],
+        (subjectId: string) => subjectCounts.get(subjectId) ?? 0,
+        [subjectCounts],
     );
 
     const getTopicCount = useCallback(
-        (subjectId: string, topic: string) => (
-            searchableCards.filter((card) => card.subject === subjectId && card.topic === topic).length
-        ),
-        [searchableCards],
+        (subjectId: string, topic: string) => topicCounts.get(subjectId)?.get(topic) ?? 0,
+        [topicCounts],
     );
 
     const totalCards = searchableCards.length;

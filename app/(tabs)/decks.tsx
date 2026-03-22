@@ -23,7 +23,7 @@ import { useApp } from './_layout';
 
 export default function DecksScreen() {
     const router = useRouter();
-    const { settings } = useApp();
+    const { settings, dataVersion } = useApp();
     const [expandedDecks, setExpandedDecks] = useState<Set<string>>(new Set(['TUS']));
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [newDeckName, setNewDeckName] = useState('');
@@ -33,7 +33,7 @@ export default function DecksScreen() {
         const decks = getAllDecks();
         const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour);
         return buildDeckTree(decks, counts);
-    }, [refreshToken, settings.dayRolloverHour]);
+    }, [refreshToken, dataVersion, settings.dayRolloverHour]);
 
     const refresh = useCallback(() => {
         setRefreshToken((value) => value + 1);

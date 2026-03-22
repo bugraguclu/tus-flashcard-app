@@ -18,8 +18,10 @@ import { todayLocalYMD } from '../../lib/scheduler';
 import { getTodayStudyTimeMs } from '../../lib/reviewLogger';
 import { confirm, alert } from '../../lib/confirm';
 import type { AppSettings, SessionStats } from '../../lib/types';
+import { useApp } from './_layout';
 
 export default function StatsScreen() {
+    const { dataVersion, bumpDataVersion, refreshData } = useApp();
     const [sessionStats, setSessionStats] = useState<SessionStats>({
         reviewed: 0,
         correct: 0,
@@ -33,21 +35,33 @@ export default function StatsScreen() {
     const [showImport, setShowImport] = useState(false);
 
     useEffect(() => {
+        let cancelled = false;
+
         async function load() {
             const stats = await loadSessionStats();
             const appSettings = loadSettings();
+
+            if (cancelled) return;
+
             setSessionStats(stats);
             setSettings(appSettings);
             setLoading(false);
         }
-        load();
-    }, []);
 
-    const cards = useMemo(() => getBrowserCards(settings), [settings]);
-    const bucketTotals = useMemo(() => aggregateBucketsSql(), [settings]);
+        load();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [dataVersion]);
+
+    const cards = useMemo(() => getBrowserCards(settings), [settings, dataVersion]);
+    const bucketTotals = useMemo(() => aggregateBucketsSql(), [dataVersion]);
 
     const subjectStats = useMemo(() => {
-        const today = todayLocalYMD();
+        const today = todayLocalYMD(undefined, settings.dayRolloverHour);
+        const nowMs = Date.now();
+
         return TUS_SUBJECTS.map((subject) => {
             const subjectCards = cards.filter((card) => card.subject === subject.id);
 
@@ -67,7 +81,7 @@ export default function StatsScreen() {
 
                 if (card.state.status === 'learning') {
                     learningCount += 1;
-                    if (!card.state.dueTime || card.state.dueTime <= Date.now()) {
+                    if (!card.state.dueTime || card.state.dueTime <= nowMs) {
                         dueCount += 1;
                     }
                     continue;
@@ -100,7 +114,7 @@ export default function StatsScreen() {
                 pct,
             };
         });
-    }, [cards]);
+    }, [cards, settings.dayRolloverHour]);
 
     const accuracy = sessionStats.reviewed > 0
         ? Math.round((sessionStats.correct / sessionStats.reviewed) * 100)
@@ -134,7 +148,9 @@ export default function StatsScreen() {
         confirm('Uyarı', 'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?', async () => {
             const success = await importAllData(importData);
             if (success) {
-                alert('Başarılı', 'Veriler içe aktarıldı. Uygulamayı yeniden açın.');
+                refreshData();
+                bumpDataVersion();
+                alert('Başarılı', 'Veriler içe aktarıldı. Görünüm güncellendi.');
                 setImportData('');
                 setShowImport(false);
             } else {
