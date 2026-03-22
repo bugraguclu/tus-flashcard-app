@@ -84,6 +84,7 @@ const migrations: Migration[] = [
         version: 2,
         description: 'FTS5 full-text search',
         up: (db) => {
+            if (Platform.OS === 'web') return; // sql.js default build lacks FTS5
             db.execSync(`
                 CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
                     card_id,
@@ -130,6 +131,7 @@ const migrations: Migration[] = [
                     factor INTEGER NOT NULL DEFAULT 0,
                     reps INTEGER NOT NULL DEFAULT 0,
                     lapses INTEGER NOT NULL DEFAULT 0,
+                    "left" INTEGER NOT NULL DEFAULT 0,
                     flags INTEGER NOT NULL DEFAULT 0,
                     data TEXT NOT NULL
                 );
@@ -213,6 +215,7 @@ const migrations: Migration[] = [
         version: 6,
         description: 'Rebuild FTS with unicode61/remove_diacritics tokenizer',
         up: (db) => {
+            if (Platform.OS === 'web') return; // sql.js default build lacks FTS5
             db.execSync('DROP TABLE IF EXISTS cards_fts;');
             db.execSync(`
                 CREATE VIRTUAL TABLE cards_fts USING fts5(
@@ -309,6 +312,7 @@ export function buildFtsPrefixQuery(query: string): string {
 }
 
 export function dbIndexAllCards(cards: SearchableCard[]): void {
+    if (Platform.OS === 'web') return; // FTS5 unavailable on web
     const db = getDB();
     db.execSync('DELETE FROM cards_fts;');
     db.execSync('BEGIN TRANSACTION;');
@@ -333,6 +337,7 @@ export function dbIndexAllCards(cards: SearchableCard[]): void {
 
 export function dbSearchCards(query: string): number[] {
     if (!query.trim()) return [];
+    if (Platform.OS === 'web') return []; // FTS5 unavailable on web; browser.tsx uses LIKE fallback
     const db = getDB();
 
     const searchTerms = buildFtsPrefixQuery(query);
@@ -351,6 +356,7 @@ export function dbSearchCards(query: string): number[] {
 }
 
 export function dbUpsertFtsCard(card: SearchableCard): void {
+    if (Platform.OS === 'web') return;
     const db = getDB();
     db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(card.id));
     db.runSync(
@@ -364,6 +370,7 @@ export function dbUpsertFtsCard(card: SearchableCard): void {
 }
 
 export function dbDeleteFtsCard(cardId: number): void {
+    if (Platform.OS === 'web') return;
     const db = getDB();
     db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
 }

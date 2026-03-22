@@ -67,11 +67,13 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
                     }
                 }
 
-                const ftsRow = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards_fts');
-                if (!ftsRow?.cnt) {
-                    const searchableCards = getSearchIndexCards();
-                    dbIndexAllCards(searchableCards);
-                    console.log(`[App] FTS indexed ${searchableCards.length} cards.`);
+                if (Platform.OS !== 'web') {
+                    const ftsRow = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM cards_fts');
+                    if (!ftsRow?.cnt) {
+                        const searchableCards = getSearchIndexCards();
+                        dbIndexAllCards(searchableCards);
+                        console.log(`[App] FTS indexed ${searchableCards.length} cards.`);
+                    }
                 }
 
                 const { unburiedCount, didRun } = runDailyMaintenance();

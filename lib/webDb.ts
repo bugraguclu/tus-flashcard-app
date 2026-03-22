@@ -17,7 +17,13 @@ function persistToLocalStorage(): void {
 
     try {
         const data = _sqlDb.export();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(data)));
+        const bytes = new Uint8Array(data);
+        const chunks: string[] = [];
+        const chunkSize = 8192;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            chunks.push(String.fromCharCode(...bytes.subarray(i, i + chunkSize)));
+        }
+        const base64 = btoa(chunks.join(''));
         localStorage.setItem(DB_STORAGE_KEY, base64);
     } catch (e) {
         console.warn('[WebDB] Failed to persist database:', e);
@@ -118,7 +124,7 @@ function createWrapper(db: SqlJsDatabase): WebSQLiteDatabase {
 
 export async function initWebDatabase(): Promise<WebSQLiteDatabase> {
     const SQL = await initSqlJs({
-        locateFile: (file: string) => `https://sql.js.org/dist/${file}`,
+        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/${file}`,
     });
 
     const savedData = loadFromLocalStorage();
