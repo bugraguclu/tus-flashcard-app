@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors } from '../constants/theme';
+import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Colors, FontSize } from '../constants/theme';
+import { initWebDb } from '../lib/db';
 
 class AppErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -59,38 +60,91 @@ const errorStyles = StyleSheet.create({
     buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 });
 
+/** Ensures the web SQLite (sql.js) database is ready before any screen renders. */
+function WebDbGate({ children }: { children: React.ReactNode }) {
+    const [ready, setReady] = useState(Platform.OS !== 'web');
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (Platform.OS !== 'web') return;
+
+        initWebDb()
+            .then(() => setReady(true))
+            .catch((e) => {
+                const msg = e instanceof Error ? e.message : String(e);
+                console.error('[WebDbGate] initWebDb failed:', e);
+                setError(msg);
+            });
+    }, []);
+
+    if (error) {
+        return (
+            <View style={errorStyles.container}>
+                <Text style={errorStyles.icon}>⚠️</Text>
+                <Text style={errorStyles.title}>Veritabani baslatilamadi</Text>
+                <Text style={errorStyles.message}>{error}</Text>
+                <TouchableOpacity
+                    style={errorStyles.button}
+                    onPress={() => {
+                        setError(null);
+                        setReady(false);
+                        initWebDb()
+                            .then(() => setReady(true))
+                            .catch((e2) => setError(e2 instanceof Error ? e2.message : String(e2)));
+                    }}
+                >
+                    <Text style={errorStyles.buttonText}>Tekrar Dene</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    if (!ready) {
+        return (
+            <View style={errorStyles.container}>
+                <Text style={errorStyles.icon}>🧠</Text>
+                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>Yukleniyor...</Text>
+            </View>
+        );
+    }
+
+    return <>{children}</>;
+}
+
 export default function RootLayout() {
     return (
         <AppErrorBoundary>
-            <StatusBar style="auto" />
-            <Stack
-                screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: Colors.bgPrimary },
-                }}
-            >
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen
-                    name="editor"
-                    options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: 'Kart Düzenle',
-                        headerStyle: { backgroundColor: Colors.bgSecondary },
-                        headerTintColor: Colors.accent,
+            <WebDbGate>
+                <StatusBar style="auto" />
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: Colors.bgPrimary },
                     }}
-                />
-                <Stack.Screen
-                    name="card-info"
-                    options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: 'Kart Bilgisi',
-                        headerStyle: { backgroundColor: Colors.bgSecondary },
-                        headerTintColor: Colors.accent,
-                    }}
-                />
-            </Stack>
+                >
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen
+                        name="editor"
+                        options={{
+                            presentation: 'modal',
+                            headerShown: true,
+                            title: 'Kart Duzenle',
+                            headerStyle: { backgroundColor: Colors.bgSecondary },
+                            headerTintColor: Colors.accent,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="card-info"
+                        options={{
+                            presentation: 'modal',
+                            headerShown: true,
+                            title: 'Kart Bilgisi',
+                            headerStyle: { backgroundColor: Colors.bgSecondary },
+                            headerTintColor: Colors.accent,
+                        }}
+                    />
+                </Stack>
+            </WebDbGate>
         </AppErrorBoundary>
     );
 }

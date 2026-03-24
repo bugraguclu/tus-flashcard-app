@@ -8,7 +8,7 @@ import {
     clearLegacyCardStates,
     migrateLegacySettingsIfNeeded,
 } from '../../lib/storage';
-import { initDB, initWebDb, dbIndexAllCards, getDB } from '../../lib/db';
+import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
 import { initAnkiData } from '../../lib/ankiInit';
 import { getSearchIndexCards } from '../../lib/noteManager';
@@ -17,10 +17,7 @@ import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '.
 let startupPromise: Promise<void> | null = null;
 
 async function runStartupCore(): Promise<void> {
-    if (Platform.OS === 'web') {
-        await initWebDb();
-    }
-
+    // Web DB is initialized in root _layout.tsx (WebDbGate) before any screen renders.
     initDB();
     console.log('[App] SQLite DB initialized.');
 
