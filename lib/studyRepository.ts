@@ -410,39 +410,44 @@ function toStudyCards(
 ): StudyCard[] {
     const settingsCache = options.settingsCache ?? new Map<number, AppSettings>();
 
-    return rows.map((row) => {
-        const note = JSON.parse(row.noteData) as Note;
-        const noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
+    return rows.reduce<StudyCard[]>((acc, row) => {
+        try {
+            const note = JSON.parse(row.noteData) as Note;
+            const noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
 
-        // Parse full card blob only for learning queues (left/decode needed)
-        // or when caller explicitly needs a full raw card object.
-        const needsFullCard = options.includeRawCard
-            || row.queue === 1
-            || row.queue === 3
-            || row.type === 1
-            || row.type === 3;
+            // Parse full card blob only for learning queues (left/decode needed)
+            // or when caller explicitly needs a full raw card object.
+            const needsFullCard = options.includeRawCard
+                || row.queue === 1
+                || row.queue === 3
+                || row.type === 1
+                || row.type === 3;
 
-        let card: AnkiCard;
-        if (needsFullCard) {
-            if (row.cardData) {
-                card = JSON.parse(row.cardData) as AnkiCard;
+            let card: AnkiCard;
+            if (needsFullCard) {
+                if (row.cardData) {
+                    card = JSON.parse(row.cardData) as AnkiCard;
+                } else {
+                    card = getAnkiCard(row.cardId) ?? makeShallowCardFromRow(row, nowMs);
+                }
             } else {
-                card = getAnkiCard(row.cardId) ?? makeShallowCardFromRow(row, nowMs);
+                card = makeShallowCardFromRow(row, nowMs);
             }
-        } else {
-            card = makeShallowCardFromRow(row, nowMs);
-        }
 
-        const cardSettings = resolveSettingsForDeck(card.deckId, baseSettings, settingsCache);
-        return makeStudyCard(
-            card,
-            note,
-            noteType,
-            cardSettings,
-            nowMs,
-            Boolean(options.includeRawCard),
-        );
-    });
+            const cardSettings = resolveSettingsForDeck(card.deckId, baseSettings, settingsCache);
+            acc.push(makeStudyCard(
+                card,
+                note,
+                noteType,
+                cardSettings,
+                nowMs,
+                Boolean(options.includeRawCard),
+            ));
+        } catch (e) {
+            console.warn('[StudyRepo] Skipping corrupt row:', row.cardId, e);
+        }
+        return acc;
+    }, []);
 }
 
 function deterministicShuffle<T>(items: T[], seedKey: string): T[] {

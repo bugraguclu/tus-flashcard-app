@@ -21,16 +21,17 @@ export default function CardWebView({ noteType, note, card, deck, side }: CardWe
     });
 
     if (Platform.OS === 'web') {
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;background:${Colors.bgCard};color:${Colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;}</style></head><body>${html}</body></html>`;
         return (
-            <div
-                dangerouslySetInnerHTML={{ __html: html }}
+            <iframe
+                srcDoc={fullHtml}
+                sandbox="allow-same-origin"
                 style={{
+                    border: 'none',
+                    width: '100%',
+                    minHeight: 120,
                     backgroundColor: Colors.bgCard,
-                    padding: 12,
                     borderRadius: 8,
-                    color: Colors.textPrimary,
-                    fontSize: 16,
-                    lineHeight: '24px',
                 }}
             />
         );

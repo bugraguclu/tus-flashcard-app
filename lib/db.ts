@@ -337,8 +337,27 @@ export function dbIndexAllCards(cards: SearchableCard[]): void {
 
 export function dbSearchCards(query: string): number[] {
     if (!query.trim()) return [];
-    if (Platform.OS === 'web') return []; // FTS5 unavailable on web; browser.tsx uses LIKE fallback
     const db = getDB();
+
+    if (Platform.OS === 'web') {
+        // FTS5 unavailable on web; use LIKE-based fallback against notes table
+        try {
+            const likePattern = `%${query.trim()}%`;
+            const rows = db.getAllSync<{ id: number }>(
+                `SELECT DISTINCT ac.id FROM anki_cards ac
+                 JOIN notes n ON n.id = ac.noteId
+                 WHERE n.sfld LIKE ? OR n.data LIKE ? OR n.tags LIKE ?
+                 LIMIT 200`,
+                likePattern,
+                likePattern,
+                likePattern,
+            );
+            return rows.map((row) => row.id);
+        } catch (e) {
+            console.warn('[DB] Web LIKE search failed:', e);
+            return [];
+        }
+    }
 
     const searchTerms = buildFtsPrefixQuery(query);
     if (!searchTerms) return [];
