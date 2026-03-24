@@ -279,7 +279,7 @@ function loadRowsByQueue(
             c.factor AS factor,
             c.reps AS reps,
             c.lapses AS lapses,
-            c.left AS left,
+            c."left" AS "left",
             c.flags AS flags,
             ${cardDataSelect} AS cardData,
             n.data AS noteData,
@@ -718,7 +718,7 @@ export function getStudyCardById(cardId: number, settings: AppSettings): StudyCa
             c.factor AS factor,
             c.reps AS reps,
             c.lapses AS lapses,
-            c.left AS left,
+            c."left" AS "left",
             c.flags AS flags,
             c.data AS cardData,
             n.data AS noteData,
@@ -895,7 +895,7 @@ export function getBrowserCards(settings: AppSettings, limit?: number, offset?: 
             c.id AS cardId, c.noteId AS noteId, c.deckId AS deckId,
             c.ord AS ord, c.type AS type, c.queue AS queue,
             c.due AS due, c.ivl AS ivl, c.factor AS factor,
-            c.reps AS reps, c.lapses AS lapses, c.left AS left,
+            c.reps AS reps, c.lapses AS lapses, c."left" AS "left",
             c.flags AS flags, NULL AS cardData,
             n.data AS noteData, nt.data AS noteTypeData
          FROM anki_cards c

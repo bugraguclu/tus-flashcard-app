@@ -227,8 +227,8 @@ export function saveAnkiCard(card: AnkiCard): void {
     if (!existing) {
         db.runSync(
             `INSERT INTO anki_cards
-             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data, updated_at, usn, tombstone)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             card.id,
             card.noteId,
             card.deckId,
@@ -240,6 +240,7 @@ export function saveAnkiCard(card: AnkiCard): void {
             card.factor,
             card.reps,
             card.lapses,
+            card.left ?? 0,
             card.flags,
             serializedData,
             nowMs,
@@ -253,7 +254,7 @@ export function saveAnkiCard(card: AnkiCard): void {
         db.runSync(
             `UPDATE anki_cards
              SET noteId = ?, deckId = ?, ord = ?, type = ?, queue = ?, due = ?, ivl = ?, factor = ?,
-                 reps = ?, lapses = ?, flags = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0
+                 reps = ?, lapses = ?, "left" = ?, flags = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0
              WHERE id = ?`,
             card.noteId,
             card.deckId,
@@ -265,6 +266,7 @@ export function saveAnkiCard(card: AnkiCard): void {
             card.factor,
             card.reps,
             card.lapses,
+            card.left ?? 0,
             card.flags,
             serializedData,
             nowMs,
@@ -277,7 +279,7 @@ export function saveAnkiCard(card: AnkiCard): void {
     db.runSync(
         `UPDATE anki_cards
          SET noteId = ?, deckId = ?, ord = ?, type = ?, queue = ?, due = ?, ivl = ?, factor = ?,
-             reps = ?, lapses = ?, flags = ?, updated_at = ?, usn = ?, tombstone = 0
+             reps = ?, lapses = ?, "left" = ?, flags = ?, updated_at = ?, usn = ?, tombstone = 0
          WHERE id = ?`,
         card.noteId,
         card.deckId,
@@ -289,6 +291,7 @@ export function saveAnkiCard(card: AnkiCard): void {
         card.factor,
         card.reps,
         card.lapses,
+        card.left ?? 0,
         card.flags,
         nowMs,
         card.usn ?? -1,

@@ -519,8 +519,8 @@ function importCanonicalTables(data: any): void {
         for (const row of data.tables.anki_cards || []) {
             db.runSync(
                 `INSERT INTO anki_cards
-                 (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data, updated_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, usn, tombstone)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 row.id,
                 row.noteId,
                 row.deckId,
@@ -532,6 +532,7 @@ function importCanonicalTables(data: any): void {
                 row.factor,
                 row.reps,
                 row.lapses,
+                row.left ?? 0,
                 row.flags,
                 row.data,
                 row.updated_at ?? 0,
