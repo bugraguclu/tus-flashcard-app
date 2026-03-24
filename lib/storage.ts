@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0.7,
+    lapseNewInterval: 0,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
@@ -53,7 +53,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     maxInterval: 36500,
     dayRolloverHour: 4,
     algorithm: 'ANKI_V3' as AlgorithmType,
-    desiredRetention: 0.9,
 };
 
 function getDbSetting(key: string): string | null {
@@ -270,7 +269,6 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
         config.easyBonus = settings.easyBonus;
         config.ivlModifier = settings.intervalModifier;
         config.maxIvl = settings.maxInterval;
-        config.desiredRetention = settings.desiredRetention;
         config.mod = Math.floor(Date.now() / 1000);
         config.usn = -1;
         saveDeckConfig(config);
@@ -409,13 +407,12 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
     validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
-    validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval) || 0.7));
+    validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval ?? 0)));
     validated.hardIntervalMultiplier = Math.max(1.0, Math.min(2.0, Number(validated.hardIntervalMultiplier) || 1.2));
     validated.easyBonus = Math.max(1.0, Math.min(2.0, Number(validated.easyBonus) || 1.3));
     validated.intervalModifier = Math.max(0.1, Math.min(3.0, Number(validated.intervalModifier) || 1.0));
     validated.maxInterval = Math.max(1, Math.min(36500, Number(validated.maxInterval) || 36500));
     validated.dayRolloverHour = Math.max(0, Math.min(23, Number(validated.dayRolloverHour) || 4));
-    validated.desiredRetention = Math.max(0.5, Math.min(0.99, Number(validated.desiredRetention) || 0.9));
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
     validated.queueOrder = validated.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new';

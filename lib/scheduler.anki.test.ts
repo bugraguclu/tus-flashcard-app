@@ -10,7 +10,7 @@ const defaultSettings: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0.7,
+    lapseNewInterval: 0,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
@@ -19,7 +19,6 @@ const defaultSettings: AppSettings = {
     maxInterval: 36500,
     dayRolloverHour: 4,
     algorithm: 'ANKI_V3',
-    desiredRetention: 0.9,
 };
 
 function makeNewCard(): CardState {
@@ -36,8 +35,6 @@ function makeNewCard(): CardState {
         learningStep: 0,
         relearningStep: -1,
         lastReviewedAtMs: 0,
-        stability: 0,
-        difficulty: 0,
         elapsedDays: 0,
         lapses: 0,
     };
@@ -57,8 +54,6 @@ function makeReviewCard(overrides: Partial<CardState> = {}): CardState {
         learningStep: -1,
         relearningStep: -1,
         lastReviewedAtMs: Date.now() - 10 * 86400000,
-        stability: 0,
-        difficulty: 0,
         elapsedDays: 0,
         lapses: 0,
         ...overrides,
@@ -85,15 +80,24 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.stateUpdates.learningStep).toBe(-1);
     });
 
-    it('uses lapseNewInterval and lapseSteps on review Again', () => {
+    it('uses lapseNewInterval=0 (Anki default: reset to 1 day) on review Again', () => {
         const card = makeReviewCard({ interval: 20 });
         const result = engine.schedule(card, 1 as Grade, defaultSettings);
 
         expect(result.isLearning).toBe(true);
         expect(result.minutesUntilDue).toBe(10); // lapseSteps[0]
-        expect(result.stateUpdates.interval).toBe(14); // 20 * 0.7
+        // lapseNewInterval=0 means 20*0=0, clamped to 1
+        expect(result.stateUpdates.interval).toBe(1);
         expect(result.stateUpdates.relearningStep).toBe(0);
         expect(result.stateUpdates.lapses).toBe(1);
+    });
+
+    it('uses custom lapseNewInterval when set', () => {
+        const card = makeReviewCard({ interval: 20 });
+        const settings70 = { ...defaultSettings, lapseNewInterval: 0.7 };
+        const result = engine.schedule(card, 1 as Grade, settings70);
+
+        expect(result.stateUpdates.interval).toBe(14); // 20 * 0.7
     });
 
     it('uses lapseSteps (not learningSteps) during relearning', () => {
@@ -113,7 +117,7 @@ describe('ANKI_V3 scheduler', () => {
         expect(resultGood.stateUpdates.interval).toBe(7);
     });
 
-    it('relearning Easy graduates to a larger interval than Good', () => {
+    it('relearning Easy graduates to ivl+1 (Anki behavior)', () => {
         const card = makeReviewCard({
             status: 'learning',
             learningStep: -1,
@@ -125,7 +129,23 @@ describe('ANKI_V3 scheduler', () => {
         const good = engine.schedule(card, 3 as Grade, defaultSettings, now).interval;
         const easy = engine.schedule(card, 4 as Grade, defaultSettings, now).interval;
 
-        expect(easy).toBeGreaterThan(good);
+        expect(good).toBe(10);
+        expect(easy).toBe(11); // ivl + 1
+    });
+
+    it('does not change ease factor during relearning graduation', () => {
+        const card = makeReviewCard({
+            status: 'learning',
+            learningStep: -1,
+            relearningStep: 0,
+            interval: 10,
+            easeFactor: 2.5,
+        });
+
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const easyResult = engine.schedule(card, 4 as Grade, defaultSettings, now);
+        // Anki does NOT change ease during relearning graduation
+        expect(easyResult.stateUpdates.easeFactor).toBeUndefined();
     });
 
     it('keeps review interval ordering hard < good < easy', () => {
@@ -137,6 +157,33 @@ describe('ANKI_V3 scheduler', () => {
         expect(hard).toBeGreaterThan(0);
         expect(good).toBeGreaterThan(hard);
         expect(easy).toBeGreaterThan(good);
+    });
+
+    it('adds overdue bonus for Good and Easy (Anki overdue delay)', () => {
+        // Card with interval=10, reviewed 15 days ago (5 days overdue)
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const lastReview = now - 15 * 86400000;
+        const card = makeReviewCard({
+            interval: 10,
+            easeFactor: 2.5,
+            lastReviewedAtMs: lastReview,
+            cardId: 999,
+        });
+
+        // On-time card (reviewed exactly at interval)
+        const onTimeLastReview = now - 10 * 86400000;
+        const onTimeCard = makeReviewCard({
+            interval: 10,
+            easeFactor: 2.5,
+            lastReviewedAtMs: onTimeLastReview,
+            cardId: 999,
+        });
+
+        const overdueGood = engine.schedule(card, 3 as Grade, defaultSettings, now);
+        const onTimeGood = engine.schedule(onTimeCard, 3 as Grade, defaultSettings, now);
+
+        // Overdue card should get a larger interval due to delay/2 bonus
+        expect(overdueGood.interval).toBeGreaterThan(onTimeGood.interval);
     });
 
     it('does not apply intervalModifier on Hard, but applies it on Good/Easy', () => {

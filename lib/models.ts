@@ -166,9 +166,6 @@ export interface AnkiCard {
     odue: number;        // original due (filtered deck)
     odid: number;        // original deck ID (filtered deck)
     flags: CardFlag;
-    // FSRS specific
-    stability: number;
-    difficulty: number;
     lastReview: number;  // epoch ms of last review
 }
 
@@ -226,9 +223,6 @@ export interface DeckConfig {
     showTimer: boolean;
     maxAnswerSecs: number;        // 60
 
-    // FSRS
-    desiredRetention: number;     // 0.9
-    fsrsWeights: number[];
 }
 
 export const DEFAULT_DECK_CONFIG: DeckConfig = {
@@ -257,8 +251,6 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     buryInterdayLearningSiblings: true,
     showTimer: false,
     maxAnswerSecs: 60,
-    desiredRetention: 0.9,
-    fsrsWeights: [],
 };
 
 // ---- Review Log (Anki: revlog) ----

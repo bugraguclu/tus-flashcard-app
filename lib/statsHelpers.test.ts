@@ -21,8 +21,6 @@ function makeCard(overrides: Partial<AnkiCard>): AnkiCard {
         odue: 0,
         odid: 0,
         flags: 0,
-        stability: 0,
-        difficulty: 0,
         lastReview: 0,
         ...overrides,
     };

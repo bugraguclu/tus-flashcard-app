@@ -36,10 +36,6 @@ export interface CardState {
     learningStep: number;
     relearningStep: number;
     lastReviewedAtMs: number;
-
-    // FSRS specific
-    stability: number;
-    difficulty: number;
     elapsedDays: number;
     lapses: number;
 }
@@ -90,7 +86,6 @@ export interface AppSettings {
     maxInterval: number;
     dayRolloverHour: number;
     algorithm: AlgorithmType;
-    desiredRetention: number;
 }
 
 export interface SessionStats {

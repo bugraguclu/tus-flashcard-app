@@ -213,8 +213,6 @@ export function ankiCardToCardState(
         learningStep: isRelearning ? -1 : inferredStep,
         relearningStep: isRelearning ? inferredStep : -1,
         lastReviewedAtMs: card.lastReview || 0,
-        stability: card.stability || 0,
-        difficulty: card.difficulty || 0,
         elapsedDays: elapsedStudyDays(card.lastReview || 0, nowMs, settings.dayRolloverHour),
         lapses: card.lapses || 0,
     };
@@ -233,8 +231,6 @@ export function cardStateToAnkiCard(
         reps: Math.max(0, Math.round(state.repetition || 0)),
         lapses: Math.max(0, Math.round(state.lapses || 0)),
         factor: Math.max(1300, Math.round((state.easeFactor || settings.startingEase) * 1000)),
-        stability: state.stability || 0,
-        difficulty: state.difficulty || 0,
         lastReview: state.lastReviewedAtMs || card.lastReview || 0,
         mod: Math.floor(nowMs / 1000),
         usn: -1,
@@ -342,8 +338,6 @@ export function makeDefaultCardState(settings: AppSettings): CardState {
         learningStep: 0,
         relearningStep: -1,
         lastReviewedAtMs: 0,
-        stability: 0,
-        difficulty: 0,
         elapsedDays: 0,
         lapses: 0,
     };

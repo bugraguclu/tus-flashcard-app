@@ -21,6 +21,5 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
         intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
         maxInterval: config.maxIvl > 0 ? config.maxIvl : base.maxInterval,
-        desiredRetention: config.desiredRetention > 0 ? config.desiredRetention : base.desiredRetention,
     };
 }

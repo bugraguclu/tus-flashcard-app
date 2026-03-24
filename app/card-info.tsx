@@ -181,8 +181,6 @@ export default function CardInfoScreen() {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Model Fields</Text>
-                    <InfoRow label="Stability" value={card.stability.toFixed(2)} />
-                    <InfoRow label="Difficulty" value={card.difficulty.toFixed(2)} />
                     <InfoRow label="Last Review" value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
                 </View>
 

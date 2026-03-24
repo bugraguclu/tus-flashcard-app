@@ -338,8 +338,6 @@ function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
         odue: 0,
         odid: 0,
         flags: row.flags as AnkiCard['flags'],
-        stability: 0,
-        difficulty: 0,
         lastReview: 0,
     };
 }

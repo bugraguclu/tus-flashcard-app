@@ -62,11 +62,19 @@ function hashSeed(text: string): number {
     return Math.abs(h);
 }
 
-function fuzzRangeForInterval(interval: number): number {
-    if (interval < 2.5) return 0;
-    if (interval < 7) return 1;
-    if (interval < 30) return Math.max(2, Math.round(interval * 0.15));
-    return Math.max(4, Math.round(interval * 0.05));
+function fuzzRangeForInterval(interval: number): { min: number; max: number } {
+    if (interval < 2) return { min: Math.round(interval), max: Math.round(interval) };
+    if (interval === 2) return { min: 2, max: 3 };
+    if (interval < 7) {
+        const fuzz = Math.max(1, Math.round(interval * 0.25));
+        return { min: Math.round(interval) - fuzz, max: Math.round(interval) + fuzz };
+    }
+    if (interval < 30) {
+        const fuzz = Math.max(2, Math.round(interval * 0.15));
+        return { min: Math.round(interval) - fuzz, max: Math.round(interval) + fuzz };
+    }
+    const fuzz = Math.max(4, Math.round(interval * 0.05));
+    return { min: Math.round(interval) - fuzz, max: Math.round(interval) + fuzz };
 }
 
 function applyFuzz(
@@ -75,28 +83,35 @@ function applyFuzz(
     nowMs: number,
     rolloverHour: number = 4,
 ): number {
-    const rounded = Math.max(1, Math.round(interval));
-    const fuzzRange = fuzzRangeForInterval(interval);
-    if (fuzzRange <= 0) return rounded;
+    const range = fuzzRangeForInterval(interval);
+    if (range.min === range.max) return Math.max(1, range.min);
 
     // Deterministic Anki-like fuzz seed: study-day + card id.
     const seed = hashSeed(`${todayLocalYMD(new Date(nowMs), rolloverHour)}-${cardId ?? 0}`);
-    const delta = (seed % (2 * fuzzRange + 1)) - fuzzRange;
-    return Math.max(1, rounded + delta);
+    const span = range.max - range.min + 1;
+    return Math.max(1, range.min + (seed % span));
 }
 
 function clampInterval(interval: number, settings: AppSettings): number {
     return Math.max(1, Math.min(settings.maxInterval, Math.round(interval)));
 }
 
-function computeReviewIntervals(cs: CardState, settings: AppSettings): { hard: number; good: number; easy: number } {
+function computeReviewIntervals(
+    cs: CardState,
+    settings: AppSettings,
+    elapsedDays: number = 0,
+): { hard: number; good: number; easy: number } {
     const cur = Math.max(1, cs.interval || 1);
     const ef = cs.easeFactor || settings.startingEase;
+    // Anki overdue bonus: days the card was overdue beyond its scheduled interval.
+    const delay = Math.max(0, elapsedDays - cur);
 
-    // Anki hard interval path does not use global interval modifier.
+    // Anki hard interval path does not use global interval modifier or overdue bonus.
     const hardBase = Math.max(cur + 1, Math.round(cur * settings.hardIntervalMultiplier));
-    const goodBase = Math.max(hardBase + 1, Math.round(cur * ef * settings.intervalModifier));
-    const easyBase = Math.max(goodBase + 1, Math.round(cur * ef * settings.easyBonus * settings.intervalModifier));
+    // Anki Good: (ivl + delay/2) * ease * modifier
+    const goodBase = Math.max(hardBase + 1, Math.round((cur + delay / 2) * ef * settings.intervalModifier));
+    // Anki Easy: (ivl + delay) * ease * easyBonus * modifier
+    const easyBase = Math.max(goodBase + 1, Math.round((cur + delay) * ef * settings.easyBonus * settings.intervalModifier));
 
     return {
         hard: clampInterval(hardBase, settings),
@@ -106,14 +121,9 @@ function computeReviewIntervals(cs: CardState, settings: AppSettings): { hard: n
 }
 
 function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): number {
+    // Anki relearning Easy: preserved lapse interval + 1 day.
     const relearnGood = clampInterval(Math.max(1, cs.interval || 1), settings);
-    return clampInterval(
-        Math.max(
-            relearnGood + 1,
-            Math.round(relearnGood * settings.easyBonus * settings.intervalModifier),
-        ),
-        settings,
-    );
+    return clampInterval(relearnGood + 1, settings);
 }
 
 function computeElapsedDays(lastReviewedAtMs: number, nowMs: number, rolloverHour: number): number {
@@ -136,8 +146,6 @@ const AnkiV3Engine: SchedulerEngine = {
         easeFactor: settings.startingEase,
         learningStep: 0,
         relearningStep: -1,
-        stability: 0,
-        difficulty: 0,
         elapsedDays: 0,
         lapses: 0,
         lastReviewedAtMs: 0,
@@ -154,7 +162,9 @@ const AnkiV3Engine: SchedulerEngine = {
         return ankiV3Review(cs, grade, settings, now, elapsedDays);
     },
 
-    previewIntervals: (cs: CardState, settings: AppSettings): IntervalPreview => {
+    previewIntervals: (cs: CardState, settings: AppSettings, nowMs?: number): IntervalPreview => {
+        const now = typeof nowMs === 'number' ? nowMs : Date.now();
+        const elapsedDays = computeElapsedDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
         const learningSteps = settings.learningSteps;
         const lapseSteps = settings.lapseSteps;
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
@@ -194,7 +204,7 @@ const AnkiV3Engine: SchedulerEngine = {
             };
         }
 
-        const preview = computeReviewIntervals(cs, settings);
+        const preview = computeReviewIntervals(cs, settings, elapsedDays);
         return {
             again: formatMinutes(lapseSteps[0] || 1),
             hard: formatDays(preview.hard),
@@ -380,7 +390,7 @@ function ankiV3Relearning(
             learningStep: -1,
             status: 'review',
             interval: relearnEasyInterval,
-            easeFactor: Math.max(1.3, (cs.easeFactor || settings.startingEase) + 0.15),
+            // Anki does NOT change ease factor during relearning graduation.
             lastReviewedAtMs: now,
             elapsedDays,
         },
@@ -419,7 +429,7 @@ function ankiV3Review(
         };
     }
 
-    const preview = computeReviewIntervals(cs, settings);
+    const preview = computeReviewIntervals(cs, settings, elapsedDays);
 
     if (grade === 2) {
         const newEase = Math.max(1.3, ef - 0.15);

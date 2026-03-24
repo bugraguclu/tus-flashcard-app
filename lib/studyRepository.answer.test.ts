@@ -45,14 +45,12 @@ const deckConfig: DeckConfig = {
     minIvl: 1,
     leechThreshold: 8,
     leechAction: 'suspend',
-    newIvlPercent: 0.7,
+    newIvlPercent: 0,
     buryNewSiblings: true,
     buryReviewSiblings: true,
     buryInterdayLearningSiblings: true,
     showTimer: false,
     maxAnswerSecs: 60,
-    desiredRetention: 0.9,
-    fsrsWeights: [],
 };
 
 vi.mock('./db', () => ({
@@ -116,7 +114,7 @@ const settings: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0.7,
+    lapseNewInterval: 0,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
@@ -125,7 +123,6 @@ const settings: AppSettings = {
     maxInterval: 36500,
     dayRolloverHour: 4,
     algorithm: 'ANKI_V3',
-    desiredRetention: 0.9,
 };
 
 function baseCard(id: number, noteId: number, queue: AnkiCard['queue'], type: AnkiCard['type']): AnkiCard {
@@ -147,8 +144,6 @@ function baseCard(id: number, noteId: number, queue: AnkiCard['queue'], type: An
         odue: 0,
         odid: 0,
         flags: 0,
-        stability: 0,
-        difficulty: 0,
         lastReview: Date.now() - 3 * 86400000,
     };
 }

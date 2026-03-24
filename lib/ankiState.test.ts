@@ -28,7 +28,6 @@ const settings: AppSettings = {
     maxInterval: 36500,
     dayRolloverHour: 4,
     algorithm: 'ANKI_V3',
-    desiredRetention: 0.9,
 };
 
 function makeCard(overrides: Partial<AnkiCard> = {}): AnkiCard {
@@ -50,8 +49,6 @@ function makeCard(overrides: Partial<AnkiCard> = {}): AnkiCard {
         odue: 0,
         odid: 0,
         flags: 0,
-        stability: 0,
-        difficulty: 0,
         lastReview: 0,
         ...overrides,
     };
@@ -169,8 +166,6 @@ describe('ankiState edge cases', () => {
             learningStep: 0,
             relearningStep: -1,
             lastReviewedAtMs: 0,
-            stability: 0,
-            difficulty: 0,
             elapsedDays: 0,
             lapses: 0,
         };

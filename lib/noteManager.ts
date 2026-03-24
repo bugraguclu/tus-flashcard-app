@@ -165,8 +165,6 @@ function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
         odue: 0,
         odid: 0,
         flags: 0 as CardFlag,
-        stability: 0,
-        difficulty: 0,
         lastReview: 0,
     };
 
@@ -344,11 +342,12 @@ export function burySiblings(card: AnkiCard): number {
     return buriedCount;
 }
 
-/** Unbury all buried cards for the new day rollover. */
+/** Unbury scheduler-buried cards at day rollover. User-buried (-2) cards stay buried. */
 export function unburyAllCards(rolloverHour: number = 4): number {
     const db = getDB();
+    // Anki only auto-unbury scheduler-buried (-3) at day rollover, not user-buried (-2).
     const buried = db.getAllSync<{ data: string }>(
-        'SELECT data FROM anki_cards WHERE queue IN (-2, -3)'
+        'SELECT data FROM anki_cards WHERE queue = -3'
     );
     let count = 0;
     for (const row of buried) {
@@ -363,7 +362,9 @@ export function unburyAllCards(rolloverHour: number = 4): number {
 // ---- Leech Detection ----
 
 export function isLeech(card: AnkiCard, threshold: number = 8): boolean {
-    return card.lapses >= threshold;
+    if (!threshold || card.lapses < threshold) return false;
+    // Anki fires leech on threshold, then every threshold/2 lapses after that.
+    return (card.lapses - threshold) % Math.max(1, Math.floor(threshold / 2)) === 0;
 }
 
 export function handleLeech(card: AnkiCard, action: 'suspend' | 'tag' = 'suspend'): void {
@@ -472,8 +473,6 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
                     odue: 0,
                     odid: 0,
                     flags: 0,
-                    stability: 0,
-                    difficulty: 0,
                     lastReview: 0,
                 };
                 saveAnkiCard(ankiCard);
