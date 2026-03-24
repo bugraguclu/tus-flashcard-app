@@ -96,17 +96,13 @@ export default function TabLayout() {
     }, [isWide, router]);
 
     const handleSubjectPress = (subjectId: string) => {
-        if (expandedSubject === subjectId) {
-            setSelectedSubject(subjectId);
-            setSelectedTopic(null);
-            navigate('/');
-            return;
-        }
-
-        setExpandedSubject(subjectId);
         setSelectedSubject(subjectId);
         setSelectedTopic(null);
         navigate('/');
+    };
+
+    const handleToggleExpand = (subjectId: string) => {
+        setExpandedSubject((prev) => (prev === subjectId ? null : subjectId));
     };
 
     const handleTopicPress = (subjectId: string, topic: string) => {
@@ -168,6 +164,7 @@ export default function TabLayout() {
                         getTopicCount={getTopicCount}
                         onAllPress={handleAllPress}
                         onSubjectPress={handleSubjectPress}
+                        onToggleExpand={handleToggleExpand}
                         onTopicPress={handleTopicPress}
                         navigate={navigate}
                     />

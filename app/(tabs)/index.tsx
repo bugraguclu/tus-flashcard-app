@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, type ViewProps } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, FontSize, Shadows } from '../../constants/theme';
 import { TUS_SUBJECTS } from '../../lib/data';
@@ -23,6 +23,11 @@ import {
     undoAnswer,
     type StudyCard,
 } from '../../lib/studyRepository';
+
+/** Web-only tooltip via HTML title attribute */
+function webTitle(text: string): Record<string, string> {
+    return Platform.OS === 'web' ? { title: text } : {};
+}
 
 type QueueStats = { newCount: number; learningCount: number; reviewCount: number };
 
@@ -439,14 +444,14 @@ export default function StudyScreen() {
                             </View>
 
                             <View style={{ flex: 1 }} />
-                            <TouchableOpacity style={styles.iconBtn} onPress={handleBury}>
+                            <TouchableOpacity style={styles.iconBtn} onPress={handleBury} {...webTitle('Karti gomun (Bury)')}>
                                 <Text style={styles.iconBtnText}>💤</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconBtn} onPress={handleSuspend}>
+                            <TouchableOpacity style={styles.iconBtn} onPress={handleSuspend} {...webTitle('Karti askiya al (Suspend)')}>
                                 <Text style={styles.iconBtnText}>⏸️</Text>
                             </TouchableOpacity>
                             {undoStack.length > 0 && (
-                                <TouchableOpacity style={styles.iconBtn} onPress={undoLast}>
+                                <TouchableOpacity style={styles.iconBtn} onPress={undoLast} {...webTitle('Geri al (Ctrl+Z)')}>
                                     <Text style={styles.iconBtnText}>↩️</Text>
                                 </TouchableOpacity>
                             )}
@@ -497,6 +502,7 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnAgainBg, borderColor: '#e8c4c0' }]}
                                     onPress={() => answerCard(1)}
+                                    {...webTitle('Tekrar - Karti hatirlamadim (1)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnAgain }]}>{preview.again}</Text>
                                     <Text style={[styles.btnLabel, { color: Colors.btnAgain }]}>Tekrar</Text>
@@ -504,6 +510,7 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnHardBg, borderColor: '#e8d8b5' }]}
                                     onPress={() => answerCard(2)}
+                                    {...webTitle('Zor - Zorlanarak hatirladim (2)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnHard }]}>{preview.hard}</Text>
                                     <Text style={[styles.btnLabel, { color: Colors.btnHard }]}>Zor</Text>
@@ -511,6 +518,7 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnGoodBg, borderColor: '#b8dcc8' }]}
                                     onPress={() => answerCard(3)}
+                                    {...webTitle('Iyi - Dogru hatirladim (3)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnGood }]}>{preview.good}</Text>
                                     <Text style={[styles.btnLabel, { color: Colors.btnGood }]}>İyi</Text>
@@ -518,6 +526,7 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnEasyBg, borderColor: '#b8cfe0' }]}
                                     onPress={() => answerCard(4)}
+                                    {...webTitle('Kolay - Cok kolay hatirladim (4)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnEasy }]}>{preview.easy}</Text>
                                     <Text style={[styles.btnLabel, { color: Colors.btnEasy }]}>Kolay</Text>

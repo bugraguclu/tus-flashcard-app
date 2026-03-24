@@ -24,9 +24,15 @@ type SidebarProps = {
     getTopicCount: (subjectId: string, topic: string) => number;
     onAllPress: () => void;
     onSubjectPress: (subjectId: string) => void;
+    onToggleExpand: (subjectId: string) => void;
     onTopicPress: (subjectId: string, topic: string) => void;
     navigate: (path: string) => void;
 };
+
+/** Web-only tooltip via HTML title attribute */
+function webTitle(text: string): Record<string, string> {
+    return Platform.OS === 'web' ? { title: text } : {};
+}
 
 export function Sidebar(props: SidebarProps) {
     const {
@@ -40,6 +46,7 @@ export function Sidebar(props: SidebarProps) {
         getTopicCount,
         onAllPress,
         onSubjectPress,
+        onToggleExpand,
         onTopicPress,
         navigate,
     } = props;
@@ -73,23 +80,32 @@ export function Sidebar(props: SidebarProps) {
 
                     return (
                         <View key={subject.id}>
-                            <TouchableOpacity
-                                style={[styles.subjectItem, isSelected && styles.subjectItemActive]}
-                                onPress={() => onSubjectPress(subject.id)}
-                            >
-                                <Text style={styles.subjectIcon}>{subject.icon}</Text>
-                                <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
-                                    {subject.name}
-                                </Text>
-                                <View style={[styles.subjectCount, isSelected && styles.subjectCountActive]}>
-                                    <Text style={[styles.subjectCountText, isSelected && styles.subjectCountTextActive]}>
-                                        {getSubjectCount(subject.id)}
+                            <View style={[styles.subjectRow, isSelected && styles.subjectItemActive]}>
+                                <TouchableOpacity
+                                    style={styles.subjectItem}
+                                    onPress={() => onSubjectPress(subject.id)}
+                                    {...webTitle(`${subject.name} dersini calis`)}
+                                >
+                                    <Text style={styles.subjectIcon}>{subject.icon}</Text>
+                                    <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
+                                        {subject.name}
                                     </Text>
-                                </View>
-                                <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
-                                    {isExpanded ? '▾' : '▸'}
-                                </Text>
-                            </TouchableOpacity>
+                                    <View style={[styles.subjectCount, isSelected && styles.subjectCountActive]}>
+                                        <Text style={[styles.subjectCountText, isSelected && styles.subjectCountTextActive]}>
+                                            {getSubjectCount(subject.id)}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.expandBtn}
+                                    onPress={() => onToggleExpand(subject.id)}
+                                    {...webTitle(isExpanded ? 'Alt basliklari gizle' : 'Alt basliklari goster')}
+                                >
+                                    <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
+                                        {isExpanded ? '▾' : '▸'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
 
                             {isExpanded && subject.topics.map((topic) => {
                                 const isTopicSelected = selectedSubject === subject.id && selectedTopic === topic;
@@ -116,21 +132,21 @@ export function Sidebar(props: SidebarProps) {
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/editor')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/editor')} {...webTitle('Yeni kart ekle')}>
                         <Text style={styles.actionIcon}>+</Text>
                         <Text style={styles.actionText}>Kart Ekle</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle('Kart tarayicisini ac')}>
                         <Text style={styles.actionIcon}>🗂️</Text>
                         <Text style={styles.actionText}>Tarayıcı</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/stats')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/stats')} {...webTitle('Istatistikleri goruntule')}>
                         <Text style={styles.actionIcon}>📊</Text>
                         <Text style={styles.actionText}>İstatistik</Text>
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')}>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle('Uygulama ayarlari')}>
                     <Text style={styles.settingsBtnText}>⚙️ Ayarlar</Text>
                 </TouchableOpacity>
 
@@ -171,16 +187,27 @@ const styles = StyleSheet.create({
     sidebarTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.accent },
     sidebarSubtitle: { fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
-    subjectItem: {
+    subjectRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 9,
-        paddingHorizontal: Spacing.lg,
         borderRadius: BorderRadius.sm,
         marginHorizontal: Spacing.sm,
         marginVertical: 1,
     },
+    subjectItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 9,
+        paddingHorizontal: Spacing.lg,
+    },
     subjectItemActive: { backgroundColor: Colors.accentLight },
+    expandBtn: {
+        paddingVertical: 9,
+        paddingHorizontal: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     subjectIcon: { fontSize: 16, width: 26 },
     subjectName: { flex: 1, fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: '500' },
     subjectNameActive: { color: Colors.accent, fontWeight: '700' },
