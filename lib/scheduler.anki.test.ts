@@ -246,6 +246,31 @@ describe('ANKI_V3 scheduler', () => {
         expect(preview.good).toContain('g');
     });
 
+    it('Hard at last learning step repeats current delay (Anki v3)', () => {
+        // At step 1 (last step, 10min) with steps [1, 10]
+        const card = { ...makeNewCard(), status: 'learning' as const, learningStep: 1 };
+        const preview = engine.previewIntervals(card, defaultSettings);
+        // Anki v3: Hard at last step = current step delay (10min), NOT 1.5x (15min)
+        expect(preview.hard).toBe('10dk');
+        expect(preview.again).toBe('1dk');
+        expect(preview.good).toBe('1 gün');
+        expect(preview.easy).toBe('4 gün');
+
+        // Also verify the actual scheduling gives 10min, not 15min
+        const result = engine.schedule(card, 2 as Grade, defaultSettings);
+        expect(result.minutesUntilDue).toBe(10);
+    });
+
+    it('Hard at first learning step averages current and next (Anki v3)', () => {
+        // At step 0 (1min) with steps [1, 10] → Hard = max(avg(1,10), 1) = 6
+        const card = makeNewCard();
+        const preview = engine.previewIntervals(card, defaultSettings);
+        expect(preview.hard).toBe('6dk');
+        expect(preview.again).toBe('1dk');
+        expect(preview.good).toBe('10dk');
+        expect(preview.easy).toBe('4 gün');
+    });
+
     it('formats minutes and days for button labels', () => {
         expect(formatMinutes(5)).toBe('5dk');
         expect(formatMinutes(90)).toBe('2sa');

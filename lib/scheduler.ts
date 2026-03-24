@@ -174,7 +174,8 @@ const AnkiV3Engine: SchedulerEngine = {
             const step = cs.learningStep || 0;
             const curMin = learningSteps[step] || 1;
             const nextMin = learningSteps[step + 1] ?? null;
-            const hardMin = nextMin !== null ? Math.round((curMin + nextMin) / 2) : Math.round(curMin * 1.5);
+            // Anki v3: Hard at last step repeats current delay; otherwise averages current & next.
+            const hardMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
 
             return {
                 again: formatMinutes(learningSteps[0] || 1),
@@ -190,7 +191,8 @@ const AnkiV3Engine: SchedulerEngine = {
             const step = cs.relearningStep;
             const curMin = lapseSteps[step] || lapseSteps[0] || 1;
             const nextMin = lapseSteps[step + 1] ?? null;
-            const hardMin = nextMin !== null ? Math.round((curMin + nextMin) / 2) : Math.round(curMin * 1.5);
+            // Anki v3: Hard at last relearning step repeats current delay; otherwise averages current & next.
+            const hardMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
             const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
             const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
 
@@ -243,7 +245,8 @@ function ankiV3Learning(
     }
 
     if (grade === 2) {
-        const delayMin = nextMin !== null ? Math.round((curMin + nextMin) / 2) : Math.round(curMin * 1.5);
+        // Anki v3: Hard at last step repeats current delay; otherwise averages current & next (at least current).
+        const delayMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
         return {
             interval: 0,
             isLearning: true,
@@ -335,7 +338,8 @@ function ankiV3Relearning(
     }
 
     if (grade === 2) {
-        const delayMin = nextMin !== null ? Math.round((curMin + nextMin) / 2) : Math.round(curMin * 1.5);
+        // Anki v3: Hard at last relearning step repeats current delay; otherwise averages current & next (at least current).
+        const delayMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
         return {
             interval: 0,
             isLearning: true,
