@@ -37,7 +37,7 @@ let legacySessionStatsMigrationPromise: Promise<void> | null = null;
 const CARD_STATE_PREFIX = 'tus_cs:';
 
 export const DEFAULT_SETTINGS: AppSettings = {
-    dailyNewLimit: 20,
+    dailyNewLimit: 9999,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
     lapseSteps: [10],

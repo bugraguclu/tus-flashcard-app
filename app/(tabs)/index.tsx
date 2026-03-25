@@ -58,6 +58,7 @@ export default function StudyScreen() {
     const [nextLearningDue, setNextLearningDue] = useState<number | null>(null);
     const [countdown, setCountdown] = useState('');
     const [queueStats, setQueueStats] = useState<QueueStats>({ newCount: 0, learningCount: 0, reviewCount: 0 });
+    const [dailyNewLimitReached, setDailyNewLimitReached] = useState(false);
     const [answerStartedAt, setAnswerStartedAt] = useState<number>(Date.now());
 
     const sessionStatsRef = useRef(sessionStats);
@@ -86,6 +87,7 @@ export default function StudyScreen() {
         setCurrentCard(result.cards.length > 0 ? result.cards[0] : null);
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
+        setDailyNewLimitReached(result.dailyNewLimitReached);
         setShowingAnswer(false);
 
         if (resetCounter) {
@@ -547,6 +549,17 @@ export default function StudyScreen() {
                         <Text style={styles.countdownText}>{countdown}</Text>
                         <Text style={styles.emptyDesc}>
                             Öğrenme kartları bekleme süresinde. Süre dolduğunda otomatik gösterilecek.
+                        </Text>
+                        <Text style={styles.emptySub}>
+                            Bugün <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> kart tekrar edildi.
+                        </Text>
+                    </View>
+                ) : dailyNewLimitReached ? (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyIcon}>📋</Text>
+                        <Text style={styles.emptyTitle}>Günlük Limit</Text>
+                        <Text style={styles.emptyDesc}>
+                            Günlük yeni kart limiti ({settings.dailyNewLimit}) doldu. Ayarlardan limiti artırabilirsiniz.
                         </Text>
                         <Text style={styles.emptySub}>
                             Bugün <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> kart tekrar edildi.

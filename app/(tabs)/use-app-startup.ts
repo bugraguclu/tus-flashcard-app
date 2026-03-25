@@ -10,7 +10,7 @@ import {
 } from '../../lib/storage';
 import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
-import { initAnkiData } from '../../lib/ankiInit';
+import { initAnkiData, migrateNewCardLimit } from '../../lib/ankiInit';
 import { getSearchIndexCards } from '../../lib/noteManager';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../../lib/legacyMigration';
 
@@ -25,6 +25,8 @@ async function runStartupCore(): Promise<void> {
     if (ankiResult.initialized) {
         console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
     }
+
+    migrateNewCardLimit();
 
     const settingsMigration = await migrateLegacySettingsIfNeeded();
     if (settingsMigration.migrated) {

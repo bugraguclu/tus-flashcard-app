@@ -230,7 +230,7 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     name: 'Default',
     mod: 0,
     usn: 0,
-    newPerDay: 20,
+    newPerDay: 9999,
     learningSteps: [1, 10],
     graduatingIvl: 1,
     easyIvl: 4,

@@ -49,6 +49,7 @@ export interface StudyQueueResult {
     cards: StudyCard[];
     stats: QueueStats;
     nextLearningDue: number | null;
+    dailyNewLimitReached: boolean;
 }
 
 export interface StudyQueueParams {
@@ -705,6 +706,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             reviewCount,
         },
         nextLearningDue,
+        dailyNewLimitReached: availableNewLimit <= 0 && newCount > 0,
     };
 }
 

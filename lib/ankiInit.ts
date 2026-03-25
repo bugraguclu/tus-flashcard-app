@@ -57,6 +57,37 @@ export function initAnkiData(): { initialized: boolean; notesCreated: number; ca
     return { initialized: true, notesCreated, cardsCreated };
 }
 
+const MIGRATE_NEW_LIMIT_KEY = 'tus_migrate_new_limit_v1';
+
+/** Migrate existing users from dailyNewLimit 20 → 9999 (effectively unlimited for TUS prep) */
+export function migrateNewCardLimit(): void {
+    const db = getDB();
+    const row = db.getFirstSync<{ value: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        MIGRATE_NEW_LIMIT_KEY,
+    );
+    if (row?.value === 'done') return;
+
+    try {
+        const configRow = db.getFirstSync<{ data: string }>('SELECT data FROM deck_configs WHERE id = 1');
+        if (configRow?.data) {
+            const config = JSON.parse(configRow.data) as DeckConfig;
+            if (config.newPerDay === 20) {
+                config.newPerDay = DEFAULT_DECK_CONFIG.newPerDay; // 9999
+                saveDeckConfig(config);
+                console.log('[AnkiInit] Migrated dailyNewLimit from 20 → 9999');
+            }
+        }
+    } catch (e) {
+        console.warn('[AnkiInit] migrateNewCardLimit failed:', e);
+    }
+
+    db.runSync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        MIGRATE_NEW_LIMIT_KEY, 'done',
+    );
+}
+
 /** Reset Anki data (for testing) — uses transaction for atomicity */
 export function resetAnkiData(): void {
     const db = getDB();

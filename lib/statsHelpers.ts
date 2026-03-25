@@ -72,6 +72,63 @@ export function aggregateBuckets(cards: AnkiCard[]): CardBuckets {
     return result;
 }
 
+export interface SubjectBuckets extends CardBuckets {
+    subjectId: string;
+    total: number;
+}
+
+/** SQL-based per-subject stats - reads directly from DB for accuracy */
+export function perSubjectStatsSql(subjectIds: string[]): Map<string, SubjectBuckets> {
+    const result = new Map<string, SubjectBuckets>();
+    for (const id of subjectIds) {
+        result.set(id, { subjectId: id, total: 0, ...DEFAULT_BUCKETS });
+    }
+
+    try {
+        const { getDB } = require('./db') as typeof import('./db');
+        const db = getDB();
+
+        // Note tags column stores space-separated tags; the first tag is the subject id.
+        // e.g. "pediatri Neonatoloji"
+        const rows = db.getAllSync<{ tags: string; queue: number; ivl: number; cnt: number }>(
+            `SELECT n.tags AS tags, c.queue AS queue, c.ivl AS ivl, COUNT(*) as cnt
+             FROM anki_cards c
+             JOIN notes n ON n.id = c.noteId
+             GROUP BY n.tags, c.queue, CASE
+                 WHEN c.queue = 2 AND c.ivl >= 90 THEN 3
+                 WHEN c.queue = 2 AND c.ivl >= 21 THEN 2
+                 WHEN c.queue = 2 THEN 1
+                 ELSE 0
+             END`,
+        );
+
+        const subjectSet = new Set(subjectIds);
+
+        for (const row of rows) {
+            const firstTag = (row.tags || '').split(' ')[0];
+            if (!subjectSet.has(firstTag)) continue;
+
+            const bucket = result.get(firstTag)!;
+            bucket.total += row.cnt;
+
+            if (row.queue === -1) { bucket.suspendedCount += row.cnt; }
+            else if (row.queue === -2 || row.queue === -3) { bucket.buriedCount += row.cnt; }
+            else if (row.queue === 0) { bucket.newCount += row.cnt; }
+            else if (row.queue === 1 || row.queue === 3) { bucket.learningCount += row.cnt; }
+            else if (row.queue === 2) {
+                bucket.reviewCount += row.cnt;
+                if (row.ivl >= 90) bucket.masteredCount += row.cnt;
+                else if (row.ivl >= 21) bucket.matureCount += row.cnt;
+                else bucket.youngCount += row.cnt;
+            }
+        }
+    } catch (e) {
+        console.warn('[StatsHelpers] perSubjectStatsSql failed:', e);
+    }
+
+    return result;
+}
+
 /** SQL-based aggregation - avoids loading all cards into memory */
 export function aggregateBucketsSql(): CardBuckets {
     try {
