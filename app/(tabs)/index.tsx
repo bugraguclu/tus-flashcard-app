@@ -233,6 +233,8 @@ export default function StudyScreen() {
 
         // Incremental queue update: pop current card, optionally reinsert if still due now.
         const nowMs = Date.now();
+        let queueBecameEmpty = false;
+
         setQueue((prevQueue) => {
             const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
             const shouldReinsert = isCardDueNow(result.updatedCard, nowMs);
@@ -249,7 +251,17 @@ export default function StudyScreen() {
                 futureLearningDue.push(result.updatedCard.state.dueTime);
             }
 
-            setNextLearningDue(futureLearningDue.length > 0 ? Math.min(...futureLearningDue) : null);
+            // Only update nextLearningDue if we found future learning cards in memory.
+            // When empty, defer to buildQueue which queries the full DB for any learning cards
+            // from earlier answers that are no longer in the in-memory queue.
+            if (futureLearningDue.length > 0) {
+                setNextLearningDue(Math.min(...futureLearningDue));
+            }
+
+            if (nextQueue.length === 0) {
+                queueBecameEmpty = true;
+            }
+
             return nextQueue;
         });
 
@@ -270,7 +282,9 @@ export default function StudyScreen() {
         bumpDataVersion();
 
         answersSinceRefreshRef.current += 1;
-        if (answersSinceRefreshRef.current >= 8 || queue.length <= 1) {
+        // Always do a full DB rebuild when the queue empties — the in-memory queue
+        // may not contain learning cards from earlier answers that are still waiting.
+        if (queueBecameEmpty || answersSinceRefreshRef.current >= 8 || queue.length <= 1) {
             buildQueue(nextStats.newCardsToday);
         } else {
             scheduleFullRefresh(15000, nextStats.newCardsToday);
