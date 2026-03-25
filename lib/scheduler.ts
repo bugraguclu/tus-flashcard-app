@@ -62,19 +62,38 @@ function hashSeed(text: string): number {
     return Math.abs(h);
 }
 
+/**
+ * Anki-compatible fuzz range using incremental delta calculation.
+ * Matches rslib/src/scheduler/states/fuzz.rs fuzz_delta().
+ *
+ * Ranges:  2.5-7 days → 15%,  7-20 days → 10%,  20+ days → 5%
+ * Base delta of 1 day is always added.
+ * Minimum fuzzed interval is 2; minimum range span is 2 days.
+ */
 function fuzzRangeForInterval(interval: number): { min: number; max: number } {
-    if (interval < 2) return { min: Math.round(interval), max: Math.round(interval) };
-    if (interval === 2) return { min: 2, max: 3 };
-    if (interval < 7) {
-        const fuzz = Math.max(1, Math.round(interval * 0.25));
-        return { min: Math.round(interval) - fuzz, max: Math.round(interval) + fuzz };
+    if (interval < 2.5) return { min: Math.round(interval), max: Math.round(interval) };
+
+    const RANGES: [number, number, number][] = [
+        [2.5, 7.0, 0.15],
+        [7.0, 20.0, 0.10],
+        [20.0, Infinity, 0.05],
+    ];
+
+    let delta = 1.0;
+    for (const [start, end, factor] of RANGES) {
+        const effective = Math.max(0, Math.min(interval, end) - start);
+        delta += effective * factor;
     }
-    if (interval < 30) {
-        const fuzz = Math.max(2, Math.round(interval * 0.15));
-        return { min: Math.round(interval) - fuzz, max: Math.round(interval) + fuzz };
+
+    let min = Math.max(2, Math.round(interval - delta));
+    let max = Math.round(interval + delta);
+
+    // Guarantee minimum range of 2 days when possible.
+    if (max - min < 2) {
+        max = min + 2;
     }
-    const fuzz = Math.max(4, Math.round(interval * 0.05));
-    return { min: Math.round(interval) - fuzz, max: Math.round(interval) + fuzz };
+
+    return { min, max };
 }
 
 function applyFuzz(
@@ -90,6 +109,27 @@ function applyFuzz(
     const seed = hashSeed(`${todayLocalYMD(new Date(nowMs), rolloverHour)}-${cardId ?? 0}`);
     const span = range.max - range.min + 1;
     return Math.max(1, range.min + (seed % span));
+}
+
+/**
+ * Compute Hard delay in minutes for learning/relearning steps.
+ * Matches Anki rslib/src/scheduler/states/steps.rs hard_delay().
+ *
+ * First step (index 0): 150% of again delay, capped at again + 1 day.
+ * Other steps: average of current and next step, at least current.
+ */
+function hardDelayMinutes(steps: number[], stepIndex: number): number {
+    const curMin = steps[stepIndex] || 1;
+    if (stepIndex === 0) {
+        const hardMin = Math.ceil(curMin * 1.5);
+        const cappedMin = Math.min(hardMin, curMin + 1440); // cap at current + 1 day
+        return Math.max(1, cappedMin);
+    }
+    const nextMin = steps[stepIndex + 1] ?? null;
+    if (nextMin !== null) {
+        return Math.max(curMin, Math.round((curMin + nextMin) / 2));
+    }
+    return curMin;
 }
 
 function clampInterval(interval: number, settings: AppSettings): number {
@@ -121,8 +161,8 @@ function computeReviewIntervals(
 }
 
 function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): number {
-    // Anki relearning Easy: preserved lapse interval + 1 day.
-    const relearnGood = clampInterval(Math.max(1, cs.interval || 1), settings);
+    // Anki relearning Easy: preserved lapse interval + 1 day, respecting minLapseInterval.
+    const relearnGood = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
     return clampInterval(relearnGood + 1, settings);
 }
 
@@ -172,10 +212,8 @@ const AnkiV3Engine: SchedulerEngine = {
 
         if (isLearning && !isRelearning) {
             const step = cs.learningStep || 0;
-            const curMin = learningSteps[step] || 1;
             const nextMin = learningSteps[step + 1] ?? null;
-            // Anki v3: Hard at last step repeats current delay; otherwise averages current & next.
-            const hardMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
+            const hardMin = hardDelayMinutes(learningSteps, step);
 
             return {
                 again: formatMinutes(learningSteps[0] || 1),
@@ -189,11 +227,9 @@ const AnkiV3Engine: SchedulerEngine = {
 
         if (isRelearning) {
             const step = cs.relearningStep;
-            const curMin = lapseSteps[step] || lapseSteps[0] || 1;
             const nextMin = lapseSteps[step + 1] ?? null;
-            // Anki v3: Hard at last relearning step repeats current delay; otherwise averages current & next.
-            const hardMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
-            const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
+            const hardMin = hardDelayMinutes(lapseSteps, step);
+            const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
             const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
 
             return {
@@ -245,8 +281,7 @@ function ankiV3Learning(
     }
 
     if (grade === 2) {
-        // Anki v3: Hard at last step repeats current delay; otherwise averages current & next (at least current).
-        const delayMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
+        const delayMin = hardDelayMinutes(steps, step);
         return {
             interval: 0,
             isLearning: true,
@@ -338,8 +373,7 @@ function ankiV3Relearning(
     }
 
     if (grade === 2) {
-        // Anki v3: Hard at last relearning step repeats current delay; otherwise averages current & next (at least current).
-        const delayMin = nextMin !== null ? Math.max(Math.round((curMin + nextMin) / 2), curMin) : curMin;
+        const delayMin = hardDelayMinutes(steps, step);
         return {
             interval: 0,
             isLearning: true,
@@ -370,7 +404,7 @@ function ankiV3Relearning(
             };
         }
 
-        const relearnInterval = clampInterval(Math.max(1, cs.interval || 1), settings);
+        const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
         return {
             interval: relearnInterval,
             isLearning: false,
@@ -413,7 +447,7 @@ function ankiV3Review(
     const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
-        const newInterval = clampInterval(Math.max(1, Math.round(cur * settings.lapseNewInterval)), settings);
+        const newInterval = clampInterval(Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseNewInterval)), settings);
         const newEase = Math.max(1.3, ef - 0.20);
 
         return {

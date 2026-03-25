@@ -11,6 +11,7 @@ const defaultSettings: AppSettings = {
     easyInterval: 4,
     startingEase: 2.5,
     lapseNewInterval: 0,
+    minLapseInterval: 1,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
@@ -261,11 +262,11 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.minutesUntilDue).toBe(10);
     });
 
-    it('Hard at first learning step averages current and next (Anki v3)', () => {
-        // At step 0 (1min) with steps [1, 10] → Hard = max(avg(1,10), 1) = 6
+    it('Hard at first learning step uses 150% of again delay (Anki v3)', () => {
+        // At step 0 (1min) with steps [1, 10] → Hard = ceil(1 * 1.5) = 2min
         const card = makeNewCard();
         const preview = engine.previewIntervals(card, defaultSettings);
-        expect(preview.hard).toBe('6dk');
+        expect(preview.hard).toBe('2dk');
         expect(preview.again).toBe('1dk');
         expect(preview.good).toBe('10dk');
         expect(preview.easy).toBe('4 gün');

@@ -45,6 +45,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     easyInterval: 4,
     startingEase: 2.5,
     lapseNewInterval: 0,
+    minLapseInterval: 1,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
@@ -264,6 +265,7 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
         config.easyIvl = settings.easyInterval;
         config.startingEase = Math.round(settings.startingEase * 1000);
         config.newIvlPercent = settings.lapseNewInterval;
+        config.minIvl = settings.minLapseInterval;
         config.insertionOrder = settings.newCardOrder;
         config.hardIvl = settings.hardIntervalMultiplier;
         config.easyBonus = settings.easyBonus;
@@ -408,6 +410,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
     validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval ?? 0)));
+    validated.minLapseInterval = Math.max(1, Math.min(365, Number(validated.minLapseInterval ?? 1)));
     validated.hardIntervalMultiplier = Math.max(1.0, Math.min(2.0, Number(validated.hardIntervalMultiplier) || 1.2));
     validated.easyBonus = Math.max(1.0, Math.min(2.0, Number(validated.easyBonus) || 1.3));
     validated.intervalModifier = Math.max(0.1, Math.min(3.0, Number(validated.intervalModifier) || 1.0));

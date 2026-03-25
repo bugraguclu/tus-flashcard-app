@@ -78,6 +78,7 @@ export interface AppSettings {
     easyInterval: number;          // days
     startingEase: number;
     lapseNewInterval: number;
+    minLapseInterval: number;          // minimum interval after a lapse (days), Anki DeckConfig.minIvl
     queueOrder: 'learning-review-new' | 'learning-new-review';
     newCardOrder: 'sequential' | 'random';
     hardIntervalMultiplier: number;

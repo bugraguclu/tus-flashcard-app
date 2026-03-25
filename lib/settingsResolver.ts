@@ -16,6 +16,7 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         easyInterval: config.easyIvl,
         startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
         lapseNewInterval: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseNewInterval,
+        minLapseInterval: config.minIvl > 0 ? config.minIvl : base.minLapseInterval,
         newCardOrder: config.insertionOrder === 'random' ? 'random' : 'sequential',
         hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,
         easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
