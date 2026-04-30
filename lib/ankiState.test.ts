@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { AppSettings } from './types';
+import type { AppSettings, CardState } from './types';
 import type { AnkiCard } from './models';
 import {
     ankiCardToCardState,
@@ -19,7 +19,7 @@ const settings: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0.7,
+    lapseIntervalMultiplier: 0.7,
     minLapseInterval: 1,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
@@ -155,7 +155,8 @@ describe('ankiState edge cases', () => {
         const now = new Date(2026, 2, 12, 3, 50, 0, 0).getTime();
         const dueTime = now + 20 * 60_000; // crosses 04:00 rollover
 
-        const state = {
+        const state: CardState = {
+            cardId: 1,
             interval: 0,
             repetition: 0,
             dueDate: dayNumberToYmd(localDayNumber(now, settings.dayRolloverHour), settings.dayRolloverHour),

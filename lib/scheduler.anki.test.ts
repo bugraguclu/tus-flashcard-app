@@ -10,7 +10,7 @@ const defaultSettings: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0,
+    lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
@@ -81,21 +81,21 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.stateUpdates.learningStep).toBe(-1);
     });
 
-    it('uses lapseNewInterval=0 (Anki default: reset to 1 day) on review Again', () => {
+    it('uses lapseIntervalMultiplier=0 (Anki default: reset to 1 day) on review Again', () => {
         const card = makeReviewCard({ interval: 20 });
         const result = engine.schedule(card, 1 as Grade, defaultSettings);
 
         expect(result.isLearning).toBe(true);
         expect(result.minutesUntilDue).toBe(10); // lapseSteps[0]
-        // lapseNewInterval=0 means 20*0=0, clamped to 1
+        // lapseIntervalMultiplier=0 means 20*0=0, clamped to 1
         expect(result.stateUpdates.interval).toBe(1);
         expect(result.stateUpdates.relearningStep).toBe(0);
         expect(result.stateUpdates.lapses).toBe(1);
     });
 
-    it('uses custom lapseNewInterval when set', () => {
+    it('uses custom lapseIntervalMultiplier when set', () => {
         const card = makeReviewCard({ interval: 20 });
-        const settings70 = { ...defaultSettings, lapseNewInterval: 0.7 };
+        const settings70 = { ...defaultSettings, lapseIntervalMultiplier: 0.7 };
         const result = engine.schedule(card, 1 as Grade, settings70);
 
         expect(result.stateUpdates.interval).toBe(14); // 20 * 0.7

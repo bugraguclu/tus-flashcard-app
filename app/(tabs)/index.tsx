@@ -49,6 +49,7 @@ export default function StudyScreen() {
         wrong: 0,
         startTime: Date.now(),
         newCardsToday: 0,
+        date: todayLocalYMD(),
     });
     const [queue, setQueue] = useState<StudyCard[]>([]);
     const [currentCard, setCurrentCard] = useState<StudyCard | null>(null);

@@ -15,6 +15,7 @@ import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSessionStats, loadS
 import { aggregateBucketsSql, perSubjectStatsSql } from '../../lib/statsHelpers';
 import { getTodayStudyTimeMs } from '../../lib/reviewLogger';
 import { confirm, alert } from '../../lib/confirm';
+import { todayLocalYMD } from '../../lib/scheduler';
 import type { AppSettings, SessionStats } from '../../lib/types';
 import { useApp } from './_layout';
 
@@ -26,6 +27,7 @@ export default function StatsScreen() {
         wrong: 0,
         startTime: Date.now(),
         newCardsToday: 0,
+        date: todayLocalYMD(),
     });
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);

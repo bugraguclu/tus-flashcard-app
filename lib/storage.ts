@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0,
+    lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',
@@ -155,14 +155,14 @@ export async function saveCustomCards(cards: Card[]): Promise<void> {
     }
 }
 
-function defaultSessionStats(date?: string): SessionStats {
+function defaultSessionStats(date: string): SessionStats {
     return {
         reviewed: 0,
         correct: 0,
         wrong: 0,
         startTime: Date.now(),
         newCardsToday: 0,
-        ...(date ? { date } : {}),
+        date,
     };
 }
 
@@ -264,7 +264,7 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
         config.graduatingIvl = settings.graduatingInterval;
         config.easyIvl = settings.easyInterval;
         config.startingEase = Math.round(settings.startingEase * 1000);
-        config.newIvlPercent = settings.lapseNewInterval;
+        config.newIvlPercent = settings.lapseIntervalMultiplier;
         config.minIvl = settings.minLapseInterval;
         config.insertionOrder = settings.newCardOrder;
         config.hardIvl = settings.hardIntervalMultiplier;
@@ -409,7 +409,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
     validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
-    validated.lapseNewInterval = Math.max(0, Math.min(1.0, Number(validated.lapseNewInterval ?? 0)));
+    validated.lapseIntervalMultiplier = Math.max(0, Math.min(1.0, Number(validated.lapseIntervalMultiplier ?? 0)));
     validated.minLapseInterval = Math.max(1, Math.min(365, Number(validated.minLapseInterval ?? 1)));
     validated.hardIntervalMultiplier = Math.max(1.0, Math.min(2.0, Number(validated.hardIntervalMultiplier) || 1.2));
     validated.easyBonus = Math.max(1.0, Math.min(2.0, Number(validated.easyBonus) || 1.3));

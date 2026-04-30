@@ -114,7 +114,7 @@ const settings: AppSettings = {
     graduatingInterval: 1,
     easyInterval: 4,
     startingEase: 2.5,
-    lapseNewInterval: 0,
+    lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
     queueOrder: 'learning-review-new',
     newCardOrder: 'sequential',

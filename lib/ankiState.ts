@@ -3,6 +3,17 @@ import type { AnkiCard } from './models';
 
 const DAY_MS = 86400000;
 const HOUR_MS = 3600000;
+const MIN_EASE_PERMILLE = 1300;
+
+/** AnkiCard.factor (permille, e.g. 2500) → CardState.easeFactor (float, e.g. 2.5) */
+export function permilleToEase(permille: number): number {
+    return permille / 1000;
+}
+
+/** CardState.easeFactor (float, e.g. 2.5) → AnkiCard.factor (permille, e.g. 2500) */
+export function easeToPermille(ease: number): number {
+    return Math.max(MIN_EASE_PERMILLE, Math.round(ease * 1000));
+}
 
 function localStudyDayDate(atMs: number, rolloverHour: number): Date {
     const shifted = new Date(atMs - rolloverHour * HOUR_MS);
@@ -209,7 +220,7 @@ export function ankiCardToCardState(
         status,
         suspended,
         buried,
-        easeFactor: (card.factor && card.factor > 0 ? card.factor : Math.round(settings.startingEase * 1000)) / 1000,
+        easeFactor: permilleToEase(card.factor && card.factor > 0 ? card.factor : easeToPermille(settings.startingEase)),
         learningStep: isRelearning ? -1 : inferredStep,
         relearningStep: isRelearning ? inferredStep : -1,
         lastReviewedAtMs: card.lastReview || 0,
@@ -226,11 +237,11 @@ export function cardStateToAnkiCard(
 ): AnkiCard {
     const updated: AnkiCard = {
         ...card,
-        id: state.cardId ?? card.id,
+        id: state.cardId,
         ivl: Math.max(0, Math.round(state.interval || 0)),
         reps: Math.max(0, Math.round(state.repetition || 0)),
         lapses: Math.max(0, Math.round(state.lapses || 0)),
-        factor: Math.max(1300, Math.round((state.easeFactor || settings.startingEase) * 1000)),
+        factor: easeToPermille(state.easeFactor || settings.startingEase),
         lastReview: state.lastReviewedAtMs || card.lastReview || 0,
         mod: Math.floor(nowMs / 1000),
         usn: -1,
@@ -324,9 +335,9 @@ export function cardStateToAnkiCard(
     return updated;
 }
 
-export function makeDefaultCardState(settings: AppSettings): CardState {
+export function makeDefaultCardState(cardId: number, settings: AppSettings): CardState {
     return {
-        cardId: undefined,
+        cardId,
         interval: 0,
         repetition: 0,
         dueDate: dayNumberToYmd(localDayNumber(Date.now(), settings.dayRolloverHour), settings.dayRolloverHour),

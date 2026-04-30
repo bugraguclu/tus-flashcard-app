@@ -239,6 +239,7 @@ describe('storage import/export canonical round-trip', () => {
             wrong: 3,
             startTime: Date.now() - 1000,
             newCardsToday: 2,
+            date: '2026-04-30',
         });
 
         const exported = await exportAllData();

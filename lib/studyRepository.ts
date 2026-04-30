@@ -1,7 +1,9 @@
 import { TUS_SUBJECTS } from './data';
 import { getDB } from './db';
-import type { CardState, AppSettings, Grade } from './types';
+import type { CardState, AppSettings, Grade, StudyCard } from './types';
 import type { AnkiCard, Note, DeckConfig, NoteType } from './models';
+
+export type { StudyCard };
 import {
     ankiCardIdFromLegacyCardId,
     ankiCardToCardState,
@@ -25,19 +27,6 @@ import {
 import { getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { deleteReviewById, logReview } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
-
-export interface StudyCard {
-    cardId: number;
-    legacyCardId: number;
-    noteId: number;
-    deckId: number;
-    subject: string;
-    topic: string;
-    question: string;
-    answer: string;
-    state: CardState;
-    rawCard?: AnkiCard;
-}
 
 export interface QueueStats {
     newCount: number;
@@ -782,23 +771,26 @@ export function answerStudyCard(
     const scheduler = getScheduler(cardSettings.algorithm);
     const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
 
+    const baseDue = scheduleResult.isLearning
+        ? {
+            status: 'learning' as const,
+            dueDate: todayLocalYMD(new Date(nowMs), cardSettings.dayRolloverHour),
+            dueTime: scheduleResult.minutesUntilDue
+                ? nowMs + scheduleResult.minutesUntilDue * 60000
+                : nowMs + 60000,
+        }
+        : {
+            status: 'review' as const,
+            dueDate: addDaysLocalYMD(scheduleResult.interval, new Date(nowMs), cardSettings.dayRolloverHour),
+            dueTime: 0,
+        };
+
     const nextState: CardState = {
         ...currentState,
         ...scheduleResult.stateUpdates,
         cardId: currentAnkiCard.id,
+        ...baseDue,
     };
-
-    if (scheduleResult.isLearning) {
-        nextState.status = 'learning';
-        nextState.dueDate = todayLocalYMD(new Date(nowMs), cardSettings.dayRolloverHour);
-        nextState.dueTime = scheduleResult.minutesUntilDue
-            ? nowMs + scheduleResult.minutesUntilDue * 60000
-            : nowMs + 60000;
-    } else {
-        nextState.status = 'review';
-        nextState.dueDate = addDaysLocalYMD(scheduleResult.interval, new Date(nowMs), cardSettings.dayRolloverHour);
-        nextState.dueTime = 0;
-    }
 
     const updatedAnkiCard = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
 
@@ -879,7 +871,7 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
 export function getCardState(cardId: number, settings: AppSettings): CardState {
     const card = getAnkiCard(cardId);
     if (!card) {
-        return makeDefaultCardState(settings);
+        return makeDefaultCardState(cardId, settings);
     }
 
     const cardSettings = resolveSettingsForDeck(card.deckId, settings);

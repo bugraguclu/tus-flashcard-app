@@ -290,15 +290,15 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Lapse New Interval (%)</Text>
+                        <Text style={styles.settingLabel}>Lapse Interval Multiplier (%)</Text>
                         <View style={styles.inputRow}>
                             {[0.4, 0.5, 0.7, 0.8].map((value) => (
                                 <TouchableOpacity
                                     key={value}
-                                    style={[styles.optionBtn, settings.lapseNewInterval === value && styles.optionBtnActive]}
-                                    onPress={() => updateSetting('lapseNewInterval', value)}
+                                    style={[styles.optionBtn, settings.lapseIntervalMultiplier === value && styles.optionBtnActive]}
+                                    onPress={() => updateSetting('lapseIntervalMultiplier', value)}
                                 >
-                                    <Text style={[styles.optionText, settings.lapseNewInterval === value && styles.optionTextActive]}>
+                                    <Text style={[styles.optionText, settings.lapseIntervalMultiplier === value && styles.optionTextActive]}>
                                         {Math.round(value * 100)}%
                                     </Text>
                                 </TouchableOpacity>

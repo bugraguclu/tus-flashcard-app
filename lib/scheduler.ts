@@ -98,7 +98,7 @@ function fuzzRangeForInterval(interval: number): { min: number; max: number } {
 
 function applyFuzz(
     interval: number,
-    cardId: number | undefined,
+    cardId: number,
     nowMs: number,
     rolloverHour: number = 4,
 ): number {
@@ -106,7 +106,7 @@ function applyFuzz(
     if (range.min === range.max) return Math.max(1, range.min);
 
     // Deterministic Anki-like fuzz seed: study-day + card id.
-    const seed = hashSeed(`${todayLocalYMD(new Date(nowMs), rolloverHour)}-${cardId ?? 0}`);
+    const seed = hashSeed(`${todayLocalYMD(new Date(nowMs), rolloverHour)}-${cardId}`);
     const span = range.max - range.min + 1;
     return Math.max(1, range.min + (seed % span));
 }
@@ -181,15 +181,6 @@ function computeElapsedDays(lastReviewedAtMs: number, nowMs: number, rolloverHou
 const AnkiV3Engine: SchedulerEngine = {
     name: 'ANKI_V3',
     description: 'Anki V3 compatible scheduler (learning/relearning/review)',
-
-    initCardState: (settings: AppSettings): Partial<CardState> => ({
-        easeFactor: settings.startingEase,
-        learningStep: 0,
-        relearningStep: -1,
-        elapsedDays: 0,
-        lapses: 0,
-        lastReviewedAtMs: 0,
-    }),
 
     schedule: (cs: CardState, grade: Grade, settings: AppSettings, nowMs?: number): ScheduleResult => {
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
@@ -447,7 +438,7 @@ function ankiV3Review(
     const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
-        const newInterval = clampInterval(Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseNewInterval)), settings);
+        const newInterval = clampInterval(Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)), settings);
         const newEase = Math.max(1.3, ef - 0.20);
 
         return {
