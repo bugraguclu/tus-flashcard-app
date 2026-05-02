@@ -81,6 +81,17 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.stateUpdates.learningStep).toBe(-1);
     });
 
+    it('sets easeFactor to startingEase on learning graduation (Anki behavior)', () => {
+        // Good graduation: easeFactor should be explicitly set to startingEase
+        const card = { ...makeNewCard(), status: 'learning' as const, learningStep: 1 };
+        const result = engine.schedule(card, 3 as Grade, defaultSettings);
+        expect(result.stateUpdates.easeFactor).toBe(defaultSettings.startingEase);
+
+        // Easy graduation: same — Anki uses initial_ease_factor, no +0.15 bonus
+        const easyResult = engine.schedule(makeNewCard(), 4 as Grade, defaultSettings);
+        expect(easyResult.stateUpdates.easeFactor).toBe(defaultSettings.startingEase);
+    });
+
     it('uses lapseIntervalMultiplier=0 (Anki default: reset to 1 day) on review Again', () => {
         const card = makeReviewCard({ interval: 20 });
         const result = engine.schedule(card, 1 as Grade, defaultSettings);
@@ -187,7 +198,7 @@ describe('ANKI_V3 scheduler', () => {
         expect(overdueGood.interval).toBeGreaterThan(onTimeGood.interval);
     });
 
-    it('does not apply intervalModifier on Hard, but applies it on Good/Easy', () => {
+    it('applies intervalModifier to all grades including Hard (Anki behavior)', () => {
         const card = makeReviewCard({ interval: 20, easeFactor: 2.5, cardId: 314 });
         const lowModifier = { ...defaultSettings, intervalModifier: 0.5, hardIntervalMultiplier: 1.2 };
         const neutralModifier = { ...defaultSettings, intervalModifier: 1.0, hardIntervalMultiplier: 1.2 };
@@ -199,7 +210,8 @@ describe('ANKI_V3 scheduler', () => {
         const goodWithLowModifier = engine.schedule(card, 3 as Grade, lowModifier, now).interval;
         const goodWithNeutralModifier = engine.schedule(card, 3 as Grade, neutralModifier, now).interval;
 
-        expect(hardWithLowModifier).toBe(hardWithNeutralModifier);
+        // Anki applies intervalModifier to all grades equally (verified against Rust source)
+        expect(hardWithLowModifier).toBeLessThan(hardWithNeutralModifier);
         expect(goodWithLowModifier).toBeLessThan(goodWithNeutralModifier);
     });
 
@@ -262,14 +274,28 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.minutesUntilDue).toBe(10);
     });
 
-    it('Hard at first learning step uses 150% of again delay (Anki v3)', () => {
-        // At step 0 (1min) with steps [1, 10] → Hard = ceil(1 * 1.5) = 2min
+    it('Hard at first learning step uses avg(current, next) when next exists (Anki v3)', () => {
+        // steps [1, 10], step 0: avg(1, 10) = 5.5 → round(6) = 6min
         const card = makeNewCard();
         const preview = engine.previewIntervals(card, defaultSettings);
-        expect(preview.hard).toBe('2dk');
+        expect(preview.hard).toBe('6dk');
         expect(preview.again).toBe('1dk');
         expect(preview.good).toBe('10dk');
         expect(preview.easy).toBe('4 gün');
+    });
+
+    it('Hard at first learning step uses 150% when no next step exists (Anki v3)', () => {
+        // steps [5], step 0: ceil(5 * 1.5) = 8min
+        const card = makeNewCard();
+        const singleStep = { ...defaultSettings, learningSteps: [5] };
+        const preview = engine.previewIntervals(card, singleStep);
+        expect(preview.hard).toBe('8dk');
+    });
+
+    it('rejects invalid grades at runtime', () => {
+        const card = makeReviewCard();
+        expect(() => engine.schedule(card, 0 as Grade, defaultSettings)).toThrow('Invalid grade');
+        expect(() => engine.schedule(card, 5 as Grade, defaultSettings)).toThrow('Invalid grade');
     });
 
     it('formats minutes and days for button labels', () => {
