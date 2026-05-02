@@ -8,29 +8,46 @@ import type {
     AppSettings,
 } from './types';
 
+// Time constants
 const HOUR_MS = 3600000;
 const DAY_MS = 86400000;
+const MINUTES_PER_DAY = 1440;
 
+// Ease factor constants (Anki rslib/src/scheduler/states/review.rs)
+const INITIAL_EASE_FACTOR = 2.5;
+const MINIMUM_EASE_FACTOR = 1.3;
+const EASE_FACTOR_AGAIN_DELTA = -0.20;
+const EASE_FACTOR_HARD_DELTA = -0.15;
+const EASE_FACTOR_EASY_DELTA = 0.15;
+
+// ---------------------------------------------------------------------------
+// Section 1: Day-boundary helpers
+// ---------------------------------------------------------------------------
+
+/** Shifts a Date back by rolloverHour to derive the Anki "study day". */
 function toRolloverShiftedDate(input: Date, rolloverHour: number): Date {
     return new Date(input.getTime() - rolloverHour * HOUR_MS);
 }
 
-// Local-day helpers with configurable rollover hour (Anki-like day boundary)
-function todayLocalYMD(now?: Date, rolloverHour: number = 4): string {
-    const d = toRolloverShiftedDate(now || new Date(), rolloverHour);
+/** Formats a Date as YYYY-MM-DD. Pure function. */
+function formatYMD(d: Date): string {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
 }
 
+/** Returns today's Anki study day as YYYY-MM-DD, respecting rollover hour. */
+function todayLocalYMD(now?: Date, rolloverHour: number = 4): string {
+    return formatYMD(toRolloverShiftedDate(now ?? new Date(), rolloverHour));
+}
+
+/** Returns the Anki study day `days` days after `baseDate` as YYYY-MM-DD. */
 function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: number = 4): string {
-    const shifted = toRolloverShiftedDate(baseDate ? new Date(baseDate.getTime()) : new Date(), rolloverHour);
-    shifted.setDate(shifted.getDate() + days);
-    const yyyy = shifted.getFullYear();
-    const mm = String(shifted.getMonth() + 1).padStart(2, '0');
-    const dd = String(shifted.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    const shifted = toRolloverShiftedDate(baseDate ?? new Date(), rolloverHour);
+    const result = new Date(shifted.getTime());
+    result.setDate(result.getDate() + days);
+    return formatYMD(result);
 }
 
 function getToday(rolloverHour: number = 4): string {
@@ -50,28 +67,36 @@ function formatDays(days: number): string {
 
 function formatMinutes(minutes: number): string {
     if (minutes < 60) return `${Math.round(minutes)}dk`;
-    if (minutes < 1440) return `${Math.round(minutes / 60)}sa`;
-    return formatDays(Math.round(minutes / 1440));
+    if (minutes < MINUTES_PER_DAY) return `${Math.round(minutes / 60)}sa`;
+    return formatDays(Math.round(minutes / MINUTES_PER_DAY));
 }
 
+// ---------------------------------------------------------------------------
+// Section 2: Deterministic fuzz
+// ---------------------------------------------------------------------------
+
+/**
+ * DJB2 hash producing a deterministic 32-bit unsigned integer.
+ * Guarantees the same card receives the same fuzz within a study day.
+ */
 function hashSeed(text: string): number {
     let h = 0;
     for (let i = 0; i < text.length; i++) {
         h = ((h << 5) - h + text.charCodeAt(i)) | 0;
     }
-    return Math.abs(h);
+    return h >>> 0;
 }
 
 /**
- * Anki-compatible fuzz range using incremental delta calculation.
- * Matches rslib/src/scheduler/states/fuzz.rs fuzz_delta().
+ * Computes the fuzz range for a given interval.
+ * Matches Anki's fuzz_delta (rslib/src/scheduler/states/fuzz.rs).
  *
- * Ranges:  2.5-7 days → 15%,  7-20 days → 10%,  20+ days → 5%
- * Base delta of 1 day is always added.
- * Minimum fuzzed interval is 2; minimum range span is 2 days.
+ * Ranges: 2.5-7d 15%, 7-20d 10%, 20+d 5%. Base delta: 1 day.
  */
 function fuzzRangeForInterval(interval: number): { min: number; max: number } {
-    if (interval < 2.5) return { min: Math.round(interval), max: Math.round(interval) };
+    if (interval < 2.5) {
+        return { min: Math.max(1, Math.round(interval)), max: Math.max(1, Math.round(interval)) };
+    }
 
     const RANGES: [number, number, number][] = [
         [2.5, 7.0, 0.15],
@@ -81,14 +106,12 @@ function fuzzRangeForInterval(interval: number): { min: number; max: number } {
 
     let delta = 1.0;
     for (const [start, end, factor] of RANGES) {
-        const effective = Math.max(0, Math.min(interval, end) - start);
-        delta += effective * factor;
+        delta += Math.max(0, Math.min(interval, end) - start) * factor;
     }
 
     let min = Math.max(2, Math.round(interval - delta));
     let max = Math.round(interval + delta);
 
-    // Guarantee minimum range of 2 days when possible.
     if (max - min < 2) {
         max = min + 2;
     }
@@ -96,6 +119,10 @@ function fuzzRangeForInterval(interval: number): { min: number; max: number } {
     return { min, max };
 }
 
+/**
+ * Applies deterministic fuzz to an interval (standalone, no min/max bounds).
+ * Same card + same study day always produces the same result.
+ */
 function applyFuzz(
     interval: number,
     cardId: number,
@@ -103,80 +130,178 @@ function applyFuzz(
     rolloverHour: number = 4,
 ): number {
     const range = fuzzRangeForInterval(interval);
-    if (range.min === range.max) return Math.max(1, range.min);
 
-    // Deterministic Anki-like fuzz seed: study-day + card id.
+    if (range.min === range.max) {
+        return Math.max(1, range.min);
+    }
+
     const seed = hashSeed(`${todayLocalYMD(new Date(nowMs), rolloverHour)}-${cardId}`);
     const span = range.max - range.min + 1;
     return Math.max(1, range.min + (seed % span));
 }
 
+// ---------------------------------------------------------------------------
+// Section 3: Learning/relearning step delays
+// ---------------------------------------------------------------------------
+
 /**
- * Compute Hard delay in minutes for learning/relearning steps.
- * Matches Anki rslib/src/scheduler/states/steps.rs hard_delay().
+ * Rounds durations exceeding 1 day to the nearest whole day (in minutes).
+ * Matches Anki's maybe_round_in_days (rslib/src/scheduler/states/steps.rs).
+ */
+function maybeRoundInDays(minutes: number): number {
+    if (minutes > MINUTES_PER_DAY) {
+        return Math.round(minutes / MINUTES_PER_DAY) * MINUTES_PER_DAY;
+    }
+    return minutes;
+}
+
+/**
+ * Computes the Hard button delay for learning/relearning steps.
+ * Matches Anki's hard_delay_secs (rslib/src/scheduler/states/steps.rs).
  *
- * First step (index 0): 150% of again delay, capped at again + 1 day.
- * Other steps: average of current and next step, at least current.
+ * step 0: next exists -> avg(current, next); else current * 1.5, cap +1 day.
+ * step >0: current step delay unchanged.
  */
 function hardDelayMinutes(steps: number[], stepIndex: number): number {
-    const curMin = steps[stepIndex] || 1;
+    const curMin = steps[stepIndex] ?? 1;
+
     if (stepIndex === 0) {
+        const nextMin = steps[1];
+        if (nextMin !== undefined) {
+            return maybeRoundInDays(Math.round((curMin + nextMin) / 2));
+        }
         const hardMin = Math.ceil(curMin * 1.5);
-        const cappedMin = Math.min(hardMin, curMin + 1440); // cap at current + 1 day
-        return Math.max(1, cappedMin);
+        const cappedMin = Math.min(hardMin, curMin + MINUTES_PER_DAY);
+        return maybeRoundInDays(Math.max(1, cappedMin));
     }
-    const nextMin = steps[stepIndex + 1] ?? null;
-    if (nextMin !== null) {
-        return Math.max(curMin, Math.round((curMin + nextMin) / 2));
-    }
+
     return curMin;
 }
 
+// ---------------------------------------------------------------------------
+// Section 4: Review interval formulas
+// ---------------------------------------------------------------------------
+
+/** Clamps an interval to [1, maxInterval]. Used for non-review contexts. */
 function clampInterval(interval: number, settings: AppSettings): number {
     return Math.max(1, Math.min(settings.maxInterval, Math.round(interval)));
 }
 
+/**
+ * Constrains and optionally fuzzes an interval within [minimum, maximum].
+ * Matches Anki's constrain_passing_interval + with_review_fuzz + constrained_fuzz_bounds.
+ *
+ * With fuzz: computes deterministic fuzz constrained to [minimum, maximum].
+ * Without fuzz: rounds and clamps to [minimum, maximum].
+ */
+function constrainInterval(
+    interval: number,
+    minimum: number,
+    maximum: number,
+    fuzz?: { cardId: number; nowMs: number; rolloverHour: number },
+): number {
+    if (fuzz) {
+        const clamped = Math.max(minimum, Math.min(maximum, interval));
+        const range = fuzzRangeForInterval(clamped);
+
+        let lower = Math.max(minimum, Math.min(maximum, range.min));
+        let upper = Math.max(minimum, Math.min(maximum, range.max));
+
+        // Ensure at least 2 selectable values when possible (matches Anki)
+        if (upper === lower && upper > 2 && upper < maximum) {
+            upper = lower + 1;
+        }
+
+        if (lower === upper) return lower;
+
+        const seed = hashSeed(`${todayLocalYMD(new Date(fuzz.nowMs), fuzz.rolloverHour)}-${fuzz.cardId}`);
+        const span = upper - lower + 1;
+        return lower + (seed % span);
+    }
+
+    return Math.max(minimum, Math.min(maximum, Math.round(interval)));
+}
+
+/**
+ * Computes review intervals for Hard/Good/Easy.
+ * Matches Anki's passing_nonearly_review_intervals (rslib/src/scheduler/states/review.rs).
+ *
+ * Verified against Anki Rust source:
+ * - intervalModifier applies to ALL grades including Hard.
+ * - hard minimum is 0 when hardFactor <= 1.0 (interval may shrink).
+ * - Each grade's minimum chains off the previous FUZZED value,
+ *   guaranteeing hard <= good <= easy after fuzz.
+ */
 function computeReviewIntervals(
     cs: CardState,
     settings: AppSettings,
     elapsedDays: number = 0,
+    fuzz?: { cardId: number; nowMs: number },
 ): { hard: number; good: number; easy: number } {
     const cur = Math.max(1, cs.interval || 1);
     const ef = cs.easeFactor || settings.startingEase;
-    // Anki overdue bonus: days the card was overdue beyond its scheduled interval.
     const delay = Math.max(0, elapsedDays - cur);
+    const hf = settings.hardIntervalMultiplier;
+    const im = settings.intervalModifier;
+    const max = settings.maxInterval;
 
-    // Anki hard interval path does not use global interval modifier or overdue bonus.
-    const hardBase = Math.max(cur + 1, Math.round(cur * settings.hardIntervalMultiplier));
-    // Anki Good: (ivl + delay/2) * ease * modifier
-    const goodBase = Math.max(hardBase + 1, Math.round((cur + delay / 2) * ef * settings.intervalModifier));
-    // Anki Easy: (ivl + delay) * ease * easyBonus * modifier
-    const easyBase = Math.max(goodBase + 1, Math.round((cur + delay) * ef * settings.easyBonus * settings.intervalModifier));
+    const fp = fuzz
+        ? { cardId: cs.cardId, nowMs: fuzz.nowMs, rolloverHour: settings.dayRolloverHour }
+        : undefined;
 
-    return {
-        hard: clampInterval(hardBase, settings),
-        good: clampInterval(goodBase, settings),
-        easy: clampInterval(easyBase, settings),
-    };
+    // Anki: hard minimum is 0 when hard_factor <= 1.0 (allows interval to shrink)
+    const hardMin = hf <= 1.0 ? 0 : cur + 1;
+    const hard = constrainInterval(cur * hf * im, hardMin, max, fp);
+
+    // Anki: good minimum is cur+1 when hard_factor <= 1.0, else fuzzed hard+1
+    const goodMin = hf <= 1.0 ? cur + 1 : hard + 1;
+    const good = constrainInterval((cur + delay / 2) * ef * im, goodMin, max, fp);
+
+    const easy = constrainInterval((cur + delay) * ef * settings.easyBonus * im, good + 1, max, fp);
+
+    return { hard, good, easy };
 }
 
-function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): number {
-    // Anki relearning Easy: preserved lapse interval + 1 day, respecting minLapseInterval.
+/**
+ * Relearning Easy interval: preserved lapse interval + 1 day, with optional fuzz.
+ * Matches Anki's relearning.rs — with_review_fuzz is applied at graduation.
+ */
+function computeRelearningEasyInterval(
+    cs: CardState,
+    settings: AppSettings,
+    fuzz?: { cardId: number; nowMs: number },
+): number {
     const relearnGood = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
+    if (fuzz) {
+        const fp = { cardId: cs.cardId, nowMs: fuzz.nowMs, rolloverHour: settings.dayRolloverHour };
+        return constrainInterval(relearnGood + 1, relearnGood + 1, settings.maxInterval, fp);
+    }
     return clampInterval(relearnGood + 1, settings);
 }
 
+// ---------------------------------------------------------------------------
+// Section support: Elapsed days
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes whole days elapsed between two review timestamps,
+ * accounting for the rollover hour. Returns 0 if no previous review.
+ */
 function computeElapsedDays(lastReviewedAtMs: number, nowMs: number, rolloverHour: number): number {
     if (!lastReviewedAtMs || lastReviewedAtMs <= 0) return 0;
 
-    const nowDay = toRolloverShiftedDate(new Date(nowMs), rolloverHour);
-    const prevDay = toRolloverShiftedDate(new Date(lastReviewedAtMs), rolloverHour);
+    const nowShifted = toRolloverShiftedDate(new Date(nowMs), rolloverHour);
+    const prevShifted = toRolloverShiftedDate(new Date(lastReviewedAtMs), rolloverHour);
 
-    nowDay.setHours(0, 0, 0, 0);
-    prevDay.setHours(0, 0, 0, 0);
+    const nowDay = new Date(nowShifted.getFullYear(), nowShifted.getMonth(), nowShifted.getDate());
+    const prevDay = new Date(prevShifted.getFullYear(), prevShifted.getMonth(), prevShifted.getDate());
 
     return Math.max(0, Math.round((nowDay.getTime() - prevDay.getTime()) / DAY_MS));
 }
+
+// ---------------------------------------------------------------------------
+// Section 5-9: State handlers and engine
+// ---------------------------------------------------------------------------
 
 const AnkiV3Engine: SchedulerEngine = {
     name: 'ANKI_V3',
@@ -233,6 +358,7 @@ const AnkiV3Engine: SchedulerEngine = {
             };
         }
 
+        // Review state: unfuzzed preview (base intervals for button labels)
         const preview = computeReviewIntervals(cs, settings, elapsedDays);
         return {
             again: formatMinutes(lapseSteps[0] || 1),
@@ -319,6 +445,7 @@ function ankiV3Learning(
         };
     }
 
+    // Grade 4 (Easy): graduate immediately with easy interval
     const easyInt = clampInterval(settings.easyInterval, settings);
     return {
         interval: easyInt,
@@ -328,7 +455,7 @@ function ankiV3Learning(
             relearningStep: -1,
             status: 'review',
             interval: easyInt,
-            easeFactor: Math.max(1.3, (cs.easeFactor || settings.startingEase) + 0.15),
+            easeFactor: Math.max(MINIMUM_EASE_FACTOR, (cs.easeFactor || settings.startingEase) + EASE_FACTOR_EASY_DELTA),
             repetition: (cs.repetition || 0) + 1,
             lastReviewedAtMs: now,
             elapsedDays,
@@ -410,7 +537,8 @@ function ankiV3Relearning(
         };
     }
 
-    const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
+    // Grade 4 (Easy): graduate with interval + 1 (Anki does NOT change ease here)
+    const relearnEasyInterval = computeRelearningEasyInterval(cs, settings, { cardId: cs.cardId, nowMs: now });
     return {
         interval: relearnEasyInterval,
         isLearning: false,
@@ -419,7 +547,6 @@ function ankiV3Relearning(
             learningStep: -1,
             status: 'review',
             interval: relearnEasyInterval,
-            // Anki does NOT change ease factor during relearning graduation.
             lastReviewedAtMs: now,
             elapsedDays,
         },
@@ -438,8 +565,11 @@ function ankiV3Review(
     const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
-        const newInterval = clampInterval(Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)), settings);
-        const newEase = Math.max(1.3, ef - 0.20);
+        const newInterval = clampInterval(
+            Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)),
+            settings,
+        );
+        const newEase = Math.max(MINIMUM_EASE_FACTOR, ef + EASE_FACTOR_AGAIN_DELTA);
 
         return {
             interval: 0,
@@ -458,20 +588,17 @@ function ankiV3Review(
         };
     }
 
-    const preview = computeReviewIntervals(cs, settings, elapsedDays);
+    // Fuzzed intervals with chained minimums — guarantees hard <= good <= easy
+    const intervals = computeReviewIntervals(cs, settings, elapsedDays, { cardId: cs.cardId, nowMs: now });
 
     if (grade === 2) {
-        const newEase = Math.max(1.3, ef - 0.15);
-        const iHard = clampInterval(
-            applyFuzz(preview.hard, cs.cardId, now, settings.dayRolloverHour),
-            settings,
-        );
+        const newEase = Math.max(MINIMUM_EASE_FACTOR, ef + EASE_FACTOR_HARD_DELTA);
 
         return {
-            interval: iHard,
+            interval: intervals.hard,
             isLearning: false,
             stateUpdates: {
-                interval: iHard,
+                interval: intervals.hard,
                 easeFactor: newEase,
                 learningStep: -1,
                 relearningStep: -1,
@@ -484,16 +611,11 @@ function ankiV3Review(
     }
 
     if (grade === 3) {
-        const iGood = clampInterval(
-            applyFuzz(preview.good, cs.cardId, now, settings.dayRolloverHour),
-            settings,
-        );
-
         return {
-            interval: iGood,
+            interval: intervals.good,
             isLearning: false,
             stateUpdates: {
-                interval: iGood,
+                interval: intervals.good,
                 easeFactor: ef,
                 learningStep: -1,
                 relearningStep: -1,
@@ -505,17 +627,14 @@ function ankiV3Review(
         };
     }
 
-    const iEasy = clampInterval(
-        applyFuzz(preview.easy, cs.cardId, now, settings.dayRolloverHour),
-        settings,
-    );
-    const newEase = Math.max(1.3, ef + 0.15);
+    // Grade 4 (Easy)
+    const newEase = Math.max(MINIMUM_EASE_FACTOR, ef + EASE_FACTOR_EASY_DELTA);
 
     return {
-        interval: iEasy,
+        interval: intervals.easy,
         isLearning: false,
         stateUpdates: {
-            interval: iEasy,
+            interval: intervals.easy,
             easeFactor: newEase,
             learningStep: -1,
             relearningStep: -1,
