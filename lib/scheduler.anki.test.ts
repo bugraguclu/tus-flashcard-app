@@ -198,6 +198,69 @@ describe('ANKI_V3 scheduler', () => {
         expect(overdueGood.interval).toBeGreaterThan(onTimeGood.interval);
     });
 
+    it('uses early review formulas for cards reviewed before due date (Anki early review)', () => {
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+
+        // Card with interval=10, reviewed after 5 days (5 days early)
+        const earlyCard = makeReviewCard({
+            interval: 10,
+            easeFactor: 2.5,
+            lastReviewedAtMs: now - 5 * 86400000,
+            cardId: 500,
+        });
+
+        // Same card reviewed on-time (10 days)
+        const onTimeCard = makeReviewCard({
+            interval: 10,
+            easeFactor: 2.5,
+            lastReviewedAtMs: now - 10 * 86400000,
+            cardId: 500,
+        });
+
+        const earlyGood = engine.schedule(earlyCard, 3 as Grade, defaultSettings, now);
+        const onTimeGood = engine.schedule(onTimeCard, 3 as Grade, defaultSettings, now);
+
+        // Early review should produce a shorter interval than on-time
+        expect(earlyGood.interval).toBeLessThan(onTimeGood.interval);
+    });
+
+    it('maintains hard <= good <= easy ordering for early reviews', () => {
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const card = makeReviewCard({
+            interval: 20,
+            easeFactor: 2.5,
+            lastReviewedAtMs: now - 7 * 86400000, // 13 days early
+            cardId: 600,
+        });
+
+        const hard = engine.schedule(card, 2 as Grade, defaultSettings, now).interval;
+        const good = engine.schedule(card, 3 as Grade, defaultSettings, now).interval;
+        const easy = engine.schedule(card, 4 as Grade, defaultSettings, now).interval;
+
+        expect(hard).toBeGreaterThan(0);
+        expect(good).toBeGreaterThanOrEqual(hard);
+        expect(easy).toBeGreaterThanOrEqual(good);
+    });
+
+    it('uses reduced easy bonus for early reviews (Anki behavior)', () => {
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const card = makeReviewCard({
+            interval: 20,
+            easeFactor: 2.5,
+            lastReviewedAtMs: now - 8 * 86400000, // 12 days early
+            cardId: 700,
+        });
+
+        const good = engine.schedule(card, 3 as Grade, defaultSettings, now).interval;
+        const easy = engine.schedule(card, 4 as Grade, defaultSettings, now).interval;
+
+        // Easy should be larger than good, but the bonus is reduced
+        // reducedBonus = 1.3 - (1.3 - 1.0) / 2 = 1.15 (vs full 1.3)
+        expect(easy).toBeGreaterThanOrEqual(good);
+        // The gap between easy and good should be modest due to reduced bonus
+        expect(easy).toBeLessThan(good * 1.3);
+    });
+
     it('applies intervalModifier to all grades including Hard (Anki behavior)', () => {
         const card = makeReviewCard({ interval: 20, easeFactor: 2.5, cardId: 314 });
         const lowModifier = { ...defaultSettings, intervalModifier: 0.5, hardIntervalMultiplier: 1.2 };

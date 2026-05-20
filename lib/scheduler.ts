@@ -203,13 +203,16 @@ function constrainInterval(
 
 /**
  * Computes review intervals for Hard/Good/Easy.
- * Matches Anki's passing_nonearly_review_intervals (rslib/src/scheduler/states/review.rs).
+ * Handles both early and non-early review paths from Anki's review.rs.
  *
- * Verified against Anki Rust source:
- * - intervalModifier applies to ALL grades including Hard.
- * - hard minimum is 0 when hardFactor <= 1.0 (interval may shrink).
- * - Each grade's minimum chains off the previous FUZZED value,
- *   guaranteeing hard <= good <= easy after fuzz.
+ * Early path (days_late < 0): uses elapsed days as base, no fuzz, no chained minimums.
+ * Non-early path (days_late >= 0): uses current interval + overdue bonus, fuzzed, chained minimums.
+ *
+ * Verified against Anki Rust source (rslib/src/scheduler/states/review.rs):
+ * - intervalModifier applies to ALL grades in both paths.
+ * - Early reviews use reduced easy bonus: easyBonus - (easyBonus - 1) / 2.
+ * - Non-early hard minimum is 0 when hardFactor <= 1.0 (interval may shrink).
+ * - Non-early minimums chain off previous FUZZED value (hard <= good <= easy).
  */
 function computeReviewIntervals(
     cs: CardState,
@@ -219,10 +222,34 @@ function computeReviewIntervals(
 ): { hard: number; good: number; easy: number } {
     const cur = Math.max(1, cs.interval || 1);
     const ef = cs.easeFactor || settings.startingEase;
-    const delay = Math.max(0, elapsedDays - cur);
     const hf = settings.hardIntervalMultiplier;
     const im = settings.intervalModifier;
     const max = settings.maxInterval;
+    const daysLate = elapsedDays - cur;
+
+    // Early review path: card answered before due date (Anki: passing_early_review_intervals)
+    // Guard: elapsedDays > 0 prevents false early detection for cards with no review history.
+    if (daysLate < 0 && elapsedDays > 0) {
+        const elapsed = Math.max(1, elapsedDays);
+        const scheduled = cur;
+
+        // No fuzz, no chained minimums — all minimums are 0
+        const hard = constrainInterval(
+            Math.max(elapsed * hf, scheduled * hf / 2) * im, 0, max,
+        );
+        const good = constrainInterval(
+            Math.max(elapsed * ef, scheduled) * im, 0, max,
+        );
+        // Anki halves the distance of easy bonus from 1.0 for early reviews
+        const reducedBonus = settings.easyBonus - (settings.easyBonus - 1.0) / 2.0;
+        const easy = constrainInterval(
+            Math.max(elapsed * ef, scheduled) * reducedBonus * im, 0, max,
+        );
+        return { hard, good, easy };
+    }
+
+    // Non-early review path: card answered on or after due date (Anki: passing_nonearly_review_intervals)
+    const delay = Math.max(0, daysLate);
 
     const fp = fuzz
         ? { cardId: cs.cardId, nowMs: fuzz.nowMs, rolloverHour: settings.dayRolloverHour }
