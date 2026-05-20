@@ -5,8 +5,12 @@ A cross-platform spaced repetition flashcard app built for TUS (Tipta Uzmanlık 
 ## Features
 
 ### Spaced Repetition (Anki V3)
+- Faithful port of the Anki V3 scheduling algorithm, verified against the Rust source (`rslib/src/scheduler/states/`)
 - Four answer grades: Again / Hard / Good / Easy
+- Early and non-early review paths with correct interval formulas
+- Deterministic fuzz for non-early reviews (DJB2 hash, day + card ID seeded)
 - Configurable learning steps, lapse steps, and graduating intervals
+- Ease factor management with named constants and 1.3 floor
 - Queue ordering options (learning-review-new or learning-new-review)
 - New card ordering (sequential or random)
 - Per-deck configuration overrides
@@ -62,7 +66,7 @@ A cross-platform spaced repetition flashcard app built for TUS (Tipta Uzmanlık 
 | Navigation | expo-router (file-based) |
 | Database (native) | expo-sqlite (WAL mode) |
 | Database (web) | sql.js (WebAssembly) |
-| Testing | Vitest |
+| Testing | Vitest (40 tests across 7 suites) |
 | State | React Context |
 
 ## Getting Started
@@ -111,7 +115,7 @@ app/
 lib/
   db.ts                    Platform-aware SQLite + migrations
   webDb.ts                 sql.js wrapper for web platform
-  scheduler.ts             Anki V3 scheduling engine
+  scheduler.ts             Anki V3 scheduling engine (40+ tests, verified against Rust source)
   studyRepository.ts       Study queue + answer processing
   noteManager.ts           Note/card CRUD operations
   deckManager.ts           Deck hierarchy + configuration
@@ -135,7 +139,7 @@ constants/
 The app follows a local-first, platform-abstracted architecture:
 
 - **Database layer** (`lib/db.ts`) exposes a unified `DBHandle` interface implemented by `expo-sqlite` on native and `sql.js` on web. All database consumers use this interface, making the storage backend transparent.
-- **Study flow** is driven by `studyRepository.ts` which manages the queue, delegates scheduling to `scheduler.ts` (a faithful port of Anki V3), and logs reviews via `reviewLogger.ts`.
+- **Study flow** is driven by `studyRepository.ts` which manages the queue, delegates scheduling to `scheduler.ts` (a faithful TypeScript port of Anki V3, verified against the official Rust source at `ankitects/anki`), and logs reviews via `reviewLogger.ts`.
 - **UI state** flows through a single `AppContext` provider, with data refreshed via version bumping to trigger dependent `useMemo` recalculations.
 
 ## License
