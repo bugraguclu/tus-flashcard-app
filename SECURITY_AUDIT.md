@@ -84,14 +84,13 @@ This is a local-first flashcard application with no server-side components, no a
 - **Remediation**: Truncate SQL in error messages to the query type (SELECT/INSERT/UPDATE/DELETE) and table name only. Avoid including parameter values or full query text in production error messages.
 - **Priority**: Backlog
 
-### [LOW] `getBrowserCards` uses string interpolation for LIMIT/OFFSET
+### [RESOLVED] ~~`getBrowserCards` uses string interpolation for LIMIT/OFFSET~~
 
-- **Location**: `lib/studyRepository.ts:897-898`
+- **Location**: `lib/studyRepository.ts`
 - **OWASP Category**: A03:2021 - Injection (SQL Injection)
-- **Description**: The `getBrowserCards` function constructs LIMIT and OFFSET clauses via template literals: `` ` LIMIT ${Math.floor(limit as number)}` ``. While `Math.floor()` ensures the value is always a number (not injectable), this pattern is inconsistent with the rest of the codebase which correctly uses parameterized queries for limit values (e.g., `loadRowsByQueue`).
-- **Exploit Scenario**: Not exploitable in the current code because `Math.floor` guarantees numeric output. However, the inconsistent pattern could lead to copy-paste errors by future developers who omit the `Math.floor` guard.
-- **Remediation**: Use parameterized queries consistently: `` `... LIMIT ? OFFSET ?`, limit, offset ``. This matches the pattern already used in `loadRowsByQueue`.
-- **Priority**: Backlog
+- **Status**: **FIXED** (2026-05-22) -- `LIMIT` and `OFFSET` now use parameterized `?` placeholders with a dedicated `paginationParams` array, matching the pattern in `loadRowsByQueue`.
+- **Original Description**: The function constructed LIMIT/OFFSET via template literals (`${Math.floor(limit)}`). While `Math.floor()` prevented injection, the pattern was inconsistent with the rest of the codebase.
+- **Resolution**: Replaced with `LIMIT ? OFFSET ?` and parameterized values.
 
 ### [LOW] Potential race condition in concurrent database writes
 
@@ -126,7 +125,9 @@ This is a local-first flashcard application with no server-side components, no a
 
 The codebase demonstrates several strong security practices:
 
-1. **Parameterized SQL queries throughout**: Nearly all database queries use parameterized placeholders (`?`) rather than string concatenation. This is the single most important defense against SQL injection and is applied consistently across `studyRepository.ts`, `noteManager.ts`, `deckManager.ts`, `reviewLogger.ts`, `storage.ts`, and `db.ts`.
+1. **Parameterized SQL queries throughout**: All database queries use parameterized placeholders (`?`) rather than string concatenation. This is the single most important defense against SQL injection and is applied consistently across `studyRepository.ts`, `noteManager.ts`, `deckManager.ts`, `reviewLogger.ts`, `storage.ts`, and `db.ts`. As of 2026-05-22, `getBrowserCards` LIMIT/OFFSET was the last remaining interpolation and has been converted to parameterized form.
+
+1b. **SQL LIKE wildcard escaping**: The `escapeLikePattern` function in `studyRepository.ts` escapes `%`, `_`, and `\` characters in user-provided search terms before embedding them in LIKE clauses. All LIKE queries use the `ESCAPE '\\'` clause. This matches the escaping logic in Anki's `to_sql()` and `escape_anki_wildcards()` functions (`rslib/src/search/writer.rs`, `rslib/src/text.rs`), preventing wildcard injection in search filters.
 
 2. **FTS5 query sanitization**: The `sanitizeFtsToken` function in `db.ts:290-298` strips control characters, FTS5 syntax characters (`"*():`), and reserved keywords (`AND`, `OR`, `NOT`, `NEAR`) before building match queries. The `buildFtsPrefixQuery` function double-quotes tokens and escapes internal quotes. This prevents FTS5 injection attacks.
 
@@ -164,7 +165,7 @@ _(None - no critical vulnerabilities found)_
 
 ### Backlog
 4. **Add whitelist validation to `hasColumn`** (`lib/db.ts`) - Defensive coding against future misuse
-5. **Use parameterized LIMIT/OFFSET in `getBrowserCards`** (`lib/studyRepository.ts`) - Consistency with rest of codebase
+5. ~~**Use parameterized LIMIT/OFFSET in `getBrowserCards`**~~ - **RESOLVED** (2026-05-22)
 6. **Add per-table row count limits during import** (`lib/storage.ts`) - Prevent resource exhaustion
 7. **Consider IndexedDB over localStorage for web database** (`lib/webDb.ts`) - Better storage limits and isolation
 8. **Reduce SQL fragment exposure in error messages** (`lib/webDb.ts`) - Preparation for future error monitoring

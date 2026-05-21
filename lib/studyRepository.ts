@@ -2,8 +2,6 @@ import { TUS_SUBJECTS } from './data';
 import { getDB } from './db';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
 import type { AnkiCard, Note, DeckConfig, NoteType } from './models';
-
-export type { StudyCard };
 import {
     ankiCardIdFromLegacyCardId,
     ankiCardToCardState,
@@ -90,15 +88,51 @@ function buildNoteTypeFieldMap(note: Note, noteType: NoteType | null): Map<strin
     return fieldMap;
 }
 
+/**
+ * Extract field name references from an Anki template string.
+ *
+ * Anki's template syntax (mustache-like):
+ *   {{FieldName}}                — simple replacement
+ *   {{#FieldName}} ... {{/FieldName}}  — conditional block
+ *   {{^FieldName}} ... {{/FieldName}}  — negated conditional
+ *   {{filter:FieldName}}         — filtered replacement (hint:, text:, cloze:, type:, tts:, etc.)
+ *   {{filter1:filter2:FieldName}} — chained filters
+ *
+ * Anki source (template.rs classify_handle + ParsedNode::Replacement):
+ *   1. Strip optional block marker (#, ^, /)
+ *   2. Split on ':' — the LAST segment is the field name, preceding segments are filters
+ *   3. Trim whitespace (Anki allows "{{ Front }}")
+ *   4. Field names may contain any character except { and }
+ *
+ * Special pseudo-fields (FrontSide, Tags, Type, Deck, Card) are excluded
+ * because they are not real note fields — Anki fills them dynamically.
+ */
 function extractTemplateFieldRefs(template: string): string[] {
+    const seen = new Set<string>();
     const refs: string[] = [];
-    const regex = /\{\{(?:#|\^|\/)?(?:cloze:|type:)?([A-Za-z0-9_]+)\}\}/g;
+    // Match everything between {{ and }}, including unicode, spaces, and filter chains.
+    const regex = /\{\{([^{}]+?)\}\}/g;
     let match: RegExpExecArray | null;
 
     while ((match = regex.exec(template)) !== null) {
-        const name = match[1];
-        if (SPECIAL_TEMPLATE_FIELDS.has(name)) continue;
-        if (!refs.includes(name)) refs.push(name);
+        let content = match[1].trim();
+        if (!content) continue;
+
+        // Strip optional block marker: # (conditional), ^ (negated), / (close)
+        if (content[0] === '#' || content[0] === '^' || content[0] === '/') {
+            content = content.slice(1).trim();
+        }
+
+        // Anki splits on ':' and takes the LAST segment as the field name.
+        // Preceding segments are filters (cloze, type, hint, text, furigana, tts, etc.)
+        const colonIdx = content.lastIndexOf(':');
+        const fieldName = colonIdx >= 0 ? content.slice(colonIdx + 1).trim() : content;
+
+        if (!fieldName) continue;
+        if (SPECIAL_TEMPLATE_FIELDS.has(fieldName)) continue;
+        if (seen.has(fieldName)) continue;
+        seen.add(fieldName);
+        refs.push(fieldName);
     }
 
     return refs;
@@ -157,17 +191,36 @@ function parseNotePayload(note: Note, noteType: NoteType | null): { subject: str
         ? (fieldMap.get(answerFieldName) ?? '')
         : (note.fields[1] || '');
 
+    // Topic: first remaining non-empty field (after question & answer), else a tag, else 'General'.
     const topicFieldName = firstNonEmptyFieldName(
         orderedFieldNames.filter((name) => name !== questionFieldName && name !== answerFieldName),
         fieldMap,
     );
+    const topicFromField = topicFieldName != null ? (fieldMap.get(topicFieldName) ?? '') : '';
     const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
-    const topic = (topicFieldName ? fieldMap.get(topicFieldName) : '') || topicFromTag || 'General';
+    const topic = topicFromField || topicFromTag || 'General';
 
     return { subject, topic, question, answer };
 }
 
-function buildFilteredSearchClause(searchQuery: string): { sql: string; params: Array<string | number> } {
+/** Escape SQL LIKE wildcard characters so they match literally.
+ *  Anki's to_sql() escapes % and keeps _ as literal via ESCAPE clause;
+ *  we do the same for user-supplied search terms. */
+function escapeLikePattern(s: string): string {
+    return s.replace(/[%_\\]/g, '\\$&');
+}
+
+/**
+ * Parse a simplified Anki-style search query into individual SQL clauses.
+ * Returns { clauses, params } where clauses is an array of SQL fragments
+ * WITHOUT any leading AND — the caller decides how to join them.
+ *
+ * Supported prefixes (matching Anki's search syntax):
+ *   tag:<name>   — substring match on n.tags
+ *   deck:<name>  — exact match OR child deck match (deck::child)
+ *   <term>       — substring match on sfld, note data, and tags
+ */
+function buildFilteredSearchClause(searchQuery: string): { clauses: string[]; params: Array<string | number> } {
     const terms = searchQuery.trim().split(/\s+/).filter(Boolean);
     const clauses: string[] = [];
     const params: Array<string | number> = [];
@@ -176,8 +229,8 @@ function buildFilteredSearchClause(searchQuery: string): { sql: string; params: 
         if (term.startsWith('tag:')) {
             const tag = term.slice(4);
             if (tag) {
-                clauses.push('n.tags LIKE ?');
-                params.push(`%${tag}%`);
+                clauses.push("n.tags LIKE ? ESCAPE '\\'");
+                params.push(`%${escapeLikePattern(tag)}%`);
             }
             continue;
         }
@@ -185,22 +238,25 @@ function buildFilteredSearchClause(searchQuery: string): { sql: string; params: 
         if (term.startsWith('deck:')) {
             const deckName = term.slice(5);
             if (deckName) {
-                clauses.push('(d.name = ? OR d.name LIKE ?)');
-                params.push(deckName, `${deckName}::%`);
+                clauses.push("(d.name = ? OR d.name LIKE ? ESCAPE '\\')");
+                params.push(deckName, `${escapeLikePattern(deckName)}::%`);
             }
             continue;
         }
 
-        clauses.push('(n.sfld LIKE ? OR n.data LIKE ? OR n.tags LIKE ?)');
-        params.push(`%${term}%`, `%${term}%`, `%${term}%`);
+        const escaped = escapeLikePattern(term);
+        clauses.push("(n.sfld LIKE ? ESCAPE '\\' OR n.data LIKE ? ESCAPE '\\' OR n.tags LIKE ? ESCAPE '\\')");
+        params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
     }
 
-    return {
-        sql: clauses.length > 0 ? ` AND ${clauses.join(' AND ')}` : '',
-        params,
-    };
+    return { clauses, params };
 }
 
+/**
+ * Build a SQL WHERE fragment for subject/topic/deck scope filtering.
+ * Returns { sql, params } where sql is either empty string or " AND (...)" —
+ * always safe to append directly after another WHERE predicate.
+ */
 function buildScopeClause(
     selectedSubject?: string | null,
     selectedTopic?: string | null,
@@ -210,26 +266,24 @@ function buildScopeClause(
     const params: Array<string | number> = [];
 
     if (selectedSubject) {
-        clauses.push('n.tags LIKE ?');
-        params.push(`%${selectedSubject}%`);
+        clauses.push("n.tags LIKE ? ESCAPE '\\'");
+        params.push(`%${escapeLikePattern(selectedSubject)}%`);
     }
 
     if (selectedTopic) {
-        clauses.push('n.data LIKE ?');
-        params.push(`%${selectedTopic}%`);
+        clauses.push("n.data LIKE ? ESCAPE '\\'");
+        params.push(`%${escapeLikePattern(selectedTopic)}%`);
     }
 
     if (selectedDeckName) {
         const selectedDeck = getDeckByName(selectedDeckName);
         if (selectedDeck?.isFiltered && selectedDeck.searchQuery) {
             const filtered = buildFilteredSearchClause(selectedDeck.searchQuery);
-            if (filtered.sql) {
-                clauses.push(filtered.sql.replace(/^\s*AND\s+/i, ''));
-                params.push(...filtered.params);
-            }
+            clauses.push(...filtered.clauses);
+            params.push(...filtered.params);
         } else {
-            clauses.push('(d.name = ? OR d.name LIKE ?)');
-            params.push(selectedDeckName, `${selectedDeckName}::%`);
+            clauses.push("(d.name = ? OR d.name LIKE ? ESCAPE '\\')");
+            params.push(selectedDeckName, `${escapeLikePattern(selectedDeckName)}::%`);
         }
     }
 
@@ -286,6 +340,12 @@ function loadRowsByQueue(
     );
 }
 
+/**
+ * Count cards matching a queue predicate + scope filters.
+ * JOINs the same 4 tables as loadRowsByQueue so that a card missing
+ * its note_type row is excluded from both the count and the load —
+ * preventing "N cards available" when only N-1 can actually render.
+ */
 function countRowsByQueue(
     queueSql: string,
     queueParams: Array<string | number>,
@@ -300,13 +360,14 @@ function countRowsByQueue(
         `SELECT COUNT(*) as cnt
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
          JOIN decks d ON d.id = c.deckId
          WHERE ${queueSql}${scope.sql}`,
         ...queueParams,
         ...scope.params,
     );
 
-    return row?.cnt || 0;
+    return row?.cnt ?? 0;
 }
 
 function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
@@ -481,10 +542,6 @@ function applyPerDeckLimit(
     }
 
     return result;
-}
-
-function getDeckConfig(deckId: number): DeckConfig {
-    return getDeckConfigForDeck(deckId);
 }
 
 function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): void {
@@ -766,7 +823,7 @@ export function answerStudyCard(
     const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings);
     const currentState = ankiCardToCardState(currentAnkiCard, cardSettings, nowMs);
     const noteType = getNoteType(note.noteTypeId);
-    const deckConfig = getDeckConfig(currentAnkiCard.deckId);
+    const deckConfig = getDeckConfigForDeck(currentAnkiCard.deckId);
 
     const scheduler = getScheduler(cardSettings.algorithm);
     const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
@@ -852,20 +909,24 @@ export function setCardSuspended(cardId: number, suspended: boolean, rolloverHou
     const card = getAnkiCard(cardId);
     if (!card) return;
 
-    card.queue = suspended ? -1 : restoreQueueFromType(card, rolloverHour);
-    card.mod = Math.floor(Date.now() / 1000);
-    card.usn = -1;
-    saveAnkiCard(card);
+    saveAnkiCard({
+        ...card,
+        queue: suspended ? -1 : restoreQueueFromType(card, rolloverHour),
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+    });
 }
 
 export function setCardBuried(cardId: number, buried: boolean, rolloverHour: number = 4): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
 
-    card.queue = buried ? -2 : restoreQueueFromType(card, rolloverHour);
-    card.mod = Math.floor(Date.now() / 1000);
-    card.usn = -1;
-    saveAnkiCard(card);
+    saveAnkiCard({
+        ...card,
+        queue: buried ? -2 : restoreQueueFromType(card, rolloverHour),
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+    });
 }
 
 export function getCardState(cardId: number, settings: AppSettings): CardState {
@@ -886,8 +947,12 @@ export function getBrowserCards(settings: AppSettings, limit?: number, offset?: 
     const db = getDB();
     const hasLimit = Number.isFinite(limit) && (limit as number) > 0;
     const hasOffset = Number.isFinite(offset) && (offset as number) > 0;
-    const limitSql = hasLimit ? ` LIMIT ${Math.floor(limit as number)}` : '';
-    const offsetSql = hasOffset ? ` OFFSET ${Math.floor(offset as number)}` : '';
+    const limitSql = hasLimit ? ' LIMIT ?' : '';
+    const offsetSql = hasOffset ? ' OFFSET ?' : '';
+    const paginationParams: number[] = [
+        ...(hasLimit ? [Math.floor(limit as number)] : []),
+        ...(hasOffset ? [Math.floor(offset as number)] : []),
+    ];
 
     const rows = db.getAllSync<QueueCardRow>(
         `SELECT
@@ -901,6 +966,7 @@ export function getBrowserCards(settings: AppSettings, limit?: number, offset?: 
          JOIN notes n ON n.id = c.noteId
          JOIN note_types nt ON nt.id = n.noteTypeId
          ORDER BY c.id ASC${limitSql}${offsetSql}`,
+        ...paginationParams,
     );
     return toStudyCards(rows, settings, Date.now());
 }

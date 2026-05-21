@@ -6,7 +6,7 @@ import { TUS_SUBJECTS } from '../../lib/data';
 import { getScheduler, todayLocalYMD } from '../../lib/scheduler';
 import { loadSessionStats, saveSessionStats } from '../../lib/storage';
 import { useApp } from './_layout';
-import type { Grade, SessionStats } from '../../lib/types';
+import type { Grade, SessionStats, StudyCard } from '../../lib/types';
 import type { AnkiCard } from '../../lib/models';
 import {
     getAnkiCard,
@@ -21,7 +21,6 @@ import {
     setCardBuried,
     setCardSuspended,
     undoAnswer,
-    type StudyCard,
 } from '../../lib/studyRepository';
 
 /** Web-only tooltip via HTML title attribute */

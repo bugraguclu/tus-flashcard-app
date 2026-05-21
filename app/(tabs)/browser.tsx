@@ -13,7 +13,8 @@ import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constant
 import { TUS_SUBJECTS } from '../../lib/data';
 import { dbSearchCards } from '../../lib/db';
 import { useApp } from './_layout';
-import { getBrowserCards, setCardSuspended, type StudyCard } from '../../lib/studyRepository';
+import type { StudyCard } from '../../lib/types';
+import { getBrowserCards, setCardSuspended } from '../../lib/studyRepository';
 
 export default function BrowserScreen() {
     const { settings, bumpDataVersion, dataVersion } = useApp();

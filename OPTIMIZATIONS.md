@@ -12,7 +12,7 @@ TUS Flashcard uygulamasi genel olarak iyi yapilandirilmis bir codebase. SQL sorg
 
 - **Location**: `lib/studyRepository.ts:535-610`
 - **Impact**: High
-- **Current**: `getStudyQueue` her cagrildiginda 4 `countRowsByQueue` (her biri ayri SQL COUNT) ve ardindan 4 `loadRowsByQueue` (her biri ayri SELECT + JOIN) calistiriyor. Toplamda 8 SQL round-trip yapiliyor. Bu fonksiyon her kart cevabinda, her 45 saniyede bir, ve her learning timer'da tetikleniyor.
+- **Current**: `getStudyQueue` her cagrildiginda 4 `countRowsByQueue` (her biri ayri SQL COUNT) ve ardindan 4 `loadRowsByQueue` (her biri ayri SELECT + JOIN) calistiriyor. Toplamda 8 SQL round-trip yapiliyor. Bu fonksiyon her kart cevabinda, her 45 saniyede bir, ve her learning timer'da tetikleniyor. (Not: 2026-05-22'de `countRowsByQueue`'daki eksik `note_types` JOIN duzeltildi -- artik `loadRowsByQueue` ile ayni 4-table JOIN kullaniliyor.)
 - **Recommended**: Tek bir SQL sorgusuyla tum queue'lari sayip row'lari cekmek:
   ```sql
   SELECT c.queue, c.type, c.due, ...
@@ -34,7 +34,7 @@ TUS Flashcard uygulamasi genel olarak iyi yapilandirilmis bir codebase. SQL sorg
 
 - **Location**: `lib/noteManager.ts:207-300`
 - **Impact**: High
-- **Current**: `saveAnkiCard` her cagrildiginda once SELECT ile mevcut karti okuyup JSON.parse yapiyor, ardindan `{ ...existingParsed, ...card }` merge edip JSON.stringify ile karsilastirma yapiyor. Review akisinda bu fonksiyon `answerStudyCard` icinde 1 kez, `applySiblingBuryPolicy` icinde N kez (kardes kart sayisi kadar), ve `handleLeech` icinde potansiyel 1 kez daha cagriliyor.
+- **Current**: `saveAnkiCard` her cagrildiginda once SELECT ile mevcut karti okuyup JSON.parse yapiyor, ardindan `{ ...existingParsed, ...card }` merge edip JSON.stringify ile karsilastirma yapiyor. Review akisinda bu fonksiyon `answerStudyCard` icinde 1 kez, `applySiblingBuryPolicy` icinde N kez (kardes kart sayisi kadar), ve `handleLeech` icinde potansiyel 1 kez daha cagriliyor. (Not: 2026-05-22'de `setCardSuspended` ve `setCardBuried` fonksiyonlari immutable pattern'e gecti -- artik dogrudan mutation yerine `saveAnkiCard({ ...card, queue, mod, usn })` spread kullaniliyor.)
 - **Recommended**: `saveAnkiCard` fonksiyonuna `skipMerge: boolean` parametresi ekleyerek review hot path'inde merge'u atlamak. `answerStudyCard` zaten tam AnkiCard nesnesi uretiyor, merge gereksiz. Alternatif: Sadece denormalize kolonlari UPDATE eden bir `updateAnkiCardColumns` fonksiyonu yazmak (data blob'u guncellenmeden).
 - **Estimated Gain**: Review basina 1-3 gereksiz SELECT + JSON.parse/stringify cikartilir. ~5-15ms tasarruf per review.
 
