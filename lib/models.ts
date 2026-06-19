@@ -137,14 +137,16 @@ export interface Note {
     tags: string[];      // tag listesi
     fields: string[];    // alan değerleri (NoteType.fields sırasıyla)
     sfld: string;        // sort field value
-    csum: number;        // SHA1 checksum of first field (duplicate detection)
-    flags: number;       // card flags (1-7 renk)
+    csum: number;        // FNV-1a hash of first field for dup detection (see checksumField; NOT Anki's SHA1 csum)
+    flags: number;       // reserved; Anki's notes.flags is unused — color flags live on the card (AnkiCard.flags)
 }
 
 // ---- Cards (Anki: cards) ----
 export type CardType = 0 | 1 | 2 | 3;  // 0=new, 1=learning, 2=review, 3=relearning
 export type CardQueue = -3 | -2 | -1 | 0 | 1 | 2 | 3 | 4;
-// -3=sched buried, -2=user buried, -1=suspended, 0=new, 1=learning, 2=review, 3=day-learn, 4=preview
+// Matches Anki (rslib/src/card.rs):
+// -3=user buried (manual), -2=sched buried (sibling/auto), -1=suspended,
+// 0=new, 1=learning, 2=review, 3=day-learn, 4=preview
 
 export type CardFlag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

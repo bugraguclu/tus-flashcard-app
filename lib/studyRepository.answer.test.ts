@@ -98,7 +98,8 @@ vi.mock('./noteManager', () => ({
     buryCard: (cardId: number, schedulerBury = false) => {
         const card = shared.cards.get(cardId);
         if (!card) return;
-        shared.cards.set(cardId, { ...card, queue: schedulerBury ? -3 : -2 });
+        // Anki mapping: sched/sibling bury = -2, user/manual bury = -3.
+        shared.cards.set(cardId, { ...card, queue: schedulerBury ? -2 : -3 });
     },
     isLeech: (card: AnkiCard, threshold: number) => card.lapses >= threshold,
     handleLeech: vi.fn(),
@@ -189,8 +190,8 @@ describe('answerStudyCard', () => {
         expect(updated.reps).toBeGreaterThan(5);
         expect(updated.queue).toBe(2);
 
-        // Bury policy: queue=3 sibling buried, queue=1 sibling untouched.
-        expect(shared.cards.get(12)?.queue).toBe(-3);
+        // Bury policy: interday-learning sibling sched-buried (-2), intraday sibling untouched.
+        expect(shared.cards.get(12)?.queue).toBe(-2);
         expect(shared.cards.get(11)?.queue).toBe(1);
 
         expect(result.reviewLogId).toBeGreaterThan(1000);

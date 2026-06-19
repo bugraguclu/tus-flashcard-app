@@ -923,7 +923,8 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
 
     saveAnkiCard({
         ...card,
-        queue: buried ? -2 : restoreQueueFromType(card, rolloverHour),
+        // Manual bury from the UI = user-buried (-3) in Anki.
+        queue: buried ? -3 : restoreQueueFromType(card, rolloverHour),
         mod: Math.floor(Date.now() / 1000),
         usn: -1,
     });

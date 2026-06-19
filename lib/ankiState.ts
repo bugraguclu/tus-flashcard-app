@@ -269,7 +269,8 @@ export function cardStateToAnkiCard(
     }
 
     if (state.buried) {
-        updated.queue = -2;
+        // CardState.buried is a single flag; encode it as user-buried (-3), the manual notion.
+        updated.queue = -3;
         return updated;
     }
 

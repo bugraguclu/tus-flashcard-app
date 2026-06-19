@@ -319,7 +319,8 @@ export function unsuspendCard(cardId: number, rolloverHour: number = 4): void {
 export function buryCard(cardId: number, schedulerBury = false): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
-    card.queue = schedulerBury ? -3 : -2;
+    // Anki: sched/sibling bury = -2, user/manual bury = -3.
+    card.queue = schedulerBury ? -2 : -3;
     card.mod = Math.floor(Date.now() / 1000);
     saveAnkiCard(card);
 }
@@ -345,12 +346,12 @@ export function burySiblings(card: AnkiCard): number {
     return buriedCount;
 }
 
-/** Unbury scheduler-buried cards at day rollover. User-buried (-2) cards stay buried. */
+/** Unbury both sched-buried (-2) and user-buried (-3) cards at day rollover.
+ *  Matches Anki: burying is "until the next day" for both kinds; only suspend (-1) persists. */
 export function unburyAllCards(rolloverHour: number = 4): number {
     const db = getDB();
-    // Anki only auto-unbury scheduler-buried (-3) at day rollover, not user-buried (-2).
     const buried = db.getAllSync<{ data: string }>(
-        'SELECT data FROM anki_cards WHERE queue = -3'
+        'SELECT data FROM anki_cards WHERE queue = -2 OR queue = -3'
     );
     let count = 0;
     for (const row of buried) {
