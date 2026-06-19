@@ -116,6 +116,31 @@ describe('ankiState edge cases', () => {
         expect(roundTrip.reps).toBe(card.reps);
     });
 
+    it('decodes new and review cards with no active (re)learning step', () => {
+        const now = Date.now();
+
+        // Review card (type 2, left 0) must NOT carry a learning step, otherwise the scheduler
+        // routes it through the learning handler and collapses its interval (regression guard).
+        const review = makeCard({ type: 2, queue: 2, ivl: 30, left: 0, reps: 9 });
+        const reviewState = ankiCardToCardState(review, settings, now);
+        expect(reviewState.status).toBe('review');
+        expect(reviewState.learningStep).toBe(-1);
+        expect(reviewState.relearningStep).toBe(-1);
+
+        // New card (type 0) begins at the first learning step (0), not the inferred last step.
+        const fresh = makeCard({ type: 0, queue: 0, ivl: 0, left: 0, reps: 0 });
+        const freshState = ankiCardToCardState(fresh, settings, now);
+        expect(freshState.status).toBe('new');
+        expect(freshState.learningStep).toBe(0);
+        expect(freshState.relearningStep).toBe(-1);
+
+        // Relearning card (type 3) carries a relearning step, not a learning step.
+        const relearn = makeCard({ type: 3, queue: 1, ivl: 15, left: encodeAnkiLeft(1, 1), lapses: 1 });
+        const relearnState = ankiCardToCardState(relearn, settings, now);
+        expect(relearnState.relearningStep).toBeGreaterThanOrEqual(0);
+        expect(relearnState.learningStep).toBe(-1);
+    });
+
     it('keeps day-number conversion consistent around rollover', () => {
         const beforeRollover = new Date(2026, 2, 12, 3, 30, 0, 0).getTime();
         const afterRollover = new Date(2026, 2, 12, 5, 0, 0, 0).getTime();

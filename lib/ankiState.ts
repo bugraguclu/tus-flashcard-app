@@ -201,6 +201,22 @@ export function ankiCardToCardState(
         ? Math.max(0, Math.min(learnSteps.length - 1, learnSteps.length - Math.max(remainingTotal, 1)))
         : 0;
 
+    // Only cards actually mid-(re)learning carry a step. This gating is critical:
+    // a review card (type 2) MUST decode to learningStep/relearningStep = -1, otherwise the
+    // scheduler's `learningStep >= 0` routing would send it through the learning handler and
+    // collapse its interval to the graduating interval. New cards (type 0) begin at step 0 —
+    // not the "last step" that decodeAnkiLeft(0) (remainingTotal=0) would otherwise imply.
+    let learningStep = -1;
+    let relearningStep = -1;
+    if (card.type === 3) {
+        relearningStep = inferredStep;       // relearning
+    } else if (card.type === 1) {
+        learningStep = inferredStep;         // intraday/interday learning
+    } else if (card.type === 0) {
+        learningStep = 0;                    // new card begins at the first learning step
+    }
+    // card.type === 2 (review): both remain -1 -> routes to the review handler
+
     const dueDate = status === 'review'
         ? dayNumberToYmd(card.due || todayNumber, settings.dayRolloverHour)
         : status === 'learning' && card.queue === 3
@@ -221,8 +237,8 @@ export function ankiCardToCardState(
         suspended,
         buried,
         easeFactor: permilleToEase(card.factor && card.factor > 0 ? card.factor : easeToPermille(settings.startingEase)),
-        learningStep: isRelearning ? -1 : inferredStep,
-        relearningStep: isRelearning ? inferredStep : -1,
+        learningStep,
+        relearningStep,
         lastReviewedAtMs: card.lastReview || 0,
         elapsedDays: elapsedStudyDays(card.lastReview || 0, nowMs, settings.dayRolloverHour),
         lapses: card.lapses || 0,

@@ -205,4 +205,42 @@ describe('answerStudyCard', () => {
         expect(shared.txLog).toContain('BEGIN TRANSACTION;');
         expect(shared.txLog).toContain('ROLLBACK;');
     });
+
+    it('grows a mature review card on Good instead of collapsing it', () => {
+        // Regression: review cards used to decode with a bogus learning step and route through
+        // the learning handler, collapsing ivl to the graduating interval (1 day) on every answer.
+        shared.cards.set(20, {
+            ...baseCard(20, 1, 2, 2),
+            ivl: 30,
+            reps: 9,
+            lastReview: Date.now() - 30 * 86400000, // due today (non-early review)
+        });
+
+        const result = answerStudyCard(20, 3, settings, 1500);
+        const updated = shared.cards.get(20)!;
+
+        expect(updated.type).toBe(2);                 // stays a review card
+        expect(updated.queue).toBe(2);
+        expect(updated.ivl).toBeGreaterThan(20);      // ~30 * 2.5 ≈ 75, NOT 1
+        expect(updated.reps).toBe(10);
+        expect(result.updatedCard.state.status).toBe('review');
+    });
+
+    it('lapses a review card into relearning on Again', () => {
+        shared.cards.set(21, {
+            ...baseCard(21, 1, 2, 2),
+            ivl: 30,
+            reps: 9,
+            lapses: 0,
+            lastReview: Date.now() - 30 * 86400000,
+        });
+
+        answerStudyCard(21, 1, settings, 800);
+        const updated = shared.cards.get(21)!;
+
+        expect(updated.type).toBe(3);                 // relearning
+        expect(updated.queue).toBe(1);                // intraday learning step
+        expect(updated.lapses).toBe(1);
+        expect(updated.factor).toBeLessThan(2500);    // ease penalty applied
+    });
 });
