@@ -5,12 +5,12 @@ const DAY_MS = 86400000;
 const HOUR_MS = 3600000;
 const MIN_EASE_PERMILLE = 1300;
 
-/** AnkiCard.factor (permille, e.g. 2500) → CardState.easeFactor (float, e.g. 2.5) */
+/** AnkiCard.factor (permille, e.g. 2500) -> CardState.easeFactor (float, e.g. 2.5). */
 export function permilleToEase(permille: number): number {
     return permille / 1000;
 }
 
-/** CardState.easeFactor (float, e.g. 2.5) → AnkiCard.factor (permille, e.g. 2500) */
+/** CardState.easeFactor (float) -> AnkiCard.factor (permille), floored at 1.3x. */
 export function easeToPermille(ease: number): number {
     return Math.max(MIN_EASE_PERMILLE, Math.round(ease * 1000));
 }
@@ -20,11 +20,17 @@ function localStudyDayDate(atMs: number, rolloverHour: number): Date {
     return new Date(shifted.getFullYear(), shifted.getMonth(), shifted.getDate());
 }
 
+/**
+ * Integer index of the study day a timestamp falls in, respecting the rollover hour.
+ * Counted from the Unix epoch; Anki counts from the collection's creation day (col.crt).
+ * Internally consistent — revisit only for .apkg / sync interop.
+ */
 export function localDayNumber(atMs: number = Date.now(), rolloverHour: number = 4): number {
     const d = localStudyDayDate(atMs, rolloverHour);
     return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS);
 }
 
+/** Day number -> YYYY-MM-DD (the rollover hour is already baked into the number). */
 export function dayNumberToYmd(dayNumber: number, _rolloverHour: number = 4): string {
     const d = new Date(dayNumber * DAY_MS);
     const yyyy = d.getUTCFullYear();
@@ -33,6 +39,7 @@ export function dayNumberToYmd(dayNumber: number, _rolloverHour: number = 4): st
     return `${yyyy}-${mm}-${dd}`;
 }
 
+/** YYYY-MM-DD -> day number; returns `fallback` for malformed or impossible dates. */
 export function ymdToLocalDayNumber(ymd: string, fallback: number, _rolloverHour: number = 4): number {
     if (!ymd) return fallback;
 
@@ -50,7 +57,7 @@ export function ymdToLocalDayNumber(ymd: string, fallback: number, _rolloverHour
     const utcMs = Date.UTC(yyyy, mm - 1, dd);
     const check = new Date(utcMs);
 
-    // Reject impossible dates (e.g. 2026-02-31).
+    // Reject dates JS would silently roll over (e.g. 2026-02-31).
     if (
         check.getUTCFullYear() !== yyyy
         || check.getUTCMonth() !== mm - 1
@@ -71,10 +78,7 @@ export function legacyCardIdFromAnkiCardId(ankiCardId: number): number {
 }
 
 export interface DecodeLeftOptions {
-    /**
-     * Only enable for explicit legacy migration paths.
-     * Canonical runtime should keep this false and decode using Anki semantics only.
-     */
+    /** Only enable for explicit legacy migration paths; canonical runtime decodes Anki-style. */
     allowLegacyFallback?: boolean;
 }
 
@@ -84,16 +88,15 @@ export interface DecodedLeft {
     usedLegacyFallback: boolean;
 }
 
+/** Unpack Anki's `left` (reps_today * 1000 + reps_until_graduation) into its two counters. */
 export function decodeAnkiLeft(left: number, options: DecodeLeftOptions = {}): DecodedLeft {
     if (!Number.isFinite(left) || left <= 0) {
         return { remainingTotal: 0, remainingToday: 0, usedLegacyFallback: false };
     }
 
     const value = Math.max(0, Math.floor(left));
-
-    // Canonical Anki encoding: left = totalRemaining + todayRemaining * 1000
-    const total = value % 1000;
-    const today = Math.floor(value / 1000);
+    const total = value % 1000;            // reps until graduation
+    const today = Math.floor(value / 1000); // reps scheduled today
 
     if (total > 0) {
         return {
@@ -103,7 +106,7 @@ export function decodeAnkiLeft(left: number, options: DecodeLeftOptions = {}): D
         };
     }
 
-    // Legacy fallback (explicitly gated): left = totalRemaining * 1000 + todayRemaining
+    // Legacy builds packed it the other way (total * 1000 + today). Honored only on request.
     if (options.allowLegacyFallback) {
         const legacyTotal = Math.floor(value / 1000);
         const legacyToday = value % 1000;
@@ -120,6 +123,7 @@ export function decodeAnkiLeft(left: number, options: DecodeLeftOptions = {}): D
     return { remainingTotal: 0, remainingToday: 0, usedLegacyFallback: false };
 }
 
+/** Pack two step counters back into Anki's `left` integer. */
 export function encodeAnkiLeft(remainingTotal: number, remainingToday: number): number {
     const total = Math.max(0, Math.floor(remainingTotal));
     if (total <= 0) return 0;
@@ -128,6 +132,7 @@ export function encodeAnkiLeft(remainingTotal: number, remainingToday: number): 
     return total + today * 1000;
 }
 
+/** Timestamp of the next rollover boundary at or after `nowMs`. */
 function nextRolloverMs(nowMs: number, rolloverHour: number): number {
     const now = new Date(nowMs);
     const boundary = new Date(nowMs);
@@ -140,6 +145,10 @@ function nextRolloverMs(nowMs: number, rolloverHour: number): number {
     return boundary.getTime();
 }
 
+/**
+ * How many of the remaining learning steps fall before the next rollover, by walking the
+ * step delays forward from the current step's due time. Always at least 1.
+ */
 function computeRemainingToday(
     steps: number[],
     stepIndex: number,
@@ -152,7 +161,6 @@ function computeRemainingToday(
     const remainingTotal = Math.max(1, steps.length - stepIndex);
     const rollMs = nextRolloverMs(nowMs, rolloverHour);
 
-    // firstDueMs is the due time for the current step.
     let reviewDueMs = Math.max(firstDueMs, nowMs);
     let count = 0;
 
@@ -172,13 +180,13 @@ function computeRemainingToday(
     return Math.max(1, Math.min(remainingTotal, count));
 }
 
-function elapsedStudyDays(lastReviewMs: number, nowMs: number, rolloverHour: number): number {
+/** Whole study days between two timestamps; 0 when there is no previous review. */
+export function elapsedStudyDays(lastReviewMs: number, nowMs: number, rolloverHour: number): number {
     if (!lastReviewMs || lastReviewMs <= 0) return 0;
-    const previousDay = localDayNumber(lastReviewMs, rolloverHour);
-    const currentDay = localDayNumber(nowMs, rolloverHour);
-    return Math.max(0, currentDay - previousDay);
+    return Math.max(0, localDayNumber(nowMs, rolloverHour) - localDayNumber(lastReviewMs, rolloverHour));
 }
 
+/** Decode a persisted AnkiCard into the scheduler's working CardState. */
 export function ankiCardToCardState(
     card: AnkiCard,
     settings: AppSettings,
@@ -189,6 +197,7 @@ export function ankiCardToCardState(
     const suspended = card.queue === -1;
     const buried = card.queue === -2 || card.queue === -3;
 
+    // Collapse Anki's (type, queue) pair into a single status the scheduler routes on.
     let status: CardState['status'] = 'new';
     if (card.queue === 0) status = 'new';
     else if (card.queue === 1 || card.queue === 3 || card.type === 1 || card.type === 3) status = 'learning';
@@ -197,26 +206,27 @@ export function ankiCardToCardState(
     const isRelearning = card.type === 3;
     const learnSteps = isRelearning ? settings.lapseSteps : settings.learningSteps;
     const { remainingTotal } = decodeAnkiLeft(card.left);
+    // step = total_steps - steps_remaining. A (re)learning card with left=0 has no recoverable
+    // progress, so it falls back to the last step.
     const inferredStep = learnSteps.length > 0
         ? Math.max(0, Math.min(learnSteps.length - 1, learnSteps.length - Math.max(remainingTotal, 1)))
         : 0;
 
-    // Only cards actually mid-(re)learning carry a step. This gating is critical:
-    // a review card (type 2) MUST decode to learningStep/relearningStep = -1, otherwise the
-    // scheduler's `learningStep >= 0` routing would send it through the learning handler and
-    // collapse its interval to the graduating interval. New cards (type 0) begin at step 0 —
-    // not the "last step" that decodeAnkiLeft(0) (remainingTotal=0) would otherwise imply.
+    // Only cards actually mid-(re)learning carry a step. A review card (type 2) MUST decode to
+    // learningStep/relearningStep = -1, or the scheduler's `learningStep >= 0` routing would send
+    // it through the learning handler and collapse its interval. New cards (type 0) start at step 0.
     let learningStep = -1;
     let relearningStep = -1;
     if (card.type === 3) {
-        relearningStep = inferredStep;       // relearning
+        relearningStep = inferredStep;
     } else if (card.type === 1) {
-        learningStep = inferredStep;         // intraday/interday learning
+        learningStep = inferredStep;
     } else if (card.type === 0) {
-        learningStep = 0;                    // new card begins at the first learning step
+        learningStep = 0;
     }
-    // card.type === 2 (review): both remain -1 -> routes to the review handler
 
+    // Decode the overloaded `due`: review/interday-learning carry a day number (-> dueDate),
+    // intraday learning carries a timestamp (-> dueTime). The two are mutually exclusive.
     const dueDate = status === 'review'
         ? dayNumberToYmd(card.due || todayNumber, settings.dayRolloverHour)
         : status === 'learning' && card.queue === 3
@@ -236,7 +246,7 @@ export function ankiCardToCardState(
         status,
         suspended,
         buried,
-        easeFactor: permilleToEase(card.factor && card.factor > 0 ? card.factor : easeToPermille(settings.startingEase)),
+        easeFactor: card.factor && card.factor > 0 ? permilleToEase(card.factor) : settings.startingEase,
         learningStep,
         relearningStep,
         lastReviewedAtMs: card.lastReview || 0,
@@ -245,6 +255,7 @@ export function ankiCardToCardState(
     };
 }
 
+/** Encode a scheduled CardState back onto its AnkiCard (the disk shape). */
 export function cardStateToAnkiCard(
     card: AnkiCard,
     state: CardState,
@@ -291,6 +302,8 @@ export function cardStateToAnkiCard(
         const remainingTotal = steps.length > 0 ? Math.max(1, steps.length - stepIndex) : 1;
         const todayDay = localDayNumber(nowMs, settings.dayRolloverHour);
 
+        // Intraday step (queue 1) stores a timestamp in `due`; a step that crosses the rollover
+        // becomes interday (queue 3) and stores a day number instead.
         let queue: 1 | 3;
         let due: number;
         let remainingToday: number;
@@ -371,7 +384,7 @@ export function makeDefaultCardState(cardId: number, settings: AppSettings): Car
     };
 }
 
-/** Infer the correct active queue value from card type and due. */
+/** Rebuild the active queue from a card's durable type (used when unsuspending/unburying). */
 export function restoreQueueFromType(
     card: AnkiCard,
     rolloverHour: number = 4,
@@ -382,6 +395,7 @@ export function restoreQueueFromType(
 
     if (card.type === 1 || card.type === 3) {
         const today = localDayNumber(nowMs, rolloverHour);
+        // A small `due` is a day number (interday); a large one is a ms timestamp (intraday).
         const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
         if (looksLikeDayNumber && card.due > today) {
             return 3;

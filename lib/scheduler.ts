@@ -7,9 +7,9 @@ import type {
     AlgorithmType,
     AppSettings,
 } from './types';
+import { elapsedStudyDays } from './ankiState';
 
 const HOUR_MS = 3600000;
-const DAY_MS = 86400000;
 const MINUTES_PER_DAY = 1440;
 
 // Ease deltas, matching Anki rslib/src/scheduler/states/review.rs.
@@ -233,19 +233,6 @@ function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): nu
     return clampInterval(relearnGood + 1, settings);
 }
 
-/** Whole study days between two review timestamps; 0 if there is no previous review. */
-function computeElapsedDays(lastReviewedAtMs: number, nowMs: number, rolloverHour: number): number {
-    if (!lastReviewedAtMs || lastReviewedAtMs <= 0) return 0;
-
-    const nowShifted = toRolloverShiftedDate(new Date(nowMs), rolloverHour);
-    const prevShifted = toRolloverShiftedDate(new Date(lastReviewedAtMs), rolloverHour);
-
-    const nowDay = new Date(nowShifted.getFullYear(), nowShifted.getMonth(), nowShifted.getDate());
-    const prevDay = new Date(prevShifted.getFullYear(), prevShifted.getMonth(), prevShifted.getDate());
-
-    return Math.max(0, Math.round((nowDay.getTime() - prevDay.getTime()) / DAY_MS));
-}
-
 const AnkiV3Engine: SchedulerEngine = {
     name: 'ANKI_V3',
     description: 'Anki V3 compatible scheduler (learning/relearning/review)',
@@ -255,7 +242,7 @@ const AnkiV3Engine: SchedulerEngine = {
             throw new Error(`Invalid grade: ${grade}. Expected 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy).`);
         }
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = computeElapsedDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
+        const elapsedDays = elapsedStudyDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
 
@@ -266,7 +253,7 @@ const AnkiV3Engine: SchedulerEngine = {
 
     previewIntervals: (cs: CardState, settings: AppSettings, nowMs?: number): IntervalPreview => {
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = computeElapsedDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
+        const elapsedDays = elapsedStudyDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
         const learningSteps = settings.learningSteps;
         const lapseSteps = settings.lapseSteps;
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
