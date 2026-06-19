@@ -67,7 +67,7 @@ export interface IntervalPreview {
     hardMinutes?: number;
 }
 
-/** Tekrar=1, Zor=2, İyi=3, Kolay=4 (Again, Hard, Good, Easy). */
+/** 1=Again, 2=Hard, 3=Good, 4=Easy. */
 export type Grade = 1 | 2 | 3 | 4;
 
 export type AlgorithmType = 'ANKI_V3';
