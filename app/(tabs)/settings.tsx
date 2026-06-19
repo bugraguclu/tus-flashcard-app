@@ -290,7 +290,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Lapse Interval Multiplier (%)</Text>
+                        <Text style={styles.settingLabel}>New Interval after Lapse (%)</Text>
                         <View style={styles.inputRow}>
                             {[0.4, 0.5, 0.7, 0.8].map((value) => (
                                 <TouchableOpacity

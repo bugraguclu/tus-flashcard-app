@@ -212,7 +212,11 @@ export interface DeckConfig {
     minIvl: number;               // 1
     leechThreshold: number;       // 8
     leechAction: 'suspend' | 'tag';
-    newIvlPercent: number;        // 0 (0% = reset to minIvl)
+    // Lapse "new interval". UNIT: a fraction in 0.0–1.0 — NOT a 0–100 percentage.
+    // On a review lapse the new interval = oldInterval × newIvlPercent (then clamped to minIvl).
+    // 0.0 = reset to minIvl (Anki default); 0.7 = keep 70%. The UI shows it as a percent but
+    // always stores the fraction. Mirrors Anki's lapse `mult`. Despite the name, never 0–100.
+    newIvlPercent: number;        // e.g. 0 → 0%, 0.7 → 70%
 
     // Burying
     buryNewSiblings: boolean;
@@ -245,7 +249,7 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     minIvl: 1,
     leechThreshold: 8,
     leechAction: 'suspend',
-    newIvlPercent: 0,
+    newIvlPercent: 0,             // 0.0 fraction = reset to minIvl on lapse (Anki default)
     buryNewSiblings: true,
     buryReviewSiblings: true,
     buryInterdayLearningSiblings: true,

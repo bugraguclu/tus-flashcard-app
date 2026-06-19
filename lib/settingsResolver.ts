@@ -15,7 +15,11 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         graduatingInterval: config.graduatingIvl,
         easyInterval: config.easyIvl,
         startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
-        lapseIntervalMultiplier: config.newIvlPercent >= 0 ? config.newIvlPercent : base.lapseIntervalMultiplier,
+        // newIvlPercent is a fraction (0.0–1.0). Clamp defensively so a stray out-of-range value
+        // (e.g. an imported/hand-edited config storing 70 instead of 0.7) can never explode intervals.
+        lapseIntervalMultiplier: Number.isFinite(config.newIvlPercent)
+            ? Math.max(0, Math.min(1, config.newIvlPercent))
+            : base.lapseIntervalMultiplier,
         minLapseInterval: config.minIvl > 0 ? config.minIvl : base.minLapseInterval,
         newCardOrder: config.insertionOrder === 'random' ? 'random' : 'sequential',
         hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,

@@ -92,9 +92,10 @@ export interface AppSettings {
     easyInterval: number;
     startingEase: number;
     /**
-     * Multiplier applied to current interval when a review card is answered "Again".
-     * Range: 0.0 to 1.0 (e.g. 0 resets, 0.7 keeps 70% of the interval).
-     * Maps to Anki DeckConfig.newIvlPercent.
+     * Multiplier applied to a review card's interval when it lapses ("Again" on a review).
+     * UNIT: a fraction in 0.0–1.0 (e.g. 0 = reset to minIvl, 0.7 = keep 70%) — NOT a 0–100 percent.
+     * Persisted as DeckConfig.newIvlPercent and shown in the UI as a percentage, but always
+     * stored and consumed as a fraction. Mirrors Anki's lapse `mult`.
      */
     lapseIntervalMultiplier: number;
     /** Minimum interval (days) after a lapse. Maps to Anki DeckConfig.minIvl. */
