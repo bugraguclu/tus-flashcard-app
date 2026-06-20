@@ -46,7 +46,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     startingEase: 2.5,
     lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
-    queueOrder: 'learning-review-new',
+    queueOrder: 'mix',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
@@ -290,6 +290,25 @@ function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
     }
 }
 
+/**
+ * Coerce any stored value to a valid queue order, migrating the pre-1.0 labels:
+ * 'learning-new-review' -> 'before', 'learning-review-new' -> 'after'. Unknown -> 'mix'.
+ */
+function normalizeQueueOrder(value: unknown): AppSettings['queueOrder'] {
+    switch (value) {
+        case 'mix':
+        case 'before':
+        case 'after':
+            return value;
+        case 'learning-new-review':
+            return 'before';
+        case 'learning-review-new':
+            return 'after';
+        default:
+            return 'mix';
+    }
+}
+
 function loadAppSettingsMeta(): Partial<AppSettings> {
     try {
         const raw = getDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META);
@@ -298,7 +317,7 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
         const parsed = JSON.parse(raw) as Partial<AppSettings>;
 
         return {
-            queueOrder: parsed.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new',
+            queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             algorithm: 'ANKI_V3',
         };
@@ -418,7 +437,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.dayRolloverHour = Math.max(0, Math.min(23, Number(validated.dayRolloverHour) || 4));
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
-    validated.queueOrder = validated.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new';
+    validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
     validated.algorithm = 'ANKI_V3';
     return validated;

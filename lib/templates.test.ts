@@ -1,7 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import type { Note, NoteType } from './models';
 import { BUILTIN_NOTE_TYPES } from './models';
-import { renderCardHtml, renderTemplate } from './templates';
+import { clozeFieldIndex, countCardsForNote, renderCardHtml, renderTemplate } from './templates';
+
+describe('clozeFieldIndex', () => {
+    function clozeNoteType(fieldNames: string[], clozeField: string): NoteType {
+        return {
+            id: 99,
+            name: 'Custom Cloze',
+            kind: 'cloze',
+            fields: fieldNames.map((name, ord) => ({ name, ord, sticky: false, rtl: false })),
+            templates: [{ name: 'Cloze', ord: 0, qfmt: `{{cloze:${clozeField}}}`, afmt: `{{cloze:${clozeField}}}` }],
+            css: '',
+            sortFieldIdx: 0,
+            mod: 0,
+        };
+    }
+
+    it('resolves the cloze field from the template, not a hardcoded name', () => {
+        // Field is named "Metin", not "Text" — the old hardcoded lookup returned -1 here.
+        const nt = clozeNoteType(['Metin', 'Ekstra'], 'Metin');
+        expect(clozeFieldIndex(nt)).toBe(0);
+
+        const nt2 = clozeNoteType(['Ekstra', 'Metin'], 'Metin');
+        expect(clozeFieldIndex(nt2)).toBe(1);
+    });
+
+    it('counts cards for a custom-named cloze field instead of generating none', () => {
+        const nt = clozeNoteType(['Metin', 'Ekstra'], 'Metin');
+        const note: Note = {
+            id: 1, guid: 'g', noteTypeId: 99, mod: 0, usn: -1, tags: [],
+            fields: ['{{c1::a}} {{c2::b}}', ''], sfld: '', csum: 0, flags: 0,
+        };
+        expect(countCardsForNote(nt, note)).toBe(2);
+    });
+});
 
 describe('templates', () => {
     it('renders nested positive/negative conditionals correctly', () => {

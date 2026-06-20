@@ -162,22 +162,30 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Queue Sırası</Text>
+                        <Text style={styles.settingLabel}>Yeni Kart Yerleşimi</Text>
                         <View style={styles.inputRow}>
                             <TouchableOpacity
-                                style={[styles.optionBtn, settings.queueOrder === 'learning-review-new' && styles.optionBtnActive]}
-                                onPress={() => updateSetting('queueOrder', 'learning-review-new')}
+                                style={[styles.optionBtn, settings.queueOrder === 'mix' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'mix')}
                             >
-                                <Text style={[styles.optionText, settings.queueOrder === 'learning-review-new' && styles.optionTextActive]}>
-                                    Learning → Review → New
+                                <Text style={[styles.optionText, settings.queueOrder === 'mix' && styles.optionTextActive]}>
+                                    Karışık
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.optionBtn, settings.queueOrder === 'learning-new-review' && styles.optionBtnActive]}
-                                onPress={() => updateSetting('queueOrder', 'learning-new-review')}
+                                style={[styles.optionBtn, settings.queueOrder === 'before' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'before')}
                             >
-                                <Text style={[styles.optionText, settings.queueOrder === 'learning-new-review' && styles.optionTextActive]}>
-                                    Learning → New → Review
+                                <Text style={[styles.optionText, settings.queueOrder === 'before' && styles.optionTextActive]}>
+                                    Önce Yeni
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.optionBtn, settings.queueOrder === 'after' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'after')}
+                            >
+                                <Text style={[styles.optionText, settings.queueOrder === 'after' && styles.optionTextActive]}>
+                                    Sonra Yeni
                                 </Text>
                             </TouchableOpacity>
                         </View>

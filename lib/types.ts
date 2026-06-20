@@ -100,7 +100,12 @@ export interface AppSettings {
     lapseIntervalMultiplier: number;
     /** Minimum interval (days) after a lapse. Maps to Anki DeckConfig.minIvl. */
     minLapseInterval: number;
-    queueOrder: 'learning-review-new' | 'learning-new-review';
+    /**
+     * Where new cards sit relative to reviews (learning always comes first). Mirrors Anki's
+     * new-card placement: 'mix' spreads new cards evenly through the reviews (Anki default),
+     * 'before' shows all new cards ahead of reviews, 'after' shows them behind.
+     */
+    queueOrder: 'mix' | 'before' | 'after';
     newCardOrder: 'sequential' | 'random';
     hardIntervalMultiplier: number;
     easyBonus: number;

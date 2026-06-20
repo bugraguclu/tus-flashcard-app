@@ -12,7 +12,7 @@ const defaultSettings: AppSettings = {
     startingEase: 2.5,
     lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
-    queueOrder: 'learning-review-new',
+    queueOrder: 'after',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,

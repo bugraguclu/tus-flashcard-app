@@ -1,16 +1,19 @@
-// ============================================================
-// TUS Flashcard - Note Manager
-// Note CRUD + automatic Card generation (Anki-compatible)
-// ============================================================
+// Note and card storage: CRUD, card generation, status (suspend/bury/flag), leech, tags, search.
 
 import type { Note, NoteType, AnkiCard, CardFlag } from './models';
 import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
-import { extractClozeNumbers, shouldGenerateCard } from './templates';
+import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { buildFtsPrefixQuery, getDB } from './db';
 import { TUS_CARDS, TUS_SUBJECTS } from './data';
 
 const SUBJECT_TAGS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
+
+/** Anki stores tags space-separated with a leading and trailing space (" a b "), so that a
+ *  whole-tag search (`LIKE '% a %'`) cannot partially match a longer tag. Empty -> "". */
+function serializeTags(tags: string[]): string {
+    return tags.length > 0 ? ` ${tags.join(' ')} ` : '';
+}
 
 // ---- Note CRUD ----
 
@@ -36,7 +39,7 @@ export function saveNote(note: Note): void {
         note.noteTypeId,
         note.sfld,
         note.csum,
-        note.tags.join(' '),
+        serializeTags(note.tags),
         JSON.stringify(note),
         Date.now(),
         note.usn ?? -1,
@@ -52,14 +55,20 @@ export function deleteNote(id: number): void {
         const cardIds = cardRows.map((row) => row.id);
 
         if (cardIds.length > 0) {
-            const numericPlaceholders = cardIds.map(() => '?').join(', ');
-            const textPlaceholders = cardIds.map(() => '?').join(', ');
-            db.runSync(`DELETE FROM revlog WHERE cardId IN (${numericPlaceholders})`, ...cardIds);
-            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${textPlaceholders})`, ...cardIds.map(String));
+            const placeholders = cardIds.map(() => '?').join(', ');
+            db.runSync(`DELETE FROM revlog WHERE cardId IN (${placeholders})`, ...cardIds);
+            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
         }
 
         db.runSync('DELETE FROM anki_cards WHERE noteId = ?', id);
         db.runSync('DELETE FROM notes WHERE id = ?', id);
+
+        // Tombstones so the deletion can propagate on the next sync (grave types: 0=card, 1=note).
+        for (const cardId of cardIds) {
+            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+        }
+        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', id);
+
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -86,7 +95,7 @@ export function createNote(
         tags,
         fields,
         sfld,
-        csum: checksumField(sfld),
+        csum: checksumField(fields[0] ?? ''),
         flags: 0,
     };
 
@@ -100,9 +109,8 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
     const cards: AnkiCard[] = [];
 
     if (noteType.kind === 'cloze') {
-        // One card per cloze number
-        const textFieldIdx = noteType.fields.findIndex(f => f.name === 'Text') ?? 0;
-        const text = note.fields[textFieldIdx] || '';
+        // One card per cloze number, over the field the template actually clozes.
+        const text = note.fields[clozeFieldIndex(noteType)] || '';
         const clozeNumbers = extractClozeNumbers(text);
 
         for (const clozeNum of clozeNumbers) {
@@ -145,6 +153,15 @@ function generateUniqueCardId(): number {
     throw new Error('Unable to generate a unique card id. Please retry.');
 }
 
+/** Next new-card position: Anki gives each new card an incrementing `due` that sets its order. */
+function nextNewCardPosition(): number {
+    const db = getDB();
+    const row = db.getFirstSync<{ maxDue: number | null }>(
+        'SELECT MAX(due) AS maxDue FROM anki_cards WHERE type = 0',
+    );
+    return (row?.maxDue ?? 0) + 1;
+}
+
 function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
     const id = generateUniqueCardId();
     const card: AnkiCard = {
@@ -156,7 +173,7 @@ function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
         usn: -1,
         type: 0,     // new
         queue: 0,     // new
-        due: 0,       // position (will be set later)
+        due: nextNewCardPosition(),  // new-card position
         ivl: 0,
         factor: 0,
         reps: 0,
@@ -209,18 +226,14 @@ export function saveAnkiCard(card: AnkiCard): void {
     const nowMs = Date.now();
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = ?', card.id);
 
+    // Preserve any forward-compat keys the stored blob may carry that aren't on AnkiCard.
     let serializedData = JSON.stringify(card);
-    let dataChanged = true;
-
     if (existing?.data) {
         try {
             const existingParsed = JSON.parse(existing.data) as Record<string, unknown>;
             serializedData = JSON.stringify({ ...existingParsed, ...card });
-            dataChanged = serializedData !== existing.data;
         } catch (e) {
-            console.warn('[NoteManager] operation failed:', e);
-            serializedData = JSON.stringify(card);
-            dataChanged = true;
+            console.warn('[NoteManager] failed to merge stored card data:', e);
         }
     }
 
@@ -250,36 +263,10 @@ export function saveAnkiCard(card: AnkiCard): void {
         return;
     }
 
-    if (dataChanged) {
-        db.runSync(
-            `UPDATE anki_cards
-             SET noteId = ?, deckId = ?, ord = ?, type = ?, queue = ?, due = ?, ivl = ?, factor = ?,
-                 reps = ?, lapses = ?, "left" = ?, flags = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0
-             WHERE id = ?`,
-            card.noteId,
-            card.deckId,
-            card.ord,
-            card.type,
-            card.queue,
-            card.due,
-            card.ivl,
-            card.factor,
-            card.reps,
-            card.lapses,
-            card.left ?? 0,
-            card.flags,
-            serializedData,
-            nowMs,
-            card.usn ?? -1,
-            card.id,
-        );
-        return;
-    }
-
     db.runSync(
         `UPDATE anki_cards
          SET noteId = ?, deckId = ?, ord = ?, type = ?, queue = ?, due = ?, ivl = ?, factor = ?,
-             reps = ?, lapses = ?, "left" = ?, flags = ?, updated_at = ?, usn = ?, tombstone = 0
+             reps = ?, lapses = ?, "left" = ?, flags = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0
          WHERE id = ?`,
         card.noteId,
         card.deckId,
@@ -293,6 +280,7 @@ export function saveAnkiCard(card: AnkiCard): void {
         card.lapses,
         card.left ?? 0,
         card.flags,
+        serializedData,
         nowMs,
         card.usn ?? -1,
         card.id,
@@ -389,18 +377,26 @@ export function handleLeech(card: AnkiCard, action: 'suspend' | 'tag' = 'suspend
 export function getAllNoteTypes(): NoteType[] {
     const db = getDB();
     const rows = db.getAllSync<{ data: string }>('SELECT data FROM note_types ORDER BY id');
-    if (rows.length === 0) return [...BUILTIN_NOTE_TYPES];
-    return rows.map(r => JSON.parse(r.data));
+
+    // Merge built-ins with stored types so the built-ins never disappear once a custom type is
+    // added; a stored row overrides the built-in of the same id (consistent with getNoteType).
+    const byId = new Map<number, NoteType>();
+    for (const nt of BUILTIN_NOTE_TYPES) byId.set(nt.id, nt);
+    for (const row of rows) {
+        const nt = JSON.parse(row.data) as NoteType;
+        byId.set(nt.id, nt);
+    }
+    return [...byId.values()].sort((a, b) => a.id - b.id);
 }
 
 export function getNoteType(id: number): NoteType | null {
-    // Check built-in first
-    const builtin = BUILTIN_NOTE_TYPES.find(nt => nt.id === id);
-    if (builtin) return builtin;
-
+    // Prefer the stored row so edits to a built-in note type take effect; the hardcoded
+    // definition is only a fallback for the initial state before anything is seeded.
     const db = getDB();
     const row = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', id);
-    return row ? JSON.parse(row.data) : null;
+    if (row) return JSON.parse(row.data);
+
+    return BUILTIN_NOTE_TYPES.find(nt => nt.id === id) ?? null;
 }
 
 export function saveNoteType(nt: NoteType): void {
@@ -470,7 +466,7 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
                     queue: 0,
                     due: oldCard.id, // position
                     ivl: 0,
-                    factor: 2500,
+                    factor: 0,       // new cards have no ease until they graduate
                     reps: 0,
                     lapses: 0,
                     left: 0,
@@ -641,9 +637,11 @@ export function searchNotes(query: string): Note[] {
             return rows.map((row) => JSON.parse(row.data) as Note);
         }
 
+        // Whole-tag match: wrap the stored tags in spaces so the query can't partially match a
+        // longer tag (works whether or not the row already has Anki's surrounding spaces).
         const rows = db.getAllSync<{ data: string }>(
-            'SELECT data FROM notes WHERE LOWER(tags) LIKE ? ORDER BY id',
-            `%${tagQuery}%`,
+            "SELECT data FROM notes WHERE (' ' || LOWER(TRIM(tags)) || ' ') LIKE ? ORDER BY id",
+            `% ${tagQuery} %`,
         );
         return rows.map((row) => JSON.parse(row.data) as Note);
     }
