@@ -8,13 +8,19 @@ import type { DeckConfig } from './models';
 export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings): AppSettings {
     return {
         ...base,
-        dailyNewLimit: config.newPerDay,
-        dailyReviewLimit: config.maxReviewsPerDay,
+        // Daily limits accept 0 (a valid "none today"); guard only against non-finite/negative.
+        dailyNewLimit: Number.isFinite(config.newPerDay) && config.newPerDay >= 0
+            ? config.newPerDay
+            : base.dailyNewLimit,
+        dailyReviewLimit: Number.isFinite(config.maxReviewsPerDay) && config.maxReviewsPerDay >= 0
+            ? config.maxReviewsPerDay
+            : base.dailyReviewLimit,
         learningSteps: config.learningSteps?.length > 0 ? [...config.learningSteps] : base.learningSteps,
         lapseSteps: config.relearningSteps?.length > 0 ? [...config.relearningSteps] : base.lapseSteps,
-        graduatingInterval: config.graduatingIvl,
-        easyInterval: config.easyIvl,
-        startingEase: config.startingEase > 0 ? config.startingEase / 1000 : base.startingEase,
+        graduatingInterval: config.graduatingIvl > 0 ? config.graduatingIvl : base.graduatingInterval,
+        easyInterval: config.easyIvl > 0 ? config.easyIvl : base.easyInterval,
+        // Permille -> float, floored at Anki's hard ease minimum of 1.3.
+        startingEase: config.startingEase > 0 ? Math.max(1.3, config.startingEase / 1000) : base.startingEase,
         // newIvlPercent is a fraction (0.0–1.0). Clamp defensively so a stray out-of-range value
         // (e.g. an imported/hand-edited config storing 70 instead of 0.7) can never explode intervals.
         lapseIntervalMultiplier: Number.isFinite(config.newIvlPercent)
@@ -25,6 +31,6 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         hardIntervalMultiplier: config.hardIvl > 0 ? config.hardIvl : base.hardIntervalMultiplier,
         easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
         intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
-        maxInterval: config.maxIvl > 0 ? config.maxIvl : base.maxInterval,
+        maxInterval: config.maxIvl > 0 ? Math.min(36500, config.maxIvl) : base.maxInterval,
     };
 }

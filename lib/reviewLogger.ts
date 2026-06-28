@@ -1,7 +1,4 @@
-// ============================================================
-// TUS Flashcard - Review Logger (revlog)
-// Records every review for statistics and FSRS optimization
-// ============================================================
+// Review log (revlog): append-only history of every answer, plus the stats queries that read it.
 
 import type { ReviewLog, AnkiCard } from './models';
 import { getDB } from './db';
@@ -31,8 +28,11 @@ export function logReview(
     lastIvl: number,
     newFactor: number,
     timeTakenMs: number,
-    reviewType: 0 | 1 | 2 | 3 | 4 // learn, review, relearn, filtered, manual
+    reviewType: 0 | 1 | 2 | 3 | 4, // learn, review, relearn, filtered, manual
+    maxAnswerSecs: number = 60,
 ): ReviewLog {
+    // Clamp to [0, the deck's max answer time] so an idle pause can't skew time stats.
+    const timeCapMs = Math.max(1, maxAnswerSecs) * 1000;
     const entry: ReviewLog = {
         id: uniqueId(),
         cardId: card.id,
@@ -41,7 +41,7 @@ export function logReview(
         ivl: newIvl,
         lastIvl,
         factor: newFactor,
-        time: Math.min(timeTakenMs, 60000), // cap at 60 seconds
+        time: Math.max(0, Math.min(timeTakenMs, timeCapMs)),
         type: reviewType,
     };
 
@@ -193,16 +193,22 @@ export function getFutureDueCounts(days: number, rolloverHour: number = 4): { da
     const today = localDayNumber(Date.now(), rolloverHour);
     const maxDueDay = today + days - 1;
 
+    // Include interday learning (queue 3), whose `due` is also a day number, like Anki's forecast.
     const rows = db.getAllSync<{ due: number; cnt: number }>(
         `SELECT due, COUNT(*) as cnt FROM anki_cards
-         WHERE queue = 2 AND due <= ?
+         WHERE queue IN (2, 3) AND due <= ?
          GROUP BY due ORDER BY due`,
         maxDueDay,
     );
 
     const dueMap = new Map(rows.map((row) => [row.due, row.cnt]));
     const result: { date: string; count: number }[] = [];
+
+    // Overdue cards (due < today) are all waiting now, so seed the running total with them.
     let cumulative = 0;
+    for (const [due, cnt] of dueMap) {
+        if (due < today) cumulative += cnt;
+    }
 
     for (let i = 0; i < days; i++) {
         const dueDay = today + i;

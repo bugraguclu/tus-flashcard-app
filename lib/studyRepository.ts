@@ -905,8 +905,9 @@ export function answerStudyCard(
             revlogInterval,
             currentAnkiCard.ivl,
             updatedAnkiCard.factor,
-            Math.max(0, answerTimeMs),
+            answerTimeMs,
             reviewType,
+            deckConfig.maxAnswerSecs,
         );
         reviewLogId = reviewLog.id;
 
