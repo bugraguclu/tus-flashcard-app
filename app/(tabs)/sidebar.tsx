@@ -146,6 +146,14 @@ export function Sidebar(props: SidebarProps) {
                     </TouchableOpacity>
                 </View>
 
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle('CSV/TSV dosyasi ice aktar')}>
+                    <Text style={styles.settingsBtnText}>📥 İçe Aktar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle('Not turlerini duzenle')}>
+                    <Text style={styles.settingsBtnText}>🧩 Not Türleri</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle('Uygulama ayarlari')}>
                     <Text style={styles.settingsBtnText}>⚙️ Ayarlar</Text>
                 </TouchableOpacity>

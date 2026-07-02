@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, FontSize } from '../constants/theme';
-import { initWebDb } from '../lib/db';
+import { initWebDb, isPrimaryTab } from '../lib/db';
 
 class AppErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -58,6 +58,8 @@ const errorStyles = StyleSheet.create({
         borderRadius: 8,
     },
     buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+    secondaryBar: { backgroundColor: Colors.badgeNewBg, paddingVertical: 6, paddingHorizontal: 12 },
+    secondaryBarText: { fontSize: 12, color: Colors.badgeNew, textAlign: 'center' },
 });
 
 /** Ensures the web SQLite (sql.js) database is ready before any screen renders. */
@@ -108,7 +110,18 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         );
     }
 
-    return <>{children}</>;
+    return (
+        <>
+            {Platform.OS === 'web' && !isPrimaryTab() && (
+                <View style={errorStyles.secondaryBar}>
+                    <Text style={errorStyles.secondaryBarText}>
+                        ⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.
+                    </Text>
+                </View>
+            )}
+            {children}
+        </>
+    );
 }
 
 export default function RootLayout() {
@@ -139,6 +152,35 @@ export default function RootLayout() {
                             presentation: 'modal',
                             headerShown: true,
                             title: 'Kart Bilgisi',
+                            headerStyle: { backgroundColor: Colors.bgSecondary },
+                            headerTintColor: Colors.accent,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="import"
+                        options={{
+                            presentation: 'modal',
+                            headerShown: true,
+                            title: 'İçe Aktar',
+                            headerStyle: { backgroundColor: Colors.bgSecondary },
+                            headerTintColor: Colors.accent,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="note-types"
+                        options={{
+                            presentation: 'modal',
+                            headerShown: true,
+                            title: 'Not Türleri',
+                            headerStyle: { backgroundColor: Colors.bgSecondary },
+                            headerTintColor: Colors.accent,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="note-type"
+                        options={{
+                            headerShown: true,
+                            title: 'Not Türü Düzenle',
                             headerStyle: { backgroundColor: Colors.bgSecondary },
                             headerTintColor: Colors.accent,
                         }}
