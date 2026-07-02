@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
     loadCardStates,
     loadCustomCards,
@@ -119,6 +119,24 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
         return () => {
             cancelled = true;
         };
+    }, [bumpDataVersion, refreshData]);
+
+    // Re-run day-rollover housekeeping when the app returns to the foreground, so a
+    // new day (past the rollover hour) unburies cards even if the app stayed open.
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state !== 'active') return;
+            try {
+                const { didRun } = runDailyMaintenance();
+                if (didRun) {
+                    bumpDataVersion();
+                    refreshData();
+                }
+            } catch (e) {
+                console.warn('[App] Foreground maintenance failed:', e);
+            }
+        });
+        return () => sub.remove();
     }, [bumpDataVersion, refreshData]);
 
     return { startupError, isLoading };

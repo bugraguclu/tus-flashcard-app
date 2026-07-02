@@ -341,14 +341,21 @@ export function unburyAllCards(rolloverHour: number = 4): number {
     const buried = db.getAllSync<{ data: string }>(
         'SELECT data FROM anki_cards WHERE queue = -2 OR queue = -3'
     );
-    let count = 0;
-    for (const row of buried) {
-        const card: AnkiCard = JSON.parse(row.data);
-        card.queue = restoreQueueFromType(card, rolloverHour);
-        saveAnkiCard(card);
-        count++;
+    if (buried.length === 0) return 0;
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const row of buried) {
+            const card: AnkiCard = JSON.parse(row.data);
+            card.queue = restoreQueueFromType(card, rolloverHour);
+            saveAnkiCard(card);
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
     }
-    return count;
+    return buried.length;
 }
 
 // ---- Leech Detection ----
@@ -496,6 +503,19 @@ export interface SearchIndexCard {
     subject: string;
 }
 
+/** Build a card's search-index entry from its note. Shared by full and incremental indexing. */
+export function searchIndexCardFromNote(note: Note, cardId: number): SearchIndexCard {
+    const subject = note.tags.find((tag) => SUBJECT_TAGS.has(tag)) ?? 'custom';
+    const topic = note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General';
+    return {
+        id: cardId,
+        subject,
+        topic,
+        question: note.fields[0] || note.sfld || '',
+        answer: note.fields[1] || '',
+    };
+}
+
 export function getSearchIndexCards(): SearchIndexCard[] {
     const db = getDB();
     const rows = db.getAllSync<{ cardId: number; noteData: string }>(
@@ -504,21 +524,7 @@ export function getSearchIndexCards(): SearchIndexCard[] {
          JOIN notes n ON n.id = c.noteId`
     );
 
-    return rows.map((row) => {
-        const note: Note = JSON.parse(row.noteData);
-        const subject = note.tags.find((tag) => SUBJECT_TAGS.has(tag)) ?? 'custom';
-        const topic = note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General';
-        const question = note.fields[0] || note.sfld || '';
-        const answer = note.fields[1] || '';
-
-        return {
-            id: row.cardId,
-            subject,
-            topic,
-            question,
-            answer,
-        };
-    });
+    return rows.map((row) => searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId));
 }
 
 export function createTusCard(input: {
