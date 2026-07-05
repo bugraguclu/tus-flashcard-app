@@ -6,6 +6,7 @@ import {
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
     sortReviewsDueThenRandom,
+    splitIntradayLearning,
 } from './queueBuild';
 
 // interleaveNewWithReviews only reads array positions, so a thin stub stands in for StudyCard.
@@ -151,6 +152,48 @@ describe('buryBuildTimeSiblings', () => {
 
         expect(result.learning.map((c) => c.cardId)).toEqual([1, 2]);
         expect(buried).toEqual([]);
+    });
+});
+
+describe('splitIntradayLearning (Anki learn-ahead serving order)', () => {
+    function learn(cardId: number, dueTime: number): StudyCard {
+        return { cardId, state: { status: 'learning', dueTime } } as unknown as StudyCard;
+    }
+    const now = 1_750_000_000_000;
+
+    it('separates expired step timers from cards still inside the learn-ahead window', () => {
+        const cards = [
+            learn(1, now - 60000),  // timer expired a minute ago
+            learn(2, now + 60000),  // due in a minute -> learn-ahead pool
+            learn(3, now),          // due exactly now counts as due
+        ];
+
+        const { dueNow, learnAhead } = splitIntradayLearning(cards, now);
+
+        expect(dueNow.map((c) => c.cardId)).toEqual([1, 3]);
+        expect(learnAhead.map((c) => c.cardId)).toEqual([2]);
+    });
+
+    it('treats interday learning cards (dueTime 0) as due now', () => {
+        const interday = learn(1, 0);
+        const { dueNow, learnAhead } = splitIntradayLearning([interday], now);
+
+        expect(dueNow).toEqual([interday]);
+        expect(learnAhead).toHaveLength(0);
+    });
+
+    it('preserves due order within each partition', () => {
+        const cards = [
+            learn(1, now + 120000),
+            learn(2, now - 1),
+            learn(3, now + 60000),
+            learn(4, now - 2),
+        ];
+
+        const { dueNow, learnAhead } = splitIntradayLearning(cards, now);
+
+        expect(dueNow.map((c) => c.cardId)).toEqual([2, 4]);
+        expect(learnAhead.map((c) => c.cardId)).toEqual([1, 3]);
     });
 });
 

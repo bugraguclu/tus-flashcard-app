@@ -64,6 +64,26 @@ export function applyHierarchicalLimit(
     return result;
 }
 
+/**
+ * Partition intraday learning cards around `nowMs`, mirroring Anki's serving order
+ * (rslib scheduler/queue/mod.rs `iter`): cards whose step timer has expired are served before
+ * the main queue, while cards still waiting — inside the learn-ahead window — are served only
+ * after everything else is done. Interday learning cards (dueTime 0) count as due now.
+ */
+export function splitIntradayLearning(
+    cards: StudyCard[],
+    nowMs: number,
+): { dueNow: StudyCard[]; learnAhead: StudyCard[] } {
+    const dueNow: StudyCard[] = [];
+    const learnAhead: StudyCard[] = [];
+
+    for (const card of cards) {
+        (card.state.dueTime > nowMs ? learnAhead : dueNow).push(card);
+    }
+
+    return { dueNow, learnAhead };
+}
+
 /** Stable 32-bit hash of a string, used for deterministic per-day ordering. */
 function hashString(value: string): number {
     let hash = 0;

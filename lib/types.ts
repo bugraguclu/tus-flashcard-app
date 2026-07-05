@@ -113,6 +113,12 @@ export interface AppSettings {
     maxInterval: number;
     /** Hour of day when the study day rolls over. Must be in the range 0..23. */
     dayRolloverHour: number;
+    /**
+     * Minutes an intraday learning card may be shown before its step timer expires, once there
+     * is nothing else left to study. Mirrors Anki's collection preference `learn_ahead_secs`
+     * (Anki defaults to 20 minutes; 0 always waits for the timer and shows the countdown).
+     */
+    learnAheadMinutes: number;
     algorithm: AlgorithmType;
 }
 

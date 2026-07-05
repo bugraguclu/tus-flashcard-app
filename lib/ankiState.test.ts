@@ -28,6 +28,7 @@ const settings: AppSettings = {
     intervalModifier: 1.0,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3',
 };
 
@@ -114,6 +115,27 @@ describe('ankiState edge cases', () => {
         expect(roundTrip.due).toBe(card.due);
         expect(roundTrip.ivl).toBe(card.ivl);
         expect(roundTrip.reps).toBe(card.reps);
+    });
+
+    it('preserves the AnkiCard id and never adopts state.cardId (legacy-migration safety)', () => {
+        // Legacy migration fetches the seeded card by legacyId * 1000 but the incoming CardState
+        // still carries the pre-remap legacy id. Encoding must keep the fetched card's id (5000),
+        // not fork the progress onto a phantom card at the legacy id (5).
+        const now = new Date(2026, 2, 12, 10, 0, 0, 0).getTime();
+        const card = makeCard({
+            id: 5000,
+            type: 2,
+            queue: 2,
+            ivl: 12,
+            reps: 8,
+            left: 0,
+            due: localDayNumber(now, settings.dayRolloverHour) + 5,
+        });
+
+        const state: CardState = { ...ankiCardToCardState(card, settings, now), cardId: 5 };
+        const updated = cardStateToAnkiCard(card, state, settings, now);
+
+        expect(updated.id).toBe(5000);
     });
 
     it('decodes new and review cards with no active (re)learning step', () => {

@@ -31,9 +31,9 @@ export default function DecksScreen() {
 
     const deckTree = useMemo(() => {
         const decks = getAllDecks();
-        const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour);
+        const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour, settings.learnAheadMinutes);
         return buildDeckTree(decks, counts);
-    }, [refreshToken, dataVersion, settings.dayRolloverHour]);
+    }, [refreshToken, dataVersion, settings.dayRolloverHour, settings.learnAheadMinutes]);
 
     const refresh = useCallback(() => {
         setRefreshToken((value) => value + 1);

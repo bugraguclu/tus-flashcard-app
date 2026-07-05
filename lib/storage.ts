@@ -53,10 +53,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
     intervalModifier: 1.0,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    // Anki defaults its learn-ahead limit to 20 minutes; we default to 0 ("always wait for the
+    // step timer") because the study screen has a dedicated countdown for waiting cards.
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3' as AlgorithmType,
 };
 
-function getDbSetting(key: string): string | null {
+/** Read a raw key from the SQLite settings table (guard keys, metadata blobs). */
+export function getDbSetting(key: string): string | null {
     try {
         const db = getDB();
         const row = db.getFirstSync('SELECT value FROM settings WHERE key = ?', key) as { value?: string } | null;
@@ -67,7 +71,8 @@ function getDbSetting(key: string): string | null {
     }
 }
 
-function setDbSetting(key: string, value: string): void {
+/** Write a raw key to the SQLite settings table. Failures are logged, not thrown. */
+export function setDbSetting(key: string, value: string): void {
     try {
         const db = getDB();
         db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
@@ -319,6 +324,7 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
         return {
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
+            learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
         };
     } catch (e) {
@@ -331,6 +337,7 @@ function persistAppSettingsMeta(settings: AppSettings): void {
     const meta = {
         queueOrder: settings.queueOrder,
         dayRolloverHour: settings.dayRolloverHour,
+        learnAheadMinutes: settings.learnAheadMinutes,
         algorithm: settings.algorithm,
     };
 
@@ -346,6 +353,7 @@ export function loadSettings(): AppSettings {
         ...fromDeck,
         queueOrder: meta.queueOrder ?? fromDeck.queueOrder,
         dayRolloverHour: meta.dayRolloverHour ?? fromDeck.dayRolloverHour,
+        learnAheadMinutes: meta.learnAheadMinutes ?? fromDeck.learnAheadMinutes,
         algorithm: meta.algorithm ?? fromDeck.algorithm,
     };
 }
@@ -658,13 +666,15 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             return false;
         }
 
+        let customCardIdMap: Record<number, number> = {};
         if (data.customCards) {
-            migrateLegacyCustomCardsToAnki(data.customCards as Card[], { force: true });
+            const customResult = migrateLegacyCustomCardsToAnki(data.customCards as Card[], { force: true });
+            customCardIdMap = customResult.legacyIdToAnkiCardId;
         }
 
         if (data.cardStates) {
             const settings = loadSettings();
-            migrateLegacyCardStatesToAnki(data.cardStates as Record<string, CardState>, settings, { force: true });
+            migrateLegacyCardStatesToAnki(data.cardStates as Record<string, CardState>, settings, { force: true }, customCardIdMap);
         }
 
         await clearLegacyCardStates();

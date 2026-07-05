@@ -264,7 +264,11 @@ export function cardStateToAnkiCard(
 ): AnkiCard {
     const updated: AnkiCard = {
         ...card,
-        id: state.cardId,
+        // Keep the on-disk card's own id: the AnkiCard passed in is the row of record, so its id
+        // is authoritative. Deliberately NOT `id: state.cardId` — in the legacy-migration path
+        // state.cardId is the pre-remap legacy id (anki id / 1000), which would fork the progress
+        // onto a phantom card. Canonical callers set state.cardId === card.id, so this is a no-op
+        // for them.
         ivl: Math.max(0, Math.round(state.interval || 0)),
         reps: Math.max(0, Math.round(state.repetition || 0)),
         lapses: Math.max(0, Math.round(state.lapses || 0)),
