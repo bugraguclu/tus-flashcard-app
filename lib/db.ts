@@ -237,6 +237,26 @@ const migrations: Migration[] = [
             `);
         },
     },
+    {
+        version: 7,
+        description: 'Web shadow cards_fts table',
+        up: (db) => {
+            if (Platform.OS !== 'web') return;
+            // Plain, always-empty stand-in for the native FTS5 table so raw SQL
+            // that touches cards_fts (import, reset, deck/note deletion) works
+            // without per-platform guards. Web search keeps its LIKE fallback;
+            // the web-gated FTS helpers in this file never write to it.
+            db.execSync(`
+                CREATE TABLE IF NOT EXISTS cards_fts (
+                    card_id TEXT,
+                    question TEXT,
+                    answer TEXT,
+                    topic TEXT,
+                    subject TEXT
+                );
+            `);
+        },
+    },
 ];
 
 // ---------- Run Migrations ----------
