@@ -5,34 +5,76 @@
  * safe to call on startup and on every app foreground.
  */
 
+import { Platform } from 'react-native';
 import { todayLocalYMD } from './scheduler';
-import { getDB } from './db';
-import { unburyAllCards } from './noteManager';
-import { loadSettings } from './storage';
+import { dbIndexAllCards, getDB } from './db';
+import { getSearchIndexCards, unburyAllCards } from './noteManager';
+import { getDbSetting, loadSettings, setDbSetting } from './storage';
 
 const LAST_MAINTENANCE_KEY = 'tus_last_maintenance';
 
 export function runDailyMaintenance(): { unburiedCount: number; didRun: boolean } {
-    const db = getDB();
     const settings = loadSettings();
     const today = todayLocalYMD(undefined, settings.dayRolloverHour);
 
-    const row = db.getFirstSync<{ value: string }>(
-        'SELECT value FROM settings WHERE key = ?',
-        LAST_MAINTENANCE_KEY,
-    );
-    if (row?.value === today) {
+    if (getDbSetting(LAST_MAINTENANCE_KEY) === today) {
         return { unburiedCount: 0, didRun: false };
     }
 
     const unburiedCount = unburyAllCards(settings.dayRolloverHour);
 
     // Record the run only after the work succeeds, so a failure retries next time.
-    db.runSync(
-        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-        LAST_MAINTENANCE_KEY,
-        today,
-    );
+    setDbSetting(LAST_MAINTENANCE_KEY, today);
 
     return { unburiedCount, didRun: true };
+}
+
+export interface DatabaseCheckResult {
+    /** 'ok', or SQLite's first reported corruption message. */
+    integrity: string;
+    /** Live cards whose note row is missing or deleted. */
+    orphanCards: number;
+    /** Live notes that no longer have any cards. */
+    orphanNotes: number;
+    /** Cards rebuilt into the FTS index (always 0 on web, which has no FTS). */
+    ftsReindexed: number;
+}
+
+/**
+ * Lite version of Anki's Check Database: verify SQLite file integrity, count
+ * orphaned rows, and rebuild the search index. Read-only apart from the FTS
+ * rebuild — orphan cleanup stays a manual/post-launch concern.
+ */
+export function checkDatabase(): DatabaseCheckResult {
+    const db = getDB();
+
+    let integrity = 'ok';
+    try {
+        const row = db.getFirstSync<Record<string, unknown>>('PRAGMA quick_check');
+        const value = row ? String(Object.values(row)[0] ?? '') : '';
+        if (value) integrity = value;
+    } catch (e) {
+        integrity = e instanceof Error ? e.message : String(e);
+    }
+
+    const orphanCards = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM anki_cards c
+         WHERE c.tombstone = 0
+           AND NOT EXISTS (SELECT 1 FROM notes n WHERE n.id = c.noteId AND n.tombstone = 0)`,
+    )?.cnt ?? 0;
+
+    const orphanNotes = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM notes n
+         WHERE n.tombstone = 0
+           AND NOT EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND c.tombstone = 0)`,
+    )?.cnt ?? 0;
+
+    let ftsReindexed = 0;
+    if (Platform.OS !== 'web') {
+        const cards = getSearchIndexCards();
+        dbIndexAllCards(cards);
+        ftsReindexed = cards.length;
+    }
+
+    return { integrity, orphanCards, orphanNotes, ftsReindexed };
 }

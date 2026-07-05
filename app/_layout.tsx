@@ -167,6 +167,16 @@ export default function RootLayout() {
                         }}
                     />
                     <Stack.Screen
+                        name="backups"
+                        options={{
+                            presentation: 'modal',
+                            headerShown: true,
+                            title: 'Yedekler',
+                            headerStyle: { backgroundColor: Colors.bgSecondary },
+                            headerTintColor: Colors.accent,
+                        }}
+                    />
+                    <Stack.Screen
                         name="note-types"
                         options={{
                             presentation: 'modal',
