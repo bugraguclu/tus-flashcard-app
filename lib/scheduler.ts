@@ -139,6 +139,19 @@ function clampInterval(interval: number, settings: AppSettings): number {
 }
 
 /**
+ * Post-lapse review interval: the old interval scaled by the lapse multiplier, floored at
+ * minLapseInterval and clamped (rslib answering.rs `lapsed_interval`). Shared by the Again
+ * button preview and the actual review-answer path so the label always matches scheduling.
+ */
+function lapsedReviewInterval(currentInterval: number, settings: AppSettings): number {
+    const cur = Math.max(1, currentInterval || 1);
+    return clampInterval(
+        Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)),
+        settings,
+    );
+}
+
+/**
  * Constrain (and optionally fuzz) an interval within [minimum, maximum].
  * Matches Anki's constrain_passing_interval + with_review_fuzz + constrained_fuzz_bounds.
  */
@@ -293,12 +306,15 @@ const AnkiV3Engine: SchedulerEngine = {
 
         // Review state: unfuzzed base intervals for the button labels.
         const preview = computeReviewIntervals(cs, settings, elapsedDays);
+        // With no relearning steps, Again returns to review with the reduced interval (days),
+        // so label it as days rather than the first relearning step.
+        const lapsedInterval = lapsedReviewInterval(cs.interval, settings);
         return {
-            again: formatMinutes(lapseSteps[0] || 1),
+            again: lapseSteps.length === 0 ? formatDays(lapsedInterval) : formatMinutes(lapseSteps[0] || 1),
             hard: formatDays(preview.hard),
             good: formatDays(preview.good),
             easy: formatDays(preview.easy),
-            againMinutes: lapseSteps[0] || 1,
+            againMinutes: lapseSteps.length === 0 ? lapsedInterval * MINUTES_PER_DAY : lapseSteps[0] || 1,
         };
     },
 };
@@ -508,11 +524,28 @@ function ankiV3Review(
     const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
-        const newInterval = clampInterval(
-            Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)),
-            settings,
-        );
+        const newInterval = lapsedReviewInterval(cur, settings);
         const newEase = Math.max(MINIMUM_EASE_FACTOR, ef + EASE_FACTOR_AGAIN_DELTA);
+        const lapses = (cs.lapses || 0) + 1;
+
+        // With no relearning steps configured, Anki does not demote the card into relearning; it
+        // returns straight to review with the reduced interval (rslib review.rs `again_review`).
+        if (lapseSteps.length === 0) {
+            return {
+                interval: newInterval,
+                isLearning: false,
+                stateUpdates: {
+                    interval: newInterval,
+                    easeFactor: newEase,
+                    relearningStep: -1,
+                    learningStep: -1,
+                    lapses,
+                    status: 'review',
+                    lastReviewedAtMs: now,
+                    elapsedDays,
+                },
+            };
+        }
 
         return {
             interval: 0,
@@ -523,7 +556,7 @@ function ankiV3Review(
                 easeFactor: newEase,
                 relearningStep: 0,
                 learningStep: -1,
-                lapses: (cs.lapses || 0) + 1,
+                lapses,
                 status: 'learning',
                 lastReviewedAtMs: now,
                 elapsedDays,
