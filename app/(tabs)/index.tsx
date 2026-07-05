@@ -62,6 +62,7 @@ export default function StudyScreen() {
     const [answerStartedAt, setAnswerStartedAt] = useState<number>(Date.now());
 
     const sessionStatsRef = useRef(sessionStats);
+    const currentCardRef = useRef<StudyCard | null>(null);
     const answersSinceRefreshRef = useRef(0);
     const scheduledRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -69,7 +70,15 @@ export default function StudyScreen() {
         sessionStatsRef.current = sessionStats;
     }, [sessionStats]);
 
-    const buildQueue = useCallback((newCardsStudiedToday?: number, resetCounter: boolean = true) => {
+    useEffect(() => {
+        currentCardRef.current = currentCard;
+    }, [currentCard]);
+
+    const buildQueue = useCallback((
+        newCardsStudiedToday?: number,
+        resetCounter: boolean = true,
+        preserveCurrent: boolean = false,
+    ) => {
         if (scheduledRefreshRef.current) {
             clearTimeout(scheduledRefreshRef.current);
             scheduledRefreshRef.current = null;
@@ -83,12 +92,23 @@ export default function StudyScreen() {
             newCardsStudiedToday: newCardsStudiedToday ?? sessionStatsRef.current.newCardsToday ?? 0,
         });
 
-        setQueue(result.cards);
-        setCurrentCard(result.cards.length > 0 ? result.cards[0] : null);
+        // Background refreshes must not yank the card the user is looking at (or hide the
+        // answer they are reading) — keep it in front and merge the fresh queue behind it.
+        const active = preserveCurrent ? currentCardRef.current : null;
+        const activeStillQueued = active != null
+            && result.cards.some((card) => card.cardId === active.cardId);
+
+        if (activeStillQueued) {
+            setQueue([active, ...result.cards.filter((card) => card.cardId !== active.cardId)]);
+        } else {
+            setQueue(result.cards);
+            setCurrentCard(result.cards.length > 0 ? result.cards[0] : null);
+            setShowingAnswer(false);
+        }
+
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
         setDailyNewLimitReached(result.dailyNewLimitReached);
-        setShowingAnswer(false);
 
         if (resetCounter) {
             answersSinceRefreshRef.current = 0;
@@ -101,7 +121,7 @@ export default function StudyScreen() {
         }
 
         scheduledRefreshRef.current = setTimeout(() => {
-            buildQueue(newCardsStudiedToday);
+            buildQueue(newCardsStudiedToday, true, true);
             scheduledRefreshRef.current = null;
         }, delayMs);
     }, [buildQueue]);
@@ -133,7 +153,7 @@ export default function StudyScreen() {
         if (loading) return;
 
         const timer = setInterval(() => {
-            buildQueue(undefined, false);
+            buildQueue(undefined, false, true);
         }, 45000);
 
         return () => clearInterval(timer);
@@ -142,13 +162,16 @@ export default function StudyScreen() {
     useEffect(() => {
         if (!currentCard) return;
         setAnswerStartedAt(Date.now());
+        // A new card always starts on the question side, whichever path swapped it in.
+        setShowingAnswer(false);
     }, [currentCard?.cardId]);
 
-    // Rebuild queue when the next learning card becomes due.
+    // Rebuild queue when the next learning card becomes due. The newly due card joins the
+    // queue behind the card currently being studied, never replacing it mid-answer.
     useEffect(() => {
         if (!nextLearningDue) return;
         const delay = Math.max(500, nextLearningDue - Date.now() + 300);
-        const timer = setTimeout(buildQueue, delay);
+        const timer = setTimeout(() => buildQueue(undefined, true, true), delay);
         return () => clearTimeout(timer);
     }, [nextLearningDue, buildQueue]);
 
@@ -206,7 +229,20 @@ export default function StudyScreen() {
         }
 
         const elapsed = Math.max(0, Date.now() - answerStartedAt);
-        const result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);
+
+        let result;
+        try {
+            result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);
+        } catch (e) {
+            // The card can vanish under us when the collection is replaced (backup restore,
+            // import) while this screen holds a stale queue. Resync instead of crashing;
+            // the undo stack refers to the old collection, so it must go too.
+            console.warn('[Study] answer failed, rebuilding queue:', e);
+            setUndoStack([]);
+            setShowingAnswer(false);
+            buildQueue();
+            return;
+        }
 
         const prevStats = sessionStatsRef.current;
         const nextStats: SessionStats = {
@@ -303,6 +339,16 @@ export default function StudyScreen() {
         if (undoStack.length === 0) return;
 
         const undo = undoStack[undoStack.length - 1];
+
+        // If the collection was replaced (backup restore, import) the snapshot belongs to
+        // a card that no longer exists — drop the stale stack instead of resurrecting it.
+        if (!getAnkiCard(undo.cardId)) {
+            console.warn('[Study] undo target missing, clearing stale undo stack.');
+            setUndoStack([]);
+            buildQueue();
+            return;
+        }
+
         setUndoStack((prev) => prev.slice(0, -1));
 
         undoAnswer(undo.previousSnapshot, undo.reviewLogId);

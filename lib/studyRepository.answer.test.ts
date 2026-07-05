@@ -108,6 +108,7 @@ vi.mock('./noteManager', () => ({
 }));
 
 import { answerStudyCard } from './studyRepository';
+import { handleLeech } from './noteManager';
 
 const settings: AppSettings = {
     dailyNewLimit: 20,
@@ -126,6 +127,7 @@ const settings: AppSettings = {
     intervalModifier: 1,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3',
 };
 
@@ -254,6 +256,28 @@ describe('answerStudyCard', () => {
         expect(updated.queue).toBe(1);                // intraday learning step
         expect(updated.lapses).toBe(1);
         expect(updated.factor).toBeLessThan(2500);    // ease penalty applied
+    });
+
+    it('fires leech handling only when the answer itself causes a lapse (Anki answer_again)', () => {
+        vi.mocked(handleLeech).mockClear();
+
+        // A card already sitting at the leech threshold from earlier lapses.
+        shared.cards.set(23, {
+            ...baseCard(23, 1, 2, 2),
+            ivl: 30,
+            reps: 9,
+            lapses: 8,
+            lastReview: Date.now() - 30 * 86400000,
+        });
+
+        // A successful review must not re-trigger the leech action (it used to re-suspend
+        // an unsuspended leech after every answer)...
+        answerStudyCard(23, 3, settings, 700);
+        expect(handleLeech).not.toHaveBeenCalled();
+
+        // ...but an answer that increments lapses past the threshold must.
+        answerStudyCard(23, 1, settings, 700);
+        expect(handleLeech).toHaveBeenCalledTimes(1);
     });
 
     it('logs the real interday-learning interval, not a clamped -1 second', () => {

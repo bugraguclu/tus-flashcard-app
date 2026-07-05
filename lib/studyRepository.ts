@@ -24,7 +24,13 @@ import {
     saveAnkiCard,
 } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
-import { applyHierarchicalLimit, buryBuildTimeSiblings, interleaveNewWithReviews, sortReviewsDueThenRandom } from './queueBuild';
+import {
+    applyHierarchicalLimit,
+    buryBuildTimeSiblings,
+    interleaveNewWithReviews,
+    sortReviewsDueThenRandom,
+    splitIntradayLearning,
+} from './queueBuild';
 import { deleteReviewById, logReview } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 
@@ -57,10 +63,6 @@ export interface ReviewResult {
 }
 
 const KNOWN_SUBJECTS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
-
-// Anki's "learn ahead limit": intraday learning cards due within this window are shown early
-// so the session never stalls waiting on a short step. Anki's default is 20 minutes.
-const LEARN_AHEAD_MS = 20 * 60 * 1000;
 
 interface QueueCardRow {
     cardId: number;
@@ -556,8 +558,11 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
     const reviewLimit = Math.max(0, params.settings.dailyReviewLimit);
 
-    // Pull intraday learning cards due within the learn-ahead window, not just those due now.
-    const learnAheadCutoff = nowMs + LEARN_AHEAD_MS;
+    // Anki's "learn ahead limit" (rslib: learn_ahead_secs): intraday learning cards due within
+    // this window are gathered too, but they are served strictly AFTER everything else — never
+    // ahead of their step timer while other cards remain. With the limit at 0 they are not
+    // gathered at all and the UI counts down until the first one is due.
+    const learnAheadCutoff = nowMs + Math.max(0, params.settings.learnAheadMinutes || 0) * 60000;
 
     // Count with SQL first (scales better than loading full queue).
     const intradayLearningCount = countRowsByQueue(
@@ -752,14 +757,19 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         newCardsForQueue = applyHierarchicalLimit(newCards, availableNewLimit, deckKeysForCard, newLimitForDeckKey);
     }
 
-    // Learning always leads; new cards mix into / sit before / sit after the reviews.
+    // Anki serving order (rslib scheduler/queue/mod.rs `iter`): learning cards whose timer has
+    // expired lead, then the main queue (new/review per queueOrder), and learning cards still
+    // inside the learn-ahead window trail at the very end — they only surface once everything
+    // else is exhausted, instead of storming back in front on every queue rebuild.
+    const { dueNow: learningDueNow, learnAhead: learningAhead } = splitIntradayLearning(learningCards, nowMs);
+
     let cards: StudyCard[];
     if (params.settings.queueOrder === 'before') {
-        cards = [...learningCards, ...newCardsForQueue, ...reviewCardsForQueue];
+        cards = [...learningDueNow, ...newCardsForQueue, ...reviewCardsForQueue, ...learningAhead];
     } else if (params.settings.queueOrder === 'after') {
-        cards = [...learningCards, ...reviewCardsForQueue, ...newCardsForQueue];
+        cards = [...learningDueNow, ...reviewCardsForQueue, ...newCardsForQueue, ...learningAhead];
     } else {
-        cards = [...learningCards, ...interleaveNewWithReviews(reviewCardsForQueue, newCardsForQueue)];
+        cards = [...learningDueNow, ...interleaveNewWithReviews(reviewCardsForQueue, newCardsForQueue), ...learningAhead];
     }
 
     // Cards inside the learn-ahead window are already queued; report the first one due beyond it.
@@ -913,7 +923,10 @@ export function answerStudyCard(
 
         applySiblingBuryPolicy(currentAnkiCard, deckConfig);
 
-        if (isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
+        // Anki evaluates leech only when the answer itself caused a lapse (rslib review.rs
+        // `answer_again` sets `leeched`); checking on every answer would keep re-suspending an
+        // unsuspended leech that still sits on a threshold multiple.
+        if (updatedAnkiCard.lapses > currentAnkiCard.lapses && isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
             handleLeech(updatedAnkiCard, deckConfig.leechAction);
         }
 
