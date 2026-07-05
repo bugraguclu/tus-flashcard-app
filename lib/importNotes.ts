@@ -8,7 +8,7 @@
 
 import { getDB } from './db';
 import { checksumField, type NoteType } from './models';
-import { createNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
+import { createNote, getAllNotes, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
 import { parseDelimited } from './importDelimited';
 
 export interface ImportOptions {
@@ -69,6 +69,9 @@ export interface RowImportOptions {
     /** 1-based column whose whitespace-separated values become per-row tags. */
     tagsColumn?: number;
     allowDuplicates?: boolean;
+    /** Anki note guids per row (.apkg path). When present, dedupe by guid instead of first field
+     *  and preserve the guid on the created note, matching how Anki identifies notes. */
+    rowGuids?: string[];
 }
 
 export interface RowImportCounts {
@@ -81,9 +84,15 @@ export interface RowImportCounts {
 
 /** Writes rows of field values as notes in one transaction, deduped by first field. */
 export function importRows(rows: string[][], options: RowImportOptions): RowImportCounts {
-    const { noteType, deckId, fieldColumns, defaultFields, tags = [], rowTags, tagsColumn, allowDuplicates = false } = options;
+    const { noteType, deckId, fieldColumns, defaultFields, tags = [], rowTags, tagsColumn, allowDuplicates = false, rowGuids } = options;
     const fieldCount = noteType.fields.length;
     const counts: RowImportCounts = { added: 0, duplicates: 0, emptyRows: 0, indexed: [] };
+
+    // When guids are supplied (.apkg import) Anki identifies notes by guid, not by first field:
+    // load the existing guids once and also track those seen in this batch, so a re-import stays
+    // idempotent and two distinct notes that share a first field are not wrongly merged.
+    const existingGuids = rowGuids ? new Set(getAllNotes().map((note) => note.guid)) : null;
+    const seenGuids = new Set<string>();
 
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
@@ -102,7 +111,18 @@ export function importRows(rows: string[][], options: RowImportOptions): RowImpo
                 continue;
             }
 
-            if (!allowDuplicates && firstFieldExists(noteType.id, fields[0])) {
+            let guid = rowGuids?.[r];
+            if (guid) {
+                // A guid seen twice in one file is malformed; an existing guid means already imported.
+                if (seenGuids.has(guid) || (!allowDuplicates && existingGuids!.has(guid))) {
+                    counts.duplicates++;
+                    continue;
+                }
+                seenGuids.add(guid);
+                // A forced re-add (allowDuplicates) of an existing guid must not clone that guid:
+                // Anki treats the guid as unique note identity, so the copy gets a fresh one.
+                if (existingGuids!.has(guid)) guid = undefined;
+            } else if (!allowDuplicates && firstFieldExists(noteType.id, fields[0])) {
                 counts.duplicates++;
                 continue;
             }
@@ -112,7 +132,7 @@ export function importRows(rows: string[][], options: RowImportOptions): RowImpo
                 for (const tag of (row[tagsColumn - 1] ?? '').split(/\s+/).filter(Boolean)) noteTags.push(tag);
             }
 
-            const { note, cards } = createNote(noteType, fields, deckId, uniqueTags(noteTags));
+            const { note, cards } = createNote(noteType, fields, deckId, uniqueTags(noteTags), guid);
             for (const card of cards) counts.indexed.push(searchIndexCardFromNote(note, card.id));
             counts.added++;
         }

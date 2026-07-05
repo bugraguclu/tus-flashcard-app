@@ -17,9 +17,17 @@ import { subjectToDeckId, BUILTIN_NOTE_TYPES, type NoteType } from './models';
 const TUS_BASIC_NOTETYPE_ID = 4;
 const CLOZE_NOTETYPE_ID = 3;
 const FIELD_SEPARATOR = '\x1f';
-const COLLECTION_NAMES = ['collection.anki21', 'collection.anki2'];
-const MEDIA_RE = /<img\b|\[sound:/i;
+// Probed in order. collection.anki21b is checked between the two: a new-format export ships the
+// real data as .anki21b alongside a stub .anki2 kept only to show old Anki versions an upgrade
+// notice, so falling through to .anki2 would silently import the stub instead of the deck.
+const LEGACY_COLLECTION_NAME = 'collection.anki21';
+const OLDEST_COLLECTION_NAME = 'collection.anki2';
+// Fields that reference a media file (Anki audio uses [sound:...]; HTML uses img/audio/video).
+const MEDIA_RE = /<img\b|<audio\b|<video\b|\[sound:/i;
 const MAX_APKG_BYTES = 200 * 1024 * 1024;
+// Cap the decompressed collection before handing it to sql.js, which would copy the whole
+// database into its WASM heap. The SQLite itself (no media) is normally tiny.
+const MAX_COLLECTION_BYTES = 200 * 1024 * 1024;
 
 export interface SqliteReader {
     getAllSync<T = any>(sql: string, ...params: any[]): T[];
@@ -31,6 +39,8 @@ export interface ApkgReader extends SqliteReader {
 }
 
 export interface AnkiNote {
+    /** Anki's stable per-note id, used to dedupe/update on import. */
+    guid: string;
     fields: string[];
     tags: string[];
     cloze: boolean;
@@ -69,10 +79,23 @@ export function readAnkiNotes(reader: SqliteReader): AnkiNote[] {
     const col = reader.getFirstSync<{ models: string }>('SELECT models FROM col LIMIT 1');
     const models = parseModelsMap(col?.models); // Anki model type: 0 = standard, 1 = cloze
 
-    const rows = reader.getAllSync<{ mid: number; flds: string; tags: string }>('SELECT mid, flds, tags FROM notes');
+    const rows = reader.getAllSync<{ guid: string; mid: number; flds: string; tags: string }>(
+        'SELECT guid, mid, flds, tags FROM notes',
+    );
+
+    // The legacy schema keeps note types in col.models. If that map is empty while notes exist,
+    // this is really the newer schema-18 collection (note types live in tables there) mislabelled
+    // as a legacy file — cloze detection would silently fail, so reject it with clear guidance.
+    if (rows.length > 0 && Object.keys(models).length === 0) {
+        throw new Error(
+            'Bu .apkg desteklenmeyen bir biçimde. Anki\'de dışa aktarırken "Eski Anki sürümlerini destekle" seçeneğini işaretleyip yeniden deneyin.',
+        );
+    }
+
     return rows.map((row) => {
         const fields = (row.flds ?? '').split(FIELD_SEPARATOR);
         return {
+            guid: row.guid ?? '',
             fields,
             tags: (row.tags ?? '').split(/\s+/).filter(Boolean),
             cloze: models[String(row.mid)]?.type === 1,
@@ -114,6 +137,7 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
               defaultFields: ['', '', topicValue],
               tags: baseTags,
               rowTags: standard.map((note) => note.tags),
+              rowGuids: standard.map((note) => note.guid),
               allowDuplicates: options.allowDuplicates,
           })
         : empty;
@@ -124,6 +148,7 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
               deckId,
               tags: baseTags,
               rowTags: cloze.map((note) => note.tags),
+              rowGuids: cloze.map((note) => note.guid),
               allowDuplicates: options.allowDuplicates,
           })
         : empty;
@@ -147,15 +172,27 @@ export async function extractCollectionBytes(zipBytes: Uint8Array): Promise<Uint
     const JSZip = (await import('jszip')).default;
     const zip = await JSZip.loadAsync(zipBytes);
 
-    for (const name of COLLECTION_NAMES) {
-        const file = zip.file(name);
-        if (file) return file.async('uint8array');
+    async function inflate(file: import('jszip').JSZipObject): Promise<Uint8Array> {
+        const bytes = await file.async('uint8array');
+        if (bytes.length > MAX_COLLECTION_BYTES) {
+            throw new Error('Koleksiyon çok büyük (açılmış en fazla 200 MB).');
+        }
+        return bytes;
     }
+
+    const legacy = zip.file(LEGACY_COLLECTION_NAME);
+    if (legacy) return inflate(legacy);
+
+    // Must come before the .anki2 fallback; see the collection-name constants above.
     if (zip.file('collection.anki21b')) {
         throw new Error(
             'Bu .apkg yeni sıkıştırılmış biçimde. Anki\'de dışa aktarırken "Eski Anki sürümlerini destekle" seçeneğini işaretleyip yeniden deneyin.',
         );
     }
+
+    const oldest = zip.file(OLDEST_COLLECTION_NAME);
+    if (oldest) return inflate(oldest);
+
     throw new Error('Geçerli bir Anki koleksiyonu bulunamadı.');
 }
 

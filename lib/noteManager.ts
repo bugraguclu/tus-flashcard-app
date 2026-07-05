@@ -81,14 +81,17 @@ export function createNote(
     noteType: NoteType,
     fields: string[],
     deckId: number,
-    tags: string[] = []
+    tags: string[] = [],
+    guid?: string,
 ): { note: Note; cards: AnkiCard[] } {
     const now = uniqueId();
     const sfld = fields[noteType.sortFieldIdx] || fields[0] || '';
 
     const note: Note = {
         id: now,
-        guid: generateGuid(),
+        // Preserve a supplied guid (Anki .apkg keeps a stable per-note id) so a later re-import
+        // recognises the same note; otherwise mint a fresh one.
+        guid: guid ?? generateGuid(),
         noteTypeId: noteType.id,
         mod: Math.floor(now / 1000),
         usn: -1,
@@ -525,6 +528,38 @@ export function getSearchIndexCards(): SearchIndexCard[] {
     );
 
     return rows.map((row) => searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId));
+}
+
+/**
+ * Find an existing TUS card by its question (first field), matching how Anki dedupes text imports
+ * (first field within a note type). Returns the primary card id of the first match, or null.
+ * The `csum` filter narrows candidates in SQL; the exact trimmed compare then rejects hash
+ * collisions, exactly like `firstFieldExists` in the import path.
+ */
+export function findTusCardIdByFirstField(question: string): number | null {
+    const db = getDB();
+    const target = question.trim();
+    const rows = db.getAllSync<{ cardId: number; noteData: string }>(
+        `SELECT c.id AS cardId, n.data AS noteData
+         FROM notes n
+         JOIN anki_cards c ON c.noteId = n.id
+         WHERE n.csum = ? AND n.noteTypeId = 4
+         ORDER BY c.ord`,
+        checksumField(question),
+    );
+
+    for (const row of rows) {
+        try {
+            const field0 = (JSON.parse(row.noteData) as { fields?: string[] }).fields?.[0];
+            if (typeof field0 === 'string' && field0.trim() === target) {
+                return row.cardId;
+            }
+        } catch {
+            // Skip a note row whose data blob will not parse.
+        }
+    }
+
+    return null;
 }
 
 export function createTusCard(input: {

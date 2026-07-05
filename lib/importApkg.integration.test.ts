@@ -19,9 +19,9 @@ function buildAnkiCollectionBytes(): Uint8Array {
     const db: Database = new SQL.Database();
     db.run('CREATE TABLE col (models text)');
     db.run('INSERT INTO col (models) VALUES (?)', [JSON.stringify({ '100': { type: 0 } })]);
-    db.run('CREATE TABLE notes (id integer primary key, mid integer, flds text, tags text)');
-    db.run('INSERT INTO notes (id, mid, flds, tags) VALUES (1, 100, ?, ?)', ['Kalp\x1fPompa\x1fFizyoloji', 'exam cardio']);
-    db.run('INSERT INTO notes (id, mid, flds, tags) VALUES (2, 100, ?, ?)', ['Akciğer\x1fSolunum', '']);
+    db.run('CREATE TABLE notes (id integer primary key, guid text, mid integer, flds text, tags text)');
+    db.run('INSERT INTO notes (id, guid, mid, flds, tags) VALUES (1, ?, 100, ?, ?)', ['g-kalp', 'Kalp\x1fPompa\x1fFizyoloji', 'exam cardio']);
+    db.run('INSERT INTO notes (id, guid, mid, flds, tags) VALUES (2, ?, 100, ?, ?)', ['g-akciger', 'Akciğer\x1fSolunum', '']);
     const bytes = db.export();
     db.close();
     return bytes;
@@ -67,11 +67,32 @@ describe('apkg glue (real sql.js + jszip)', () => {
         await expect(extractCollectionBytes(zipBytes)).rejects.toThrow(/[Ee]ski/);
     });
 
+    it('rejects a new-format package instead of importing its collection.anki2 stub', async () => {
+        // New-format exports ship the real data as .anki21b plus a stub .anki2 whose only purpose
+        // is to show old Anki versions an upgrade notice. The stub must not be silently imported.
+        const zip = new JSZip();
+        zip.file('collection.anki21b', new Uint8Array([1, 2, 3]));
+        zip.file('collection.anki2', buildAnkiCollectionBytes());
+        zip.file('media', '{}');
+        const zipBytes = await zip.generateAsync({ type: 'uint8array' });
+        await expect(extractCollectionBytes(zipBytes)).rejects.toThrow(/[Ee]ski/);
+    });
+
+    it('prefers collection.anki21 when a legacy export contains both legacy files', async () => {
+        const newer = buildAnkiCollectionBytes();
+        const zip = new JSZip();
+        zip.file('collection.anki21', newer);
+        zip.file('collection.anki2', new Uint8Array([9, 9]));
+        const zipBytes = await zip.generateAsync({ type: 'uint8array' });
+        const extracted = await extractCollectionBytes(zipBytes);
+        expect(extracted.length).toBe(newer.length);
+    });
+
     it('reads notes (flds split by \\x1f, tags by whitespace) from a real Anki SQLite', () => {
         const reader = wrapReader(buildAnkiCollectionBytes());
         expect(readAnkiNotes(reader as any)).toEqual([
-            { fields: ['Kalp', 'Pompa', 'Fizyoloji'], tags: ['exam', 'cardio'], cloze: false, hasMedia: false },
-            { fields: ['Akciğer', 'Solunum'], tags: [], cloze: false, hasMedia: false },
+            { guid: 'g-kalp', fields: ['Kalp', 'Pompa', 'Fizyoloji'], tags: ['exam', 'cardio'], cloze: false, hasMedia: false },
+            { guid: 'g-akciger', fields: ['Akciğer', 'Solunum'], tags: [], cloze: false, hasMedia: false },
         ]);
     });
 });

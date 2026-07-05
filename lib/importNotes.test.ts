@@ -4,6 +4,7 @@ const h = vi.hoisted(() => {
     const store = {
         notes: [] as { csum: number; noteTypeId: number; data: string }[],
         exec: [] as string[],
+        existingGuids: [] as string[],
     };
     function fnv(field: string): number {
         let hash = 0x811c9dc5;
@@ -32,9 +33,10 @@ vi.mock('./db', () => ({
 vi.mock('./noteManager', () => ({
     createNote: vi.fn(),
     searchIndexCardFromNote: (_note: any, cardId: number) => ({ id: cardId }),
+    getAllNotes: () => h.store.existingGuids.map((guid) => ({ guid })),
 }));
 
-import { importDelimitedNotes } from './importNotes';
+import { importDelimitedNotes, importRows } from './importNotes';
 import { createNote } from './noteManager';
 
 const createNoteMock = vi.mocked(createNote);
@@ -43,6 +45,7 @@ const NT: any = { id: 4, fields: [{}, {}], sortFieldIdx: 0 };
 beforeEach(() => {
     h.store.notes.length = 0;
     h.store.exec.length = 0;
+    h.store.existingGuids.length = 0;
     createNoteMock.mockReset();
     createNoteMock.mockImplementation((noteType: any, fields: string[], _deckId: number, tags: string[] = []) => {
         const id = 1000 + h.store.notes.length;
@@ -120,5 +123,42 @@ describe('importDelimitedNotes', () => {
         });
         expect(() => importDelimitedNotes('A,B', { noteType: NT, deckId: 1 })).toThrow('boom');
         expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
+    });
+});
+
+describe('importRows guid dedup (.apkg identity)', () => {
+    it('dedupes by guid, not first field, and preserves the guid on the note', () => {
+        // Two notes share a first field but have distinct guids -> both imported (Anki identity).
+        const res = importRows([['Same', 'A1'], ['Same', 'A2']], {
+            noteType: NT,
+            deckId: 1,
+            rowGuids: ['g1', 'g2'],
+        });
+        expect(res).toMatchObject({ added: 2, duplicates: 0 });
+        expect(createNoteMock.mock.calls.map((c) => c[4])).toEqual(['g1', 'g2']);
+    });
+
+    it('skips a note whose guid already exists (idempotent re-import)', () => {
+        h.store.existingGuids.push('g1');
+        const res = importRows([['Heart', 'Kalp']], { noteType: NT, deckId: 1, rowGuids: ['g1'] });
+        expect(res).toMatchObject({ added: 0, duplicates: 1 });
+    });
+
+    it('skips a duplicate guid within the same file', () => {
+        const res = importRows([['A', 'x'], ['B', 'y']], { noteType: NT, deckId: 1, rowGuids: ['g1', 'g1'] });
+        expect(res).toMatchObject({ added: 1, duplicates: 1 });
+    });
+
+    it('mints a fresh guid when allowDuplicates re-adds an existing guid', () => {
+        // Guids are unique note identity in Anki; a forced duplicate must not clone one.
+        h.store.existingGuids.push('g1');
+        const res = importRows([['Heart', 'Kalp']], {
+            noteType: NT,
+            deckId: 1,
+            rowGuids: ['g1'],
+            allowDuplicates: true,
+        });
+        expect(res).toMatchObject({ added: 1, duplicates: 0 });
+        expect(createNoteMock.mock.calls[0][4]).toBeUndefined();
     });
 });
