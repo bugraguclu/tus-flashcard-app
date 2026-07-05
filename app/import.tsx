@@ -15,6 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import { TUS_SUBJECTS } from '../lib/data';
 import { alert } from '../lib/confirm';
+import { readUriText } from '../lib/files';
 import { useApp } from './(tabs)/app-context';
 import { importDelimitedNotes } from '../lib/importNotes';
 import { importApkg } from '../lib/importApkg';
@@ -34,15 +35,6 @@ type ImportSummary = {
 };
 
 const MAX_TEXT_CHARS = 50_000_000;
-
-async function readAssetText(uri: string): Promise<string> {
-    if (Platform.OS === 'web') {
-        const response = await fetch(uri);
-        return response.text();
-    }
-    const fs = require('expo-file-system/legacy') as typeof import('expo-file-system/legacy');
-    return fs.readAsStringAsync(uri);
-}
 
 async function readAssetBytes(uri: string): Promise<Uint8Array> {
     const buffer = await (await fetch(uri)).arrayBuffer();
@@ -91,7 +83,7 @@ export default function ImportScreen() {
                 setFileText(null);
                 setRowCount(0);
             } else {
-                const text = await readAssetText(asset.uri);
+                const text = await readUriText(asset.uri);
                 if (text.length > MAX_TEXT_CHARS) {
                     setFileName(null);
                     alert('Hata', 'Metin dosyası çok büyük (en fazla ~50 MB).');

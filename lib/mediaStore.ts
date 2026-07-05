@@ -9,21 +9,14 @@
  */
 
 import { Platform } from 'react-native';
+import { getLegacyFileSystem as getFileSystem } from './files';
 import { sanitizeMediaFilename } from './mediaFilename';
 
 export { sanitizeMediaFilename };
 
 const WEB_MEDIA_PREFIX = 'tus-media:';
 
-// The classic file-system API moved to `expo-file-system/legacy` in SDK 54.
-type LegacyFileSystem = typeof import('expo-file-system/legacy');
-let _fs: LegacyFileSystem | null = null;
 let _mediaDir: string | null = null;
-
-function getFileSystem(): LegacyFileSystem {
-    if (!_fs) _fs = require('expo-file-system/legacy') as LegacyFileSystem;
-    return _fs;
-}
 
 function getMediaDir(): string {
     if (_mediaDir) return _mediaDir;
