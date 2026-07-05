@@ -1,23 +1,19 @@
-// ============================================================
-// TUS Flashcard - Anki-Compatible Data Models
-// Faz 1: Note/Card ayrımı, NoteTypes, Decks, Tags, Flags, RevLog
-// ============================================================
+// Anki-compatible data models: notes, cards, note types, decks, deck config, revlog.
 
-// ---- Note Types (Anki: notetypes) ----
 export type NoteTypeKind = 'standard' | 'cloze';
 
 export interface NoteTypeField {
     name: string;
-    ord: number;        // sıra numarası (0-indexed)
-    sticky: boolean;    // alan değerini kart eklerken koru
-    rtl: boolean;       // sağdan sola yazım
+    ord: number;
+    sticky: boolean;     // keep the value when adding the next card
+    rtl: boolean;        // right-to-left text
 }
 
 export interface NoteTypeTemplate {
     name: string;
     ord: number;
-    qfmt: string;       // soru şablonu (mustache syntax)
-    afmt: string;       // cevap şablonu
+    qfmt: string;        // question (front) template, mustache syntax
+    afmt: string;        // answer (back) template
 }
 
 export interface NoteType {
@@ -28,10 +24,9 @@ export interface NoteType {
     templates: NoteTypeTemplate[];
     css: string;
     sortFieldIdx: number;
-    mod: number;         // modification timestamp
+    mod: number;
 }
 
-// ---- Built-in Note Types ----
 export const BUILTIN_NOTE_TYPES: NoteType[] = [
     {
         id: 1,
@@ -127,92 +122,93 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
     },
 ];
 
-// ---- Notes (Anki: notes) ----
+// Mirrors Anki's notes table. One note generates one or more cards.
 export interface Note {
     id: number;          // epoch ms
-    guid: string;        // globally unique ID
-    noteTypeId: number;  // references NoteType.id
-    mod: number;         // modification timestamp (epoch seconds)
-    usn: number;         // update sequence number (sync)
-    tags: string[];      // tag listesi
-    fields: string[];    // alan değerleri (NoteType.fields sırasıyla)
-    sfld: string;        // sort field value
-    csum: number;        // SHA1 checksum of first field (duplicate detection)
-    flags: number;       // card flags (1-7 renk)
+    guid: string;        // stable identity across sync/import
+    noteTypeId: number;
+    mod: number;         // epoch seconds
+    usn: number;         // update sequence number; -1 = needs sync
+    tags: string[];
+    fields: string[];    // values, in NoteType.fields order
+    sfld: string;        // sort-field value
+    csum: number;        // FNV-1a hash of the first field for dup detection (not Anki's SHA1 csum)
+    flags: number;       // reserved; color flags live on the card (AnkiCard.flags)
 }
 
-// ---- Cards (Anki: cards) ----
 export type CardType = 0 | 1 | 2 | 3;  // 0=new, 1=learning, 2=review, 3=relearning
 export type CardQueue = -3 | -2 | -1 | 0 | 1 | 2 | 3 | 4;
-// -3=sched buried, -2=user buried, -1=suspended, 0=new, 1=learning, 2=review, 3=day-learn, 4=preview
-
+// Anki (rslib/src/card.rs): -3=user buried, -2=sched buried, -1=suspended,
+// 0=new, 1=learning, 2=review, 3=day-learn, 4=preview
 export type CardFlag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
+// Mirrors Anki's cards table. `type` is the durable stage; `queue` is the live slot.
 export interface AnkiCard {
     id: number;          // epoch ms
-    noteId: number;      // references Note.id
-    deckId: number;      // references Deck.id
-    ord: number;         // template ordinal (0-indexed)
-    mod: number;         // modification timestamp
-    usn: number;         // update sequence number
+    noteId: number;
+    deckId: number;
+    ord: number;         // template ordinal (matches NoteTypeTemplate.ord)
+    mod: number;         // epoch seconds
+    usn: number;
     type: CardType;
     queue: CardQueue;
-    due: number;         // new=position, learn=timestamp, review=days since epoch
-    ivl: number;         // current interval in days (negative=seconds)
-    factor: number;      // ease factor in permille (2500 = 2.5x)
-    reps: number;        // total review count
-    lapses: number;      // times forgotten
-    left: number;        // remaining_steps * 1000 + remaining_today
-    odue: number;        // original due (filtered deck)
-    odid: number;        // original deck ID (filtered deck)
+    due: number;         // new=position, learning=epoch ms, review=day number
+    ivl: number;         // interval in days (negative = seconds)
+    factor: number;      // ease in permille (2500 = 2.5x)
+    reps: number;
+    lapses: number;
+    left: number;        // reps_today * 1000 + reps_until_graduation
+    odue: number;        // original due (filtered decks)
+    odid: number;        // original deck id (filtered decks)
     flags: CardFlag;
-    lastReview: number;  // epoch ms of last review
+    lastReview: number;  // epoch ms; denormalized (Anki derives this from the revlog)
 }
 
-// ---- Decks (Anki: decks) ----
+// Hierarchical decks, e.g. "TUS::Dahiliye::Kardiyoloji".
 export interface Deck {
     id: number;
-    name: string;        // hierarchical: "Dahiliye::Kardiyoloji::Aritmiler"
-    configId: number;    // references DeckConfig.id
+    name: string;
+    configId: number;
     mod: number;
     usn: number;
     description: string;
     collapsed: boolean;
     isFiltered: boolean;
-    // Filtered deck specific
     searchQuery?: string;
     searchLimit?: number;
     searchOrder?: number;
 }
 
-// ---- Deck Config (Anki: deck_config) ----
 export interface DeckConfig {
     id: number;
     name: string;
     mod: number;
     usn: number;
 
-    // New Cards
+    // New cards
     newPerDay: number;
     learningSteps: number[];      // minutes
     graduatingIvl: number;        // days
     easyIvl: number;              // days
-    startingEase: number;         // permille (2500)
+    startingEase: number;         // permille
     insertionOrder: 'sequential' | 'random';
 
     // Reviews
     maxReviewsPerDay: number;
-    easyBonus: number;            // 1.30
-    hardIvl: number;              // 1.20
-    ivlModifier: number;          // 1.00
-    maxIvl: number;               // 36500
+    easyBonus: number;
+    hardIvl: number;
+    ivlModifier: number;
+    maxIvl: number;               // days
 
     // Lapses
     relearningSteps: number[];    // minutes
-    minIvl: number;               // 1
-    leechThreshold: number;       // 8
+    minIvl: number;               // days
+    leechThreshold: number;
     leechAction: 'suspend' | 'tag';
-    newIvlPercent: number;        // 0 (0% = reset to minIvl)
+    // Lapse "new interval": a fraction in 0.0–1.0 (newIvl = oldIvl × this, then clamped to
+    // minIvl). 0 = reset to minIvl. Stored as a fraction though shown as a percent in the UI.
+    // Mirrors Anki's lapse `mult`; never a 0–100 value.
+    newIvlPercent: number;
 
     // Burying
     buryNewSiblings: boolean;
@@ -221,8 +217,7 @@ export interface DeckConfig {
 
     // Display
     showTimer: boolean;
-    maxAnswerSecs: number;        // 60
-
+    maxAnswerSecs: number;
 }
 
 export const DEFAULT_DECK_CONFIG: DeckConfig = {
@@ -230,7 +225,7 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     name: 'Default',
     mod: 0,
     usn: 0,
-    newPerDay: 9999,
+    newPerDay: 20,
     learningSteps: [1, 10],
     graduatingIvl: 1,
     easyIvl: 4,
@@ -253,26 +248,24 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     maxAnswerSecs: 60,
 };
 
-// ---- Review Log (Anki: revlog) ----
+// Mirrors Anki's revlog: one immutable row per answer.
 export interface ReviewLog {
-    id: number;          // epoch ms of review
+    id: number;          // epoch ms
     cardId: number;
     usn: number;
-    ease: 1 | 2 | 3 | 4; // button pressed
-    ivl: number;         // new interval (negative=seconds, positive=days)
+    ease: 1 | 2 | 3 | 4;
+    ivl: number;         // new interval (negative = seconds)
     lastIvl: number;     // previous interval
-    factor: number;      // new ease factor (permille)
+    factor: number;      // new ease (permille)
     time: number;        // review duration ms (capped at 60000)
     type: 0 | 1 | 2 | 3 | 4; // 0=learn, 1=review, 2=relearn, 3=filtered, 4=manual
 }
 
-// ---- Tags ----
 export interface Tag {
-    name: string;        // hierarchical: "TUS::Anatomi::YüksekVerim"
+    name: string;        // hierarchical, e.g. "TUS::Anatomi"
     usn: number;
 }
 
-// ---- Flag Colors ----
 export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
     0: { name: 'Bayrak Yok', color: 'transparent' },
     1: { name: 'Kırmızı', color: '#ff4444' },
@@ -284,7 +277,6 @@ export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
     7: { name: 'Mor', color: '#8844ff' },
 };
 
-// ---- Default Decks ----
 export const DEFAULT_DECKS: Deck[] = [
     { id: 1, name: 'TUS', configId: 1, mod: 0, usn: 0, description: 'TUS ana deste', collapsed: false, isFiltered: false },
     { id: 2, name: 'TUS::Anatomi', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
@@ -299,16 +291,14 @@ export const DEFAULT_DECKS: Deck[] = [
     { id: 11, name: 'TUS::Kadın Hastalıkları', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
 ];
 
-// ---- Sync Deletion Tracking ----
+// Sync deletion tombstones.
 export interface GraveEntry {
-    oid: number;         // original deleted object ID
-    type: 0 | 1 | 2;    // 0=card, 1=note, 2=deck
+    oid: number;         // deleted object id
+    type: 0 | 1 | 2;     // 0=card, 1=note, 2=deck
     usn: number;
 }
 
-// ---- Helpers ----
-
-// Monotonic ID counter to prevent Date.now() collisions
+// Monotonic id counter so cards created in the same millisecond don't collide.
 let _lastId = 0;
 export function uniqueId(): number {
     const now = Date.now();
@@ -317,14 +307,11 @@ export function uniqueId(): number {
 }
 
 export function generateGuid(): string {
-    // Use expo-crypto getRandomValues for cryptographic randomness
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const bytes = new Uint8Array(10);
-    // globalThis.crypto is available in React Native (Hermes) via expo-crypto polyfill
     if (typeof globalThis.crypto?.getRandomValues === 'function') {
         globalThis.crypto.getRandomValues(bytes);
     } else {
-        // Fallback for environments without crypto
         for (let i = 0; i < 10; i++) bytes[i] = Math.floor(Math.random() * 256);
     }
     let result = '';
@@ -335,7 +322,6 @@ export function generateGuid(): string {
 }
 
 export function checksumField(field: string): number {
-    // FNV-1a 32-bit hash — better distribution than djb2 for duplicate detection
     let hash = 0x811c9dc5; // FNV offset basis
     const str = field.trim();
     for (let i = 0; i < str.length; i++) {
@@ -345,7 +331,7 @@ export function checksumField(field: string): number {
     return Math.abs(hash | 0);
 }
 
-/** Parse deck hierarchy: "A::B::C" → ["A", "A::B", "A::B::C"] */
+/** Parse a deck hierarchy: "A::B::C" -> ["A", "A::B", "A::B::C"]. */
 export function getDeckAncestors(name: string): string[] {
     const parts = name.split('::');
     const result: string[] = [];
@@ -355,30 +341,30 @@ export function getDeckAncestors(name: string): string[] {
     return result;
 }
 
-/** Get direct children of a deck */
+/** Direct children of a deck (one level down). */
 export function getDeckChildren(parentName: string, allDecks: Deck[]): Deck[] {
     const prefix = parentName + '::';
     return allDecks.filter(d => {
         if (!d.name.startsWith(prefix)) return false;
         const rest = d.name.slice(prefix.length);
-        return !rest.includes('::'); // only direct children
+        return !rest.includes('::');
     });
 }
 
-/** Get deck display name (last part) */
+/** Deck display name (last segment). */
 export function getDeckDisplayName(fullName: string): string {
     const parts = fullName.split('::');
     return parts[parts.length - 1];
 }
 
-/** Get parent deck name */
+/** Parent deck name, or null at the root. */
 export function getParentDeckName(fullName: string): string | null {
     const parts = fullName.split('::');
     if (parts.length <= 1) return null;
     return parts.slice(0, -1).join('::');
 }
 
-/** Map old subject to deck ID */
+/** Map a subject slug to its seeded deck id. */
 export function subjectToDeckId(subject: string): number {
     const map: Record<string, number> = {
         'anatomi': 2, 'fizyoloji': 3, 'biyokimya': 4,

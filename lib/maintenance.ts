@@ -1,48 +1,80 @@
-// ============================================================
-// TUS Flashcard - Background Maintenance (D4)
-// Auto-unbury, day-rollover, daily cleanup
-// ============================================================
+/**
+ * Once-a-day housekeeping tied to Anki's day boundary. When a new day begins
+ * (per the deck's rollover hour) the cards buried the previous day are released
+ * back to their normal queues. Guarded to run at most once per day, so it is
+ * safe to call on startup and on every app foreground.
+ */
 
+import { Platform } from 'react-native';
 import { todayLocalYMD } from './scheduler';
-import { getDB } from './db';
-import { unburyAllCards } from './noteManager';
-import { loadSettings } from './storage';
+import { dbIndexAllCards, getDB } from './db';
+import { getSearchIndexCards, unburyAllCards } from './noteManager';
+import { getDbSetting, loadSettings, setDbSetting } from './storage';
 
 const LAST_MAINTENANCE_KEY = 'tus_last_maintenance';
 
-// Günde 1 kez çalışır: buried kartları aç, session stats sıfırla
 export function runDailyMaintenance(): { unburiedCount: number; didRun: boolean } {
-    const db = getDB();
     const settings = loadSettings();
     const today = todayLocalYMD(undefined, settings.dayRolloverHour);
 
-    // Son bakım tarihini kontrol et
-    const row = db.getFirstSync<{ value: string }>(
-        'SELECT value FROM settings WHERE key = ?',
-        LAST_MAINTENANCE_KEY
-    );
-    const lastDate = row?.value;
-
-    if (lastDate === today) {
-        // Bugün zaten çalıştı
+    if (getDbSetting(LAST_MAINTENANCE_KEY) === today) {
         return { unburiedCount: 0, didRun: false };
     }
 
-    console.log(`[Maintenance] Running daily maintenance for ${today}...`);
-
-    // Auto-unbury canonical Anki cards (queue -2/-3 -> active queue).
     const unburiedCount = unburyAllCards(settings.dayRolloverHour);
-    if (unburiedCount > 0) {
-        console.log(`[Maintenance] Unburied ${unburiedCount} cards.`);
+
+    // Record the run only after the work succeeds, so a failure retries next time.
+    setDbSetting(LAST_MAINTENANCE_KEY, today);
+
+    return { unburiedCount, didRun: true };
+}
+
+export interface DatabaseCheckResult {
+    /** 'ok', or SQLite's first reported corruption message. */
+    integrity: string;
+    /** Live cards whose note row is missing or deleted. */
+    orphanCards: number;
+    /** Live notes that no longer have any cards. */
+    orphanNotes: number;
+    /** Cards rebuilt into the FTS index (always 0 on web, which has no FTS). */
+    ftsReindexed: number;
+}
+
+/**
+ * Lite version of Anki's Check Database: verify SQLite file integrity, count
+ * orphaned rows, and rebuild the search index. Read-only apart from the FTS
+ * rebuild — orphan cleanup stays a manual/post-launch concern.
+ */
+export function checkDatabase(): DatabaseCheckResult {
+    const db = getDB();
+
+    let integrity = 'ok';
+    try {
+        const row = db.getFirstSync<Record<string, unknown>>('PRAGMA quick_check');
+        const value = row ? String(Object.values(row)[0] ?? '') : '';
+        if (value) integrity = value;
+    } catch (e) {
+        integrity = e instanceof Error ? e.message : String(e);
     }
 
-    // Son bakım tarihini güncelle
-    db.runSync(
-        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-        LAST_MAINTENANCE_KEY,
-        today
-    );
+    const orphanCards = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM anki_cards c
+         WHERE c.tombstone = 0
+           AND NOT EXISTS (SELECT 1 FROM notes n WHERE n.id = c.noteId AND n.tombstone = 0)`,
+    )?.cnt ?? 0;
 
-    console.log(`[Maintenance] Daily maintenance complete.`);
-    return { unburiedCount, didRun: true };
+    const orphanNotes = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM notes n
+         WHERE n.tombstone = 0
+           AND NOT EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND c.tombstone = 0)`,
+    )?.cnt ?? 0;
+
+    let ftsReindexed = 0;
+    if (Platform.OS !== 'web') {
+        const cards = getSearchIndexCards();
+        dbIndexAllCards(cards);
+        ftsReindexed = cards.length;
+    }
+
+    return { integrity, orphanCards, orphanNotes, ftsReindexed };
 }

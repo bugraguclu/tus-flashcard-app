@@ -1,12 +1,19 @@
-// ============================================================
-// TUS Flashcard - Deck Manager
-// Hierarchical deck management (Anki-compatible)
-// ============================================================
+// Deck and deck-config storage: CRUD, name hierarchy, deck tree, and per-deck card counts.
 
 import type { Deck, DeckConfig, AnkiCard } from './models';
-import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getDeckChildren, getParentDeckName, uniqueId } from './models';
+import { DEFAULT_DECK_CONFIG, getParentDeckName, uniqueId } from './models';
 import { getDB } from './db';
-import { localDayNumber } from './ankiState';
+import { localDayNumber, restoreQueueFromType } from './ankiState';
+import { saveAnkiCard } from './noteManager';
+
+/** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
+function escapeLikePattern(value: string): string {
+    return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+function sqlPlaceholders(count: number): string {
+    return Array.from({ length: count }, () => '?').join(', ');
+}
 
 // ---- Deck CRUD ----
 
@@ -41,15 +48,102 @@ export function saveDeck(deck: Deck): void {
     );
 }
 
+/**
+ * Delete a deck the way Anki does: a filtered deck returns its cards to their home decks and is
+ * removed; a regular deck is removed together with all its subdecks and the cards in them (and any
+ * note left with no cards). Everything runs in one transaction and writes sync tombstones
+ * (grave types: 0=card, 1=note, 2=deck).
+ */
 export function deleteDeck(id: number): void {
     const db = getDB();
-    db.runSync('DELETE FROM decks WHERE id = ?', id);
+    const deck = getDeck(id);
+    if (!deck) return;
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        if (deck.isFiltered) {
+            returnFilteredCardsHome(id);
+            db.runSync('DELETE FROM decks WHERE id = ?', id);
+            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
+            db.execSync('COMMIT;');
+            return;
+        }
+
+        // The deck itself plus every subdeck (matched by the "name::" prefix).
+        const deckRows = db.getAllSync<{ id: number }>(
+            "SELECT id FROM decks WHERE id = ? OR name LIKE ? ESCAPE '\\'",
+            id,
+            `${escapeLikePattern(`${deck.name}::`)}%`,
+        );
+        const deckIds = deckRows.map((row) => row.id);
+
+        const cardRows = db.getAllSync<{ id: number; noteId: number }>(
+            `SELECT id, noteId FROM anki_cards WHERE deckId IN (${sqlPlaceholders(deckIds.length)})`,
+            ...deckIds,
+        );
+        const cardIds = cardRows.map((row) => row.id);
+        const noteIds = [...new Set(cardRows.map((row) => row.noteId))];
+
+        if (cardIds.length > 0) {
+            const placeholders = sqlPlaceholders(cardIds.length);
+            db.runSync(`DELETE FROM revlog WHERE cardId IN (${placeholders})`, ...cardIds);
+            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
+            db.runSync(`DELETE FROM anki_cards WHERE id IN (${placeholders})`, ...cardIds);
+            for (const cardId of cardIds) {
+                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+            }
+        }
+
+        // A note is deleted only once it has no cards left in any other deck.
+        for (const noteId of noteIds) {
+            const remaining = db.getFirstSync<{ cnt: number }>(
+                'SELECT COUNT(*) AS cnt FROM anki_cards WHERE noteId = ?',
+                noteId,
+            );
+            if (!remaining || remaining.cnt === 0) {
+                db.runSync('DELETE FROM notes WHERE id = ?', noteId);
+                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', noteId);
+            }
+        }
+
+        for (const deckId of deckIds) {
+            db.runSync('DELETE FROM decks WHERE id = ?', deckId);
+            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', deckId);
+        }
+
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+}
+
+/** Move a filtered deck's cards back to their original decks, restoring their pre-filter schedule. */
+function returnFilteredCardsHome(filteredDeckId: number): void {
+    const db = getDB();
+    const rows = db.getAllSync<{ data: string }>('SELECT data FROM anki_cards WHERE deckId = ?', filteredDeckId);
+    for (const row of rows) {
+        const card = JSON.parse(row.data) as AnkiCard;
+        card.deckId = card.odid && card.odid > 0 ? card.odid : DEFAULT_DECK_CONFIG.id;
+        if (card.odue && card.odue > 0) card.due = card.odue;
+        card.odid = 0;
+        card.odue = 0;
+        card.queue = restoreQueueFromType(card);
+        saveAnkiCard(card);
+    }
 }
 
 export function renameDeck(id: number, newName: string): void {
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
+    if (newName === deck.name) return;
+
+    // Deck names are unique; refuse to rename onto an existing (different) deck.
+    const collision = getDeckByName(newName);
+    if (collision && collision.id !== id) {
+        throw new Error(`A deck named "${newName}" already exists.`);
+    }
 
     const oldPrefix = `${deck.name}::`;
     const nowSec = Math.floor(Date.now() / 1000);
@@ -60,10 +154,10 @@ export function renameDeck(id: number, newName: string): void {
         const rows = db.getAllSync<{ id: number; name: string; data: string }>(
             `SELECT id, name, data
              FROM decks
-             WHERE id = ? OR name LIKE ?
+             WHERE id = ? OR name LIKE ? ESCAPE '\\'
              ORDER BY LENGTH(name) ASC`,
             id,
-            `${oldPrefix}%`,
+            `${escapeLikePattern(oldPrefix)}%`,
         );
 
         for (const row of rows) {
@@ -96,6 +190,10 @@ export function renameDeck(id: number, newName: string): void {
 }
 
 export function createDeck(name: string, configId?: number): Deck {
+    // Deck names are unique in Anki: return the existing deck instead of creating a duplicate.
+    const existing = getDeckByName(name);
+    if (existing) return existing;
+
     const now = uniqueId();
     const deck: Deck = {
         id: now,
@@ -247,9 +345,14 @@ export function saveDeckConfig(config: DeckConfig): void {
 export function getCardCountsByDeck(
     nowMs: number = Date.now(),
     rolloverHour: number = 4,
+    learnAheadMinutes: number = 0,
 ): Map<number, { new: number; learn: number; review: number; total: number }> {
     const db = getDB();
     const today = localDayNumber(nowMs, rolloverHour);
+    // Match the study queue: intraday learning cards within the learn-ahead window count as
+    // due. Uses the same learnAheadMinutes setting as queue build, so the badge never counts
+    // a card the study screen refuses to serve.
+    const learnAheadCutoff = nowMs + Math.max(0, learnAheadMinutes) * 60_000;
 
     // NOTE: `due` has queue-specific semantics in Anki:
     // - queue=1 (intraday learning): epoch milliseconds
@@ -275,15 +378,19 @@ export function getCardCountsByDeck(
             SUM(CASE WHEN queue = 2 AND due <= ? THEN 1 ELSE 0 END) AS reviewCount
          FROM anki_cards
          GROUP BY deckId`,
-        nowMs,
+        learnAheadCutoff,
         today,
         today,
     );
 
     const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
     for (const row of rows) {
+        // Cap the "new" badge at the deck's daily limit like Anki. This is a start-of-day upper
+        // bound: per-deck "introduced today" isn't tracked, so the study queue does the exact,
+        // hierarchical, studied-today-aware capping.
+        const newPerDay = Math.max(0, getDeckConfigForDeck(row.deckId).newPerDay);
         counts.set(row.deckId, {
-            new: Number(row.newCount) || 0,
+            new: Math.min(Number(row.newCount) || 0, newPerDay),
             learn: Number(row.learnCount) || 0,
             review: Number(row.reviewCount) || 0,
             total: Number(row.totalCount) || 0,

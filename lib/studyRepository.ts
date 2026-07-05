@@ -11,6 +11,7 @@ import {
     localDayNumber,
     restoreQueueFromType,
 } from './ankiState';
+import { getDeckAncestors } from './models';
 import { addDaysLocalYMD, getScheduler, todayLocalYMD } from './scheduler';
 import {
     buryCard,
@@ -22,7 +23,14 @@ import {
     isLeech,
     saveAnkiCard,
 } from './noteManager';
-import { getDeckByName, getDeckConfigForDeck } from './deckManager';
+import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
+import {
+    applyHierarchicalLimit,
+    buryBuildTimeSiblings,
+    interleaveNewWithReviews,
+    sortReviewsDueThenRandom,
+    splitIntradayLearning,
+} from './queueBuild';
 import { deleteReviewById, logReview } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 
@@ -517,33 +525,6 @@ function deterministicShuffle<T>(items: T[], seedKey: string): T[] {
     return result;
 }
 
-function applyPerDeckLimit(
-    cards: StudyCard[],
-    globalLimit: number,
-    getDeckLimit: (card: StudyCard) => number,
-): StudyCard[] {
-    if (globalLimit <= 0) return [];
-
-    const result: StudyCard[] = [];
-    const deckCounts = new Map<number, number>();
-
-    for (const card of cards) {
-        if (result.length >= globalLimit) break;
-
-        const deckLimit = Math.max(0, getDeckLimit(card));
-        const currentDeckCount = deckCounts.get(card.deckId) || 0;
-
-        if (currentDeckCount >= deckLimit) {
-            continue;
-        }
-
-        result.push(card);
-        deckCounts.set(card.deckId, currentDeckCount + 1);
-    }
-
-    return result;
-}
-
 function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): void {
     const siblings = getCardsForNote(answeredCard.noteId);
 
@@ -577,10 +558,16 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
     const reviewLimit = Math.max(0, params.settings.dailyReviewLimit);
 
+    // Anki's "learn ahead limit" (rslib: learn_ahead_secs): intraday learning cards due within
+    // this window are gathered too, but they are served strictly AFTER everything else — never
+    // ahead of their step timer while other cards remain. With the limit at 0 they are not
+    // gathered at all and the UI counts down until the first one is due.
+    const learnAheadCutoff = nowMs + Math.max(0, params.settings.learnAheadMinutes || 0) * 60000;
+
     // Count with SQL first (scales better than loading full queue).
     const intradayLearningCount = countRowsByQueue(
         'c.queue = 1 AND c.due <= ?',
-        [nowMs],
+        [learnAheadCutoff],
         params.selectedSubject,
         params.selectedTopic,
         params.selectedDeckName,
@@ -610,7 +597,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // Anki priority: intraday learning (queue=1) before interday learning (queue=3).
     const intradayLearningRows = loadRowsByQueue(
         'c.queue = 1 AND c.due <= ?',
-        [nowMs],
+        [learnAheadCutoff],
         params.selectedSubject,
         params.selectedTopic,
         params.selectedDeckName,
@@ -649,7 +636,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             params.selectedSubject,
             params.selectedTopic,
             params.selectedDeckName,
-            'c.id ASC',
+            'c.due ASC, c.id ASC',
             false,
             newFetchLimit,
         )
@@ -657,48 +644,94 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
 
     const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs, { settingsCache });
     const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
-    const learningCards = [...intradayLearningCards, ...interdayLearningCards];
+    let learningCards = [...intradayLearningCards, ...interdayLearningCards];
 
     let reviewCards = toStudyCards(reviewRows, params.settings, nowMs, { settingsCache });
     let newCards = toStudyCards(newRows, params.settings, nowMs, { settingsCache });
 
+    const daySeed = todayLocalYMD(undefined, params.settings.dayRolloverHour);
+
+    // Reviews: due date first, then a per-day-stable random tiebreak.
+    reviewCards = sortReviewsDueThenRandom(reviewCards, daySeed, today);
+
     if (params.settings.newCardOrder === 'random') {
-        newCards = deterministicShuffle(
-            newCards,
-            `${todayLocalYMD(undefined, params.settings.dayRolloverHour)}-${newCount}`,
-        );
+        newCards = deterministicShuffle(newCards, `${daySeed}-${newCount}`);
     }
 
-    let reviewCardsForQueue = applyPerDeckLimit(reviewCards, reviewLimit, (card) => {
-        const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
-        return cardSettings.dailyReviewLimit;
-    });
+    // Build-time sibling burying happens before limits so a buried sibling never wastes a slot.
+    const deckConfigCache = new Map<number, DeckConfig>();
+    const configForDeck = (deckId: number): DeckConfig => {
+        let config = deckConfigCache.get(deckId);
+        if (!config) {
+            config = getDeckConfigForDeck(deckId);
+            deckConfigCache.set(deckId, config);
+        }
+        return config;
+    };
+    ({ learning: learningCards, reviews: reviewCards, news: newCards } =
+        buryBuildTimeSiblings(learningCards, reviewCards, newCards, configForDeck, (cardId) => buryCard(cardId, true)));
 
-    let newCardsForQueue = applyPerDeckLimit(newCards, availableNewLimit, (card) => {
-        const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
-        return cardSettings.dailyNewLimit;
-    });
+    // Hierarchical daily limits: a card counts against its deck and every ancestor deck.
+    const deckNameCache = new Map<number, string | null>();
+    const deckKeysForCard = (card: StudyCard): string[] => {
+        let name = deckNameCache.get(card.deckId);
+        if (name === undefined) {
+            name = getDeck(card.deckId)?.name ?? null;
+            deckNameCache.set(card.deckId, name);
+        }
+        return name ? getDeckAncestors(name) : [`#${card.deckId}`];
+    };
+    const settingsForDeckKey = (key: string): AppSettings => {
+        if (key.startsWith('#')) {
+            return resolveSettingsForDeck(Number(key.slice(1)), params.settings, settingsCache);
+        }
+        const deck = getDeckByName(key);
+        return deck ? resolveSettingsForDeck(deck.id, params.settings, settingsCache) : params.settings;
+    };
+    const newLimitByKey = new Map<string, number>();
+    const newLimitForDeckKey = (key: string): number => {
+        let limit = newLimitByKey.get(key);
+        if (limit === undefined) {
+            limit = settingsForDeckKey(key).dailyNewLimit;
+            newLimitByKey.set(key, limit);
+        }
+        return limit;
+    };
+    const reviewLimitByKey = new Map<string, number>();
+    const reviewLimitForDeckKey = (key: string): number => {
+        let limit = reviewLimitByKey.get(key);
+        if (limit === undefined) {
+            limit = settingsForDeckKey(key).dailyReviewLimit;
+            reviewLimitByKey.set(key, limit);
+        }
+        return limit;
+    };
 
-    // Fallback for strict per-deck limits: if limited fetch under-fills, do one full fetch.
+    let reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
+    let newCardsForQueue = applyHierarchicalLimit(newCards, availableNewLimit, deckKeysForCard, newLimitForDeckKey);
+
+    // Fallback for strict per-deck limits: if the limited fetch under-fills, do one full fetch.
+    // Siblings buried above are persisted, so a full re-fetch stays free of sibling pairs.
     if (reviewCardsForQueue.length < Math.min(reviewLimit, reviewCount) && reviewRows.length < reviewCount) {
-        reviewCards = toStudyCards(
-            loadRowsByQueue(
-                'c.queue = 2 AND c.due <= ?',
-                [today],
-                params.selectedSubject,
-                params.selectedTopic,
-                params.selectedDeckName,
-                'c.due ASC',
-                false,
+        reviewCards = sortReviewsDueThenRandom(
+            toStudyCards(
+                loadRowsByQueue(
+                    'c.queue = 2 AND c.due <= ?',
+                    [today],
+                    params.selectedSubject,
+                    params.selectedTopic,
+                    params.selectedDeckName,
+                    'c.due ASC',
+                    false,
+                ),
+                params.settings,
+                nowMs,
+                { settingsCache },
             ),
-            params.settings,
-            nowMs,
-            { settingsCache },
+            daySeed,
+            today,
         );
-        reviewCardsForQueue = applyPerDeckLimit(reviewCards, reviewLimit, (card) => {
-            const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
-            return cardSettings.dailyReviewLimit;
-        });
+        reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
     }
 
     if (newCardsForQueue.length < Math.min(availableNewLimit, newCount) && newRows.length < newCount) {
@@ -709,7 +742,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
                 params.selectedSubject,
                 params.selectedTopic,
                 params.selectedDeckName,
-                'c.id ASC',
+                'c.due ASC, c.id ASC',
                 false,
             ),
             params.settings,
@@ -718,27 +751,30 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         );
 
         if (params.settings.newCardOrder === 'random') {
-            newCards = deterministicShuffle(
-                newCards,
-                `${todayLocalYMD(undefined, params.settings.dayRolloverHour)}-${newCount}`,
-            );
+            newCards = deterministicShuffle(newCards, `${daySeed}-${newCount}`);
         }
 
-        newCardsForQueue = applyPerDeckLimit(newCards, availableNewLimit, (card) => {
-            const cardSettings = resolveSettingsForDeck(card.deckId, params.settings, settingsCache);
-            return cardSettings.dailyNewLimit;
-        });
+        newCardsForQueue = applyHierarchicalLimit(newCards, availableNewLimit, deckKeysForCard, newLimitForDeckKey);
     }
+
+    // Anki serving order (rslib scheduler/queue/mod.rs `iter`): learning cards whose timer has
+    // expired lead, then the main queue (new/review per queueOrder), and learning cards still
+    // inside the learn-ahead window trail at the very end — they only surface once everything
+    // else is exhausted, instead of storming back in front on every queue rebuild.
+    const { dueNow: learningDueNow, learnAhead: learningAhead } = splitIntradayLearning(learningCards, nowMs);
 
     let cards: StudyCard[];
-    if (params.settings.queueOrder === 'learning-new-review') {
-        cards = [...learningCards, ...newCardsForQueue, ...reviewCardsForQueue];
+    if (params.settings.queueOrder === 'before') {
+        cards = [...learningDueNow, ...newCardsForQueue, ...reviewCardsForQueue, ...learningAhead];
+    } else if (params.settings.queueOrder === 'after') {
+        cards = [...learningDueNow, ...reviewCardsForQueue, ...newCardsForQueue, ...learningAhead];
     } else {
-        cards = [...learningCards, ...reviewCardsForQueue, ...newCardsForQueue];
+        cards = [...learningDueNow, ...interleaveNewWithReviews(reviewCardsForQueue, newCardsForQueue), ...learningAhead];
     }
 
+    // Cards inside the learn-ahead window are already queued; report the first one due beyond it.
     const nextLearningDue = loadNextLearningDue(
-        nowMs,
+        learnAheadCutoff,
         params.selectedSubject,
         params.selectedTopic,
         params.selectedDeckName,
@@ -852,9 +888,19 @@ export function answerStudyCard(
     const updatedAnkiCard = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
 
     const reviewType: 0 | 1 | 2 = currentAnkiCard.type === 2 ? 1 : currentAnkiCard.type === 3 ? 2 : 0;
-    const revlogInterval = updatedAnkiCard.queue === 2
-        ? updatedAnkiCard.ivl
-        : -Math.max(1, Math.round((updatedAnkiCard.due - nowMs) / 1000));
+    // Revlog interval (Anki: positive = days, negative = seconds). The three queues encode `due`
+    // differently, so each needs its own conversion.
+    let revlogInterval: number;
+    if (updatedAnkiCard.queue === 2) {
+        revlogInterval = updatedAnkiCard.ivl;                    // review: interval already in days
+    } else if (updatedAnkiCard.queue === 3) {
+        // interday learning: `due` is a day number, not a timestamp -> log the delay in seconds.
+        const daysUntilDue = Math.max(1, updatedAnkiCard.due - localDayNumber(nowMs, cardSettings.dayRolloverHour));
+        revlogInterval = -daysUntilDue * 86400;
+    } else {
+        // intraday learning: `due` is a ms timestamp.
+        revlogInterval = -Math.max(1, Math.round((updatedAnkiCard.due - nowMs) / 1000));
+    }
 
     const db = getDB();
     let reviewLogId = 0;
@@ -869,14 +915,18 @@ export function answerStudyCard(
             revlogInterval,
             currentAnkiCard.ivl,
             updatedAnkiCard.factor,
-            Math.max(0, answerTimeMs),
+            answerTimeMs,
             reviewType,
+            deckConfig.maxAnswerSecs,
         );
         reviewLogId = reviewLog.id;
 
         applySiblingBuryPolicy(currentAnkiCard, deckConfig);
 
-        if (isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
+        // Anki evaluates leech only when the answer itself caused a lapse (rslib review.rs
+        // `answer_again` sets `leeched`); checking on every answer would keep re-suspending an
+        // unsuspended leech that still sits on a threshold multiple.
+        if (updatedAnkiCard.lapses > currentAnkiCard.lapses && isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
             handleLeech(updatedAnkiCard, deckConfig.leechAction);
         }
 
@@ -923,7 +973,8 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
 
     saveAnkiCard({
         ...card,
-        queue: buried ? -2 : restoreQueueFromType(card, rolloverHour),
+        // Manual bury from the UI = user-buried (-3) in Anki.
+        queue: buried ? -3 : restoreQueueFromType(card, rolloverHour),
         mod: Math.floor(Date.now() / 1000),
         usn: -1,
     });

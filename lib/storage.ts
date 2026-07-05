@@ -37,7 +37,7 @@ let legacySessionStatsMigrationPromise: Promise<void> | null = null;
 const CARD_STATE_PREFIX = 'tus_cs:';
 
 export const DEFAULT_SETTINGS: AppSettings = {
-    dailyNewLimit: 9999,
+    dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
     lapseSteps: [10],
@@ -46,17 +46,21 @@ export const DEFAULT_SETTINGS: AppSettings = {
     startingEase: 2.5,
     lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
-    queueOrder: 'learning-review-new',
+    queueOrder: 'mix',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    // Anki defaults its learn-ahead limit to 20 minutes; we default to 0 ("always wait for the
+    // step timer") because the study screen has a dedicated countdown for waiting cards.
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3' as AlgorithmType,
 };
 
-function getDbSetting(key: string): string | null {
+/** Read a raw key from the SQLite settings table (guard keys, metadata blobs). */
+export function getDbSetting(key: string): string | null {
     try {
         const db = getDB();
         const row = db.getFirstSync('SELECT value FROM settings WHERE key = ?', key) as { value?: string } | null;
@@ -67,7 +71,8 @@ function getDbSetting(key: string): string | null {
     }
 }
 
-function setDbSetting(key: string, value: string): void {
+/** Write a raw key to the SQLite settings table. Failures are logged, not thrown. */
+export function setDbSetting(key: string, value: string): void {
     try {
         const db = getDB();
         db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
@@ -290,6 +295,25 @@ function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
     }
 }
 
+/**
+ * Coerce any stored value to a valid queue order, migrating the pre-1.0 labels:
+ * 'learning-new-review' -> 'before', 'learning-review-new' -> 'after'. Unknown -> 'mix'.
+ */
+function normalizeQueueOrder(value: unknown): AppSettings['queueOrder'] {
+    switch (value) {
+        case 'mix':
+        case 'before':
+        case 'after':
+            return value;
+        case 'learning-new-review':
+            return 'before';
+        case 'learning-review-new':
+            return 'after';
+        default:
+            return 'mix';
+    }
+}
+
 function loadAppSettingsMeta(): Partial<AppSettings> {
     try {
         const raw = getDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META);
@@ -298,8 +322,9 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
         const parsed = JSON.parse(raw) as Partial<AppSettings>;
 
         return {
-            queueOrder: parsed.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new',
+            queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
+            learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
         };
     } catch (e) {
@@ -312,6 +337,7 @@ function persistAppSettingsMeta(settings: AppSettings): void {
     const meta = {
         queueOrder: settings.queueOrder,
         dayRolloverHour: settings.dayRolloverHour,
+        learnAheadMinutes: settings.learnAheadMinutes,
         algorithm: settings.algorithm,
     };
 
@@ -327,6 +353,7 @@ export function loadSettings(): AppSettings {
         ...fromDeck,
         queueOrder: meta.queueOrder ?? fromDeck.queueOrder,
         dayRolloverHour: meta.dayRolloverHour ?? fromDeck.dayRolloverHour,
+        learnAheadMinutes: meta.learnAheadMinutes ?? fromDeck.learnAheadMinutes,
         algorithm: meta.algorithm ?? fromDeck.algorithm,
     };
 }
@@ -418,7 +445,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.dayRolloverHour = Math.max(0, Math.min(23, Number(validated.dayRolloverHour) || 4));
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
-    validated.queueOrder = validated.queueOrder === 'learning-new-review' ? 'learning-new-review' : 'learning-review-new';
+    validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
     validated.algorithm = 'ANKI_V3';
     return validated;
@@ -639,13 +666,15 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             return false;
         }
 
+        let customCardIdMap: Record<number, number> = {};
         if (data.customCards) {
-            migrateLegacyCustomCardsToAnki(data.customCards as Card[], { force: true });
+            const customResult = migrateLegacyCustomCardsToAnki(data.customCards as Card[], { force: true });
+            customCardIdMap = customResult.legacyIdToAnkiCardId;
         }
 
         if (data.cardStates) {
             const settings = loadSettings();
-            migrateLegacyCardStatesToAnki(data.cardStates as Record<string, CardState>, settings, { force: true });
+            migrateLegacyCardStatesToAnki(data.cardStates as Record<string, CardState>, settings, { force: true }, customCardIdMap);
         }
 
         await clearLegacyCardStates();

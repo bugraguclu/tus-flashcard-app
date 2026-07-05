@@ -77,7 +77,6 @@ export default function StatsScreen() {
                 reviewCount: bucket?.reviewCount ?? 0,
                 youngCount: bucket?.youngCount ?? 0,
                 matureCount: bucket?.matureCount ?? 0,
-                masteredCount: bucket?.masteredCount ?? 0,
                 dueCount: 0, // Due count requires date comparison; omitted for now
                 pct,
             };
@@ -192,7 +191,7 @@ export default function StatsScreen() {
                         📐 Scheduler: <Text style={{ fontWeight: '700', color: Colors.accent }}>{settings.algorithm}</Text>
                     </Text>
                     <Text style={styles.algorithmInfo}>
-                        Young: {bucketTotals.youngCount} · Mature: {bucketTotals.matureCount} · Mastered: {bucketTotals.masteredCount}
+                        Young: {bucketTotals.youngCount} · Mature: {bucketTotals.matureCount}
                     </Text>
                 </View>
 
@@ -213,7 +212,7 @@ export default function StatsScreen() {
                                 {subject.dueCount > 0 && <Text style={{ color: Colors.btnAgain }}> · {subject.dueCount} bekliyor</Text>}
                             </Text>
                             <Text style={styles.subjectDetailText}>
-                                Young {subject.youngCount} · Mature {subject.matureCount} · Mastered {subject.masteredCount}
+                                Young {subject.youngCount} · Mature {subject.matureCount}
                             </Text>
                         </View>
                     </View>

@@ -8,13 +8,19 @@ import {
     SafeAreaView,
     Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Sharing from 'expo-sharing';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { loadSettings, saveSettings, resetAllData, exportAllData, DEFAULT_SETTINGS } from '../../lib/storage';
+import { loadSettings, saveSettings, resetAllData, exportAllData, importAllData, DEFAULT_SETTINGS } from '../../lib/storage';
+import { checkDatabase } from '../../lib/maintenance';
+import { downloadTextFileWeb, getLegacyFileSystem, readUriText } from '../../lib/files';
 import { confirm, alert } from '../../lib/confirm';
 import { useApp } from './_layout';
 import type { AppSettings } from '../../lib/types';
 
 export default function SettingsScreen() {
+    const router = useRouter();
     const { refreshData, bumpDataVersion } = useApp();
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
@@ -55,20 +61,81 @@ export default function SettingsScreen() {
     const handleExport = async () => {
         try {
             const json = await exportAllData();
+            const fileName = `tus-flashcard-export-${new Date().toISOString().split('T')[0]}.json`;
+
             if (Platform.OS === 'web') {
-                const blob = new Blob([json], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const anchor = document.createElement('a');
-                anchor.href = url;
-                anchor.download = `tus-flashcard-export-${new Date().toISOString().split('T')[0]}.json`;
-                anchor.click();
-                URL.revokeObjectURL(url);
+                downloadTextFileWeb(fileName, json);
+                return;
+            }
+
+            // Native: write to the cache dir and hand the file to the share sheet.
+            const fs = getLegacyFileSystem();
+            const target = `${fs.cacheDirectory ?? ''}${fileName}`;
+            await fs.writeAsStringAsync(target, json);
+
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(target, { mimeType: 'application/json', dialogTitle: fileName });
             } else {
-                alert('Dışa aktarma', 'Yedek verisi üretildi.');
+                alert('Dışa aktarma', `Yedek dosyası oluşturuldu: ${fileName}`);
             }
         } catch (e) {
             console.warn('[Settings] export failed:', e);
             alert('Hata', 'Dışa aktarma başarısız.');
+        }
+    };
+
+    const handleImport = async () => {
+        try {
+            const picked = await DocumentPicker.getDocumentAsync({
+                type: ['application/json', 'text/plain', '*/*'],
+                copyToCacheDirectory: true,
+            });
+            if (picked.canceled || !picked.assets?.length) return;
+
+            const json = await readUriText(picked.assets[0].uri);
+
+            confirm(
+                'Verileri İçe Aktar',
+                'Mevcut koleksiyonun yerine seçilen dosya yüklenecek. Bu işlem geri alınamaz.',
+                async () => {
+                    const ok = await importAllData(json);
+                    if (ok) {
+                        setSettings(loadSettings());
+                        refreshData();
+                        bumpDataVersion();
+                        alert('Tamamlandı', 'Veriler içe aktarıldı.');
+                    } else {
+                        alert('Hata', 'Dosya içe aktarılamadı. Geçerli bir yedek dosyası seçin.');
+                    }
+                },
+            );
+        } catch (e) {
+            console.warn('[Settings] import failed:', e);
+            alert('Hata', 'Dosya okunamadı.');
+        }
+    };
+
+    const handleCheckDatabase = () => {
+        try {
+            const result = checkDatabase();
+            const lines = [
+                result.integrity === 'ok'
+                    ? '✓ Dosya bütünlüğü: sorun yok'
+                    : `⚠️ Dosya bütünlüğü: ${result.integrity}`,
+                result.orphanCards === 0
+                    ? '✓ Sahipsiz kart yok'
+                    : `⚠️ ${result.orphanCards} sahipsiz kart bulundu`,
+                result.orphanNotes === 0
+                    ? '✓ Kartsız not yok'
+                    : `⚠️ ${result.orphanNotes} kartsız not bulundu`,
+            ];
+            if (result.ftsReindexed > 0) {
+                lines.push(`✓ Arama dizini yeniden oluşturuldu (${result.ftsReindexed} kart)`);
+            }
+            alert('Veritabanı Denetimi', lines.join('\n'));
+        } catch (e) {
+            console.warn('[Settings] check database failed:', e);
+            alert('Hata', 'Veritabanı denetimi başarısız.');
         }
     };
 
@@ -162,23 +229,50 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Queue Sırası</Text>
+                        <Text style={styles.settingLabel}>Yeni Kart Yerleşimi</Text>
                         <View style={styles.inputRow}>
                             <TouchableOpacity
-                                style={[styles.optionBtn, settings.queueOrder === 'learning-review-new' && styles.optionBtnActive]}
-                                onPress={() => updateSetting('queueOrder', 'learning-review-new')}
+                                style={[styles.optionBtn, settings.queueOrder === 'mix' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'mix')}
                             >
-                                <Text style={[styles.optionText, settings.queueOrder === 'learning-review-new' && styles.optionTextActive]}>
-                                    Learning → Review → New
+                                <Text style={[styles.optionText, settings.queueOrder === 'mix' && styles.optionTextActive]}>
+                                    Karışık
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.optionBtn, settings.queueOrder === 'learning-new-review' && styles.optionBtnActive]}
-                                onPress={() => updateSetting('queueOrder', 'learning-new-review')}
+                                style={[styles.optionBtn, settings.queueOrder === 'before' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'before')}
                             >
-                                <Text style={[styles.optionText, settings.queueOrder === 'learning-new-review' && styles.optionTextActive]}>
-                                    Learning → New → Review
+                                <Text style={[styles.optionText, settings.queueOrder === 'before' && styles.optionTextActive]}>
+                                    Önce Yeni
                                 </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.optionBtn, settings.queueOrder === 'after' && styles.optionBtnActive]}
+                                onPress={() => updateSetting('queueOrder', 'after')}
+                            >
+                                <Text style={[styles.optionText, settings.queueOrder === 'after' && styles.optionTextActive]}>
+                                    Sonra Yeni
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Öğrenme Kartlarını Erken Gösterme (dk)</Text>
+                        <View style={styles.inputRow}>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('learnAheadMinutes', Math.max(0, settings.learnAheadMinutes - 5))}
+                            >
+                                <Text style={styles.stepBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.inputValue}>{settings.learnAheadMinutes}</Text>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('learnAheadMinutes', Math.min(120, settings.learnAheadMinutes + 5))}
+                            >
+                                <Text style={styles.stepBtnText}>+</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -290,7 +384,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Lapse Interval Multiplier (%)</Text>
+                        <Text style={styles.settingLabel}>New Interval after Lapse (%)</Text>
                         <View style={styles.inputRow}>
                             {[0.4, 0.5, 0.7, 0.8].map((value) => (
                                 <TouchableOpacity
@@ -309,8 +403,17 @@ export default function SettingsScreen() {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>💾 Veri Yönetimi</Text>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/backups')}>
+                        <Text style={styles.actionBtnText}>🗄️ Yedekler</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={handleExport}>
                         <Text style={styles.actionBtnText}>📤 Verileri Dışa Aktar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleImport}>
+                        <Text style={styles.actionBtnText}>📥 Verileri İçe Aktar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleCheckDatabase}>
+                        <Text style={styles.actionBtnText}>🩺 Veritabanını Denetle</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={[styles.actionBtn, styles.dangerBtn]} onPress={handleReset}>
                         <Text style={[styles.actionBtnText, styles.dangerText]}>🗑️ İlerlemeyi Sıfırla</Text>

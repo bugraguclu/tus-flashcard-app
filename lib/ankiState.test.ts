@@ -21,13 +21,14 @@ const settings: AppSettings = {
     startingEase: 2.5,
     lapseIntervalMultiplier: 0.7,
     minLapseInterval: 1,
-    queueOrder: 'learning-review-new',
+    queueOrder: 'after',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3',
 };
 
@@ -114,6 +115,52 @@ describe('ankiState edge cases', () => {
         expect(roundTrip.due).toBe(card.due);
         expect(roundTrip.ivl).toBe(card.ivl);
         expect(roundTrip.reps).toBe(card.reps);
+    });
+
+    it('preserves the AnkiCard id and never adopts state.cardId (legacy-migration safety)', () => {
+        // Legacy migration fetches the seeded card by legacyId * 1000 but the incoming CardState
+        // still carries the pre-remap legacy id. Encoding must keep the fetched card's id (5000),
+        // not fork the progress onto a phantom card at the legacy id (5).
+        const now = new Date(2026, 2, 12, 10, 0, 0, 0).getTime();
+        const card = makeCard({
+            id: 5000,
+            type: 2,
+            queue: 2,
+            ivl: 12,
+            reps: 8,
+            left: 0,
+            due: localDayNumber(now, settings.dayRolloverHour) + 5,
+        });
+
+        const state: CardState = { ...ankiCardToCardState(card, settings, now), cardId: 5 };
+        const updated = cardStateToAnkiCard(card, state, settings, now);
+
+        expect(updated.id).toBe(5000);
+    });
+
+    it('decodes new and review cards with no active (re)learning step', () => {
+        const now = Date.now();
+
+        // Review card (type 2, left 0) must NOT carry a learning step, otherwise the scheduler
+        // routes it through the learning handler and collapses its interval (regression guard).
+        const review = makeCard({ type: 2, queue: 2, ivl: 30, left: 0, reps: 9 });
+        const reviewState = ankiCardToCardState(review, settings, now);
+        expect(reviewState.status).toBe('review');
+        expect(reviewState.learningStep).toBe(-1);
+        expect(reviewState.relearningStep).toBe(-1);
+
+        // New card (type 0) begins at the first learning step (0), not the inferred last step.
+        const fresh = makeCard({ type: 0, queue: 0, ivl: 0, left: 0, reps: 0 });
+        const freshState = ankiCardToCardState(fresh, settings, now);
+        expect(freshState.status).toBe('new');
+        expect(freshState.learningStep).toBe(0);
+        expect(freshState.relearningStep).toBe(-1);
+
+        // Relearning card (type 3) carries a relearning step, not a learning step.
+        const relearn = makeCard({ type: 3, queue: 1, ivl: 15, left: encodeAnkiLeft(1, 1), lapses: 1 });
+        const relearnState = ankiCardToCardState(relearn, settings, now);
+        expect(relearnState.relearningStep).toBeGreaterThanOrEqual(0);
+        expect(relearnState.learningStep).toBe(-1);
     });
 
     it('keeps day-number conversion consistent around rollover', () => {

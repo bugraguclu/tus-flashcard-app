@@ -20,6 +20,21 @@ export function extractClozeNumbers(text: string): number[] {
     return Array.from(numbers).sort((a, b) => a - b);
 }
 
+/**
+ * Index of the field a cloze note type clozes over, resolved from its `{{cloze:Field}}`
+ * template (Anki's source of truth). Falls back to a field literally named "Text", then to
+ * the first field, so custom cloze note types are not silently broken.
+ */
+export function clozeFieldIndex(noteType: NoteType): number {
+    const match = noteType.templates[0]?.qfmt.match(/\{\{cloze:(\w+)\}\}/);
+    if (match) {
+        const idx = noteType.fields.findIndex(f => f.name === match[1]);
+        if (idx !== -1) return idx;
+    }
+    const named = noteType.fields.findIndex(f => f.name === 'Text');
+    return named === -1 ? 0 : named;
+}
+
 /** Render cloze deletion for a specific ordinal (question side) */
 export function renderClozeQuestion(text: string, targetOrd: number): string {
     // Replace target cloze with blank
@@ -247,8 +262,7 @@ export function shouldGenerateCard(
 ): boolean {
     if (noteType.kind === 'cloze') {
         // Cloze: check if the cloze number exists in the text
-        const textFieldIdx = noteType.fields.findIndex(f => f.name === 'Text') || 0;
-        const text = note.fields[textFieldIdx] || '';
+        const text = note.fields[clozeFieldIndex(noteType)] || '';
         const numbers = extractClozeNumbers(text);
         return numbers.includes(templateOrd + 1);
     }
@@ -272,8 +286,7 @@ export function shouldGenerateCard(
 /** Count how many cards a note should generate */
 export function countCardsForNote(noteType: NoteType, note: Note): number {
     if (noteType.kind === 'cloze') {
-        const textFieldIdx = noteType.fields.findIndex(f => f.name === 'Text') || 0;
-        const text = note.fields[textFieldIdx] || '';
+        const text = note.fields[clozeFieldIndex(noteType)] || '';
         return extractClozeNumbers(text).length || 1;
     }
     return noteType.templates.filter((_, i) => shouldGenerateCard(noteType, note, i)).length;

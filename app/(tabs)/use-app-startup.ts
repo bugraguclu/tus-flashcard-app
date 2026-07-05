@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
     loadCardStates,
     loadCustomCards,
@@ -10,7 +10,8 @@ import {
 } from '../../lib/storage';
 import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
 import { runDailyMaintenance } from '../../lib/maintenance';
-import { initAnkiData, migrateNewCardLimit } from '../../lib/ankiInit';
+import { runAutoBackupIfDue } from '../../lib/backup';
+import { initAnkiData } from '../../lib/ankiInit';
 import { getSearchIndexCards } from '../../lib/noteManager';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../../lib/legacyMigration';
 
@@ -26,8 +27,6 @@ async function runStartupCore(): Promise<void> {
         console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
     }
 
-    migrateNewCardLimit();
-
     const settingsMigration = await migrateLegacySettingsIfNeeded();
     if (settingsMigration.migrated) {
         console.log('[App] Legacy settings migrated to SQLite config.');
@@ -40,11 +39,14 @@ async function runStartupCore(): Promise<void> {
         'tus_legacy_custom_cards_migrated_v1',
     )?.value === 'true';
 
+    let customCardIdMap: Record<number, number> = {};
+
     if (!customMigrated) {
         const legacyCustomCards = await loadCustomCards();
         const customMigration = migrateLegacyCustomCardsToAnki(legacyCustomCards);
+        customCardIdMap = customMigration.legacyIdToAnkiCardId;
         if (!customMigration.alreadyMigrated) {
-            console.log(`[App] Legacy custom cards migration: ${customMigration.migratedCards} migrated.`);
+            console.log(`[App] Legacy custom cards migration: ${customMigration.migratedCards} migrated, ${customMigration.duplicateCards} duplicates.`);
             await saveCustomCards([]);
         }
     }
@@ -56,7 +58,7 @@ async function runStartupCore(): Promise<void> {
 
     if (!cardStatesMigrated) {
         const asyncStates = await loadCardStates();
-        const migrationResult = migrateLegacyCardStatesToAnki(asyncStates, loadSettings());
+        const migrationResult = migrateLegacyCardStatesToAnki(asyncStates, loadSettings(), {}, customCardIdMap);
         if (!migrationResult.alreadyMigrated) {
             console.log(`[App] Legacy card state migration: ${migrationResult.migratedCards} migrated, ${migrationResult.skippedCards} skipped.`);
             await clearLegacyCardStates();
@@ -76,6 +78,25 @@ async function runStartupCore(): Promise<void> {
     if (didRun) {
         console.log(`[App] Maintenance ran: ${unburiedCount} cards unburied.`);
     }
+
+    startupComplete = true;
+    scheduleAutoBackup();
+}
+
+// Backups must never snapshot a mid-migration collection: the foreground listener can
+// fire while runStartupCore is still migrating, so it only backs up after this flips.
+let startupComplete = false;
+
+// Fire-and-forget: a backup failure must never block startup or foregrounding.
+function scheduleAutoBackup(): void {
+    if (!startupComplete) return;
+    void runAutoBackupIfDue()
+        .then((result) => {
+            if (result.didRun) {
+                console.log(`[App] Auto backup written: ${result.fileName}`);
+            }
+        })
+        .catch((e) => console.warn('[App] Auto backup failed:', e));
 }
 
 export function useAppStartup(refreshData: () => void, bumpDataVersion: () => void) {
@@ -121,6 +142,26 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
         return () => {
             cancelled = true;
         };
+    }, [bumpDataVersion, refreshData]);
+
+    // Re-run day-rollover housekeeping when the app returns to the foreground, so a
+    // new day (past the rollover hour) unburies cards even if the app stayed open.
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state !== 'active') return;
+            try {
+                const { didRun } = runDailyMaintenance();
+                if (didRun) {
+                    bumpDataVersion();
+                    refreshData();
+                }
+                // Day-guarded, so an app left open overnight still backs up.
+                scheduleAutoBackup();
+            } catch (e) {
+                console.warn('[App] Foreground maintenance failed:', e);
+            }
+        });
+        return () => sub.remove();
     }, [bumpDataVersion, refreshData]);
 
     return { startupError, isLoading };

@@ -12,13 +12,14 @@ const defaultSettings: AppSettings = {
     startingEase: 2.5,
     lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
-    queueOrder: 'learning-review-new',
+    queueOrder: 'after',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3',
 };
 
@@ -110,6 +111,30 @@ describe('ANKI_V3 scheduler', () => {
         const result = engine.schedule(card, 1 as Grade, settings70);
 
         expect(result.stateUpdates.interval).toBe(14); // 20 * 0.7
+    });
+
+    it('review Again with no relearning steps returns to review, not relearning (Anki again_review)', () => {
+        const card = makeReviewCard({ interval: 20, easeFactor: 2.5, lapses: 1 });
+        const noRelearn = { ...defaultSettings, lapseSteps: [], lapseIntervalMultiplier: 0.5 };
+        const result = engine.schedule(card, 1 as Grade, noRelearn);
+
+        // Stays a review card with the reduced interval; no relearning demotion.
+        expect(result.isLearning).toBe(false);
+        expect(result.minutesUntilDue).toBeUndefined();
+        expect(result.stateUpdates.status).toBe('review');
+        expect(result.stateUpdates.relearningStep).toBe(-1);
+        expect(result.stateUpdates.interval).toBe(10); // 20 * 0.5
+        // Lapse is still counted and ease still drops by 0.20.
+        expect(result.stateUpdates.lapses).toBe(2);
+        expect(result.stateUpdates.easeFactor).toBeCloseTo(2.3, 5);
+    });
+
+    it('preview labels Again in days when there are no relearning steps', () => {
+        const card = makeReviewCard({ interval: 20 });
+        const noRelearn = { ...defaultSettings, lapseSteps: [], lapseIntervalMultiplier: 0.5 };
+        const preview = engine.previewIntervals(card, noRelearn);
+
+        expect(preview.again).toBe(formatDays(10)); // 20 * 0.5 days, not "1dk"
     });
 
     it('uses lapseSteps (not learningSteps) during relearning', () => {

@@ -67,7 +67,7 @@ export interface IntervalPreview {
     hardMinutes?: number;
 }
 
-/** Tekrar=1, Zor=2, İyi=3, Kolay=4 (Again, Hard, Good, Easy). */
+/** 1=Again, 2=Hard, 3=Good, 4=Easy. */
 export type Grade = 1 | 2 | 3 | 4;
 
 export type AlgorithmType = 'ANKI_V3';
@@ -92,14 +92,20 @@ export interface AppSettings {
     easyInterval: number;
     startingEase: number;
     /**
-     * Multiplier applied to current interval when a review card is answered "Again".
-     * Range: 0.0 to 1.0 (e.g. 0 resets, 0.7 keeps 70% of the interval).
-     * Maps to Anki DeckConfig.newIvlPercent.
+     * Multiplier applied to a review card's interval when it lapses ("Again" on a review).
+     * UNIT: a fraction in 0.0–1.0 (e.g. 0 = reset to minIvl, 0.7 = keep 70%) — NOT a 0–100 percent.
+     * Persisted as DeckConfig.newIvlPercent and shown in the UI as a percentage, but always
+     * stored and consumed as a fraction. Mirrors Anki's lapse `mult`.
      */
     lapseIntervalMultiplier: number;
     /** Minimum interval (days) after a lapse. Maps to Anki DeckConfig.minIvl. */
     minLapseInterval: number;
-    queueOrder: 'learning-review-new' | 'learning-new-review';
+    /**
+     * Where new cards sit relative to reviews (learning always comes first). Mirrors Anki's
+     * new-card placement: 'mix' spreads new cards evenly through the reviews (Anki default),
+     * 'before' shows all new cards ahead of reviews, 'after' shows them behind.
+     */
+    queueOrder: 'mix' | 'before' | 'after';
     newCardOrder: 'sequential' | 'random';
     hardIntervalMultiplier: number;
     easyBonus: number;
@@ -107,6 +113,12 @@ export interface AppSettings {
     maxInterval: number;
     /** Hour of day when the study day rolls over. Must be in the range 0..23. */
     dayRolloverHour: number;
+    /**
+     * Minutes an intraday learning card may be shown before its step timer expires, once there
+     * is nothing else left to study. Mirrors Anki's collection preference `learn_ahead_secs`
+     * (Anki defaults to 20 minutes; 0 always waits for the timer and shows the countdown).
+     */
+    learnAheadMinutes: number;
     algorithm: AlgorithmType;
 }
 

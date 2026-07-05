@@ -9,7 +9,8 @@
       "WebFetch(domain:eggrain.blog)",
       "WebFetch(domain:deepwiki.com)",
       "WebFetch(domain:eikowagenknecht.com)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx vitest *)"
     ]
   }
 }

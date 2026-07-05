@@ -1,16 +1,14 @@
-// ============================================================
-// TUS Flashcard - SQLite Database Layer
-// Platform-aware: expo-sqlite on native, sql.js on web
-// ============================================================
+/**
+ * SQLite access layer. Exposes one platform-agnostic database handle — backed by
+ * expo-sqlite on native and a sql.js wrapper on web — alongside the schema
+ * migrations and full-text-search helpers built on top of it.
+ */
 
 import { Platform } from 'react-native';
 import type { WebSQLiteDatabase } from './webDb';
 
-// ---------- Schema Version ----------
-const SCHEMA_VERSION = 6;
-
-// ---------- Unified DB Interface ----------
-// Both expo-sqlite and our web wrapper implement these methods.
+// Both expo-sqlite and the web wrapper implement this surface, so callers never
+// branch on platform.
 interface DBHandle {
     execSync(sql: string): void;
     runSync(sql: string, ...params: any[]): any;
@@ -44,6 +42,13 @@ export async function initWebDb(): Promise<void> {
     if (Platform.OS !== 'web') return;
     const { initWebDatabase } = require('./webDb') as typeof import('./webDb');
     _db = await initWebDatabase();
+}
+
+/** Whether this client persists changes. Always true on native; on web only the elected writer tab does. */
+export function isPrimaryTab(): boolean {
+    if (Platform.OS !== 'web') return true;
+    const { isPrimaryTab: webIsPrimary } = require('./webDb') as typeof import('./webDb');
+    return webIsPrimary();
 }
 
 // ---------- Migrations ----------
@@ -119,6 +124,9 @@ const migrations: Migration[] = [
                 CREATE INDEX IF NOT EXISTS idx_notes_noteTypeId ON notes(noteTypeId);
                 CREATE INDEX IF NOT EXISTS idx_notes_csum ON notes(csum);
 
+                -- Scheduler fields are mirrored into indexed columns for fast
+                -- queue queries; the full card object lives in the data column,
+                -- which is the source of truth on read. saveAnkiCard() writes both.
                 CREATE TABLE IF NOT EXISTS anki_cards (
                     id INTEGER PRIMARY KEY,
                     noteId INTEGER NOT NULL,
@@ -229,6 +237,26 @@ const migrations: Migration[] = [
             `);
         },
     },
+    {
+        version: 7,
+        description: 'Web shadow cards_fts table',
+        up: (db) => {
+            if (Platform.OS !== 'web') return;
+            // Plain, always-empty stand-in for the native FTS5 table so raw SQL
+            // that touches cards_fts (import, reset, deck/note deletion) works
+            // without per-platform guards. Web search keeps its LIKE fallback;
+            // the web-gated FTS helpers in this file never write to it.
+            db.execSync(`
+                CREATE TABLE IF NOT EXISTS cards_fts (
+                    card_id TEXT,
+                    question TEXT,
+                    answer TEXT,
+                    topic TEXT,
+                    subject TEXT
+                );
+            `);
+        },
+    },
 ];
 
 // ---------- Run Migrations ----------
@@ -266,10 +294,11 @@ export function runMigrations(db: DBHandle): void {
 export function initDB(): DBHandle {
     const db = getDB();
     if (Platform.OS !== 'web') {
-        // WAL mode and foreign keys are native-only pragmas
+        // WAL improves concurrent read/write throughput; native-only.
         db.execSync('PRAGMA journal_mode = WAL;');
     }
-    db.execSync('PRAGMA foreign_keys = ON;');
+    // No foreign_keys pragma: the schema declares no FK constraints (integrity is
+    // enforced in code, as Anki does), so enabling it would be a misleading no-op.
     runMigrations(db);
     return db;
 }
@@ -400,5 +429,3 @@ export function dbGetSchemaVersion(): number {
     const row = db.getFirstSync<{ version: number }>('SELECT version FROM schema_version LIMIT 1');
     return row?.version ?? 0;
 }
-
-export { SCHEMA_VERSION };

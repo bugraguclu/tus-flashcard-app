@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnkiCard, DeckConfig, Note, NoteType, ReviewLog } from './models';
 import type { AppSettings } from './types';
 
@@ -8,6 +8,7 @@ const shared = vi.hoisted(() => ({
     txLog: [] as string[],
     reviewId: 1000,
     throwOnSave: false,
+    lastRevlogInterval: 0,
 }));
 
 const testNoteType: NoteType = {
@@ -67,8 +68,9 @@ vi.mock('./deckManager', () => ({
 }));
 
 vi.mock('./reviewLogger', () => ({
-    logReview: () => {
+    logReview: (_card: AnkiCard, _grade: number, interval: number) => {
         shared.reviewId += 1;
+        shared.lastRevlogInterval = interval;
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
@@ -98,13 +100,15 @@ vi.mock('./noteManager', () => ({
     buryCard: (cardId: number, schedulerBury = false) => {
         const card = shared.cards.get(cardId);
         if (!card) return;
-        shared.cards.set(cardId, { ...card, queue: schedulerBury ? -3 : -2 });
+        // Anki mapping: sched/sibling bury = -2, user/manual bury = -3.
+        shared.cards.set(cardId, { ...card, queue: schedulerBury ? -2 : -3 });
     },
     isLeech: (card: AnkiCard, threshold: number) => card.lapses >= threshold,
     handleLeech: vi.fn(),
 }));
 
 import { answerStudyCard } from './studyRepository';
+import { handleLeech } from './noteManager';
 
 const settings: AppSettings = {
     dailyNewLimit: 20,
@@ -116,13 +120,14 @@ const settings: AppSettings = {
     startingEase: 2.5,
     lapseIntervalMultiplier: 0,
     minLapseInterval: 1,
-    queueOrder: 'learning-review-new',
+    queueOrder: 'after',
     newCardOrder: 'sequential',
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1,
     maxInterval: 36500,
     dayRolloverHour: 4,
+    learnAheadMinutes: 0,
     algorithm: 'ANKI_V3',
 };
 
@@ -151,6 +156,11 @@ function baseCard(id: number, noteId: number, queue: AnkiCard['queue'], type: An
 
 describe('answerStudyCard', () => {
     beforeEach(() => {
+        // Pin the clock to local noon so short learning steps never straddle the 4 AM rollover
+        // (which would flip a card from intraday queue 1 to interday queue 3 near 3:50–4:00 AM).
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 5, 20, 12, 0, 0));
+
         shared.cards.clear();
         shared.notes.clear();
         shared.txLog = [];
@@ -178,6 +188,10 @@ describe('answerStudyCard', () => {
         shared.cards.set(12, { ...baseCard(12, 1, 3, 1), left: 1001, due: 999999 });
     });
 
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it('updates card, logs review, and commits transaction', () => {
         const result = answerStudyCard(10, 3, settings, 1200);
 
@@ -189,8 +203,8 @@ describe('answerStudyCard', () => {
         expect(updated.reps).toBeGreaterThan(5);
         expect(updated.queue).toBe(2);
 
-        // Bury policy: queue=3 sibling buried, queue=1 sibling untouched.
-        expect(shared.cards.get(12)?.queue).toBe(-3);
+        // Bury policy: interday-learning sibling sched-buried (-2), intraday sibling untouched.
+        expect(shared.cards.get(12)?.queue).toBe(-2);
         expect(shared.cards.get(11)?.queue).toBe(1);
 
         expect(result.reviewLogId).toBeGreaterThan(1000);
@@ -204,5 +218,88 @@ describe('answerStudyCard', () => {
         expect(() => answerStudyCard(10, 3, settings, 500)).toThrow('save failed');
         expect(shared.txLog).toContain('BEGIN TRANSACTION;');
         expect(shared.txLog).toContain('ROLLBACK;');
+    });
+
+    it('grows a mature review card on Good instead of collapsing it', () => {
+        // Regression: review cards used to decode with a bogus learning step and route through
+        // the learning handler, collapsing ivl to the graduating interval (1 day) on every answer.
+        shared.cards.set(20, {
+            ...baseCard(20, 1, 2, 2),
+            ivl: 30,
+            reps: 9,
+            lastReview: Date.now() - 30 * 86400000, // due today (non-early review)
+        });
+
+        const result = answerStudyCard(20, 3, settings, 1500);
+        const updated = shared.cards.get(20)!;
+
+        expect(updated.type).toBe(2);                 // stays a review card
+        expect(updated.queue).toBe(2);
+        expect(updated.ivl).toBeGreaterThan(20);      // ~30 * 2.5 ≈ 75, NOT 1
+        expect(updated.reps).toBe(10);
+        expect(result.updatedCard.state.status).toBe('review');
+    });
+
+    it('lapses a review card into relearning on Again', () => {
+        shared.cards.set(21, {
+            ...baseCard(21, 1, 2, 2),
+            ivl: 30,
+            reps: 9,
+            lapses: 0,
+            lastReview: Date.now() - 30 * 86400000,
+        });
+
+        answerStudyCard(21, 1, settings, 800);
+        const updated = shared.cards.get(21)!;
+
+        expect(updated.type).toBe(3);                 // relearning
+        expect(updated.queue).toBe(1);                // intraday learning step
+        expect(updated.lapses).toBe(1);
+        expect(updated.factor).toBeLessThan(2500);    // ease penalty applied
+    });
+
+    it('fires leech handling only when the answer itself causes a lapse (Anki answer_again)', () => {
+        vi.mocked(handleLeech).mockClear();
+
+        // A card already sitting at the leech threshold from earlier lapses.
+        shared.cards.set(23, {
+            ...baseCard(23, 1, 2, 2),
+            ivl: 30,
+            reps: 9,
+            lapses: 8,
+            lastReview: Date.now() - 30 * 86400000,
+        });
+
+        // A successful review must not re-trigger the leech action (it used to re-suspend
+        // an unsuspended leech after every answer)...
+        answerStudyCard(23, 3, settings, 700);
+        expect(handleLeech).not.toHaveBeenCalled();
+
+        // ...but an answer that increments lapses past the threshold must.
+        answerStudyCard(23, 1, settings, 700);
+        expect(handleLeech).toHaveBeenCalledTimes(1);
+    });
+
+    it('logs the real interday-learning interval, not a clamped -1 second', () => {
+        // A relearning step of one day makes the lapsed card interday (queue 3), where `due`
+        // is a day number — the case the old revlog formula mis-converted to -1.
+        const original = deckConfig.relearningSteps;
+        deckConfig.relearningSteps = [1440]; // 1 day
+        try {
+            shared.cards.set(22, {
+                ...baseCard(22, 1, 2, 2),
+                ivl: 30,
+                reps: 9,
+                lastReview: Date.now() - 30 * 86400000,
+            });
+
+            answerStudyCard(22, 1, settings, 800);
+            const updated = shared.cards.get(22)!;
+
+            expect(updated.queue).toBe(3);                       // interday learning
+            expect(shared.lastRevlogInterval).toBe(-86400);      // one day in negative seconds
+        } finally {
+            deckConfig.relearningSteps = original;
+        }
     });
 });
