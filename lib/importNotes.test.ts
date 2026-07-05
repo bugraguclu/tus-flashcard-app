@@ -124,6 +124,19 @@ describe('importDelimitedNotes', () => {
         expect(() => importDelimitedNotes('A,B', { noteType: NT, deckId: 1 })).toThrow('boom');
         expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
     });
+
+    it('honours #guid column: dedupes by guid and maps fields past the guid column', () => {
+        h.store.existingGuids.push('g-existing');
+        const res = importDelimitedNotes(
+            '#separator:comma\n#guid column:1\ng-new,Front,Back\ng-existing,Dup,X',
+            { noteType: NT, deckId: 1 },
+        );
+
+        expect(res).toMatchObject({ added: 1, duplicates: 1 });
+        // The guid column (col 0) is skipped, so fields come from cols 1-2, and the guid is preserved.
+        expect(createNoteMock.mock.calls[0][1]).toEqual(['Front', 'Back']);
+        expect(createNoteMock.mock.calls[0][4]).toBe('g-new');
+    });
 });
 
 describe('importRows guid dedup (.apkg identity)', () => {

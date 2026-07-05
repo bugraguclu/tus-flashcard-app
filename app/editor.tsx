@@ -140,7 +140,7 @@ export default function EditorScreen() {
                 console.warn('[Editor] delete failed:', e);
                 alert('Hata', 'Kart silinemedi.');
             }
-        });
+        }, { destructive: true });
     };
 
     return (

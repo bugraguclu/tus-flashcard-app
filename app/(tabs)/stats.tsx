@@ -123,7 +123,7 @@ export default function StatsScreen() {
             } else {
                 alert('Hata', 'Geçersiz veri formatı.');
             }
-        });
+        }, { destructive: true });
     };
 
     if (loading) {

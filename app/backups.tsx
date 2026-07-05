@@ -103,6 +103,7 @@ export default function BackupsScreen() {
                         alert('Hata', 'Yedek geri yüklenemedi.');
                     }
                 }),
+            { destructive: true },
         );
     };
 
@@ -117,6 +118,7 @@ export default function BackupsScreen() {
                     alert('Hata', 'Yedek silinemedi.');
                 }
             }),
+            { destructive: true },
         );
     };
 

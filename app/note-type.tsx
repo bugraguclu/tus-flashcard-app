@@ -68,6 +68,9 @@ export default function NoteTypeScreen() {
     }
 
     const template = nt.templates[0];
+    // Cloze cards are generated from the {{c1::…}} markers in the cloze field, so reordering or
+    // removing fields would desync the generated cards. Only cosmetic edits are allowed for them.
+    const isCloze = nt.kind === 'cloze';
 
     // Structural field changes migrate every note, so they persist immediately.
     const applyStructural = (edit: FieldEdit) => {
@@ -83,12 +86,17 @@ export default function NoteTypeScreen() {
     };
 
     const handleRemoveField = (ord: number) => {
+        if (isCloze) {
+            alert('Uyarı', 'Kapama (cloze) türünde alanlar yeniden düzenlenemez.');
+            return;
+        }
         if (nt.fields.length <= 1) {
             alert('Uyarı', 'Bir not türünde en az bir alan olmalıdır.');
             return;
         }
         confirm('Alanı sil', `"${nt.fields[ord].name}" alanı ve tüm notlardaki değeri silinecek.`, () =>
             applyStructural(removeField(nt, ord)),
+            { destructive: true },
         );
     };
 
@@ -124,27 +132,35 @@ export default function NoteTypeScreen() {
                             onChangeText={(text) => setNt(renameField(nt, field.ord, text))}
                         />
                         <TouchableOpacity
-                            style={[styles.iconBtn, i === 0 && styles.iconBtnDisabled]}
-                            disabled={i === 0}
+                            style={[styles.iconBtn, (i === 0 || isCloze) && styles.iconBtnDisabled]}
+                            disabled={i === 0 || isCloze}
                             onPress={() => applyStructural(moveField(nt, i, i - 1))}
                         >
                             <Text style={styles.iconText}>↑</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.iconBtn, i === nt.fields.length - 1 && styles.iconBtnDisabled]}
-                            disabled={i === nt.fields.length - 1}
+                            style={[styles.iconBtn, (i === nt.fields.length - 1 || isCloze) && styles.iconBtnDisabled]}
+                            disabled={i === nt.fields.length - 1 || isCloze}
                             onPress={() => applyStructural(moveField(nt, i, i + 1))}
                         >
                             <Text style={styles.iconText}>↓</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.iconBtn} onPress={() => handleRemoveField(field.ord)}>
+                        <TouchableOpacity
+                            style={[styles.iconBtn, isCloze && styles.iconBtnDisabled]}
+                            disabled={isCloze}
+                            onPress={() => handleRemoveField(field.ord)}
+                        >
                             <Text style={[styles.iconText, styles.removeText]}>✕</Text>
                         </TouchableOpacity>
                     </View>
                 ))}
-                <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, 'Yeni Alan'))}>
-                    <Text style={styles.addFieldText}>+ Alan Ekle</Text>
-                </TouchableOpacity>
+                {isCloze ? (
+                    <Text style={styles.help}>Kapama (cloze) türünde alanlar yeniden düzenlenemez.</Text>
+                ) : (
+                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, 'Yeni Alan'))}>
+                        <Text style={styles.addFieldText}>+ Alan Ekle</Text>
+                    </TouchableOpacity>
+                )}
 
                 {template && (
                     <>

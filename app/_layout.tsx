@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, FontSize } from '../constants/theme';
 import { initWebDb, isPrimaryTab } from '../lib/db';
+import { DialogHost } from '../components/DialogHost';
 
 class AppErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -196,6 +197,7 @@ export default function RootLayout() {
                         }}
                     />
                 </Stack>
+                <DialogHost />
             </WebDbGate>
         </AppErrorBoundary>
     );

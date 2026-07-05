@@ -108,6 +108,7 @@ export default function SettingsScreen() {
                         alert('Hata', 'Dosya içe aktarılamadı. Geçerli bir yedek dosyası seçin.');
                     }
                 },
+                { destructive: true },
             );
         } catch (e) {
             console.warn('[Settings] import failed:', e);
@@ -151,6 +152,7 @@ export default function SettingsScreen() {
                 bumpDataVersion();
                 alert('Sıfırlandı', 'Tüm ilerleme temizlendi.');
             },
+            { destructive: true },
         );
     };
 

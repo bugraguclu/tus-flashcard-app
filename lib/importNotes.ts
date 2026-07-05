@@ -145,16 +145,45 @@ export function importRows(rows: string[][], options: RowImportOptions): RowImpo
     return counts;
 }
 
+/**
+ * Map note-type field indices to source columns, skipping Anki's special (guid/tags) columns so a
+ * column-directive export imports its fields — not the guid/tags values — as content. Returns
+ * undefined (identity mapping, unchanged behaviour) when there are no special columns.
+ */
+function deriveFieldColumns(fieldCount: number, guidColumn?: number, tagsColumn?: number): number[] | undefined {
+    if (!guidColumn && !tagsColumn) return undefined;
+
+    const special = new Set<number>();
+    if (guidColumn) special.add(guidColumn - 1);
+    if (tagsColumn) special.add(tagsColumn - 1);
+
+    const columns: number[] = [];
+    for (let col = 0; columns.length < fieldCount; col++) {
+        if (!special.has(col)) columns.push(col);
+    }
+    return columns;
+}
+
 export function importDelimitedNotes(text: string, options: ImportOptions): ImportResult {
     const parsed = parseDelimited(text, options.delimiter ? { delimiter: options.delimiter } : {});
+    const { guidColumn, tagsColumn } = parsed.metadata;
+
+    // Honour Anki's column directives: read per-row guids from #guid column and keep the guid/tags
+    // columns out of the field mapping. An explicit UI mapping (options.fieldColumns) still wins.
+    // #notetype/#deck/#html are intentionally not honoured — the import screen chooses the note type
+    // and deck, and fields are stored as-is for WebView rendering.
+    const fieldColumns = options.fieldColumns ?? deriveFieldColumns(options.noteType.fields.length, guidColumn, tagsColumn);
+    const rowGuids = guidColumn ? parsed.rows.map((row) => row[guidColumn - 1] ?? '') : undefined;
+
     const counts = importRows(parsed.rows, {
         noteType: options.noteType,
         deckId: options.deckId,
-        fieldColumns: options.fieldColumns,
+        fieldColumns,
         defaultFields: options.defaultFields,
         tags: [...(options.tags ?? []), ...(parsed.metadata.tags ?? [])],
-        tagsColumn: parsed.metadata.tagsColumn,
+        tagsColumn,
         allowDuplicates: options.allowDuplicates,
+        rowGuids,
     });
 
     return { totalRows: parsed.rows.length, delimiter: parsed.delimiter, ...counts };

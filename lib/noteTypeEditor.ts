@@ -7,7 +7,7 @@
  * transaction.
  */
 
-import { getDB } from './db';
+import { dbUpsertFtsCard, getDB } from './db';
 import {
     checksumField,
     type Note,
@@ -15,7 +15,7 @@ import {
     type NoteTypeField,
     type NoteTypeTemplate,
 } from './models';
-import { saveNote, saveNoteType } from './noteManager';
+import { getCardsForNote, saveNote, saveNoteType, searchIndexCardFromNote } from './noteManager';
 
 function reindex<T extends { ord: number }>(items: T[]): T[] {
     return items.map((item, i) => ({ ...item, ord: i }));
@@ -130,6 +130,12 @@ export function applyFieldEdit(noteTypeId: number, edit: FieldEdit): number {
             note.mod = Math.floor(Date.now() / 1000);
             note.usn = -1;
             saveNote(note);
+
+            // Field values changed, so refresh this note's cards in the search index
+            // (native FTS; no-op on web).
+            for (const card of getCardsForNote(note.id)) {
+                dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
+            }
         }
         db.execSync('COMMIT;');
     } catch (error) {

@@ -1,10 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NoteType } from './models';
 
-vi.mock('./db', () => ({ getDB: vi.fn() }));
-vi.mock('./noteManager', () => ({ saveNote: vi.fn(), saveNoteType: vi.fn() }));
+vi.mock('./db', () => ({ getDB: vi.fn(), dbUpsertFtsCard: vi.fn() }));
+vi.mock('./noteManager', () => ({
+    saveNote: vi.fn(),
+    saveNoteType: vi.fn(),
+    getCardsForNote: (noteId: number) => [{ id: noteId * 10 }],
+    searchIndexCardFromNote: (note: any, cardId: number) => ({
+        id: cardId,
+        question: note.fields[0],
+        answer: note.fields[1] ?? '',
+        topic: note.fields[2] ?? '',
+        subject: 's',
+    }),
+}));
 
-import { getDB } from './db';
+import { getDB, dbUpsertFtsCard } from './db';
 import { saveNote, saveNoteType } from './noteManager';
 import {
     addField,
@@ -127,6 +138,7 @@ describe('applyFieldEdit', () => {
         savedNotes.length = 0;
         vi.mocked(saveNote).mockImplementation((note) => savedNotes.push(note));
         vi.mocked(saveNoteType).mockReset();
+        vi.mocked(dbUpsertFtsCard).mockClear();
         vi.mocked(getDB).mockReturnValue({
             getAllSync: () =>
                 [
@@ -151,5 +163,7 @@ describe('applyFieldEdit', () => {
         ]);
         expect(savedNotes[0].sfld).toBe('Q1'); // sortFieldIdx 0 → first field
         expect(exec).toEqual(['BEGIN TRANSACTION;', 'COMMIT;']);
+        // The search index is refreshed for each migrated note's cards.
+        expect(vi.mocked(dbUpsertFtsCard).mock.calls.map((c) => c[0].id)).toEqual([10, 20]);
     });
 });
