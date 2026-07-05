@@ -11,17 +11,18 @@ A cross-platform spaced repetition flashcard app built for TUS (Tipta Uzmanlık 
 - Deterministic fuzz for non-early reviews (DJB2 hash, day + card ID seeded)
 - Configurable learning steps, lapse steps, and graduating intervals
 - Ease factor management with named constants and 1.3 floor
-- Queue ordering options (learning-review-new or learning-new-review)
-- New card ordering (sequential or random)
+- Anki serving order: due learning cards first, learn-ahead cards last
+- Configurable learn-ahead limit, queue order (mix / new first / new last), and new card order
 - Per-deck configuration overrides
 - Leech detection and sibling burying
 - Transaction-safe undo for the last review
+- Day rollover handling (configurable rollover hour, foreground-aware)
 
 ### SQLite Storage
 - Local-first architecture with full offline support
 - `expo-sqlite` on iOS/Android, `sql.js` (WebAssembly) on web
 - WAL journal mode on native for concurrent read performance
-- Web database persisted to localStorage between sessions
+- Web database snapshotted to IndexedDB (debounced, flushed on page hide) with Web Locks writer election across tabs
 - Automatic schema migrations (versioned, transactional)
 
 ### Full-Text Search
@@ -47,9 +48,19 @@ A cross-platform spaced repetition flashcard app built for TUS (Tipta Uzmanlık 
 - Card distribution breakdown: New / Learning / Review / Young / Mature / Mastered
 - SQL-based aggregation from the review log
 
+### Backups & Data Safety
+- Automatic daily backups (one snapshot per study day, newest 7 kept)
+- Backups screen: restore with an automatic pre-restore snapshot (restores are undoable), share, delete
+- Database check: SQLite integrity, orphan detection, search index rebuild
+
 ### Import / Export
-- Full JSON backup and restore of all tables
+- Anki `.apkg` import (guid-based dedupe) and CSV/TSV import
+- Full JSON export/import of all tables (cards, decks, review log, settings)
 - Web: direct browser download; Native: share sheet integration
+
+### Editor & Note Types
+- Note editor with live card preview
+- Note type manager: fields, card templates (`{{Field}}`, `{{cloze:}}`, conditionals), CSS
 
 ### Responsive UI
 - Sidebar navigation on desktop (768px+), hamburger menu on mobile
@@ -66,7 +77,7 @@ A cross-platform spaced repetition flashcard app built for TUS (Tipta Uzmanlık 
 | Navigation | expo-router (file-based) |
 | Database (native) | expo-sqlite (WAL mode) |
 | Database (web) | sql.js (WebAssembly) |
-| Testing | Vitest (40 tests across 7 suites) |
+| Testing | Vitest (161 tests across 20 suites) |
 | State | React Context |
 
 ## Getting Started
@@ -89,11 +100,8 @@ npm run ios
 npm run android
 npm run web
 
-# Run tests
-npm test
-
-# Type check
-npx tsc --noEmit
+# Run tests + type check
+npm run check
 ```
 
 ## Project Structure
@@ -106,25 +114,33 @@ app/
     index.tsx              Study screen
     browser.tsx            Card browser with FTS search
     decks.tsx              Deck hierarchy view
-    settings.tsx           App settings + import/export
+    settings.tsx           App settings + import/export + database check
     stats.tsx              Statistics dashboard
     sidebar.tsx            Navigation sidebar
     app-context.tsx        Shared app state
-    use-app-startup.ts     Startup sequence + migrations
+    use-app-startup.ts     Startup sequence, migrations, auto backup
+  backups.tsx              Backup list / restore / share
+  import.tsx               .apkg and CSV/TSV import
+  editor.tsx               Note editor
+  note-types.tsx           Note type & template manager
 
 lib/
   db.ts                    Platform-aware SQLite + migrations
   webDb.ts                 sql.js wrapper for web platform
-  scheduler.ts             Anki V3 scheduling engine (40+ tests, verified against Rust source)
+  scheduler.ts             Anki V3 scheduling engine (verified against Rust source)
   studyRepository.ts       Study queue + answer processing
+  queueBuild.ts            Queue assembly (limits, burying, ordering)
+  backup.ts                Daily auto backups + undoable restore
+  maintenance.ts           Day rollover housekeeping + database check
   noteManager.ts           Note/card CRUD operations
   deckManager.ts           Deck hierarchy + configuration
+  importApkg.ts            Anki .apkg importer
   reviewLogger.ts          Review logging + statistics queries
   storage.ts               Settings, session stats, import/export
+  templates.ts             Anki card template renderer
   mediaStore.ts            Platform-aware media file storage
   models.ts                Data model definitions
   types.ts                 TypeScript type definitions
-  confirm.ts               Cross-platform confirm/alert
 
 components/
   CardWebView.tsx          HTML card renderer (WebView native, div web)
@@ -144,4 +160,4 @@ The app follows a local-first, platform-abstracted architecture:
 
 ## License
 
-MIT
+[MIT](LICENSE)
