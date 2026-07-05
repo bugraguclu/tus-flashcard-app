@@ -45,6 +45,10 @@ export default function CardWebView({ noteType, note, card, deck, side }: CardWe
             javaScriptEnabled={false}
             domStorageEnabled={false}
             automaticallyAdjustContentInsets
+            // Android blocks file:// reads by default; media lives in the app's own
+            // documentDirectory (getMediaBaseUrl), so images need this to render.
+            // JS stays disabled, so no file->JS escalation is possible.
+            allowFileAccess
         />
     );
 }
