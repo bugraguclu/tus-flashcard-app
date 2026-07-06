@@ -80,13 +80,16 @@ export interface RowImportCounts {
     emptyRows: number;
     /** Search-index entries for the created cards, for incremental FTS updates. */
     indexed: SearchIndexCard[];
+    /** Identity of each note this run created, so callers (.apkg import) can attach
+     *  per-note data such as scheduling progress to the right rows. */
+    addedNotes: { guid: string; noteId: number }[];
 }
 
 /** Writes rows of field values as notes in one transaction, deduped by first field. */
 export function importRows(rows: string[][], options: RowImportOptions): RowImportCounts {
     const { noteType, deckId, fieldColumns, defaultFields, tags = [], rowTags, tagsColumn, allowDuplicates = false, rowGuids } = options;
     const fieldCount = noteType.fields.length;
-    const counts: RowImportCounts = { added: 0, duplicates: 0, emptyRows: 0, indexed: [] };
+    const counts: RowImportCounts = { added: 0, duplicates: 0, emptyRows: 0, indexed: [], addedNotes: [] };
 
     // When guids are supplied (.apkg import) Anki identifies notes by guid, not by first field:
     // load the existing guids once and also track those seen in this batch, so a re-import stays
@@ -134,6 +137,7 @@ export function importRows(rows: string[][], options: RowImportOptions): RowImpo
 
             const { note, cards } = createNote(noteType, fields, deckId, uniqueTags(noteTags), guid);
             for (const card of cards) counts.indexed.push(searchIndexCardFromNote(note, card.id));
+            counts.addedNotes.push({ guid: note.guid, noteId: note.id });
             counts.added++;
         }
         db.execSync('COMMIT;');

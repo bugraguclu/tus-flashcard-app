@@ -32,6 +32,10 @@ type ImportSummary = {
     emptyRows: number;
     clozeImported?: number;
     withMedia?: number;
+    progressCards?: number;
+    progressReviews?: number;
+    mediaImported?: number;
+    mediaSkipped?: number;
 };
 
 const MAX_TEXT_CHARS = 50_000_000;
@@ -43,7 +47,7 @@ async function readAssetBytes(uri: string): Promise<Uint8Array> {
 
 export default function ImportScreen() {
     const router = useRouter();
-    const { bumpDataVersion } = useApp();
+    const { bumpDataVersion, settings } = useApp();
 
     const [subject, setSubject] = useState(TUS_SUBJECTS[0].id);
     const [topic, setTopic] = useState('');
@@ -114,7 +118,11 @@ export default function ImportScreen() {
             let imported: (ImportSummary & { indexed: SearchIndexCard[] }) | null = null;
 
             if (isApkg && fileBytes) {
-                imported = await importApkg(fileBytes, { subject, topic: topicValue });
+                imported = await importApkg(fileBytes, {
+                    subject,
+                    topic: topicValue,
+                    rolloverHour: settings.dayRolloverHour,
+                });
             } else if (fileText !== null) {
                 const noteType =
                     getNoteType(TUS_BASIC_NOTETYPE_ID) ??
@@ -207,9 +215,26 @@ export default function ImportScreen() {
                                 <Text style={styles.resultValue}>{result.clozeImported}</Text>
                             </View>
                         ) : null}
-                        {result.withMedia ? (
+                        {result.progressCards ? (
+                            <View style={styles.resultRow}>
+                                <Text style={styles.resultLabel}>Çalışma geçmişiyle gelen kart</Text>
+                                <Text style={styles.resultValue}>{result.progressCards}</Text>
+                            </View>
+                        ) : null}
+                        {result.mediaImported ? (
+                            <View style={styles.resultRow}>
+                                <Text style={styles.resultLabel}>Medya dosyası</Text>
+                                <Text style={styles.resultValue}>{result.mediaImported}</Text>
+                            </View>
+                        ) : null}
+                        {result.withMedia && !result.mediaImported ? (
                             <Text style={styles.resultNote}>
-                                ⚠️ {result.withMedia} kartta medya var; medya dosyaları içe aktarılmadı.
+                                ⚠️ {result.withMedia} kartta medya var; medya dosyaları içe aktarılamadı.
+                            </Text>
+                        ) : null}
+                        {result.mediaSkipped ? (
+                            <Text style={styles.resultNote}>
+                                ⚠️ {result.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).
                             </Text>
                         ) : null}
                         <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>

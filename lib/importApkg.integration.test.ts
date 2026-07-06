@@ -2,12 +2,19 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import initSqlJs, { type Database } from 'sql.js';
 import JSZip from 'jszip';
 
-// importApkg pulls in importNotes/noteManager (which import the RN db layer);
-// the glue under test here doesn't use them, so stub them out.
+// importApkg pulls in importNotes/noteManager/mediaStore (which import the RN db
+// layer); the glue under test here doesn't use them, so stub them out.
 vi.mock('./importNotes', () => ({ importRows: () => ({ added: 0, duplicates: 0, emptyRows: 0 }) }));
 vi.mock('./noteManager', () => ({ getNoteType: () => null }));
+const media = vi.hoisted(() => ({ saved: [] as { filename: string; size: number }[] }));
+vi.mock('./mediaStore', () => ({
+    saveMediaBytes: async (filename: string, bytes: Uint8Array) => {
+        media.saved.push({ filename, size: bytes.length });
+    },
+}));
 
-import { extractCollectionBytes, readAnkiNotes } from './importApkg';
+import { extractCollectionBytes, importMediaFromZip, readAnkiNotes } from './importApkg';
+import { readAnkiProgress } from './importApkgProgress';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 
@@ -93,6 +100,49 @@ describe('apkg glue (real sql.js + jszip)', () => {
         expect(readAnkiNotes(reader as any)).toEqual([
             { guid: 'g-kalp', fields: ['Kalp', 'Pompa', 'Fizyoloji'], tags: ['exam', 'cardio'], cloze: false, hasMedia: false },
             { guid: 'g-akciger', fields: ['Akciğer', 'Solunum'], tags: [], cloze: false, hasMedia: false },
+        ]);
+    });
+
+    it('reads scheduling state and revlog joined to note guids from a real Anki SQLite', () => {
+        const db: Database = new SQL.Database();
+        db.run('CREATE TABLE col (models text, crt integer)');
+        db.run('INSERT INTO col (models, crt) VALUES (?, ?)', [JSON.stringify({ '100': { type: 0 } }), 1600000000]);
+        db.run('CREATE TABLE notes (id integer primary key, guid text, mid integer, flds text, tags text)');
+        db.run('INSERT INTO notes VALUES (1, ?, 100, ?, ?)', ['g-kalp', 'Kalp\x1fPompa', '']);
+        db.run(`CREATE TABLE cards (id integer primary key, nid integer, ord integer, type integer,
+                queue integer, due integer, ivl integer, factor integer, reps integer, lapses integer,
+                "left" integer, odue integer, odid integer)`);
+        db.run('INSERT INTO cards VALUES (10, 1, 0, 2, 2, 105, 21, 2350, 8, 1, 0, 0, 0)');
+        db.run(`CREATE TABLE revlog (id integer primary key, cid integer, usn integer, ease integer,
+                ivl integer, lastIvl integer, factor integer, time integer, type integer)`);
+        db.run('INSERT INTO revlog VALUES (1700000000000, 10, -1, 3, 21, 10, 2350, 4200, 1)');
+        const reader = wrapReader(db.export());
+        db.close();
+
+        expect(readAnkiProgress(reader as any)).toEqual({
+            crt: 1600000000,
+            cards: [{
+                ankiCardId: 10, guid: 'g-kalp', ord: 0, type: 2, queue: 2, due: 105,
+                ivl: 21, factor: 2350, reps: 8, lapses: 1, left: 0, odue: 0, odid: 0,
+            }],
+            revlog: [{ id: 1700000000000, cid: 10, ease: 3, ivl: 21, lastIvl: 10, factor: 2350, time: 4200, type: 1 }],
+        });
+    });
+
+    it('copies media files listed in the manifest and skips unlisted/missing entries', async () => {
+        media.saved.length = 0;
+        const zip = new JSZip();
+        zip.file('media', JSON.stringify({ '0': 'kalp.png', '1': 'ses.mp3', '2': 'missing.png' }));
+        zip.file('0', new Uint8Array([1, 2, 3]));
+        zip.file('1', new Uint8Array([4, 5]));
+        // '2' has a manifest entry but no zip entry; '99' has an entry but no manifest row.
+        zip.file('99', new Uint8Array([9]));
+
+        const counts = await importMediaFromZip(zip);
+        expect(counts).toEqual({ imported: 2, skipped: 1 });
+        expect(media.saved).toEqual([
+            { filename: 'kalp.png', size: 3 },
+            { filename: 'ses.mp3', size: 2 },
         ]);
     });
 });

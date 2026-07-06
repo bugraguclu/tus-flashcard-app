@@ -1,18 +1,22 @@
 /**
  * Imports Anki .apkg packages: unzips the archive, reads the embedded SQLite
  * collection, and maps its notes onto TUS cards through the shared importRows
- * pipeline (transactional, deduped by first field).
+ * pipeline (transactional, deduped by note guid).
  *
  * Reads the uncompressed legacy collection (collection.anki2 / .anki21); the
  * newer zstd-compressed collection.anki21b must be re-exported with "support
  * older Anki versions". Cloze note types are routed to the app's Cloze type;
- * notes referencing media are counted and reported (the media files themselves
- * are not yet copied in). Decks are flattened into the chosen subject.
+ * scheduling state and review history come along via importApkgProgress, and
+ * the package's media files are copied into the media store. Decks are
+ * flattened into the chosen subject.
  */
 
+import type JSZipType from 'jszip';
 import { importRows, type RowImportCounts } from './importNotes';
 import { getNoteType, type SearchIndexCard } from './noteManager';
 import { subjectToDeckId, BUILTIN_NOTE_TYPES, type NoteType } from './models';
+import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
+import { saveMediaBytes } from './mediaStore';
 
 const TUS_BASIC_NOTETYPE_ID = 4;
 const CLOZE_NOTETYPE_ID = 3;
@@ -28,6 +32,11 @@ const MAX_APKG_BYTES = 200 * 1024 * 1024;
 // Cap the decompressed collection before handing it to sql.js, which would copy the whole
 // database into its WASM heap. The SQLite itself (no media) is normally tiny.
 const MAX_COLLECTION_BYTES = 200 * 1024 * 1024;
+// Media caps: one runaway file must not exhaust storage, and the total stays inside
+// what IndexedDB (web) comfortably holds.
+const MEDIA_MANIFEST_NAME = 'media';
+const MAX_MEDIA_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_MEDIA_TOTAL_BYTES = 200 * 1024 * 1024;
 
 export interface SqliteReader {
     getAllSync<T = any>(sql: string, ...params: any[]): T[];
@@ -51,6 +60,10 @@ export interface ApkgImportOptions {
     subject: string;
     topic?: string;
     allowDuplicates?: boolean;
+    /** Study-day rollover hour, for converting Anki due-day numbers. */
+    rolloverHour?: number;
+    /** Injectable for tests. */
+    nowMs?: number;
     /** Injectable for tests; defaults to the web sql.js opener. */
     openReader?: (bytes: Uint8Array) => Promise<ApkgReader>;
 }
@@ -62,6 +75,13 @@ export interface ApkgImportResult {
     emptyRows: number;
     clozeImported: number;
     withMedia: number;
+    /** Cards that arrived with scheduling state (interval/ease/queue) carried over. */
+    progressCards: number;
+    /** Review-history entries copied into the local revlog. */
+    progressReviews: number;
+    /** Media files copied into the media store / skipped (missing, oversized, unreadable). */
+    mediaImported: number;
+    mediaSkipped: number;
     indexed: SearchIndexCard[];
 }
 
@@ -128,7 +148,7 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
 
     const standard = notes.filter((note) => !note.cloze);
     const cloze = notes.filter((note) => note.cloze);
-    const empty: RowImportCounts = { added: 0, duplicates: 0, emptyRows: 0, indexed: [] };
+    const empty: RowImportCounts = { added: 0, duplicates: 0, emptyRows: 0, indexed: [], addedNotes: [] };
 
     const stdCounts = standard.length
         ? importRows(standard.map(ankiNoteToFields), {
@@ -153,6 +173,21 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
           })
         : empty;
 
+    // Carry over scheduling state and review history for the notes this run created.
+    // Deduped (pre-existing) notes keep their local progress untouched.
+    const addedNotes = [...(stdCounts.addedNotes ?? []), ...(clozeCounts.addedNotes ?? [])];
+    let progress = { cardsUpdated: 0, revlogImported: 0 };
+    if (addedNotes.length > 0) {
+        const ankiProgress = readAnkiProgress(reader);
+        if (ankiProgress) {
+            progress = applyAnkiProgress(ankiProgress, {
+                addedNotes,
+                rolloverHour: options.rolloverHour,
+                nowMs: options.nowMs,
+            });
+        }
+    }
+
     return {
         totalNotes: notes.length,
         added: stdCounts.added + clozeCounts.added,
@@ -160,18 +195,27 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
         emptyRows: stdCounts.emptyRows + clozeCounts.emptyRows,
         clozeImported: clozeCounts.added,
         withMedia: notes.filter((note) => note.hasMedia).length,
+        progressCards: progress.cardsUpdated,
+        progressReviews: progress.revlogImported,
+        mediaImported: 0,
+        mediaSkipped: 0,
         indexed: [...stdCounts.indexed, ...clozeCounts.indexed],
     };
 }
 
-export async function extractCollectionBytes(zipBytes: Uint8Array): Promise<Uint8Array> {
+async function loadZip(zipBytes: Uint8Array): Promise<JSZipType> {
     if (zipBytes.length > MAX_APKG_BYTES) {
         throw new Error('Dosya çok büyük (en fazla 200 MB).');
     }
-
     const JSZip = (await import('jszip')).default;
-    const zip = await JSZip.loadAsync(zipBytes);
+    return JSZip.loadAsync(zipBytes);
+}
 
+export async function extractCollectionBytes(zipBytes: Uint8Array): Promise<Uint8Array> {
+    return extractCollectionFromZip(await loadZip(zipBytes));
+}
+
+async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
     async function inflate(file: import('jszip').JSZipObject): Promise<Uint8Array> {
         const bytes = await file.async('uint8array');
         if (bytes.length > MAX_COLLECTION_BYTES) {
@@ -205,12 +249,76 @@ async function defaultOpenReader(bytes: Uint8Array): Promise<ApkgReader> {
     return openSqlJsReader(bytes);
 }
 
-export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOptions): Promise<ApkgImportResult> {
-    const collectionBytes = await extractCollectionBytes(zipBytes);
-    const reader = await (options.openReader ?? defaultOpenReader)(collectionBytes);
+/**
+ * Copies the package's media files (numeric zip entries mapped by the `media`
+ * manifest) into the media store. Oversized or unreadable entries are skipped,
+ * never fatal — the notes have already been imported at this point.
+ */
+export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: number; skipped: number }> {
+    const counts = { imported: 0, skipped: 0 };
+
+    const manifestFile = zip.file(MEDIA_MANIFEST_NAME);
+    if (!manifestFile) return counts;
+
+    let manifest: Record<string, unknown>;
     try {
-        return importAnkiReader(reader, options);
+        const parsed = JSON.parse(await manifestFile.async('text'));
+        if (!parsed || typeof parsed !== 'object') return counts;
+        manifest = parsed;
+    } catch {
+        return counts;
+    }
+
+    let totalBytes = 0;
+    for (const [entryName, filename] of Object.entries(manifest)) {
+        if (typeof filename !== 'string' || filename === '') {
+            counts.skipped++;
+            continue;
+        }
+
+        const entry = zip.file(entryName);
+        if (!entry) {
+            counts.skipped++;
+            continue;
+        }
+
+        try {
+            const bytes = await entry.async('uint8array');
+            if (bytes.length > MAX_MEDIA_FILE_BYTES || totalBytes + bytes.length > MAX_MEDIA_TOTAL_BYTES) {
+                counts.skipped++;
+                continue;
+            }
+            totalBytes += bytes.length;
+            await saveMediaBytes(filename, bytes);
+            counts.imported++;
+        } catch (e) {
+            console.warn(`[ApkgImport] media entry ${entryName} (${filename}) skipped:`, e);
+            counts.skipped++;
+        }
+    }
+
+    return counts;
+}
+
+export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOptions): Promise<ApkgImportResult> {
+    const zip = await loadZip(zipBytes);
+    const collectionBytes = await extractCollectionFromZip(zip);
+    const reader = await (options.openReader ?? defaultOpenReader)(collectionBytes);
+
+    let result: ApkgImportResult;
+    try {
+        result = importAnkiReader(reader, options);
     } finally {
         reader.close();
     }
+
+    // Media only matters when the package contributed notes; a fully duplicate
+    // re-import must not rewrite stored files.
+    if (result.added > 0) {
+        const media = await importMediaFromZip(zip);
+        result.mediaImported = media.imported;
+        result.mediaSkipped = media.skipped;
+    }
+
+    return result;
 }
