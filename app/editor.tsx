@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { TUS_SUBJECTS } from '../lib/data';
 import { confirm, alert } from '../lib/confirm';
+import { useApp } from './(tabs)/app-context';
 import {
     createTusCard,
     updateTusCardByCardId,
@@ -32,6 +33,7 @@ function parseCardId(raw: string | string[] | undefined): number | null {
 export default function EditorScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { bumpDataVersion } = useApp();
 
     const routeCardId = useMemo(() => {
         const explicitCardId = parseCardId(params.cardId);
@@ -102,6 +104,7 @@ export default function EditorScreen() {
                     answer: answer.trim(),
                 });
 
+                bumpDataVersion();
                 alert('Başarılı', 'Kart güncellendi.', () => router.back());
             } else {
                 const created = createTusCard({
@@ -119,6 +122,7 @@ export default function EditorScreen() {
                     answer: answer.trim(),
                 });
 
+                bumpDataVersion();
                 alert('Başarılı', 'Kart kaydedildi.', () => router.back());
             }
         } catch (e) {
@@ -135,6 +139,7 @@ export default function EditorScreen() {
                 deleteTusCardByCardId(routeCardId);
                 dbDeleteFtsCard(routeCardId);
                 rebuildSearchIndex();
+                bumpDataVersion();
                 alert('Silindi', 'Kart başarıyla silindi.', () => router.back());
             } catch (e) {
                 console.warn('[Editor] delete failed:', e);

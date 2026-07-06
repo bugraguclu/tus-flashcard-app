@@ -9,25 +9,27 @@ import {
 } from 'react-native';
 import { Slot, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize } from '../../constants/theme';
-import { loadSettings, DEFAULT_SETTINGS } from '../../lib/storage';
-import type { AppSettings } from '../../lib/types';
 import { getSearchIndexCards } from '../../lib/noteManager';
-import { AppContext } from './app-context';
+import { useApp } from './app-context';
 import { Sidebar, SIDEBAR_WIDTH } from './sidebar';
-import { useAppStartup } from './use-app-startup';
 
 export { useApp } from './app-context';
 
 export default function TabLayout() {
     const router = useRouter();
+    const {
+        selectedSubject,
+        setSelectedSubject,
+        selectedTopic,
+        setSelectedTopic,
+        dataVersion,
+        startupError,
+        isLoading,
+    } = useApp();
 
-    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-    const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
-    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
-    const [dataVersion, setDataVersion] = useState(0);
 
     const isWide = windowWidth >= 768;
 
@@ -37,16 +39,6 @@ export default function TabLayout() {
         });
         return () => sub?.remove();
     }, []);
-
-    const refreshData = useCallback(() => {
-        setSettings(loadSettings());
-    }, []);
-
-    const bumpDataVersion = useCallback(() => {
-        setDataVersion((prev) => prev + 1);
-    }, []);
-
-    const { startupError, isLoading } = useAppStartup(refreshData, bumpDataVersion);
 
     const searchableCards = useMemo(() => {
         try {
@@ -128,67 +120,58 @@ export default function TabLayout() {
     }
 
     return (
-        <AppContext.Provider
-            value={{
-                selectedSubject,
-                setSelectedSubject,
-                selectedTopic,
-                setSelectedTopic,
-                settings,
-                refreshData,
-                dataVersion,
-                bumpDataVersion,
-                startupError,
-            }}
-        >
-            <View style={styles.container}>
-                {!isWide && (
-                    <View style={styles.mobileHeader}>
-                        <TouchableOpacity style={styles.hamburger} onPress={() => setSidebarOpen((prev) => !prev)}>
-                            <Text style={styles.hamburgerText}>☰</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
-                        <View style={{ width: 40 }} />
-                    </View>
-                )}
+        <View style={styles.container}>
+            {!isWide && (
+                <View style={styles.mobileHeader}>
+                    <TouchableOpacity
+                        style={styles.hamburger}
+                        onPress={() => setSidebarOpen((prev) => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel={sidebarOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+                    >
+                        <Text style={styles.hamburgerText}>☰</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+            )}
 
-                <View style={styles.appLayout}>
-                    <Sidebar
-                        isWide={isWide}
-                        sidebarOpen={sidebarOpen}
-                        selectedSubject={selectedSubject}
-                        selectedTopic={selectedTopic}
-                        expandedSubject={expandedSubject}
-                        totalCards={totalCards}
-                        getSubjectCount={getSubjectCount}
-                        getTopicCount={getTopicCount}
-                        onAllPress={handleAllPress}
-                        onSubjectPress={handleSubjectPress}
-                        onToggleExpand={handleToggleExpand}
-                        onTopicPress={handleTopicPress}
-                        navigate={navigate}
-                    />
+            <View style={styles.appLayout}>
+                <Sidebar
+                    isWide={isWide}
+                    sidebarOpen={sidebarOpen}
+                    selectedSubject={selectedSubject}
+                    selectedTopic={selectedTopic}
+                    expandedSubject={expandedSubject}
+                    totalCards={totalCards}
+                    getSubjectCount={getSubjectCount}
+                    getTopicCount={getTopicCount}
+                    onAllPress={handleAllPress}
+                    onSubjectPress={handleSubjectPress}
+                    onToggleExpand={handleToggleExpand}
+                    onTopicPress={handleTopicPress}
+                    navigate={navigate}
+                />
 
-                    {!isWide && sidebarOpen ? (
-                        <Pressable style={styles.overlay} onPress={() => setSidebarOpen(false)} />
-                    ) : null}
+                {!isWide && sidebarOpen ? (
+                    <Pressable style={styles.overlay} onPress={() => setSidebarOpen(false)} />
+                ) : null}
 
-                    <View style={[styles.mainContent, isWide && styles.mainContentWithSidebar]}>
-                        {startupError ? (
-                            <View style={styles.startupErrorContainer}>
-                                <Text style={styles.startupErrorIcon}>📱</Text>
-                                <Text style={styles.startupErrorTitle}>{startupError}</Text>
-                                <Text style={styles.startupErrorText}>
-                                    Lütfen uygulamayı iOS veya Android cihazınızdan kullanın.
-                                </Text>
-                            </View>
-                        ) : (
-                            <Slot />
-                        )}
-                    </View>
+                <View style={[styles.mainContent, isWide && styles.mainContentWithSidebar]}>
+                    {startupError ? (
+                        <View style={styles.startupErrorContainer}>
+                            <Text style={styles.startupErrorIcon}>📱</Text>
+                            <Text style={styles.startupErrorTitle}>{startupError}</Text>
+                            <Text style={styles.startupErrorText}>
+                                Lütfen uygulamayı iOS veya Android cihazınızdan kullanın.
+                            </Text>
+                        </View>
+                    ) : (
+                        <Slot />
+                    )}
                 </View>
             </View>
-        </AppContext.Provider>
+        </View>
     );
 }
 

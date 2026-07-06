@@ -65,6 +65,9 @@ export default function StudyScreen() {
     const currentCardRef = useRef<StudyCard | null>(null);
     const answersSinceRefreshRef = useRef(0);
     const scheduledRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Blocks re-entry while an answer/undo is committing, so a double tap or a
+    // held-down grade key cannot rate the same card twice.
+    const isMutatingRef = useRef(false);
 
     useEffect(() => {
         sessionStatsRef.current = sessionStats;
@@ -219,111 +222,117 @@ export default function StudyScreen() {
     };
 
     const answerCard = useCallback(async (grade: Grade) => {
-        if (!currentCard) return;
+        if (!currentCard || isMutatingRef.current) return;
+        isMutatingRef.current = true;
 
-        if (Platform.OS !== 'web') {
-            try {
-                const Haptics = require('expo-haptics');
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch { /* haptics unavailable */ }
-        }
-
-        const elapsed = Math.max(0, Date.now() - answerStartedAt);
-
-        let result;
         try {
-            result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);
-        } catch (e) {
-            // The card can vanish under us when the collection is replaced (backup restore,
-            // import) while this screen holds a stale queue. Resync instead of crashing;
-            // the undo stack refers to the old collection, so it must go too.
-            console.warn('[Study] answer failed, rebuilding queue:', e);
-            setUndoStack([]);
+            if (Platform.OS !== 'web') {
+                try {
+                    const Haptics = require('expo-haptics');
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch { /* haptics unavailable */ }
+            }
+
+            const elapsed = Math.max(0, Date.now() - answerStartedAt);
+
+            let result;
+            try {
+                result = answerStudyCard(currentCard.cardId, grade, settings, elapsed);
+            } catch (e) {
+                // The card can vanish under us when the collection is replaced (backup restore,
+                // import) while this screen holds a stale queue. Resync instead of crashing;
+                // the undo stack refers to the old collection, so it must go too.
+                console.warn('[Study] answer failed, rebuilding queue:', e);
+                setUndoStack([]);
+                setShowingAnswer(false);
+                buildQueue();
+                return;
+            }
+
+            const prevStats = sessionStatsRef.current;
+            const nextStats: SessionStats = {
+                ...prevStats,
+                reviewed: prevStats.reviewed + 1,
+                // Anki semantics: only Again is a failed review; Hard still passes.
+                correct: grade > 1 ? prevStats.correct + 1 : prevStats.correct,
+                wrong: grade === 1 ? prevStats.wrong + 1 : prevStats.wrong,
+                newCardsToday: result.wasNewCard ? (prevStats.newCardsToday || 0) + 1 : prevStats.newCardsToday,
+            };
+
+            setUndoStack((prev) => [
+                ...prev.slice(-29),
+                {
+                    cardId: currentCard.cardId,
+                    reviewLogId: result.reviewLogId,
+                    previousSnapshot: result.previousAnkiCard,
+                    previousStats: { ...prevStats },
+                },
+            ]);
+
+            sessionStatsRef.current = nextStats;
+            setSessionStats(nextStats);
+            await saveSessionStats(nextStats);
+
+            // Incremental queue update: pop current card, optionally reinsert if still due now.
+            const nowMs = Date.now();
+            let queueBecameEmpty = false;
+
+            setQueue((prevQueue) => {
+                const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
+                const shouldReinsert = isCardDueNow(result.updatedCard, nowMs);
+                const nextQueue = shouldReinsert ? [...withoutCurrent, result.updatedCard] : withoutCurrent;
+
+                setCurrentCard(nextQueue[0] ?? null);
+
+                const futureLearningDue = nextQueue
+                    .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
+                    .map((card) => card.state.dueTime)
+                    .filter((value): value is number => Boolean(value));
+
+                if (result.updatedCard.state.status === 'learning' && result.updatedCard.state.dueTime > nowMs) {
+                    futureLearningDue.push(result.updatedCard.state.dueTime);
+                }
+
+                // Only update nextLearningDue if we found future learning cards in memory.
+                // When empty, defer to buildQueue which queries the full DB for any learning cards
+                // from earlier answers that are no longer in the in-memory queue.
+                if (futureLearningDue.length > 0) {
+                    setNextLearningDue(Math.min(...futureLearningDue));
+                }
+
+                if (nextQueue.length === 0) {
+                    queueBecameEmpty = true;
+                }
+
+                return nextQueue;
+            });
+
+            setQueueStats((prev) => {
+                const next = { ...prev };
+                const currentBucket = statusToQueueBucket(currentCard.state.status);
+                next[currentBucket] = Math.max(0, next[currentBucket] - 1);
+
+                if (isCardDueNow(result.updatedCard, nowMs)) {
+                    const nextBucket = statusToQueueBucket(result.updatedCard.state.status);
+                    next[nextBucket] += 1;
+                }
+
+                return next;
+            });
+
             setShowingAnswer(false);
-            buildQueue();
-            return;
-        }
+            bumpDataVersion();
 
-        const prevStats = sessionStatsRef.current;
-        const nextStats: SessionStats = {
-            ...prevStats,
-            reviewed: prevStats.reviewed + 1,
-            correct: grade >= 3 ? prevStats.correct + 1 : prevStats.correct,
-            wrong: grade < 3 ? prevStats.wrong + 1 : prevStats.wrong,
-            newCardsToday: result.wasNewCard ? (prevStats.newCardsToday || 0) + 1 : prevStats.newCardsToday,
-        };
-
-        setUndoStack((prev) => [
-            ...prev.slice(-29),
-            {
-                cardId: currentCard.cardId,
-                reviewLogId: result.reviewLogId,
-                previousSnapshot: result.previousAnkiCard,
-                previousStats: { ...prevStats },
-            },
-        ]);
-
-        sessionStatsRef.current = nextStats;
-        setSessionStats(nextStats);
-        await saveSessionStats(nextStats);
-
-        // Incremental queue update: pop current card, optionally reinsert if still due now.
-        const nowMs = Date.now();
-        let queueBecameEmpty = false;
-
-        setQueue((prevQueue) => {
-            const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
-            const shouldReinsert = isCardDueNow(result.updatedCard, nowMs);
-            const nextQueue = shouldReinsert ? [...withoutCurrent, result.updatedCard] : withoutCurrent;
-
-            setCurrentCard(nextQueue[0] ?? null);
-
-            const futureLearningDue = nextQueue
-                .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
-                .map((card) => card.state.dueTime)
-                .filter((value): value is number => Boolean(value));
-
-            if (result.updatedCard.state.status === 'learning' && result.updatedCard.state.dueTime > nowMs) {
-                futureLearningDue.push(result.updatedCard.state.dueTime);
+            answersSinceRefreshRef.current += 1;
+            // Always do a full DB rebuild when the queue empties — the in-memory queue
+            // may not contain learning cards from earlier answers that are still waiting.
+            if (queueBecameEmpty || answersSinceRefreshRef.current >= 8 || queue.length <= 1) {
+                buildQueue(nextStats.newCardsToday);
+            } else {
+                scheduleFullRefresh(15000, nextStats.newCardsToday);
             }
-
-            // Only update nextLearningDue if we found future learning cards in memory.
-            // When empty, defer to buildQueue which queries the full DB for any learning cards
-            // from earlier answers that are no longer in the in-memory queue.
-            if (futureLearningDue.length > 0) {
-                setNextLearningDue(Math.min(...futureLearningDue));
-            }
-
-            if (nextQueue.length === 0) {
-                queueBecameEmpty = true;
-            }
-
-            return nextQueue;
-        });
-
-        setQueueStats((prev) => {
-            const next = { ...prev };
-            const currentBucket = statusToQueueBucket(currentCard.state.status);
-            next[currentBucket] = Math.max(0, next[currentBucket] - 1);
-
-            if (isCardDueNow(result.updatedCard, nowMs)) {
-                const nextBucket = statusToQueueBucket(result.updatedCard.state.status);
-                next[nextBucket] += 1;
-            }
-
-            return next;
-        });
-
-        setShowingAnswer(false);
-        bumpDataVersion();
-
-        answersSinceRefreshRef.current += 1;
-        // Always do a full DB rebuild when the queue empties — the in-memory queue
-        // may not contain learning cards from earlier answers that are still waiting.
-        if (queueBecameEmpty || answersSinceRefreshRef.current >= 8 || queue.length <= 1) {
-            buildQueue(nextStats.newCardsToday);
-        } else {
-            scheduleFullRefresh(15000, nextStats.newCardsToday);
+        } finally {
+            isMutatingRef.current = false;
         }
     }, [
         currentCard,
@@ -336,28 +345,35 @@ export default function StudyScreen() {
     ]);
 
     const undoLast = useCallback(async () => {
-        if (undoStack.length === 0) return;
+        // Same re-entrancy guard as answerCard: repeated Ctrl+Z presses would pop two
+        // stack entries while actually undoing the same answer twice.
+        if (undoStack.length === 0 || isMutatingRef.current) return;
+        isMutatingRef.current = true;
 
-        const undo = undoStack[undoStack.length - 1];
+        try {
+            const undo = undoStack[undoStack.length - 1];
 
-        // If the collection was replaced (backup restore, import) the snapshot belongs to
-        // a card that no longer exists — drop the stale stack instead of resurrecting it.
-        if (!getAnkiCard(undo.cardId)) {
-            console.warn('[Study] undo target missing, clearing stale undo stack.');
-            setUndoStack([]);
-            buildQueue();
-            return;
+            // If the collection was replaced (backup restore, import) the snapshot belongs to
+            // a card that no longer exists — drop the stale stack instead of resurrecting it.
+            if (!getAnkiCard(undo.cardId)) {
+                console.warn('[Study] undo target missing, clearing stale undo stack.');
+                setUndoStack([]);
+                buildQueue();
+                return;
+            }
+
+            setUndoStack((prev) => prev.slice(0, -1));
+
+            undoAnswer(undo.previousSnapshot, undo.reviewLogId);
+
+            sessionStatsRef.current = undo.previousStats;
+            setSessionStats(undo.previousStats);
+            await saveSessionStats(undo.previousStats);
+            bumpDataVersion();
+            buildQueue(undo.previousStats.newCardsToday);
+        } finally {
+            isMutatingRef.current = false;
         }
-
-        setUndoStack((prev) => prev.slice(0, -1));
-
-        undoAnswer(undo.previousSnapshot, undo.reviewLogId);
-
-        sessionStatsRef.current = undo.previousStats;
-        setSessionStats(undo.previousStats);
-        await saveSessionStats(undo.previousStats);
-        bumpDataVersion();
-        buildQueue(undo.previousStats.newCardsToday);
     }, [undoStack, buildQueue, bumpDataVersion]);
 
     const handleSuspend = useCallback(() => {
@@ -374,8 +390,10 @@ export default function StudyScreen() {
         buildQueue();
     }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
 
+    // Keyboard shortcuts are a web-only affordance; React Native's global `window`
+    // exists but is not a DOM event target.
     useEffect(() => {
-        if (typeof window === 'undefined') return;
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return;
 
         const isEditableTarget = (target: EventTarget | null): boolean => {
             if (!(target instanceof HTMLElement)) return false;
@@ -506,14 +524,32 @@ export default function StudyScreen() {
                             </View>
 
                             <View style={{ flex: 1 }} />
-                            <TouchableOpacity style={styles.iconBtn} onPress={handleBury} {...webTitle('Karti gomun (Bury)')}>
+                            <TouchableOpacity
+                                style={styles.iconBtn}
+                                onPress={handleBury}
+                                accessibilityRole="button"
+                                accessibilityLabel="Kartı göm"
+                                {...webTitle('Karti gomun (Bury)')}
+                            >
                                 <Text style={styles.iconBtnText}>💤</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconBtn} onPress={handleSuspend} {...webTitle('Karti askiya al (Suspend)')}>
+                            <TouchableOpacity
+                                style={styles.iconBtn}
+                                onPress={handleSuspend}
+                                accessibilityRole="button"
+                                accessibilityLabel="Kartı askıya al"
+                                {...webTitle('Karti askiya al (Suspend)')}
+                            >
                                 <Text style={styles.iconBtnText}>⏸️</Text>
                             </TouchableOpacity>
                             {undoStack.length > 0 && (
-                                <TouchableOpacity style={styles.iconBtn} onPress={undoLast} {...webTitle('Geri al (Ctrl+Z)')}>
+                                <TouchableOpacity
+                                    style={styles.iconBtn}
+                                    onPress={undoLast}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Son cevabı geri al"
+                                    {...webTitle('Geri al (Ctrl+Z)')}
+                                >
                                     <Text style={styles.iconBtnText}>↩️</Text>
                                 </TouchableOpacity>
                             )}
@@ -553,6 +589,8 @@ export default function StudyScreen() {
                                     style={styles.showAnswerBtn}
                                     onPress={() => setShowingAnswer(true)}
                                     activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Cevabı göster"
                                 >
                                     <Text style={styles.showAnswerText}>👁️ Cevabı Göster</Text>
                                 </TouchableOpacity>
@@ -564,6 +602,8 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnAgainBg, borderColor: '#e8c4c0' }]}
                                     onPress={() => answerCard(1)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Tekrar, sonraki gösterim ${preview.again}`}
                                     {...webTitle('Tekrar - Karti hatirlamadim (1)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnAgain }]}>{preview.again}</Text>
@@ -572,6 +612,8 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnHardBg, borderColor: '#e8d8b5' }]}
                                     onPress={() => answerCard(2)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Zor, sonraki gösterim ${preview.hard}`}
                                     {...webTitle('Zor - Zorlanarak hatirladim (2)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnHard }]}>{preview.hard}</Text>
@@ -580,6 +622,8 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnGoodBg, borderColor: '#b8dcc8' }]}
                                     onPress={() => answerCard(3)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`İyi, sonraki gösterim ${preview.good}`}
                                     {...webTitle('Iyi - Dogru hatirladim (3)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnGood }]}>{preview.good}</Text>
@@ -588,6 +632,8 @@ export default function StudyScreen() {
                                 <TouchableOpacity
                                     style={[styles.answerBtn, { backgroundColor: Colors.btnEasyBg, borderColor: '#b8cfe0' }]}
                                     onPress={() => answerCard(4)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Kolay, sonraki gösterim ${preview.easy}`}
                                     {...webTitle('Kolay - Cok kolay hatirladim (4)')}
                                 >
                                     <Text style={[styles.btnTime, { color: Colors.btnEasy }]}>{preview.easy}</Text>

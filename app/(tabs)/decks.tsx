@@ -81,7 +81,12 @@ export default function DecksScreen() {
                     onLongPress={() => handleStudy(node.deck.name)}
                 >
                     {hasChildren ? (
-                        <TouchableOpacity style={styles.expandBtn} onPress={() => toggleExpand(node.deck.name)}>
+                        <TouchableOpacity
+                            style={styles.expandBtn}
+                            onPress={() => toggleExpand(node.deck.name)}
+                            accessibilityRole="button"
+                            accessibilityLabel={isExpanded ? 'Alt desteleri gizle' : 'Alt desteleri göster'}
+                        >
                             <Text style={styles.expandArrow}>{isExpanded ? '▾' : '▸'}</Text>
                         </TouchableOpacity>
                     ) : (
@@ -98,7 +103,12 @@ export default function DecksScreen() {
                         <Text style={[styles.countBadge, styles.countReview]}>{node.reviewCount}</Text>
                     </View>
 
-                    <TouchableOpacity style={styles.gearBtn} onPress={() => alert('Deste', node.deck.name)}>
+                    <TouchableOpacity
+                        style={styles.gearBtn}
+                        onPress={() => alert('Deste', node.deck.name)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${displayName} deste seçenekleri`}
+                    >
                         <Text style={styles.gearText}>⚙️</Text>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -116,7 +126,12 @@ export default function DecksScreen() {
                     <TouchableOpacity style={styles.headerBtn} onPress={() => setShowAddDeck(!showAddDeck)}>
                         <Text style={styles.headerBtnText}>+ Deste</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerBtn} onPress={refresh}>
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={refresh}
+                        accessibilityRole="button"
+                        accessibilityLabel="Desteleri yenile"
+                    >
                         <Text style={styles.headerBtnText}>↻</Text>
                     </TouchableOpacity>
                 </View>

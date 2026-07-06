@@ -99,6 +99,8 @@ export function Sidebar(props: SidebarProps) {
                                 <TouchableOpacity
                                     style={styles.expandBtn}
                                     onPress={() => onToggleExpand(subject.id)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={isExpanded ? 'Alt başlıkları gizle' : 'Alt başlıkları göster'}
                                     {...webTitle(isExpanded ? 'Alt basliklari gizle' : 'Alt basliklari goster')}
                                 >
                                     <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
