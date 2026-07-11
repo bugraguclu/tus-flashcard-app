@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, type ViewProps } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize, Shadows } from '../../constants/theme';
-import { TUS_SUBJECTS } from '../../lib/data';
+import { findSubject } from '../../lib/subjects';
 import { getScheduler, todayLocalYMD } from '../../lib/scheduler';
-import { loadSessionStats, saveSessionStats } from '../../lib/storage';
+import { nextRolloverMs } from '../../lib/ankiState';
+import { getStudyStreak, getTodayAnswerStats, type StudyStreak } from '../../lib/reviewLogger';
 import { useApp } from './_layout';
 import type { Grade, SessionStats, StudyCard } from '../../lib/types';
 import type { AnkiCard } from '../../lib/models';
@@ -34,12 +35,29 @@ type UndoEntry = {
     cardId: number;
     reviewLogId: number;
     previousSnapshot: AnkiCard;
-    previousStats: SessionStats;
 };
+
+/**
+ * Today's session numbers, always derived from the review log. The revlog is the durable
+ * source of truth, so these survive restarts, OS sleep and multiple tabs — a cached blob
+ * (the old approach) silently zeroed on any state loss.
+ */
+function readTodaySessionStats(rolloverHour: number): SessionStats {
+    const today = getTodayAnswerStats(rolloverHour);
+    return {
+        reviewed: today.reviewed,
+        correct: today.passed,
+        wrong: today.failed,
+        startTime: Date.now(),
+        newCardsToday: today.newCardsIntroduced,
+        date: todayLocalYMD(undefined, rolloverHour),
+    };
+}
 
 export default function StudyScreen() {
     const { selectedSubject, selectedTopic, settings, bumpDataVersion } = useApp();
     const params = useLocalSearchParams();
+    const router = useRouter();
     const selectedDeckName = typeof params.deck === 'string' ? params.deck : null;
 
     const [sessionStats, setSessionStats] = useState<SessionStats>({
@@ -50,6 +68,7 @@ export default function StudyScreen() {
         newCardsToday: 0,
         date: todayLocalYMD(),
     });
+    const [streak, setStreak] = useState<StudyStreak>({ current: 0, studiedToday: false, best: 0 });
     const [queue, setQueue] = useState<StudyCard[]>([]);
     const [currentCard, setCurrentCard] = useState<StudyCard | null>(null);
     const [showingAnswer, setShowingAnswer] = useState(false);
@@ -59,6 +78,10 @@ export default function StudyScreen() {
     const [countdown, setCountdown] = useState('');
     const [queueStats, setQueueStats] = useState<QueueStats>({ newCount: 0, learningCount: 0, reviewCount: 0 });
     const [dailyNewLimitReached, setDailyNewLimitReached] = useState(false);
+    const [heldBackNewCount, setHeldBackNewCount] = useState(0);
+    // One-shot "study ahead" window: serve learning cards due before this timestamp even
+    // though their step timer is still running (Anki's learn-ahead, but user-triggered).
+    const [studyAheadUntil, setStudyAheadUntil] = useState<number | null>(null);
     const [answerStartedAt, setAnswerStartedAt] = useState<number>(Date.now());
 
     const sessionStatsRef = useRef(sessionStats);
@@ -87,8 +110,19 @@ export default function StudyScreen() {
             scheduledRefreshRef.current = null;
         }
 
+        // Widen the learn-ahead window when the user asked to study waiting cards early.
+        const effectiveSettings = studyAheadUntil && studyAheadUntil > Date.now()
+            ? {
+                ...settings,
+                learnAheadMinutes: Math.max(
+                    settings.learnAheadMinutes || 0,
+                    Math.ceil((studyAheadUntil - Date.now()) / 60000) + 1,
+                ),
+            }
+            : settings;
+
         const result = getStudyQueue({
-            settings,
+            settings: effectiveSettings,
             selectedSubject,
             selectedTopic,
             selectedDeckName,
@@ -112,11 +146,12 @@ export default function StudyScreen() {
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
         setDailyNewLimitReached(result.dailyNewLimitReached);
+        setHeldBackNewCount(result.heldBackNewCount);
 
         if (resetCounter) {
             answersSinceRefreshRef.current = 0;
         }
-    }, [settings, selectedSubject, selectedTopic, selectedDeckName]);
+    }, [settings, selectedSubject, selectedTopic, selectedDeckName, studyAheadUntil]);
 
     const scheduleFullRefresh = useCallback((delayMs: number, newCardsStudiedToday?: number) => {
         if (scheduledRefreshRef.current) {
@@ -129,14 +164,28 @@ export default function StudyScreen() {
         }, delayMs);
     }, [buildQueue]);
 
-    useEffect(() => {
-        async function load() {
-            const stats = await loadSessionStats();
-            setSessionStats(stats);
-            setLoading(false);
+    const refreshSessionStats = useCallback(() => {
+        try {
+            const fresh = readTodaySessionStats(settings.dayRolloverHour);
+            sessionStatsRef.current = fresh;
+            setSessionStats(fresh);
+            setStreak(getStudyStreak(settings.dayRolloverHour));
+            return fresh;
+        } catch (e) {
+            console.warn('[Study] session stats refresh failed:', e);
+            return sessionStatsRef.current;
         }
-        load();
-    }, []);
+    }, [settings.dayRolloverHour]);
+
+    useEffect(() => {
+        refreshSessionStats();
+        setLoading(false);
+    }, [refreshSessionStats]);
+
+    // A manual study-ahead request belongs to the scope it was made in.
+    useEffect(() => {
+        setStudyAheadUntil(null);
+    }, [selectedSubject, selectedTopic, selectedDeckName]);
 
     useEffect(() => {
         if (!loading) {
@@ -249,29 +298,18 @@ export default function StudyScreen() {
                 return;
             }
 
-            const prevStats = sessionStatsRef.current;
-            const nextStats: SessionStats = {
-                ...prevStats,
-                reviewed: prevStats.reviewed + 1,
-                // Anki semantics: only Again is a failed review; Hard still passes.
-                correct: grade > 1 ? prevStats.correct + 1 : prevStats.correct,
-                wrong: grade === 1 ? prevStats.wrong + 1 : prevStats.wrong,
-                newCardsToday: result.wasNewCard ? (prevStats.newCardsToday || 0) + 1 : prevStats.newCardsToday,
-            };
-
             setUndoStack((prev) => [
                 ...prev.slice(-29),
                 {
                     cardId: currentCard.cardId,
                     reviewLogId: result.reviewLogId,
                     previousSnapshot: result.previousAnkiCard,
-                    previousStats: { ...prevStats },
                 },
             ]);
 
-            sessionStatsRef.current = nextStats;
-            setSessionStats(nextStats);
-            await saveSessionStats(nextStats);
+            // The review log row is already committed, so re-reading it gives exact numbers
+            // (reviewed / passed / new-introduced) with no drift to hand-maintain.
+            const nextStats = refreshSessionStats();
 
             // Incremental queue update: pop current card, optionally reinsert if still due now.
             const nowMs = Date.now();
@@ -312,9 +350,17 @@ export default function StudyScreen() {
                 const currentBucket = statusToQueueBucket(currentCard.state.status);
                 next[currentBucket] = Math.max(0, next[currentBucket] - 1);
 
-                if (isCardDueNow(result.updatedCard, nowMs)) {
-                    const nextBucket = statusToQueueBucket(result.updatedCard.state.status);
-                    next[nextBucket] += 1;
+                const updated = result.updatedCard;
+                if (updated.state.status === 'learning') {
+                    // Learning counts for the whole study day (Anki deck-list semantics):
+                    // a card waiting on its 10-minute step is still today's workload, so the
+                    // ÖĞRENİYOR counter must grow the moment a new card enters learning.
+                    const endOfDay = nextRolloverMs(nowMs, settings.dayRolloverHour);
+                    if (updated.state.dueTime === 0 || updated.state.dueTime < endOfDay) {
+                        next.learningCount += 1;
+                    }
+                } else if (isCardDueNow(updated, nowMs)) {
+                    next[statusToQueueBucket(updated.state.status)] += 1;
                 }
 
                 return next;
@@ -342,6 +388,7 @@ export default function StudyScreen() {
         bumpDataVersion,
         queue.length,
         scheduleFullRefresh,
+        refreshSessionStats,
     ]);
 
     const undoLast = useCallback(async () => {
@@ -366,15 +413,14 @@ export default function StudyScreen() {
 
             undoAnswer(undo.previousSnapshot, undo.reviewLogId);
 
-            sessionStatsRef.current = undo.previousStats;
-            setSessionStats(undo.previousStats);
-            await saveSessionStats(undo.previousStats);
+            // Deleting the revlog row already reverted the day's numbers; re-read them.
+            const restoredStats = refreshSessionStats();
             bumpDataVersion();
-            buildQueue(undo.previousStats.newCardsToday);
+            buildQueue(restoredStats.newCardsToday);
         } finally {
             isMutatingRef.current = false;
         }
-    }, [undoStack, buildQueue, bumpDataVersion]);
+    }, [undoStack, buildQueue, bumpDataVersion, refreshSessionStats]);
 
     const handleSuspend = useCallback(() => {
         if (!currentCard) return;
@@ -463,12 +509,24 @@ export default function StudyScreen() {
 
     const preview = getPreview();
     const currentCardState = currentCard?.state;
-    const subject = currentCard ? TUS_SUBJECTS.find((item) => item.id === currentCard.subject) : null;
+    const subject = currentCard ? findSubject(currentCard.subject) : null;
 
     return (
         <View style={styles.container}>
             <View style={styles.topBar}>
-                <Text style={styles.topBarTitle}>Bugünün Kartları</Text>
+                <View style={styles.topBarTitleRow}>
+                    <Text style={styles.topBarTitle}>Bugünün Kartları</Text>
+                    {streak.current > 0 && (
+                        <View
+                            style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
+                            {...webTitle(streak.studiedToday
+                                ? `Günlük seri: ${streak.current} gün`
+                                : `Seri ${streak.current} günde — bugün çalışarak devam ettir!`)}
+                        >
+                            <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
+                        </View>
+                    )}
+                </View>
                 <View style={styles.statsRow}>
                     <View style={styles.stat}>
                         <Text style={[styles.statCount, { color: Colors.badgeNew }]}>{queueStats.newCount}</Text>
@@ -528,19 +586,21 @@ export default function StudyScreen() {
                                 style={styles.iconBtn}
                                 onPress={handleBury}
                                 accessibilityRole="button"
-                                accessibilityLabel="Kartı göm"
-                                {...webTitle('Karti gomun (Bury)')}
+                                accessibilityLabel="Kartı göm — yarına kadar gizlenir"
+                                {...webTitle('Gom (Bury): kart yarina kadar gizlenir')}
                             >
                                 <Text style={styles.iconBtnText}>💤</Text>
+                                <Text style={styles.iconBtnLabel}>Göm</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.iconBtn}
                                 onPress={handleSuspend}
                                 accessibilityRole="button"
-                                accessibilityLabel="Kartı askıya al"
-                                {...webTitle('Karti askiya al (Suspend)')}
+                                accessibilityLabel="Kartı askıya al — sen açana kadar gösterilmez"
+                                {...webTitle('Askiya al (Suspend): sen geri acana kadar gosterilmez')}
                             >
                                 <Text style={styles.iconBtnText}>⏸️</Text>
+                                <Text style={styles.iconBtnLabel}>Askıya Al</Text>
                             </TouchableOpacity>
                             {undoStack.length > 0 && (
                                 <TouchableOpacity
@@ -551,6 +611,7 @@ export default function StudyScreen() {
                                     {...webTitle('Geri al (Ctrl+Z)')}
                                 >
                                     <Text style={styles.iconBtnText}>↩️</Text>
+                                    <Text style={styles.iconBtnLabel}>Geri Al</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -651,11 +712,37 @@ export default function StudyScreen() {
                 ) : nextLearningDue ? (
                     <View style={styles.emptyState}>
                         <Text style={styles.emptyIcon}>⏳</Text>
-                        <Text style={styles.emptyTitle}>Kart Bekleniyor</Text>
+                        <Text style={styles.emptyTitle}>Şimdilik Hepsi Bu Kadar!</Text>
                         <Text style={styles.countdownText}>{countdown}</Text>
                         <Text style={styles.emptyDesc}>
-                            Öğrenme kartları bekleme süresinde. Süre dolduğunda otomatik gösterilecek.
+                            Şu an hazır olan tüm kartları bitirdin.{' '}
+                            {queueStats.learningCount > 0
+                                ? `${queueStats.learningCount} öğrenme kartı zamanlayıcıda bekliyor`
+                                : 'Öğrenme kartları zamanlayıcıda bekliyor'}
+                            {' '}— süre dolunca otomatik gösterilecek. İstersen aşağıdan süreyi beklemeden devam edebilirsin.
                         </Text>
+                        {dailyNewLimitReached && heldBackNewCount > 0 && (
+                            <Text style={styles.emptyInfo}>
+                                📋 Günlük yeni kart limiti doldu — {heldBackNewCount} yeni kart sırada, yarın gösterilecek.
+                            </Text>
+                        )}
+                        <TouchableOpacity
+                            style={styles.primaryActionBtn}
+                            onPress={() => setStudyAheadUntil(nextLearningDue + 60000)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Bekleme süresini atla ve hemen çalış"
+                            {...webTitle('Zamanlayiciyi bekleme, sirali ogrenme kartlarini simdi calis')}
+                        >
+                            <Text style={styles.primaryActionText}>⚡ Beklemeden Çalış</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.secondaryActionBtn}
+                            onPress={() => router.push('/settings')}
+                            accessibilityRole="button"
+                            accessibilityLabel="Ayarları aç"
+                        >
+                            <Text style={styles.secondaryActionText}>⚙️ Limit ve bekleme ayarları</Text>
+                        </TouchableOpacity>
                         <Text style={styles.emptySub}>
                             Bugün <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> kart tekrar edildi.
                         </Text>
@@ -663,10 +750,20 @@ export default function StudyScreen() {
                 ) : dailyNewLimitReached ? (
                     <View style={styles.emptyState}>
                         <Text style={styles.emptyIcon}>📋</Text>
-                        <Text style={styles.emptyTitle}>Günlük Limit</Text>
+                        <Text style={styles.emptyTitle}>Günlük Yeni Kart Limiti Doldu</Text>
                         <Text style={styles.emptyDesc}>
-                            Günlük yeni kart limiti ({settings.dailyNewLimit}) doldu. Ayarlardan limiti artırabilirsiniz.
+                            Bugün {sessionStats.newCardsToday || 0} yeni kart öğrendin.
+                            {heldBackNewCount > 0 ? ` ${heldBackNewCount} yeni kart sırada — yarın otomatik gösterilecek.` : ''}
+                            {' '}Devam etmek istersen limiti Ayarlar&apos;dan artırabilirsin.
                         </Text>
+                        <TouchableOpacity
+                            style={styles.secondaryActionBtn}
+                            onPress={() => router.push('/settings')}
+                            accessibilityRole="button"
+                            accessibilityLabel="Ayarlardan limiti artır"
+                        >
+                            <Text style={styles.secondaryActionText}>⚙️ Limiti Artır</Text>
+                        </TouchableOpacity>
                         <Text style={styles.emptySub}>
                             Bugün <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> kart tekrar edildi.
                         </Text>
@@ -679,7 +776,7 @@ export default function StudyScreen() {
                             {selectedTopic
                                 ? `"${selectedTopic}" konusu`
                                 : selectedSubject
-                                    ? `"${TUS_SUBJECTS.find((item) => item.id === selectedSubject)?.name}" dersi`
+                                    ? `"${findSubject(selectedSubject)?.name ?? selectedSubject}" dersi`
                                     : 'Tüm dersler'} için bugünlük tüm kartlar tamamlandı.
                         </Text>
                         <Text style={styles.emptySub}>
@@ -720,7 +817,18 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: Colors.borderLight,
     },
+    topBarTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     topBarTitle: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textPrimary },
+    streakChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.btnHardBg,
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 12,
+    },
+    streakChipIdle: { opacity: 0.55 },
+    streakChipText: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.btnHard },
     statsRow: { flexDirection: 'row', gap: 20 },
     stat: { alignItems: 'center' },
     statCount: { fontSize: 24, fontWeight: '700' },
@@ -741,14 +849,16 @@ const styles = StyleSheet.create({
     statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 4 },
     statusText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
     iconBtn: {
-        width: 32,
-        height: 32,
+        minWidth: 44,
         borderRadius: 6,
         backgroundColor: Colors.bgInput,
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 3,
+        paddingHorizontal: 6,
     },
-    iconBtnText: { fontSize: 16 },
+    iconBtnText: { fontSize: 15 },
+    iconBtnLabel: { fontSize: 8, fontWeight: '600', color: Colors.textMuted, marginTop: 1 },
 
     cardBody: {
         backgroundColor: Colors.bgCard,
@@ -828,6 +938,31 @@ const styles = StyleSheet.create({
         fontVariant: ['tabular-nums'] as any,
     },
     emptyTitle: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.accent, marginBottom: Spacing.sm },
-    emptyDesc: { fontSize: FontSize.lg, color: Colors.textSecondary, textAlign: 'center' },
-    emptySub: { fontSize: FontSize.md, color: Colors.textSecondary, marginTop: Spacing.sm },
+    emptyDesc: { fontSize: FontSize.lg, color: Colors.textSecondary, textAlign: 'center', maxWidth: 520 },
+    emptyInfo: {
+        fontSize: FontSize.md,
+        color: Colors.btnHard,
+        textAlign: 'center',
+        marginTop: Spacing.md,
+        maxWidth: 520,
+    },
+    primaryActionBtn: {
+        marginTop: Spacing.xl,
+        backgroundColor: Colors.accent,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.xxl,
+        borderRadius: 8,
+    },
+    primaryActionText: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.white },
+    secondaryActionBtn: {
+        marginTop: Spacing.md,
+        backgroundColor: Colors.bgInput,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.xl,
+        borderRadius: 8,
+    },
+    secondaryActionText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textSecondary },
+    emptySub: { fontSize: FontSize.md, color: Colors.textSecondary, marginTop: Spacing.lg },
 });

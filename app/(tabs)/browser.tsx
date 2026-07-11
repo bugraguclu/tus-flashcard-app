@@ -9,15 +9,58 @@ import {
     SafeAreaView,
     FlatList,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { TUS_SUBJECTS } from '../../lib/data';
+import { getAllSubjects } from '../../lib/subjects';
 import { dbSearchCards } from '../../lib/db';
+import { localDayNumber, ymdToLocalDayNumber } from '../../lib/ankiState';
 import { useApp } from './_layout';
-import type { StudyCard } from '../../lib/types';
+import type { CardState, StudyCard } from '../../lib/types';
 import { getBrowserCards, setCardSuspended } from '../../lib/studyRepository';
+
+/** Compact "how long ago" label for the card list (Turkish). */
+function formatLastReview(lastReviewedAtMs: number): string {
+    if (!lastReviewedAtMs) return 'Hiç çalışılmadı';
+
+    const elapsedMs = Date.now() - lastReviewedAtMs;
+    if (elapsedMs < 60_000) return 'Az önce';
+    if (elapsedMs < 3_600_000) return `${Math.floor(elapsedMs / 60_000)}dk önce`;
+    if (elapsedMs < 86_400_000) return `${Math.floor(elapsedMs / 3_600_000)}sa önce`;
+
+    const days = Math.floor(elapsedMs / 86_400_000);
+    if (days < 30) return `${days} gün önce`;
+
+    const date = new Date(lastReviewedAtMs);
+    return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+}
+
+/** Compact "when is it due" label from the scheduling state (Turkish). */
+function formatNextDue(state: CardState, rolloverHour: number): string {
+    if (state.suspended) return 'Askıda';
+    if (state.buried) return 'Gömülü (yarın)';
+    if (state.status === 'new') return 'Sırada (yeni)';
+
+    if (state.status === 'learning' && state.dueTime > 0) {
+        const remainingMs = state.dueTime - Date.now();
+        if (remainingMs <= 0) return 'Şimdi';
+        if (remainingMs < 3_600_000) return `${Math.max(1, Math.ceil(remainingMs / 60_000))}dk içinde`;
+        return `${Math.ceil(remainingMs / 3_600_000)}sa içinde`;
+    }
+
+    const today = localDayNumber(Date.now(), rolloverHour);
+    const dueDay = ymdToLocalDayNumber(state.dueDate, today, rolloverHour);
+    const diff = dueDay - today;
+    if (diff <= 0) return 'Bugün';
+    if (diff === 1) return 'Yarın';
+    if (diff < 30) return `${diff} gün içinde`;
+    if (diff < 365) return `${Math.round(diff / 30)} ay içinde`;
+    return `${(diff / 365).toFixed(1)} yıl içinde`;
+}
 
 export default function BrowserScreen() {
     const { settings, bumpDataVersion, dataVersion } = useApp();
+    const router = useRouter();
+    const subjects = useMemo(() => getAllSubjects(), [dataVersion]);
 
     const [allCards, setAllCards] = useState<StudyCard[]>([]);
     const [rawQuery, setRawQuery] = useState('');
@@ -82,7 +125,7 @@ export default function BrowserScreen() {
         reload();
     }, [reload, bumpDataVersion, settings.dayRolloverHour]);
 
-    const subject = (id: string) => TUS_SUBJECTS.find((s) => s.id === id);
+    const subject = (id: string) => subjects.find((s) => s.id === id);
 
     const renderCard = ({ item }: { item: StudyCard }) => {
         const isExpanded = expandedCard === item.cardId;
@@ -120,7 +163,18 @@ export default function BrowserScreen() {
                                 </Text>
                             </View>
                         </View>
+                        <Text style={styles.scheduleMeta}>
+                            ⏱ Son: {formatLastReview(item.state.lastReviewedAtMs)} · Sonraki: {formatNextDue(item.state, settings.dayRolloverHour)}
+                        </Text>
                     </View>
+                    <TouchableOpacity
+                        style={styles.editBtn}
+                        onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Kartı düzenle"
+                    >
+                        <Text style={styles.editBtnText}>✏️</Text>
+                    </TouchableOpacity>
                     {item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
                 </View>
 
@@ -163,8 +217,17 @@ export default function BrowserScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>🗂️ Kart Tarayıcı</Text>
+                <Text style={styles.title}>🗂️ Kartlarım</Text>
                 <Text style={styles.subtitle}>{filteredCards.length} kart</Text>
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity
+                    style={styles.addCardBtn}
+                    onPress={() => router.push(selectedSubject ? `/editor?subject=${selectedSubject}` : '/editor')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Yeni kart ekle"
+                >
+                    <Text style={styles.addCardBtnText}>＋ Yeni Kart</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.searchContainer}>
@@ -184,7 +247,7 @@ export default function BrowserScreen() {
                 >
                     <Text style={[styles.filterChipText, !selectedSubject && styles.filterChipTextActive]}>Tümü</Text>
                 </TouchableOpacity>
-                {TUS_SUBJECTS.map((item) => (
+                {subjects.map((item) => (
                     <TouchableOpacity
                         key={item.id}
                         style={[styles.filterChip, selectedSubject === item.id && styles.filterChipActive]}
@@ -222,6 +285,13 @@ const styles = StyleSheet.create({
     },
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textPrimary },
     subtitle: { fontSize: FontSize.md, color: Colors.textMuted },
+    addCardBtn: {
+        backgroundColor: Colors.accent,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: 8,
+        borderRadius: BorderRadius.sm,
+    },
+    addCardBtnText: { fontSize: FontSize.md, fontWeight: '700', color: Colors.white },
 
     searchContainer: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
     searchInput: {
@@ -267,6 +337,16 @@ const styles = StyleSheet.create({
     cardTopic: { fontSize: FontSize.xs, color: Colors.textMuted },
     statusDot: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
     statusDotText: { fontSize: 9, fontWeight: '600' },
+    scheduleMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 3 },
+    editBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 6,
+        backgroundColor: Colors.bgInput,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    editBtnText: { fontSize: 14 },
     suspendedIcon: { fontSize: 18 },
 
     expandedContent: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderLight },

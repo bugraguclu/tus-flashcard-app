@@ -10,6 +10,7 @@ import {
 import { Slot, useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize } from '../../constants/theme';
 import { getSearchIndexCards } from '../../lib/noteManager';
+import { getAllSubjects } from '../../lib/subjects';
 import { useApp } from './app-context';
 import { Sidebar, SIDEBAR_WIDTH } from './sidebar';
 
@@ -49,6 +50,15 @@ export default function TabLayout() {
         }
     }, [dataVersion]);
 
+    const subjects = useMemo(() => {
+        try {
+            return getAllSubjects();
+        } catch (e) {
+            console.warn('[Layout] getAllSubjects failed:', e);
+            return [];
+        }
+    }, [dataVersion]);
+
     const { subjectCounts, topicCounts } = useMemo(() => {
         const nextSubjectCounts = new Map<string, number>();
         const nextTopicCounts = new Map<string, Map<string, number>>();
@@ -78,6 +88,19 @@ export default function TabLayout() {
     const getTopicCount = useCallback(
         (subjectId: string, topic: string) => topicCounts.get(subjectId)?.get(topic) ?? 0,
         [topicCounts],
+    );
+
+    // Navigation must show every topic that actually has cards, not just the seeded list —
+    // otherwise a card created with a fresh topic is unreachable from the sidebar.
+    const getTopicsForSubject = useCallback(
+        (subjectId: string) => {
+            const staticTopics = subjects.find((subject) => subject.id === subjectId)?.topics ?? [];
+            const discovered = [...(topicCounts.get(subjectId)?.keys() ?? [])]
+                .filter((topic) => !staticTopics.includes(topic))
+                .sort((a, b) => a.localeCompare(b, 'tr'));
+            return [...staticTopics, ...discovered];
+        },
+        [subjects, topicCounts],
     );
 
     const totalCards = searchableCards.length;
@@ -140,12 +163,14 @@ export default function TabLayout() {
                 <Sidebar
                     isWide={isWide}
                     sidebarOpen={sidebarOpen}
+                    subjects={subjects}
                     selectedSubject={selectedSubject}
                     selectedTopic={selectedTopic}
                     expandedSubject={expandedSubject}
                     totalCards={totalCards}
                     getSubjectCount={getSubjectCount}
                     getTopicCount={getTopicCount}
+                    getTopicsForSubject={getTopicsForSubject}
                     onAllPress={handleAllPress}
                     onSubjectPress={handleSubjectPress}
                     onToggleExpand={handleToggleExpand}

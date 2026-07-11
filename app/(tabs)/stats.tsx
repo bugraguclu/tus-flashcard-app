@@ -10,58 +10,77 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { TUS_SUBJECTS } from '../../lib/data';
-import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSessionStats, loadSettings } from '../../lib/storage';
+import { getAllSubjects } from '../../lib/subjects';
+import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSettings } from '../../lib/storage';
 import { aggregateBucketsSql, perSubjectStatsSql } from '../../lib/statsHelpers';
-import { getTodayStudyTimeMs } from '../../lib/reviewLogger';
+import {
+    getDailyReviewCounts,
+    getStudyStreak,
+    getTodayAnswerStats,
+    type StudyStreak,
+    type TodayAnswerStats,
+} from '../../lib/reviewLogger';
 import { confirm, alert } from '../../lib/confirm';
-import { todayLocalYMD } from '../../lib/scheduler';
-import type { AppSettings, SessionStats } from '../../lib/types';
+import type { AppSettings } from '../../lib/types';
 import { useApp } from './_layout';
+
+const EMPTY_TODAY: TodayAnswerStats = {
+    reviewed: 0,
+    passed: 0,
+    failed: 0,
+    newCardsIntroduced: 0,
+    studyTimeMs: 0,
+};
 
 export default function StatsScreen() {
     const { dataVersion, bumpDataVersion, refreshData } = useApp();
-    const [sessionStats, setSessionStats] = useState<SessionStats>({
-        reviewed: 0,
-        correct: 0,
-        wrong: 0,
-        startTime: Date.now(),
-        newCardsToday: 0,
-        date: todayLocalYMD(),
-    });
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [importData, setImportData] = useState('');
     const [showImport, setShowImport] = useState(false);
 
     useEffect(() => {
-        let cancelled = false;
-
-        async function load() {
-            const stats = await loadSessionStats();
-            const appSettings = loadSettings();
-
-            if (cancelled) return;
-
-            setSessionStats(stats);
-            setSettings(appSettings);
-            setLoading(false);
-        }
-
-        load();
-
-        return () => {
-            cancelled = true;
-        };
+        setSettings(loadSettings());
+        setLoading(false);
     }, [dataVersion]);
+
+    // All "today" numbers come from the review log — the durable source that survives
+    // restarts, OS sleep and day rollovers (unlike the old cached session blob).
+    const todayStats = useMemo(() => {
+        try {
+            return getTodayAnswerStats(settings.dayRolloverHour);
+        } catch (e) {
+            console.warn('[Stats] getTodayAnswerStats failed:', e);
+            return EMPTY_TODAY;
+        }
+    }, [dataVersion, settings.dayRolloverHour]);
+
+    const streak = useMemo<StudyStreak>(() => {
+        try {
+            return getStudyStreak(settings.dayRolloverHour);
+        } catch (e) {
+            console.warn('[Stats] getStudyStreak failed:', e);
+            return { current: 0, studiedToday: false, best: 0 };
+        }
+    }, [dataVersion, settings.dayRolloverHour]);
+
+    const recentDays = useMemo(() => {
+        try {
+            return getDailyReviewCounts(14, settings.dayRolloverHour);
+        } catch (e) {
+            console.warn('[Stats] getDailyReviewCounts failed:', e);
+            return [];
+        }
+    }, [dataVersion, settings.dayRolloverHour]);
 
     const bucketTotals = useMemo(() => aggregateBucketsSql(), [dataVersion]);
 
     const subjectStats = useMemo(() => {
-        const subjectIds = TUS_SUBJECTS.map((s) => s.id);
+        const subjects = getAllSubjects();
+        const subjectIds = subjects.map((s) => s.id);
         const perSubject = perSubjectStatsSql(subjectIds);
 
-        return TUS_SUBJECTS.map((subject) => {
+        return subjects.map((subject) => {
             const bucket = perSubject.get(subject.id);
             const total = bucket?.total ?? 0;
             const newCount = bucket?.newCount ?? 0;
@@ -83,17 +102,11 @@ export default function StatsScreen() {
         });
     }, [dataVersion]);
 
-    const accuracy = sessionStats.reviewed > 0
-        ? Math.round((sessionStats.correct / sessionStats.reviewed) * 100)
+    const accuracy = todayStats.reviewed > 0
+        ? Math.round((todayStats.passed / todayStats.reviewed) * 100)
         : 0;
-    const studyMinutes = useMemo(() => {
-        try {
-            return Math.round(getTodayStudyTimeMs(settings.dayRolloverHour) / 60000);
-        } catch (e) {
-            console.warn('[Stats] studyMinutes calculation failed:', e);
-            return 0;
-        }
-    }, [sessionStats.reviewed, settings.dayRolloverHour]);
+    const studyMinutes = Math.round(todayStats.studyTimeMs / 60000);
+    const maxRecentCount = Math.max(1, ...recentDays.map((day) => day.count));
 
     const handleExport = async () => {
         try {
@@ -146,7 +159,7 @@ export default function StatsScreen() {
                     <Text style={styles.sectionTitle}>Bugünün Özeti</Text>
                     <View style={styles.todayGrid}>
                         <View style={styles.todayStat}>
-                            <Text style={styles.todayNumber}>{sessionStats.reviewed}</Text>
+                            <Text style={styles.todayNumber}>{todayStats.reviewed}</Text>
                             <Text style={styles.todayLabel}>Tekrar</Text>
                         </View>
                         <View style={styles.todayStat}>
@@ -158,9 +171,51 @@ export default function StatsScreen() {
                             <Text style={styles.todayLabel}>Dakika</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={[styles.todayNumber, { color: Colors.badgeNew }]}>{sessionStats.newCardsToday || 0}</Text>
+                            <Text style={[styles.todayNumber, { color: Colors.badgeNew }]}>{todayStats.newCardsIntroduced}</Text>
                             <Text style={styles.todayLabel}>Yeni Kart</Text>
                         </View>
+                    </View>
+                </View>
+
+                <View style={styles.streakCard}>
+                    <View style={styles.streakHeader}>
+                        <Text style={styles.sectionTitle}>🔥 Günlük Seri</Text>
+                        <Text style={styles.streakBest}>En uzun: {streak.best} gün</Text>
+                    </View>
+                    <View style={styles.streakRow}>
+                        <Text style={styles.streakNumber}>{streak.current}</Text>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.streakUnit}>gün üst üste çalıştın</Text>
+                            <Text style={styles.streakHint}>
+                                {streak.studiedToday
+                                    ? 'Bugünü tamamladın — böyle devam! 💪'
+                                    : streak.current > 0
+                                        ? 'Bugün henüz çalışmadın; seriyi korumak için birkaç kart çöz.'
+                                        : 'Bugün birkaç kart çözerek yeni bir seri başlat.'}
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.historyRow}>
+                        {recentDays.map((day) => {
+                            const intensity = day.count === 0 ? 0 : Math.max(0.25, day.count / maxRecentCount);
+                            return (
+                                <View key={day.date} style={styles.historyCol}>
+                                    <View
+                                        style={[
+                                            styles.historyCell,
+                                            day.count > 0
+                                                ? { backgroundColor: Colors.accent, opacity: intensity }
+                                                : { backgroundColor: Colors.borderLight },
+                                        ]}
+                                        accessibilityLabel={`${day.date}: ${day.count} tekrar`}
+                                    />
+                                </View>
+                            );
+                        })}
+                    </View>
+                    <View style={styles.historyLabels}>
+                        <Text style={styles.historyLabelText}>2 hafta önce</Text>
+                        <Text style={styles.historyLabelText}>bugün</Text>
                     </View>
                 </View>
 
@@ -286,6 +341,26 @@ const styles = StyleSheet.create({
     todayStat: { alignItems: 'center' },
     todayNumber: { fontSize: FontSize.xxxl, fontWeight: '700', color: Colors.accent },
     todayLabel: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '500', marginTop: 2 },
+
+    streakCard: {
+        backgroundColor: Colors.bgCard,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.lg,
+        ...Shadows.sm,
+    },
+    streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+    streakBest: { fontSize: FontSize.sm, color: Colors.textMuted },
+    streakRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md },
+    streakNumber: { fontSize: 44, fontWeight: '700', color: Colors.btnHard },
+    streakUnit: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
+    streakHint: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
+    historyRow: { flexDirection: 'row', gap: 4 },
+    historyCol: { flex: 1 },
+    historyCell: { height: 22, borderRadius: 4 },
+    historyLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+    historyLabelText: { fontSize: FontSize.xs, color: Colors.textMuted },
 
     overviewCard: {
         backgroundColor: Colors.bgCard,

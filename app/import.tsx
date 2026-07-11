@@ -13,14 +13,14 @@ import {
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
-import { TUS_SUBJECTS } from '../lib/data';
+import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
 import { alert } from '../lib/confirm';
 import { readUriText } from '../lib/files';
 import { useApp } from './(tabs)/app-context';
 import { importDelimitedNotes } from '../lib/importNotes';
 import { importApkg } from '../lib/importApkg';
 import { getNoteType, type SearchIndexCard } from '../lib/noteManager';
-import { BUILTIN_NOTE_TYPES, subjectToDeckId } from '../lib/models';
+import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { parseDelimited } from '../lib/importDelimited';
 import { dbUpsertFtsCard } from '../lib/db';
 
@@ -47,9 +47,10 @@ async function readAssetBytes(uri: string): Promise<Uint8Array> {
 
 export default function ImportScreen() {
     const router = useRouter();
-    const { bumpDataVersion, settings } = useApp();
+    const { bumpDataVersion, settings, dataVersion } = useApp();
 
-    const [subject, setSubject] = useState(TUS_SUBJECTS[0].id);
+    const subjects = React.useMemo(() => getAllSubjects(), [dataVersion]);
+    const [subject, setSubject] = useState(subjects[0]?.id ?? '');
     const [topic, setTopic] = useState('');
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileText, setFileText] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export default function ImportScreen() {
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState<ImportSummary | null>(null);
 
-    const selectedSubject = TUS_SUBJECTS.find((entry) => entry.id === subject);
+    const selectedSubject = subjects.find((entry) => entry.id === subject);
     const hasFile = fileText !== null || fileBytes !== null;
 
     const pickFile = async () => {
@@ -129,7 +130,7 @@ export default function ImportScreen() {
                     BUILTIN_NOTE_TYPES.find((nt) => nt.id === TUS_BASIC_NOTETYPE_ID)!;
                 imported = importDelimitedNotes(fileText, {
                     noteType,
-                    deckId: subjectToDeckId(subject),
+                    deckId: resolveSubjectDeckId(subject),
                     defaultFields: ['', '', topicValue],
                     tags: [subject, topicValue.replace(/\s+/g, '-')],
                 });
@@ -160,7 +161,7 @@ export default function ImportScreen() {
 
                 <Text style={styles.label}>DERS</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
-                    {TUS_SUBJECTS.map((entry) => (
+                    {subjects.map((entry) => (
                         <TouchableOpacity
                             key={entry.id}
                             style={[styles.subjectChip, subject === entry.id && styles.subjectChipActive]}

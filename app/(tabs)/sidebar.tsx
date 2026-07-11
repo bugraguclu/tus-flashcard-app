@@ -9,19 +9,21 @@ import {
     Platform,
 } from 'react-native';
 import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
-import { TUS_SUBJECTS } from '../../lib/data';
+import type { Subject } from '../../lib/types';
 
 export const SIDEBAR_WIDTH = 260;
 
 type SidebarProps = {
     isWide: boolean;
     sidebarOpen: boolean;
+    subjects: Subject[];
     selectedSubject: string | null;
     selectedTopic: string | null;
     expandedSubject: string | null;
     totalCards: number;
     getSubjectCount: (subjectId: string) => number;
     getTopicCount: (subjectId: string, topic: string) => number;
+    getTopicsForSubject: (subjectId: string) => string[];
     onAllPress: () => void;
     onSubjectPress: (subjectId: string) => void;
     onToggleExpand: (subjectId: string) => void;
@@ -38,12 +40,14 @@ export function Sidebar(props: SidebarProps) {
     const {
         isWide,
         sidebarOpen,
+        subjects,
         selectedSubject,
         selectedTopic,
         expandedSubject,
         totalCards,
         getSubjectCount,
         getTopicCount,
+        getTopicsForSubject,
         onAllPress,
         onSubjectPress,
         onToggleExpand,
@@ -74,7 +78,7 @@ export function Sidebar(props: SidebarProps) {
                     </View>
                 </TouchableOpacity>
 
-                {TUS_SUBJECTS.map((subject) => {
+                {subjects.map((subject) => {
                     const isExpanded = expandedSubject === subject.id;
                     const isSelected = selectedSubject === subject.id && !selectedTopic;
 
@@ -109,7 +113,7 @@ export function Sidebar(props: SidebarProps) {
                                 </TouchableOpacity>
                             </View>
 
-                            {isExpanded && subject.topics.map((topic) => {
+                            {isExpanded && getTopicsForSubject(subject.id).map((topic) => {
                                 const isTopicSelected = selectedSubject === subject.id && selectedTopic === topic;
                                 return (
                                     <TouchableOpacity
@@ -138,9 +142,9 @@ export function Sidebar(props: SidebarProps) {
                         <Text style={styles.actionIcon}>+</Text>
                         <Text style={styles.actionText}>Kart Ekle</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle('Kart tarayicisini ac')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle('Kartlarim: tum kartlari gor ve duzenle')}>
                         <Text style={styles.actionIcon}>🗂️</Text>
-                        <Text style={styles.actionText}>Tarayıcı</Text>
+                        <Text style={styles.actionText}>Kartlarım</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/stats')} {...webTitle('Istatistikleri goruntule')}>
                         <Text style={styles.actionIcon}>📊</Text>
