@@ -592,9 +592,21 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
-    note.fields = [input.question, input.answer, input.topic];
-    note.sfld = input.question;
-    note.csum = checksumField(input.question);
+    // The simple editor only knows question/answer/topic. Notes of richer types
+    // (imported Anki decks, cloze) may carry more fields — overwrite only the
+    // slots the editor owns and keep the rest, or a save here would wipe them.
+    const noteType = getNoteType(note.noteTypeId);
+    const fieldCount = Math.max(noteType?.fields.length ?? 3, note.fields.length, 3);
+    const fields = [...note.fields];
+    fields.length = fieldCount;
+    for (let i = 0; i < fieldCount; i++) fields[i] = fields[i] ?? '';
+    fields[0] = input.question;
+    fields[1] = input.answer;
+    if (note.noteTypeId === 4) fields[2] = input.topic;
+
+    note.fields = fields;
+    note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
+    note.csum = checksumField(fields[0]);
     note.tags = [input.subject, input.topic.replace(/\s+/g, '-')];
     note.mod = Math.floor(Date.now() / 1000);
     note.usn = -1;

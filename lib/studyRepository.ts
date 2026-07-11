@@ -239,8 +239,10 @@ function buildFilteredSearchClause(searchQuery: string): { clauses: string[]; pa
         if (term.startsWith('tag:')) {
             const tag = term.slice(4);
             if (tag) {
-                clauses.push("n.tags LIKE ? ESCAPE '\\'");
-                params.push(`%${escapeLikePattern(tag)}%`);
+                // Whole-tag match (same rationale as buildScopeClause): "tag:veri" must not
+                // match a note tagged "Veri-Tipleri".
+                clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
+                params.push(`% ${escapeLikePattern(tag)} %`);
             }
             continue;
         }

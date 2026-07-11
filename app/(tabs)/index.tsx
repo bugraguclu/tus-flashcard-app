@@ -55,7 +55,7 @@ function readTodaySessionStats(rolloverHour: number): SessionStats {
 }
 
 export default function StudyScreen() {
-    const { selectedSubject, selectedTopic, settings, bumpDataVersion } = useApp();
+    const { selectedSubject, selectedTopic, settings, bumpDataVersion, dataVersion } = useApp();
     const params = useLocalSearchParams();
     const router = useRouter();
     const selectedDeckName = typeof params.deck === 'string' ? params.deck : null;
@@ -193,6 +193,17 @@ export default function StudyScreen() {
         }
     }, [loading, buildQueue]);
 
+    // Rebuild when data changes elsewhere (card created/edited, import, restore) so a
+    // just-created card appears immediately instead of waiting for the fallback timer.
+    // preserveCurrent keeps the card being studied in place; answers from this screen
+    // bump dataVersion too, which makes this a cheap merge behind the current card.
+    const lastDataVersionRef = useRef(dataVersion);
+    useEffect(() => {
+        if (loading || dataVersion === lastDataVersionRef.current) return;
+        lastDataVersionRef.current = dataVersion;
+        buildQueue(undefined, false, true);
+    }, [dataVersion, loading, buildQueue]);
+
     useEffect(() => () => {
         if (scheduledRefreshRef.current) {
             clearTimeout(scheduledRefreshRef.current);
@@ -200,16 +211,18 @@ export default function StudyScreen() {
         }
     }, []);
 
-    // Periodic fallback refresh to keep queue/stat drift bounded.
+    // Periodic fallback refresh to keep queue/stat drift bounded. Also re-reads the
+    // day's numbers so waking from sleep or crossing the rollover self-corrects.
     useEffect(() => {
         if (loading) return;
 
         const timer = setInterval(() => {
+            refreshSessionStats();
             buildQueue(undefined, false, true);
         }, 45000);
 
         return () => clearInterval(timer);
-    }, [loading, buildQueue]);
+    }, [loading, buildQueue, refreshSessionStats]);
 
     useEffect(() => {
         if (!currentCard) return;

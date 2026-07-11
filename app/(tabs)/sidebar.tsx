@@ -138,7 +138,11 @@ export function Sidebar(props: SidebarProps) {
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/editor')} {...webTitle('Yeni kart ekle')}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigate(selectedSubject ? `/editor?subject=${encodeURIComponent(selectedSubject)}` : '/editor')}
+                        {...webTitle('Yeni kart ekle')}
+                    >
                         <Text style={styles.actionIcon}>+</Text>
                         <Text style={styles.actionText}>Kart Ekle</Text>
                     </TouchableOpacity>

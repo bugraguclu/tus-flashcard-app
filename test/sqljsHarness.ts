@@ -33,18 +33,20 @@ export function createAppDb(SQL: SqlJsStatic): SyncDb {
     const db: Database = new SQL.Database();
     db.exec(SCHEMA);
 
+    // Same param-binding shape as the production web wrapper (lib/webDb.ts).
+    const bind = (params: any[]) => (params.length > 0 ? params : undefined);
+
     const getAllSync = <T = any>(sql: string, ...params: any[]): T[] => {
-        const stmt = db.prepare(sql);
-        try {
-            if (params.length > 0) stmt.bind(params);
-            const rows: T[] = [];
-            while (stmt.step()) {
-                rows.push(stmt.getAsObject() as T);
-            }
-            return rows;
-        } finally {
-            stmt.free();
-        }
+        const results = db.exec(sql, bind(params));
+        if (results.length === 0) return [];
+        const { columns, values } = results[0];
+        return values.map((row) => {
+            const obj: Record<string, any> = {};
+            columns.forEach((col, i) => {
+                obj[col] = row[i];
+            });
+            return obj as T;
+        });
     };
 
     return {
@@ -54,13 +56,7 @@ export function createAppDb(SQL: SqlJsStatic): SyncDb {
             return rows.length > 0 ? rows[0] : null;
         },
         runSync(sql: string, ...params: any[]): void {
-            const stmt = db.prepare(sql);
-            try {
-                if (params.length > 0) stmt.bind(params);
-                stmt.step();
-            } finally {
-                stmt.free();
-            }
+            db.run(sql, bind(params));
         },
         execSync(sql: string): void {
             db.exec(sql);
