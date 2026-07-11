@@ -1,7 +1,3 @@
-// ============================================================
-// TUS Flashcard - Theme Constants (Light + Dark)
-// ============================================================
-
 import { useColorScheme } from 'react-native';
 
 export type ColorScheme = typeof LightColors;

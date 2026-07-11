@@ -82,8 +82,11 @@ export default function CardInfoScreen() {
                         : 'Review';
 
     const formatIvl = (ivl: number) => {
-        if (ivl < 0) return `${Math.abs(ivl)}sn`;
-        if (ivl <= 1) return `${ivl} gün`;
+        // Negative intervals are (re)learning steps stored in seconds.
+        if (ivl < 0) {
+            const sec = Math.abs(ivl);
+            return sec < 60 ? `${sec}sn` : `${Math.round(sec / 60)}dk`;
+        }
         if (ivl < 30) return `${ivl} gün`;
         if (ivl < 365) return `${(ivl / 30).toFixed(1)} ay`;
         return `${(ivl / 365).toFixed(1)} yıl`;
@@ -199,7 +202,7 @@ export default function CardInfoScreen() {
                     {reviews.map((rev, index) => {
                         const ease = easeLabel(rev.ease);
                         const date = new Date(rev.id);
-                        const dateStr = `${date.getDate()}/${date.getMonth() + 1}`;
+                        const dateStr = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
                         return (
                             <View key={rev.id} style={[styles.tableRow, index % 2 === 0 && styles.tableRowEven]}>
                                 <Text style={[styles.td, { flex: 2 }]}>{dateStr}</Text>

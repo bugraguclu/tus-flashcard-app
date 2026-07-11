@@ -278,17 +278,13 @@ export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
 };
 
 export const DEFAULT_DECKS: Deck[] = [
-    { id: 1, name: 'TUS', configId: 1, mod: 0, usn: 0, description: 'TUS ana deste', collapsed: false, isFiltered: false },
-    { id: 2, name: 'TUS::Anatomi', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 3, name: 'TUS::Fizyoloji', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 4, name: 'TUS::Biyokimya', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 5, name: 'TUS::Mikrobiyoloji', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 6, name: 'TUS::Patoloji', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 7, name: 'TUS::Farmakoloji', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 8, name: 'TUS::Dahiliye', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 9, name: 'TUS::Cerrahi', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 10, name: 'TUS::Pediatri', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 11, name: 'TUS::Kadın Hastalıkları', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 1, name: 'Python', configId: 1, mod: 0, usn: 0, description: 'Python ana deste', collapsed: false, isFiltered: false },
+    { id: 2, name: 'Python::Temeller', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 3, name: 'Python::Mantık & Döngüler', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 4, name: 'Python::Veri Yapıları', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 5, name: 'Python::Fonksiyonlar', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 6, name: 'Python::Nesne Yönelimli (OOP)', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 7, name: 'Python::Modüller & Hata Ayıklama', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
 ];
 
 // Sync deletion tombstones.
@@ -367,9 +363,8 @@ export function getParentDeckName(fullName: string): string | null {
 /** Map a subject slug to its seeded deck id. */
 export function subjectToDeckId(subject: string): number {
     const map: Record<string, number> = {
-        'anatomi': 2, 'fizyoloji': 3, 'biyokimya': 4,
-        'mikrobiyoloji': 5, 'patoloji': 6, 'farmakoloji': 7,
-        'dahiliye': 8, 'cerrahi': 9, 'pediatri': 10, 'kadin': 11,
+        'temeller': 2, 'mantik': 3, 'veri': 4,
+        'fonksiyon': 5, 'oop': 6, 'araclar': 7,
     };
     return map[subject] || 1;
 }

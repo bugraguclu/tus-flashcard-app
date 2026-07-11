@@ -167,9 +167,15 @@ export default function StatsScreen() {
                 <View style={styles.overviewCard}>
                     <Text style={styles.sectionTitle}>Genel Durum</Text>
                     <View style={styles.overviewBar}>
-                        <View style={[styles.overviewSegment, { flex: bucketTotals.newCount || 1, backgroundColor: Colors.badgeNewBg }]} />
-                        <View style={[styles.overviewSegment, { flex: bucketTotals.learningCount || 0.1, backgroundColor: Colors.badgeLearnBg }]} />
-                        <View style={[styles.overviewSegment, { flex: bucketTotals.reviewCount || 0.1, backgroundColor: Colors.badgeReviewBg }]} />
+                        {bucketTotals.newCount + bucketTotals.learningCount + bucketTotals.reviewCount > 0 ? (
+                            <>
+                                <View style={[styles.overviewSegment, { flex: bucketTotals.newCount, backgroundColor: Colors.badgeNewBg }]} />
+                                <View style={[styles.overviewSegment, { flex: bucketTotals.learningCount, backgroundColor: Colors.badgeLearnBg }]} />
+                                <View style={[styles.overviewSegment, { flex: bucketTotals.reviewCount, backgroundColor: Colors.badgeReviewBg }]} />
+                            </>
+                        ) : (
+                            <View style={[styles.overviewSegment, { flex: 1, backgroundColor: Colors.borderLight }]} />
+                        )}
                     </View>
 
                     <View style={styles.overviewLegend}>
@@ -188,7 +194,7 @@ export default function StatsScreen() {
                     </View>
 
                     <Text style={styles.algorithmInfo}>
-                        📐 Scheduler: <Text style={{ fontWeight: '700', color: Colors.accent }}>{settings.algorithm}</Text>
+                        📐 Zamanlayıcı: <Text style={{ fontWeight: '700', color: Colors.accent }}>{settings.algorithm}</Text>
                     </Text>
                     <Text style={styles.algorithmInfo}>
                         Young: {bucketTotals.youngCount} · Mature: {bucketTotals.matureCount}

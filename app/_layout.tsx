@@ -85,7 +85,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>⚠️</Text>
-                <Text style={errorStyles.title}>Veritabani baslatilamadi</Text>
+                <Text style={errorStyles.title}>Veritabanı başlatılamadı</Text>
                 <Text style={errorStyles.message}>{error}</Text>
                 <TouchableOpacity
                     style={errorStyles.button}
@@ -107,7 +107,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>🧠</Text>
-                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>Yukleniyor...</Text>
+                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>Yükleniyor...</Text>
             </View>
         );
     }
@@ -144,7 +144,7 @@ export default function RootLayout() {
                             options={{
                                 presentation: 'modal',
                                 headerShown: true,
-                                title: 'Kart Duzenle',
+                                title: 'Kart Düzenle',
                                 headerStyle: { backgroundColor: Colors.bgSecondary },
                                 headerTintColor: Colors.accent,
                             }}

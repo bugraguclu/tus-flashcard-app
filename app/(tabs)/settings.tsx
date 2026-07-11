@@ -179,7 +179,7 @@ export default function SettingsScreen() {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>🧠 Scheduler</Text>
+                    <Text style={styles.sectionTitle}>🧠 Zamanlayıcı</Text>
                     <Text style={styles.sectionDesc}>
                         Uygulama şu anda Anki V3 davranışına göre çalışır. Again/Hard/Good/Easy akışı kalıcı olarak SQLite üzerinde saklanır.
                     </Text>
@@ -212,7 +212,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Günlük Review Limiti</Text>
+                        <Text style={styles.settingLabel}>Günlük Tekrar Limiti</Text>
                         <View style={styles.inputRow}>
                             <TouchableOpacity
                                 style={styles.stepBtn}
@@ -280,14 +280,14 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>New Card Order</Text>
+                        <Text style={styles.settingLabel}>Yeni Kart Sırası</Text>
                         <View style={styles.inputRow}>
                             <TouchableOpacity
                                 style={[styles.optionBtn, settings.newCardOrder === 'sequential' && styles.optionBtnActive]}
                                 onPress={() => updateSetting('newCardOrder', 'sequential')}
                             >
                                 <Text style={[styles.optionText, settings.newCardOrder === 'sequential' && styles.optionTextActive]}>
-                                    Sequential
+                                    Sıralı
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -295,14 +295,14 @@ export default function SettingsScreen() {
                                 onPress={() => updateSetting('newCardOrder', 'random')}
                             >
                                 <Text style={[styles.optionText, settings.newCardOrder === 'random' && styles.optionTextActive]}>
-                                    Random
+                                    Rastgele
                                 </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Learning Steps (dakika)</Text>
+                        <Text style={styles.settingLabel}>Öğrenme Adımları (dakika)</Text>
                         <View style={styles.inputRow}>
                             {[[1, 10], [1, 10, 60], [5, 20], [1, 5, 15]].map((steps, index) => (
                                 <TouchableOpacity
@@ -327,7 +327,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Lapse Steps (dakika)</Text>
+                        <Text style={styles.settingLabel}>Unutma Adımları (dakika)</Text>
                         <View style={styles.inputRow}>
                             {[[10], [5, 15], [10, 30], [1, 10]].map((steps, index) => (
                                 <TouchableOpacity
@@ -352,7 +352,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Graduating Interval (gün)</Text>
+                        <Text style={styles.settingLabel}>Mezuniyet Aralığı (gün)</Text>
                         <View style={styles.inputRow}>
                             {[1, 2, 3, 4].map((value) => (
                                 <TouchableOpacity
@@ -369,7 +369,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Easy Interval (gün)</Text>
+                        <Text style={styles.settingLabel}>Kolay Aralığı (gün)</Text>
                         <View style={styles.inputRow}>
                             {[3, 4, 5, 7].map((value) => (
                                 <TouchableOpacity
@@ -386,7 +386,7 @@ export default function SettingsScreen() {
                     </View>
 
                     <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>New Interval after Lapse (%)</Text>
+                        <Text style={styles.settingLabel}>Unutma Sonrası Yeni Aralık (%)</Text>
                         <View style={styles.inputRow}>
                             {[0.4, 0.5, 0.7, 0.8].map((value) => (
                                 <TouchableOpacity

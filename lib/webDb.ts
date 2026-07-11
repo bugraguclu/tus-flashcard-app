@@ -295,6 +295,22 @@ function loadSqlJs() {
     return _sqlModule;
 }
 
+/**
+ * Ask the browser to keep our storage durable so IndexedDB isn't evicted under storage pressure.
+ * Best-effort: unsupported browsers or a denied request are ignored and the app keeps working with
+ * default (evictable) storage.
+ */
+async function requestPersistentStorage(): Promise<void> {
+    try {
+        const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
+        if (!storage?.persist || !storage.persisted) return;
+        if (await storage.persisted()) return; // already granted
+        await storage.persist();
+    } catch (e) {
+        console.warn('[WebDB] Persistent storage request failed:', e);
+    }
+}
+
 /** Initialise the web database: boot WASM, restore the snapshot, and wire unload flushes. */
 export async function initWebDatabase(): Promise<WebSQLiteDatabase> {
     const SQL = await loadSqlJs();
@@ -303,6 +319,7 @@ export async function initWebDatabase(): Promise<WebSQLiteDatabase> {
     _sqlDb = savedData ? new SQL.Database(savedData) : new SQL.Database();
 
     await electWriter();
+    void requestPersistentStorage();
 
     // IndexedDB writes are async and cannot complete during `beforeunload`, so flush
     // on the events that fire reliably before the page is discarded.

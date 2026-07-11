@@ -25,8 +25,10 @@ export function DialogHost() {
         request.onAccept?.();
     };
 
+    // Alerts have a single button, so dismissing (Escape / back) must still run the
+    // callback — e.g. a success alert that navigates back. Confirms treat dismiss as cancel.
     return (
-        <Modal transparent visible animationType="fade" onRequestClose={close}>
+        <Modal transparent visible animationType="fade" onRequestClose={isConfirm ? close : accept}>
             <View style={styles.backdrop}>
                 <View style={styles.card}>
                     <Text style={styles.title}>{request.title}</Text>
