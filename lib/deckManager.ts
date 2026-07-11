@@ -3,7 +3,7 @@
 import type { Deck, DeckConfig, AnkiCard } from './models';
 import { DEFAULT_DECK_CONFIG, getParentDeckName, uniqueId } from './models';
 import { getDB } from './db';
-import { localDayNumber, restoreQueueFromType } from './ankiState';
+import { localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 
 /** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
@@ -349,10 +349,13 @@ export function getCardCountsByDeck(
 ): Map<number, { new: number; learn: number; review: number; total: number }> {
     const db = getDB();
     const today = localDayNumber(nowMs, rolloverHour);
-    // Match the study queue: intraday learning cards within the learn-ahead window count as
-    // due. Uses the same learnAheadMinutes setting as queue build, so the badge never counts
-    // a card the study screen refuses to serve.
-    const learnAheadCutoff = nowMs + Math.max(0, learnAheadMinutes) * 60_000;
+    // Anki deck-list semantics: intraday learning cards count until the day rolls over, even
+    // while their step timer is still running — the badge answers "how much is left today",
+    // not "what can be dealt this second". Learn-ahead can only widen that window.
+    const learnAheadCutoff = Math.max(
+        nextRolloverMs(nowMs, rolloverHour),
+        nowMs + Math.max(0, learnAheadMinutes) * 60_000,
+    );
 
     // NOTE: `due` has queue-specific semantics in Anki:
     // - queue=1 (intraday learning): epoch milliseconds

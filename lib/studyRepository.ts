@@ -1,5 +1,5 @@
-import { TUS_SUBJECTS } from './data';
 import { getDB } from './db';
+import { getSubjectIdSet } from './subjects';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
 import type { AnkiCard, Note, DeckConfig, NoteType } from './models';
 import {
@@ -9,6 +9,7 @@ import {
     legacyCardIdFromAnkiCardId,
     makeDefaultCardState,
     localDayNumber,
+    nextRolloverMs,
     restoreQueueFromType,
 } from './ankiState';
 import { getDeckAncestors } from './models';
@@ -45,6 +46,8 @@ export interface StudyQueueResult {
     stats: QueueStats;
     nextLearningDue: number | null;
     dailyNewLimitReached: boolean;
+    /** New cards in scope that daily limits kept out of today's queue. */
+    heldBackNewCount: number;
 }
 
 export interface StudyQueueParams {
@@ -61,8 +64,6 @@ export interface ReviewResult {
     wasNewCard: boolean;
     reviewLogId: number;
 }
-
-const KNOWN_SUBJECTS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
 
 interface QueueCardRow {
     cardId: number;
@@ -157,7 +158,8 @@ function firstNonEmptyFieldName(fieldNames: string[], fieldMap: Map<string, stri
 }
 
 function parseNotePayload(note: Note, noteType: NoteType | null): { subject: string; topic: string; question: string; answer: string } {
-    const subjectFromTag = note.tags.find((tag) => KNOWN_SUBJECTS.has(tag));
+    const knownSubjects = getSubjectIdSet();
+    const subjectFromTag = note.tags.find((tag) => knownSubjects.has(tag));
     const subject = subjectFromTag ?? 'custom';
 
     if (!noteType) {
@@ -274,13 +276,24 @@ function buildScopeClause(
     const params: Array<string | number> = [];
 
     if (selectedSubject) {
-        clauses.push("n.tags LIKE ? ESCAPE '\\'");
-        params.push(`%${escapeLikePattern(selectedSubject)}%`);
+        // Whole-tag match. Tags are stored space-separated (" a b "); a plain substring
+        // LIKE would let subject "veri" swallow another course's "Veri-Tipleri" topic tag.
+        clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
+        params.push(`% ${escapeLikePattern(selectedSubject)} %`);
     }
 
     if (selectedTopic) {
-        clauses.push("n.data LIKE ? ESCAPE '\\'");
-        params.push(`%${escapeLikePattern(selectedTopic)}%`);
+        // A topic is stored two ways: as a whole tag with spaces dashed ("Hata-Ayıklama")
+        // and verbatim as a note field, which appears JSON-quoted inside n.data. Substring
+        // matching the raw topic against n.data would also hit question/answer TEXT (topic
+        // "random" matching every card that merely mentions random), so require either the
+        // whole tag or the exact quoted field value.
+        const topicTag = selectedTopic.replace(/\s+/g, '-');
+        clauses.push("((' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\' OR n.data LIKE ? ESCAPE '\\')");
+        params.push(
+            `% ${escapeLikePattern(topicTag)} %`,
+            `%${escapeLikePattern(JSON.stringify(selectedTopic))}%`,
+        );
     }
 
     if (selectedDeckName) {
@@ -564,10 +577,15 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // gathered at all and the UI counts down until the first one is due.
     const learnAheadCutoff = nowMs + Math.max(0, params.settings.learnAheadMinutes || 0) * 60000;
 
+    // The displayed learning count follows Anki's deck list: every intraday learning card due
+    // before the day rolls over counts, including ones whose step timer is still running. Only
+    // the serving cutoff (learnAheadCutoff) decides what is actually dealt right now.
+    const endOfDayMs = nextRolloverMs(nowMs, params.settings.dayRolloverHour);
+
     // Count with SQL first (scales better than loading full queue).
     const intradayLearningCount = countRowsByQueue(
-        'c.queue = 1 AND c.due <= ?',
-        [learnAheadCutoff],
+        'c.queue = 1 AND c.due < ?',
+        [Math.max(endOfDayMs, learnAheadCutoff)],
         params.selectedSubject,
         params.selectedTopic,
         params.selectedDeckName,
@@ -780,15 +798,22 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         params.selectedDeckName,
     );
 
+    // Report the new count the way Anki's deck list does: what today's limits still allow,
+    // not the raw backlog. The uncapped remainder feeds the "held back" message instead of
+    // silently inflating the badge past what the queue will ever serve.
+    const servableNewCount = newCardsForQueue.length;
+
     return {
         cards,
         stats: {
-            newCount,
+            newCount: servableNewCount,
             learningCount: intradayLearningCount + interdayLearningCount,
             reviewCount,
         },
         nextLearningDue,
-        dailyNewLimitReached: availableNewLimit <= 0 && newCount > 0,
+        // Reached when new cards exist in scope but none survived the global/per-deck limits.
+        dailyNewLimitReached: newCount > 0 && servableNewCount === 0,
+        heldBackNewCount: Math.max(0, newCount - servableNewCount),
     };
 }
 
@@ -1005,13 +1030,15 @@ export function getBrowserCards(settings: AppSettings, limit?: number, offset?: 
         ...(hasOffset ? [Math.floor(offset as number)] : []),
     ];
 
+    // Full card blobs are needed here: the browser shows last-review timestamps, which only
+    // live in the stored card JSON (the shallow row projection zeroes lastReview).
     const rows = db.getAllSync<QueueCardRow>(
         `SELECT
             c.id AS cardId, c.noteId AS noteId, c.deckId AS deckId,
             c.ord AS ord, c.type AS type, c.queue AS queue,
             c.due AS due, c.ivl AS ivl, c.factor AS factor,
             c.reps AS reps, c.lapses AS lapses, c."left" AS "left",
-            c.flags AS flags, NULL AS cardData,
+            c.flags AS flags, c.data AS cardData,
             n.data AS noteData, nt.data AS noteTypeData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
@@ -1019,7 +1046,7 @@ export function getBrowserCards(settings: AppSettings, limit?: number, offset?: 
          ORDER BY c.id ASC${limitSql}${offsetSql}`,
         ...paginationParams,
     );
-    return toStudyCards(rows, settings, Date.now());
+    return toStudyCards(rows, settings, Date.now(), { includeRawCard: true });
 }
 
 export function getBrowserCardCount(): number {

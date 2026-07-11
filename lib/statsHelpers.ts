@@ -72,8 +72,6 @@ export function perSubjectStatsSql(subjectIds: string[]): Map<string, SubjectBuc
         const { getDB } = require('./db') as typeof import('./db');
         const db = getDB();
 
-        // A note's first tag is its subject id (e.g. "pediatri Neonatoloji"); cards whose
-        // first tag isn't a requested subject are ignored.
         const rows = db.getAllSync<{ tags: string; queue: number; mature: number; cnt: number }>(
             `SELECT n.tags AS tags, c.queue AS queue, ${matureBand('c.queue', 'c.ivl')} AS mature, COUNT(*) AS cnt
              FROM anki_cards c
@@ -81,12 +79,16 @@ export function perSubjectStatsSql(subjectIds: string[]): Map<string, SubjectBuc
              GROUP BY n.tags, c.queue, ${matureBand('c.queue', 'c.ivl')}`,
         );
 
+        // Tags are serialized Anki-style with surrounding spaces (" subject topic "), so the
+        // subject is found by scanning the split tag list — never by position: a leading space
+        // makes index 0 empty, and extra tags (e.g. "leech") can join later.
         const subjectSet = new Set(subjectIds);
         for (const row of rows) {
-            const firstTag = (row.tags || '').split(' ')[0];
-            if (!subjectSet.has(firstTag)) continue;
+            const tags = (row.tags || '').trim().split(/\s+/);
+            const subjectTag = tags.find((tag) => subjectSet.has(tag));
+            if (!subjectTag) continue;
 
-            const bucket = result.get(firstTag)!;
+            const bucket = result.get(subjectTag)!;
             bucket.total += row.cnt;
             for (const key of bucketKeys(row.queue, row.mature === 1)) bucket[key] += row.cnt;
         }

@@ -3,7 +3,7 @@
 import type { ReviewLog, AnkiCard } from './models';
 import { getDB } from './db';
 import { uniqueId } from './models';
-import { dayNumberToYmd, localDayNumber } from './ankiState';
+import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState';
 
 const HOUR_MS = 3600000;
 
@@ -94,6 +94,101 @@ export function getTodayReviewCount(rolloverHour: number = 4): number {
         startMs,
     );
     return row?.cnt || 0;
+}
+
+export interface TodayAnswerStats {
+    reviewed: number;
+    /** Answers with ease > 1 (Anki: only "Again" fails). */
+    passed: number;
+    failed: number;
+    /** Cards whose first-ever review happened today ("new cards introduced"). */
+    newCardsIntroduced: number;
+    studyTimeMs: number;
+}
+
+/**
+ * Today's study numbers derived from the review log — the persistent source of truth.
+ * Unlike a cached session blob, these survive restarts, sleep and multiple tabs, and undo
+ * corrects them automatically because it deletes the revlog row.
+ */
+export function getTodayAnswerStats(rolloverHour: number = 4): TodayAnswerStats {
+    const db = getDB();
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+
+    const totals = db.getFirstSync<{ reviewed: number; failed: number; timeMs: number }>(
+        `SELECT COUNT(*) AS reviewed,
+                COALESCE(SUM(CASE WHEN ease = 1 THEN 1 ELSE 0 END), 0) AS failed,
+                COALESCE(SUM(time), 0) AS timeMs
+         FROM revlog WHERE id >= ?`,
+        startMs,
+    );
+
+    const introduced = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) AS cnt
+         FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog GROUP BY cardId)
+         WHERE firstReview >= ?`,
+        startMs,
+    );
+
+    const reviewed = totals?.reviewed ?? 0;
+    const failed = totals?.failed ?? 0;
+
+    return {
+        reviewed,
+        failed,
+        passed: Math.max(0, reviewed - failed),
+        newCardsIntroduced: introduced?.cnt ?? 0,
+        studyTimeMs: totals?.timeMs ?? 0,
+    };
+}
+
+export interface StudyStreak {
+    /** Consecutive study days ending today (or yesterday, if today has no reviews yet). */
+    current: number;
+    /** Whether today already counts toward the streak. */
+    studiedToday: boolean;
+    /** Longest run of consecutive study days on record. */
+    best: number;
+}
+
+/** Daily streak computed from distinct study days in the review log. */
+export function getStudyStreak(rolloverHour: number = 4): StudyStreak {
+    const db = getDB();
+    const shiftSec = rolloverHour * 3600;
+
+    // Same local-date bucketing as getDailyReviewCounts, so the streak, the history chart
+    // and localDayNumber all agree on where a study day starts.
+    const rows = db.getAllSync<{ d: string }>(
+        `SELECT DISTINCT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
+         FROM revlog ORDER BY d ASC`,
+        shiftSec,
+    );
+
+    const dayNumbers = rows
+        .map((row) => ymdToLocalDayNumber(row.d, -1))
+        .filter((day) => day >= 0);
+    const today = localDayNumber(Date.now(), rolloverHour);
+
+    const days = new Set(dayNumbers);
+    const studiedToday = days.has(today);
+
+    let current = 0;
+    let cursor = studiedToday ? today : today - 1;
+    while (days.has(cursor)) {
+        current += 1;
+        cursor -= 1;
+    }
+
+    let best = 0;
+    let run = 0;
+    let prev: number | null = null;
+    for (const day of dayNumbers) {
+        run = prev !== null && day === prev + 1 ? run + 1 : 1;
+        best = Math.max(best, run);
+        prev = day;
+    }
+
+    return { current, studiedToday, best };
 }
 
 /** Get review statistics for a period */

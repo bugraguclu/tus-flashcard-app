@@ -5,9 +5,8 @@ import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDec
 import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { buildFtsPrefixQuery, getDB } from './db';
-import { TUS_CARDS, TUS_SUBJECTS } from './data';
-
-const SUBJECT_TAGS = new Set(TUS_SUBJECTS.map((subject) => subject.id));
+import { TUS_CARDS } from './data';
+import { getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 
 /** Anki stores tags space-separated with a leading and trailing space (" a b "), so that a
  *  whole-tag search (`LIKE '% a %'`) cannot partially match a longer tag. Empty -> "". */
@@ -508,7 +507,8 @@ export interface SearchIndexCard {
 
 /** Build a card's search-index entry from its note. Shared by full and incremental indexing. */
 export function searchIndexCardFromNote(note: Note, cardId: number): SearchIndexCard {
-    const subject = note.tags.find((tag) => SUBJECT_TAGS.has(tag)) ?? 'custom';
+    const subjectTags = getSubjectIdSet();
+    const subject = note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
     const topic = note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General';
     return {
         id: cardId,
@@ -569,7 +569,7 @@ export function createTusCard(input: {
     answer: string;
 }): { note: Note; card: AnkiCard } {
     const noteType = getNoteType(4) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === 4)!;
-    const deckId = subjectToDeckId(input.subject);
+    const deckId = resolveSubjectDeckId(input.subject);
     const tags = [input.subject, input.topic.replace(/\s+/g, '-')];
 
     const { note, cards } = createNote(
@@ -600,7 +600,7 @@ export function updateTusCardByCardId(
     note.usn = -1;
     saveNote(note);
 
-    card.deckId = subjectToDeckId(input.subject);
+    card.deckId = resolveSubjectDeckId(input.subject);
     card.mod = Math.floor(Date.now() / 1000);
     card.usn = -1;
     saveAnkiCard(card);

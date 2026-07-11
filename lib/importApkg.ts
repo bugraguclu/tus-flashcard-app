@@ -14,7 +14,8 @@
 import type JSZipType from 'jszip';
 import { importRows, type RowImportCounts } from './importNotes';
 import { getNoteType, type SearchIndexCard } from './noteManager';
-import { subjectToDeckId, BUILTIN_NOTE_TYPES, type NoteType } from './models';
+import { BUILTIN_NOTE_TYPES, type NoteType } from './models';
+import { resolveSubjectDeckId } from './subjects';
 import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { saveMediaBytes } from './mediaStore';
 
@@ -143,7 +144,7 @@ function resolveNoteType(id: number): NoteType {
 export function importAnkiReader(reader: SqliteReader, options: ApkgImportOptions): ApkgImportResult {
     const notes = readAnkiNotes(reader);
     const topicValue = (options.topic ?? '').trim() || 'Genel';
-    const deckId = subjectToDeckId(options.subject);
+    const deckId = resolveSubjectDeckId(options.subject);
     const baseTags = [options.subject, topicValue.replace(/\s+/g, '-')];
 
     const standard = notes.filter((note) => !note.cloze);
