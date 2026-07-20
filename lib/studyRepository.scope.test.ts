@@ -20,10 +20,11 @@ vi.mock('./db', () => ({
     dbSearchCards: () => [],
 }));
 
-import { getStudyQueue } from './studyRepository';
+import { adjustIntervalForEasyDays, getStudyQueue, getWaitingLearningCardIds } from './studyRepository';
 import { saveNote, saveAnkiCard, saveNoteType } from './noteManager';
 import { saveDeck, saveDeckConfig } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
+import { localDayNumber } from './ankiState';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -79,6 +80,9 @@ const deckConfig: DeckConfig = {
 const rolloverHour = (new Date().getHours() + 12) % 24;
 
 const settings: AppSettings = {
+    themeMode: 'system',
+    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4' },
+    autoAdvance: false,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -90,6 +94,10 @@ const settings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'mix',
     newCardOrder: 'sequential',
+    newCardGatherOrder: 'topic',
+    reviewSortOrder: 'dueRandom',
+    autoPlayAudio: true,
+    easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1,
@@ -214,6 +222,164 @@ describe('scope filtering (subject/topic)', () => {
 
         const modules = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'Modüller' });
         expect(modules.nextLearningDue).toBe(dueMs);
+    });
+});
+
+describe('easy days', () => {
+    it('shifts a review off a blocked weekday to the nearest allowed day', () => {
+        const nowMs = Date.now();
+        // Block whatever weekday a 10-day interval would land on.
+        const today = localDayNumber(nowMs, rolloverHour);
+        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
+        const blocked = mondayIndex(today + 10);
+        const easyDays = [1, 1, 1, 1, 1, 1, 1];
+        easyDays[blocked] = 0;
+
+        const adjusted = adjustIntervalForEasyDays(10, 42, easyDays, nowMs, rolloverHour);
+        expect(adjusted).not.toBe(10);
+        expect(Math.abs(adjusted - 10)).toBeLessThanOrEqual(2);
+        expect(mondayIndex(today + adjusted)).not.toBe(blocked);
+    });
+
+    it('leaves intervals alone when every day is normal', () => {
+        expect(adjustIntervalForEasyDays(10, 42, [1, 1, 1, 1, 1, 1, 1], Date.now(), rolloverHour)).toBe(10);
+        expect(adjustIntervalForEasyDays(10, 42, undefined, Date.now(), rolloverHour)).toBe(10);
+    });
+});
+
+describe('flag search (filtered decks)', () => {
+    it('flag:N matches only cards carrying that flag', () => {
+        // Re-save card 1010 with the orange flag; 1020 stays unflagged.
+        saveAnkiCard(makeCard(1010, 101, 7, { flags: 2 }));
+        saveDeck({
+            id: 99, name: 'Bayrak 2', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true, searchQuery: 'flag:2',
+        });
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Bayrak 2' });
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1010]);
+    });
+});
+
+describe('filtered deck sessions (Anki gather semantics)', () => {
+    const makeFiltered = (searchQuery: string) => {
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true, searchQuery,
+        });
+    };
+
+    it('is:new gathers new cards; prop:due<= pulls future reviews (review ahead)', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        // A review card due 2 days from now — invisible to the normal queue.
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 2, queue: 2, due: today + 2, ivl: 10, factor: 2500 }));
+
+        makeFiltered('deck:"Python::Modüller & Hata Ayıklama" prop:due<=3');
+        const ahead = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(ahead.cards.map((card) => card.cardId)).toEqual([1010]);
+
+        makeFiltered('deck:"Python::Modüller & Hata Ayıklama" is:new');
+        const preview = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(preview.cards.map((card) => card.cardId)).toEqual([1020]);
+    });
+
+    it('rated:N:1 matches cards answered Again recently', () => {
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, 1, 1, 0, 2500, 3000, 0)',
+            Date.now() - 3600_000, 1020,
+        );
+
+        makeFiltered('rated:7:1');
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1020]);
+    });
+
+    it('applies the gather limit and the latest-added order', () => {
+        makeFiltered('deck:"Python"');
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
+        });
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1030, 1020]);
+    });
+
+    it('merges a second filter without duplicating cards', () => {
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random', searchQuery2: 'tag:Modüller', searchLimit2: 50,
+        });
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId).sort()).toEqual([1010, 1020]);
+    });
+});
+
+describe('new-card gathering order', () => {
+    it('serves new cards topic by topic in the course order, not raw position order', () => {
+        // Position order would be 1005 (Hata Ayıklama), 1010 (random), 1020 (Modüller);
+        // the course defines Modüller → random → Hata Ayıklama.
+        saveNote(makeNote(105, ['araclar', 'Hata-Ayıklama'], [
+            'Traceback nedir?',
+            'Hatanın çağrı dökümü.',
+            'Hata Ayıklama',
+        ]));
+        saveAnkiCard(makeCard(1005, 105, 7));
+
+        const queue = getStudyQueue({ settings, selectedSubject: 'araclar' });
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1020, 1010, 1005]);
+    });
+});
+
+describe('one-shot study ahead', () => {
+    it('serves a waiting learning card only while its id is on the extra list', () => {
+        const dueMs = Date.now() + 10 * 60_000;
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001 }));
+
+        const withoutPass = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
+        expect(withoutPass.cards).toHaveLength(0);
+
+        const withPass = getStudyQueue({
+            settings,
+            selectedSubject: 'araclar',
+            selectedTopic: 'random',
+            extraLearningCardIds: [1010],
+        });
+        expect(withPass.cards.map((card) => card.cardId)).toEqual([1010]);
+    });
+
+    it('getWaitingLearningCardIds honors scope, cutoff and limit', () => {
+        const now = Date.now();
+        // Two waiting cards in "araclar" (10 and 40 minutes out), one in "temeller".
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: now + 10 * 60_000, left: 1001 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: now + 40 * 60_000, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 2, { type: 1, queue: 1, due: now + 5 * 60_000, left: 1001 }));
+
+        // Scope: only "araclar" cards, soonest first.
+        expect(getWaitingLearningCardIds({ selectedSubject: 'araclar' })).toEqual([1010, 1020]);
+
+        // Cutoff: a 20-minute window excludes the 40-minute card.
+        expect(getWaitingLearningCardIds({
+            selectedSubject: 'araclar',
+            cutoffMs: now + 20 * 60_000,
+        })).toEqual([1010]);
+
+        // Limit: "just the next card" regardless of how far out it is.
+        expect(getWaitingLearningCardIds({ selectedSubject: 'araclar', limit: 1 })).toEqual([1010]);
+    });
+
+    it('a card answered off the extra list is not re-served by its new short step', () => {
+        // Simulates the reported loop: press the button, answer with a sub-window step,
+        // and the id leaves the list — the rebuilt queue must be empty again.
+        const dueMs = Date.now() + 15 * 60_000;
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001 }));
+
+        const afterAnswer = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
+        expect(afterAnswer.cards).toHaveLength(0);
+        expect(afterAnswer.nextLearningDue).toBe(dueMs);
     });
 });
 

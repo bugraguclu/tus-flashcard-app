@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Colors, FontSize } from '../constants/theme';
+import { Colors, FontSize, ThemeColorsProvider, useThemeColors } from '../constants/theme';
 import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
-import { AppProvider } from './(tabs)/app-context';
+import { AppProvider, useApp } from './(tabs)/app-context';
 
 class AppErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -126,81 +126,100 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     );
 }
 
+/** Resolves the persisted themeMode against the OS scheme; must sit inside AppProvider. */
+function ThemeGate({ children }: { children: React.ReactNode }) {
+    const { settings } = useApp();
+    return <ThemeColorsProvider mode={settings.themeMode}>{children}</ThemeColorsProvider>;
+}
+
+/** Renders the navigator + DialogHost; lives inside ThemeGate so it can read live theme colors. */
+function AppStack() {
+    const colors = useThemeColors();
+
+    return (
+        <>
+            <StatusBar style="auto" />
+            <Stack
+                screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.bgPrimary },
+                }}
+            >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                    name="editor"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'Kart Düzenle',
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+                <Stack.Screen
+                    name="card-info"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'Kart Bilgisi',
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+                <Stack.Screen
+                    name="import"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'İçe Aktar',
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+                <Stack.Screen
+                    name="backups"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'Yedekler',
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+                <Stack.Screen
+                    name="note-types"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'Not Türleri',
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+                <Stack.Screen
+                    name="note-type"
+                    options={{
+                        headerShown: true,
+                        title: 'Not Türü Düzenle',
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+            </Stack>
+            <DialogHost />
+        </>
+    );
+}
+
 export default function RootLayout() {
     return (
         <AppErrorBoundary>
             <WebDbGate>
                 <AppProvider>
-                    <StatusBar style="auto" />
-                    <Stack
-                        screenOptions={{
-                            headerShown: false,
-                            contentStyle: { backgroundColor: Colors.bgPrimary },
-                        }}
-                    >
-                        <Stack.Screen name="(tabs)" />
-                        <Stack.Screen
-                            name="editor"
-                            options={{
-                                presentation: 'modal',
-                                headerShown: true,
-                                title: 'Kart Düzenle',
-                                headerStyle: { backgroundColor: Colors.bgSecondary },
-                                headerTintColor: Colors.accent,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="card-info"
-                            options={{
-                                presentation: 'modal',
-                                headerShown: true,
-                                title: 'Kart Bilgisi',
-                                headerStyle: { backgroundColor: Colors.bgSecondary },
-                                headerTintColor: Colors.accent,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="import"
-                            options={{
-                                presentation: 'modal',
-                                headerShown: true,
-                                title: 'İçe Aktar',
-                                headerStyle: { backgroundColor: Colors.bgSecondary },
-                                headerTintColor: Colors.accent,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="backups"
-                            options={{
-                                presentation: 'modal',
-                                headerShown: true,
-                                title: 'Yedekler',
-                                headerStyle: { backgroundColor: Colors.bgSecondary },
-                                headerTintColor: Colors.accent,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="note-types"
-                            options={{
-                                presentation: 'modal',
-                                headerShown: true,
-                                title: 'Not Türleri',
-                                headerStyle: { backgroundColor: Colors.bgSecondary },
-                                headerTintColor: Colors.accent,
-                            }}
-                        />
-                        <Stack.Screen
-                            name="note-type"
-                            options={{
-                                headerShown: true,
-                                title: 'Not Türü Düzenle',
-                                headerStyle: { backgroundColor: Colors.bgSecondary },
-                                headerTintColor: Colors.accent,
-                            }}
-                        />
-                    </Stack>
+                    <ThemeGate>
+                        <AppStack />
+                    </ThemeGate>
                 </AppProvider>
-                <DialogHost />
             </WebDbGate>
         </AppErrorBoundary>
     );

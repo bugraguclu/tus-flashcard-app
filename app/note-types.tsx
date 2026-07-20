@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useApp } from './(tabs)/app-context';
 import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
 import { uniqueId, BUILTIN_NOTE_TYPES } from '../lib/models';
@@ -9,6 +9,8 @@ import { uniqueId, BUILTIN_NOTE_TYPES } from '../lib/models';
 export default function NoteTypesScreen() {
     const router = useRouter();
     const { dataVersion, bumpDataVersion } = useApp();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const noteTypes = useMemo(() => getAllNoteTypes(), [dataVersion]);
 
     const createNoteType = () => {
@@ -49,30 +51,32 @@ export default function NoteTypesScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.sm },
-    help: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.sm },
+    help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
     },
     rowText: { flex: 1 },
-    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
-    rowSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
-    chevron: { fontSize: 24, color: Colors.textMuted },
+    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    rowSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
+    chevron: { fontSize: 24, color: colors.textMuted },
     addBtn: {
         borderWidth: 1,
-        borderColor: Colors.accent,
+        borderColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
         marginTop: Spacing.sm,
     },
-    addBtnText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.accent },
-});
+    addBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
+    });
+}

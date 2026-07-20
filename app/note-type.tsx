@@ -9,7 +9,7 @@ import {
     SafeAreaView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
 import { useApp } from './(tabs)/app-context';
 import { getNoteType, saveNoteType } from '../lib/noteManager';
@@ -49,6 +49,8 @@ export default function NoteTypeScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { bumpDataVersion } = useApp();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
     const id = Number(Array.isArray(params.id) ? params.id[0] : params.id);
     const [nt, setNt] = useState<NoteType | null>(null);
@@ -120,7 +122,7 @@ export default function NoteTypeScreen() {
                     value={nt.name}
                     onChangeText={(text) => setNt(renameNoteType(nt, text))}
                     placeholder="Not türü adı"
-                    placeholderTextColor={Colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                 />
 
                 <Text style={styles.label}>ALANLAR</Text>
@@ -215,26 +217,27 @@ export default function NoteTypeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.sm },
-    help: { fontSize: FontSize.md, color: Colors.textMuted, padding: Spacing.lg },
+    help: { fontSize: FontSize.md, color: colors.textMuted, padding: Spacing.lg },
     label: {
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 1.5,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         textTransform: 'uppercase',
         marginTop: Spacing.sm,
     },
     input: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         fontSize: FontSize.md,
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
     },
     code: { minHeight: 72, fontFamily: MONOSPACE, fontSize: FontSize.sm },
     fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -244,26 +247,26 @@ const styles = StyleSheet.create({
         height: 38,
         borderRadius: BorderRadius.sm,
         borderWidth: 1,
-        borderColor: Colors.border,
-        backgroundColor: Colors.bgCard,
+        borderColor: colors.border,
+        backgroundColor: colors.bgCard,
         alignItems: 'center',
         justifyContent: 'center',
     },
     iconBtnDisabled: { opacity: 0.35 },
-    iconText: { fontSize: 16, color: Colors.textSecondary },
-    removeText: { color: Colors.badgeNew },
+    iconText: { fontSize: 16, color: colors.textSecondary },
+    removeText: { color: colors.badgeNew },
     addFieldBtn: {
         borderWidth: 1,
-        borderColor: Colors.accent,
+        borderColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.sm,
         alignItems: 'center',
     },
-    addFieldText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.accent },
+    addFieldText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
     previewBox: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.sm,
         gap: 4,
@@ -272,17 +275,18 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 1,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         textTransform: 'uppercase',
     },
     saveBtn: {
-        backgroundColor: Colors.accent,
+        backgroundColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
         marginTop: Spacing.md,
     },
-    saveBtnText: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.white },
+    saveBtnText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white },
     cancelBtn: { paddingVertical: Spacing.md, alignItems: 'center' },
-    cancelBtnText: { fontSize: FontSize.md, color: Colors.textMuted },
-});
+    cancelBtnText: { fontSize: FontSize.md, color: colors.textMuted },
+    });
+}

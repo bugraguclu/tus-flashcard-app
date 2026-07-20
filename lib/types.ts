@@ -79,7 +79,26 @@ export interface SchedulerEngine {
     previewIntervals: (cardState: CardState, settings: AppSettings, nowMs?: number) => IntervalPreview;
 }
 
+/** 'system' follows the OS light/dark setting; 'light'/'dark' pin it. */
+export type ThemeMode = 'system' | 'light' | 'dark';
+
+/**
+ * Single-character (or named, e.g. "Space") key bindings for the study screen, web only.
+ * showAnswer reveals the card; again/hard/good/easy submit that grade once the answer is shown.
+ */
+export interface KeyBindings {
+    showAnswer: string;
+    again: string;
+    hard: string;
+    good: string;
+    easy: string;
+}
+
 export interface AppSettings {
+    themeMode: ThemeMode;
+    keyBindings: KeyBindings;
+    /** Auto-reveal the answer a few seconds after a card appears, if the user hasn't already. */
+    autoAdvance: boolean;
     dailyNewLimit: number;
     dailyReviewLimit: number;
     /** Minutes between learning steps for new cards. */
@@ -107,6 +126,14 @@ export interface AppSettings {
      */
     queueOrder: 'mix' | 'before' | 'after';
     newCardOrder: 'sequential' | 'random';
+    /** Anki v3 "new card gather order": course/topic order (our default), raw position, or random. */
+    newCardGatherOrder: 'topic' | 'position' | 'random';
+    /** Anki v3 "review sort order": due date + daily random tiebreak, or by interval length. */
+    reviewSortOrder: 'dueRandom' | 'intervalsAsc' | 'intervalsDesc';
+    /** Play a card's [sound:] attachments automatically when the side is shown. */
+    autoPlayAudio: boolean;
+    /** Per-weekday review load factor, Monday-first (1 normal, 0.5 reduced, 0 none). */
+    easyDays: number[];
     hardIntervalMultiplier: number;
     easyBonus: number;
     intervalModifier: number;

@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS } from '../lib/models';
 import type { CardFlag } from '../lib/models';
 import { getAnkiCard, getNote, getNoteType } from '../lib/noteManager';
@@ -24,6 +24,8 @@ function parseCardId(raw: string | string[] | undefined): number {
 export default function CardInfoScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const cardId = parseCardId(params.cardId);
 
     const payload = useMemo(() => {
@@ -100,11 +102,11 @@ export default function CardInfoScreen() {
 
     const easeLabel = (ease: number) => {
         switch (ease) {
-            case 1: return { text: 'Tekrar', color: Colors.btnAgain };
-            case 2: return { text: 'Zor', color: Colors.btnHard };
-            case 3: return { text: 'İyi', color: Colors.btnGood };
-            case 4: return { text: 'Kolay', color: Colors.btnEasy };
-            default: return { text: String(ease), color: Colors.textMuted };
+            case 1: return { text: 'Tekrar', color: colors.btnAgain };
+            case 2: return { text: 'Zor', color: colors.btnHard };
+            case 3: return { text: 'İyi', color: colors.btnGood };
+            case 4: return { text: 'Kolay', color: colors.btnEasy };
+            default: return { text: String(ease), color: colors.textMuted };
         }
     };
 
@@ -157,7 +159,7 @@ export default function CardInfoScreen() {
                                 style={[
                                     styles.flagBtn,
                                     card.flags === flag && styles.flagBtnActive,
-                                    { borderColor: flag === 0 ? Colors.border : FLAG_COLORS[flag].color },
+                                    { borderColor: flag === 0 ? colors.border : FLAG_COLORS[flag].color },
                                 ]}
                             >
                                 <View
@@ -223,6 +225,8 @@ export default function CardInfoScreen() {
 }
 
 function InfoRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+    const colors = useThemeColors();
+    const infoStyles = useMemo(() => createInfoStyles(colors), [colors]);
     return (
         <View style={infoStyles.row}>
             <Text style={infoStyles.label}>{label}</Text>
@@ -231,15 +235,18 @@ function InfoRow({ label, value, highlight }: { label: string; value: string; hi
     );
 }
 
-const infoStyles = StyleSheet.create({
+function createInfoStyles(colors: ColorScheme) {
+    return StyleSheet.create({
     row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-    label: { fontSize: FontSize.sm, color: Colors.textMuted },
-    value: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textPrimary },
-    valueHighlight: { color: Colors.btnAgain },
-});
+    label: { fontSize: FontSize.sm, color: colors.textMuted },
+    value: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
+    valueHighlight: { color: colors.btnAgain },
+    });
+}
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -247,33 +254,33 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.borderLight,
+        borderBottomColor: colors.borderLight,
     },
-    backBtn: { fontSize: FontSize.md, color: Colors.accent, fontWeight: '600' },
-    title: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary },
+    backBtn: { fontSize: FontSize.md, color: colors.accent, fontWeight: '600' },
+    title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
     content: { flex: 1, padding: Spacing.lg },
 
     section: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
         marginBottom: Spacing.md,
         ...Shadows.sm,
     },
-    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.sm },
+    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
 
     tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     tag: {
         paddingHorizontal: 10,
         paddingVertical: 4,
-        backgroundColor: Colors.accentLight,
+        backgroundColor: colors.accentLight,
         borderRadius: BorderRadius.full,
         borderWidth: 1,
-        borderColor: Colors.accent,
+        borderColor: colors.accent,
     },
-    tagText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.accent },
+    tagText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.accent },
 
     flagsRow: { flexDirection: 'row', gap: 8 },
     flagBtn: {
@@ -284,26 +291,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    flagBtnActive: { backgroundColor: Colors.accentLight },
+    flagBtnActive: { backgroundColor: colors.accentLight },
     flagDot: { width: 16, height: 16, borderRadius: 8 },
 
     tableHeader: {
         flexDirection: 'row',
         paddingVertical: 6,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
+        borderBottomColor: colors.border,
     },
     th: {
         fontSize: FontSize.xs,
         fontWeight: '700',
-        color: Colors.textMuted,
+        color: colors.textMuted,
         letterSpacing: 0.3,
         textTransform: 'uppercase',
     },
     tableRow: { flexDirection: 'row', paddingVertical: 6 },
-    tableRowEven: { backgroundColor: Colors.bgSecondary },
-    td: { fontSize: FontSize.xs, color: Colors.textSecondary },
+    tableRowEven: { backgroundColor: colors.bgSecondary },
+    td: { fontSize: FontSize.xs, color: colors.textSecondary },
 
     emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    emptyTitle: { fontSize: FontSize.lg, color: Colors.textSecondary },
-});
+    emptyTitle: { fontSize: FontSize.lg, color: colors.textSecondary },
+    });
+}

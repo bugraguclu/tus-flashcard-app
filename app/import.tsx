@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Modal } from 'react-native';
+import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
+import { getAllDecks, getDeck } from '../lib/deckManager';
 import { alert } from '../lib/confirm';
 import { readUriText } from '../lib/files';
 import { useApp } from './(tabs)/app-context';
@@ -48,10 +50,19 @@ async function readAssetBytes(uri: string): Promise<Uint8Array> {
 export default function ImportScreen() {
     const router = useRouter();
     const { bumpDataVersion, settings, dataVersion } = useApp();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
     const subjects = React.useMemo(() => getAllSubjects(), [dataVersion]);
     const [subject, setSubject] = useState(subjects[0]?.id ?? '');
     const [topic, setTopic] = useState('');
+    // Anki's "import into deck": null follows the selected course's deck.
+    const [targetDeckId, setTargetDeckId] = useState<number | null>(null);
+    const [showDeckPicker, setShowDeckPicker] = useState(false);
+    const targetDeck = useMemo(
+        () => getDeck(targetDeckId ?? resolveSubjectDeckId(subject)),
+        [targetDeckId, subject, dataVersion],
+    );
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileText, setFileText] = useState<string | null>(null);
     const [fileBytes, setFileBytes] = useState<Uint8Array | null>(null);
@@ -130,7 +141,7 @@ export default function ImportScreen() {
                     BUILTIN_NOTE_TYPES.find((nt) => nt.id === TUS_BASIC_NOTETYPE_ID)!;
                 imported = importDelimitedNotes(fileText, {
                     noteType,
-                    deckId: resolveSubjectDeckId(subject),
+                    deckId: targetDeckId ?? resolveSubjectDeckId(subject),
                     defaultFields: ['', '', topicValue],
                     tags: [subject, topicValue.replace(/\s+/g, '-')],
                 });
@@ -159,6 +170,18 @@ export default function ImportScreen() {
                     aynı sorulu kartlar atlanır.
                 </Text>
 
+                <Text style={styles.label}>HEDEF DESTE</Text>
+                <TouchableOpacity
+                    style={styles.deckSelector}
+                    onPress={() => setShowDeckPicker(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Hedef desteyi seç"
+                >
+                    <Text style={styles.deckSelectorText} numberOfLines={1}>
+                        🗃️ {targetDeck?.name ?? '—'} ▾
+                    </Text>
+                </TouchableOpacity>
+
                 <Text style={styles.label}>DERS</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
                     {subjects.map((entry) => (
@@ -182,7 +205,7 @@ export default function ImportScreen() {
                     value={topic}
                     onChangeText={setTopic}
                     placeholder={selectedSubject?.topics[0] || 'Genel'}
-                    placeholderTextColor={Colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                 />
 
                 <Text style={styles.label}>DOSYA</Text>
@@ -249,7 +272,7 @@ export default function ImportScreen() {
                         disabled={!hasFile || importing}
                     >
                         {importing ? (
-                            <ActivityIndicator color={Colors.white} />
+                            <ActivityIndicator color={colors.white} />
                         ) : (
                             <Text style={styles.importBtnText}>📥 İçe Aktar</Text>
                         )}
@@ -260,86 +283,155 @@ export default function ImportScreen() {
                     <Text style={styles.cancelBtnText}>İptal</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            <Modal visible={showDeckPicker} transparent animationType="fade" onRequestClose={() => setShowDeckPicker(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>Hedef Deste</Text>
+                        <ScrollView style={{ maxHeight: 320 }}>
+                            <TouchableOpacity
+                                style={styles.deckOption}
+                                onPress={() => { setTargetDeckId(null); setShowDeckPicker(false); }}
+                            >
+                                <Text style={[styles.deckOptionText, targetDeckId === null && styles.deckOptionActive]}>
+                                    ✨ Otomatik — seçilen dersin destesi
+                                </Text>
+                            </TouchableOpacity>
+                            {getAllDecks().filter((deck) => !deck.isFiltered).map((deck) => (
+                                <TouchableOpacity
+                                    key={deck.id}
+                                    style={styles.deckOption}
+                                    onPress={() => { setTargetDeckId(deck.id); setShowDeckPicker(false); }}
+                                >
+                                    <Text
+                                        style={[styles.deckOptionText, targetDeckId === deck.id && styles.deckOptionActive]}
+                                        numberOfLines={1}
+                                    >
+                                        🗃️ {deck.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowDeckPicker(false)}>
+                            <Text style={styles.cancelBtnText}>Vazgeç</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.md },
-    help: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20 },
-    helpStrong: { fontWeight: '700', color: Colors.textPrimary },
+    help: { fontSize: FontSize.sm, color: colors.textSecondary, lineHeight: 20 },
+    helpStrong: { fontWeight: '700', color: colors.textPrimary },
     label: {
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 1.5,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         textTransform: 'uppercase',
     },
     subjectScroll: { marginBottom: 4 },
     subjectChip: {
         paddingHorizontal: Spacing.md,
         paddingVertical: 6,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderRadius: BorderRadius.full,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         marginRight: 6,
     },
-    subjectChipActive: { backgroundColor: Colors.accentLight, borderColor: Colors.accent },
-    subjectChipText: { fontSize: FontSize.sm, color: Colors.textSecondary },
-    subjectChipTextActive: { color: Colors.accent, fontWeight: '600' },
+    subjectChipActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
+    subjectChipText: { fontSize: FontSize.sm, color: colors.textSecondary },
+    subjectChipTextActive: { color: colors.accent, fontWeight: '600' },
     input: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         fontSize: FontSize.md,
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
     },
     fileBtn: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.accent,
+        borderColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
     },
-    fileBtnText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.accent },
-    fileInfo: { fontSize: FontSize.sm, color: Colors.textMuted },
+    fileBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
+    fileInfo: { fontSize: FontSize.sm, color: colors.textMuted },
     importBtn: {
-        backgroundColor: Colors.accent,
+        backgroundColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
         marginTop: Spacing.sm,
     },
     importBtnDisabled: { opacity: 0.5 },
-    importBtnText: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.white },
+    importBtnText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white },
     resultCard: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
         gap: Spacing.sm,
         marginTop: Spacing.sm,
     },
-    resultTitle: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+    resultTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
     resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    resultLabel: { fontSize: FontSize.md, color: Colors.textSecondary },
-    resultNote: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4 },
-    resultValue: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary },
-    resultAdded: { color: Colors.accent },
+    resultLabel: { fontSize: FontSize.md, color: colors.textSecondary },
+    resultNote: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 4 },
+    resultValue: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    resultAdded: { color: colors.accent },
     doneBtn: {
-        backgroundColor: Colors.accent,
+        backgroundColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
         marginTop: Spacing.sm,
     },
-    doneBtnText: { fontSize: FontSize.md, fontWeight: '700', color: Colors.white },
+    doneBtnText: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
     cancelBtn: { paddingVertical: Spacing.md, alignItems: 'center' },
-    cancelBtnText: { fontSize: FontSize.md, color: Colors.textMuted },
-});
+    cancelBtnText: { fontSize: FontSize.md, color: colors.textMuted },
+    deckSelector: {
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: 10,
+    },
+    deckSelectorText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.35)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: Spacing.xl,
+    },
+    modalCard: {
+        width: '100%',
+        maxWidth: 420,
+        backgroundColor: colors.bgCard,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.xl,
+        gap: Spacing.sm,
+    },
+    modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    deckOption: {
+        paddingVertical: 11,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.borderLight,
+    },
+    deckOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
+    deckOptionActive: { color: colors.accent, fontWeight: '700' },
+    });
+}

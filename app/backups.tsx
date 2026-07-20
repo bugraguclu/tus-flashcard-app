@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,7 @@ import {
     Platform,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
 import { downloadTextFileWeb } from '../lib/files';
 import { useApp } from './(tabs)/app-context';
@@ -43,6 +43,8 @@ function formatDate(epochMs: number): string {
 
 export default function BackupsScreen() {
     const { refreshData, bumpDataVersion } = useApp();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [backups, setBackups] = useState<BackupInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
@@ -160,7 +162,7 @@ export default function BackupsScreen() {
                     <Text style={styles.primaryBtnText}>💾 Şimdi Yedekle</Text>
                 </TouchableOpacity>
 
-                {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={Colors.accent} />}
+                {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}
 
                 {!loading && backups.length === 0 && (
                     <Text style={styles.empty}>Henüz yedek yok.</Text>
@@ -208,41 +210,43 @@ export default function BackupsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.sm },
-    help: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 20 },
+    help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 20 },
     primaryBtn: {
         borderWidth: 1,
-        borderColor: Colors.accent,
-        backgroundColor: Colors.accentLight,
+        borderColor: colors.accent,
+        backgroundColor: colors.accentLight,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
     },
-    primaryBtnText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.accent },
+    primaryBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
     btnDisabled: { opacity: 0.5 },
-    empty: { fontSize: FontSize.md, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
+    empty: { fontSize: FontSize.md, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
     row: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         gap: Spacing.sm,
     },
     rowText: {},
-    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
-    rowSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
+    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    rowSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
     rowActions: { flexDirection: 'row', gap: Spacing.sm },
     actionBtn: {
         paddingHorizontal: Spacing.md,
         paddingVertical: 6,
-        backgroundColor: Colors.bgSecondary,
+        backgroundColor: colors.bgSecondary,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
     },
-    actionText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textSecondary },
-    dangerText: { color: Colors.btnAgain },
-});
+    actionText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+    dangerText: { color: colors.btnAgain },
+    });
+}

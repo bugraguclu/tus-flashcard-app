@@ -12,6 +12,9 @@ import {
 } from './ankiState';
 
 const settings: AppSettings = {
+    themeMode: 'system',
+    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4' },
+    autoAdvance: false,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10, 60],
@@ -23,6 +26,10 @@ const settings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'after',
     newCardOrder: 'sequential',
+    newCardGatherOrder: 'topic',
+    reviewSortOrder: 'dueRandom',
+    autoPlayAudio: true,
+    easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,

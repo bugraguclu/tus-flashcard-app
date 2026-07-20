@@ -14,11 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tusankim.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Kart oluştururken fotoğraf çekmek için kamera erişimi gereklidir.",
-        "NSPhotoLibraryUsageDescription": "Kartlara görsel eklemek için fotoğraf kitaplığı erişimi gereklidir."
-      }
+      "bundleIdentifier": "com.tusankim.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +36,20 @@
     "scheme": "tusankim",
     "plugins": [
       "expo-sqlite",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kartlara görsel eklemek için fotoğraf kitaplığı erişimi gereklidir.",
+          "cameraPermission": "Kart oluştururken fotoğraf çekmek için kamera erişimi gereklidir."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Kartlara ses kaydı eklemek için mikrofon erişimi gereklidir."
+        }
+      ]
     ],
     "extra": {
       "eas": {

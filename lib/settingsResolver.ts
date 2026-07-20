@@ -32,5 +32,14 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         easyBonus: config.easyBonus > 0 ? config.easyBonus : base.easyBonus,
         intervalModifier: config.ivlModifier > 0 ? config.ivlModifier : base.intervalModifier,
         maxInterval: config.maxIvl > 0 ? Math.min(36500, config.maxIvl) : base.maxInterval,
+        // Display order / audio / easy days arrived after the first configs were written;
+        // absent fields fall back to the app-wide defaults.
+        queueOrder: config.newReviewOrder ?? base.queueOrder,
+        newCardGatherOrder: config.newCardGatherOrder ?? base.newCardGatherOrder,
+        reviewSortOrder: config.reviewSortOrder ?? base.reviewSortOrder,
+        autoPlayAudio: config.autoPlayAudio ?? base.autoPlayAudio,
+        easyDays: Array.isArray(config.easyDays) && config.easyDays.length === 7
+            ? [...config.easyDays]
+            : base.easyDays,
     };
 }

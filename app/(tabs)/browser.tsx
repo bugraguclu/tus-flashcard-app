@@ -10,12 +10,13 @@ import {
     FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import { getAllSubjects } from '../../lib/subjects';
 import { dbSearchCards } from '../../lib/db';
 import { localDayNumber, ymdToLocalDayNumber } from '../../lib/ankiState';
 import { useApp } from './_layout';
 import type { CardState, StudyCard } from '../../lib/types';
+import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import { getBrowserCards, setCardSuspended } from '../../lib/studyRepository';
 
 /** Compact "how long ago" label for the card list (Turkish). */
@@ -60,6 +61,8 @@ function formatNextDue(state: CardState, rolloverHour: number): string {
 export default function BrowserScreen() {
     const { settings, bumpDataVersion, dataVersion } = useApp();
     const router = useRouter();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const subjects = useMemo(() => getAllSubjects(), [dataVersion]);
 
     const [allCards, setAllCards] = useState<StudyCard[]>([]);
@@ -130,18 +133,19 @@ export default function BrowserScreen() {
     const renderCard = ({ item }: { item: StudyCard }) => {
         const isExpanded = expandedCard === item.cardId;
         const sub = subject(item.subject);
+        const flag = (item.rawCard?.flags ?? 0) as CardFlag;
 
         const statusColor = item.state.status === 'new'
-            ? Colors.badgeNew
+            ? colors.badgeNew
             : item.state.status === 'learning'
-                ? Colors.badgeLearn
-                : Colors.badgeReview;
+                ? colors.badgeLearn
+                : colors.badgeReview;
 
         const statusBg = item.state.status === 'new'
-            ? Colors.badgeNewBg
+            ? colors.badgeNewBg
             : item.state.status === 'learning'
-                ? Colors.badgeLearnBg
-                : Colors.badgeReviewBg;
+                ? colors.badgeLearnBg
+                : colors.badgeReviewBg;
 
         return (
             <TouchableOpacity
@@ -167,6 +171,14 @@ export default function BrowserScreen() {
                             ⏱ Son: {formatLastReview(item.state.lastReviewedAtMs)} · Sonraki: {formatNextDue(item.state, settings.dayRolloverHour)}
                         </Text>
                     </View>
+                    {flag > 0 && (
+                        <Text
+                            style={[styles.flagIcon, { color: FLAG_COLORS[flag].color }]}
+                            accessibilityLabel={`Bayrak: ${FLAG_COLORS[flag].name}`}
+                        >
+                            ⚑
+                        </Text>
+                    )}
                     <TouchableOpacity
                         style={styles.editBtn}
                         onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
@@ -234,7 +246,7 @@ export default function BrowserScreen() {
                 <TextInput
                     style={styles.searchInput}
                     placeholder="🔍 Kart ara..."
-                    placeholderTextColor={Colors.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     value={rawQuery}
                     onChangeText={handleSearch}
                 />
@@ -264,6 +276,7 @@ export default function BrowserScreen() {
                 data={filteredCards}
                 renderItem={renderCard}
                 keyExtractor={(item) => String(item.cardId)}
+                style={styles.list}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
@@ -273,8 +286,9 @@ export default function BrowserScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     header: {
         paddingHorizontal: Spacing.lg,
         paddingTop: Spacing.lg,
@@ -283,48 +297,51 @@ const styles = StyleSheet.create({
         alignItems: 'baseline',
         gap: 8,
     },
-    title: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textPrimary },
-    subtitle: { fontSize: FontSize.md, color: Colors.textMuted },
+    title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
+    subtitle: { fontSize: FontSize.md, color: colors.textMuted },
     addCardBtn: {
-        backgroundColor: Colors.accent,
+        backgroundColor: colors.accent,
         paddingHorizontal: Spacing.lg,
         paddingVertical: 8,
         borderRadius: BorderRadius.sm,
     },
-    addCardBtnText: { fontSize: FontSize.md, fontWeight: '700', color: Colors.white },
+    addCardBtnText: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
 
     searchContainer: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
     searchInput: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.sm,
         fontSize: FontSize.md,
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
     },
 
-    filterScroll: { maxHeight: 42 },
-    filterContent: { paddingHorizontal: Spacing.lg, gap: 6 },
+    // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
+    // row stretches into leftover space when the list below is short, inflating the chips.
+    filterScroll: { maxHeight: 42, flexGrow: 0 },
+    filterContent: { paddingHorizontal: Spacing.lg, gap: 6, alignItems: 'center' },
     filterChip: {
         paddingHorizontal: Spacing.md,
         paddingVertical: 5,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderRadius: BorderRadius.full,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
     },
-    filterChipActive: { backgroundColor: Colors.accentLight, borderColor: Colors.accent },
-    filterChipText: { fontSize: FontSize.sm, color: Colors.textSecondary },
-    filterChipTextActive: { color: Colors.accent, fontWeight: '600' },
+    filterChipActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
+    filterChipText: { fontSize: FontSize.sm, color: colors.textSecondary },
+    filterChipTextActive: { color: colors.accent, fontWeight: '600' },
 
+    list: { flex: 1 },
     listContent: { padding: Spacing.lg, gap: 8 },
 
     cardItem: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
         padding: Spacing.md,
         ...Shadows.sm,
@@ -332,26 +349,27 @@ const styles = StyleSheet.create({
     cardSuspended: { opacity: 0.5 },
     cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
     cardIcon: { fontSize: 22, marginTop: 2 },
-    cardQuestion: { fontSize: FontSize.md, fontWeight: '500', color: Colors.textPrimary, lineHeight: 22 },
+    cardQuestion: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary, lineHeight: 22 },
     cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-    cardTopic: { fontSize: FontSize.xs, color: Colors.textMuted },
+    cardTopic: { fontSize: FontSize.xs, color: colors.textMuted },
     statusDot: { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
     statusDotText: { fontSize: 9, fontWeight: '600' },
-    scheduleMeta: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 3 },
+    scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 3 },
     editBtn: {
         width: 32,
         height: 32,
         borderRadius: 6,
-        backgroundColor: Colors.bgInput,
+        backgroundColor: colors.bgInput,
         alignItems: 'center',
         justifyContent: 'center',
     },
     editBtnText: { fontSize: 14 },
     suspendedIcon: { fontSize: 18 },
+    flagIcon: { fontSize: 18, marginTop: 6 },
 
-    expandedContent: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.borderLight },
+    expandedContent: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: colors.borderLight },
     answerBox: {
-        backgroundColor: Colors.bgInput,
+        backgroundColor: colors.bgInput,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         marginBottom: Spacing.md,
@@ -360,22 +378,23 @@ const styles = StyleSheet.create({
         fontSize: 9,
         fontWeight: '700',
         letterSpacing: 1,
-        color: Colors.accent,
+        color: colors.accent,
         marginBottom: 4,
         textTransform: 'uppercase',
     },
-    answerContent: { fontSize: FontSize.md, color: Colors.textSecondary, lineHeight: 22 },
+    answerContent: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 22 },
     cardDetails: { gap: 4, marginBottom: Spacing.sm },
     detailRow: { flexDirection: 'row', justifyContent: 'space-between' },
-    detailLabel: { fontSize: FontSize.sm, color: Colors.textMuted },
-    detailValue: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: '500' },
+    detailLabel: { fontSize: FontSize.sm, color: colors.textMuted },
+    detailValue: { fontSize: FontSize.sm, color: colors.textPrimary, fontWeight: '500' },
 
     suspendBtn: {
         paddingVertical: Spacing.sm,
-        backgroundColor: Colors.bgInput,
+        backgroundColor: colors.bgInput,
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
     },
-    suspendBtnActive: { backgroundColor: Colors.accentLight },
-    suspendBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textSecondary },
-});
+    suspendBtnActive: { backgroundColor: colors.accentLight },
+    suspendBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+    });
+}

@@ -110,10 +110,39 @@ export interface TodayAnswerStats {
  * Today's study numbers derived from the review log — the persistent source of truth.
  * Unlike a cached session blob, these survive restarts, sleep and multiple tabs, and undo
  * corrects them automatically because it deletes the revlog row.
+ *
+ * With deckName the numbers cover only that deck's subtree. Reviews of since-deleted cards
+ * can't be attributed to a deck anymore, so they count in the global numbers only.
  */
-export function getTodayAnswerStats(rolloverHour: number = 4): TodayAnswerStats {
+export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string): TodayAnswerStats {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+
+    if (deckName) {
+        const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;
+
+        const totals = db.getFirstSync<{ reviewed: number; failed: number; timeMs: number }>(
+            `SELECT COUNT(*) AS reviewed,
+                    COALESCE(SUM(CASE WHEN r.ease = 1 THEN 1 ELSE 0 END), 0) AS failed,
+                    COALESCE(SUM(r.time), 0) AS timeMs
+             FROM revlog r
+             JOIN anki_cards c ON c.id = r.cardId
+             JOIN decks d ON d.id = c.deckId
+             WHERE r.id >= ? AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+            startMs, deckName, escapedPrefix,
+        );
+
+        const reviewed = totals?.reviewed ?? 0;
+        const failed = totals?.failed ?? 0;
+
+        return {
+            reviewed,
+            failed,
+            passed: Math.max(0, reviewed - failed),
+            newCardsIntroduced: getNewCardsIntroducedTodayInDeck(deckName, rolloverHour),
+            studyTimeMs: totals?.timeMs ?? 0,
+        };
+    }
 
     const totals = db.getFirstSync<{ reviewed: number; failed: number; timeMs: number }>(
         `SELECT COUNT(*) AS reviewed,
@@ -140,6 +169,35 @@ export function getTodayAnswerStats(rolloverHour: number = 4): TodayAnswerStats 
         newCardsIntroduced: introduced?.cnt ?? 0,
         studyTimeMs: totals?.timeMs ?? 0,
     };
+}
+
+/**
+ * How many of today's first-ever reviews belong to a deck subtree. Anki tracks the new-card
+ * allotment per deck; deriving it from the revlog keeps deck-scoped studying from being
+ * throttled by new cards introduced in unrelated decks.
+ */
+export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour: number = 4): number {
+    const db = getDB();
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+    const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;
+
+    const row = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) AS cnt
+         FROM (
+            SELECT r.cardId, MIN(r.id) AS firstReview
+            FROM revlog r
+            JOIN anki_cards c ON c.id = r.cardId
+            JOIN decks d ON d.id = c.deckId
+            WHERE d.name = ? OR d.name LIKE ? ESCAPE '\\'
+            GROUP BY r.cardId
+         )
+         WHERE firstReview >= ?`,
+        deckName,
+        escapedPrefix,
+        startMs,
+    );
+
+    return row?.cnt ?? 0;
 }
 
 export interface StudyStreak {
@@ -189,6 +247,40 @@ export function getStudyStreak(rolloverHour: number = 4): StudyStreak {
     }
 
     return { current, studiedToday, best };
+}
+
+/**
+ * Distinct study days with at least one review inside [startDayNumber, endDayNumber],
+ * as YYYY-MM-DD strings. Buckets reviews by the same rollover-shifted local date as
+ * getStudyStreak and getDailyReviewCounts, so a 2 AM answer belongs to the previous
+ * study day everywhere at once.
+ */
+export function getStudiedDaysBetween(
+    startDayNumber: number,
+    endDayNumber: number,
+    rolloverHour: number = 4,
+): Set<string> {
+    if (endDayNumber < startDayNumber) return new Set();
+
+    const db = getDB();
+    const shiftSec = rolloverHour * 3600;
+    const startMs = studyDayStartMsFromDayNumber(startDayNumber, rolloverHour);
+    const endMs = studyDayStartMsFromDayNumber(endDayNumber + 1, rolloverHour);
+
+    const rows = db.getAllSync<{ d: string }>(
+        `SELECT DISTINCT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
+         FROM revlog WHERE id >= ? AND id < ?`,
+        shiftSec, startMs, endMs,
+    );
+
+    return new Set(rows.map((row) => row.d));
+}
+
+/** Local timestamp where the given study day begins (its calendar date at the rollover hour). */
+function studyDayStartMsFromDayNumber(dayNumber: number, rolloverHour: number): number {
+    const ymd = dayNumberToYmd(dayNumber, rolloverHour);
+    const [yyyy, mm, dd] = ymd.split('-').map(Number);
+    return new Date(yyyy, mm - 1, dd, rolloverHour, 0, 0, 0).getTime();
 }
 
 /** Get review statistics for a period */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View,
     Text,
@@ -11,21 +11,49 @@ import {
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
-import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { loadSettings, saveSettings, resetAllData, exportAllData, importAllData, DEFAULT_SETTINGS } from '../../lib/storage';
+import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../../constants/theme';
+import {
+    loadSettings,
+    saveSettings,
+    resetAllData,
+    resetSettingsToDefaults,
+    exportAllData,
+    importAllData,
+    DEFAULT_SETTINGS,
+    DEFAULT_KEY_BINDINGS,
+} from '../../lib/storage';
 import { checkDatabase } from '../../lib/maintenance';
 import { downloadTextFileWeb, getLegacyFileSystem, readUriText } from '../../lib/files';
 import { confirm, alert } from '../../lib/confirm';
 import { useApp } from './_layout';
-import type { AppSettings } from '../../lib/types';
+import type { AppSettings, KeyBindings, ThemeMode } from '../../lib/types';
+
+/** Human label for a stored key binding value (a raw KeyboardEvent.key). */
+function formatKeyLabel(key: string): string {
+    if (key === ' ') return 'Space';
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+}
+
+const KEY_BINDING_ROWS: Array<{ field: keyof KeyBindings; label: string }> = [
+    { field: 'showAnswer', label: 'Cevabı Göster' },
+    { field: 'again', label: 'Tekrar (Again)' },
+    { field: 'hard', label: 'Zor (Hard)' },
+    { field: 'good', label: 'İyi (Good)' },
+    { field: 'easy', label: 'Kolay (Easy)' },
+];
 
 export default function SettingsScreen() {
     const router = useRouter();
     const { refreshData, bumpDataVersion } = useApp();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Field currently waiting for the user to press a key (web only); null = not recording.
+    const [recordingField, setRecordingField] = useState<keyof KeyBindings | null>(null);
 
     useEffect(() => {
         setSettings(loadSettings());
@@ -43,10 +71,14 @@ export default function SettingsScreen() {
         setSettings((prev) => {
             const updated = { ...prev, [key]: value };
             saveSettings(updated);
-            refreshData();
-            bumpDataVersion();
             return updated;
         });
+        // Side effects that touch other components' state must happen outside the updater
+        // above — React invokes that callback during the render phase, and calling another
+        // component's setState from there (refreshData/bumpDataVersion live in AppProvider)
+        // triggers "Cannot update a component while rendering a different component".
+        refreshData();
+        bumpDataVersion();
 
         setSaved(true);
         if (savedTimerRef.current) {
@@ -156,6 +188,41 @@ export default function SettingsScreen() {
         );
     };
 
+    const handleResetSettingsToDefaults = () => {
+        confirm(
+            'Varsayılan Ayarlara Dön',
+            'Tüm ayarlar (görünüm, tercihler, zamanlayıcı) varsayılana döner. Kartların ve ilerlemenin dokunulmaz.',
+            () => {
+                resetSettingsToDefaults();
+                setSettings(loadSettings());
+                refreshData();
+                bumpDataVersion();
+                alert('Tamamlandı', 'Ayarlar varsayılana döndürüldü.');
+            },
+        );
+    };
+
+    // Web-only key capture: while recordingField is set, the next keydown becomes that
+    // binding's value. Native platforms don't get shortcuts at all (see index.tsx), so there
+    // is nothing to capture there — the row still shows a disabled/inert current value.
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined' || !recordingField) return;
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            event.preventDefault();
+            if (event.key === 'Escape') {
+                setRecordingField(null);
+                return;
+            }
+            updateSetting('keyBindings', { ...settings.keyBindings, [recordingField]: event.key });
+            setRecordingField(null);
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recordingField, settings.keyBindings]);
+
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
@@ -176,6 +243,123 @@ export default function SettingsScreen() {
                             <Text style={styles.savedText}>✓ Kaydedildi</Text>
                         </View>
                     )}
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>🎨 Görünüm</Text>
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Tema</Text>
+                        <View style={styles.inputRow}>
+                            {([
+                                ['system', 'Sistemi Takip Et'],
+                                ['light', 'Açık'],
+                                ['dark', 'Koyu'],
+                            ] as Array<[ThemeMode, string]>).map(([mode, label]) => (
+                                <TouchableOpacity
+                                    key={mode}
+                                    style={[styles.optionBtn, settings.themeMode === mode && styles.optionBtnActive]}
+                                    onPress={() => updateSetting('themeMode', mode)}
+                                >
+                                    <Text style={[styles.optionText, settings.themeMode === mode && styles.optionTextActive]}>
+                                        {label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>🧑‍💻 Kullanıcı Tercihleri</Text>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Günün Başlangıç Saati</Text>
+                        <Text style={styles.sectionDesc}>
+                            Günlük istatistikler ve kart limitleri bu saatte sıfırlanır (varsayılan 04:00).
+                        </Text>
+                        <View style={styles.inputRow}>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('dayRolloverHour', (settings.dayRolloverHour + 23) % 24)}
+                            >
+                                <Text style={styles.stepBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.inputValue}>{String(settings.dayRolloverHour).padStart(2, '0')}:00</Text>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('dayRolloverHour', (settings.dayRolloverHour + 1) % 24)}
+                            >
+                                <Text style={styles.stepBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Öğrenme Kartlarını Erken Gösterme (dk)</Text>
+                        <Text style={styles.sectionDesc}>
+                            {settings.learnAheadMinutes > 0
+                                ? `Zamanlayıcısı dolmasına ${settings.learnAheadMinutes} dakikadan az kalan öğrenme kartları, sırada başka kart kalmayınca otomatik gösterilir.`
+                                : 'Kapalı: öğrenme kartları yalnızca "⚡ Beklemeden Çalış" ile ya da zamanlayıcıları dolunca gösterilir.'}
+                        </Text>
+                        <View style={styles.inputRow}>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('learnAheadMinutes', Math.max(0, settings.learnAheadMinutes - 5))}
+                            >
+                                <Text style={styles.stepBtnText}>−</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.inputValue}>{settings.learnAheadMinutes}</Text>
+                            <TouchableOpacity
+                                style={styles.stepBtn}
+                                onPress={() => updateSetting('learnAheadMinutes', Math.min(120, settings.learnAheadMinutes + 5))}
+                            >
+                                <Text style={styles.stepBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.settingRow}>
+                        <Text style={styles.settingLabel}>Tuş Atamaları</Text>
+                        <Text style={styles.sectionDesc}>
+                            {Platform.OS === 'web'
+                                ? 'Değiştir\'e basıp ardından istediğin tuşa bas.'
+                                : 'Klavye kısayolları yalnızca web sürümünde çalışır.'}
+                        </Text>
+                        {KEY_BINDING_ROWS.map(({ field, label }) => (
+                            <View key={field} style={styles.keyBindingRow}>
+                                <Text style={styles.keyBindingLabel}>{label}</Text>
+                                <View style={styles.inputRow}>
+                                    <View style={styles.keyChip}>
+                                        <Text style={styles.keyChipText}>
+                                            {recordingField === field ? 'Bir tuşa basın…' : formatKeyLabel(settings.keyBindings[field])}
+                                        </Text>
+                                    </View>
+                                    {Platform.OS === 'web' && (
+                                        <TouchableOpacity
+                                            style={styles.optionBtn}
+                                            onPress={() => setRecordingField(recordingField === field ? null : field)}
+                                        >
+                                            <Text style={styles.optionText}>
+                                                {recordingField === field ? 'İptal (Esc)' : 'Değiştir'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                            </View>
+                        ))}
+                        {JSON.stringify(settings.keyBindings) !== JSON.stringify(DEFAULT_KEY_BINDINGS) && (
+                            <TouchableOpacity
+                                style={[styles.actionBtn, { marginTop: Spacing.sm }]}
+                                onPress={() => updateSetting('keyBindings', DEFAULT_KEY_BINDINGS)}
+                            >
+                                <Text style={styles.actionBtnText}>Tuş Atamalarını Sıfırla</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <TouchableOpacity style={[styles.actionBtn, { marginTop: Spacing.lg }]} onPress={handleResetSettingsToDefaults}>
+                        <Text style={styles.actionBtnText}>↺ Varsayılan Ayarlara Dön</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.section}>
@@ -256,25 +440,6 @@ export default function SettingsScreen() {
                                 <Text style={[styles.optionText, settings.queueOrder === 'after' && styles.optionTextActive]}>
                                     Sonra Yeni
                                 </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    <View style={styles.settingRow}>
-                        <Text style={styles.settingLabel}>Öğrenme Kartlarını Erken Gösterme (dk)</Text>
-                        <View style={styles.inputRow}>
-                            <TouchableOpacity
-                                style={styles.stepBtn}
-                                onPress={() => updateSetting('learnAheadMinutes', Math.max(0, settings.learnAheadMinutes - 5))}
-                            >
-                                <Text style={styles.stepBtnText}>−</Text>
-                            </TouchableOpacity>
-                            <Text style={styles.inputValue}>{settings.learnAheadMinutes}</Text>
-                            <TouchableOpacity
-                                style={styles.stepBtn}
-                                onPress={() => updateSetting('learnAheadMinutes', Math.min(120, settings.learnAheadMinutes + 5))}
-                            >
-                                <Text style={styles.stepBtnText}>+</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -426,79 +591,98 @@ export default function SettingsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
-    scrollContent: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 80 },
-    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    title: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textPrimary },
-    savedBadge: {
-        backgroundColor: Colors.btnGoodBg,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: BorderRadius.sm,
-    },
-    savedText: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.btnGood },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.bgPrimary },
+        scrollContent: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 80 },
+        headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+        title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
+        savedBadge: {
+            backgroundColor: colors.btnGoodBg,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: BorderRadius.sm,
+        },
+        savedText: { fontSize: FontSize.xs, fontWeight: '700', color: colors.btnGood },
 
-    section: {
-        backgroundColor: Colors.bgCard,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.lg,
-        ...Shadows.sm,
-    },
-    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-    sectionDesc: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.md, lineHeight: 20 },
+        section: {
+            backgroundColor: colors.bgCard,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.md,
+            padding: Spacing.lg,
+            ...Shadows.sm,
+        },
+        sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
+        sectionDesc: { fontSize: FontSize.sm, color: colors.textMuted, marginBottom: Spacing.md, lineHeight: 20 },
 
-    algorithmCardActive: {
-        borderColor: Colors.accent,
-        backgroundColor: Colors.accentLight,
-        borderWidth: 1,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-    },
-    algName: { fontSize: FontSize.md, fontWeight: '700', color: Colors.accent },
-    algDesc: { fontSize: FontSize.sm, color: Colors.accentHover, marginTop: 2 },
+        algorithmCardActive: {
+            borderColor: colors.accent,
+            backgroundColor: colors.accentLight,
+            borderWidth: 1,
+            borderRadius: BorderRadius.sm,
+            padding: Spacing.md,
+        },
+        algName: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
+        algDesc: { fontSize: FontSize.sm, color: colors.accentHover, marginTop: 2 },
 
-    settingRow: { marginTop: Spacing.md },
-    settingLabel: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary, marginBottom: 8 },
+        settingRow: { marginTop: Spacing.md },
+        settingLabel: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary, marginBottom: 8 },
 
-    inputRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-    stepBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: BorderRadius.sm,
-        backgroundColor: Colors.bgSecondary,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    stepBtnText: { fontSize: FontSize.xl, fontWeight: '600', color: Colors.textPrimary },
-    inputValue: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.accent, minWidth: 40, textAlign: 'center', lineHeight: 36 },
+        inputRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
+        stepBtn: {
+            width: 36,
+            height: 36,
+            borderRadius: BorderRadius.sm,
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        stepBtnText: { fontSize: FontSize.xl, fontWeight: '600', color: colors.textPrimary },
+        inputValue: { fontSize: FontSize.xl, fontWeight: '700', color: colors.accent, minWidth: 40, textAlign: 'center', lineHeight: 36 },
 
-    optionBtn: {
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 6,
-        backgroundColor: Colors.bgSecondary,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        borderRadius: BorderRadius.sm,
-    },
-    optionBtnActive: { backgroundColor: Colors.accentLight, borderColor: Colors.accent },
-    optionText: { fontSize: FontSize.sm, color: Colors.textSecondary, fontWeight: '500' },
-    optionTextActive: { color: Colors.accent, fontWeight: '700' },
+        optionBtn: {
+            paddingHorizontal: Spacing.md,
+            paddingVertical: 6,
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.sm,
+        },
+        optionBtnActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
+        optionText: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '500' },
+        optionTextActive: { color: colors.accent, fontWeight: '700' },
 
-    actionBtn: {
-        paddingVertical: Spacing.md,
-        backgroundColor: Colors.bgSecondary,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        borderRadius: BorderRadius.sm,
-        alignItems: 'center',
-        marginTop: Spacing.sm,
-    },
-    actionBtnText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
-    dangerBtn: { borderColor: '#e8c4c0' },
-    dangerText: { color: Colors.btnAgain },
-});
+        keyBindingRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: 6,
+        },
+        keyBindingLabel: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '500' },
+        keyChip: {
+            minWidth: 64,
+            paddingHorizontal: Spacing.md,
+            paddingVertical: 6,
+            backgroundColor: colors.accentLight,
+            borderRadius: BorderRadius.sm,
+            alignItems: 'center',
+        },
+        keyChipText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
+
+        actionBtn: {
+            paddingVertical: Spacing.md,
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.sm,
+            alignItems: 'center',
+            marginTop: Spacing.sm,
+        },
+        actionBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+        dangerBtn: { borderColor: '#e8c4c0' },
+        dangerText: { color: colors.btnAgain },
+    });
+}

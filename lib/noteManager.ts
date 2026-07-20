@@ -567,24 +567,30 @@ export function createTusCard(input: {
     topic: string;
     question: string;
     answer: string;
-}): { note: Note; card: AnkiCard } {
-    const noteType = getNoteType(4) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === 4)!;
-    const deckId = resolveSubjectDeckId(input.subject);
+    /** Explicit target deck (Anki's add-dialog deck picker); defaults to the subject's deck. */
+    deckId?: number;
+    /** 4 = Basic (default), 5 = Type Answer, 6 = Reversed. */
+    noteTypeId?: number;
+    /** Card 2's answer override for note type 6; blank means "same as Soru". */
+    reverseAnswer?: string;
+}): { note: Note; card: AnkiCard; cards: AnkiCard[] } {
+    const noteTypeId = input.noteTypeId ?? 4;
+    const noteType = getNoteType(noteTypeId) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId)!;
+    const deckId = input.deckId ?? resolveSubjectDeckId(input.subject);
     const tags = [input.subject, input.topic.replace(/\s+/g, '-')];
 
-    const { note, cards } = createNote(
-        noteType,
-        [input.question, input.answer, input.topic],
-        deckId,
-        tags,
-    );
+    const fields = noteTypeId === 6
+        ? [input.question, input.answer, input.topic, (input.reverseAnswer ?? '').trim()]
+        : [input.question, input.answer, input.topic];
 
-    return { note, card: cards[0] };
+    const { note, cards } = createNote(noteType, fields, deckId, tags);
+
+    return { note, card: cards[0], cards };
 }
 
 export function updateTusCardByCardId(
     cardId: number,
-    input: { subject: string; topic: string; question: string; answer: string },
+    input: { subject: string; topic: string; question: string; answer: string; reverseAnswer?: string },
 ): { note: Note; card: AnkiCard } | null {
     const card = getAnkiCard(cardId);
     if (!card) return null;
@@ -592,7 +598,7 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
-    // The simple editor only knows question/answer/topic. Notes of richer types
+    // The simple editor only knows question/answer/topic(/reverseAnswer). Notes of richer types
     // (imported Anki decks, cloze) may carry more fields — overwrite only the
     // slots the editor owns and keep the rest, or a save here would wipe them.
     const noteType = getNoteType(note.noteTypeId);
@@ -602,7 +608,8 @@ export function updateTusCardByCardId(
     for (let i = 0; i < fieldCount; i++) fields[i] = fields[i] ?? '';
     fields[0] = input.question;
     fields[1] = input.answer;
-    if (note.noteTypeId === 4) fields[2] = input.topic;
+    if (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6) fields[2] = input.topic;
+    if (note.noteTypeId === 6) fields[3] = (input.reverseAnswer ?? '').trim();
 
     note.fields = fields;
     note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
@@ -624,6 +631,91 @@ export function deleteTusCardByCardId(cardId: number): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
     deleteNote(card.noteId);
+}
+
+// ---- Empty Cards (Anki's "Find Empty Cards") ----
+
+export interface EmptyCardEntry {
+    cardId: number;
+    noteId: number;
+    /** First field, for display — same convention as the search index. */
+    question: string;
+    reason: string;
+}
+
+/**
+ * Cards whose generation condition no longer holds: a cloze ordinal missing from its field,
+ * a template the note type no longer defines, or (for standard note types) a blank first field.
+ * Mirrors Anki's "Find Empty Cards" tool — these are safe to delete without touching the note
+ * itself or its other, still-valid, sibling cards.
+ */
+export function findEmptyCards(): EmptyCardEntry[] {
+    const db = getDB();
+    const rows = db.getAllSync<{ cardId: number; ord: number; noteData: string }>(
+        `SELECT c.id AS cardId, c.ord AS ord, n.data AS noteData
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId`,
+    );
+
+    const noteTypeCache = new Map<number, NoteType | null>();
+    const results: EmptyCardEntry[] = [];
+
+    for (const row of rows) {
+        let note: Note;
+        try {
+            note = JSON.parse(row.noteData);
+        } catch {
+            continue;
+        }
+
+        let noteType = noteTypeCache.get(note.noteTypeId);
+        if (noteType === undefined) {
+            noteType = getNoteType(note.noteTypeId);
+            noteTypeCache.set(note.noteTypeId, noteType);
+        }
+        if (!noteType) continue; // orphaned note type is a different problem; leave its cards alone
+
+        const question = note.fields[0] || note.sfld || '';
+
+        if (noteType.kind === 'cloze') {
+            const text = note.fields[clozeFieldIndex(noteType)] || '';
+            if (!extractClozeNumbers(text).includes(row.ord + 1)) {
+                results.push({ cardId: row.cardId, noteId: note.id, question, reason: 'Kapama numarası artık metinde yok' });
+            }
+            continue;
+        }
+
+        const template = noteType.templates[row.ord];
+        if (!template) {
+            results.push({ cardId: row.cardId, noteId: note.id, question, reason: 'Şablon artık mevcut değil' });
+            continue;
+        }
+        if (!shouldGenerateCard(noteType, note, row.ord)) {
+            results.push({ cardId: row.cardId, noteId: note.id, question, reason: 'Gerekli alan boş' });
+        }
+    }
+
+    return results;
+}
+
+/**
+ * Deletes a single card without touching its note or any sibling cards — unlike
+ * deleteTusCardByCardId, which deletes the whole note. For orphaned cards found by
+ * findEmptyCards(), where the note (and its other cards) may still be perfectly valid.
+ */
+export function deleteAnkiCardOnly(cardId: number): void {
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        db.runSync('DELETE FROM revlog WHERE cardId = ?', cardId);
+        db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
+        db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
+        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
 }
 
 // ---- Tag Management ----
@@ -669,6 +761,40 @@ export function removeTagFromNote(noteId: number, tag: string): void {
     note.tags = note.tags.filter(t => t !== tag);
     note.mod = Math.floor(Date.now() / 1000);
     saveNote(note);
+}
+
+/** Reserved tag mirroring Anki's note "mark" (star) feature. */
+export const MARKED_TAG = 'marked';
+
+export function isNoteMarked(note: Note): boolean {
+    return note.tags.includes(MARKED_TAG);
+}
+
+/** Toggles the reserved "marked" tag on a note. Returns the new marked state. */
+export function toggleNoteMark(noteId: number): boolean {
+    const note = getNote(noteId);
+    if (!note) return false;
+    const willMark = !isNoteMarked(note);
+    if (willMark) {
+        addTagToNote(noteId, MARKED_TAG);
+    } else {
+        removeTagFromNote(noteId, MARKED_TAG);
+    }
+    return willMark;
+}
+
+/** Duplicates a note (fields + tags) into a fresh note, generating cards in the same deck. */
+export function duplicateNote(noteId: number): { note: Note; cards: AnkiCard[] } | null {
+    const note = getNote(noteId);
+    if (!note) return null;
+
+    const noteType = getNoteType(note.noteTypeId);
+    if (!noteType) return null;
+
+    const existingCards = getCardsForNote(noteId);
+    const deckId = existingCards[0]?.deckId ?? subjectToDeckId('anatomy');
+
+    return createNote(noteType, [...note.fields], deckId, [...note.tags]);
 }
 
 // ---- Search (uses FTS5 index when available) ----

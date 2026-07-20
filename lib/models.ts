@@ -110,13 +110,76 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
                 name: 'Soru → Cevap',
                 ord: 0,
                 qfmt: '<div class="question">{{Soru}}</div>',
-                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{Cevap}}</div>{{#Kaynak}}<div class="source">📚 {{Kaynak}}</div>{{/Kaynak}}',
+                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{Cevap}}</div>',
             },
         ],
         css: `.card { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 18px; color: #2c3e36; background-color: #f4faf7; padding: 20px; }
 .question { font-weight: 600; line-height: 1.6; }
 .answer { line-height: 1.6; color: #556b62; }
 .source { margin-top: 12px; font-size: 13px; color: #7f9a8f; }`,
+        sortFieldIdx: 0,
+        mod: 0,
+    },
+    {
+        // "Yazarak Cevapla": same Soru/Cevap/Kaynak shape as the TUS card (id 4), but the
+        // templates embed {{type:Cevap}} so the study screen collects a typed answer and
+        // diffs it against the real one, Anki-style.
+        id: 5,
+        name: 'TUS Yazarak Cevapla',
+        kind: 'standard',
+        fields: [
+            { name: 'Soru', ord: 0, sticky: false, rtl: false },
+            { name: 'Cevap', ord: 1, sticky: false, rtl: false },
+            { name: 'Kaynak', ord: 2, sticky: true, rtl: false },
+        ],
+        templates: [
+            {
+                name: 'Soru → Cevap',
+                ord: 0,
+                qfmt: '<div class="question">{{Soru}}</div>{{type:Cevap}}',
+                afmt: '{{FrontSide}}<hr id=answer>{{type:Cevap}}',
+            },
+        ],
+        css: `.card { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 18px; color: #2c3e36; background-color: #f4faf7; padding: 20px; }
+.question { font-weight: 600; line-height: 1.6; }
+.source { margin-top: 12px; font-size: 13px; color: #7f9a8f; }
+.typeanswer { margin-top: 14px; font-size: 16px; }
+.typeGood { background: #d7f0df; color: #1c6b35; }
+.typeBad { background: #fadadb; color: #a3283a; text-decoration: line-through; }
+.typeMissed { background: #fadadb; color: #a3283a; }`,
+        sortFieldIdx: 0,
+        mod: 0,
+    },
+    {
+        // "Çift Taraflı": fields[3] (TersCevap) is an optional override for Card 2's answer —
+        // if left blank, Card 2 answers with the original Soru (a plain swap, matching Anki's
+        // "Basic and Reversed Card"); if filled, Card 2 answers with the custom text instead.
+        id: 6,
+        name: 'TUS Çift Taraflı',
+        kind: 'standard',
+        fields: [
+            { name: 'Soru', ord: 0, sticky: false, rtl: false },
+            { name: 'Cevap', ord: 1, sticky: false, rtl: false },
+            { name: 'Konu', ord: 2, sticky: true, rtl: false },
+            { name: 'TersCevap', ord: 3, sticky: false, rtl: false },
+        ],
+        templates: [
+            {
+                name: 'Soru → Cevap',
+                ord: 0,
+                qfmt: '<div class="question">{{Soru}}</div>',
+                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{Cevap}}</div>',
+            },
+            {
+                name: 'Cevap → Soru',
+                ord: 1,
+                qfmt: '<div class="question">{{Cevap}}</div>',
+                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{#TersCevap}}{{TersCevap}}{{/TersCevap}}{{^TersCevap}}{{Soru}}{{/TersCevap}}</div>',
+            },
+        ],
+        css: `.card { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 18px; color: #2c3e36; background-color: #f4faf7; padding: 20px; }
+.question { font-weight: 600; line-height: 1.6; }
+.answer { line-height: 1.6; color: #556b62; }`,
         sortFieldIdx: 0,
         mod: 0,
     },
@@ -176,8 +239,26 @@ export interface Deck {
     isFiltered: boolean;
     searchQuery?: string;
     searchLimit?: number;
+    /** Gather order for a filtered deck's search: see FILTERED_ORDERS. */
     searchOrder?: number;
+    /** Anki's "enable second filter": an extra search gathered after the first. */
+    searchQuery2?: string;
+    searchLimit2?: number;
+    searchOrder2?: number;
+    /** Anki's "reschedule cards based on my answers". False = preview mode: answers never touch the cards. */
+    reschedule?: boolean;
 }
+
+/** Gather orders for filtered decks (index = the stored searchOrder value). */
+export const FILTERED_ORDERS = [
+    'Vade sırası',           // 0: order due
+    'Rastgele',              // 1: random
+    'Aralık (artan)',        // 2: shortest intervals first
+    'Aralık (azalan)',       // 3: longest intervals first
+    'Ekleniş sırası',        // 4: oldest added first
+    'Son eklenen önce',      // 5: latest added first
+    'En çok hata',           // 6: most lapses first
+] as const;
 
 export interface DeckConfig {
     id: number;
@@ -218,6 +299,19 @@ export interface DeckConfig {
     // Display
     showTimer: boolean;
     maxAnswerSecs: number;
+
+    // Display order (Anki v3 "Display Order"). Optional: configs saved by older builds
+    // lack them; readers fall back to the DEFAULT_DECK_CONFIG values.
+    newCardGatherOrder?: 'topic' | 'position' | 'random';
+    newReviewOrder?: 'mix' | 'before' | 'after';
+    reviewSortOrder?: 'dueRandom' | 'intervalsAsc' | 'intervalsDesc';
+
+    // Audio
+    autoPlayAudio?: boolean;
+
+    // Easy days: per-weekday load factor, Monday-first. 1 = normal, 0.5 = reduced
+    // (half the reviews land here), 0 = no reviews scheduled on that day.
+    easyDays?: number[];
 }
 
 export const DEFAULT_DECK_CONFIG: DeckConfig = {
@@ -246,6 +340,11 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     buryInterdayLearningSiblings: true,
     showTimer: false,
     maxAnswerSecs: 60,
+    newCardGatherOrder: 'topic',
+    newReviewOrder: 'mix',
+    reviewSortOrder: 'dueRandom',
+    autoPlayAudio: true,
+    easyDays: [1, 1, 1, 1, 1, 1, 1],
 };
 
 // Mirrors Anki's revlog: one immutable row per answer.

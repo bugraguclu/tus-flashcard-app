@@ -11,7 +11,8 @@ vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
 }));
 
-import { getStudyStreak, getTodayAnswerStats } from './reviewLogger';
+import { getStudiedDaysBetween, getStudyStreak, getTodayAnswerStats } from './reviewLogger';
+import { localDayNumber, dayNumberToYmd } from './ankiState';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -74,6 +75,41 @@ describe('getTodayAnswerStats', () => {
         expect(stats.reviewed).toBe(0);
         expect(stats.newCardsIntroduced).toBe(0);
     });
+
+    it('scopes every number to the deck subtree when a deck name is given', () => {
+        const addDeck = (id: number, name: string) => db.runSync(
+            'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)',
+            id, name, JSON.stringify({ id, name }),
+        );
+        const addCard = (id: number, deckId: number) => db.runSync(
+            `INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor,
+                reps, lapses, "left", flags, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, 0, 0, 0, 0, 0, 2500, 0, 0, 0, 0, '{}', 0, -1, 0)`,
+            id, id, deckId,
+        );
+
+        addDeck(10, 'Python');
+        addDeck(11, 'Python::Fonksiyonlar');
+        addDeck(12, 'Tarih');
+        addCard(1, 10);
+        addCard(2, 11);
+        addCard(3, 12);
+
+        const now = Date.now();
+        logAt(now - 3000, 1, 3, 5000);  // Python root
+        logAt(now - 2000, 2, 1, 3000);  // Python subdeck, failed
+        logAt(now - 1000, 3, 4, 2000);  // unrelated deck
+
+        const scoped = getTodayAnswerStats(rolloverHour, 'Python');
+        expect(scoped.reviewed).toBe(2);
+        expect(scoped.failed).toBe(1);
+        expect(scoped.passed).toBe(1);
+        expect(scoped.studyTimeMs).toBe(8000);
+        expect(scoped.newCardsIntroduced).toBe(2);
+
+        // The global numbers still cover everything.
+        expect(getTodayAnswerStats(rolloverHour).reviewed).toBe(3);
+    });
 });
 
 describe('getStudyStreak', () => {
@@ -108,5 +144,29 @@ describe('getStudyStreak', () => {
         const streak = getStudyStreak(rolloverHour);
         expect(streak.current).toBe(0);
         expect(streak.best).toBe(1);
+    });
+});
+
+describe('getStudiedDaysBetween', () => {
+    it('marks exactly the studied days inside the window (the weekly strip query)', () => {
+        const now = Date.now();
+        const today = localDayNumber(now, rolloverHour);
+
+        logAt(now - 1000, 1, 3);            // today
+        logAt(now - 2 * DAY_MS, 2, 3);      // two days ago
+        logAt(now - 9 * DAY_MS, 3, 3);      // outside a 7-day window ending today
+
+        const days = getStudiedDaysBetween(today - 6, today, rolloverHour);
+        expect(days.has(dayNumberToYmd(today, rolloverHour))).toBe(true);
+        expect(days.has(dayNumberToYmd(today - 2, rolloverHour))).toBe(true);
+        expect(days.has(dayNumberToYmd(today - 1, rolloverHour))).toBe(false);
+        expect(days.has(dayNumberToYmd(today - 9, rolloverHour))).toBe(false);
+        expect(days.size).toBe(2);
+    });
+
+    it('returns an empty set for an inverted or review-free range', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        expect(getStudiedDaysBetween(today, today - 1, rolloverHour).size).toBe(0);
+        expect(getStudiedDaysBetween(today - 6, today, rolloverHour).size).toBe(0);
     });
 });

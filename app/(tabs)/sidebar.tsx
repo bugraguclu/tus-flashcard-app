@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,7 @@ import {
     Linking,
     Platform,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../../constants/theme';
 import type { Subject } from '../../lib/types';
 
 export const SIDEBAR_WIDTH = 260;
@@ -29,6 +29,8 @@ type SidebarProps = {
     onToggleExpand: (subjectId: string) => void;
     onTopicPress: (subjectId: string, topic: string) => void;
     navigate: (path: string) => void;
+    /** Stats screen target; the layout points it at the active deck's stats when one is open. */
+    statsPath?: string;
 };
 
 /** Web-only tooltip via HTML title attribute */
@@ -37,6 +39,8 @@ function webTitle(text: string): Record<string, string> {
 }
 
 export function Sidebar(props: SidebarProps) {
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const {
         isWide,
         sidebarOpen,
@@ -53,6 +57,7 @@ export function Sidebar(props: SidebarProps) {
         onToggleExpand,
         onTopicPress,
         navigate,
+        statsPath = '/stats',
     } = props;
 
     return (
@@ -150,11 +155,15 @@ export function Sidebar(props: SidebarProps) {
                         <Text style={styles.actionIcon}>🗂️</Text>
                         <Text style={styles.actionText}>Kartlarım</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/stats')} {...webTitle('Istatistikleri goruntule')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle('Istatistikleri goruntule')}>
                         <Text style={styles.actionIcon}>📊</Text>
                         <Text style={styles.actionText}>İstatistik</Text>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle('Desteler: Anki tarzi deste listesi')}>
+                    <Text style={styles.settingsBtnText}>🗃️ Desteler</Text>
+                </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle('CSV/TSV dosyasi ice aktar')}>
                     <Text style={styles.settingsBtnText}>📥 İçe Aktar</Text>
@@ -181,12 +190,13 @@ export function Sidebar(props: SidebarProps) {
     );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
     sidebar: {
         width: SIDEBAR_WIDTH,
-        backgroundColor: Colors.bgSidebar,
+        backgroundColor: colors.bgSidebar,
         borderRightWidth: 1,
-        borderRightColor: Colors.border,
+        borderRightColor: colors.border,
         ...(Platform.OS === 'web'
             ? { position: 'fixed' as any, top: 0, left: 0, bottom: 0, zIndex: 100 }
             : { position: 'absolute', top: 0, left: 0, bottom: 0, zIndex: 100 }),
@@ -200,10 +210,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
+        borderBottomColor: colors.border,
     },
-    sidebarTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.accent },
-    sidebarSubtitle: { fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
+    sidebarTitle: { fontSize: FontSize.xl, fontWeight: '700', color: colors.accent },
+    sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
     subjectRow: {
         flexDirection: 'row',
@@ -219,7 +229,7 @@ const styles = StyleSheet.create({
         paddingVertical: 9,
         paddingHorizontal: Spacing.lg,
     },
-    subjectItemActive: { backgroundColor: Colors.accentLight },
+    subjectItemActive: { backgroundColor: colors.accentLight },
     expandBtn: {
         paddingVertical: 9,
         paddingHorizontal: 8,
@@ -227,8 +237,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     subjectIcon: { fontSize: 16, width: 26 },
-    subjectName: { flex: 1, fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: '500' },
-    subjectNameActive: { color: Colors.accent, fontWeight: '700' },
+    subjectName: { flex: 1, fontSize: FontSize.md, color: colors.textSecondary, fontWeight: '500' },
+    subjectNameActive: { color: colors.accent, fontWeight: '700' },
     subjectCount: {
         backgroundColor: 'rgba(0,0,0,0.04)',
         paddingHorizontal: 8,
@@ -237,17 +247,17 @@ const styles = StyleSheet.create({
         minWidth: 28,
         alignItems: 'center',
     },
-    subjectCountActive: { backgroundColor: Colors.accent },
-    subjectCountText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted },
-    subjectCountTextActive: { color: Colors.white },
+    subjectCountActive: { backgroundColor: colors.accent },
+    subjectCountText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
+    subjectCountTextActive: { color: colors.white },
     expandArrow: {
         fontSize: 11,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         marginLeft: 6,
         width: 14,
         textAlign: 'center',
     },
-    expandArrowOpen: { color: Colors.accent },
+    expandArrowOpen: { color: colors.accent },
     topicItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -258,49 +268,50 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.sm,
         marginVertical: 1,
     },
-    topicItemActive: { backgroundColor: Colors.accentLight },
+    topicItemActive: { backgroundColor: colors.accentLight },
     topicDot: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: Colors.border,
+        backgroundColor: colors.border,
         marginRight: 8,
     },
-    topicDotActive: { backgroundColor: Colors.accent },
-    topicName: { flex: 1, fontSize: FontSize.sm, color: Colors.textMuted, fontWeight: '500' },
-    topicNameActive: { color: Colors.accent, fontWeight: '600' },
-    topicCount: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '500' },
-    topicCountActive: { color: Colors.accent, fontWeight: '700' },
+    topicDotActive: { backgroundColor: colors.accent },
+    topicName: { flex: 1, fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '500' },
+    topicNameActive: { color: colors.accent, fontWeight: '600' },
+    topicCount: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500' },
+    topicCountActive: { color: colors.accent, fontWeight: '700' },
     sidebarActions: {
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.md,
         borderTopWidth: 1,
-        borderTopColor: Colors.border,
+        borderTopColor: colors.border,
     },
     actionRow: { flexDirection: 'row', gap: 6, marginBottom: Spacing.sm },
     actionBtn: {
         flex: 1,
         alignItems: 'center',
         paddingVertical: 8,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         gap: 2,
     },
     actionIcon: { fontSize: 16 },
-    actionText: { fontSize: 9, fontWeight: '600', color: Colors.textSecondary },
+    actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
     settingsBtn: {
         paddingVertical: 8,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
         marginBottom: Spacing.sm,
     },
-    settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: Colors.textSecondary },
+    settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
     creditContainer: { alignItems: 'center', paddingVertical: 6 },
-    creditText: { fontSize: 10, color: Colors.textMuted, letterSpacing: 0.3 },
-    creditName: { fontWeight: '700', color: Colors.accent },
-});
+    creditText: { fontSize: 10, color: colors.textMuted, letterSpacing: 0.3 },
+    creditName: { fontWeight: '700', color: colors.accent },
+    });
+}

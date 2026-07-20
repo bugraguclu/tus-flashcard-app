@@ -7,8 +7,8 @@ import {
     Dimensions,
     Pressable,
 } from 'react-native';
-import { Slot, useRouter } from 'expo-router';
-import { Colors, Spacing, FontSize } from '../../constants/theme';
+import { Slot, usePathname, useRouter } from 'expo-router';
+import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
 import { getSearchIndexCards } from '../../lib/noteManager';
 import { getAllSubjects } from '../../lib/subjects';
 import { useApp } from './app-context';
@@ -18,11 +18,16 @@ export { useApp } from './app-context';
 
 export default function TabLayout() {
     const router = useRouter();
+    const pathname = usePathname();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const {
         selectedSubject,
         setSelectedSubject,
         selectedTopic,
         setSelectedTopic,
+        studyPosition,
+        activeDeckName,
         dataVersion,
         startupError,
         isLoading,
@@ -33,6 +38,21 @@ export default function TabLayout() {
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
 
     const isWide = windowWidth >= 768;
+
+    // While studying, the sidebar mirrors the card on screen (Anki-style): the shown card's
+    // course opens and its topic is highlighted, moving along as the queue advances.
+    useEffect(() => {
+        if (studyPosition?.subject) {
+            setExpandedSubject(studyPosition.subject);
+        }
+    }, [studyPosition?.subject]);
+
+    const highlightSubject = studyPosition?.subject ?? selectedSubject;
+    const highlightTopic = studyPosition?.topic ?? selectedTopic;
+
+    // The deck list is the landing screen and renders full-bleed like Anki's: no sidebar,
+    // no mobile header. The usual layout returns as soon as a deck is opened for study.
+    const isDeckScreen = pathname === '/decks';
 
     useEffect(() => {
         const sub = Dimensions.addEventListener('change', ({ window }) => {
@@ -144,7 +164,7 @@ export default function TabLayout() {
 
     return (
         <View style={styles.container}>
-            {!isWide && (
+            {!isWide && !isDeckScreen && (
                 <View style={styles.mobileHeader}>
                     <TouchableOpacity
                         style={styles.hamburger}
@@ -160,29 +180,33 @@ export default function TabLayout() {
             )}
 
             <View style={styles.appLayout}>
-                <Sidebar
-                    isWide={isWide}
-                    sidebarOpen={sidebarOpen}
-                    subjects={subjects}
-                    selectedSubject={selectedSubject}
-                    selectedTopic={selectedTopic}
-                    expandedSubject={expandedSubject}
-                    totalCards={totalCards}
-                    getSubjectCount={getSubjectCount}
-                    getTopicCount={getTopicCount}
-                    getTopicsForSubject={getTopicsForSubject}
-                    onAllPress={handleAllPress}
-                    onSubjectPress={handleSubjectPress}
-                    onToggleExpand={handleToggleExpand}
-                    onTopicPress={handleTopicPress}
-                    navigate={navigate}
-                />
+                {!isDeckScreen && (
+                    <Sidebar
+                        isWide={isWide}
+                        sidebarOpen={sidebarOpen}
+                        subjects={subjects}
+                        selectedSubject={highlightSubject}
+                        selectedTopic={highlightTopic}
+                        expandedSubject={expandedSubject}
+                        totalCards={totalCards}
+                        getSubjectCount={getSubjectCount}
+                        getTopicCount={getTopicCount}
+                        getTopicsForSubject={getTopicsForSubject}
+                        onAllPress={handleAllPress}
+                        onSubjectPress={handleSubjectPress}
+                        onToggleExpand={handleToggleExpand}
+                        onTopicPress={handleTopicPress}
+                        navigate={navigate}
+                        // Anki scopes the stats screen to the current deck by default.
+                        statsPath={activeDeckName ? `/stats?deck=${encodeURIComponent(activeDeckName)}` : '/stats'}
+                    />
+                )}
 
-                {!isWide && sidebarOpen ? (
+                {!isWide && sidebarOpen && !isDeckScreen ? (
                     <Pressable style={styles.overlay} onPress={() => setSidebarOpen(false)} />
                 ) : null}
 
-                <View style={[styles.mainContent, isWide && styles.mainContentWithSidebar]}>
+                <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
                     {startupError ? (
                         <View style={styles.startupErrorContainer}>
                             <Text style={styles.startupErrorIcon}>📱</Text>
@@ -200,16 +224,17 @@ export default function TabLayout() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.bgPrimary,
+        backgroundColor: colors.bgPrimary,
     },
     loadingEmoji: { fontSize: 48, marginBottom: 12 },
-    loadingText: { fontSize: FontSize.lg, color: Colors.textMuted, fontWeight: '500' },
+    loadingText: { fontSize: FontSize.lg, color: colors.textMuted, fontWeight: '500' },
     appLayout: { flex: 1, flexDirection: 'row' },
 
     mobileHeader: {
@@ -218,13 +243,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.sm,
-        backgroundColor: Colors.bgSidebar,
+        backgroundColor: colors.bgSidebar,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
+        borderBottomColor: colors.border,
     },
     hamburger: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    hamburgerText: { fontSize: 22, color: Colors.textPrimary },
-    mobileTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.accent },
+    hamburgerText: { fontSize: 22, color: colors.textPrimary },
+    mobileTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
 
     overlay: {
         position: 'absolute',
@@ -252,13 +277,14 @@ const styles = StyleSheet.create({
     startupErrorTitle: {
         fontSize: FontSize.lg,
         fontWeight: '700',
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
         textAlign: 'center',
         marginBottom: Spacing.sm,
     },
     startupErrorText: {
         fontSize: FontSize.md,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         textAlign: 'center',
     },
-});
+    });
+}

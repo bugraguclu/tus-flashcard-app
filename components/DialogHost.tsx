@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BorderRadius, Colors, FontSize, Spacing } from '../constants/theme';
+import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { registerDialogHost, type DialogRequest } from '../lib/confirm';
 
 /**
@@ -9,6 +9,8 @@ import { registerDialogHost, type DialogRequest } from '../lib/confirm';
  * Native never registers a handler, so this renders nothing there.
  */
 export function DialogHost() {
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [request, setRequest] = useState<DialogRequest | null>(null);
 
     useEffect(() => {
@@ -52,28 +54,30 @@ export function DialogHost() {
     );
 }
 
-const styles = StyleSheet.create({
-    backdrop: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.45)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: Spacing.xxl,
-    },
-    card: {
-        width: '100%',
-        maxWidth: 420,
-        backgroundColor: Colors.bgCard,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.xxl,
-    },
-    title: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.sm },
-    message: { fontSize: FontSize.md, color: Colors.textSecondary, marginBottom: Spacing.xxl, lineHeight: 20 },
-    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.md },
-    button: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.md },
-    cancel: { backgroundColor: Colors.bgInput },
-    cancelText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textSecondary },
-    accept: { backgroundColor: Colors.accent },
-    destructive: { backgroundColor: Colors.btnAgain },
-    acceptText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.white },
-});
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+        backdrop: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: Spacing.xxl,
+        },
+        card: {
+            width: '100%',
+            maxWidth: 420,
+            backgroundColor: colors.bgCard,
+            borderRadius: BorderRadius.lg,
+            padding: Spacing.xxl,
+        },
+        title: { fontSize: FontSize.xl, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
+        message: { fontSize: FontSize.md, color: colors.textSecondary, marginBottom: Spacing.xxl, lineHeight: 20 },
+        actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.md },
+        button: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.md },
+        cancel: { backgroundColor: colors.bgInput },
+        cancelText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary },
+        accept: { backgroundColor: colors.accent },
+        destructive: { backgroundColor: colors.btnAgain },
+        acceptText: { fontSize: FontSize.md, fontWeight: '600', color: colors.white },
+    });
+}
