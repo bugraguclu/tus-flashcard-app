@@ -255,7 +255,9 @@ export function renderCardHtml(
         cardName: template.name,
         clozeOrd,
     };
-    const questionHtml = renderTemplate(template.qfmt, questionCtx);
+    // Templates are imported content too. Sanitize the fully rendered side so a malicious
+    // qfmt/afmt cannot bypass the field-level sanitizer used above.
+    const questionHtml = normalizeFieldHtml(renderTemplate(template.qfmt, questionCtx));
 
     if (side === 'question') {
         return wrapInCardHtml(questionHtml, noteType.css);
@@ -268,7 +270,7 @@ export function renderCardHtml(
         typedAnswer: options?.typedAnswer,
         omitFrontSide: options?.omitFrontSide,
     };
-    const answerHtml = renderTemplate(template.afmt, answerCtx);
+    const answerHtml = normalizeFieldHtml(renderTemplate(template.afmt, answerCtx));
     return wrapInCardHtml(answerHtml, noteType.css);
 }
 
@@ -406,16 +408,36 @@ export function renderTypeAnswerDiff(typed: string, correct: string): string {
 
 // ---- Helpers ----
 
+function decodeSecurityEntities(text: string): string {
+    return text
+        .replace(/&#(\d+);?/g, (_match, value) => String.fromCodePoint(Math.min(Number(value), 0x10ffff)))
+        .replace(/&#x([0-9a-f]+);?/gi, (_match, value) => String.fromCodePoint(Math.min(parseInt(value, 16), 0x10ffff)))
+        .replace(/&colon;/gi, ':')
+        .replace(/&(?:tab|newline);/gi, ' ');
+}
+
 function normalizeFieldHtml(text: string): string {
     let result = text;
 
     // Remove dangerous containers and script vectors entirely.
+    // Repeat paired-container removal to collapse nested/malformed variants before
+    // stripping any unmatched opening/closing tag remnants.
+    for (let pass = 0; pass < 4; pass++) {
+        const before = result;
+        result = result.replace(
+            /<\s*(script|svg|math|style|iframe|object|embed|frame|frameset|form)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
+            '',
+        );
+        if (result === before) break;
+    }
     result = result
-        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-        .replace(/<svg[\s\S]*?>[\s\S]*?<\/svg>/gi, '')
-        .replace(/<\/?(?:iframe|object|embed|frame|frameset|meta|link|base)[^>]*>/gi, '')
+        .replace(/<\/?\s*(?:script|svg|math|style|iframe|object|embed|frame|frameset|form|maction|annotation-xml|meta|link|base)\b[^>]*>/gi, '')
         .replace(/<\?(?:xml|php)[\s\S]*?\?>/gi, '')
         .replace(/<!DOCTYPE[\s\S]*?>/gi, '');
+
+    // Decode character references inside tags before attribute checks. Browsers decode
+    // them while parsing, so values such as java&#x73;cript: must be inspected decoded.
+    result = result.replace(/<[^>]*>/g, (tag) => decodeSecurityEntities(tag));
 
     // Remove inline event handlers like onclick=..., onerror=..., onLoad=...
     result = result.replace(/\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
@@ -428,7 +450,9 @@ function normalizeFieldHtml(text: string): string {
         /(href|src|xlink:href|poster)\s*=\s*(?:(['"])([\s\S]*?)\2|([^\s>]+))/gi,
         (_match, attr, quote, quotedValue, bareValue) => {
             const rawValue = String(quotedValue ?? bareValue ?? '').trim();
-            const normalized = rawValue.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+            const normalized = decodeSecurityEntities(rawValue)
+                .replace(/[\u0000-\u001F\u007F\s]+/g, '')
+                .toLowerCase();
 
             const isJsScheme = normalized.startsWith('javascript:') || normalized.startsWith('vbscript:');
             const isDangerousDataUri = normalized.startsWith('data:')
@@ -477,7 +501,14 @@ function escapeHtml(text: string): string {
 }
 
 function wrapInCardHtml(body: string, css: string): string {
-    // Prevent CSS breakout via </style> injection.
-    const safeCss = css.replace(/<\/style/gi, '<\\/style');
-    return `<style>${safeCss}</style><div class="card">${body}</div>`;
+    // Prevent CSS breakout and network/script-capable CSS imports from imported note types.
+    const safeCss = css
+        .replace(/<\/style/gi, '<\\/style')
+        .replace(/@import[\s\S]*?(?:;|$)/gi, '')
+        .replace(/url\(\s*(['"]?)(?:https?:|javascript:|data:text\/html|data:image\/svg\+xml)[\s\S]*?\1\s*\)/gi, 'none')
+        .replace(/(?:expression|behavior|-moz-binding)\s*:[^;}]*/gi, '');
+    // Media must fit the card panel (AnkiDroid scales images to screen width). Declared
+    // before the note type's own CSS so a template can still deliberately override it.
+    const baseCss = '.card img, .card video { max-width: 100%; max-height: 60vh; height: auto; } .card audio { max-width: 100%; }';
+    return `<style>${baseCss}</style><style>${safeCss}</style><div class="card">${body}</div>`;
 }

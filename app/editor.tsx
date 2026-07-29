@@ -8,13 +8,15 @@ import {
     StyleSheet,
     SafeAreaView,
     Modal,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
+import { getAllSubjects, getSubjectsForDeck, resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from './(tabs)/app-context';
+import { useApp } from '../contexts/AppContext';
 import {
     createTusCard,
     updateTusCardByCardId,
@@ -25,11 +27,12 @@ import {
     getNoteType,
     getSearchIndexCards,
 } from '../lib/noteManager';
-import { getAllDecks, getDeck } from '../lib/deckManager';
+import { getAllDecks, getDeck, getDeckByName } from '../lib/deckManager';
 import { BUILTIN_NOTE_TYPES, type AnkiCard, type Note } from '../lib/models';
 import CardWebView from '../components/CardWebView';
-import MediaAttachButton from '../components/MediaAttachButton';
+import MediaAttachButton, { FIELD_MEDIA_RE } from '../components/MediaAttachButton';
 import { dbDeleteFtsCard, dbIndexAllCards, dbUpsertFtsCard } from '../lib/db';
+import { useI18n } from '../hooks/useI18n';
 
 function parseCardId(raw: string | string[] | undefined): number | null {
     if (!raw) return null;
@@ -43,18 +46,18 @@ function appendSnippet(fieldText: string, snippet: string): string {
     return `${fieldText}\n${snippet}`;
 }
 
-const COURSE_ICON_CHOICES = ['📘', '📗', '📙', '🧪', '🧮', '🌍', '🎨', '⚖️', '🩺', '💡'];
 
-const CARD_TYPE_CHOICES: { id: number; label: string; icon: string }[] = [
-    { id: 4, label: 'Temel', icon: '📄' },
-    { id: 5, label: 'Yazarak Cevapla', icon: '⌨️' },
-    { id: 6, label: 'Çift Taraflı', icon: '🔁' },
+const CARD_TYPE_CHOICES: { id: number; icon: string }[] = [
+    { id: 4, icon: '📄' },
+    { id: 5, icon: '⌨️' },
+    { id: 6, icon: '🔁' },
 ];
 
 export default function EditorScreen() {
+    const { t, l } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { bumpDataVersion, dataVersion } = useApp();
+    const { bumpDataVersion, dataVersion, activeDeckName } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -68,7 +71,23 @@ export default function EditorScreen() {
         return legacyId;
     }, [params.cardId, params.id]);
 
-    const subjects = useMemo(() => getAllSubjects(), [dataVersion]);
+    // Anki's add dialog: an explicit target deck (null = follow the selected course's deck),
+    // and an eye-button preview of the card before it is saved.
+    const [targetDeckId, setTargetDeckId] = useState<number | null>(null);
+    const [showDeckPicker, setShowDeckPicker] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+
+    // Courses are deck-specific: the DERS row lists only the target deck's own courses
+    // (explicit deck pick wins, otherwise the deck currently being studied).
+    const courseScopeDeckName = useMemo(() => {
+        if (targetDeckId) return getDeck(targetDeckId)?.name ?? null;
+        return activeDeckName;
+    }, [targetDeckId, activeDeckName, dataVersion]);
+
+    const subjects = useMemo(
+        () => getSubjectsForDeck(courseScopeDeckName),
+        [dataVersion, courseScopeDeckName],
+    );
 
     const [subject, setSubject] = useState((params.subject as string) || subjects[0]?.id || '');
     const [topic, setTopic] = useState((params.topic as string) || '');
@@ -79,24 +98,23 @@ export default function EditorScreen() {
     const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
     const [showNewCourse, setShowNewCourse] = useState(false);
     const [newCourseName, setNewCourseName] = useState('');
-    const [newCourseIcon, setNewCourseIcon] = useState(COURSE_ICON_CHOICES[0]);
-    // Anki's add dialog: an explicit target deck (null = follow the selected course's deck),
-    // and an eye-button preview of the card before it is saved.
-    const [targetDeckId, setTargetDeckId] = useState<number | null>(null);
-    const [showDeckPicker, setShowDeckPicker] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
 
     const targetDeck = useMemo(() => {
-        const fallback = resolveSubjectDeckId(subject);
-        return getDeck(targetDeckId ?? fallback);
-    }, [targetDeckId, subject, dataVersion]);
+        if (targetDeckId) return getDeck(targetDeckId);
+        // "Otomatik": the selected course's own deck; before any course exists in this
+        // scope, stay inside the deck being studied instead of jumping to the root deck.
+        const bySubject = subject ? resolveSubjectDeckId(subject) : 1;
+        if (bySubject !== 1) return getDeck(bySubject);
+        if (activeDeckName) return getDeckByName(activeDeckName) ?? getDeck(bySubject);
+        return getDeck(bySubject);
+    }, [targetDeckId, subject, activeDeckName, dataVersion]);
 
     const previewPayload = useMemo(() => {
         if (!showPreview) return null;
         const noteType = getNoteType(cardTypeId) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId)!;
         const fields = cardTypeId === 6
-            ? [question || '(boş soru)', answer || '(boş cevap)', topic.trim() || 'General', reverseAnswer.trim()]
-            : [question || '(boş soru)', answer || '(boş cevap)', topic.trim() || 'General'];
+            ? [question || l('(boş soru)', '(empty question)'), answer || l('(boş cevap)', '(empty answer)'), topic.trim() || 'General', reverseAnswer.trim()]
+            : [question || l('(boş soru)', '(empty question)'), answer || l('(boş cevap)', '(empty answer)'), topic.trim() || 'General'];
         const note: Note = {
             id: -1,
             guid: 'preview',
@@ -115,7 +133,7 @@ export default function EditorScreen() {
             left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
         };
         return { noteType, note, card };
-    }, [showPreview, subject, topic, question, answer, targetDeck?.id, cardTypeId, reverseAnswer]);
+    }, [showPreview, subject, topic, question, answer, targetDeck?.id, cardTypeId, reverseAnswer, l]);
 
     useEffect(() => {
         if (!routeCardId) return;
@@ -125,9 +143,14 @@ export default function EditorScreen() {
         const note = getNote(card.noteId);
         if (!note) return;
 
-        const parsedSubject = note.tags.find((tag) => subjects.some((entry) => entry.id === tag));
+        // Parse against the full registry — the deck-scoped list may not include this
+        // card's course when the editor was opened from another deck's context.
+        const allSubjects = getAllSubjects();
+        const parsedSubject = note.tags.find((tag) => allSubjects.some((entry) => entry.id === tag));
         const parsedTopic = note.fields[2] || note.tags.find((tag) => tag !== parsedSubject) || 'General';
 
+        // Editing follows the card's own deck (course list, DESTE display).
+        setTargetDeckId(card.deckId);
         setSubject(parsedSubject || subject);
         setTopic(parsedTopic);
         setQuestion(note.fields[0] || note.sfld || '');
@@ -137,11 +160,20 @@ export default function EditorScreen() {
         setIsEditing(true);
     }, [routeCardId]);
 
+    // Re-scoping the course list (deck pick, deck change while editing) can strand the
+    // selected course outside the list; snap to the scope's first course then.
+    useEffect(() => {
+        if (subjects.length === 0) return;
+        if (!subjects.some((entry) => entry.id === subject)) {
+            setSubject(subjects[0].id);
+        }
+    }, [subjects, subject]);
+
     const selectedSubject = subjects.find((entry) => entry.id === subject);
 
     const handleCreateCourse = () => {
         try {
-            const result = createCourse(newCourseName, newCourseIcon);
+            const result = createCourse(newCourseName, { parentDeckName: courseScopeDeckName ?? undefined });
             if (!result.created) {
                 if (result.error === 'Bu isimde bir ders zaten var.') {
                     // Same name already exists: just select it instead of complaining.
@@ -150,7 +182,7 @@ export default function EditorScreen() {
                     setNewCourseName('');
                     return;
                 }
-                alert('Hata', result.error ?? 'Ders oluşturulamadı.');
+                alert(t('common.error'), result.error ?? l('Ders oluşturulamadı.', 'Could not create the subject.'));
                 return;
             }
 
@@ -160,7 +192,7 @@ export default function EditorScreen() {
             setNewCourseName('');
         } catch (e) {
             console.warn('[Editor] course creation failed:', e);
-            alert('Hata', 'Ders oluşturulamadı.');
+            alert(t('common.error'), l('Ders oluşturulamadı.', 'Could not create the subject.'));
         }
     };
 
@@ -171,7 +203,7 @@ export default function EditorScreen() {
 
     const handleSave = () => {
         if (!question.trim() || !answer.trim()) {
-            alert('Hata', 'Soru ve cevap alanları boş olamaz.');
+            alert(t('common.error'), l('Soru ve cevap alanları boş bırakılamaz.', 'Question and answer fields cannot be empty.'));
             return;
         }
 
@@ -186,7 +218,7 @@ export default function EditorScreen() {
                 });
 
                 if (!updated) {
-                    alert('Hata', 'Kart güncellenemedi.');
+                    alert(t('common.error'), l('Kart güncellenemedi.', 'Could not update the card.'));
                     return;
                 }
 
@@ -203,7 +235,7 @@ export default function EditorScreen() {
                 }
 
                 bumpDataVersion();
-                alert('Başarılı', 'Kart güncellendi.', () => router.back());
+                alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
             } else {
                 const created = createTusCard({
                     subject,
@@ -226,43 +258,53 @@ export default function EditorScreen() {
                 }
 
                 bumpDataVersion();
-                alert('Başarılı', 'Kart kaydedildi.', () => router.back());
+                alert(t('common.completed'), l('Kart kaydedildi.', 'Card saved.'), () => router.back());
             }
         } catch (e) {
             console.warn('[Editor] save failed:', e);
-            alert('Hata', 'Kart kaydedilemedi.');
+            alert(t('common.error'), l('Kart kaydedilemedi.', 'Could not save the card.'));
         }
     };
 
     const handleDelete = () => {
         if (!routeCardId) return;
 
-        confirm('Uyarı', 'Bu kartı silmek istediğinize emin misiniz?', () => {
+        confirm(l('Kartı Sil', 'Delete Card'), l('Bu kartı silmek istediğinizden emin misiniz?', 'Are you sure you want to delete this card?'), () => {
             try {
                 deleteTusCardByCardId(routeCardId);
                 dbDeleteFtsCard(routeCardId);
                 rebuildSearchIndex();
                 bumpDataVersion();
-                alert('Silindi', 'Kart başarıyla silindi.', () => router.back());
+                alert(l('Silindi', 'Deleted'), l('Kart silindi.', 'Card deleted.'), () => router.back());
             } catch (e) {
                 console.warn('[Editor] delete failed:', e);
-                alert('Hata', 'Kart silinemedi.');
+                alert(t('common.error'), l('Kart silinemedi.', 'Could not delete the card.'));
             }
         }, { destructive: true });
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
+            <Stack.Screen options={{ title: isEditing ? t('root.editCard') : l('Yeni Kart', 'New Card') }} />
+            <KeyboardAvoidingView
+                style={styles.keyboardArea}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+            >
+            <ScrollView
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets
+            >
                 <View style={styles.topRow}>
                     {!isEditing ? (
                         <TouchableOpacity
                             style={styles.deckSelector}
                             onPress={() => setShowDeckPicker(true)}
                             accessibilityRole="button"
-                            accessibilityLabel="Hedef desteyi seç"
+                            accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
                         >
-                            <Text style={styles.deckSelectorLabel}>DESTE</Text>
+                            <Text style={styles.deckSelectorLabel}>{t('common.deck').toLocaleUpperCase()}</Text>
                             <Text style={styles.deckSelectorText} numberOfLines={1}>
                                 🗃️ {targetDeck?.name ?? '—'} ▾
                             </Text>
@@ -272,16 +314,22 @@ export default function EditorScreen() {
                         style={styles.previewBtn}
                         onPress={() => setShowPreview(true)}
                         accessibilityRole="button"
-                        accessibilityLabel="Kartı kaydetmeden önizle"
+                        accessibilityLabel={l('Kartı kaydetmeden önizle', 'Preview card before saving')}
                     >
                         <Text style={styles.previewBtnIcon}>👁️</Text>
-                        <Text style={styles.previewBtnText}>Önizle</Text>
+                        <Text style={styles.previewBtnText}>{l('Önizle', 'Preview')}</Text>
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.label}>KART TÜRÜ</Text>
+                <Text style={styles.label}>{l('KART TÜRÜ', 'NOTE TYPE')}</Text>
                 <View style={styles.cardTypeRow}>
-                    {CARD_TYPE_CHOICES.map((choice) => (
+                    {CARD_TYPE_CHOICES.map((choice) => {
+                        const label = choice.id === 4
+                            ? l('Temel', 'Basic')
+                            : choice.id === 5
+                                ? l('Yazarak Yanıtla', 'Basic (type in the answer)')
+                                : l('Çift Taraflı', 'Basic (and reversed card)');
+                        return (
                         <TouchableOpacity
                             key={choice.id}
                             style={[
@@ -292,19 +340,19 @@ export default function EditorScreen() {
                             onPress={() => !isEditing && setCardTypeId(choice.id)}
                             disabled={isEditing}
                             accessibilityRole="button"
-                            accessibilityLabel={`Kart türü: ${choice.label}`}
+                            accessibilityLabel={l(`Not türü: ${label}`, `Note type: ${label}`)}
                         >
                             <Text style={[styles.subjectChipText, cardTypeId === choice.id && styles.subjectChipTextActive]}>
-                                {choice.icon} {choice.label}
+                                {choice.icon} {label}
                             </Text>
                         </TouchableOpacity>
-                    ))}
+                    );})}
                 </View>
                 {isEditing && (
-                    <Text style={styles.help}>Mevcut bir kartın türü değiştirilemez.</Text>
+                    <Text style={styles.help}>{l('Mevcut bir kartın not türü değiştirilemez.', 'The note type of an existing card cannot be changed.')}</Text>
                 )}
 
-                <Text style={styles.label}>DERS</Text>
+                <Text style={styles.label}>{l('DERS', 'SUBJECT')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
                     {subjects.map((entry) => (
                         <TouchableOpacity
@@ -321,10 +369,10 @@ export default function EditorScreen() {
                         style={[styles.subjectChip, styles.newCourseChip, showNewCourse && styles.subjectChipActive]}
                         onPress={() => setShowNewCourse((prev) => !prev)}
                         accessibilityRole="button"
-                        accessibilityLabel="Yeni ders oluştur"
+                        accessibilityLabel={l('Yeni ders oluştur', 'Create new subject')}
                     >
                         <Text style={[styles.subjectChipText, showNewCourse && styles.subjectChipTextActive]}>
-                            ＋ Yeni Ders
+                            ＋ {l('Yeni Ders', 'New Subject')}
                         </Text>
                     </TouchableOpacity>
                 </ScrollView>
@@ -335,38 +383,25 @@ export default function EditorScreen() {
                             style={styles.input}
                             value={newCourseName}
                             onChangeText={setNewCourseName}
-                            placeholder="Yeni ders adı (örn. Dosya İşlemleri)"
+                            placeholder={l('Yeni ders adı (örn. Dahiliye)', 'New subject name (e.g. Internal Medicine)')}
                             placeholderTextColor={colors.textMuted}
                         />
-                        <View style={styles.iconRow}>
-                            {COURSE_ICON_CHOICES.map((icon) => (
-                                <TouchableOpacity
-                                    key={icon}
-                                    style={[styles.iconChoice, newCourseIcon === icon && styles.iconChoiceActive]}
-                                    onPress={() => setNewCourseIcon(icon)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Simge ${icon}`}
-                                >
-                                    <Text style={styles.iconChoiceText}>{icon}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
                         <TouchableOpacity
                             style={[styles.createCourseBtn, !newCourseName.trim() && styles.createCourseBtnDisabled]}
                             onPress={handleCreateCourse}
                             disabled={!newCourseName.trim()}
                         >
-                            <Text style={styles.createCourseBtnText}>Dersi Oluştur</Text>
+                            <Text style={styles.createCourseBtnText}>{l('Dersi Oluştur', 'Create Subject')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
 
-                <Text style={styles.label}>KONU</Text>
+                <Text style={styles.label}>{l('KONU', 'TOPIC')}</Text>
                 <TextInput
                     style={styles.input}
                     value={topic}
                     onChangeText={setTopic}
-                    placeholder={selectedSubject?.topics[0] || 'Konu adı'}
+                    placeholder={selectedSubject?.topics[0] || l('Konu adı', 'Topic name')}
                     placeholderTextColor={colors.textMuted}
                 />
                 {(selectedSubject?.topics.length ?? 0) > 0 && (
@@ -386,28 +421,34 @@ export default function EditorScreen() {
                 )}
 
                 <View style={styles.fieldLabelRow}>
-                    <Text style={styles.label}>SORU</Text>
-                    <MediaAttachButton onInsert={(snippet) => setQuestion((prev) => appendSnippet(prev, snippet))} />
+                    <Text style={styles.label}>{l('SORU', 'QUESTION')}</Text>
+                    <MediaAttachButton
+                        hasMedia={FIELD_MEDIA_RE.test(question)}
+                        onInsert={(snippet) => setQuestion((prev) => appendSnippet(prev, snippet))}
+                    />
                 </View>
                 <TextInput
                     style={[styles.input, styles.textArea]}
                     value={question}
                     onChangeText={setQuestion}
-                    placeholder="Soruyu yazın..."
+                    placeholder={l('Soruyu yazın…', 'Enter the question…')}
                     placeholderTextColor={colors.textMuted}
                     multiline
                     textAlignVertical="top"
                 />
 
                 <View style={styles.fieldLabelRow}>
-                    <Text style={styles.label}>CEVAP</Text>
-                    <MediaAttachButton onInsert={(snippet) => setAnswer((prev) => appendSnippet(prev, snippet))} />
+                    <Text style={styles.label}>{l('CEVAP', 'ANSWER')}</Text>
+                    <MediaAttachButton
+                        hasMedia={FIELD_MEDIA_RE.test(answer)}
+                        onInsert={(snippet) => setAnswer((prev) => appendSnippet(prev, snippet))}
+                    />
                 </View>
                 <TextInput
                     style={[styles.input, styles.textArea]}
                     value={answer}
                     onChangeText={setAnswer}
-                    placeholder="Cevabı yazın..."
+                    placeholder={l('Cevabı yazın…', 'Enter the answer…')}
                     placeholderTextColor={colors.textMuted}
                     multiline
                     textAlignVertical="top"
@@ -415,12 +456,12 @@ export default function EditorScreen() {
 
                 {cardTypeId === 6 && (
                     <>
-                        <Text style={styles.label}>TERS KARTIN CEVABI (İSTEĞE BAĞLI)</Text>
+                        <Text style={styles.label}>{l('TERS KARTIN CEVABI (İSTEĞE BAĞLI)', 'BACK TEMPLATE ANSWER (OPTIONAL)')}</Text>
                         <TextInput
                             style={[styles.input, styles.textArea, styles.faintInput]}
                             value={reverseAnswer}
                             onChangeText={setReverseAnswer}
-                            placeholder="Boş bırakılırsa ters kartın cevabı otomatik olarak 'Soru' olur. Değiştirmek için yazın."
+                            placeholder={l('Boş bırakılırsa ters kartın cevabı otomatik olarak “Soru” olur.', 'If left blank, the reversed card answer defaults to the Question field.')}
                             placeholderTextColor={colors.textMuted}
                             multiline
                             textAlignVertical="top"
@@ -429,31 +470,32 @@ export default function EditorScreen() {
                 )}
 
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                    <Text style={styles.saveBtnText}>💾 {isEditing ? 'Değişiklikleri Kaydet' : 'Kartı Kaydet'}</Text>
+                    <Text style={styles.saveBtnText}>💾 {isEditing ? l('Değişiklikleri Kaydet', 'Save Changes') : l('Kartı Kaydet', 'Save Card')}</Text>
                 </TouchableOpacity>
 
                 {isEditing && routeCardId && (
                     <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-                        <Text style={styles.deleteBtnText}>🗑️ Kartı Sil</Text>
+                        <Text style={styles.deleteBtnText}>🗑️ {l('Kartı Sil', 'Delete Card')}</Text>
                     </TouchableOpacity>
                 )}
 
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelBtnText}>İptal</Text>
+                    <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
             </ScrollView>
+            </KeyboardAvoidingView>
 
             <Modal visible={showDeckPicker} transparent animationType="fade" onRequestClose={() => setShowDeckPicker(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Hedef Deste</Text>
+                        <Text style={styles.modalTitle}>{l('Hedef Deste', 'Target Deck')}</Text>
                         <ScrollView style={styles.deckList}>
                             <TouchableOpacity
                                 style={styles.deckOption}
                                 onPress={() => { setTargetDeckId(null); setShowDeckPicker(false); }}
                             >
                                 <Text style={[styles.deckOptionText, targetDeckId === null && styles.deckOptionActive]}>
-                                    ✨ Otomatik — seçilen dersin destesi
+                                    ✨ {l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
                                 </Text>
                             </TouchableOpacity>
                             {getAllDecks().filter((deck) => !deck.isFiltered).map((deck) => (
@@ -472,7 +514,7 @@ export default function EditorScreen() {
                             ))}
                         </ScrollView>
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowDeckPicker(false)}>
-                            <Text style={styles.modalCloseText}>Vazgeç</Text>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -481,12 +523,12 @@ export default function EditorScreen() {
             <Modal visible={showPreview} transparent animationType="fade" onRequestClose={() => setShowPreview(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalCard, styles.previewCard]}>
-                        <Text style={styles.modalTitle}>👁️ Önizleme</Text>
+                        <Text style={styles.modalTitle}>👁️ {l('Önizleme', 'Preview')}</Text>
                         <ScrollView style={styles.previewScroll}>
                             <Text style={styles.previewMeta} numberOfLines={1}>
                                 🗃️ {targetDeck?.name ?? '—'} · {topic.trim() || 'General'}
                             </Text>
-                            <Text style={styles.label}>SORU</Text>
+                            <Text style={styles.label}>{l('SORU', 'QUESTION')}</Text>
                             {previewPayload && (
                                 <CardWebView
                                     noteType={previewPayload.noteType}
@@ -496,7 +538,7 @@ export default function EditorScreen() {
                                     side="question"
                                 />
                             )}
-                            <Text style={styles.label}>CEVAP</Text>
+                            <Text style={styles.label}>{l('CEVAP', 'ANSWER')}</Text>
                             {previewPayload && (
                                 <CardWebView
                                     noteType={previewPayload.noteType}
@@ -509,7 +551,7 @@ export default function EditorScreen() {
                             )}
                         </ScrollView>
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowPreview(false)}>
-                            <Text style={styles.modalCloseText}>Kapat</Text>
+                            <Text style={styles.modalCloseText}>{t('common.close')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -521,10 +563,12 @@ export default function EditorScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    content: { padding: Spacing.lg, gap: Spacing.md },
+    keyboardArea: { flex: 1 },
+    content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.md, paddingBottom: 48 },
     topRow: { flexDirection: 'row', alignItems: 'stretch', gap: Spacing.sm },
     deckSelector: {
         flex: 1,
+        minHeight: 52,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
@@ -540,6 +584,8 @@ function createStyles(colors: ColorScheme) {
     },
     deckSelectorText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary, marginTop: 2 },
     previewBtn: {
+        minWidth: 72,
+        minHeight: 52,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: Spacing.lg,
@@ -569,13 +615,15 @@ function createStyles(colors: ColorScheme) {
     modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.md },
     deckList: { maxHeight: 320 },
     deckOption: {
+        minHeight: 48,
+        justifyContent: 'center',
         paddingVertical: 11,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
     deckOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
     deckOptionActive: { color: colors.accent, fontWeight: '700' },
-    modalClose: { marginTop: Spacing.md, alignItems: 'center', paddingVertical: 6 },
+    modalClose: { minHeight: 48, marginTop: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
     modalCloseText: { color: colors.textMuted, fontWeight: '600' },
     previewScroll: { flexGrow: 0 },
     previewMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginBottom: Spacing.sm },
@@ -588,6 +636,8 @@ function createStyles(colors: ColorScheme) {
     },
     cardTypeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     cardTypeChip: {
+        minHeight: 44,
+        justifyContent: 'center',
         paddingHorizontal: Spacing.md,
         paddingVertical: 6,
         backgroundColor: colors.bgCard,
@@ -601,6 +651,8 @@ function createStyles(colors: ColorScheme) {
     faintInput: { opacity: 0.7 },
     subjectScroll: { marginBottom: 4 },
     subjectChip: {
+        minHeight: 44,
+        justifyContent: 'center',
         paddingHorizontal: Spacing.md,
         paddingVertical: 6,
         backgroundColor: colors.bgCard,
@@ -621,20 +673,8 @@ function createStyles(colors: ColorScheme) {
         padding: Spacing.md,
         gap: Spacing.sm,
     },
-    iconRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    iconChoice: {
-        width: 36,
-        height: 36,
-        borderRadius: BorderRadius.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.bgInput,
-    },
-    iconChoiceActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-    iconChoiceText: { fontSize: 18 },
     createCourseBtn: {
+        minHeight: 48,
         backgroundColor: colors.accent,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.sm,
@@ -644,6 +684,8 @@ function createStyles(colors: ColorScheme) {
     createCourseBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.white },
     topicScroll: { marginTop: -4 },
     topicChip: {
+        minHeight: 44,
+        justifyContent: 'center',
         paddingHorizontal: Spacing.md,
         paddingVertical: 4,
         backgroundColor: colors.bgCard,
@@ -653,6 +695,7 @@ function createStyles(colors: ColorScheme) {
         marginRight: 6,
     },
     input: {
+        minHeight: 48,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,

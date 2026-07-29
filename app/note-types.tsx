@@ -2,11 +2,14 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
-import { useApp } from './(tabs)/app-context';
+import { useApp } from '../contexts/AppContext';
 import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
 import { uniqueId, BUILTIN_NOTE_TYPES } from '../lib/models';
+import { useI18n } from '../hooks/useI18n';
+import { localizeNoteTypeName } from '../lib/i18n';
 
 export default function NoteTypesScreen() {
+    const { l, locale } = useI18n();
     const router = useRouter();
     const { dataVersion, bumpDataVersion } = useApp();
     const colors = useThemeColors();
@@ -16,7 +19,7 @@ export default function NoteTypesScreen() {
     const createNoteType = () => {
         const base = getNoteType(4) ?? BUILTIN_NOTE_TYPES.find((nt) => nt.id === 4)!;
         const id = uniqueId();
-        saveNoteType({ ...base, id, name: 'Yeni Not Türü', mod: Math.floor(Date.now() / 1000) });
+        saveNoteType({ ...base, id, name: l('Yeni Not Türü', 'New Note Type'), mod: Math.floor(Date.now() / 1000) });
         bumpDataVersion();
         router.push(`/note-type?id=${id}`);
     };
@@ -24,7 +27,7 @@ export default function NoteTypesScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>Not türlerini, alanlarını ve kart şablonlarını düzenleyin.</Text>
+                <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin.', 'Edit note types, fields, and card templates.')}</Text>
 
                 {noteTypes.map((nt) => (
                     <TouchableOpacity
@@ -33,10 +36,10 @@ export default function NoteTypesScreen() {
                         onPress={() => router.push(`/note-type?id=${nt.id}`)}
                     >
                         <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>{nt.name}</Text>
+                            <Text style={styles.rowTitle}>{localizeNoteTypeName(locale, nt.name)}</Text>
                             <Text style={styles.rowSub}>
-                                {nt.fields.length} alan · {nt.templates.length} şablon ·{' '}
-                                {nt.kind === 'cloze' ? 'boşluk doldurma' : 'standart'}
+                                {l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · {l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} ·{' '}
+                                {nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}
                             </Text>
                         </View>
                         <Text style={styles.chevron}>›</Text>
@@ -44,7 +47,7 @@ export default function NoteTypesScreen() {
                 ))}
 
                 <TouchableOpacity style={styles.addBtn} onPress={createNoteType}>
-                    <Text style={styles.addBtnText}>+ Yeni Not Türü</Text>
+                    <Text style={styles.addBtnText}>+ {l('Yeni Not Türü', 'New Note Type')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

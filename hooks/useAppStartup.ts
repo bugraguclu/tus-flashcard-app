@@ -7,14 +7,14 @@ import {
     saveCustomCards,
     clearLegacyCardStates,
     migrateLegacySettingsIfNeeded,
-} from '../../lib/storage';
-import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
-import { createDeck, getDeckByName } from '../../lib/deckManager';
-import { runDailyMaintenance } from '../../lib/maintenance';
-import { runAutoBackupIfDue } from '../../lib/backup';
-import { initAnkiData, ensureBuiltinNoteTypesSeeded } from '../../lib/ankiInit';
-import { getSearchIndexCards } from '../../lib/noteManager';
-import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../../lib/legacyMigration';
+} from '../lib/storage';
+import { initDB, dbIndexAllCards, getDB } from '../lib/db';
+import { createDeck, getDeckByName } from '../lib/deckManager';
+import { runDailyMaintenance } from '../lib/maintenance';
+import { runAutoBackupIfDue } from '../lib/backup';
+import { initAnkiData, ensureBuiltinNoteTypesSeeded } from '../lib/ankiInit';
+import { getSearchIndexCards } from '../lib/noteManager';
+import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../lib/legacyMigration';
 
 let startupPromise: Promise<void> | null = null;
 

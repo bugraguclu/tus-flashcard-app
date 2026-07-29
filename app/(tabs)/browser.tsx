@@ -18,47 +18,52 @@ import { useApp } from './_layout';
 import type { CardState, StudyCard } from '../../lib/types';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import { getBrowserCards, setCardSuspended } from '../../lib/studyRepository';
+import { humanizeCardText } from '../../lib/displayText';
+import { useI18n } from '../../hooks/useI18n';
+import type { SupportedLocale } from '../../lib/i18n';
+import { cardFlagName } from '../../lib/i18n';
 
 /** Compact "how long ago" label for the card list (Turkish). */
-function formatLastReview(lastReviewedAtMs: number): string {
-    if (!lastReviewedAtMs) return 'Hiç çalışılmadı';
+function formatLastReview(lastReviewedAtMs: number, locale: SupportedLocale): string {
+    if (!lastReviewedAtMs) return locale === 'tr' ? 'Hiç çalışılmadı' : 'Never studied';
 
     const elapsedMs = Date.now() - lastReviewedAtMs;
-    if (elapsedMs < 60_000) return 'Az önce';
-    if (elapsedMs < 3_600_000) return `${Math.floor(elapsedMs / 60_000)}dk önce`;
-    if (elapsedMs < 86_400_000) return `${Math.floor(elapsedMs / 3_600_000)}sa önce`;
+    if (elapsedMs < 60_000) return locale === 'tr' ? 'Az önce' : 'Just now';
+    if (elapsedMs < 3_600_000) return locale === 'tr' ? `${Math.floor(elapsedMs / 60_000)} dk. önce` : `${Math.floor(elapsedMs / 60_000)}m ago`;
+    if (elapsedMs < 86_400_000) return locale === 'tr' ? `${Math.floor(elapsedMs / 3_600_000)} sa. önce` : `${Math.floor(elapsedMs / 3_600_000)}h ago`;
 
     const days = Math.floor(elapsedMs / 86_400_000);
-    if (days < 30) return `${days} gün önce`;
+    if (days < 30) return locale === 'tr' ? `${days} gün önce` : `${days}d ago`;
 
     const date = new Date(lastReviewedAtMs);
     return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 }
 
 /** Compact "when is it due" label from the scheduling state (Turkish). */
-function formatNextDue(state: CardState, rolloverHour: number): string {
-    if (state.suspended) return 'Askıda';
-    if (state.buried) return 'Gömülü (yarın)';
-    if (state.status === 'new') return 'Sırada (yeni)';
+function formatNextDue(state: CardState, rolloverHour: number, locale: SupportedLocale): string {
+    if (state.suspended) return locale === 'tr' ? 'Askıda' : 'Suspended';
+    if (state.buried) return locale === 'tr' ? 'Gömülü (yarına kadar)' : 'Buried (until tomorrow)';
+    if (state.status === 'new') return locale === 'tr' ? 'Sırada (yeni)' : 'Queued (new)';
 
     if (state.status === 'learning' && state.dueTime > 0) {
         const remainingMs = state.dueTime - Date.now();
-        if (remainingMs <= 0) return 'Şimdi';
-        if (remainingMs < 3_600_000) return `${Math.max(1, Math.ceil(remainingMs / 60_000))}dk içinde`;
-        return `${Math.ceil(remainingMs / 3_600_000)}sa içinde`;
+        if (remainingMs <= 0) return locale === 'tr' ? 'Şimdi' : 'Now';
+        if (remainingMs < 3_600_000) return locale === 'tr' ? `${Math.max(1, Math.ceil(remainingMs / 60_000))} dk. sonra` : `in ${Math.max(1, Math.ceil(remainingMs / 60_000))}m`;
+        return locale === 'tr' ? `${Math.ceil(remainingMs / 3_600_000)} sa. sonra` : `in ${Math.ceil(remainingMs / 3_600_000)}h`;
     }
 
     const today = localDayNumber(Date.now(), rolloverHour);
     const dueDay = ymdToLocalDayNumber(state.dueDate, today, rolloverHour);
     const diff = dueDay - today;
-    if (diff <= 0) return 'Bugün';
-    if (diff === 1) return 'Yarın';
-    if (diff < 30) return `${diff} gün içinde`;
-    if (diff < 365) return `${Math.round(diff / 30)} ay içinde`;
-    return `${(diff / 365).toFixed(1)} yıl içinde`;
+    if (diff <= 0) return locale === 'tr' ? 'Bugün' : 'Today';
+    if (diff === 1) return locale === 'tr' ? 'Yarın' : 'Tomorrow';
+    if (diff < 30) return locale === 'tr' ? `${diff} gün sonra` : `in ${diff} days`;
+    if (diff < 365) return locale === 'tr' ? `${Math.round(diff / 30)} ay sonra` : `in ${Math.round(diff / 30)} months`;
+    return locale === 'tr' ? `${(diff / 365).toFixed(1)} yıl sonra` : `in ${(diff / 365).toFixed(1)} years`;
 }
 
 export default function BrowserScreen() {
+    const { t, l, locale } = useI18n();
     const { settings, bumpDataVersion, dataVersion } = useApp();
     const router = useRouter();
     const colors = useThemeColors();
@@ -69,6 +74,7 @@ export default function BrowserScreen() {
     const [rawQuery, setRawQuery] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    const [markedOnly, setMarkedOnly] = useState(false);
     const [expandedCard, setExpandedCard] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,6 +110,10 @@ export default function BrowserScreen() {
             cards = cards.filter((card) => card.subject === selectedSubject);
         }
 
+        if (markedOnly) {
+            cards = cards.filter((card) => card.noteMarked);
+        }
+
         if (!query) {
             return cards;
         }
@@ -120,7 +130,7 @@ export default function BrowserScreen() {
             || card.answer.toLowerCase().includes(lower)
             || card.topic.toLowerCase().includes(lower)
         ));
-    }, [allCards, selectedSubject, searchQuery]);
+    }, [allCards, selectedSubject, markedOnly, searchQuery]);
 
     const toggleSuspend = useCallback((cardId: number, isSuspended: boolean) => {
         setCardSuspended(cardId, !isSuspended, settings.dayRolloverHour);
@@ -149,32 +159,35 @@ export default function BrowserScreen() {
 
         return (
             <TouchableOpacity
-                style={[styles.cardItem, item.state.suspended && styles.cardSuspended]}
+                style={styles.cardItem}
                 onPress={() => setExpandedCard(isExpanded ? null : item.cardId)}
                 activeOpacity={0.7}
             >
-                <View style={styles.cardItemHeader}>
+                <View style={[styles.cardItemHeader, item.state.suspended && styles.cardSuspended]}>
                     <Text style={styles.cardIcon}>{sub?.icon || '📝'}</Text>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.cardQuestion} numberOfLines={isExpanded ? undefined : 2}>
-                            {item.question}
+                            {humanizeCardText(item.question) || l('🃏 (boş)', '🃏 (empty)')}
                         </Text>
                         <View style={styles.cardMeta}>
                             <Text style={styles.cardTopic}>{sub?.name || item.subject} · {item.topic}</Text>
                             <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
                                 <Text style={[styles.statusDotText, { color: statusColor }]}>
-                                    {item.state.status === 'new' ? 'Yeni' : item.state.status === 'learning' ? 'Öğren' : 'Tekrar'}
+                                    {item.state.status === 'new' ? t('anki.new') : item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
                                 </Text>
                             </View>
                         </View>
                         <Text style={styles.scheduleMeta}>
-                            ⏱ Son: {formatLastReview(item.state.lastReviewedAtMs)} · Sonraki: {formatNextDue(item.state, settings.dayRolloverHour)}
+                            ⏱ {l('Son:', 'Last:')} {formatLastReview(item.state.lastReviewedAtMs, locale)} · {l('Sonraki:', 'Next:')} {formatNextDue(item.state, settings.dayRolloverHour, locale)}
                         </Text>
                     </View>
+                    {item.noteMarked && (
+                        <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
+                    )}
                     {flag > 0 && (
                         <Text
                             style={[styles.flagIcon, { color: FLAG_COLORS[flag].color }]}
-                            accessibilityLabel={`Bayrak: ${FLAG_COLORS[flag].name}`}
+                            accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
                         >
                             ⚑
                         </Text>
@@ -183,7 +196,7 @@ export default function BrowserScreen() {
                         style={styles.editBtn}
                         onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
                         accessibilityRole="button"
-                        accessibilityLabel="Kartı düzenle"
+                        accessibilityLabel={l('Kartı düzenle', 'Edit card')}
                     >
                         <Text style={styles.editBtnText}>✏️</Text>
                     </TouchableOpacity>
@@ -192,23 +205,23 @@ export default function BrowserScreen() {
 
                 {isExpanded && (
                     <View style={styles.expandedContent}>
-                        <View style={styles.answerBox}>
-                            <Text style={styles.answerLabel}>CEVAP</Text>
-                            <Text style={styles.answerContent}>{item.answer}</Text>
+                        <View style={[styles.answerBox, item.state.suspended && styles.cardSuspended]}>
+                            <Text style={styles.answerLabel}>{l('CEVAP', 'ANSWER')}</Text>
+                            <Text style={styles.answerContent}>{humanizeCardText(item.answer) || '—'}</Text>
                         </View>
 
-                        <View style={styles.cardDetails}>
+                        <View style={[styles.cardDetails, item.state.suspended && styles.cardSuspended]}>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Interval</Text>
-                                <Text style={styles.detailValue}>{item.state.interval} gün</Text>
+                                <Text style={styles.detailLabel}>{l('Aralık', 'Interval')}</Text>
+                                <Text style={styles.detailValue}>{item.state.interval} {l('gün', 'days')}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Ease</Text>
+                                <Text style={styles.detailLabel}>{l('Kolaylık', 'Ease')}</Text>
                                 <Text style={styles.detailValue}>{item.state.easeFactor.toFixed(2)}</Text>
                             </View>
                             <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>Due</Text>
-                                <Text style={styles.detailValue}>{item.state.status === 'learning' ? 'Learning queue' : item.state.dueDate}</Text>
+                                <Text style={styles.detailLabel}>{l('Sonraki gösterim', 'Due')}</Text>
+                                <Text style={styles.detailValue}>{item.state.status === 'learning' ? l('Öğrenme sırasında', 'In learning') : item.state.dueDate}</Text>
                             </View>
                         </View>
 
@@ -217,7 +230,7 @@ export default function BrowserScreen() {
                             onPress={() => toggleSuspend(item.cardId, item.state.suspended)}
                         >
                             <Text style={styles.suspendBtnText}>
-                                {item.state.suspended ? '▶️ Sürdür' : '⏸️ Askıya Al'}
+                                {item.state.suspended ? l('▶️ Askıdan Çıkar', '▶️ Unsuspend') : `⏸️ ${t('anki.suspend')}`}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -229,23 +242,23 @@ export default function BrowserScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>🗂️ Kartlarım</Text>
-                <Text style={styles.subtitle}>{filteredCards.length} kart</Text>
+                <Text style={styles.title}>🗂️ {t('sidebar.myCards')}</Text>
+                <Text style={styles.subtitle}>{filteredCards.length} {l('kart', 'cards')}</Text>
                 <View style={{ flex: 1 }} />
                 <TouchableOpacity
                     style={styles.addCardBtn}
                     onPress={() => router.push(selectedSubject ? `/editor?subject=${selectedSubject}` : '/editor')}
                     accessibilityRole="button"
-                    accessibilityLabel="Yeni kart ekle"
+                    accessibilityLabel={l('Yeni kart ekle', 'Add new card')}
                 >
-                    <Text style={styles.addCardBtnText}>＋ Yeni Kart</Text>
+                    <Text style={styles.addCardBtnText}>＋ {l('Yeni Kart', 'New Card')}</Text>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="🔍 Kart ara..."
+                    placeholder={l('🔍 Kart ara…', '🔍 Search cards…')}
                     placeholderTextColor={colors.textMuted}
                     value={rawQuery}
                     onChangeText={handleSearch}
@@ -257,7 +270,15 @@ export default function BrowserScreen() {
                     style={[styles.filterChip, !selectedSubject && styles.filterChipActive]}
                     onPress={() => setSelectedSubject(null)}
                 >
-                    <Text style={[styles.filterChipText, !selectedSubject && styles.filterChipTextActive]}>Tümü</Text>
+                    <Text style={[styles.filterChipText, !selectedSubject && styles.filterChipTextActive]}>{t('common.all')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.filterChip, markedOnly && styles.filterChipActive]}
+                    onPress={() => setMarkedOnly((prev) => !prev)}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Yalnızca işaretli notları göster', 'Show marked notes only')}
+                >
+                    <Text style={[styles.filterChipText, markedOnly && styles.filterChipTextActive]}>⭐ {l('İşaretli', 'Marked')}</Text>
                 </TouchableOpacity>
                 {subjects.map((item) => (
                     <TouchableOpacity
@@ -321,7 +342,7 @@ function createStyles(colors: ColorScheme) {
 
     // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
     // row stretches into leftover space when the list below is short, inflating the chips.
-    filterScroll: { maxHeight: 42, flexGrow: 0 },
+    filterScroll: { minHeight: 42, maxHeight: 42, flexGrow: 0 },
     filterContent: { paddingHorizontal: Spacing.lg, gap: 6, alignItems: 'center' },
     filterChip: {
         paddingHorizontal: Spacing.md,

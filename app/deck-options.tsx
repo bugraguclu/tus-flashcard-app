@@ -17,7 +17,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
-import { useApp } from './(tabs)/app-context';
+import { useApp } from '../contexts/AppContext';
 import {
     getDeck,
     getDeckConfig,
@@ -32,10 +32,10 @@ import {
     setDeckDescription,
 } from '../lib/deckManager';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
+import { useI18n } from '../hooks/useI18n';
+import LeechExplainer from '../components/LeechExplainer';
 
-const DAY_LABELS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 const DAY_FACTORS = [1, 0.5, 0] as const;
-const FACTOR_LABELS: Record<number, string> = { 1: 'Normal', 0.5: 'Azaltılmış', 0: 'Yok' };
 
 function parseCount(text: string, fallback: number, max: number = 9999): number {
     const value = parseInt(text, 10);
@@ -56,6 +56,9 @@ function parseSteps(text: string, fallback: number[]): number[] {
 }
 
 export default function DeckOptionsScreen() {
+    const { t, l } = useI18n();
+    const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
+    const factorLabel = (factor: number) => factor === 1 ? l('Normal', 'Normal') : factor === 0.5 ? l('Azaltılmış', 'Reduced') : l('Yok', 'None');
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const router = useRouter();
@@ -115,13 +118,13 @@ export default function DeckOptionsScreen() {
     if (!deck) {
         return (
             <SafeAreaView style={styles.container}>
-                <Text style={styles.missing}>Deste bulunamadı.</Text>
+                <Text style={styles.missing}>{l('Deste bulunamadı.', 'Deck not found.')}</Text>
             </SafeAreaView>
         );
     }
 
     const usedBy = getDecksUsingConfig(configId).length;
-    const presetName = initialConfig.name || 'Varsayılan';
+    const presetName = initialConfig.name || l('Varsayılan', 'Default');
 
     const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -171,29 +174,29 @@ export default function DeckOptionsScreen() {
             if (deck.configId !== configId) assignDeckConfig(deck.id, configId);
             setDeckDescription(deck.id, form.description);
             bumpDataVersion();
-            alert('Kaydedildi', usedBy > 1
-                ? `Ayarlar kaydedildi. Bu ayar grubunu kullanan ${usedBy} deste etkilendi.`
-                : 'Ayarlar kaydedildi.', () => router.back());
+            alert(t('common.saved'), usedBy > 1
+                ? l(`Ayarlar kaydedildi. Bu ayar grubunu kullanan ${usedBy} deste etkilendi.`, `Settings saved. ${usedBy} decks using this preset were updated.`)
+                : l('Ayarlar kaydedildi.', 'Settings saved.'), () => router.back());
         } catch (e) {
             console.warn('[DeckOptions] save failed:', e);
-            alert('Hata', 'Ayarlar kaydedilemedi.');
+            alert(t('common.error'), l('Ayarlar kaydedilemedi.', 'Could not save the settings.'));
         }
     };
 
     const handleNewPreset = () => {
-        const preset = createPreset(`${getDeckDisplayName(deck.name)} ayarları`, configId);
+        const preset = createPreset(l(`${getDeckDisplayName(deck.name)} ayarları`, `${getDeckDisplayName(deck.name)} options`), configId);
         assignDeckConfig(deck.id, preset.id);
         switchPreset(preset.id);
     };
 
     const handleDeletePreset = () => {
         if (configId === DEFAULT_DECK_CONFIG.id) {
-            alert('Bilgi', 'Varsayılan ayar grubu silinemez.');
+            alert(l('Bilgi', 'Info'), l('Varsayılan ayar grubu silinemez.', 'The default preset cannot be deleted.'));
             return;
         }
         confirm(
-            'Ayar grubunu sil',
-            `"${presetName}" silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`,
+            l('Ayar Grubunu Sil', 'Delete Preset'),
+            l(`“${presetName}” silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`, `“${presetName}” will be deleted; ${usedBy} decks using it will return to the default preset.`),
             () => {
                 deletePreset(configId);
                 bumpDataVersion();
@@ -206,9 +209,9 @@ export default function DeckOptionsScreen() {
     const handleApplyToSubdecks = () => {
         const changed = applyConfigToSubdecks(deck.id);
         bumpDataVersion();
-        alert('Uygulandı', changed > 0
-            ? `${changed} alt deste bu ayar grubuna geçirildi.`
-            : 'Tüm alt desteler zaten bu ayar grubunda.');
+        alert(l('Uygulandı', 'Applied'), changed > 0
+            ? l(`${changed} alt deste bu ayar grubuna geçirildi.`, `${changed} subdecks were assigned to this preset.`)
+            : l('Tüm alt desteler zaten bu ayar grubunda.', 'All subdecks already use this preset.'));
     };
 
     const Choice = ({ value, options, onChange }: {
@@ -250,122 +253,160 @@ export default function DeckOptionsScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.title}>⚙️ Seçenekler — {getDeckDisplayName(deck.name)}</Text>
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.headerButton}
+                    onPress={() => router.back()}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Deste genel bakışına dön', 'Back to deck overview')}
+                >
+                    <Text style={styles.backText}>‹</Text>
+                </TouchableOpacity>
+                <View style={styles.headerTitleWrap}>
+                    <Text style={styles.headerEyebrow}>{l('DESTE SEÇENEKLERİ', 'DECK OPTIONS')}</Text>
+                    <Text style={styles.headerTitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
+                </View>
+                <TouchableOpacity
+                    style={styles.headerSaveButton}
+                    onPress={handleSave}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Deste seçeneklerini kaydet', 'Save deck options')}
+                >
+                    <Text style={styles.headerSaveText}>{t('common.save')}</Text>
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
 
                 <View style={styles.presetCard}>
-                    <Text style={styles.sectionTitle}>AYAR GRUBU (PRESET)</Text>
+                    <Text style={styles.sectionTitle}>{l('AYAR GRUBU', 'PRESET')}</Text>
                     <Text style={styles.presetName}>{presetName}</Text>
                     <Text style={styles.presetMeta}>
-                        Bu grubu {usedBy} deste kullanıyor{usedBy > 1 ? ' — değişiklikler hepsini etkiler.' : '.'}
+                        {l(`Bu grubu ${usedBy} deste kullanıyor${usedBy > 1 ? ' — değişiklikler hepsini etkiler.' : '.'}`, `${usedBy} decks use this preset${usedBy > 1 ? ' — changes affect all of them.' : '.'}`)}
                     </Text>
                     <View style={styles.presetActions}>
                         <TouchableOpacity style={styles.presetBtn} onPress={() => setPresetPickerOpen(true)}>
-                            <Text style={styles.presetBtnText}>Değiştir</Text>
+                            <Text style={styles.presetBtnText}>{l('Değiştir', 'Change')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.presetBtn} onPress={handleNewPreset}>
-                            <Text style={styles.presetBtnText}>Klonla & Ayrıl</Text>
+                            <Text style={styles.presetBtnText}>{l('Klonla ve Ayır', 'Clone & Detach')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.presetBtn}
                             onPress={() => { setRenameText(presetName); setRenameOpen(true); }}
                         >
-                            <Text style={styles.presetBtnText}>Adlandır</Text>
+                            <Text style={styles.presetBtnText}>{l('Adlandır', 'Rename')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.presetBtn} onPress={handleDeletePreset}>
-                            <Text style={[styles.presetBtnText, styles.presetBtnDanger]}>Sil</Text>
+                            <Text style={[styles.presetBtnText, styles.presetBtnDanger]}>{t('common.delete')}</Text>
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity style={styles.subdeckBtn} onPress={handleApplyToSubdecks}>
-                        <Text style={styles.subdeckBtnText}>📁 Tüm alt destelere uygula</Text>
+                        <Text style={styles.subdeckBtnText}>📁 {l('Tüm alt destelere uygula', 'Apply to all subdecks')}</Text>
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.sectionTitle}>GÜNLÜK LİMİTLER</Text>
-                <Field label="Günlük yeni kart" value={form.newPerDay} onChange={(t) => set('newPerDay', t)} />
-                <Field label="Günlük azami tekrar" value={form.maxReviewsPerDay} onChange={(t) => set('maxReviewsPerDay', t)} />
-                <Text style={styles.fieldHint}>"Sadece bugün" ek limitleri deste dişlisindeki Özel Çalışma'da.</Text>
+                <Text style={styles.sectionTitle}>{l('GÜNLÜK LİMİTLER', 'DAILY LIMITS')}</Text>
+                <Field label={l('Günlük yeni kart', 'New cards/day')} value={form.newPerDay} onChange={(t) => set('newPerDay', t)} />
+                <Field label={l('Günlük en fazla tekrar', 'Maximum reviews/day')} value={form.maxReviewsPerDay} onChange={(t) => set('maxReviewsPerDay', t)} />
+                <Text style={styles.fieldHint}>{l('“Yalnızca bugün” için ek limitler deste menüsündeki Özel Çalışma bölümündedir.', 'Use Custom Study from the deck menu for “today only” limit increases.')}</Text>
 
-                <Text style={styles.sectionTitle}>YENİ KARTLAR</Text>
+                <Text style={styles.sectionTitle}>{l('YENİ KARTLAR', 'NEW CARDS')}</Text>
                 <Field
-                    label="Öğrenme adımları (dakika)"
+                    label={l('Öğrenme adımları (dakika)', 'Learning steps (minutes)')}
                     value={form.learningSteps}
                     onChange={(t) => set('learningSteps', t)}
-                    hint="Boşlukla ayır: örn. 1 10"
+                    hint={l('Boşlukla ayırın: örn. 1 10', 'Separate with spaces, e.g. 1 10')}
                 />
-                <Field label="Mezuniyet aralığı (gün)" value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
-                <Field label="Kolay aralığı (gün)" value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
-                <Text style={styles.fieldLabel}>Ekleniş sırası</Text>
+                <Field label={l('Mezuniyet aralığı (gün)', 'Graduating interval (days)')} value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
+                <Field label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
+                <Text style={styles.fieldLabel}>{l('Ekleniş sırası', 'Insertion order')}</Text>
                 <Choice
                     value={form.insertionOrder}
-                    options={[{ key: 'sequential', label: 'Sıralı' }, { key: 'random', label: 'Rastgele' }]}
+                    options={[{ key: 'sequential', label: l('Sıralı', 'Sequential') }, { key: 'random', label: l('Rastgele', 'Random') }]}
                     onChange={(key) => set('insertionOrder', key as 'sequential' | 'random')}
                 />
 
-                <Text style={styles.sectionTitle}>GECİKMELER (LAPSES)</Text>
+                <Text style={styles.sectionTitle}>{l('UNUTMALAR', 'LAPSES')}</Text>
                 <Field
-                    label="Yeniden öğrenme adımları (dakika)"
+                    label={l('Yeniden öğrenme adımları (dakika)', 'Relearning steps (minutes)')}
                     value={form.relearningSteps}
                     onChange={(t) => set('relearningSteps', t)}
                 />
-                <Field label="Asgari aralık (gün)" value={form.minIvl} onChange={(t) => set('minIvl', t)} />
-                <Field label="Leech eşiği (hata sayısı)" value={form.leechThreshold} onChange={(t) => set('leechThreshold', t)} />
-                <Text style={styles.fieldLabel}>Leech eylemi</Text>
+                <Field label={l('En az aralık (gün)', 'Minimum interval (days)')} value={form.minIvl} onChange={(t) => set('minIvl', t)} />
+                <Field
+                    label={l('Sürekli Unutulan Kart eşiği', 'Leech threshold (lapses)')}
+                    value={form.leechThreshold}
+                    onChange={(t) => set('leechThreshold', t)}
+                    hint={l(
+                        'Kart bu sayıda unutulduğunda işaretlenir. Anki varsayılanı: 8.',
+                        'The card is marked when it reaches this many lapses. Anki default: 8.',
+                    )}
+                />
+                <Text style={styles.fieldLabel}>{l('Eşiğe ulaşıldığında', 'Leech action')}</Text>
                 <Choice
                     value={form.leechAction}
-                    options={[{ key: 'suspend', label: 'Askıya al' }, { key: 'tag', label: 'Yalnızca etiketle' }]}
+                    options={[
+                        { key: 'suspend', label: l('Etiketle ve askıya al', 'Tag and Suspend') },
+                        { key: 'tag', label: l('Yalnızca etiketle', 'Tag Only') },
+                    ]}
                     onChange={(key) => set('leechAction', key as 'suspend' | 'tag')}
                 />
+                <LeechExplainer context="settings" />
 
-                <Text style={styles.sectionTitle}>GÖRÜNTÜLEME SIRASI</Text>
-                <Text style={styles.fieldLabel}>Yeni kart toplama sırası</Text>
+                <Text style={styles.sectionTitle}>{l('GÖRÜNTÜLEME SIRASI', 'DISPLAY ORDER')}</Text>
+                <Text style={styles.fieldLabel}>{l('Yeni kart toplama sırası', 'New card gather order')}</Text>
                 <Choice
                     value={form.newCardGatherOrder}
                     options={[
-                        { key: 'topic', label: 'Konu sırası' },
-                        { key: 'position', label: 'Pozisyon' },
-                        { key: 'random', label: 'Rastgele' },
+                        { key: 'topic', label: l('Konu sırası', 'Topic order') },
+                        { key: 'position', label: l('Konum', 'Position') },
+                        { key: 'random', label: l('Rastgele', 'Random') },
                     ]}
                     onChange={(key) => set('newCardGatherOrder', key as 'topic' | 'position' | 'random')}
                 />
-                <Text style={styles.fieldLabel}>Yeni / tekrar karışımı</Text>
+                <Text style={styles.fieldLabel}>{l('Yeni / tekrar sırası', 'New/review order')}</Text>
                 <Choice
                     value={form.newReviewOrder}
                     options={[
-                        { key: 'mix', label: 'Karışık' },
-                        { key: 'before', label: 'Önce yeni' },
-                        { key: 'after', label: 'Önce tekrar' },
+                        { key: 'mix', label: l('Karıştır', 'Mix with reviews') },
+                        { key: 'before', label: l('Önce yeni', 'Show before reviews') },
+                        { key: 'after', label: l('Önce tekrar', 'Show after reviews') },
                     ]}
                     onChange={(key) => set('newReviewOrder', key as 'mix' | 'before' | 'after')}
                 />
-                <Text style={styles.fieldLabel}>Tekrar sıralaması</Text>
+                <Text style={styles.fieldLabel}>{l('Tekrar sıralaması', 'Review sort order')}</Text>
                 <Choice
                     value={form.reviewSortOrder}
                     options={[
-                        { key: 'dueRandom', label: 'Vade + rastgele' },
-                        { key: 'intervalsAsc', label: 'Aralık artan' },
-                        { key: 'intervalsDesc', label: 'Aralık azalan' },
+                        { key: 'dueRandom', label: l('Zamanı gelen + rastgele', 'Due date, then random') },
+                        { key: 'intervalsAsc', label: l('Aralık artan', 'Ascending intervals') },
+                        { key: 'intervalsDesc', label: l('Aralık azalan', 'Descending intervals') },
                     ]}
                     onChange={(key) => set('reviewSortOrder', key as 'dueRandom' | 'intervalsAsc' | 'intervalsDesc')}
                 />
 
-                <Text style={styles.sectionTitle}>GÖMME (BURY)</Text>
-                <SwitchRow label="Yeni kardeş kartları göm" value={form.buryNewSiblings} onChange={(v) => set('buryNewSiblings', v)} />
-                <SwitchRow label="Tekrar kardeş kartları göm" value={form.buryReviewSiblings} onChange={(v) => set('buryReviewSiblings', v)} />
+                <Text style={styles.sectionTitle}>{l('GÖMME', 'BURYING')}</Text>
+                <SwitchRow label={l('Yeni kardeş kartları göm', 'Bury new siblings')} value={form.buryNewSiblings} onChange={(v) => set('buryNewSiblings', v)} />
+                <SwitchRow label={l('Tekrar kardeş kartları göm', 'Bury review siblings')} value={form.buryReviewSiblings} onChange={(v) => set('buryReviewSiblings', v)} />
                 <SwitchRow
-                    label="Gün-aşan öğrenme kardeşlerini göm"
+                    label={l('Gün aşan öğrenme kardeşlerini göm', 'Bury interday learning siblings')}
                     value={form.buryInterdayLearningSiblings}
                     onChange={(v) => set('buryInterdayLearningSiblings', v)}
                 />
 
-                <Text style={styles.sectionTitle}>SES</Text>
-                <SwitchRow label="Sesi otomatik çal" value={form.autoPlayAudio} onChange={(v) => set('autoPlayAudio', v)} />
-                <Text style={styles.fieldHint}>Kapalıyken kart üzerindeki 🔊 düğmesi ya da R tuşu ile çalınır.</Text>
+                <Text style={styles.sectionTitle}>{l('SES', 'AUDIO')}</Text>
+                <SwitchRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={form.autoPlayAudio} onChange={(v) => set('autoPlayAudio', v)} />
+                <Text style={styles.fieldHint}>{l('Kapalıyken kart üzerindeki 🔊 düğmesiyle veya R tuşuyla oynatılır.', 'When off, use the 🔊 button on the card or press R to play audio.')}</Text>
 
-                <Text style={styles.sectionTitle}>EASY DAYS — HAFTALIK YÜK</Text>
-                <Text style={styles.fieldHint}>Güne dokunarak değiştir: Normal → Azaltılmış → Yok. Tekrarlar o günlerden kaydırılır.</Text>
+                <Text style={styles.sectionTitle}>{l('KOLAY GÜNLER — HAFTALIK YÜK', 'EASY DAYS — WEEKLY LOAD')}</Text>
+                <Text style={styles.fieldHint}>{l('Değiştirmek için güne dokunun: Normal → Azaltılmış → Yok. Tekrarlar o günlerden kaydırılır.', 'Tap a day to cycle: Normal → Reduced → None. Reviews are shifted away from those days.')}</Text>
                 <View style={styles.easyDaysRow}>
-                    {DAY_LABELS.map((label, index) => {
+                    {dayLabels.map((label, index) => {
                         const factor = form.easyDays[index];
                         return (
                             <TouchableOpacity
@@ -377,56 +418,51 @@ export default function DeckOptionsScreen() {
                                 ]}
                                 onPress={() => cycleEasyDay(index)}
                                 accessibilityRole="button"
-                                accessibilityLabel={`${label}: ${FACTOR_LABELS[factor] ?? 'Normal'}`}
+                                accessibilityLabel={`${label}: ${factorLabel(factor)}`}
                             >
                                 <Text style={styles.easyDayLabel}>{label}</Text>
-                                <Text style={styles.easyDayFactor}>{FACTOR_LABELS[factor] ?? 'Normal'}</Text>
+                                <Text style={styles.easyDayFactor}>{factorLabel(factor)}</Text>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
 
-                <Text style={styles.sectionTitle}>GELİŞMİŞ</Text>
-                <Field label="Başlangıç kolaylığı" value={form.startingEase} onChange={(t) => set('startingEase', t)} hint="Örn. 2.50" />
-                <Field label="Kolay bonusu" value={form.easyBonus} onChange={(t) => set('easyBonus', t)} />
-                <Field label="Zor aralık çarpanı" value={form.hardIvl} onChange={(t) => set('hardIvl', t)} />
-                <Field label="Aralık düzenleyici" value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
-                <Field label="Azami aralık (gün)" value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
-                <Field label="Yeni aralık (%) — hata sonrası" value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint="0 = baştan başla" />
+                <Text style={styles.sectionTitle}>{l('GELİŞMİŞ', 'ADVANCED')}</Text>
+                <Field label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('Örn. 2,50', 'E.g. 2.50')} />
+                <Field label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} />
+                <Field label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} />
+                <Field label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
+                <Field label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
+                <Field label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
 
-                <Text style={styles.sectionTitle}>DESTE AÇIKLAMASI</Text>
+                <Text style={styles.sectionTitle}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
                 <TextInput
                     style={[styles.input, styles.descriptionInput]}
                     value={form.description}
                     onChangeText={(t) => set('description', t)}
-                    placeholder="Bu deste hakkında not (çalışma ekranında görünür)"
+                    placeholder={l('Bu deste hakkında not (çalışma ekranında görünür)', 'Notes about this deck (shown on the study screen)')}
                     placeholderTextColor={colors.textMuted}
                     multiline
                 />
 
-                <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                    <Text style={styles.saveBtnText}>💾 Kaydet</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelText}>Vazgeç</Text>
-                </TouchableOpacity>
+                <Text style={styles.bottomHint}>{l('Değişiklikleri uygulamak için sağ üstteki Kaydet düğmesini kullanın.', 'Use Save in the top-right corner to apply your changes.')}</Text>
             </ScrollView>
 
             <Modal visible={presetPickerOpen} transparent animationType="fade" onRequestClose={() => setPresetPickerOpen(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Ayar Grubu Seç</Text>
+                        <Text style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
                         <ScrollView style={{ maxHeight: 320 }}>
                             {getAllDeckConfigs().map((preset) => (
                                 <TouchableOpacity key={preset.id} style={styles.presetOption} onPress={() => switchPreset(preset.id)}>
                                     <Text style={[styles.presetOptionText, preset.id === configId && styles.presetOptionActive]}>
-                                        {preset.name || `Grup ${preset.id}`} · {getDecksUsingConfig(preset.id).length} deste
+                                        {preset.name || l(`Grup ${preset.id}`, `Preset ${preset.id}`)} · {l(`${getDecksUsingConfig(preset.id).length} deste`, `${getDecksUsingConfig(preset.id).length} decks`)}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                         <TouchableOpacity style={styles.cancelBtn} onPress={() => setPresetPickerOpen(false)}>
-                            <Text style={styles.cancelText}>Vazgeç</Text>
+                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -435,11 +471,11 @@ export default function DeckOptionsScreen() {
             <Modal visible={renameOpen} transparent animationType="fade" onRequestClose={() => setRenameOpen(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Ayar Grubunu Adlandır</Text>
+                        <Text style={styles.modalTitle}>{l('Ayar Grubunu Adlandır', 'Rename Preset')}</Text>
                         <TextInput style={styles.input} value={renameText} onChangeText={setRenameText} autoFocus />
                         <View style={styles.modalActions}>
                             <TouchableOpacity style={styles.cancelBtn} onPress={() => setRenameOpen(false)}>
-                                <Text style={styles.cancelText}>Vazgeç</Text>
+                                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.saveBtnSmall}
@@ -449,7 +485,7 @@ export default function DeckOptionsScreen() {
                                     setForm((prev) => ({ ...prev }));
                                 }}
                             >
-                                <Text style={styles.saveBtnText}>Kaydet</Text>
+                                <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -462,9 +498,39 @@ export default function DeckOptionsScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: { padding: Spacing.lg, gap: Spacing.sm, paddingBottom: Spacing.xxxl },
+        header: {
+            minHeight: 60,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: Spacing.sm,
+            backgroundColor: colors.bgPrimary,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
+        },
+        headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+        backText: { fontSize: 34, lineHeight: 36, color: colors.accent },
+        headerTitleWrap: { flex: 1, paddingHorizontal: Spacing.xs },
+        headerEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1.1, color: colors.textMuted },
+        headerTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, marginTop: 2 },
+        headerSaveButton: {
+            minWidth: 68,
+            minHeight: 44,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: BorderRadius.sm,
+            backgroundColor: colors.accent,
+            paddingHorizontal: Spacing.md,
+        },
+        headerSaveText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
+        content: {
+            width: '100%',
+            maxWidth: 720,
+            alignSelf: 'center',
+            padding: Spacing.lg,
+            gap: Spacing.sm,
+            paddingBottom: 72,
+        },
         missing: { margin: Spacing.xl, color: colors.textMuted, fontSize: FontSize.md },
-        title: { fontSize: FontSize.xl, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.xs },
 
         sectionTitle: {
             fontSize: 11,
@@ -503,6 +569,7 @@ function createStyles(colors: ColorScheme) {
         fieldLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary, marginTop: Spacing.xs },
         fieldHint: { fontSize: FontSize.xs, color: colors.textMuted },
         input: {
+            minHeight: 44,
             backgroundColor: colors.bgCard,
             borderWidth: 1,
             borderColor: colors.border,
@@ -531,6 +598,7 @@ function createStyles(colors: ColorScheme) {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+            minHeight: 48,
             paddingVertical: 6,
         },
         switchLabel: { fontSize: FontSize.md, color: colors.textPrimary, flex: 1, marginRight: Spacing.md },
@@ -568,6 +636,7 @@ function createStyles(colors: ColorScheme) {
         saveBtnText: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
         cancelBtn: { paddingVertical: Spacing.md, alignItems: 'center' },
         cancelText: { color: colors.textMuted, fontWeight: '600' },
+        bottomHint: { marginTop: Spacing.xl, fontSize: FontSize.sm, lineHeight: 19, color: colors.textMuted, textAlign: 'center' },
 
         modalOverlay: {
             flex: 1,

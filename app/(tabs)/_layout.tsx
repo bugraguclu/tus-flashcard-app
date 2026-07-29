@@ -10,16 +10,18 @@ import {
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
 import { getSearchIndexCards } from '../../lib/noteManager';
-import { getAllSubjects } from '../../lib/subjects';
-import { useApp } from './app-context';
-import { Sidebar, SIDEBAR_WIDTH } from './sidebar';
+import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
+import { useApp } from '../../contexts/AppContext';
+import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
+import { useI18n } from '../../hooks/useI18n';
 
-export { useApp } from './app-context';
+export { useApp } from '../../contexts/AppContext';
 
 export default function TabLayout() {
     const router = useRouter();
     const pathname = usePathname();
     const colors = useThemeColors();
+    const { t, localeTag } = useI18n();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {
         selectedSubject,
@@ -70,14 +72,16 @@ export default function TabLayout() {
         }
     }, [dataVersion]);
 
+    // Courses are deck-specific: the sidebar lists only the active deck's own courses
+    // (an empty deck lists none). Without a deck context the full list stays visible.
     const subjects = useMemo(() => {
         try {
-            return getAllSubjects();
+            return activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
         } catch (e) {
-            console.warn('[Layout] getAllSubjects failed:', e);
+            console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [dataVersion]);
+    }, [dataVersion, activeDeckName]);
 
     const { subjectCounts, topicCounts } = useMemo(() => {
         const nextSubjectCounts = new Map<string, number>();
@@ -117,13 +121,17 @@ export default function TabLayout() {
             const staticTopics = subjects.find((subject) => subject.id === subjectId)?.topics ?? [];
             const discovered = [...(topicCounts.get(subjectId)?.keys() ?? [])]
                 .filter((topic) => !staticTopics.includes(topic))
-                .sort((a, b) => a.localeCompare(b, 'tr'));
+                .sort((a, b) => a.localeCompare(b, localeTag));
             return [...staticTopics, ...discovered];
         },
-        [subjects, topicCounts],
+        [subjects, topicCounts, localeTag],
     );
 
-    const totalCards = searchableCards.length;
+    // "Tüm Dersler" counts only the listed (deck-scoped) courses' cards.
+    const totalCards = useMemo(
+        () => subjects.reduce((sum, entry) => sum + (subjectCounts.get(entry.id) ?? 0), 0),
+        [subjects, subjectCounts],
+    );
 
     const navigate = useCallback((path: string) => {
         router.push(path as any);
@@ -150,14 +158,15 @@ export default function TabLayout() {
         setSelectedSubject(null);
         setSelectedTopic(null);
         setExpandedSubject(null);
-        navigate('/');
+        // Inside a deck, "Tüm Dersler" means that whole deck — not the whole collection.
+        navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/');
     };
 
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
                 <Text style={styles.loadingEmoji}>🧠</Text>
-                <Text style={styles.loadingText}>TusAnkiM yükleniyor...</Text>
+                <Text style={styles.loadingText}>{t('tabs.loadingApp')}</Text>
             </View>
         );
     }
@@ -170,11 +179,17 @@ export default function TabLayout() {
                         style={styles.hamburger}
                         onPress={() => setSidebarOpen((prev) => !prev)}
                         accessibilityRole="button"
-                        accessibilityLabel={sidebarOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+                        accessibilityLabel={sidebarOpen ? t('tabs.closeMenu') : t('tabs.openMenu')}
                     >
                         <Text style={styles.hamburgerText}>☰</Text>
                     </TouchableOpacity>
-                    <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
+                    <TouchableOpacity
+                        onPress={() => router.push('/decks' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('tabs.backToDecks')}
+                    >
+                        <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
+                    </TouchableOpacity>
                     <View style={{ width: 40 }} />
                 </View>
             )}
@@ -212,7 +227,7 @@ export default function TabLayout() {
                             <Text style={styles.startupErrorIcon}>📱</Text>
                             <Text style={styles.startupErrorTitle}>{startupError}</Text>
                             <Text style={styles.startupErrorText}>
-                                Lütfen uygulamayı iOS veya Android cihazınızdan kullanın.
+                                {t('tabs.nativeOnly')}
                             </Text>
                         </View>
                     ) : (

@@ -247,6 +247,16 @@ export interface Deck {
     searchOrder2?: number;
     /** Anki's "reschedule cards based on my answers". False = preview mode: answers never touch the cards. */
     reschedule?: boolean;
+    /**
+     * Filtered decks are virtual in this client: their saved search is gathered on demand instead
+     * of physically moving cards between decks. This flag models Anki's Empty/Rebuild lifecycle —
+     * Empty hides the gathered cards, while Rebuild makes the saved search active again.
+     */
+    filteredDeckEmpty?: boolean;
+    /** Cards completed since the last filtered-deck build; kept out until the next rebuild. */
+    filteredDoneCardIds?: number[];
+    /** Millisecond timestamp of the last Build/Rebuild action. */
+    filteredBuildAt?: number;
 }
 
 /** Gather orders for filtered decks (index = the stored searchOrder value). */

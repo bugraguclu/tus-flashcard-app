@@ -1,4 +1,5 @@
 import { Alert, Platform } from 'react-native';
+import { translateActive } from './i18n';
 
 export interface ConfirmOptions {
     /** Style the confirm action as destructive (red) — for delete/overwrite actions. */
@@ -31,7 +32,7 @@ export function registerDialogHost(handler: DialogHandler): () => void {
 
 /**
  * Cross-platform confirm dialog. Native uses Alert.alert; web routes through the mounted DialogHost
- * so the buttons carry the app's Turkish labels and styling, falling back to window.confirm when no
+ * so the buttons carry localized labels and styling, falling back to window.confirm when no
  * host is mounted (Alert.alert button callbacks don't fire on web).
  */
 export function confirm(
@@ -50,8 +51,8 @@ export function confirm(
     }
 
     Alert.alert(title, message, [
-        { text: 'İptal', style: 'cancel' },
-        { text: 'Tamam', style: options.destructive ? 'destructive' : 'default', onPress: onConfirm },
+        { text: translateActive('common.cancel'), style: 'cancel' },
+        { text: translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: onConfirm },
     ]);
 }
 
@@ -67,5 +68,5 @@ export function alert(title: string, message: string, onDismiss?: () => void): v
         return;
     }
 
-    Alert.alert(title, message, onDismiss ? [{ text: 'Tamam', onPress: onDismiss }] : undefined);
+    Alert.alert(title, message, onDismiss ? [{ text: translateActive('common.ok'), onPress: onDismiss }] : undefined);
 }

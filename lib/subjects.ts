@@ -113,6 +113,34 @@ export function resolveSubjectDeckId(subjectId: string): number {
     return user?.deckId ?? 1;
 }
 
+/**
+ * The subjects whose home deck lives inside the given deck's subtree. Courses are
+ * deck-specific: entering a deck shows only its own courses, an empty deck shows none.
+ * A null/unknown deck falls back to the full list (legacy scopes, safety).
+ */
+export function getSubjectsForDeck(deckName: string | null | undefined): Subject[] {
+    if (!deckName) return getAllSubjects();
+
+    try {
+        const db = getDB();
+        if (typeof db.getAllSync !== 'function') return getAllSubjects();
+        const deckNamesById = new Map<number, string>(
+            db.getAllSync<{ id: number; name: string }>(
+                'SELECT id, name FROM decks WHERE tombstone = 0',
+            ).map((row) => [row.id, row.name]),
+        );
+
+        const prefix = `${deckName}::`;
+        return getAllSubjects().filter((subject) => {
+            const home = deckNamesById.get(resolveSubjectDeckId(subject.id));
+            return home === deckName || (home?.startsWith(prefix) ?? false);
+        });
+    } catch (e) {
+        console.warn('[Subjects] getSubjectsForDeck failed:', e);
+        return getAllSubjects();
+    }
+}
+
 /** Transliterate a course name into a stable ASCII slug usable as a subject id / tag. */
 export function slugifySubjectId(name: string): string {
     const map: Record<string, string> = {

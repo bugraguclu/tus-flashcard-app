@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { registerDialogHost, type DialogRequest } from '../lib/confirm';
+import { useI18n } from '../hooks/useI18n';
 
 /**
  * Web-only dialog surface for confirm()/alert(). React Native Web drops Alert.alert button
@@ -9,6 +10,7 @@ import { registerDialogHost, type DialogRequest } from '../lib/confirm';
  * Native never registers a handler, so this renders nothing there.
  */
 export function DialogHost() {
+    const { t } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [request, setRequest] = useState<DialogRequest | null>(null);
@@ -38,14 +40,14 @@ export function DialogHost() {
                     <View style={styles.actions}>
                         {isConfirm && (
                             <TouchableOpacity style={[styles.button, styles.cancel]} onPress={close}>
-                                <Text style={styles.cancelText}>İptal</Text>
+                                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity
                             style={[styles.button, request.destructive ? styles.destructive : styles.accept]}
                             onPress={accept}
                         >
-                            <Text style={styles.acceptText}>Tamam</Text>
+                            <Text style={styles.acceptText}>{t('common.ok')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

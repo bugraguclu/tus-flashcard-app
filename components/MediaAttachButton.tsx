@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -8,11 +8,18 @@ import { saveMediaBytes } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
 import AudioRecordModal from './AudioRecordModal';
 import DrawingCanvasModal from './DrawingCanvasModal';
+import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
+import { useI18n } from '../hooks/useI18n';
 
 interface MediaAttachButtonProps {
     /** Appends an Anki-style media reference (`<img src="…">`, `[sound:…]`, …) to the field. */
     onInsert: (snippet: string) => void;
+    /** The field already holds an attachment — a field carries at most one piece of media. */
+    hasMedia?: boolean;
 }
+
+/** Matches any media reference a field can carry (image/video/audio tag or [sound:] marker). */
+export const FIELD_MEDIA_RE = /<img\b|<video\b|<audio\b|\[sound:/i;
 
 async function readUriBytes(uri: string): Promise<Uint8Array> {
     const response = await fetch(uri);
@@ -22,13 +29,15 @@ async function readUriBytes(uri: string): Promise<Uint8Array> {
 
 type MediaKind = 'image' | 'audio' | 'video';
 
-export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) {
+export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachButtonProps) {
+    const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [menuVisible, setMenuVisible] = useState(false);
     const [busy, setBusy] = useState(false);
     const [showRecorder, setShowRecorder] = useState(false);
     const [showDrawing, setShowDrawing] = useState(false);
+    const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
 
     const closeMenu = () => setMenuVisible(false);
 
@@ -43,7 +52,7 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
             else onInsert(`<video controls src="${filename}"></video>`);
         } catch (e) {
             console.warn('[MediaAttach] save failed:', e);
-            alert('Hata', 'Dosya eklenemedi.');
+            alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
         } finally {
             setBusy(false);
         }
@@ -54,16 +63,26 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
         try {
             const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!perm.granted) {
-                alert('İzin gerekli', 'Galeriye erişmek için izin vermeniz gerekiyor.');
+                alert(l('İzin Gerekli', 'Permission Required'), l('Galeriye erişmek için izin vermeniz gerekiyor.', 'Allow photo library access to choose a photo.'));
                 return;
             }
-            const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                quality: 1,
+                selectionLimit: 1,
+            });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            await saveAndInsert(asset.uri, asset.fileName || 'gorsel.jpg', 'image');
+            setPhotoToEdit({
+                uri: asset.uri,
+                name: asset.fileName || 'gorsel.jpg',
+                width: asset.width,
+                height: asset.height,
+            });
         } catch (e) {
             console.warn('[MediaAttach] gallery pick failed:', e);
-            alert('Hata', 'Görsel seçilemedi.');
+            alert(t('common.error'), l('Görsel seçilemedi.', 'Could not select the image.'));
         }
     };
 
@@ -72,16 +91,25 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
         try {
             const perm = await ImagePicker.requestCameraPermissionsAsync();
             if (!perm.granted) {
-                alert('İzin gerekli', 'Kamerayı kullanmak için izin vermeniz gerekiyor.');
+                alert(l('İzin Gerekli', 'Permission Required'), l('Kamerayı kullanmak için izin vermeniz gerekiyor.', 'Allow camera access to take a photo.'));
                 return;
             }
-            const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                quality: 1,
+            });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            await saveAndInsert(asset.uri, asset.fileName || 'kamera.jpg', 'image');
+            setPhotoToEdit({
+                uri: asset.uri,
+                name: asset.fileName || 'kamera.jpg',
+                width: asset.width,
+                height: asset.height,
+            });
         } catch (e) {
             console.warn('[MediaAttach] camera capture failed:', e);
-            alert('Hata', 'Fotoğraf çekilemedi.');
+            alert(t('common.error'), l('Fotoğraf çekilemedi.', 'Could not take the photo.'));
         }
     };
 
@@ -94,7 +122,7 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
             await saveAndInsert(asset.uri, asset.name, 'audio');
         } catch (e) {
             console.warn('[MediaAttach] audio clip pick failed:', e);
-            alert('Hata', 'Ses klibi eklenemedi.');
+            alert(t('common.error'), l('Ses klibi eklenemedi.', 'Could not attach the audio clip.'));
         }
     };
 
@@ -107,35 +135,43 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
             await saveAndInsert(asset.uri, asset.name, 'video');
         } catch (e) {
             console.warn('[MediaAttach] video clip pick failed:', e);
-            alert('Hata', 'Video klibi eklenemedi.');
+            alert(t('common.error'), l('Video klibi eklenemedi.', 'Could not attach the video clip.'));
         }
     };
 
     const options: { icon: string; label: string; onPress: () => void }[] = [
-        { icon: '🖼️', label: 'Galeri', onPress: pickFromGallery },
-        { icon: '📷', label: 'Kamera', onPress: captureFromCamera },
-        { icon: '✏️', label: 'Çizim', onPress: () => { closeMenu(); setShowDrawing(true); } },
-        { icon: '🎙️', label: 'Ses Kaydet', onPress: () => { closeMenu(); setShowRecorder(true); } },
-        { icon: '🎵', label: 'Ses Klibi Ekle', onPress: pickAudioClip },
-        { icon: '🎬', label: 'Video Klibi Ekle', onPress: pickVideoClip },
+        { icon: '🖼️', label: l('Fotoğraf Seç ve Düzenle', 'Choose & Edit Photo'), onPress: pickFromGallery },
+        { icon: '📷', label: l('Fotoğraf Çek ve Düzenle', 'Take & Edit Photo'), onPress: captureFromCamera },
+        { icon: '✏️', label: l('Boş Tuvale Çiz', 'Draw on Blank Canvas'), onPress: () => { closeMenu(); setShowDrawing(true); } },
+        { icon: '🎙️', label: l('Ses Kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
+        { icon: '🎵', label: l('Ses Klibi Ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
+        { icon: '🎬', label: l('Video Klibi Ekle', 'Attach Video Clip'), onPress: pickVideoClip },
     ];
 
     return (
         <>
             <TouchableOpacity
                 style={styles.addBtn}
-                onPress={() => setMenuVisible(true)}
+                onPress={() => {
+                    if (hasMedia) {
+                        alert(l('Ek Sınırı', 'Attachment Limit'), l('Bir alana en fazla bir medya (görsel, ses, video veya çizim) eklenebilir. Yenisini eklemek için alandaki mevcut eki silin.', 'Each field can contain one media attachment (image, audio, video, or drawing). Remove the current attachment before adding another.'));
+                        return;
+                    }
+                    setMenuVisible(true);
+                }}
                 accessibilityRole="button"
-                accessibilityLabel="Ek ekle"
+                accessibilityLabel={l('Ek ekle', 'Add attachment')}
                 disabled={busy}
             >
                 {busy ? <ActivityIndicator size="small" color={colors.accent} /> : <Text style={styles.addBtnText}>＋</Text>}
             </TouchableOpacity>
 
             <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeMenu}>
-                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={closeMenu}>
+                <View style={styles.overlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
                     <View style={styles.sheet}>
-                        <Text style={styles.sheetTitle}>Ek Ekle</Text>
+                        <View style={styles.sheetHandle} />
+                        <Text style={styles.sheetTitle}>{l('Ek Ekle', 'Add Attachment')}</Text>
                         {options.map((opt) => (
                             <TouchableOpacity
                                 key={opt.label}
@@ -149,10 +185,10 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity style={styles.cancelRow} onPress={closeMenu}>
-                            <Text style={styles.cancelText}>Vazgeç</Text>
+                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
-                </TouchableOpacity>
+                </View>
             </Modal>
 
             <AudioRecordModal
@@ -165,6 +201,12 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
                 onClose={() => setShowDrawing(false)}
                 onSaved={(filename) => onInsert(`<img src="${filename}">`)}
             />
+            <PhotoEditorModal
+                visible={photoToEdit !== null}
+                photo={photoToEdit}
+                onClose={() => setPhotoToEdit(null)}
+                onSaved={(filename) => onInsert(`<img src="${filename}">`)}
+            />
         </>
     );
 }
@@ -172,8 +214,8 @@ export default function MediaAttachButton({ onInsert }: MediaAttachButtonProps) 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         addBtn: {
-            width: 28,
-            height: 28,
+            width: 44,
+            height: 44,
             borderRadius: BorderRadius.sm,
             borderWidth: 1,
             borderColor: colors.border,
@@ -181,7 +223,7 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        addBtnText: { fontSize: 16, fontWeight: '700', color: colors.accent, lineHeight: 18 },
+        addBtnText: { fontSize: 22, fontWeight: '700', color: colors.accent, lineHeight: 24 },
         overlay: {
             flex: 1,
             backgroundColor: 'rgba(0, 0, 0, 0.35)',
@@ -192,8 +234,17 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
             padding: Spacing.lg,
-            paddingBottom: Spacing.xl,
+            paddingBottom: 32,
             ...Shadows.lg,
+        },
+        sheetHandle: {
+            width: 42,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: colors.border,
+            alignSelf: 'center',
+            marginTop: -8,
+            marginBottom: Spacing.md,
         },
         sheetTitle: {
             fontSize: FontSize.md,
@@ -204,14 +255,15 @@ function createStyles(colors: ColorScheme) {
         optionRow: {
             flexDirection: 'row',
             alignItems: 'center',
+            minHeight: 52,
             gap: Spacing.md,
-            paddingVertical: 12,
+            paddingVertical: 10,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
         optionIcon: { fontSize: 20, width: 28, textAlign: 'center' },
         optionLabel: { fontSize: FontSize.md, color: colors.textPrimary },
-        cancelRow: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.xs },
+        cancelRow: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs },
         cancelText: { color: colors.textMuted, fontWeight: '600' },
     });
 }

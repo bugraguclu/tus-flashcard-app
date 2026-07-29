@@ -18,13 +18,14 @@ import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
 import { getAllDecks, getDeck } from '../lib/deckManager';
 import { alert } from '../lib/confirm';
 import { readUriText } from '../lib/files';
-import { useApp } from './(tabs)/app-context';
+import { useApp } from '../contexts/AppContext';
 import { importDelimitedNotes } from '../lib/importNotes';
 import { importApkg } from '../lib/importApkg';
 import { getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { parseDelimited } from '../lib/importDelimited';
 import { dbUpsertFtsCard } from '../lib/db';
+import { useI18n } from '../hooks/useI18n';
 
 const TUS_BASIC_NOTETYPE_ID = 4;
 
@@ -48,10 +49,12 @@ async function readAssetBytes(uri: string): Promise<Uint8Array> {
 }
 
 export default function ImportScreen() {
+    const { t, l } = useI18n();
     const router = useRouter();
     const { bumpDataVersion, settings, dataVersion } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const supportsApkgImport = Platform.OS === 'web';
 
     const subjects = React.useMemo(() => getAllSubjects(), [dataVersion]);
     const [subject, setSubject] = useState(subjects[0]?.id ?? '');
@@ -77,7 +80,9 @@ export default function ImportScreen() {
     const pickFile = async () => {
         try {
             const picked = await DocumentPicker.getDocumentAsync({
-                type: ['text/csv', 'text/tab-separated-values', 'text/plain', 'application/zip', '*/*'],
+                type: supportsApkgImport
+                    ? ['text/csv', 'text/tab-separated-values', 'text/plain', 'application/zip', '*/*']
+                    : ['text/csv', 'text/tab-separated-values', 'text/plain'],
                 copyToCacheDirectory: true,
             });
             if (picked.canceled || !picked.assets?.length) return;
@@ -86,7 +91,7 @@ export default function ImportScreen() {
             const apkg = asset.name.toLowerCase().endsWith('.apkg');
 
             if (apkg && Platform.OS !== 'web') {
-                alert('Bilgi', '.apkg içe aktarma şu an yalnızca web sürümünde destekleniyor.');
+                alert(l('Desteklenmeyen Dosya', 'Unsupported File'), l('Bu cihazda CSV, TSV veya TXT dosyası seçin.', 'Select a CSV, TSV, or TXT file on this device.'));
                 return;
             }
 
@@ -102,7 +107,7 @@ export default function ImportScreen() {
                 const text = await readUriText(asset.uri);
                 if (text.length > MAX_TEXT_CHARS) {
                     setFileName(null);
-                    alert('Hata', 'Metin dosyası çok büyük (en fazla ~50 MB).');
+                    alert(t('common.error'), l('Metin dosyası çok büyük (en fazla yaklaşık 50 MB).', 'The text file is too large (maximum about 50 MB).'));
                     return;
                 }
                 setFileText(text);
@@ -111,13 +116,13 @@ export default function ImportScreen() {
             }
         } catch (e) {
             console.warn('[Import] file read failed:', e);
-            alert('Hata', 'Dosya okunamadı.');
+            alert(t('common.error'), l('Dosya okunamadı.', 'Could not read the file.'));
         }
     };
 
     const handleImport = async () => {
         if (!hasFile) {
-            alert('Hata', 'Önce bir dosya seçin.');
+            alert(t('common.error'), l('Önce bir dosya seçin.', 'Select a file first.'));
             return;
         }
 
@@ -155,7 +160,7 @@ export default function ImportScreen() {
             }
         } catch (e) {
             console.warn('[Import] import failed:', e);
-            alert('Hata', e instanceof Error ? e.message : 'İçe aktarma başarısız oldu.');
+            alert(t('common.error'), e instanceof Error ? e.message : l('İçe aktarma başarısız oldu.', 'Import failed.'));
         } finally {
             setImporting(false);
         }
@@ -165,24 +170,33 @@ export default function ImportScreen() {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    CSV/TSV dosyası (<Text style={styles.helpStrong}>Soru, Cevap, Kaynak</Text>) veya bir Anki{' '}
-                    <Text style={styles.helpStrong}>.apkg</Text> paketi içe aktarın. Ayırıcı otomatik algılanır;
-                    aynı sorulu kartlar atlanır.
+                    {supportsApkgImport ? (
+                        <>
+                            {l('Bir CSV/TSV dosyası (', 'Import a CSV/TSV file (')}<Text style={styles.helpStrong}>{l('Soru, Cevap, Kaynak', 'Question, Answer, Source')}</Text>{l(') veya Anki ', ') or an Anki ')}
+                            <Text style={styles.helpStrong}>.apkg</Text>{l(' paketi içe aktarın.', ' package.')}
+                        </>
+                    ) : (
+                        <>
+                            {l('CSV, TSV veya TXT dosyası içe aktarın. Sütun sırası: ', 'Import a CSV, TSV, or TXT file. Column order: ')}
+                            <Text style={styles.helpStrong}>{l('Soru, Cevap, Kaynak', 'Question, Answer, Source')}</Text>.
+                        </>
+                    )}{' '}
+                    {l(' Ayırıcı otomatik olarak algılanır; aynı soruya sahip kartlar atlanır.', ' The delimiter is detected automatically; cards with duplicate questions are skipped.')}
                 </Text>
 
-                <Text style={styles.label}>HEDEF DESTE</Text>
+                <Text style={styles.label}>{l('HEDEF DESTE', 'TARGET DECK')}</Text>
                 <TouchableOpacity
                     style={styles.deckSelector}
                     onPress={() => setShowDeckPicker(true)}
                     accessibilityRole="button"
-                    accessibilityLabel="Hedef desteyi seç"
+                    accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
                 >
                     <Text style={styles.deckSelectorText} numberOfLines={1}>
                         🗃️ {targetDeck?.name ?? '—'} ▾
                     </Text>
                 </TouchableOpacity>
 
-                <Text style={styles.label}>DERS</Text>
+                <Text style={styles.label}>{l('DERS', 'SUBJECT')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
                     {subjects.map((entry) => (
                         <TouchableOpacity
@@ -199,70 +213,75 @@ export default function ImportScreen() {
                     ))}
                 </ScrollView>
 
-                <Text style={styles.label}>KONU (Kaynak sütunu yoksa)</Text>
+                <Text style={styles.label}>{l('KONU (Kaynak sütunu yoksa)', 'TOPIC (when there is no Source column)')}</Text>
                 <TextInput
                     style={styles.input}
                     value={topic}
                     onChangeText={setTopic}
-                    placeholder={selectedSubject?.topics[0] || 'Genel'}
+                    placeholder={selectedSubject?.topics[0] || l('Genel', 'General')}
                     placeholderTextColor={colors.textMuted}
                 />
 
-                <Text style={styles.label}>DOSYA</Text>
-                <TouchableOpacity style={styles.fileBtn} onPress={pickFile}>
-                    <Text style={styles.fileBtnText}>📄 {fileName ? 'Dosyayı Değiştir' : 'Dosya Seç'}</Text>
+                <Text style={styles.label}>{l('DOSYA', 'FILE')}</Text>
+                <TouchableOpacity
+                    style={styles.fileBtn}
+                    onPress={pickFile}
+                    accessibilityRole="button"
+                    accessibilityLabel={supportsApkgImport ? l('İçe aktarılacak dosyayı seç', 'Select a file to import') : l('CSV, TSV veya TXT dosyası seç', 'Select a CSV, TSV, or TXT file')}
+                >
+                    <Text style={styles.fileBtnText}>📄 {fileName ? l('Dosyayı Değiştir', 'Change File') : l('Dosya Seç', 'Choose File')}</Text>
                 </TouchableOpacity>
                 {fileName && (
                     <Text style={styles.fileInfo}>
-                        {fileName} · {isApkg ? 'Anki paketi' : `${rowCount} satır`}
+                        {fileName} · {isApkg ? l('Anki paketi', 'Anki package') : l(`${rowCount} satır`, `${rowCount} rows`)}
                     </Text>
                 )}
 
                 {result ? (
                     <View style={styles.resultCard}>
-                        <Text style={styles.resultTitle}>İçe aktarma tamamlandı</Text>
+                        <Text style={styles.resultTitle}>{l('İçe Aktarma Tamamlandı', 'Import Complete')}</Text>
                         <View style={styles.resultRow}>
-                            <Text style={styles.resultLabel}>Eklenen</Text>
+                            <Text style={styles.resultLabel}>{l('Eklenen', 'Added')}</Text>
                             <Text style={[styles.resultValue, styles.resultAdded]}>{result.added}</Text>
                         </View>
                         <View style={styles.resultRow}>
-                            <Text style={styles.resultLabel}>Zaten var (atlandı)</Text>
+                            <Text style={styles.resultLabel}>{l('Zaten var (atlandı)', 'Duplicates (skipped)')}</Text>
                             <Text style={styles.resultValue}>{result.duplicates}</Text>
                         </View>
                         <View style={styles.resultRow}>
-                            <Text style={styles.resultLabel}>Boş kart</Text>
+                            <Text style={styles.resultLabel}>{l('Boş kart', 'Empty cards')}</Text>
                             <Text style={styles.resultValue}>{result.emptyRows}</Text>
                         </View>
                         {result.clozeImported ? (
                             <View style={styles.resultRow}>
-                                <Text style={styles.resultLabel}>Boşluk doldurma (cloze)</Text>
+                                <Text style={styles.resultLabel}>{l('Boşluk Doldurma (Cloze)', 'Cloze')}</Text>
                                 <Text style={styles.resultValue}>{result.clozeImported}</Text>
                             </View>
                         ) : null}
                         {result.progressCards ? (
                             <View style={styles.resultRow}>
-                                <Text style={styles.resultLabel}>Çalışma geçmişiyle gelen kart</Text>
+                                <Text style={styles.resultLabel}>{l('Çalışma geçmişiyle gelen kart', 'Cards with review history')}</Text>
                                 <Text style={styles.resultValue}>{result.progressCards}</Text>
                             </View>
                         ) : null}
                         {result.mediaImported ? (
                             <View style={styles.resultRow}>
-                                <Text style={styles.resultLabel}>Medya dosyası</Text>
+                                <Text style={styles.resultLabel}>{l('Medya dosyası', 'Media files')}</Text>
                                 <Text style={styles.resultValue}>{result.mediaImported}</Text>
                             </View>
                         ) : null}
                         {result.withMedia && !result.mediaImported ? (
                             <Text style={styles.resultNote}>
-                                ⚠️ {result.withMedia} kartta medya var; medya dosyaları içe aktarılamadı.
+                                {l(`⚠️ ${result.withMedia} kartta medya var; medya dosyaları içe aktarılamadı.`, `⚠️ ${result.withMedia} cards reference media; the media files could not be imported.`)}
                             </Text>
                         ) : null}
                         {result.mediaSkipped ? (
                             <Text style={styles.resultNote}>
-                                ⚠️ {result.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).
+                                {l(`⚠️ ${result.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).`, `⚠️ ${result.mediaSkipped} media files were skipped (missing or too large).`)}
                             </Text>
                         ) : null}
                         <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>
-                            <Text style={styles.doneBtnText}>Bitti</Text>
+                            <Text style={styles.doneBtnText}>{t('common.completed')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -274,27 +293,27 @@ export default function ImportScreen() {
                         {importing ? (
                             <ActivityIndicator color={colors.white} />
                         ) : (
-                            <Text style={styles.importBtnText}>📥 İçe Aktar</Text>
+                            <Text style={styles.importBtnText}>📥 {t('root.import')}</Text>
                         )}
                     </TouchableOpacity>
                 )}
 
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelBtnText}>İptal</Text>
+                    <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
             </ScrollView>
 
             <Modal visible={showDeckPicker} transparent animationType="fade" onRequestClose={() => setShowDeckPicker(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Hedef Deste</Text>
+                        <Text style={styles.modalTitle}>{l('Hedef Deste', 'Target Deck')}</Text>
                         <ScrollView style={{ maxHeight: 320 }}>
                             <TouchableOpacity
                                 style={styles.deckOption}
                                 onPress={() => { setTargetDeckId(null); setShowDeckPicker(false); }}
                             >
                                 <Text style={[styles.deckOptionText, targetDeckId === null && styles.deckOptionActive]}>
-                                    ✨ Otomatik — seçilen dersin destesi
+                                    ✨ {l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
                                 </Text>
                             </TouchableOpacity>
                             {getAllDecks().filter((deck) => !deck.isFiltered).map((deck) => (
@@ -313,7 +332,7 @@ export default function ImportScreen() {
                             ))}
                         </ScrollView>
                         <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowDeckPicker(false)}>
-                            <Text style={styles.cancelBtnText}>Vazgeç</Text>
+                            <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

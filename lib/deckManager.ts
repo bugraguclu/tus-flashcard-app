@@ -230,6 +230,9 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         searchQuery,
         searchLimit: limit || 100,
         searchOrder: 0,
+        filteredDeckEmpty: false,
+        filteredDoneCardIds: [],
+        filteredBuildAt: now,
     };
     saveDeck(deck);
     return deck;
@@ -248,7 +251,11 @@ export interface DeckTreeNode {
     totalCards: number;
 }
 
-export function buildDeckTree(decks: Deck[], cardCounts?: Map<number, { new: number; learn: number; review: number; total: number }>): DeckTreeNode[] {
+export function buildDeckTree(
+    decks: Deck[],
+    cardCounts?: Map<number, { new: number; learn: number; review: number; total: number }>,
+    rolloverHour: number = 4,
+): DeckTreeNode[] {
     // Sort by name for hierarchy
     const sorted = [...decks].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -284,10 +291,22 @@ export function buildDeckTree(decks: Deck[], cardCounts?: Map<number, { new: num
     function aggregateCounts(node: DeckTreeNode): void {
         for (const child of node.children) {
             aggregateCounts(child);
+            // Filtered decks reference cards from their home decks. In this app they are gathered
+            // virtually, so adding their counts to a parent would count the same cards twice.
+            if (child.deck.isFiltered) continue;
             node.newCount += child.newCount;
             node.learnCount += child.learnCount;
             node.reviewCount += child.reviewCount;
             node.totalCards += child.totalCards;
+        }
+
+        // When the parent is selected, its own limits cap the total drawn from all children.
+        // This keeps the deck-list number aligned with the overview/study queue instead of
+        // advertising the uncapped sum of every subdeck.
+        if (!node.deck.isFiltered) {
+            const config = getDeckConfigForDeck(node.deck.id, rolloverHour);
+            node.newCount = Math.min(node.newCount, Math.max(0, config.newPerDay));
+            node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay));
         }
     }
     roots.forEach(aggregateCounts);
@@ -527,6 +546,16 @@ export function moveDeckUnder(deckId: number, newParentName: string | null): voi
     renameDeck(deckId, targetName);
 }
 
+/** Persist the disclosure state of a deck row, matching Anki's remembered deck tree. */
+export function setDeckCollapsed(deckId: number, collapsed: boolean): void {
+    const deck = getDeck(deckId);
+    if (!deck || deck.collapsed === collapsed) return;
+    deck.collapsed = collapsed;
+    deck.mod = Math.floor(Date.now() / 1000);
+    deck.usn = -1;
+    saveDeck(deck);
+}
+
 /** Buried-card count (sched- or user-buried) inside a deck subtree, for the overview screen. */
 export function getBuriedCountForDeck(deckId: number): number {
     const deck = getDeck(deckId);
@@ -598,16 +627,68 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
         : undefined;
     deck.searchOrder2 = options.searchQuery2?.trim() ? (options.searchOrder2 ?? 0) : undefined;
     deck.reschedule = options.reschedule;
+    // Saving filtered-deck options is Anki's Build/Rebuild action.
+    deck.filteredDeckEmpty = false;
+    deck.filteredDoneCardIds = [];
+    deck.filteredBuildAt = Date.now();
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
     saveDeck(deck);
 }
 
+/** Empty a filtered deck without deleting its saved search or the cards in their home decks. */
+export function emptyFilteredDeck(deckId: number): boolean {
+    const deck = getDeck(deckId);
+    if (!deck?.isFiltered) return false;
+    deck.filteredDeckEmpty = true;
+    deck.filteredDoneCardIds = [];
+    deck.mod = Math.floor(Date.now() / 1000);
+    deck.usn = -1;
+    saveDeck(deck);
+    return true;
+}
+
+/** Rebuild a previously emptied filtered deck from its saved search. */
+export function rebuildFilteredDeck(deckId: number): boolean {
+    const deck = getDeck(deckId);
+    if (!deck?.isFiltered) return false;
+    deck.filteredDeckEmpty = false;
+    deck.filteredDoneCardIds = [];
+    deck.filteredBuildAt = Date.now();
+    deck.mod = Math.floor(Date.now() / 1000);
+    deck.usn = -1;
+    saveDeck(deck);
+    return true;
+}
+
+/** Retire one card from the current filtered-deck build after it has completed its steps. */
+export function completeFilteredCard(deckId: number, cardId: number): boolean {
+    const deck = getDeck(deckId);
+    if (!deck?.isFiltered) return false;
+    const completed = new Set(deck.filteredDoneCardIds ?? []);
+    if (completed.has(cardId)) return false;
+    completed.add(cardId);
+    deck.filteredDoneCardIds = [...completed];
+    deck.usn = -1;
+    saveDeck(deck);
+    return true;
+}
+
+/** Put a completed card back into the active filtered build when its answer is undone. */
+export function restoreFilteredCard(deckId: number, cardId: number): boolean {
+    const deck = getDeck(deckId);
+    if (!deck?.isFiltered || !deck.filteredDoneCardIds?.includes(cardId)) return false;
+    deck.filteredDoneCardIds = deck.filteredDoneCardIds.filter((id) => id !== cardId);
+    deck.usn = -1;
+    saveDeck(deck);
+    return true;
+}
+
 export const CUSTOM_STUDY_PREFIX = 'Özel Çalışma Oturumu';
 
 /**
- * Create — or rebuild, Anki keeps a single session per deck — the deck's custom study session:
- * a filtered subdeck named "Özel Çalışma Oturumu (Deck)" driven by a saved search.
+ * Create — or rebuild — Anki's single conventional Custom Study Session. Renaming the session
+ * preserves it; the next Custom Study action then creates a fresh deck with the conventional name.
  */
 export function createOrReplaceCustomStudySession(
     baseDeckId: number,
@@ -618,7 +699,7 @@ export function createOrReplaceCustomStudySession(
     const base = getDeck(baseDeckId);
     if (!base || base.isFiltered) return null;
 
-    const name = `${base.name}::${CUSTOM_STUDY_PREFIX} (${getDeckDisplayName(base.name)})`;
+    const name = CUSTOM_STUDY_PREFIX;
     const sanitizedLimit = Math.max(1, Math.min(9999, Math.floor(limit) || 100));
 
     const existing = getDeckByName(name);
@@ -628,15 +709,24 @@ export function createOrReplaceCustomStudySession(
         existing.searchOrder = options.searchOrder ?? 0;
         existing.searchQuery2 = undefined;
         existing.reschedule = options.reschedule ?? true;
+        existing.filteredDeckEmpty = false;
+        existing.filteredDoneCardIds = [];
+        existing.filteredBuildAt = Date.now();
         existing.mod = Math.floor(Date.now() / 1000);
         existing.usn = -1;
         saveDeck(existing);
         return existing;
     }
 
+    // A regular deck using Anki's reserved conventional name must not be overwritten.
+    if (existing) return null;
+
     const session = createFilteredDeck(name, searchQuery, sanitizedLimit);
     session.searchOrder = options.searchOrder ?? 0;
     session.reschedule = options.reschedule ?? true;
+    session.filteredDeckEmpty = false;
+    session.filteredDoneCardIds = [];
+    session.filteredBuildAt = Date.now();
     saveDeck(session);
     return session;
 }
@@ -689,12 +779,10 @@ export function getCardCountsByDeck(
 
     const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
     for (const row of rows) {
-        // Cap the "new" badge at the deck's daily limit like Anki. This is a start-of-day upper
-        // bound: per-deck "introduced today" isn't tracked, so the study queue does the exact,
-        // hierarchical, studied-today-aware capping.
-        const newPerDay = Math.max(0, getDeckConfigForDeck(row.deckId).newPerDay);
         counts.set(row.deckId, {
-            new: Math.min(Number(row.newCount) || 0, newPerDay),
+            // Keep raw counts here. buildDeckTree applies the selected deck's cap after child
+            // aggregation, which is required for correct parent/subdeck limit semantics.
+            new: Number(row.newCount) || 0,
             learn: Number(row.learnCount) || 0,
             review: Number(row.reviewCount) || 0,
             total: Number(row.totalCount) || 0,

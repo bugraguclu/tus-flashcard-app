@@ -22,6 +22,7 @@ import {
     getNoteType,
     handleLeech,
     isLeech,
+    MARKED_TAG,
     saveAnkiCard,
 } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
@@ -43,6 +44,8 @@ export interface QueueStats {
 
 export interface StudyQueueResult {
     cards: StudyCard[];
+    /** Full filtered-build membership, including learning cards still waiting on a step timer. */
+    allSessionCards?: StudyCard[];
     stats: QueueStats;
     nextLearningDue: number | null;
     dailyNewLimitReached: boolean;
@@ -541,6 +544,7 @@ function makeStudyCard(
         topic: payload.topic,
         question: payload.question,
         answer: payload.answer,
+        noteMarked: note.tags.includes(MARKED_TAG),
         // TODO(boundary): remove CardState materialization from queue path once scheduler works directly on AnkiCard.
         state: stateOverride ?? ankiCardToCardState(card, settings, nowMs),
         rawCard: includeRawCard ? card : undefined,
@@ -748,6 +752,18 @@ function filteredOrderSql(order: number | undefined): string {
  * not apply (Anki: filtered decks are exempt).
  */
 function buildFilteredDeckQueue(deck: Deck, settings: AppSettings, nowMs: number): StudyQueueResult {
+    if (deck.filteredDeckEmpty) {
+        return {
+            cards: [],
+            stats: { newCount: 0, learningCount: 0, reviewCount: 0 },
+            nextLearningDue: null,
+            dailyNewLimitReached: false,
+            heldBackNewCount: 0,
+        };
+    }
+
+    const completedIds = new Set(deck.filteredDoneCardIds ?? []);
+    const buildAt = deck.filteredBuildAt ?? nowMs;
     const gatherGroup = (search: string, order: number | undefined, limit: number | undefined): QueueCardRow[] => {
         const filtered = buildFilteredSearchClause(search);
         const where = filtered.clauses.length > 0 ? filtered.clauses.join(' AND ') : '1=1';
@@ -760,7 +776,7 @@ function buildFilteredDeckQueue(deck: Deck, settings: AppSettings, nowMs: number
             filteredOrderSql(order),
             true,
             Math.max(1, Math.min(9999, Math.floor(limit ?? 100))),
-        );
+        ).filter((row) => !completedIds.has(row.cardId) && row.cardId <= buildAt + 999);
     };
 
     const rows = gatherGroup(deck.searchQuery ?? '', deck.searchOrder, deck.searchLimit);
@@ -771,17 +787,31 @@ function buildFilteredDeckQueue(deck: Deck, settings: AppSettings, nowMs: number
         }
     }
 
-    const cards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map() });
+    const gatheredCards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map() });
+    const todayYmd = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
+    // New and review cards are intentionally gathered regardless of dueness (preview/review
+    // ahead). Learning cards still obey their step timer, or a failed card would immediately
+    // loop after every queue refresh.
+    const cards = gatheredCards.filter((card) => {
+        if (card.state.status !== 'learning') return true;
+        if (card.state.dueTime > 0) return card.state.dueTime <= nowMs;
+        return card.state.dueDate <= todayYmd;
+    });
     const stats = {
-        newCount: cards.filter((card) => card.state.status === 'new').length,
-        learningCount: cards.filter((card) => card.state.status === 'learning').length,
-        reviewCount: cards.filter((card) => card.state.status === 'review').length,
+        newCount: gatheredCards.filter((card) => card.state.status === 'new').length,
+        learningCount: gatheredCards.filter((card) => card.state.status === 'learning').length,
+        reviewCount: gatheredCards.filter((card) => card.state.status === 'review').length,
     };
+
+    const futureLearningTimes = gatheredCards
+        .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
+        .map((card) => card.state.dueTime);
 
     return {
         cards,
+        allSessionCards: gatheredCards,
         stats,
-        nextLearningDue: null,
+        nextLearningDue: futureLearningTimes.length > 0 ? Math.min(...futureLearningTimes) : null,
         dailyNewLimitReached: false,
         heldBackNewCount: 0,
     };

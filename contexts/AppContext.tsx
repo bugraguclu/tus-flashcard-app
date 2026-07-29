@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
-import type { AppSettings } from '../../lib/types';
-import { DEFAULT_SETTINGS, loadSettings } from '../../lib/storage';
-import { useAppStartup } from './use-app-startup';
+import type { AppSettings } from '../lib/types';
+import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
+import { useAppStartup } from '../hooks/useAppStartup';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
 export type StudyPosition = { subject: string; topic: string } | null;

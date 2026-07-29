@@ -7,6 +7,7 @@ import {
     SafeAreaView,
     TouchableOpacity,
     TextInput,
+    useWindowDimensions,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -25,6 +26,7 @@ import { confirm, alert } from '../../lib/confirm';
 import type { AppSettings } from '../../lib/types';
 import { useApp } from './_layout';
 import WeekStreakStrip from '../../components/WeekStreakStrip';
+import { useI18n } from '../../hooks/useI18n';
 
 const EMPTY_TODAY: TodayAnswerStats = {
     reviewed: 0,
@@ -35,8 +37,11 @@ const EMPTY_TODAY: TodayAnswerStats = {
 };
 
 export default function StatsScreen() {
+    const { t, l, localeTag } = useI18n();
+    const { width } = useWindowDimensions();
+    const isCompact = width < 600;
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
     const router = useRouter();
     const params = useLocalSearchParams();
     const { dataVersion, bumpDataVersion, refreshData } = useApp();
@@ -117,12 +122,12 @@ export default function StatsScreen() {
                         pct,
                     };
                 })
-                .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                .sort((a, b) => a.name.localeCompare(b.name, localeTag));
         } catch (e) {
             console.warn('[Stats] deck stats failed:', e);
             return [];
         }
-    }, [dataVersion, deckScope]);
+    }, [dataVersion, deckScope, localeTag]);
 
     const accuracy = todayStats.reviewed > 0
         ? Math.round((todayStats.passed / todayStats.reviewed) * 100)
@@ -133,29 +138,29 @@ export default function StatsScreen() {
         try {
             const data = await exportAllData();
             await Clipboard.setStringAsync(data);
-            alert('Başarılı', 'Yedek verisi panoya kopyalandı.');
+            alert(t('common.completed'), l('Yedek verisi panoya kopyalandı.', 'Backup data was copied to the clipboard.'));
         } catch (e) {
             console.warn('[Stats] export failed:', e);
-            alert('Hata', 'Dışa aktarma başarısız oldu.');
+            alert(t('common.error'), l('Veriler dışa aktarılamadı.', 'Could not export the data.'));
         }
     };
 
     const handleImport = async () => {
         if (!importData.trim()) {
-            alert('Hata', 'Lütfen içe aktarılacak JSON verisini yapıştırın.');
+            alert(t('common.error'), l('Lütfen içe aktarılacak JSON verisini yapıştırın.', 'Paste the JSON data you want to import.'));
             return;
         }
 
-        confirm('Uyarı', 'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?', async () => {
+        confirm(l('Uyarı', 'Warning'), l('Bu işlem mevcut tüm verilerin üzerine yazacak. Devam etmek istiyor musunuz?', 'This will overwrite all existing data. Do you want to continue?'), async () => {
             const success = await importAllData(importData);
             if (success) {
                 refreshData();
                 bumpDataVersion();
-                alert('Başarılı', 'Veriler içe aktarıldı. Görünüm güncellendi.');
+                alert(t('common.completed'), l('Veriler içe aktarıldı.', 'Data imported successfully.'));
                 setImportData('');
                 setShowImport(false);
             } else {
-                alert('Hata', 'Geçersiz veri formatı.');
+                alert(t('common.error'), l('Geçersiz veri biçimi.', 'Invalid data format.'));
             }
         }, { destructive: true });
     };
@@ -165,7 +170,7 @@ export default function StatsScreen() {
             <SafeAreaView style={styles.container}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 48 }}>📊</Text>
-                    <Text style={{ color: colors.textMuted }}>Yükleniyor...</Text>
+                    <Text style={{ color: colors.textMuted }}>{t('common.loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -174,58 +179,58 @@ export default function StatsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.title}>📊 İstatistikler</Text>
+                <Text style={styles.title}>📊 {t('common.statistics')}</Text>
 
                 {deckScope ? (
                     <View style={styles.scopeRow}>
                         <Text style={styles.scopeText} numberOfLines={1}>🗃️ {deckScope}</Text>
                         <TouchableOpacity onPress={() => router.replace('/stats' as any)}>
-                            <Text style={styles.scopeLink}>Tüm koleksiyon ›</Text>
+                            <Text style={styles.scopeLink}>{l('Tüm koleksiyon', 'Whole Collection')} ›</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
-                    <Text style={styles.scopeHint}>Tüm koleksiyon — bir desteye özel istatistik için aşağıdan deste seç.</Text>
+                    <Text style={styles.scopeHint}>{l('Tüm koleksiyon — bir desteye özel istatistikleri görmek için aşağıdan deste seçin.', 'Whole collection — select a deck below to view deck-specific statistics.')}</Text>
                 )}
 
                 <View style={styles.todayCard}>
-                    <Text style={styles.sectionTitle}>Bugünün Özeti</Text>
+                    <Text style={styles.sectionTitle}>{l('Bugünün Özeti', 'Today')}</Text>
                     <View style={styles.todayGrid}>
                         <View style={styles.todayStat}>
                             <Text style={styles.todayNumber}>{todayStats.reviewed}</Text>
-                            <Text style={styles.todayLabel}>Tekrar</Text>
+                            <Text style={styles.todayLabel}>{l('Yanıtlanan', 'Reviews')}</Text>
                         </View>
                         <View style={styles.todayStat}>
                             <Text style={[styles.todayNumber, { color: colors.btnGood }]}>{accuracy}%</Text>
-                            <Text style={styles.todayLabel}>Doğruluk</Text>
+                            <Text style={styles.todayLabel}>{l('Doğruluk', 'Accuracy')}</Text>
                         </View>
                         <View style={styles.todayStat}>
                             <Text style={styles.todayNumber}>{studyMinutes}</Text>
-                            <Text style={styles.todayLabel}>Dakika</Text>
+                            <Text style={styles.todayLabel}>{l('Dakika', 'Minutes')}</Text>
                         </View>
                         <View style={styles.todayStat}>
                             <Text style={[styles.todayNumber, { color: colors.badgeNew }]}>{todayStats.newCardsIntroduced}</Text>
-                            <Text style={styles.todayLabel}>Yeni Kart</Text>
+                            <Text style={styles.todayLabel}>{l('Yeni Kart', 'New Cards')}</Text>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.streakCard}>
                     <View style={styles.streakHeader}>
-                        <Text style={styles.sectionTitle}>🔥 Günlük Seri</Text>
-                        <Text style={styles.streakBest}>En uzun: {streak.best} gün</Text>
+                        <Text style={styles.sectionTitle}>🔥 {l('Günlük Seri', 'Daily Streak')}</Text>
+                        <Text style={styles.streakBest}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>
                     </View>
                     <View style={styles.streakBody}>
                         <View style={styles.streakInfo}>
                             <View style={styles.streakRow}>
                                 <Text style={styles.streakNumber}>{streak.current}</Text>
-                                <Text style={styles.streakUnit}>gün üst üste çalıştın</Text>
+                                <Text style={styles.streakUnit}>{l('gün üst üste çalıştınız', 'day study streak')}</Text>
                             </View>
                             <Text style={styles.streakHint}>
                                 {streak.studiedToday
-                                    ? 'Bugünü tamamladın — böyle devam! 💪'
+                                    ? l('Bugünü tamamladınız — böyle devam! 💪', 'You studied today — keep it up! 💪')
                                     : streak.current > 0
-                                        ? 'Bugün henüz çalışmadın; seriyi korumak için birkaç kart çöz.'
-                                        : 'Bugün birkaç kart çözerek yeni bir seri başlat.'}
+                                        ? l('Bugün henüz çalışmadınız; seriyi korumak için birkaç kart yanıtlayın.', 'You have not studied yet today; answer a few cards to keep your streak.')
+                                        : l('Bugün birkaç kart yanıtlayarak yeni bir seri başlatın.', 'Answer a few cards today to start a new streak.')}
                             </Text>
                         </View>
                         <View style={styles.streakStripWrap}>
@@ -235,7 +240,7 @@ export default function StatsScreen() {
                 </View>
 
                 <View style={styles.overviewCard}>
-                    <Text style={styles.sectionTitle}>Genel Durum</Text>
+                    <Text style={styles.sectionTitle}>{l('Genel Durum', 'Card Counts')}</Text>
                     <View style={styles.overviewBar}>
                         {bucketTotals.newCount + bucketTotals.learningCount + bucketTotals.reviewCount > 0 ? (
                             <>
@@ -251,29 +256,29 @@ export default function StatsScreen() {
                     <View style={styles.overviewLegend}>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: colors.badgeNew }]} />
-                            <Text style={styles.legendText}>Yeni: {bucketTotals.newCount}</Text>
+                            <Text style={styles.legendText}>{t('anki.new')}: {bucketTotals.newCount}</Text>
                         </View>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: colors.badgeLearn }]} />
-                            <Text style={styles.legendText}>Öğren: {bucketTotals.learningCount}</Text>
+                            <Text style={styles.legendText}>{t('anki.learn')}: {bucketTotals.learningCount}</Text>
                         </View>
                         <View style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: colors.badgeReview }]} />
-                            <Text style={styles.legendText}>Tekrar: {bucketTotals.reviewCount}</Text>
+                            <Text style={styles.legendText}>{t('anki.review')}: {bucketTotals.reviewCount}</Text>
                         </View>
                     </View>
 
                     <Text style={styles.algorithmInfo}>
-                        📐 Zamanlayıcı: <Text style={{ fontWeight: '700', color: colors.accent }}>{settings.algorithm}</Text>
+                        📐 {l('Zamanlayıcı:', 'Scheduler:')} <Text style={{ fontWeight: '700', color: colors.accent }}>{settings.algorithm}</Text>
                     </Text>
                     <Text style={styles.algorithmInfo}>
-                        Young: {bucketTotals.youngCount} · Mature: {bucketTotals.matureCount}
+                        {l('Genç', 'Young')}: {bucketTotals.youngCount} · {l('Olgun', 'Mature')}: {bucketTotals.matureCount}
                     </Text>
                 </View>
 
                 {(deckStats.length > 0 || !deckScope) && (
                     <Text style={styles.sectionTitle2}>
-                        {deckScope ? 'Alt Deste İlerlemesi' : 'Deste Bazlı İlerleme'}
+                        {deckScope ? l('Alt Deste İlerlemesi', 'Subdeck Progress') : l('Deste Bazlı İlerleme', 'Progress by Deck')}
                     </Text>
                 )}
                 {deckStats.map((deck) => (
@@ -282,7 +287,7 @@ export default function StatsScreen() {
                         style={styles.subjectRow}
                         onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
                         accessibilityRole="button"
-                        accessibilityLabel={`${deck.displayName} destesinin istatistiklerini aç`}
+                        accessibilityLabel={l(`${deck.displayName} destesinin istatistiklerini aç`, `Open statistics for ${deck.displayName}`)}
                     >
                         <View style={styles.subjectHeader}>
                             <Text style={styles.subjectIcon}>🗃️</Text>
@@ -294,28 +299,28 @@ export default function StatsScreen() {
                         </View>
                         <View style={styles.subjectDetail}>
                             <Text style={styles.subjectDetailText}>
-                                {deck.studied}/{deck.total} çalışıldı · Yeni {deck.newCount} · Öğrenme {deck.learningCount} · Tekrar {deck.reviewCount}
+                                {l(`${deck.studied}/${deck.total} çalışıldı`, `${deck.studied}/${deck.total} studied`)} · {t('anki.new')} {deck.newCount} · {t('anki.learn')} {deck.learningCount} · {t('anki.review')} {deck.reviewCount}
                             </Text>
                             <Text style={styles.subjectDetailText}>
-                                Young {deck.youngCount} · Mature {deck.matureCount}
+                                {l('Genç', 'Young')} {deck.youngCount} · {l('Olgun', 'Mature')} {deck.matureCount}
                             </Text>
                         </View>
                     </TouchableOpacity>
                 ))}
                 {!deckScope && deckStats.length === 0 && (
-                    <Text style={styles.scopeHint}>Henüz deste yok — Desteler ekranından bir deste oluştur.</Text>
+                    <Text style={styles.scopeHint}>{l('Henüz deste yok — Desteler ekranından bir deste oluşturun.', 'No decks yet — create one from the Decks screen.')}</Text>
                 )}
 
                 {!deckScope && (<>
-                <Text style={[styles.sectionTitle2, { marginTop: Spacing.xl }]}>Veri Yönetimi (Yedekleme)</Text>
+                <Text style={[styles.sectionTitle2, { marginTop: Spacing.xl }]}>{l('Veri Yönetimi (Yedekleme)', 'Data Management (Backup)')}</Text>
                 <View style={styles.dataCard}>
                     <Text style={styles.dataDesc}>
-                        Verilerinizi JSON olarak dışa aktarabilir veya aynı formatla geri yükleyebilirsiniz.
+                        {l('Verilerinizi JSON olarak dışa aktarabilir veya aynı biçimdeki bir yedekten geri yükleyebilirsiniz.', 'Export your data as JSON or restore it from a backup in the same format.')}
                     </Text>
 
                     <View style={styles.dataButtons}>
                         <TouchableOpacity style={[styles.dataBtn, styles.exportBtn]} onPress={handleExport}>
-                            <Text style={styles.dataBtnText}>📤 Dışa Aktar</Text>
+                            <Text style={styles.dataBtnText}>📤 {l('Dışa Aktar', 'Export')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -323,7 +328,7 @@ export default function StatsScreen() {
                             onPress={() => setShowImport(!showImport)}
                         >
                             <Text style={[styles.dataBtnText, { color: colors.textPrimary }]}>
-                                {showImport ? 'İptal' : '📥 İçe Aktar'}
+                                {showImport ? t('common.cancel') : `📥 ${t('root.import')}`}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -332,14 +337,14 @@ export default function StatsScreen() {
                         <View style={styles.importSection}>
                             <TextInput
                                 style={styles.importInput}
-                                placeholder="JSON verisini buraya yapıştırın..."
+                                placeholder={l('JSON verisini buraya yapıştırın…', 'Paste JSON data here…')}
                                 placeholderTextColor={colors.textMuted}
                                 multiline
                                 value={importData}
                                 onChangeText={setImportData}
                             />
                             <TouchableOpacity style={styles.confirmImportBtn} onPress={handleImport}>
-                                <Text style={styles.confirmImportText}>Verileri Geri Yükle</Text>
+                                <Text style={styles.confirmImportText}>{l('Verileri Geri Yükle', 'Restore Data')}</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -352,10 +357,16 @@ export default function StatsScreen() {
     );
 }
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, isCompact: boolean) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    scrollContent: { padding: Spacing.lg, gap: Spacing.md },
+    scrollContent: {
+        width: '100%',
+        maxWidth: 880,
+        alignSelf: 'center',
+        padding: isCompact ? Spacing.md : Spacing.lg,
+        gap: Spacing.md,
+    },
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
     scopeRow: {
         flexDirection: 'row',
@@ -380,8 +391,8 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.sm,
     },
     sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.md },
-    todayGrid: { flexDirection: 'row', justifyContent: 'space-around' },
-    todayStat: { alignItems: 'center' },
+    todayGrid: { flexDirection: 'row', justifyContent: 'space-around', flexWrap: isCompact ? 'wrap' : 'nowrap' },
+    todayStat: { alignItems: 'center', width: isCompact ? '50%' : undefined, paddingVertical: isCompact ? Spacing.sm : 0 },
     todayNumber: { fontSize: FontSize.xxxl, fontWeight: '700', color: colors.accent },
     todayLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500', marginTop: 2 },
 
@@ -393,18 +404,18 @@ function createStyles(colors: ColorScheme) {
         padding: Spacing.lg,
         ...Shadows.sm,
     },
-    streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+    streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: Spacing.xs },
     streakBest: { fontSize: FontSize.sm, color: colors.textMuted },
     streakBody: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: isCompact ? 'column' : 'row',
+        alignItems: isCompact ? 'stretch' : 'center',
         justifyContent: 'space-between',
-        gap: Spacing.xl,
+        gap: isCompact ? Spacing.lg : Spacing.xl,
         flexWrap: 'wrap',
     },
-    streakInfo: { flexShrink: 1, minWidth: 180 },
-    streakStripWrap: { flexGrow: 1, minWidth: 300 },
-    streakRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
+    streakInfo: { flexShrink: 1, minWidth: isCompact ? 0 : 180 },
+    streakStripWrap: { flexGrow: 1, minWidth: isCompact ? 0 : 300, width: isCompact ? '100%' : undefined },
+    streakRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, flexWrap: 'wrap' },
     streakNumber: { fontSize: 44, fontWeight: '700', color: colors.btnHard },
     streakUnit: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
     streakHint: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
@@ -425,7 +436,7 @@ function createStyles(colors: ColorScheme) {
         marginBottom: Spacing.sm,
     },
     overviewSegment: { height: '100%' },
-    overviewLegend: { flexDirection: 'row', gap: Spacing.lg, marginBottom: Spacing.sm },
+    overviewLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.lg, marginBottom: Spacing.sm },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     legendDot: { width: 8, height: 8, borderRadius: 4 },
     legendText: { fontSize: FontSize.sm, color: colors.textSecondary },
@@ -469,7 +480,7 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.sm,
     },
     dataDesc: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.md },
-    dataButtons: { flexDirection: 'row', gap: Spacing.md },
+    dataButtons: { flexDirection: isCompact ? 'column' : 'row', gap: Spacing.md },
     dataBtn: {
         flex: 1,
         paddingVertical: Spacing.md,

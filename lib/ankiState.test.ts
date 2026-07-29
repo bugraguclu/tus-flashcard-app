@@ -12,9 +12,13 @@ import {
 } from './ankiState';
 
 const settings: AppSettings = {
+    language: 'system',
     themeMode: 'system',
-    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4' },
+    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4', replayAudio: 'r', buryCard: '-', suspendCard: '@', markNote: '*' },
     autoAdvance: false,
+    interruptAudioOnAnswer: true,
+    showRemainingCount: true,
+    showNextReviewTimes: true,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10, 60],

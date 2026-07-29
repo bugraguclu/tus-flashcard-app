@@ -4,14 +4,13 @@
 // the stats charts always agree on which day a review belongs to.
 
 import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, PanResponder, Platform, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, PanResponder, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { useThemeColors, type ColorScheme, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { getStudiedDaysBetween } from '../lib/reviewLogger';
+import { useI18n } from '../hooks/useI18n';
 
 const DAY_MS = 86400000;
-const DAY_LABELS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-const MONTH_LABELS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -31,13 +30,14 @@ function mondayIndex(dayNumber: number): number {
 }
 
 /** "14 – 20 Tem 2026" for one month, "29 Haz – 5 Tem 2026" across months, years spelled out when they differ. */
-function formatWeekRange(monday: number, sunday: number): string {
+function formatWeekRange(monday: number, sunday: number, localeTag: string): string {
     const from = new Date(monday * DAY_MS);
     const to = new Date(sunday * DAY_MS);
     const fromDay = from.getUTCDate();
     const toDay = to.getUTCDate();
-    const fromMonth = MONTH_LABELS[from.getUTCMonth()];
-    const toMonth = MONTH_LABELS[to.getUTCMonth()];
+    const monthFormatter = new Intl.DateTimeFormat(localeTag, { month: 'short', timeZone: 'UTC' });
+    const fromMonth = monthFormatter.format(from);
+    const toMonth = monthFormatter.format(to);
     const fromYear = from.getUTCFullYear();
     const toYear = to.getUTCFullYear();
 
@@ -57,8 +57,12 @@ interface WeekStreakStripProps {
 }
 
 export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStreakStripProps) {
+    const { l, localeTag } = useI18n();
+    const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
+    const { width } = useWindowDimensions();
+    const isCompact = width < 430;
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
 
     // 0 = current week, 1 = one week back, and so on.
     const [weeksBack, setWeeksBack] = useState(0);
@@ -113,21 +117,21 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
                     style={styles.arrowBtn}
                     onPress={() => setWeeksBack((prev) => prev + 1)}
                     accessibilityRole="button"
-                    accessibilityLabel="Önceki hafta"
-                    {...webTitle('Önceki hafta')}
+                    accessibilityLabel={l('Önceki hafta', 'Previous week')}
+                    {...webTitle(l('Önceki hafta', 'Previous week'))}
                 >
                     <Text style={styles.arrowText}>‹</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.rangeText}>{formatWeekRange(monday, sunday)}</Text>
+                <Text style={styles.rangeText}>{formatWeekRange(monday, sunday, localeTag)}</Text>
 
                 <TouchableOpacity
                     style={[styles.arrowBtn, atCurrentWeek && styles.arrowBtnDisabled]}
                     onPress={() => setWeeksBack((prev) => Math.max(0, prev - 1))}
                     disabled={atCurrentWeek}
                     accessibilityRole="button"
-                    accessibilityLabel="Sonraki hafta"
-                    {...webTitle('Sonraki hafta')}
+                    accessibilityLabel={l('Sonraki hafta', 'Next week')}
+                    {...webTitle(l('Sonraki hafta', 'Next week'))}
                 >
                     <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
@@ -139,7 +143,7 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
                     return (
                         <View key={day.ymd} style={styles.dayColumn}>
                             <Text style={[styles.dayLabel, day.isToday && styles.dayLabelToday]}>
-                                {DAY_LABELS[i]}
+                                {dayLabels[i]}
                             </Text>
                             <View
                                 style={[
@@ -150,9 +154,15 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
                                 ]}
                                 {...webTitle(
                                     day.isToday
-                                        ? (studied ? 'Bugün — çalışıldı' : 'Bugün — henüz çalışılmadı')
-                                        : (studied ? `${day.ymd} — çalışıldı` : `${day.ymd} — çalışılmadı`),
+                                        ? (studied ? l('Bugün — çalışıldı', 'Today — studied') : l('Bugün — henüz çalışılmadı', 'Today — not studied yet'))
+                                        : (studied ? l(`${day.ymd} — çalışıldı`, `${day.ymd} — studied`) : l(`${day.ymd} — çalışılmadı`, `${day.ymd} — not studied`)),
                                 )}
+                                accessible
+                                accessibilityLabel={
+                                    day.isToday
+                                        ? (studied ? l('Bugün, çalışıldı', 'Today, studied') : l('Bugün, henüz çalışılmadı', 'Today, not studied yet'))
+                                        : `${dayLabels[i]}, ${day.ymd}, ${studied ? l('çalışıldı', 'studied') : l('çalışılmadı', 'not studied')}`
+                                }
                             >
                                 {studied && <Text style={styles.dayCheck}>✓</Text>}
                             </View>
@@ -164,19 +174,19 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
     );
 }
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, isCompact: boolean) {
     return StyleSheet.create({
-    container: { marginTop: -Spacing.lg },
+    container: { width: '100%' },
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: Spacing.xs,
+        gap: isCompact ? 2 : Spacing.xs,
         marginBottom: Spacing.sm,
     },
     arrowBtn: {
-        width: 26,
-        height: 26,
+        width: 44,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: BorderRadius.sm,
@@ -189,14 +199,17 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '600',
     },
     rangeText: {
-        fontSize: FontSize.lg,
+        flexShrink: 1,
+        textAlign: 'center',
+        fontSize: isCompact ? FontSize.sm : FontSize.lg,
         fontWeight: '700',
         color: colors.textSecondary,
     },
     daysRow: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        gap: Spacing.sm,
+        width: '100%',
+        justifyContent: 'space-between',
+        gap: 0,
     },
     dayColumn: {
         alignItems: 'center',
@@ -210,8 +223,8 @@ function createStyles(colors: ColorScheme) {
     },
     dayLabelToday: { color: colors.streak, fontWeight: '700' },
     dayBox: {
-        width: 34,
-        height: 34,
+        width: isCompact ? 32 : 36,
+        height: isCompact ? 32 : 36,
         borderRadius: BorderRadius.md,
         borderWidth: 1.5,
         borderColor: colors.border,

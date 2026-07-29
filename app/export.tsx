@@ -15,8 +15,10 @@ import { alert } from '../lib/confirm';
 import { downloadTextFileWeb, getLegacyFileSystem } from '../lib/files';
 import { buildExportText, exportFileName, getNoteIdsInDeck } from '../lib/exportNotes';
 import { getAllNotes } from '../lib/noteManager';
+import { useI18n } from '../hooks/useI18n';
 
 export default function ExportScreen() {
+    const { t, l } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
     const colors = useThemeColors();
@@ -49,11 +51,11 @@ export default function ExportScreen() {
             if (await Sharing.isAvailableAsync()) {
                 await Sharing.shareAsync(uri, { mimeType: 'text/plain', dialogTitle: name });
             } else {
-                alert('Bilgi', `Dosya oluşturuldu: ${uri}`);
+                alert(l('Bilgi', 'Info'), l(`Dosya oluşturuldu: ${uri}`, `File created: ${uri}`));
             }
         } catch (e) {
             console.warn('[Export] failed:', e);
-            alert('Hata', 'Dışa aktarma başarısız oldu.');
+            alert(t('common.error'), l('Dışa aktarma başarısız oldu.', 'Export failed.'));
         } finally {
             setBusy(false);
         }
@@ -62,12 +64,12 @@ export default function ExportScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.title}>📤 Dışa Aktar</Text>
+                <Text style={styles.title}>📤 {l('Dışa Aktar', 'Export')}</Text>
                 <Text style={styles.help}>
                     {deckName
-                        ? `"${deckName}" destesindeki (alt desteler dahil) ${noteCount} not, Anki'nin düz metin biçimiyle uyumlu bir .txt dosyasına aktarılır.`
-                        : `Koleksiyonundaki tüm notlar (${noteCount} not), Anki'nin düz metin biçimiyle uyumlu bir .txt dosyasına aktarılır.`}
-                    {' '}Bu dosya, İçe Aktar ekranından geri yüklenebilir.
+                        ? l(`“${deckName}” destesindeki ${noteCount} not (alt desteler dahil), Anki’nin düz metin biçimiyle uyumlu bir .txt dosyasına aktarılır.`, `${noteCount} notes from “${deckName}” (including subdecks) will be exported to an Anki-compatible plain-text .txt file.`)
+                        : l(`Koleksiyonunuzdaki tüm notlar (${noteCount} not), Anki’nin düz metin biçimiyle uyumlu bir .txt dosyasına aktarılır.`, `All notes in your collection (${noteCount} notes) will be exported to an Anki-compatible plain-text .txt file.`)}
+                    {l(' Bu dosya İçe Aktar ekranından geri yüklenebilir.', ' You can restore this file from the Import screen.')}
                 </Text>
 
                 <TouchableOpacity
@@ -76,12 +78,12 @@ export default function ExportScreen() {
                     disabled={busy}
                 >
                     <Text style={styles.exportBtnText}>
-                        {busy ? 'Hazırlanıyor…' : deckName ? '📤 Desteyi Dışa Aktar' : '📤 Tüm Kartları Dışa Aktar'}
+                        {busy ? l('Hazırlanıyor…', 'Preparing…') : deckName ? l('📤 Desteyi Dışa Aktar', '📤 Export Deck') : l('📤 Tüm Kartları Dışa Aktar', '📤 Export All Cards')}
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelText}>Kapat</Text>
+                    <Text style={styles.cancelText}>{t('common.close')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

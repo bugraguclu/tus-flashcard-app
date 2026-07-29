@@ -80,9 +80,13 @@ const deckConfig: DeckConfig = {
 const rolloverHour = (new Date().getHours() + 12) % 24;
 
 const settings: AppSettings = {
+    language: 'system',
     themeMode: 'system',
-    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4' },
+    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4', replayAudio: 'r', buryCard: '-', suspendCard: '@', markNote: '*' },
     autoAdvance: false,
+    interruptAudioOnAnswer: true,
+    showRemainingCount: true,
+    showNextReviewTimes: true,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -315,6 +319,44 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
 
         const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
         expect(queue.cards.map((card) => card.cardId).sort()).toEqual([1010, 1020]);
+    });
+
+    it('keeps an emptied filtered deck empty until it is rebuilt', () => {
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', filteredDeckEmpty: true,
+        });
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards).toHaveLength(0);
+        expect(queue.stats).toEqual({ newCount: 0, learningCount: 0, reviewCount: 0 });
+    });
+
+    it('does not re-gather cards completed in the current filtered build', () => {
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', filteredBuildAt: Date.now(), filteredDoneCardIds: [1010],
+        });
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId)).not.toContain(1010);
+    });
+
+    it('counts a filtered learning card but waits for its step timer before serving it', () => {
+        const dueMs = Date.now() + 10 * 60_000;
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001 }));
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python::Modüller & Hata Ayıklama"', filteredBuildAt: Date.now(),
+        });
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1020]);
+        expect(queue.stats.learningCount).toBe(1);
+        expect(queue.nextLearningDue).toBe(dueMs);
     });
 });
 

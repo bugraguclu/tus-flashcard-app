@@ -11,11 +11,13 @@ import {
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from './(tabs)/app-context';
+import { useApp } from '../contexts/AppContext';
 import { findEmptyCards, deleteAnkiCardOnly, type EmptyCardEntry } from '../lib/noteManager';
 import { dbDeleteFtsCard } from '../lib/db';
+import { useI18n } from '../hooks/useI18n';
 
 export default function EmptyCardsScreen() {
+    const { t, l } = useI18n();
     const router = useRouter();
     const { bumpDataVersion, dataVersion } = useApp();
     const colors = useThemeColors();
@@ -40,15 +42,15 @@ export default function EmptyCardsScreen() {
             setEntries((prev) => (prev ? prev.filter((e) => e.cardId !== cardId) : prev));
         } catch (e) {
             console.warn('[EmptyCards] delete failed:', e);
-            alert('Hata', 'Kart silinemedi.');
+            alert(t('common.error'), l('Kart silinemedi.', 'Could not delete the card.'));
         }
     };
 
     const deleteAll = () => {
         if (!entries || entries.length === 0) return;
         confirm(
-            'Boş Kartları Sil',
-            `${entries.length} boş kart kalıcı olarak silinecek. Notların kendisi ve geçerli diğer kartları etkilenmeyecek.`,
+            l('Boş Kartları Sil', 'Delete Empty Cards'),
+            l(`${entries.length} boş kart kalıcı olarak silinecek. Notların kendisi ve diğer geçerli kartları etkilenmeyecek.`, `${entries.length} empty cards will be permanently deleted. Their notes and other valid cards will not be affected.`),
             () => {
                 setBusy(true);
                 try {
@@ -60,7 +62,7 @@ export default function EmptyCardsScreen() {
                     setEntries([]);
                 } catch (e) {
                     console.warn('[EmptyCards] bulk delete failed:', e);
-                    alert('Hata', 'Kartlar silinemedi.');
+                    alert(t('common.error'), l('Kartlar silinemedi.', 'Could not delete the cards.'));
                 } finally {
                     setBusy(false);
                 }
@@ -73,20 +75,18 @@ export default function EmptyCardsScreen() {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    Şablonu artık mevcut olmayan, alanı boşalmış ya da metinden kaldırılmış bir kapama
-                    numarasına ait kartlar burada listelenir. Bunlar notun kendisini değil, yalnızca
-                    o tek geçersiz kartı temsil eder.
+                    {l('Şablonu artık bulunmayan, alanı boş olan veya metinden kaldırılmış bir kapama numarasına ait kartlar burada listelenir. Bunlar notun kendisini değil, yalnızca geçersiz kartı temsil eder.', 'Cards whose template no longer exists, whose field is empty, or whose cloze number was removed from the text appear here. These represent only the invalid card, not the note itself.')}
                 </Text>
 
                 {entries === null ? (
                     <View style={styles.loadingBox}>
                         <ActivityIndicator color={colors.accent} />
-                        <Text style={styles.help}>Taranıyor…</Text>
+                        <Text style={styles.help}>{l('Taranıyor…', 'Scanning…')}</Text>
                     </View>
                 ) : entries.length === 0 ? (
                     <View style={styles.emptyBox}>
                         <Text style={styles.emptyIcon}>✅</Text>
-                        <Text style={styles.emptyText}>Boş kart bulunamadı.</Text>
+                        <Text style={styles.emptyText}>{l('Boş kart bulunamadı.', 'No empty cards found.')}</Text>
                     </View>
                 ) : (
                     <>
@@ -95,14 +95,14 @@ export default function EmptyCardsScreen() {
                             onPress={deleteAll}
                             disabled={busy}
                         >
-                            <Text style={styles.deleteAllText}>🗑️ Tümünü Sil ({entries.length})</Text>
+                            <Text style={styles.deleteAllText}>🗑️ {l('Tümünü Sil', 'Delete All')} ({entries.length})</Text>
                         </TouchableOpacity>
 
                         {entries.map((entry) => (
                             <View key={entry.cardId} style={styles.row}>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.rowQuestion} numberOfLines={2}>
-                                        {entry.question || '(boş)'}
+                                        {entry.question || l('(boş)', '(empty)')}
                                     </Text>
                                     <Text style={styles.rowReason}>{entry.reason}</Text>
                                 </View>
@@ -110,7 +110,7 @@ export default function EmptyCardsScreen() {
                                     style={styles.rowDeleteBtn}
                                     onPress={() => deleteOne(entry.cardId)}
                                     accessibilityRole="button"
-                                    accessibilityLabel="Bu kartı sil"
+                                    accessibilityLabel={l('Bu kartı sil', 'Delete this card')}
                                 >
                                     <Text style={styles.rowDeleteText}>✕</Text>
                                 </TouchableOpacity>
@@ -120,7 +120,7 @@ export default function EmptyCardsScreen() {
                 )}
 
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelText}>Kapat</Text>
+                    <Text style={styles.cancelText}>{t('common.close')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

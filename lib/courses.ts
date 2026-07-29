@@ -7,6 +7,7 @@ import { createDeck, getDeck } from './deckManager';
 import {
     getAllSubjects,
     getSubjectIdSet,
+    getSubjectsForDeck,
     invalidateSubjectsCache,
     registerUserSubject,
     slugifySubjectId,
@@ -23,17 +24,28 @@ function rootDeckName(): string {
     return getDeck(1)?.name ?? 'Python';
 }
 
+export interface CreateCourseOptions {
+    /** Deck the course belongs to; its own deck is created as a child of this one.
+     *  Courses are deck-specific — omitting it falls back to the legacy root deck. */
+    parentDeckName?: string;
+    icon?: string;
+}
+
 /**
- * Create a user course: unique slug id, its own deck under the root deck, and a
+ * Create a user course: unique slug id, its own deck under the parent deck, and a
  * persisted subject record so it shows up in navigation, editor and stats.
  */
-export function createCourse(rawName: string, icon: string = '📘'): CreateCourseResult {
+export function createCourse(rawName: string, options: CreateCourseOptions = {}): CreateCourseResult {
     const name = rawName.trim();
+    const icon = options.icon || '📘';
     if (!name) {
         return { subject: { id: '', name: '', icon, topics: [] }, created: false, error: 'Ders adı boş olamaz.' };
     }
 
-    const existingByName = getAllSubjects().find(
+    const parentDeckName = options.parentDeckName?.trim() || rootDeckName();
+
+    // Same course name is fine in another deck; only a sibling within this deck collides.
+    const existingByName = getSubjectsForDeck(parentDeckName).find(
         (subject) => subject.name.toLocaleLowerCase('tr') === name.toLocaleLowerCase('tr'),
     );
     if (existingByName) {
@@ -47,12 +59,12 @@ export function createCourse(rawName: string, icon: string = '📘'): CreateCour
         id = `${base}-${i}`;
     }
 
-    const deck = createDeck(`${rootDeckName()}::${name}`);
-    registerUserSubject({ id, name, icon: icon || '📘', deckId: deck.id });
+    const deck = createDeck(`${parentDeckName}::${name}`);
+    registerUserSubject({ id, name, icon, deckId: deck.id });
     invalidateSubjectsCache();
 
     const subject = getAllSubjects().find((entry) => entry.id === id)
-        ?? { id, name, icon: icon || '📘', topics: [] };
+        ?? { id, name, icon, topics: [] };
 
     return { subject, created: true };
 }

@@ -83,6 +83,37 @@ describe('templates', () => {
         expect(html.toLowerCase()).not.toContain('javascript:');
         expect(html.toLowerCase()).not.toContain('data:image/svg+xml');
     });
+
+    it('blocks encoded, malformed and template-level active content', () => {
+        const basic = structuredClone(BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!) as NoteType;
+        basic.templates[0].qfmt = `<script<script>>alert(1)</script>{{${basic.fields[0].name}}}<math><maction actiontype="statusline">x</maction></math>`;
+        basic.css = '@import url(https://evil.example/x.css); .card{background:url(javascript:alert(1))}';
+        const note: Note = {
+            id: 2,
+            guid: 'encoded',
+            noteTypeId: basic.id,
+            mod: 0,
+            usn: -1,
+            tags: [],
+            fields: [
+                '<img src="x" o&#110;error="alert(1)"><a href="java&#x73;cript&colon;alert(1)">safe label</a>',
+                'back',
+            ],
+            sfld: 'safe label',
+            csum: 0,
+            flags: 0,
+        };
+
+        const html = renderCardHtml(basic, note, 0, 'question').toLowerCase();
+
+        expect(html).toContain('safe label');
+        expect(html).not.toContain('<script');
+        expect(html).not.toContain('<math');
+        expect(html).not.toContain('onerror');
+        expect(html).not.toContain('javascript:');
+        expect(html).not.toContain('@import');
+        expect(html).not.toContain('evil.example');
+    });
 });
 
 describe('typed-answer (type:Field)', () => {

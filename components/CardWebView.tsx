@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Linking, Platform, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { NoteType, Note, AnkiCard, Deck } from '../lib/models';
 import { renderCardHtml } from '../lib/templates';
@@ -16,16 +16,19 @@ interface CardWebViewProps {
     typedAnswer?: string;
     /** Bump to (re)play the side's audio/video attachments in order (deck audio settings / R key). */
     playAudioSignal?: number;
+    /** Bump to pause every audio/video attachment on this side. */
+    pauseAudioSignal?: number;
     /** Render the answer without {{FrontSide}} — for stacked layouts that keep the question
      *  visible in its own panel above. */
     omitFrontSide?: boolean;
 }
 
-export default function CardWebView({ noteType, note, card, deck, side, typedAnswer, playAudioSignal, omitFrontSide }: CardWebViewProps) {
+export default function CardWebView({ noteType, note, card, deck, side, typedAnswer, playAudioSignal, pauseAudioSignal, omitFrontSide }: CardWebViewProps) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
     const webViewRef = useRef<WebView | null>(null);
+    const mediaBaseUrl = getMediaBaseUrl();
     const html = renderCardHtml(noteType, note, card.ord, side, {
         deckName: deck?.name,
         clozeOrd: card.ord + 1,
@@ -85,6 +88,25 @@ export default function CardWebView({ noteType, note, card, deck, side, typedAns
         );
     }, [playAudioSignal]);
 
+    useEffect(() => {
+        if (!pauseAudioSignal) return;
+
+        if (Platform.OS === 'web') {
+            const doc = iframeRef.current?.contentDocument;
+            if (!doc) return;
+            for (const element of Array.from(doc.querySelectorAll('audio, video')) as HTMLMediaElement[]) {
+                element.onended = null;
+                element.pause();
+            }
+            return;
+        }
+
+        webViewRef.current?.injectJavaScript(
+            '(function(){var l=document.querySelectorAll("audio,video");' +
+            'for(var i=0;i<l.length;i++){l[i].onended=null;l[i].pause();}})();true;',
+        );
+    }, [pauseAudioSignal]);
+
     if (Platform.OS === 'web') {
         const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;background:${colors.bgCard};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;}</style></head><body>${webHtml}</body></html>`;
         return (
@@ -107,15 +129,31 @@ export default function CardWebView({ noteType, note, card, deck, side, typedAns
     // respond. Enable it only for cards that actually embed playable media — the card
     // sanitizer has already stripped scripts and inline event handlers from note HTML.
     const hasPlayableMedia = /<(?:audio|video)\b/i.test(html);
+    const shouldStartNavigation = useCallback((request: { url: string; isTopFrame?: boolean }) => {
+        const url = request.url;
+        if (url === 'about:blank' || url.startsWith(mediaBaseUrl)) return true;
+
+        // Card links are never allowed to replace the review WebView. A deliberate tap on
+        // an http(s) link opens the system browser; every other scheme stays blocked.
+        if (/^https?:\/\//i.test(url)) {
+            Linking.openURL(url).catch(() => undefined);
+        }
+        return false;
+    }, [mediaBaseUrl]);
 
     return (
         <WebView
             ref={webViewRef}
             originWhitelist={['*']}
-            source={{ html, baseUrl: getMediaBaseUrl() }}
+            source={{ html, baseUrl: mediaBaseUrl }}
             style={styles.webView}
             javaScriptEnabled={hasPlayableMedia}
             domStorageEnabled={false}
+            mixedContentMode="never"
+            setSupportMultipleWindows={false}
+            javaScriptCanOpenWindowsAutomatically={false}
+            allowUniversalAccessFromFileURLs={false}
+            onShouldStartLoadWithRequest={shouldStartNavigation}
             automaticallyAdjustContentInsets
             // Audio attached to a card should play inline, not hijack iOS fullscreen.
             allowsInlineMediaPlayback

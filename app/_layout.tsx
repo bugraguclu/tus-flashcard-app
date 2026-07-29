@@ -5,7 +5,17 @@ import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native
 import { Colors, FontSize, ThemeColorsProvider, useThemeColors } from '../constants/theme';
 import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
-import { AppProvider, useApp } from './(tabs)/app-context';
+import { AppProvider, useApp } from '../contexts/AppContext';
+import { useI18n, useSystemI18n } from '../hooks/useI18n';
+
+// Expo's default web template pins html/body/#root to 100% height; without it every
+// ScrollView/FlatList on web computes a 0px viewport — content still paints (overflow)
+// but nothing can scroll, so long lists appear cut off at the first screenful.
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.textContent = 'html, body, #root { height: 100%; } body { overflow: hidden; }';
+    document.head.appendChild(style);
+}
 
 class AppErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -25,21 +35,28 @@ class AppErrorBoundary extends React.Component<
     render() {
         if (this.state.hasError) {
             return (
-                <View style={errorStyles.container}>
-                    <Text style={errorStyles.icon}>⚠️</Text>
-                    <Text style={errorStyles.title}>Bir hata oluştu</Text>
-                    <Text style={errorStyles.message}>{this.state.error}</Text>
-                    <TouchableOpacity
-                        style={errorStyles.button}
-                        onPress={() => this.setState({ hasError: false, error: '' })}
-                    >
-                        <Text style={errorStyles.buttonText}>Tekrar Dene</Text>
-                    </TouchableOpacity>
-                </View>
+                <LocalizedErrorFallback
+                    message={this.state.error}
+                    onRetry={() => this.setState({ hasError: false, error: '' })}
+                />
             );
         }
         return this.props.children;
     }
+}
+
+function LocalizedErrorFallback({ message, onRetry }: { message: string; onRetry: () => void }) {
+    const { t } = useSystemI18n();
+    return (
+        <View style={errorStyles.container}>
+            <Text style={errorStyles.icon}>⚠️</Text>
+            <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
+            <Text style={errorStyles.message}>{message}</Text>
+            <TouchableOpacity style={errorStyles.button} onPress={onRetry}>
+                <Text style={errorStyles.buttonText}>{t('common.retry')}</Text>
+            </TouchableOpacity>
+        </View>
+    );
 }
 
 const errorStyles = StyleSheet.create({
@@ -66,6 +83,7 @@ const errorStyles = StyleSheet.create({
 
 /** Ensures the web SQLite (sql.js) database is ready before any screen renders. */
 function WebDbGate({ children }: { children: React.ReactNode }) {
+    const { t } = useSystemI18n();
     const [ready, setReady] = useState(Platform.OS !== 'web');
     const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +103,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>⚠️</Text>
-                <Text style={errorStyles.title}>Veritabanı başlatılamadı</Text>
+                <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
                 <Text style={errorStyles.message}>{error}</Text>
                 <TouchableOpacity
                     style={errorStyles.button}
@@ -97,7 +115,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
                             .catch((e2) => setError(e2 instanceof Error ? e2.message : String(e2)));
                     }}
                 >
-                    <Text style={errorStyles.buttonText}>Tekrar Dene</Text>
+                    <Text style={errorStyles.buttonText}>{t('common.retry')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -107,7 +125,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>🧠</Text>
-                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>Yükleniyor...</Text>
+                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
             </View>
         );
     }
@@ -117,7 +135,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
             {Platform.OS === 'web' && !isPrimaryTab() && (
                 <View style={errorStyles.secondaryBar}>
                     <Text style={errorStyles.secondaryBarText}>
-                        ⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.
+                        {t('root.secondaryTab')}
                     </Text>
                 </View>
             )}
@@ -135,6 +153,7 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
 /** Renders the navigator + DialogHost; lives inside ThemeGate so it can read live theme colors. */
 function AppStack() {
     const colors = useThemeColors();
+    const { t } = useI18n();
 
     return (
         <>
@@ -151,7 +170,7 @@ function AppStack() {
                     options={{
                         presentation: 'modal',
                         headerShown: true,
-                        title: 'Kart Düzenle',
+                        title: t('root.editCard'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}
@@ -161,7 +180,7 @@ function AppStack() {
                     options={{
                         presentation: 'modal',
                         headerShown: true,
-                        title: 'Kart Bilgisi',
+                        title: t('root.cardInfo'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}
@@ -171,7 +190,7 @@ function AppStack() {
                     options={{
                         presentation: 'modal',
                         headerShown: true,
-                        title: 'İçe Aktar',
+                        title: t('root.import'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}
@@ -181,7 +200,7 @@ function AppStack() {
                     options={{
                         presentation: 'modal',
                         headerShown: true,
-                        title: 'Yedekler',
+                        title: t('root.backups'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}
@@ -191,7 +210,7 @@ function AppStack() {
                     options={{
                         presentation: 'modal',
                         headerShown: true,
-                        title: 'Not Türleri',
+                        title: t('root.noteTypes'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}
@@ -200,7 +219,7 @@ function AppStack() {
                     name="note-type"
                     options={{
                         headerShown: true,
-                        title: 'Not Türü Düzenle',
+                        title: t('root.editNoteType'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}

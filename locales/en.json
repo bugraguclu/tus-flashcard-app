@@ -1,0 +1,11 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "TusAnkiM",
+    "NSPhotoLibraryUsageDescription": "TusAnkiM needs access to your photo library so you can add images to cards.",
+    "NSCameraUsageDescription": "TusAnkiM needs camera access so you can take photos while creating cards.",
+    "NSMicrophoneUsageDescription": "TusAnkiM needs microphone access so you can add audio recordings to cards."
+  },
+  "android": {
+    "app_name": "TusAnkiM"
+  }
+}

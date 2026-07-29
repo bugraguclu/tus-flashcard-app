@@ -82,6 +82,9 @@ export interface SchedulerEngine {
 /** 'system' follows the OS light/dark setting; 'light'/'dark' pin it. */
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+/** UI language preference. `system` follows the device locale at runtime. */
+export type AppLanguage = 'system' | 'tr' | 'en';
+
 /**
  * Single-character (or named, e.g. "Space") key bindings for the study screen, web only.
  * showAnswer reveals the card; again/hard/good/easy submit that grade once the answer is shown.
@@ -92,13 +95,28 @@ export interface KeyBindings {
     hard: string;
     good: string;
     easy: string;
+    /** Replay the shown side's audio (Anki: R). */
+    replayAudio: string;
+    /** Bury the current card (Anki: -). */
+    buryCard: string;
+    /** Suspend the current card (Anki: @). */
+    suspendCard: string;
+    /** Toggle the note's mark (Anki: *). */
+    markNote: string;
 }
 
 export interface AppSettings {
+    language: AppLanguage;
     themeMode: ThemeMode;
     keyBindings: KeyBindings;
     /** Auto-reveal the answer a few seconds after a card appears, if the user hasn't already. */
     autoAdvance: boolean;
+    /** Anki Preferences: stop the playing audio when the answer is shown or graded. */
+    interruptAudioOnAnswer: boolean;
+    /** Anki Preferences: show the remaining new/learning/review counts while studying. */
+    showRemainingCount: boolean;
+    /** Anki Preferences: show the next review time above each answer button. */
+    showNextReviewTimes: boolean;
     dailyNewLimit: number;
     dailyReviewLimit: number;
     /** Minutes between learning steps for new cards. */
@@ -168,6 +186,8 @@ export interface StudyCard {
     topic: string;
     question: string;
     answer: string;
+    /** The note carries Anki's reserved "marked" tag (browser star / filters). */
+    noteMarked: boolean;
     state: CardState;
     rawCard?: AnkiCard;
 }

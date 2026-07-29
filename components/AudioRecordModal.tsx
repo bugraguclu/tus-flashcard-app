@@ -11,6 +11,7 @@ import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorSch
 import { alert } from '../lib/confirm';
 import { saveMediaBytes } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
+import { useI18n } from '../hooks/useI18n';
 
 interface AudioRecordModalProps {
     visible: boolean;
@@ -27,6 +28,7 @@ function formatDuration(ms: number): string {
 }
 
 export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRecordModalProps) {
+    const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -37,7 +39,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
         try {
             const perm = await requestRecordingPermissionsAsync();
             if (!perm.granted) {
-                alert('İzin gerekli', 'Ses kaydetmek için mikrofon izni vermeniz gerekiyor.');
+                alert(l('İzin Gerekli', 'Permission Required'), l('Ses kaydetmek için mikrofon izni vermeniz gerekiyor.', 'Allow microphone access to record audio.'));
                 return;
             }
             await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -45,7 +47,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
             recorder.record();
         } catch (e) {
             console.warn('[AudioRecordModal] start failed:', e);
-            alert('Hata', 'Kayıt başlatılamadı.');
+            alert(t('common.error'), l('Kayıt başlatılamadı.', 'Could not start recording.'));
         }
     };
 
@@ -83,7 +85,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
             onClose();
         } catch (e) {
             console.warn('[AudioRecordModal] save failed:', e);
-            alert('Hata', 'Ses kaydı kaydedilemedi.');
+            alert(t('common.error'), l('Ses kaydı kaydedilemedi.', 'Could not save the audio recording.'));
         } finally {
             setSaving(false);
         }
@@ -102,10 +104,10 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
         <Modal visible={visible} transparent animationType="fade" onRequestClose={discardAndClose}>
             <View style={styles.overlay}>
                 <View style={styles.card}>
-                    <Text style={styles.title}>🎙️ Ses Kaydet</Text>
+                    <Text style={styles.title}>🎙️ {l('Ses Kaydet', 'Record Audio')}</Text>
                     <Text style={styles.duration}>{formatDuration(state.durationMillis)}</Text>
                     <Text style={styles.status}>
-                        {state.isRecording ? 'Kaydediliyor…' : saving ? 'Kaydediliyor (dosya)…' : 'Başlamak için mikrofona basın'}
+                        {state.isRecording ? l('Kayıt sürüyor…', 'Recording…') : saving ? l('Dosya kaydediliyor…', 'Saving recording…') : l('Başlamak için mikrofona dokunun', 'Tap the microphone to start')}
                     </Text>
 
                     <TouchableOpacity
@@ -113,13 +115,13 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                         onPress={state.isRecording ? stopAndSave : startRecording}
                         disabled={saving}
                         accessibilityRole="button"
-                        accessibilityLabel={state.isRecording ? 'Kaydı durdur ve kaydet' : 'Kaydı başlat'}
+                        accessibilityLabel={state.isRecording ? l('Kaydı durdur ve kaydet', 'Stop and save recording') : l('Kaydı başlat', 'Start recording')}
                     >
                         <Text style={styles.recordBtnText}>{state.isRecording ? '⏹️' : '🎙️'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.cancelBtn} onPress={discardAndClose} disabled={saving}>
-                        <Text style={styles.cancelText}>Vazgeç</Text>
+                        <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

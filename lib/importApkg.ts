@@ -244,7 +244,7 @@ async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
 async function defaultOpenReader(bytes: Uint8Array): Promise<ApkgReader> {
     const { Platform } = require('react-native') as typeof import('react-native');
     if (Platform.OS !== 'web') {
-        throw new Error('.apkg içe aktarma şu an yalnızca web sürümünde destekleniyor.');
+        throw new Error('Bu cihazda .apkg içe aktarma kullanılamıyor.');
     }
     const { openSqlJsReader } = require('./webDb') as typeof import('./webDb');
     return openSqlJsReader(bytes);

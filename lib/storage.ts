@@ -45,12 +45,20 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
     hard: '2',
     good: '3',
     easy: '4',
+    replayAudio: 'r',
+    buryCard: '-',
+    suspendCard: '@',
+    markNote: '*',
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
+    language: 'system',
     themeMode: 'system',
     keyBindings: DEFAULT_KEY_BINDINGS,
     autoAdvance: false,
+    interruptAudioOnAnswer: true,
+    showRemainingCount: true,
+    showNextReviewTimes: true,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -336,6 +344,10 @@ function normalizeThemeMode(value: unknown): ThemeMode {
     return value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
 }
 
+function normalizeLanguage(value: unknown): AppSettings['language'] {
+    return value === 'tr' || value === 'en' || value === 'system' ? value : 'system';
+}
+
 /** A key binding is a single printable char, or a named key like "Space"/"Enter". */
 function normalizeKeyBindings(value: unknown): KeyBindings {
     const raw = (value && typeof value === 'object' ? value : {}) as Partial<KeyBindings>;
@@ -351,6 +363,10 @@ function normalizeKeyBindings(value: unknown): KeyBindings {
         hard: clean(raw.hard, DEFAULT_KEY_BINDINGS.hard),
         good: clean(raw.good, DEFAULT_KEY_BINDINGS.good),
         easy: clean(raw.easy, DEFAULT_KEY_BINDINGS.easy),
+        replayAudio: clean(raw.replayAudio, DEFAULT_KEY_BINDINGS.replayAudio),
+        buryCard: clean(raw.buryCard, DEFAULT_KEY_BINDINGS.buryCard),
+        suspendCard: clean(raw.suspendCard, DEFAULT_KEY_BINDINGS.suspendCard),
+        markNote: clean(raw.markNote, DEFAULT_KEY_BINDINGS.markNote),
     };
 
     // Reject configs with duplicate keys (ambiguous bindings) — fall back to defaults entirely.
@@ -370,9 +386,15 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
         const parsed = JSON.parse(raw) as Partial<AppSettings>;
 
         return {
+            language: normalizeLanguage(parsed.language),
             themeMode: normalizeThemeMode(parsed.themeMode),
             keyBindings: normalizeKeyBindings(parsed.keyBindings),
             autoAdvance: Boolean(parsed.autoAdvance),
+            // Default-on prefs (Anki parity): only an explicit false turns them off, so
+            // settings blobs written before these fields existed keep the default.
+            interruptAudioOnAnswer: parsed.interruptAudioOnAnswer !== false,
+            showRemainingCount: parsed.showRemainingCount !== false,
+            showNextReviewTimes: parsed.showNextReviewTimes !== false,
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
@@ -386,9 +408,13 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
 
 function persistAppSettingsMeta(settings: AppSettings): void {
     const meta = {
+        language: settings.language,
         themeMode: settings.themeMode,
         keyBindings: settings.keyBindings,
         autoAdvance: settings.autoAdvance,
+        interruptAudioOnAnswer: settings.interruptAudioOnAnswer,
+        showRemainingCount: settings.showRemainingCount,
+        showNextReviewTimes: settings.showNextReviewTimes,
         queueOrder: settings.queueOrder,
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
@@ -405,9 +431,13 @@ export function loadSettings(): AppSettings {
 
     return {
         ...fromDeck,
+        language: meta.language ?? fromDeck.language,
         themeMode: meta.themeMode ?? fromDeck.themeMode,
         keyBindings: meta.keyBindings ?? fromDeck.keyBindings,
         autoAdvance: meta.autoAdvance ?? fromDeck.autoAdvance,
+        interruptAudioOnAnswer: meta.interruptAudioOnAnswer ?? fromDeck.interruptAudioOnAnswer,
+        showRemainingCount: meta.showRemainingCount ?? fromDeck.showRemainingCount,
+        showNextReviewTimes: meta.showNextReviewTimes ?? fromDeck.showNextReviewTimes,
         queueOrder: meta.queueOrder ?? fromDeck.queueOrder,
         dayRolloverHour: meta.dayRolloverHour ?? fromDeck.dayRolloverHour,
         learnAheadMinutes: meta.learnAheadMinutes ?? fromDeck.learnAheadMinutes,
@@ -510,6 +540,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
     validated.algorithm = 'ANKI_V3';
+    validated.language = normalizeLanguage(validated.language);
     validated.themeMode = normalizeThemeMode(validated.themeMode);
     validated.keyBindings = normalizeKeyBindings(validated.keyBindings);
     validated.autoAdvance = Boolean(validated.autoAdvance);

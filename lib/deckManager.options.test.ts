@@ -33,6 +33,13 @@ import {
     assignDeckConfig,
     applyConfigToSubdecks,
     getDecksUsingConfig,
+    emptyFilteredDeck,
+    rebuildFilteredDeck,
+    updateFilteredDeck,
+    buildDeckTree,
+    setDeckCollapsed,
+    completeFilteredCard,
+    restoreFilteredCard,
 } from './deckManager';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
@@ -118,6 +125,32 @@ describe('setDeckLimits', () => {
     });
 });
 
+describe('deck tree counts', () => {
+    it('caps an aggregated parent row by the parent daily limits', () => {
+        const parent = createDeck('TUS');
+        const child = createDeck('TUS::Dahiliye');
+        const tree = buildDeckTree([parent, child], new Map([
+            [parent.id, { new: 0, learn: 0, review: 0, total: 0 }],
+            [child.id, { new: 70, learn: 3, review: 500, total: 573 }],
+        ]), rolloverHour);
+
+        expect(tree[0]).toMatchObject({
+            newCount: DEFAULT_DECK_CONFIG.newPerDay,
+            learnCount: 3,
+            reviewCount: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+            totalCards: 573,
+        });
+    });
+
+    it('persists the disclosure state used by the mobile deck tree', () => {
+        const deck = createDeck('TUS');
+        setDeckCollapsed(deck.id, true);
+        expect(getDeckByName('TUS')?.collapsed).toBe(true);
+        setDeckCollapsed(deck.id, false);
+        expect(getDeckByName('TUS')?.collapsed).toBe(false);
+    });
+});
+
 describe('today-only limit boost', () => {
     it('adds on top of the persistent limits for today only', () => {
         const deck = createDeck('Boostlu');
@@ -191,13 +224,13 @@ describe('presets', () => {
 });
 
 describe('createOrReplaceCustomStudySession', () => {
-    it('creates a filtered subdeck named after the deck', () => {
+    it('creates Anki\'s single conventional custom-study deck', () => {
         const deck = createDeck('Python::Temeller');
 
         const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50);
 
         expect(session).not.toBeNull();
-        expect(session!.name).toBe('Python::Temeller::Özel Çalışma Oturumu (Temeller)');
+        expect(session!.name).toBe('Özel Çalışma Oturumu');
         expect(session!.isFiltered).toBe(true);
         expect(session!.searchQuery).toBe('deck:"Python::Temeller"');
     });
@@ -218,5 +251,48 @@ describe('createOrReplaceCustomStudySession', () => {
         const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
 
         expect(createOrReplaceCustomStudySession(session.id, 'deck:x', 10)).toBeNull();
+    });
+
+    it('supports Anki-style empty and rebuild without deleting the filtered deck', () => {
+        const deck = createDeck('Python');
+        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+
+        expect(emptyFilteredDeck(session.id)).toBe(true);
+        expect(getDeckByName(session.name)?.filteredDeckEmpty).toBe(true);
+
+        expect(rebuildFilteredDeck(session.id)).toBe(true);
+        expect(getDeckByName(session.name)?.filteredDeckEmpty).toBe(false);
+    });
+
+    it('saving filter options rebuilds an emptied session', () => {
+        const deck = createDeck('Python');
+        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        emptyFilteredDeck(session.id);
+
+        updateFilteredDeck(session.id, {
+            searchQuery: 'deck:"Python" tag:"zor"',
+            searchLimit: 25,
+            searchOrder: 1,
+            reschedule: false,
+        });
+
+        expect(getDeckByName(session.name)).toMatchObject({
+            searchLimit: 25,
+            searchOrder: 1,
+            reschedule: false,
+            filteredDeckEmpty: false,
+        });
+    });
+
+    it('retires a completed card from the current build and restores it on undo', () => {
+        const deck = createDeck('Python');
+        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+
+        expect(completeFilteredCard(session.id, 123)).toBe(true);
+        expect(completeFilteredCard(session.id, 123)).toBe(false);
+        expect(getDeckByName(session.name)?.filteredDoneCardIds).toEqual([123]);
+
+        expect(restoreFilteredCard(session.id, 123)).toBe(true);
+        expect(getDeckByName(session.name)?.filteredDoneCardIds).toEqual([]);
     });
 });

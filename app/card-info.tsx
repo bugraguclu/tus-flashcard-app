@@ -14,6 +14,9 @@ import type { CardFlag } from '../lib/models';
 import { getAnkiCard, getNote, getNoteType } from '../lib/noteManager';
 import { getDeck } from '../lib/deckManager';
 import { getReviewsForCard } from '../lib/reviewLogger';
+import { useI18n } from '../hooks/useI18n';
+import { localizeNoteTypeName } from '../lib/i18n';
+import LeechExplainer from '../components/LeechExplainer';
 
 function parseCardId(raw: string | string[] | undefined): number {
     const value = Array.isArray(raw) ? raw[0] : raw;
@@ -22,6 +25,7 @@ function parseCardId(raw: string | string[] | undefined): number {
 }
 
 export default function CardInfoScreen() {
+    const { t, l, locale, localeTag } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
     const colors = useThemeColors();
@@ -56,13 +60,13 @@ export default function CardInfoScreen() {
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()}>
-                        <Text style={styles.backBtn}>← Geri</Text>
+                        <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
                     </TouchableOpacity>
-                    <Text style={styles.title}>Kart Bilgisi</Text>
+                    <Text style={styles.title}>{t('root.cardInfo')}</Text>
                     <View style={{ width: 60 }} />
                 </View>
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>Kart bulunamadı.</Text>
+                    <Text style={styles.emptyTitle}>{l('Kart bulunamadı.', 'Card not found.')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -70,88 +74,90 @@ export default function CardInfoScreen() {
 
     const { card, note, noteType, deck, reviews, createdAt, modifiedAt } = payload;
 
-    const typeLabel = card.type === 0 ? 'New' : card.type === 1 ? 'Learning' : card.type === 2 ? 'Review' : 'Relearning';
+    const typeLabel = card.type === 0 ? t('anki.new') : card.type === 1 ? t('anki.learn') : card.type === 2 ? t('anki.review') : t('anki.relearn');
     const queueLabel = card.queue === -1
-        ? 'Suspended'
+        ? l('Askıda', 'Suspended')
         : card.queue === -2
-            ? 'Buried (User)'
+            ? l('Kullanıcı tarafından gömüldü', 'Buried manually')
             : card.queue === -3
-                ? 'Buried (Scheduler)'
+                ? l('Zamanlayıcı tarafından gömüldü', 'Buried by scheduler')
                 : card.queue === 0
-                    ? 'New'
+                    ? t('anki.new')
                     : card.queue === 1 || card.queue === 3
-                        ? 'Learning'
-                        : 'Review';
+                        ? t('anki.learn')
+                        : t('anki.review');
 
     const formatIvl = (ivl: number) => {
         // Negative intervals are (re)learning steps stored in seconds.
         if (ivl < 0) {
             const sec = Math.abs(ivl);
-            return sec < 60 ? `${sec}sn` : `${Math.round(sec / 60)}dk`;
+            return sec < 60 ? l(`${sec} sn.`, `${sec}s`) : l(`${Math.round(sec / 60)} dk.`, `${Math.round(sec / 60)}m`);
         }
-        if (ivl < 30) return `${ivl} gün`;
-        if (ivl < 365) return `${(ivl / 30).toFixed(1)} ay`;
-        return `${(ivl / 365).toFixed(1)} yıl`;
+        if (ivl < 30) return l(`${ivl} gün`, `${ivl} days`);
+        if (ivl < 365) return l(`${(ivl / 30).toFixed(1)} ay`, `${(ivl / 30).toFixed(1)} months`);
+        return l(`${(ivl / 365).toFixed(1)} yıl`, `${(ivl / 365).toFixed(1)} years`);
     };
 
     const formatTime = (ms: number) => {
         const sec = Math.round(ms / 1000);
-        if (sec < 60) return `${sec}sn`;
-        return `${Math.floor(sec / 60)}dk ${sec % 60}sn`;
+        if (sec < 60) return l(`${sec} sn.`, `${sec}s`);
+        return l(`${Math.floor(sec / 60)} dk. ${sec % 60} sn.`, `${Math.floor(sec / 60)}m ${sec % 60}s`);
     };
 
     const easeLabel = (ease: number) => {
         switch (ease) {
-            case 1: return { text: 'Tekrar', color: colors.btnAgain };
-            case 2: return { text: 'Zor', color: colors.btnHard };
-            case 3: return { text: 'İyi', color: colors.btnGood };
-            case 4: return { text: 'Kolay', color: colors.btnEasy };
+            case 1: return { text: t('anki.again'), color: colors.btnAgain };
+            case 2: return { text: t('anki.hard'), color: colors.btnHard };
+            case 3: return { text: t('anki.good'), color: colors.btnGood };
+            case 4: return { text: t('anki.easy'), color: colors.btnEasy };
             default: return { text: String(ease), color: colors.textMuted };
         }
     };
 
     const reviewTypeLabel = (type: number) => {
-        if (type === 0) return 'Learning';
-        if (type === 1) return 'Review';
-        if (type === 2) return 'Relearn';
-        if (type === 3) return 'Filtered';
-        return 'Manual';
+        if (type === 0) return t('anki.learn');
+        if (type === 1) return t('anki.review');
+        if (type === 2) return t('anki.relearn');
+        if (type === 3) return l('Filtrelenmiş', 'Filtered');
+        return l('El ile', 'Manual');
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Text style={styles.backBtn}>← Geri</Text>
+                    <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.title}>Kart Bilgisi</Text>
+                <Text style={styles.title}>{t('root.cardInfo')}</Text>
                 <View style={{ width: 60 }} />
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
+
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Genel Bilgi</Text>
-                    <InfoRow label="Card ID" value={`#${card.id}`} />
-                    <InfoRow label="Note ID" value={`#${card.noteId}`} />
-                    <InfoRow label="Deck" value={deck?.name || '-'} />
-                    <InfoRow label="Note Type" value={noteType?.name || '-'} />
-                    <InfoRow label="Oluşturulma" value={createdAt} />
-                    <InfoRow label="Değiştirilme" value={modifiedAt} />
+                    <Text style={styles.sectionTitle}>{l('Genel Bilgi', 'General Information')}</Text>
+                    <InfoRow label="Kart ID" value={`#${card.id}`} />
+                    <InfoRow label="Not ID" value={`#${card.noteId}`} />
+                    <InfoRow label={t('common.deck')} value={deck?.name || '-'} />
+                    <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '-'} />
+                    <InfoRow label={l('Oluşturulma', 'Created')} value={createdAt} />
+                    <InfoRow label={l('Değiştirilme', 'Modified')} value={modifiedAt} />
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Etiketler</Text>
+                    <Text style={styles.sectionTitle}>{l('Etiketler', 'Tags')}</Text>
                     <View style={styles.tagsRow}>
                         {(note?.tags || []).map((tag) => (
                             <View key={tag} style={styles.tag}>
-                                <Text style={styles.tagText}>{tag}</Text>
+                                <Text style={styles.tagText}>{tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag}</Text>
                             </View>
                         ))}
                     </View>
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Bayrak</Text>
+                    <Text style={styles.sectionTitle}>{l('Bayrak', 'Flag')}</Text>
                     <View style={styles.flagsRow}>
                         {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
                             <View
@@ -174,37 +180,37 @@ export default function CardInfoScreen() {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Scheduling</Text>
-                    <InfoRow label="Type" value={typeLabel} />
-                    <InfoRow label="Queue" value={queueLabel} />
-                    <InfoRow label="Due" value={String(card.due)} />
-                    <InfoRow label="Interval" value={formatIvl(card.ivl)} />
-                    <InfoRow label="Ease" value={`${(card.factor / 10).toFixed(0)}%`} />
-                    <InfoRow label="Reps" value={String(card.reps)} />
-                    <InfoRow label="Lapses" value={String(card.lapses)} highlight={card.lapses > 0} />
+                    <Text style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
+                    <InfoRow label={l('Kart durumu', 'Card state')} value={typeLabel} />
+                    <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
+                    <InfoRow label={l('Vade', 'Due')} value={String(card.due)} />
+                    <InfoRow label={l('Aralık', 'Interval')} value={formatIvl(card.ivl)} />
+                    <InfoRow label={l('Kolaylık', 'Ease')} value={`${(card.factor / 10).toFixed(0)}%`} />
+                    <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
+                    <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Model Fields</Text>
-                    <InfoRow label="Last Review" value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
+                    <Text style={styles.sectionTitle}>{l('Teknik Bilgi', 'Technical Information')}</Text>
+                    <InfoRow label={l('Son çalışma', 'Last review')} value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Review Log ({reviews.length})</Text>
+                    <Text style={styles.sectionTitle}>{l('Çalışma Geçmişi', 'Review History')} ({reviews.length})</Text>
 
                     <View style={styles.tableHeader}>
-                        <Text style={[styles.th, { flex: 2 }]}>Tarih</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>Cevap</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>Aralık</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>Ease</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>Süre</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>Tip</Text>
+                        <Text style={[styles.th, { flex: 2 }]}>{l('Tarih', 'Date')}</Text>
+                        <Text style={[styles.th, { flex: 1 }]}>{l('Yanıt', 'Answer')}</Text>
+                        <Text style={[styles.th, { flex: 1 }]}>{l('Aralık', 'Interval')}</Text>
+                        <Text style={[styles.th, { flex: 1 }]}>{l('Kolaylık', 'Ease')}</Text>
+                        <Text style={[styles.th, { flex: 1 }]}>{l('Süre', 'Time')}</Text>
+                        <Text style={[styles.th, { flex: 1 }]}>{l('Tür', 'Type')}</Text>
                     </View>
 
                     {reviews.map((rev, index) => {
                         const ease = easeLabel(rev.ease);
                         const date = new Date(rev.id);
-                        const dateStr = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+                        const dateStr = date.toLocaleDateString(localeTag);
                         return (
                             <View key={rev.id} style={[styles.tableRow, index % 2 === 0 && styles.tableRowEven]}>
                                 <Text style={[styles.td, { flex: 2 }]}>{dateStr}</Text>

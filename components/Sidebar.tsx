@@ -8,8 +8,9 @@ import {
     Linking,
     Platform,
 } from 'react-native';
-import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../../constants/theme';
-import type { Subject } from '../../lib/types';
+import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import type { Subject } from '../lib/types';
+import { useI18n } from '../hooks/useI18n';
 
 export const SIDEBAR_WIDTH = 260;
 
@@ -39,6 +40,7 @@ function webTitle(text: string): Record<string, string> {
 }
 
 export function Sidebar(props: SidebarProps) {
+    const { t } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {
@@ -62,10 +64,16 @@ export function Sidebar(props: SidebarProps) {
 
     return (
         <View style={[styles.sidebar, !isWide && !sidebarOpen && styles.sidebarHidden]}>
-            <View style={styles.sidebarHeader}>
+            <TouchableOpacity
+                style={styles.sidebarHeader}
+                onPress={() => navigate('/decks')}
+                accessibilityRole="button"
+                accessibilityLabel={t('tabs.backToDecks')}
+                {...webTitle(t('tabs.backToDecks'))}
+            >
                 <Text style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
-                <Text style={styles.sidebarSubtitle}>Spaced Repetition</Text>
-            </View>
+                <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
+            </TouchableOpacity>
 
             <ScrollView style={styles.subjectList} showsVerticalScrollIndicator={false}>
                 <TouchableOpacity
@@ -74,7 +82,7 @@ export function Sidebar(props: SidebarProps) {
                 >
                     <Text style={styles.subjectIcon}>📚</Text>
                     <Text style={[styles.subjectName, !selectedSubject && !selectedTopic && styles.subjectNameActive]}>
-                        Tüm Dersler
+                        {t('sidebar.allCourses')}
                     </Text>
                     <View style={[styles.subjectCount, !selectedSubject && !selectedTopic && styles.subjectCountActive]}>
                         <Text style={[styles.subjectCountText, !selectedSubject && !selectedTopic && styles.subjectCountTextActive]}>
@@ -93,7 +101,7 @@ export function Sidebar(props: SidebarProps) {
                                 <TouchableOpacity
                                     style={styles.subjectItem}
                                     onPress={() => onSubjectPress(subject.id)}
-                                    {...webTitle(`${subject.name} dersini calis`)}
+                                    {...webTitle(`${subject.name} — ${t('common.study')}`)}
                                 >
                                     <Text style={styles.subjectIcon}>{subject.icon}</Text>
                                     <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
@@ -109,8 +117,8 @@ export function Sidebar(props: SidebarProps) {
                                     style={styles.expandBtn}
                                     onPress={() => onToggleExpand(subject.id)}
                                     accessibilityRole="button"
-                                    accessibilityLabel={isExpanded ? 'Alt başlıkları gizle' : 'Alt başlıkları göster'}
-                                    {...webTitle(isExpanded ? 'Alt basliklari gizle' : 'Alt basliklari goster')}
+                                    accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                                    {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
                                 >
                                     <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
                                         {isExpanded ? '▾' : '▸'}
@@ -146,35 +154,35 @@ export function Sidebar(props: SidebarProps) {
                     <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => navigate(selectedSubject ? `/editor?subject=${encodeURIComponent(selectedSubject)}` : '/editor')}
-                        {...webTitle('Yeni kart ekle')}
+                        {...webTitle(t('sidebar.addCard'))}
                     >
                         <Text style={styles.actionIcon}>+</Text>
-                        <Text style={styles.actionText}>Kart Ekle</Text>
+                        <Text style={styles.actionText}>{t('sidebar.addCard')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle('Kartlarim: tum kartlari gor ve duzenle')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
                         <Text style={styles.actionIcon}>🗂️</Text>
-                        <Text style={styles.actionText}>Kartlarım</Text>
+                        <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle('Istatistikleri goruntule')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
                         <Text style={styles.actionIcon}>📊</Text>
-                        <Text style={styles.actionText}>İstatistik</Text>
+                        <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle('Desteler: Anki tarzi deste listesi')}>
-                    <Text style={styles.settingsBtnText}>🗃️ Desteler</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
+                    <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle('CSV/TSV dosyasi ice aktar')}>
-                    <Text style={styles.settingsBtnText}>📥 İçe Aktar</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle(t('root.import'))}>
+                    <Text style={styles.settingsBtnText}>📥 {t('sidebar.import')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle('Not turlerini duzenle')}>
-                    <Text style={styles.settingsBtnText}>🧩 Not Türleri</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle(t('root.noteTypes'))}>
+                    <Text style={styles.settingsBtnText}>🧩 {t('sidebar.noteTypes')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle('Uygulama ayarlari')}>
-                    <Text style={styles.settingsBtnText}>⚙️ Ayarlar</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
+                    <Text style={styles.settingsBtnText}>⚙️ {t('tabs.settings')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity

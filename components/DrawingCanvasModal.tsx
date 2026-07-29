@@ -10,6 +10,7 @@ import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorSch
 import { alert } from '../lib/confirm';
 import { saveMediaBytes } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
+import { useI18n } from '../hooks/useI18n';
 
 interface DrawingCanvasModalProps {
     visible: boolean;
@@ -100,6 +101,7 @@ async function readUriBytes(uri: string): Promise<Uint8Array> {
 }
 
 export default function DrawingCanvasModal({ visible, onClose, onSaved }: DrawingCanvasModalProps) {
+    const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const canvasRef = useRef<View>(null);
@@ -172,7 +174,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
 
     const handleSave = async () => {
         if (strokes.length === 0) {
-            alert('Uyarı', 'Kaydetmeden önce bir şeyler çizin.');
+            alert(l('Uyarı', 'Nothing to Save'), l('Kaydetmeden önce bir şeyler çizin.', 'Draw something before saving.'));
             return;
         }
         setSaving(true);
@@ -190,7 +192,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
             closeAndReset();
         } catch (e) {
             console.warn('[DrawingCanvasModal] save failed:', e);
-            alert('Hata', 'Çizim kaydedilemedi.');
+            alert(t('common.error'), l('Çizim kaydedilemedi.', 'Could not save the drawing.'));
         } finally {
             setSaving(false);
         }
@@ -200,7 +202,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
         <Modal visible={visible} transparent animationType="fade" onRequestClose={closeAndReset}>
             <View style={styles.overlay}>
                 <View style={styles.card}>
-                    <Text style={styles.title}>✏️ Çizim</Text>
+                    <Text style={styles.title}>✏️ {l('Çizim', 'Drawing')}</Text>
 
                     <View
                         ref={canvasRef}
@@ -241,14 +243,14 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
                                 style={[styles.swatch, { backgroundColor: c }, color === c && styles.swatchActive]}
                                 onPress={() => setColor(c)}
                                 accessibilityRole="button"
-                                accessibilityLabel={`Renk ${c}`}
+                                accessibilityLabel={l(`Renk ${c}`, `Color ${c}`)}
                             />
                         ))}
                         <TouchableOpacity
                             style={[styles.eraserBtn, color === ERASER && styles.swatchActive]}
                             onPress={() => setColor(ERASER)}
                             accessibilityRole="button"
-                            accessibilityLabel="Silgi"
+                            accessibilityLabel={l('Silgi', 'Eraser')}
                         >
                             <Text style={styles.eraserText}>🧽</Text>
                         </TouchableOpacity>
@@ -261,7 +263,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
                                 style={[styles.widthBtn, strokeWidth === option.width && styles.widthBtnActive]}
                                 onPress={() => setStrokeWidth(option.width)}
                                 accessibilityRole="button"
-                                accessibilityLabel={`Kalınlık: ${option.label}`}
+                                accessibilityLabel={l(`Kalınlık: ${option.label}`, `Width: ${option.width === 2.5 ? 'Thin' : option.width === 5 ? 'Medium' : 'Thick'}`)}
                                 {...(Platform.OS === 'web' ? { title: option.label } : {})}
                             >
                                 <View
@@ -280,19 +282,19 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
 
                     <View style={styles.actionRow}>
                         <TouchableOpacity style={styles.smallBtn} onPress={undo} disabled={strokes.length === 0}>
-                            <Text style={styles.smallBtnText}>↩️ Geri Al</Text>
+                            <Text style={styles.smallBtnText}>↩️ {l('Geri Al', 'Undo')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.smallBtn} onPress={reset} disabled={strokes.length === 0}>
-                            <Text style={styles.smallBtnText}>🗑️ Temizle</Text>
+                            <Text style={styles.smallBtnText}>🗑️ {l('Temizle', 'Clear')}</Text>
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.footerRow}>
                         <TouchableOpacity style={styles.cancelBtn} onPress={closeAndReset} disabled={saving}>
-                            <Text style={styles.cancelText}>Vazgeç</Text>
+                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                            <Text style={styles.saveBtnText}>{saving ? 'Kaydediliyor…' : '💾 Kaydet'}</Text>
+                            <Text style={styles.saveBtnText}>{saving ? l('Kaydediliyor…', 'Saving…') : `💾 ${t('common.save')}`}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
