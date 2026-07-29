@@ -3,6 +3,13 @@ import { getScheduler, formatMinutes, formatDays } from './scheduler';
 import type { AppSettings, CardState, Grade } from './types';
 
 const defaultSettings: AppSettings = {
+    language: 'system',
+    themeMode: 'system',
+    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4', replayAudio: 'r', buryCard: '-', suspendCard: '@', markNote: '*' },
+    autoAdvance: false,
+    interruptAudioOnAnswer: true,
+    showRemainingCount: true,
+    showNextReviewTimes: true,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -14,6 +21,10 @@ const defaultSettings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'after',
     newCardOrder: 'sequential',
+    newCardGatherOrder: 'topic',
+    reviewSortOrder: 'dueRandom',
+    autoPlayAudio: true,
+    easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,

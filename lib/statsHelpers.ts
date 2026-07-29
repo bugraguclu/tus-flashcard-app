@@ -1,3 +1,4 @@
+import { getDB } from './db';
 import type { AnkiCard } from './models';
 
 // Anki's young/mature cutoff: a review card is "mature" once its interval reaches
@@ -69,11 +70,8 @@ export function perSubjectStatsSql(subjectIds: string[]): Map<string, SubjectBuc
     }
 
     try {
-        const { getDB } = require('./db') as typeof import('./db');
         const db = getDB();
 
-        // A note's first tag is its subject id (e.g. "pediatri Neonatoloji"); cards whose
-        // first tag isn't a requested subject are ignored.
         const rows = db.getAllSync<{ tags: string; queue: number; mature: number; cnt: number }>(
             `SELECT n.tags AS tags, c.queue AS queue, ${matureBand('c.queue', 'c.ivl')} AS mature, COUNT(*) AS cnt
              FROM anki_cards c
@@ -81,12 +79,16 @@ export function perSubjectStatsSql(subjectIds: string[]): Map<string, SubjectBuc
              GROUP BY n.tags, c.queue, ${matureBand('c.queue', 'c.ivl')}`,
         );
 
+        // Tags are serialized Anki-style with surrounding spaces (" subject topic "), so the
+        // subject is found by scanning the split tag list — never by position: a leading space
+        // makes index 0 empty, and extra tags (e.g. "leech") can join later.
         const subjectSet = new Set(subjectIds);
         for (const row of rows) {
-            const firstTag = (row.tags || '').split(' ')[0];
-            if (!subjectSet.has(firstTag)) continue;
+            const tags = (row.tags || '').trim().split(/\s+/);
+            const subjectTag = tags.find((tag) => subjectSet.has(tag));
+            if (!subjectTag) continue;
 
-            const bucket = result.get(firstTag)!;
+            const bucket = result.get(subjectTag)!;
             bucket.total += row.cnt;
             for (const key of bucketKeys(row.queue, row.mature === 1)) bucket[key] += row.cnt;
         }
@@ -97,22 +99,65 @@ export function perSubjectStatsSql(subjectIds: string[]): Map<string, SubjectBuc
     return result;
 }
 
-/** Collection-wide card-state counts, computed in SQL. */
-export function aggregateBucketsSql(): CardBuckets {
+const escapeLikePattern = (s: string) => s.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+
+/**
+ * Card-state counts computed in SQL. With no argument the whole collection; with a deck
+ * name only that deck's subtree ("Parent::Child" naming, same matching as the scheduler).
+ */
+export function aggregateBucketsSql(deckName?: string): CardBuckets {
     const result: CardBuckets = { ...DEFAULT_BUCKETS };
     try {
-        const { getDB } = require('./db') as typeof import('./db');
         const db = getDB();
+
+        const deckFilter = deckName
+            ? `JOIN decks d ON d.id = c.deckId AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`
+            : '';
+        const params = deckName ? [deckName, `${escapeLikePattern(deckName)}::%`] : [];
+
         const rows = db.getAllSync<{ queue: number; mature: number; cnt: number }>(
-            `SELECT queue, ${matureBand('queue', 'ivl')} AS mature, COUNT(*) AS cnt
-             FROM anki_cards
-             GROUP BY queue, ${matureBand('queue', 'ivl')}`,
+            `SELECT c.queue AS queue, ${matureBand('c.queue', 'c.ivl')} AS mature, COUNT(*) AS cnt
+             FROM anki_cards c ${deckFilter}
+             GROUP BY c.queue, ${matureBand('c.queue', 'c.ivl')}`,
+            ...params,
         );
         for (const row of rows) {
             for (const key of bucketKeys(row.queue, row.mature === 1)) result[key] += row.cnt;
         }
     } catch (e) {
         console.warn('[StatsHelpers] aggregateBucketsSql failed:', e);
+    }
+    return result;
+}
+
+export interface DeckBuckets extends CardBuckets {
+    total: number;
+}
+
+/**
+ * Card-state counts grouped by owning deck id, computed in SQL. Callers fold rows into
+ * subtree totals themselves — deck hierarchy lives in the "Parent::Child" names, not here.
+ */
+export function perDeckBucketsSql(): Map<number, DeckBuckets> {
+    const result = new Map<number, DeckBuckets>();
+    try {
+        const db = getDB();
+        const rows = db.getAllSync<{ deckId: number; queue: number; mature: number; cnt: number }>(
+            `SELECT deckId, queue, ${matureBand('queue', 'ivl')} AS mature, COUNT(*) AS cnt
+             FROM anki_cards
+             GROUP BY deckId, queue, ${matureBand('queue', 'ivl')}`,
+        );
+        for (const row of rows) {
+            let bucket = result.get(row.deckId);
+            if (!bucket) {
+                bucket = { total: 0, ...DEFAULT_BUCKETS };
+                result.set(row.deckId, bucket);
+            }
+            bucket.total += row.cnt;
+            for (const key of bucketKeys(row.queue, row.mature === 1)) bucket[key] += row.cnt;
+        }
+    } catch (e) {
+        console.warn('[StatsHelpers] perDeckBucketsSql failed:', e);
     }
     return result;
 }

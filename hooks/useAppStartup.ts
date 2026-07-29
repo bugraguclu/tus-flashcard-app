@@ -7,13 +7,14 @@ import {
     saveCustomCards,
     clearLegacyCardStates,
     migrateLegacySettingsIfNeeded,
-} from '../../lib/storage';
-import { initDB, dbIndexAllCards, getDB } from '../../lib/db';
-import { runDailyMaintenance } from '../../lib/maintenance';
-import { runAutoBackupIfDue } from '../../lib/backup';
-import { initAnkiData } from '../../lib/ankiInit';
-import { getSearchIndexCards } from '../../lib/noteManager';
-import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../../lib/legacyMigration';
+} from '../lib/storage';
+import { initDB, dbIndexAllCards, getDB } from '../lib/db';
+import { createDeck, getDeckByName } from '../lib/deckManager';
+import { runDailyMaintenance } from '../lib/maintenance';
+import { runAutoBackupIfDue } from '../lib/backup';
+import { initAnkiData, ensureBuiltinNoteTypesSeeded } from '../lib/ankiInit';
+import { getSearchIndexCards } from '../lib/noteManager';
+import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../lib/legacyMigration';
 
 let startupPromise: Promise<void> | null = null;
 
@@ -25,6 +26,14 @@ async function runStartupCore(): Promise<void> {
     const ankiResult = initAnkiData();
     if (ankiResult.initialized) {
         console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
+    }
+    // Runs every launch (unlike initAnkiData, which only seeds once) so a new built-in note
+    // type introduced in an app update reaches installs that already exist.
+    ensureBuiltinNoteTypesSeeded();
+
+    // Anki always keeps a Default deck around (it comes back even after deletion).
+    if (!getDeckByName('Varsayılan')) {
+        createDeck('Varsayılan');
     }
 
     const settingsMigration = await migrateLegacySettingsIfNeeded();

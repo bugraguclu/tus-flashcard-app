@@ -78,7 +78,7 @@ describe('importAnkiReader', () => {
     };
 
     it('routes standard and cloze notes to their note types and reports media', () => {
-        const res = importAnkiReader(reader as any, { subject: 'anatomi', topic: 'Anki' });
+        const res = importAnkiReader(reader as any, { subject: 'temeller', topic: 'Anki' });
         expect(res.totalNotes).toBe(3);
         expect(res.added).toBe(3); // 2 standard + 1 cloze
         expect(res.clozeImported).toBe(1);
@@ -91,8 +91,8 @@ describe('importAnkiReader', () => {
             ['<img src="x.png">', 'A', ''],
         ]);
         expect(cloze.rows).toEqual([['{{c1::Beyin}}', 'not']]);
-        expect(std.options.deckId).toBe(2); // subjectToDeckId('anatomi')
-        expect(std.options.tags).toEqual(['anatomi', 'Anki']);
+        expect(std.options.deckId).toBe(2); // subjectToDeckId('temeller')
+        expect(std.options.tags).toEqual(['temeller', 'Anki']);
         // Anki note guids are forwarded so importRows can dedupe by identity, not first field.
         expect(std.options.rowGuids).toEqual(['s1', 's2']);
         expect(cloze.options.rowGuids).toEqual(['c1']);

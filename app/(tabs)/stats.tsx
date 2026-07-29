@@ -7,121 +7,160 @@ import {
     SafeAreaView,
     TouchableOpacity,
     TextInput,
+    useWindowDimensions,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Colors, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
-import { TUS_SUBJECTS } from '../../lib/data';
-import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSessionStats, loadSettings } from '../../lib/storage';
-import { aggregateBucketsSql, perSubjectStatsSql } from '../../lib/statsHelpers';
-import { getTodayStudyTimeMs } from '../../lib/reviewLogger';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
+import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSettings } from '../../lib/storage';
+import { aggregateBucketsSql, perDeckBucketsSql } from '../../lib/statsHelpers';
+import { getAllDecks } from '../../lib/deckManager';
+import { getDeckDisplayName } from '../../lib/models';
+import {
+    getStudyStreak,
+    getTodayAnswerStats,
+    type StudyStreak,
+    type TodayAnswerStats,
+} from '../../lib/reviewLogger';
 import { confirm, alert } from '../../lib/confirm';
-import { todayLocalYMD } from '../../lib/scheduler';
-import type { AppSettings, SessionStats } from '../../lib/types';
+import type { AppSettings } from '../../lib/types';
 import { useApp } from './_layout';
+import WeekStreakStrip from '../../components/WeekStreakStrip';
+import { useI18n } from '../../hooks/useI18n';
+
+const EMPTY_TODAY: TodayAnswerStats = {
+    reviewed: 0,
+    passed: 0,
+    failed: 0,
+    newCardsIntroduced: 0,
+    studyTimeMs: 0,
+};
 
 export default function StatsScreen() {
+    const { t, l, localeTag } = useI18n();
+    const { width } = useWindowDimensions();
+    const isCompact = width < 600;
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
+    const router = useRouter();
+    const params = useLocalSearchParams();
     const { dataVersion, bumpDataVersion, refreshData } = useApp();
-    const [sessionStats, setSessionStats] = useState<SessionStats>({
-        reviewed: 0,
-        correct: 0,
-        wrong: 0,
-        startTime: Date.now(),
-        newCardsToday: 0,
-        date: todayLocalYMD(),
-    });
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [importData, setImportData] = useState('');
     const [showImport, setShowImport] = useState(false);
 
+    // Anki-style scoping: /stats shows the whole collection, /stats?deck=X only that
+    // deck's subtree. The deck list and sidebar pick the scope for the user.
+    const deckScope = typeof params.deck === 'string' && params.deck.length > 0 ? params.deck : null;
+
     useEffect(() => {
-        let cancelled = false;
-
-        async function load() {
-            const stats = await loadSessionStats();
-            const appSettings = loadSettings();
-
-            if (cancelled) return;
-
-            setSessionStats(stats);
-            setSettings(appSettings);
-            setLoading(false);
-        }
-
-        load();
-
-        return () => {
-            cancelled = true;
-        };
+        setSettings(loadSettings());
+        setLoading(false);
     }, [dataVersion]);
 
-    const bucketTotals = useMemo(() => aggregateBucketsSql(), [dataVersion]);
-
-    const subjectStats = useMemo(() => {
-        const subjectIds = TUS_SUBJECTS.map((s) => s.id);
-        const perSubject = perSubjectStatsSql(subjectIds);
-
-        return TUS_SUBJECTS.map((subject) => {
-            const bucket = perSubject.get(subject.id);
-            const total = bucket?.total ?? 0;
-            const newCount = bucket?.newCount ?? 0;
-            const studied = total - newCount;
-            const pct = total > 0 ? Math.round((studied / total) * 100) : 0;
-
-            return {
-                ...subject,
-                total,
-                studied,
-                newCount,
-                learningCount: bucket?.learningCount ?? 0,
-                reviewCount: bucket?.reviewCount ?? 0,
-                youngCount: bucket?.youngCount ?? 0,
-                matureCount: bucket?.matureCount ?? 0,
-                dueCount: 0, // Due count requires date comparison; omitted for now
-                pct,
-            };
-        });
-    }, [dataVersion]);
-
-    const accuracy = sessionStats.reviewed > 0
-        ? Math.round((sessionStats.correct / sessionStats.reviewed) * 100)
-        : 0;
-    const studyMinutes = useMemo(() => {
+    // All "today" numbers come from the review log — the durable source that survives
+    // restarts, OS sleep and day rollovers (unlike the old cached session blob).
+    const todayStats = useMemo(() => {
         try {
-            return Math.round(getTodayStudyTimeMs(settings.dayRolloverHour) / 60000);
+            return getTodayAnswerStats(settings.dayRolloverHour, deckScope ?? undefined);
         } catch (e) {
-            console.warn('[Stats] studyMinutes calculation failed:', e);
-            return 0;
+            console.warn('[Stats] getTodayAnswerStats failed:', e);
+            return EMPTY_TODAY;
         }
-    }, [sessionStats.reviewed, settings.dayRolloverHour]);
+    }, [dataVersion, settings.dayRolloverHour, deckScope]);
+
+    const streak = useMemo<StudyStreak>(() => {
+        try {
+            return getStudyStreak(settings.dayRolloverHour);
+        } catch (e) {
+            console.warn('[Stats] getStudyStreak failed:', e);
+            return { current: 0, studiedToday: false, best: 0 };
+        }
+    }, [dataVersion, settings.dayRolloverHour]);
+
+    const bucketTotals = useMemo(() => aggregateBucketsSql(deckScope ?? undefined), [dataVersion, deckScope]);
+
+    // Per-deck progress, aggregated over each deck's subtree ("Parent::Child" naming).
+    // Collection view lists the top-level decks; deck view lists the scope's direct
+    // subdecks. Filtered decks own no cards (they gather live), so they are skipped.
+    const deckStats = useMemo(() => {
+        try {
+            const decks = getAllDecks().filter((deck) => !deck.isFiltered);
+            const perDeck = perDeckBucketsSql();
+
+            const listed = deckScope
+                ? decks.filter((deck) => deck.name.startsWith(`${deckScope}::`)
+                    && !deck.name.slice(deckScope.length + 2).includes('::'))
+                : decks.filter((deck) => !deck.name.includes('::'));
+
+            return listed
+                .map((root) => {
+                    const totals = {
+                        total: 0, newCount: 0, learningCount: 0,
+                        reviewCount: 0, youngCount: 0, matureCount: 0,
+                    };
+                    for (const deck of decks) {
+                        if (deck.name !== root.name && !deck.name.startsWith(`${root.name}::`)) continue;
+                        const bucket = perDeck.get(deck.id);
+                        if (!bucket) continue;
+                        totals.total += bucket.total;
+                        totals.newCount += bucket.newCount;
+                        totals.learningCount += bucket.learningCount;
+                        totals.reviewCount += bucket.reviewCount;
+                        totals.youngCount += bucket.youngCount;
+                        totals.matureCount += bucket.matureCount;
+                    }
+
+                    const studied = totals.total - totals.newCount;
+                    const pct = totals.total > 0 ? Math.round((studied / totals.total) * 100) : 0;
+                    return {
+                        name: root.name,
+                        displayName: getDeckDisplayName(root.name),
+                        ...totals,
+                        studied,
+                        pct,
+                    };
+                })
+                .sort((a, b) => a.name.localeCompare(b.name, localeTag));
+        } catch (e) {
+            console.warn('[Stats] deck stats failed:', e);
+            return [];
+        }
+    }, [dataVersion, deckScope, localeTag]);
+
+    const accuracy = todayStats.reviewed > 0
+        ? Math.round((todayStats.passed / todayStats.reviewed) * 100)
+        : 0;
+    const studyMinutes = Math.round(todayStats.studyTimeMs / 60000);
 
     const handleExport = async () => {
         try {
             const data = await exportAllData();
             await Clipboard.setStringAsync(data);
-            alert('Başarılı', 'Yedek verisi panoya kopyalandı.');
+            alert(t('common.completed'), l('Yedek verisi panoya kopyalandı.', 'Backup data was copied to the clipboard.'));
         } catch (e) {
             console.warn('[Stats] export failed:', e);
-            alert('Hata', 'Dışa aktarma başarısız oldu.');
+            alert(t('common.error'), l('Veriler dışa aktarılamadı.', 'Could not export the data.'));
         }
     };
 
     const handleImport = async () => {
         if (!importData.trim()) {
-            alert('Hata', 'Lütfen içe aktarılacak JSON verisini yapıştırın.');
+            alert(t('common.error'), l('Lütfen içe aktarılacak JSON verisini yapıştırın.', 'Paste the JSON data you want to import.'));
             return;
         }
 
-        confirm('Uyarı', 'Bu işlem mevcut tüm verilerin üzerine yazacaktır. Emin misiniz?', async () => {
+        confirm(l('Uyarı', 'Warning'), l('Bu işlem mevcut tüm verilerin üzerine yazacak. Devam etmek istiyor musunuz?', 'This will overwrite all existing data. Do you want to continue?'), async () => {
             const success = await importAllData(importData);
             if (success) {
                 refreshData();
                 bumpDataVersion();
-                alert('Başarılı', 'Veriler içe aktarıldı. Görünüm güncellendi.');
+                alert(t('common.completed'), l('Veriler içe aktarıldı.', 'Data imported successfully.'));
                 setImportData('');
                 setShowImport(false);
             } else {
-                alert('Hata', 'Geçersiz veri formatı.');
+                alert(t('common.error'), l('Geçersiz veri biçimi.', 'Invalid data format.'));
             }
         }, { destructive: true });
     };
@@ -131,7 +170,7 @@ export default function StatsScreen() {
             <SafeAreaView style={styles.container}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: 48 }}>📊</Text>
-                    <Text style={{ color: Colors.textMuted }}>Yükleniyor...</Text>
+                    <Text style={{ color: colors.textMuted }}>{t('common.loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -140,101 +179,156 @@ export default function StatsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.title}>📊 İstatistikler</Text>
+                <Text style={styles.title}>📊 {t('common.statistics')}</Text>
+
+                {deckScope ? (
+                    <View style={styles.scopeRow}>
+                        <Text style={styles.scopeText} numberOfLines={1}>🗃️ {deckScope}</Text>
+                        <TouchableOpacity onPress={() => router.replace('/stats' as any)}>
+                            <Text style={styles.scopeLink}>{l('Tüm koleksiyon', 'Whole Collection')} ›</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <Text style={styles.scopeHint}>{l('Tüm koleksiyon — bir desteye özel istatistikleri görmek için aşağıdan deste seçin.', 'Whole collection — select a deck below to view deck-specific statistics.')}</Text>
+                )}
 
                 <View style={styles.todayCard}>
-                    <Text style={styles.sectionTitle}>Bugünün Özeti</Text>
+                    <Text style={styles.sectionTitle}>{l('Bugünün Özeti', 'Today')}</Text>
                     <View style={styles.todayGrid}>
                         <View style={styles.todayStat}>
-                            <Text style={styles.todayNumber}>{sessionStats.reviewed}</Text>
-                            <Text style={styles.todayLabel}>Tekrar</Text>
+                            <Text style={styles.todayNumber}>{todayStats.reviewed}</Text>
+                            <Text style={styles.todayLabel}>{l('Yanıtlanan', 'Reviews')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={[styles.todayNumber, { color: Colors.btnGood }]}>{accuracy}%</Text>
-                            <Text style={styles.todayLabel}>Doğruluk</Text>
+                            <Text style={[styles.todayNumber, { color: colors.btnGood }]}>{accuracy}%</Text>
+                            <Text style={styles.todayLabel}>{l('Doğruluk', 'Accuracy')}</Text>
                         </View>
                         <View style={styles.todayStat}>
                             <Text style={styles.todayNumber}>{studyMinutes}</Text>
-                            <Text style={styles.todayLabel}>Dakika</Text>
+                            <Text style={styles.todayLabel}>{l('Dakika', 'Minutes')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={[styles.todayNumber, { color: Colors.badgeNew }]}>{sessionStats.newCardsToday || 0}</Text>
-                            <Text style={styles.todayLabel}>Yeni Kart</Text>
+                            <Text style={[styles.todayNumber, { color: colors.badgeNew }]}>{todayStats.newCardsIntroduced}</Text>
+                            <Text style={styles.todayLabel}>{l('Yeni Kart', 'New Cards')}</Text>
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.streakCard}>
+                    <View style={styles.streakHeader}>
+                        <Text style={styles.sectionTitle}>🔥 {l('Günlük Seri', 'Daily Streak')}</Text>
+                        <Text style={styles.streakBest}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>
+                    </View>
+                    <View style={styles.streakBody}>
+                        <View style={styles.streakInfo}>
+                            <View style={styles.streakRow}>
+                                <Text style={styles.streakNumber}>{streak.current}</Text>
+                                <Text style={styles.streakUnit}>{l('gün üst üste çalıştınız', 'day study streak')}</Text>
+                            </View>
+                            <Text style={styles.streakHint}>
+                                {streak.studiedToday
+                                    ? l('Bugünü tamamladınız — böyle devam! 💪', 'You studied today — keep it up! 💪')
+                                    : streak.current > 0
+                                        ? l('Bugün henüz çalışmadınız; seriyi korumak için birkaç kart yanıtlayın.', 'You have not studied yet today; answer a few cards to keep your streak.')
+                                        : l('Bugün birkaç kart yanıtlayarak yeni bir seri başlatın.', 'Answer a few cards today to start a new streak.')}
+                            </Text>
+                        </View>
+                        <View style={styles.streakStripWrap}>
+                            <WeekStreakStrip rolloverHour={settings.dayRolloverHour} dataVersion={dataVersion} />
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.overviewCard}>
-                    <Text style={styles.sectionTitle}>Genel Durum</Text>
+                    <Text style={styles.sectionTitle}>{l('Genel Durum', 'Card Counts')}</Text>
                     <View style={styles.overviewBar}>
-                        <View style={[styles.overviewSegment, { flex: bucketTotals.newCount || 1, backgroundColor: Colors.badgeNewBg }]} />
-                        <View style={[styles.overviewSegment, { flex: bucketTotals.learningCount || 0.1, backgroundColor: Colors.badgeLearnBg }]} />
-                        <View style={[styles.overviewSegment, { flex: bucketTotals.reviewCount || 0.1, backgroundColor: Colors.badgeReviewBg }]} />
+                        {bucketTotals.newCount + bucketTotals.learningCount + bucketTotals.reviewCount > 0 ? (
+                            <>
+                                <View style={[styles.overviewSegment, { flex: bucketTotals.newCount, backgroundColor: colors.badgeNewBg }]} />
+                                <View style={[styles.overviewSegment, { flex: bucketTotals.learningCount, backgroundColor: colors.badgeLearnBg }]} />
+                                <View style={[styles.overviewSegment, { flex: bucketTotals.reviewCount, backgroundColor: colors.badgeReviewBg }]} />
+                            </>
+                        ) : (
+                            <View style={[styles.overviewSegment, { flex: 1, backgroundColor: colors.borderLight }]} />
+                        )}
                     </View>
 
                     <View style={styles.overviewLegend}>
                         <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, { backgroundColor: Colors.badgeNew }]} />
-                            <Text style={styles.legendText}>Yeni: {bucketTotals.newCount}</Text>
+                            <View style={[styles.legendDot, { backgroundColor: colors.badgeNew }]} />
+                            <Text style={styles.legendText}>{t('anki.new')}: {bucketTotals.newCount}</Text>
                         </View>
                         <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, { backgroundColor: Colors.badgeLearn }]} />
-                            <Text style={styles.legendText}>Öğren: {bucketTotals.learningCount}</Text>
+                            <View style={[styles.legendDot, { backgroundColor: colors.badgeLearn }]} />
+                            <Text style={styles.legendText}>{t('anki.learn')}: {bucketTotals.learningCount}</Text>
                         </View>
                         <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, { backgroundColor: Colors.badgeReview }]} />
-                            <Text style={styles.legendText}>Tekrar: {bucketTotals.reviewCount}</Text>
+                            <View style={[styles.legendDot, { backgroundColor: colors.badgeReview }]} />
+                            <Text style={styles.legendText}>{t('anki.review')}: {bucketTotals.reviewCount}</Text>
                         </View>
                     </View>
 
                     <Text style={styles.algorithmInfo}>
-                        📐 Scheduler: <Text style={{ fontWeight: '700', color: Colors.accent }}>{settings.algorithm}</Text>
+                        📐 {l('Zamanlayıcı:', 'Scheduler:')} <Text style={{ fontWeight: '700', color: colors.accent }}>{settings.algorithm}</Text>
                     </Text>
                     <Text style={styles.algorithmInfo}>
-                        Young: {bucketTotals.youngCount} · Mature: {bucketTotals.matureCount}
+                        {l('Genç', 'Young')}: {bucketTotals.youngCount} · {l('Olgun', 'Mature')}: {bucketTotals.matureCount}
                     </Text>
                 </View>
 
-                <Text style={styles.sectionTitle2}>Ders Bazlı İlerleme</Text>
-                {subjectStats.map((subject) => (
-                    <View key={subject.id} style={styles.subjectRow}>
+                {(deckStats.length > 0 || !deckScope) && (
+                    <Text style={styles.sectionTitle2}>
+                        {deckScope ? l('Alt Deste İlerlemesi', 'Subdeck Progress') : l('Deste Bazlı İlerleme', 'Progress by Deck')}
+                    </Text>
+                )}
+                {deckStats.map((deck) => (
+                    <TouchableOpacity
+                        key={deck.name}
+                        style={styles.subjectRow}
+                        onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l(`${deck.displayName} destesinin istatistiklerini aç`, `Open statistics for ${deck.displayName}`)}
+                    >
                         <View style={styles.subjectHeader}>
-                            <Text style={styles.subjectIcon}>{subject.icon}</Text>
-                            <Text style={styles.subjectName}>{subject.name}</Text>
-                            <Text style={styles.subjectPct}>{subject.pct}%</Text>
+                            <Text style={styles.subjectIcon}>🗃️</Text>
+                            <Text style={styles.subjectName}>{deck.displayName}</Text>
+                            <Text style={styles.subjectPct}>{deck.pct}%</Text>
                         </View>
                         <View style={styles.subjectProgress}>
-                            <View style={[styles.progressSegment, { width: `${subject.pct}%`, backgroundColor: Colors.accent }]} />
+                            <View style={[styles.progressSegment, { width: `${deck.pct}%`, backgroundColor: colors.accent }]} />
                         </View>
                         <View style={styles.subjectDetail}>
                             <Text style={styles.subjectDetailText}>
-                                {subject.studied}/{subject.total} çalışıldı
-                                {subject.dueCount > 0 && <Text style={{ color: Colors.btnAgain }}> · {subject.dueCount} bekliyor</Text>}
+                                {l(`${deck.studied}/${deck.total} çalışıldı`, `${deck.studied}/${deck.total} studied`)} · {t('anki.new')} {deck.newCount} · {t('anki.learn')} {deck.learningCount} · {t('anki.review')} {deck.reviewCount}
                             </Text>
                             <Text style={styles.subjectDetailText}>
-                                Young {subject.youngCount} · Mature {subject.matureCount}
+                                {l('Genç', 'Young')} {deck.youngCount} · {l('Olgun', 'Mature')} {deck.matureCount}
                             </Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 ))}
+                {!deckScope && deckStats.length === 0 && (
+                    <Text style={styles.scopeHint}>{l('Henüz deste yok — Desteler ekranından bir deste oluşturun.', 'No decks yet — create one from the Decks screen.')}</Text>
+                )}
 
-                <Text style={[styles.sectionTitle2, { marginTop: Spacing.xl }]}>Veri Yönetimi (Yedekleme)</Text>
+                {!deckScope && (<>
+                <Text style={[styles.sectionTitle2, { marginTop: Spacing.xl }]}>{l('Veri Yönetimi (Yedekleme)', 'Data Management (Backup)')}</Text>
                 <View style={styles.dataCard}>
                     <Text style={styles.dataDesc}>
-                        Verilerinizi JSON olarak dışa aktarabilir veya aynı formatla geri yükleyebilirsiniz.
+                        {l('Verilerinizi JSON olarak dışa aktarabilir veya aynı biçimdeki bir yedekten geri yükleyebilirsiniz.', 'Export your data as JSON or restore it from a backup in the same format.')}
                     </Text>
 
                     <View style={styles.dataButtons}>
                         <TouchableOpacity style={[styles.dataBtn, styles.exportBtn]} onPress={handleExport}>
-                            <Text style={styles.dataBtnText}>📤 Dışa Aktar</Text>
+                            <Text style={styles.dataBtnText}>📤 {l('Dışa Aktar', 'Export')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[styles.dataBtn, styles.importToggleBtn]}
                             onPress={() => setShowImport(!showImport)}
                         >
-                            <Text style={[styles.dataBtnText, { color: Colors.textPrimary }]}>
-                                {showImport ? 'İptal' : '📥 İçe Aktar'}
+                            <Text style={[styles.dataBtnText, { color: colors.textPrimary }]}>
+                                {showImport ? t('common.cancel') : `📥 ${t('root.import')}`}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -243,18 +337,19 @@ export default function StatsScreen() {
                         <View style={styles.importSection}>
                             <TextInput
                                 style={styles.importInput}
-                                placeholder="JSON verisini buraya yapıştırın..."
-                                placeholderTextColor={Colors.textMuted}
+                                placeholder={l('JSON verisini buraya yapıştırın…', 'Paste JSON data here…')}
+                                placeholderTextColor={colors.textMuted}
                                 multiline
                                 value={importData}
                                 onChangeText={setImportData}
                             />
                             <TouchableOpacity style={styles.confirmImportBtn} onPress={handleImport}>
-                                <Text style={styles.confirmImportText}>Verileri Geri Yükle</Text>
+                                <Text style={styles.confirmImportText}>{l('Verileri Geri Yükle', 'Restore Data')}</Text>
                             </TouchableOpacity>
                         </View>
                     )}
                 </View>
+                </>)}
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -262,29 +357,73 @@ export default function StatsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
-    scrollContent: { padding: Spacing.lg, gap: Spacing.md },
-    title: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.sm },
+function createStyles(colors: ColorScheme, isCompact: boolean) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
+    scrollContent: {
+        width: '100%',
+        maxWidth: 880,
+        alignSelf: 'center',
+        padding: isCompact ? Spacing.md : Spacing.lg,
+        gap: Spacing.md,
+    },
+    title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
+    scopeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: Spacing.md,
+        backgroundColor: colors.accentLight,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+    },
+    scopeText: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
+    scopeLink: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+    scopeHint: { fontSize: FontSize.sm, color: colors.textMuted },
 
     todayCard: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
         ...Shadows.sm,
     },
-    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary, marginBottom: Spacing.md },
-    todayGrid: { flexDirection: 'row', justifyContent: 'space-around' },
-    todayStat: { alignItems: 'center' },
-    todayNumber: { fontSize: FontSize.xxxl, fontWeight: '700', color: Colors.accent },
-    todayLabel: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '500', marginTop: 2 },
+    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.md },
+    todayGrid: { flexDirection: 'row', justifyContent: 'space-around', flexWrap: isCompact ? 'wrap' : 'nowrap' },
+    todayStat: { alignItems: 'center', width: isCompact ? '50%' : undefined, paddingVertical: isCompact ? Spacing.sm : 0 },
+    todayNumber: { fontSize: FontSize.xxxl, fontWeight: '700', color: colors.accent },
+    todayLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500', marginTop: 2 },
+
+    streakCard: {
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.lg,
+        ...Shadows.sm,
+    },
+    streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: Spacing.xs },
+    streakBest: { fontSize: FontSize.sm, color: colors.textMuted },
+    streakBody: {
+        flexDirection: isCompact ? 'column' : 'row',
+        alignItems: isCompact ? 'stretch' : 'center',
+        justifyContent: 'space-between',
+        gap: isCompact ? Spacing.lg : Spacing.xl,
+        flexWrap: 'wrap',
+    },
+    streakInfo: { flexShrink: 1, minWidth: isCompact ? 0 : 180 },
+    streakStripWrap: { flexGrow: 1, minWidth: isCompact ? 0 : 300, width: isCompact ? '100%' : undefined },
+    streakRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, flexWrap: 'wrap' },
+    streakNumber: { fontSize: 44, fontWeight: '700', color: colors.btnHard },
+    streakUnit: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    streakHint: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
 
     overviewCard: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
         ...Shadows.sm,
@@ -297,51 +436,51 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.sm,
     },
     overviewSegment: { height: '100%' },
-    overviewLegend: { flexDirection: 'row', gap: Spacing.lg, marginBottom: Spacing.sm },
+    overviewLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.lg, marginBottom: Spacing.sm },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     legendDot: { width: 8, height: 8, borderRadius: 4 },
-    legendText: { fontSize: FontSize.sm, color: Colors.textSecondary },
-    algorithmInfo: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4 },
+    legendText: { fontSize: FontSize.sm, color: colors.textSecondary },
+    algorithmInfo: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 4 },
 
     sectionTitle2: {
         fontSize: FontSize.lg,
         fontWeight: '700',
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
         marginTop: Spacing.sm,
     },
     subjectRow: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         ...Shadows.sm,
     },
     subjectHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
     subjectIcon: { fontSize: 18 },
-    subjectName: { flex: 1, fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
-    subjectPct: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.accent },
+    subjectName: { flex: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    subjectPct: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
     subjectProgress: {
         height: 4,
-        backgroundColor: Colors.borderLight,
+        backgroundColor: colors.borderLight,
         borderRadius: 2,
         overflow: 'hidden',
         marginBottom: 4,
     },
     progressSegment: { height: '100%', borderRadius: 2 },
     subjectDetail: {},
-    subjectDetailText: { fontSize: FontSize.xs, color: Colors.textMuted },
+    subjectDetailText: { fontSize: FontSize.xs, color: colors.textMuted },
 
     dataCard: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
         padding: Spacing.lg,
         ...Shadows.sm,
     },
-    dataDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.md },
-    dataButtons: { flexDirection: 'row', gap: Spacing.md },
+    dataDesc: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.md },
+    dataButtons: { flexDirection: isCompact ? 'column' : 'row', gap: Spacing.md },
     dataBtn: {
         flex: 1,
         paddingVertical: Spacing.md,
@@ -349,27 +488,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
     },
-    exportBtn: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-    importToggleBtn: { backgroundColor: Colors.bgInput, borderColor: Colors.border },
-    dataBtnText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.white },
+    exportBtn: { backgroundColor: colors.accent, borderColor: colors.accent },
+    importToggleBtn: { backgroundColor: colors.bgInput, borderColor: colors.border },
+    dataBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.white },
     importSection: { marginTop: Spacing.md },
     importInput: {
-        backgroundColor: Colors.bgInput,
+        backgroundColor: colors.bgInput,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         minHeight: 100,
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
         marginBottom: Spacing.md,
     },
     confirmImportBtn: {
-        backgroundColor: Colors.badgeNewBg,
-        borderColor: Colors.badgeNew,
+        backgroundColor: colors.badgeNewBg,
+        borderColor: colors.badgeNew,
         borderWidth: 1,
         paddingVertical: Spacing.md,
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
     },
-    confirmImportText: { fontSize: FontSize.md, fontWeight: '700', color: Colors.badgeNew },
-});
+    confirmImportText: { fontSize: FontSize.md, fontWeight: '700', color: colors.badgeNew },
+    });
+}

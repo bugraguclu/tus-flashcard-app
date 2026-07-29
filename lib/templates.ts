@@ -84,6 +84,13 @@ export interface RenderContext {
     deckName?: string;
     cardName?: string;               // template name
     clozeOrd?: number;               // for cloze note types
+    /** What the user typed for a {{type:Field}} prompt, once the answer side is shown.
+     *  undefined = not answered yet (question side, or no typed-answer field on this card). */
+    typedAnswer?: string;
+    /** Render {{FrontSide}} as empty (and drop the <hr id=answer> separator). For layouts
+     *  that keep the question visible in its own panel, so the back shows only the answer.
+     *  frontSide must still be set — cloze rendering uses it to detect the answer side. */
+    omitFrontSide?: boolean;
 }
 
 type ConditionalNode =
@@ -168,7 +175,11 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
     let result = renderConditionalNodes(parseConditionalNodes(template), ctx.fields);
 
     // Special fields
-    result = result.replace(/\{\{FrontSide\}\}/g, ctx.frontSide || '');
+    result = result.replace(/\{\{FrontSide\}\}/g, ctx.omitFrontSide ? '' : ctx.frontSide || '');
+    if (ctx.omitFrontSide) {
+        // The answer separator only makes sense with the front side rendered above it.
+        result = result.replace(/<hr id=["']?answer["']?\s*\/?>/gi, '');
+    }
     result = result.replace(/\{\{Tags\}\}/g, ctx.tags || '');
     result = result.replace(/\{\{Type\}\}/g, ctx.typeName || '');
     result = result.replace(/\{\{Deck\}\}/g, ctx.deckName || '');
@@ -190,12 +201,17 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
         }
     );
 
-    // Type-in-the-answer: {{type:FieldName}}
+    // Type-in-the-answer: {{type:FieldName}}. The WebView runs no JS, so a live <input> here
+    // would be inert — the real text box is a native TextInput the study screen renders
+    // alongside the question. On the question side this placeholder stays empty; once the
+    // answer is shown, ctx.typedAnswer (if any) is diffed against the field's real value.
     result = result.replace(
         /\{\{type:(\w+)\}\}/g,
         (_match, field) => {
             const value = ctx.fields[field] || '';
-            return `<input type="text" class="type-answer" data-correct="${escapeHtml(value)}" placeholder="cevabınızı yazın..." />`;
+            if (!ctx.frontSide) return '';
+            if (ctx.typedAnswer === undefined) return `<div class="typeanswer">${escapeHtml(value)}</div>`;
+            return renderTypeAnswerDiff(ctx.typedAnswer, value);
         }
     );
 
@@ -214,7 +230,7 @@ export function renderCardHtml(
     note: Note,
     templateOrd: number,
     side: 'question' | 'answer',
-    options?: { deckName?: string; clozeOrd?: number }
+    options?: { deckName?: string; clozeOrd?: number; typedAnswer?: string; omitFrontSide?: boolean }
 ): string {
     const template = noteType.templates[templateOrd] ||
         (noteType.kind === 'cloze' ? noteType.templates[0] : null);
@@ -239,7 +255,9 @@ export function renderCardHtml(
         cardName: template.name,
         clozeOrd,
     };
-    const questionHtml = renderTemplate(template.qfmt, questionCtx);
+    // Templates are imported content too. Sanitize the fully rendered side so a malicious
+    // qfmt/afmt cannot bypass the field-level sanitizer used above.
+    const questionHtml = normalizeFieldHtml(renderTemplate(template.qfmt, questionCtx));
 
     if (side === 'question') {
         return wrapInCardHtml(questionHtml, noteType.css);
@@ -249,8 +267,10 @@ export function renderCardHtml(
     const answerCtx: RenderContext = {
         ...questionCtx,
         frontSide: questionHtml,
+        typedAnswer: options?.typedAnswer,
+        omitFrontSide: options?.omitFrontSide,
     };
-    const answerHtml = renderTemplate(template.afmt, answerCtx);
+    const answerHtml = normalizeFieldHtml(renderTemplate(template.afmt, answerCtx));
     return wrapInCardHtml(answerHtml, noteType.css);
 }
 
@@ -292,18 +312,132 @@ export function countCardsForNote(noteType: NoteType, note: Note): number {
     return noteType.templates.filter((_, i) => shouldGenerateCard(noteType, note, i)).length;
 }
 
+// ---- Type-in-the-answer ----
+
+/** Field name of the first {{type:Field}} prompt in a template's qfmt, if any. */
+export function getTypeAnswerField(template: { qfmt: string } | undefined): string | null {
+    const match = template?.qfmt.match(/\{\{type:(\w+)\}\}/);
+    return match ? match[1] : null;
+}
+
+/** Longest common subsequence of two strings, as a list of [typedIdx, correctIdx] matched pairs. */
+function lcsPairs(a: string, b: string): Array<[number, number]> {
+    const n = a.length;
+    const m = b.length;
+    const dp: Uint32Array[] = new Array(n + 1);
+    for (let i = 0; i <= n; i++) dp[i] = new Uint32Array(m + 1);
+
+    for (let i = n - 1; i >= 0; i--) {
+        for (let j = m - 1; j >= 0; j--) {
+            dp[i][j] = a[i] === b[j]
+                ? dp[i + 1][j + 1] + 1
+                : Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+    }
+
+    const pairs: Array<[number, number]> = [];
+    let i = 0, j = 0;
+    while (i < n && j < m) {
+        if (a[i] === b[j]) {
+            pairs.push([i, j]);
+            i++; j++;
+        } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+            i++;
+        } else {
+            j++;
+        }
+    }
+    return pairs;
+}
+
+/**
+ * Anki-style typed-answer feedback: the user's text with correct runs highlighted and wrong
+ * runs struck through, followed by the real answer with the parts the user missed underlined.
+ */
+export function renderTypeAnswerDiff(typed: string, correct: string): string {
+    const typedTrimmed = typed.trim();
+    const correctTrimmed = correct.trim();
+
+    if (typedTrimmed.length === 0) {
+        return `<div class="typeanswer"><div class="typed"><span class="typeMissed">${escapeHtml(correctTrimmed)}</span></div></div>`;
+    }
+    if (typedTrimmed === correctTrimmed) {
+        return `<div class="typeanswer"><div class="typed"><span class="typeGood">${escapeHtml(correctTrimmed)}</span></div></div>`;
+    }
+
+    const matched = lcsPairs(typedTrimmed, correctTrimmed);
+    const typedMatchIdx = new Set(matched.map((p) => p[0]));
+    const correctMatchIdx = new Set(matched.map((p) => p[1]));
+
+    let typedLine = '';
+    let run = '';
+    let runGood = false;
+    const flushTyped = () => {
+        if (!run) return;
+        typedLine += runGood
+            ? `<span class="typeGood">${escapeHtml(run)}</span>`
+            : `<span class="typeBad">${escapeHtml(run)}</span>`;
+        run = '';
+    };
+    for (let i = 0; i < typedTrimmed.length; i++) {
+        const good = typedMatchIdx.has(i);
+        if (run && good !== runGood) flushTyped();
+        runGood = good;
+        run += typedTrimmed[i];
+    }
+    flushTyped();
+
+    let correctLine = '';
+    run = '';
+    runGood = false;
+    const flushCorrect = () => {
+        if (!run) return;
+        correctLine += runGood ? escapeHtml(run) : `<span class="typeMissed">${escapeHtml(run)}</span>`;
+        run = '';
+    };
+    for (let j = 0; j < correctTrimmed.length; j++) {
+        const good = correctMatchIdx.has(j);
+        if (run && good !== runGood) flushCorrect();
+        runGood = good;
+        run += correctTrimmed[j];
+    }
+    flushCorrect();
+
+    return `<div class="typeanswer"><div class="typed">${typedLine}</div><hr size=1><div class="correct">${correctLine}</div></div>`;
+}
+
 // ---- Helpers ----
+
+function decodeSecurityEntities(text: string): string {
+    return text
+        .replace(/&#(\d+);?/g, (_match, value) => String.fromCodePoint(Math.min(Number(value), 0x10ffff)))
+        .replace(/&#x([0-9a-f]+);?/gi, (_match, value) => String.fromCodePoint(Math.min(parseInt(value, 16), 0x10ffff)))
+        .replace(/&colon;/gi, ':')
+        .replace(/&(?:tab|newline);/gi, ' ');
+}
 
 function normalizeFieldHtml(text: string): string {
     let result = text;
 
     // Remove dangerous containers and script vectors entirely.
+    // Repeat paired-container removal to collapse nested/malformed variants before
+    // stripping any unmatched opening/closing tag remnants.
+    for (let pass = 0; pass < 4; pass++) {
+        const before = result;
+        result = result.replace(
+            /<\s*(script|svg|math|style|iframe|object|embed|frame|frameset|form)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
+            '',
+        );
+        if (result === before) break;
+    }
     result = result
-        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-        .replace(/<svg[\s\S]*?>[\s\S]*?<\/svg>/gi, '')
-        .replace(/<\/?(?:iframe|object|embed|frame|frameset|meta|link|base)[^>]*>/gi, '')
+        .replace(/<\/?\s*(?:script|svg|math|style|iframe|object|embed|frame|frameset|form|maction|annotation-xml|meta|link|base)\b[^>]*>/gi, '')
         .replace(/<\?(?:xml|php)[\s\S]*?\?>/gi, '')
         .replace(/<!DOCTYPE[\s\S]*?>/gi, '');
+
+    // Decode character references inside tags before attribute checks. Browsers decode
+    // them while parsing, so values such as java&#x73;cript: must be inspected decoded.
+    result = result.replace(/<[^>]*>/g, (tag) => decodeSecurityEntities(tag));
 
     // Remove inline event handlers like onclick=..., onerror=..., onLoad=...
     result = result.replace(/\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
@@ -316,7 +450,9 @@ function normalizeFieldHtml(text: string): string {
         /(href|src|xlink:href|poster)\s*=\s*(?:(['"])([\s\S]*?)\2|([^\s>]+))/gi,
         (_match, attr, quote, quotedValue, bareValue) => {
             const rawValue = String(quotedValue ?? bareValue ?? '').trim();
-            const normalized = rawValue.replace(/[\u0000-\u001F\u007F\s]+/g, '').toLowerCase();
+            const normalized = decodeSecurityEntities(rawValue)
+                .replace(/[\u0000-\u001F\u007F\s]+/g, '')
+                .toLowerCase();
 
             const isJsScheme = normalized.startsWith('javascript:') || normalized.startsWith('vbscript:');
             const isDangerousDataUri = normalized.startsWith('data:')
@@ -365,7 +501,14 @@ function escapeHtml(text: string): string {
 }
 
 function wrapInCardHtml(body: string, css: string): string {
-    // Prevent CSS breakout via </style> injection.
-    const safeCss = css.replace(/<\/style/gi, '<\\/style');
-    return `<style>${safeCss}</style><div class="card">${body}</div>`;
+    // Prevent CSS breakout and network/script-capable CSS imports from imported note types.
+    const safeCss = css
+        .replace(/<\/style/gi, '<\\/style')
+        .replace(/@import[\s\S]*?(?:;|$)/gi, '')
+        .replace(/url\(\s*(['"]?)(?:https?:|javascript:|data:text\/html|data:image\/svg\+xml)[\s\S]*?\1\s*\)/gi, 'none')
+        .replace(/(?:expression|behavior|-moz-binding)\s*:[^;}]*/gi, '');
+    // Media must fit the card panel (AnkiDroid scales images to screen width). Declared
+    // before the note type's own CSS so a template can still deliberately override it.
+    const baseCss = '.card img, .card video { max-width: 100%; max-height: 60vh; height: auto; } .card audio { max-width: 100%; }';
+    return `<style>${baseCss}</style><style>${safeCss}</style><div class="card">${body}</div>`;
 }

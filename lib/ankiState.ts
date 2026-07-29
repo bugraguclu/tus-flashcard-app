@@ -133,7 +133,7 @@ export function encodeAnkiLeft(remainingTotal: number, remainingToday: number): 
 }
 
 /** Timestamp of the next rollover boundary at or after `nowMs`. */
-function nextRolloverMs(nowMs: number, rolloverHour: number): number {
+export function nextRolloverMs(nowMs: number, rolloverHour: number): number {
     const now = new Date(nowMs);
     const boundary = new Date(nowMs);
     boundary.setHours(rolloverHour, 0, 0, 0);

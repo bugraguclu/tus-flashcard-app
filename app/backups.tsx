@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -10,10 +10,10 @@ import {
     Platform,
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
-import { Colors, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
 import { downloadTextFileWeb } from '../lib/files';
-import { useApp } from './(tabs)/app-context';
+import { useApp } from '../contexts/AppContext';
 import {
     createBackupNow,
     deleteBackup,
@@ -24,15 +24,16 @@ import {
     restoreBackup,
     type BackupInfo,
 } from '../lib/backup';
+import { useI18n } from '../hooks/useI18n';
 
 function formatSize(bytes: number): string {
     if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-function formatDate(epochMs: number): string {
+function formatDate(epochMs: number, localeTag: string): string {
     if (!epochMs) return '';
-    return new Date(epochMs).toLocaleString('tr-TR', {
+    return new Date(epochMs).toLocaleString(localeTag, {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
@@ -42,7 +43,10 @@ function formatDate(epochMs: number): string {
 }
 
 export default function BackupsScreen() {
+    const { t, l, localeTag } = useI18n();
     const { refreshData, bumpDataVersion } = useApp();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [backups, setBackups] = useState<BackupInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
@@ -78,14 +82,14 @@ export default function BackupsScreen() {
                 await reload();
             } catch (e) {
                 console.warn('[Backups] manual backup failed:', e);
-                alert('Hata', 'Yedek oluşturulamadı.');
+                alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
             }
         });
 
     const handleRestore = (name: string) => {
         confirm(
-            'Yedeği Geri Yükle',
-            'Mevcut koleksiyonun yerine bu yedek yüklenecek. Geri yüklemeden önce mevcut durumun otomatik bir kopyası alınır.',
+            l('Yedeği Geri Yükle', 'Restore Backup'),
+            l('Bu yedek mevcut koleksiyonun yerini alacak. Geri yüklemeden önce mevcut durumun otomatik bir kopyası oluşturulur.', 'This backup will replace the current collection. A copy of the current state is created automatically before restoring.'),
             () =>
                 void withBusy(async () => {
                     try {
@@ -94,13 +98,13 @@ export default function BackupsScreen() {
                         refreshData();
                         bumpDataVersion();
                         if (result.ok) {
-                            alert('Tamamlandı', 'Yedek geri yüklendi.');
+                            alert(t('common.completed'), l('Yedek geri yüklendi.', 'Backup restored.'));
                         } else {
-                            alert('Hata', 'Yedek geri yüklenemedi. Mevcut veriler değişmedi.');
+                            alert(t('common.error'), l('Yedek geri yüklenemedi. Mevcut veriler değişmedi.', 'Could not restore the backup. Existing data was not changed.'));
                         }
                     } catch (e) {
                         console.warn('[Backups] restore failed:', e);
-                        alert('Hata', 'Yedek geri yüklenemedi.');
+                        alert(t('common.error'), l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
                     }
                 }),
             { destructive: true },
@@ -108,14 +112,14 @@ export default function BackupsScreen() {
     };
 
     const handleDelete = (name: string) => {
-        confirm('Yedeği Sil', `${name} kalıcı olarak silinecek.`, () =>
+        confirm(l('Yedeği Sil', 'Delete Backup'), l(`${name} kalıcı olarak silinecek.`, `${name} will be permanently deleted.`), () =>
             void withBusy(async () => {
                 try {
                     await deleteBackup(name);
                     await reload();
                 } catch (e) {
                     console.warn('[Backups] delete failed:', e);
-                    alert('Hata', 'Yedek silinemedi.');
+                    alert(t('common.error'), l('Yedek silinemedi.', 'Could not delete the backup.'));
                 }
             }),
             { destructive: true },
@@ -131,7 +135,7 @@ export default function BackupsScreen() {
                 }
 
                 if (!(await Sharing.isAvailableAsync())) {
-                    alert('Bilgi', 'Paylaşım bu cihazda kullanılamıyor.');
+                    alert(l('Bilgi', 'Info'), l('Paylaşım bu cihazda kullanılamıyor.', 'Sharing is not available on this device.'));
                     return;
                 }
                 await Sharing.shareAsync(`${getNativeBackupDir()}${name}`, {
@@ -140,7 +144,7 @@ export default function BackupsScreen() {
                 });
             } catch (e) {
                 console.warn('[Backups] share failed:', e);
-                alert('Hata', 'Yedek paylaşılamadı.');
+                alert(t('common.error'), l('Yedek paylaşılamadı.', 'Could not share the backup.'));
             }
         });
 
@@ -148,8 +152,7 @@ export default function BackupsScreen() {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    Uygulama her gün otomatik yedek alır ve en yeni 7 günlük yedeği saklar. Geri
-                    yükleme öncesi anlık kopyalar da burada listelenir.
+                    {l('Uygulama her gün otomatik yedek oluşturur ve en yeni 7 günlük yedeği saklar. Geri yükleme öncesi oluşturulan anlık kopyalar da burada listelenir.', 'The app creates a daily backup automatically and keeps the latest 7 daily backups. Snapshots created before a restore also appear here.')}
                 </Text>
 
                 <TouchableOpacity
@@ -157,13 +160,13 @@ export default function BackupsScreen() {
                     onPress={handleBackupNow}
                     disabled={busy}
                 >
-                    <Text style={styles.primaryBtnText}>💾 Şimdi Yedekle</Text>
+                    <Text style={styles.primaryBtnText}>💾 {l('Şimdi Yedekle', 'Back Up Now')}</Text>
                 </TouchableOpacity>
 
-                {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={Colors.accent} />}
+                {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}
 
                 {!loading && backups.length === 0 && (
-                    <Text style={styles.empty}>Henüz yedek yok.</Text>
+                    <Text style={styles.empty}>{l('Henüz yedek yok.', 'No backups yet.')}</Text>
                 )}
 
                 {backups.map((backup) => (
@@ -171,11 +174,11 @@ export default function BackupsScreen() {
                         <View style={styles.rowText}>
                             <Text style={styles.rowTitle}>
                                 {isPreRestoreBackup(backup.name)
-                                    ? '↩️ Geri yükleme öncesi kopya'
-                                    : '📦 Günlük yedek'}
+                                    ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
+                                    : l('📦 Günlük yedek', '📦 Daily backup')}
                             </Text>
                             <Text style={styles.rowSub}>
-                                {formatDate(backup.createdAt)} · {formatSize(backup.size)}
+                                {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}
                             </Text>
                         </View>
                         <View style={styles.rowActions}>
@@ -184,21 +187,21 @@ export default function BackupsScreen() {
                                 onPress={() => handleRestore(backup.name)}
                                 disabled={busy}
                             >
-                                <Text style={styles.actionText}>Geri Yükle</Text>
+                                <Text style={styles.actionText}>{l('Geri Yükle', 'Restore')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.actionBtn}
                                 onPress={() => handleShare(backup.name)}
                                 disabled={busy}
                             >
-                                <Text style={styles.actionText}>Paylaş</Text>
+                                <Text style={styles.actionText}>{l('Paylaş', 'Share')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.actionBtn}
                                 onPress={() => handleDelete(backup.name)}
                                 disabled={busy}
                             >
-                                <Text style={[styles.actionText, styles.dangerText]}>Sil</Text>
+                                <Text style={[styles.actionText, styles.dangerText]}>{t('common.delete')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -208,41 +211,43 @@ export default function BackupsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.bgPrimary },
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.sm },
-    help: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 20 },
+    help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 20 },
     primaryBtn: {
         borderWidth: 1,
-        borderColor: Colors.accent,
-        backgroundColor: Colors.accentLight,
+        borderColor: colors.accent,
+        backgroundColor: colors.accentLight,
         borderRadius: BorderRadius.sm,
         paddingVertical: Spacing.md,
         alignItems: 'center',
     },
-    primaryBtnText: { fontSize: FontSize.md, fontWeight: '600', color: Colors.accent },
+    primaryBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
     btnDisabled: { opacity: 0.5 },
-    empty: { fontSize: FontSize.md, color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
+    empty: { fontSize: FontSize.md, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
     row: {
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         padding: Spacing.md,
         gap: Spacing.sm,
     },
     rowText: {},
-    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary },
-    rowSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 2 },
+    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    rowSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
     rowActions: { flexDirection: 'row', gap: Spacing.sm },
     actionBtn: {
         paddingHorizontal: Spacing.md,
         paddingVertical: 6,
-        backgroundColor: Colors.bgSecondary,
+        backgroundColor: colors.bgSecondary,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
     },
-    actionText: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textSecondary },
-    dangerText: { color: Colors.btnAgain },
-});
+    actionText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+    dangerText: { color: colors.btnAgain },
+    });
+}

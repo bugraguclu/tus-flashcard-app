@@ -84,6 +84,23 @@ async function idbGet(name: string): Promise<Blob | null> {
     });
 }
 
+// ---------- MIME resolution ----------
+
+const EXTENSION_MIME: Record<string, string> = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+    webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp', svg: 'image/svg+xml',
+    mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', wav: 'audio/wav',
+    ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', flac: 'audio/flac',
+    webm: 'audio/webm',
+    mp4: 'video/mp4', mov: 'video/quicktime', mkv: 'video/x-matroska',
+};
+
+/** Best-effort MIME type from a filename extension; empty string when unknown. */
+export function guessMimeFromFilename(filename: string): string {
+    const ext = filename.slice(filename.lastIndexOf('.') + 1).toLowerCase();
+    return EXTENSION_MIME[ext] ?? '';
+}
+
 // ---------- Writing ----------
 
 const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -104,13 +121,15 @@ export function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /** Store one media file by (sanitized) filename; overwrites an existing file of the same name. */
-export async function saveMediaBytes(filename: string, bytes: Uint8Array): Promise<void> {
+export async function saveMediaBytes(filename: string, bytes: Uint8Array, mimeType?: string): Promise<void> {
     const safe = sanitizeMediaFilename(filename);
 
     if (Platform.OS === 'web') {
         // Copy into a plain ArrayBuffer: Blob rejects views over a SharedArrayBuffer,
-        // which TS must assume a Uint8Array may wrap.
-        await idbPut(safe, new Blob([new Uint8Array(bytes).buffer as ArrayBuffer]));
+        // which TS must assume a Uint8Array may wrap. The blob must carry a MIME type:
+        // <img> sniffs a typeless blob happily, but <audio>/<video> refuse to play it.
+        const type = mimeType || guessMimeFromFilename(safe);
+        await idbPut(safe, new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], type ? { type } : undefined));
         // The next lookup must see the new content, not a cached miss or a stale URL.
         objectUrlCache.delete(safe);
         return;
@@ -157,7 +176,14 @@ export async function getWebMediaUrl(filename: string): Promise<string | null> {
     if (cached !== undefined) return cached;
 
     try {
-        const blob = await idbGet(safe);
+        let blob = await idbGet(safe);
+        // Blobs stored by older builds carry no MIME type, which breaks <audio>/<video>
+        // playback. Re-type them from the file extension at read time so existing
+        // recordings play without needing a re-upload.
+        if (blob && !blob.type) {
+            const type = guessMimeFromFilename(safe);
+            if (type) blob = new Blob([blob], { type });
+        }
         const url = blob ? URL.createObjectURL(blob) : null;
         objectUrlCache.set(safe, url);
         return url;

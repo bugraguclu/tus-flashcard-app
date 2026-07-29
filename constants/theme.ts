@@ -1,10 +1,8 @@
-// ============================================================
-// TUS Flashcard - Theme Constants (Light + Dark)
-// ============================================================
-
+import React, { createContext, useContext } from 'react';
 import { useColorScheme } from 'react-native';
 
 export type ColorScheme = typeof LightColors;
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 const LightColors = {
     bgPrimary: '#e8f5f0',
@@ -38,6 +36,9 @@ const LightColors = {
     badgeLearnBg: '#fef5e7',
     badgeReview: '#27864e',
     badgeReviewBg: '#e0f3ec',
+
+    streak: '#ef8a1d',
+    streakBg: '#fdeedd',
 
     white: '#ffffff',
     transparent: 'transparent',
@@ -76,17 +77,35 @@ const DarkColors: ColorScheme = {
     badgeReview: '#3aad60',
     badgeReviewBg: '#253828',
 
+    streak: '#f2994a',
+    streakBg: '#3d2f1f',
+
     white: '#ffffff',
     transparent: 'transparent',
 };
 
-// Default export for backward compatibility — light theme
+// Default export for backward compatibility — light theme. Screens that have not yet
+// been migrated to useThemeColors() will keep rendering the light palette regardless
+// of the user's theme preference.
 export const Colors = LightColors;
 
-/** Hook that returns the correct color palette based on system theme */
+const ThemeColorsContext = createContext<ColorScheme>(LightColors);
+
+/**
+ * Wraps the app and resolves the user's `themeMode` preference ('system' | 'light' | 'dark')
+ * against the OS color scheme, feeding the result to useThemeColors() below. Must sit inside
+ * AppProvider (needs the persisted setting) and outside anything that calls useThemeColors().
+ */
+export function ThemeColorsProvider({ mode, children }: { mode: ThemeMode; children: React.ReactNode }) {
+    const systemScheme = useColorScheme();
+    const effective = mode === 'system' ? systemScheme : mode;
+    const colors = effective === 'dark' ? DarkColors : LightColors;
+    return React.createElement(ThemeColorsContext.Provider, { value: colors }, children);
+}
+
+/** Hook that returns the color palette for the current theme (preference + system fallback). */
 export function useThemeColors(): ColorScheme {
-    const scheme = useColorScheme();
-    return scheme === 'dark' ? DarkColors : LightColors;
+    return useContext(ThemeColorsContext);
 }
 
 export const Spacing = {

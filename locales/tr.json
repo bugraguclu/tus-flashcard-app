@@ -1,0 +1,11 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "TusAnkiM",
+    "NSPhotoLibraryUsageDescription": "Kartlarınıza görsel eklemek için fotoğraf kitaplığınıza erişim gerekir.",
+    "NSCameraUsageDescription": "Kart oluştururken fotoğraf çekebilmek için kameranıza erişim gerekir.",
+    "NSMicrophoneUsageDescription": "Kartlarınıza ses kaydı eklemek için mikrofonunuza erişim gerekir."
+  },
+  "android": {
+    "app_name": "TusAnkiM"
+  }
+}

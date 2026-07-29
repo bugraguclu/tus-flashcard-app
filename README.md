@@ -110,19 +110,25 @@ npm run check
 app/
   _layout.tsx              Root layout + error boundary
   (tabs)/
-    _layout.tsx            Tab layout, sidebar, AppContext
+    _layout.tsx            Tab layout and responsive navigation shell
     index.tsx              Study screen
     browser.tsx            Card browser with FTS search
     decks.tsx              Deck hierarchy view
     settings.tsx           App settings + import/export + database check
     stats.tsx              Statistics dashboard
-    sidebar.tsx            Navigation sidebar
-    app-context.tsx        Shared app state
-    use-app-startup.ts     Startup sequence, migrations, auto backup
   backups.tsx              Backup list / restore / share
   import.tsx               .apkg and CSV/TSV import
   editor.tsx               Note editor
   note-types.tsx           Note type & template manager
+
+components/
+  Sidebar.tsx              Navigation sidebar
+
+contexts/
+  AppContext.tsx           Shared app state
+
+hooks/
+  useAppStartup.ts         Startup sequence, migrations, auto backup
 
 lib/
   db.ts                    Platform-aware SQLite + migrations

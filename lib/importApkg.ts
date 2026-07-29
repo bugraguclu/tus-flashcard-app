@@ -14,7 +14,8 @@
 import type JSZipType from 'jszip';
 import { importRows, type RowImportCounts } from './importNotes';
 import { getNoteType, type SearchIndexCard } from './noteManager';
-import { subjectToDeckId, BUILTIN_NOTE_TYPES, type NoteType } from './models';
+import { BUILTIN_NOTE_TYPES, type NoteType } from './models';
+import { resolveSubjectDeckId } from './subjects';
 import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { saveMediaBytes } from './mediaStore';
 
@@ -143,7 +144,7 @@ function resolveNoteType(id: number): NoteType {
 export function importAnkiReader(reader: SqliteReader, options: ApkgImportOptions): ApkgImportResult {
     const notes = readAnkiNotes(reader);
     const topicValue = (options.topic ?? '').trim() || 'Genel';
-    const deckId = subjectToDeckId(options.subject);
+    const deckId = resolveSubjectDeckId(options.subject);
     const baseTags = [options.subject, topicValue.replace(/\s+/g, '-')];
 
     const standard = notes.filter((note) => !note.cloze);
@@ -243,7 +244,7 @@ async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
 async function defaultOpenReader(bytes: Uint8Array): Promise<ApkgReader> {
     const { Platform } = require('react-native') as typeof import('react-native');
     if (Platform.OS !== 'web') {
-        throw new Error('.apkg içe aktarma şu an yalnızca web sürümünde destekleniyor.');
+        throw new Error('Bu cihazda .apkg içe aktarma kullanılamıyor.');
     }
     const { openSqlJsReader } = require('./webDb') as typeof import('./webDb');
     return openSqlJsReader(bytes);

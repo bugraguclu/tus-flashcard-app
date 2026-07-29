@@ -210,7 +210,7 @@ vi.mock('./noteManager', () => ({
     getSearchIndexCards: () => [],
 }));
 
-import { exportAllData, importAllData, saveSessionStats } from './storage';
+import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSettings, saveSessionStats, saveSettings } from './storage';
 
 describe('storage import/export canonical round-trip', () => {
     beforeEach(() => {
@@ -263,5 +263,13 @@ describe('storage import/export canonical round-trip', () => {
         expect(dbState.decks).toHaveLength(1);
         expect(dbState.deck_configs).toHaveLength(1);
         expect(dbState.session_stats.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('persists the app language independently from deck scheduling options', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, language: 'en' });
+        expect(loadSettings().language).toBe('en');
+
+        saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
+        expect(loadSettings().language).toBe('tr');
     });
 });

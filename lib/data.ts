@@ -5,16 +5,12 @@
 import type { Subject, Card } from './types';
 
 export const TUS_SUBJECTS: Subject[] = [
-    { id: 'anatomi', name: 'Anatomi', icon: '🦴', topics: ['Üst Ekstremite', 'Alt Ekstremite', 'Baş-Boyun', 'Nöroanatomi'] },
-    { id: 'fizyoloji', name: 'Fizyoloji', icon: '⚡', topics: ['Kardiyovasküler', 'Solunum', 'Endokrin', 'Nörofizyoloji'] },
-    { id: 'biyokimya', name: 'Biyokimya', icon: '🧬', topics: ['Enzimler', 'Metabolizma', 'Vitaminler', 'Genetik'] },
-    { id: 'mikrobiyoloji', name: 'Mikrobiyoloji', icon: '🦠', topics: ['Bakteriyoloji', 'Viroloji', 'Parazitoloji', 'Mikoloji'] },
-    { id: 'patoloji', name: 'Patoloji', icon: '🔬', topics: ['Genel Patoloji', 'Sistemik Patoloji', 'Hematopatoloji'] },
-    { id: 'farmakoloji', name: 'Farmakoloji', icon: '💊', topics: ['Otonom', 'Santral', 'Kardiyovasküler', 'Antimikrobiyal'] },
-    { id: 'dahiliye', name: 'Dahiliye', icon: '🩺', topics: ['Kardiyoloji', 'Gastroenteroloji', 'Endokrinoloji', 'Hematoloji'] },
-    { id: 'cerrahi', name: 'Cerrahi', icon: '🔪', topics: ['Genel Cerrahi', 'Ortopedi', 'Üroloji', 'KBB'] },
-    { id: 'pediatri', name: 'Pediatri', icon: '👶', topics: ['Neonatoloji', 'Büyüme-Gelişme', 'Enfeksiyon', 'Beslenme'] },
-    { id: 'kadin', name: 'Kadın Hastalıkları', icon: '🤰', topics: ['Obstetrik', 'Jinekoloji', 'Jinekolojik Onkoloji'] },
+    { id: 'temeller', name: 'Temeller', icon: '🐍', topics: ['Yazdırma & Girdi', 'Veri Tipleri', 'f-string & Matematik'] },
+    { id: 'mantik', name: 'Mantık & Döngüler', icon: '🔀', topics: ['Koşullar', 'Operatörler', 'for Döngüsü', 'while Döngüsü'] },
+    { id: 'veri', name: 'Veri Yapıları', icon: '📦', topics: ['Listeler', 'Sözlükler', 'Tuple'] },
+    { id: 'fonksiyon', name: 'Fonksiyonlar', icon: '🧩', topics: ['Tanımlama', 'Parametreler', 'return', 'Kapsam (Scope)'] },
+    { id: 'oop', name: 'Nesne Yönelimli (OOP)', icon: '🏗️', topics: ['Sınıflar & Nesneler', 'Öznitelikler', 'Metotlar', '__init__'] },
+    { id: 'araclar', name: 'Modüller & Hata Ayıklama', icon: '🧰', topics: ['Modüller', 'random', 'Hata Ayıklama'] },
 ];
 
 // Seed cards moved out of code to reduce bundle size.

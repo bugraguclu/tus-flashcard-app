@@ -2,27 +2,32 @@
   "expo": {
     "name": "TusAnkiM",
     "slug": "tusankim",
+    "owner": "smbg",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-appstore.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/app-mark.png",
       "resizeMode": "contain",
       "backgroundColor": "#e8f5f0"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tusankim.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Kart oluştururken fotoğraf çekmek için kamera erişimi gereklidir.",
-        "NSPhotoLibraryUsageDescription": "Kartlara görsel eklemek için fotoğraf kitaplığı erişimi gereklidir."
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyCollectedDataTypes": [],
+        "NSPrivacyTrackingDomains": []
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/app-mark.png",
         "backgroundColor": "#e8f5f0"
       },
       "package": "com.tusankim.app",
@@ -40,11 +45,37 @@
     "scheme": "tusankim",
     "plugins": [
       "expo-sqlite",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kartlara görsel eklemek için fotoğraf kitaplığı erişimi gereklidir.",
+          "cameraPermission": "Kart oluştururken fotoğraf çekmek için kamera erişimi gereklidir."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Kartlara ses kaydı eklemek için mikrofon erişimi gereklidir."
+        }
+      ],
+      [
+        "expo-localization",
+        {
+          "supportedLocales": [
+            "tr",
+            "en"
+          ]
+        }
+      ]
     ],
+    "locales": {
+      "tr": "./locales/tr.json",
+      "en": "./locales/en.json"
+    },
     "extra": {
       "eas": {
-        "projectId": "tusankim"
+        "projectId": "e9a513b4-4561-4bf2-8b6e-2bf50e09364d"
       }
     }
   }

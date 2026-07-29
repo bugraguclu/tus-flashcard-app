@@ -5,7 +5,7 @@
 // ============================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { CardState, SessionStats, AppSettings, AlgorithmType } from './types';
+import type { CardState, SessionStats, AppSettings, AlgorithmType, ThemeMode, KeyBindings } from './types';
 import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
@@ -36,7 +36,29 @@ let legacySessionStatsMigrationPromise: Promise<void> | null = null;
 // Legacy per-card state keys used by old builds.
 const CARD_STATE_PREFIX = 'tus_cs:';
 
+// showAnswer is stored as the literal `KeyboardEvent.key` value the space bar produces (' '),
+// not the string "Space" — that keeps binding comparisons a single, uniform `event.key === x`
+// check. The settings UI is responsible for rendering ' ' as the human label "Space".
+export const DEFAULT_KEY_BINDINGS: KeyBindings = {
+    showAnswer: ' ',
+    again: '1',
+    hard: '2',
+    good: '3',
+    easy: '4',
+    replayAudio: 'r',
+    buryCard: '-',
+    suspendCard: '@',
+    markNote: '*',
+};
+
 export const DEFAULT_SETTINGS: AppSettings = {
+    language: 'system',
+    themeMode: 'system',
+    keyBindings: DEFAULT_KEY_BINDINGS,
+    autoAdvance: false,
+    interruptAudioOnAnswer: true,
+    showRemainingCount: true,
+    showNextReviewTimes: true,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -48,6 +70,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'mix',
     newCardOrder: 'sequential',
+    newCardGatherOrder: 'topic',
+    reviewSortOrder: 'dueRandom',
+    autoPlayAudio: true,
+    easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,
@@ -314,6 +340,44 @@ function normalizeQueueOrder(value: unknown): AppSettings['queueOrder'] {
     }
 }
 
+function normalizeThemeMode(value: unknown): ThemeMode {
+    return value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
+}
+
+function normalizeLanguage(value: unknown): AppSettings['language'] {
+    return value === 'tr' || value === 'en' || value === 'system' ? value : 'system';
+}
+
+/** A key binding is a single printable char, or a named key like "Space"/"Enter". */
+function normalizeKeyBindings(value: unknown): KeyBindings {
+    const raw = (value && typeof value === 'object' ? value : {}) as Partial<KeyBindings>;
+    const clean = (candidate: unknown, fallback: string): string => {
+        // Not trimmed: a lone space (' ') is the valid, literal binding for the space bar.
+        if (typeof candidate !== 'string') return fallback;
+        return candidate.length > 0 && candidate.length <= 16 ? candidate : fallback;
+    };
+
+    const bindings: KeyBindings = {
+        showAnswer: clean(raw.showAnswer, DEFAULT_KEY_BINDINGS.showAnswer),
+        again: clean(raw.again, DEFAULT_KEY_BINDINGS.again),
+        hard: clean(raw.hard, DEFAULT_KEY_BINDINGS.hard),
+        good: clean(raw.good, DEFAULT_KEY_BINDINGS.good),
+        easy: clean(raw.easy, DEFAULT_KEY_BINDINGS.easy),
+        replayAudio: clean(raw.replayAudio, DEFAULT_KEY_BINDINGS.replayAudio),
+        buryCard: clean(raw.buryCard, DEFAULT_KEY_BINDINGS.buryCard),
+        suspendCard: clean(raw.suspendCard, DEFAULT_KEY_BINDINGS.suspendCard),
+        markNote: clean(raw.markNote, DEFAULT_KEY_BINDINGS.markNote),
+    };
+
+    // Reject configs with duplicate keys (ambiguous bindings) — fall back to defaults entirely.
+    const values = Object.values(bindings).map((v) => v.toLowerCase());
+    if (new Set(values).size !== values.length) {
+        return { ...DEFAULT_KEY_BINDINGS };
+    }
+
+    return bindings;
+}
+
 function loadAppSettingsMeta(): Partial<AppSettings> {
     try {
         const raw = getDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META);
@@ -322,6 +386,15 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
         const parsed = JSON.parse(raw) as Partial<AppSettings>;
 
         return {
+            language: normalizeLanguage(parsed.language),
+            themeMode: normalizeThemeMode(parsed.themeMode),
+            keyBindings: normalizeKeyBindings(parsed.keyBindings),
+            autoAdvance: Boolean(parsed.autoAdvance),
+            // Default-on prefs (Anki parity): only an explicit false turns them off, so
+            // settings blobs written before these fields existed keep the default.
+            interruptAudioOnAnswer: parsed.interruptAudioOnAnswer !== false,
+            showRemainingCount: parsed.showRemainingCount !== false,
+            showNextReviewTimes: parsed.showNextReviewTimes !== false,
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
@@ -335,6 +408,13 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
 
 function persistAppSettingsMeta(settings: AppSettings): void {
     const meta = {
+        language: settings.language,
+        themeMode: settings.themeMode,
+        keyBindings: settings.keyBindings,
+        autoAdvance: settings.autoAdvance,
+        interruptAudioOnAnswer: settings.interruptAudioOnAnswer,
+        showRemainingCount: settings.showRemainingCount,
+        showNextReviewTimes: settings.showNextReviewTimes,
         queueOrder: settings.queueOrder,
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
@@ -351,11 +431,23 @@ export function loadSettings(): AppSettings {
 
     return {
         ...fromDeck,
+        language: meta.language ?? fromDeck.language,
+        themeMode: meta.themeMode ?? fromDeck.themeMode,
+        keyBindings: meta.keyBindings ?? fromDeck.keyBindings,
+        autoAdvance: meta.autoAdvance ?? fromDeck.autoAdvance,
+        interruptAudioOnAnswer: meta.interruptAudioOnAnswer ?? fromDeck.interruptAudioOnAnswer,
+        showRemainingCount: meta.showRemainingCount ?? fromDeck.showRemainingCount,
+        showNextReviewTimes: meta.showNextReviewTimes ?? fromDeck.showNextReviewTimes,
         queueOrder: meta.queueOrder ?? fromDeck.queueOrder,
         dayRolloverHour: meta.dayRolloverHour ?? fromDeck.dayRolloverHour,
         learnAheadMinutes: meta.learnAheadMinutes ?? fromDeck.learnAheadMinutes,
         algorithm: meta.algorithm ?? fromDeck.algorithm,
     };
+}
+
+/** Resets only the app settings (not decks/cards/history) to factory defaults. */
+export function resetSettingsToDefaults(): void {
+    saveSettings({ ...DEFAULT_SETTINGS });
 }
 
 export function saveSettings(settings: AppSettings): void {
@@ -448,6 +540,10 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
     validated.algorithm = 'ANKI_V3';
+    validated.language = normalizeLanguage(validated.language);
+    validated.themeMode = normalizeThemeMode(validated.themeMode);
+    validated.keyBindings = normalizeKeyBindings(validated.keyBindings);
+    validated.autoAdvance = Boolean(validated.autoAdvance);
     return validated;
 }
 

@@ -77,6 +77,7 @@ vi.mock('./reviewLogger', () => ({
 }));
 
 vi.mock('./noteManager', () => ({
+    MARKED_TAG: 'marked',
     getAnkiCard: (id: number) => {
         const card = shared.cards.get(id);
         return card ? JSON.parse(JSON.stringify(card)) : null;
@@ -107,10 +108,18 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard } from './studyRepository';
+import { answerStudyCard, forgetCard, setCardDueInDays } from './studyRepository';
+import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
 
 const settings: AppSettings = {
+    language: 'system',
+    themeMode: 'system',
+    keyBindings: { showAnswer: ' ', again: '1', hard: '2', good: '3', easy: '4', replayAudio: 'r', buryCard: '-', suspendCard: '@', markNote: '*' },
+    autoAdvance: false,
+    interruptAudioOnAnswer: true,
+    showRemainingCount: true,
+    showNextReviewTimes: true,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -122,6 +131,10 @@ const settings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'after',
     newCardOrder: 'sequential',
+    newCardGatherOrder: 'topic',
+    reviewSortOrder: 'dueRandom',
+    autoPlayAudio: true,
+    easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1,
@@ -220,6 +233,35 @@ describe('answerStudyCard', () => {
         expect(shared.txLog).toContain('ROLLBACK;');
     });
 
+    it('scales an early review (review ahead) by elapsed time, not the full interval', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        // 10-day interval, still 8 days from due => only 2 days elapsed.
+        shared.cards.set(30, {
+            ...baseCard(30, 1, 2, 2),
+            ivl: 10,
+            reps: 6,
+            due: today + 8,
+            lastReview: Date.now() - 2 * 86400000,
+        });
+
+        answerStudyCard(30, 3, settings, 900);
+        const updated = shared.cards.get(30)!;
+
+        // A due-today Good would give ~ivl * ease (≈25); reviewing 80% early shrinks it to ~1/5 of that.
+        expect(updated.ivl).toBeGreaterThanOrEqual(1);
+        expect(updated.ivl).toBeLessThanOrEqual(6);
+    });
+
+    it('preview mode leaves the card and the revlog untouched', () => {
+        const before = { ...shared.cards.get(10)! };
+
+        const result = answerStudyCard(10, 3, settings, 900, { preview: true });
+
+        expect(shared.cards.get(10)).toEqual(before);
+        expect(result.reviewLogId).toBe(0);
+        expect(shared.txLog).not.toContain('BEGIN TRANSACTION;');
+    });
+
     it('grows a mature review card on Good instead of collapsing it', () => {
         // Regression: review cards used to decode with a bogus learning step and route through
         // the learning handler, collapsing ivl to the graduating interval (1 day) on every answer.
@@ -301,5 +343,70 @@ describe('answerStudyCard', () => {
         } finally {
             deckConfig.relearningSteps = original;
         }
+    });
+});
+
+describe('forgetCard', () => {
+    beforeEach(() => {
+        shared.cards.clear();
+        shared.notes.clear();
+    });
+
+    it('resets a reviewed card back to brand-new, discarding scheduling progress', () => {
+        shared.cards.set(30, {
+            ...baseCard(30, 1, 2, 2),
+            ivl: 45,
+            reps: 12,
+            lapses: 3,
+            factor: 2100,
+        });
+
+        forgetCard(30, settings);
+
+        const updated = shared.cards.get(30)!;
+        expect(updated.type).toBe(0);
+        expect(updated.queue).toBe(0);
+        expect(updated.ivl).toBe(0);
+        expect(updated.reps).toBe(0);
+        expect(updated.lapses).toBe(0);
+        expect(updated.left).toBe(0);
+    });
+
+    it('is a no-op when the card does not exist', () => {
+        expect(() => forgetCard(999, settings)).not.toThrow();
+        expect(shared.cards.has(999)).toBe(false);
+    });
+});
+
+describe('setCardDueInDays', () => {
+    beforeEach(() => {
+        shared.cards.clear();
+        shared.notes.clear();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 5, 20, 12, 0, 0));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('pins a card into the review queue, due N days from today', () => {
+        shared.cards.set(31, baseCard(31, 1, 0, 0)); // starts as a new card
+
+        setCardDueInDays(31, 3, settings);
+
+        const updated = shared.cards.get(31)!;
+        expect(updated.type).toBe(2);
+        expect(updated.queue).toBe(2);
+        expect(updated.ivl).toBe(3);
+    });
+
+    it('clamps negative/invalid day counts to today (0)', () => {
+        shared.cards.set(32, baseCard(32, 1, 2, 2));
+
+        setCardDueInDays(32, -5, settings);
+
+        const updated = shared.cards.get(32)!;
+        expect(updated.ivl).toBe(1); // ivl is floored at 1 even when days clamp to 0
     });
 });

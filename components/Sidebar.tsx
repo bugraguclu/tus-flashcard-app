@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     View,
     Text,
@@ -8,25 +8,30 @@ import {
     Linking,
     Platform,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius, FontSize } from '../../constants/theme';
-import { TUS_SUBJECTS } from '../../lib/data';
+import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import type { Subject } from '../lib/types';
+import { useI18n } from '../hooks/useI18n';
 
 export const SIDEBAR_WIDTH = 260;
 
 type SidebarProps = {
     isWide: boolean;
     sidebarOpen: boolean;
+    subjects: Subject[];
     selectedSubject: string | null;
     selectedTopic: string | null;
     expandedSubject: string | null;
     totalCards: number;
     getSubjectCount: (subjectId: string) => number;
     getTopicCount: (subjectId: string, topic: string) => number;
+    getTopicsForSubject: (subjectId: string) => string[];
     onAllPress: () => void;
     onSubjectPress: (subjectId: string) => void;
     onToggleExpand: (subjectId: string) => void;
     onTopicPress: (subjectId: string, topic: string) => void;
     navigate: (path: string) => void;
+    /** Stats screen target; the layout points it at the active deck's stats when one is open. */
+    statsPath?: string;
 };
 
 /** Web-only tooltip via HTML title attribute */
@@ -35,28 +40,40 @@ function webTitle(text: string): Record<string, string> {
 }
 
 export function Sidebar(props: SidebarProps) {
+    const { t } = useI18n();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const {
         isWide,
         sidebarOpen,
+        subjects,
         selectedSubject,
         selectedTopic,
         expandedSubject,
         totalCards,
         getSubjectCount,
         getTopicCount,
+        getTopicsForSubject,
         onAllPress,
         onSubjectPress,
         onToggleExpand,
         onTopicPress,
         navigate,
+        statsPath = '/stats',
     } = props;
 
     return (
         <View style={[styles.sidebar, !isWide && !sidebarOpen && styles.sidebarHidden]}>
-            <View style={styles.sidebarHeader}>
+            <TouchableOpacity
+                style={styles.sidebarHeader}
+                onPress={() => navigate('/decks')}
+                accessibilityRole="button"
+                accessibilityLabel={t('tabs.backToDecks')}
+                {...webTitle(t('tabs.backToDecks'))}
+            >
                 <Text style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
-                <Text style={styles.sidebarSubtitle}>Spaced Repetition</Text>
-            </View>
+                <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
+            </TouchableOpacity>
 
             <ScrollView style={styles.subjectList} showsVerticalScrollIndicator={false}>
                 <TouchableOpacity
@@ -65,7 +82,7 @@ export function Sidebar(props: SidebarProps) {
                 >
                     <Text style={styles.subjectIcon}>📚</Text>
                     <Text style={[styles.subjectName, !selectedSubject && !selectedTopic && styles.subjectNameActive]}>
-                        Tüm Dersler
+                        {t('sidebar.allCourses')}
                     </Text>
                     <View style={[styles.subjectCount, !selectedSubject && !selectedTopic && styles.subjectCountActive]}>
                         <Text style={[styles.subjectCountText, !selectedSubject && !selectedTopic && styles.subjectCountTextActive]}>
@@ -74,7 +91,7 @@ export function Sidebar(props: SidebarProps) {
                     </View>
                 </TouchableOpacity>
 
-                {TUS_SUBJECTS.map((subject) => {
+                {subjects.map((subject) => {
                     const isExpanded = expandedSubject === subject.id;
                     const isSelected = selectedSubject === subject.id && !selectedTopic;
 
@@ -84,7 +101,7 @@ export function Sidebar(props: SidebarProps) {
                                 <TouchableOpacity
                                     style={styles.subjectItem}
                                     onPress={() => onSubjectPress(subject.id)}
-                                    {...webTitle(`${subject.name} dersini calis`)}
+                                    {...webTitle(`${subject.name} — ${t('common.study')}`)}
                                 >
                                     <Text style={styles.subjectIcon}>{subject.icon}</Text>
                                     <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
@@ -100,8 +117,8 @@ export function Sidebar(props: SidebarProps) {
                                     style={styles.expandBtn}
                                     onPress={() => onToggleExpand(subject.id)}
                                     accessibilityRole="button"
-                                    accessibilityLabel={isExpanded ? 'Alt başlıkları gizle' : 'Alt başlıkları göster'}
-                                    {...webTitle(isExpanded ? 'Alt basliklari gizle' : 'Alt basliklari goster')}
+                                    accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                                    {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
                                 >
                                     <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
                                         {isExpanded ? '▾' : '▸'}
@@ -109,7 +126,7 @@ export function Sidebar(props: SidebarProps) {
                                 </TouchableOpacity>
                             </View>
 
-                            {isExpanded && subject.topics.map((topic) => {
+                            {isExpanded && getTopicsForSubject(subject.id).map((topic) => {
                                 const isTopicSelected = selectedSubject === subject.id && selectedTopic === topic;
                                 return (
                                     <TouchableOpacity
@@ -134,30 +151,38 @@ export function Sidebar(props: SidebarProps) {
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/editor')} {...webTitle('Yeni kart ekle')}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigate(selectedSubject ? `/editor?subject=${encodeURIComponent(selectedSubject)}` : '/editor')}
+                        {...webTitle(t('sidebar.addCard'))}
+                    >
                         <Text style={styles.actionIcon}>+</Text>
-                        <Text style={styles.actionText}>Kart Ekle</Text>
+                        <Text style={styles.actionText}>{t('sidebar.addCard')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle('Kart tarayicisini ac')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
                         <Text style={styles.actionIcon}>🗂️</Text>
-                        <Text style={styles.actionText}>Tarayıcı</Text>
+                        <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/stats')} {...webTitle('Istatistikleri goruntule')}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
                         <Text style={styles.actionIcon}>📊</Text>
-                        <Text style={styles.actionText}>İstatistik</Text>
+                        <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle('CSV/TSV dosyasi ice aktar')}>
-                    <Text style={styles.settingsBtnText}>📥 İçe Aktar</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
+                    <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle('Not turlerini duzenle')}>
-                    <Text style={styles.settingsBtnText}>🧩 Not Türleri</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle(t('root.import'))}>
+                    <Text style={styles.settingsBtnText}>📥 {t('sidebar.import')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle('Uygulama ayarlari')}>
-                    <Text style={styles.settingsBtnText}>⚙️ Ayarlar</Text>
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle(t('root.noteTypes'))}>
+                    <Text style={styles.settingsBtnText}>🧩 {t('sidebar.noteTypes')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
+                    <Text style={styles.settingsBtnText}>⚙️ {t('tabs.settings')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -173,12 +198,13 @@ export function Sidebar(props: SidebarProps) {
     );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ColorScheme) {
+    return StyleSheet.create({
     sidebar: {
         width: SIDEBAR_WIDTH,
-        backgroundColor: Colors.bgSidebar,
+        backgroundColor: colors.bgSidebar,
         borderRightWidth: 1,
-        borderRightColor: Colors.border,
+        borderRightColor: colors.border,
         ...(Platform.OS === 'web'
             ? { position: 'fixed' as any, top: 0, left: 0, bottom: 0, zIndex: 100 }
             : { position: 'absolute', top: 0, left: 0, bottom: 0, zIndex: 100 }),
@@ -192,10 +218,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
+        borderBottomColor: colors.border,
     },
-    sidebarTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.accent },
-    sidebarSubtitle: { fontSize: FontSize.xs, color: Colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
+    sidebarTitle: { fontSize: FontSize.xl, fontWeight: '700', color: colors.accent },
+    sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
     subjectRow: {
         flexDirection: 'row',
@@ -211,7 +237,7 @@ const styles = StyleSheet.create({
         paddingVertical: 9,
         paddingHorizontal: Spacing.lg,
     },
-    subjectItemActive: { backgroundColor: Colors.accentLight },
+    subjectItemActive: { backgroundColor: colors.accentLight },
     expandBtn: {
         paddingVertical: 9,
         paddingHorizontal: 8,
@@ -219,8 +245,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     subjectIcon: { fontSize: 16, width: 26 },
-    subjectName: { flex: 1, fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: '500' },
-    subjectNameActive: { color: Colors.accent, fontWeight: '700' },
+    subjectName: { flex: 1, fontSize: FontSize.md, color: colors.textSecondary, fontWeight: '500' },
+    subjectNameActive: { color: colors.accent, fontWeight: '700' },
     subjectCount: {
         backgroundColor: 'rgba(0,0,0,0.04)',
         paddingHorizontal: 8,
@@ -229,17 +255,17 @@ const styles = StyleSheet.create({
         minWidth: 28,
         alignItems: 'center',
     },
-    subjectCountActive: { backgroundColor: Colors.accent },
-    subjectCountText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted },
-    subjectCountTextActive: { color: Colors.white },
+    subjectCountActive: { backgroundColor: colors.accent },
+    subjectCountText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
+    subjectCountTextActive: { color: colors.white },
     expandArrow: {
         fontSize: 11,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         marginLeft: 6,
         width: 14,
         textAlign: 'center',
     },
-    expandArrowOpen: { color: Colors.accent },
+    expandArrowOpen: { color: colors.accent },
     topicItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -250,49 +276,50 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.sm,
         marginVertical: 1,
     },
-    topicItemActive: { backgroundColor: Colors.accentLight },
+    topicItemActive: { backgroundColor: colors.accentLight },
     topicDot: {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: Colors.border,
+        backgroundColor: colors.border,
         marginRight: 8,
     },
-    topicDotActive: { backgroundColor: Colors.accent },
-    topicName: { flex: 1, fontSize: FontSize.sm, color: Colors.textMuted, fontWeight: '500' },
-    topicNameActive: { color: Colors.accent, fontWeight: '600' },
-    topicCount: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: '500' },
-    topicCountActive: { color: Colors.accent, fontWeight: '700' },
+    topicDotActive: { backgroundColor: colors.accent },
+    topicName: { flex: 1, fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '500' },
+    topicNameActive: { color: colors.accent, fontWeight: '600' },
+    topicCount: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500' },
+    topicCountActive: { color: colors.accent, fontWeight: '700' },
     sidebarActions: {
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.md,
         borderTopWidth: 1,
-        borderTopColor: Colors.border,
+        borderTopColor: colors.border,
     },
     actionRow: { flexDirection: 'row', gap: 6, marginBottom: Spacing.sm },
     actionBtn: {
         flex: 1,
         alignItems: 'center',
         paddingVertical: 8,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         gap: 2,
     },
     actionIcon: { fontSize: 16 },
-    actionText: { fontSize: 9, fontWeight: '600', color: Colors.textSecondary },
+    actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
     settingsBtn: {
         paddingVertical: 8,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
         marginBottom: Spacing.sm,
     },
-    settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: Colors.textSecondary },
+    settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
     creditContainer: { alignItems: 'center', paddingVertical: 6 },
-    creditText: { fontSize: 10, color: Colors.textMuted, letterSpacing: 0.3 },
-    creditName: { fontWeight: '700', color: Colors.accent },
-});
+    creditText: { fontSize: 10, color: colors.textMuted, letterSpacing: 0.3 },
+    creditName: { fontWeight: '700', color: colors.accent },
+    });
+}

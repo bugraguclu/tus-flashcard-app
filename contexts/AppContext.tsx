@@ -1,13 +1,22 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
-import type { AppSettings } from '../../lib/types';
-import { DEFAULT_SETTINGS, loadSettings } from '../../lib/storage';
-import { useAppStartup } from './use-app-startup';
+import type { AppSettings } from '../lib/types';
+import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
+import { useAppStartup } from '../hooks/useAppStartup';
+
+/** Course + topic of the card currently on screen; drives the live sidebar highlight. */
+export type StudyPosition = { subject: string; topic: string } | null;
 
 export type AppContextType = {
     selectedSubject: string | null;
     setSelectedSubject: (s: string | null) => void;
     selectedTopic: string | null;
     setSelectedTopic: (t: string | null) => void;
+    studyPosition: StudyPosition;
+    setStudyPosition: (position: StudyPosition) => void;
+    /** Anki's "current deck": the deck last opened for studying; null when studying by
+     *  course/topic scope. Deck-aware screens (stats) default to it. */
+    activeDeckName: string | null;
+    setActiveDeckName: (name: string | null) => void;
     settings: AppSettings;
     refreshData: () => void;
     dataVersion: number;
@@ -21,6 +30,10 @@ export const AppContext = createContext<AppContextType>({
     setSelectedSubject: () => { },
     selectedTopic: null,
     setSelectedTopic: () => { },
+    studyPosition: null,
+    setStudyPosition: () => { },
+    activeDeckName: null,
+    setActiveDeckName: () => { },
     settings: DEFAULT_SETTINGS,
     refreshData: () => { },
     dataVersion: 0,
@@ -38,6 +51,8 @@ export const AppContext = createContext<AppContextType>({
 export function AppProvider({ children }: { children: React.ReactNode }) {
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+    const [studyPosition, setStudyPosition] = useState<StudyPosition>(null);
+    const [activeDeckName, setActiveDeckName] = useState<string | null>(null);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [dataVersion, setDataVersion] = useState(0);
 
@@ -58,6 +73,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 setSelectedSubject,
                 selectedTopic,
                 setSelectedTopic,
+                studyPosition,
+                setStudyPosition,
+                activeDeckName,
+                setActiveDeckName,
                 settings,
                 refreshData,
                 dataVersion,
