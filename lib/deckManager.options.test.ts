@@ -19,13 +19,20 @@ vi.mock('./db', () => ({
 
 import {
     createDeck,
+    createFilteredDeck,
     createOrReplaceCustomStudySession,
+    getAllDecks,
+    getAvailableDeckName,
+    getAvailableDeckSubtreeName,
     getDeckByName,
     getDeckConfig,
     getDeckConfigForDeck,
     getDeckTodayBoost,
     addDeckTodayBoost,
     moveDeckUnder,
+    reorderDeckRelative,
+    renameDeck,
+    saveDeck,
     saveDeckConfig,
     setDeckLimits,
     createPreset,
@@ -88,12 +95,137 @@ describe('moveDeckUnder', () => {
         expect(getDeckByName('A::C')).toBeNull();
     });
 
+    it('adds a numeric suffix instead of failing when the destination name exists', () => {
+        createDeck('Python::Veri Yapıları::Varsayılan');
+        createDeck('Python::Veri Yapıları::Varsayılan (1)');
+        const source = createDeck('Varsayılan');
+        createDeck('Varsayılan::Alt Deste');
+
+        const movedName = moveDeckUnder(source.id, 'Python::Veri Yapıları');
+
+        expect(movedName).toBe('Python::Veri Yapıları::Varsayılan (2)');
+        expect(getDeckByName('Python::Veri Yapıları::Varsayılan (2)')?.id).toBe(source.id);
+        expect(getDeckByName('Python::Veri Yapıları::Varsayılan (2)::Alt Deste')).not.toBeNull();
+        expect(getDeckByName('Varsayılan')).toBeNull();
+    });
+
     it('refuses to move a deck under its own subtree', () => {
         const a = createDeck('A');
         createDeck('A::C');
 
         expect(() => moveDeckUnder(a.id, 'A::C')).toThrow();
         expect(getDeckByName('A')).not.toBeNull();
+    });
+
+    it('keeps filtered decks at the top level', () => {
+        createDeck('A');
+        const filtered = createFilteredDeck('Filtered', 'is:due');
+
+        expect(() => moveDeckUnder(filtered.id, 'A')).toThrow(/Filtrelenmiş/);
+        expect(getDeckByName('Filtered')).not.toBeNull();
+        expect(getDeckByName('A::Filtered')).toBeNull();
+    });
+
+    it('creates missing parents when a full :: path is entered while renaming', () => {
+        const deck = createDeck('Old');
+
+        renameDeck(deck.id, 'New::Deep::Moved');
+
+        expect(getDeckByName('New')).not.toBeNull();
+        expect(getDeckByName('New::Deep')).not.toBeNull();
+        expect(getDeckByName('New::Deep::Moved')?.id).toBe(deck.id);
+        expect(getDeckByName('Old')).toBeNull();
+    });
+
+    it('rejects a subtree rename when one of its descendants would collide', () => {
+        const deck = createDeck('Old');
+        createDeck('Old::Child');
+        // Simulate an orphaned descendant from an imported/legacy collection.
+        saveDeck({ ...deck, id: deck.id + 10_000, name: 'New::Child' });
+
+        expect(() => renameDeck(deck.id, 'New')).toThrow(/New::Child/);
+        expect(getDeckByName('Old')?.id).toBe(deck.id);
+        expect(getDeckByName('Old::Child')).not.toBeNull();
+        expect(getDeckByName('New::Child')).not.toBeNull();
+    });
+
+    it('prevents regular decks from being created below a filtered deck', () => {
+        createFilteredDeck('Filtered', 'is:due');
+
+        expect(() => createDeck('Filtered::Child')).toThrow(/Filtrelenmiş/);
+        expect(getDeckByName('Filtered::Child')).toBeNull();
+    });
+
+    it('supports a deck tree at least 100 levels deep', () => {
+        const levels = Array.from({ length: 100 }, (_, index) => `L${String(index + 1).padStart(3, '0')}`);
+        createDeck(levels.join('::'));
+
+        const decks = getAllDecks();
+        expect(decks).toHaveLength(100);
+
+        let branch = buildDeckTree(decks);
+        let expectedPath = '';
+        for (let depth = 0; depth < levels.length; depth++) {
+            expectedPath = expectedPath ? `${expectedPath}::${levels[depth]}` : levels[depth];
+            expect(branch).toHaveLength(1);
+            expect(branch[0].deck.name).toBe(expectedPath);
+            expect(branch[0].depth).toBe(depth);
+            branch = branch[0].children;
+        }
+        expect(branch).toHaveLength(0);
+    });
+});
+
+describe('getAvailableDeckName', () => {
+    it('returns the first free PC-style numbered leaf name', () => {
+        createDeck('Python::Varsayılan');
+        createDeck('Python::Varsayılan (1)');
+
+        expect(getAvailableDeckName('Python::Varsayılan')).toBe('Python::Varsayılan (2)');
+        expect(getAvailableDeckName('Python::Yeni')).toBe('Python::Yeni');
+    });
+
+    it('resolves a rename collision without dropping descendants', () => {
+        const source = createDeck('Eski');
+        createDeck('Eski::Alt Deste');
+        createDeck('Yeni');
+
+        const availableName = getAvailableDeckSubtreeName(source.id, 'Yeni');
+        renameDeck(source.id, availableName);
+
+        expect(availableName).toBe('Yeni (1)');
+        expect(getDeckByName('Yeni (1)')?.id).toBe(source.id);
+        expect(getDeckByName('Yeni (1)::Alt Deste')).not.toBeNull();
+    });
+});
+
+describe('reorderDeckRelative', () => {
+    it('persists a root deck immediately before another root deck', () => {
+        const python = createDeck('Python');
+        createDeck('Tıp');
+        const defaultDeck = createDeck('Varsayılan');
+
+        reorderDeckRelative(defaultDeck.id, python.id, 'before');
+
+        expect(buildDeckTree(getAllDecks()).map((node) => node.deck.name)).toEqual([
+            'Varsayılan',
+            'Python',
+            'Tıp',
+        ]);
+    });
+
+    it('moves a deck beside a nested target and preserves the requested sibling position', () => {
+        createDeck('Python');
+        const functions = createDeck('Python::Fonksiyonlar');
+        const defaultDeck = createDeck('Varsayılan');
+
+        reorderDeckRelative(defaultDeck.id, functions.id, 'after');
+
+        expect(getDeckByName('Varsayılan')).toBeNull();
+        expect(buildDeckTree(getAllDecks())[0].children.map((node) => node.deck.name)).toEqual([
+            'Python::Fonksiyonlar',
+            'Python::Varsayılan',
+        ]);
     });
 });
 

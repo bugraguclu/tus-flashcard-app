@@ -3,6 +3,9 @@
 // options/limits, custom study, delete) and drag-and-drop nesting via the row handle.
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
 import {
     View,
     Text,
@@ -13,18 +16,26 @@ import {
     TextInput,
     Modal,
     PanResponder,
+    Animated,
+    LayoutAnimation,
+    UIManager,
     Platform,
     KeyboardAvoidingView,
     useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import {
     getAllDecks,
+    getDeckByName,
+    getAvailableDeckName,
+    getAvailableDeckSubtreeName,
     getCardCountsByDeck,
     buildDeckTree,
     flattenDeckTree,
     createDeck,
+    createFilteredDeck,
     deleteDeck,
     renameDeck,
     moveDeckUnder,
@@ -33,11 +44,15 @@ import {
     updateFilteredDeck,
     rebuildFilteredDeck,
     setDeckCollapsed,
+    setDeckDescription,
+    emptyFilteredDeck,
+    reorderDeckRelative,
     type DeckTreeNode,
 } from '../../lib/deckManager';
 import { getDeckDisplayName, getParentDeckName, FILTERED_ORDERS, type Deck } from '../../lib/models';
 import { alert, confirm } from '../../lib/confirm';
 import { getStudyQueue } from '../../lib/studyRepository';
+import { createBackupNow } from '../../lib/backup';
 import { useApp } from './_layout';
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel } from '../../lib/i18n';
@@ -51,8 +66,11 @@ type ModalState =
     | { kind: 'menu'; deck: Deck }
     | { kind: 'rename'; deck: Deck }
     | { kind: 'move'; deck: Deck }
+    | { kind: 'create-subdeck'; deck: Deck }
+    | { kind: 'description'; deck: Deck }
     | { kind: 'custom'; deck: Deck }
     | { kind: 'filter'; deck: Deck }
+    | { kind: 'create-filter' }
     | null;
 
 function parseCount(text: string, fallback: number = 0): number {
@@ -60,13 +78,60 @@ function parseCount(text: string, fallback: number = 0): number {
     return Number.isFinite(value) ? Math.max(0, value) : fallback;
 }
 
+const ROOT_DROP_TARGET = '__root_deck_drop_target__';
+type DeckDropPlacement = 'before' | 'inside' | 'after';
+
+function decodeDeckDropTarget(target: string | null):
+    | { kind: 'root' }
+    | { kind: 'deck'; name: string; placement: DeckDropPlacement }
+    | null {
+    if (!target) return null;
+    if (target === ROOT_DROP_TARGET) return { kind: 'root' };
+    const separator = target.indexOf(':');
+    if (separator < 0) return null;
+    const placement = target.slice(0, separator) as DeckDropPlacement;
+    if (placement !== 'before' && placement !== 'inside' && placement !== 'after') return null;
+    return { kind: 'deck', placement, name: target.slice(separator + 1) };
+}
+
+function encodeDeckDropTarget(name: string, placement: DeckDropPlacement): string {
+    return `${placement}:${name}`;
+}
+// A deliberate spring-open delay prevents a parent from expanding while the pointer merely
+// passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
+const DECK_HOVER_EXPAND_DELAY_MS = 800;
+
+/** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
+function remapExpandedDeckPaths(
+    paths: Set<string>,
+    oldPath: string,
+    newPath: string,
+    additionallyExpand?: string | null,
+): Set<string> {
+    const next = new Set<string>();
+    for (const path of paths) {
+        if (path === oldPath || path.startsWith(`${oldPath}::`)) {
+            next.add(`${newPath}${path.slice(oldPath.length)}`);
+        } else {
+            next.add(path);
+        }
+    }
+    if (additionallyExpand) next.add(additionallyExpand);
+    return next;
+}
+
 export default function DecksScreen() {
     const { t, l, locale } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
+    const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
+    // Bottom-sheet modals fill most of the screen; a top inset keeps the tap-to-dismiss backdrop
+    // reachable below the status bar/notch instead of hiding under it.
+    const compactSheetTopInset = { paddingTop: insets.top + Spacing.md };
     const isDesktopWeb = Platform.OS === 'web' && !isCompact;
+    const supportsDeckDrag = isDesktopWeb || Platform.OS === 'ios' || Platform.OS === 'android';
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings, dataVersion, bumpDataVersion } = useApp();
@@ -74,13 +139,20 @@ export default function DecksScreen() {
         getAllDecks().filter((deck) => !deck.collapsed).map((deck) => deck.name),
     ));
     const [showAddDeck, setShowAddDeck] = useState(false);
+    const [showAddMenu, setShowAddMenu] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
+    const pendingOverflowRouteRef = useRef<string | null>(null);
+    const pendingOverflowActionRef = useRef<(() => void) | null>(null);
+    const pendingDeckMenuRouteRef = useRef<string | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
+    const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
     const [refreshToken, setRefreshToken] = useState(0);
     const [modal, setModal] = useState<ModalState>(null);
 
     // Modal form fields (filled when the corresponding modal opens).
     const [renameText, setRenameText] = useState('');
+    const [newSubdeckName, setNewSubdeckName] = useState('');
+    const [descriptionText, setDescriptionText] = useState('');
     const [boostNew, setBoostNew] = useState('10');
     const [boostReview, setBoostReview] = useState('20');
     const [customLimit, setCustomLimit] = useState('50');
@@ -98,13 +170,53 @@ export default function DecksScreen() {
     // Drag-and-drop state: rows report their content-space layout; the active drag
     // tracks the pointer against those rows to pick a drop target.
     const rowLayouts = useRef(new Map<string, { y: number; h: number }>());
+    const deckRowRefs = useRef(new Map<string, View>());
     const scrollOffsetRef = useRef(0);
     const listTopRef = useRef(0);
+    const listHeightRef = useRef(0);
+    const listContentHeightRef = useRef(0);
     const listWrapRef = useRef<View>(null);
+    const deckScrollRef = useRef<ScrollView>(null);
+    const hoverExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [draggingDeck, setDraggingDeck] = useState<string | null>(null);
     const draggingRef = useRef<string | null>(null);
     const dropTargetRef = useRef<string | null>(null);
     const [dropTarget, setDropTarget] = useState<string | null>(null);
+    const dragPageYRef = useRef<number | null>(null);
+    const dragAutoScrollFrameRef = useRef<number | null>(null);
+    const dragPreviewTranslateY = useRef(new Animated.Value(72)).current;
+    const dragPreviewLift = useRef(new Animated.Value(0)).current;
+    // PanResponder must survive the state update fired when dragging begins. Recreating it
+    // during that render loses its closure-local `activated` flag and leaves the UI stuck in
+    // drag mode without receiving move/release callbacks.
+    const dragRespondersRef = useRef(new Map<number, ReturnType<typeof PanResponder.create>>());
+    const dragHandlersRef = useRef<{
+        begin: (node: DeckTreeNode, pageY: number) => void;
+        move: (pageY: number) => void;
+        complete: () => void;
+        cancel: () => void;
+    } | null>(null);
+
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            UIManager.setLayoutAnimationEnabledExperimental?.(true);
+        }
+        return () => {
+            if (hoverExpandTimerRef.current) clearTimeout(hoverExpandTimerRef.current);
+            if (dragAutoScrollFrameRef.current !== null) {
+                cancelAnimationFrame(dragAutoScrollFrameRef.current);
+            }
+        };
+    }, []);
+
+    const animateDeckTreeLayout = () => {
+        LayoutAnimation.configureNext({
+            duration: 190,
+            update: { type: LayoutAnimation.Types.easeInEaseOut },
+            create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+            delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+        });
+    };
 
     const deckTree = useMemo(() => {
         const decks = getAllDecks();
@@ -164,6 +276,9 @@ export default function DecksScreen() {
         walk(deckTree);
         return rows;
     }, [deckTree, expandedDecks]);
+    const visibleRowsRef = useRef<DeckTreeNode[]>(visibleRows);
+    visibleRowsRef.current = visibleRows;
+    const decodedDropTarget = decodeDeckDropTarget(dropTarget);
 
     const refresh = useCallback(() => {
         setRefreshToken((value) => value + 1);
@@ -171,6 +286,7 @@ export default function DecksScreen() {
     }, [bumpDataVersion]);
 
     const toggleExpand = (deck: Deck) => {
+        animateDeckTreeLayout();
         setExpandedDecks((prev) => {
             const next = new Set(prev);
             const willCollapse = next.has(deck.name);
@@ -195,7 +311,7 @@ export default function DecksScreen() {
         if (!name) return;
 
         try {
-            createDeck(name);
+            createDeck(getAvailableDeckName(name));
             setNewDeckName('');
             setShowAddDeck(false);
             refresh();
@@ -205,13 +321,231 @@ export default function DecksScreen() {
         }
     };
 
+    const openOverflowRoute = (path: string) => {
+        // iOS must finish dismissing the native overflow Modal before Expo Router presents
+        // another modal screen, otherwise UIKit rejects the second presentation.
+        if (Platform.OS === 'ios') {
+            pendingOverflowRouteRef.current = path;
+            setShowOverflowMenu(false);
+            return;
+        }
+        setShowOverflowMenu(false);
+        router.push(path as any);
+    };
+
+    const handleOverflowDismiss = () => {
+        const path = pendingOverflowRouteRef.current;
+        pendingOverflowRouteRef.current = null;
+        if (path) router.push(path as any);
+        const action = pendingOverflowActionRef.current;
+        pendingOverflowActionRef.current = null;
+        action?.();
+    };
+
+    // Run an action after the overflow Modal has fully closed. iOS rejects presenting
+    // another modal (router screen, Alert) while the menu is still dismissing, so defer
+    // via onDismiss; other platforms have no such constraint and run immediately.
+    const runAfterOverflowClose = (action: () => void) => {
+        if (Platform.OS === 'ios') {
+            pendingOverflowActionRef.current = action;
+            setShowOverflowMenu(false);
+            return;
+        }
+        setShowOverflowMenu(false);
+        action();
+    };
+
+    const handleCreateBackup = () => {
+        runAfterOverflowClose(() => {
+            void (async () => {
+                try {
+                    await createBackupNow();
+                    alert(
+                        l('Yedek Oluşturuldu', 'Backup Created'),
+                        l('Koleksiyonunuzun bir yedeği kaydedildi.', 'A backup of your collection was saved.'),
+                    );
+                } catch (e) {
+                    console.warn('[Decks] manual backup failed:', e);
+                    alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
+                }
+            })();
+        });
+    };
+
+    const openDeckMenuRoute = (path: string) => {
+        // Dismiss the native menu before presenting another screen on iOS. Pushing while the
+        // menu Modal is still mounted can be rejected by UIKit.
+        if (Platform.OS === 'ios') {
+            pendingDeckMenuRouteRef.current = path;
+            setModal(null);
+            return;
+        }
+        setModal(null);
+        router.push(path as any);
+    };
+
+    const handleDeckModalDismiss = () => {
+        const path = pendingDeckMenuRouteRef.current;
+        pendingDeckMenuRouteRef.current = null;
+        if (path) router.push(path as any);
+    };
+
+    const openCreateDeck = () => {
+        setShowAddMenu(false);
+        setNewDeckName('');
+        setShowAddDeck(true);
+    };
+
+    // Anki's "Add" toolbar action: open the note editor targeting the current deck. Passing no
+    // deckId lets the editor resolve the last-opened deck (activeDeckName), matching Anki's habit
+    // of adding to the deck you last studied.
+    const openAddCard = () => {
+        setShowAddMenu(false);
+        router.push('/editor' as any);
+    };
+
+    const openCreateFilteredDeck = () => {
+        const baseName = l('Filtrelenmiş Deste', 'Filtered Deck');
+        let suffix = 1;
+        while (getDeckByName(`${baseName} ${suffix}`)) suffix += 1;
+
+        setShowAddMenu(false);
+        setNewFilteredDeckName(`${baseName} ${suffix}`);
+        setFilterSearch('is:due');
+        setFilterLimit('100');
+        setFilterOrder(0);
+        setFilterSearch2('');
+        setFilterLimit2('100');
+        setFilterReschedule(true);
+        setModal({ kind: 'create-filter' });
+    };
+
+    const handleCreateFilteredDeck = () => {
+        if (modal?.kind !== 'create-filter') return;
+        const name = newFilteredDeckName.trim();
+        const search = filterSearch.trim();
+        if (!name || !search) return;
+
+        if (name.includes('::')) {
+            alert(
+                t('common.error'),
+                l('Filtrelenmiş deste başka bir destenin alt destesi olamaz.', 'A filtered deck cannot be a subdeck.'),
+            );
+            return;
+        }
+        try {
+            const availableName = getAvailableDeckName(name);
+            const deck = createFilteredDeck(availableName, search, parseCount(filterLimit, 100) || 100);
+            updateFilteredDeck(deck.id, {
+                searchQuery: search,
+                searchLimit: parseCount(filterLimit, 100) || 100,
+                searchOrder: filterOrder,
+                searchQuery2: filterSearch2.trim() || undefined,
+                searchLimit2: parseCount(filterLimit2, 100) || 100,
+                searchOrder2: 0,
+                reschedule: filterReschedule,
+            });
+            setModal(null);
+            refresh();
+            router.push(`/deck-overview?deck=${encodeURIComponent(availableName)}` as any);
+        } catch (e) {
+            console.warn('[Decks] create filtered deck failed:', e);
+            alert(t('common.error'), l('Filtrelenmiş deste oluşturulamadı.', 'Could not create the filtered deck.'));
+        }
+    };
+
     // ---- Gear menu actions ----
 
     const openMenu = (deck: Deck) => setModal({ kind: 'menu', deck });
 
     const openRename = (deck: Deck) => {
-        setRenameText(getDeckDisplayName(deck.name));
+        // AnkiDroid exposes the full name here, so editing the :: path can also move a deck.
+        setRenameText(deck.name);
         setModal({ kind: 'rename', deck });
+    };
+
+    const openCreateSubdeck = (deck: Deck) => {
+        setNewSubdeckName('');
+        setModal({ kind: 'create-subdeck', deck });
+    };
+
+    const openMoveDeck = (deck: Deck) => setModal({ kind: 'move', deck });
+
+    const handleCreateSubdeck = () => {
+        if (modal?.kind !== 'create-subdeck') return;
+        const segments = newSubdeckName.split('::').map((segment) => segment.trim());
+        if (segments.length === 0 || segments.some((segment) => !segment)) {
+            alert(t('common.error'), l('Alt deste adı boş olamaz.', 'The subdeck name cannot be empty.'));
+            return;
+        }
+
+        const relativePath = segments.join('::');
+        const fullName = `${modal.deck.name}::${relativePath}`;
+
+        try {
+            const availableName = getAvailableDeckName(fullName);
+            createDeck(availableName, modal.deck.configId);
+            const availableSegments = availableName.slice(`${modal.deck.name}::`.length).split('::');
+            setDeckCollapsed(modal.deck.id, false);
+            setExpandedDecks((prev) => {
+                const next = new Set(prev);
+                let path = modal.deck.name;
+                next.add(path);
+                for (const segment of availableSegments) {
+                    path = `${path}::${segment}`;
+                    next.add(path);
+                }
+                return next;
+            });
+            setModal(null);
+            refresh();
+            if (Platform.OS !== 'web') {
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+            }
+        } catch (e) {
+            console.warn('[Decks] create subdeck failed:', e);
+            alert(t('common.error'), e instanceof Error ? e.message : l('Alt deste oluşturulamadı.', 'Could not create the subdeck.'));
+        }
+    };
+
+    const openDescription = (deck: Deck) => {
+        setDescriptionText(deck.description ?? '');
+        setModal({ kind: 'description', deck });
+    };
+
+    const handleSaveDescription = () => {
+        if (modal?.kind !== 'description') return;
+        try {
+            setDeckDescription(modal.deck.id, descriptionText);
+            setModal(null);
+            refresh();
+        } catch (e) {
+            console.warn('[Decks] description save failed:', e);
+            alert(t('common.error'), l('Deste açıklaması kaydedilemedi.', 'Could not save the deck description.'));
+        }
+    };
+
+    const handleCreateShortcut = async (deck: Deck) => {
+        try {
+            // AnkiDroid's launcher shortcut enters study for the selected deck; keep the same
+            // semantics in the cross-platform deep link used by iOS Shortcuts.
+            const url = Linking.createURL('/', { queryParams: { deck: deck.name } });
+            await Clipboard.setStringAsync(url);
+            setModal(null);
+            const message = Platform.OS === 'ios'
+                ? l(
+                    `“${deck.name}” destesini doğrudan açan bağlantı panoya kopyalandı. Kestirmeler uygulamasında “URL'leri Aç” eylemine yapıştırıp Ana Ekrana Ekle'yi seçin.`,
+                    `A link that opens “${deck.name}” directly was copied. Paste it into an “Open URLs” action in Shortcuts, then choose Add to Home Screen.`,
+                )
+                : l(
+                    `“${deck.name}” destesini doğrudan açan kısayol bağlantısı panoya kopyalandı.`,
+                    `A shortcut link that opens “${deck.name}” directly was copied to the clipboard.`,
+                );
+            setTimeout(() => alert(l('Kısayol Hazır', 'Shortcut Ready'), message), Platform.OS === 'ios' ? 300 : 0);
+        } catch (e) {
+            console.warn('[Decks] shortcut creation failed:', e);
+            alert(t('common.error'), l('Deste kısayolu oluşturulamadı.', 'Could not create the deck shortcut.'));
+        }
     };
 
     const openCustomStudy = (deck: Deck) => {
@@ -307,12 +641,17 @@ export default function DecksScreen() {
 
     const handleRename = () => {
         if (modal?.kind !== 'rename') return;
-        const leaf = renameText.trim();
-        if (!leaf) return;
+        const nextName = renameText.trim();
+        if (!nextName) return;
+        if (nextName.split('::').some((segment) => !segment.trim())) {
+            alert(t('common.error'), l('Deste yolunda boş bir seviye olamaz.', 'A deck path cannot contain an empty level.'));
+            return;
+        }
 
         try {
-            const parent = getParentDeckName(modal.deck.name);
-            renameDeck(modal.deck.id, parent ? `${parent}::${leaf}` : leaf);
+            const availableName = getAvailableDeckSubtreeName(modal.deck.id, nextName);
+            renameDeck(modal.deck.id, availableName);
+            setExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, availableName));
             setModal(null);
             refresh();
         } catch (e) {
@@ -324,10 +663,13 @@ export default function DecksScreen() {
     const handleMoveTo = (targetName: string | null) => {
         if (modal?.kind !== 'move') return;
         try {
-            moveDeckUnder(modal.deck.id, targetName);
-            if (targetName) {
-                setExpandedDecks((prev) => new Set(prev).add(targetName));
-            }
+            const nextName = moveDeckUnder(modal.deck.id, targetName) ?? modal.deck.name;
+            setExpandedDecks((prev) => remapExpandedDeckPaths(
+                prev,
+                modal.deck.name,
+                nextName,
+                targetName,
+            ));
             setModal(null);
             refresh();
         } catch (e) {
@@ -390,66 +732,369 @@ export default function DecksScreen() {
         );
     };
 
+    const requestDelete = (deck: Deck) => {
+        setModal(null);
+        setTimeout(() => handleDelete(deck), Platform.OS === 'ios' ? 250 : 0);
+    };
+
+    const requestEmptyFilteredDeck = (deck: Deck) => {
+        setModal(null);
+        setTimeout(() => confirm(
+            l('Filtrelenmiş Desteyi Boşalt', 'Empty Filtered Deck'),
+            l('Kartlar silinmez; ait oldukları destelere döner.', 'Cards are not deleted; they return to their home decks.'),
+            () => {
+                emptyFilteredDeck(deck.id);
+                refresh();
+            },
+        ), Platform.OS === 'ios' ? 250 : 0);
+    };
+
     // ---- Drag & drop ----
 
     const isDescendantOf = (name: string, ancestor: string) => name.startsWith(`${ancestor}::`);
+    const isOverRootDropZone = (listY: number, dragged: string) => (
+        Boolean(getParentDeckName(dragged)) && listY >= -64 && listY <= -6
+    );
 
-    const findDropTarget = (contentY: number, dragged: string): string | null => {
-        for (const row of visibleRows) {
-            const layout = rowLayouts.current.get(row.deck.name);
-            if (!layout) continue;
-            if (contentY < layout.y || contentY > layout.y + layout.h) continue;
-            const name = row.deck.name;
-            if (name === dragged || isDescendantOf(name, dragged) || row.deck.isFiltered) return null;
-            return name;
-        }
-        return null;
+    const clearHoverExpandTimer = () => {
+        if (!hoverExpandTimerRef.current) return;
+        clearTimeout(hoverExpandTimerRef.current);
+        hoverExpandTimerRef.current = null;
     };
 
-    const makeDragResponder = (node: DeckTreeNode) => PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onPanResponderGrant: () => {
-            draggingRef.current = node.deck.name;
-            dropTargetRef.current = null;
-            setDraggingDeck(node.deck.name);
-            setDropTarget(null);
-        },
-        onPanResponderMove: (_evt, gesture) => {
-            if (!draggingRef.current) return;
-            const contentY = gesture.moveY - listTopRef.current + scrollOffsetRef.current;
-            const target = findDropTarget(contentY, draggingRef.current);
-            if (target !== dropTargetRef.current) {
-                dropTargetRef.current = target;
-                setDropTarget(target);
-            }
-        },
-        onPanResponderRelease: () => {
-            const dragged = draggingRef.current;
-            const target = dropTargetRef.current;
-            draggingRef.current = null;
-            dropTargetRef.current = null;
-            setDraggingDeck(null);
-            setDropTarget(null);
+    const cancelDragAutoScroll = () => {
+        if (dragAutoScrollFrameRef.current === null) return;
+        cancelAnimationFrame(dragAutoScrollFrameRef.current);
+        dragAutoScrollFrameRef.current = null;
+    };
 
-            if (!dragged || !target) return;
-            const deck = getAllDecks().find((entry) => entry.name === dragged);
-            if (!deck) return;
-            try {
-                moveDeckUnder(deck.id, target);
-                setExpandedDecks((prev) => new Set(prev).add(target));
-                refresh();
-            } catch (e) {
-                console.warn('[Decks] drag move failed:', e);
-                alert(t('common.error'), e instanceof Error ? e.message : l('Deste taşınamadı.', 'Could not move the deck.'));
+    const resetDeckDrag = () => {
+        clearHoverExpandTimer();
+        cancelDragAutoScroll();
+        draggingRef.current = null;
+        dragPageYRef.current = null;
+        dropTargetRef.current = null;
+        dragPreviewLift.stopAnimation();
+        dragPreviewLift.setValue(0);
+        setDraggingDeck(null);
+        setDropTarget(null);
+    };
+
+    const findDropTarget = (pageY: number, dragged: string): string | null => {
+        const listY = pageY - listTopRef.current;
+        // Keep the top-level target just above the scrolling rows so it never covers the first
+        // visible deck, which must remain a valid parent drop target.
+        if (isOverRootDropZone(listY, dragged)) return ROOT_DROP_TARGET;
+        if (listY < 0 || (listHeightRef.current > 0 && listY > listHeightRef.current)) return null;
+
+        const contentY = listY + scrollOffsetRef.current;
+        let nearestTarget: { name: string; placement: 'before' | 'after'; distance: number } | null = null;
+        let firstValidRow: { name: string; y: number } | null = null;
+        let lastValidRow: { name: string; bottom: number } | null = null;
+        for (const row of visibleRowsRef.current) {
+            const layout = rowLayouts.current.get(row.deck.name);
+            if (!layout) continue;
+            const name = row.deck.name;
+            const isInvalidTarget = name === dragged || isDescendantOf(name, dragged);
+            if (!isInvalidTarget) {
+                if (!firstValidRow || layout.y < firstValidRow.y) firstValidRow = { name, y: layout.y };
+                if (!lastValidRow || layout.y + layout.h > lastValidRow.bottom) {
+                    lastValidRow = { name, bottom: layout.y + layout.h };
+                }
             }
-        },
-        onPanResponderTerminate: () => {
-            draggingRef.current = null;
-            dropTargetRef.current = null;
-            setDraggingDeck(null);
-            setDropTarget(null);
-        },
-    });
+            if (contentY >= layout.y && contentY <= layout.y + layout.h) {
+                if (isInvalidTarget) return null;
+                const position = (contentY - layout.y) / Math.max(1, layout.h);
+                // The broad edge zones make ordinary list reordering effortless. The calmer
+                // centre zone retains Anki's drop-onto-parent behaviour for creating subdecks.
+                const placement: DeckDropPlacement = position < 0.36
+                    ? 'before'
+                    : position > 0.64
+                        ? 'after'
+                        : 'inside';
+                if (placement === 'inside' && row.deck.isFiltered) return null;
+                return encodeDeckDropTarget(name, placement);
+            }
+
+            // Nested cards have small visual gaps between their rows. Snap those gaps to the
+            // nearest valid deck so the target does not flicker away while the finger moves.
+            if (isInvalidTarget) continue;
+            const distance = contentY < layout.y
+                ? layout.y - contentY
+                : contentY - (layout.y + layout.h);
+            if (distance <= 12 && (!nearestTarget || distance < nearestTarget.distance)) {
+                nearestTarget = {
+                    name,
+                    distance,
+                    placement: contentY < layout.y ? 'before' : 'after',
+                };
+            }
+        }
+        // Keep the empty breathing room below the final card useful: dragging all the way down
+        // still means “place last”, rather than silently cancelling the move.
+        if (lastValidRow && contentY > lastValidRow.bottom) {
+            return encodeDeckDropTarget(lastValidRow.name, 'after');
+        }
+        if (firstValidRow && contentY < firstValidRow.y) {
+            return encodeDeckDropTarget(firstValidRow.name, 'before');
+        }
+        return nearestTarget
+            ? encodeDeckDropTarget(nearestTarget.name, nearestTarget.placement)
+            : null;
+    };
+
+    const updateDropTarget = (target: string | null) => {
+        if (target === dropTargetRef.current) return;
+        clearHoverExpandTimer();
+        dropTargetRef.current = target;
+        setDropTarget(target);
+
+        if (target && Platform.OS !== 'web') {
+            void Haptics.selectionAsync().catch(() => undefined);
+        }
+
+        const decoded = decodeDeckDropTarget(target);
+        if (!decoded || decoded.kind !== 'deck' || decoded.placement !== 'inside') return;
+        const targetRow = visibleRowsRef.current.find((row) => row.deck.name === decoded.name);
+        if (!targetRow?.children.length || expandedDecks.has(decoded.name)) return;
+
+        // Hovering over a collapsed parent opens it, so deeply nested destinations remain
+        // reachable without cancelling the current drag.
+        hoverExpandTimerRef.current = setTimeout(() => {
+            hoverExpandTimerRef.current = null;
+            if (!draggingRef.current || dropTargetRef.current !== target) return;
+            animateDeckTreeLayout();
+            setExpandedDecks((prev) => {
+                if (prev.has(decoded.name)) return prev;
+                setDeckCollapsed(targetRow.deck.id, false);
+                return new Set(prev).add(decoded.name);
+            });
+        }, DECK_HOVER_EXPAND_DELAY_MS);
+    };
+
+    const getDragAutoScrollDelta = (pageY: number): number => {
+        const viewportHeight = listHeightRef.current;
+        if (!viewportHeight) return 0;
+
+        const listY = pageY - listTopRef.current;
+        const edge = 96;
+        const maxSpeed = 15;
+        if (listY < edge && scrollOffsetRef.current > 0) {
+            const strength = Math.min(1, Math.max(0, (edge - listY) / edge));
+            return -Math.max(2, Math.round(maxSpeed * strength));
+        }
+
+        const maxOffset = Math.max(0, listContentHeightRef.current - viewportHeight);
+        if (listY > viewportHeight - edge && scrollOffsetRef.current < maxOffset) {
+            const strength = Math.min(1, Math.max(0, (listY - (viewportHeight - edge)) / edge));
+            return Math.max(2, Math.round(maxSpeed * strength));
+        }
+        return 0;
+    };
+
+    const runDragAutoScrollFrame = () => {
+        dragAutoScrollFrameRef.current = null;
+        const dragged = draggingRef.current;
+        const pageY = dragPageYRef.current;
+        if (!dragged || pageY === null) return;
+
+        const delta = getDragAutoScrollDelta(pageY);
+        if (delta === 0) return;
+
+        const maxOffset = Math.max(0, listContentHeightRef.current - listHeightRef.current);
+        const nextOffset = Math.max(0, Math.min(maxOffset, scrollOffsetRef.current + delta));
+        if (nextOffset === scrollOffsetRef.current) return;
+
+        scrollOffsetRef.current = nextOffset;
+        deckScrollRef.current?.scrollTo({ y: nextOffset, animated: false });
+        updateDropTarget(findDropTarget(pageY, dragged));
+        dragAutoScrollFrameRef.current = requestAnimationFrame(runDragAutoScrollFrame);
+    };
+
+    const updateDragPreviewPosition = (pageY: number) => {
+        const nextY = Math.min(
+            Math.max(4, pageY - listTopRef.current - 29),
+            Math.max(4, listHeightRef.current - 66),
+        );
+        dragPreviewTranslateY.setValue(nextY);
+    };
+
+    const updateDeckDrag = (pageY: number) => {
+        const dragged = draggingRef.current;
+        if (!dragged) return;
+        dragPageYRef.current = pageY;
+        updateDragPreviewPosition(pageY);
+
+        const listY = pageY - listTopRef.current;
+        const overRootTarget = isOverRootDropZone(listY, dragged);
+        if (overRootTarget || getDragAutoScrollDelta(pageY) === 0) {
+            cancelDragAutoScroll();
+        } else if (dragAutoScrollFrameRef.current === null) {
+            dragAutoScrollFrameRef.current = requestAnimationFrame(runDragAutoScrollFrame);
+        }
+        updateDropTarget(findDropTarget(pageY, dragged));
+    };
+
+    const beginDeckDrag = (node: DeckTreeNode, pageY: number) => {
+        if (node.deck.isFiltered) return;
+        draggingRef.current = node.deck.name;
+        dragPageYRef.current = pageY;
+        dropTargetRef.current = null;
+        setDraggingDeck(node.deck.name);
+        setDropTarget(null);
+        updateDragPreviewPosition(pageY);
+        dragPreviewLift.stopAnimation();
+        dragPreviewLift.setValue(0);
+        Animated.spring(dragPreviewLift, {
+            toValue: 1,
+            speed: 28,
+            bounciness: 4,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+        setShowAddMenu(false);
+
+        // Refresh screen-space geometry at gesture time. Safe-area changes, rotation and the
+        // Simulator title bar can all make the value captured by the initial onLayout stale.
+        listWrapRef.current?.measureInWindow((_x, y, _width, height) => {
+            listTopRef.current = y;
+            if (height > 0) listHeightRef.current = height;
+            const measurableRows = visibleRowsRef.current
+                .map((row) => ({ name: row.deck.name, view: deckRowRefs.current.get(row.deck.name) }))
+                .filter((entry): entry is { name: string; view: View } => Boolean(entry.view));
+            if (!measurableRows.length) {
+                updateDeckDrag(pageY);
+                return;
+            }
+
+            let remaining = measurableRows.length;
+            for (const entry of measurableRows) {
+                entry.view.measureInWindow((_rowX, rowY, _rowWidth, rowHeight) => {
+                    if (rowHeight > 0) {
+                        rowLayouts.current.set(entry.name, {
+                            y: rowY - y + scrollOffsetRef.current,
+                            h: rowHeight,
+                        });
+                    }
+                    remaining -= 1;
+                    if (remaining === 0) updateDeckDrag(pageY);
+                });
+            }
+        });
+        if (Platform.OS !== 'web') {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+        }
+    };
+
+    const completeDeckDrag = () => {
+        const dragged = draggingRef.current;
+        const target = dropTargetRef.current;
+        resetDeckDrag();
+
+        if (!dragged || !target) return;
+        const deck = getAllDecks().find((entry) => entry.name === dragged);
+        if (!deck) return;
+
+        const decoded = decodeDeckDropTarget(target);
+        if (!decoded) return;
+        if (decoded.kind === 'deck' && decoded.placement !== 'inside') {
+            const targetDeck = getDeckByName(decoded.name);
+            if (!targetDeck) return;
+            try {
+                const nextName = reorderDeckRelative(deck.id, targetDeck.id, decoded.placement);
+                animateDeckTreeLayout();
+                setExpandedDecks((prev) => remapExpandedDeckPaths(
+                    prev,
+                    dragged,
+                    nextName,
+                    getParentDeckName(nextName),
+                ));
+                refresh();
+                if (Platform.OS !== 'web') {
+                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+                }
+            } catch (e) {
+                console.warn('[Decks] drag reorder failed:', e);
+                if (Platform.OS !== 'web') {
+                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+                }
+                alert(t('common.error'), e instanceof Error ? e.message : l('Deste sıralanamadı.', 'Could not reorder the deck.'));
+            }
+            return;
+        }
+
+        const targetParent = decoded.kind === 'root' ? null : decoded.name;
+        const proposedName = targetParent
+            ? `${targetParent}::${getDeckDisplayName(dragged)}`
+            : getDeckDisplayName(dragged);
+        if (proposedName === dragged) return;
+
+        try {
+            const nextName = moveDeckUnder(deck.id, targetParent) ?? dragged;
+            if (targetParent) {
+                const parent = getDeckByName(targetParent);
+                if (parent) setDeckCollapsed(parent.id, false);
+            }
+            animateDeckTreeLayout();
+            setExpandedDecks((prev) => remapExpandedDeckPaths(
+                prev,
+                dragged,
+                nextName,
+                targetParent,
+            ));
+            refresh();
+            if (Platform.OS !== 'web') {
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+            }
+        } catch (e) {
+            console.warn('[Decks] drag move failed:', e);
+            if (Platform.OS !== 'web') {
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+            }
+            alert(t('common.error'), e instanceof Error ? e.message : l('Deste taşınamadı.', 'Could not move the deck.'));
+        }
+    };
+
+    dragHandlersRef.current = {
+        begin: beginDeckDrag,
+        move: updateDeckDrag,
+        complete: completeDeckDrag,
+        cancel: resetDeckDrag,
+    };
+
+    const getDragResponder = (node: DeckTreeNode) => {
+        const cached = dragRespondersRef.current.get(node.deck.id);
+        if (cached) return cached;
+
+        const deckId = node.deck.id;
+        let activated = false;
+        const finishGesture = () => {
+            if (!activated) return;
+            activated = false;
+            dragHandlersRef.current?.complete();
+        };
+        const responder = PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onPanResponderGrant: (event, gesture) => {
+                const currentNode = visibleRowsRef.current.find((row) => row.deck.id === deckId);
+                if (!currentNode) return;
+                activated = true;
+                const startPageY = gesture.y0 || event.nativeEvent.pageY;
+                dragHandlersRef.current?.begin(currentNode, startPageY);
+            },
+            onPanResponderMove: (event, gesture) => {
+                if (!activated) return;
+                dragHandlersRef.current?.move(gesture.moveY || event.nativeEvent.pageY);
+            },
+            onPanResponderRelease: finishGesture,
+            onPanResponderTerminate: () => {
+                activated = false;
+                dragHandlersRef.current?.cancel();
+            },
+            onPanResponderTerminationRequest: () => !activated,
+        });
+        dragRespondersRef.current.set(deckId, responder);
+        return responder;
+    };
 
     // ---- Rendering ----
 
@@ -459,34 +1104,63 @@ export default function DecksScreen() {
         const hasChildren = node.children.length > 0;
         const displayName = getDeckDisplayName(deck.name);
         const isDragging = draggingDeck === deck.name;
-        const isDropTarget = dropTarget === deck.name;
-        const dragResponder = isDesktopWeb ? makeDragResponder(node) : null;
+        const rowDropTarget = decodedDropTarget?.kind === 'deck' && decodedDropTarget.name === deck.name
+            ? decodedDropTarget
+            : null;
+        const isInsideDropTarget = rowDropTarget?.placement === 'inside';
+        const isDropBefore = rowDropTarget?.placement === 'before';
+        const isDropAfter = rowDropTarget?.placement === 'after';
+        const dragResponder = supportsDeckDrag && !deck.isFiltered ? getDragResponder(node) : null;
+        const maxIndentDepth = isCompact ? 4 : 10;
+        const visualDepth = Math.min(node.depth, maxIndentDepth);
+        const isChild = node.depth > 0;
+        // Compact layouts get their indentation from actual nested containers below. Desktop keeps
+        // Anki's table-like deck tree, but uses a restrained step so names and counts retain room.
+        const contentIndent = 8 + visualDepth * 24;
 
         return (
             <View
                 key={deck.id}
+                ref={(view) => {
+                    if (view) deckRowRefs.current.set(deck.name, view);
+                    else deckRowRefs.current.delete(deck.name);
+                }}
                 onLayout={(e) => {
-                    rowLayouts.current.set(deck.name, {
-                        y: e.nativeEvent.layout.y,
-                        h: e.nativeEvent.layout.height,
+                    const layoutHeight = e.nativeEvent.layout.height;
+                    // Compact rows are recursively nested, so onLayout.y is relative to the
+                    // immediate parent rather than the ScrollView content. Keep drag hit-testing
+                    // in one coordinate space by measuring the row against the list viewport.
+                    const rowView = deckRowRefs.current.get(deck.name);
+                    if (!rowView) return;
+                    rowView.measureInWindow((_x, rowY, _width, rowHeight) => {
+                        rowLayouts.current.set(deck.name, {
+                            y: rowY - listTopRef.current + scrollOffsetRef.current,
+                            h: rowHeight || layoutHeight,
+                        });
                     });
                 }}
                 style={[
                     styles.deckRow,
                     isCompact && styles.deckRowCompact,
-                    { paddingLeft: (isCompact ? 4 : 8) + node.depth * (isCompact ? 14 : 22) },
+                    isCompact && isChild && styles.deckRowCompactChild,
+                    !isCompact && { paddingLeft: contentIndent },
                     isDragging && styles.deckRowDragging,
-                    isDropTarget && styles.deckRowDropTarget,
+                    isInsideDropTarget && styles.deckRowDropTarget,
                 ]}
             >
+                {!isCompact && isDropBefore && <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineBefore]} />}
+                {!isCompact && isDropAfter && <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineAfter]} />}
                 {hasChildren ? (
                     <TouchableOpacity
                         style={styles.expandBtn}
                         onPress={() => toggleExpand(deck)}
                         accessibilityRole="button"
                         accessibilityLabel={isExpanded ? l('Alt desteleri gizle', 'Hide subdecks') : l('Alt desteleri göster', 'Show subdecks')}
+                        accessibilityState={{ expanded: isExpanded }}
                     >
-                        <Text style={styles.expandArrow}>{isExpanded ? '▾' : '▸'}</Text>
+                        <View style={styles.expandIconCircle}>
+                            <Text style={[styles.expandArrow, isExpanded && styles.expandArrowExpanded]}>›</Text>
+                        </View>
                     </TouchableOpacity>
                 ) : (
                     <View style={styles.expandBtn}>
@@ -512,6 +1186,7 @@ export default function DecksScreen() {
                             <Text style={styles.deckMeta} numberOfLines={1}>
                                 {l(`${node.totalCards} kart`, `${node.totalCards} cards`)}{hasChildren ? l(` · ${node.children.length} alt deste`, ` · ${node.children.length} subdecks`) : ''}
                                 {deck.isFiltered ? (deck.filteredDeckEmpty ? l(' · boşaltıldı', ' · emptied') : l(' · filtreli', ' · filtered')) : ''}
+                                {node.depth > maxIndentDepth ? l(` · ${node.depth + 1}. seviye`, ` · level ${node.depth + 1}`) : ''}
                             </Text>
                             <View style={styles.mobileCountsRow}>
                                 <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeNewBg }]}>
@@ -536,11 +1211,24 @@ export default function DecksScreen() {
                     </View>
                 )}
 
-                {isDesktopWeb && dragResponder && (
+                {supportsDeckDrag && dragResponder && (
                     <View
-                        style={styles.dragHandle}
+                        style={[styles.dragHandle, isDragging && styles.dragHandleActive]}
                         {...dragResponder.panHandlers}
-                        {...webTitle(l('Sürükleyip başka bir desteye bırakarak alt deste yapın', 'Drag onto another deck to make a subdeck'))}
+                        accessible
+                        accessibilityRole="button"
+                        accessibilityLabel={l(`${displayName} destesini taşı`, `Move ${displayName} deck`)}
+                        accessibilityHint={l('Satırın üstüne veya altına bırakarak sıralayın; ortasına bırakarak alt deste yapın', 'Drop at a row edge to reorder, or at its centre to make a subdeck')}
+                        {...webTitle(l('Kenarlara bırakın: sırala · Ortaya bırakın: alt deste yap', 'Drop at edges: reorder · Drop at centre: make a subdeck'))}
+                    >
+                        <Text style={styles.dragHandleText}>⠿</Text>
+                    </View>
+                )}
+                {supportsDeckDrag && !dragResponder && (
+                    <View
+                        style={[styles.dragHandle, styles.dragHandleDisabled]}
+                        accessible
+                        accessibilityLabel={l('Filtrelenmiş desteler alt deste olarak taşınamaz', 'Filtered decks cannot be moved into the deck tree')}
                     >
                         <Text style={styles.dragHandleText}>⠿</Text>
                     </View>
@@ -558,63 +1246,126 @@ export default function DecksScreen() {
         );
     };
 
-    const renderMenuModal = (deck: Deck) => (
-        <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
-            {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalTitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
+    // On phones, render the data tree as a real view tree. Children share their parent's card
+    // surface; indentation and a single guide line convey depth without nested boxes.
+    const renderCompactDeckBranch = (
+        node: DeckTreeNode,
+        isRoot: boolean,
+        isLastSibling: boolean,
+    ): React.ReactNode => {
+        const showChildren = node.children.length > 0 && expandedDecks.has(node.deck.name);
+        const deepNesting = node.depth >= 4;
+        const branchDropTarget = decodedDropTarget?.kind === 'deck' && decodedDropTarget.name === node.deck.name
+            ? decodedDropTarget.placement
+            : null;
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setModal(null); handleStudy(deck.name); }}>
-                <Text style={styles.menuItemText}>▶️  {t('common.study')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => openRename(deck)}>
-                <Text style={styles.menuItemText}>✏️  {l('Yeniden Adlandır', 'Rename')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => setModal({ kind: 'move', deck })}>
-                <Text style={styles.menuItemText}>📁  {l('Taşı (alt deste yap)', 'Move (make subdeck)')}</Text>
-            </TouchableOpacity>
-            {!deck.isFiltered && (
-                <>
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => { setModal(null); router.push(`/deck-options?deckId=${deck.id}` as any); }}
+        return (
+            <View
+                key={node.deck.id}
+                style={[
+                    isRoot ? styles.deckGroupCard : styles.deckNestedBranch,
+                    !isRoot && isLastSibling && styles.deckNestedBranchLast,
+                ]}
+            >
+                {branchDropTarget === 'before' && (
+                    <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineBefore]} />
+                )}
+                {renderDeckRow(node)}
+                {showChildren && (
+                    <View
+                        style={[
+                            styles.deckChildrenWell,
+                            node.depth > 0 && styles.deckChildrenWellNested,
+                            deepNesting && styles.deckChildrenWellDeep,
+                        ]}
                     >
-                        <Text style={styles.menuItemText}>⚙️  {l('Seçenekler (günlük limitler)', 'Options (daily limits)')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => openCustomStudy(deck)}>
-                        <Text style={styles.menuItemText}>🎯  {t('anki.customStudy')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => { setModal(null); router.push(`/export?deck=${encodeURIComponent(deck.name)}` as any); }}
-                    >
-                        <Text style={styles.menuItemText}>📤  {l('Dışa Aktar', 'Export')}</Text>
-                    </TouchableOpacity>
-                </>
-            )}
-            {deck.isFiltered && (
-                <TouchableOpacity style={styles.menuItem} onPress={() => openFilterOptions(deck)}>
-                    <Text style={styles.menuItemText}>🔍  {l('Filtre Seçenekleri', 'Filtered Deck Options')}</Text>
-                </TouchableOpacity>
-            )}
-            {deck.isFiltered && (
-                <TouchableOpacity style={styles.menuItem} onPress={() => handleRebuildFilter(deck)}>
-                    <Text style={styles.menuItemText}>↻  {l('Yeniden Oluştur', 'Rebuild')}</Text>
-                </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleDelete(deck)}>
-                <Text style={[styles.menuItemText, styles.menuItemDanger]}>🗑️  {t('common.delete')}</Text>
-            </TouchableOpacity>
+                        {node.children.map((child, childIndex) => renderCompactDeckBranch(
+                            child,
+                            false,
+                            childIndex === node.children.length - 1,
+                        ))}
+                    </View>
+                )}
+                {branchDropTarget === 'after' && (
+                    <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineAfter]} />
+                )}
+            </View>
+        );
+    };
 
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setModal(null)}>
-                <Text style={styles.modalCancelText}>{t('common.close')}</Text>
+    const renderMenuModal = (deck: Deck) => {
+        const MenuAction = ({ label, onPress, danger = false }: {
+            label: string;
+            onPress: () => void;
+            danger?: boolean;
+        }) => (
+            <TouchableOpacity
+                style={styles.deckMenuItem}
+                onPress={onPress}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+            >
+                <Text style={[styles.deckMenuItemText, danger && styles.menuItemDanger]}>{label}</Text>
             </TouchableOpacity>
-        </View>
-    );
+        );
+
+        return (
+            <View style={styles.deckMenuCard} accessibilityViewIsModal>
+                <Text style={styles.deckMenuTitle}>{deck.name}</Text>
+                <ScrollView
+                    style={styles.deckMenuScroll}
+                    contentContainerStyle={styles.deckMenuContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {!deck.isFiltered && (
+                        <MenuAction
+                            label={l('Ekle', 'Add')}
+                            onPress={() => openDeckMenuRoute(`/editor?deckId=${deck.id}`)}
+                        />
+                    )}
+                    <MenuAction
+                        label={l('Kartlara göz at', 'Browse cards')}
+                        onPress={() => openDeckMenuRoute(`/browser?deck=${encodeURIComponent(deck.name)}`)}
+                    />
+                    <MenuAction label={l('Desteyi yeniden adlandır', 'Rename deck')} onPress={() => openRename(deck)} />
+
+                    {!deck.isFiltered ? (
+                        <>
+                            <MenuAction label={l('Alt deste oluştur', 'Create subdeck')} onPress={() => openCreateSubdeck(deck)} />
+                            <MenuAction label={l('Desteyi taşı', 'Move deck')} onPress={() => openMoveDeck(deck)} />
+                            <MenuAction
+                                label={l('Deste seçenekleri', 'Deck options')}
+                                onPress={() => openDeckMenuRoute(`/deck-options?deckId=${deck.id}`)}
+                            />
+                            <MenuAction label={l('Özel çalışma', 'Custom study')} onPress={() => openCustomStudy(deck)} />
+                            <MenuAction
+                                label={l('Desteyi dışa aktar', 'Export deck')}
+                                onPress={() => openDeckMenuRoute(`/export?deck=${encodeURIComponent(deck.name)}`)}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <MenuAction label={l('Filtre seçenekleri', 'Filtered deck options')} onPress={() => openFilterOptions(deck)} />
+                            <MenuAction label={l('Yeniden oluştur', 'Rebuild')} onPress={() => handleRebuildFilter(deck)} />
+                            <MenuAction label={l('Desteyi boşalt', 'Empty deck')} onPress={() => requestEmptyFilteredDeck(deck)} />
+                        </>
+                    )}
+
+                    <MenuAction label={l('Kısayol oluştur', 'Create shortcut')} onPress={() => { void handleCreateShortcut(deck); }} />
+                    <MenuAction label={l('Açıklamayı düzenle', 'Edit description')} onPress={() => openDescription(deck)} />
+                    <MenuAction label={l('Desteyi sil', 'Delete deck')} onPress={() => requestDelete(deck)} />
+                </ScrollView>
+            </View>
+        );
+    };
 
     const renderRenameModal = (deck: Deck) => (
         <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
             {isCompact && <View style={styles.sheetHandle} />}
             <Text style={styles.modalTitle}>{l('Yeniden Adlandır', 'Rename')}</Text>
+            <Text style={styles.modalHint}>
+                {l('Tam deste yolu. :: işaretleri alt deste seviyelerini belirler.', 'Full deck path. Double colons (::) define subdeck levels.')}
+            </Text>
             <TextInput
                 style={styles.modalInput}
                 value={renameText}
@@ -635,6 +1386,73 @@ export default function DecksScreen() {
         </View>
     );
 
+    const renderCreateSubdeckModal = (deck: Deck) => (
+        <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
+            {isCompact && <View style={styles.sheetHandle} />}
+            <Text style={styles.modalEyebrow}>{l('ALT DESTE OLUŞTUR', 'CREATE SUBDECK')}</Text>
+            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
+            <Text style={styles.modalHint}>
+                {l(
+                    'Yeni deste bu destenin doğrudan altında oluşturulur. Bir kerede daha derin yol için adları :: ile ayırabilirsiniz.',
+                    'The new deck is created directly below this deck. To create a deeper path at once, separate names with ::.',
+                )}
+            </Text>
+            <TextInput
+                style={styles.modalInput}
+                value={newSubdeckName}
+                onChangeText={setNewSubdeckName}
+                onSubmitEditing={handleCreateSubdeck}
+                autoFocus
+                placeholder={l('Alt deste adı', 'Subdeck name')}
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="done"
+            />
+            <Text style={styles.subdeckPathPreview} numberOfLines={3}>
+                {newSubdeckName.trim()
+                    ? `${deck.name}::${newSubdeckName.trim()}`
+                    : `${deck.name}::…`}
+            </Text>
+            <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
+                    <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.modalBtnPrimary, !newSubdeckName.trim() && styles.buttonDisabled]}
+                    onPress={handleCreateSubdeck}
+                    disabled={!newSubdeckName.trim()}
+                >
+                    <Text style={styles.modalBtnPrimaryText}>{l('Alt Desteyi Oluştur', 'Create Subdeck')}</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
+    const renderDescriptionModal = (deck: Deck) => (
+        <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
+            {isCompact && <View style={styles.sheetHandle} />}
+            <Text style={styles.modalEyebrow}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
+            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
+            <TextInput
+                style={[styles.modalInput, styles.descriptionInput]}
+                value={descriptionText}
+                onChangeText={setDescriptionText}
+                placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                autoFocus
+                textAlignVertical="top"
+            />
+            <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
+                    <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleSaveDescription}>
+                    <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
     const renderMoveModal = (deck: Deck) => {
         const targets = getAllDecks().filter((candidate) =>
             !candidate.isFiltered
@@ -648,12 +1466,23 @@ export default function DecksScreen() {
                 <Text style={styles.modalTitle}>{l('Nereye taşınsın?', 'Move deck to…')}</Text>
                 <ScrollView style={styles.moveList}>
                     {getParentDeckName(deck.name) && (
-                        <TouchableOpacity style={styles.menuItem} onPress={() => handleMoveTo(null)}>
+                        <TouchableOpacity
+                            style={styles.menuItem}
+                            onPress={() => handleMoveTo(null)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Kök seviyeye taşı', 'Move to top level')}
+                        >
                             <Text style={styles.menuItemText}>📂  {l('Kök seviyeye taşı', 'Move to top level')}</Text>
                         </TouchableOpacity>
                     )}
                     {targets.map((target) => (
-                        <TouchableOpacity key={target.id} style={styles.menuItem} onPress={() => handleMoveTo(target.name)}>
+                        <TouchableOpacity
+                            key={target.id}
+                            style={styles.menuItem}
+                            onPress={() => handleMoveTo(target.name)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l(`${target.name} altına taşı`, `Move under ${target.name}`)}
+                        >
                             <Text style={styles.menuItemText} numberOfLines={1}>📁  {target.name}</Text>
                         </TouchableOpacity>
                     ))}
@@ -804,15 +1633,38 @@ export default function DecksScreen() {
         </ScrollView>
     );
 
-    const renderFilterModal = (deck: Deck) => (
-        <ScrollView
-            style={[styles.modalCard, isCompact && styles.modalCardCompact, styles.modalCardScrollable]}
-            contentContainerStyle={styles.modalCardScrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-        >
+    const renderFilterModal = (deck?: Deck) => {
+        const isCreating = !deck;
+        const createDisabled = !newFilteredDeckName.trim() || !filterSearch.trim();
+
+        return (
+            <ScrollView
+                style={[styles.modalCard, isCompact && styles.modalCardCompact, styles.modalCardScrollable]}
+                contentContainerStyle={styles.modalCardScrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
             {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalTitle}>🔍 {t('anki.filteredDeck')} — {getDeckDisplayName(deck.name)}</Text>
+            <Text style={styles.modalEyebrow}>{l('FİLTRELENMİŞ DESTE', 'FILTERED DECK')}</Text>
+            <Text style={styles.modalTitle}>
+                {isCreating
+                    ? l('Filtrelenmiş Deste Oluştur', 'Create Filtered Deck')
+                    : getDeckDisplayName(deck.name)}
+            </Text>
+
+            {isCreating && (
+                <>
+                    <Text style={styles.fieldLabel}>{l('Deste adı', 'Deck name')}</Text>
+                    <TextInput
+                        style={styles.modalInput}
+                        value={newFilteredDeckName}
+                        onChangeText={setNewFilteredDeckName}
+                        placeholder={l('Filtrelenmiş Deste 1', 'Filtered Deck 1')}
+                        placeholderTextColor={colors.textMuted}
+                        autoFocus
+                    />
+                </>
+            )}
 
             <Text style={styles.fieldLabel}>{t('common.search')}</Text>
             <TextInput
@@ -885,18 +1737,27 @@ export default function DecksScreen() {
                 <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
                     <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
+                {!isCreating && (
+                    <TouchableOpacity
+                        style={styles.modalBtnSecondary}
+                        onPress={() => handleRebuildFilter(deck)}
+                    >
+                        <Text style={styles.modalBtnSecondaryText}>↻ {l('Yeniden Oluştur', 'Rebuild')}</Text>
+                    </TouchableOpacity>
+                )}
                 <TouchableOpacity
-                    style={styles.modalBtnSecondary}
-                    onPress={() => handleRebuildFilter(deck)}
+                    style={[styles.modalBtnPrimary, isCreating && createDisabled && styles.buttonDisabled]}
+                    onPress={isCreating ? handleCreateFilteredDeck : handleSaveFilterOptions}
+                    disabled={isCreating && createDisabled}
                 >
-                    <Text style={styles.modalBtnSecondaryText}>↻ {l('Yeniden Oluştur', 'Rebuild')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleSaveFilterOptions}>
-                    <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>
+                        {isCreating ? l('Oluştur', 'Create') : t('common.save')}
+                    </Text>
                 </TouchableOpacity>
             </View>
-        </ScrollView>
-    );
+            </ScrollView>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -908,14 +1769,6 @@ export default function DecksScreen() {
                     </Text>
                 </View>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        style={[styles.headerBtn, styles.headerBtnPrimary]}
-                        onPress={() => setShowAddDeck(true)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
-                    >
-                        <Text style={styles.headerBtnText}>+ {t('common.deck')}</Text>
-                    </TouchableOpacity>
                     {isDesktopWeb && (
                         <TouchableOpacity
                             style={styles.headerBtn}
@@ -927,75 +1780,97 @@ export default function DecksScreen() {
                         </TouchableOpacity>
                     )}
                     <TouchableOpacity
-                        style={styles.headerBtn}
+                        style={styles.headerMenuBtn}
                         onPress={() => setShowOverflowMenu(true)}
                         accessibilityRole="button"
                         accessibilityLabel={l('Diğer seçenekler', 'More options')}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Text style={styles.headerBtnText}>⋮</Text>
+                        <View style={styles.headerMenuDot} />
+                        <View style={styles.headerMenuDot} />
+                        <View style={styles.headerMenuDot} />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {isCompact && (
-                <View style={styles.todayCard}>
-                    <View style={styles.todayMetric}>
-                        <Text style={[styles.todayValue, { color: colors.badgeNew }]}>{todaySummary.new}</Text>
-                        <Text style={styles.todayLabel}>{t('anki.new')}</Text>
-                    </View>
-                    <View style={styles.todayDivider} />
-                    <View style={styles.todayMetric}>
-                        <Text style={[styles.todayValue, { color: colors.badgeLearn }]}>{todaySummary.learn}</Text>
-                        <Text style={styles.todayLabel}>{t('anki.learn')}</Text>
-                    </View>
-                    <View style={styles.todayDivider} />
-                    <View style={styles.todayMetric}>
-                        <Text style={[styles.todayValue, { color: colors.badgeReview }]}>{todaySummary.review}</Text>
-                        <Text style={styles.todayLabel}>{t('anki.review')}</Text>
-                    </View>
-                </View>
-            )}
-
-            <Modal visible={showOverflowMenu} transparent animationType="fade" onRequestClose={() => setShowOverflowMenu(false)}>
-                <TouchableOpacity style={styles.overflowOverlay} activeOpacity={1} onPress={() => setShowOverflowMenu(false)}>
-                    <View style={styles.overflowSheet}>
+            <Modal
+                visible={showOverflowMenu}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowOverflowMenu(false)}
+                onDismiss={handleOverflowDismiss}
+            >
+                <View style={styles.overflowOverlay}>
+                    <TouchableOpacity
+                        style={styles.overflowBackdrop}
+                        activeOpacity={1}
+                        onPress={() => setShowOverflowMenu(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Menüyü kapat', 'Close menu')}
+                    />
+                    <View style={styles.overflowSheet} accessibilityViewIsModal>
                         <TouchableOpacity
                             style={styles.overflowRow}
-                            onPress={() => { setShowOverflowMenu(false); router.push('/empty-cards' as any); }}
+                            onPress={() => openOverflowRoute('/empty-cards')}
                         >
                             <Text style={styles.overflowIcon}>🧹</Text>
                             <Text style={styles.overflowLabel}>{l('Boş Kartlar', 'Empty Cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
-                            onPress={() => { setShowOverflowMenu(false); router.push('/import' as any); }}
+                            onPress={() => openOverflowRoute('/import')}
                         >
                             <Text style={styles.overflowIcon}>📥</Text>
                             <Text style={styles.overflowLabel}>{t('root.import')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
-                            onPress={() => { setShowOverflowMenu(false); router.push('/export' as any); }}
+                            onPress={() => openOverflowRoute('/export')}
                         >
                             <Text style={styles.overflowIcon}>📤</Text>
                             <Text style={styles.overflowLabel}>{l('Dışa Aktar', 'Export')}</Text>
                         </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.overflowRow}
+                            onPress={handleCreateBackup}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Yedek oluştur', 'Create backup')}
+                        >
+                            <Text style={styles.overflowIcon}>🗄️</Text>
+                            <Text style={styles.overflowLabel}>{l('Yedek Oluştur', 'Create Backup')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.overflowRow}
+                            onPress={() => openOverflowRoute('/backups')}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
+                        >
+                            <Text style={styles.overflowIcon}>↩️</Text>
+                            <Text style={styles.overflowLabel}>{l('Yedekten Geri Yükle', 'Restore from Backup')}</Text>
+                        </TouchableOpacity>
                     </View>
-                </TouchableOpacity>
+                </View>
             </Modal>
 
             <Modal visible={showAddDeck} transparent animationType="slide" onRequestClose={() => setShowAddDeck(false)}>
                 <KeyboardAvoidingView
-                    style={[styles.modalOverlay, isCompact && styles.modalOverlayCompact]}
+                    style={[styles.modalOverlay, isCompact && styles.modalOverlayCompact, isCompact && compactSheetTopInset]}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
+                    <TouchableOpacity
+                        style={styles.modalBackdropHit}
+                        activeOpacity={1}
+                        onPress={() => setShowAddDeck(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Yeni deste penceresini kapat', 'Close new deck dialog')}
+                    />
                     <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
                         <View style={styles.sheetHandle} />
                         <Text style={styles.modalEyebrow}>{l('YENİ DESTE', 'NEW DECK')}</Text>
                         <Text style={styles.modalTitle}>{l('Çalışma alanınızı oluşturun', 'Create your study space')}</Text>
                         <Text style={styles.modalHint}>
                             {isCompact
-                                ? l('Alt deste yapmak için desteyi oluşturduktan sonra ••• menüsünden Taşı’yı seçin.', 'After creating it, select Move from the ••• menu to make it a subdeck.')
+                                ? l('Alt deste yapmak için ⠿ tutamacından sürükleyip desteyi üst destesinin üzerine bırakın.', 'To make a subdeck, drag it by the ⠿ handle and drop it onto its parent.')
                                 : l('Alt deste için iki nokta kullanın: TUS::Dahiliye::Kardiyoloji', 'Use two colons for subdecks: TUS::Internal Medicine::Cardiology')}
                         </Text>
                     <TextInput
@@ -1039,23 +1914,36 @@ export default function DecksScreen() {
             <View
                 style={styles.listWrap}
                 ref={listWrapRef}
-                onLayout={() => {
+                onLayout={(event) => {
+                    listHeightRef.current = event.nativeEvent.layout.height;
                     listWrapRef.current?.measureInWindow((_x, y) => {
                         listTopRef.current = y;
                     });
                 }}
             >
                 <ScrollView
+                    ref={deckScrollRef}
                     style={styles.deckList}
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={!draggingDeck}
                     onScroll={(e) => {
                         scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
                     }}
-                    scrollEventThrottle={32}
+                    scrollEventThrottle={16}
+                    onContentSizeChange={(_width, height) => {
+                        listContentHeightRef.current = height;
+                    }}
                     contentContainerStyle={isCompact ? styles.deckListContentCompact : undefined}
                 >
-                    {visibleRows.length > 0 ? visibleRows.map((node) => renderDeckRow(node)) : (
+                    {visibleRows.length > 0 ? (
+                        isCompact
+                            ? deckTree.map((node, index) => renderCompactDeckBranch(
+                                node,
+                                true,
+                                index === deckTree.length - 1,
+                            ))
+                            : visibleRows.map((node) => renderDeckRow(node))
+                    ) : (
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyStateIcon}>＋</Text>
                             <Text style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
@@ -1064,18 +1952,118 @@ export default function DecksScreen() {
                     )}
                     <View style={{ height: 80 }} />
                 </ScrollView>
+
+                {draggingDeck && getParentDeckName(draggingDeck) && (
+                    <View
+                        pointerEvents="none"
+                        style={[
+                            styles.rootDropZone,
+                            dropTarget === ROOT_DROP_TARGET && styles.rootDropZoneActive,
+                        ]}
+                    >
+                        <Text style={[
+                            styles.rootDropZoneText,
+                            dropTarget === ROOT_DROP_TARGET && styles.rootDropZoneTextActive,
+                        ]}>
+                            ↑ {l('Ana seviyeye bırak', 'Drop at top level')}
+                        </Text>
+                    </View>
+                )}
+
+                {!isDesktopWeb && draggingDeck && (
+                    <Animated.View
+                        pointerEvents="none"
+                        style={[
+                            styles.mobileDragPreview,
+                            {
+                                opacity: dragPreviewLift.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0.72, 1],
+                                }),
+                                transform: [
+                                    { translateY: dragPreviewTranslateY },
+                                    {
+                                        scale: dragPreviewLift.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: [0.965, 1],
+                                        }),
+                                    },
+                                ],
+                            },
+                        ]}
+                    >
+                        <Text style={styles.mobileDragPreviewTitle} numberOfLines={1}>
+                            ⠿ {draggingDeck.replaceAll('::', ' › ')}
+                        </Text>
+                    </Animated.View>
+                )}
+            </View>
+
+            {showAddMenu && (
+                <TouchableOpacity
+                    style={styles.fabDismissLayer}
+                    activeOpacity={1}
+                    onPress={() => setShowAddMenu(false)}
+                    accessibilityLabel={l('Ekleme menüsünü kapat', 'Close add menu')}
+                />
+            )}
+
+            <View style={styles.fabWrap} pointerEvents="box-none">
+                {showAddMenu && (
+                    <View style={styles.fabActions}>
+                        <View style={styles.fabActionRow}>
+                            <View style={styles.fabActionLabel}>
+                                <Text style={styles.fabActionLabelText}>{l('Filtrelenmiş deste oluştur', 'Create filtered deck')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.fabActionButton}
+                                onPress={openCreateFilteredDeck}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
+                            >
+                                <Text style={styles.fabActionIcon}>⧉</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.fabActionRow}>
+                            <View style={styles.fabActionLabel}>
+                                <Text style={styles.fabActionLabelText}>{l('Deste oluştur', 'Create deck')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.fabActionButton}
+                                onPress={openCreateDeck}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Deste oluştur', 'Create deck')}
+                            >
+                                <Text style={styles.fabActionIcon}>▤</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.fabActionRow}>
+                            <View style={styles.fabActionLabel}>
+                                <Text style={styles.fabActionLabelText}>{l('Kart ekle', 'Add note')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.fabActionButton}
+                                onPress={openAddCard}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Kart ekle', 'Add note')}
+                            >
+                                <Text style={styles.fabActionIcon}>✎</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+                <TouchableOpacity
+                    style={[styles.fabMain, showAddMenu && styles.fabMainOpen]}
+                    onPress={() => setShowAddMenu((open) => !open)}
+                    accessibilityRole="button"
+                    accessibilityLabel={showAddMenu ? l('Ekleme menüsünü kapat', 'Close add menu') : l('Ekle', 'Add')}
+                    accessibilityState={{ expanded: showAddMenu }}
+                >
+                    <Text style={styles.fabMainIcon}>＋</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.bottomBar}>
-                <TouchableOpacity
-                    style={styles.bottomBtn}
-                    onPress={() => router.push('/editor' as any)}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Yeni kart ekle', 'Add new card')}
-                >
-                    <Text style={styles.bottomBtnIcon}>＋</Text>
-                    <Text style={styles.bottomBtnText}>{t('sidebar.addCard')}</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
                     onPress={() => router.push('/browser' as any)}
@@ -1108,22 +2096,43 @@ export default function DecksScreen() {
             {isDesktopWeb && draggingDeck && (
                 <View style={styles.dragBanner}>
                     <Text style={styles.dragBannerText}>
-                        {l(`“${getDeckDisplayName(draggingDeck)}” taşınıyor — hedef desteye bırak`, `Moving “${getDeckDisplayName(draggingDeck)}” — drop it on the target deck`)}
-                        {dropTarget ? ` → ${dropTarget}` : ''}
+                        {l(`“${getDeckDisplayName(draggingDeck)}” taşınıyor`, `Moving “${getDeckDisplayName(draggingDeck)}”`)}
                     </Text>
                 </View>
             )}
 
-            <Modal visible={modal !== null} transparent animationType={isCompact ? 'slide' : 'fade'} onRequestClose={() => setModal(null)}>
+            <Modal
+                visible={modal !== null}
+                transparent
+                animationType={modal?.kind === 'menu' ? 'fade' : isCompact ? 'slide' : 'fade'}
+                onRequestClose={() => setModal(null)}
+                onDismiss={handleDeckModalDismiss}
+            >
                 <KeyboardAvoidingView
-                    style={[styles.modalOverlay, isCompact && styles.modalOverlayCompact]}
+                    style={[
+                        styles.modalOverlay,
+                        isCompact && modal?.kind !== 'menu' && styles.modalOverlayCompact,
+                        isCompact && modal?.kind !== 'menu' && compactSheetTopInset,
+                    ]}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
+                    {modal !== null && (
+                        <TouchableOpacity
+                            style={styles.modalBackdropHit}
+                            activeOpacity={1}
+                            onPress={() => setModal(null)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Açık pencereyi kapat', 'Close open dialog')}
+                        />
+                    )}
                     {modal?.kind === 'menu' && renderMenuModal(modal.deck)}
                     {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
                     {modal?.kind === 'move' && renderMoveModal(modal.deck)}
+                    {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
+                    {modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
                     {modal?.kind === 'custom' && renderCustomModal(modal.deck)}
                     {modal?.kind === 'filter' && renderFilterModal(modal.deck)}
+                    {modal?.kind === 'create-filter' && renderFilterModal()}
                 </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
@@ -1157,26 +2166,23 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerBtnPrimary: { backgroundColor: colors.accentLight, borderColor: colors.accent },
     headerBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
 
-    todayCard: {
-        marginHorizontal: Spacing.lg,
-        marginTop: Spacing.md,
-        marginBottom: Spacing.sm,
-        minHeight: 72,
-        flexDirection: 'row',
+    // Keep the native-sized 44 pt touch target, but render a compact 15 pt `more_vert` glyph.
+    headerMenuBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.lg,
-        borderWidth: 1,
-        borderColor: colors.border,
-        ...Shadows.sm,
+        justifyContent: 'center',
+        gap: 3,
     },
-    todayMetric: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
-    todayValue: { fontSize: FontSize.xl, fontWeight: '800', fontVariant: ['tabular-nums'] },
-    todayLabel: { fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '600' },
-    todayDivider: { width: StyleSheet.hairlineWidth, height: 34, backgroundColor: colors.border },
+    headerMenuDot: {
+        width: 3,
+        height: 3,
+        borderRadius: 1.5,
+        backgroundColor: colors.textSecondary,
+    },
 
     overflowOverlay: {
         flex: 1,
@@ -1185,8 +2191,12 @@ function createStyles(colors: ColorScheme) {
         paddingTop: 56,
         paddingRight: Spacing.lg,
     },
+    overflowBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+    },
     overflowSheet: {
         minWidth: 200,
+        zIndex: 1,
         backgroundColor: colors.bgCard,
         borderRadius: BorderRadius.md,
         borderWidth: 1,
@@ -1203,35 +2213,6 @@ function createStyles(colors: ColorScheme) {
     },
     overflowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
     overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
-
-    addDeckRow: {
-        flexDirection: 'row',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.sm,
-        gap: 8,
-        backgroundColor: colors.bgSecondary,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
-    },
-    addDeckInput: {
-        flex: 1,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 6,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-    },
-    addDeckBtn: {
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: 6,
-        backgroundColor: colors.accent,
-        borderRadius: BorderRadius.sm,
-        justifyContent: 'center',
-    },
-    addDeckBtnText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
 
     columnHeaders: {
         flexDirection: 'row',
@@ -1252,11 +2233,16 @@ function createStyles(colors: ColorScheme) {
     },
     columnCount: { fontSize: FontSize.xs, fontWeight: '700', width: 48, textAlign: 'center' },
 
-    listWrap: { flex: 1 },
+    listWrap: { flex: 1, position: 'relative' },
     deckList: { flex: 1 },
-    deckListContentCompact: { paddingHorizontal: Spacing.md, paddingTop: Spacing.xs },
+    deckListContentCompact: {
+        paddingHorizontal: Spacing.md,
+        paddingTop: Spacing.xs,
+        paddingBottom: Spacing.sm,
+    },
 
     deckRow: {
+        position: 'relative',
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 10,
@@ -1265,24 +2251,81 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.borderLight,
     },
     deckRowCompact: {
-        minHeight: 82,
-        marginVertical: 4,
-        paddingVertical: Spacing.sm,
+        minHeight: 76,
+        paddingVertical: 7,
         paddingRight: 4,
+        borderBottomWidth: 0,
+    },
+    deckRowCompactChild: {
+        minHeight: 70,
+    },
+    // A top-level deck is one surface. Its recursively rendered child wells below are physically
+    // inside this card instead of being painted behind unrelated flat rows.
+    deckGroupCard: {
+        position: 'relative',
+        marginTop: Spacing.sm,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: colors.borderLight,
+        borderColor: colors.border,
         borderRadius: BorderRadius.md,
+        overflow: 'visible',
         ...Shadows.sm,
     },
-    deckRowDragging: { opacity: 0.4 },
+    deckNestedBranch: { position: 'relative' },
+    deckNestedBranchLast: {},
+    deckChildrenWell: {
+        marginLeft: 18,
+        marginRight: 0,
+        marginBottom: 4,
+        paddingLeft: 6,
+        backgroundColor: colors.bgCard,
+        borderLeftWidth: 2,
+        borderLeftColor: colors.borderLight,
+        overflow: 'visible',
+    },
+    deckChildrenWellNested: {
+        marginLeft: 14,
+        marginRight: 0,
+        marginBottom: 3,
+    },
+    // After four visual levels, preserve usable title width while keeping the hierarchy guide.
+    deckChildrenWellDeep: {
+        marginLeft: 6,
+        marginRight: 0,
+    },
+    deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,
-        borderBottomColor: colors.accent,
-        borderBottomWidth: 2,
+        transform: [{ scale: 1.006 }],
     },
-    expandBtn: { width: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    expandArrow: { fontSize: 18, color: colors.textMuted },
+    deckDropLine: {
+        position: 'absolute',
+        left: 8,
+        right: 8,
+        height: 3,
+        zIndex: 5,
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.accent,
+    },
+    deckDropLineBefore: { top: -2 },
+    deckDropLineAfter: { bottom: -2 },
+    expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    expandIconCircle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.accentLight,
+    },
+    expandArrow: {
+        fontSize: 22,
+        lineHeight: 22,
+        fontWeight: '600',
+        color: colors.accent,
+        transform: [{ rotate: '0deg' }],
+    },
+    expandArrowExpanded: { transform: [{ rotate: '90deg' }] },
     expandDot: { fontSize: 10, color: colors.border },
     deckNameTouchable: { flex: 1, marginLeft: 2, minHeight: 44, justifyContent: 'center' },
     deckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
@@ -1301,13 +2344,122 @@ function createStyles(colors: ColorScheme) {
     dragHandle: {
         width: 44,
         height: 44,
+        borderRadius: BorderRadius.sm,
         alignItems: 'center',
         justifyContent: 'center',
         ...(Platform.OS === 'web' ? ({ cursor: 'grab' } as object) : null),
     },
-    dragHandleText: { fontSize: 16, color: colors.textMuted },
+    dragHandleActive: { backgroundColor: colors.accentLight, transform: [{ scale: 1.08 }] },
+    dragHandleDisabled: { opacity: 0.25 },
+    dragHandleText: { fontSize: 18, color: colors.textMuted },
     gearBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     gearText: { fontSize: 16, fontWeight: '800', color: colors.textMuted, letterSpacing: -1 },
+
+    rootDropZone: {
+        position: 'absolute',
+        top: -64,
+        left: Spacing.md,
+        right: Spacing.md,
+        minHeight: 58,
+        zIndex: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        borderColor: colors.accent,
+        borderRadius: BorderRadius.md,
+        backgroundColor: colors.bgCard,
+        ...Shadows.md,
+    },
+    rootDropZoneActive: {
+        borderStyle: 'solid',
+        backgroundColor: colors.accent,
+        transform: [{ scale: 1.015 }],
+    },
+    rootDropZoneText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '800' },
+    rootDropZoneTextActive: { color: colors.white },
+    mobileDragPreview: {
+        position: 'absolute',
+        top: 0,
+        left: Spacing.lg,
+        right: Spacing.lg,
+        zIndex: 30,
+        minHeight: 58,
+        justifyContent: 'center',
+        paddingHorizontal: Spacing.md,
+        paddingVertical: 8,
+        backgroundColor: colors.bgCard,
+        borderWidth: 2,
+        borderColor: colors.accent,
+        borderRadius: BorderRadius.md,
+        ...Shadows.lg,
+    },
+    mobileDragPreviewTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
+
+    fabDismissLayer: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 20,
+    },
+    fabWrap: {
+        position: 'absolute',
+        right: Spacing.lg,
+        bottom: 112,
+        zIndex: 30,
+        alignItems: 'flex-end',
+    },
+    fabActions: {
+        gap: Spacing.md,
+        marginBottom: Spacing.md,
+        alignItems: 'flex-end',
+    },
+    fabActionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: Spacing.md,
+    },
+    fabActionLabel: {
+        maxWidth: 240,
+        borderRadius: 4,
+        backgroundColor: 'rgba(65, 65, 65, 0.82)',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+    },
+    fabActionLabelText: {
+        color: colors.white,
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+    },
+    fabActionButton: {
+        width: 46,
+        height: 46,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.accent,
+        ...Shadows.md,
+    },
+    fabActionIcon: {
+        color: colors.white,
+        fontSize: 21,
+        fontWeight: '700',
+    },
+    fabMain: {
+        width: 56,
+        height: 56,
+        borderRadius: BorderRadius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.accent,
+        ...Shadows.lg,
+    },
+    fabMainOpen: { backgroundColor: colors.accentHover },
+    fabMainIcon: {
+        color: colors.white,
+        fontSize: 30,
+        fontWeight: '400',
+        lineHeight: 32,
+    },
 
     bottomBar: {
         flexDirection: 'row',
@@ -1349,9 +2501,34 @@ function createStyles(colors: ColorScheme) {
         padding: Spacing.xl,
     },
     modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
+    modalBackdropHit: { ...StyleSheet.absoluteFillObject },
+    deckMenuCard: {
+        width: '100%',
+        maxWidth: 520,
+        maxHeight: '88%',
+        zIndex: 1,
+        overflow: 'hidden',
+        backgroundColor: colors.badgeNewBg,
+        borderRadius: 28,
+        paddingTop: Spacing.xl,
+        ...Shadows.lg,
+    },
+    deckMenuTitle: {
+        paddingHorizontal: 30,
+        paddingBottom: Spacing.sm,
+        fontSize: 20,
+        lineHeight: 27,
+        fontWeight: '500',
+        color: colors.textPrimary,
+    },
+    deckMenuScroll: { flexGrow: 0 },
+    deckMenuContent: { paddingHorizontal: 30, paddingBottom: Spacing.xl },
+    deckMenuItem: { minHeight: 66, justifyContent: 'center' },
+    deckMenuItemText: { fontSize: 17, lineHeight: 23, fontWeight: '400', color: colors.textPrimary },
     modalCard: {
         width: '100%',
         maxWidth: 420,
+        zIndex: 1,
         backgroundColor: colors.bgCard,
         borderRadius: BorderRadius.lg,
         padding: Spacing.xl,
@@ -1392,6 +2569,14 @@ function createStyles(colors: ColorScheme) {
         color: colors.textMuted,
         marginBottom: Spacing.sm,
     },
+    subdeckPathPreview: {
+        fontSize: FontSize.sm,
+        lineHeight: 19,
+        color: colors.accent,
+        fontWeight: '600',
+        marginBottom: Spacing.sm,
+    },
+    descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
     fieldLabel: {
         fontSize: FontSize.sm,
         fontWeight: '600',

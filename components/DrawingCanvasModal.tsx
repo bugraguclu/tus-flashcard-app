@@ -3,7 +3,7 @@
 // view, web replays the strokes onto a 2D canvas — so the feature works on both.
 
 import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, PanResponder, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, PanResponder, Platform, Pressable } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -201,6 +201,11 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={closeAndReset}>
             <View style={styles.overlay}>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={closeAndReset}
+                    accessibilityLabel={l('Çizim penceresini kapat', 'Close drawing dialog')}
+                />
                 <View style={styles.card}>
                     <Text style={styles.title}>✏️ {l('Çizim', 'Drawing')}</Text>
 

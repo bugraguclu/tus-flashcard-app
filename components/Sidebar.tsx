@@ -63,7 +63,10 @@ export function Sidebar(props: SidebarProps) {
     } = props;
 
     return (
-        <View style={[styles.sidebar, !isWide && !sidebarOpen && styles.sidebarHidden]}>
+        <View
+            pointerEvents={isWide || sidebarOpen ? 'auto' : 'none'}
+            style={[styles.sidebar, !isWide && !sidebarOpen && styles.sidebarHidden]}
+        >
             <TouchableOpacity
                 style={styles.sidebarHeader}
                 onPress={() => navigate('/decks')}
@@ -171,10 +174,6 @@ export function Sidebar(props: SidebarProps) {
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
                     <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/import')} {...webTitle(t('root.import'))}>
-                    <Text style={styles.settingsBtnText}>📥 {t('sidebar.import')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle(t('root.noteTypes'))}>

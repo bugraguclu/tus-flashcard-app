@@ -9,6 +9,7 @@ import {
     SafeAreaView,
     ActivityIndicator,
     Platform,
+    Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -305,6 +306,11 @@ export default function ImportScreen() {
 
             <Modal visible={showDeckPicker} transparent animationType="fade" onRequestClose={() => setShowDeckPicker(false)}>
                 <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setShowDeckPicker(false)}
+                        accessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                    />
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>{l('Hedef Deste', 'Target Deck')}</Text>
                         <ScrollView style={{ maxHeight: 320 }}>

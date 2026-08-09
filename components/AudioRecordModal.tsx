@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
 import {
     useAudioRecorder,
     useAudioRecorderState,
@@ -103,6 +103,11 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={discardAndClose}>
             <View style={styles.overlay}>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={discardAndClose}
+                    accessibilityLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
+                />
                 <View style={styles.card}>
                     <Text style={styles.title}>🎙️ {l('Ses Kaydet', 'Record Audio')}</Text>
                     <Text style={styles.duration}>{formatDuration(state.durationMillis)}</Text>

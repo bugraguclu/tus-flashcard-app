@@ -12,7 +12,11 @@ import { initDB, dbIndexAllCards, getDB } from '../lib/db';
 import { createDeck, getDeckByName } from '../lib/deckManager';
 import { runDailyMaintenance } from '../lib/maintenance';
 import { runAutoBackupIfDue } from '../lib/backup';
-import { initAnkiData, ensureBuiltinNoteTypesSeeded } from '../lib/ankiInit';
+import {
+    initAnkiData,
+    ensureBuiltinNoteTypesSeeded,
+    migrateLegacySubjectTopicsToDecks,
+} from '../lib/ankiInit';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../lib/legacyMigration';
 
@@ -59,6 +63,10 @@ async function runStartupCore(): Promise<void> {
             await saveCustomCards([]);
         }
     }
+
+    // Run after AsyncStorage custom-card import so every legacy Ders/Konu card participates in
+    // the same one-time conversion to real parent/subdeck paths.
+    migrateLegacySubjectTopicsToDecks();
 
     const cardStatesMigrated = db.getFirstSync<{ value: string }>(
         'SELECT value FROM settings WHERE key = ?',
@@ -164,7 +172,7 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
                     bumpDataVersion();
                     refreshData();
                 }
-                // Day-guarded, so an app left open overnight still backs up.
+                // Interval-guarded, so returning to the foreground catches up safely.
                 scheduleAutoBackup();
             } catch (e) {
                 console.warn('[App] Foreground maintenance failed:', e);
@@ -172,6 +180,13 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
         });
         return () => sub.remove();
     }, [bumpDataVersion, refreshData]);
+
+    // AnkiDroid-style interval backups while the reviewer stays open. Mobile operating systems
+    // pause this timer in the background; the foreground listener above catches up on return.
+    useEffect(() => {
+        const timer = setInterval(scheduleAutoBackup, 5 * 60 * 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     return { startupError, isLoading };
 }

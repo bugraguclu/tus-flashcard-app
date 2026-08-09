@@ -6,7 +6,14 @@ vi.mock('./db', () => ({ getDB: vi.fn(), isPrimaryTab: () => true }));
 vi.mock('./storage', () => ({
     exportAllData: vi.fn(),
     importAllData: vi.fn(),
-    loadSettings: () => ({ dayRolloverHour: 4 }),
+    loadSettings: () => ({
+        dayRolloverHour: 4,
+        autoBackupEnabled: true,
+        backupIntervalMinutes: 30,
+        backupDailyCopies: 12,
+        backupWeeklyCopies: 10,
+        backupMonthlyCopies: 9,
+    }),
     getDbSetting: vi.fn(() => null),
     setDbSetting: vi.fn(),
 }));
@@ -50,7 +57,12 @@ function makeFakeStore(clock: () => Date) {
     return { store, files };
 }
 
-function makeHarness(startIso = '2026-07-05T12:00:00') {
+function makeHarness(startIso = '2026-07-05T12:00:00', policy: {
+    intervalMinutes?: number;
+    dailyCopies?: number;
+    weeklyCopies?: number;
+    monthlyCopies?: number;
+} = {}) {
     let now = new Date(startIso);
     let guard: string | null = null;
     let exported = '{"version":6,"canonical":true}';
@@ -67,12 +79,17 @@ function makeHarness(startIso = '2026-07-05T12:00:00') {
             imports.push(json);
             return importResult;
         },
-        getLastBackupDay: () => guard,
-        setLastBackupDay: (day) => {
-            guard = day;
+        getLastBackupAt: () => guard,
+        setLastBackupAt: (timestamp) => {
+            guard = timestamp;
         },
         rolloverHour: () => 4,
         isWriter: () => true,
+        autoBackupEnabled: () => true,
+        intervalMinutes: () => policy.intervalMinutes ?? 30,
+        dailyCopies: () => policy.dailyCopies ?? 12,
+        weeklyCopies: () => policy.weeklyCopies ?? 10,
+        monthlyCopies: () => policy.monthlyCopies ?? 9,
     };
 
     return {
@@ -96,52 +113,54 @@ function makeHarness(startIso = '2026-07-05T12:00:00') {
 }
 
 describe('runAutoBackupIfDue', () => {
-    it('writes a dated snapshot on first run and records the day guard', async () => {
+    it('writes a timestamped snapshot on first run and records the successful write time', async () => {
         const h = makeHarness();
 
         const result = await runAutoBackupIfDue(h.deps);
 
-        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05.json' });
-        expect(h.files.get('tus-backup-2026-07-05.json')?.contents).toContain('"canonical":true');
-        expect(h.getGuard()).toBe('2026-07-05');
+        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-120000.json' });
+        expect(h.files.get('tus-backup-2026-07-05-120000.json')?.contents).toContain('"canonical":true');
+        expect(h.getGuard()).toBe(String(new Date('2026-07-05T12:00:00').getTime()));
     });
 
-    it('is a no-op on the second call within the same Anki day', async () => {
+    it('uses the configured interval instead of limiting backups to once per Anki day', async () => {
         const h = makeHarness();
 
         await runAutoBackupIfDue(h.deps);
-        h.setNow('2026-07-05T23:59:00');
-        const second = await runAutoBackupIfDue(h.deps);
-
-        expect(second.didRun).toBe(false);
-        expect(h.files.size).toBe(1);
-    });
-
-    it('respects the rollover hour: 03:00 still belongs to the previous day', async () => {
-        const h = makeHarness('2026-07-05T12:00:00');
-        await runAutoBackupIfDue(h.deps);
-
-        // 03:00 the next calendar day is before the 04:00 rollover — same Anki day.
-        h.setNow('2026-07-06T03:00:00');
+        h.setNow('2026-07-05T12:29:00');
         expect((await runAutoBackupIfDue(h.deps)).didRun).toBe(false);
 
-        h.setNow('2026-07-06T05:00:00');
-        const after = await runAutoBackupIfDue(h.deps);
-        expect(after).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-06.json' });
+        h.setNow('2026-07-05T12:31:00');
+        const due = await runAutoBackupIfDue(h.deps);
+
+        expect(due).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-123100.json' });
+        expect(h.files.size).toBe(2);
     });
 
-    it('keeps only the 7 newest daily snapshots (day 8 prunes day 1)', async () => {
-        const h = makeHarness('2026-07-01T12:00:00');
+    it('uses the Anki rollover day in the timestamped filename', async () => {
+        const h = makeHarness('2026-07-06T03:00:00');
+        const result = await runAutoBackupIfDue(h.deps);
 
-        for (let day = 0; day < 8; day++) {
-            await runAutoBackupIfDue(h.deps);
-            h.advanceDays(1);
-        }
+        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-030000.json' });
+    });
 
-        const names = [...h.files.keys()].sort();
-        expect(names).toHaveLength(7);
-        expect(names[0]).toBe('tus-backup-2026-07-02.json');
-        expect(names[6]).toBe('tus-backup-2026-07-08.json');
+    it('keeps dense interval restore points for two days before thinning the archive', async () => {
+        const h = makeHarness('2026-07-01T12:00:00', {
+            dailyCopies: 0,
+            weeklyCopies: 0,
+            monthlyCopies: 0,
+        });
+
+        await createBackupNow(h.deps);
+        h.setNow('2026-07-02T23:00:00');
+        await createBackupNow(h.deps);
+        expect(h.files.has('tus-backup-2026-07-01-120000.json')).toBe(true);
+
+        h.setNow('2026-07-03T13:00:00');
+        await createBackupNow(h.deps);
+        expect(h.files.has('tus-backup-2026-07-01-120000.json')).toBe(false);
+        expect(h.files.has('tus-backup-2026-07-02-230000.json')).toBe(true);
+        expect(h.files.has('tus-backup-2026-07-03-130000.json')).toBe(true);
     });
 
     it('skips entirely on a non-writer tab', async () => {
@@ -176,26 +195,27 @@ describe('runAutoBackupIfDue', () => {
 });
 
 describe('createBackupNow', () => {
-    it('overwrites the same day file and refreshes its contents', async () => {
+    it('preserves separate interval restore points from the same day', async () => {
         const h = makeHarness();
         await createBackupNow(h.deps);
 
+        h.setNow('2026-07-05T12:05:00');
         h.setExported('{"version":6,"canonical":true,"changed":1}');
         await createBackupNow(h.deps);
 
-        expect(h.files.size).toBe(1);
-        expect(h.files.get('tus-backup-2026-07-05.json')?.contents).toContain('"changed":1');
+        expect(h.files.size).toBe(2);
+        expect(h.files.get('tus-backup-2026-07-05-120500.json')?.contents).toContain('"changed":1');
     });
 });
 
 describe('restoreBackup', () => {
     it('snapshots current state before importing, and imports the backup contents', async () => {
         const h = makeHarness();
-        await createBackupNow(h.deps);
-        const backupJson = h.files.get('tus-backup-2026-07-05.json')!.contents;
+        const { fileName } = await createBackupNow(h.deps);
+        const backupJson = h.files.get(fileName)!.contents;
 
         h.setExported('{"version":6,"canonical":true,"current":"state"}');
-        const result = await restoreBackup('tus-backup-2026-07-05.json', h.deps);
+        const result = await restoreBackup(fileName, h.deps);
 
         expect(result.ok).toBe(true);
         expect(result.preRestoreName).toMatch(/^tus-prerestore-\d+\.json$/);
@@ -205,10 +225,10 @@ describe('restoreBackup', () => {
 
     it('keeps the pre-restore snapshot when the import fails', async () => {
         const h = makeHarness();
-        await createBackupNow(h.deps);
+        const { fileName } = await createBackupNow(h.deps);
         h.setImportResult(false);
 
-        const result = await restoreBackup('tus-backup-2026-07-05.json', h.deps);
+        const result = await restoreBackup(fileName, h.deps);
 
         expect(result.ok).toBe(false);
         expect(h.files.has(result.preRestoreName!)).toBe(true);
@@ -224,11 +244,11 @@ describe('restoreBackup', () => {
 
     it('keeps only the 3 newest pre-restore snapshots', async () => {
         const h = makeHarness();
-        await createBackupNow(h.deps);
+        const { fileName } = await createBackupNow(h.deps);
 
         for (let i = 0; i < 5; i++) {
             h.setNow(`2026-07-05T12:0${i + 1}:00`);
-            await restoreBackup('tus-backup-2026-07-05.json', h.deps);
+            await restoreBackup(fileName, h.deps);
         }
 
         const preRestores = [...h.files.keys()].filter((n) => n.startsWith('tus-prerestore-'));
@@ -252,19 +272,19 @@ describe('listBackups / readBackup / deleteBackup', () => {
         const listed = await listBackups(h.deps);
 
         expect(listed.map((b) => b.name)).toEqual([
-            'tus-backup-2026-07-02.json',
-            'tus-backup-2026-07-01.json',
+            'tus-backup-2026-07-02-120000.json',
+            'tus-backup-2026-07-01-120000.json',
         ]);
         expect(listed[0].size).toBeGreaterThan(0);
     });
 
     it('reads and deletes by name, rejecting invalid names', async () => {
         const h = makeHarness();
-        await createBackupNow(h.deps);
+        const { fileName } = await createBackupNow(h.deps);
 
-        expect(await readBackup('tus-backup-2026-07-05.json', h.deps)).toContain('"canonical":true');
+        expect(await readBackup(fileName, h.deps)).toContain('"canonical":true');
 
-        await deleteBackup('tus-backup-2026-07-05.json', h.deps);
+        await deleteBackup(fileName, h.deps);
         expect(h.files.size).toBe(0);
 
         await expect(readBackup('nope.json', h.deps)).rejects.toThrow('Invalid backup name');
@@ -275,6 +295,7 @@ describe('listBackups / readBackup / deleteBackup', () => {
 describe('isBackupFileName', () => {
     it('accepts only generated names', () => {
         expect(isBackupFileName('tus-backup-2026-07-05.json')).toBe(true);
+        expect(isBackupFileName('tus-backup-2026-07-05-120000.json')).toBe(true);
         expect(isBackupFileName('tus-prerestore-1751700000000.json')).toBe(true);
         expect(isBackupFileName('tus-backup-2026-07-05.json.bak')).toBe(false);
         expect(isBackupFileName('../tus-backup-2026-07-05.json')).toBe(false);

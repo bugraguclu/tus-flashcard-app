@@ -15,7 +15,7 @@ import {
     migrateLegacyCardStatesToAnki,
     migrateLegacyCustomCardsToAnki,
 } from './legacyMigration';
-import { initAnkiData } from './ankiInit';
+import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
 
 const KEYS = {
@@ -59,6 +59,34 @@ export const DEFAULT_SETTINGS: AppSettings = {
     interruptAudioOnAnswer: true,
     showRemainingCount: true,
     showNextReviewTimes: true,
+    newCardDeckMode: 'current',
+    studyFrameStyle: 'card',
+    showAudioPlayButtons: true,
+    showAnswerFeedback: true,
+    showAnswerButtons: true,
+    hideHardAndEasy: false,
+    showStudyTopBar: true,
+    showDeckTitle: true,
+    centerCardContent: false,
+    showRemainingTime: false,
+    answerButtonsPosition: 'bottom',
+    studyBackgroundImageUri: null,
+    timeboxMinutes: 0,
+    keepScreenOn: false,
+    gesturesEnabled: false,
+    swipeSensitivity: 100,
+    cardZoomPercent: 100,
+    imageZoomPercent: 100,
+    answerButtonScalePercent: 100,
+    twoRowAnswerButtons: false,
+    browserFontScalePercent: 100,
+    showAnswerLongPressMs: 0,
+    answerDoubleTapMs: 200,
+    autoBackupEnabled: true,
+    backupIntervalMinutes: 30,
+    backupDailyCopies: 12,
+    backupWeeklyCopies: 10,
+    backupMonthlyCopies: 9,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -395,6 +423,36 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             interruptAudioOnAnswer: parsed.interruptAudioOnAnswer !== false,
             showRemainingCount: parsed.showRemainingCount !== false,
             showNextReviewTimes: parsed.showNextReviewTimes !== false,
+            newCardDeckMode: parsed.newCardDeckMode === 'default' ? 'default' : 'current',
+            studyFrameStyle: parsed.studyFrameStyle === 'plain' ? 'plain' : 'card',
+            showAudioPlayButtons: parsed.showAudioPlayButtons !== false,
+            showAnswerFeedback: parsed.showAnswerFeedback !== false,
+            showAnswerButtons: parsed.showAnswerButtons !== false,
+            hideHardAndEasy: Boolean(parsed.hideHardAndEasy),
+            showStudyTopBar: parsed.showStudyTopBar !== false,
+            showDeckTitle: parsed.showDeckTitle !== false,
+            centerCardContent: Boolean(parsed.centerCardContent),
+            showRemainingTime: Boolean(parsed.showRemainingTime),
+            answerButtonsPosition: parsed.answerButtonsPosition === 'top' ? 'top' : 'bottom',
+            studyBackgroundImageUri: typeof parsed.studyBackgroundImageUri === 'string' && parsed.studyBackgroundImageUri.length <= 2048
+                ? parsed.studyBackgroundImageUri
+                : null,
+            timeboxMinutes: Math.max(0, Math.min(180, Number(parsed.timeboxMinutes ?? 0) || 0)),
+            keepScreenOn: Boolean(parsed.keepScreenOn),
+            gesturesEnabled: Boolean(parsed.gesturesEnabled),
+            swipeSensitivity: Math.max(25, Math.min(200, Number(parsed.swipeSensitivity ?? 100) || 100)),
+            cardZoomPercent: Math.max(50, Math.min(200, Number(parsed.cardZoomPercent ?? 100) || 100)),
+            imageZoomPercent: Math.max(50, Math.min(200, Number(parsed.imageZoomPercent ?? 100) || 100)),
+            answerButtonScalePercent: Math.max(75, Math.min(175, Number(parsed.answerButtonScalePercent ?? 100) || 100)),
+            twoRowAnswerButtons: Boolean(parsed.twoRowAnswerButtons),
+            browserFontScalePercent: Math.max(75, Math.min(175, Number(parsed.browserFontScalePercent ?? 100) || 100)),
+            showAnswerLongPressMs: Math.max(0, Math.min(2000, Number(parsed.showAnswerLongPressMs ?? 0) || 0)),
+            answerDoubleTapMs: Math.max(0, Math.min(2000, Number(parsed.answerDoubleTapMs ?? 200) || 0)),
+            autoBackupEnabled: parsed.autoBackupEnabled !== false,
+            backupIntervalMinutes: Math.max(5, Math.min(10080, Number(parsed.backupIntervalMinutes ?? 30) || 30)),
+            backupDailyCopies: Math.max(0, Math.min(99, Number(parsed.backupDailyCopies ?? 12) || 0)),
+            backupWeeklyCopies: Math.max(0, Math.min(99, Number(parsed.backupWeeklyCopies ?? 10) || 0)),
+            backupMonthlyCopies: Math.max(0, Math.min(99, Number(parsed.backupMonthlyCopies ?? 9) || 0)),
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
@@ -415,6 +473,34 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         interruptAudioOnAnswer: settings.interruptAudioOnAnswer,
         showRemainingCount: settings.showRemainingCount,
         showNextReviewTimes: settings.showNextReviewTimes,
+        newCardDeckMode: settings.newCardDeckMode,
+        studyFrameStyle: settings.studyFrameStyle,
+        showAudioPlayButtons: settings.showAudioPlayButtons,
+        showAnswerFeedback: settings.showAnswerFeedback,
+        showAnswerButtons: settings.showAnswerButtons,
+        hideHardAndEasy: settings.hideHardAndEasy,
+        showStudyTopBar: settings.showStudyTopBar,
+        showDeckTitle: settings.showDeckTitle,
+        centerCardContent: settings.centerCardContent,
+        showRemainingTime: settings.showRemainingTime,
+        answerButtonsPosition: settings.answerButtonsPosition,
+        studyBackgroundImageUri: settings.studyBackgroundImageUri,
+        timeboxMinutes: settings.timeboxMinutes,
+        keepScreenOn: settings.keepScreenOn,
+        gesturesEnabled: settings.gesturesEnabled,
+        swipeSensitivity: settings.swipeSensitivity,
+        cardZoomPercent: settings.cardZoomPercent,
+        imageZoomPercent: settings.imageZoomPercent,
+        answerButtonScalePercent: settings.answerButtonScalePercent,
+        twoRowAnswerButtons: settings.twoRowAnswerButtons,
+        browserFontScalePercent: settings.browserFontScalePercent,
+        showAnswerLongPressMs: settings.showAnswerLongPressMs,
+        answerDoubleTapMs: settings.answerDoubleTapMs,
+        autoBackupEnabled: settings.autoBackupEnabled,
+        backupIntervalMinutes: settings.backupIntervalMinutes,
+        backupDailyCopies: settings.backupDailyCopies,
+        backupWeeklyCopies: settings.backupWeeklyCopies,
+        backupMonthlyCopies: settings.backupMonthlyCopies,
         queueOrder: settings.queueOrder,
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
@@ -429,20 +515,7 @@ export function loadSettings(): AppSettings {
     const fromDeck = hydrateSettingsFromDeckConfig({ ...DEFAULT_SETTINGS });
     const meta = loadAppSettingsMeta();
 
-    return {
-        ...fromDeck,
-        language: meta.language ?? fromDeck.language,
-        themeMode: meta.themeMode ?? fromDeck.themeMode,
-        keyBindings: meta.keyBindings ?? fromDeck.keyBindings,
-        autoAdvance: meta.autoAdvance ?? fromDeck.autoAdvance,
-        interruptAudioOnAnswer: meta.interruptAudioOnAnswer ?? fromDeck.interruptAudioOnAnswer,
-        showRemainingCount: meta.showRemainingCount ?? fromDeck.showRemainingCount,
-        showNextReviewTimes: meta.showNextReviewTimes ?? fromDeck.showNextReviewTimes,
-        queueOrder: meta.queueOrder ?? fromDeck.queueOrder,
-        dayRolloverHour: meta.dayRolloverHour ?? fromDeck.dayRolloverHour,
-        learnAheadMinutes: meta.learnAheadMinutes ?? fromDeck.learnAheadMinutes,
-        algorithm: meta.algorithm ?? fromDeck.algorithm,
-    };
+    return { ...fromDeck, ...meta };
 }
 
 /** Resets only the app settings (not decks/cards/history) to factory defaults. */
@@ -488,6 +561,7 @@ export async function resetAllData(): Promise<void> {
         `);
 
         initAnkiData();
+        migrateLegacySubjectTopicsToDecks();
         saveSettings({ ...DEFAULT_SETTINGS });
         dbIndexAllCards(getSearchIndexCards());
     } catch (e) {
@@ -544,6 +618,36 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.themeMode = normalizeThemeMode(validated.themeMode);
     validated.keyBindings = normalizeKeyBindings(validated.keyBindings);
     validated.autoAdvance = Boolean(validated.autoAdvance);
+    validated.newCardDeckMode = validated.newCardDeckMode === 'default' ? 'default' : 'current';
+    validated.studyFrameStyle = validated.studyFrameStyle === 'plain' ? 'plain' : 'card';
+    validated.showAudioPlayButtons = validated.showAudioPlayButtons !== false;
+    validated.showAnswerFeedback = validated.showAnswerFeedback !== false;
+    validated.showAnswerButtons = validated.showAnswerButtons !== false;
+    validated.hideHardAndEasy = Boolean(validated.hideHardAndEasy);
+    validated.showStudyTopBar = validated.showStudyTopBar !== false;
+    validated.showDeckTitle = validated.showDeckTitle !== false;
+    validated.centerCardContent = Boolean(validated.centerCardContent);
+    validated.showRemainingTime = Boolean(validated.showRemainingTime);
+    validated.answerButtonsPosition = validated.answerButtonsPosition === 'top' ? 'top' : 'bottom';
+    validated.studyBackgroundImageUri = typeof validated.studyBackgroundImageUri === 'string' && validated.studyBackgroundImageUri.length <= 2048
+        ? validated.studyBackgroundImageUri
+        : null;
+    validated.timeboxMinutes = Math.max(0, Math.min(180, Number(validated.timeboxMinutes ?? 0) || 0));
+    validated.keepScreenOn = Boolean(validated.keepScreenOn);
+    validated.gesturesEnabled = Boolean(validated.gesturesEnabled);
+    validated.swipeSensitivity = Math.max(25, Math.min(200, Number(validated.swipeSensitivity ?? 100) || 100));
+    validated.cardZoomPercent = Math.max(50, Math.min(200, Number(validated.cardZoomPercent ?? 100) || 100));
+    validated.imageZoomPercent = Math.max(50, Math.min(200, Number(validated.imageZoomPercent ?? 100) || 100));
+    validated.answerButtonScalePercent = Math.max(75, Math.min(175, Number(validated.answerButtonScalePercent ?? 100) || 100));
+    validated.twoRowAnswerButtons = Boolean(validated.twoRowAnswerButtons);
+    validated.browserFontScalePercent = Math.max(75, Math.min(175, Number(validated.browserFontScalePercent ?? 100) || 100));
+    validated.showAnswerLongPressMs = Math.max(0, Math.min(2000, Number(validated.showAnswerLongPressMs ?? 0) || 0));
+    validated.answerDoubleTapMs = Math.max(0, Math.min(2000, Number(validated.answerDoubleTapMs ?? 200) || 0));
+    validated.autoBackupEnabled = validated.autoBackupEnabled !== false;
+    validated.backupIntervalMinutes = Math.max(5, Math.min(10080, Number(validated.backupIntervalMinutes ?? 30) || 30));
+    validated.backupDailyCopies = Math.max(0, Math.min(99, Number(validated.backupDailyCopies ?? 12) || 0));
+    validated.backupWeeklyCopies = Math.max(0, Math.min(99, Number(validated.backupWeeklyCopies ?? 10) || 0));
+    validated.backupMonthlyCopies = Math.max(0, Math.min(99, Number(validated.backupMonthlyCopies ?? 9) || 0));
     return validated;
 }
 

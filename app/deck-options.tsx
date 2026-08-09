@@ -13,6 +13,7 @@ import {
     SafeAreaView,
     Modal,
     Switch,
+    Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -450,6 +451,11 @@ export default function DeckOptionsScreen() {
 
             <Modal visible={presetPickerOpen} transparent animationType="fade" onRequestClose={() => setPresetPickerOpen(false)}>
                 <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setPresetPickerOpen(false)}
+                        accessibilityLabel={l('Ayar grubu seçiciyi kapat', 'Close preset picker')}
+                    />
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
                         <ScrollView style={{ maxHeight: 320 }}>
@@ -470,6 +476,11 @@ export default function DeckOptionsScreen() {
 
             <Modal visible={renameOpen} transparent animationType="fade" onRequestClose={() => setRenameOpen(false)}>
                 <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setRenameOpen(false)}
+                        accessibilityLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
+                    />
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>{l('Ayar Grubunu Adlandır', 'Rename Preset')}</Text>
                         <TextInput style={styles.input} value={renameText} onChangeText={setRenameText} autoFocus />

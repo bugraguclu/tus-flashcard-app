@@ -231,6 +231,8 @@ export interface AnkiCard {
 export interface Deck {
     id: number;
     name: string;
+    /** Manual order among decks that share the same parent. Missing values keep legacy A–Z order. */
+    sortOrder?: number;
     configId: number;
     mod: number;
     usn: number;
@@ -387,7 +389,7 @@ export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
 };
 
 export const DEFAULT_DECKS: Deck[] = [
-    { id: 1, name: 'Python', configId: 1, mod: 0, usn: 0, description: 'Python ana deste', collapsed: false, isFiltered: false },
+    { id: 1, name: 'Python', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
     { id: 2, name: 'Python::Temeller', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
     { id: 3, name: 'Python::Mantık & Döngüler', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
     { id: 4, name: 'Python::Veri Yapıları', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },

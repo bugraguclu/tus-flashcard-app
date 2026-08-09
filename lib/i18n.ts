@@ -310,7 +310,7 @@ const en: Record<TranslationKey, string> = {
     'sidebar.hideTopics': 'Hide topics',
     'sidebar.showTopics': 'Show topics',
     'sidebar.addCard': 'Add Card',
-    'sidebar.myCards': 'Browse',
+    'sidebar.myCards': 'Card Browser',
     'sidebar.import': 'Import',
     'sidebar.noteTypes': 'Note Types',
 };

@@ -2,9 +2,9 @@
  * Automatic collection backups.
  *
  * A full-collection JSON snapshot (exportAllData, the canonical v6 format) is
- * written once per Anki day — guarded by a settings-table key so startup and
- * every app foreground can call runAutoBackupIfDue() safely. Daily snapshots
- * rotate (newest 7 kept); every restore first snapshots the current state, so
+ * written at the user-selected interval — guarded by a settings-table key so startup and
+ * every app foreground can call runAutoBackupIfDue() safely. Snapshots rotate with AnkiDroid's
+ * daily/weekly/monthly retention policy; every restore first snapshots the current state, so
  * a restore is itself undoable.
  *
  * Storage backends: a folder under documentDirectory on native, an IndexedDB
@@ -21,11 +21,12 @@ import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting 
 
 const DAILY_PREFIX = 'tus-backup-';
 const PRE_RESTORE_PREFIX = 'tus-prerestore-';
-const KEEP_DAILY = 7;
 const KEEP_PRE_RESTORE = 3;
-const GUARD_KEY = 'tus_last_auto_backup_day';
+const GUARD_KEY = 'tus_last_auto_backup_at';
+const DENSE_RETENTION_MS = 2 * 24 * 60 * 60 * 1000;
 
-const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}\.json$/;
+// Accept old once-per-day filenames as well as the interval-aware timestamp form.
+const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6})?\.json$/;
 const PRE_RESTORE_NAME_RE = /^tus-prerestore-\d+\.json$/;
 
 export interface BackupInfo {
@@ -48,9 +49,14 @@ export interface BackupDeps {
     now?: () => Date;
     exportData?: () => Promise<string>;
     importData?: (json: string) => Promise<boolean>;
-    getLastBackupDay?: () => string | null;
-    setLastBackupDay?: (day: string) => void;
+    getLastBackupAt?: () => string | null;
+    setLastBackupAt?: (timestamp: string) => void;
     rolloverHour?: () => number;
+    autoBackupEnabled?: () => boolean;
+    intervalMinutes?: () => number;
+    dailyCopies?: () => number;
+    weeklyCopies?: () => number;
+    monthlyCopies?: () => number;
     /** On web only the elected writer tab persists; other tabs skip backups. */
     isWriter?: () => boolean;
 }
@@ -128,10 +134,15 @@ interface ResolvedDeps {
     now: () => Date;
     exportData: () => Promise<string>;
     importData: (json: string) => Promise<boolean>;
-    getLastBackupDay: () => string | null;
-    setLastBackupDay: (day: string) => void;
+    getLastBackupAt: () => string | null;
+    setLastBackupAt: (timestamp: string) => void;
     rolloverHour: () => number;
     isWriter: () => boolean;
+    autoBackupEnabled: () => boolean;
+    intervalMinutes: () => number;
+    dailyCopies: () => number;
+    weeklyCopies: () => number;
+    monthlyCopies: () => number;
 }
 
 function resolveDeps(deps: BackupDeps): ResolvedDeps {
@@ -140,32 +151,83 @@ function resolveDeps(deps: BackupDeps): ResolvedDeps {
         now: deps.now ?? (() => new Date()),
         exportData: deps.exportData ?? exportAllData,
         importData: deps.importData ?? importAllData,
-        getLastBackupDay: deps.getLastBackupDay ?? (() => getDbSetting(GUARD_KEY)),
-        setLastBackupDay: deps.setLastBackupDay ?? ((day) => setDbSetting(GUARD_KEY, day)),
+        getLastBackupAt: deps.getLastBackupAt ?? (() => getDbSetting(GUARD_KEY)),
+        setLastBackupAt: deps.setLastBackupAt ?? ((timestamp) => setDbSetting(GUARD_KEY, timestamp)),
         rolloverHour: deps.rolloverHour ?? (() => loadSettings().dayRolloverHour),
         isWriter: deps.isWriter ?? (() => Platform.OS !== 'web' || isPrimaryTab()),
+        autoBackupEnabled: deps.autoBackupEnabled ?? (() => loadSettings().autoBackupEnabled !== false),
+        intervalMinutes: deps.intervalMinutes ?? (() => Math.max(5, loadSettings().backupIntervalMinutes ?? 30)),
+        dailyCopies: deps.dailyCopies ?? (() => Math.max(0, loadSettings().backupDailyCopies ?? 12)),
+        weeklyCopies: deps.weeklyCopies ?? (() => Math.max(0, loadSettings().backupWeeklyCopies ?? 10)),
+        monthlyCopies: deps.monthlyCopies ?? (() => Math.max(0, loadSettings().backupMonthlyCopies ?? 9)),
     };
 }
 
-/** Delete rotation overflow: newest KEEP_DAILY daily and KEEP_PRE_RESTORE pre-restore files stay. */
-async function pruneBackups(store: BackupStore): Promise<void> {
+function backupDate(name: string): string | null {
+    return name.match(/^tus-backup-(\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
+}
+
+function weekKey(ymd: string): string {
+    const date = new Date(`${ymd}T12:00:00`);
+    const day = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - day);
+    return date.toISOString().slice(0, 10);
+}
+
+function snapshotTime(info: BackupInfo): number {
+    if (Number.isFinite(info.createdAt) && info.createdAt > 0) return info.createdAt;
+    const ymd = backupDate(info.name);
+    return ymd ? new Date(`${ymd}T12:00:00`).getTime() : 0;
+}
+
+/**
+ * Anki keeps every interval backup for the first two days. Only older snapshots are
+ * thinned to the requested daily/weekly/monthly restore points; pre-restore files use
+ * their own small safety rotation.
+ */
+async function pruneBackups(
+    store: BackupStore,
+    now: Date,
+    dailyCopies: number,
+    weeklyCopies: number,
+    monthlyCopies: number,
+): Promise<void> {
     const all = await store.list();
+    const snapshots = all
+        .filter((b) => DAILY_NAME_RE.test(b.name))
+        .sort((a, b) => b.name.localeCompare(a.name));
+    const denseCutoff = now.getTime() - DENSE_RETENTION_MS;
+    const keep = new Set(
+        snapshots
+            .filter((info) => snapshotTime(info) >= denseCutoff)
+            .map((info) => info.name),
+    );
+    const archiveCandidates = snapshots.filter((info) => !keep.has(info.name));
 
-    const overflow = (names: BackupInfo[], keep: number) =>
-        names
-            .slice()
-            .sort((a, b) => b.name.localeCompare(a.name))
-            .slice(keep);
+    const retainDistinct = (limit: number, keyFor: (ymd: string) => string) => {
+        const groups = new Set<string>();
+        for (const info of archiveCandidates) {
+            const ymd = backupDate(info.name);
+            if (!ymd) continue;
+            const key = keyFor(ymd);
+            if (groups.has(key)) continue;
+            if (groups.size >= limit) continue;
+            groups.add(key);
+            keep.add(info.name);
+        }
+    };
 
-    // Daily names embed YYYY-MM-DD and pre-restore names embed epoch-ms zero-padded
-    // only by magnitude; both sort chronologically by name for same-length values.
-    const daily = overflow(all.filter((b) => DAILY_NAME_RE.test(b.name)), KEEP_DAILY);
+    retainDistinct(dailyCopies, (ymd) => ymd);
+    retainDistinct(weeklyCopies, weekKey);
+    retainDistinct(monthlyCopies, (ymd) => ymd.slice(0, 7));
+
+    const overflow = snapshots.filter((info) => !keep.has(info.name));
     const preRestore = all
         .filter((b) => PRE_RESTORE_NAME_RE.test(b.name))
         .sort((a, b) => parseTimestamp(b.name) - parseTimestamp(a.name))
         .slice(KEEP_PRE_RESTORE);
 
-    for (const info of [...daily, ...preRestore]) {
+    for (const info of [...overflow, ...preRestore]) {
         await store.remove(info.name);
     }
 }
@@ -178,16 +240,18 @@ function parseTimestamp(preRestoreName: string): number {
 /** Write today's snapshot unconditionally (manual backup / due auto backup). */
 export async function createBackupNow(deps: BackupDeps = {}): Promise<{ fileName: string }> {
     const d = resolveDeps(deps);
-    const today = todayLocalYMD(d.now(), d.rolloverHour());
-    const fileName = `${DAILY_PREFIX}${today}.json`;
+    const now = d.now();
+    const today = todayLocalYMD(now, d.rolloverHour());
+    const stamp = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+    const fileName = `${DAILY_PREFIX}${today}-${stamp}.json`;
 
     const json = await d.exportData();
     await d.store.write(fileName, json);
-    // Mark the day only after the write succeeds, so a failure retries next launch.
-    d.setLastBackupDay(today);
+    // Mark the time only after the write succeeds, so a failure retries next launch.
+    d.setLastBackupAt(String(now.getTime()));
 
     try {
-        await pruneBackups(d.store);
+        await pruneBackups(d.store, now, d.dailyCopies(), d.weeklyCopies(), d.monthlyCopies());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }
@@ -198,10 +262,10 @@ export async function createBackupNow(deps: BackupDeps = {}): Promise<{ fileName
 let _autoBackupInFlight: Promise<{ didRun: boolean; fileName?: string }> | null = null;
 
 /**
- * Take the daily automatic backup if none was taken this Anki day.
+ * Take an automatic backup when the configured interval has elapsed.
  * Safe to call on every startup and app foreground; concurrent calls (startup
  * racing the first AppState 'active' event) coalesce into one run because the
- * day guard is only written after the export completes.
+ * timestamp guard is only written after the export completes.
  */
 export function runAutoBackupIfDue(
     deps: BackupDeps = {},
@@ -211,9 +275,19 @@ export function runAutoBackupIfDue(
     _autoBackupInFlight = (async () => {
         const d = resolveDeps(deps);
         if (!d.isWriter()) return { didRun: false };
+        if (!d.autoBackupEnabled()) return { didRun: false };
 
-        const today = todayLocalYMD(d.now(), d.rolloverHour());
-        if (d.getLastBackupDay() === today) return { didRun: false };
+        const now = d.now();
+        const lastRaw = d.getLastBackupAt();
+        if (lastRaw) {
+            const timestamp = Number(lastRaw);
+            const lastAt = Number.isFinite(timestamp)
+                ? timestamp
+                : new Date(`${lastRaw}T${String(d.rolloverHour()).padStart(2, '0')}:00:00`).getTime();
+            if (Number.isFinite(lastAt) && now.getTime() - lastAt < d.intervalMinutes() * 60_000) {
+                return { didRun: false };
+            }
+        }
 
         const { fileName } = await createBackupNow(deps);
         return { didRun: true, fileName };
@@ -260,7 +334,7 @@ export async function restoreBackup(
     const ok = await d.importData(contents);
 
     try {
-        await pruneBackups(d.store);
+        await pruneBackups(d.store, d.now(), d.dailyCopies(), d.weeklyCopies(), d.monthlyCopies());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }

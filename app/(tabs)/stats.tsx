@@ -8,6 +8,8 @@ import {
     TouchableOpacity,
     TextInput,
     useWindowDimensions,
+    Modal,
+    Pressable,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -49,10 +51,42 @@ export default function StatsScreen() {
     const [loading, setLoading] = useState(true);
     const [importData, setImportData] = useState('');
     const [showImport, setShowImport] = useState(false);
+    const [deckPickerVisible, setDeckPickerVisible] = useState(false);
 
     // Anki-style scoping: /stats shows the whole collection, /stats?deck=X only that
     // deck's subtree. The deck list and sidebar pick the scope for the user.
     const deckScope = typeof params.deck === 'string' && params.deck.length > 0 ? params.deck : null;
+    const scopeTitle = deckScope
+        ? deckScope.replaceAll('::', ' › ')
+        : l('Tüm Koleksiyon', 'Whole Collection');
+
+    const deckPickerItems = useMemo(() => {
+        try {
+            return getAllDecks()
+                .filter((deck) => !deck.isFiltered)
+                .sort((a, b) => a.name.localeCompare(b.name, localeTag));
+        } catch (e) {
+            console.warn('[Stats] deck picker list failed:', e);
+            return [];
+        }
+    }, [dataVersion, localeTag]);
+
+    const handlePickDeck = (name: string | null) => {
+        setDeckPickerVisible(false);
+        router.replace((name ? `/stats?deck=${encodeURIComponent(name)}` : '/stats') as any);
+    };
+
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+            return;
+        }
+        if (deckScope) {
+            router.replace(`/deck-overview?deck=${encodeURIComponent(deckScope)}` as any);
+            return;
+        }
+        router.replace('/decks' as any);
+    };
 
     useEffect(() => {
         setSettings(loadSettings());
@@ -179,18 +213,30 @@ export default function StatsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.title}>📊 {t('common.statistics')}</Text>
-
-                {deckScope ? (
-                    <View style={styles.scopeRow}>
-                        <Text style={styles.scopeText} numberOfLines={1}>🗃️ {deckScope}</Text>
-                        <TouchableOpacity onPress={() => router.replace('/stats' as any)}>
-                            <Text style={styles.scopeLink}>{l('Tüm koleksiyon', 'Whole Collection')} ›</Text>
+                <View style={styles.titleRow}>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={handleBack}
+                        hitSlop={{ top: 6, right: 6, bottom: 6, left: 6 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
+                    >
+                        <Text style={styles.backButtonText}>‹</Text>
+                    </TouchableOpacity>
+                    <View style={styles.titleBlock}>
+                        <Text style={styles.title} numberOfLines={1}>📊 {t('common.statistics')}</Text>
+                        <TouchableOpacity
+                            style={styles.scopeSelector}
+                            onPress={() => setDeckPickerVisible(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l(`İstatistik destesi: ${scopeTitle}`, `Statistics deck: ${scopeTitle}`)}
+                            accessibilityState={{ expanded: deckPickerVisible }}
+                        >
+                            <Text style={styles.scopeSelectorText} numberOfLines={1}>{scopeTitle}</Text>
+                            <Text style={styles.scopeSelectorCaret}>▾</Text>
                         </TouchableOpacity>
                     </View>
-                ) : (
-                    <Text style={styles.scopeHint}>{l('Tüm koleksiyon — bir desteye özel istatistikleri görmek için aşağıdan deste seçin.', 'Whole collection — select a deck below to view deck-specific statistics.')}</Text>
-                )}
+                </View>
 
                 <View style={styles.todayCard}>
                     <Text style={styles.sectionTitle}>{l('Bugünün Özeti', 'Today')}</Text>
@@ -225,13 +271,6 @@ export default function StatsScreen() {
                                 <Text style={styles.streakNumber}>{streak.current}</Text>
                                 <Text style={styles.streakUnit}>{l('gün üst üste çalıştınız', 'day study streak')}</Text>
                             </View>
-                            <Text style={styles.streakHint}>
-                                {streak.studiedToday
-                                    ? l('Bugünü tamamladınız — böyle devam! 💪', 'You studied today — keep it up! 💪')
-                                    : streak.current > 0
-                                        ? l('Bugün henüz çalışmadınız; seriyi korumak için birkaç kart yanıtlayın.', 'You have not studied yet today; answer a few cards to keep your streak.')
-                                        : l('Bugün birkaç kart yanıtlayarak yeni bir seri başlatın.', 'Answer a few cards today to start a new streak.')}
-                            </Text>
                         </View>
                         <View style={styles.streakStripWrap}>
                             <WeekStreakStrip rolloverHour={settings.dayRolloverHour} dataVersion={dataVersion} />
@@ -268,9 +307,6 @@ export default function StatsScreen() {
                         </View>
                     </View>
 
-                    <Text style={styles.algorithmInfo}>
-                        📐 {l('Zamanlayıcı:', 'Scheduler:')} <Text style={{ fontWeight: '700', color: colors.accent }}>{settings.algorithm}</Text>
-                    </Text>
                     <Text style={styles.algorithmInfo}>
                         {l('Genç', 'Young')}: {bucketTotals.youngCount} · {l('Olgun', 'Mature')}: {bucketTotals.matureCount}
                     </Text>
@@ -353,6 +389,69 @@ export default function StatsScreen() {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            <Modal
+                visible={deckPickerVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setDeckPickerVisible(false)}
+            >
+                <Pressable style={styles.pickerOverlay} onPress={() => setDeckPickerVisible(false)}>
+                    <Pressable style={styles.pickerCard} onPress={() => {}} accessibilityViewIsModal>
+                        <View style={styles.pickerHeader}>
+                            <View>
+                                <Text style={styles.pickerEyebrow}>{t('common.statistics')}</Text>
+                                <Text style={styles.pickerTitle}>{l('Deste Seç', 'Select Deck')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.pickerClose}
+                                onPress={() => setDeckPickerVisible(false)}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                            >
+                                <Text style={styles.pickerCloseText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+                            <TouchableOpacity
+                                style={[styles.pickerRow, !deckScope && styles.pickerRowActive]}
+                                onPress={() => handlePickDeck(null)}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: !deckScope }}
+                            >
+                                <Text style={styles.pickerRowIcon}>▦</Text>
+                                <Text style={[styles.pickerRowText, !deckScope && styles.pickerRowTextActive]}>
+                                    {l('Tüm Koleksiyon', 'Whole Collection')}
+                                </Text>
+                                {!deckScope && <Text style={styles.pickerCheck}>✓</Text>}
+                            </TouchableOpacity>
+                            {deckPickerItems.map((deck) => {
+                                const depth = deck.name.split('::').length - 1;
+                                const active = deckScope === deck.name;
+                                return (
+                                    <TouchableOpacity
+                                        key={deck.id}
+                                        style={[
+                                            styles.pickerRow,
+                                            active && styles.pickerRowActive,
+                                            { paddingLeft: Spacing.lg + Math.min(depth, 8) * 18 },
+                                        ]}
+                                        onPress={() => handlePickDeck(deck.name)}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: active }}
+                                    >
+                                        <Text style={styles.pickerRowIcon}>{depth > 0 ? '›' : '▤'}</Text>
+                                        <Text style={[styles.pickerRowText, active && styles.pickerRowTextActive]} numberOfLines={1}>
+                                            {getDeckDisplayName(deck.name)}
+                                        </Text>
+                                        {active && <Text style={styles.pickerCheck}>✓</Text>}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -367,19 +466,29 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         padding: isCompact ? Spacing.md : Spacing.lg,
         gap: Spacing.md,
     },
-    title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
-    scopeRow: {
+    titleRow: {
+        minHeight: 44,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: Spacing.md,
-        backgroundColor: colors.accentLight,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
+        gap: Spacing.sm,
+        marginBottom: Spacing.sm,
     },
-    scopeText: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
-    scopeLink: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+    backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    backButtonText: { fontSize: 34, lineHeight: 36, color: colors.accent, fontWeight: '400' },
+    titleBlock: { flex: 1, minWidth: 0 },
+    title: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
+    scopeSelector: {
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        minHeight: 36,
+        maxWidth: '100%',
+        marginTop: 2,
+        paddingRight: Spacing.sm,
+    },
+    scopeSelectorText: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '800', color: colors.accent },
+    scopeSelectorCaret: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800', marginTop: 2 },
     scopeHint: { fontSize: FontSize.sm, color: colors.textMuted },
 
     todayCard: {
@@ -418,8 +527,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     streakRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, flexWrap: 'wrap' },
     streakNumber: { fontSize: 44, fontWeight: '700', color: colors.btnHard },
     streakUnit: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-    streakHint: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
-
     overviewCard: {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
@@ -511,5 +618,54 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         alignItems: 'center',
     },
     confirmImportText: { fontSize: FontSize.md, fontWeight: '700', color: colors.badgeNew },
+
+    pickerOverlay: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: Spacing.xl,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    pickerCard: {
+        width: '100%',
+        maxWidth: 420,
+        maxHeight: '82%',
+        overflow: 'hidden',
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.lg,
+        ...Shadows.lg,
+    },
+    pickerHeader: {
+        minHeight: 72,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.borderLight,
+    },
+    pickerEyebrow: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+    pickerTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800', marginTop: 2 },
+    pickerClose: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
+    pickerCloseText: { color: colors.textMuted, fontSize: 30, lineHeight: 32, fontWeight: '300' },
+    pickerScroll: { paddingVertical: Spacing.xs },
+    pickerRow: {
+        minHeight: 50,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: 10,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.borderLight,
+    },
+    pickerRowActive: { backgroundColor: colors.accentLight },
+    pickerRowIcon: { width: 22, textAlign: 'center', color: colors.textMuted, fontSize: 18 },
+    pickerRowText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
+    pickerRowTextActive: { color: colors.accent, fontWeight: '800' },
+    pickerCheck: { color: colors.accent, fontSize: 19, fontWeight: '900' },
     });
 }

@@ -7,6 +7,7 @@ import { restoreQueueFromType } from './ankiState';
 import { buildFtsPrefixQuery, getDB } from './db';
 import { TUS_CARDS } from './data';
 import { getSubjectIdSet, resolveSubjectDeckId } from './subjects';
+import { humanizeCardText } from './displayText';
 
 /** Anki stores tags space-separated with a leading and trailing space (" a b "), so that a
  *  whole-tag search (`LIKE '% a %'`) cannot partially match a longer tag. Empty -> "". */
@@ -323,6 +324,74 @@ export function setCardFlag(cardId: number, flag: CardFlag): void {
     saveAnkiCard(card);
 }
 
+export interface CardDeckMoveSnapshot {
+    cardId: number;
+    previousDeckId: number;
+    targetDeckId: number;
+}
+
+/**
+ * Move a browser selection to another deck as one undoable operation.
+ *
+ * The caller owns the undo stack, while this function keeps the database write atomic and
+ * returns the original deck of every card. Scheduling data is preserved exactly; only deckId,
+ * mod and usn change, matching Anki's browser "Change Deck" action.
+ */
+export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDeckMoveSnapshot[] {
+    const uniqueCardIds = [...new Set(cardIds)];
+    const moves = uniqueCardIds
+        .map((cardId) => getAnkiCard(cardId))
+        .filter((card): card is AnkiCard => card !== null && card.deckId !== targetDeckId)
+        .map((card) => ({
+            cardId: card.id,
+            previousDeckId: card.deckId,
+            targetDeckId,
+        }));
+
+    if (moves.length === 0) return [];
+
+    const db = getDB();
+    const nowSec = Math.floor(Date.now() / 1000);
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const move of moves) {
+            const card = getAnkiCard(move.cardId);
+            if (!card) continue;
+            saveAnkiCard({ ...card, deckId: targetDeckId, mod: nowSec, usn: -1 });
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return moves;
+}
+
+/** Restore the cards captured by moveCardsToDeck(), without overwriting later scheduling data. */
+export function undoCardsMovedToDeck(moves: CardDeckMoveSnapshot[]): number {
+    if (moves.length === 0) return 0;
+
+    const db = getDB();
+    const nowSec = Math.floor(Date.now() / 1000);
+    let restored = 0;
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const move of moves) {
+            const card = getAnkiCard(move.cardId);
+            if (!card) continue;
+            saveAnkiCard({ ...card, deckId: move.previousDeckId, mod: nowSec, usn: -1 });
+            restored += 1;
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return restored;
+}
+
 /** Bury all sibling cards of a given card (same note, different ord) */
 export function burySiblings(card: AnkiCard): number {
     const siblings = getCardsForNote(card.noteId);
@@ -514,8 +583,8 @@ export function searchIndexCardFromNote(note: Note, cardId: number): SearchIndex
         id: cardId,
         subject,
         topic,
-        question: note.fields[0] || note.sfld || '',
-        answer: note.fields[1] || '',
+        question: humanizeCardText(note.fields[0] || note.sfld || ''),
+        answer: humanizeCardText(note.fields[1] || ''),
     };
 }
 
@@ -563,11 +632,13 @@ export function findTusCardIdByFirstField(question: string): number | null {
 }
 
 export function createTusCard(input: {
-    subject: string;
-    topic: string;
+    /** Legacy grouping metadata. New Anki-style editor cards use deckId instead. */
+    subject?: string;
+    topic?: string;
+    tags?: string[];
     question: string;
     answer: string;
-    /** Explicit target deck (Anki's add-dialog deck picker); defaults to the subject's deck. */
+    /** Explicit target deck (Anki's add-dialog deck picker); legacy calls may omit it. */
     deckId?: number;
     /** 4 = Basic (default), 5 = Type Answer, 6 = Reversed. */
     noteTypeId?: number;
@@ -576,12 +647,16 @@ export function createTusCard(input: {
 }): { note: Note; card: AnkiCard; cards: AnkiCard[] } {
     const noteTypeId = input.noteTypeId ?? 4;
     const noteType = getNoteType(noteTypeId) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId)!;
-    const deckId = input.deckId ?? resolveSubjectDeckId(input.subject);
-    const tags = [input.subject, input.topic.replace(/\s+/g, '-')];
+    const topic = input.topic?.trim() ?? '';
+    const deckId = input.deckId ?? (input.subject ? resolveSubjectDeckId(input.subject) : 1);
+    const tags = input.tags ?? [
+        input.subject,
+        topic ? topic.replace(/\s+/g, '-') : undefined,
+    ].filter((tag): tag is string => Boolean(tag));
 
     const fields = noteTypeId === 6
-        ? [input.question, input.answer, input.topic, (input.reverseAnswer ?? '').trim()]
-        : [input.question, input.answer, input.topic];
+        ? [input.question, input.answer, topic, (input.reverseAnswer ?? '').trim()]
+        : [input.question, input.answer, topic];
 
     const { note, cards } = createNote(noteType, fields, deckId, tags);
 
@@ -590,7 +665,15 @@ export function createTusCard(input: {
 
 export function updateTusCardByCardId(
     cardId: number,
-    input: { subject: string; topic: string; question: string; answer: string; reverseAnswer?: string },
+    input: {
+        subject?: string;
+        topic?: string;
+        tags?: string[];
+        question: string;
+        answer: string;
+        reverseAnswer?: string;
+        deckId?: number;
+    },
 ): { note: Note; card: AnkiCard } | null {
     const card = getAnkiCard(cardId);
     if (!card) return null;
@@ -598,9 +681,8 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
-    // The simple editor only knows question/answer/topic(/reverseAnswer). Notes of richer types
-    // (imported Anki decks, cloze) may carry more fields — overwrite only the
-    // slots the editor owns and keep the rest, or a save here would wipe them.
+    // The compact editor owns the front/back (and optional reverse-answer) fields. Notes of
+    // richer types may carry legacy/imported fields, so keep every slot the editor does not show.
     const noteType = getNoteType(note.noteTypeId);
     const fieldCount = Math.max(noteType?.fields.length ?? 3, note.fields.length, 3);
     const fields = [...note.fields];
@@ -608,21 +690,35 @@ export function updateTusCardByCardId(
     for (let i = 0; i < fieldCount; i++) fields[i] = fields[i] ?? '';
     fields[0] = input.question;
     fields[1] = input.answer;
-    if (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6) fields[2] = input.topic;
+    if (input.topic !== undefined && (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6)) {
+        fields[2] = input.topic;
+    }
     if (note.noteTypeId === 6) fields[3] = (input.reverseAnswer ?? '').trim();
 
     note.fields = fields;
     note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
     note.csum = checksumField(fields[0]);
-    note.tags = [input.subject, input.topic.replace(/\s+/g, '-')];
+    if (input.tags) {
+        note.tags = input.tags;
+    } else if (input.subject !== undefined || input.topic !== undefined) {
+        note.tags = [
+            input.subject,
+            input.topic?.trim() ? input.topic.trim().replace(/\s+/g, '-') : undefined,
+        ].filter((tag): tag is string => Boolean(tag));
+    }
     note.mod = Math.floor(Date.now() / 1000);
     note.usn = -1;
     saveNote(note);
 
-    card.deckId = resolveSubjectDeckId(input.subject);
-    card.mod = Math.floor(Date.now() / 1000);
-    card.usn = -1;
-    saveAnkiCard(card);
+    const destinationDeckId = input.deckId
+        ?? (input.subject ? resolveSubjectDeckId(input.subject) : card.deckId);
+    for (const sibling of getCardsForNote(note.id)) {
+        sibling.deckId = destinationDeckId;
+        sibling.mod = Math.floor(Date.now() / 1000);
+        sibling.usn = -1;
+        saveAnkiCard(sibling);
+    }
+    card.deckId = destinationDeckId;
 
     return { note, card };
 }

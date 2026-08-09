@@ -21,20 +21,53 @@ interface CardWebViewProps {
     /** Render the answer without {{FrontSide}} — for stacked layouts that keep the question
      *  visible in its own panel above. */
     omitFrontSide?: boolean;
+    /** AnkiDroid accessibility/display preferences. */
+    cardZoomPercent?: number;
+    imageZoomPercent?: number;
+    showAudioPlayButtons?: boolean;
+    centerContent?: boolean;
+    frameStyle?: 'card' | 'plain';
 }
 
-export default function CardWebView({ noteType, note, card, deck, side, typedAnswer, playAudioSignal, pauseAudioSignal, omitFrontSide }: CardWebViewProps) {
+export default function CardWebView({
+    noteType,
+    note,
+    card,
+    deck,
+    side,
+    typedAnswer,
+    playAudioSignal,
+    pauseAudioSignal,
+    omitFrontSide,
+    cardZoomPercent = 100,
+    imageZoomPercent = 100,
+    showAudioPlayButtons = true,
+    centerContent = false,
+    frameStyle = 'card',
+}: CardWebViewProps) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const plainFrame = frameStyle === 'plain';
+    const surfaceColor = plainFrame ? 'transparent' : colors.bgCard;
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
     const webViewRef = useRef<WebView | null>(null);
     const mediaBaseUrl = getMediaBaseUrl();
-    const html = renderCardHtml(noteType, note, card.ord, side, {
+    const renderedHtml = renderCardHtml(noteType, note, card.ord, side, {
         deckName: deck?.name,
         clozeOrd: card.ord + 1,
         typedAnswer,
         omitFrontSide,
     });
+    const preferenceCss = `<style>
+        .card{zoom:${Math.max(50, Math.min(200, cardZoomPercent)) / 100};}
+        .card img{zoom:${Math.max(50, Math.min(200, imageZoomPercent)) / 100};}
+        ${showAudioPlayButtons ? '' : '.card audio{display:none!important;}'}
+        ${centerContent ? 'html,body{min-height:100%;}body{display:flex;align-items:center;justify-content:center;}' : ''}
+        ${plainFrame ? 'html,body{background:transparent!important;}.card.side-question,.card.side-answer{background:transparent!important;border-radius:0!important;padding:0!important;}' : ''}
+    </style>`;
+    // Keep preference CSS last so user-selected accessibility/display settings override
+    // imported note-type CSS without mutating the note template itself.
+    const html = `${renderedHtml}${preferenceCss}`;
 
     // Web media lives in IndexedDB, so bare filename refs must be swapped for object
     // URLs asynchronously; until that resolves the raw html renders (text is intact,
@@ -108,7 +141,7 @@ export default function CardWebView({ noteType, note, card, deck, side, typedAns
     }, [pauseAudioSignal]);
 
     if (Platform.OS === 'web') {
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;background:${colors.bgCard};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;}</style></head><body>${webHtml}</body></html>`;
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:${plainFrame ? 0 : 12}px;background:${surfaceColor};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;}</style></head><body>${webHtml}</body></html>`;
         return (
             <iframe
                 ref={iframeRef}
@@ -118,8 +151,8 @@ export default function CardWebView({ noteType, note, card, deck, side, typedAns
                     border: 'none',
                     width: '100%',
                     minHeight: 120,
-                    backgroundColor: colors.bgCard,
-                    borderRadius: 8,
+                    backgroundColor: surfaceColor,
+                    borderRadius: plainFrame ? 0 : 8,
                 }}
             />
         );
@@ -146,7 +179,7 @@ export default function CardWebView({ noteType, note, card, deck, side, typedAns
             ref={webViewRef}
             originWhitelist={['*']}
             source={{ html, baseUrl: mediaBaseUrl }}
-            style={styles.webView}
+            style={[styles.webView, plainFrame && styles.webViewPlain]}
             javaScriptEnabled={hasPlayableMedia}
             domStorageEnabled={false}
             mixedContentMode="never"
@@ -170,6 +203,9 @@ function createStyles(colors: ColorScheme) {
         webView: {
             backgroundColor: colors.bgCard,
             height: 220,
+        },
+        webViewPlain: {
+            backgroundColor: 'transparent',
         },
     });
 }

@@ -13,6 +13,7 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    Pressable,
     useWindowDimensions,
 } from 'react-native';
 import Svg, {
@@ -731,6 +732,11 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                         style={styles.textOverlay}
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     >
+                        <Pressable
+                            style={StyleSheet.absoluteFill}
+                            onPress={() => setTextModal(false)}
+                            accessibilityLabel={l('Metin penceresini kapat', 'Close text dialog')}
+                        />
                         <View style={styles.textCard}>
                             <Text style={styles.textTitle}>{l('Fotoğrafa Metin Ekle', 'Add Text to Photo')}</Text>
                             <TextInput

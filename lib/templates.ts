@@ -260,7 +260,7 @@ export function renderCardHtml(
     const questionHtml = normalizeFieldHtml(renderTemplate(template.qfmt, questionCtx));
 
     if (side === 'question') {
-        return wrapInCardHtml(questionHtml, noteType.css);
+        return wrapInCardHtml(questionHtml, noteType.css, 'question');
     }
 
     // Render answer
@@ -271,7 +271,7 @@ export function renderCardHtml(
         omitFrontSide: options?.omitFrontSide,
     };
     const answerHtml = normalizeFieldHtml(renderTemplate(template.afmt, answerCtx));
-    return wrapInCardHtml(answerHtml, noteType.css);
+    return wrapInCardHtml(answerHtml, noteType.css, 'answer');
 }
 
 /** Check if a standard template should generate a card (first field reference non-empty) */
@@ -500,15 +500,24 @@ function escapeHtml(text: string): string {
         .replace(/'/g, '&#039;');
 }
 
-function wrapInCardHtml(body: string, css: string): string {
+function wrapInCardHtml(body: string, css: string, side: 'question' | 'answer'): string {
     // Prevent CSS breakout and network/script-capable CSS imports from imported note types.
     const safeCss = css
         .replace(/<\/style/gi, '<\\/style')
         .replace(/@import[\s\S]*?(?:;|$)/gi, '')
         .replace(/url\(\s*(['"]?)(?:https?:|javascript:|data:text\/html|data:image\/svg\+xml)[\s\S]*?\1\s*\)/gi, 'none')
         .replace(/(?:expression|behavior|-moz-binding)\s*:[^;}]*/gi, '');
-    // Media must fit the card panel (AnkiDroid scales images to screen width). Declared
-    // before the note type's own CSS so a template can still deliberately override it.
-    const baseCss = '.card img, .card video { max-width: 100%; max-height: 60vh; height: auto; } .card audio { max-width: 100%; }';
-    return `<style>${baseCss}</style><style>${safeCss}</style><div class="card">${body}</div>`;
+    // Both sides render as a centred, content-hugging white card with large text (the prompt and
+    // answer should read big and sit in the middle). The `.card.side-*` selectors outrank a note
+    // type's own `.card` rule, so a template can still override via `!important`. Media fits the
+    // panel (AnkiDroid scales images to screen width). Declared before the note type's CSS so its
+    // single-class rules stay overridable.
+    const baseCss = 'html,body{margin:0;padding:0;}'
+        + ' body{text-align:center;}'
+        + ' .card img, .card video { max-width: 100%; max-height: 60vh; height: auto; }'
+        + ' .card audio { max-width: 100%; }'
+        + ' .card.side-question, .card.side-answer {'
+        + ' display:inline-block; text-align:center; font-size:26px; line-height:1.5;'
+        + ' background:#ffffff; border-radius:14px; padding:20px 24px; max-width:100%; box-sizing:border-box; }';
+    return `<style>${baseCss}</style><style>${safeCss}</style><div class="card side-${side}">${body}</div>`;
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors, FontSize, ThemeColorsProvider, useThemeColors } from '../constants/theme';
 import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
@@ -233,13 +234,15 @@ function AppStack() {
 export default function RootLayout() {
     return (
         <AppErrorBoundary>
-            <WebDbGate>
-                <AppProvider>
-                    <ThemeGate>
-                        <AppStack />
-                    </ThemeGate>
-                </AppProvider>
-            </WebDbGate>
+            <SafeAreaProvider>
+                <WebDbGate>
+                    <AppProvider>
+                        <ThemeGate>
+                            <AppStack />
+                        </ThemeGate>
+                    </AppProvider>
+                </WebDbGate>
+            </SafeAreaProvider>
         </AppErrorBoundary>
     );
 }

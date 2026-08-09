@@ -107,3 +107,31 @@ describe('healBuiltinNoteTypeTemplates', () => {
         expect(after).toBe(before);
     });
 });
+
+describe('healSeededDeckDescriptions', () => {
+    const seedPythonDeck = (description: string) => {
+        const deck = { id: 1, name: 'Python', configId: 1, mod: 0, usn: 0, description, collapsed: false, isFiltered: false };
+        db.runSync(
+            'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
+            deck.id, deck.name, JSON.stringify(deck), 0, -1, 0,
+        );
+    };
+
+    it('clears the seeded placeholder description from the Python deck', () => {
+        seedPythonDeck('Python ana deste');
+
+        ensureBuiltinNoteTypesSeeded();
+
+        const row = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', 'Python');
+        expect(JSON.parse(row!.data).description).toBe('');
+    });
+
+    it('preserves a real description the user later wrote', () => {
+        seedPythonDeck('Benim notlarım');
+
+        ensureBuiltinNoteTypesSeeded();
+
+        const row = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', 'Python');
+        expect(JSON.parse(row!.data).description).toBe('Benim notlarım');
+    });
+});

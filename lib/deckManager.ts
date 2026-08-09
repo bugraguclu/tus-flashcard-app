@@ -35,6 +35,60 @@ export function getDeckByName(name: string): Deck | null {
     return row ? JSON.parse(row.data) : null;
 }
 
+function deckNameWithNumericSuffix(name: string, suffix: number): string {
+    const parent = getParentDeckName(name);
+    const leaf = getDeckDisplayName(name);
+    const numberedLeaf = `${leaf} (${suffix})`;
+    return parent ? `${parent}::${numberedLeaf}` : numberedLeaf;
+}
+
+/** Return the requested deck path, or the first free PC-style `(n)` variant of its leaf name. */
+export function getAvailableDeckName(name: string): string {
+    if (!getDeckByName(name)) return name;
+
+    let suffix = 1;
+    let candidate = deckNameWithNumericSuffix(name, suffix);
+    while (getDeckByName(candidate)) {
+        suffix += 1;
+        candidate = deckNameWithNumericSuffix(name, suffix);
+    }
+    return candidate;
+}
+
+/**
+ * Resolve a collision-free destination for an entire deck subtree. The suffix belongs on the
+ * moved root's leaf (`Parent::Deck (1)`), while every descendant keeps its relative path.
+ */
+function getAvailableSubtreeName(deck: Deck, desiredName: string): string {
+    const subtreePrefix = `${deck.name}::`;
+    const subtree = getAllDecks().filter((entry) => (
+        entry.id === deck.id || entry.name.startsWith(subtreePrefix)
+    ));
+    const subtreeIds = new Set(subtree.map((entry) => entry.id));
+    const collides = (candidateRoot: string) => subtree.some((entry) => {
+        const candidateName = entry.id === deck.id
+            ? candidateRoot
+            : `${candidateRoot}::${entry.name.slice(subtreePrefix.length)}`;
+        const existing = getDeckByName(candidateName);
+        return Boolean(existing && !subtreeIds.has(existing.id));
+    });
+
+    if (!collides(desiredName)) return desiredName;
+    let suffix = 1;
+    let candidate = deckNameWithNumericSuffix(desiredName, suffix);
+    while (collides(candidate)) {
+        suffix += 1;
+        candidate = deckNameWithNumericSuffix(desiredName, suffix);
+    }
+    return candidate;
+}
+
+/** Resolve a collision-free rename destination while preserving a deck's complete subtree. */
+export function getAvailableDeckSubtreeName(deckId: number, desiredName: string): string {
+    const deck = getDeck(deckId);
+    return deck ? getAvailableSubtreeName(deck, desiredName) : desiredName;
+}
+
 export function saveDeck(deck: Deck): void {
     const db = getDB();
     db.runSync(
@@ -145,7 +199,48 @@ export function renameDeck(id: number, newName: string): void {
         throw new Error(`A deck named "${newName}" already exists.`);
     }
 
+    // Validate every descendant before creating a missing target parent. A root-only collision
+    // check is not enough when, for example, A::Child is moved onto an existing B::Child.
     const oldPrefix = `${deck.name}::`;
+    const subtree = db.getAllSync<{ id: number; name: string }>(
+        `SELECT id, name
+         FROM decks
+         WHERE id = ? OR name LIKE ? ESCAPE '\\'`,
+        id,
+        `${escapeLikePattern(oldPrefix)}%`,
+    );
+    const subtreeIds = new Set(subtree.map((row) => row.id));
+    for (const row of subtree) {
+        const resolvedName = row.id === id
+            ? newName
+            : `${newName}::${row.name.slice(oldPrefix.length)}`;
+        const target = getDeckByName(resolvedName);
+        if (target && !subtreeIds.has(target.id)) {
+            throw new Error(`A deck named "${resolvedName}" already exists.`);
+        }
+    }
+
+    const newParentName = getParentDeckName(newName);
+    if (newParentName) {
+        if (deck.isFiltered) {
+            throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
+        }
+        if (newParentName === deck.name || newParentName.startsWith(`${deck.name}::`)) {
+            throw new Error('Bir deste kendi altındaki bir desteye taşınamaz.');
+        }
+
+        let ancestorName: string | null = newParentName;
+        while (ancestorName) {
+            const ancestor = getDeckByName(ancestorName);
+            if (ancestor?.isFiltered) {
+                throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
+            }
+            ancestorName = getParentDeckName(ancestorName);
+        }
+
+        if (!getDeckByName(newParentName)) createDeck(newParentName, deck.configId);
+    }
+
     const nowSec = Math.floor(Date.now() / 1000);
     const nowMs = Date.now();
 
@@ -193,6 +288,16 @@ export function createDeck(name: string, configId?: number): Deck {
     // Deck names are unique in Anki: return the existing deck instead of creating a duplicate.
     const existing = getDeckByName(name);
     if (existing) return existing;
+
+    // Anki filtered decks are always top-level and may not contain regular subdecks.
+    let ancestorName = getParentDeckName(name);
+    while (ancestorName) {
+        const ancestor = getDeckByName(ancestorName);
+        if (ancestor?.isFiltered) {
+            throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
+        }
+        ancestorName = getParentDeckName(ancestorName);
+    }
 
     const now = uniqueId();
     const deck: Deck = {
@@ -251,13 +356,21 @@ export interface DeckTreeNode {
     totalCards: number;
 }
 
+function compareDeckDisplayOrder(a: Deck, b: Deck): number {
+    const aOrder = Number.isFinite(a.sortOrder) ? a.sortOrder! : Number.MAX_SAFE_INTEGER;
+    const bOrder = Number.isFinite(b.sortOrder) ? b.sortOrder! : Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.name.localeCompare(b.name);
+}
+
 export function buildDeckTree(
     decks: Deck[],
     cardCounts?: Map<number, { new: number; learn: number; review: number; total: number }>,
     rolloverHour: number = 4,
 ): DeckTreeNode[] {
-    // Sort by name for hierarchy
-    const sorted = [...decks].sort((a, b) => a.name.localeCompare(b.name));
+    // Legacy collections without a manual position stay alphabetical. As soon as the user
+    // reorders siblings, their persisted sortOrder takes precedence.
+    const sorted = [...decks].sort(compareDeckDisplayOrder);
 
     // Build tree
     const nodeMap = new Map<string, DeckTreeNode>();
@@ -286,6 +399,12 @@ export function buildDeckTree(
             roots.push(node);
         }
     }
+
+    const sortBranch = (nodes: DeckTreeNode[]) => {
+        nodes.sort((a, b) => compareDeckDisplayOrder(a.deck, b.deck));
+        nodes.forEach((node) => sortBranch(node.children));
+    };
+    sortBranch(roots);
 
     // Aggregate counts from children up
     function aggregateCounts(node: DeckTreeNode): void {
@@ -527,11 +646,14 @@ export function setDeckLimits(deckId: number, newPerDay: number, maxReviewsPerDa
  * Move a deck (with its whole subtree) under a new parent — Anki's drag-and-drop nesting.
  * `newParentName` null means "make it a top-level deck".
  */
-export function moveDeckUnder(deckId: number, newParentName: string | null): void {
+export function moveDeckUnder(deckId: number, newParentName: string | null): string | null {
     const deck = getDeck(deckId);
-    if (!deck) return;
+    if (!deck) return null;
 
     if (newParentName) {
+        if (deck.isFiltered) {
+            throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
+        }
         if (newParentName === deck.name || newParentName.startsWith(`${deck.name}::`)) {
             throw new Error('Bir deste kendi altındaki bir desteye taşınamaz.');
         }
@@ -542,8 +664,58 @@ export function moveDeckUnder(deckId: number, newParentName: string | null): voi
 
     const leaf = getDeckDisplayName(deck.name);
     const targetName = newParentName ? `${newParentName}::${leaf}` : leaf;
-    if (targetName === deck.name) return;
-    renameDeck(deckId, targetName);
+    if (targetName === deck.name) return deck.name;
+    const availableName = getAvailableDeckSubtreeName(deck.id, targetName);
+    renameDeck(deckId, availableName);
+    return availableName;
+}
+
+/**
+ * Place a deck immediately before/after another deck. If they have different parents, the
+ * dragged deck (and its subtree) first moves beside the target, then the sibling order is saved.
+ */
+export function reorderDeckRelative(
+    deckId: number,
+    targetDeckId: number,
+    placement: 'before' | 'after',
+): string {
+    const deck = getDeck(deckId);
+    const target = getDeck(targetDeckId);
+    if (!deck || !target) throw new Error('Deste bulunamadı.');
+    if (deck.id === target.id) return deck.name;
+    if (target.name.startsWith(`${deck.name}::`)) {
+        throw new Error('Bir deste kendi altındaki bir destenin yanına taşınamaz.');
+    }
+
+    const targetParent = getParentDeckName(target.name);
+    if (deck.isFiltered && targetParent) {
+        throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
+    }
+
+    const nextName = targetParent
+        ? `${targetParent}::${getDeckDisplayName(deck.name)}`
+        : getDeckDisplayName(deck.name);
+    if (nextName !== deck.name) moveDeckUnder(deck.id, targetParent);
+
+    const moved = getDeck(deck.id);
+    if (!moved) throw new Error('Taşınan deste bulunamadı.');
+    const siblings = getAllDecks()
+        .filter((entry) => getParentDeckName(entry.name) === targetParent && entry.id !== moved.id)
+        .sort(compareDeckDisplayOrder);
+    const targetIndex = siblings.findIndex((entry) => entry.id === target.id);
+    if (targetIndex < 0) throw new Error('Hedef deste bulunamadı.');
+
+    siblings.splice(placement === 'before' ? targetIndex : targetIndex + 1, 0, moved);
+    const nowSec = Math.floor(Date.now() / 1000);
+    for (let index = 0; index < siblings.length; index++) {
+        const sibling = siblings[index];
+        if (sibling.sortOrder === index) continue;
+        sibling.sortOrder = index;
+        sibling.mod = nowSec;
+        sibling.usn = -1;
+        saveDeck(sibling);
+    }
+    return moved.name;
 }
 
 /** Persist the disclosure state of a deck row, matching Anki's remembered deck tree. */

@@ -8,6 +8,7 @@ import {
     Pressable,
 } from 'react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
 import { getSearchIndexCards } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
@@ -20,6 +21,7 @@ export { useApp } from '../../contexts/AppContext';
 export default function TabLayout() {
     const router = useRouter();
     const pathname = usePathname();
+    const insets = useSafeAreaInsets();
     const colors = useThemeColors();
     const { t, localeTag } = useI18n();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -40,6 +42,10 @@ export default function TabLayout() {
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
 
     const isWide = windowWidth >= 768;
+
+    useEffect(() => {
+        if (!isWide) setSidebarOpen(false);
+    }, [pathname, isWide]);
 
     // While studying, the sidebar mirrors the card on screen (Anki-style): the shown card's
     // course opens and its topic is highlighted, moving along as the queue advances.
@@ -174,12 +180,14 @@ export default function TabLayout() {
     return (
         <View style={styles.container}>
             {!isWide && !isDeckScreen && (
-                <View style={styles.mobileHeader}>
+                <View style={[styles.mobileHeader, { paddingTop: insets.top + Spacing.sm }]}>
                     <TouchableOpacity
                         style={styles.hamburger}
                         onPress={() => setSidebarOpen((prev) => !prev)}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                         accessibilityRole="button"
                         accessibilityLabel={sidebarOpen ? t('tabs.closeMenu') : t('tabs.openMenu')}
+                        accessibilityState={{ expanded: sidebarOpen }}
                     >
                         <Text style={styles.hamburgerText}>☰</Text>
                     </TouchableOpacity>
@@ -190,7 +198,7 @@ export default function TabLayout() {
                     >
                         <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
                     </TouchableOpacity>
-                    <View style={{ width: 40 }} />
+                    <View style={{ width: 48 }} />
                 </View>
             )}
 
@@ -253,6 +261,9 @@ function createStyles(colors: ColorScheme) {
     appLayout: { flex: 1, flexDirection: 'row' },
 
     mobileHeader: {
+        position: 'relative',
+        zIndex: 200,
+        elevation: 8,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -262,7 +273,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
-    hamburger: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+    hamburger: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
     hamburgerText: { fontSize: 22, color: colors.textPrimary },
     mobileTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
 

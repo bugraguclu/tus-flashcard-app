@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Modal,
@@ -11,22 +11,24 @@ import {
     View,
     StyleSheet,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 
-type MenuView = 'menu' | 'flag' | 'dueDate';
+type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 
 export interface CardOptionsMenuProps {
     visible: boolean;
+    /** Which panel to show when the sheet opens. The top-bar flag button opens straight to 'flag'. */
+    initialView?: 'menu' | 'flag';
     onClose: () => void;
     cardSuspended: boolean;
     noteMarked: boolean;
     /** Audio rows are only shown for cards that actually embed audio/video. */
     cardHasAudio: boolean;
     onReplayAudio: () => void;
-    onPauseAudio: () => void;
     autoAdvance: boolean;
     onToggleAutoAdvance: () => void;
     /** Anki Preferences trio, surfaced here like Anki's reviewer settings. */
@@ -41,22 +43,50 @@ export interface CardOptionsMenuProps {
     onSuspendCard: () => void;
     onForgetCard: () => void;
     onSetDueDate: (days: number) => void;
-    onCardInfo: () => void;
     onDeckOptions: () => void;
     onToggleMarkNote: () => void;
     onBuryNote: () => void;
     onSuspendNote: () => void;
-    onDuplicateNote: () => void;
     onDeleteNote: () => void;
+    /** Undo the last answer (shown only when there is something to undo). */
+    canUndo: boolean;
+    onUndo: () => void;
+    onEditNote: () => void;
+    /** Space-separated tags of the current note, and a save callback (Anki's "Edit tags"). */
+    noteTags: string;
+    onSaveTags: (tags: string) => void;
+    /** Whiteboard: its rows appear only while the whiteboard is on, like AnkiDroid. */
+    whiteboardActive: boolean;
+    whiteboardHasContent: boolean;
+    stylusOnly: boolean;
+    onToggleStylus: () => void;
+    onClearWhiteboard: () => void;
+    onSaveWhiteboard: () => void;
+    onDisableWhiteboard: () => void;
+    /** Voice playback (TTS): a single Enable/Disable row like AnkiDroid's "voice playback". */
+    voicePlaybackEnabled: boolean;
+    onToggleVoicePlayback: () => void;
 }
 
 /** Anki-style right-click card/note options menu, opened from a button on the study screen. */
 export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
+    const insets = useSafeAreaInsets();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [view, setView] = useState<MenuView>('menu');
     const [dueDateInput, setDueDateInput] = useState('1');
+    const [tagsInput, setTagsInput] = useState('');
+
+    // Open on the caller's requested panel (e.g. the flag button jumps straight to flag colors).
+    useEffect(() => {
+        if (props.visible) setView(props.initialView ?? 'menu');
+    }, [props.visible, props.initialView]);
+
+    // Prefill the tag editor with the note's current tags each time that panel is opened.
+    useEffect(() => {
+        if (view === 'tags') setTagsInput(props.noteTags);
+    }, [view, props.noteTags]);
 
     const close = () => {
         setView('menu');
@@ -77,7 +107,15 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         ? l('Bayrak Rengi', 'Flag Color')
         : view === 'dueDate'
             ? l('Son Tarihi Ayarla', 'Set Due Date')
-            : l('Kart Seçenekleri', 'Card Options');
+            : view === 'bury'
+                ? l('Göm', 'Bury')
+                : view === 'suspend'
+                    ? l('Askıya Al', 'Suspend')
+                    : view === 'reschedule'
+                        ? l('Yeniden Zamanla', 'Reschedule')
+                        : view === 'tags'
+                            ? l('Etiketleri Düzenle', 'Edit Tags')
+                            : l('Kart Seçenekleri', 'Card Options');
 
     const flagNames = [
         l('Bayrak Yok', 'No Flag'), l('Kırmızı', 'Red'), l('Turuncu', 'Orange'),
@@ -85,10 +123,24 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         l('Turkuaz', 'Turquoise'), l('Mor', 'Purple'),
     ];
 
+    // Back row shared by every sub-panel (bury / suspend / reschedule / flag / due date).
+    const SubHeader = () => (
+        <View style={styles.subHeader}>
+            <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => setView('menu')}
+                accessibilityRole="button"
+                accessibilityLabel={l('Kart seçeneklerine dön', 'Back to card options')}
+            >
+                <Text style={styles.backLink}>‹ {l('Geri', 'Back')}</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
     return (
         <Modal transparent visible={props.visible} animationType="fade" onRequestClose={close}>
             <KeyboardAvoidingView
-                style={styles.backdrop}
+                style={[styles.backdrop, { paddingTop: insets.top + Spacing.md }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel={t('tabs.closeMenu')} />
@@ -112,53 +164,28 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                     >
                     {view === 'menu' && (
                         <>
-                            <Text style={styles.groupLabel}>{t('common.card').toLocaleUpperCase()}</Text>
-                            <MenuRow styles={styles} icon="🚩" label={l('Kartı Bayrakla İşaretle', 'Flag Card')} onPress={() => setView('flag')} />
-                            <MenuRow styles={styles} icon="💤" label={l('Kartı Göm', 'Bury Card')} onPress={() => runAndClose(props.onBuryCard)} />
-                            <MenuRow
-                                styles={styles}
-                                icon="⏸️"
-                                label={props.cardSuspended ? l('Askıdan Çıkar', 'Unsuspend Card') : l('Kartı Askıya Al', 'Suspend Card')}
-                                onPress={() => runAndClose(props.onSuspendCard)}
-                            />
-                            <MenuRow
-                                styles={styles}
-                                icon="🔄"
-                                label={l('Kartı Unut…', 'Forget Card…')}
-                                onPress={() => confirmAndClose(
-                                    l('Kartı Unut', 'Forget Card'),
-                                    l('Bu kartın tüm zamanlama ilerlemesi silinir ve kart Yeni durumuna sıfırlanır. Bu işlem geri alınamaz.', 'All scheduling progress for this card will be deleted and the card will be reset to New. This cannot be undone.'),
-                                    props.onForgetCard,
-                                    true,
-                                )}
-                            />
-                            <MenuRow styles={styles} icon="📅" label={l('Son Tarihi Ayarla…', 'Set Due Date…')} onPress={() => setView('dueDate')} />
-                            {props.cardHasAudio && (
+                            {props.whiteboardActive && (
                                 <>
-                                    <MenuRow styles={styles} icon="🔊" label={l('Sesi Yeniden Oynat', 'Replay Audio')} onPress={() => runAndClose(props.onReplayAudio)} />
-                                    <MenuRow styles={styles} icon="🔇" label={l('Sesi Durdur', 'Pause Audio')} onPress={() => runAndClose(props.onPauseAudio)} />
+                                    <Text style={styles.groupLabel}>{l('BEYAZ TAHTA', 'WHITEBOARD')}</Text>
+                                    {props.whiteboardHasContent && (
+                                        <>
+                                            <MenuRow styles={styles} icon="🧹" label={l('Beyaz Tahtayı Temizle', 'Clear Whiteboard')} onPress={() => runAndClose(props.onClearWhiteboard)} />
+                                            <MenuRow styles={styles} icon="💾" label={l('Beyaz Tahtayı Kaydet', 'Save Whiteboard')} onPress={() => runAndClose(props.onSaveWhiteboard)} />
+                                        </>
+                                    )}
+                                    <ToggleRow styles={styles} icon="🖊️" label={l('Kalemle Yazma (stylus)', 'Stylus Writing')} value={props.stylusOnly} onPress={props.onToggleStylus} />
+                                    <MenuRow styles={styles} icon="❌" label={l('Beyaz Tahtayı Kapat', 'Disable Whiteboard')} onPress={() => runAndClose(props.onDisableWhiteboard)} />
+                                    <View style={styles.divider} />
                                 </>
                             )}
-                            <MenuRow styles={styles} icon="ℹ️" label={t('root.cardInfo')} onPress={() => runAndClose(props.onCardInfo)} />
-                            <MenuRow styles={styles} icon="⚙️" label={l('Seçenekler', 'Options')} onPress={() => runAndClose(props.onDeckOptions)} />
 
-                            <View style={styles.divider} />
-
-                            <Text style={styles.groupLabel}>{t('common.note').toLocaleUpperCase()}</Text>
-                            <MenuRow
-                                styles={styles}
-                                icon="⭐"
-                                label={props.noteMarked ? l('Not İşaretini Kaldır', 'Unmark Note') : l('Notu İşaretle', 'Mark Note')}
-                                onPress={() => runAndClose(props.onToggleMarkNote)}
-                            />
-                            <MenuRow styles={styles} icon="💤" label={l('Notu Göm', 'Bury Note')} onPress={() => runAndClose(props.onBuryNote)} />
-                            <MenuRow styles={styles} icon="⏸️" label={l('Notu Askıya Al', 'Suspend Note')} onPress={() => runAndClose(props.onSuspendNote)} />
-                            <MenuRow styles={styles} icon="📄" label={l('Kopyasını Oluştur…', 'Create Copy…')} onPress={() => confirmAndClose(
-                                l('Kopyasını Oluştur', 'Create Copy'),
-                                l('Bu notun bir kopyası oluşturulacak.', 'A copy of this note will be created.'),
-                                props.onDuplicateNote,
+                            {props.canUndo && (
+                                <MenuRow styles={styles} icon="↩️" label={l('Son Yanıtı Geri Al', 'Undo')} onPress={() => runAndClose(props.onUndo)} />
                             )}
-                            />
+                            <MenuRow styles={styles} icon="✏️" label={l('Notu Düzenle', 'Edit Note')} onPress={() => runAndClose(props.onEditNote)} />
+                            <MenuRow styles={styles} icon="🏷️" label={l('Etiketleri Düzenle', 'Edit Tags')} chevron onPress={() => setView('tags')} />
+                            <MenuRow styles={styles} icon="💤" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
+                            <MenuRow styles={styles} icon="⏸️" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
                             <MenuRow
                                 styles={styles}
                                 icon="🗑️"
@@ -171,6 +198,23 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     true,
                                 )}
                             />
+                            <MenuRow
+                                styles={styles}
+                                icon="⭐"
+                                label={props.noteMarked ? l('Not İşaretini Kaldır', 'Unmark Note') : l('Notu İşaretle', 'Mark Note')}
+                                onPress={() => runAndClose(props.onToggleMarkNote)}
+                            />
+                            <MenuRow styles={styles} icon="📅" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
+                            {props.cardHasAudio && (
+                                <MenuRow styles={styles} icon="🔊" label={l('Medyayı Yeniden Oynat', 'Replay Media')} onPress={() => runAndClose(props.onReplayAudio)} />
+                            )}
+                            <MenuRow
+                                styles={styles}
+                                icon="🗣️"
+                                label={props.voicePlaybackEnabled ? l('Sesli Okumayı Kapat', 'Disable Voice Playback') : l('Sesli Okumayı Aç', 'Enable Voice Playback')}
+                                onPress={() => runAndClose(props.onToggleVoicePlayback)}
+                            />
+                            <MenuRow styles={styles} icon="⚙️" label={l('Deste Seçenekleri', 'Deck Options')} onPress={() => runAndClose(props.onDeckOptions)} />
 
                             <View style={styles.divider} />
 
@@ -178,6 +222,64 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                             <ToggleRow styles={styles} icon="🔇" label={l('Yanıtlarken Çalan Sesi Kes', 'Interrupt Audio When Answering')} value={props.interruptAudioOnAnswer} onPress={props.onToggleInterruptAudio} />
                             <ToggleRow styles={styles} icon="🔢" label={l('Kalan Kart Sayısını Göster', 'Show Remaining Card Count')} value={props.showRemainingCount} onPress={props.onToggleShowRemaining} />
                             <ToggleRow styles={styles} icon="⏱️" label={l('Yanıt Düğmelerinde Sonraki Süreyi Göster', 'Show Next Review Time Above Answer Buttons')} value={props.showNextReviewTimes} onPress={props.onToggleShowNextTimes} />
+                        </>
+                    )}
+
+                    {view === 'bury' && (
+                        <>
+                            <SubHeader />
+                            <MenuRow styles={styles} icon="💤" label={l('Kartı Göm', 'Bury Card')} onPress={() => runAndClose(props.onBuryCard)} />
+                            <MenuRow styles={styles} icon="🌙" label={l('Notu Göm', 'Bury Note')} onPress={() => runAndClose(props.onBuryNote)} />
+                        </>
+                    )}
+
+                    {view === 'suspend' && (
+                        <>
+                            <SubHeader />
+                            <MenuRow
+                                styles={styles}
+                                icon="⏸️"
+                                label={props.cardSuspended ? l('Askıdan Çıkar', 'Unsuspend Card') : l('Kartı Askıya Al', 'Suspend Card')}
+                                onPress={() => runAndClose(props.onSuspendCard)}
+                            />
+                            <MenuRow styles={styles} icon="⏹️" label={l('Notu Askıya Al', 'Suspend Note')} onPress={() => runAndClose(props.onSuspendNote)} />
+                        </>
+                    )}
+
+                    {view === 'reschedule' && (
+                        <>
+                            <SubHeader />
+                            <MenuRow styles={styles} icon="📅" label={l('Son Tarihi Ayarla…', 'Set Due Date…')} onPress={() => setView('dueDate')} />
+                            <MenuRow
+                                styles={styles}
+                                icon="🔄"
+                                label={l('Kartı Unut…', 'Forget Card…')}
+                                onPress={() => confirmAndClose(
+                                    l('Kartı Unut', 'Forget Card'),
+                                    l('Bu kartın tüm zamanlama ilerlemesi silinir ve kart Yeni durumuna sıfırlanır. Bu işlem geri alınamaz.', 'All scheduling progress for this card will be deleted and the card will be reset to New. This cannot be undone.'),
+                                    props.onForgetCard,
+                                    true,
+                                )}
+                            />
+                        </>
+                    )}
+
+                    {view === 'tags' && (
+                        <>
+                            <SubHeader />
+                            <Text style={styles.subDesc}>{l('Etiketleri boşlukla ayırın.', 'Separate tags with spaces.')}</Text>
+                            <TextInput
+                                style={styles.dueDateInput}
+                                value={tagsInput}
+                                onChangeText={setTagsInput}
+                                placeholder={l('etiketler', 'tags')}
+                                placeholderTextColor={colors.textMuted}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                            <TouchableOpacity style={styles.confirmBtn} onPress={() => runAndClose(() => props.onSaveTags(tagsInput))}>
+                                <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
+                            </TouchableOpacity>
                         </>
                     )}
 
@@ -265,12 +367,14 @@ function ToggleRow({ styles, icon, label, value, onPress }: {
     );
 }
 
-function MenuRow({ styles, icon, label, onPress, danger }: {
+function MenuRow({ styles, icon, label, onPress, danger, chevron }: {
     styles: ReturnType<typeof createStyles>;
     icon: string;
     label: string;
     onPress: () => void;
     danger?: boolean;
+    /** Shows a ▸ affordance for rows that open a sub-panel (Bury / Suspend / Reschedule). */
+    chevron?: boolean;
 }) {
     return (
         <TouchableOpacity
@@ -281,6 +385,7 @@ function MenuRow({ styles, icon, label, onPress, danger }: {
         >
             <Text style={styles.rowIcon}>{icon}</Text>
             <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
+            {chevron && <Text style={styles.rowChevron}>›</Text>}
         </TouchableOpacity>
     );
 }
@@ -358,6 +463,7 @@ function createStyles(colors: ColorScheme) {
         rowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
         rowLabel: { fontSize: FontSize.md, color: colors.textPrimary, flex: 1 },
         rowLabelDanger: { color: colors.btnAgain },
+        rowChevron: { fontSize: 20, color: colors.textMuted, marginLeft: 4 },
         divider: { height: 1, backgroundColor: colors.borderLight, marginVertical: Spacing.xs },
 
         toggle: {

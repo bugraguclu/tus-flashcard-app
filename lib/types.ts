@@ -117,6 +117,42 @@ export interface AppSettings {
     showRemainingCount: boolean;
     /** Anki Preferences: show the next review time above each answer button. */
     showNextReviewTimes: boolean;
+    /** AnkiDroid General: add new notes to the current deck or always to Default. */
+    newCardDeckMode?: 'current' | 'default';
+    /** Reviewer presentation preferences shared by the study screen and CardWebView. */
+    studyFrameStyle?: 'card' | 'plain';
+    showAudioPlayButtons?: boolean;
+    showAnswerFeedback?: boolean;
+    showAnswerButtons?: boolean;
+    hideHardAndEasy?: boolean;
+    showStudyTopBar?: boolean;
+    showDeckTitle?: boolean;
+    centerCardContent?: boolean;
+    showRemainingTime?: boolean;
+    answerButtonsPosition?: 'top' | 'bottom';
+    /** App-owned local image URI used behind the reviewer. */
+    studyBackgroundImageUri?: string | null;
+    /** Anki's timebox reminder. Zero disables it. */
+    timeboxMinutes?: number;
+    /** Prevent the device from sleeping while the reviewer is open. */
+    keepScreenOn?: boolean;
+    /** Touch reviewer controls. Swipes are intentionally opt-in. */
+    gesturesEnabled?: boolean;
+    swipeSensitivity?: number;
+    /** Accessibility scaling and accidental-tap protection. Values are percentages/ms. */
+    cardZoomPercent?: number;
+    imageZoomPercent?: number;
+    answerButtonScalePercent?: number;
+    twoRowAnswerButtons?: boolean;
+    browserFontScalePercent?: number;
+    showAnswerLongPressMs?: number;
+    answerDoubleTapMs?: number;
+    /** Automatic local collection backup policy. */
+    autoBackupEnabled?: boolean;
+    backupIntervalMinutes?: number;
+    backupDailyCopies?: number;
+    backupWeeklyCopies?: number;
+    backupMonthlyCopies?: number;
     dailyNewLimit: number;
     dailyReviewLimit: number;
     /** Minutes between learning steps for new cards. */

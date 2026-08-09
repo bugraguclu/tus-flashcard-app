@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import Svg, { Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert } from '../lib/confirm';
 import { saveMediaBytes } from '../lib/mediaStore';
@@ -14,12 +15,16 @@ import { useI18n } from '../hooks/useI18n';
 interface MediaAttachButtonProps {
     /** Appends an Anki-style media reference (`<img src="…">`, `[sound:…]`, …) to the field. */
     onInsert: (snippet: string) => void;
-    /** The field already holds an attachment — a field carries at most one piece of media. */
+    /** Visually marks that the field already contains media; Anki permits additional files. */
     hasMedia?: boolean;
 }
 
+export interface MediaAttachButtonHandle {
+    open: () => void;
+}
+
 /** Matches any media reference a field can carry (image/video/audio tag or [sound:] marker). */
-export const FIELD_MEDIA_RE = /<img\b|<video\b|<audio\b|\[sound:/i;
+export const FIELD_MEDIA_RE = /<img\b|<video\b|<audio\b|<a\b[^>]*\bhref=|\[sound:/i;
 
 async function readUriBytes(uri: string): Promise<Uint8Array> {
     const response = await fetch(uri);
@@ -27,9 +32,17 @@ async function readUriBytes(uri: string): Promise<Uint8Array> {
     return new Uint8Array(buffer);
 }
 
-type MediaKind = 'image' | 'audio' | 'video';
+type MediaKind = 'image' | 'audio' | 'video' | 'file';
 
-export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachButtonProps) {
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert, hasMedia }, ref) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -40,6 +53,9 @@ export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachBut
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
 
     const closeMenu = () => setMenuVisible(false);
+    const openMenu = () => setMenuVisible(true);
+
+    useImperativeHandle(ref, () => ({ open: openMenu }));
 
     const saveAndInsert = async (uri: string, name: string, kind: MediaKind) => {
         setBusy(true);
@@ -49,7 +65,8 @@ export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachBut
             await saveMediaBytes(filename, bytes);
             if (kind === 'image') onInsert(`<img src="${filename}">`);
             else if (kind === 'audio') onInsert(`[sound:${filename}]`);
-            else onInsert(`<video controls src="${filename}"></video>`);
+            else if (kind === 'video') onInsert(`<video controls src="${filename}"></video>`);
+            else onInsert(`<a href="${filename}">${escapeHtml(name)}</a>`);
         } catch (e) {
             console.warn('[MediaAttach] save failed:', e);
             alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
@@ -139,6 +156,19 @@ export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachBut
         }
     };
 
+    const pickFile = async () => {
+        closeMenu();
+        try {
+            const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+            if (picked.canceled || !picked.assets?.length) return;
+            const asset = picked.assets[0];
+            await saveAndInsert(asset.uri, asset.name, 'file');
+        } catch (e) {
+            console.warn('[MediaAttach] file pick failed:', e);
+            alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
+        }
+    };
+
     const options: { icon: string; label: string; onPress: () => void }[] = [
         { icon: '🖼️', label: l('Fotoğraf Seç ve Düzenle', 'Choose & Edit Photo'), onPress: pickFromGallery },
         { icon: '📷', label: l('Fotoğraf Çek ve Düzenle', 'Take & Edit Photo'), onPress: captureFromCamera },
@@ -146,24 +176,32 @@ export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachBut
         { icon: '🎙️', label: l('Ses Kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
         { icon: '🎵', label: l('Ses Klibi Ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
         { icon: '🎬', label: l('Video Klibi Ekle', 'Attach Video Clip'), onPress: pickVideoClip },
+        { icon: '📄', label: l('Dosya Ekle', 'Attach File'), onPress: pickFile },
     ];
 
     return (
         <>
             <TouchableOpacity
-                style={styles.addBtn}
-                onPress={() => {
-                    if (hasMedia) {
-                        alert(l('Ek Sınırı', 'Attachment Limit'), l('Bir alana en fazla bir medya (görsel, ses, video veya çizim) eklenebilir. Yenisini eklemek için alandaki mevcut eki silin.', 'Each field can contain one media attachment (image, audio, video, or drawing). Remove the current attachment before adding another.'));
-                        return;
-                    }
-                    setMenuVisible(true);
-                }}
+                style={[styles.addBtn, hasMedia && styles.addBtnHasMedia]}
+                onPress={openMenu}
                 accessibilityRole="button"
                 accessibilityLabel={l('Ek ekle', 'Add attachment')}
                 disabled={busy}
             >
-                {busy ? <ActivityIndicator size="small" color={colors.accent} /> : <Text style={styles.addBtnText}>＋</Text>}
+                {busy ? (
+                    <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                    <Svg width={23} height={23} viewBox="0 0 24 24">
+                        <Path
+                            d="M21.4 11.1l-9.2 9.1a6 6 0 01-8.5-8.5l9.2-9.1a4 4 0 015.7 5.6l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"
+                            fill="none"
+                            stroke={hasMedia ? colors.accent : colors.textSecondary}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </Svg>
+                )}
             </TouchableOpacity>
 
             <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeMenu}>
@@ -209,21 +247,18 @@ export default function MediaAttachButton({ onInsert, hasMedia }: MediaAttachBut
             />
         </>
     );
-}
+});
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         addBtn: {
-            width: 44,
-            height: 44,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
+            width: 40,
+            height: 40,
+            borderRadius: BorderRadius.full,
             alignItems: 'center',
             justifyContent: 'center',
         },
-        addBtnText: { fontSize: 22, fontWeight: '700', color: colors.accent, lineHeight: 24 },
+        addBtnHasMedia: { backgroundColor: colors.accentLight },
         overlay: {
             flex: 1,
             backgroundColor: 'rgba(0, 0, 0, 0.35)',
@@ -267,3 +302,5 @@ function createStyles(colors: ColorScheme) {
         cancelText: { color: colors.textMuted, fontWeight: '600' },
     });
 }
+
+export default MediaAttachButton;
