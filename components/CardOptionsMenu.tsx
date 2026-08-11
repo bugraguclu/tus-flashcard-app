@@ -169,26 +169,26 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     <Text style={styles.groupLabel}>{l('BEYAZ TAHTA', 'WHITEBOARD')}</Text>
                                     {props.whiteboardHasContent && (
                                         <>
-                                            <MenuRow styles={styles} icon="🧹" label={l('Beyaz Tahtayı Temizle', 'Clear Whiteboard')} onPress={() => runAndClose(props.onClearWhiteboard)} />
-                                            <MenuRow styles={styles} icon="💾" label={l('Beyaz Tahtayı Kaydet', 'Save Whiteboard')} onPress={() => runAndClose(props.onSaveWhiteboard)} />
+                                            <MenuRow styles={styles} icon="×" label={l('Beyaz Tahtayı Temizle', 'Clear Whiteboard')} onPress={() => runAndClose(props.onClearWhiteboard)} />
+                                            <MenuRow styles={styles} icon="✓" label={l('Beyaz Tahtayı Kaydet', 'Save Whiteboard')} onPress={() => runAndClose(props.onSaveWhiteboard)} />
                                         </>
                                     )}
-                                    <ToggleRow styles={styles} icon="🖊️" label={l('Kalemle Yazma (stylus)', 'Stylus Writing')} value={props.stylusOnly} onPress={props.onToggleStylus} />
-                                    <MenuRow styles={styles} icon="❌" label={l('Beyaz Tahtayı Kapat', 'Disable Whiteboard')} onPress={() => runAndClose(props.onDisableWhiteboard)} />
+                                    <ToggleRow styles={styles} icon="✎" label={l('Kalemle Yazma (stylus)', 'Stylus Writing')} value={props.stylusOnly} onPress={props.onToggleStylus} />
+                                    <MenuRow styles={styles} icon="×" label={l('Beyaz Tahtayı Kapat', 'Disable Whiteboard')} onPress={() => runAndClose(props.onDisableWhiteboard)} />
                                     <View style={styles.divider} />
                                 </>
                             )}
 
                             {props.canUndo && (
-                                <MenuRow styles={styles} icon="↩️" label={l('Son Yanıtı Geri Al', 'Undo')} onPress={() => runAndClose(props.onUndo)} />
+                                <MenuRow styles={styles} icon="↩" label={l('Son Yanıtı Geri Al', 'Undo')} onPress={() => runAndClose(props.onUndo)} />
                             )}
-                            <MenuRow styles={styles} icon="✏️" label={l('Notu Düzenle', 'Edit Note')} onPress={() => runAndClose(props.onEditNote)} />
-                            <MenuRow styles={styles} icon="🏷️" label={l('Etiketleri Düzenle', 'Edit Tags')} chevron onPress={() => setView('tags')} />
-                            <MenuRow styles={styles} icon="💤" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
-                            <MenuRow styles={styles} icon="⏸️" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
+                            <MenuRow styles={styles} icon="✎" label={l('Notu Düzenle', 'Edit Note')} onPress={() => runAndClose(props.onEditNote)} />
+                            <MenuRow styles={styles} icon="#" label={l('Etiketleri Düzenle', 'Edit Tags')} chevron onPress={() => setView('tags')} />
+                            <MenuRow styles={styles} icon="−" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
+                            <MenuRow styles={styles} icon="Ⅱ" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
                             <MenuRow
                                 styles={styles}
-                                icon="🗑️"
+                                icon="×"
                                 label={l('Notu Sil', 'Delete Note')}
                                 danger
                                 onPress={() => confirmAndClose(
@@ -200,36 +200,36 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                             />
                             <MenuRow
                                 styles={styles}
-                                icon="⭐"
+                                icon="★"
                                 label={props.noteMarked ? l('Not İşaretini Kaldır', 'Unmark Note') : l('Notu İşaretle', 'Mark Note')}
                                 onPress={() => runAndClose(props.onToggleMarkNote)}
                             />
-                            <MenuRow styles={styles} icon="📅" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
+                            <MenuRow styles={styles} icon="◷" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
                             {props.cardHasAudio && (
-                                <MenuRow styles={styles} icon="🔊" label={l('Medyayı Yeniden Oynat', 'Replay Media')} onPress={() => runAndClose(props.onReplayAudio)} />
+                                <MenuRow styles={styles} icon="♪" label={l('Medyayı Yeniden Oynat', 'Replay Media')} onPress={() => runAndClose(props.onReplayAudio)} />
                             )}
                             <MenuRow
                                 styles={styles}
-                                icon="🗣️"
+                                icon="T"
                                 label={props.voicePlaybackEnabled ? l('Sesli Okumayı Kapat', 'Disable Voice Playback') : l('Sesli Okumayı Aç', 'Enable Voice Playback')}
                                 onPress={() => runAndClose(props.onToggleVoicePlayback)}
                             />
-                            <MenuRow styles={styles} icon="⚙️" label={l('Deste Seçenekleri', 'Deck Options')} onPress={() => runAndClose(props.onDeckOptions)} />
+                            <MenuRow styles={styles} icon="▤" label={l('Deste Seçenekleri', 'Deck Options')} onPress={() => runAndClose(props.onDeckOptions)} />
 
                             <View style={styles.divider} />
 
-                            <ToggleRow styles={styles} icon="▶️" label={l('Otomatik İlerleme', 'Auto Advance')} value={props.autoAdvance} onPress={props.onToggleAutoAdvance} />
-                            <ToggleRow styles={styles} icon="🔇" label={l('Yanıtlarken Çalan Sesi Kes', 'Interrupt Audio When Answering')} value={props.interruptAudioOnAnswer} onPress={props.onToggleInterruptAudio} />
-                            <ToggleRow styles={styles} icon="🔢" label={l('Kalan Kart Sayısını Göster', 'Show Remaining Card Count')} value={props.showRemainingCount} onPress={props.onToggleShowRemaining} />
-                            <ToggleRow styles={styles} icon="⏱️" label={l('Yanıt Düğmelerinde Sonraki Süreyi Göster', 'Show Next Review Time Above Answer Buttons')} value={props.showNextReviewTimes} onPress={props.onToggleShowNextTimes} />
+                            <ToggleRow styles={styles} icon="▶" label={l('Otomatik İlerleme', 'Auto Advance')} value={props.autoAdvance} onPress={props.onToggleAutoAdvance} />
+                            <ToggleRow styles={styles} icon="♪" label={l('Yanıtlarken Çalan Sesi Kes', 'Interrupt Audio When Answering')} value={props.interruptAudioOnAnswer} onPress={props.onToggleInterruptAudio} />
+                            <ToggleRow styles={styles} icon="#" label={l('Kalan Kart Sayısını Göster', 'Show Remaining Card Count')} value={props.showRemainingCount} onPress={props.onToggleShowRemaining} />
+                            <ToggleRow styles={styles} icon="◷" label={l('Yanıt Düğmelerinde Sonraki Süreyi Göster', 'Show Next Review Time Above Answer Buttons')} value={props.showNextReviewTimes} onPress={props.onToggleShowNextTimes} />
                         </>
                     )}
 
                     {view === 'bury' && (
                         <>
                             <SubHeader />
-                            <MenuRow styles={styles} icon="💤" label={l('Kartı Göm', 'Bury Card')} onPress={() => runAndClose(props.onBuryCard)} />
-                            <MenuRow styles={styles} icon="🌙" label={l('Notu Göm', 'Bury Note')} onPress={() => runAndClose(props.onBuryNote)} />
+                            <MenuRow styles={styles} icon="−" label={l('Kartı Göm', 'Bury Card')} onPress={() => runAndClose(props.onBuryCard)} />
+                            <MenuRow styles={styles} icon="−" label={l('Notu Göm', 'Bury Note')} onPress={() => runAndClose(props.onBuryNote)} />
                         </>
                     )}
 
@@ -238,21 +238,21 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                             <SubHeader />
                             <MenuRow
                                 styles={styles}
-                                icon="⏸️"
+                                icon="Ⅱ"
                                 label={props.cardSuspended ? l('Askıdan Çıkar', 'Unsuspend Card') : l('Kartı Askıya Al', 'Suspend Card')}
                                 onPress={() => runAndClose(props.onSuspendCard)}
                             />
-                            <MenuRow styles={styles} icon="⏹️" label={l('Notu Askıya Al', 'Suspend Note')} onPress={() => runAndClose(props.onSuspendNote)} />
+                            <MenuRow styles={styles} icon="■" label={l('Notu Askıya Al', 'Suspend Note')} onPress={() => runAndClose(props.onSuspendNote)} />
                         </>
                     )}
 
                     {view === 'reschedule' && (
                         <>
                             <SubHeader />
-                            <MenuRow styles={styles} icon="📅" label={l('Son Tarihi Ayarla…', 'Set Due Date…')} onPress={() => setView('dueDate')} />
+                            <MenuRow styles={styles} icon="◷" label={l('Son Tarihi Ayarla…', 'Set Due Date…')} onPress={() => setView('dueDate')} />
                             <MenuRow
                                 styles={styles}
-                                icon="🔄"
+                                icon="↻"
                                 label={l('Kartı Unut…', 'Forget Card…')}
                                 onPress={() => confirmAndClose(
                                     l('Kartı Unut', 'Forget Card'),

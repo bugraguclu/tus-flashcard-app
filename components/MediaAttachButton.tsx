@@ -170,13 +170,13 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     const options: { icon: string; label: string; onPress: () => void }[] = [
-        { icon: '🖼️', label: l('Fotoğraf Seç ve Düzenle', 'Choose & Edit Photo'), onPress: pickFromGallery },
-        { icon: '📷', label: l('Fotoğraf Çek ve Düzenle', 'Take & Edit Photo'), onPress: captureFromCamera },
-        { icon: '✏️', label: l('Boş Tuvale Çiz', 'Draw on Blank Canvas'), onPress: () => { closeMenu(); setShowDrawing(true); } },
-        { icon: '🎙️', label: l('Ses Kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
-        { icon: '🎵', label: l('Ses Klibi Ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
-        { icon: '🎬', label: l('Video Klibi Ekle', 'Attach Video Clip'), onPress: pickVideoClip },
-        { icon: '📄', label: l('Dosya Ekle', 'Attach File'), onPress: pickFile },
+        { icon: '▧', label: l('Fotoğraf Seç ve Düzenle', 'Choose & Edit Photo'), onPress: pickFromGallery },
+        { icon: '⌾', label: l('Fotoğraf Çek ve Düzenle', 'Take & Edit Photo'), onPress: captureFromCamera },
+        { icon: '✎', label: l('Boş Tuvale Çiz', 'Draw on Blank Canvas'), onPress: () => { closeMenu(); setShowDrawing(true); } },
+        { icon: '●', label: l('Ses Kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
+        { icon: '♪', label: l('Ses Klibi Ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
+        { icon: '▻', label: l('Video Klibi Ekle', 'Attach Video Clip'), onPress: pickVideoClip },
+        { icon: '□', label: l('Dosya Ekle', 'Attach File'), onPress: pickFile },
     ];
 
     return (

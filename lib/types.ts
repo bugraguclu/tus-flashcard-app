@@ -22,7 +22,7 @@ export interface Subject {
     id: string;
     /** Display name shown in UI. */
     name: string;
-    /** Single emoji character used as the subject's visual marker (e.g. "🫀"). */
+    /** Short visual marker used beside the subject name. */
     icon: string;
     /** Topics belonging to this subject. */
     topics: string[];

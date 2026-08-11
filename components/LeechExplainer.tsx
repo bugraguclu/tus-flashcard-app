@@ -29,7 +29,7 @@ export default function LeechExplainer({ context }: LeechExplainerProps) {
     return (
         <View style={styles.container} accessibilityRole="summary">
             <View style={styles.titleRow}>
-                <Text style={styles.icon}>💡</Text>
+                <Text style={styles.icon}>i</Text>
                 <Text style={styles.title}>{l('Sürekli Unutulan Kart nedir?', 'What is a Leech?')}</Text>
             </View>
             <Text style={styles.body}>

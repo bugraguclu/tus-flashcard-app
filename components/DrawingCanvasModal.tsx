@@ -207,7 +207,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
                     accessibilityLabel={l('Çizim penceresini kapat', 'Close drawing dialog')}
                 />
                 <View style={styles.card}>
-                    <Text style={styles.title}>✏️ {l('Çizim', 'Drawing')}</Text>
+                    <Text style={styles.title}>{l('Çizim', 'Drawing')}</Text>
 
                     <View
                         ref={canvasRef}
@@ -257,7 +257,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
                             accessibilityRole="button"
                             accessibilityLabel={l('Silgi', 'Eraser')}
                         >
-                            <Text style={styles.eraserText}>🧽</Text>
+                            <Text style={styles.eraserText}>⌫</Text>
                         </TouchableOpacity>
 
                         <View style={styles.toolSpacer} />
@@ -287,10 +287,10 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
 
                     <View style={styles.actionRow}>
                         <TouchableOpacity style={styles.smallBtn} onPress={undo} disabled={strokes.length === 0}>
-                            <Text style={styles.smallBtnText}>↩️ {l('Geri Al', 'Undo')}</Text>
+                            <Text style={styles.smallBtnText}>↩ {l('Geri Al', 'Undo')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.smallBtn} onPress={reset} disabled={strokes.length === 0}>
-                            <Text style={styles.smallBtnText}>🗑️ {l('Temizle', 'Clear')}</Text>
+                            <Text style={styles.smallBtnText}>{l('Temizle', 'Clear')}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -299,7 +299,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
                             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                            <Text style={styles.saveBtnText}>{saving ? l('Kaydediliyor…', 'Saving…') : `💾 ${t('common.save')}`}</Text>
+                            <Text style={styles.saveBtnText}>{saving ? l('Kaydediliyor…', 'Saving…') : t('common.save')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -171,7 +171,7 @@ export default function DeckOverviewScreen() {
 
                 {buriedCount > 0 && (
                     <TouchableOpacity style={styles.unburyBtn} onPress={handleUnbury}>
-                        <Text style={styles.unburyText}>💤 {l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}</Text>
+                        <Text style={styles.unburyText}>{l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}</Text>
                     </TouchableOpacity>
                 )}
 

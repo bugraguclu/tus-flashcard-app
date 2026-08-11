@@ -37,7 +37,7 @@ export interface CreateCourseOptions {
  */
 export function createCourse(rawName: string, options: CreateCourseOptions = {}): CreateCourseResult {
     const name = rawName.trim();
-    const icon = options.icon || '📘';
+    const icon = options.icon || '▤';
     if (!name) {
         return { subject: { id: '', name: '', icon, topics: [] }, created: false, error: 'Ders adı boş olamaz.' };
     }

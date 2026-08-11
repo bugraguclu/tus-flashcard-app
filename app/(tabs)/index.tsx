@@ -1077,7 +1077,7 @@ export default function StudyScreen() {
         return (
             <View style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingEmoji}>🧠</Text>
+                    <Text style={styles.loadingEmoji}>…</Text>
                     <Text style={styles.loadingText}>{t('common.loading')}</Text>
                 </View>
             </View>
@@ -1154,7 +1154,7 @@ export default function StudyScreen() {
                                     ? l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)
                                     : l(`Seri ${streak.current} günde — bugün çalışarak sürdürün!`, `${streak.current}-day streak — study today to keep it going!`))}
                             >
-                                <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
+                                <Text style={styles.streakChipText}>{streak.current}</Text>
                             </View>
                         )}
                     </TouchableOpacity>
@@ -1195,14 +1195,14 @@ export default function StudyScreen() {
 
             <View style={styles.contentArea}>
             {deckDescription !== '' && (
-                <Text style={styles.deckDescription} numberOfLines={2}>📝 {deckDescription}</Text>
+                <Text style={styles.deckDescription} numberOfLines={2}>{deckDescription}</Text>
             )}
 
             <ScrollView contentContainerStyle={styles.cardArea}>
                 {currentCard ? (
                     <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.cardSubject}>{subject ? `${subject.icon} ${subject.name}` : '📝'}</Text>
+                            <Text style={styles.cardSubject}>{subject ? `${subject.icon} ${subject.name}` : ''}</Text>
                             <Text style={styles.cardTopic}>{currentCard.topic}</Text>
                             <View
                                 style={[
@@ -1254,7 +1254,7 @@ export default function StudyScreen() {
                                     accessibilityLabel={l('Not işaretli — kaldırmak için dokunun', 'Note is marked — tap to remove mark')}
                                     {...webTitle(l('Not işaretli (Kartlarım > İşaretli filtresinde bulunur)', 'Note is marked (shown in Browse > Marked)'))}
                                 >
-                                    <Text style={styles.markedIndicator}>⭐</Text>
+                                    <Text style={styles.markedIndicator}>★</Text>
                                 </TouchableOpacity>
                             )}
 
@@ -1343,7 +1343,7 @@ export default function StudyScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel={t('anki.showAnswer')}
                                 >
-                                    <Text style={styles.showAnswerText}>👁️ {t('anki.showAnswer')}</Text>
+                                    <Text style={styles.showAnswerText}>{t('anki.showAnswer')}</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -1385,7 +1385,7 @@ export default function StudyScreen() {
                         </Text>
                         {dailyNewLimitReached && heldBackNewCount > 0 && (
                             <Text style={styles.emptyInfo}>
-                                {l(`📋 Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve yarın gösterilecek.`, `📋 The daily new card limit was reached — ${heldBackNewCount} new cards are queued for tomorrow.`)}
+                                {l(`Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve yarın gösterilecek.`, `The daily new card limit was reached — ${heldBackNewCount} new cards are queued for tomorrow.`)}
                             </Text>
                         )}
                         <TouchableOpacity
@@ -1395,7 +1395,7 @@ export default function StudyScreen() {
                             accessibilityLabel={l('Bekleme süresini atla ve hemen çalış', 'Skip the wait and study now')}
                             {...webTitle(l('Zamanlayıcıyı beklemeden öğrenme kartlarını şimdi çalış', 'Study queued learning cards now without waiting for the timer'))}
                         >
-                            <Text style={styles.primaryActionText}>⚡ {l('Beklemeden Çalış', 'Study Now')}</Text>
+                            <Text style={styles.primaryActionText}>{l('Beklemeden Çalış', 'Study Now')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.secondaryActionBtn}
@@ -1403,7 +1403,7 @@ export default function StudyScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Ayarları aç', 'Open settings')}
                         >
-                            <Text style={styles.secondaryActionText}>⚙️ {l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
+                            <Text style={styles.secondaryActionText}>{l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
                         </TouchableOpacity>
                         <Text style={styles.emptySub}>
                             {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', 'cards were reviewed.')}
@@ -1411,7 +1411,7 @@ export default function StudyScreen() {
                     </View>
                 ) : dailyNewLimitReached ? (
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>📋</Text>
+                        <Text style={styles.emptyIcon}>!</Text>
                         <Text style={styles.emptyTitle}>{l('Günlük Yeni Kart Limiti Doldu', 'Daily New Card Limit Reached')}</Text>
                         <Text style={styles.emptyDesc}>
                             {l(`Bugün ${sessionStats.newCardsToday || 0} yeni kart öğrendiniz.`, `You learned ${sessionStats.newCardsToday || 0} new cards today.`)}
@@ -1424,7 +1424,7 @@ export default function StudyScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Ayarlardan limiti artır', 'Increase the limit in settings')}
                         >
-                            <Text style={styles.secondaryActionText}>⚙️ {l('Limiti Artır', 'Increase Limit')}</Text>
+                            <Text style={styles.secondaryActionText}>{l('Limiti Artır', 'Increase Limit')}</Text>
                         </TouchableOpacity>
                         <Text style={styles.emptySub}>
                             {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', 'cards were reviewed.')}
@@ -1432,7 +1432,7 @@ export default function StudyScreen() {
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>🎉</Text>
+                        <Text style={styles.emptyIcon}>✓</Text>
                         <Text style={styles.emptyTitle}>{l('Tebrikler!', 'Congratulations!')}</Text>
                         <Text style={styles.emptyDesc}>
                             {selectedTopic
@@ -1549,7 +1549,7 @@ export default function StudyScreen() {
                                 accessibilityRole="button"
                             >
                                 <Text style={[styles.pickerRowText, !selectedDeckName && styles.pickerRowTextActive]}>
-                                    📚 {l('Tüm Desteler', 'All Decks')}
+                                    {l('Tüm Desteler', 'All Decks')}
                                 </Text>
                             </TouchableOpacity>
                             {deckPickerItems.map((deck) => {

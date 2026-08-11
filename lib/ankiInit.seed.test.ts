@@ -69,7 +69,7 @@ describe('ensureBuiltinNoteTypesSeeded', () => {
 });
 
 describe('healBuiltinNoteTypeTemplates', () => {
-    const LEGACY_FOOTER = '{{#Kaynak}}<div class="source">📚 {{Kaynak}}</div>{{/Kaynak}}';
+    const LEGACY_FOOTER = '{{#Kaynak}}<div class="source">Kaynak: {{Kaynak}}</div>{{/Kaynak}}';
 
     it('strips the legacy Kaynak footer from a stored TUS template, keeping other user edits', () => {
         // An install seeded before the footer was removed, with a user-customized name and css.

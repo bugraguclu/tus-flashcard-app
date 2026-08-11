@@ -3,12 +3,12 @@
 // "card name" is unreadable, so media becomes a small labeled icon and tags are dropped.
 
 const MEDIA_PLACEHOLDERS: Array<[RegExp, string]> = [
-    [/\[sound:[^\]]*\]/gi, ' 🔊 Ses '],
-    [/<audio\b[^>]*>[\s\S]*?<\/audio>/gi, ' 🔊 Ses '],
-    [/<audio\b[^>]*\/?>/gi, ' 🔊 Ses '],
-    [/<video\b[^>]*>[\s\S]*?<\/video>/gi, ' 🎬 Video '],
-    [/<video\b[^>]*\/?>/gi, ' 🎬 Video '],
-    [/<img\b[^>]*\/?>/gi, ' 🖼️ Görsel '],
+    [/\[sound:[^\]]*\]/gi, ' Ses '],
+    [/<audio\b[^>]*>[\s\S]*?<\/audio>/gi, ' Ses '],
+    [/<audio\b[^>]*\/?>/gi, ' Ses '],
+    [/<video\b[^>]*>[\s\S]*?<\/video>/gi, ' Video '],
+    [/<video\b[^>]*\/?>/gi, ' Video '],
+    [/<img\b[^>]*\/?>/gi, ' Görsel '],
 ];
 
 /** Human-friendly one-line rendering of a field: media → icons, HTML stripped. */

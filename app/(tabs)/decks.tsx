@@ -44,6 +44,7 @@ import {
     updateFilteredDeck,
     rebuildFilteredDeck,
     setDeckCollapsed,
+    initializeDeckDisclosureDefaults,
     setDeckDescription,
     emptyFilteredDeck,
     reorderDeckRelative,
@@ -101,6 +102,11 @@ function encodeDeckDropTarget(name: string, placement: DeckDropPlacement): strin
 // passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
 const DECK_HOVER_EXPAND_DELAY_MS = 800;
 
+function getPersistedExpandedDeckNames(): Set<string> {
+    initializeDeckDisclosureDefaults();
+    return new Set(getAllDecks().filter((deck) => !deck.collapsed).map((deck) => deck.name));
+}
+
 /** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
 function remapExpandedDeckPaths(
     paths: Set<string>,
@@ -135,9 +141,7 @@ export default function DecksScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings, dataVersion, bumpDataVersion } = useApp();
-    const [expandedDecks, setExpandedDecks] = useState<Set<string>>(() => new Set(
-        getAllDecks().filter((deck) => !deck.collapsed).map((deck) => deck.name),
-    ));
+    const [expandedDecks, setExpandedDecks] = useState<Set<string>>(getPersistedExpandedDeckNames);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
@@ -279,6 +283,34 @@ export default function DecksScreen() {
     const visibleRowsRef = useRef<DeckTreeNode[]>(visibleRows);
     visibleRowsRef.current = visibleRows;
     const decodedDropTarget = decodeDeckDropTarget(dropTarget);
+    const dragDropFeedback = useMemo(() => {
+        if (!draggingDeck || !decodedDropTarget) return null;
+        const dragged = getDeckDisplayName(draggingDeck);
+        if (decodedDropTarget.kind === 'root') {
+            return {
+                title: l(`${dragged} ana seviyeye taşınacak`, `${dragged} will move to the top level`),
+                tone: 'root' as const,
+            };
+        }
+
+        const target = getDeckDisplayName(decodedDropTarget.name);
+        if (decodedDropTarget.placement === 'inside') {
+            return {
+                title: l(`${dragged}, ${target} destesinin alt destesi olacak`, `${dragged} will become a subdeck of ${target}`),
+                tone: 'inside' as const,
+            };
+        }
+        if (decodedDropTarget.placement === 'before') {
+            return {
+                title: l(`${dragged}, ${target} destesinin üstüne yerleşecek`, `${dragged} will be placed above ${target}`),
+                tone: 'order' as const,
+            };
+        }
+        return {
+            title: l(`${dragged}, ${target} destesinin altına yerleşecek`, `${dragged} will be placed below ${target}`),
+            tone: 'order' as const,
+        };
+    }, [decodedDropTarget, draggingDeck, l]);
 
     const refresh = useCallback(() => {
         setRefreshToken((value) => value + 1);
@@ -534,14 +566,17 @@ export default function DecksScreen() {
             setModal(null);
             const message = Platform.OS === 'ios'
                 ? l(
-                    `“${deck.name}” destesini doğrudan açan bağlantı panoya kopyalandı. Kestirmeler uygulamasında “URL'leri Aç” eylemine yapıştırıp Ana Ekrana Ekle'yi seçin.`,
-                    `A link that opens “${deck.name}” directly was copied. Paste it into an “Open URLs” action in Shortcuts, then choose Add to Home Screen.`,
+                    `iOS uygulamaların Ana Ekran'a otomatik kısayol eklemesine izin vermiyor. “${deck.name}” destesini doğrudan açan bağlantı panoya kopyalandı.`,
+                    `iOS does not allow apps to add Home Screen shortcuts automatically. A link that opens “${deck.name}” directly was copied to the clipboard.`,
                 )
                 : l(
                     `“${deck.name}” destesini doğrudan açan kısayol bağlantısı panoya kopyalandı.`,
                     `A shortcut link that opens “${deck.name}” directly was copied to the clipboard.`,
                 );
-            setTimeout(() => alert(l('Kısayol Hazır', 'Shortcut Ready'), message), Platform.OS === 'ios' ? 300 : 0);
+            const title = Platform.OS === 'ios'
+                ? l('Bağlantı Kopyalandı', 'Link Copied')
+                : l('Kısayol Hazır', 'Shortcut Ready');
+            setTimeout(() => alert(title, message), Platform.OS === 'ios' ? 300 : 0);
         } catch (e) {
             console.warn('[Decks] shortcut creation failed:', e);
             alert(t('common.error'), l('Deste kısayolu oluşturulamadı.', 'Could not create the deck shortcut.'));
@@ -683,7 +718,7 @@ export default function DecksScreen() {
         addDeckTodayBoost(modal.deck.id, extraNew, extraReview, settings.dayRolloverHour);
         setModal(null);
         refresh();
-        alert(l('✅ Bugünkü limit artırıldı', '✅ Today’s limit increased'), extraNew > 0
+        alert(l('Bugünkü limit artırıldı', 'Today’s limit increased'), extraNew > 0
             ? l(`Bugün bu desteden ${extraNew} ek yeni kart gösterilecek.`, `${extraNew} additional new cards will be shown from this deck today.`)
             : l(`Bugün bu destede ${extraReview} ek tekrara izin verildi.`, `${extraReview} additional reviews are allowed in this deck today.`));
     };
@@ -1110,6 +1145,7 @@ export default function DecksScreen() {
         const isInsideDropTarget = rowDropTarget?.placement === 'inside';
         const isDropBefore = rowDropTarget?.placement === 'before';
         const isDropAfter = rowDropTarget?.placement === 'after';
+        const rowDropFeedback = rowDropTarget ? dragDropFeedback : null;
         const dragResponder = supportsDeckDrag && !deck.isFiltered ? getDragResponder(node) : null;
         const maxIndentDepth = isCompact ? 4 : 10;
         const visualDepth = Math.min(node.depth, maxIndentDepth);
@@ -1148,8 +1184,26 @@ export default function DecksScreen() {
                     isInsideDropTarget && styles.deckRowDropTarget,
                 ]}
             >
-                {!isCompact && isDropBefore && <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineBefore]} />}
-                {!isCompact && isDropAfter && <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineAfter]} />}
+                {rowDropFeedback && (isDropBefore || isDropAfter) && (
+                    <View
+                        pointerEvents="none"
+                        style={[
+                            styles.deckDropLabel,
+                            isDropBefore ? styles.deckDropLabelBefore : styles.deckDropLabelAfter,
+                        ]}
+                    >
+                        <Text style={styles.deckDropLabelText} numberOfLines={1}>
+                            {rowDropFeedback.title}
+                        </Text>
+                    </View>
+                )}
+                {rowDropFeedback && isInsideDropTarget && (
+                    <View pointerEvents="none" style={styles.deckInsideDropBadge}>
+                        <Text style={styles.deckInsideDropBadgeText} numberOfLines={1}>
+                            {rowDropFeedback.title}
+                        </Text>
+                    </View>
+                )}
                 {hasChildren ? (
                     <TouchableOpacity
                         style={styles.expandBtn}
@@ -1158,9 +1212,7 @@ export default function DecksScreen() {
                         accessibilityLabel={isExpanded ? l('Alt desteleri gizle', 'Hide subdecks') : l('Alt desteleri göster', 'Show subdecks')}
                         accessibilityState={{ expanded: isExpanded }}
                     >
-                        <View style={styles.expandIconCircle}>
-                            <Text style={[styles.expandArrow, isExpanded && styles.expandArrowExpanded]}>›</Text>
-                        </View>
+                        <Text style={[styles.expandArrow, isExpanded && styles.expandArrowExpanded]}>›</Text>
                     </TouchableOpacity>
                 ) : (
                     <View style={styles.expandBtn}>
@@ -1267,9 +1319,6 @@ export default function DecksScreen() {
                     !isRoot && isLastSibling && styles.deckNestedBranchLast,
                 ]}
             >
-                {branchDropTarget === 'before' && (
-                    <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineBefore]} />
-                )}
                 {renderDeckRow(node)}
                 {showChildren && (
                     <View
@@ -1285,9 +1334,6 @@ export default function DecksScreen() {
                             childIndex === node.children.length - 1,
                         ))}
                     </View>
-                )}
-                {branchDropTarget === 'after' && (
-                    <View pointerEvents="none" style={[styles.deckDropLine, styles.deckDropLineAfter]} />
                 )}
             </View>
         );
@@ -1351,7 +1397,10 @@ export default function DecksScreen() {
                         </>
                     )}
 
-                    <MenuAction label={l('Kısayol oluştur', 'Create shortcut')} onPress={() => { void handleCreateShortcut(deck); }} />
+                    <MenuAction
+                        label={Platform.OS === 'ios' ? l('Deste bağlantısını kopyala', 'Copy deck link') : l('Kısayol oluştur', 'Create shortcut')}
+                        onPress={() => { void handleCreateShortcut(deck); }}
+                    />
                     <MenuAction label={l('Açıklamayı düzenle', 'Edit description')} onPress={() => openDescription(deck)} />
                     <MenuAction label={l('Desteyi sil', 'Delete deck')} onPress={() => requestDelete(deck)} />
                 </ScrollView>
@@ -1472,7 +1521,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Kök seviyeye taşı', 'Move to top level')}
                         >
-                            <Text style={styles.menuItemText}>📂  {l('Kök seviyeye taşı', 'Move to top level')}</Text>
+                            <Text style={styles.menuItemText}>{l('Kök seviyeye taşı', 'Move to top level')}</Text>
                         </TouchableOpacity>
                     )}
                     {targets.map((target) => (
@@ -1483,7 +1532,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l(`${target.name} altına taşı`, `Move under ${target.name}`)}
                         >
-                            <Text style={styles.menuItemText} numberOfLines={1}>📁  {target.name}</Text>
+                            <Text style={styles.menuItemText} numberOfLines={1}>{target.name}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -1560,7 +1609,7 @@ export default function DecksScreen() {
                     />
                 </View>
                 <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleCreateCustomSession}>
-                    <Text style={styles.modalBtnPrimaryText}>🎯 {l('Oturum Oluştur', 'Create Session')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>{l('Oturum Oluştur', 'Create Session')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -1619,7 +1668,7 @@ export default function DecksScreen() {
                         { reschedule: false, searchOrder: 4 },
                     )}
                 >
-                    <Text style={styles.modalBtnPrimaryText}>👁️ {l('Önizleme Oturumu', 'Preview Session')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>{l('Önizleme Oturumu', 'Preview Session')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -1813,21 +1862,18 @@ export default function DecksScreen() {
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/empty-cards')}
                         >
-                            <Text style={styles.overflowIcon}>🧹</Text>
                             <Text style={styles.overflowLabel}>{l('Boş Kartlar', 'Empty Cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/import')}
                         >
-                            <Text style={styles.overflowIcon}>📥</Text>
                             <Text style={styles.overflowLabel}>{t('root.import')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/export')}
                         >
-                            <Text style={styles.overflowIcon}>📤</Text>
                             <Text style={styles.overflowLabel}>{l('Dışa Aktar', 'Export')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -1836,7 +1882,6 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedek oluştur', 'Create backup')}
                         >
-                            <Text style={styles.overflowIcon}>🗄️</Text>
                             <Text style={styles.overflowLabel}>{l('Yedek Oluştur', 'Create Backup')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -1845,7 +1890,6 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
                         >
-                            <Text style={styles.overflowIcon}>↩️</Text>
                             <Text style={styles.overflowLabel}>{l('Yedekten Geri Yükle', 'Restore from Backup')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -1965,7 +2009,9 @@ export default function DecksScreen() {
                             styles.rootDropZoneText,
                             dropTarget === ROOT_DROP_TARGET && styles.rootDropZoneTextActive,
                         ]}>
-                            ↑ {l('Ana seviyeye bırak', 'Drop at top level')}
+                            {dropTarget === ROOT_DROP_TARGET && dragDropFeedback
+                                ? dragDropFeedback.title
+                                : `↑ ${l('Ana seviyeye bırak', 'Drop at top level')}`}
                         </Text>
                     </View>
                 )}
@@ -1995,6 +2041,17 @@ export default function DecksScreen() {
                         <Text style={styles.mobileDragPreviewTitle} numberOfLines={1}>
                             ⠿ {draggingDeck.replaceAll('::', ' › ')}
                         </Text>
+                        {dragDropFeedback && (
+                            <Text
+                                style={[
+                                    styles.mobileDragPreviewHint,
+                                    dragDropFeedback.tone === 'order' && styles.mobileDragPreviewHintOrder,
+                                ]}
+                                numberOfLines={1}
+                            >
+                                {dragDropFeedback.title}
+                            </Text>
+                        )}
                     </Animated.View>
                 )}
             </View>
@@ -2070,8 +2127,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
                 >
-                    <Text style={styles.bottomBtnIcon}>🗂️</Text>
-                    <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
+                    <Text style={styles.bottomBtnText}>📚 {t('sidebar.myCards')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2079,8 +2135,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
                 >
-                    <Text style={styles.bottomBtnIcon}>📊</Text>
-                    <Text style={styles.bottomBtnText}>{t('tabs.statistics')}</Text>
+                    <Text style={styles.bottomBtnText}>📊 {t('tabs.statistics')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2088,15 +2143,14 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                 >
-                    <Text style={styles.bottomBtnIcon}>⚙️</Text>
-                    <Text style={styles.bottomBtnText}>{t('tabs.settings')}</Text>
+                    <Text style={styles.bottomBtnText}>⚙️ {t('tabs.settings')}</Text>
                 </TouchableOpacity>
             </View>
 
             {isDesktopWeb && draggingDeck && (
                 <View style={styles.dragBanner}>
                     <Text style={styles.dragBannerText}>
-                        {l(`“${getDeckDisplayName(draggingDeck)}” taşınıyor`, `Moving “${getDeckDisplayName(draggingDeck)}”`)}
+                        {dragDropFeedback?.title ?? l(`“${getDeckDisplayName(draggingDeck)}” taşınıyor`, `Moving “${getDeckDisplayName(draggingDeck)}”`)}
                     </Text>
                 </View>
             )}
@@ -2211,7 +2265,6 @@ function createStyles(colors: ColorScheme) {
         paddingHorizontal: Spacing.md,
         minHeight: 48,
     },
-    overflowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
     overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
 
     columnHeaders: {
@@ -2279,8 +2332,7 @@ function createStyles(colors: ColorScheme) {
         marginBottom: 4,
         paddingLeft: 6,
         backgroundColor: colors.bgCard,
-        borderLeftWidth: 2,
-        borderLeftColor: colors.borderLight,
+        borderLeftWidth: 0,
         overflow: 'visible',
     },
     deckChildrenWellNested: {
@@ -2298,31 +2350,51 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.accentLight,
         transform: [{ scale: 1.006 }],
     },
-    deckDropLine: {
+    deckDropLabel: {
         position: 'absolute',
-        left: 8,
-        right: 8,
-        height: 3,
-        zIndex: 5,
-        borderRadius: BorderRadius.full,
+        left: 42,
+        right: 52,
+        zIndex: 8,
+        alignItems: 'flex-start',
+    },
+    deckDropLabelBefore: { top: -18 },
+    deckDropLabelAfter: { bottom: -18 },
+    deckDropLabelText: {
+        maxWidth: '100%',
+        overflow: 'hidden',
+        paddingHorizontal: 9,
+        paddingVertical: 4,
+        borderRadius: BorderRadius.sm,
         backgroundColor: colors.accent,
+        color: colors.white,
+        fontSize: 11,
+        fontWeight: '800',
     },
-    deckDropLineBefore: { top: -2 },
-    deckDropLineAfter: { bottom: -2 },
+    deckInsideDropBadge: {
+        position: 'absolute',
+        left: 42,
+        right: 52,
+        top: 4,
+        zIndex: 8,
+        alignItems: 'flex-start',
+    },
+    deckInsideDropBadgeText: {
+        maxWidth: '100%',
+        overflow: 'hidden',
+        paddingHorizontal: 9,
+        paddingVertical: 4,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.accent,
+        color: colors.white,
+        fontSize: 11,
+        fontWeight: '800',
+    },
     expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    expandIconCircle: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.accentLight,
-    },
     expandArrow: {
-        fontSize: 22,
+        fontSize: 20,
         lineHeight: 22,
-        fontWeight: '600',
-        color: colors.accent,
+        fontWeight: '700',
+        color: '#111111',
         transform: [{ rotate: '0deg' }],
     },
     expandArrowExpanded: { transform: [{ rotate: '90deg' }] },
@@ -2395,6 +2467,13 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.lg,
     },
     mobileDragPreviewTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
+    mobileDragPreviewHint: {
+        marginTop: 4,
+        color: colors.accent,
+        fontSize: 12,
+        fontWeight: '800',
+    },
+    mobileDragPreviewHintOrder: { color: colors.textSecondary },
 
     fabDismissLayer: {
         ...StyleSheet.absoluteFillObject,
@@ -2472,7 +2551,6 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.md,
     },
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
-    bottomBtnIcon: { fontSize: 20 },
     bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 },
 
     emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },

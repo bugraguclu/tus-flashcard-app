@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
+    TextInput,
     TouchableOpacity,
     ScrollView,
     StyleSheet,
@@ -16,6 +17,7 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
+import { createCourse } from '../lib/courses';
 import { confirm, alert } from '../lib/confirm';
 import { useApp } from '../contexts/AppContext';
 import {
@@ -66,9 +68,9 @@ function fieldHasContent(value: string): boolean {
 type EditorField = 'question' | 'answer' | 'reverseAnswer';
 
 const CARD_TYPE_CHOICES: { id: number; icon: string }[] = [
-    { id: 4, icon: '📄' },
-    { id: 5, icon: '⌨️' },
-    { id: 6, icon: '🔁' },
+    { id: 4, icon: '1' },
+    { id: 5, icon: 'T' },
+    { id: 6, icon: '↻' },
 ];
 
 export default function EditorScreen() {
@@ -108,6 +110,8 @@ export default function EditorScreen() {
         return getDeck(1)?.id ?? getAllDecks().find((deck) => !deck.isFiltered)?.id ?? null;
     });
     const [showDeckPicker, setShowDeckPicker] = useState(false);
+    const [showNewSubject, setShowNewSubject] = useState(false);
+    const [newSubjectName, setNewSubjectName] = useState('');
     const [showPreview, setShowPreview] = useState(false);
     const [showTagPicker, setShowTagPicker] = useState(false);
     const [showCardTypePicker, setShowCardTypePicker] = useState(false);
@@ -141,6 +145,24 @@ export default function EditorScreen() {
             .filter((node) => !node.deck.isFiltered),
         [dataVersion, showDeckPicker],
     );
+
+    const openNewSubject = () => {
+        setNewSubjectName('');
+        setShowDeckPicker(false);
+        setShowNewSubject(true);
+    };
+
+    const handleCreateSubject = () => {
+        const result = createCourse(newSubjectName);
+        if (!result.created) {
+            alert(t('common.error'), result.error ?? l('Ders oluşturulamadı.', 'Could not create the course.'));
+            return;
+        }
+        setTargetDeckId(resolveSubjectDeckId(result.subject.id));
+        setShowNewSubject(false);
+        setNewSubjectName('');
+        bumpDataVersion();
+    };
 
     const previewPayload = useMemo(() => {
         if (!showPreview) return null;
@@ -446,7 +468,7 @@ export default function EditorScreen() {
                     >
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
-                        <Text style={styles.ankiSelectorChevron}>{isEditing ? '🔒' : '⌄'}</Text>
+                        <Text style={styles.ankiSelectorChevron}>{isEditing ? '•' : '⌄'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.ankiSelectorRow, styles.ankiSelectorRowLast]}
@@ -697,6 +719,16 @@ export default function EditorScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>{l('Hedef Deste', 'Target Deck')}</Text>
                         <ScrollView style={styles.deckList}>
+                            <TouchableOpacity
+                                style={[styles.deckOption, styles.deckOptionNew]}
+                                onPress={openNewSubject}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Yeni ders oluştur', 'Create new course')}
+                            >
+                                <Text style={[styles.deckOptionText, styles.deckOptionNewText]}>
+                                    {l('+ Yeni', '+ New')}
+                                </Text>
+                            </TouchableOpacity>
                             {deckPickerRows.map((node) => (
                                 <TouchableOpacity
                                     key={node.deck.id}
@@ -708,13 +740,42 @@ export default function EditorScreen() {
                                         style={[styles.deckOptionText, targetDeck?.id === node.deck.id && styles.deckOptionActive]}
                                         numberOfLines={1}
                                     >
-                                        {node.depth > 0 ? '↳  ' : '🗃️  '}{getDeckDisplayName(node.deck.name)}
+                                        {node.depth > 0 ? '↳  ' : ''}{getDeckDisplayName(node.deck.name)}
                                     </Text>
                                     {targetDeck?.id === node.deck.id && <Text style={styles.deckOptionCheck}>✓</Text>}
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowDeckPicker(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
+                <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setShowNewSubject(false)}
+                        accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
+                    />
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            value={newSubjectName}
+                            onChangeText={setNewSubjectName}
+                            placeholder={l('Ders adı', 'Course name')}
+                            placeholderTextColor={colors.textMuted}
+                            autoFocus
+                            returnKeyType="done"
+                            onSubmitEditing={handleCreateSubject}
+                        />
+                        <TouchableOpacity style={styles.modalPrimary} onPress={handleCreateSubject}>
+                            <Text style={styles.modalPrimaryText}>{t('common.create')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowNewSubject(false)}>
                             <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -739,10 +800,10 @@ export default function EditorScreen() {
                         accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}
                     />
                     <View style={[styles.modalCard, styles.previewCard]}>
-                        <Text style={styles.modalTitle}>👁️ {l('Önizleme', 'Preview')}</Text>
+                        <Text style={styles.modalTitle}>{l('Önizleme', 'Preview')}</Text>
                         <ScrollView style={styles.previewScroll}>
                             <Text style={styles.previewMeta} numberOfLines={1}>
-                                🗃️ {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                                {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                             </Text>
                             <Text style={styles.label}>{l('SORU', 'QUESTION')}</Text>
                             {previewPayload && (
@@ -950,7 +1011,28 @@ function createStyles(colors: ColorScheme) {
     },
     deckOptionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
     deckOptionActive: { color: colors.accent, fontWeight: '700' },
+    deckOptionNew: { paddingLeft: Spacing.sm },
+    deckOptionNewText: { color: colors.accent, fontWeight: '800' },
     deckOptionCheck: { marginLeft: Spacing.sm, color: colors.accent, fontSize: 18, fontWeight: '800' },
+    modalInput: {
+        minHeight: 48,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: Spacing.md,
+        fontSize: FontSize.md,
+        color: colors.textPrimary,
+        backgroundColor: colors.bgSecondary,
+    },
+    modalPrimary: {
+        minHeight: 48,
+        marginTop: Spacing.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.accent,
+    },
+    modalPrimaryText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
     modalClose: { minHeight: 48, marginTop: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
     modalCloseText: { color: colors.textMuted, fontWeight: '600' },
     previewScroll: { flexGrow: 0 },

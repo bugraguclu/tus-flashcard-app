@@ -239,15 +239,15 @@ export default function SettingsScreen() {
 
     const categories = useMemo<Category[]>(() => [
         { id: 'general', icon: '⚙️', title: l('Genel', 'General'), summary: l('Dil • Düzenleme • Sistem geneli', 'Language • Editing • System-wide') },
-        { id: 'newStudy', icon: '▣', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
-        { id: 'reviewing', icon: '▱', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
+        { id: 'newStudy', icon: '🃏', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
+        { id: 'reviewing', icon: '🧠', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
         { id: 'notifications', icon: '🔔', title: l('Bildirimler', 'Notifications'), summary: l('iOS bildirim durumu', 'iOS notification status') },
         { id: 'appearance', icon: '🎨', title: l('Görünüm', 'Appearance'), summary: l('Temalar • Çalışma ekranı', 'Themes • Study screen') },
-        { id: 'controls', icon: '☝️', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Klavye', 'Gestures • Keyboard') },
-        { id: 'accessibility', icon: '♿️', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
-        { id: 'backups', icon: '↶', title: l('Yedekler', 'Backups'), summary: l('Sıklık • Saklama süresi', 'Frequency • Lifetime') },
+        { id: 'controls', icon: '👆', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Klavye', 'Gestures • Keyboard') },
+        { id: 'accessibility', icon: '♿', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
+        { id: 'backups', icon: '💾', title: l('Yedekler', 'Backups'), summary: l('Sıklık • Saklama süresi', 'Frequency • Lifetime') },
         { id: 'data', icon: '🗄️', title: l('Veri Yönetimi', 'Data management'), summary: l('İçe aktar • Dışa aktar • Veritabanı', 'Import • Export • Database') },
-        { id: 'about', icon: 'ⓘ', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
+        { id: 'about', icon: 'ℹ️', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
     ], [l]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
@@ -603,7 +603,7 @@ export default function SettingsScreen() {
     };
 
     if (loading) {
-        return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.loadingIcon}>⚙️</Text></View></SafeAreaView>;
+        return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.loadingIcon}>…</Text></View></SafeAreaView>;
     }
 
     return (
@@ -626,7 +626,7 @@ export default function SettingsScreen() {
                 ) : (
                     <>
                         <View style={styles.titleRow}>
-                            <Text style={styles.title}>{l('Ayarlar', 'Settings')}</Text>
+                            <Text style={styles.title}>⚙️ {l('Ayarlar', 'Settings')}</Text>
                             {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : null}
                         </View>
                         <View style={styles.searchBox}>

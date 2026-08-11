@@ -500,7 +500,7 @@ export default function BrowserScreen() {
                             {isSelected && <Text style={styles.selectionCheckboxTick}>✓</Text>}
                         </View>
                     )}
-                    <Text style={styles.cardIcon}>{sub?.icon || '📝'}</Text>
+                    <Text style={styles.cardIcon}>{sub?.icon || '•'}</Text>
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.cardQuestion, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]} numberOfLines={isExpanded ? undefined : 2}>
                             {humanizeCardText(item.question) || l('🃏 (boş)', '🃏 (empty)')}
@@ -528,7 +528,7 @@ export default function BrowserScreen() {
                         )}
                     </View>
                     {item.noteMarked && (
-                        <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
+                        <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>★</Text>
                     )}
                     {flag > 0 && (
                         <Text
@@ -545,10 +545,10 @@ export default function BrowserScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Kartı düzenle', 'Edit card')}
                         >
-                            <Text style={styles.editBtnText}>✏️</Text>
+                            <Text style={styles.editBtnText}>✎</Text>
                         </TouchableOpacity>
                     )}
-                    {item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
+                    {item.state.suspended && <Text style={styles.suspendedIcon}>Ⅱ</Text>}
                 </View>
 
                 {isExpanded && !selectionMode && (
@@ -578,7 +578,7 @@ export default function BrowserScreen() {
                             onPress={() => toggleSuspend(item.cardId, item.state.suspended)}
                         >
                             <Text style={styles.suspendBtnText}>
-                                {item.state.suspended ? l('▶️ Askıdan Çıkar', '▶️ Unsuspend') : `⏸️ ${t('anki.suspend')}`}
+                                {item.state.suspended ? l('Askıdan Çıkar', 'Unsuspend') : t('anki.suspend')}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -600,7 +600,7 @@ export default function BrowserScreen() {
                     <Text style={styles.backButtonText}>‹</Text>
                 </TouchableOpacity>
                 <View style={styles.headerTitleWrap}>
-                    <Text style={styles.title} numberOfLines={1}>🗂️ {t('sidebar.myCards')}</Text>
+                    <Text style={styles.title} numberOfLines={1}>📚 {t('sidebar.myCards')}</Text>
                     <Text style={styles.subtitle} numberOfLines={1}>
                         {scopeDeck ? `${scopeDeck.name} · ` : ''}{filteredCards.length} {l('kart', 'cards')}
                     </Text>
@@ -636,7 +636,7 @@ export default function BrowserScreen() {
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder={l('🔍 Kart ara…', '🔍 Search cards…')}
+                    placeholder={l('Kart ara…', 'Search cards…')}
                     placeholderTextColor={colors.textMuted}
                     value={rawQuery}
                     onChangeText={handleSearch}
@@ -656,7 +656,7 @@ export default function BrowserScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Yalnızca işaretli notları göster', 'Show marked notes only')}
                 >
-                    <Text style={[styles.filterChipText, markedOnly && styles.filterChipTextActive]}>⭐ {l('İşaretli', 'Marked')}</Text>
+                    <Text style={[styles.filterChipText, markedOnly && styles.filterChipTextActive]}>{l('İşaretli', 'Marked')}</Text>
                 </TouchableOpacity>
                 {suspendedOnly && (
                     <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setSuspendedOnly(false)}>

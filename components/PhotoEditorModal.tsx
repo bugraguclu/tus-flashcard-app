@@ -60,9 +60,9 @@ interface PhotoEditorModalProps {
 type EditorTool = 'pen' | 'highlighter' | 'arrow' | 'rect' | 'ellipse' | 'cover' | 'text' | 'eraser';
 
 const TOOL_ITEMS: { id: EditorTool; icon: string }[] = [
-    { id: 'pen', icon: '✏️' },
-    { id: 'highlighter', icon: '🖍️' },
-    { id: 'arrow', icon: '↗️' },
+    { id: 'pen', icon: '✎' },
+    { id: 'highlighter', icon: '▰' },
+    { id: 'arrow', icon: '↗' },
     { id: 'rect', icon: '▭' },
     { id: 'ellipse', icon: '◯' },
     { id: 'cover', icon: '■' },
@@ -722,7 +722,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                             accessibilityRole="button"
                             accessibilityLabel={l('Tüm düzenlemeleri temizle', 'Clear all edits')}
                         >
-                            <Text style={[styles.historyIcon, !annotations.length && styles.disabledText]}>🗑</Text>
+                            <Text style={[styles.historyIcon, !annotations.length && styles.disabledText]}>×</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

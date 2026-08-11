@@ -74,7 +74,7 @@ export function Sidebar(props: SidebarProps) {
                 accessibilityLabel={t('tabs.backToDecks')}
                 {...webTitle(t('tabs.backToDecks'))}
             >
-                <Text style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
+                <Text style={styles.sidebarTitle}>TusAnkiM</Text>
                 <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
             </TouchableOpacity>
 
@@ -83,7 +83,7 @@ export function Sidebar(props: SidebarProps) {
                     style={[styles.subjectItem, !selectedSubject && !selectedTopic && styles.subjectItemActive]}
                     onPress={onAllPress}
                 >
-                    <Text style={styles.subjectIcon}>📚</Text>
+                    <Text style={styles.subjectIcon}>▤</Text>
                     <Text style={[styles.subjectName, !selectedSubject && !selectedTopic && styles.subjectNameActive]}>
                         {t('sidebar.allCourses')}
                     </Text>
@@ -163,7 +163,7 @@ export function Sidebar(props: SidebarProps) {
                         <Text style={styles.actionText}>{t('sidebar.addCard')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
-                        <Text style={styles.actionIcon}>🗂️</Text>
+                        <Text style={styles.actionIcon}>📚</Text>
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
@@ -173,7 +173,7 @@ export function Sidebar(props: SidebarProps) {
                 </View>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
-                    <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
+                    <Text style={styles.settingsBtnText}>🗂️ {t('tabs.decks')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle(t('root.noteTypes'))}>

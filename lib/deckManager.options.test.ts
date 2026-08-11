@@ -44,6 +44,7 @@ import {
     rebuildFilteredDeck,
     updateFilteredDeck,
     buildDeckTree,
+    initializeDeckDisclosureDefaults,
     setDeckCollapsed,
     completeFilteredCard,
     restoreFilteredCard,
@@ -280,6 +281,26 @@ describe('deck tree counts', () => {
         expect(getDeckByName('TUS')?.collapsed).toBe(true);
         setDeckCollapsed(deck.id, false);
         expect(getDeckByName('TUS')?.collapsed).toBe(false);
+    });
+
+    it('initializes disclosure like Anki: one child layer visible, deeper parents remembered collapsed', () => {
+        createDeck('Python');
+        createDeck('Python::Temeller');
+        createDeck('Python::Temeller::Giris');
+        createDeck('Python::Temeller::Giris::Degiskenler');
+        createDeck('Python::Fonksiyonlar');
+
+        initializeDeckDisclosureDefaults();
+
+        expect(getDeckByName('Python')?.collapsed).toBe(false);
+        expect(getDeckByName('Python::Temeller')?.collapsed).toBe(true);
+        expect(getDeckByName('Python::Temeller::Giris')?.collapsed).toBe(true);
+        expect(getDeckByName('Python::Fonksiyonlar')?.collapsed).toBe(false);
+
+        setDeckCollapsed(getDeckByName('Python::Temeller')!.id, false);
+        initializeDeckDisclosureDefaults();
+
+        expect(getDeckByName('Python::Temeller')?.collapsed).toBe(false);
     });
 });
 

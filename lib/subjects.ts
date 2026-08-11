@@ -49,7 +49,7 @@ function readUserSubjects(): UserSubject[] {
 
         return parsed.filter(isValidUserSubject).map((entry) => ({
             ...entry,
-            icon: typeof entry.icon === 'string' && entry.icon ? entry.icon : '📘',
+            icon: typeof entry.icon === 'string' && entry.icon ? entry.icon : '▤',
             topics: Array.isArray(entry.topics) ? entry.topics.filter((t) => typeof t === 'string') : [],
             isCustom: true as const,
         }));

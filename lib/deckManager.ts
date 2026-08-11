@@ -15,6 +15,8 @@ function sqlPlaceholders(count: number): string {
     return Array.from({ length: count }, () => '?').join(', ');
 }
 
+const DECK_DISCLOSURE_DEFAULTS_KEY = 'deck_disclosure_defaults_v1';
+
 // ---- Deck CRUD ----
 
 export function getAllDecks(): Deck[] {
@@ -99,6 +101,40 @@ export function saveDeck(deck: Deck): void {
         Date.now(),
         deck.usn ?? -1,
         0,
+    );
+}
+
+/**
+ * Existing collections used to open every deck level because `collapsed` defaulted to false.
+ * Apply Anki-like first-run disclosure once: top-level decks reveal their immediate children, and
+ * deeper parent decks wait for the user's explicit expansion. Later clicks are persisted normally.
+ */
+export function initializeDeckDisclosureDefaults(): void {
+    const db = getDB();
+    const applied = db.getFirstSync<{ value?: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        DECK_DISCLOSURE_DEFAULTS_KEY,
+    );
+    if (applied) return;
+
+    const decks = getAllDecks();
+    const parentNames = new Set<string>();
+    for (const deck of decks) {
+        const parent = getParentDeckName(deck.name);
+        if (parent) parentNames.add(parent);
+    }
+
+    for (const deck of decks) {
+        const depth = deck.name.split('::').length - 1;
+        if (depth >= 1 && parentNames.has(deck.name) && deck.collapsed !== true) {
+            saveDeck({ ...deck, collapsed: true });
+        }
+    }
+
+    db.runSync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        DECK_DISCLOSURE_DEFAULTS_KEY,
+        'true',
     );
 }
 

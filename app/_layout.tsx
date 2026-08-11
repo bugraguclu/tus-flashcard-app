@@ -50,7 +50,7 @@ function LocalizedErrorFallback({ message, onRetry }: { message: string; onRetry
     const { t } = useSystemI18n();
     return (
         <View style={errorStyles.container}>
-            <Text style={errorStyles.icon}>⚠️</Text>
+            <Text style={errorStyles.icon}>!</Text>
             <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
             <Text style={errorStyles.message}>{message}</Text>
             <TouchableOpacity style={errorStyles.button} onPress={onRetry}>
@@ -103,7 +103,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     if (error) {
         return (
             <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>⚠️</Text>
+                <Text style={errorStyles.icon}>!</Text>
                 <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
                 <Text style={errorStyles.message}>{error}</Text>
                 <TouchableOpacity
@@ -125,7 +125,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     if (!ready) {
         return (
             <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>🧠</Text>
+                <Text style={errorStyles.icon}>…</Text>
                 <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
             </View>
         );
