@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 
 # IDEs and local tooling
+.claude/
 .idea/
 .vscode/
 
