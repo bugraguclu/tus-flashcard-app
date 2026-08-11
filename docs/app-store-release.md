@@ -13,8 +13,8 @@ metadata, signing, real-device permission/audio checks, or Apple review.
 - **Store-facing product name:** `TusAnkiM` uses the Anki name even though this app is not an
   official Anki client or AnkiWeb-compatible client. Approve a distinct store name such as
   `TUS Kart` before submitting. Do not describe the app as official or fully Anki-compatible.
-- **Public URLs:** merge the `docs/` and GitHub Pages workflow, enable Pages through GitHub
-  Actions, and verify both URLs return HTTP 200:
+- **Public URLs:** configure a stable host for `docs/`, then verify both URLs return HTTP 200
+  before using them in App Store Connect. The repository does not currently publish these pages:
   - Support: `https://bugraguclu.github.io/tus-flashcard-app/`
   - Privacy: `https://bugraguclu.github.io/tus-flashcard-app/privacy.html`
 - **Real device:** verify camera, photo-library and microphone permission prompts; record and

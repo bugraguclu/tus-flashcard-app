@@ -1,169 +1,200 @@
-# TusAnkiM
+<p align="center">
+  <img src="assets/app-mark.png" width="112" alt="TusAnkiM app mark" />
+</p>
 
-A cross-platform spaced repetition flashcard app built for TUS (Tipta Uzmanlık Sınavı) preparation. Powered by the Anki V3 scheduling algorithm, it runs on iOS, Android, and Web with a single codebase.
+<h1 align="center">TusAnkiM</h1>
 
-## Features
+<p align="center">
+  Anki-inspired, local-first flashcards for focused medical exam preparation.
+</p>
 
-### Spaced Repetition (Anki V3)
-- Faithful port of the Anki V3 scheduling algorithm, verified against the Rust source (`rslib/src/scheduler/states/`)
-- Four answer grades: Again / Hard / Good / Easy
-- Early and non-early review paths with correct interval formulas
-- Deterministic fuzz for non-early reviews (DJB2 hash, day + card ID seeded)
-- Configurable learning steps, lapse steps, and graduating intervals
-- Ease factor management with named constants and 1.3 floor
-- Anki serving order: due learning cards first, learn-ahead cards last
-- Configurable learn-ahead limit, queue order (mix / new first / new last), and new card order
-- Per-deck configuration overrides
-- Leech detection and sibling burying
-- Transaction-safe undo for the last review
-- Day rollover handling (configurable rollover hour, foreground-aware)
+<p align="center">
+  <a href="https://github.com/bugraguclu/tus-flashcard-app/actions/workflows/ci.yml"><img src="https://github.com/bugraguclu/tus-flashcard-app/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <img src="https://img.shields.io/badge/Expo-54-000020?logo=expo&logoColor=white" alt="Expo 54" />
+  <img src="https://img.shields.io/badge/React%20Native-0.81-61DAFB?logo=react&logoColor=111827" alt="React Native 0.81" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F855A" alt="MIT License" /></a>
+</p>
 
-### SQLite Storage
-- Local-first architecture with full offline support
-- `expo-sqlite` on iOS/Android, `sql.js` (WebAssembly) on web
-- WAL journal mode on native for concurrent read performance
-- Web database snapshotted to IndexedDB (debounced, flushed on page hide) with Web Locks writer election across tabs
-- Automatic schema migrations (versioned, transactional)
+<p align="center">
+  <a href="#türkçe">Türkçe</a> ·
+  <a href="#english-overview">English overview</a> ·
+  <a href="https://github.com/bugraguclu/tus-flashcard-app/issues">Support</a> ·
+  <a href="docs/privacy.html">Privacy</a>
+</p>
 
-### Full-Text Search
-- FTS5-powered search across questions, answers, topics, and subjects
-- Unicode-aware tokenization with diacritic removal
-- Prefix matching for instant search-as-you-type results
+---
 
-### Study Interface
-- Flip-card study flow with HTML rendering support
-- Keyboard shortcuts on web (Space to flip, 1-4 to answer)
-- Haptic feedback on iOS/Android
-- Undo last answer during a study session
+## Türkçe
 
-### Deck Management
-- Hierarchical deck structure with `::` separator (e.g., `TUS::Anatomi::Sinir`)
-- Per-deck card counts (new / learning / review)
-- Custom deck creation
-- Deck-level study sessions
+**TusAnkiM**, Tıpta Uzmanlık Sınavı (TUS) başta olmak üzere yoğun bilgi gerektiren
+sınavlara hazırlanmak için geliştirilmiş, çevrimdışı çalışabilen bir aralıklı tekrar
+uygulamasıdır. Anki’den ilham alan çalışma akışlarını modern ve platformlar arası bir
+arayüzle iOS, Android ve Web’e taşır.
 
-### Statistics
-- Daily review count, accuracy, and study time
-- Subject-level progress tracking
-- Card distribution breakdown: New / Learning / Review / Young / Mature / Mastered
-- SQL-based aggregation from the review log
+> [!IMPORTANT]
+> TusAnkiM aktif geliştirme aşamasındadır. Bir tıbbi cihaz veya klinik karar aracı değildir;
+> kart içeriklerini güvenilir ve güncel kaynaklarla doğrulayın.
 
-### Backups & Data Safety
-- Automatic daily backups (one snapshot per study day, newest 7 kept)
-- Backups screen: restore with an automatic pre-restore snapshot (restores are undoable), share, delete
-- Database check: SQLite integrity, orphan detection, search index rebuild
+### Neden TusAnkiM?
 
-### Import / Export
-- Anki `.apkg` import (guid-based dedupe) and CSV/TSV import
-- Full JSON export/import of all tables (cards, decks, review log, settings)
-- Web: direct browser download; Native: share sheet integration
+| | Özellik | Ne sağlar? |
+|---|---|---|
+| 🧠 | **Aralıklı tekrar** | Again, Hard, Good ve Easy yanıtlarıyla kartları doğru zamanda yeniden gösterir. |
+| 📦 | **Anki uyumlu iş akışları** | `.apkg`, CSV ve TSV içe aktarma; hiyerarşik ve filtrelenmiş desteler; özel çalışma oturumları. |
+| ✍️ | **Zengin kart editörü** | Metin, HTML, görsel, fotoğraf düzenleme, ses kaydı, çizim ve kart şablonları. |
+| 📴 | **Yerel ve çevrimdışı** | Kartlar, çalışma geçmişi ve ayarlar varsayılan olarak cihazınızda kalır. |
+| 📊 | **Ölçülebilir ilerleme** | Günlük çalışma, doğruluk, süre, seri ve deste/konu bazlı istatistikler. |
+| 🌍 | **Tek kod tabanı** | iOS, Android ve Web; Türkçe ve İngilizce arayüz; açık/koyu tema. |
 
-### Editor & Note Types
-- Note editor with live card preview
-- Note type manager: fields, card templates (`{{Field}}`, `{{cloze:}}`, conditionals), CSS
+### Başlıca özellikler
 
-### Responsive UI
-- Sidebar navigation on desktop (768px+), hamburger menu on mobile
-- Automatic dark/light mode based on system preference
-- Cross-platform alert/confirm dialogs
-- Error boundary with recovery option
+- Anki V3 davranışlarından esinlenen planlama motoru, öğrenme/lapse adımları ve gün devri
+- Yeni, öğrenilen ve tekrar kartları için deste bazlı limitler ve sıralama seçenekleri
+- Leech tespiti, kardeş kart gömme, bayraklar, etiketler ve son yanıtı geri alma
+- Hiyerarşik desteler, sürükle-bırak taşıma, filtrelenmiş desteler ve özel çalışma
+- Unicode ve aksan duyarlı kart arama; soru, cevap, konu ve ders kapsamı
+- Fotoğraf kırpma/döndürme, çizim, ses kaydı, metin okuma ve çalışma beyaz tahtası
+- Günlük otomatik yedek, geri yükleme öncesi güvenlik kopyası ve veritabanı bütünlük kontrolü
+- Yerel JSON yedeği ile Anki `.apkg`, CSV ve TSV içe aktarma
+- Mobil dokunsal geri bildirim ve Web’de klavye kısayolları
 
-## Tech Stack
+### Ekranlar ve çalışma akışı
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Expo 54, React Native 0.81 |
+```mermaid
+flowchart LR
+    A["İçe aktar veya kart oluştur"] --> B["Deste ve etiketlerle düzenle"]
+    B --> C["Aralıklı tekrar kuyruğu"]
+    C --> D["Again · Hard · Good · Easy"]
+    D --> E["İstatistik ve çalışma geçmişi"]
+    D --> C
+```
+
+## English overview
+
+TusAnkiM is an Anki-inspired, local-first spaced-repetition app built for medical exam
+preparation. It combines hierarchical and filtered decks, rich card authoring, Anki package
+imports, offline storage, backups, and detailed study statistics in one Expo codebase for iOS,
+Android, and Web.
+
+The project is independent and is not affiliated with or endorsed by Ankitects or Anki.
+
+## Technology
+
+| Area | Implementation |
+|---|---|
+| Application | Expo 54 · React Native 0.81 · React 19 |
 | Language | TypeScript 5.9 |
-| Navigation | expo-router (file-based) |
-| Database (native) | expo-sqlite (WAL mode) |
-| Database (web) | sql.js (WebAssembly) |
-| Testing | Vitest (161 tests across 20 suites) |
-| State | React Context |
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm or yarn
-
-### Install & Run
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npx expo start
-
-# Run on specific platform
-npm run ios
-npm run android
-npm run web
-
-# Run tests + type check
-npm run check
-```
-
-## Project Structure
-
-```
-app/
-  _layout.tsx              Root layout + error boundary
-  (tabs)/
-    _layout.tsx            Tab layout and responsive navigation shell
-    index.tsx              Study screen
-    browser.tsx            Card browser with FTS search
-    decks.tsx              Deck hierarchy view
-    settings.tsx           App settings + import/export + database check
-    stats.tsx              Statistics dashboard
-  backups.tsx              Backup list / restore / share
-  import.tsx               .apkg and CSV/TSV import
-  editor.tsx               Note editor
-  note-types.tsx           Note type & template manager
-
-components/
-  Sidebar.tsx              Navigation sidebar
-
-contexts/
-  AppContext.tsx           Shared app state
-
-hooks/
-  useAppStartup.ts         Startup sequence, migrations, auto backup
-
-lib/
-  db.ts                    Platform-aware SQLite + migrations
-  webDb.ts                 sql.js wrapper for web platform
-  scheduler.ts             Anki V3 scheduling engine (verified against Rust source)
-  studyRepository.ts       Study queue + answer processing
-  queueBuild.ts            Queue assembly (limits, burying, ordering)
-  backup.ts                Daily auto backups + undoable restore
-  maintenance.ts           Day rollover housekeeping + database check
-  noteManager.ts           Note/card CRUD operations
-  deckManager.ts           Deck hierarchy + configuration
-  importApkg.ts            Anki .apkg importer
-  reviewLogger.ts          Review logging + statistics queries
-  storage.ts               Settings, session stats, import/export
-  templates.ts             Anki card template renderer
-  mediaStore.ts            Platform-aware media file storage
-  models.ts                Data model definitions
-  types.ts                 TypeScript type definitions
-
-components/
-  CardWebView.tsx          HTML card renderer (WebView native, div web)
-
-constants/
-  theme.ts                 Colors, spacing, typography tokens
-  subjects.ts              TUS subject definitions
-```
+| Navigation | Expo Router |
+| Native database | `expo-sqlite` with WAL mode |
+| Web database | `sql.js` persisted to IndexedDB |
+| Card rendering | React Native WebView / DOM on Web |
+| Testing | Vitest integration and unit test suite |
+| Delivery | GitHub Actions · Expo/EAS-ready configuration |
 
 ## Architecture
 
-The app follows a local-first, platform-abstracted architecture:
+TusAnkiM separates UI, study orchestration, scheduling, and persistence so the same domain logic
+runs on every platform.
 
-- **Database layer** (`lib/db.ts`) exposes a unified `DBHandle` interface implemented by `expo-sqlite` on native and `sql.js` on web. All database consumers use this interface, making the storage backend transparent.
-- **Study flow** is driven by `studyRepository.ts` which manages the queue, delegates scheduling to `scheduler.ts` (a faithful TypeScript port of Anki V3, verified against the official Rust source at `ankitects/anki`), and logs reviews via `reviewLogger.ts`.
-- **UI state** flows through a single `AppContext` provider, with data refreshed via version bumping to trigger dependent `useMemo` recalculations.
+```mermaid
+flowchart TB
+    UI["Expo Router screens and components"] --> APP["App context and repositories"]
+    APP --> SCHED["Scheduling and queue engine"]
+    APP --> DATA["Decks · notes · media · backups"]
+    DATA --> NATIVE[("expo-sqlite · iOS / Android")]
+    DATA --> WEB[("sql.js + IndexedDB · Web")]
+```
+
+Key modules:
+
+- `lib/studyRepository.ts` — queue construction, answers and undo
+- `lib/scheduler.ts` — interval and card-state transitions
+- `lib/deckManager.ts` — deck hierarchy, options and filtered decks
+- `lib/noteManager.ts` — note/card lifecycle and full-text indexing
+- `lib/importApkg.ts` — Anki package import and scheduling transfer
+- `lib/backup.ts` — automatic snapshots and safe restore
+- `lib/db.ts` / `lib/webDb.ts` — platform-specific database adapters
+
+## Getting started
+
+### Requirements
+
+- Node.js 20 or newer
+- npm
+- Xcode for local iOS builds
+- Android Studio and an Android SDK for local Android builds
+
+### Installation
+
+```bash
+git clone https://github.com/bugraguclu/tus-flashcard-app.git
+cd tus-flashcard-app
+npm ci
+```
+
+### Development
+
+```bash
+# Start Expo and choose a target
+npm start
+
+# Run a native development build
+npm run ios
+npm run android
+
+# Start the web app
+npm run web
+```
+
+### Quality checks
+
+```bash
+# TypeScript + complete test suite
+npm run check
+
+# Production web export
+npm run build:web
+
+# Expo project diagnostics (via the latest doctor CLI)
+npx expo-doctor
+```
+
+## Project structure
+
+```text
+app/          Expo Router screens and application routes
+components/   Shared UI, card, media and study components
+contexts/     Application-wide state providers
+hooks/        Startup and localization hooks
+lib/          Scheduling, data, import/export and domain logic
+locales/      Turkish and English native metadata
+assets/       Branding, icons and seed data
+test/         Shared test harnesses
+docs/         Support, privacy and release documentation
+```
+
+## Data and privacy
+
+TusAnkiM follows a local-first model. Core study data is stored on the device and is not sent to
+an application server by this project. Users remain responsible for exporting backups and for the
+content they import. See the [privacy policy](docs/privacy.html) and use the
+[issue tracker](https://github.com/bugraguclu/tus-flashcard-app/issues) for support.
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
+submitting a change. Use the provided issue forms for reproducible bug reports and focused feature
+requests.
+
+For security-sensitive reports, follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
 
 ## License
 
-[MIT](LICENSE)
+Distributed under the [MIT License](LICENSE).
+
+## Acknowledgements
+
+TusAnkiM is inspired by the study model and workflows popularized by
+[Anki](https://apps.ankiweb.net/). Anki is a separate project and TusAnkiM is not an official Anki
+client.

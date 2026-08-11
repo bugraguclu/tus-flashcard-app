@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Privacy policy
+    url: https://github.com/bugraguclu/tus-flashcard-app/blob/master/docs/privacy.html
+    about: Review how TusAnkiM handles app and study data.
+  - name: Private security report
+    url: https://github.com/bugraguclu/tus-flashcard-app/security/advisories/new
+    about: Report a vulnerability privately instead of opening a public issue.
