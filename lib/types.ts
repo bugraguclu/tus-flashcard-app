@@ -22,7 +22,7 @@ export interface Subject {
     id: string;
     /** Display name shown in UI. */
     name: string;
-    /** Short visual marker used beside the subject name. */
+    /** Single emoji character used as the subject's visual marker (e.g. "🫀"). */
     icon: string;
     /** Topics belonging to this subject. */
     topics: string[];
@@ -153,6 +153,11 @@ export interface AppSettings {
     backupDailyCopies?: number;
     backupWeeklyCopies?: number;
     backupMonthlyCopies?: number;
+    /** AnkiMobile: show one local reminder at the selected time when reviews are waiting. */
+    studyNotificationsEnabled?: boolean;
+    /** Local clock time used by the daily review reminder. */
+    studyNotificationHour?: number;
+    studyNotificationMinute?: number;
     dailyNewLimit: number;
     dailyReviewLimit: number;
     /** Minutes between learning steps for new cards. */

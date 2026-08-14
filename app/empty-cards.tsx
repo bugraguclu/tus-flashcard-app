@@ -85,7 +85,7 @@ export default function EmptyCardsScreen() {
                     </View>
                 ) : entries.length === 0 ? (
                     <View style={styles.emptyBox}>
-                        <Text style={styles.emptyIcon}>✓</Text>
+                        <Text style={styles.emptyIcon}>✅</Text>
                         <Text style={styles.emptyText}>{l('Boş kart bulunamadı.', 'No empty cards found.')}</Text>
                     </View>
                 ) : (
@@ -95,7 +95,7 @@ export default function EmptyCardsScreen() {
                             onPress={deleteAll}
                             disabled={busy}
                         >
-                            <Text style={styles.deleteAllText}>{l('Tümünü Sil', 'Delete All')} ({entries.length})</Text>
+                            <Text style={styles.deleteAllText}>🗑️ {l('Tümünü Sil', 'Delete All')} ({entries.length})</Text>
                         </TouchableOpacity>
 
                         {entries.map((entry) => (

@@ -64,7 +64,7 @@ export default function ExportScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.title}>{l('Dışa Aktar', 'Export')}</Text>
+                <Text style={styles.title}>📤 {l('Dışa Aktar', 'Export')}</Text>
                 <Text style={styles.help}>
                     {deckName
                         ? l(`“${deckName}” destesindeki ${noteCount} not (alt desteler dahil), Anki’nin düz metin biçimiyle uyumlu bir .txt dosyasına aktarılır.`, `${noteCount} notes from “${deckName}” (including subdecks) will be exported to an Anki-compatible plain-text .txt file.`)
@@ -78,7 +78,7 @@ export default function ExportScreen() {
                     disabled={busy}
                 >
                     <Text style={styles.exportBtnText}>
-                        {busy ? l('Hazırlanıyor…', 'Preparing…') : deckName ? l('Desteyi Dışa Aktar', 'Export Deck') : l('Tüm Kartları Dışa Aktar', 'Export All Cards')}
+                        {busy ? l('Hazırlanıyor…', 'Preparing…') : deckName ? l('📤 Desteyi Dışa Aktar', '📤 Export Deck') : l('📤 Tüm Kartları Dışa Aktar', '📤 Export All Cards')}
                     </Text>
                 </TouchableOpacity>
 

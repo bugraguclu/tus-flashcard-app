@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+    AppState,
     Linking,
     Platform,
     SafeAreaView,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
@@ -34,6 +36,13 @@ import { useApp } from './_layout';
 import { useI18n } from '../../hooks/useI18n';
 import type { AppLanguage, AppSettings, KeyBindings, ThemeMode } from '../../lib/types';
 import { normalizeHardwareKey } from '../../lib/hardwareKeyboard';
+import {
+    disableStudyNotifications,
+    getDueReviewCountAt,
+    getStudyNotificationPermission,
+    requestStudyNotificationPermission,
+    type StudyNotificationPermission,
+} from '../../lib/studyNotifications';
 
 type SectionId =
     | 'general'
@@ -175,7 +184,7 @@ export default function SettingsScreen() {
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 600;
     const canRecordHardwareKeys = Platform.OS !== 'web' || isDesktopWeb;
-    const { refreshData, bumpDataVersion } = useApp();
+    const { refreshData, bumpDataVersion, dataVersion } = useApp();
     const { l, deviceLanguage } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -185,6 +194,13 @@ export default function SettingsScreen() {
     const [activeSection, setActiveSection] = useState<SectionId | null>(null);
     const [search, setSearch] = useState('');
     const [recordingField, setRecordingField] = useState<keyof KeyBindings | null>(null);
+    const [notificationPermission, setNotificationPermission] = useState<StudyNotificationPermission>({
+        state: Platform.OS === 'ios' ? 'undetermined' : 'unavailable',
+        canAskAgain: Platform.OS === 'ios',
+        allowsAlert: false,
+        allowsBadge: false,
+    });
+    const [currentDueReviews, setCurrentDueReviews] = useState(0);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
@@ -195,19 +211,75 @@ export default function SettingsScreen() {
         };
     }, []);
 
-    const updateSettings = (patch: Partial<AppSettings>) => {
+    const updateSettings = (patch: Partial<AppSettings>): AppSettings => {
         const updated = { ...settings, ...patch };
         saveSettings(updated);
-        setSettings(loadSettings());
+        const persisted = loadSettings();
+        setSettings(persisted);
         refreshData();
         bumpDataVersion();
         setSaved(true);
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaved(false), 1400);
+        return persisted;
     };
 
     const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
         updateSettings({ [key]: value } as Pick<AppSettings, K>);
+    };
+
+    useEffect(() => {
+        if (activeSection !== 'notifications' || Platform.OS !== 'ios') return;
+        let active = true;
+        const refresh = () => {
+            void getStudyNotificationPermission()
+                .then((permission) => {
+                    if (!active) return;
+                    setNotificationPermission(permission);
+                    setCurrentDueReviews(getDueReviewCountAt(Date.now(), loadSettings().dayRolloverHour));
+                })
+                .catch((error) => console.warn('[Settings] notification status failed:', error));
+        };
+        refresh();
+        const subscription = AppState.addEventListener('change', (state) => {
+            if (state === 'active') refresh();
+        });
+        return () => {
+            active = false;
+            subscription.remove();
+        };
+    }, [activeSection, dataVersion]);
+
+    const handleStudyNotificationsToggle = async (enabled: boolean) => {
+        if (Platform.OS !== 'ios') {
+            alert(l('Yalnızca iPhone ve iPad', 'iPhone and iPad only'), l('Bu ayar AnkiMobile uyumlu iOS bildirimleri içindir.', 'This setting controls AnkiMobile-compatible iOS notifications.'));
+            return;
+        }
+
+        if (!enabled) {
+            updateSetting('studyNotificationsEnabled', false);
+            await disableStudyNotifications().catch((error) => console.warn('[Settings] notification disable failed:', error));
+            setCurrentDueReviews(0);
+            return;
+        }
+
+        try {
+            const permission = await requestStudyNotificationPermission();
+            setNotificationPermission(permission);
+            if (permission.state !== 'granted' && permission.state !== 'limited') {
+                updateSetting('studyNotificationsEnabled', false);
+                alert(
+                    l('Bildirim izni gerekli', 'Notification permission required'),
+                    l('Günlük çalışma hatırlatmasını açmak için iOS Ayarları’nda bildirimlere izin verin.', 'Allow notifications in iOS Settings to enable the daily study reminder.'),
+                );
+                return;
+            }
+            updateSetting('studyNotificationsEnabled', true);
+            setCurrentDueReviews(getDueReviewCountAt(Date.now(), settings.dayRolloverHour));
+        } catch (error) {
+            console.warn('[Settings] notification permission failed:', error);
+            alert(l('Bildirim açılamadı', 'Could not enable notifications'), l('Bildirim izni alınamadı. Lütfen iOS Ayarları’nı kontrol edin.', 'Notification permission could not be obtained. Check iOS Settings.'));
+        }
     };
 
     useEffect(() => {
@@ -241,14 +313,21 @@ export default function SettingsScreen() {
         { id: 'general', icon: '⚙️', title: l('Genel', 'General'), summary: l('Dil • Düzenleme • Sistem geneli', 'Language • Editing • System-wide') },
         { id: 'newStudy', icon: '🃏', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
         { id: 'reviewing', icon: '🧠', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
-        { id: 'notifications', icon: '🔔', title: l('Bildirimler', 'Notifications'), summary: l('iOS bildirim durumu', 'iOS notification status') },
+        {
+            id: 'notifications',
+            icon: '🔔',
+            title: l('Bildirimler', 'Notifications'),
+            summary: settings.studyNotificationsEnabled
+                ? `${l('Açık', 'On')} · ${String(settings.studyNotificationHour ?? 9).padStart(2, '0')}:${String(settings.studyNotificationMinute ?? 0).padStart(2, '0')}`
+                : l('Kapalı', 'Off'),
+        },
         { id: 'appearance', icon: '🎨', title: l('Görünüm', 'Appearance'), summary: l('Temalar • Çalışma ekranı', 'Themes • Study screen') },
-        { id: 'controls', icon: '👆', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Klavye', 'Gestures • Keyboard') },
-        { id: 'accessibility', icon: '♿', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
+        { id: 'controls', icon: '☝️', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Klavye', 'Gestures • Keyboard') },
+        { id: 'accessibility', icon: '♿️', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
         { id: 'backups', icon: '💾', title: l('Yedekler', 'Backups'), summary: l('Sıklık • Saklama süresi', 'Frequency • Lifetime') },
         { id: 'data', icon: '🗄️', title: l('Veri Yönetimi', 'Data management'), summary: l('İçe aktar • Dışa aktar • Veritabanı', 'Import • Export • Database') },
         { id: 'about', icon: 'ℹ️', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
-    ], [l]);
+    ], [l, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationsEnabled]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
     const filteredCategories = categories.filter((item) => `${item.title} ${item.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
@@ -446,17 +525,93 @@ export default function SettingsScreen() {
         </>
     );
 
-    const renderNotifications = () => (
-        <Group
-            title={l('iOS bildirimleri', 'iOS notifications')}
-            description={l('Bu sürüm henüz zamanı gelen kartlar için yerel bildirim planlamıyor. Sahte bir anahtar eklemek yerine yalnızca iOS uygulama ayarlarına güvenli geçiş sunuluyor.', 'This build does not yet schedule local due-card notifications. Instead of exposing a non-functional switch, it only provides a safe shortcut to iOS app settings.')}
-            styles={styles}
-        >
-            <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openSettings().catch(() => undefined)}>
-                <Text style={styles.actionButtonText}>{l('iOS uygulama ayarlarını aç', 'Open iOS app settings')} ↗</Text>
-            </TouchableOpacity>
-        </Group>
-    );
+    const renderNotifications = () => {
+        const time = new Date();
+        time.setHours(settings.studyNotificationHour ?? 9, settings.studyNotificationMinute ?? 0, 0, 0);
+        const permissionLabel = notificationPermission.state === 'granted'
+            ? l('İzin verildi', 'Allowed')
+            : notificationPermission.state === 'limited'
+                ? l('iOS’ta kısmen izin verildi', 'Partially allowed in iOS')
+                : notificationPermission.state === 'denied'
+                    ? l('iOS tarafından engellendi', 'Blocked by iOS')
+                    : notificationPermission.state === 'undetermined'
+                        ? l('Henüz izin istenmedi', 'Not requested yet')
+                        : l('Bu platformda kullanılamıyor', 'Unavailable on this platform');
+
+        return (
+            <>
+                <Group
+                    title={l('Çalışma hatırlatması', 'Study reminder')}
+                    description={l('AnkiMobile gibi, seçtiğiniz saatte yalnızca bekleyen tekrar kartınız varsa tek bir günlük bildirim gösterir. Öğrenme adımı dolan her kart için ayrı bildirim gönderilmez.', 'Like AnkiMobile, one daily alert appears at your selected time only when reviews are waiting. It does not alert separately for each learning step that becomes due.')}
+                    styles={styles}
+                >
+                    <ToggleRow
+                        label={l('Zamanı gelen kartlar için uyar', 'Alert when reviews are due')}
+                        summary={l('Bildirim, o gün bekleyen tekrar kartlarının sayısını içerir.', 'The alert includes the number of reviews waiting that day.')}
+                        value={Boolean(settings.studyNotificationsEnabled)}
+                        onChange={(value) => { void handleStudyNotificationsToggle(value); }}
+                        styles={styles}
+                    />
+                    {settings.studyNotificationsEnabled && Platform.OS === 'ios' ? (
+                        <View style={styles.preferenceBlock}>
+                            <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
+                            <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte kontrol edilir.', 'Reviews are checked at this local time each day.')}</Text>
+                            <View style={styles.notificationTimeRow}>
+                                <DateTimePicker
+                                    value={time}
+                                    mode="time"
+                                    display="compact"
+                                    locale={deviceLanguage === 'tr' ? 'tr-TR' : 'en-US'}
+                                    onChange={(_event, selectedTime) => {
+                                        if (!selectedTime) return;
+                                        updateSettings({
+                                            studyNotificationHour: selectedTime.getHours(),
+                                            studyNotificationMinute: selectedTime.getMinutes(),
+                                        });
+                                    }}
+                                />
+                            </View>
+                        </View>
+                    ) : null}
+                    <View style={styles.notificationStatusRow}>
+                        <View style={[styles.notificationStatusDot, (notificationPermission.state === 'granted' || notificationPermission.state === 'limited') && styles.notificationStatusDotActive]} />
+                        <View style={styles.preferenceCopy}>
+                            <Text style={styles.preferenceLabel}>{l('iOS bildirim izni', 'iOS notification permission')}</Text>
+                            <Text style={styles.preferenceSummary}>{permissionLabel}</Text>
+                        </View>
+                    </View>
+                    {(notificationPermission.state === 'denied' || notificationPermission.state === 'limited' || notificationPermission.state === 'granted') ? (
+                        <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openSettings().catch(() => undefined)}>
+                            <Text style={styles.actionButtonText}>{l('iOS bildirim ayarlarını aç', 'Open iOS notification settings')} ↗</Text>
+                        </TouchableOpacity>
+                    ) : null}
+                </Group>
+
+                <Group
+                    title={l('Uygulama simgesi rozeti', 'App icon badge')}
+                    description={l('Bildirimler açıkken rozet, şu anda bekleyen tekrar kartı sayısıyla otomatik güncellenir. Bildirimleri kapatmak rozeti temizler.', 'When notifications are enabled, the badge automatically shows the current number of waiting reviews. Turning notifications off clears it.')}
+                    styles={styles}
+                >
+                    <View style={styles.badgePreviewRow}>
+                        <View style={styles.badgePreviewIcon}>
+                            <Text style={styles.badgePreviewMark}>🧠</Text>
+                            {settings.studyNotificationsEnabled && notificationPermission.allowsBadge && currentDueReviews > 0 ? (
+                                <View style={styles.badgePreviewCount}>
+                                    <Text style={styles.badgePreviewCountText}>{currentDueReviews > 99 ? '99+' : currentDueReviews}</Text>
+                                </View>
+                            ) : null}
+                        </View>
+                        <View style={styles.preferenceCopy}>
+                            <Text style={styles.preferenceLabel}>{l('Bekleyen tekrarlar', 'Reviews waiting')}</Text>
+                            <Text style={styles.preferenceSummary}>
+                                {l(`${currentDueReviews} tekrar kartı`, `${currentDueReviews} review cards`)}
+                            </Text>
+                        </View>
+                    </View>
+                </Group>
+            </>
+        );
+    };
 
     const renderAppearance = () => (
         <>
@@ -603,7 +758,7 @@ export default function SettingsScreen() {
     };
 
     if (loading) {
-        return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.loadingIcon}>…</Text></View></SafeAreaView>;
+        return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.loadingIcon}>⚙️</Text></View></SafeAreaView>;
     }
 
     return (
@@ -704,6 +859,15 @@ function createStyles(colors: ColorScheme) {
         stepButton: { width: 48, height: 44, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         stepButtonText: { fontSize: FontSize.xl, color: colors.textPrimary, fontWeight: '700' },
         stepValue: { minWidth: 82, textAlign: 'center', fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
+        notificationTimeRow: { minHeight: 48, alignItems: 'flex-start', justifyContent: 'center', marginTop: Spacing.sm },
+        notificationStatusRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.sm },
+        notificationStatusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.textMuted },
+        notificationStatusDotActive: { backgroundColor: colors.btnGood },
+        badgePreviewRow: { minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.md },
+        badgePreviewIcon: { width: 58, height: 58, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight, borderWidth: 1, borderColor: colors.border, position: 'relative' },
+        badgePreviewMark: { fontSize: 28 },
+        badgePreviewCount: { position: 'absolute', top: -7, right: -9, minWidth: 24, height: 24, paddingHorizontal: 5, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.btnAgain, borderWidth: 2, borderColor: colors.bgCard },
+        badgePreviewCountText: { color: colors.white, fontSize: 10, fontWeight: '900' },
         outlineButton: { minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         outlineButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
         actionButton: { minHeight: 48, marginTop: Spacing.sm, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md },

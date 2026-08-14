@@ -87,6 +87,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     backupDailyCopies: 12,
     backupWeeklyCopies: 10,
     backupMonthlyCopies: 9,
+    studyNotificationsEnabled: false,
+    studyNotificationHour: 9,
+    studyNotificationMinute: 0,
     dailyNewLimit: 20,
     dailyReviewLimit: 200,
     learningSteps: [1, 10],
@@ -453,6 +456,9 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             backupDailyCopies: Math.max(0, Math.min(99, Number(parsed.backupDailyCopies ?? 12) || 0)),
             backupWeeklyCopies: Math.max(0, Math.min(99, Number(parsed.backupWeeklyCopies ?? 10) || 0)),
             backupMonthlyCopies: Math.max(0, Math.min(99, Number(parsed.backupMonthlyCopies ?? 9) || 0)),
+            studyNotificationsEnabled: Boolean(parsed.studyNotificationsEnabled),
+            studyNotificationHour: Math.max(0, Math.min(23, Number(parsed.studyNotificationHour ?? 9) || 0)),
+            studyNotificationMinute: Math.max(0, Math.min(59, Number(parsed.studyNotificationMinute ?? 0) || 0)),
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
@@ -501,6 +507,9 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         backupDailyCopies: settings.backupDailyCopies,
         backupWeeklyCopies: settings.backupWeeklyCopies,
         backupMonthlyCopies: settings.backupMonthlyCopies,
+        studyNotificationsEnabled: settings.studyNotificationsEnabled,
+        studyNotificationHour: settings.studyNotificationHour,
+        studyNotificationMinute: settings.studyNotificationMinute,
         queueOrder: settings.queueOrder,
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
@@ -648,6 +657,9 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.backupDailyCopies = Math.max(0, Math.min(99, Number(validated.backupDailyCopies ?? 12) || 0));
     validated.backupWeeklyCopies = Math.max(0, Math.min(99, Number(validated.backupWeeklyCopies ?? 10) || 0));
     validated.backupMonthlyCopies = Math.max(0, Math.min(99, Number(validated.backupMonthlyCopies ?? 9) || 0));
+    validated.studyNotificationsEnabled = Boolean(validated.studyNotificationsEnabled);
+    validated.studyNotificationHour = Math.max(0, Math.min(23, Number(validated.studyNotificationHour ?? 9) || 0));
+    validated.studyNotificationMinute = Math.max(0, Math.min(59, Number(validated.studyNotificationMinute ?? 0) || 0));
     return validated;
 }
 

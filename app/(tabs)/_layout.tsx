@@ -171,7 +171,7 @@ export default function TabLayout() {
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
-                <Text style={styles.loadingEmoji}>…</Text>
+                <Text style={styles.loadingEmoji}>🧠</Text>
                 <Text style={styles.loadingText}>{t('tabs.loadingApp')}</Text>
             </View>
         );
@@ -196,7 +196,7 @@ export default function TabLayout() {
                         accessibilityRole="button"
                         accessibilityLabel={t('tabs.backToDecks')}
                     >
-                        <Text style={styles.mobileTitle}>TusAnkiM</Text>
+                        <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
                     </TouchableOpacity>
                     <View style={{ width: 48 }} />
                 </View>
@@ -232,7 +232,7 @@ export default function TabLayout() {
                 <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
                     {startupError ? (
                         <View style={styles.startupErrorContainer}>
-                            <Text style={styles.startupErrorIcon}>!</Text>
+                            <Text style={styles.startupErrorIcon}>📱</Text>
                             <Text style={styles.startupErrorTitle}>{startupError}</Text>
                             <Text style={styles.startupErrorText}>
                                 {t('tabs.nativeOnly')}

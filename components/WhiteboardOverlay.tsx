@@ -282,7 +282,7 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
                             accessibilityRole="button"
                             accessibilityLabel={l('Silgi', 'Eraser')}
                         >
-                            <Text style={styles.toolIcon}>⌫</Text>
+                            <Text style={styles.toolIcon}>🧽</Text>
                         </TouchableOpacity>
                         <View style={styles.divider} />
                         {STROKE_WIDTHS.map((w) => (
@@ -301,7 +301,7 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
                             <Text style={styles.toolIcon}>↩︎</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.toolBtn} onPress={clear} accessibilityRole="button" accessibilityLabel={l('Temizle', 'Clear')}>
-                            <Text style={styles.toolIcon}>×</Text>
+                            <Text style={styles.toolIcon}>🗑️</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

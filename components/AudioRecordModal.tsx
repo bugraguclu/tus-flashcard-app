@@ -109,7 +109,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                     accessibilityLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
                 />
                 <View style={styles.card}>
-                    <Text style={styles.title}>{l('Ses Kaydet', 'Record Audio')}</Text>
+                    <Text style={styles.title}>🎙️ {l('Ses Kaydet', 'Record Audio')}</Text>
                     <Text style={styles.duration}>{formatDuration(state.durationMillis)}</Text>
                     <Text style={styles.status}>
                         {state.isRecording ? l('Kayıt sürüyor…', 'Recording…') : saving ? l('Dosya kaydediliyor…', 'Saving recording…') : l('Başlamak için mikrofona dokunun', 'Tap the microphone to start')}
@@ -122,7 +122,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                         accessibilityRole="button"
                         accessibilityLabel={state.isRecording ? l('Kaydı durdur ve kaydet', 'Stop and save recording') : l('Kaydı başlat', 'Start recording')}
                     >
-                        <Text style={styles.recordBtnText}>{state.isRecording ? '■' : '●'}</Text>
+                        <Text style={styles.recordBtnText}>{state.isRecording ? '⏹️' : '🎙️'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.cancelBtn} onPress={discardAndClose} disabled={saving}>

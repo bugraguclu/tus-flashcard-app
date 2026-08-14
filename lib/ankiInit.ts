@@ -199,8 +199,8 @@ export function healSeededDeckDescriptions(): void {
 }
 
 // Early builds printed the Kaynak field (which actually stores the card's topic — scope
-// filtering reads it) under every answer as "Kaynak: <topic>".
-const LEGACY_SOURCE_FOOTER = '{{#Kaynak}}<div class="source">Kaynak: {{Kaynak}}</div>{{/Kaynak}}';
+// filtering reads it) under every answer as "📚 <topic>".
+const LEGACY_SOURCE_FOOTER = '{{#Kaynak}}<div class="source">📚 {{Kaynak}}</div>{{/Kaynak}}';
 
 /**
  * Strips the legacy Kaynak footer from the stored TUS templates (note types 4 and 5).

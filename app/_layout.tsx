@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors, FontSize, ThemeColorsProvider, useThemeColors } from '../constants/theme';
@@ -8,6 +9,7 @@ import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useApp } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
+import { isStudyReminderData } from '../lib/studyNotifications';
 
 // Expo's default web template pins html/body/#root to 100% height; without it every
 // ScrollView/FlatList on web computes a 0px viewport — content still paints (overflow)
@@ -50,7 +52,7 @@ function LocalizedErrorFallback({ message, onRetry }: { message: string; onRetry
     const { t } = useSystemI18n();
     return (
         <View style={errorStyles.container}>
-            <Text style={errorStyles.icon}>!</Text>
+            <Text style={errorStyles.icon}>⚠️</Text>
             <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
             <Text style={errorStyles.message}>{message}</Text>
             <TouchableOpacity style={errorStyles.button} onPress={onRetry}>
@@ -103,7 +105,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     if (error) {
         return (
             <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>!</Text>
+                <Text style={errorStyles.icon}>⚠️</Text>
                 <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
                 <Text style={errorStyles.message}>{error}</Text>
                 <TouchableOpacity
@@ -125,7 +127,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     if (!ready) {
         return (
             <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>…</Text>
+                <Text style={errorStyles.icon}>🧠</Text>
                 <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
             </View>
         );
@@ -153,8 +155,30 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
 
 /** Renders the navigator + DialogHost; lives inside ThemeGate so it can read live theme colors. */
 function AppStack() {
+    const router = useRouter();
     const colors = useThemeColors();
     const { t } = useI18n();
+
+    useEffect(() => {
+        if (Platform.OS !== 'ios') return;
+        const openReminder = (response: Notifications.NotificationResponse | null) => {
+            if (!response || !isStudyReminderData(response.notification.request.content.data)) return;
+            router.replace('/decks' as any);
+            Notifications.clearLastNotificationResponse();
+        };
+
+        let active = true;
+        void Notifications.getLastNotificationResponseAsync()
+            .then((response) => {
+                if (active) openReminder(response);
+            })
+            .catch((error) => console.warn('[Notifications] launch response failed:', error));
+        const subscription = Notifications.addNotificationResponseReceivedListener(openReminder);
+        return () => {
+            active = false;
+            subscription.remove();
+        };
+    }, [router]);
 
     return (
         <>

@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useState } from 'react';
 import type { AppSettings } from '../lib/types';
 import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
 import { useAppStartup } from '../hooks/useAppStartup';
+import { useStudyNotifications } from '../hooks/useStudyNotifications';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
 export type StudyPosition = { subject: string; topic: string } | null;
@@ -65,6 +66,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const { startupError, isLoading } = useAppStartup(refreshData, bumpDataVersion);
+    useStudyNotifications(settings, dataVersion, isLoading);
 
     return (
         <AppContext.Provider

@@ -68,9 +68,9 @@ function fieldHasContent(value: string): boolean {
 type EditorField = 'question' | 'answer' | 'reverseAnswer';
 
 const CARD_TYPE_CHOICES: { id: number; icon: string }[] = [
-    { id: 4, icon: '1' },
-    { id: 5, icon: 'T' },
-    { id: 6, icon: '↻' },
+    { id: 4, icon: '📄' },
+    { id: 5, icon: '⌨️' },
+    { id: 6, icon: '🔁' },
 ];
 
 export default function EditorScreen() {
@@ -468,7 +468,7 @@ export default function EditorScreen() {
                     >
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
-                        <Text style={styles.ankiSelectorChevron}>{isEditing ? '•' : '⌄'}</Text>
+                        <Text style={styles.ankiSelectorChevron}>{isEditing ? '🔒' : '⌄'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.ankiSelectorRow, styles.ankiSelectorRowLast]}
@@ -740,7 +740,7 @@ export default function EditorScreen() {
                                         style={[styles.deckOptionText, targetDeck?.id === node.deck.id && styles.deckOptionActive]}
                                         numberOfLines={1}
                                     >
-                                        {node.depth > 0 ? '↳  ' : ''}{getDeckDisplayName(node.deck.name)}
+                                        {node.depth > 0 ? '↳  ' : '🗃️  '}{getDeckDisplayName(node.deck.name)}
                                     </Text>
                                     {targetDeck?.id === node.deck.id && <Text style={styles.deckOptionCheck}>✓</Text>}
                                 </TouchableOpacity>
@@ -800,10 +800,10 @@ export default function EditorScreen() {
                         accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}
                     />
                     <View style={[styles.modalCard, styles.previewCard]}>
-                        <Text style={styles.modalTitle}>{l('Önizleme', 'Preview')}</Text>
+                        <Text style={styles.modalTitle}>👁️ {l('Önizleme', 'Preview')}</Text>
                         <ScrollView style={styles.previewScroll}>
                             <Text style={styles.previewMeta} numberOfLines={1}>
-                                {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                                🗃️ {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                             </Text>
                             <Text style={styles.label}>{l('SORU', 'QUESTION')}</Text>
                             {previewPayload && (

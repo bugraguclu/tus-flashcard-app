@@ -718,7 +718,7 @@ export default function DecksScreen() {
         addDeckTodayBoost(modal.deck.id, extraNew, extraReview, settings.dayRolloverHour);
         setModal(null);
         refresh();
-        alert(l('Bugünkü limit artırıldı', 'Today’s limit increased'), extraNew > 0
+        alert(l('✅ Bugünkü limit artırıldı', '✅ Today’s limit increased'), extraNew > 0
             ? l(`Bugün bu desteden ${extraNew} ek yeni kart gösterilecek.`, `${extraNew} additional new cards will be shown from this deck today.`)
             : l(`Bugün bu destede ${extraReview} ek tekrara izin verildi.`, `${extraReview} additional reviews are allowed in this deck today.`));
     };
@@ -1521,7 +1521,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Kök seviyeye taşı', 'Move to top level')}
                         >
-                            <Text style={styles.menuItemText}>{l('Kök seviyeye taşı', 'Move to top level')}</Text>
+                            <Text style={styles.menuItemText}>📂  {l('Kök seviyeye taşı', 'Move to top level')}</Text>
                         </TouchableOpacity>
                     )}
                     {targets.map((target) => (
@@ -1532,7 +1532,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l(`${target.name} altına taşı`, `Move under ${target.name}`)}
                         >
-                            <Text style={styles.menuItemText} numberOfLines={1}>{target.name}</Text>
+                            <Text style={styles.menuItemText} numberOfLines={1}>📁  {target.name}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -1609,7 +1609,7 @@ export default function DecksScreen() {
                     />
                 </View>
                 <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleCreateCustomSession}>
-                    <Text style={styles.modalBtnPrimaryText}>{l('Oturum Oluştur', 'Create Session')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>🎯 {l('Oturum Oluştur', 'Create Session')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -1668,7 +1668,7 @@ export default function DecksScreen() {
                         { reschedule: false, searchOrder: 4 },
                     )}
                 >
-                    <Text style={styles.modalBtnPrimaryText}>{l('Önizleme Oturumu', 'Preview Session')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>👁️ {l('Önizleme Oturumu', 'Preview Session')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -1862,18 +1862,21 @@ export default function DecksScreen() {
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/empty-cards')}
                         >
+                            <Text style={styles.overflowIcon}>🧹</Text>
                             <Text style={styles.overflowLabel}>{l('Boş Kartlar', 'Empty Cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/import')}
                         >
+                            <Text style={styles.overflowIcon}>📥</Text>
                             <Text style={styles.overflowLabel}>{t('root.import')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/export')}
                         >
+                            <Text style={styles.overflowIcon}>📤</Text>
                             <Text style={styles.overflowLabel}>{l('Dışa Aktar', 'Export')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -1882,6 +1885,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedek oluştur', 'Create backup')}
                         >
+                            <Text style={styles.overflowIcon}>🗄️</Text>
                             <Text style={styles.overflowLabel}>{l('Yedek Oluştur', 'Create Backup')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -1890,6 +1894,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
                         >
+                            <Text style={styles.overflowIcon}>↩️</Text>
                             <Text style={styles.overflowLabel}>{l('Yedekten Geri Yükle', 'Restore from Backup')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -2127,7 +2132,8 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
                 >
-                    <Text style={styles.bottomBtnText}>📚 {t('sidebar.myCards')}</Text>
+                    <Text style={styles.bottomBtnIcon}>🗂️</Text>
+                    <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2135,7 +2141,8 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
                 >
-                    <Text style={styles.bottomBtnText}>📊 {t('tabs.statistics')}</Text>
+                    <Text style={styles.bottomBtnIcon}>📊</Text>
+                    <Text style={styles.bottomBtnText}>{t('tabs.statistics')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2143,7 +2150,8 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                 >
-                    <Text style={styles.bottomBtnText}>⚙️ {t('tabs.settings')}</Text>
+                    <Text style={styles.bottomBtnIcon}>⚙️</Text>
+                    <Text style={styles.bottomBtnText}>{t('tabs.settings')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -2265,6 +2273,7 @@ function createStyles(colors: ColorScheme) {
         paddingHorizontal: Spacing.md,
         minHeight: 48,
     },
+    overflowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
     overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
 
     columnHeaders: {
@@ -2551,6 +2560,7 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.md,
     },
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
+    bottomBtnIcon: { fontSize: 20 },
     bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 },
 
     emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },

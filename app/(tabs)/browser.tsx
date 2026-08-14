@@ -35,16 +35,13 @@ import {
     getDeckByName,
 } from '../../lib/deckManager';
 import {
-    getAnkiCard,
     getNote,
-    getNoteType,
     moveCardsToDeck,
     setCardFlag,
     undoCardsMovedToDeck,
     type CardDeckMoveSnapshot,
 } from '../../lib/noteManager';
 import { getDbSetting, setDbSetting } from '../../lib/storage';
-import CardWebView from '../../components/CardWebView';
 import TagPickerModal from '../../components/TagPickerModal';
 
 type BrowserSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified' | 'interval' | 'ease' | 'lapses' | 'reviews';
@@ -156,7 +153,6 @@ export default function BrowserScreen() {
     const [showTagFilter, setShowTagFilter] = useState(false);
     const [flagPickerMode, setFlagPickerMode] = useState<'filter' | 'selection' | null>(null);
     const [showOptions, setShowOptions] = useState(false);
-    const [previewCardId, setPreviewCardId] = useState<number | null>(null);
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedCardIds, setSelectedCardIds] = useState<Set<number>>(() => new Set());
     const [showDeckPicker, setShowDeckPicker] = useState(false);
@@ -325,27 +321,6 @@ export default function BrowserScreen() {
         setSelectedCardIds(new Set(filteredCards.map((card) => card.cardId)));
     }, [filteredCards]);
 
-    const previewTargetId = useMemo(() => {
-        if (selectedCardIds.size === 1) return [...selectedCardIds][0];
-        if (expandedCard != null && filteredCards.some((card) => card.cardId === expandedCard)) return expandedCard;
-        return filteredCards[0]?.cardId ?? null;
-    }, [selectedCardIds, expandedCard, filteredCards]);
-
-    const previewPayload = useMemo(() => {
-        if (previewCardId == null) return null;
-        const card = getAnkiCard(previewCardId);
-        if (!card) return null;
-        const note = getNote(card.noteId);
-        const noteType = note ? getNoteType(note.noteTypeId) : null;
-        if (!note || !noteType) return null;
-        return { card, note, noteType, deck: getDeck(card.deckId) };
-    }, [previewCardId, dataVersion]);
-
-    const openPreview = useCallback(() => {
-        setShowOverflowMenu(false);
-        if (previewTargetId != null) setPreviewCardId(previewTargetId);
-    }, [previewTargetId]);
-
     const openFlagFilter = useCallback(() => {
         setShowOverflowMenu(false);
         setFlagPickerMode('filter');
@@ -500,7 +475,7 @@ export default function BrowserScreen() {
                             {isSelected && <Text style={styles.selectionCheckboxTick}>✓</Text>}
                         </View>
                     )}
-                    <Text style={styles.cardIcon}>{sub?.icon || '•'}</Text>
+                    <Text style={styles.cardIcon}>{sub?.icon || '📝'}</Text>
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.cardQuestion, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]} numberOfLines={isExpanded ? undefined : 2}>
                             {humanizeCardText(item.question) || l('🃏 (boş)', '🃏 (empty)')}
@@ -528,7 +503,7 @@ export default function BrowserScreen() {
                         )}
                     </View>
                     {item.noteMarked && (
-                        <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>★</Text>
+                        <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
                     )}
                     {flag > 0 && (
                         <Text
@@ -545,10 +520,10 @@ export default function BrowserScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Kartı düzenle', 'Edit card')}
                         >
-                            <Text style={styles.editBtnText}>✎</Text>
+                            <Text style={styles.editBtnText}>✏️</Text>
                         </TouchableOpacity>
                     )}
-                    {item.state.suspended && <Text style={styles.suspendedIcon}>Ⅱ</Text>}
+                    {item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
                 </View>
 
                 {isExpanded && !selectionMode && (
@@ -578,7 +553,7 @@ export default function BrowserScreen() {
                             onPress={() => toggleSuspend(item.cardId, item.state.suspended)}
                         >
                             <Text style={styles.suspendBtnText}>
-                                {item.state.suspended ? l('Askıdan Çıkar', 'Unsuspend') : t('anki.suspend')}
+                                {item.state.suspended ? l('▶️ Askıdan Çıkar', '▶️ Unsuspend') : `⏸️ ${t('anki.suspend')}`}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -600,7 +575,7 @@ export default function BrowserScreen() {
                     <Text style={styles.backButtonText}>‹</Text>
                 </TouchableOpacity>
                 <View style={styles.headerTitleWrap}>
-                    <Text style={styles.title} numberOfLines={1}>📚 {t('sidebar.myCards')}</Text>
+                    <Text style={styles.title} numberOfLines={1}>🗂️ {t('sidebar.myCards')}</Text>
                     <Text style={styles.subtitle} numberOfLines={1}>
                         {scopeDeck ? `${scopeDeck.name} · ` : ''}{filteredCards.length} {l('kart', 'cards')}
                     </Text>
@@ -636,7 +611,7 @@ export default function BrowserScreen() {
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder={l('Kart ara…', 'Search cards…')}
+                    placeholder={l('🔍 Kart ara…', '🔍 Search cards…')}
                     placeholderTextColor={colors.textMuted}
                     value={rawQuery}
                     onChangeText={handleSearch}
@@ -656,7 +631,7 @@ export default function BrowserScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Yalnızca işaretli notları göster', 'Show marked notes only')}
                 >
-                    <Text style={[styles.filterChipText, markedOnly && styles.filterChipTextActive]}>{l('İşaretli', 'Marked')}</Text>
+                    <Text style={[styles.filterChipText, markedOnly && styles.filterChipTextActive]}>⭐ {l('İşaretli', 'Marked')}</Text>
                 </TouchableOpacity>
                 {suspendedOnly && (
                     <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setSuspendedOnly(false)}>
@@ -774,14 +749,6 @@ export default function BrowserScreen() {
                         >
                             <Text style={styles.overflowItemIcon}>↶</Text>
                             <Text style={styles.overflowItemText}>{l('Geri Al: Deste Güncelleme', 'Undo Update Deck')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.overflowItem, previewTargetId == null && styles.overflowItemDisabled]}
-                            disabled={previewTargetId == null}
-                            onPress={openPreview}
-                        >
-                            <Text style={styles.overflowItemIcon}>◉</Text>
-                            <Text style={styles.overflowItemText}>{l('Önizle', 'Preview')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.overflowItem, filteredCards.length === 0 && styles.overflowItemDisabled]}
@@ -904,31 +871,6 @@ export default function BrowserScreen() {
                             <Switch value={compactRows} onValueChange={(value) => updateBrowserOption('compact', value)} trackColor={{ true: colors.accentLight }} thumbColor={compactRows ? colors.accent : colors.textMuted} />
                         </View>
                         <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.close')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal visible={previewCardId !== null} transparent animationType="fade" onRequestClose={() => setPreviewCardId(null)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setPreviewCardId(null)} />
-                    <View style={[styles.modalCard, styles.previewCard]} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>◉ {l('Önizleme', 'Preview')}</Text>
-                        {previewPayload ? (
-                            <ScrollView style={styles.previewScroll}>
-                                <Text style={styles.previewDeck} numberOfLines={2}>
-                                    ▤ {previewPayload.deck?.name.replaceAll('::', ' › ') ?? '—'}
-                                </Text>
-                                <Text style={styles.previewLabel}>{l('SORU', 'QUESTION')}</Text>
-                                <CardWebView noteType={previewPayload.noteType} note={previewPayload.note} card={previewPayload.card} deck={previewPayload.deck} side="question" />
-                                <Text style={styles.previewLabel}>{l('CEVAP', 'ANSWER')}</Text>
-                                <CardWebView noteType={previewPayload.noteType} note={previewPayload.note} card={previewPayload.card} deck={previewPayload.deck} side="answer" omitFrontSide />
-                            </ScrollView>
-                        ) : (
-                            <Text style={styles.emptyModalText}>{l('Kart bulunamadı.', 'Card not found.')}</Text>
-                        )}
-                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setPreviewCardId(null)}>
                             <Text style={styles.modalCloseText}>{t('common.close')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -1253,11 +1195,6 @@ function createStyles(colors: ColorScheme) {
     optionCopy: { flex: 1 },
     optionTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
     optionCaption: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17, marginTop: 2 },
-    previewCard: { maxHeight: '90%' },
-    previewScroll: { flexGrow: 0 },
-    previewDeck: { color: colors.textMuted, fontSize: FontSize.sm, marginBottom: Spacing.md },
-    previewLabel: { color: colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.3, marginTop: Spacing.sm },
-    emptyModalText: { color: colors.textMuted, fontSize: FontSize.md, textAlign: 'center', paddingVertical: Spacing.xxl },
     deckPickerList: { maxHeight: 430 },
     deckIndent: { width: 52, color: colors.textMuted, fontSize: FontSize.md, fontFamily: 'monospace' },
     fieldLabel: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '700', marginTop: Spacing.sm, marginBottom: Spacing.xs },

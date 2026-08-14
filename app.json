@@ -67,7 +67,9 @@
             "en"
           ]
         }
-      ]
+      ],
+      "expo-notifications",
+      "@react-native-community/datetimepicker"
     ],
     "locales": {
       "tr": "./locales/tr.json",

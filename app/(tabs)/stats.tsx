@@ -203,7 +203,7 @@ export default function StatsScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 48 }}>▤</Text>
+                    <Text style={{ fontSize: 48 }}>📊</Text>
                     <Text style={{ color: colors.textMuted }}>{t('common.loading')}</Text>
                 </View>
             </SafeAreaView>
@@ -262,7 +262,7 @@ export default function StatsScreen() {
 
                 <View style={styles.streakCard}>
                     <View style={styles.streakHeader}>
-                        <Text style={styles.sectionTitle}>{l('Günlük Seri', 'Daily Streak')}</Text>
+                        <Text style={styles.sectionTitle}>🔥 {l('Günlük Seri', 'Daily Streak')}</Text>
                         <Text style={styles.streakBest}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>
                     </View>
                     <View style={styles.streakBody}>
@@ -326,7 +326,7 @@ export default function StatsScreen() {
                         accessibilityLabel={l(`${deck.displayName} destesinin istatistiklerini aç`, `Open statistics for ${deck.displayName}`)}
                     >
                         <View style={styles.subjectHeader}>
-                            <Text style={styles.subjectIcon}>▤</Text>
+                            <Text style={styles.subjectIcon}>🗃️</Text>
                             <Text style={styles.subjectName}>{deck.displayName}</Text>
                             <Text style={styles.subjectPct}>{deck.pct}%</Text>
                         </View>
@@ -356,7 +356,7 @@ export default function StatsScreen() {
 
                     <View style={styles.dataButtons}>
                         <TouchableOpacity style={[styles.dataBtn, styles.exportBtn]} onPress={handleExport}>
-                            <Text style={styles.dataBtnText}>{l('Dışa Aktar', 'Export')}</Text>
+                            <Text style={styles.dataBtnText}>📤 {l('Dışa Aktar', 'Export')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -364,7 +364,7 @@ export default function StatsScreen() {
                             onPress={() => setShowImport(!showImport)}
                         >
                             <Text style={[styles.dataBtnText, { color: colors.textPrimary }]}>
-                                {showImport ? t('common.cancel') : t('root.import')}
+                                {showImport ? t('common.cancel') : `📥 ${t('root.import')}`}
                             </Text>
                         </TouchableOpacity>
                     </View>

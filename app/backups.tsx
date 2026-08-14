@@ -160,7 +160,7 @@ export default function BackupsScreen() {
                     onPress={handleBackupNow}
                     disabled={busy}
                 >
-                    <Text style={styles.primaryBtnText}>{l('Şimdi Yedekle', 'Back Up Now')}</Text>
+                    <Text style={styles.primaryBtnText}>💾 {l('Şimdi Yedekle', 'Back Up Now')}</Text>
                 </TouchableOpacity>
 
                 {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}
@@ -174,8 +174,8 @@ export default function BackupsScreen() {
                         <View style={styles.rowText}>
                             <Text style={styles.rowTitle}>
                                 {isPreRestoreBackup(backup.name)
-                                    ? l('Geri yükleme öncesi kopya', 'Pre-restore snapshot')
-                                    : l('Günlük yedek', 'Daily backup')}
+                                    ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
+                                    : l('📦 Günlük yedek', '📦 Daily backup')}
                             </Text>
                             <Text style={styles.rowSub}>
                                 {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}

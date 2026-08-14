@@ -307,7 +307,7 @@ export default function DeckOptionsScreen() {
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity style={styles.subdeckBtn} onPress={handleApplyToSubdecks}>
-                        <Text style={styles.subdeckBtnText}>{l('Tüm alt destelere uygula', 'Apply to all subdecks')}</Text>
+                        <Text style={styles.subdeckBtnText}>📁 {l('Tüm alt destelere uygula', 'Apply to all subdecks')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -402,7 +402,7 @@ export default function DeckOptionsScreen() {
 
                 <Text style={styles.sectionTitle}>{l('SES', 'AUDIO')}</Text>
                 <SwitchRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={form.autoPlayAudio} onChange={(v) => set('autoPlayAudio', v)} />
-                <Text style={styles.fieldHint}>{l('Kapalıyken kart üzerindeki ses düğmesiyle veya R tuşuyla oynatılır.', 'When off, use the audio button on the card or press R to play audio.')}</Text>
+                <Text style={styles.fieldHint}>{l('Kapalıyken kart üzerindeki 🔊 düğmesiyle veya R tuşuyla oynatılır.', 'When off, use the 🔊 button on the card or press R to play audio.')}</Text>
 
                 <Text style={styles.sectionTitle}>{l('KOLAY GÜNLER — HAFTALIK YÜK', 'EASY DAYS — WEEKLY LOAD')}</Text>
                 <Text style={styles.fieldHint}>{l('Değiştirmek için güne dokunun: Normal → Azaltılmış → Yok. Tekrarlar o günlerden kaydırılır.', 'Tap a day to cycle: Normal → Reduced → None. Reviews are shifted away from those days.')}</Text>

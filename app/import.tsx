@@ -364,7 +364,7 @@ export default function ImportScreen() {
                     accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
                 >
                     <Text style={styles.deckSelectorText} numberOfLines={1}>
-                        {targetDeck?.name ?? '—'} ▾
+                        🗃️ {targetDeck?.name ?? '—'} ▾
                     </Text>
                 </TouchableOpacity>
 
@@ -434,7 +434,7 @@ export default function ImportScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l(`${formatLabel(fileType)} dosyası seç`, `Choose a ${formatLabel(fileType)} file`)}
                 >
-                    <Text style={styles.fileBtnText}>{pickFileButtonLabel()}</Text>
+                    <Text style={styles.fileBtnText}>📄 {pickFileButtonLabel()}</Text>
                 </TouchableOpacity>
                 {fileName && (
                     <Text style={styles.fileInfo}>
@@ -477,12 +477,12 @@ export default function ImportScreen() {
                         ) : null}
                         {result.withMedia && !result.mediaImported ? (
                             <Text style={styles.resultNote}>
-                                {l(`${result.withMedia} kartta medya var; medya dosyaları içe aktarılamadı.`, `${result.withMedia} cards reference media; the media files could not be imported.`)}
+                                {l(`⚠️ ${result.withMedia} kartta medya var; medya dosyaları içe aktarılamadı.`, `⚠️ ${result.withMedia} cards reference media; the media files could not be imported.`)}
                             </Text>
                         ) : null}
                         {result.mediaSkipped ? (
                             <Text style={styles.resultNote}>
-                                {l(`${result.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).`, `${result.mediaSkipped} media files were skipped (missing or too large).`)}
+                                {l(`⚠️ ${result.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).`, `⚠️ ${result.mediaSkipped} media files were skipped (missing or too large).`)}
                             </Text>
                         ) : null}
                         <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>
@@ -498,7 +498,7 @@ export default function ImportScreen() {
                         {importing ? (
                             <ActivityIndicator color={colors.white} />
                         ) : (
-                            <Text style={styles.importBtnText}>{t('root.import')}</Text>
+                            <Text style={styles.importBtnText}>📥 {t('root.import')}</Text>
                         )}
                     </TouchableOpacity>
                 )}
@@ -523,7 +523,7 @@ export default function ImportScreen() {
                                 onPress={() => { setTargetDeckId(null); setShowDeckPicker(false); }}
                             >
                                 <Text style={[styles.deckOptionText, targetDeckId === null && styles.deckOptionActive]}>
-                                    {l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
+                                    ✨ {l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
                                 </Text>
                             </TouchableOpacity>
                             {getAllDecks().filter((deck) => !deck.isFiltered).map((deck) => (
@@ -536,7 +536,7 @@ export default function ImportScreen() {
                                         style={[styles.deckOptionText, targetDeckId === deck.id && styles.deckOptionActive]}
                                         numberOfLines={1}
                                     >
-                                        {deck.name}
+                                        🗃️ {deck.name}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
