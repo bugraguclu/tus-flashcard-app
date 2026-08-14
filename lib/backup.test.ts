@@ -9,10 +9,10 @@ vi.mock('./storage', () => ({
     loadSettings: () => ({
         dayRolloverHour: 4,
         autoBackupEnabled: true,
-        backupIntervalMinutes: 30,
-        backupDailyCopies: 12,
-        backupWeeklyCopies: 10,
-        backupMonthlyCopies: 9,
+        backupIntervalMinutes: 10080,
+        backupDailyCopies: 0,
+        backupWeeklyCopies: 7,
+        backupMonthlyCopies: 0,
     }),
     getDbSetting: vi.fn(() => null),
     setDbSetting: vi.fn(),
@@ -59,9 +59,7 @@ function makeFakeStore(clock: () => Date) {
 
 function makeHarness(startIso = '2026-07-05T12:00:00', policy: {
     intervalMinutes?: number;
-    dailyCopies?: number;
-    weeklyCopies?: number;
-    monthlyCopies?: number;
+    maxCopies?: number;
 } = {}) {
     let now = new Date(startIso);
     let guard: string | null = null;
@@ -86,10 +84,8 @@ function makeHarness(startIso = '2026-07-05T12:00:00', policy: {
         rolloverHour: () => 4,
         isWriter: () => true,
         autoBackupEnabled: () => true,
-        intervalMinutes: () => policy.intervalMinutes ?? 30,
-        dailyCopies: () => policy.dailyCopies ?? 12,
-        weeklyCopies: () => policy.weeklyCopies ?? 10,
-        monthlyCopies: () => policy.monthlyCopies ?? 9,
+        intervalMinutes: () => policy.intervalMinutes ?? 10080,
+        maxCopies: () => policy.maxCopies ?? 7,
     };
 
     return {
@@ -123,17 +119,17 @@ describe('runAutoBackupIfDue', () => {
         expect(h.getGuard()).toBe(String(new Date('2026-07-05T12:00:00').getTime()));
     });
 
-    it('uses the configured interval instead of limiting backups to once per Anki day', async () => {
+    it('waits a full week between automatic backups', async () => {
         const h = makeHarness();
 
         await runAutoBackupIfDue(h.deps);
-        h.setNow('2026-07-05T12:29:00');
+        h.setNow('2026-07-12T11:59:00');
         expect((await runAutoBackupIfDue(h.deps)).didRun).toBe(false);
 
-        h.setNow('2026-07-05T12:31:00');
+        h.setNow('2026-07-12T12:01:00');
         const due = await runAutoBackupIfDue(h.deps);
 
-        expect(due).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-123100.json' });
+        expect(due).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-12-120100.json' });
         expect(h.files.size).toBe(2);
     });
 
@@ -144,23 +140,15 @@ describe('runAutoBackupIfDue', () => {
         expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-030000.json' });
     });
 
-    it('keeps dense interval restore points for two days before thinning the archive', async () => {
-        const h = makeHarness('2026-07-01T12:00:00', {
-            dailyCopies: 0,
-            weeklyCopies: 0,
-            monthlyCopies: 0,
-        });
-
-        await createBackupNow(h.deps);
-        h.setNow('2026-07-02T23:00:00');
-        await createBackupNow(h.deps);
-        expect(h.files.has('tus-backup-2026-07-01-120000.json')).toBe(true);
-
-        h.setNow('2026-07-03T13:00:00');
-        await createBackupNow(h.deps);
+    it('keeps only the newest seven collection snapshots', async () => {
+        const h = makeHarness('2026-07-01T12:00:00');
+        for (let day = 1; day <= 8; day++) {
+            h.setNow(`2026-07-${String(day).padStart(2, '0')}T12:00:00`);
+            await createBackupNow(h.deps);
+        }
         expect(h.files.has('tus-backup-2026-07-01-120000.json')).toBe(false);
-        expect(h.files.has('tus-backup-2026-07-02-230000.json')).toBe(true);
-        expect(h.files.has('tus-backup-2026-07-03-130000.json')).toBe(true);
+        expect([...h.files.keys()].filter((name) => name.startsWith('tus-backup-'))).toHaveLength(7);
+        expect(h.files.has('tus-backup-2026-07-08-120000.json')).toBe(true);
     });
 
     it('skips entirely on a non-writer tab', async () => {
@@ -265,14 +253,14 @@ describe('listBackups / readBackup / deleteBackup', () => {
     it('lists newest first and ignores foreign files in the store', async () => {
         const h = makeHarness('2026-07-01T12:00:00');
         await runAutoBackupIfDue(h.deps);
-        h.advanceDays(1);
+        h.advanceDays(7);
         await runAutoBackupIfDue(h.deps);
         await h.deps.store!.write('junk.txt', 'not a backup');
 
         const listed = await listBackups(h.deps);
 
         expect(listed.map((b) => b.name)).toEqual([
-            'tus-backup-2026-07-02-120000.json',
+            'tus-backup-2026-07-08-120000.json',
             'tus-backup-2026-07-01-120000.json',
         ]);
         expect(listed[0].size).toBeGreaterThan(0);

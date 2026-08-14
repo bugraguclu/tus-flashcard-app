@@ -2,10 +2,10 @@
  * Automatic collection backups.
  *
  * A full-collection JSON snapshot (exportAllData, the canonical v6 format) is
- * written at the user-selected interval — guarded by a settings-table key so startup and
- * every app foreground can call runAutoBackupIfDue() safely. Snapshots rotate with AnkiDroid's
- * daily/weekly/monthly retention policy; every restore first snapshots the current state, so
- * a restore is itself undoable.
+ * written at most once a week. Startup and every app foreground may call
+ * runAutoBackupIfDue() safely; a timestamp guard prevents duplicate work. The newest seven
+ * collection snapshots are retained. Every restore first snapshots the current state, so a
+ * restore is itself undoable.
  *
  * Storage backends: a folder under documentDirectory on native, an IndexedDB
  * store on web (localStorage is too small for a full collection). On web only
@@ -23,7 +23,8 @@ const DAILY_PREFIX = 'tus-backup-';
 const PRE_RESTORE_PREFIX = 'tus-prerestore-';
 const KEEP_PRE_RESTORE = 3;
 const GUARD_KEY = 'tus_last_auto_backup_at';
-const DENSE_RETENTION_MS = 2 * 24 * 60 * 60 * 1000;
+const WEEKLY_INTERVAL_MINUTES = 7 * 24 * 60;
+const KEEP_COLLECTION_BACKUPS = 7;
 
 // Accept old once-per-day filenames as well as the interval-aware timestamp form.
 const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6})?\.json$/;
@@ -54,9 +55,7 @@ export interface BackupDeps {
     rolloverHour?: () => number;
     autoBackupEnabled?: () => boolean;
     intervalMinutes?: () => number;
-    dailyCopies?: () => number;
-    weeklyCopies?: () => number;
-    monthlyCopies?: () => number;
+    maxCopies?: () => number;
     /** On web only the elected writer tab persists; other tabs skip backups. */
     isWriter?: () => boolean;
 }
@@ -140,9 +139,7 @@ interface ResolvedDeps {
     isWriter: () => boolean;
     autoBackupEnabled: () => boolean;
     intervalMinutes: () => number;
-    dailyCopies: () => number;
-    weeklyCopies: () => number;
-    monthlyCopies: () => number;
+    maxCopies: () => number;
 }
 
 function resolveDeps(deps: BackupDeps): ResolvedDeps {
@@ -156,72 +153,24 @@ function resolveDeps(deps: BackupDeps): ResolvedDeps {
         rolloverHour: deps.rolloverHour ?? (() => loadSettings().dayRolloverHour),
         isWriter: deps.isWriter ?? (() => Platform.OS !== 'web' || isPrimaryTab()),
         autoBackupEnabled: deps.autoBackupEnabled ?? (() => loadSettings().autoBackupEnabled !== false),
-        intervalMinutes: deps.intervalMinutes ?? (() => Math.max(5, loadSettings().backupIntervalMinutes ?? 30)),
-        dailyCopies: deps.dailyCopies ?? (() => Math.max(0, loadSettings().backupDailyCopies ?? 12)),
-        weeklyCopies: deps.weeklyCopies ?? (() => Math.max(0, loadSettings().backupWeeklyCopies ?? 10)),
-        monthlyCopies: deps.monthlyCopies ?? (() => Math.max(0, loadSettings().backupMonthlyCopies ?? 9)),
+        intervalMinutes: deps.intervalMinutes ?? (() => WEEKLY_INTERVAL_MINUTES),
+        maxCopies: deps.maxCopies ?? (() => KEEP_COLLECTION_BACKUPS),
     };
-}
-
-function backupDate(name: string): string | null {
-    return name.match(/^tus-backup-(\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
-}
-
-function weekKey(ymd: string): string {
-    const date = new Date(`${ymd}T12:00:00`);
-    const day = (date.getDay() + 6) % 7;
-    date.setDate(date.getDate() - day);
-    return date.toISOString().slice(0, 10);
 }
 
 function snapshotTime(info: BackupInfo): number {
     if (Number.isFinite(info.createdAt) && info.createdAt > 0) return info.createdAt;
-    const ymd = backupDate(info.name);
+    const ymd = info.name.match(/^tus-backup-(\d{4}-\d{2}-\d{2})/)?.[1];
     return ymd ? new Date(`${ymd}T12:00:00`).getTime() : 0;
 }
 
-/**
- * Anki keeps every interval backup for the first two days. Only older snapshots are
- * thinned to the requested daily/weekly/monthly restore points; pre-restore files use
- * their own small safety rotation.
- */
-async function pruneBackups(
-    store: BackupStore,
-    now: Date,
-    dailyCopies: number,
-    weeklyCopies: number,
-    monthlyCopies: number,
-): Promise<void> {
+/** Keep the newest collection snapshots and rotate pre-restore safety copies separately. */
+async function pruneBackups(store: BackupStore, maxCopies: number): Promise<void> {
     const all = await store.list();
     const snapshots = all
         .filter((b) => DAILY_NAME_RE.test(b.name))
-        .sort((a, b) => b.name.localeCompare(a.name));
-    const denseCutoff = now.getTime() - DENSE_RETENTION_MS;
-    const keep = new Set(
-        snapshots
-            .filter((info) => snapshotTime(info) >= denseCutoff)
-            .map((info) => info.name),
-    );
-    const archiveCandidates = snapshots.filter((info) => !keep.has(info.name));
-
-    const retainDistinct = (limit: number, keyFor: (ymd: string) => string) => {
-        const groups = new Set<string>();
-        for (const info of archiveCandidates) {
-            const ymd = backupDate(info.name);
-            if (!ymd) continue;
-            const key = keyFor(ymd);
-            if (groups.has(key)) continue;
-            if (groups.size >= limit) continue;
-            groups.add(key);
-            keep.add(info.name);
-        }
-    };
-
-    retainDistinct(dailyCopies, (ymd) => ymd);
-    retainDistinct(weeklyCopies, weekKey);
-    retainDistinct(monthlyCopies, (ymd) => ymd.slice(0, 7));
-
-    const overflow = snapshots.filter((info) => !keep.has(info.name));
+        .sort((a, b) => snapshotTime(b) - snapshotTime(a) || b.name.localeCompare(a.name));
+    const overflow = snapshots.slice(Math.max(0, maxCopies));
     const preRestore = all
         .filter((b) => PRE_RESTORE_NAME_RE.test(b.name))
         .sort((a, b) => parseTimestamp(b.name) - parseTimestamp(a.name))
@@ -251,7 +200,7 @@ export async function createBackupNow(deps: BackupDeps = {}): Promise<{ fileName
     d.setLastBackupAt(String(now.getTime()));
 
     try {
-        await pruneBackups(d.store, now, d.dailyCopies(), d.weeklyCopies(), d.monthlyCopies());
+        await pruneBackups(d.store, d.maxCopies());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }
@@ -276,6 +225,15 @@ export function runAutoBackupIfDue(
         const d = resolveDeps(deps);
         if (!d.isWriter()) return { didRun: false };
         if (!d.autoBackupEnabled()) return { didRun: false };
+
+        // Apply the new retention policy immediately on startup, even when the next
+        // weekly snapshot is not due yet. This clears collections accumulated by the
+        // former high-frequency policy without forcing an extra backup.
+        try {
+            await pruneBackups(d.store, d.maxCopies());
+        } catch (error) {
+            console.warn('[Backup] startup prune failed:', error);
+        }
 
         const now = d.now();
         const lastRaw = d.getLastBackupAt();
@@ -334,7 +292,7 @@ export async function restoreBackup(
     const ok = await d.importData(contents);
 
     try {
-        await pruneBackups(d.store, d.now(), d.dailyCopies(), d.weeklyCopies(), d.monthlyCopies());
+        await pruneBackups(d.store, d.maxCopies());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }

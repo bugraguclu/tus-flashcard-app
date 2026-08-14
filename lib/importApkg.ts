@@ -3,9 +3,8 @@
  * collection, and maps its notes onto TUS cards through the shared importRows
  * pipeline (transactional, deduped by note guid).
  *
- * Reads the uncompressed legacy collection (collection.anki2 / .anki21); the
- * newer zstd-compressed collection.anki21b must be re-exported with "support
- * older Anki versions". Cloze note types are routed to the app's Cloze type;
+ * Reads both legacy SQLite collections and current zstd-compressed schema-18
+ * collections. Cloze note types are routed to the app's Cloze type;
  * scheduling state and review history come along via importApkgProgress, and
  * the package's media files are copied into the media store. Decks are
  * flattened into the chosen subject.
@@ -18,6 +17,7 @@ import { BUILTIN_NOTE_TYPES, type NoteType } from './models';
 import { resolveSubjectDeckId } from './subjects';
 import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { saveMediaBytes } from './mediaStore';
+import { decompress } from 'fzstd';
 
 const TUS_BASIC_NOTETYPE_ID = 4;
 const CLOZE_NOTETYPE_ID = 3;
@@ -104,22 +104,15 @@ export function readAnkiNotes(reader: SqliteReader): AnkiNote[] {
         'SELECT guid, mid, flds, tags FROM notes',
     );
 
-    // The legacy schema keeps note types in col.models. If that map is empty while notes exist,
-    // this is really the newer schema-18 collection (note types live in tables there) mislabelled
-    // as a legacy file — cloze detection would silently fail, so reject it with clear guidance.
-    if (rows.length > 0 && Object.keys(models).length === 0) {
-        throw new Error(
-            'Bu .apkg desteklenmeyen bir biçimde. Anki\'de dışa aktarırken "Eski Anki sürümlerini destekle" seçeneğini işaretleyip yeniden deneyin.',
-        );
-    }
-
     return rows.map((row) => {
         const fields = (row.flds ?? '').split(FIELD_SEPARATOR);
         return {
             guid: row.guid ?? '',
             fields,
             tags: (row.tags ?? '').split(/\s+/).filter(Boolean),
-            cloze: models[String(row.mid)]?.type === 1,
+            // Modern schema-18 packages no longer keep note types in col.models. Cloze
+            // syntax is unambiguous, so it is also a safe fallback for those packages.
+            cloze: models[String(row.mid)]?.type === 1 || fields.some((field) => /\{\{c\d+::/i.test(field)),
             hasMedia: fields.some((field) => MEDIA_RE.test(field)),
         };
     });
@@ -228,11 +221,16 @@ async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
     const legacy = zip.file(LEGACY_COLLECTION_NAME);
     if (legacy) return inflate(legacy);
 
-    // Must come before the .anki2 fallback; see the collection-name constants above.
-    if (zip.file('collection.anki21b')) {
-        throw new Error(
-            'Bu .apkg yeni sıkıştırılmış biçimde. Anki\'de dışa aktarırken "Eski Anki sürümlerini destekle" seçeneğini işaretleyip yeniden deneyin.',
-        );
+    // Current Anki packages use zstd-compressed schema-18 SQLite. Both names have
+    // appeared in official clients, so accept either spelling.
+    const compressed = zip.file('collection.anki21b') ?? zip.file('collection.21b');
+    if (compressed) {
+        const packed = await compressed.async('uint8array');
+        const bytes = decompress(packed);
+        if (bytes.length > MAX_COLLECTION_BYTES) {
+            throw new Error('Koleksiyon çok büyük (açılmış en fazla 200 MB).');
+        }
+        return bytes;
     }
 
     const oldest = zip.file(OLDEST_COLLECTION_NAME);
@@ -244,7 +242,13 @@ async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
 async function defaultOpenReader(bytes: Uint8Array): Promise<ApkgReader> {
     const { Platform } = require('react-native') as typeof import('react-native');
     if (Platform.OS !== 'web') {
-        throw new Error('Bu cihazda .apkg içe aktarma kullanılamıyor.');
+        const SQLite = require('expo-sqlite') as typeof import('expo-sqlite');
+        const db = SQLite.deserializeDatabaseSync(bytes);
+        return {
+            getAllSync: <T,>(sql: string, ...params: any[]) => db.getAllSync<T>(sql, ...params),
+            getFirstSync: <T,>(sql: string, ...params: any[]) => db.getFirstSync<T>(sql, ...params),
+            close: () => db.closeSync(),
+        };
     }
     const { openSqlJsReader } = require('./webDb') as typeof import('./webDb');
     return openSqlJsReader(bytes);
@@ -267,7 +271,14 @@ export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: nu
         if (!parsed || typeof parsed !== 'object') return counts;
         manifest = parsed;
     } catch {
-        return counts;
+        try {
+            let bytes = await manifestFile.async('uint8array');
+            if (isZstd(bytes)) bytes = decompress(bytes);
+            manifest = parseModernMediaManifest(bytes);
+        } catch (error) {
+            console.warn('[ApkgImport] media manifest skipped:', error);
+            return counts;
+        }
     }
 
     let totalBytes = 0;
@@ -284,7 +295,11 @@ export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: nu
         }
 
         try {
-            const bytes = await entry.async('uint8array');
+            let bytes = await entry.async('uint8array');
+            // Current packages may zstd-compress individual media entries.
+            if (isZstd(bytes)) {
+                bytes = decompress(bytes);
+            }
             if (bytes.length > MAX_MEDIA_FILE_BYTES || totalBytes + bytes.length > MAX_MEDIA_TOTAL_BYTES) {
                 counts.skipped++;
                 continue;
@@ -299,6 +314,82 @@ export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: nu
     }
 
     return counts;
+}
+
+function isZstd(bytes: Uint8Array): boolean {
+    return bytes.length >= 4 && bytes[0] === 0x28 && bytes[1] === 0xb5 && bytes[2] === 0x2f && bytes[3] === 0xfd;
+}
+
+function decodeUtf8(bytes: Uint8Array): string {
+    let result = '';
+    for (let i = 0; i < bytes.length;) {
+        const first = bytes[i++];
+        if (first < 0x80) { result += String.fromCharCode(first); continue; }
+        const extra = first < 0xe0 ? 1 : first < 0xf0 ? 2 : 3;
+        let codePoint = first & (extra === 1 ? 0x1f : extra === 2 ? 0x0f : 0x07);
+        for (let j = 0; j < extra && i < bytes.length; j++) codePoint = (codePoint << 6) | (bytes[i++] & 0x3f);
+        if (codePoint <= 0xffff) result += String.fromCharCode(codePoint);
+        else {
+            codePoint -= 0x10000;
+            result += String.fromCharCode(0xd800 + (codePoint >> 10), 0xdc00 + (codePoint & 0x3ff));
+        }
+    }
+    return result;
+}
+
+function readVarint(bytes: Uint8Array, state: { offset: number }): number {
+    let value = 0;
+    let shift = 0;
+    while (state.offset < bytes.length && shift < 35) {
+        const byte = bytes[state.offset++];
+        value += (byte & 0x7f) * 2 ** shift;
+        if ((byte & 0x80) === 0) return value;
+        shift += 7;
+    }
+    throw new Error('Geçersiz Anki medya manifesti.');
+}
+
+function skipProtoField(bytes: Uint8Array, state: { offset: number }, wire: number): void {
+    if (wire === 0) { readVarint(bytes, state); return; }
+    if (wire === 1) { state.offset += 8; return; }
+    if (wire === 2) { state.offset += readVarint(bytes, state); return; }
+    if (wire === 5) { state.offset += 4; return; }
+    throw new Error('Desteklenmeyen Anki medya alanı.');
+}
+
+/** Decode Anki's current MediaEntries protobuf without pulling in a protobuf runtime. */
+function parseModernMediaManifest(bytes: Uint8Array): Record<string, string> {
+    const result: Record<string, string> = {};
+    const outer = { offset: 0 };
+    let sequentialIndex = 0;
+    while (outer.offset < bytes.length) {
+        const tag = readVarint(bytes, outer);
+        const field = tag >>> 3;
+        const wire = tag & 7;
+        if (field !== 1 || wire !== 2) { skipProtoField(bytes, outer, wire); continue; }
+        const end = outer.offset + readVarint(bytes, outer);
+        const inner = { offset: outer.offset };
+        let name = '';
+        let legacyIndex: number | undefined;
+        while (inner.offset < end) {
+            const innerTag = readVarint(bytes, inner);
+            const innerField = innerTag >>> 3;
+            const innerWire = innerTag & 7;
+            if (innerField === 1 && innerWire === 2) {
+                const length = readVarint(bytes, inner);
+                name = decodeUtf8(bytes.slice(inner.offset, inner.offset + length));
+                inner.offset += length;
+            } else if (innerField === 255 && innerWire === 0) {
+                legacyIndex = readVarint(bytes, inner);
+            } else {
+                skipProtoField(bytes, inner, innerWire);
+            }
+        }
+        outer.offset = end;
+        if (name) result[String(legacyIndex ?? sequentialIndex)] = name;
+        sequentialIndex++;
+    }
+    return result;
 }
 
 export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOptions): Promise<ApkgImportResult> {

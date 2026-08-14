@@ -710,14 +710,11 @@ export default function SettingsScreen() {
 
     const renderBackups = () => (
         <>
-            <Group title={l('Otomatik yedekleme', 'Automatic backups')} description={l('Koleksiyon uygulama açıkken seçilen aralıkta yedeklenir. Geri yüklemeden önce ayrıca geri alınabilir bir kopya oluşturulur.', 'The collection is backed up at the selected interval while the app is active. A recoverable copy is also made before every restore.')} styles={styles}>
+            <Group title={l('Otomatik yedekleme', 'Automatic backups')} description={l('Uygulama açıkken haftada bir koleksiyon yedeği oluşturulur. Geri yüklemeden önce ayrıca geri alınabilir bir güvenlik kopyası alınır.', 'A collection backup is created once a week while the app is active. A recoverable safety copy is also made before every restore.')} styles={styles}>
                 <ToggleRow label={l('Otomatik yedeklemeyi etkinleştir', 'Enable automatic backups')} value={settings.autoBackupEnabled !== false} onChange={(value) => updateSetting('autoBackupEnabled', value)} styles={styles} />
-                <ChoiceRow label={l('Otomatik yedekler arasındaki süre', 'Minutes between automatic backups')} value={String(settings.backupIntervalMinutes ?? 30)} options={[5, 15, 30, 60, 360, 1440].map((value) => ({ value: String(value), label: value < 60 ? `${value} ${l('dk.', 'min')}` : value === 1440 ? l('1 gün', '1 day') : `${value / 60} ${l('sa.', 'hr')}` }))} onChange={(value) => updateSetting('backupIntervalMinutes', Number(value))} styles={styles} />
             </Group>
             <Group title={l('Saklama süresi', 'Lifetime')} styles={styles}>
-                <StepperRow label={l('Saklanacak günlük yedekler', 'Daily backups to keep')} value={settings.backupDailyCopies ?? 12} step={1} min={0} max={99} onChange={(value) => updateSetting('backupDailyCopies', value)} styles={styles} />
-                <StepperRow label={l('Saklanacak haftalık yedekler', 'Weekly backups to keep')} value={settings.backupWeeklyCopies ?? 10} step={1} min={0} max={99} onChange={(value) => updateSetting('backupWeeklyCopies', value)} styles={styles} />
-                <StepperRow label={l('Saklanacak aylık yedekler', 'Monthly backups to keep')} value={settings.backupMonthlyCopies ?? 9} step={1} min={0} max={99} onChange={(value) => updateSetting('backupMonthlyCopies', value)} styles={styles} />
+                <Text style={styles.groupDescription}>{l('En yeni 7 koleksiyon yedeği saklanır; daha eski olanlar otomatik silinir.', 'The newest 7 collection backups are kept; older copies are removed automatically.')}</Text>
                 <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/backups')}>
                     <Text style={styles.actionButtonText}>{l('Yedekleri görüntüle ve geri yükle', 'View and restore backups')} ›</Text>
                 </TouchableOpacity>

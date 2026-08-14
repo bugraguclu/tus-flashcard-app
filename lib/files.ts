@@ -25,6 +25,42 @@ export async function readUriText(uri: string): Promise<string> {
     return getLegacyFileSystem().readAsStringAsync(uri);
 }
 
+const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+/** Base64 -> bytes without relying on Buffer/atob, which are not guaranteed by Hermes. */
+export function base64ToBytes(value: string): Uint8Array {
+    const clean = value.replace(/\s/g, '').replace(/=+$/, '');
+    const lookup = new Int16Array(128).fill(-1);
+    for (let i = 0; i < B64_ALPHABET.length; i++) lookup[B64_ALPHABET.charCodeAt(i)] = i;
+    const output = new Uint8Array(Math.floor(clean.length * 6 / 8));
+    let bits = 0;
+    let bitCount = 0;
+    let offset = 0;
+    for (let i = 0; i < clean.length; i++) {
+        const code = clean.charCodeAt(i);
+        const digit = code < lookup.length ? lookup[code] : -1;
+        if (digit < 0) throw new Error('Geçersiz base64 verisi.');
+        bits = (bits << 6) | digit;
+        bitCount += 6;
+        if (bitCount >= 8) {
+            bitCount -= 8;
+            output[offset++] = (bits >> bitCount) & 0xff;
+        }
+    }
+    return offset === output.length ? output : output.slice(0, offset);
+}
+
+/** Read a picked asset as bytes on every platform, including native file/content URIs. */
+export async function readUriBytes(uri: string): Promise<Uint8Array> {
+    if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        return new Uint8Array(await response.arrayBuffer());
+    }
+    const fs = getLegacyFileSystem();
+    const encoded = await fs.readAsStringAsync(uri, { encoding: fs.EncodingType.Base64 });
+    return base64ToBytes(encoded);
+}
+
 /** Trigger a browser download of the given text. Web only. */
 export function downloadTextFileWeb(
     fileName: string,
@@ -32,6 +68,18 @@ export function downloadTextFileWeb(
     mimeType = 'application/json',
 ): void {
     const blob = new Blob([contents], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+}
+
+/** Trigger a browser download of binary data. Web only. */
+export function downloadBytesFileWeb(fileName: string, contents: Uint8Array, mimeType: string): void {
+    const copy = new Uint8Array(contents);
+    const blob = new Blob([copy.buffer as ArrayBuffer], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;

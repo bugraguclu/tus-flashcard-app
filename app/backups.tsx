@@ -152,7 +152,7 @@ export default function BackupsScreen() {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    {l('Uygulama her gün otomatik yedek oluşturur ve en yeni 7 günlük yedeği saklar. Geri yükleme öncesi oluşturulan anlık kopyalar da burada listelenir.', 'The app creates a daily backup automatically and keeps the latest 7 daily backups. Snapshots created before a restore also appear here.')}
+                    {l('Uygulama haftada bir otomatik yedek oluşturur ve en yeni 7 koleksiyon yedeğini saklar. Geri yükleme öncesi oluşturulan güvenlik kopyaları ayrıca burada listelenir.', 'The app creates one automatic backup per week and keeps the latest 7 collection backups. Safety snapshots created before a restore also appear here.')}
                 </Text>
 
                 <TouchableOpacity
@@ -175,7 +175,7 @@ export default function BackupsScreen() {
                             <Text style={styles.rowTitle}>
                                 {isPreRestoreBackup(backup.name)
                                     ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
-                                    : l('📦 Günlük yedek', '📦 Daily backup')}
+                                    : l('📦 Koleksiyon yedeği', '📦 Collection backup')}
                             </Text>
                             <Text style={styles.rowSub}>
                                 {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}

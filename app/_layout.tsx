@@ -157,7 +157,7 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
 function AppStack() {
     const router = useRouter();
     const colors = useThemeColors();
-    const { t } = useI18n();
+    const { t, l } = useI18n();
 
     useEffect(() => {
         if (Platform.OS !== 'ios') return;
@@ -193,11 +193,8 @@ function AppStack() {
                 <Stack.Screen
                     name="editor"
                     options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: t('root.editCard'),
-                        headerStyle: { backgroundColor: colors.bgSecondary },
-                        headerTintColor: colors.accent,
+                        presentation: 'card',
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen
@@ -216,6 +213,16 @@ function AppStack() {
                         presentation: 'modal',
                         headerShown: true,
                         title: t('root.import'),
+                        headerStyle: { backgroundColor: colors.bgSecondary },
+                        headerTintColor: colors.accent,
+                    }}
+                />
+                <Stack.Screen
+                    name="export"
+                    options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: l('Dışa Aktar', 'Export'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
                     }}

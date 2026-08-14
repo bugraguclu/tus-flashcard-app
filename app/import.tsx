@@ -8,7 +8,6 @@ import {
     StyleSheet,
     SafeAreaView,
     ActivityIndicator,
-    Platform,
     Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -19,7 +18,7 @@ import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
 import { getAllDecks, getDeck } from '../lib/deckManager';
 import { alert } from '../lib/confirm';
-import { readUriText } from '../lib/files';
+import { readUriBytes, readUriText } from '../lib/files';
 import { useApp } from '../contexts/AppContext';
 import { importDelimitedNotes } from '../lib/importNotes';
 import { importApkg } from '../lib/importApkg';
@@ -43,13 +42,12 @@ type ImportSummary = {
     mediaSkipped?: number;
 };
 
-type ImportFileType = 'csv' | 'tsv' | 'txt' | 'apkg';
+type ImportFileType = 'csv' | 'tsv' | 'txt' | 'apkg' | 'colpkg';
 
 type ImportFormat = {
     id: ImportFileType;
     mimeTypes: string[];
     extensions: string[];
-    webOnly?: boolean;
 };
 
 const MAX_TEXT_CHARS = 50_000_000;
@@ -74,7 +72,11 @@ const IMPORT_FORMATS: ImportFormat[] = [
         id: 'apkg',
         mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
         extensions: ['apkg'],
-        webOnly: true,
+    },
+    {
+        id: 'colpkg',
+        mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
+        extensions: ['colpkg'],
     },
 ];
 
@@ -94,22 +96,13 @@ function getFileExtension(name: string): string | undefined {
     return trimmed.slice(dot + 1);
 }
 
-async function readAssetBytes(uri: string): Promise<Uint8Array> {
-    const buffer = await (await fetch(uri)).arrayBuffer();
-    return new Uint8Array(buffer);
-}
-
 export default function ImportScreen() {
     const { t, l } = useI18n();
     const router = useRouter();
     const { bumpDataVersion, settings, dataVersion } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const supportsApkgImport = Platform.OS === 'web';
-    const availableFormats = useMemo(
-        () => IMPORT_FORMATS.filter((format) => !format.webOnly || supportsApkgImport),
-        [supportsApkgImport],
-    );
+    const availableFormats = IMPORT_FORMATS;
 
     const subjects = React.useMemo(() => getAllSubjects(), [dataVersion]);
     const [subject, setSubject] = useState(subjects[0]?.id ?? '');
@@ -159,6 +152,8 @@ export default function ImportScreen() {
                 return 'TXT';
             case 'apkg':
                 return '.apkg';
+            case 'colpkg':
+                return '.colpkg';
         }
     };
 
@@ -184,6 +179,11 @@ export default function ImportScreen() {
                     '.apkg seçildi: notlar, cloze kartlar, çalışma geçmişi ve uygun medya dosyaları paketten alınır.',
                     '.apkg selected: notes, cloze cards, review history, and eligible media files are imported from the package.',
                 );
+            case 'colpkg':
+                return l(
+                    '.colpkg seçildi: tüm Anki koleksiyon paketindeki notlar, cloze kartlar, çalışma geçmişi ve medya alınır.',
+                    '.colpkg selected: notes, cloze cards, review history, and media are imported from the full Anki collection package.',
+                );
         }
     };
 
@@ -200,10 +200,8 @@ export default function ImportScreen() {
                     'If the TXT file is very free-form, add #separator:tab or #separator:comma at the top for more accurate results.',
                 );
             case 'apkg':
-                return l(
-                    'Yeni Anki paketleri içe alınmazsa dışa aktarırken “eski Anki sürümlerini destekle” seçeneğini kullanın.',
-                    'If a newer Anki package fails, export it again with “support older Anki versions” enabled.',
-                );
+            case 'colpkg':
+                return l('Güncel ve eski Anki paket biçimleri desteklenir.', 'Current and legacy Anki package formats are supported.');
             case 'tsv':
                 return null;
         }
@@ -220,6 +218,8 @@ export default function ImportScreen() {
                 return l('TXT Dosyası Seç', 'Choose TXT File');
             case 'apkg':
                 return l('Anki .apkg Paketi Seç', 'Choose Anki .apkg Package');
+            case 'colpkg':
+                return l('Anki .colpkg Paketi Seç', 'Choose Anki .colpkg Package');
         }
     };
 
@@ -265,16 +265,11 @@ export default function ImportScreen() {
                 return;
             }
 
-            if (fileType === 'apkg' && Platform.OS !== 'web') {
-                alert(l('Desteklenmeyen Dosya', 'Unsupported File'), l('Bu cihazda CSV, TSV veya TXT dosyası seçin.', 'Select a CSV, TSV, or TXT file on this device.'));
-                return;
-            }
-
             setFileName(asset.name);
             setResult(null);
 
-            if (fileType === 'apkg') {
-                setFileBytes(await readAssetBytes(asset.uri));
+            if (fileType === 'apkg' || fileType === 'colpkg') {
+                setFileBytes(await readUriBytes(asset.uri));
                 setFileText(null);
                 setRowCount(0);
             } else {
@@ -308,7 +303,7 @@ export default function ImportScreen() {
             const topicValue = topic.trim() || 'Genel';
             let imported: (ImportSummary & { indexed: SearchIndexCard[] }) | null = null;
 
-            if (fileType === 'apkg' && fileBytes) {
+            if ((fileType === 'apkg' || fileType === 'colpkg') && fileBytes) {
                 imported = await importApkg(fileBytes, {
                     subject,
                     topic: topicValue,
@@ -346,16 +341,6 @@ export default function ImportScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>
-                    {l(
-                        'Dosya tipini seçin; uygulama seçilen biçim için en uygun Anki uyumlu içe aktarma motorunu kullanır. Aynı soruya sahip kartlar atlanır.',
-                        'Choose a file type; the app uses the best Anki-compatible import engine for the selected format. Cards with duplicate questions are skipped.',
-                    )}{' '}
-                    <Text style={styles.helpStrong}>
-                        {supportsApkgImport ? l('CSV, TSV, TXT ve .apkg desteklenir.', 'CSV, TSV, TXT, and .apkg are supported.') : l('Bu cihazda CSV, TSV ve TXT desteklenir.', 'CSV, TSV, and TXT are supported on this device.')}
-                    </Text>
-                </Text>
-
                 <Text style={styles.label}>{l('HEDEF DESTE', 'TARGET DECK')}</Text>
                 <TouchableOpacity
                     style={styles.deckSelector}
@@ -438,7 +423,7 @@ export default function ImportScreen() {
                 </TouchableOpacity>
                 {fileName && (
                     <Text style={styles.fileInfo}>
-                        {fileName} · {fileType === 'apkg' ? l('Anki paketi', 'Anki package') : l(`${rowCount} satır`, `${rowCount} rows`)}
+                        {fileName} · {fileType === 'apkg' || fileType === 'colpkg' ? l('Anki paketi', 'Anki package') : l(`${rowCount} satır`, `${rowCount} rows`)}
                     </Text>
                 )}
 
@@ -584,8 +569,6 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.md },
-    help: { fontSize: FontSize.sm, color: colors.textSecondary, lineHeight: 20 },
-    helpStrong: { fontWeight: '700', color: colors.textPrimary },
     label: {
         fontSize: 10,
         fontWeight: '700',

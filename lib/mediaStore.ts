@@ -157,6 +157,22 @@ export async function saveMediaFile(filename: string, base64Data: string): Promi
     await fs.writeAsStringAsync(`${dir}${safe}`, base64Data, { encoding: fs.EncodingType.Base64 });
 }
 
+/** Read a stored media file for Anki package export. Missing files return null. */
+export async function readMediaBytes(filename: string): Promise<Uint8Array | null> {
+    const safe = sanitizeMediaFilename(filename);
+    if (Platform.OS === 'web') {
+        const blob = await idbGet(safe);
+        return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+    }
+    const fs = getFileSystem();
+    const uri = `${await ensureMediaDir()}${safe}`;
+    const info = await fs.getInfoAsync(uri);
+    if (!info.exists) return null;
+    const encoded = await fs.readAsStringAsync(uri, { encoding: fs.EncodingType.Base64 });
+    const { base64ToBytes } = require('./files') as typeof import('./files');
+    return base64ToBytes(encoded);
+}
+
 export function getMediaBaseUrl(): string {
     return Platform.OS === 'web' ? '' : getMediaDir();
 }

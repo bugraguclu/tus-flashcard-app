@@ -3,7 +3,6 @@ import {
     KeyboardAvoidingView,
     Modal,
     Platform,
-    Pressable,
     ScrollView,
     Text,
     TextInput,
@@ -21,7 +20,7 @@ type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' 
 
 export interface CardOptionsMenuProps {
     visible: boolean;
-    /** Which panel to show when the sheet opens. The top-bar flag button opens straight to 'flag'. */
+    /** Which panel to show when the screen opens. The top-bar flag button opens straight to 'flag'. */
     initialView?: 'menu' | 'flag';
     onClose: () => void;
     cardSuspended: boolean;
@@ -68,7 +67,7 @@ export interface CardOptionsMenuProps {
     onToggleVoicePlayback: () => void;
 }
 
-/** Anki-style right-click card/note options menu, opened from a button on the study screen. */
+/** Full-screen Anki-style card/note options, opened from the study screen. */
 export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
@@ -95,12 +94,15 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     };
 
     const runAndClose = (action: () => void) => {
-        action();
         close();
+        // iOS will reject navigation/alerts while a full-screen native modal is still
+        // dismissing. Close first, then run the selected operation after that transition.
+        setTimeout(action, Platform.OS === 'ios' ? 260 : 0);
     };
 
     const confirmAndClose = (title: string, message: string, action: () => void, destructive = false) => {
-        confirm(title, message, () => runAndClose(action), { destructive });
+        close();
+        setTimeout(() => confirm(title, message, action, { destructive }), Platform.OS === 'ios' ? 260 : 0);
     };
 
     const sheetTitle = view === 'flag'
@@ -138,24 +140,28 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     );
 
     return (
-        <Modal transparent visible={props.visible} animationType="fade" onRequestClose={close}>
+        <Modal
+            visible={props.visible}
+            animationType="slide"
+            presentationStyle="fullScreen"
+            onRequestClose={close}
+        >
             <KeyboardAvoidingView
-                style={[styles.backdrop, { paddingTop: insets.top + Spacing.md }]}
+                style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel={t('tabs.closeMenu')} />
-                <View style={styles.sheet}>
-                    <View style={styles.sheetHandle} />
+                <View style={styles.sheet} accessibilityViewIsModal>
                     <View style={styles.sheetHeader}>
-                        <Text style={styles.sheetTitle}>{sheetTitle}</Text>
                         <TouchableOpacity
                             style={styles.closeBtn}
                             onPress={close}
                             accessibilityRole="button"
                             accessibilityLabel={l('Kart seçeneklerini kapat', 'Close card options')}
                         >
-                            <Text style={styles.closeBtnText}>×</Text>
+                            <Text style={styles.closeBtnText}>‹</Text>
                         </TouchableOpacity>
+                        <Text style={styles.sheetTitle}>{sheetTitle}</Text>
+                        <View style={styles.headerSpacer} />
                     </View>
                     <ScrollView
                         showsVerticalScrollIndicator={false}
@@ -392,41 +398,25 @@ function MenuRow({ styles, icon, label, onPress, danger, chevron }: {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        backdrop: {
+        screen: {
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.35)',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
+            backgroundColor: colors.bgCard,
         },
         sheet: {
+            flex: 1,
             width: '100%',
-            maxWidth: 520,
-            maxHeight: '90%',
             backgroundColor: colors.bgCard,
-            borderTopLeftRadius: BorderRadius.lg,
-            borderTopRightRadius: BorderRadius.lg,
-            borderWidth: 1,
-            borderColor: colors.border,
-            overflow: 'hidden',
-        },
-        sheetHandle: {
-            width: 42,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: colors.border,
-            alignSelf: 'center',
-            marginTop: 8,
         },
         sheetHeader: {
-            minHeight: 52,
+            minHeight: 56,
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingLeft: Spacing.lg,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
         sheetTitle: {
+            flex: 1,
+            textAlign: 'center',
             fontSize: FontSize.lg,
             fontWeight: '700',
             color: colors.textPrimary,
@@ -438,11 +428,19 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
         },
         closeBtnText: {
-            fontSize: 28,
-            lineHeight: 30,
-            color: colors.textSecondary,
+            fontSize: 38,
+            lineHeight: 38,
+            fontWeight: '300',
+            color: colors.textPrimary,
         },
-        sheetContent: { paddingVertical: Spacing.sm, paddingBottom: 32 },
+        headerSpacer: { width: 48, height: 48 },
+        sheetContent: {
+            width: '100%',
+            maxWidth: 720,
+            alignSelf: 'center',
+            paddingVertical: Spacing.sm,
+            paddingBottom: 32,
+        },
         groupLabel: {
             fontSize: 10,
             fontWeight: '700',

@@ -124,7 +124,13 @@ export default function TagPickerModal({
     };
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            presentationStyle="overFullScreen"
+            onRequestClose={onCancel}
+        >
             <KeyboardAvoidingView
                 style={styles.overlay}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}

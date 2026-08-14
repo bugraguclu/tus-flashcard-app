@@ -56,6 +56,8 @@ function wrapReader(bytes: Uint8Array) {
 }
 
 describe('apkg glue (real sql.js + jszip)', () => {
+    const modernCollection = new Uint8Array(Buffer.from('KLUv/QRYuQAAbW9kZXJuIGNvbGxlY3Rpb24gYnl0ZXPtQ4PX', 'base64'));
+
     it('extracts collection.anki2 bytes from a package', async () => {
         const collection = buildAnkiCollectionBytes();
         const zip = new JSZip();
@@ -67,22 +69,22 @@ describe('apkg glue (real sql.js + jszip)', () => {
         expect(extracted.length).toBe(collection.length);
     });
 
-    it('rejects the newer compressed collection.anki21b format', async () => {
+    it('extracts the newer zstd-compressed collection.anki21b format', async () => {
         const zip = new JSZip();
-        zip.file('collection.anki21b', new Uint8Array([1, 2, 3]));
+        zip.file('collection.anki21b', modernCollection);
         const zipBytes = await zip.generateAsync({ type: 'uint8array' });
-        await expect(extractCollectionBytes(zipBytes)).rejects.toThrow(/[Ee]ski/);
+        expect(new TextDecoder().decode(await extractCollectionBytes(zipBytes))).toBe('modern collection bytes');
     });
 
-    it('rejects a new-format package instead of importing its collection.anki2 stub', async () => {
+    it('prefers a new-format collection instead of importing its collection.anki2 stub', async () => {
         // New-format exports ship the real data as .anki21b plus a stub .anki2 whose only purpose
         // is to show old Anki versions an upgrade notice. The stub must not be silently imported.
         const zip = new JSZip();
-        zip.file('collection.anki21b', new Uint8Array([1, 2, 3]));
+        zip.file('collection.anki21b', modernCollection);
         zip.file('collection.anki2', buildAnkiCollectionBytes());
         zip.file('media', '{}');
         const zipBytes = await zip.generateAsync({ type: 'uint8array' });
-        await expect(extractCollectionBytes(zipBytes)).rejects.toThrow(/[Ee]ski/);
+        expect(new TextDecoder().decode(await extractCollectionBytes(zipBytes))).toBe('modern collection bytes');
     });
 
     it('prefers collection.anki21 when a legacy export contains both legacy files', async () => {

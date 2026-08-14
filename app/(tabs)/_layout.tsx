@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -58,9 +58,14 @@ export default function TabLayout() {
     const highlightSubject = studyPosition?.subject ?? selectedSubject;
     const highlightTopic = studyPosition?.topic ?? selectedTopic;
 
-    // The deck list is the landing screen and renders full-bleed like Anki's: no sidebar,
-    // no mobile header. The usual layout returns as soon as a deck is opened for study.
-    const isDeckScreen = pathname === '/decks';
+    // Root-stack modals also change usePathname() while the tabs remain mounted underneath.
+    // Remember the actual tab route so opening Import/Export cannot momentarily add this
+    // layout's mobile header and push the deck list down during the transition.
+    const lastTabPath = useRef('/decks');
+    if (pathname === '/' || pathname === '/decks' || pathname === '/browser' || pathname === '/stats' || pathname === '/settings') {
+        lastTabPath.current = pathname;
+    }
+    const isDeckScreen = lastTabPath.current === '/decks';
 
     useEffect(() => {
         const sub = Dimensions.addEventListener('change', ({ window }) => {
@@ -191,13 +196,7 @@ export default function TabLayout() {
                     >
                         <Text style={styles.hamburgerText}>☰</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => router.push('/decks' as any)}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('tabs.backToDecks')}
-                    >
-                        <Text style={styles.mobileTitle}>🧠 TusAnkiM</Text>
-                    </TouchableOpacity>
+                    <View style={{ flex: 1 }} />
                     <View style={{ width: 48 }} />
                 </View>
             )}
@@ -275,8 +274,6 @@ function createStyles(colors: ColorScheme) {
     },
     hamburger: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
     hamburgerText: { fontSize: 22, color: colors.textPrimary },
-    mobileTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
-
     overlay: {
         position: 'absolute',
         top: 0,

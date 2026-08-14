@@ -58,12 +58,15 @@ describe('readAnkiNotes', () => {
         ]);
     });
 
-    it('rejects a collection whose note types are missing (newer schema mislabelled)', () => {
+    it('accepts modern collections without col.models and infers cloze syntax', () => {
         const reader = {
             getFirstSync: () => ({ models: '{}' }),
-            getAllSync: () => [{ guid: 'n1', mid: 100, flds: 'Q\x1fA', tags: '' }],
+            getAllSync: () => [
+                { guid: 'n1', mid: 100, flds: 'Q\x1fA', tags: '' },
+                { guid: 'n2', mid: 200, flds: '{{c1::Q}}\x1fA', tags: '' },
+            ],
         };
-        expect(() => readAnkiNotes(reader as any)).toThrow(/[Ee]ski/);
+        expect(readAnkiNotes(reader as any).map((note) => note.cloze)).toEqual([false, true]);
     });
 });
 

@@ -119,6 +119,11 @@ export interface AppSettings {
     showNextReviewTimes: boolean;
     /** AnkiDroid General: add new notes to the current deck or always to Default. */
     newCardDeckMode?: 'current' | 'default';
+    /** AnkiDroid note-editor display/input preferences. */
+    editorFontSize?: number;
+    editorCapitalizeSentences?: boolean;
+    editorToolbarVisible?: boolean;
+    editorToolbarScrollable?: boolean;
     /** Reviewer presentation preferences shared by the study screen and CardWebView. */
     studyFrameStyle?: 'card' | 'plain';
     showAudioPlayButtons?: boolean;

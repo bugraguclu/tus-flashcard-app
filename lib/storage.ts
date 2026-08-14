@@ -60,6 +60,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showRemainingCount: true,
     showNextReviewTimes: true,
     newCardDeckMode: 'current',
+    editorFontSize: 16,
+    editorCapitalizeSentences: true,
+    editorToolbarVisible: true,
+    editorToolbarScrollable: true,
     studyFrameStyle: 'card',
     showAudioPlayButtons: true,
     showAnswerFeedback: true,
@@ -83,10 +87,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showAnswerLongPressMs: 0,
     answerDoubleTapMs: 200,
     autoBackupEnabled: true,
-    backupIntervalMinutes: 30,
-    backupDailyCopies: 12,
-    backupWeeklyCopies: 10,
-    backupMonthlyCopies: 9,
+    backupIntervalMinutes: 10080,
+    backupDailyCopies: 0,
+    backupWeeklyCopies: 7,
+    backupMonthlyCopies: 0,
     studyNotificationsEnabled: false,
     studyNotificationHour: 9,
     studyNotificationMinute: 0,
@@ -452,10 +456,10 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             showAnswerLongPressMs: Math.max(0, Math.min(2000, Number(parsed.showAnswerLongPressMs ?? 0) || 0)),
             answerDoubleTapMs: Math.max(0, Math.min(2000, Number(parsed.answerDoubleTapMs ?? 200) || 0)),
             autoBackupEnabled: parsed.autoBackupEnabled !== false,
-            backupIntervalMinutes: Math.max(5, Math.min(10080, Number(parsed.backupIntervalMinutes ?? 30) || 30)),
-            backupDailyCopies: Math.max(0, Math.min(99, Number(parsed.backupDailyCopies ?? 12) || 0)),
-            backupWeeklyCopies: Math.max(0, Math.min(99, Number(parsed.backupWeeklyCopies ?? 10) || 0)),
-            backupMonthlyCopies: Math.max(0, Math.min(99, Number(parsed.backupMonthlyCopies ?? 9) || 0)),
+            backupIntervalMinutes: 10080,
+            backupDailyCopies: 0,
+            backupWeeklyCopies: 7,
+            backupMonthlyCopies: 0,
             studyNotificationsEnabled: Boolean(parsed.studyNotificationsEnabled),
             studyNotificationHour: Math.max(0, Math.min(23, Number(parsed.studyNotificationHour ?? 9) || 0)),
             studyNotificationMinute: Math.max(0, Math.min(59, Number(parsed.studyNotificationMinute ?? 0) || 0)),
@@ -628,6 +632,10 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.keyBindings = normalizeKeyBindings(validated.keyBindings);
     validated.autoAdvance = Boolean(validated.autoAdvance);
     validated.newCardDeckMode = validated.newCardDeckMode === 'default' ? 'default' : 'current';
+    validated.editorFontSize = Math.max(12, Math.min(32, Number(validated.editorFontSize ?? 16) || 16));
+    validated.editorCapitalizeSentences = validated.editorCapitalizeSentences !== false;
+    validated.editorToolbarVisible = validated.editorToolbarVisible !== false;
+    validated.editorToolbarScrollable = validated.editorToolbarScrollable !== false;
     validated.studyFrameStyle = validated.studyFrameStyle === 'plain' ? 'plain' : 'card';
     validated.showAudioPlayButtons = validated.showAudioPlayButtons !== false;
     validated.showAnswerFeedback = validated.showAnswerFeedback !== false;
@@ -653,10 +661,10 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.showAnswerLongPressMs = Math.max(0, Math.min(2000, Number(validated.showAnswerLongPressMs ?? 0) || 0));
     validated.answerDoubleTapMs = Math.max(0, Math.min(2000, Number(validated.answerDoubleTapMs ?? 200) || 0));
     validated.autoBackupEnabled = validated.autoBackupEnabled !== false;
-    validated.backupIntervalMinutes = Math.max(5, Math.min(10080, Number(validated.backupIntervalMinutes ?? 30) || 30));
-    validated.backupDailyCopies = Math.max(0, Math.min(99, Number(validated.backupDailyCopies ?? 12) || 0));
-    validated.backupWeeklyCopies = Math.max(0, Math.min(99, Number(validated.backupWeeklyCopies ?? 10) || 0));
-    validated.backupMonthlyCopies = Math.max(0, Math.min(99, Number(validated.backupMonthlyCopies ?? 9) || 0));
+    validated.backupIntervalMinutes = 10080;
+    validated.backupDailyCopies = 0;
+    validated.backupWeeklyCopies = 7;
+    validated.backupMonthlyCopies = 0;
     validated.studyNotificationsEnabled = Boolean(validated.studyNotificationsEnabled);
     validated.studyNotificationHour = Math.max(0, Math.min(23, Number(validated.studyNotificationHour ?? 9) || 0));
     validated.studyNotificationMinute = Math.max(0, Math.min(59, Number(validated.studyNotificationMinute ?? 0) || 0));

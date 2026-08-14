@@ -25,6 +25,7 @@ export interface RichTextEditorHandle {
     focus: () => void;
     runCommand: (command: RichTextCommand, value?: string) => void;
     insertHtml: (html: string) => void;
+    wrapSelection: (prefix: string, suffix: string) => void;
 }
 
 interface RichTextEditorProps {
@@ -35,13 +36,21 @@ interface RichTextEditorProps {
     placeholder: string;
     colors: ColorScheme;
     minHeight?: number;
+    fontSize?: number;
+    capitalizeSentences?: boolean;
 }
 
 function safeJsValue(value: string): string {
     return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
 }
 
-function editorDocument(value: string, placeholder: string, colors: ColorScheme): string {
+function editorDocument(
+    value: string,
+    placeholder: string,
+    colors: ColorScheme,
+    fontSize: number,
+    capitalizeSentences: boolean,
+): string {
     return `<!doctype html>
 <html>
 <head>
@@ -54,7 +63,7 @@ function editorDocument(value: string, placeholder: string, colors: ColorScheme)
     min-height: 96px;
     padding: 12px;
     outline: none;
-    font-size: 16px;
+    font-size: ${fontSize}px;
     line-height: 1.45;
     overflow-wrap: anywhere;
     -webkit-user-select: text;
@@ -66,7 +75,7 @@ function editorDocument(value: string, placeholder: string, colors: ColorScheme)
 </style>
 </head>
 <body>
-  <div id="editor" contenteditable="true" autocapitalize="sentences" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
+  <div id="editor" contenteditable="true" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
   <script>
     (function () {
       const editor = document.getElementById('editor');
@@ -151,6 +160,37 @@ function editorDocument(value: string, placeholder: string, colors: ColorScheme)
         emitChange();
       };
 
+      window.__tusEditorWrapSelection = function (prefix, suffix) {
+        restoreSelection();
+        const selection = window.getSelection();
+        if (!selection || !selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const selectedContainer = document.createElement('div');
+        selectedContainer.appendChild(range.cloneContents());
+        const selectedHtml = selectedContainer.innerHTML;
+        const markerId = '__tus_editor_cursor_' + Date.now();
+        const middle = range.collapsed
+          ? '<span id="' + markerId + '">&#8203;</span>'
+          : selectedHtml;
+
+        document.execCommand('insertHTML', false, prefix + middle + suffix);
+
+        if (range.collapsed) {
+          const marker = document.getElementById(markerId);
+          if (marker) {
+            const caret = document.createRange();
+            caret.setStartBefore(marker);
+            caret.collapse(true);
+            marker.remove();
+            selection.removeAllRanges();
+            selection.addRange(caret);
+          }
+        }
+        saveSelection();
+        emitChange();
+      };
+
       window.__tusEditorSetHtml = function (html) {
         if (editor.innerHTML === html) return;
         editor.innerHTML = html;
@@ -188,6 +228,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     placeholder,
     colors,
     minHeight = 112,
+    fontSize = 16,
+    capitalizeSentences = true,
 }, ref) {
     const webViewRef = useRef<WebView>(null);
     const lastEditorValueRef = useRef(value);
@@ -196,10 +238,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     latestValueRef.current = value;
     const [contentHeight, setContentHeight] = useState(minHeight);
     const source = useMemo(
-        () => ({ html: editorDocument(value, placeholder, colors) }),
+        () => ({ html: editorDocument(value, placeholder, colors, fontSize, capitalizeSentences) }),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder],
+        [colors, placeholder, fontSize, capitalizeSentences],
     );
 
     useEffect(() => {
@@ -215,6 +257,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             inject(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
         },
         insertHtml: (html) => inject(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(html)})`),
+        wrapSelection: (prefix, suffix) => inject(
+            `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(prefix)}, ${safeJsValue(suffix)})`,
+        ),
     }));
 
     useEffect(() => {
