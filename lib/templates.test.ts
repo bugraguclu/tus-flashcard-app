@@ -117,18 +117,18 @@ describe('templates', () => {
 });
 
 describe('typed-answer (type:Field)', () => {
-    const typeAnswerNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 5)!;
+    const typeAnswerNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 8)!;
 
     it('getTypeAnswerField finds the field name from a template qfmt', () => {
-        expect(getTypeAnswerField(typeAnswerNoteType.templates[0])).toBe('Cevap');
+        expect(getTypeAnswerField(typeAnswerNoteType.templates[0])).toBe('Back');
         expect(getTypeAnswerField(BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!.templates[0])).toBeNull();
         expect(getTypeAnswerField(undefined)).toBeNull();
     });
 
     it('renders no live input on the question side (WebView JS is disabled, so it would be inert)', () => {
         const note: Note = {
-            id: 1, guid: 'g', noteTypeId: 5, mod: 0, usn: -1, tags: [],
-            fields: ['Soru metni', 'Doğru cevap', ''], sfld: 'Soru metni', csum: 0, flags: 0,
+            id: 1, guid: 'g', noteTypeId: 8, mod: 0, usn: -1, tags: [],
+            fields: ['Soru metni', 'Doğru cevap'], sfld: 'Soru metni', csum: 0, flags: 0,
         };
         const html = renderCardHtml(typeAnswerNoteType, note, 0, 'question');
         expect(html).not.toContain('<input');
@@ -137,8 +137,8 @@ describe('typed-answer (type:Field)', () => {
 
     it('renders the plain correct answer on the answer side when nothing was typed yet', () => {
         const note: Note = {
-            id: 1, guid: 'g', noteTypeId: 5, mod: 0, usn: -1, tags: [],
-            fields: ['Soru metni', 'Doğru cevap', ''], sfld: 'Soru metni', csum: 0, flags: 0,
+            id: 1, guid: 'g', noteTypeId: 8, mod: 0, usn: -1, tags: [],
+            fields: ['Soru metni', 'Doğru cevap'], sfld: 'Soru metni', csum: 0, flags: 0,
         };
         const html = renderCardHtml(typeAnswerNoteType, note, 0, 'answer');
         expect(html).toContain('Doğru cevap');
@@ -147,8 +147,8 @@ describe('typed-answer (type:Field)', () => {
 
     it('diffs a typed answer against the real one on the answer side', () => {
         const note: Note = {
-            id: 1, guid: 'g', noteTypeId: 5, mod: 0, usn: -1, tags: [],
-            fields: ['Soru metni', 'mitoz', ''], sfld: 'Soru metni', csum: 0, flags: 0,
+            id: 1, guid: 'g', noteTypeId: 8, mod: 0, usn: -1, tags: [],
+            fields: ['Soru metni', 'mitoz'], sfld: 'Soru metni', csum: 0, flags: 0,
         };
         const exact = renderCardHtml(typeAnswerNoteType, note, 0, 'answer', { typedAnswer: 'mitoz' });
         expect(exact).toContain('class="typeGood"');
@@ -162,21 +162,21 @@ describe('typed-answer (type:Field)', () => {
 });
 
 describe('omitFrontSide (stacked question+answer layouts)', () => {
-    const tusNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 4)!;
+    const basicNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!;
     const note: Note = {
-        id: 1, guid: 'g', noteTypeId: 4, mod: 0, usn: -1, tags: [],
-        fields: ['Soru metni', 'Cevap metni', 'Konu Adı'], sfld: 'Soru metni', csum: 0, flags: 0,
+        id: 1, guid: 'g', noteTypeId: 1, mod: 0, usn: -1, tags: [],
+        fields: ['Soru metni', 'Cevap metni'], sfld: 'Soru metni', csum: 0, flags: 0,
     };
 
     it('renders the answer without the question or the hr separator', () => {
-        const html = renderCardHtml(tusNoteType, note, 0, 'answer', { omitFrontSide: true });
+        const html = renderCardHtml(basicNoteType, note, 0, 'answer', { omitFrontSide: true });
         expect(html).toContain('Cevap metni');
         expect(html).not.toContain('Soru metni');
         expect(html).not.toContain('<hr');
     });
 
     it('keeps the full Anki back (FrontSide + answer) without the option', () => {
-        const html = renderCardHtml(tusNoteType, note, 0, 'answer');
+        const html = renderCardHtml(basicNoteType, note, 0, 'answer');
         expect(html).toContain('Soru metni');
         expect(html).toContain('Cevap metni');
         expect(html).toContain('<hr id=answer>');
@@ -223,41 +223,42 @@ describe('renderTypeAnswerDiff', () => {
     });
 });
 
-describe('reversed note type (id 6)', () => {
-    const reversedNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 6)!;
+describe('Anki reversed note types', () => {
+    const reversedNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 2)!;
+    const optionalReversedNoteType = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 7)!;
 
-    it('has two templates: Soru->Cevap and Cevap->Soru', () => {
+    it('has two templates: Front->Back and Back->Front', () => {
         expect(reversedNoteType.templates).toHaveLength(2);
-        expect(reversedNoteType.templates[0].qfmt).toContain('{{Soru}}');
-        expect(reversedNoteType.templates[1].qfmt).toContain('{{Cevap}}');
+        expect(reversedNoteType.templates[0].qfmt).toContain('{{Front}}');
+        expect(reversedNoteType.templates[1].qfmt).toContain('{{Back}}');
     });
 
     it('generates both cards whenever Soru and Cevap are both filled', () => {
         const note: Note = {
-            id: 1, guid: 'g', noteTypeId: 6, mod: 0, usn: -1, tags: [],
-            fields: ['Soru metni', 'Cevap metni', 'Konu', ''], sfld: 'Soru metni', csum: 0, flags: 0,
+            id: 1, guid: 'g', noteTypeId: 2, mod: 0, usn: -1, tags: [],
+            fields: ['Soru metni', 'Cevap metni'], sfld: 'Soru metni', csum: 0, flags: 0,
         };
         expect(shouldGenerateCard(reversedNoteType, note, 0)).toBe(true);
         expect(shouldGenerateCard(reversedNoteType, note, 1)).toBe(true);
         expect(countCardsForNote(reversedNoteType, note)).toBe(2);
     });
 
-    it("card 2 answers with Soru when TersCevap is blank (plain swap, matching Anki's reversed card)", () => {
+    it('card 2 answers with Front', () => {
         const note: Note = {
-            id: 1, guid: 'g', noteTypeId: 6, mod: 0, usn: -1, tags: [],
-            fields: ['Orijinal soru', 'Orijinal cevap', 'Konu', ''], sfld: '', csum: 0, flags: 0,
+            id: 1, guid: 'g', noteTypeId: 2, mod: 0, usn: -1, tags: [],
+            fields: ['Orijinal soru', 'Orijinal cevap'], sfld: '', csum: 0, flags: 0,
         };
         const answerHtml = renderCardHtml(reversedNoteType, note, 1, 'answer');
         expect(answerHtml).toContain('Orijinal soru');
     });
 
-    it('card 2 answers with the custom TersCevap override when provided', () => {
-        const note: Note = {
-            id: 1, guid: 'g', noteTypeId: 6, mod: 0, usn: -1, tags: [],
-            fields: ['Orijinal soru', 'Orijinal cevap', 'Konu', 'Özel ters cevap'], sfld: '', csum: 0, flags: 0,
+    it('generates optional Card 2 only when Add Reverse has content', () => {
+        const blank: Note = {
+            id: 1, guid: 'g', noteTypeId: 7, mod: 0, usn: -1, tags: [],
+            fields: ['Front', 'Back', ''], sfld: '', csum: 0, flags: 0,
         };
-        const answerHtml = renderCardHtml(reversedNoteType, note, 1, 'answer');
-        expect(answerHtml).toContain('Özel ters cevap');
-        expect(answerHtml).not.toContain('Orijinal soru');
+        const enabled: Note = { ...blank, fields: ['Front', 'Back', '1'] };
+        expect(countCardsForNote(optionalReversedNoteType, blank)).toBe(1);
+        expect(countCardsForNote(optionalReversedNoteType, enabled)).toBe(2);
     });
 });

@@ -30,8 +30,8 @@ export function getNoteIdsInDeck(deckName: string): Set<number> {
 
 /** Serializes notes as `#separator:tab` / `#html:true` text, one row per note.
  *  With `deckName`, only notes that have a card in that deck subtree are included. */
-export function buildExportText(deckName?: string): string {
-    const scope = deckName ? getNoteIdsInDeck(deckName) : null;
+export function buildExportText(deckName?: string, selectedNoteIds?: Set<number>): string {
+    const scope = selectedNoteIds ?? (deckName ? getNoteIdsInDeck(deckName) : null);
     const notes = getAllNotes().filter((note) => !scope || scope.has(note.id));
     const lines = ['#separator:tab', '#html:true'];
 

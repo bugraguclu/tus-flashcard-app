@@ -5,6 +5,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     Dimensions,
+    Keyboard,
     Pressable,
 } from 'react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
@@ -62,7 +63,7 @@ export default function TabLayout() {
     // Remember the actual tab route so opening Import/Export cannot momentarily add this
     // layout's mobile header and push the deck list down during the transition.
     const lastTabPath = useRef('/decks');
-    if (pathname === '/' || pathname === '/decks' || pathname === '/browser' || pathname === '/stats' || pathname === '/settings') {
+    if (pathname === '/' || pathname === '/decks') {
         lastTabPath.current = pathname;
     }
     const isDeckScreen = lastTabPath.current === '/decks';
@@ -188,7 +189,10 @@ export default function TabLayout() {
                 <View style={[styles.mobileHeader, { paddingTop: insets.top + Spacing.sm }]}>
                     <TouchableOpacity
                         style={styles.hamburger}
-                        onPress={() => setSidebarOpen((prev) => !prev)}
+                        onPress={() => {
+                            if (!sidebarOpen) Keyboard.dismiss();
+                            setSidebarOpen((prev) => !prev);
+                        }}
                         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                         accessibilityRole="button"
                         accessibilityLabel={sidebarOpen ? t('tabs.closeMenu') : t('tabs.openMenu')}

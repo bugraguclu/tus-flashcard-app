@@ -44,6 +44,7 @@ import {
     rebuildFilteredDeck,
     updateFilteredDeck,
     buildDeckTree,
+    getDirectDecksForScope,
     initializeDeckDisclosureDefaults,
     setDeckCollapsed,
     completeFilteredCard,
@@ -174,6 +175,29 @@ describe('moveDeckUnder', () => {
             branch = branch[0].children;
         }
         expect(branch).toHaveLength(0);
+    });
+});
+
+describe('getDirectDecksForScope', () => {
+    it('returns root decks for the collection and immediate children for a deck', () => {
+        createDeck('Python');
+        createDeck('Python::Temeller');
+        createDeck('Python::Temeller::Yazdırma');
+        createDeck('Python::Fonksiyonlar');
+        createDeck('Tıp');
+        createFilteredDeck('Özel Çalışma', 'is:due');
+
+        expect(getDirectDecksForScope(getAllDecks(), null).map((deck) => deck.name)).toEqual([
+            'Python',
+            'Tıp',
+        ]);
+        expect(getDirectDecksForScope(getAllDecks(), 'Python').map((deck) => deck.name)).toEqual([
+            'Python::Fonksiyonlar',
+            'Python::Temeller',
+        ]);
+        expect(getDirectDecksForScope(getAllDecks(), 'Python::Temeller').map((deck) => deck.name)).toEqual([
+            'Python::Temeller::Yazdırma',
+        ]);
     });
 });
 

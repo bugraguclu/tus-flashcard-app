@@ -11,7 +11,10 @@ import {
     ScrollView,
     StyleSheet,
     SafeAreaView,
+    KeyboardAvoidingView,
+    Keyboard,
     Modal,
+    Platform,
     Switch,
     Pressable,
 } from 'react-native';
@@ -290,7 +293,10 @@ export default function DeckOptionsScreen() {
                         {l(`Bu grubu ${usedBy} deste kullanıyor${usedBy > 1 ? ' — değişiklikler hepsini etkiler.' : '.'}`, `${usedBy} decks use this preset${usedBy > 1 ? ' — changes affect all of them.' : '.'}`)}
                     </Text>
                     <View style={styles.presetActions}>
-                        <TouchableOpacity style={styles.presetBtn} onPress={() => setPresetPickerOpen(true)}>
+                        <TouchableOpacity style={styles.presetBtn} onPress={() => {
+                            Keyboard.dismiss();
+                            setPresetPickerOpen(true);
+                        }}>
                             <Text style={styles.presetBtnText}>{l('Değiştir', 'Change')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.presetBtn} onPress={handleNewPreset}>
@@ -475,7 +481,7 @@ export default function DeckOptionsScreen() {
             </Modal>
 
             <Modal visible={renameOpen} transparent animationType="fade" onRequestClose={() => setRenameOpen(false)}>
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
                         onPress={() => setRenameOpen(false)}
@@ -500,7 +506,7 @@ export default function DeckOptionsScreen() {
                             </TouchableOpacity>
                         </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
     );

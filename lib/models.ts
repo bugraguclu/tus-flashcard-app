@@ -27,6 +27,15 @@ export interface NoteType {
     mod: number;
 }
 
+/** Stable local ids for the stock note types that this editor fully supports. */
+export const ANKI_STOCK_NOTE_TYPE_IDS = [1, 2, 7, 8, 3] as const;
+export const LEGACY_TUS_NOTE_TYPE_IDS = [4, 5, 6] as const;
+
+export function isLegacyTusNoteType(noteType: Pick<NoteType, 'id' | 'name'>): boolean {
+    return LEGACY_TUS_NOTE_TYPE_IDS.includes(noteType.id as 4 | 5 | 6)
+        || /^TUS (Tıp Kartı|Yazarak Cevapla|Çift Taraflı)$/.test(noteType.name);
+}
+
 export const BUILTIN_NOTE_TYPES: NoteType[] = [
     {
         id: 1,
@@ -41,7 +50,7 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
                 name: 'Card 1',
                 ord: 0,
                 qfmt: '{{Front}}',
-                afmt: '{{FrontSide}}<hr id=answer>{{Back}}',
+                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}',
             },
         ],
         css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }`,
@@ -50,7 +59,7 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
     },
     {
         id: 2,
-        name: 'Basic (and Reversed Card)',
+        name: 'Basic (and reversed card)',
         kind: 'standard',
         fields: [
             { name: 'Front', ord: 0, sticky: false, rtl: false },
@@ -61,13 +70,60 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
                 name: 'Card 1',
                 ord: 0,
                 qfmt: '{{Front}}',
-                afmt: '{{FrontSide}}<hr id=answer>{{Back}}',
+                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}',
             },
             {
                 name: 'Card 2',
                 ord: 1,
                 qfmt: '{{Back}}',
-                afmt: '{{FrontSide}}<hr id=answer>{{Front}}',
+                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}',
+            },
+        ],
+        css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }`,
+        sortFieldIdx: 0,
+        mod: 0,
+    },
+    {
+        id: 7,
+        name: 'Basic (optional reversed card)',
+        kind: 'standard',
+        fields: [
+            { name: 'Front', ord: 0, sticky: false, rtl: false },
+            { name: 'Back', ord: 1, sticky: false, rtl: false },
+            { name: 'Add Reverse', ord: 2, sticky: false, rtl: false },
+        ],
+        templates: [
+            {
+                name: 'Card 1',
+                ord: 0,
+                qfmt: '{{Front}}',
+                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}',
+            },
+            {
+                name: 'Card 2',
+                ord: 1,
+                qfmt: '{{#Add Reverse}}{{Back}}{{/Add Reverse}}',
+                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}',
+            },
+        ],
+        css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }`,
+        sortFieldIdx: 0,
+        mod: 0,
+    },
+    {
+        id: 8,
+        name: 'Basic (type in the answer)',
+        kind: 'standard',
+        fields: [
+            { name: 'Front', ord: 0, sticky: false, rtl: false },
+            { name: 'Back', ord: 1, sticky: false, rtl: false },
+        ],
+        templates: [
+            {
+                name: 'Card 1',
+                ord: 0,
+                qfmt: '{{Front}}\n\n{{type:Back}}',
+                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{type:Back}}',
             },
         ],
         css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }`,
@@ -80,106 +136,19 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
         kind: 'cloze',
         fields: [
             { name: 'Text', ord: 0, sticky: false, rtl: false },
-            { name: 'Extra', ord: 1, sticky: false, rtl: false },
+            { name: 'Back Extra', ord: 1, sticky: false, rtl: false },
         ],
         templates: [
             {
                 name: 'Cloze',
                 ord: 0,
                 qfmt: '{{cloze:Text}}',
-                afmt: '{{cloze:Text}}<br>{{Extra}}',
+                afmt: '{{cloze:Text}}<br>\n{{Back Extra}}',
             },
         ],
         css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }
 .cloze { font-weight: bold; color: blue; }
-.cloze-hint { font-size: 14px; color: #999; }`,
-        sortFieldIdx: 0,
-        mod: 0,
-    },
-    {
-        id: 4,
-        name: 'TUS Tıp Kartı',
-        kind: 'standard',
-        fields: [
-            { name: 'Soru', ord: 0, sticky: false, rtl: false },
-            { name: 'Cevap', ord: 1, sticky: false, rtl: false },
-            { name: 'Kaynak', ord: 2, sticky: true, rtl: false },
-        ],
-        templates: [
-            {
-                name: 'Soru → Cevap',
-                ord: 0,
-                qfmt: '<div class="question">{{Soru}}</div>',
-                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{Cevap}}</div>',
-            },
-        ],
-        css: `.card { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 18px; color: #2c3e36; background-color: #f4faf7; padding: 20px; }
-.question { font-weight: 600; line-height: 1.6; }
-.answer { line-height: 1.6; color: #556b62; }
-.source { margin-top: 12px; font-size: 13px; color: #7f9a8f; }`,
-        sortFieldIdx: 0,
-        mod: 0,
-    },
-    {
-        // "Yazarak Cevapla": same Soru/Cevap/Kaynak shape as the TUS card (id 4), but the
-        // templates embed {{type:Cevap}} so the study screen collects a typed answer and
-        // diffs it against the real one, Anki-style.
-        id: 5,
-        name: 'TUS Yazarak Cevapla',
-        kind: 'standard',
-        fields: [
-            { name: 'Soru', ord: 0, sticky: false, rtl: false },
-            { name: 'Cevap', ord: 1, sticky: false, rtl: false },
-            { name: 'Kaynak', ord: 2, sticky: true, rtl: false },
-        ],
-        templates: [
-            {
-                name: 'Soru → Cevap',
-                ord: 0,
-                qfmt: '<div class="question">{{Soru}}</div>{{type:Cevap}}',
-                afmt: '{{FrontSide}}<hr id=answer>{{type:Cevap}}',
-            },
-        ],
-        css: `.card { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 18px; color: #2c3e36; background-color: #f4faf7; padding: 20px; }
-.question { font-weight: 600; line-height: 1.6; }
-.source { margin-top: 12px; font-size: 13px; color: #7f9a8f; }
-.typeanswer { margin-top: 14px; font-size: 16px; }
-.typeGood { background: #d7f0df; color: #1c6b35; }
-.typeBad { background: #fadadb; color: #a3283a; text-decoration: line-through; }
-.typeMissed { background: #fadadb; color: #a3283a; }`,
-        sortFieldIdx: 0,
-        mod: 0,
-    },
-    {
-        // "Çift Taraflı": fields[3] (TersCevap) is an optional override for Card 2's answer —
-        // if left blank, Card 2 answers with the original Soru (a plain swap, matching Anki's
-        // "Basic and Reversed Card"); if filled, Card 2 answers with the custom text instead.
-        id: 6,
-        name: 'TUS Çift Taraflı',
-        kind: 'standard',
-        fields: [
-            { name: 'Soru', ord: 0, sticky: false, rtl: false },
-            { name: 'Cevap', ord: 1, sticky: false, rtl: false },
-            { name: 'Konu', ord: 2, sticky: true, rtl: false },
-            { name: 'TersCevap', ord: 3, sticky: false, rtl: false },
-        ],
-        templates: [
-            {
-                name: 'Soru → Cevap',
-                ord: 0,
-                qfmt: '<div class="question">{{Soru}}</div>',
-                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{Cevap}}</div>',
-            },
-            {
-                name: 'Cevap → Soru',
-                ord: 1,
-                qfmt: '<div class="question">{{Cevap}}</div>',
-                afmt: '{{FrontSide}}<hr id=answer><div class="answer">{{#TersCevap}}{{TersCevap}}{{/TersCevap}}{{^TersCevap}}{{Soru}}{{/TersCevap}}</div>',
-            },
-        ],
-        css: `.card { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 18px; color: #2c3e36; background-color: #f4faf7; padding: 20px; }
-.question { font-weight: 600; line-height: 1.6; }
-.answer { line-height: 1.6; color: #556b62; }`,
+.nightMode .cloze { color: lightblue; }`,
         sortFieldIdx: 0,
         mod: 0,
     },
@@ -249,6 +218,8 @@ export interface Deck {
     searchOrder2?: number;
     /** Anki's "reschedule cards based on my answers". False = preview mode: answers never touch the cards. */
     reschedule?: boolean;
+    /** Whether Build/Rebuild may keep a filtered deck when its searches gather no cards. */
+    filteredAllowEmpty?: boolean;
     /**
      * Filtered decks are virtual in this client: their saved search is gathered on demand instead
      * of physically moving cards between decks. This flag models Anki's Empty/Rebuild lifecycle —
@@ -270,6 +241,9 @@ export const FILTERED_ORDERS = [
     'Ekleniş sırası',        // 4: oldest added first
     'Son eklenen önce',      // 5: latest added first
     'En çok hata',           // 6: most lapses first
+    'En eski görülen önce',  // 7: oldest seen first
+    'Hatırlanabilirlik (artan)', // 8: lowest retrievability first
+    'Hatırlanabilirlik (azalan)', // 9: highest retrievability first
 ] as const;
 
 export interface DeckConfig {

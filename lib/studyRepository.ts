@@ -741,6 +741,12 @@ function filteredOrderSql(order: number | undefined): string {
         case 4: return 'c.id ASC';
         case 5: return 'c.id DESC';
         case 6: return 'c.lapses DESC, c.id ASC';
+        case 7: return 'COALESCE((SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id), 0) ASC, c.id ASC';
+        // The local scheduler does not persist FSRS stability per card. Relative overdue time
+        // is the closest deterministic retrievability proxy and matches Anki's SM-2 intent:
+        // cards further beyond their interval are less retrievable.
+        case 8: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) ASC, c.id ASC';
+        case 9: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) DESC, c.id ASC';
         default: return 'c.due ASC, c.id ASC';
     }
 }
@@ -751,7 +757,19 @@ function filteredOrderSql(order: number | undefined): string {
  * ordered and capped per filter group. Suspended/buried cards stay out. Daily limits do
  * not apply (Anki: filtered decks are exempt).
  */
-function buildFilteredDeckQueue(deck: Deck, settings: AppSettings, nowMs: number): StudyQueueResult {
+type FilteredDeckQueueDefinition = Pick<Deck,
+    | 'searchQuery'
+    | 'searchLimit'
+    | 'searchOrder'
+    | 'searchQuery2'
+    | 'searchLimit2'
+    | 'searchOrder2'
+    | 'filteredDeckEmpty'
+    | 'filteredDoneCardIds'
+    | 'filteredBuildAt'
+>;
+
+function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: AppSettings, nowMs: number): StudyQueueResult {
     if (deck.filteredDeckEmpty) {
         return {
             cards: [],
@@ -815,6 +833,55 @@ function buildFilteredDeckQueue(deck: Deck, settings: AppSettings, nowMs: number
         dailyNewLimitReached: false,
         heldBackNewCount: 0,
     };
+}
+
+/**
+ * Card ids currently owned by a filtered-deck build. Filtered decks do not become the
+ * physical `deckId` of their cards, so read-only deck scopes (Browser/Stats) must use this
+ * membership instead of comparing the card's home deck name.
+ */
+export function getFilteredDeckCardIds(deckName: string, settings: AppSettings): number[] {
+    const deck = getDeckByName(deckName);
+    if (!deck?.isFiltered) return [];
+
+    const queue = buildFilteredDeckQueue(deck, settings, Date.now());
+    return (queue.allSessionCards ?? queue.cards).map((card) => card.cardId);
+}
+
+/** Count the cards a filtered-deck configuration would gather without mutating the collection. */
+export function getFilteredDeckMatchCount(
+    settings: AppSettings,
+    options: Pick<Deck, 'searchQuery' | 'searchLimit' | 'searchOrder' | 'searchQuery2' | 'searchLimit2' | 'searchOrder2'>,
+): number {
+    const nowMs = Date.now();
+    const preview = buildFilteredDeckQueue({
+        ...options,
+        filteredDeckEmpty: false,
+        filteredDoneCardIds: [],
+        filteredBuildAt: nowMs,
+    }, settings, nowMs);
+    return preview.allSessionCards?.length ?? preview.cards.length;
+}
+
+/** Count suspended/buried cards that match one or more filters but cannot be gathered. */
+export function getFilteredDeckExcludedCount(searchQueries: string[]): number {
+    const excludedIds = new Set<number>();
+    for (const searchQuery of searchQueries) {
+        if (!searchQuery.trim()) continue;
+        const filtered = buildFilteredSearchClause(searchQuery);
+        const where = filtered.clauses.length > 0 ? filtered.clauses.join(' AND ') : '1=1';
+        const rows = loadRowsByQueue(
+            `c.queue < 0 AND ${where}`,
+            filtered.params,
+            null,
+            null,
+            null,
+            'c.id ASC',
+            false,
+        );
+        rows.forEach((row) => excludedIds.add(row.cardId));
+    }
+    return excludedIds.size;
 }
 
 export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {

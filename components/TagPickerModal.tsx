@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    Keyboard,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -73,6 +74,7 @@ export default function TagPickerModal({
 
     useEffect(() => {
         if (!visible) return;
+        Keyboard.dismiss();
         const selected = uniqueTags(selectedTags);
         const all = uniqueTags([...getAllTags(), ...selected])
             .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
@@ -120,7 +122,20 @@ export default function TagPickerModal({
             .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
         setDraftTags((current) => uniqueTags([...current, ...canonical]));
         setNewTagText('');
+        Keyboard.dismiss();
         setAddVisible(false);
+    };
+
+    const toggleSearch = () => {
+        if (searchVisible) Keyboard.dismiss();
+        setSearchVisible((current) => !current);
+        setAddVisible(false);
+    };
+
+    const toggleAdd = () => {
+        if (addVisible) Keyboard.dismiss();
+        setAddVisible((current) => !current);
+        setSearchVisible(false);
     };
 
     return (
@@ -133,7 +148,7 @@ export default function TagPickerModal({
         >
             <KeyboardAvoidingView
                 style={styles.overlay}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' && (searchVisible || addVisible) ? 'padding' : undefined}
             >
                 <Pressable
                     style={StyleSheet.absoluteFill}
@@ -145,10 +160,7 @@ export default function TagPickerModal({
                         <Text style={styles.headerTitle}>{title ?? l('Etiketler', 'Tags')}</Text>
                         <TouchableOpacity
                             style={[styles.headerAction, searchVisible && styles.headerActionActive]}
-                            onPress={() => {
-                                setSearchVisible((current) => !current);
-                                setAddVisible(false);
-                            }}
+                            onPress={toggleSearch}
                             accessibilityRole="button"
                             accessibilityLabel={l('Etiketlerde ara', 'Search tags')}
                         >
@@ -157,10 +169,7 @@ export default function TagPickerModal({
                         {allowCreate && (
                             <TouchableOpacity
                                 style={[styles.headerAction, addVisible && styles.headerActionActive]}
-                                onPress={() => {
-                                    setAddVisible((current) => !current);
-                                    setSearchVisible(false);
-                                }}
+                                onPress={toggleAdd}
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Yeni etiket ekle', 'Add new tag')}
                             >
@@ -170,12 +179,20 @@ export default function TagPickerModal({
                         <TouchableOpacity
                             style={styles.headerAction}
                             onPress={toggleAllVisible}
-                            accessibilityRole="button"
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: allVisibleSelected }}
                             accessibilityLabel={allVisibleSelected
                                 ? l('Görünen etiketlerin seçimini kaldır', 'Deselect all visible tags')
                                 : l('Görünen etiketlerin tümünü seç', 'Select all visible tags')}
                         >
-                            <Text style={styles.selectAllIcon}>{allVisibleSelected ? '☑' : '▧'}</Text>
+                            <View
+                                style={[
+                                    styles.selectAllCheckbox,
+                                    allVisibleSelected && styles.selectAllCheckboxSelected,
+                                ]}
+                            >
+                                {allVisibleSelected && <Text style={styles.selectAllCheckboxTick}>✓</Text>}
+                            </View>
                         </TouchableOpacity>
                     </View>
 
@@ -292,7 +309,6 @@ function createStyles(colors: ColorScheme) {
             width: '100%',
             maxWidth: 440,
             height: '82%',
-            minHeight: 420,
             overflow: 'hidden',
             backgroundColor: colors.bgSecondary,
             borderRadius: BorderRadius.lg,
@@ -317,7 +333,26 @@ function createStyles(colors: ColorScheme) {
         headerActionActive: { backgroundColor: 'rgba(255,255,255,0.18)' },
         headerActionText: { color: colors.white, fontSize: 29, lineHeight: 31, fontWeight: '300' },
         searchIcon: { color: colors.white, fontSize: 30, lineHeight: 31, transform: [{ rotate: '-18deg' }] },
-        selectAllIcon: { color: colors.white, fontSize: 23, fontWeight: '600' },
+        selectAllCheckbox: {
+            width: 24,
+            height: 24,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: 3,
+            backgroundColor: 'transparent',
+        },
+        selectAllCheckboxSelected: {
+            borderWidth: 3,
+            borderColor: colors.white,
+        },
+        selectAllCheckboxTick: {
+            color: colors.white,
+            fontSize: 17,
+            lineHeight: 18,
+            fontWeight: '900',
+        },
         inputBar: {
             minHeight: 54,
             flexDirection: 'row',

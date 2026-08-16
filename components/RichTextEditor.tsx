@@ -2,7 +2,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, use
 import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
-import { BorderRadius, type ColorScheme } from '../constants/theme';
+import type { ColorScheme } from '../constants/theme';
 
 export type RichTextCommand =
     | 'bold'
@@ -50,6 +50,7 @@ function editorDocument(
     colors: ColorScheme,
     fontSize: number,
     capitalizeSentences: boolean,
+    minHeight: number,
 ): string {
     return `<!doctype html>
 <html>
@@ -60,8 +61,8 @@ function editorDocument(
   html, body { margin: 0; padding: 0; background: ${colors.bgCard}; color: ${colors.textPrimary}; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   #editor {
-    min-height: 96px;
-    padding: 12px;
+    min-height: ${Math.max(48, minHeight - 2)}px;
+    padding: 8px 2px;
     outline: none;
     font-size: ${fontSize}px;
     line-height: 1.45;
@@ -98,8 +99,12 @@ function editorDocument(
 
       function restoreSelection() {
         editor.focus();
-        if (!savedRange) return;
         const selection = window.getSelection();
+        if (!savedRange) {
+          savedRange = document.createRange();
+          savedRange.selectNodeContents(editor);
+          savedRange.collapse(false);
+        }
         selection.removeAllRanges();
         selection.addRange(savedRange);
       }
@@ -117,7 +122,7 @@ function editorDocument(
 
       function reportHeight() {
         requestAnimationFrame(function () {
-          const height = Math.max(104, Math.ceil(editor.scrollHeight));
+          const height = Math.max(${minHeight}, Math.ceil(editor.scrollHeight));
           if (height !== lastHeight) {
             lastHeight = height;
             post({ type: 'height', height: height });
@@ -169,22 +174,42 @@ function editorDocument(
         const selectedContainer = document.createElement('div');
         selectedContainer.appendChild(range.cloneContents());
         const selectedHtml = selectedContainer.innerHTML;
-        const markerId = '__tus_editor_cursor_' + Date.now();
-        const middle = range.collapsed
-          ? '<span id="' + markerId + '">&#8203;</span>'
-          : selectedHtml;
-
-        document.execCommand('insertHTML', false, prefix + middle + suffix);
+        const markerBase = '__tus_editor_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        const startMarkerId = markerBase + '_start';
+        const endMarkerId = markerBase + '_end';
 
         if (range.collapsed) {
-          const marker = document.getElementById(markerId);
-          if (marker) {
+          const cursorMarkerId = markerBase + '_cursor';
+          document.execCommand(
+            'insertHTML',
+            false,
+            prefix + '<span id="' + cursorMarkerId + '">&#8203;</span>' + suffix,
+          );
+          const cursorMarker = document.getElementById(cursorMarkerId);
+          if (cursorMarker) {
             const caret = document.createRange();
-            caret.setStartBefore(marker);
+            caret.setStartBefore(cursorMarker);
             caret.collapse(true);
-            marker.remove();
+            cursorMarker.remove();
             selection.removeAllRanges();
             selection.addRange(caret);
+          }
+        } else {
+          document.execCommand(
+            'insertHTML',
+            false,
+            '<span id="' + startMarkerId + '"></span>' + prefix + selectedHtml + suffix + '<span id="' + endMarkerId + '"></span>',
+          );
+          const startMarker = document.getElementById(startMarkerId);
+          const endMarker = document.getElementById(endMarkerId);
+          if (startMarker && endMarker) {
+            const formattedSelection = document.createRange();
+            formattedSelection.setStartAfter(startMarker);
+            formattedSelection.setEndBefore(endMarker);
+            startMarker.remove();
+            endMarker.remove();
+            selection.removeAllRanges();
+            selection.addRange(formattedSelection);
           }
         }
         saveSelection();
@@ -201,6 +226,8 @@ function editorDocument(
       window.__tusEditorFocus = function () { editor.focus(); };
       editor.addEventListener('input', emitChange);
       editor.addEventListener('focus', function () { post({ type: 'focus' }); reportFormats(); });
+      editor.addEventListener('blur', saveSelection);
+      window.addEventListener('pagehide', saveSelection);
       editor.addEventListener('keyup', function () { saveSelection(); reportFormats(); });
       editor.addEventListener('mouseup', function () { saveSelection(); reportFormats(); });
       editor.addEventListener('touchend', function () { saveSelection(); reportFormats(); });
@@ -227,7 +254,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     onFormatStateChange,
     placeholder,
     colors,
-    minHeight = 112,
+    minHeight = 58,
     fontSize = 16,
     capitalizeSentences = true,
 }, ref) {
@@ -235,13 +262,14 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const lastEditorValueRef = useRef(value);
     const latestValueRef = useRef(value);
     const editorReadyRef = useRef(false);
+    const pendingScriptsRef = useRef<string[]>([]);
     latestValueRef.current = value;
     const [contentHeight, setContentHeight] = useState(minHeight);
     const source = useMemo(
-        () => ({ html: editorDocument(value, placeholder, colors, fontSize, capitalizeSentences) }),
+        () => ({ html: editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight) }),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder, fontSize, capitalizeSentences],
+        [colors, placeholder, fontSize, capitalizeSentences, minHeight],
     );
 
     useEffect(() => {
@@ -249,15 +277,22 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     }, [source]);
 
     const inject = (script: string) => webViewRef.current?.injectJavaScript(`${script}; true;`);
+    const runWhenReady = (script: string) => {
+        if (!editorReadyRef.current) {
+            pendingScriptsRef.current.push(script);
+            return;
+        }
+        inject(script);
+    };
 
     useImperativeHandle(ref, () => ({
-        focus: () => inject('window.__tusEditorFocus && window.__tusEditorFocus()'),
+        focus: () => runWhenReady('window.__tusEditorFocus && window.__tusEditorFocus()'),
         runCommand: (command, commandValue) => {
             const payload = safeJsValue(JSON.stringify({ command, value: commandValue }));
-            inject(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
+            runWhenReady(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
         },
-        insertHtml: (html) => inject(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(html)})`),
-        wrapSelection: (prefix, suffix) => inject(
+        insertHtml: (html) => runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(html)})`),
+        wrapSelection: (prefix, suffix) => runWhenReady(
             `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(prefix)}, ${safeJsValue(suffix)})`,
         ),
     }));
@@ -285,6 +320,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 const latestValue = latestValueRef.current;
                 lastEditorValueRef.current = latestValue;
                 inject(`window.__tusEditorSetHtml && window.__tusEditorSetHtml(${safeJsValue(latestValue)})`);
+                const pending = pendingScriptsRef.current;
+                pendingScriptsRef.current = [];
+                pending.forEach(inject);
             } else if (message.type === 'focus') {
                 onFocus?.();
             } else if (message.type === 'height' && typeof message.height === 'number') {
@@ -321,8 +359,7 @@ const styles = StyleSheet.create({
     frame: {
         width: '100%',
         overflow: 'hidden',
-        borderWidth: 1,
-        borderRadius: BorderRadius.sm,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
 });
 

@@ -20,16 +20,15 @@ beforeEach(() => {
 });
 
 describe('ankiNoteToFields', () => {
-    it('maps first two fields to Soru/Cevap and joins the rest into Kaynak', () => {
+    it('maps the first field to Front and preserves remaining content on Back', () => {
         expect(ankiNoteToFields({ guid: 'g1', fields: ['Q', 'A', 's1', 's2'], tags: [], cloze: false, hasMedia: false })).toEqual([
             'Q',
-            'A',
-            's1 · s2',
+            'A · s1 · s2',
         ]);
     });
 
     it('handles two-field notes', () => {
-        expect(ankiNoteToFields({ guid: 'g2', fields: ['Q', 'A'], tags: [], cloze: false, hasMedia: false })).toEqual(['Q', 'A', '']);
+        expect(ankiNoteToFields({ guid: 'g2', fields: ['Q', 'A'], tags: [], cloze: false, hasMedia: false })).toEqual(['Q', 'A']);
     });
 });
 
@@ -87,11 +86,11 @@ describe('importAnkiReader', () => {
         expect(res.clozeImported).toBe(1);
         expect(res.withMedia).toBe(1);
 
-        const std = h.calls.find((c) => c.options.noteType.id === 4)!;
+        const std = h.calls.find((c) => c.options.noteType.id === 1)!;
         const cloze = h.calls.find((c) => c.options.noteType.id === 3)!;
         expect(std.rows).toEqual([
-            ['Kalp?', 'Pompa', 'Fizyoloji'],
-            ['<img src="x.png">', 'A', ''],
+            ['Kalp?', 'Pompa · Fizyoloji'],
+            ['<img src="x.png">', 'A'],
         ]);
         expect(cloze.rows).toEqual([['{{c1::Beyin}}', 'not']]);
         expect(std.options.deckId).toBe(2); // subjectToDeckId('temeller')

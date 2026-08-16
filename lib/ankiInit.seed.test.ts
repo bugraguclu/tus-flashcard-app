@@ -36,11 +36,11 @@ describe('ensureBuiltinNoteTypesSeeded', () => {
         ensureBuiltinNoteTypesSeeded();
 
         const rows = db.getAllSync<{ id: number }>('SELECT id FROM note_types ORDER BY id');
-        expect(rows.map((r) => r.id)).toEqual(BUILTIN_NOTE_TYPES.map((nt) => nt.id));
+        expect(rows.map((r) => r.id)).toEqual(BUILTIN_NOTE_TYPES.map((nt) => nt.id).sort((a, b) => a - b));
     });
 
     it('adds only the newly-introduced types to a table already seeded by an older app version', () => {
-        // Simulate an install that ran initAnkiData() before types 5/6 existed.
+        // Simulate an install that ran initAnkiData() before types 7/8 existed.
         for (const nt of BUILTIN_NOTE_TYPES.filter((n) => n.id <= 4)) {
             db.runSync(
                 'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
@@ -51,7 +51,7 @@ describe('ensureBuiltinNoteTypesSeeded', () => {
         ensureBuiltinNoteTypesSeeded();
 
         const rows = db.getAllSync<{ id: number }>('SELECT id FROM note_types ORDER BY id');
-        expect(rows.map((r) => r.id)).toEqual(BUILTIN_NOTE_TYPES.map((nt) => nt.id));
+        expect(rows.map((r) => r.id)).toEqual(BUILTIN_NOTE_TYPES.map((nt) => nt.id).sort((a, b) => a - b));
     });
 
     it('never overwrites a user-edited built-in type (e.g. a renamed/restyled note type)', () => {
@@ -70,10 +70,24 @@ describe('ensureBuiltinNoteTypesSeeded', () => {
 
 describe('healBuiltinNoteTypeTemplates', () => {
     const LEGACY_FOOTER = '{{#Kaynak}}<div class="source">📚 {{Kaynak}}</div>{{/Kaynak}}';
+    const legacyTusBasic = {
+        id: 4,
+        name: 'TUS Tıp Kartı',
+        kind: 'standard' as const,
+        fields: [
+            { name: 'Soru', ord: 0, sticky: false, rtl: false },
+            { name: 'Cevap', ord: 1, sticky: false, rtl: false },
+            { name: 'Kaynak', ord: 2, sticky: true, rtl: false },
+        ],
+        templates: [{ name: 'Soru → Cevap', ord: 0, qfmt: '{{Soru}}', afmt: '{{Cevap}}' }],
+        css: '',
+        sortFieldIdx: 0,
+        mod: 0,
+    };
 
     it('strips the legacy Kaynak footer from a stored TUS template, keeping other user edits', () => {
         // An install seeded before the footer was removed, with a user-customized name and css.
-        const base = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 4)!;
+        const base = legacyTusBasic;
         const legacy = {
             ...base,
             name: 'Benim Kartım',
@@ -99,6 +113,10 @@ describe('healBuiltinNoteTypeTemplates', () => {
     });
 
     it('leaves an already-clean template untouched', () => {
+        db.runSync(
+            'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
+            legacyTusBasic.id, legacyTusBasic.name, JSON.stringify(legacyTusBasic), 0, -1, 0,
+        );
         ensureBuiltinNoteTypesSeeded();
         const before = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', 4)!.data;
 

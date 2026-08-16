@@ -22,6 +22,31 @@ import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '.
 
 let startupPromise: Promise<void> | null = null;
 
+// A native storage/database call should never leave the whole navigator on the
+// splash screen forever. This is especially important after a simulator restore
+// or an interrupted migration, where a legacy AsyncStorage promise can remain
+// unresolved even though the rest of the app is usable.
+const STARTUP_TIMEOUT_MS = 20_000;
+
+function withStartupTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        const timer = setTimeout(() => {
+            reject(new Error(`App startup timed out after ${Math.round(timeoutMs / 1000)} seconds.`));
+        }, timeoutMs);
+
+        promise.then(
+            (value) => {
+                clearTimeout(timer);
+                resolve(value);
+            },
+            (error) => {
+                clearTimeout(timer);
+                reject(error);
+            },
+        );
+    });
+}
+
 async function runStartupCore(): Promise<void> {
     // Web DB is initialized in root _layout.tsx (WebDbGate) before any screen renders.
     initDB();
@@ -126,7 +151,7 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
         async function startup() {
             try {
                 if (!startupPromise) {
-                    startupPromise = runStartupCore().catch((error) => {
+                    startupPromise = withStartupTimeout(runStartupCore(), STARTUP_TIMEOUT_MS).catch((error) => {
                         startupPromise = null;
                         throw error;
                     });

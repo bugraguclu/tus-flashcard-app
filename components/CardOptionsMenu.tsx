@@ -1,15 +1,20 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
+    Keyboard,
     KeyboardAvoidingView,
     Modal,
     Platform,
+    Pressable,
     ScrollView,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
-    StyleSheet,
+    useWindowDimensions,
 } from 'react-native';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
@@ -17,26 +22,36 @@ import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 
 type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
+type ReviewerMenuIcon =
+    | 'undo'
+    | 'redo'
+    | 'whiteboard'
+    | 'clear'
+    | 'save'
+    | 'stylus'
+    | 'edit'
+    | 'add'
+    | 'tag'
+    | 'bury'
+    | 'suspend'
+    | 'delete'
+    | 'mark'
+    | 'reschedule'
+    | 'replay'
+    | 'voice'
+    | 'deck';
 
 export interface CardOptionsMenuProps {
     visible: boolean;
-    /** Which panel to show when the screen opens. The top-bar flag button opens straight to 'flag'. */
+    /** The separate reviewer flag button opens this same side panel directly on flag colors. */
     initialView?: 'menu' | 'flag';
     onClose: () => void;
     cardSuspended: boolean;
     noteMarked: boolean;
-    /** Audio rows are only shown for cards that actually embed audio/video. */
+    /** Anki shows note-level Bury/Suspend choices only when the note has sibling cards. */
+    hasSiblingCards: boolean;
     cardHasAudio: boolean;
     onReplayAudio: () => void;
-    autoAdvance: boolean;
-    onToggleAutoAdvance: () => void;
-    /** Anki Preferences trio, surfaced here like Anki's reviewer settings. */
-    interruptAudioOnAnswer: boolean;
-    onToggleInterruptAudio: () => void;
-    showRemainingCount: boolean;
-    onToggleShowRemaining: () => void;
-    showNextReviewTimes: boolean;
-    onToggleShowNextTimes: () => void;
     onFlag: (flag: CardFlag) => void;
     onBuryCard: () => void;
     onSuspendCard: () => void;
@@ -47,47 +62,66 @@ export interface CardOptionsMenuProps {
     onBuryNote: () => void;
     onSuspendNote: () => void;
     onDeleteNote: () => void;
-    /** Undo the last answer (shown only when there is something to undo). */
     canUndo: boolean;
     onUndo: () => void;
+    canRedo: boolean;
+    onRedo: () => void;
+    onAddCard: () => void;
     onEditNote: () => void;
-    /** Space-separated tags of the current note, and a save callback (Anki's "Edit tags"). */
     noteTags: string;
     onSaveTags: (tags: string) => void;
-    /** Whiteboard: its rows appear only while the whiteboard is on, like AnkiDroid. */
     whiteboardActive: boolean;
     whiteboardHasContent: boolean;
+    onToggleWhiteboard: () => void;
+    onUndoWhiteboard: () => void;
     stylusOnly: boolean;
     onToggleStylus: () => void;
     onClearWhiteboard: () => void;
     onSaveWhiteboard: () => void;
     onDisableWhiteboard: () => void;
-    /** Voice playback (TTS): a single Enable/Disable row like AnkiDroid's "voice playback". */
     voicePlaybackEnabled: boolean;
     onToggleVoicePlayback: () => void;
 }
 
-/** Full-screen Anki-style card/note options, opened from the study screen. */
+/** AnkiDroid-style reviewer overflow: a compact panel that enters from the right. */
 export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const insets = useSafeAreaInsets();
+    const { width: screenWidth } = useWindowDimensions();
+    // AnkiDroid's reviewer popup occupies a little over half of the phone width. Keeping the
+    // same ratio makes it read as an anchored overflow menu instead of a second full screen.
+    const panelWidth = Math.min(300, Math.max(232, screenWidth * 0.55));
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const translateX = useRef(new Animated.Value(360)).current;
     const [view, setView] = useState<MenuView>('menu');
     const [dueDateInput, setDueDateInput] = useState('1');
     const [tagsInput, setTagsInput] = useState('');
 
-    // Open on the caller's requested panel (e.g. the flag button jumps straight to flag colors).
     useEffect(() => {
-        if (props.visible) setView(props.initialView ?? 'menu');
-    }, [props.visible, props.initialView]);
+        if (!props.visible) return;
+        // The reviewer menu is a full-height side surface. Do not let a keyboard left open
+        // by typed-answer/editor content reduce its opening bounds.
+        Keyboard.dismiss();
+        setView(props.initialView ?? 'menu');
+        translateX.setValue(panelWidth + 16);
+        const animation = Animated.spring(translateX, {
+            toValue: 0,
+            damping: 24,
+            stiffness: 260,
+            mass: 0.8,
+            useNativeDriver: true,
+        });
+        animation.start();
+        return () => animation.stop();
+    }, [props.visible, props.initialView, panelWidth, translateX]);
 
-    // Prefill the tag editor with the note's current tags each time that panel is opened.
     useEffect(() => {
         if (view === 'tags') setTagsInput(props.noteTags);
     }, [view, props.noteTags]);
 
     const close = () => {
+        if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
         setView('menu');
         setDueDateInput('1');
         props.onClose();
@@ -95,320 +129,407 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
     const runAndClose = (action: () => void) => {
         close();
-        // iOS will reject navigation/alerts while a full-screen native modal is still
-        // dismissing. Close first, then run the selected operation after that transition.
-        setTimeout(action, Platform.OS === 'ios' ? 260 : 0);
+        // iOS does not accept a navigation/alert transition while the native modal layer is
+        // dismissing. The action runs immediately after that layer has gone away.
+        setTimeout(action, Platform.OS === 'ios' ? 180 : 0);
     };
 
     const confirmAndClose = (title: string, message: string, action: () => void, destructive = false) => {
         close();
-        setTimeout(() => confirm(title, message, action, { destructive }), Platform.OS === 'ios' ? 260 : 0);
+        setTimeout(() => confirm(title, message, action, { destructive }), Platform.OS === 'ios' ? 180 : 0);
     };
 
+    const goToParent = () => {
+        if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
+        setView(view === 'dueDate' ? 'reschedule' : 'menu');
+    };
     const sheetTitle = view === 'flag'
-        ? l('Bayrak Rengi', 'Flag Color')
+        ? l('Bayrak rengi', 'Flag color')
         : view === 'dueDate'
-            ? l('Son Tarihi Ayarla', 'Set Due Date')
+            ? l('Son tarihi ayarla', 'Set due date')
             : view === 'bury'
                 ? l('Göm', 'Bury')
                 : view === 'suspend'
                     ? l('Askıya Al', 'Suspend')
                     : view === 'reschedule'
                         ? l('Yeniden Zamanla', 'Reschedule')
-                        : view === 'tags'
-                            ? l('Etiketleri Düzenle', 'Edit Tags')
-                            : l('Kart Seçenekleri', 'Card Options');
+                        : l('Etiketleri düzenle', 'Edit tags');
 
     const flagNames = [
-        l('Bayrak Yok', 'No Flag'), l('Kırmızı', 'Red'), l('Turuncu', 'Orange'),
+        l('Bayrak yok', 'No flag'), l('Kırmızı', 'Red'), l('Turuncu', 'Orange'),
         l('Yeşil', 'Green'), l('Mavi', 'Blue'), l('Pembe', 'Pink'),
         l('Turkuaz', 'Turquoise'), l('Mor', 'Purple'),
     ];
 
-    // Back row shared by every sub-panel (bury / suspend / reschedule / flag / due date).
-    const SubHeader = () => (
-        <View style={styles.subHeader}>
-            <TouchableOpacity
-                style={styles.backBtn}
-                onPress={() => setView('menu')}
-                accessibilityRole="button"
-                accessibilityLabel={l('Kart seçeneklerine dön', 'Back to card options')}
-            >
-                <Text style={styles.backLink}>‹ {l('Geri', 'Back')}</Text>
-            </TouchableOpacity>
-        </View>
-    );
+    const historyAction = props.whiteboardActive && props.whiteboardHasContent
+        ? {
+            icon: 'undo' as const,
+            label: l('Konturu geri al', 'Undo stroke'),
+            enabled: true,
+            action: props.onUndoWhiteboard,
+        }
+        : props.canRedo
+            ? { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: true, action: props.onRedo }
+            : props.canUndo
+                ? { icon: 'undo' as const, label: l('Geri Al', 'Undo'), enabled: true, action: props.onUndo }
+                : { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: false, action: props.onRedo };
 
     return (
         <Modal
             visible={props.visible}
-            animationType="slide"
-            presentationStyle="fullScreen"
+            transparent
+            animationType="fade"
+            presentationStyle="overFullScreen"
             onRequestClose={close}
         >
             <KeyboardAvoidingView
-                style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={[styles.overlay, { paddingTop: insets.top + 8, paddingBottom: Math.max(insets.bottom, 8) }]}
+                behavior={Platform.OS === 'ios' && (view === 'tags' || view === 'dueDate') ? 'padding' : undefined}
             >
-                <View style={styles.sheet} accessibilityViewIsModal>
-                    <View style={styles.sheetHeader}>
-                        <TouchableOpacity
-                            style={styles.closeBtn}
-                            onPress={close}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kart seçeneklerini kapat', 'Close card options')}
-                        >
-                            <Text style={styles.closeBtnText}>‹</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.sheetTitle}>{sheetTitle}</Text>
-                        <View style={styles.headerSpacer} />
-                    </View>
+                <Pressable
+                    style={styles.scrim}
+                    onPress={close}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Kart seçeneklerini kapat', 'Close card options')}
+                />
+                <Animated.View
+                    style={[styles.sheet, { width: panelWidth, transform: [{ translateX }] }]}
+                    accessibilityViewIsModal
+                >
+                    {view !== 'menu' && (
+                        <View style={styles.sheetHeader}>
+                            <TouchableOpacity
+                                style={styles.backBtn}
+                                onPress={goToParent}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Önceki menüye dön', 'Back to previous menu')}
+                            >
+                                <Text style={styles.backText}>‹</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.sheetTitle} numberOfLines={1}>{sheetTitle}</Text>
+                            <View style={styles.headerSpacer} />
+                        </View>
+                    )}
+
                     <ScrollView
+                        style={styles.sheetScroll}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
                         contentContainerStyle={styles.sheetContent}
                     >
-                    {view === 'menu' && (
-                        <>
-                            {props.whiteboardActive && (
-                                <>
-                                    <Text style={styles.groupLabel}>{l('BEYAZ TAHTA', 'WHITEBOARD')}</Text>
-                                    {props.whiteboardHasContent && (
-                                        <>
-                                            <MenuRow styles={styles} icon="🧹" label={l('Beyaz Tahtayı Temizle', 'Clear Whiteboard')} onPress={() => runAndClose(props.onClearWhiteboard)} />
-                                            <MenuRow styles={styles} icon="💾" label={l('Beyaz Tahtayı Kaydet', 'Save Whiteboard')} onPress={() => runAndClose(props.onSaveWhiteboard)} />
-                                        </>
+                        {view === 'menu' && (
+                            <>
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon={historyAction.icon}
+                                    label={historyAction.label}
+                                    disabled={!historyAction.enabled}
+                                    onPress={() => runAndClose(historyAction.action)}
+                                />
+
+                                {props.whiteboardActive && (
+                                    <>
+                                        <MenuRow
+                                            styles={styles}
+                                            colors={colors}
+                                            icon="clear"
+                                            label={l('Yazı tahtasını temizle', 'Clear whiteboard')}
+                                            disabled={!props.whiteboardHasContent}
+                                            onPress={() => runAndClose(props.onClearWhiteboard)}
+                                        />
+                                        <MenuRow
+                                            styles={styles}
+                                            colors={colors}
+                                            icon="save"
+                                            label={l('Yazı tahtasını kaydet', 'Save whiteboard')}
+                                            disabled={!props.whiteboardHasContent}
+                                            onPress={() => runAndClose(props.onSaveWhiteboard)}
+                                        />
+                                        <MenuRow
+                                            styles={styles}
+                                            colors={colors}
+                                            icon="stylus"
+                                            label={props.stylusOnly ? l('Kalemle yazmayı kapat', 'Disable stylus') : l('Kalemle yazmayı aç', 'Enable stylus')}
+                                            onPress={props.onToggleStylus}
+                                        />
+                                    </>
+                                )}
+
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="whiteboard"
+                                    label={props.whiteboardActive
+                                        ? l('Yazı tahtasını devre dışı bırak', 'Disable whiteboard')
+                                        : l('Yazı tahtasını etkinleştir', 'Enable whiteboard')}
+                                    onPress={() => runAndClose(props.whiteboardActive ? props.onDisableWhiteboard : props.onToggleWhiteboard)}
+                                />
+                                <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} onPress={() => runAndClose(props.onEditNote)} />
+                                <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddCard)} />
+                                <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} onPress={() => setView('tags')} />
+                                {props.hasSiblingCards ? (
+                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
+                                ) : (
+                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
+                                )}
+                                {props.hasSiblingCards ? (
+                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
+                                ) : (
+                                    <MenuRow
+                                        styles={styles}
+                                        colors={colors}
+                                        icon="suspend"
+                                        label={props.cardSuspended ? l('Kartı askıdan çıkar', 'Unsuspend card') : l('Kartı askıya al', 'Suspend card')}
+                                        onPress={() => runAndClose(props.onSuspendCard)}
+                                    />
+                                )}
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="delete"
+                                    label={l('Notu sil', 'Delete note')}
+                                    onPress={() => confirmAndClose(
+                                        l('Notu sil', 'Delete note'),
+                                        l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
+                                        props.onDeleteNote,
+                                        true,
                                     )}
-                                    <ToggleRow styles={styles} icon="🖊️" label={l('Kalemle Yazma (stylus)', 'Stylus Writing')} value={props.stylusOnly} onPress={props.onToggleStylus} />
-                                    <MenuRow styles={styles} icon="❌" label={l('Beyaz Tahtayı Kapat', 'Disable Whiteboard')} onPress={() => runAndClose(props.onDisableWhiteboard)} />
-                                    <View style={styles.divider} />
-                                </>
-                            )}
+                                />
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="mark"
+                                    label={props.noteMarked ? l('Not işaretini kaldır', 'Unmark note') : l('Notu işaretle', 'Mark note')}
+                                    onPress={() => runAndClose(props.onToggleMarkNote)}
+                                />
+                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="replay"
+                                    label={l('Medyayı yeniden oynat', 'Replay media')}
+                                    disabled={!props.cardHasAudio}
+                                    onPress={() => runAndClose(props.onReplayAudio)}
+                                />
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="voice"
+                                    label={props.voicePlaybackEnabled
+                                        ? l('Ses yeniden oynatmayı kapat', 'Disable voice playback')
+                                        : l('Ses yeniden oynatmayı aç', 'Enable voice playback')}
+                                    onPress={() => runAndClose(props.onToggleVoicePlayback)}
+                                />
+                                <MenuRow styles={styles} colors={colors} icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
+                            </>
+                        )}
 
-                            {props.canUndo && (
-                                <MenuRow styles={styles} icon="↩️" label={l('Son Yanıtı Geri Al', 'Undo')} onPress={() => runAndClose(props.onUndo)} />
-                            )}
-                            <MenuRow styles={styles} icon="✏️" label={l('Notu Düzenle', 'Edit Note')} onPress={() => runAndClose(props.onEditNote)} />
-                            <MenuRow styles={styles} icon="🏷️" label={l('Etiketleri Düzenle', 'Edit Tags')} chevron onPress={() => setView('tags')} />
-                            <MenuRow styles={styles} icon="💤" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
-                            <MenuRow styles={styles} icon="⏸️" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
-                            <MenuRow
-                                styles={styles}
-                                icon="🗑️"
-                                label={l('Notu Sil', 'Delete Note')}
-                                danger
-                                onPress={() => confirmAndClose(
-                                    l('Notu Sil', 'Delete Note'),
-                                    l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
-                                    props.onDeleteNote,
-                                    true,
-                                )}
-                            />
-                            <MenuRow
-                                styles={styles}
-                                icon="⭐"
-                                label={props.noteMarked ? l('Not İşaretini Kaldır', 'Unmark Note') : l('Notu İşaretle', 'Mark Note')}
-                                onPress={() => runAndClose(props.onToggleMarkNote)}
-                            />
-                            <MenuRow styles={styles} icon="📅" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
-                            {props.cardHasAudio && (
-                                <MenuRow styles={styles} icon="🔊" label={l('Medyayı Yeniden Oynat', 'Replay Media')} onPress={() => runAndClose(props.onReplayAudio)} />
-                            )}
-                            <MenuRow
-                                styles={styles}
-                                icon="🗣️"
-                                label={props.voicePlaybackEnabled ? l('Sesli Okumayı Kapat', 'Disable Voice Playback') : l('Sesli Okumayı Aç', 'Enable Voice Playback')}
-                                onPress={() => runAndClose(props.onToggleVoicePlayback)}
-                            />
-                            <MenuRow styles={styles} icon="⚙️" label={l('Deste Seçenekleri', 'Deck Options')} onPress={() => runAndClose(props.onDeckOptions)} />
+                        {view === 'bury' && (
+                            <>
+                                <MenuRow styles={styles} colors={colors} icon="bury" label={l('Notu göm', 'Bury note')} onPress={() => runAndClose(props.onBuryNote)} />
+                                <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
+                            </>
+                        )}
 
-                            <View style={styles.divider} />
+                        {view === 'suspend' && (
+                            <>
+                                <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Notu askıya al', 'Suspend note')} onPress={() => runAndClose(props.onSuspendNote)} />
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="suspend"
+                                    label={props.cardSuspended ? l('Kartı askıdan çıkar', 'Unsuspend card') : l('Kartı askıya al', 'Suspend card')}
+                                    onPress={() => runAndClose(props.onSuspendCard)}
+                                />
+                            </>
+                        )}
 
-                            <ToggleRow styles={styles} icon="▶️" label={l('Otomatik İlerleme', 'Auto Advance')} value={props.autoAdvance} onPress={props.onToggleAutoAdvance} />
-                            <ToggleRow styles={styles} icon="🔇" label={l('Yanıtlarken Çalan Sesi Kes', 'Interrupt Audio When Answering')} value={props.interruptAudioOnAnswer} onPress={props.onToggleInterruptAudio} />
-                            <ToggleRow styles={styles} icon="🔢" label={l('Kalan Kart Sayısını Göster', 'Show Remaining Card Count')} value={props.showRemainingCount} onPress={props.onToggleShowRemaining} />
-                            <ToggleRow styles={styles} icon="⏱️" label={l('Yanıt Düğmelerinde Sonraki Süreyi Göster', 'Show Next Review Time Above Answer Buttons')} value={props.showNextReviewTimes} onPress={props.onToggleShowNextTimes} />
-                        </>
-                    )}
+                        {view === 'reschedule' && (
+                            <>
+                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Son tarihi ayarla…', 'Set due date…')} onPress={() => setView('dueDate')} />
+                                <MenuRow
+                                    styles={styles}
+                                    colors={colors}
+                                    icon="redo"
+                                    label={l('Kartı unut…', 'Forget card…')}
+                                    onPress={() => confirmAndClose(
+                                        l('Kartı unut', 'Forget card'),
+                                        l('Bu kartın tüm zamanlama ilerlemesi silinir ve kart Yeni durumuna sıfırlanır. Bu işlem geri alınamaz.', 'All scheduling progress for this card will be deleted and the card will be reset to New. This cannot be undone.'),
+                                        props.onForgetCard,
+                                        true,
+                                    )}
+                                />
+                            </>
+                        )}
 
-                    {view === 'bury' && (
-                        <>
-                            <SubHeader />
-                            <MenuRow styles={styles} icon="💤" label={l('Kartı Göm', 'Bury Card')} onPress={() => runAndClose(props.onBuryCard)} />
-                            <MenuRow styles={styles} icon="🌙" label={l('Notu Göm', 'Bury Note')} onPress={() => runAndClose(props.onBuryNote)} />
-                        </>
-                    )}
-
-                    {view === 'suspend' && (
-                        <>
-                            <SubHeader />
-                            <MenuRow
-                                styles={styles}
-                                icon="⏸️"
-                                label={props.cardSuspended ? l('Askıdan Çıkar', 'Unsuspend Card') : l('Kartı Askıya Al', 'Suspend Card')}
-                                onPress={() => runAndClose(props.onSuspendCard)}
-                            />
-                            <MenuRow styles={styles} icon="⏹️" label={l('Notu Askıya Al', 'Suspend Note')} onPress={() => runAndClose(props.onSuspendNote)} />
-                        </>
-                    )}
-
-                    {view === 'reschedule' && (
-                        <>
-                            <SubHeader />
-                            <MenuRow styles={styles} icon="📅" label={l('Son Tarihi Ayarla…', 'Set Due Date…')} onPress={() => setView('dueDate')} />
-                            <MenuRow
-                                styles={styles}
-                                icon="🔄"
-                                label={l('Kartı Unut…', 'Forget Card…')}
-                                onPress={() => confirmAndClose(
-                                    l('Kartı Unut', 'Forget Card'),
-                                    l('Bu kartın tüm zamanlama ilerlemesi silinir ve kart Yeni durumuna sıfırlanır. Bu işlem geri alınamaz.', 'All scheduling progress for this card will be deleted and the card will be reset to New. This cannot be undone.'),
-                                    props.onForgetCard,
-                                    true,
-                                )}
-                            />
-                        </>
-                    )}
-
-                    {view === 'tags' && (
-                        <>
-                            <SubHeader />
-                            <Text style={styles.subDesc}>{l('Etiketleri boşlukla ayırın.', 'Separate tags with spaces.')}</Text>
-                            <TextInput
-                                style={styles.dueDateInput}
-                                value={tagsInput}
-                                onChangeText={setTagsInput}
-                                placeholder={l('etiketler', 'tags')}
-                                placeholderTextColor={colors.textMuted}
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                            />
-                            <TouchableOpacity style={styles.confirmBtn} onPress={() => runAndClose(() => props.onSaveTags(tagsInput))}>
-                                <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
-                            </TouchableOpacity>
-                        </>
-                    )}
-
-                    {view === 'flag' && (
-                        <>
-                            <View style={styles.subHeader}>
-                                <TouchableOpacity
-                                    style={styles.backBtn}
-                                    onPress={() => setView('menu')}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Kart seçeneklerine dön', 'Back to card options')}
-                                >
-                                    <Text style={styles.backLink}>‹ {l('Geri', 'Back')}</Text>
+                        {view === 'tags' && (
+                            <View style={styles.formContent}>
+                                <Text style={styles.subDesc}>{l('Etiketleri boşlukla ayırın.', 'Separate tags with spaces.')}</Text>
+                                <TextInput
+                                    style={styles.textInput}
+                                    value={tagsInput}
+                                    onChangeText={setTagsInput}
+                                    placeholder={l('etiketler', 'tags')}
+                                    placeholderTextColor={colors.textMuted}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                />
+                                <TouchableOpacity style={styles.confirmBtn} onPress={() => runAndClose(() => props.onSaveTags(tagsInput))}>
+                                    <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>
                             </View>
-                            {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                                <TouchableOpacity key={flag} style={styles.row} onPress={() => runAndClose(() => props.onFlag(flag))}>
-                                    <View style={[styles.flagSwatch, { backgroundColor: FLAG_COLORS[flag].color }]} />
-                                    <Text style={styles.rowLabel}>{flagNames[flag]}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </>
-                    )}
+                        )}
 
-                    {view === 'dueDate' && (
-                        <>
-                            <View style={styles.subHeader}>
+                        {view === 'flag' && (
+                            <>
+                                {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
+                                    <TouchableOpacity
+                                        key={flag}
+                                        style={styles.row}
+                                        onPress={() => runAndClose(() => props.onFlag(flag))}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={flagNames[flag]}
+                                    >
+                                        <View style={[styles.flagSwatch, { backgroundColor: FLAG_COLORS[flag].color }]} />
+                                        <Text style={styles.rowLabel}>{flagNames[flag]}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </>
+                        )}
+
+                        {view === 'dueDate' && (
+                            <View style={styles.formContent}>
+                                <Text style={styles.subDesc}>{l('Kart kaç gün sonra yeniden gösterilsin?', 'Show this card again in how many days?')}</Text>
+                                <TextInput
+                                    style={styles.textInput}
+                                    keyboardType="number-pad"
+                                    value={dueDateInput}
+                                    onChangeText={setDueDateInput}
+                                    placeholder={l('gün', 'days')}
+                                    placeholderTextColor={colors.textMuted}
+                                />
                                 <TouchableOpacity
-                                    style={styles.backBtn}
-                                    onPress={() => setView('menu')}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Kart seçeneklerine dön', 'Back to card options')}
+                                    style={styles.confirmBtn}
+                                    onPress={() => {
+                                        const days = Math.max(0, Math.floor(Number(dueDateInput) || 0));
+                                        runAndClose(() => props.onSetDueDate(days));
+                                    }}
                                 >
-                                    <Text style={styles.backLink}>‹ {l('Geri', 'Back')}</Text>
+                                    <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>
                             </View>
-                            <Text style={styles.subDesc}>{l('Kart kaç gün sonra yeniden gösterilsin?', 'Show this card again in how many days?')}</Text>
-                            <TextInput
-                                style={styles.dueDateInput}
-                                keyboardType="number-pad"
-                                value={dueDateInput}
-                                onChangeText={setDueDateInput}
-                                placeholder={l('gün', 'days')}
-                                placeholderTextColor={colors.textMuted}
-                            />
-                            <TouchableOpacity
-                                style={styles.confirmBtn}
-                                onPress={() => {
-                                    const days = Math.max(0, Math.floor(Number(dueDateInput) || 0));
-                                    runAndClose(() => props.onSetDueDate(days));
-                                }}
-                            >
-                                <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
-                            </TouchableOpacity>
-                        </>
-                    )}
+                        )}
                     </ScrollView>
-                </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </Modal>
     );
 }
 
-function ToggleRow({ styles, icon, label, value, onPress }: {
+function MenuRow({ styles, colors, icon, label, onPress, chevron, disabled = false }: {
     styles: ReturnType<typeof createStyles>;
-    icon: string;
-    label: string;
-    value: boolean;
-    onPress: () => void;
-}) {
-    return (
-        <TouchableOpacity
-            style={styles.row}
-            onPress={onPress}
-            accessibilityRole="switch"
-            accessibilityLabel={label}
-            accessibilityState={{ checked: value }}
-        >
-            <Text style={styles.rowIcon}>{icon}</Text>
-            <Text style={styles.rowLabel}>{label}</Text>
-            <View style={[styles.toggle, value && styles.toggleActive]}>
-                <View style={[styles.toggleKnob, value && styles.toggleKnobActive]} />
-            </View>
-        </TouchableOpacity>
-    );
-}
-
-function MenuRow({ styles, icon, label, onPress, danger, chevron }: {
-    styles: ReturnType<typeof createStyles>;
-    icon: string;
+    colors: ColorScheme;
+    icon: ReviewerMenuIcon;
     label: string;
     onPress: () => void;
-    danger?: boolean;
-    /** Shows a ▸ affordance for rows that open a sub-panel (Bury / Suspend / Reschedule). */
     chevron?: boolean;
+    disabled?: boolean;
 }) {
+    const color = disabled ? colors.textMuted : colors.textSecondary;
     return (
         <TouchableOpacity
-            style={styles.row}
+            style={[styles.row, disabled && styles.rowDisabled]}
             onPress={onPress}
+            disabled={disabled}
             accessibilityRole="button"
             accessibilityLabel={label}
+            accessibilityState={{ disabled }}
         >
-            <Text style={styles.rowIcon}>{icon}</Text>
-            <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
+            <View style={styles.rowIcon}><MenuIcon name={icon} color={color} /></View>
+            <Text style={[styles.rowLabel, disabled && styles.rowLabelDisabled]}>{label}</Text>
             {chevron && <Text style={styles.rowChevron}>›</Text>}
         </TouchableOpacity>
     );
 }
 
+function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
+    const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+    return (
+        <Svg width={24} height={24} viewBox="0 0 24 24" accessibilityElementsHidden>
+            {name === 'undo' && <Path d="M9 7H4V2M4.5 7A8 8 0 1 1 6 18" {...common} />}
+            {name === 'redo' && <Path d="M15 7h5V2m-.5 5A8 8 0 1 0 18 18" {...common} />}
+            {name === 'whiteboard' && (
+                <>
+                    <Path d="M4 18c2-5 3-9 5-9 1.8 0-.2 7 2 7 1.4 0 1.8-4 3.2-4 1.2 0 .4 4 2 4 1.1 0 1.6-1 3.8-1" {...common} />
+                    <Path d="m15.2 4.3 4.5 4.5M14.3 5.2l1.8-1.8a1.3 1.3 0 0 1 1.8 0l2.7 2.7a1.3 1.3 0 0 1 0 1.8l-1.8 1.8" {...common} />
+                </>
+            )}
+            {name === 'clear' && <Path d="m5 9 3-5h8l3 5-4 11H9L5 9Zm1 0h12M10 12v5m4-5v5" {...common} />}
+            {name === 'save' && <Path d="M5 3h12l2 2v16H5V3Zm3 0v6h8V3M8 21v-7h8v7" {...common} />}
+            {name === 'stylus' && <Path d="m4 20 4.2-1 10.9-11a2.1 2.1 0 0 0-3-3L5.2 16 4 20Zm10.4-13.2 3 3" {...common} />}
+            {name === 'edit' && <Path d="m4 20 4.2-1 10.9-11a2.1 2.1 0 0 0-3-3L5.2 16 4 20Zm10.4-13.2 3 3" {...common} />}
+            {name === 'add' && <Path d="M12 5v14M5 12h14" {...common} />}
+            {name === 'tag' && <Path d="M4 5h9l7 7-8 8-8-8V5Zm4 4h.01" {...common} />}
+            {name === 'bury' && (
+                <>
+                    <Rect x={4} y={6} width={16} height={14} rx={1.5} strokeDasharray="2.4 2.4" {...common} />
+                    <Path d="M12 3v10m-3-3 3 3 3-3" {...common} />
+                </>
+            )}
+            {name === 'suspend' && (
+                <>
+                    <Circle cx={12} cy={12} r={9} {...common} />
+                    <Path d="M9.5 9v6m5-6v6" {...common} />
+                </>
+            )}
+            {name === 'delete' && <Path d="M5 7h14M9 7V4h6v3m-8 0 1 14h8l1-14M10 11v6m4-6v6" {...common} />}
+            {name === 'mark' && <Path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" {...common} />}
+            {name === 'reschedule' && (
+                <>
+                    <Circle cx={12} cy={12} r={8.5} {...common} />
+                    <Path d="M12 7v5l-3 2M4 5v4h4" {...common} />
+                </>
+            )}
+            {name === 'replay' && (
+                <>
+                    <Circle cx={12} cy={12} r={9} {...common} />
+                    <Path d="m10 8 6 4-6 4V8Z" {...common} />
+                </>
+            )}
+            {name === 'voice' && <Path d="M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V5Zm-3 6a6 6 0 0 0 12 0M12 17v4m-3 0h6" {...common} />}
+            {name === 'deck' && <Path d="M4 6h6m4 0h6M4 12h10m4 0h2M4 18h3m4 0h9M10 4v4m4 2v4m-7 2v4" {...common} />}
+        </Svg>
+    );
+}
+
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        screen: {
+        overlay: {
             flex: 1,
-            backgroundColor: colors.bgCard,
+            alignItems: 'flex-end',
+        },
+        scrim: {
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: 'rgba(0,0,0,0.22)',
         },
         sheet: {
-            flex: 1,
-            width: '100%',
+            maxHeight: '100%',
             backgroundColor: colors.bgCard,
+            borderTopLeftRadius: 4,
+            borderBottomLeftRadius: 4,
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOffset: { width: -4, height: 4 },
+            shadowOpacity: 0.22,
+            shadowRadius: 10,
+            elevation: 16,
+        },
+        sheetScroll: {
+            flexGrow: 0,
         },
         sheetHeader: {
-            minHeight: 56,
+            minHeight: 54,
             flexDirection: 'row',
             alignItems: 'center',
             borderBottomWidth: StyleSheet.hairlineWidth,
@@ -417,98 +538,55 @@ function createStyles(colors: ColorScheme) {
         sheetTitle: {
             flex: 1,
             textAlign: 'center',
-            fontSize: FontSize.lg,
+            fontSize: FontSize.md,
             fontWeight: '700',
             color: colors.textPrimary,
         },
-        closeBtn: {
-            width: 48,
-            height: 48,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        closeBtnText: {
-            fontSize: 38,
-            lineHeight: 38,
-            fontWeight: '300',
-            color: colors.textPrimary,
-        },
-        headerSpacer: { width: 48, height: 48 },
-        sheetContent: {
-            width: '100%',
-            maxWidth: 720,
-            alignSelf: 'center',
-            paddingVertical: Spacing.sm,
-            paddingBottom: 32,
-        },
-        groupLabel: {
-            fontSize: 10,
-            fontWeight: '700',
-            letterSpacing: 1,
-            color: colors.textMuted,
-            paddingHorizontal: Spacing.lg,
-            paddingTop: Spacing.sm,
-            paddingBottom: 2,
-        },
+        backBtn: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
+        backText: { color: colors.textPrimary, fontSize: 34, lineHeight: 36, fontWeight: '300' },
+        headerSpacer: { width: 46, height: 46 },
+        sheetContent: { paddingVertical: 4, paddingBottom: 6 },
         row: {
+            minHeight: 48,
             flexDirection: 'row',
             alignItems: 'center',
-            minHeight: 48,
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: 11,
-            gap: 10,
+            paddingHorizontal: 15,
+            paddingVertical: 7,
         },
-        rowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
-        rowLabel: { fontSize: FontSize.md, color: colors.textPrimary, flex: 1 },
-        rowLabelDanger: { color: colors.btnAgain },
-        rowChevron: { fontSize: 20, color: colors.textMuted, marginLeft: 4 },
-        divider: { height: 1, backgroundColor: colors.borderLight, marginVertical: Spacing.xs },
-
-        toggle: {
-            width: 40,
-            height: 22,
-            borderRadius: 11,
-            backgroundColor: colors.bgInput,
+        rowDisabled: { opacity: 0.48 },
+        rowIcon: { width: 32, alignItems: 'flex-start', justifyContent: 'center' },
+        rowLabel: { flex: 1, color: colors.textPrimary, fontSize: 15, lineHeight: 20 },
+        rowLabelDisabled: { color: colors.textMuted },
+        rowChevron: { color: colors.textPrimary, fontSize: 22, marginLeft: 5 },
+        flagSwatch: {
+            width: 20,
+            height: 20,
+            borderRadius: 3,
             borderWidth: 1,
             borderColor: colors.border,
-            padding: 2,
+            marginRight: 14,
         },
-        toggleActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
-        toggleKnob: {
-            width: 16,
-            height: 16,
-            borderRadius: 8,
-            backgroundColor: colors.textMuted,
-        },
-        toggleKnobActive: { backgroundColor: colors.accent, marginLeft: 'auto' },
-
-        subHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm },
-        backBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.sm },
-        backLink: { fontSize: FontSize.md, color: colors.accent, fontWeight: '600' },
-        subDesc: { fontSize: FontSize.sm, color: colors.textSecondary, paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
-
-        flagSwatch: { width: 18, height: 18, borderRadius: 4, borderWidth: 1, borderColor: colors.border },
-
-        dueDateInput: {
-            marginHorizontal: Spacing.lg,
+        formContent: { paddingTop: Spacing.md },
+        subDesc: { color: colors.textSecondary, fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
+        textInput: {
+            minHeight: 48,
+            marginHorizontal: Spacing.md,
             marginBottom: Spacing.md,
+            paddingHorizontal: Spacing.md,
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: BorderRadius.sm,
-            paddingHorizontal: Spacing.md,
-            minHeight: 48,
-            fontSize: FontSize.lg,
             color: colors.textPrimary,
+            fontSize: FontSize.md,
         },
         confirmBtn: {
-            marginHorizontal: Spacing.lg,
-            marginBottom: Spacing.sm,
-            backgroundColor: colors.accent,
+            minHeight: 46,
+            marginHorizontal: Spacing.md,
             borderRadius: BorderRadius.sm,
-            minHeight: 48,
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.accent,
         },
-        confirmBtnText: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
+        confirmBtnText: { color: colors.white, fontSize: FontSize.md, fontWeight: '700' },
     });
 }

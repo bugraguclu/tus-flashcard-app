@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
@@ -53,7 +53,10 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
 
     const closeMenu = () => setMenuVisible(false);
-    const openMenu = () => setMenuVisible(true);
+    const openMenu = () => {
+        Keyboard.dismiss();
+        setMenuVisible(true);
+    };
 
     useImperativeHandle(ref, () => ({ open: openMenu }));
 

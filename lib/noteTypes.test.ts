@@ -26,7 +26,7 @@ describe('getAllNoteTypes (M1: built-ins never disappear)', () => {
     it('returns all built-ins when the table is empty', () => {
         dbState.noteTypeRows = [];
         const ids = getAllNoteTypes().map((nt) => nt.id);
-        expect(ids).toEqual(BUILTIN_NOTE_TYPES.map((nt) => nt.id));
+        expect(ids).toEqual(BUILTIN_NOTE_TYPES.map((nt) => nt.id).sort((a, b) => a - b));
     });
 
     it('keeps built-ins after a custom note type is added', () => {

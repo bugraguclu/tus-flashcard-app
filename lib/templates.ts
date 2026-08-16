@@ -26,9 +26,9 @@ export function extractClozeNumbers(text: string): number[] {
  * the first field, so custom cloze note types are not silently broken.
  */
 export function clozeFieldIndex(noteType: NoteType): number {
-    const match = noteType.templates[0]?.qfmt.match(/\{\{cloze:(\w+)\}\}/);
+    const match = noteType.templates[0]?.qfmt.match(/\{\{cloze:([^{}]+?)\}\}/);
     if (match) {
-        const idx = noteType.fields.findIndex(f => f.name === match[1]);
+        const idx = noteType.fields.findIndex(f => f.name === match[1].trim());
         if (idx !== -1) return idx;
     }
     const named = noteType.fields.findIndex(f => f.name === 'Text');
@@ -98,7 +98,7 @@ type ConditionalNode =
     | { kind: 'section'; field: string; inverted: boolean; children: ConditionalNode[] };
 
 function parseConditionalNodes(template: string): ConditionalNode[] {
-    const tokenRegex = /\{\{([#^\/])(\w+)\}\}/g;
+    const tokenRegex = /\{\{([#^\/])([^{}]+?)\}\}/g;
     const root: { kind: 'section'; field: string; inverted: boolean; children: ConditionalNode[] } = {
         kind: 'section',
         field: '__root__',
@@ -111,7 +111,8 @@ function parseConditionalNodes(template: string): ConditionalNode[] {
     let match: RegExpExecArray | null;
 
     while ((match = tokenRegex.exec(template)) !== null) {
-        const [token, sigil, field] = match;
+        const [token, sigil, rawField] = match;
+        const field = rawField.trim();
         const active = stack[stack.length - 1];
 
         if (match.index > cursor) {
@@ -187,8 +188,9 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
 
     // Cloze fields: {{cloze:FieldName}}
     result = result.replace(
-        /\{\{cloze:(\w+)\}\}/g,
-        (_match, field) => {
+        /\{\{cloze:([^{}]+?)\}\}/g,
+        (_match, rawField) => {
+            const field = rawField.trim();
             const value = ctx.fields[field] || '';
             if (ctx.clozeOrd !== undefined) {
                 // On question side, frontSide is not set yet.
@@ -206,8 +208,9 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
     // alongside the question. On the question side this placeholder stays empty; once the
     // answer is shown, ctx.typedAnswer (if any) is diffed against the field's real value.
     result = result.replace(
-        /\{\{type:(\w+)\}\}/g,
-        (_match, field) => {
+        /\{\{type:([^{}]+?)\}\}/g,
+        (_match, rawField) => {
+            const field = rawField.trim();
             const value = ctx.fields[field] || '';
             if (!ctx.frontSide) return '';
             if (ctx.typedAnswer === undefined) return `<div class="typeanswer">${escapeHtml(value)}</div>`;
@@ -217,8 +220,8 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
 
     // Regular field substitution: {{FieldName}} — allow HTML in note fields.
     result = result.replace(
-        /\{\{(\w+)\}\}/g,
-        (_match, field) => ctx.fields[field] || ''
+        /\{\{([^{}]+?)\}\}/g,
+        (_match, rawField) => ctx.fields[rawField.trim()] || ''
     );
 
     return result;
@@ -287,20 +290,20 @@ export function shouldGenerateCard(
         return numbers.includes(templateOrd + 1);
     }
 
-    // Standard: check if first referenced field is non-empty
+    // Standard: Anki generates a card only when the rendered question has content. Rendering
+    // first is important for conditional templates such as {{#Add Reverse}}...{{/Add Reverse}}.
     const template = noteType.templates[templateOrd];
     if (!template) return false;
-
-    const fieldMatch = template.qfmt.match(/\{\{(\w+)\}\}/);
-    if (!fieldMatch) return true;
-
-    const fieldName = fieldMatch[1];
-    if (['FrontSide', 'Tags', 'Type', 'Deck', 'Card'].includes(fieldName)) return true;
-
-    const fieldIdx = noteType.fields.findIndex(f => f.name === fieldName);
-    if (fieldIdx === -1) return true;
-
-    return (note.fields[fieldIdx] || '').trim().length > 0;
+    const fields: Record<string, string> = {};
+    noteType.fields.forEach((field, index) => { fields[field.name] = note.fields[index] || ''; });
+    const rendered = renderTemplate(template.qfmt, { fields });
+    if (/<(?:img|audio|video|object|svg)\b/i.test(rendered)) return true;
+    return rendered
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<br\s*\/?>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;|&#160;/gi, ' ')
+        .trim().length > 0;
 }
 
 /** Count how many cards a note should generate */
@@ -316,8 +319,8 @@ export function countCardsForNote(noteType: NoteType, note: Note): number {
 
 /** Field name of the first {{type:Field}} prompt in a template's qfmt, if any. */
 export function getTypeAnswerField(template: { qfmt: string } | undefined): string | null {
-    const match = template?.qfmt.match(/\{\{type:(\w+)\}\}/);
-    return match ? match[1] : null;
+    const match = template?.qfmt.match(/\{\{type:([^{}]+?)\}\}/);
+    return match ? match[1].trim() : null;
 }
 
 /** Longest common subsequence of two strings, as a list of [typedIdx, correctIdx] matched pairs. */

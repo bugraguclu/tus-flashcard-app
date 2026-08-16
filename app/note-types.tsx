@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
-import { uniqueId, BUILTIN_NOTE_TYPES } from '../lib/models';
+import { uniqueId, BUILTIN_NOTE_TYPES, isLegacyTusNoteType } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 
@@ -14,10 +14,10 @@ export default function NoteTypesScreen() {
     const { dataVersion, bumpDataVersion } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const noteTypes = useMemo(() => getAllNoteTypes(), [dataVersion]);
+    const noteTypes = useMemo(() => getAllNoteTypes().filter((noteType) => !isLegacyTusNoteType(noteType)), [dataVersion]);
 
     const createNoteType = () => {
-        const base = getNoteType(4) ?? BUILTIN_NOTE_TYPES.find((nt) => nt.id === 4)!;
+        const base = getNoteType(1) ?? BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!;
         const id = uniqueId();
         saveNoteType({ ...base, id, name: l('Yeni Not Türü', 'New Note Type'), mod: Math.floor(Date.now() / 1000) });
         bumpDataVersion();

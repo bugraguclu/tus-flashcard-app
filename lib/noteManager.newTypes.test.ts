@@ -17,12 +17,16 @@ vi.mock('./db', () => ({
 }));
 
 import {
+    changeNotesType,
     createTusCard,
     deleteAnkiCardOnly,
     findEmptyCards,
     getCardsForNote,
     getNote,
+    saveAnkiCard,
     saveNoteType,
+    updateTusCardByCardId,
+    updateNotesTags,
 } from './noteManager';
 import { saveDeck } from './deckManager';
 
@@ -41,7 +45,7 @@ beforeEach(() => {
 
 afterEach(() => db.close());
 
-describe('createTusCard: reversed note type (id 6)', () => {
+describe('createTusCard: Anki reversed note types', () => {
     it('creates two sibling cards from one note', () => {
         const { note, cards } = createTusCard({
             subject: 'anatomy',
@@ -49,7 +53,7 @@ describe('createTusCard: reversed note type (id 6)', () => {
             question: 'Soru metni',
             answer: 'Cevap metni',
             deckId: 1,
-            noteTypeId: 6,
+            noteTypeId: 2,
         });
 
         expect(cards).toHaveLength(2);
@@ -57,45 +61,64 @@ describe('createTusCard: reversed note type (id 6)', () => {
         expect(getCardsForNote(note.id)).toHaveLength(2);
     });
 
-    it('stores a blank TersCevap by default (card 2 falls back to Soru at render time)', () => {
-        const { note } = createTusCard({
+    it('does not create the optional reverse card while Add Reverse is blank', () => {
+        const { note, cards } = createTusCard({
             subject: 'anatomy',
             topic: 'Kalp',
             question: 'Soru metni',
             answer: 'Cevap metni',
             deckId: 1,
-            noteTypeId: 6,
+            noteTypeId: 7,
         });
 
         const saved = getNote(note.id)!;
-        expect(saved.fields[3]).toBe('');
+        expect(saved.fields[2]).toBe('');
+        expect(cards).toHaveLength(1);
     });
 
-    it('stores a custom TersCevap when provided', () => {
-        const { note } = createTusCard({
+    it('creates the optional reverse card when Add Reverse contains text', () => {
+        const { note, cards } = createTusCard({
             subject: 'anatomy',
             topic: 'Kalp',
             question: 'Soru metni',
             answer: 'Cevap metni',
             deckId: 1,
-            noteTypeId: 6,
-            reverseAnswer: 'Özel ters cevap',
+            noteTypeId: 7,
+            reverseAnswer: '1',
         });
 
         const saved = getNote(note.id)!;
-        expect(saved.fields[3]).toBe('Özel ters cevap');
+        expect(saved.fields[2]).toBe('1');
+        expect(cards).toHaveLength(2);
+    });
+
+    it('adds and removes the optional reverse card when the field changes', () => {
+        const { note, card } = createTusCard({
+            question: 'Soru metni', answer: 'Cevap metni', deckId: 1, noteTypeId: 7,
+        });
+        expect(getCardsForNote(note.id)).toHaveLength(1);
+
+        updateTusCardByCardId(card.id, {
+            question: 'Soru metni', answer: 'Cevap metni', deckId: 1, reverseAnswer: '1',
+        });
+        expect(getCardsForNote(note.id)).toHaveLength(2);
+
+        updateTusCardByCardId(card.id, {
+            question: 'Soru metni', answer: 'Cevap metni', deckId: 1, reverseAnswer: '',
+        });
+        expect(getCardsForNote(note.id)).toHaveLength(1);
     });
 });
 
-describe('createTusCard: type-answer note type (id 5)', () => {
-    it('creates exactly one card, same shape as the basic TUS card', () => {
+describe('createTusCard: type-answer note type (id 8)', () => {
+    it('creates exactly one card', () => {
         const { cards } = createTusCard({
             subject: 'anatomy',
             topic: 'Kalp',
             question: 'Soru metni',
             answer: 'Cevap metni',
             deckId: 1,
-            noteTypeId: 5,
+            noteTypeId: 8,
         });
 
         expect(cards).toHaveLength(1);
@@ -105,7 +128,7 @@ describe('createTusCard: type-answer note type (id 5)', () => {
 describe('findEmptyCards / deleteAnkiCardOnly', () => {
     it('finds no empty cards for a freshly created reversed note', () => {
         createTusCard({
-            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 6,
+            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 2,
         });
 
         expect(findEmptyCards()).toHaveLength(0);
@@ -113,19 +136,19 @@ describe('findEmptyCards / deleteAnkiCardOnly', () => {
 
     it('flags an orphaned card whose template ordinal no longer exists on the note type', () => {
         const { note } = createTusCard({
-            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 6,
+            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 2,
         });
 
         // Simulate a note-type edit that dropped the second template (Card 2 still exists in the DB).
         const noteType = {
-            id: 6,
-            name: 'TUS Çift Taraflı',
+            id: 2,
+            name: 'Basic (and reversed card)',
             kind: 'standard' as const,
             fields: [
-                { name: 'Soru', ord: 0, sticky: false, rtl: false },
-                { name: 'Cevap', ord: 1, sticky: false, rtl: false },
+                { name: 'Front', ord: 0, sticky: false, rtl: false },
+                { name: 'Back', ord: 1, sticky: false, rtl: false },
             ],
-            templates: [{ name: 'Soru → Cevap', ord: 0, qfmt: '{{Soru}}', afmt: '{{Cevap}}' }],
+            templates: [{ name: 'Card 1', ord: 0, qfmt: '{{Front}}', afmt: '{{Back}}' }],
             css: '',
             sortFieldIdx: 0,
             mod: 0,
@@ -140,7 +163,7 @@ describe('findEmptyCards / deleteAnkiCardOnly', () => {
 
     it('deleteAnkiCardOnly removes just that card, leaving the note and its sibling intact', () => {
         const { note, cards } = createTusCard({
-            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 6,
+            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 2,
         });
         const [card1, card2] = cards;
 
@@ -148,5 +171,34 @@ describe('findEmptyCards / deleteAnkiCardOnly', () => {
 
         expect(getCardsForNote(note.id).map((c) => c.id)).toEqual([card1.id]);
         expect(getNote(note.id)).not.toBeNull();
+    });
+});
+
+describe('browser bulk note operations', () => {
+    it('changes note type while preserving the existing card schedule', () => {
+        const { note, card } = createTusCard({
+            subject: 'anatomy', topic: 'Kalp', question: 'Q', answer: 'A', deckId: 1, noteTypeId: 1,
+        });
+        saveAnkiCard({ ...card, type: 2, queue: 2, due: 123, ivl: 30, reps: 8 });
+
+        expect(changeNotesType([note.id], 2)).toBe(1);
+
+        const converted = getNote(note.id)!;
+        const cards = getCardsForNote(note.id).sort((a, b) => a.ord - b.ord);
+        expect(converted.noteTypeId).toBe(2);
+        expect(converted.fields.slice(0, 2)).toEqual(['Q', 'A']);
+        expect(cards).toHaveLength(2);
+        expect(cards[0]).toMatchObject({ id: card.id, type: 2, queue: 2, due: 123, ivl: 30, reps: 8 });
+        expect(cards[1]).toMatchObject({ type: 0, queue: 0, ord: 1 });
+    });
+
+    it('applies tag deltas without erasing tags unique to each note', () => {
+        const first = createTusCard({ subject: 'anatomy', topic: 'A', question: 'Q1', answer: 'A1', deckId: 1 }).note;
+        const second = createTusCard({ subject: 'anatomy', topic: 'B', question: 'Q2', answer: 'A2', deckId: 1 }).note;
+
+        expect(updateNotesTags([first.id, second.id], ['ortak'], ['anatomy'])).toBe(2);
+        expect(getNote(first.id)?.tags).toEqual(expect.arrayContaining(['A', 'ortak']));
+        expect(getNote(second.id)?.tags).toEqual(expect.arrayContaining(['B', 'ortak']));
+        expect(getNote(first.id)?.tags).not.toContain('anatomy');
     });
 });

@@ -371,6 +371,7 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         searchQuery,
         searchLimit: limit || 100,
         searchOrder: 0,
+        filteredAllowEmpty: false,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
         filteredBuildAt: now,
@@ -397,6 +398,22 @@ function compareDeckDisplayOrder(a: Deck, b: Deck): number {
     const bOrder = Number.isFinite(b.sortOrder) ? b.sortOrder! : Number.MAX_SAFE_INTEGER;
     if (aOrder !== bOrder) return aOrder - bOrder;
     return a.name.localeCompare(b.name);
+}
+
+/**
+ * Deck shortcuts for a collection/deck scope. Collection scope exposes root decks;
+ * a deck scope exposes only its immediate children. Each returned deck can then be
+ * treated as the root of its complete subtree by consumers such as Browser/Stats.
+ */
+export function getDirectDecksForScope(
+    decks: Deck[],
+    scopeName: string | null,
+    includeFiltered = false,
+): Deck[] {
+    return decks
+        .filter((deck) => (includeFiltered || !deck.isFiltered)
+            && getParentDeckName(deck.name) === scopeName)
+        .sort(compareDeckDisplayOrder);
 }
 
 export function buildDeckTree(
@@ -819,6 +836,7 @@ export interface FilteredDeckOptions {
     searchLimit2?: number;
     searchOrder2?: number;
     reschedule: boolean;
+    allowEmpty?: boolean;
 }
 
 /** Update a filtered deck's search settings (Anki's filtered-deck options dialog). */
@@ -835,6 +853,7 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
         : undefined;
     deck.searchOrder2 = options.searchQuery2?.trim() ? (options.searchOrder2 ?? 0) : undefined;
     deck.reschedule = options.reschedule;
+    deck.filteredAllowEmpty = options.allowEmpty ?? false;
     // Saving filtered-deck options is Anki's Build/Rebuild action.
     deck.filteredDeckEmpty = false;
     deck.filteredDoneCardIds = [];

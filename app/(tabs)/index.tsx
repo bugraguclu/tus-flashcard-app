@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platfo
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import { Spacing, FontSize, Shadows, BorderRadius, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject } from '../../lib/subjects';
 import { getScheduler, todayLocalYMD } from '../../lib/scheduler';
@@ -10,7 +11,6 @@ import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
 import { getNewCardsIntroducedTodayInDeck, getStudyStreak, getTodayAnswerStats, type StudyStreak } from '../../lib/reviewLogger';
 import { resolveSettingsFromConfig } from '../../lib/settingsResolver';
-import { saveSettings } from '../../lib/storage';
 import { useApp } from './_layout';
 import type { Grade, SessionStats, StudyCard } from '../../lib/types';
 import { FLAG_COLORS, getDeckDisplayName, type AnkiCard, type CardFlag } from '../../lib/models';
@@ -36,6 +36,7 @@ import {
 import CardWebView from '../../components/CardWebView';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import { WhiteboardOverlay, type WhiteboardHandle } from '../../components/WhiteboardOverlay';
+import DeckPickerModal from '../../components/DeckPickerModal';
 import {
     answerStudyCard,
     forgetCard,
@@ -63,6 +64,34 @@ function formatKeyLabel(key: string): string {
     return key;
 }
 
+/**
+ * Default filtered-deck names are persisted, so a deck created while the app was in English
+ * can later appear in a Turkish reviewer. Translate only Anki's generated prefix; user-chosen
+ * deck names remain untouched.
+ */
+function localizeFilteredDeckDisplayName(displayName: string, locale: 'tr' | 'en'): string {
+    const localizedPrefix = locale === 'tr' ? 'Filtrelenmiş Deste' : 'Filtered Deck';
+    return displayName.replace(
+        /^(?:Filtered Deck|Filtrelenmiş Deste)(?=\s|$)/i,
+        localizedPrefix,
+    );
+}
+
+function DownChevron({ color }: { color: string }) {
+    return (
+        <Svg width={14} height={14} viewBox="0 0 14 14" accessibilityElementsHidden>
+            <Path
+                d="M3 5.25 7 9l4-3.75"
+                fill="none"
+                stroke={color}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
 // Anki opens on the deck list. Redirect exactly once per app launch, so in-app
 // navigation back to "/" (sidebar, deck study links) still reaches the study screen.
 let launchRedirectDone = false;
@@ -84,6 +113,8 @@ type UndoEntry = {
     reviewLogId: number;
     previousSnapshot: AnkiCard;
     filteredDeckId?: number;
+    grade: Grade;
+    answerTimeMs: number;
 };
 
 /**
@@ -105,7 +136,7 @@ function readTodaySessionStats(rolloverHour: number): SessionStats {
 
 export default function StudyScreen() {
     const { t, l, locale } = useI18n();
-    const { selectedSubject, selectedTopic, settings, refreshData, bumpDataVersion, dataVersion, setStudyPosition, setActiveDeckName } = useApp();
+    const { selectedSubject, selectedTopic, settings, bumpDataVersion, dataVersion, setStudyPosition, setActiveDeckName } = useApp();
     const params = useLocalSearchParams();
     const router = useRouter();
     const { width } = useWindowDimensions();
@@ -115,8 +146,8 @@ export default function StudyScreen() {
     const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
     const [optionsMenuVisible, setOptionsMenuVisible] = useState(false);
     const [optionsInitialView, setOptionsInitialView] = useState<'menu' | 'flag'>('menu');
-    // Anki whiteboard: an ink layer over the card, toggled by the top-bar pencil. Its clear/
-    // save/undo run through this ref so the ⋯ menu can drive them like AnkiDroid.
+    // Anki whiteboard: an ink layer over the card, enabled from the reviewer overflow menu.
+    // Clear/save/undo run through this ref so the same menu can drive the drawing tools.
     const [whiteboardActive, setWhiteboardActive] = useState(false);
     const [whiteboardStylusOnly, setWhiteboardStylusOnly] = useState(false);
     const [whiteboardHasContent, setWhiteboardHasContent] = useState(false);
@@ -141,6 +172,7 @@ export default function StudyScreen() {
     const [showingAnswer, setShowingAnswer] = useState(false);
     const [typedAnswer, setTypedAnswer] = useState('');
     const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+    const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [nextLearningDue, setNextLearningDue] = useState<number | null>(null);
     const [countdown, setCountdown] = useState('');
@@ -468,6 +500,7 @@ export default function StudyScreen() {
                 // the undo stack refers to the old collection, so it must go too.
                 console.warn('[Study] answer failed, rebuilding queue:', e);
                 setUndoStack([]);
+                setRedoStack([]);
                 setShowingAnswer(false);
                 buildQueue();
                 return;
@@ -486,6 +519,7 @@ export default function StudyScreen() {
 
             // Preview answers change nothing, so there is nothing to undo (or count).
             if (!previewMode) {
+                setRedoStack([]);
                 setUndoStack((prev) => [
                     ...prev.slice(-29),
                     {
@@ -493,6 +527,8 @@ export default function StudyScreen() {
                         reviewLogId: result.reviewLogId,
                         previousSnapshot: result.previousAnkiCard,
                         filteredDeckId: completesFilteredCard ? activeFilteredDeck?.id : undefined,
+                        grade,
+                        answerTimeMs: elapsed,
                     },
                 ]);
             } else if (grade > 1) {
@@ -630,11 +666,13 @@ export default function StudyScreen() {
             if (!getAnkiCard(undo.cardId)) {
                 console.warn('[Study] undo target missing, clearing stale undo stack.');
                 setUndoStack([]);
+                setRedoStack([]);
                 buildQueue();
                 return;
             }
 
             setUndoStack((prev) => prev.slice(0, -1));
+            setRedoStack((prev) => [...prev.slice(-29), undo]);
 
             undoAnswer(undo.previousSnapshot, undo.reviewLogId);
             if (undo.filteredDeckId) {
@@ -649,6 +687,45 @@ export default function StudyScreen() {
             isMutatingRef.current = false;
         }
     }, [undoStack, buildQueue, bumpDataVersion, refreshSessionStats]);
+
+    const redoLast = useCallback(async () => {
+        if (redoStack.length === 0 || isMutatingRef.current) return;
+        isMutatingRef.current = true;
+
+        try {
+            const redo = redoStack[redoStack.length - 1];
+            if (!getAnkiCard(redo.cardId)) {
+                console.warn('[Study] redo target missing, clearing stale redo stack.');
+                setRedoStack([]);
+                buildQueue();
+                return;
+            }
+
+            const result = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs);
+            if (redo.filteredDeckId) {
+                completeFilteredCard(redo.filteredDeckId, redo.cardId);
+            }
+
+            setRedoStack((prev) => prev.slice(0, -1));
+            setUndoStack((prev) => [
+                ...prev.slice(-29),
+                {
+                    cardId: redo.cardId,
+                    reviewLogId: result.reviewLogId,
+                    previousSnapshot: result.previousAnkiCard,
+                    filteredDeckId: redo.filteredDeckId,
+                    grade: redo.grade,
+                    answerTimeMs: redo.answerTimeMs,
+                },
+            ]);
+
+            const restoredStats = refreshSessionStats();
+            bumpDataVersion();
+            buildQueue(restoredStats.newCardsToday);
+        } finally {
+            isMutatingRef.current = false;
+        }
+    }, [redoStack, settings, buildQueue, bumpDataVersion, refreshSessionStats]);
 
     const handleSuspend = useCallback(() => {
         if (!currentCard) return;
@@ -740,18 +817,6 @@ export default function StudyScreen() {
         bumpDataVersion();
         buildQueue();
     }, [currentCard, bumpDataVersion, buildQueue]);
-
-    const handleToggleAutoAdvance = useCallback(() => {
-        const next = { ...settings, autoAdvance: !settings.autoAdvance };
-        saveSettings(next);
-        refreshData();
-    }, [settings, refreshData]);
-
-    const handleTogglePref = useCallback((key: 'interruptAudioOnAnswer' | 'showRemainingCount' | 'showNextReviewTimes') => {
-        const next = { ...settings, [key]: !settings[key] };
-        saveSettings(next);
-        refreshData();
-    }, [settings, refreshData]);
 
     // Convenience: reveal the answer on its own after a few seconds, if enabled and the
     // user hasn't already revealed it.
@@ -868,6 +933,10 @@ export default function StudyScreen() {
     }, [currentCard?.cardId, dataVersion]);
 
     const currentNoteMarked = renderPayload ? isNoteMarked(renderPayload.note) : false;
+    const hasSiblingCards = useMemo(
+        () => (renderPayload ? getCardsForNote(renderPayload.note.id).length > 1 : false),
+        [renderPayload],
+    );
     // renderPayload re-reads the card on every dataVersion bump, so a flag set through the
     // options menu or Ctrl+1-7 shows up here immediately.
     const currentFlag = (renderPayload?.card.flags ?? 0) as CardFlag;
@@ -909,7 +978,6 @@ export default function StudyScreen() {
     const deckPickerItems = useMemo(() => {
         try {
             return getAllDecks()
-                .filter((deck) => !deck.isFiltered)
                 .sort((a, b) => a.name.localeCompare(b.name, locale));
         } catch (e) {
             console.warn('[Study] deck picker list failed:', e);
@@ -966,6 +1034,20 @@ export default function StudyScreen() {
         });
     }, []);
 
+    const handleAddCard = useCallback(() => {
+        const selectedDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
+        const homeDeckId = renderPayload
+            ? (renderPayload.card.odid || renderPayload.card.deckId)
+            : null;
+        const homeDeck = homeDeckId ? getDeck(homeDeckId) : null;
+        const target = selectedDeck && !selectedDeck.isFiltered
+            ? selectedDeck
+            : homeDeck && !homeDeck.isFiltered
+                ? homeDeck
+                : null;
+        router.push((target ? `/editor?deckId=${target.id}` : '/editor') as any);
+    }, [renderPayload, router, selectedDeckName]);
+
     const handleEditNote = useCallback(() => {
         if (!currentCard) return;
         router.push(`/editor?cardId=${currentCard.cardId}` as any);
@@ -1010,6 +1092,16 @@ export default function StudyScreen() {
         return getDeckByName(selectedDeckName)?.description?.trim() ?? '';
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDeckName, dataVersion]);
+
+    const reviewerDeckTitle = useMemo(() => {
+        if (!selectedDeckName) return l('Bugünün Kartları', 'Cards for Today');
+        const displayName = getDeckDisplayName(selectedDeckName);
+        const selectedDeck = getDeckByName(selectedDeckName);
+        return selectedDeck?.isFiltered
+            ? localizeFilteredDeckDisplayName(displayName, locale)
+            : displayName;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedDeckName, dataVersion, locale, l]);
 
     // Present only for note types whose template embeds {{type:Field}} (id 5/6 built-ins, or a
     // custom type edited to include one). The WebView runs no JS, so the actual text box is this
@@ -1143,10 +1235,12 @@ export default function StudyScreen() {
                     >
                         <Text style={styles.topBarTitle} numberOfLines={1}>
                             {settings.showDeckTitle !== false && selectedDeckName
-                                ? getDeckDisplayName(selectedDeckName)
+                                ? reviewerDeckTitle
                                 : l('Bugünün Kartları', 'Cards for Today')}
                         </Text>
-                        <Text style={styles.topTitleCaret}>▾</Text>
+                        <View style={styles.topTitleCaret}>
+                            <DownChevron color={colors.textMuted} />
+                        </View>
                         {streak.current > 0 && (
                             <View
                                 style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
@@ -1161,16 +1255,6 @@ export default function StudyScreen() {
                 </View>
                 {currentCard && (
                     <View style={styles.topBarActions}>
-                        <TouchableOpacity
-                            style={[styles.topIconBtn, whiteboardActive && styles.topIconBtnActive]}
-                            onPress={toggleWhiteboard}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: whiteboardActive }}
-                            accessibilityLabel={whiteboardActive ? l('Beyaz tahtayı kapat', 'Hide whiteboard') : l('Beyaz tahtayı aç', 'Show whiteboard')}
-                            {...webTitle(l('Beyaz tahta (çizim)', 'Whiteboard (draw)'))}
-                        >
-                            <Text style={[styles.topActionIcon, whiteboardActive && { color: colors.accent }]}>✎</Text>
-                        </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.topIconBtn}
                             onPress={openFlagMenu}
@@ -1496,16 +1580,9 @@ export default function StudyScreen() {
                     onClose={closeOptionsMenu}
                     cardSuspended={currentCard.state.suspended}
                     noteMarked={currentNoteMarked}
+                    hasSiblingCards={hasSiblingCards}
                     cardHasAudio={cardHasAudio}
                     onReplayAudio={replayAudio}
-                    autoAdvance={settings.autoAdvance}
-                    onToggleAutoAdvance={handleToggleAutoAdvance}
-                    interruptAudioOnAnswer={settings.interruptAudioOnAnswer}
-                    onToggleInterruptAudio={() => handleTogglePref('interruptAudioOnAnswer')}
-                    showRemainingCount={settings.showRemainingCount}
-                    onToggleShowRemaining={() => handleTogglePref('showRemainingCount')}
-                    showNextReviewTimes={settings.showNextReviewTimes}
-                    onToggleShowNextTimes={() => handleTogglePref('showNextReviewTimes')}
                     onFlag={handleFlag}
                     onBuryCard={handleBury}
                     onSuspendCard={handleToggleSuspendCard}
@@ -1518,11 +1595,16 @@ export default function StudyScreen() {
                     onDeleteNote={handleDeleteNote}
                     canUndo={undoStack.length > 0}
                     onUndo={undoLast}
+                    canRedo={redoStack.length > 0}
+                    onRedo={redoLast}
+                    onAddCard={handleAddCard}
                     onEditNote={handleEditNote}
                     noteTags={renderPayload?.note.tags.join(' ') ?? ''}
                     onSaveTags={handleSaveTags}
                     whiteboardActive={whiteboardActive}
                     whiteboardHasContent={whiteboardHasContent}
+                    onToggleWhiteboard={toggleWhiteboard}
+                    onUndoWhiteboard={() => whiteboardRef.current?.undo()}
                     stylusOnly={whiteboardStylusOnly}
                     onToggleStylus={() => setWhiteboardStylusOnly((on) => !on)}
                     onClearWhiteboard={handleClearWhiteboard}
@@ -1533,45 +1615,23 @@ export default function StudyScreen() {
                 />
             )}
 
-            <Modal
+            <DeckPickerModal
                 visible={deckPickerVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setDeckPickerVisible(false)}
-            >
-                <Pressable style={styles.pickerOverlay} onPress={() => setDeckPickerVisible(false)}>
-                    <Pressable style={styles.pickerCard} onPress={() => {}}>
-                        <Text style={styles.pickerTitle}>{l('Deste Seç', 'Select Deck')}</Text>
-                        <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                            <TouchableOpacity
-                                style={[styles.pickerRow, !selectedDeckName && styles.pickerRowActive]}
-                                onPress={() => handlePickDeck(null)}
-                                accessibilityRole="button"
-                            >
-                                <Text style={[styles.pickerRowText, !selectedDeckName && styles.pickerRowTextActive]}>
-                                    📚 {l('Tüm Desteler', 'All Decks')}
-                                </Text>
-                            </TouchableOpacity>
-                            {deckPickerItems.map((deck) => {
-                                const depth = deck.name.split('::').length - 1;
-                                const active = selectedDeckName === deck.name;
-                                return (
-                                    <TouchableOpacity
-                                        key={deck.id}
-                                        style={[styles.pickerRow, active && styles.pickerRowActive, { paddingLeft: Spacing.lg + depth * 18 }]}
-                                        onPress={() => handlePickDeck(deck.name)}
-                                        accessibilityRole="button"
-                                    >
-                                        <Text style={[styles.pickerRowText, active && styles.pickerRowTextActive]} numberOfLines={1}>
-                                            {getDeckDisplayName(deck.name)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    </Pressable>
-                </Pressable>
-            </Modal>
+                colors={colors}
+                decks={deckPickerItems}
+                selectedDeckName={selectedDeckName}
+                title={l('Deste Seç', 'Select Deck')}
+                allDecksLabel={l('Tüm Desteler', 'All Decks')}
+                searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                cancelLabel={t('common.cancel')}
+                closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                searchAccessibilityLabel={l('Deste ara', 'Search decks')}
+                createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
+                onClose={() => setDeckPickerVisible(false)}
+                onSelect={handlePickDeck}
+                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+            />
         </View>
     );
 }
@@ -1600,37 +1660,11 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     topBarActions: { flexDirection: 'row', alignItems: 'center', gap: isCompact ? 2 : 6 },
     topBarTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.lg : FontSize.xl, fontWeight: '700', color: colors.textPrimary },
     topIconBtn: { minWidth: 40, minHeight: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-    topIconBtnActive: { backgroundColor: colors.accentLight },
     topBackIcon: { fontSize: 34, lineHeight: 34, color: colors.accent, marginTop: -4 },
     topActionIcon: { fontSize: 22, lineHeight: 24, color: colors.textSecondary },
     topTitleTap: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, minWidth: 0 },
-    topTitleCaret: { fontSize: FontSize.md, color: colors.textMuted, marginTop: 2 },
+    topTitleCaret: { width: 14, height: 14, alignItems: 'center', justifyContent: 'center' },
 
-    pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
-    pickerCard: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '80%',
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.lg,
-        borderWidth: 1,
-        borderColor: colors.border,
-        overflow: 'hidden',
-        ...Shadows.lg,
-    },
-    pickerTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        padding: Spacing.lg,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    pickerScroll: { paddingVertical: Spacing.xs },
-    pickerRow: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.lg, paddingVertical: 10 },
-    pickerRowActive: { backgroundColor: colors.accentLight },
-    pickerRowText: { fontSize: FontSize.md, color: colors.textPrimary },
-    pickerRowTextActive: { color: colors.accent, fontWeight: '700' },
     streakChip: {
         flexDirection: 'row',
         alignItems: 'center',

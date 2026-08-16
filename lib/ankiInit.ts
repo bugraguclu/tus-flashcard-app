@@ -81,6 +81,7 @@ export function ensureBuiltinNoteTypesSeeded(): void {
             nt.id, nt.name, JSON.stringify(nt), Date.now(), -1, 0,
         );
     }
+    healLegacyStockNoteTypes();
     healBuiltinNoteTypeTemplates();
     healSeededDeckDescriptions();
 }
@@ -201,6 +202,33 @@ export function healSeededDeckDescriptions(): void {
 // Early builds printed the Kaynak field (which actually stores the card's topic — scope
 // filtering reads it) under every answer as "📚 <topic>".
 const LEGACY_SOURCE_FOOTER = '{{#Kaynak}}<div class="source">📚 {{Kaynak}}</div>{{/Kaynak}}';
+
+/**
+ * Early builds stored slightly different copies of Anki's Basic/Reversed/Cloze defaults.
+ * Replace only those untouched legacy signatures; user-customized templates are preserved.
+ */
+export function healLegacyStockNoteTypes(): void {
+    const replacements = new Map(BUILTIN_NOTE_TYPES.map((noteType) => [noteType.id, noteType]));
+
+    const basic = getNoteType(1);
+    if (basic?.name === 'Basic'
+        && basic.templates[0]?.afmt === '{{FrontSide}}<hr id=answer>{{Back}}') {
+        saveNoteType({ ...replacements.get(1)!, mod: basic.mod });
+    }
+
+    const reversed = getNoteType(2);
+    if (reversed?.name === 'Basic (and Reversed Card)'
+        && reversed.fields.map((field) => field.name).join('|') === 'Front|Back') {
+        saveNoteType({ ...replacements.get(2)!, mod: reversed.mod });
+    }
+
+    const cloze = getNoteType(3);
+    if (cloze?.name === 'Cloze'
+        && cloze.fields.map((field) => field.name).join('|') === 'Text|Extra'
+        && cloze.templates[0]?.afmt === '{{cloze:Text}}<br>{{Extra}}') {
+        saveNoteType({ ...replacements.get(3)!, mod: cloze.mod });
+    }
+}
 
 /**
  * Strips the legacy Kaynak footer from the stored TUS templates (note types 4 and 5).

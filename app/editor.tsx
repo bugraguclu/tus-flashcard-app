@@ -12,6 +12,7 @@ import {
     Keyboard,
     Platform,
     Pressable,
+    useWindowDimensions,
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -32,28 +33,26 @@ import {
     searchIndexCardFromNote,
 } from '../lib/noteManager';
 import { buildDeckTree, flattenDeckTree, getAllDecks, getDeck, getDeckByName } from '../lib/deckManager';
-import { BUILTIN_NOTE_TYPES, getDeckDisplayName, type AnkiCard, type Note } from '../lib/models';
+import { ANKI_STOCK_NOTE_TYPE_IDS, BUILTIN_NOTE_TYPES, type AnkiCard, type Note } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import MediaAttachButton, { FIELD_MEDIA_RE, type MediaAttachButtonHandle } from '../components/MediaAttachButton';
 import RichTextEditor, {
-    type RichTextCommand,
     type RichTextEditorHandle,
 } from '../components/RichTextEditor';
 import TagPickerModal from '../components/TagPickerModal';
+import DeckPickerModal from '../components/DeckPickerModal';
 import { dbDeleteFtsCard, dbIndexAllCards, dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
+import { localizeNoteTypeName } from '../lib/i18n';
+import { extractClozeNumbers } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
+import { editorDraftKey, hasEditorDraftChanged } from '../lib/editorDraft';
 
 function parseCardId(raw: string | string[] | undefined): number | null {
     if (!raw) return null;
     const value = Array.isArray(raw) ? raw[0] : raw;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
-}
-
-function appendSnippet(fieldText: string, snippet: string): string {
-    if (!fieldText.trim()) return snippet;
-    return `${fieldText}<br>${snippet}`;
 }
 
 function fieldHasContent(value: string): boolean {
@@ -77,6 +76,40 @@ function EyeIcon({ color, size = 24 }: { color: string; size?: number }) {
                 strokeLinejoin="round"
             />
             <Circle cx={12} cy={12} r={2.7} fill={color} />
+        </Svg>
+    );
+}
+
+function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path d="M15 18 9 12l6-6" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
+}
+
+function CheckIcon({ color, size = 27 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path d="m5 12.5 4.2 4L19 6.8" fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
+}
+
+function MoreIcon({ color, size = 25 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Circle cx={12} cy={5} r={1.7} fill={color} />
+            <Circle cx={12} cy={12} r={1.7} fill={color} />
+            <Circle cx={12} cy={19} r={1.7} fill={color} />
+        </Svg>
+    );
+}
+
+function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
 }
@@ -193,19 +226,16 @@ function saveStickyEditorFields(fields: StickyEditorFields): void {
     setDbSetting(STICKY_EDITOR_FIELDS_KEY, JSON.stringify(fields));
 }
 
-const CARD_TYPE_CHOICES: { id: number; icon: string }[] = [
-    { id: 4, icon: '📄' },
-    { id: 5, icon: '⌨️' },
-    { id: 6, icon: '🔁' },
-];
+const CARD_TYPE_CHOICES = ANKI_STOCK_NOTE_TYPE_IDS;
 
 export default function EditorScreen() {
-    const { t, l } = useI18n();
+    const { t, l, locale } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
     const { bumpDataVersion, dataVersion, activeDeckName } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { width: screenWidth } = useWindowDimensions();
 
     const routeCardId = useMemo(() => {
         const explicitCardId = parseCardId(params.cardId);
@@ -251,6 +281,21 @@ export default function EditorScreen() {
     const [editingToolbarButtonId, setEditingToolbarButtonId] = useState<string | null>(null);
     const [toolbarButtonDraft, setToolbarButtonDraft] = useState({ buttonText: '', prefix: '', suffix: '' });
     const [customToolbarButtons, setCustomToolbarButtons] = useState<CustomToolbarButton[]>(loadCustomToolbarButtons);
+
+    const passiveOverlayOpen = showPreview
+        || showCardTypePicker
+        || showOverflowMenu
+        || showFontSizePicker
+        || showHeadingPicker
+        || showInlineFontSizePicker
+        || showMathPicker
+        || showCustomToolbarHelp;
+
+    // Formatting/preview surfaces are not keyboard editors themselves. Let them open against
+    // the full iOS window instead of inheriting the rich-text field's keyboard-sized layout.
+    useEffect(() => {
+        if (passiveOverlayOpen) Keyboard.dismiss();
+    }, [passiveOverlayOpen]);
     const [editorPreferences, setEditorPreferences] = useState(() => {
         const settings = loadSettings();
         return {
@@ -261,7 +306,6 @@ export default function EditorScreen() {
         };
     });
     const [activeField, setActiveField] = useState<EditorField>('question');
-    const [activeFormats, setActiveFormats] = useState<string[]>([]);
     const questionEditorRef = useRef<RichTextEditorHandle>(null);
     const answerEditorRef = useRef<RichTextEditorHandle>(null);
     const reverseEditorRef = useRef<RichTextEditorHandle>(null);
@@ -276,7 +320,7 @@ export default function EditorScreen() {
 
     const [question, setQuestion] = useState((params.question as string) || stickyFieldDefaults.question?.value || '');
     const [answer, setAnswer] = useState((params.answer as string) || stickyFieldDefaults.answer?.value || '');
-    const [cardTypeId, setCardTypeId] = useState(4);
+    const [cardTypeId, setCardTypeId] = useState(1);
     const [reverseAnswer, setReverseAnswer] = useState(stickyFieldDefaults.reverseAnswer?.value || '');
     const [pinnedFields, setPinnedFields] = useState<Set<EditorField>>(() => new Set(
         (['question', 'answer', 'reverseAnswer'] as EditorField[])
@@ -285,6 +329,14 @@ export default function EditorScreen() {
     const [noteTags, setNoteTags] = useState<string[]>([]);
     const [preservedFields, setPreservedFields] = useState<string[]>([]);
     const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
+    const initialDraftKeyRef = useRef<string | null>(null);
+
+    const selectedNoteType = useMemo(
+        () => getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId) ?? null,
+        [cardTypeId, dataVersion],
+    );
+    const isCloze = selectedNoteType?.kind === 'cloze';
+    const isOptionalReverse = cardTypeId === 7;
 
     const targetDeck = useMemo(() => {
         if (targetDeckId) return getDeck(targetDeckId);
@@ -318,11 +370,15 @@ export default function EditorScreen() {
 
     const previewPayload = useMemo(() => {
         if (!showPreview) return null;
-        const noteType = getNoteType(cardTypeId) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId)!;
-        const fields = preservedFields.length > 0 ? [...preservedFields] : ['', '', ''];
+        const noteType = selectedNoteType;
+        if (!noteType) return null;
+        const fields = preservedFields.length > 0
+            ? [...preservedFields]
+            : noteType.fields.map(() => '');
+        while (fields.length < noteType.fields.length) fields.push('');
         fields[0] = question || l('(boş soru)', '(empty question)');
         fields[1] = answer || l('(boş cevap)', '(empty answer)');
-        if (cardTypeId === 6) fields[3] = reverseAnswer.trim();
+        if (cardTypeId === 7) fields[2] = reverseAnswer.trim();
         const note: Note = {
             id: -1,
             guid: 'preview',
@@ -341,15 +397,19 @@ export default function EditorScreen() {
             left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
         };
         return { noteType, note, card };
-    }, [showPreview, question, answer, targetDeck?.id, cardTypeId, reverseAnswer, noteTags, preservedFields, l]);
+    }, [showPreview, question, answer, targetDeck?.id, cardTypeId, reverseAnswer, noteTags, preservedFields, selectedNoteType, l]);
 
     useEffect(() => {
         if (!routeCardId) return;
+
+        initialDraftKeyRef.current = null;
 
         const card = getAnkiCard(routeCardId);
         if (!card) return;
         const note = getNote(card.noteId);
         if (!note) return;
+
+        const initialReverseAnswer = note.noteTypeId === 7 ? (note.fields[2] || '') : '';
 
         // Editing follows the card's actual deck. Extra legacy/imported fields and tags remain
         // intact even though the compact add screen only exposes Anki's Type and Deck selectors.
@@ -358,9 +418,17 @@ export default function EditorScreen() {
         setAnswer(note.fields[1] || '');
         setNoteTags(note.tags);
         setPreservedFields(note.fields);
-        setCardTypeId([4, 5, 6].includes(note.noteTypeId) ? note.noteTypeId : 4);
-        setReverseAnswer(note.noteTypeId === 6 ? (note.fields[3] || '') : '');
+        setCardTypeId(note.noteTypeId);
+        setReverseAnswer(initialReverseAnswer);
         setIsEditing(true);
+        initialDraftKeyRef.current = editorDraftKey({
+            question: note.fields[0] || note.sfld || '',
+            answer: note.fields[1] || '',
+            reverseAnswer: initialReverseAnswer,
+            cardTypeId: note.noteTypeId,
+            deckId: card.deckId,
+            tags: note.tags,
+        });
     }, [routeCardId]);
 
     useEffect(() => {
@@ -373,11 +441,21 @@ export default function EditorScreen() {
         setTargetDeckId(activeDeck && !activeDeck.isFiltered ? activeDeck.id : (getDeck(1)?.id ?? null));
     }, [routeCardId, targetDeckId, activeDeckName]);
 
-    const cardTypeLabel = cardTypeId === 4
-        ? l('Temel', 'Basic')
-        : cardTypeId === 5
-            ? l('Yazarak Yanıtla', 'Basic (type in the answer)')
-            : l('Çift Taraflı', 'Basic (and reversed card)');
+    useEffect(() => {
+        if (routeCardId || targetDeckId === null || initialDraftKeyRef.current !== null) return;
+        initialDraftKeyRef.current = editorDraftKey({
+            question,
+            answer,
+            reverseAnswer,
+            cardTypeId,
+            deckId: targetDeckId,
+            tags: noteTags,
+        });
+    }, [routeCardId, targetDeckId, question, answer, reverseAnswer, cardTypeId, noteTags]);
+
+    const cardTypeLabel = selectedNoteType
+        ? localizeNoteTypeName(locale, selectedNoteType.name)
+        : l('Bilinmeyen', 'Unknown');
 
     const activeEditorRef = () => {
         if (activeField === 'answer') return answerEditorRef;
@@ -408,10 +486,6 @@ export default function EditorScreen() {
             persistStickyFieldValues(next);
             return next;
         });
-    };
-
-    const runEditorCommand = (command: RichTextCommand, value?: string) => {
-        activeEditorRef().current?.runCommand(command, value);
     };
 
     const wrapEditorSelection = (prefix: string, suffix: string) => {
@@ -499,13 +573,24 @@ export default function EditorScreen() {
     };
 
     const handleBack = () => {
-        if (!fieldHasContent(question) && !fieldHasContent(answer)) {
+        const hasUnsavedChanges = hasEditorDraftChanged(initialDraftKeyRef.current, {
+            question,
+            answer,
+            reverseAnswer,
+            cardTypeId,
+            deckId: targetDeckId,
+            tags: noteTags,
+        });
+
+        if (!hasUnsavedChanges) {
             router.back();
             return;
         }
         confirm(
             l('Değişiklikleri At?', 'Discard Changes?'),
-            l('Kaydetmeden kart ekleme ekranından çıkılsın mı?', 'Leave the editor without saving?'),
+            isEditing
+                ? l('Kaydetmeden kart düzenleme ekranından çıkılsın mı?', 'Leave the card editor without saving?')
+                : l('Kaydetmeden kart ekleme ekranından çıkılsın mı?', 'Leave the add card screen without saving?'),
             () => router.back(),
             { destructive: true },
         );
@@ -528,7 +613,19 @@ export default function EditorScreen() {
 
     const runAfterOverflowClose = (action: () => void) => {
         setShowOverflowMenu(false);
+        requestAnimationFrame(action);
+    };
+
+    const runAfterFormattingDialogClose = (close: () => void, action: () => void) => {
+        close();
+        // iOS keeps a transparent native modal layer alive during dismissal. Waiting for the
+        // transition preserves the WebView selection and makes menu-driven formatting reliable.
         setTimeout(action, Platform.OS === 'ios' ? 180 : 0);
+    };
+
+    const openCardTemplates = () => {
+        Keyboard.dismiss();
+        router.push(`/note-type?id=${cardTypeId}`);
     };
 
     const updateEditorPreferences = (patch: Partial<typeof editorPreferences>) => {
@@ -552,8 +649,17 @@ export default function EditorScreen() {
 
     const handleSave = () => {
         setShowOverflowMenu(false);
-        if (!fieldHasContent(question) || !fieldHasContent(answer)) {
-            alert(t('common.error'), l('Soru ve cevap alanları boş bırakılamaz.', 'Question and answer fields cannot be empty.'));
+        if (!fieldHasContent(question)) {
+            alert(t('common.error'), isCloze
+                ? l('Metin alanı boş bırakılamaz.', 'The Text field cannot be empty.')
+                : l('Ön alanı boş bırakılamaz.', 'The Front field cannot be empty.'));
+            return;
+        }
+        if (isCloze && extractClozeNumbers(question).length === 0) {
+            alert(
+                t('common.error'),
+                l('En az bir boşluk ekleyin. Metni seçip araç çubuğundaki […] düğmesine dokunun.', 'Add at least one cloze deletion. Select text, then tap […] in the toolbar.'),
+            );
             return;
         }
         if (!targetDeck || targetDeck.isFiltered) {
@@ -567,7 +673,7 @@ export default function EditorScreen() {
                     question: question.trim(),
                     answer: answer.trim(),
                     tags: noteTags,
-                    reverseAnswer: cardTypeId === 6 ? reverseAnswer : undefined,
+                    reverseAnswer: cardTypeId === 7 ? reverseAnswer : undefined,
                     deckId: targetDeck.id,
                 });
 
@@ -591,7 +697,7 @@ export default function EditorScreen() {
                     tags: noteTags,
                     deckId: targetDeck.id,
                     noteTypeId: cardTypeId,
-                    reverseAnswer: cardTypeId === 6 ? reverseAnswer : undefined,
+                    reverseAnswer: cardTypeId === 7 ? reverseAnswer : undefined,
                 });
 
                 for (const generatedCard of created.cards) {
@@ -629,14 +735,13 @@ export default function EditorScreen() {
         key: string;
         icon: AnkiToolbarIconName;
         label: string;
-        command?: RichTextCommand;
-        onPress?: () => void;
+        onPress: () => void;
         onLongPress?: () => void;
     }> = [
-        { key: 'bold', icon: 'bold', label: l('Kalın', 'Bold'), command: 'bold' },
-        { key: 'italic', icon: 'italic', label: l('İtalik', 'Italic'), command: 'italic' },
-        { key: 'underline', icon: 'underline', label: l('Altı çizili', 'Underline'), command: 'underline' },
-        { key: 'rule', icon: 'rule', label: l('Yatay çizgi ekle', 'Insert horizontal line'), command: 'insertHorizontalRule' },
+        { key: 'bold', icon: 'bold', label: l('Kalın', 'Bold'), onPress: () => wrapEditorSelection('<b>', '</b>') },
+        { key: 'italic', icon: 'italic', label: l('İtalik', 'Italic'), onPress: () => wrapEditorSelection('<i>', '</i>') },
+        { key: 'underline', icon: 'underline', label: l('Altı çizili', 'Underline'), onPress: () => wrapEditorSelection('<u>', '</u>') },
+        { key: 'rule', icon: 'rule', label: l('Yatay çizgi ekle', 'Insert horizontal line'), onPress: () => wrapEditorSelection('<hr>', '') },
         { key: 'heading', icon: 'heading', label: l('Başlık ekle', 'Insert heading'), onPress: () => setShowHeadingPicker(true) },
         { key: 'fontSize', icon: 'fontSize', label: l('Yazı boyutu', 'Font size'), onPress: () => setShowInlineFontSizePicker(true) },
         {
@@ -648,23 +753,35 @@ export default function EditorScreen() {
         },
     ];
 
+    const toolbarItemCount = formattingTools.length + customToolbarButtons.length + 1 + (isCloze ? 1 : 0);
+    const centerToolbar = toolbarItemCount * 44 <= screenWidth;
+
     const renderFormattingToolbarItems = () => (
         <>
+            {isCloze && (
+                <TouchableOpacity
+                    style={styles.formatButton}
+                    onPress={() => questionEditorRef.current?.runCommand('cloze')}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Boşluk ekle', 'Add cloze deletion')}
+                    accessibilityHint={l('Metin alanındaki seçimi bir sonraki boşluk numarasıyla kapatır', 'Wraps the Text field selection in the next cloze number')}
+                >
+                    <Text style={styles.customFormatButtonText}>[…]</Text>
+                </TouchableOpacity>
+            )}
             {formattingTools.map((tool) => {
-                const selected = Boolean(tool.command && activeFormats.includes(tool.command));
                 return (
                     <TouchableOpacity
                         key={tool.key}
-                        style={[styles.formatButton, selected && styles.formatButtonActive]}
-                        onPress={() => tool.onPress ? tool.onPress() : tool.command && runEditorCommand(tool.command)}
+                        style={styles.formatButton}
+                        onPress={tool.onPress}
                         onLongPress={tool.onLongPress}
                         delayLongPress={450}
                         accessibilityRole="button"
                         accessibilityLabel={tool.label}
                         accessibilityHint={tool.key === 'math' ? l('Basılı tutarak diğer MathJax biçimlerini açın', 'Long press for other MathJax formats') : undefined}
-                        accessibilityState={{ selected }}
                     >
-                        <AnkiToolbarIcon name={tool.icon} color={selected ? colors.accent : colors.textPrimary} />
+                        <AnkiToolbarIcon name={tool.icon} color={colors.textPrimary} />
                     </TouchableOpacity>
                 );
             })}
@@ -705,7 +822,7 @@ export default function EditorScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Geri dön', 'Go back')}
                 >
-                    <Text style={styles.headerBackIcon}>‹</Text>
+                    <BackIcon color={colors.white} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>
                     {isEditing ? t('root.editCard') : l('Yeni Kart', 'Add')}
@@ -717,7 +834,7 @@ export default function EditorScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Kartı kaydet', 'Save card')}
                 >
-                    <Text style={styles.headerCheckIcon}>✓</Text>
+                    <CheckIcon color={colors.white} />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.headerAction}
@@ -733,7 +850,7 @@ export default function EditorScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Diğer seçenekler', 'More options')}
                 >
-                    <Text style={styles.headerMoreIcon}>⋮</Text>
+                    <MoreIcon color={colors.white} />
                 </TouchableOpacity>
             </View>
             <KeyboardAvoidingView
@@ -756,7 +873,9 @@ export default function EditorScreen() {
                     >
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
-                        <Text style={styles.ankiSelectorChevron}>{isEditing ? '🔒' : '⌄'}</Text>
+                        <View style={styles.ankiSelectorChevron}>
+                            {!isEditing && <ChevronDownIcon color={colors.textMuted} size={19} />}
+                        </View>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.ankiSelectorRow, styles.ankiSelectorRowLast]}
@@ -768,28 +887,32 @@ export default function EditorScreen() {
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>
                             {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                         </Text>
-                        <Text style={styles.ankiSelectorChevron}>⌄</Text>
+                        <View style={styles.ankiSelectorChevron}>
+                            <ChevronDownIcon color={colors.textMuted} size={19} />
+                        </View>
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldName}>{l('Ön', 'Front')}</Text>
+                    <Text style={styles.fieldName}>{isCloze ? l('Metin', 'Text') : l('Ön', 'Front')}</Text>
                     <View style={styles.fieldActions}>
                         <TouchableOpacity
                             style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
                             onPress={() => togglePinnedField('question')}
                             disabled={isEditing}
                             accessibilityRole="button"
-                            accessibilityLabel={pinnedFields.has('question') ? l('Ön alanının zımbasını kaldır', 'Unpin Front field') : l('Ön alanını zımbala', 'Pin Front field')}
+                            accessibilityLabel={pinnedFields.has('question')
+                                ? (isCloze ? l('Metin alanının zımbasını kaldır', 'Unpin Text field') : l('Ön alanının zımbasını kaldır', 'Unpin Front field'))
+                                : (isCloze ? l('Metin alanını zımbala', 'Pin Text field') : l('Ön alanını zımbala', 'Pin Front field'))}
                             accessibilityState={{ selected: pinnedFields.has('question'), disabled: isEditing }}
                         >
                             <PinIcon color={pinnedFields.has('question') ? colors.accent : colors.textMuted} />
                         </TouchableOpacity>
-                    <MediaAttachButton
-                        ref={questionMediaRef}
-                        hasMedia={FIELD_MEDIA_RE.test(question)}
-                        onInsert={(snippet) => setQuestion((prev) => appendSnippet(prev, snippet))}
-                    />
+                        <MediaAttachButton
+                            ref={questionMediaRef}
+                            hasMedia={FIELD_MEDIA_RE.test(question)}
+                            onInsert={(snippet) => questionEditorRef.current?.insertHtml(snippet)}
+                        />
                     </View>
                 </View>
                 <RichTextEditor
@@ -797,31 +920,34 @@ export default function EditorScreen() {
                     value={question}
                     onChange={setQuestion}
                     onFocus={() => setActiveField('question')}
-                    onFormatStateChange={setActiveFormats}
-                    placeholder={l('Soruyu yazın…', 'Enter the question…')}
+                    placeholder={isCloze
+                        ? l('Metni yazın, sonra gizlenecek bölümü seçip […] düğmesine dokunun…', 'Enter text, then select the part to hide and tap […]…')
+                        : l('Soruyu yazın…', 'Enter the question…')}
                     colors={colors}
                     fontSize={editorPreferences.fontSize}
                     capitalizeSentences={editorPreferences.capitalizeSentences}
                 />
 
                 <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldName}>{l('Arka', 'Back')}</Text>
+                    <Text style={styles.fieldName}>{isCloze ? l('Arka Ek', 'Back Extra') : l('Arka', 'Back')}</Text>
                     <View style={styles.fieldActions}>
                         <TouchableOpacity
                             style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
                             onPress={() => togglePinnedField('answer')}
                             disabled={isEditing}
                             accessibilityRole="button"
-                            accessibilityLabel={pinnedFields.has('answer') ? l('Arka alanının zımbasını kaldır', 'Unpin Back field') : l('Arka alanını zımbala', 'Pin Back field')}
+                            accessibilityLabel={pinnedFields.has('answer')
+                                ? (isCloze ? l('Arka Ek alanının zımbasını kaldır', 'Unpin Back Extra field') : l('Arka alanının zımbasını kaldır', 'Unpin Back field'))
+                                : (isCloze ? l('Arka Ek alanını zımbala', 'Pin Back Extra field') : l('Arka alanını zımbala', 'Pin Back field'))}
                             accessibilityState={{ selected: pinnedFields.has('answer'), disabled: isEditing }}
                         >
                             <PinIcon color={pinnedFields.has('answer') ? colors.accent : colors.textMuted} />
                         </TouchableOpacity>
-                    <MediaAttachButton
-                        ref={answerMediaRef}
-                        hasMedia={FIELD_MEDIA_RE.test(answer)}
-                        onInsert={(snippet) => setAnswer((prev) => appendSnippet(prev, snippet))}
-                    />
+                        <MediaAttachButton
+                            ref={answerMediaRef}
+                            hasMedia={FIELD_MEDIA_RE.test(answer)}
+                            onInsert={(snippet) => answerEditorRef.current?.insertHtml(snippet)}
+                        />
                     </View>
                 </View>
                 <RichTextEditor
@@ -829,33 +955,32 @@ export default function EditorScreen() {
                     value={answer}
                     onChange={setAnswer}
                     onFocus={() => setActiveField('answer')}
-                    onFormatStateChange={setActiveFormats}
-                    placeholder={l('Cevabı yazın…', 'Enter the answer…')}
+                    placeholder={isCloze ? l('İsteğe bağlı ek arka metni…', 'Optional extra text for the back…') : l('Cevabı yazın…', 'Enter the answer…')}
                     colors={colors}
                     fontSize={editorPreferences.fontSize}
                     capitalizeSentences={editorPreferences.capitalizeSentences}
                 />
 
-                {cardTypeId === 6 && (
+                {isOptionalReverse && (
                     <>
                         <View style={styles.fieldLabelRow}>
-                            <Text style={styles.fieldName}>{l('Ters Kartın Cevabı', 'Back Template Answer')}</Text>
+                            <Text style={styles.fieldName}>{l('Tersini Ekle', 'Add Reverse')}</Text>
                             <View style={styles.fieldActions}>
                                 <TouchableOpacity
                                     style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
                                     onPress={() => togglePinnedField('reverseAnswer')}
                                     disabled={isEditing}
                                     accessibilityRole="button"
-                                    accessibilityLabel={pinnedFields.has('reverseAnswer') ? l('Ters kart alanının zımbasını kaldır', 'Unpin reverse field') : l('Ters kart alanını zımbala', 'Pin reverse field')}
+                                    accessibilityLabel={pinnedFields.has('reverseAnswer') ? l('Tersini Ekle alanının zımbasını kaldır', 'Unpin Add Reverse field') : l('Tersini Ekle alanını zımbala', 'Pin Add Reverse field')}
                                     accessibilityState={{ selected: pinnedFields.has('reverseAnswer'), disabled: isEditing }}
                                 >
                                     <PinIcon color={pinnedFields.has('reverseAnswer') ? colors.accent : colors.textMuted} />
                                 </TouchableOpacity>
-                            <MediaAttachButton
-                                ref={reverseMediaRef}
-                                hasMedia={FIELD_MEDIA_RE.test(reverseAnswer)}
-                                onInsert={(snippet) => setReverseAnswer((prev) => appendSnippet(prev, snippet))}
-                            />
+                                <MediaAttachButton
+                                    ref={reverseMediaRef}
+                                    hasMedia={FIELD_MEDIA_RE.test(reverseAnswer)}
+                                    onInsert={(snippet) => reverseEditorRef.current?.insertHtml(snippet)}
+                                />
                             </View>
                         </View>
                         <RichTextEditor
@@ -863,8 +988,7 @@ export default function EditorScreen() {
                             value={reverseAnswer}
                             onChange={setReverseAnswer}
                             onFocus={() => setActiveField('reverseAnswer')}
-                            onFormatStateChange={setActiveFormats}
-                            placeholder={l('Boş bırakılırsa ters kartın cevabı otomatik olarak “Soru” olur.', 'If left blank, the reversed card answer defaults to the Question field.')}
+                            placeholder={l('Ters kart oluşturmak için herhangi bir metin girin.', 'Enter any text to create a reverse card.')}
                             colors={colors}
                             fontSize={editorPreferences.fontSize}
                             capitalizeSentences={editorPreferences.capitalizeSentences}
@@ -888,12 +1012,19 @@ export default function EditorScreen() {
                     </Text>
                     <Text style={styles.summaryChevron}>›</Text>
                 </TouchableOpacity>
-                <View style={styles.summaryRow}>
+                <TouchableOpacity
+                    style={styles.summaryRow}
+                    onPress={openCardTemplates}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Kart şablonlarını düzenle', 'Edit card templates')}
+                    accessibilityHint={l('Seçili not türünün kart ve alan şablonlarını açar', 'Opens the card and field templates for the selected note type')}
+                >
                     <Text style={styles.summaryLabel}>{l('Kartlar:', 'Cards:')}</Text>
                     <Text style={styles.summaryValue}>
-                        {cardTypeId === 6 ? l('Kart 1 ve Kart 2', 'Card 1 and Card 2') : l('Kart 1', 'Card 1')}
+                        {selectedNoteType?.templates.map((template) => template.name).join(' · ') || '—'}
                     </Text>
-                </View>
+                    <Text style={styles.summaryChevron}>›</Text>
+                </TouchableOpacity>
             </ScrollView>
 
             {editorPreferences.toolbarVisible && (
@@ -901,9 +1032,13 @@ export default function EditorScreen() {
                 {editorPreferences.toolbarScrollable ? (
                     <ScrollView
                         horizontal
+                        style={styles.formatToolbarScroll}
                         showsHorizontalScrollIndicator={false}
                         keyboardShouldPersistTaps="always"
-                        contentContainerStyle={styles.formatToolbarContent}
+                        contentContainerStyle={[
+                            styles.formatToolbarContent,
+                            centerToolbar && styles.formatToolbarContentCentered,
+                        ]}
                     >
                         {renderFormattingToolbarItems()}
                     </ScrollView>
@@ -916,13 +1051,7 @@ export default function EditorScreen() {
             )}
             </KeyboardAvoidingView>
 
-            <Modal
-                visible={showOverflowMenu}
-                transparent
-                animationType="fade"
-                presentationStyle="overFullScreen"
-                onRequestClose={() => setShowOverflowMenu(false)}
-            >
+            {showOverflowMenu && (
                 <View style={styles.overflowOverlay}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
@@ -974,7 +1103,7 @@ export default function EditorScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
+            )}
 
             <Modal visible={showFontSizePicker} transparent animationType="fade" onRequestClose={() => setShowFontSizePicker(false)}>
                 <View style={styles.modalOverlay}>
@@ -1019,8 +1148,10 @@ export default function EditorScreen() {
                                 key={heading}
                                 style={styles.formatPickerOption}
                                 onPress={() => {
-                                    setShowHeadingPicker(false);
-                                    wrapEditorSelection(`<${heading}>`, `</${heading}>`);
+                                    runAfterFormattingDialogClose(
+                                        () => setShowHeadingPicker(false),
+                                        () => wrapEditorSelection(`<${heading}>`, `</${heading}>`),
+                                    );
                                 }}
                             >
                                 <Text style={styles.formatPickerOptionText}>{heading}</Text>
@@ -1049,8 +1180,10 @@ export default function EditorScreen() {
                                 key={size}
                                 style={styles.formatPickerOption}
                                 onPress={() => {
-                                    setShowInlineFontSizePicker(false);
-                                    wrapEditorSelection(`<span style="font-size:${size}">`, '</span>');
+                                    runAfterFormattingDialogClose(
+                                        () => setShowInlineFontSizePicker(false),
+                                        () => wrapEditorSelection(`<span style="font-size:${size}">`, '</span>'),
+                                    );
                                 }}
                             >
                                 <Text style={styles.formatPickerOptionText}>{size}</Text>
@@ -1077,8 +1210,10 @@ export default function EditorScreen() {
                         <TouchableOpacity
                             style={styles.formatPickerOption}
                             onPress={() => {
-                                setShowMathPicker(false);
-                                wrapEditorSelection('\\[', '\\]');
+                                runAfterFormattingDialogClose(
+                                    () => setShowMathPicker(false),
+                                    () => wrapEditorSelection('\\[', '\\]'),
+                                );
                             }}
                         >
                             <Text style={styles.formatPickerOptionText}>{l('Blok denklem', 'Block equation')}</Text>
@@ -1086,8 +1221,10 @@ export default function EditorScreen() {
                         <TouchableOpacity
                             style={styles.formatPickerOption}
                             onPress={() => {
-                                setShowMathPicker(false);
-                                wrapEditorSelection('\\( \\ce{', '} \\)');
+                                runAfterFormattingDialogClose(
+                                    () => setShowMathPicker(false),
+                                    () => wrapEditorSelection('\\( \\ce{', '} \\)'),
+                                );
                             }}
                         >
                             <Text style={styles.formatPickerOptionText}>{l('Kimya denklemi', 'Chemistry equation')}</Text>
@@ -1215,23 +1352,21 @@ export default function EditorScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>{l('Kart Türü', 'Note Type')}</Text>
                         {CARD_TYPE_CHOICES.map((choice) => {
-                            const label = choice.id === 4
-                                ? l('Temel', 'Basic')
-                                : choice.id === 5
-                                    ? l('Yazarak Yanıtla', 'Basic (type in the answer)')
-                                    : l('Çift Taraflı', 'Basic (and reversed card)');
-                            const selected = cardTypeId === choice.id;
+                            const noteType = getNoteType(choice) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === choice);
+                            if (!noteType) return null;
+                            const label = localizeNoteTypeName(locale, noteType.name);
+                            const selected = cardTypeId === choice;
                             return (
                                 <TouchableOpacity
-                                    key={choice.id}
+                                    key={choice}
                                     style={[styles.pickerOption, selected && styles.pickerOptionActive]}
                                     onPress={() => {
-                                        setCardTypeId(choice.id);
+                                        setCardTypeId(choice);
+                                        if (choice !== 7) setReverseAnswer('');
                                         setShowCardTypePicker(false);
                                     }}
                                     accessibilityState={{ selected }}
                                 >
-                                    <Text style={styles.pickerOptionIcon}>{choice.icon}</Text>
                                     <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>{label}</Text>
                                     {selected && <Text style={styles.pickerCheck}>✓</Text>}
                                 </TouchableOpacity>
@@ -1244,52 +1379,32 @@ export default function EditorScreen() {
                 </View>
             </Modal>
 
-            <Modal visible={showDeckPicker} transparent animationType="fade" onRequestClose={() => setShowDeckPicker(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setShowDeckPicker(false)}
-                        accessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
-                    />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Hedef Deste', 'Target Deck')}</Text>
-                        <ScrollView style={styles.deckList}>
-                            <TouchableOpacity
-                                style={[styles.deckOption, styles.deckOptionNew]}
-                                onPress={openNewSubject}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Yeni ders oluştur', 'Create new course')}
-                            >
-                                <Text style={[styles.deckOptionText, styles.deckOptionNewText]}>
-                                    {l('+ Yeni', '+ New')}
-                                </Text>
-                            </TouchableOpacity>
-                            {deckPickerRows.map((node) => (
-                                <TouchableOpacity
-                                    key={node.deck.id}
-                                    style={[styles.deckOption, { paddingLeft: Spacing.sm + Math.min(node.depth, 8) * 22 }]}
-                                    onPress={() => { setTargetDeckId(node.deck.id); setShowDeckPicker(false); }}
-                                    accessibilityLabel={node.deck.name.replaceAll('::', ' › ')}
-                                >
-                                    <Text
-                                        style={[styles.deckOptionText, targetDeck?.id === node.deck.id && styles.deckOptionActive]}
-                                        numberOfLines={1}
-                                    >
-                                        {node.depth > 0 ? '↳  ' : '🗃️  '}{getDeckDisplayName(node.deck.name)}
-                                    </Text>
-                                    {targetDeck?.id === node.deck.id && <Text style={styles.deckOptionCheck}>✓</Text>}
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowDeckPicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <DeckPickerModal
+                visible={showDeckPicker}
+                colors={colors}
+                decks={deckPickerRows.map((node) => node.deck)}
+                selectedDeckName={targetDeck?.name ?? null}
+                title={l('Hedef Deste', 'Target Deck')}
+                allDecksLabel={null}
+                searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                cancelLabel={t('common.cancel')}
+                closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                searchAccessibilityLabel={l('Deste ara', 'Search decks')}
+                createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
+                onClose={() => setShowDeckPicker(false)}
+                onSelect={(name) => {
+                    if (!name) return;
+                    const deck = getDeckByName(name);
+                    if (!deck) return;
+                    setTargetDeckId(deck.id);
+                    setShowDeckPicker(false);
+                }}
+                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+            />
 
             <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
                         onPress={() => setShowNewSubject(false)}
@@ -1314,7 +1429,7 @@ export default function EditorScreen() {
                             <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
 
             <TagPickerModal
@@ -1341,7 +1456,7 @@ export default function EditorScreen() {
                         </View>
                         <ScrollView style={styles.previewScroll}>
                             <Text style={styles.previewMeta} numberOfLines={1}>
-                                🗃️ {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                                {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                             </Text>
                             <Text style={styles.label}>{l('SORU', 'QUESTION')}</Text>
                             {previewPayload && (
@@ -1393,19 +1508,15 @@ function createStyles(colors: ColorScheme) {
         justifyContent: 'center',
         borderRadius: BorderRadius.full,
     },
-    headerBackIcon: { color: colors.white, fontSize: 38, lineHeight: 38, fontWeight: '300', marginTop: -2 },
     headerTitle: { color: colors.white, fontSize: FontSize.xl, fontWeight: '600', marginLeft: 4 },
     headerSpacer: { flex: 1 },
-    headerCheckIcon: { color: colors.white, fontSize: 26, fontWeight: '500' },
-    headerMoreIcon: { color: colors.white, fontSize: 30, lineHeight: 30, fontWeight: '700' },
     editorScroll: { flex: 1, backgroundColor: colors.bgCard },
     content: {
         width: '100%',
         maxWidth: 720,
         alignSelf: 'center',
-        paddingHorizontal: Spacing.md,
-        paddingTop: Spacing.sm,
-        gap: Spacing.md,
+        paddingHorizontal: 6,
+        paddingTop: 5,
         paddingBottom: Spacing.xxl,
     },
     selectorGroup: {
@@ -1423,18 +1534,21 @@ function createStyles(colors: ColorScheme) {
     ankiSelectorRowLast: { borderBottomWidth: StyleSheet.hairlineWidth },
     ankiSelectorLabel: { width: 72, fontSize: FontSize.md, fontWeight: '800', color: colors.textPrimary },
     ankiSelectorValue: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-    ankiSelectorChevron: { width: 28, textAlign: 'center', fontSize: FontSize.lg, color: colors.textMuted },
+    ankiSelectorChevron: { width: 28, height: 40, alignItems: 'center', justifyContent: 'center' },
     formatToolbar: {
         backgroundColor: colors.bgCard,
         borderTopWidth: 1,
         borderTopColor: colors.border,
         minHeight: 44,
     },
+    formatToolbarScroll: { width: '100%' },
     formatToolbarContent: {
+        flexGrow: 1,
         minHeight: 44,
         alignItems: 'center',
         paddingHorizontal: 0,
     },
+    formatToolbarContentCentered: { justifyContent: 'center' },
     formatToolbarWrapped: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -1448,7 +1562,6 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         justifyContent: 'center',
     },
-    formatButtonActive: { backgroundColor: colors.accentLight },
     customFormatButtonText: {
         maxWidth: 38,
         fontSize: 24,
@@ -1466,16 +1579,19 @@ function createStyles(colors: ColorScheme) {
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: BorderRadius.sm,
+        marginTop: 5,
     },
     summaryLabel: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
     summaryValue: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },
     summaryChevron: { color: colors.textMuted, fontSize: 22, fontWeight: '600' },
     overflowOverlay: {
-        flex: 1,
+        ...StyleSheet.absoluteFillObject,
         alignItems: 'flex-end',
         backgroundColor: 'rgba(0,0,0,0.18)',
         paddingTop: 58,
         paddingRight: 4,
+        zIndex: 100,
+        elevation: 100,
     },
     overflowMenu: {
         width: 282,
@@ -1530,7 +1646,6 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.borderLight,
     },
     pickerOptionActive: { backgroundColor: colors.accentLight },
-    pickerOptionIcon: { width: 26, textAlign: 'center', fontSize: 18 },
     pickerOptionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
     pickerOptionTextActive: { color: colors.accent, fontWeight: '700' },
     pickerCheck: { fontSize: 20, fontWeight: '800', color: colors.accent },
@@ -1600,21 +1715,6 @@ function createStyles(colors: ColorScheme) {
     previewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
     previewTitleText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
     modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.md },
-    deckList: { maxHeight: 320 },
-    deckOption: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingVertical: 11,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    deckOptionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-    deckOptionActive: { color: colors.accent, fontWeight: '700' },
-    deckOptionNew: { paddingLeft: Spacing.sm },
-    deckOptionNewText: { color: colors.accent, fontWeight: '800' },
-    deckOptionCheck: { marginLeft: Spacing.sm, color: colors.accent, fontSize: 18, fontWeight: '800' },
     modalInput: {
         minHeight: 48,
         borderWidth: 1,
@@ -1645,7 +1745,7 @@ function createStyles(colors: ColorScheme) {
         color: colors.textMuted,
         textTransform: 'uppercase',
     },
-    fieldLabelRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    fieldLabelRow: { minHeight: 40, marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     fieldName: { flex: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     fieldActions: { flexDirection: 'row', alignItems: 'center' },
     fieldAction: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

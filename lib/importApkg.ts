@@ -1,6 +1,6 @@
 /**
  * Imports Anki .apkg packages: unzips the archive, reads the embedded SQLite
- * collection, and maps its notes onto TUS cards through the shared importRows
+ * collection, and maps its notes onto supported Anki stock note types through importRows
  * pipeline (transactional, deduped by note guid).
  *
  * Reads both legacy SQLite collections and current zstd-compressed schema-18
@@ -19,7 +19,7 @@ import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { saveMediaBytes } from './mediaStore';
 import { decompress } from 'fzstd';
 
-const TUS_BASIC_NOTETYPE_ID = 4;
+const ANKI_BASIC_NOTETYPE_ID = 1;
 const CLOZE_NOTETYPE_ID = 3;
 const FIELD_SEPARATOR = '\x1f';
 // Probed in order. collection.anki21b is checked between the two: a new-format export ships the
@@ -118,10 +118,10 @@ export function readAnkiNotes(reader: SqliteReader): AnkiNote[] {
     });
 }
 
-/** Standard Anki note → our [Soru, Cevap, Kaynak] layout. */
+/** Standard Anki note → stock Basic [Front, Back]. */
 export function ankiNoteToFields(note: AnkiNote): string[] {
     const [soru = '', cevap = '', ...rest] = note.fields;
-    return [soru, cevap, rest.filter(Boolean).join(' · ')];
+    return [soru, [cevap, ...rest].filter(Boolean).join(' · ')];
 }
 
 /** Cloze Anki note → our Cloze type [Text, Extra]. */
@@ -146,9 +146,9 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
 
     const stdCounts = standard.length
         ? importRows(standard.map(ankiNoteToFields), {
-              noteType: resolveNoteType(TUS_BASIC_NOTETYPE_ID),
+              noteType: resolveNoteType(ANKI_BASIC_NOTETYPE_ID),
               deckId,
-              defaultFields: ['', '', topicValue],
+              defaultFields: ['', ''],
               tags: baseTags,
               rowTags: standard.map((note) => note.tags),
               rowGuids: standard.map((note) => note.guid),

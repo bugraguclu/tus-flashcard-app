@@ -18,7 +18,7 @@ import Constants from 'expo-constants';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import {
     DEFAULT_KEY_BINDINGS,
     DEFAULT_SETTINGS,
@@ -28,21 +28,21 @@ import {
     resetAllData,
     resetSettingsToDefaults,
     saveSettings,
-} from '../../lib/storage';
-import { checkDatabase } from '../../lib/maintenance';
-import { downloadTextFileWeb, getLegacyFileSystem, readUriText } from '../../lib/files';
-import { alert, confirm } from '../../lib/confirm';
-import { useApp } from './_layout';
-import { useI18n } from '../../hooks/useI18n';
-import type { AppLanguage, AppSettings, KeyBindings, ThemeMode } from '../../lib/types';
-import { normalizeHardwareKey } from '../../lib/hardwareKeyboard';
+} from '../lib/storage';
+import { checkDatabase } from '../lib/maintenance';
+import { downloadTextFileWeb, getLegacyFileSystem, readUriText } from '../lib/files';
+import { alert, confirm } from '../lib/confirm';
+import { useApp } from '../contexts/AppContext';
+import { useI18n } from '../hooks/useI18n';
+import type { AppLanguage, AppSettings, KeyBindings, ThemeMode } from '../lib/types';
+import { normalizeHardwareKey } from '../lib/hardwareKeyboard';
 import {
     disableStudyNotifications,
     getDueReviewCountAt,
     getStudyNotificationPermission,
     requestStudyNotificationPermission,
     type StudyNotificationPermission,
-} from '../../lib/studyNotifications';
+} from '../lib/studyNotifications';
 
 type SectionId =
     | 'general'
@@ -332,6 +332,18 @@ export default function SettingsScreen() {
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
     const filteredCategories = categories.filter((item) => `${item.title} ${item.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
 
+    const handleBack = () => {
+        if (activeSection) {
+            setActiveSection(null);
+            return;
+        }
+        if (router.canGoBack()) {
+            router.back();
+            return;
+        }
+        router.replace('/decks' as any);
+    };
+
     const handleExport = async () => {
         try {
             const json = await exportAllData();
@@ -486,7 +498,7 @@ export default function SettingsScreen() {
                 <ToggleRow label={l('Yanıt geri bildirimini göster', 'Show answer feedback')} summary={l('Yanıt verildiğinde dokunsal geri bildirim sağlar.', 'Provides haptic feedback when an answer is submitted.')} value={settings.showAnswerFeedback !== false} onChange={(value) => updateSetting('showAnswerFeedback', value)} styles={styles} />
             </Group>
             <Group title={l('Araç çubuğu', 'Toolbar')} styles={styles}>
-                <ToggleRow label={l('Üst araç çubuğunu göster', 'Show top toolbar')} summary={l('Geri, deste, beyaz tahta, bayrak ve diğer işlemleri gösterir.', 'Shows back, deck, whiteboard, flag and more actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
+                <ToggleRow label={l('Üst araç çubuğunu göster', 'Show top toolbar')} summary={l('Geri, deste, bayrak ve diğer işlemleri gösterir.', 'Shows back, deck, flag and more actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
             </Group>
             <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
                 <ToggleRow
@@ -760,27 +772,25 @@ export default function SettingsScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={styles.screenHeader}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={handleBack}
+                    accessibilityRole="button"
+                    accessibilityLabel={activeSection ? l('Ayarlara dön', 'Back to settings') : l('Geri dön', 'Go back')}
+                >
+                    <Text style={styles.backButtonText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.screenTitle} numberOfLines={1}>
+                    {activeCategory?.title ?? l('Ayarlar', 'Settings')}
+                </Text>
+                {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : <View style={styles.headerSpacer} />}
+            </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} automaticallyAdjustContentInsets>
                 {activeSection && activeCategory ? (
-                    <>
-                        <View style={styles.detailHeader}>
-                            <TouchableOpacity style={styles.backButton} onPress={() => setActiveSection(null)} accessibilityLabel={l('Ayarlara dön', 'Back to settings')}>
-                                <Text style={styles.backButtonText}>‹</Text>
-                            </TouchableOpacity>
-                            <View style={styles.detailTitleWrap}>
-                                <Text style={styles.detailIcon}>{activeCategory.icon}</Text>
-                                <Text style={styles.detailTitle}>{activeCategory.title}</Text>
-                            </View>
-                            {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : <View style={styles.headerSpacer} />}
-                        </View>
-                        {renderActiveSection()}
-                    </>
+                    renderActiveSection()
                 ) : (
                     <>
-                        <View style={styles.titleRow}>
-                            <Text style={styles.title}>⚙️ {l('Ayarlar', 'Settings')}</Text>
-                            {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : null}
-                        </View>
                         <View style={styles.searchBox}>
                             <Text style={styles.searchIcon}>⌕</Text>
                             <TextInput value={search} onChangeText={setSearch} placeholder={l('Ara…', 'Search…')} placeholderTextColor={colors.textMuted} style={styles.searchInput} />
@@ -816,9 +826,18 @@ function createStyles(colors: ColorScheme) {
         hardwareKeyboardCapture: { position: 'absolute', width: 1, height: 1, left: -10, bottom: 0, opacity: 0 },
         loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
         loadingIcon: { fontSize: 48 },
+        screenHeader: {
+            minHeight: 56,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: Spacing.sm,
+            backgroundColor: colors.bgCard,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
+        },
+        screenTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
+        headerSpacer: { width: 72 },
         scrollContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
-        titleRow: { minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-        title: { fontSize: FontSize.xxxl, fontWeight: '800', color: colors.textPrimary },
         savedText: { fontSize: FontSize.xs, fontWeight: '700', color: colors.btnGood },
         searchBox: { height: 50, flexDirection: 'row', alignItems: 'center', borderRadius: BorderRadius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, paddingHorizontal: Spacing.lg, ...Shadows.sm },
         searchIcon: { fontSize: 25, color: colors.textSecondary, marginRight: Spacing.sm, transform: [{ rotate: '-20deg' }] },
@@ -832,13 +851,8 @@ function createStyles(colors: ColorScheme) {
         categorySummary: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 18 },
         categoryArrow: { fontSize: 28, color: colors.textMuted, paddingLeft: Spacing.sm },
         emptySearch: { padding: Spacing.xxl, textAlign: 'center', color: colors.textMuted },
-        detailHeader: { minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-        backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 },
+        backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
         backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
-        detailTitleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        detailIcon: { fontSize: 23 },
-        detailTitle: { flexShrink: 1, fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
-        headerSpacer: { width: 58 },
         group: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, ...Shadows.sm },
         groupTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
         groupDescription: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 19, marginBottom: Spacing.sm },

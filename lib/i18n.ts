@@ -353,17 +353,40 @@ export function translateActive(key: TranslationKey, params?: TranslationParams)
 export function localizeNoteTypeName(locale: SupportedLocale, name: string): string {
     if (locale === 'en') return name;
     if (name === 'Basic') return 'Temel';
-    if (name === 'Basic (and Reversed Card)') return 'Temel (ve Ters Kart)';
-    if (name === 'Basic (type in the answer)') return 'Temel (Yanıtı Yazarak)';
-    if (name === 'Cloze') return 'Boşluk Doldurma';
+    if (name === 'Basic (and Reversed Card)' || name === 'Basic (and reversed card)') return 'Temel (ve ters kart)';
+    if (name === 'Basic (optional reversed card)') return 'Temel (seçimli ters kart)';
+    if (name === 'Basic (type in the answer)') return 'Temel (yanıtı yazarak)';
+    if (name === 'Cloze') return 'Boşluklu';
     return name;
 }
 
 /** Display labels for Anki filtered-deck gather order; the stored numeric value never changes. */
 export function filteredOrderLabel(locale: SupportedLocale, index: number): string {
     const labels = locale === 'tr'
-        ? ['Zamanı gelenler', 'Rastgele', 'Aralık (artan)', 'Aralık (azalan)', 'Ekleniş sırası', 'Son eklenen önce', 'En çok unutulan']
-        : ['Order due', 'Random', 'Intervals (ascending)', 'Intervals (descending)', 'Oldest added first', 'Latest added first', 'Most lapses'];
+        ? [
+            'Vade sırası',
+            'Rastgele',
+            'Aralıklar (artan)',
+            'Aralıklar (azalan)',
+            'Ekleniş sırası',
+            'Son eklenen önce',
+            'En çok unutulan',
+            'En eski görülen önce',
+            'Hatırlanabilirlik (artan)',
+            'Hatırlanabilirlik (azalan)',
+        ]
+        : [
+            'Order due',
+            'Random',
+            'Increasing intervals',
+            'Decreasing intervals',
+            'Order added',
+            'Latest added first',
+            'Most lapses',
+            'Oldest seen first',
+            'Ascending retrievability',
+            'Descending retrievability',
+        ];
     return labels[index] ?? labels[0];
 }
 

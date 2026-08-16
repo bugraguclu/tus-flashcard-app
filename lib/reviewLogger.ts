@@ -114,9 +114,44 @@ export interface TodayAnswerStats {
  * With deckName the numbers cover only that deck's subtree. Reviews of since-deleted cards
  * can't be attributed to a deck anymore, so they count in the global numbers only.
  */
-export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string): TodayAnswerStats {
+export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string, scopedCardIds?: number[]): TodayAnswerStats {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+
+    if (scopedCardIds !== undefined) {
+        const cardIds = [...new Set(scopedCardIds.filter(Number.isFinite).map(Math.trunc))];
+        if (cardIds.length === 0) {
+            return { reviewed: 0, passed: 0, failed: 0, newCardsIntroduced: 0, studyTimeMs: 0 };
+        }
+        const placeholders = cardIds.map(() => '?').join(', ');
+        const totals = db.getFirstSync<{ reviewed: number; failed: number; timeMs: number }>(
+            `SELECT COUNT(*) AS reviewed,
+                    COALESCE(SUM(CASE WHEN ease = 1 THEN 1 ELSE 0 END), 0) AS failed,
+                    COALESCE(SUM(time), 0) AS timeMs
+             FROM revlog WHERE id >= ? AND cardId IN (${placeholders})`,
+            startMs, ...cardIds,
+        );
+        const introduced = db.getFirstSync<{ cnt: number }>(
+            `SELECT COUNT(*) AS cnt
+             FROM (
+                SELECT cardId, MIN(id) AS firstReview
+                FROM revlog
+                WHERE cardId IN (${placeholders})
+                GROUP BY cardId
+             )
+             WHERE firstReview >= ?`,
+            ...cardIds, startMs,
+        );
+        const reviewed = totals?.reviewed ?? 0;
+        const failed = totals?.failed ?? 0;
+        return {
+            reviewed,
+            failed,
+            passed: Math.max(0, reviewed - failed),
+            newCardsIntroduced: introduced?.cnt ?? 0,
+            studyTimeMs: totals?.timeMs ?? 0,
+        };
+    }
 
     if (deckName) {
         const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;

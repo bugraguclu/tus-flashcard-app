@@ -38,8 +38,19 @@ function safeStem(deckName?: string): string {
         .replace(/^-+|-+$/g, '') || 'koleksiyon';
 }
 
-function scopedData(deckName?: string): { notes: Note[]; cards: AnkiCard[]; decks: Deck[] } {
+function scopedData(deckName?: string, selectedCardIds?: number[]): { notes: Note[]; cards: AnkiCard[]; decks: Deck[] } {
     const allDecks = getAllDecks().filter((deck) => !deck.isFiltered);
+    if (selectedCardIds) {
+        const selected = new Set(selectedCardIds);
+        const cards = getAllAnkiCards().filter((card) => selected.has(card.id));
+        const noteIds = new Set(cards.map((card) => card.noteId));
+        const deckIds = new Set(cards.map((card) => card.deckId));
+        return {
+            notes: getAllNotes().filter((note) => noteIds.has(note.id)),
+            cards,
+            decks: allDecks.filter((deck) => deckIds.has(deck.id)),
+        };
+    }
     if (!deckName) return { notes: getAllNotes(), cards: getAllAnkiCards(), decks: allDecks };
     const deckIds = new Set(allDecks.filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`)).map((deck) => deck.id));
     const cards = getAllAnkiCards().filter((card) => deckIds.has(card.deckId));
@@ -130,12 +141,12 @@ function ankiDue(card: AnkiCard, collectionDay: number): number {
     return card.due;
 }
 
-async function buildPackage(format: 'apkg' | 'colpkg', deckName: string | undefined, includeMedia: boolean): Promise<ExportArtifact> {
+async function buildPackage(format: 'apkg' | 'colpkg', deckName: string | undefined, includeMedia: boolean, selectedCardIds?: number[]): Promise<ExportArtifact> {
     if (Platform.OS === 'web') throw new Error('Anki paket dışa aktarımı bu sürümde iPhone/iPad uygulamasında kullanılabilir.');
     const SQLite = require('expo-sqlite') as typeof import('expo-sqlite');
     const dbName = `anki-export-${Date.now()}-${Math.floor(Math.random() * 1e6)}.db`;
     const db = SQLite.openDatabaseSync(dbName) as WritableDb;
-    const { notes, cards, decks } = scopedData(deckName);
+    const { notes, cards, decks } = scopedData(deckName, selectedCardIds);
     const noteTypes = getAllNoteTypes().filter((type) => notes.some((note) => note.noteTypeId === type.id));
     const now = Date.now();
     const collectionDay = Math.floor(now / 86_400_000);
@@ -182,15 +193,15 @@ async function buildPackage(format: 'apkg' | 'colpkg', deckName: string | undefi
         }
         zip.file('media', JSON.stringify(manifest));
         const bytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-        return { fileName: `${safeStem(deckName)}.${format}`, mimeType: 'application/zip', bytes };
+        return { fileName: `${selectedCardIds ? 'secili-kartlar' : safeStem(deckName)}.${format}`, mimeType: 'application/zip', bytes };
     } finally {
         db.closeSync();
         SQLite.deleteDatabaseSync(dbName);
     }
 }
 
-function buildCardsText(deckName?: string): string {
-    const { notes, cards, decks } = scopedData(deckName);
+function buildCardsText(deckName?: string, selectedCardIds?: number[]): string {
+    const { notes, cards, decks } = scopedData(deckName, selectedCardIds);
     const notesById = new Map(notes.map((note) => [note.id, note]));
     const types = new Map(getAllNoteTypes().map((type) => [type.id, type]));
     const deckNames = new Map(decks.map((deck) => [deck.id, deck.name]));
@@ -207,10 +218,14 @@ function buildCardsText(deckName?: string): string {
     return rows.join('\n');
 }
 
-export async function buildAnkiExport(format: AnkiExportFormat, deckName?: string, includeMedia = true): Promise<ExportArtifact> {
+export async function buildAnkiExport(format: AnkiExportFormat, deckName?: string, includeMedia = true, selectedCardIds?: number[]): Promise<ExportArtifact> {
     const stem = safeStem(format === 'colpkg' ? undefined : deckName);
-    if (format === 'notesTxt') return { fileName: `${stem}-notlar.txt`, mimeType: 'text/plain', text: buildExportText(deckName) };
-    if (format === 'cardsTxt') return { fileName: `${stem}-kartlar.txt`, mimeType: 'text/plain', text: buildCardsText(deckName) };
+    const selectedNoteIds = selectedCardIds
+        ? new Set(scopedData(undefined, selectedCardIds).notes.map((note) => note.id))
+        : undefined;
+    const selectionStem = selectedCardIds ? 'secili-kartlar' : stem;
+    if (format === 'notesTxt') return { fileName: `${selectionStem}-notlar.txt`, mimeType: 'text/plain', text: buildExportText(deckName, selectedNoteIds) };
+    if (format === 'cardsTxt') return { fileName: `${selectionStem}-kartlar.txt`, mimeType: 'text/plain', text: buildCardsText(deckName, selectedCardIds) };
     // A .colpkg is always the complete collection; deck scoping belongs to .apkg.
-    return buildPackage(format, format === 'colpkg' ? undefined : deckName, includeMedia);
+    return buildPackage(format, format === 'colpkg' ? undefined : deckName, includeMedia, selectedCardIds);
 }

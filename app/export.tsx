@@ -8,6 +8,7 @@ import { downloadBytesFileWeb, downloadTextFileWeb, getLegacyFileSystem } from '
 import { buildAnkiExport, type AnkiExportFormat } from '../lib/exportAnkiPackage';
 import { bytesToBase64 } from '../lib/mediaStore';
 import { useI18n } from '../hooks/useI18n';
+import { getDbSetting } from '../lib/storage';
 
 const FORMATS: { id: AnkiExportFormat; tr: string; en: string }[] = [
     { id: 'colpkg', tr: 'Anki Koleksiyon Paketi (.colpkg)', en: 'Anki Collection Package (.colpkg)' },
@@ -23,7 +24,20 @@ export default function ExportScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const deckName = typeof params.deck === 'string' && params.deck ? params.deck : undefined;
-    const [format, setFormat] = useState<AnkiExportFormat>(deckName ? 'apkg' : 'colpkg');
+    const selectionExport = params.selection === 'browser';
+    const selectedCardIds = useMemo(() => {
+        if (!selectionExport) return undefined;
+        try {
+            const parsed = JSON.parse(getDbSetting('browser_export_card_ids') ?? '[]');
+            return Array.isArray(parsed)
+                ? parsed.filter((value): value is number => Number.isSafeInteger(value))
+                : [];
+        } catch {
+            return [];
+        }
+    }, [selectionExport]);
+    const availableFormats = selectionExport ? FORMATS.filter((item) => item.id !== 'colpkg') : FORMATS;
+    const [format, setFormat] = useState<AnkiExportFormat>(deckName || selectionExport ? 'apkg' : 'colpkg');
     const [includeMedia, setIncludeMedia] = useState(true);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -31,9 +45,13 @@ export default function ExportScreen() {
     const packageFormat = format === 'apkg' || format === 'colpkg';
 
     const handleExport = async () => {
+        if (selectionExport && selectedCardIds?.length === 0) {
+            alert(t('common.error'), l('Dışa aktarılacak seçili kart bulunamadı.', 'No selected cards are available to export.'));
+            return;
+        }
         setBusy(true);
         try {
-            const artifact = await buildAnkiExport(format, deckName, includeMedia);
+            const artifact = await buildAnkiExport(format, deckName, includeMedia, selectedCardIds);
             if (Platform.OS === 'web') {
                 if (artifact.text !== undefined) downloadTextFileWeb(artifact.fileName, artifact.text, artifact.mimeType);
                 else if (artifact.bytes) downloadBytesFileWeb(artifact.fileName, artifact.bytes, artifact.mimeType);
@@ -64,6 +82,9 @@ export default function ExportScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.dialog}>
+                {selectionExport ? (
+                    <Text style={styles.selectionCaption}>{l(`${selectedCardIds?.length ?? 0} seçili kart dışa aktarılacak.`, `${selectedCardIds?.length ?? 0} selected cards will be exported.`)}</Text>
+                ) : null}
                 <Text style={styles.label}>{l('Dışa aktarma biçimi:', 'Export format:')}</Text>
                 <TouchableOpacity style={styles.selector} onPress={() => setPickerOpen(true)} accessibilityRole="button">
                     <Text style={styles.selectorText}>{l(selected.tr, selected.en)}</Text>
@@ -97,7 +118,7 @@ export default function ExportScreen() {
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerOpen(false)} />
                     <View style={styles.pickerCard}>
                         <ScrollView>
-                            {FORMATS.map((item) => (
+                            {availableFormats.map((item) => (
                                 <TouchableOpacity key={item.id} style={[styles.formatOption, item.id === format && styles.formatOptionActive]} onPress={() => { setFormat(item.id); setPickerOpen(false); }}>
                                     <Text style={[styles.formatOptionText, item.id === format && styles.formatOptionTextActive]}>{l(item.tr, item.en)}</Text>
                                 </TouchableOpacity>
@@ -115,6 +136,7 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgPrimary, justifyContent: 'center', padding: Spacing.lg },
         dialog: { backgroundColor: colors.bgCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, gap: 8, borderWidth: 1, borderColor: colors.border },
         label: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary },
+        selectionCaption: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm },
         selector: { minHeight: 48, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgPrimary, paddingHorizontal: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
         selectorText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
         chevron: { fontSize: 18, color: colors.textSecondary, marginLeft: 8 },

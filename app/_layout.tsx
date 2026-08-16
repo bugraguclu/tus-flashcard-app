@@ -191,9 +191,38 @@ function AppStack() {
             >
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen
-                    name="editor"
+                    name="browser"
                     options={{
                         presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="settings"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="stats"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="editor"
+                    options={{
+                        // The note editor is a complete work surface. A full-screen native
+                        // presentation prevents iOS from turning it into a rounded page sheet
+                        // and keeps nested dialogs (tags, attachments, formatting) attached to
+                        // the active screen.
+                        presentation: 'fullScreenModal',
+                        gestureEnabled: false,
                         headerShown: false,
                     }}
                 />

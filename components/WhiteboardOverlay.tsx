@@ -1,7 +1,7 @@
 // Anki-style whiteboard: a transparent drawing surface laid over the reviewer card. Strokes
 // are point lists rendered as smoothed SVG paths (the same midpoint-quadratic ink smoothing the
-// drawing modal uses). The pencil button in the top bar toggles it; clear/undo/save are exposed
-// imperatively so the ⋯ menu can drive them exactly like AnkiDroid's whiteboard entries.
+// drawing modal uses). The reviewer overflow menu toggles it; clear/undo/save are exposed
+// imperatively so that same menu can drive the drawing tools like AnkiDroid's entries.
 
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, PanResponder, Platform } from 'react-native';
@@ -22,7 +22,7 @@ export interface WhiteboardHandle {
 
 interface WhiteboardOverlayProps {
     /** Pen mode. When false the ink stays visible but drawing/toolbar are off and touches pass
-     *  through to the card — so toggling the pencil hides the tools without losing the drawing. */
+     *  through to the card, so disabling the tools does not discard the drawing. */
     active: boolean;
     /** When true, only stylus/pen pointers draw (finger touches are ignored). Best-effort: the
      *  pointer type is only reliably known on web. */

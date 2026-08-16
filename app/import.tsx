@@ -8,11 +8,13 @@ import {
     StyleSheet,
     SafeAreaView,
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
     Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import { Modal } from 'react-native';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
@@ -27,8 +29,9 @@ import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { parseDelimited } from '../lib/importDelimited';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
+import DeckPickerModal from '../components/DeckPickerModal';
 
-const TUS_BASIC_NOTETYPE_ID = 4;
+const ANKI_BASIC_NOTETYPE_ID = 1;
 
 type ImportSummary = {
     added: number;
@@ -115,6 +118,10 @@ export default function ImportScreen() {
     const targetDeck = useMemo(
         () => getDeck(targetDeckId ?? resolveSubjectDeckId(subject)),
         [targetDeckId, subject, dataVersion],
+    );
+    const deckPickerDecks = useMemo(
+        () => getAllDecks().filter((deck) => !deck.isFiltered),
+        [dataVersion, showDeckPicker],
     );
     const [fileType, setFileType] = useState<ImportFileType>('csv');
     const [fileName, setFileName] = useState<string | null>(null);
@@ -311,13 +318,13 @@ export default function ImportScreen() {
                 });
             } else if (fileText !== null) {
                 const noteType =
-                    getNoteType(TUS_BASIC_NOTETYPE_ID) ??
-                    BUILTIN_NOTE_TYPES.find((nt) => nt.id === TUS_BASIC_NOTETYPE_ID)!;
+                    getNoteType(ANKI_BASIC_NOTETYPE_ID) ??
+                    BUILTIN_NOTE_TYPES.find((nt) => nt.id === ANKI_BASIC_NOTETYPE_ID)!;
                 imported = importDelimitedNotes(fileText, {
                     noteType,
                     deckId: targetDeckId ?? resolveSubjectDeckId(subject),
                     ...delimitedParseOptions(fileType),
-                    defaultFields: ['', '', topicValue],
+                    defaultFields: ['', ''],
                     tags: [subject, topicValue.replace(/\s+/g, '-')],
                 });
             }
@@ -493,48 +500,36 @@ export default function ImportScreen() {
                 </TouchableOpacity>
             </ScrollView>
 
-            <Modal visible={showDeckPicker} transparent animationType="fade" onRequestClose={() => setShowDeckPicker(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setShowDeckPicker(false)}
-                        accessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
-                    />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Hedef Deste', 'Target Deck')}</Text>
-                        <ScrollView style={{ maxHeight: 320 }}>
-                            <TouchableOpacity
-                                style={styles.deckOption}
-                                onPress={() => { setTargetDeckId(null); setShowDeckPicker(false); }}
-                            >
-                                <Text style={[styles.deckOptionText, targetDeckId === null && styles.deckOptionActive]}>
-                                    ✨ {l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
-                                </Text>
-                            </TouchableOpacity>
-                            {getAllDecks().filter((deck) => !deck.isFiltered).map((deck) => (
-                                <TouchableOpacity
-                                    key={deck.id}
-                                    style={styles.deckOption}
-                                    onPress={() => { setTargetDeckId(deck.id); setShowDeckPicker(false); }}
-                                >
-                                    <Text
-                                        style={[styles.deckOptionText, targetDeckId === deck.id && styles.deckOptionActive]}
-                                        numberOfLines={1}
-                                    >
-                                        🗃️ {deck.name}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowDeckPicker(false)}>
-                            <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <DeckPickerModal
+                visible={showDeckPicker}
+                colors={colors}
+                decks={deckPickerDecks}
+                selectedDeckName={targetDeckId === null ? null : targetDeck?.name ?? null}
+                title={l('Hedef Deste', 'Target Deck')}
+                allDecksLabel={l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
+                searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                cancelLabel={t('common.cancel')}
+                closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                searchAccessibilityLabel={l('Deste ara', 'Search decks')}
+                createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
+                onClose={() => setShowDeckPicker(false)}
+                onSelect={(name) => {
+                    if (!name) {
+                        setTargetDeckId(null);
+                        setShowDeckPicker(false);
+                        return;
+                    }
+                    const deck = deckPickerDecks.find((candidate) => candidate.name === name);
+                    if (!deck) return;
+                    setTargetDeckId(deck.id);
+                    setShowDeckPicker(false);
+                }}
+                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+            />
 
             <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
                         onPress={() => setShowNewSubject(false)}
@@ -559,7 +554,7 @@ export default function ImportScreen() {
                             <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
     );
@@ -712,12 +707,5 @@ function createStyles(colors: ColorScheme) {
         gap: Spacing.sm,
     },
     modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-    deckOption: {
-        paddingVertical: 11,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    deckOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
-    deckOptionActive: { color: colors.accent, fontWeight: '700' },
     });
 }

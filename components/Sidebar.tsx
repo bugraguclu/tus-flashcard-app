@@ -154,14 +154,6 @@ export function Sidebar(props: SidebarProps) {
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => navigate(selectedSubject ? `/editor?subject=${encodeURIComponent(selectedSubject)}` : '/editor')}
-                        {...webTitle(t('sidebar.addCard'))}
-                    >
-                        <Text style={styles.actionIcon}>+</Text>
-                        <Text style={styles.actionText}>{t('sidebar.addCard')}</Text>
-                    </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
                         <Text style={styles.actionIcon}>🗂️</Text>
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
@@ -174,10 +166,6 @@ export function Sidebar(props: SidebarProps) {
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
                     <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/note-types')} {...webTitle(t('root.noteTypes'))}>
-                    <Text style={styles.settingsBtnText}>🧩 {t('sidebar.noteTypes')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
@@ -219,7 +207,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
-    sidebarTitle: { fontSize: FontSize.xl, fontWeight: '700', color: colors.accent },
+    sidebarTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
     sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
     subjectRow: {

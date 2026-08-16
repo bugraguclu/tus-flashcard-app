@@ -55,6 +55,13 @@ describe('getTodayAnswerStats', () => {
         expect(stats.failed).toBe(1);
         expect(stats.passed).toBe(2);
         expect(stats.studyTimeMs).toBe(10000);
+
+        const filteredDeckScope = getTodayAnswerStats(rolloverHour, undefined, [1]);
+        expect(filteredDeckScope.reviewed).toBe(2);
+        expect(filteredDeckScope.failed).toBe(1);
+        expect(filteredDeckScope.passed).toBe(1);
+        expect(filteredDeckScope.newCardsIntroduced).toBe(1);
+        expect(filteredDeckScope.studyTimeMs).toBe(8000);
     });
 
     it('counts a card as introduced only when its first-ever review is today', () => {

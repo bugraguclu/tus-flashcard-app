@@ -20,7 +20,7 @@ vi.mock('./db', () => ({
     dbSearchCards: () => [],
 }));
 
-import { adjustIntervalForEasyDays, getStudyQueue, getWaitingLearningCardIds } from './studyRepository';
+import { adjustIntervalForEasyDays, getFilteredDeckCardIds, getStudyQueue, getWaitingLearningCardIds } from './studyRepository';
 import { saveNote, saveAnkiCard, saveNoteType } from './noteManager';
 import { saveDeck, saveDeckConfig } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
@@ -319,6 +319,7 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
 
         const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
         expect(queue.cards.map((card) => card.cardId).sort()).toEqual([1010, 1020]);
+        expect(getFilteredDeckCardIds('Oturum', settings).sort()).toEqual([1010, 1020]);
     });
 
     it('keeps an emptied filtered deck empty until it is rebuilt', () => {

@@ -4,7 +4,7 @@ import type { Note, NoteType, AnkiCard, CardFlag } from './models';
 import { generateGuid, checksumField, uniqueId, BUILTIN_NOTE_TYPES, subjectToDeckId } from './models';
 import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
-import { buildFtsPrefixQuery, getDB } from './db';
+import { buildFtsPrefixQuery, dbUpsertFtsCard, getDB } from './db';
 import { TUS_CARDS } from './data';
 import { getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import { humanizeCardText } from './displayText';
@@ -491,6 +491,125 @@ export function saveNoteType(nt: NoteType): void {
     );
 }
 
+/**
+ * Convert notes to another note type while preserving the scheduling of every card that can be
+ * mapped to a target template. Fields with the same name are mapped first; remaining fields fall
+ * back to their ordinal. Existing cards are reused in order, surplus cards are removed, and only
+ * genuinely new target cards start with new scheduling.
+ */
+export function changeNotesType(noteIds: number[], targetNoteTypeId: number): number {
+    const targetType = getNoteType(targetNoteTypeId);
+    if (!targetType) return 0;
+
+    const db = getDB();
+    const uniqueNoteIds = [...new Set(noteIds)];
+    let changed = 0;
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const noteId of uniqueNoteIds) {
+            const note = getNote(noteId);
+            const sourceType = note ? getNoteType(note.noteTypeId) : null;
+            if (!note || !sourceType || note.noteTypeId === targetNoteTypeId) continue;
+
+            const sourceByName = new Map(
+                sourceType.fields.map((field, index) => [field.name.normalize('NFC').toLocaleLowerCase(), index]),
+            );
+            const fields = targetType.fields.map((field, index) => {
+                const sameNameIndex = sourceByName.get(field.name.normalize('NFC').toLocaleLowerCase());
+                if (sameNameIndex !== undefined) return note.fields[sameNameIndex] ?? '';
+                return note.fields[index] ?? '';
+            });
+
+            note.noteTypeId = targetType.id;
+            note.fields = fields;
+            note.sfld = fields[targetType.sortFieldIdx] || fields[0] || '';
+            note.csum = checksumField(fields[0] ?? '');
+            note.mod = Math.floor(Date.now() / 1000);
+            note.usn = -1;
+            saveNote(note);
+
+            const existingCards = getCardsForNote(note.id).sort((a, b) => a.ord - b.ord || a.id - b.id);
+            const requiredOrds = targetType.kind === 'cloze'
+                ? extractClozeNumbers(fields[clozeFieldIndex(targetType)] || '').map((number) => number - 1)
+                : targetType.templates
+                    .filter((template) => shouldGenerateCard(targetType, note, template.ord))
+                    .map((template) => template.ord);
+            const destinationDeckId = existingCards[0]?.deckId ?? resolveSubjectDeckId('custom');
+
+            requiredOrds.forEach((ord, index) => {
+                const existing = existingCards[index];
+                if (existing) {
+                    saveAnkiCard({
+                        ...existing,
+                        ord,
+                        mod: Math.floor(Date.now() / 1000),
+                        usn: -1,
+                    });
+                } else {
+                    createCardForNote(note, destinationDeckId, ord);
+                }
+            });
+            for (const surplus of existingCards.slice(requiredOrds.length)) {
+                db.runSync('DELETE FROM revlog WHERE cardId = ?', surplus.id);
+                db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(surplus.id));
+                db.runSync('DELETE FROM anki_cards WHERE id = ?', surplus.id);
+                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', surplus.id);
+            }
+
+            for (const card of getCardsForNote(note.id)) {
+                dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
+            }
+            changed += 1;
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return changed;
+}
+
+/** Apply the same add/remove tag delta to multiple notes without erasing unrelated tags. */
+export function updateNotesTags(noteIds: number[], addTags: string[], removeTags: string[]): number {
+    const db = getDB();
+    const uniqueNoteIds = [...new Set(noteIds)];
+    const additions = [...new Set(addTags.map((tag) => tag.normalize('NFC').trim()).filter(Boolean))];
+    const removals = new Set(removeTags.map((tag) => tag.normalize('NFC').toLocaleLowerCase()));
+    let changed = 0;
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const noteId of uniqueNoteIds) {
+            const note = getNote(noteId);
+            if (!note) continue;
+            const existingKeys = new Set(note.tags.map((tag) => tag.normalize('NFC').toLocaleLowerCase()));
+            const nextTags = note.tags.filter((tag) => !removals.has(tag.normalize('NFC').toLocaleLowerCase()));
+            for (const tag of additions) {
+                const key = tag.toLocaleLowerCase();
+                if (!existingKeys.has(key)) nextTags.push(tag);
+            }
+            if (JSON.stringify(nextTags) === JSON.stringify(note.tags)) continue;
+
+            note.tags = nextTags;
+            note.mod = Math.floor(Date.now() / 1000);
+            note.usn = -1;
+            saveNote(note);
+            for (const card of getCardsForNote(note.id)) {
+                dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
+            }
+            changed += 1;
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return changed;
+}
+
 // ---- Migration: Convert old TUS cards to Notes ----
 
 export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: number } {
@@ -505,20 +624,20 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
     let notesCreated = 0;
     let cardsCreated = 0;
 
-    // Get TUS note type
-    const tusNoteType = BUILTIN_NOTE_TYPES.find(nt => nt.id === 4)!;
+    // Legacy bundled questions now enter the collection as Anki's stock Basic type.
+    const basicNoteType = getNoteType(1) ?? BUILTIN_NOTE_TYPES.find(nt => nt.id === 1)!;
 
     db.execSync('BEGIN TRANSACTION;');
     try {
         for (const oldCard of TUS_CARDS) {
             const deckId = subjectToDeckId(oldCard.subject);
-            const fields = [oldCard.question, oldCard.answer, oldCard.topic];
+            const fields = [oldCard.question, oldCard.answer];
             const sfld = fields[0];
 
             const note: Note = {
                 id: oldCard.id * 1000, // avoid collisions
                 guid: generateGuid(),
-                noteTypeId: tusNoteType.id,
+                noteTypeId: basicNoteType.id,
                 mod: Math.floor(Date.now() / 1000),
                 usn: -1,
                 tags: [oldCard.subject, oldCard.topic.replace(/\s+/g, '-')],
@@ -532,7 +651,7 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
             notesCreated++;
 
             // Create one card per template
-            for (let ord = 0; ord < tusNoteType.templates.length; ord++) {
+            for (let ord = 0; ord < basicNoteType.templates.length; ord++) {
                 const ankiCard: AnkiCard = {
                     id: note.id + ord,
                     noteId: note.id,
@@ -600,7 +719,7 @@ export function getSearchIndexCards(): SearchIndexCard[] {
 }
 
 /**
- * Find an existing TUS card by its question (first field), matching how Anki dedupes text imports
+ * Find an existing bundled/basic card by its question (first field), matching how Anki dedupes text imports
  * (first field within a note type). Returns the primary card id of the first match, or null.
  * The `csum` filter narrows candidates in SQL; the exact trimmed compare then rejects hash
  * collisions, exactly like `firstFieldExists` in the import path.
@@ -612,7 +731,7 @@ export function findTusCardIdByFirstField(question: string): number | null {
         `SELECT c.id AS cardId, n.data AS noteData
          FROM notes n
          JOIN anki_cards c ON c.noteId = n.id
-         WHERE n.csum = ? AND n.noteTypeId = 4
+         WHERE n.csum = ? AND n.noteTypeId IN (1, 4)
          ORDER BY c.ord`,
         checksumField(question),
     );
@@ -640,13 +759,14 @@ export function createTusCard(input: {
     answer: string;
     /** Explicit target deck (Anki's add-dialog deck picker); legacy calls may omit it. */
     deckId?: number;
-    /** 4 = Basic (default), 5 = Type Answer, 6 = Reversed. */
+    /** Anki stock note type id. Defaults to Basic (1). */
     noteTypeId?: number;
-    /** Card 2's answer override for note type 6; blank means "same as Soru". */
+    /** Value for Anki's Add Reverse field (type 7); legacy type 6 keeps its old override. */
     reverseAnswer?: string;
 }): { note: Note; card: AnkiCard; cards: AnkiCard[] } {
-    const noteTypeId = input.noteTypeId ?? 4;
-    const noteType = getNoteType(noteTypeId) || BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId)!;
+    const noteTypeId = input.noteTypeId ?? 1;
+    const noteType = getNoteType(noteTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId);
+    if (!noteType) throw new Error(`Unknown note type: ${noteTypeId}`);
     const topic = input.topic?.trim() ?? '';
     const deckId = input.deckId ?? (input.subject ? resolveSubjectDeckId(input.subject) : 1);
     const tags = input.tags ?? [
@@ -654,9 +774,12 @@ export function createTusCard(input: {
         topic ? topic.replace(/\s+/g, '-') : undefined,
     ].filter((tag): tag is string => Boolean(tag));
 
-    const fields = noteTypeId === 6
-        ? [input.question, input.answer, topic, (input.reverseAnswer ?? '').trim()]
-        : [input.question, input.answer, topic];
+    const fields = noteType.fields.map(() => '');
+    fields[0] = input.question;
+    if (fields.length > 1) fields[1] = input.answer;
+    if (noteTypeId === 7 && fields.length > 2) fields[2] = (input.reverseAnswer ?? '').trim();
+    if ([4, 5, 6].includes(noteTypeId) && fields.length > 2) fields[2] = topic;
+    if (noteTypeId === 6 && fields.length > 3) fields[3] = (input.reverseAnswer ?? '').trim();
 
     const { note, cards } = createNote(noteType, fields, deckId, tags);
 
@@ -681,10 +804,10 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
-    // The compact editor owns the front/back (and optional reverse-answer) fields. Notes of
+    // The compact editor owns the first two (and optional Add Reverse) fields. Notes of
     // richer types may carry legacy/imported fields, so keep every slot the editor does not show.
     const noteType = getNoteType(note.noteTypeId);
-    const fieldCount = Math.max(noteType?.fields.length ?? 3, note.fields.length, 3);
+    const fieldCount = Math.max(noteType?.fields.length ?? 2, note.fields.length, 2);
     const fields = [...note.fields];
     fields.length = fieldCount;
     for (let i = 0; i < fieldCount; i++) fields[i] = fields[i] ?? '';
@@ -693,7 +816,8 @@ export function updateTusCardByCardId(
     if (input.topic !== undefined && (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6)) {
         fields[2] = input.topic;
     }
-    if (note.noteTypeId === 6) fields[3] = (input.reverseAnswer ?? '').trim();
+    if (note.noteTypeId === 6 && input.reverseAnswer !== undefined) fields[3] = input.reverseAnswer.trim();
+    if (note.noteTypeId === 7 && input.reverseAnswer !== undefined) fields[2] = input.reverseAnswer.trim();
 
     note.fields = fields;
     note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
@@ -712,15 +836,35 @@ export function updateTusCardByCardId(
 
     const destinationDeckId = input.deckId
         ?? (input.subject ? resolveSubjectDeckId(input.subject) : card.deckId);
+
+    // Optional reverse and Cloze fields can add/remove generated cards. Keep existing cards'
+    // scheduling by ordinal, create only missing ordinals, and delete only now-invalid siblings.
+    if (noteType) {
+        const requiredOrds = noteType.kind === 'cloze'
+            ? extractClozeNumbers(fields[clozeFieldIndex(noteType)] || '').map((number) => number - 1)
+            : noteType.templates
+                .filter((template) => shouldGenerateCard(noteType, note, template.ord))
+                .map((template) => template.ord);
+        const existingByOrd = new Map(getCardsForNote(note.id).map((sibling) => [sibling.ord, sibling]));
+
+        for (const ord of requiredOrds) {
+            if (!existingByOrd.has(ord)) createCardForNote(note, destinationDeckId, ord);
+        }
+        for (const [ord, sibling] of existingByOrd) {
+            if (!requiredOrds.includes(ord)) deleteAnkiCardOnly(sibling.id);
+        }
+    }
+
     for (const sibling of getCardsForNote(note.id)) {
         sibling.deckId = destinationDeckId;
         sibling.mod = Math.floor(Date.now() / 1000);
         sibling.usn = -1;
         saveAnkiCard(sibling);
     }
-    card.deckId = destinationDeckId;
+    const updatedCard = getAnkiCard(cardId) ?? getCardsForNote(note.id)[0] ?? card;
+    updatedCard.deckId = destinationDeckId;
 
-    return { note, card };
+    return { note, card: updatedCard };
 }
 
 export function deleteTusCardByCardId(cardId: number): void {
