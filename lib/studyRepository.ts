@@ -1,5 +1,5 @@
 import { getDB } from './db';
-import { getAllSubjects, getSubjectIdSet } from './subjects';
+import { getAllSubjects, getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
 import type { AnkiCard, Deck, Note, DeckConfig, NoteType } from './models';
 import {
@@ -170,13 +170,15 @@ function firstNonEmptyFieldName(fieldNames: string[], fieldMap: Map<string, stri
 function parseNotePayload(note: Note, noteType: NoteType | null): { subject: string; topic: string; question: string; answer: string } {
     const knownSubjects = getSubjectIdSet();
     const subjectFromTag = note.tags.find((tag) => knownSubjects.has(tag));
-    const subject = subjectFromTag ?? 'custom';
+    // Bundled BKA notes keep their source tags byte-for-byte. Curated navigation lives in
+    // separate catalog metadata, so prefer it instead of guessing a course/topic from tags.
+    const subject = note.catalogSubject || subjectFromTag || 'custom';
 
     if (!noteType) {
         const question = note.fields[0] ?? note.sfld ?? '';
         const answer = note.fields[1] ?? '';
         const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
-        const topic = note.fields[2] || topicFromTag || 'General';
+        const topic = note.catalogTopic || note.fields[2] || topicFromTag || 'General';
         return { subject, topic, question, answer };
     }
 
@@ -218,7 +220,7 @@ function parseNotePayload(note: Note, noteType: NoteType | null): { subject: str
     );
     const topicFromField = topicFieldName != null ? (fieldMap.get(topicFieldName) ?? '') : '';
     const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
-    const topic = topicFromField || topicFromTag || 'General';
+    const topic = note.catalogTopic || topicFromField || topicFromTag || 'General';
 
     return { subject, topic, question, answer };
 }
@@ -352,10 +354,18 @@ function buildScopeClause(
     const params: Array<string | number> = [];
 
     if (selectedSubject) {
-        // Whole-tag match. Tags are stored space-separated (" a b "); a plain substring
-        // LIKE would let subject "veri" swallow another course's "Veri-Tipleri" topic tag.
-        clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
-        params.push(`% ${escapeLikePattern(selectedSubject)} %`);
+        const homeDeckId = resolveSubjectDeckId(selectedSubject);
+        const homeDeck = homeDeckId === 1 ? null : getDeck(homeDeckId);
+        if (homeDeck) {
+            // Courses own a physical deck. Scope by that deck tree so imported Anki tags stay
+            // unchanged instead of injecting an app-only subject tag into every note.
+            clauses.push("(c.deckId = ? OR d.name LIKE ? ESCAPE '\\')");
+            params.push(homeDeckId, `${escapeLikePattern(homeDeck.name)}::%`);
+        } else {
+            // Legacy/unknown subjects fall back to a whole-tag match.
+            clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
+            params.push(`% ${escapeLikePattern(selectedSubject)} %`);
+        }
     }
 
     if (selectedTopic) {

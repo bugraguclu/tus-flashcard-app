@@ -5,11 +5,14 @@ import * as Notifications from 'expo-notifications';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors, FontSize, ThemeColorsProvider, useThemeColors } from '../constants/theme';
-import { initWebDb, isPrimaryTab } from '../lib/db';
+import { getDB, initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useApp } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { isStudyReminderData } from '../lib/studyNotifications';
+import { CatalogScreen } from './catalog';
+
+const CATALOG_OFFER_SEEN_KEY = 'bka_catalog_offer_seen_v1';
 
 // Expo's default web template pins html/body/#root to 100% height; without it every
 // ScrollView/FlatList on web computes a 0px viewport — content still paints (overflow)
@@ -153,6 +156,54 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
     return <ThemeColorsProvider mode={settings.themeMode}>{children}</ThemeColorsProvider>;
 }
 
+/** Hold route screens until database/receipt reconciliation, then show the one-time freemium
+ * offer. The learner can explicitly choose the 1,200-card trial without purchasing. */
+function CatalogGate({ children }: { children: React.ReactNode }) {
+    const { isLoading, startupError, catalogAccess } = useApp();
+    const { t } = useSystemI18n();
+    const [offerChecked, setOfferChecked] = useState(false);
+    const [showInitialOffer, setShowInitialOffer] = useState(false);
+
+    useEffect(() => {
+        if (isLoading || startupError || catalogAccess.status === 'loading') return;
+        if (catalogAccess.hasAccess) {
+            setShowInitialOffer(false);
+            setOfferChecked(true);
+            return;
+        }
+        const seen = getDB().getFirstSync<{ value: string }>(
+            'SELECT value FROM settings WHERE key = ?',
+            CATALOG_OFFER_SEEN_KEY,
+        )?.value === 'true';
+        setShowInitialOffer(!seen);
+        setOfferChecked(true);
+    }, [isLoading, startupError, catalogAccess.status, catalogAccess.hasAccess]);
+
+    const continueWithTrial = () => {
+        getDB().runSync(
+            'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+            CATALOG_OFFER_SEEN_KEY,
+            'true',
+        );
+        setShowInitialOffer(false);
+    };
+    // Do not mount route screens until migrations and the one-time catalog replacement finish;
+    // several screens read SQLite in state initializers and a fresh web/native install has no
+    // tables before startup completes.
+    if (isLoading || (!startupError && (catalogAccess.status === 'loading' || !offerChecked))) {
+        return (
+            <View style={errorStyles.container}>
+                <Text style={errorStyles.icon}>🧠</Text>
+                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
+            </View>
+        );
+    }
+    if (!startupError && showInitialOffer && !catalogAccess.hasAccess) {
+        return <CatalogScreen embedded onContinueTrial={continueWithTrial} />;
+    }
+    return children;
+}
+
 /** Renders the navigator + DialogHost; lives inside ThemeGate so it can read live theme colors. */
 function AppStack() {
     const router = useRouter();
@@ -190,6 +241,14 @@ function AppStack() {
                 }}
             >
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                    name="catalog"
+                    options={{
+                        presentation: 'fullScreenModal',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
                 <Stack.Screen
                     name="browser"
                     options={{
@@ -298,7 +357,9 @@ export default function RootLayout() {
                 <WebDbGate>
                     <AppProvider>
                         <ThemeGate>
-                            <AppStack />
+                            <CatalogGate>
+                                <AppStack />
+                            </CatalogGate>
                         </ThemeGate>
                     </AppProvider>
                 </WebDbGate>

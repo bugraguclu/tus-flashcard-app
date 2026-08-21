@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, StyleSheet } from 'react-native';
+import { Linking, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { NoteType, Note, AnkiCard, Deck } from '../lib/models';
 import { renderCardHtml } from '../lib/templates';
@@ -45,6 +45,8 @@ export default function CardWebView({
     centerContent = false,
     frameStyle = 'card',
 }: CardWebViewProps) {
+    const { width } = useWindowDimensions();
+    const compact = width < 600;
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const plainFrame = frameStyle === 'plain';
@@ -150,7 +152,7 @@ export default function CardWebView({
                 style={{
                     border: 'none',
                     width: '100%',
-                    minHeight: 120,
+                    height: compact ? 360 : 300,
                     backgroundColor: surfaceColor,
                     borderRadius: plainFrame ? 0 : 8,
                 }}
@@ -179,7 +181,7 @@ export default function CardWebView({
             ref={webViewRef}
             originWhitelist={['*']}
             source={{ html, baseUrl: mediaBaseUrl }}
-            style={[styles.webView, plainFrame && styles.webViewPlain]}
+            style={[styles.webView, compact && styles.webViewCompact, plainFrame && styles.webViewPlain]}
             javaScriptEnabled={hasPlayableMedia}
             domStorageEnabled={false}
             mixedContentMode="never"
@@ -202,8 +204,9 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         webView: {
             backgroundColor: colors.bgCard,
-            height: 220,
+            height: 300,
         },
+        webViewCompact: { height: 360 },
         webViewPlain: {
             backgroundColor: 'transparent',
         },

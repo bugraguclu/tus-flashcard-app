@@ -155,6 +155,17 @@ function seedBase() {
     saveDeck({ id: 1, name: 'Python', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
     saveDeck({ id: 2, name: 'Python::Temeller', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
     saveDeck({ id: 7, name: 'Python::Modüller & Hata Ayıklama', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+    // Production no longer ships the former Python demo curriculum. Register the fixture's
+    // courses explicitly so this test owns the topic ordering it is asserting.
+    db.runSync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        'user_subjects_v1',
+        JSON.stringify([
+            { id: 'temeller', name: 'Temeller', icon: '🐍', topics: ['Veri Tipleri'], deckId: 2, isCustom: true },
+            { id: 'araclar', name: 'Araçlar', icon: '🧰', topics: ['Modüller', 'random', 'Hata Ayıklama'], deckId: 7, isCustom: true },
+        ]),
+    );
+    invalidateSubjectsCache();
     saveNoteType(noteType);
 
     // Topic "random", but the ANSWER mentions "Modüller" — must never leak into that topic.

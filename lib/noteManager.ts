@@ -696,8 +696,8 @@ export interface SearchIndexCard {
 /** Build a card's search-index entry from its note. Shared by full and incremental indexing. */
 export function searchIndexCardFromNote(note: Note, cardId: number): SearchIndexCard {
     const subjectTags = getSubjectIdSet();
-    const subject = note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
-    const topic = note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General';
+    const subject = note.catalogSubject ?? note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
+    const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General');
     return {
         id: cardId,
         subject,

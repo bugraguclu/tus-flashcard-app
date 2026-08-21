@@ -205,6 +205,7 @@ export default function StudyScreen() {
     const studySessionStartedAtRef = useRef(Date.now());
     const lastTimeboxBucketRef = useRef(0);
     const nativeShortcutCaptureRef = useRef<TextInput>(null);
+    const reviewerScrollRef = useRef<ScrollView>(null);
 
     useEffect(() => {
         sessionStatsRef.current = sessionStats;
@@ -420,6 +421,13 @@ export default function StudyScreen() {
         setShowingAnswer(false);
         setTypedAnswer('');
     }, [currentCard?.cardId]);
+
+    useEffect(() => {
+        if (!showingAnswer) return;
+        // The back replaces the front. Start it at the top even if the learner had scrolled
+        // deep into a long question, then let the outer reviewer scroll naturally to grades.
+        requestAnimationFrame(() => reviewerScrollRef.current?.scrollTo({ y: 0, animated: false }));
+    }, [showingAnswer]);
 
     // Rebuild queue when the next learning card becomes due. The newly due card joins the
     // queue behind the card currently being studied, never replacing it mid-answer.
@@ -1282,7 +1290,7 @@ export default function StudyScreen() {
                 <Text style={styles.deckDescription} numberOfLines={2}>📝 {deckDescription}</Text>
             )}
 
-            <ScrollView contentContainerStyle={styles.cardArea}>
+            <ScrollView ref={reviewerScrollRef} contentContainerStyle={styles.cardArea}>
                 {currentCard ? (
                     <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
                         <View style={styles.cardHeader}>
@@ -1357,7 +1365,7 @@ export default function StudyScreen() {
                             settings.studyFrameStyle === 'plain' && styles.cardBodyPlain,
                             settings.centerCardContent && styles.cardBodyCentered,
                         ]}>
-                            {renderPayload ? (
+                            {renderPayload && !showingAnswer ? (
                                 <CardWebView
                                     noteType={renderPayload.noteType}
                                     note={renderPayload.note}
@@ -1374,9 +1382,9 @@ export default function StudyScreen() {
                                     centerContent={settings.centerCardContent}
                                     frameStyle={settings.studyFrameStyle}
                                 />
-                            ) : (
+                            ) : !renderPayload ? (
                                 <Text style={styles.questionText}>{currentCard.question}</Text>
-                            )}
+                            ) : null}
 
                             {typeAnswerField && !showingAnswer && (
                                 <TextInput
@@ -1391,31 +1399,29 @@ export default function StudyScreen() {
                                 />
                             )}
 
-                            {showingAnswer ? (
+                            {showingAnswer && renderPayload ? (
+                                // Match Anki's reviewer: the back template replaces the front.
+                                // It may contain {{FrontSide}} itself, so stacking both sides
+                                // duplicates imported AnKing cards and wastes the iPhone viewport.
+                                <CardWebView
+                                    noteType={renderPayload.noteType}
+                                    note={renderPayload.note}
+                                    card={renderPayload.card}
+                                    deck={renderPayload.deck}
+                                    side="answer"
+                                    typedAnswer={typeAnswerField ? typedAnswer : undefined}
+                                    playAudioSignal={answerSideHasAudio ? audioSignal : undefined}
+                                    pauseAudioSignal={pauseSignal}
+                                    cardZoomPercent={settings.cardZoomPercent}
+                                    imageZoomPercent={settings.imageZoomPercent}
+                                    showAudioPlayButtons={settings.showAudioPlayButtons}
+                                    centerContent={settings.centerCardContent}
+                                    frameStyle={settings.studyFrameStyle}
+                                />
+                            ) : showingAnswer ? (
                                 <View style={styles.answerSection}>
-                                    {/* Anki's back template shows the answer under an <hr id=answer> rule. */}
                                     <View style={styles.answerDivider} />
-                                    {renderPayload ? (
-                                        <CardWebView
-                                            noteType={renderPayload.noteType}
-                                            note={renderPayload.note}
-                                            card={renderPayload.card}
-                                            deck={renderPayload.deck}
-                                            side="answer"
-                                            typedAnswer={typeAnswerField ? typedAnswer : undefined}
-                                            playAudioSignal={answerSideHasAudio ? audioSignal : undefined}
-                                            pauseAudioSignal={pauseSignal}
-                                            // The question stays visible in its own panel above.
-                                            omitFrontSide
-                                            cardZoomPercent={settings.cardZoomPercent}
-                                            imageZoomPercent={settings.imageZoomPercent}
-                                            showAudioPlayButtons={settings.showAudioPlayButtons}
-                                            centerContent={settings.centerCardContent}
-                                            frameStyle={settings.studyFrameStyle}
-                                        />
-                                    ) : (
-                                        <Text style={styles.answerText}>{currentCard.answer}</Text>
-                                    )}
+                                    <Text style={styles.answerText}>{currentCard.answer}</Text>
                                 </View>
                             ) : (
                                 <TouchableOpacity
@@ -1677,7 +1683,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     streakChipText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.btnHard },
 
     contentArea: { flex: 1, position: 'relative' },
-    cardArea: { flexGrow: 1, padding: isCompact ? Spacing.md : Spacing.xxl, alignItems: 'center', justifyContent: 'center' },
+    cardArea: {
+        flexGrow: 1,
+        padding: isCompact ? Spacing.md : Spacing.xxl,
+        alignItems: 'center',
+        justifyContent: isCompact ? 'flex-start' : 'center',
+    },
     cardContainer: { width: '100%', maxWidth: 680 },
 
     cardHeader: {

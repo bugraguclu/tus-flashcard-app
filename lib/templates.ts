@@ -26,7 +26,7 @@ export function extractClozeNumbers(text: string): number[] {
  * the first field, so custom cloze note types are not silently broken.
  */
 export function clozeFieldIndex(noteType: NoteType): number {
-    const match = noteType.templates[0]?.qfmt.match(/\{\{cloze:([^{}]+?)\}\}/);
+    const match = noteType.templates[0]?.qfmt.match(/\{\{(?:edit:)?cloze:([^{}]+?)\}\}/);
     if (match) {
         const idx = noteType.fields.findIndex(f => f.name === match[1].trim());
         if (idx !== -1) return idx;
@@ -173,7 +173,15 @@ function renderConditionalNodes(nodes: ConditionalNode[], fields: Record<string,
 
 /** Render a template string with the given context */
 export function renderTemplate(template: string, ctx: RenderContext): string {
-    let result = renderConditionalNodes(parseConditionalNodes(template), ctx.fields);
+    const conditionalFields = {
+        ...ctx.fields,
+        Tags: ctx.tags || '',
+        Type: ctx.typeName || '',
+        Deck: ctx.deckName || '',
+        Card: ctx.cardName || '',
+        FrontSide: ctx.frontSide || '',
+    };
+    let result = renderConditionalNodes(parseConditionalNodes(template), conditionalFields);
 
     // Special fields
     result = result.replace(/\{\{FrontSide\}\}/g, ctx.omitFrontSide ? '' : ctx.frontSide || '');
@@ -186,9 +194,11 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
     result = result.replace(/\{\{Deck\}\}/g, ctx.deckName || '');
     result = result.replace(/\{\{Card\}\}/g, ctx.cardName || '');
 
-    // Cloze fields: {{cloze:FieldName}}
+    // Cloze fields: {{cloze:FieldName}}. AnKing's desktop editor add-on uses
+    // {{edit:cloze:FieldName}}; editing is unavailable during review here, but the cloze itself
+    // must render identically instead of disappearing as an unknown filter.
     result = result.replace(
-        /\{\{cloze:([^{}]+?)\}\}/g,
+        /\{\{(?:edit:)?cloze:([^{}]+?)\}\}/g,
         (_match, rawField) => {
             const field = rawField.trim();
             const value = ctx.fields[field] || '';
@@ -218,10 +228,39 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
         }
     );
 
+    // Anki's hint filter normally injects a JavaScript toggle. Card WebViews deliberately run
+    // without imported JavaScript, so native HTML <details> preserves the reveal interaction.
+    result = result.replace(
+        /\{\{hint:([^{}]+?)\}\}/g,
+        (_match, rawField) => {
+            const field = rawField.trim();
+            const value = ctx.fields[field] || '';
+            return value
+                ? `<details class="hint"><summary>${escapeHtml(field)}</summary><div>${value}</div></details>`
+                : '';
+        },
+    );
+
+    // AnKing's clickable tag filter depends on template JavaScript. Render the complete tag list
+    // as inert chips so no tag information is lost when scripts are stripped.
+    result = result.replace(/\{\{clickable::Tags\}\}/g, () => {
+        return (ctx.tags || '')
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((tag) => `<kbd>${escapeHtml(tag)}</kbd>`)
+            .join(' ');
+    });
+
     // Regular field substitution: {{FieldName}} — allow HTML in note fields.
     result = result.replace(
         /\{\{([^{}]+?)\}\}/g,
-        (_match, rawField) => ctx.fields[rawField.trim()] || ''
+        (_match, rawField) => {
+            // Unknown benign Anki filters degrade to their final field rather than blanking the
+            // content. Structural block markers were already consumed above.
+            const field = rawField.split(':').filter(Boolean).pop()?.trim() ?? '';
+            if (field === 'Tags') return ctx.tags || '';
+            return ctx.fields[field] || '';
+        }
     );
 
     return result;

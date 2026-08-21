@@ -166,6 +166,9 @@ export interface Note {
     sfld: string;        // sort-field value
     csum: number;        // FNV-1a hash of the first field for dup detection (not Anki's SHA1 csum)
     flags: number;       // reserved; color flags live on the card (AnkiCard.flags)
+    /** Catalog navigation metadata. Source Anki tags remain untouched. */
+    catalogSubject?: string;
+    catalogTopic?: string;
 }
 
 export type CardType = 0 | 1 | 2 | 3;  // 0=new, 1=learning, 2=review, 3=relearning
@@ -194,6 +197,8 @@ export interface AnkiCard {
     odid: number;        // original deck id (filtered decks)
     flags: CardFlag;
     lastReview: number;  // epoch ms; denormalized (Anki derives this from the revlog)
+    /** Original root deck before the curated TUS subdeck categorization. */
+    sourceDeckId?: number;
 }
 
 // Hierarchical decks, e.g. "TUS::Dahiliye::Kardiyoloji".

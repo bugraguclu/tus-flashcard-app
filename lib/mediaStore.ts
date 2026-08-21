@@ -84,6 +84,30 @@ async function idbGet(name: string): Promise<Blob | null> {
     });
 }
 
+async function idbKeys(): Promise<string[]> {
+    const db = await openMediaDb();
+    return new Promise((resolve, reject) => {
+        const request = db.transaction(WEB_MEDIA_STORE, 'readonly')
+            .objectStore(WEB_MEDIA_STORE)
+            .getAllKeys();
+        request.onsuccess = () => resolve(request.result.filter((key): key is string => typeof key === 'string'));
+        request.onerror = () => reject(request.error ?? new Error('IndexedDB key listing failed'));
+    });
+}
+
+async function idbDeleteMany(names: string[]): Promise<void> {
+    if (names.length === 0) return;
+    const db = await openMediaDb();
+    await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(WEB_MEDIA_STORE, 'readwrite');
+        const store = tx.objectStore(WEB_MEDIA_STORE);
+        for (const name of names) store.delete(name);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error ?? new Error('IndexedDB delete failed'));
+        tx.onabort = () => reject(tx.error ?? new Error('IndexedDB delete aborted'));
+    });
+}
+
 // ---------- MIME resolution ----------
 
 const EXTENSION_MIME: Record<string, string> = {
@@ -155,6 +179,42 @@ export async function saveMediaFile(filename: string, base64Data: string): Promi
     const dir = await ensureMediaDir();
     const fs = getFileSystem();
     await fs.writeAsStringAsync(`${dir}${safe}`, base64Data, { encoding: fs.EncodingType.Base64 });
+}
+
+/**
+ * Remove every stored card attachment except the supplied catalog filenames.
+ * Used only by an explicit full-collection replacement: ordinary imports remain additive.
+ */
+export async function removeMediaExcept(filenames: Iterable<string>): Promise<{ deleted: number; remaining: number }> {
+    const keep = new Set(Array.from(filenames, sanitizeMediaFilename));
+
+    if (Platform.OS === 'web') {
+        const existing = await idbKeys();
+        const stale = existing.filter((name) => !keep.has(name));
+        await idbDeleteMany(stale);
+        for (const name of stale) {
+            const url = objectUrlCache.get(name);
+            if (url) URL.revokeObjectURL(url);
+            objectUrlCache.delete(name);
+        }
+        return { deleted: stale.length, remaining: existing.length - stale.length };
+    }
+
+    const dir = await ensureMediaDir();
+    const fs = getFileSystem();
+    const existing = await fs.readDirectoryAsync(dir);
+    const stale = existing.filter((name) => !keep.has(name));
+    for (const name of stale) {
+        await fs.deleteAsync(`${dir}${name}`, { idempotent: true });
+    }
+    return { deleted: stale.length, remaining: existing.length - stale.length };
+}
+
+/** List stored attachment names without reading their contents. */
+export async function listStoredMediaFilenames(): Promise<string[]> {
+    if (Platform.OS === 'web') return idbKeys();
+    const dir = await ensureMediaDir();
+    return getFileSystem().readDirectoryAsync(dir);
 }
 
 /** Read a stored media file for Anki package export. Missing files return null. */

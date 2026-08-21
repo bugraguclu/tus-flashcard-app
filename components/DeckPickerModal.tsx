@@ -12,11 +12,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
 import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { matchesSearch } from '../lib/searchText';
+import DisclosureChevron from './DisclosureChevron';
 
 type Props = {
     visible: boolean;
@@ -37,21 +37,6 @@ type Props = {
 };
 
 type VisibleDeck = { node: DeckTreeNode; depth: number };
-
-function DisclosureChevron({ expanded, color }: { expanded: boolean; color: string }) {
-    return (
-        <Svg width={20} height={20} viewBox="0 0 20 20" accessibilityElementsHidden>
-            <Path
-                d={expanded ? 'M5.5 7.5 10 12l4.5-4.5' : 'M7.5 5.5 12 10l-4.5 4.5'}
-                fill="none"
-                stroke={color}
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
 
 function filterTree(nodes: DeckTreeNode[], query: string): DeckTreeNode[] {
     if (!query) return nodes;

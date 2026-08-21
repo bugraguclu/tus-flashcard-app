@@ -11,7 +11,7 @@ import {
 import { initDB, dbIndexAllCards, getDB } from '../lib/db';
 import { createDeck, getDeckByName } from '../lib/deckManager';
 import { runDailyMaintenance } from '../lib/maintenance';
-import { runAutoBackupIfDue } from '../lib/backup';
+import { createBackupNow, runAutoBackupIfDue } from '../lib/backup';
 import {
     initAnkiData,
     ensureBuiltinNoteTypesSeeded,
@@ -19,6 +19,8 @@ import {
 } from '../lib/ankiInit';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../lib/legacyMigration';
+import { installBkaCatalogIfNeeded, isBkaCatalogInstalled } from '../lib/bkaCatalog';
+import { invalidateSubjectsCache } from '../lib/subjects';
 
 let startupPromise: Promise<void> | null = null;
 
@@ -26,7 +28,9 @@ let startupPromise: Promise<void> | null = null;
 // splash screen forever. This is especially important after a simulator restore
 // or an interrupted migration, where a legacy AsyncStorage promise can remain
 // unresolved even though the rest of the app is usable.
-const STARTUP_TIMEOUT_MS = 20_000;
+// The first launch of the catalog build validates and writes 9,583 cards plus media. Subsequent
+// launches are still fast, but the one-time atomic migration needs more room on older devices.
+const STARTUP_TIMEOUT_MS = 60_000;
 
 function withStartupTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
@@ -56,13 +60,29 @@ async function runStartupCore(): Promise<void> {
     if (ankiResult.initialized) {
         console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
     }
-    // Runs every launch (unlike initAnkiData, which only seeds once) so a new built-in note
-    // type introduced in an app update reaches installs that already exist.
-    ensureBuiltinNoteTypesSeeded();
 
-    // Anki always keeps a Default deck around (it comes back even after deletion).
-    if (!getDeckByName('Varsayılan')) {
-        createDeck('Varsayılan');
+    // This release intentionally replaces the active card collection with the licensed BKA
+    // catalog. Take a recoverable snapshot first; if that safety copy fails, do not delete data.
+    if (!isBkaCatalogInstalled()) {
+        const db = getDB();
+        const activeCards = db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM anki_cards')?.count ?? 0;
+        if (activeCards > 0) {
+            const backup = await createBackupNow();
+            console.log(`[App] Pre-catalog safety backup written: ${backup.fileName}`);
+        }
+        const catalog = await installBkaCatalogIfNeeded();
+        invalidateSubjectsCache();
+        console.log(
+            `[App] BKA catalog installed: ${catalog.notes} notes, ${catalog.cards} cards, `
+            + `${catalog.decks} decks, ${catalog.media} media files.`,
+        );
+    }
+
+    // A general-purpose install keeps app-native note types and a default deck. This catalog
+    // edition intentionally contains only the two source note types and twelve source decks.
+    if (!isBkaCatalogInstalled()) {
+        ensureBuiltinNoteTypesSeeded();
+        if (!getDeckByName('Varsayılan')) createDeck('Varsayılan');
     }
 
     const settingsMigration = await migrateLegacySettingsIfNeeded();

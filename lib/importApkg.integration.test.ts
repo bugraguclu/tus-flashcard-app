@@ -141,7 +141,7 @@ describe('apkg glue (real sql.js + jszip)', () => {
         zip.file('99', new Uint8Array([9]));
 
         const counts = await importMediaFromZip(zip);
-        expect(counts).toEqual({ imported: 2, skipped: 1 });
+        expect(counts).toEqual({ imported: 2, skipped: 1, filenames: ['kalp.png', 'ses.mp3'] });
         expect(media.saved).toEqual([
             { filename: 'kalp.png', size: 3 },
             { filename: 'ses.mp3', size: 2 },

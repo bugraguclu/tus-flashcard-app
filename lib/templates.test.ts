@@ -42,6 +42,19 @@ describe('clozeFieldIndex', () => {
         };
         expect(countCardsForNote(nt, note)).toBe(2);
     });
+
+    it('recognizes AnKing edit:cloze templates', () => {
+        const nt = clozeNoteType(['Text', 'Extra'], 'Text');
+        nt.templates[0].qfmt = '{{edit:cloze:Text}}';
+        expect(clozeFieldIndex(nt)).toBe(0);
+
+        const html = renderCardHtml(nt, {
+            id: 3, guid: 'anking', noteTypeId: nt.id, mod: 0, usn: -1, tags: [],
+            fields: ['Kalp {{c1::dört}} odacıklıdır', ''], sfld: '', csum: 0, flags: 0,
+        }, 0, 'question');
+        expect(html).toContain('class="cloze-blank"');
+        expect(html).not.toContain('edit:cloze');
+    });
 });
 
 describe('templates', () => {
@@ -113,6 +126,20 @@ describe('templates', () => {
         expect(html).not.toContain('javascript:');
         expect(html).not.toContain('@import');
         expect(html).not.toContain('evil.example');
+    });
+
+    it('keeps hint content usable without imported JavaScript and renders clickable tags', () => {
+        const rendered = renderTemplate(
+            '{{#Extra}}{{hint:Extra}}{{/Extra}} {{#Tags}}{{clickable::Tags}}{{/Tags}}',
+            { fields: { Extra: '<b>Açıklama</b>' }, tags: 'kardiyoloji tus' },
+        );
+
+        expect(rendered).toContain('<details class="hint">');
+        expect(rendered).toContain('<b>Açıklama</b>');
+        expect(rendered).toContain('<kbd>kardiyoloji</kbd>');
+        expect(rendered).toContain('<kbd>tus</kbd>');
+        expect(rendered).not.toContain('{{hint:');
+        expect(rendered).not.toContain('{{clickable:');
     });
 });
 

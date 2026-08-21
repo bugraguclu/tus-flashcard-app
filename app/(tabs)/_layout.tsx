@@ -76,24 +76,26 @@ export default function TabLayout() {
     }, []);
 
     const searchableCards = useMemo(() => {
+        if (isLoading) return [];
         try {
             return getSearchIndexCards();
         } catch (e) {
             console.warn('[Layout] getSearchIndexCards failed:', e);
             return [];
         }
-    }, [dataVersion]);
+    }, [dataVersion, isLoading]);
 
     // Courses are deck-specific: the sidebar lists only the active deck's own courses
     // (an empty deck lists none). Without a deck context the full list stays visible.
     const subjects = useMemo(() => {
+        if (isLoading) return [];
         try {
             return activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
         } catch (e) {
             console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [dataVersion, activeDeckName]);
+    }, [dataVersion, activeDeckName, isLoading]);
 
     const { subjectCounts, topicCounts } = useMemo(() => {
         const nextSubjectCounts = new Map<string, number>();

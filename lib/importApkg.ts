@@ -17,6 +17,7 @@ import { BUILTIN_NOTE_TYPES, type NoteType } from './models';
 import { resolveSubjectDeckId } from './subjects';
 import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { saveMediaBytes } from './mediaStore';
+import { sanitizeMediaFilename } from './mediaFilename';
 import { decompress } from 'fzstd';
 
 const ANKI_BASIC_NOTETYPE_ID = 1;
@@ -197,7 +198,7 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
     };
 }
 
-async function loadZip(zipBytes: Uint8Array): Promise<JSZipType> {
+export async function loadAnkiZip(zipBytes: Uint8Array): Promise<JSZipType> {
     if (zipBytes.length > MAX_APKG_BYTES) {
         throw new Error('Dosya çok büyük (en fazla 200 MB).');
     }
@@ -206,10 +207,10 @@ async function loadZip(zipBytes: Uint8Array): Promise<JSZipType> {
 }
 
 export async function extractCollectionBytes(zipBytes: Uint8Array): Promise<Uint8Array> {
-    return extractCollectionFromZip(await loadZip(zipBytes));
+    return extractCollectionFromZip(await loadAnkiZip(zipBytes));
 }
 
-async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
+export async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
     async function inflate(file: import('jszip').JSZipObject): Promise<Uint8Array> {
         const bytes = await file.async('uint8array');
         if (bytes.length > MAX_COLLECTION_BYTES) {
@@ -239,7 +240,7 @@ async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
     throw new Error('Geçerli bir Anki koleksiyonu bulunamadı.');
 }
 
-async function defaultOpenReader(bytes: Uint8Array): Promise<ApkgReader> {
+export async function openAnkiReader(bytes: Uint8Array): Promise<ApkgReader> {
     const { Platform } = require('react-native') as typeof import('react-native');
     if (Platform.OS !== 'web') {
         const SQLite = require('expo-sqlite') as typeof import('expo-sqlite');
@@ -259,8 +260,8 @@ async function defaultOpenReader(bytes: Uint8Array): Promise<ApkgReader> {
  * manifest) into the media store. Oversized or unreadable entries are skipped,
  * never fatal — the notes have already been imported at this point.
  */
-export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: number; skipped: number }> {
-    const counts = { imported: 0, skipped: 0 };
+export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: number; skipped: number; filenames: string[] }> {
+    const counts = { imported: 0, skipped: 0, filenames: [] as string[] };
 
     const manifestFile = zip.file(MEDIA_MANIFEST_NAME);
     if (!manifestFile) return counts;
@@ -307,6 +308,7 @@ export async function importMediaFromZip(zip: JSZipType): Promise<{ imported: nu
             totalBytes += bytes.length;
             await saveMediaBytes(filename, bytes);
             counts.imported++;
+            counts.filenames.push(sanitizeMediaFilename(filename));
         } catch (e) {
             console.warn(`[ApkgImport] media entry ${entryName} (${filename}) skipped:`, e);
             counts.skipped++;
@@ -393,9 +395,9 @@ function parseModernMediaManifest(bytes: Uint8Array): Record<string, string> {
 }
 
 export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOptions): Promise<ApkgImportResult> {
-    const zip = await loadZip(zipBytes);
+    const zip = await loadAnkiZip(zipBytes);
     const collectionBytes = await extractCollectionFromZip(zip);
-    const reader = await (options.openReader ?? defaultOpenReader)(collectionBytes);
+    const reader = await (options.openReader ?? openAnkiReader)(collectionBytes);
 
     let result: ApkgImportResult;
     try {

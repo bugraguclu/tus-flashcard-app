@@ -59,6 +59,7 @@ import { createBackupNow } from '../../lib/backup';
 import { useApp } from './_layout';
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel } from '../../lib/i18n';
+import DisclosureChevron from '../../components/DisclosureChevron';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -143,7 +144,7 @@ export default function DecksScreen() {
     const supportsDeckDrag = isDesktopWeb || Platform.OS === 'ios' || Platform.OS === 'android';
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { settings, dataVersion, bumpDataVersion, activeDeckName } = useApp();
+    const { settings, dataVersion, bumpDataVersion, activeDeckName, catalogAccess } = useApp();
     const [expandedDecks, setExpandedDecks] = useState<Set<string>>(getPersistedExpandedDeckNames);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
@@ -1299,7 +1300,10 @@ export default function DecksScreen() {
                         accessibilityLabel={isExpanded ? l('Alt desteleri gizle', 'Hide subdecks') : l('Alt desteleri göster', 'Show subdecks')}
                         accessibilityState={{ expanded: isExpanded }}
                     >
-                        <Text style={[styles.expandArrow, isExpanded && styles.expandArrowExpanded]}>›</Text>
+                        <DisclosureChevron
+                            expanded={isExpanded}
+                            color={colors.textPrimary}
+                        />
                     </TouchableOpacity>
                 ) : (
                     <View style={styles.expandBtn}>
@@ -2101,6 +2105,15 @@ export default function DecksScreen() {
                     </Text>
                 </View>
                 <View style={styles.headerActions}>
+                    <TouchableOpacity
+                        style={styles.catalogButton}
+                        onPress={() => router.push('/catalog' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('BKA TUS Complete paketini görüntüle', 'View the BKA TUS Complete package')}
+                    >
+                        <Text style={styles.catalogButtonIcon}>{catalogAccess.hasAccess ? '◆' : '◇'}</Text>
+                        <Text style={styles.catalogButtonText}>{catalogAccess.hasAccess ? l('Tam Paket', 'Full') : l('Deneme', 'Trial')}</Text>
+                    </TouchableOpacity>
                     {isDesktopWeb && (
                         <TouchableOpacity
                             style={styles.headerBtn}
@@ -2124,6 +2137,28 @@ export default function DecksScreen() {
                     </TouchableOpacity>
                 </View>
             </View>
+
+            <TouchableOpacity
+                style={[styles.accessBanner, catalogAccess.hasAccess && styles.accessBannerFull]}
+                onPress={() => router.push('/catalog' as any)}
+                accessibilityRole="button"
+                accessibilityLabel={catalogAccess.hasAccess
+                    ? l('Tam BKA kataloğu açık', 'Full BKA catalog unlocked')
+                    : l('Ücretsiz deneme sürümü, tam paketi görüntüle', 'Free trial, view full package')}
+            >
+                <View style={styles.accessBannerIcon}><Text style={styles.accessBannerIconText}>{catalogAccess.hasAccess ? '✓' : '100'}</Text></View>
+                <View style={styles.accessBannerCopy}>
+                    <Text style={styles.accessBannerTitle}>
+                        {catalogAccess.hasAccess ? l('Tam katalog açık', 'Full catalog unlocked') : l('Ücretsiz deneme sürümü', 'Free trial')}
+                    </Text>
+                    <Text style={styles.accessBannerText}>
+                        {catalogAccess.hasAccess
+                            ? l('9.583 kart ve tüm alt konu desteleri', '9,583 cards and all topic subdecks')
+                            : l('Her dersten 100 kart · Toplam 1.200 kart', '100 cards per course · 1,200 cards total')}
+                    </Text>
+                </View>
+                <Text style={styles.accessBannerArrow}>›</Text>
+            </TouchableOpacity>
 
             <Modal
                 visible={showOverflowMenu}
@@ -2507,6 +2542,29 @@ function createStyles(colors: ColorScheme) {
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
     headerSubtitle: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
     headerActions: { flexDirection: 'row', gap: 8 },
+    catalogButton: {
+        minHeight: 38,
+        paddingHorizontal: 12,
+        borderRadius: BorderRadius.full,
+        backgroundColor: '#123f34',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    catalogButtonIcon: { color: '#d4b66b', fontSize: 11, marginRight: 6 },
+    catalogButtonText: { color: '#f5f2e8', fontSize: FontSize.sm, fontWeight: '800' },
+    accessBanner: {
+        flexDirection: 'row', alignItems: 'center', marginHorizontal: Spacing.md, marginVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md, paddingVertical: 11, borderRadius: BorderRadius.md,
+        backgroundColor: '#fff8e7', borderWidth: 1, borderColor: '#ead59d',
+    },
+    accessBannerFull: { backgroundColor: '#e8f5ef', borderColor: '#a9d7c4' },
+    accessBannerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#123f34', alignItems: 'center', justifyContent: 'center' },
+    accessBannerIconText: { color: '#f2d98d', fontSize: 11, fontWeight: '900' },
+    accessBannerCopy: { flex: 1, marginHorizontal: Spacing.sm },
+    accessBannerTitle: { color: '#123f34', fontSize: FontSize.sm, fontWeight: '800' },
+    accessBannerText: { color: '#587069', fontSize: FontSize.xs, marginTop: 2 },
+    accessBannerArrow: { color: '#123f34', fontSize: 24, fontWeight: '400' },
     headerBtn: {
         paddingHorizontal: Spacing.md,
         minHeight: 44,
@@ -2689,14 +2747,6 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '800',
     },
     expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    expandArrow: {
-        fontSize: 20,
-        lineHeight: 22,
-        fontWeight: '700',
-        color: '#111111',
-        transform: [{ rotate: '0deg' }],
-    },
-    expandArrowExpanded: { transform: [{ rotate: '90deg' }] },
     expandDot: { fontSize: 10, color: colors.border },
     deckNameTouchable: { flex: 1, marginLeft: 2, minHeight: 44, justifyContent: 'center' },
     deckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
