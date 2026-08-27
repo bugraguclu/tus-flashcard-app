@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "c262c9cc304abbfe716bb4d25c0d892101e35ca64d5dfee781b0f65e38d37d08",
+  "sha256": "c868ce3393ab3b820ae1b167d1be22ba8f5a74f0ad916a245eaa9fc90c3760dd",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7398,7 +7398,6 @@
     "y0LVyaro8_",
     "y19vc7aF|I",
     "y1d*HF@L4z",
-    "y2_7rH?W7t",
     "y2kqy+rgEJ",
     "y2mW0N~,@t",
     "y4.]F)&)68",
@@ -7693,7 +7692,6 @@
     "zirB61_$]&",
     "zj03a!aQP2",
     "zj3R!EA:]b",
-    "zj8?2>ALFw",
     "zjb[{P*/x+",
     "zjqLkco=M>",
     "zk(k#6s&,{",
@@ -7751,11 +7749,11 @@
     "~_nPud=(Z"
   ],
   "totals": {
-    "notes": 7737,
-    "cards": 9583,
+    "notes": 7735,
+    "cards": 9581,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 3346,
+    "ungroupedCards": 3337,
     "media": 49
   },
   "courses": [
@@ -7817,8 +7815,8 @@
         },
         {
           "name": "Baş ve Boyun",
-          "notes": 96,
-          "cards": 128,
+          "notes": 99,
+          "cards": 131,
           "deck": true
         },
         {
@@ -7859,8 +7857,8 @@
         },
         {
           "name": "Genel",
-          "notes": 89,
-          "cards": 94,
+          "notes": 86,
+          "cards": 91,
           "deck": false
         }
       ]
@@ -7912,8 +7910,8 @@
         },
         {
           "name": "Endokrin ve Üreme Fizyolojisi",
-          "notes": 25,
-          "cards": 38,
+          "notes": 26,
+          "cards": 39,
           "deck": true
         },
         {
@@ -7936,8 +7934,8 @@
         },
         {
           "name": "Genel",
-          "notes": 221,
-          "cards": 241,
+          "notes": 220,
+          "cards": 240,
           "deck": false
         }
       ]
@@ -8006,8 +8004,8 @@
         },
         {
           "name": "Bakteriyoloji",
-          "notes": 135,
-          "cards": 162,
+          "notes": 136,
+          "cards": 163,
           "deck": true
         },
         {
@@ -8036,8 +8034,8 @@
         },
         {
           "name": "Genel",
-          "notes": 143,
-          "cards": 169,
+          "notes": 142,
+          "cards": 168,
           "deck": false
         }
       ]
@@ -8053,8 +8051,8 @@
       "topics": [
         {
           "name": "Hematopatoloji",
-          "notes": 31,
-          "cards": 38,
+          "notes": 32,
+          "cards": 39,
           "deck": true
         },
         {
@@ -8113,8 +8111,8 @@
         },
         {
           "name": "Genel",
-          "notes": 223,
-          "cards": 248,
+          "notes": 222,
+          "cards": 247,
           "deck": false
         }
       ]
@@ -8125,13 +8123,13 @@
       "sourceDeckName": "Farmakoloji BKA",
       "sourceDeckId": 1748430717056,
       "icon": "💊",
-      "notes": 671,
-      "cards": 829,
+      "notes": 670,
+      "cards": 828,
       "topics": [
         {
           "name": "Genel Farmakoloji ve Toksikoloji",
-          "notes": 67,
-          "cards": 88,
+          "notes": 66,
+          "cards": 87,
           "deck": true
         },
         {
@@ -8415,8 +8413,8 @@
         },
         {
           "name": "Travma ve Yanık",
-          "notes": 41,
-          "cards": 50,
+          "notes": 42,
+          "cards": 52,
           "deck": true
         },
         {
@@ -8427,8 +8425,8 @@
         },
         {
           "name": "Genel",
-          "notes": 248,
-          "cards": 307,
+          "notes": 247,
+          "cards": 305,
           "deck": false
         }
       ]
@@ -8546,13 +8544,13 @@
       "sourceDeckName": "Kadın Doğum BKA",
       "sourceDeckId": 1748430717061,
       "icon": "🤰",
-      "notes": 525,
-      "cards": 756,
+      "notes": 524,
+      "cards": 755,
       "topics": [
         {
           "name": "Obstetri",
-          "notes": 212,
-          "cards": 311,
+          "notes": 211,
+          "cards": 310,
           "deck": true
         },
         {
@@ -8581,8 +8579,8 @@
         },
         {
           "name": "Üreme Endokrinolojisi",
-          "notes": 40,
-          "cards": 58,
+          "notes": 41,
+          "cards": 59,
           "deck": true
         },
         {
@@ -8593,8 +8591,8 @@
         },
         {
           "name": "Genel",
-          "notes": 150,
-          "cards": 182,
+          "notes": 149,
+          "cards": 181,
           "deck": false
         }
       ]

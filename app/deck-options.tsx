@@ -23,7 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     getDeck,
     getDeckConfig,
@@ -335,7 +335,8 @@ export default function DeckOptionsScreen() {
     const router = useRouter();
     const navigation = useNavigation();
     const params = useLocalSearchParams();
-    const { bumpDataVersion, refreshData, settings } = useApp();
+    const { settings, refreshSettings: refreshData } = useAppSettings();
+    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
 
     const deckId = Number(Array.isArray(params.deckId) ? params.deckId[0] : params.deckId);
     const deck = useMemo(() => (Number.isFinite(deckId) ? getDeck(deckId) : null), [deckId]);

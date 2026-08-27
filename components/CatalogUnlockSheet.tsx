@@ -9,7 +9,7 @@ import {
     View,
 } from 'react-native';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../constants/theme';
-import { useApp } from '../contexts/AppContext';
+import { useCatalogStatus } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
@@ -27,7 +27,7 @@ export default function CatalogUnlockSheet({ visible, onClose, onUnlocked }: Pro
     const { l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { purchaseCatalog, catalogInstalling } = useApp();
+    const { purchaseCatalog, catalogInstalling } = useCatalogStatus();
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

@@ -3,12 +3,13 @@
 // Day attribution follows the study-day rollover hour, so the strip, the streak chip and
 // the stats charts always agree on which day a review belongs to.
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, PanResponder, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { useThemeColors, type ColorScheme, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { getStudiedDaysBetween } from '../lib/reviewLogger';
 import { useI18n } from '../hooks/useI18n';
+import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 
 const DAY_MS = 86400000;
 
@@ -55,9 +56,15 @@ interface WeekStreakStripProps {
     rolloverHour: number;
     /** Bumped after every answer/import/restore; retriggers the studied-day query. */
     dataVersion: number;
+    /** Already read with the parent Statistics snapshot; avoids a second current-week query. */
+    initialWeekStudiedDays?: ReadonlySet<string>;
 }
 
-export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStreakStripProps) {
+export default function WeekStreakStrip({
+    rolloverHour,
+    dataVersion,
+    initialWeekStudiedDays,
+}: WeekStreakStripProps) {
     const { l, localeTag } = useI18n();
     const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
     const { width } = useWindowDimensions();
@@ -85,10 +92,17 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
         });
     }, [monday, today, rolloverHour]);
 
-    const studiedDays = useMemo(
-        () => getStudiedDaysBetween(monday, sunday, rolloverHour),
-        [monday, sunday, rolloverHour, dataVersion],
+    const studiedDaysKey = `${dataVersion}:${rolloverHour}:${monday}:${sunday}`;
+    const loadStudiedDays = useCallback(
+        () => weeksBack === 0 && initialWeekStudiedDays
+            ? new Set(initialWeekStudiedDays)
+            : getStudiedDaysBetween(monday, sunday, rolloverHour),
+        [weeksBack, initialWeekStudiedDays, monday, sunday, rolloverHour],
     );
+    const { snapshot: loadedStudiedDays } = useDeferredScreenSnapshot(studiedDaysKey, loadStudiedDays);
+    const studiedDays = weeksBack === 0 && initialWeekStudiedDays
+        ? initialWeekStudiedDays
+        : loadedStudiedDays ?? new Set<string>();
 
     // Swipe between weeks (right = older, left = newer), matching the arrow buttons.
     // Created once; the handlers use functional setState so they never see stale state.

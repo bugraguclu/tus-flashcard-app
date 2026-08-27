@@ -35,6 +35,7 @@ import { getAllTags, saveNote, saveAnkiCard, saveNoteType } from './noteManager'
 import { saveDeck, saveDeckConfig } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
 import { localDayNumber, nextRolloverMs } from './ankiState';
+import { getBrowserScopeSnapshot, getBrowserScreenSnapshot } from './screenSnapshots';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -223,6 +224,33 @@ describe('flag: masks the low three bits', () => {
 });
 
 describe('browser table modes', () => {
+    it('keeps the deferred first page equal to the existing count and search functions', () => {
+        saveNote(makeNote(91, ['ortak'], ['ortak metin bir', 'cevap', '']));
+        saveNote(makeNote(92, [], ['ortak metin iki', 'cevap', '']));
+        saveAnkiCard(makeCard(901, 91, 1, { due: 2 }));
+        saveAnkiCard(makeCard(902, 92, 1, { due: 1 }));
+        const scope = getBrowserScopeSnapshot('Tıp', settings);
+        const query = { tableMode: 'cards' as const, sortKey: 'due' as const };
+
+        const screen = getBrowserScreenSnapshot({
+            scope,
+            settings,
+            query,
+            searchQuery: 'ortak metin',
+            pageSize: 200,
+            hasActiveFilters: false,
+        });
+        const expectedQuery = { ...query, deckIds: [1] };
+        const expectedIds = getBrowserRowIdsMatchingText(expectedQuery, 'ortak metin');
+
+        expect(screen.scopeCardCount).toBe(getBrowserCardCount(expectedQuery));
+        expect(screen.searchRowIds).toEqual(expectedIds);
+        expect(screen.cards.map((card) => card.cardId)).toEqual(
+            getBrowserCards(settings, { ...expectedQuery, cardIds: expectedIds, limit: 200, offset: 0 })
+                .map((card) => card.cardId),
+        );
+    });
+
     it('shows one representative row per note and reports a note count in notes mode', () => {
         saveNote(makeNote(101, ['ortak'], ['iki kartlı not', 'cevap', '']));
         saveNote(makeNote(102, ['ortak'], ['tek kartlı not', 'cevap', '']));

@@ -22,9 +22,10 @@ vi.mock('./db', () => ({
 
 import { adjustIntervalForEasyDays, getFilteredDeckCardIds, getStudyQueue, getWaitingLearningCardIds } from './studyRepository';
 import { saveNote, saveAnkiCard, saveNoteType } from './noteManager';
-import { saveDeck, saveDeckConfig } from './deckManager';
+import { getBuriedCountForDeck, saveDeck, saveDeckConfig } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
 import { localDayNumber } from './ankiState';
+import { getDeckOverviewSnapshot } from './screenSnapshots';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -202,6 +203,18 @@ beforeEach(() => {
 
 afterEach(() => {
     db.close();
+});
+
+describe('deck overview snapshot', () => {
+    it('keeps queue counts, order and buried count equal to the existing repositories', () => {
+        const screen = getDeckOverviewSnapshot('Python', settings);
+        const directQueue = getStudyQueue({ settings, selectedDeckName: 'Python' });
+
+        expect(screen.queue?.stats).toEqual(directQueue.stats);
+        expect(screen.queue?.cards.map((card) => card.cardId))
+            .toEqual(directQueue.cards.map((card) => card.cardId));
+        expect(screen.buriedCount).toBe(getBuriedCountForDeck(1));
+    });
 });
 
 describe('scope filtering (subject/topic)', () => {

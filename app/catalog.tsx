@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
-import { useApp } from '../contexts/AppContext';
+import { useCatalogStatus } from '../contexts/AppContext';
 import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogPurchases';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
 import { formatCount } from '../lib/i18n';
@@ -36,7 +36,7 @@ export default function CatalogScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { l, locale } = useI18n();
-    const { catalogAccess, catalogInstalling, purchaseCatalog, restoreCatalogPurchase } = useApp();
+    const { catalogAccess, catalogInstalling, purchaseCatalog, restoreCatalogPurchase } = useCatalogStatus();
     const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
     const [expanded, setExpanded] = useState<string | null>(null);
     // The gradient is painted at an explicit pixel size: a percentage-sized SVG keeps the height

@@ -7,6 +7,9 @@
  * collection snapshots are retained. Every restore first snapshots the current state, so a
  * restore is itself undoable.
  *
+ * The snapshot reads every table in one synchronous pass, so *when* it runs matters as much
+ * as how often: see lib/backupWindow.ts for the policy that keeps it out of an active review.
+ *
  * Storage backends: a folder under documentDirectory on native, an IndexedDB
  * store on web (localStorage is too small for a full collection). On web only
  * the elected writer tab (Web Locks) takes backups, mirroring the DB snapshot
@@ -269,6 +272,16 @@ export async function createBackupNow(deps: BackupDeps = {}): Promise<{ fileName
 
 let _autoBackupInFlight: Promise<{ didRun: boolean; fileName?: string }> | null = null;
 
+export interface AutoBackupOptions {
+    /**
+     * Whether to apply retention even when no snapshot is due. Startup does, to retire the
+     * collections accumulated by the former high-frequency policy. The periodic poll does not:
+     * it runs while the app is in use, and a tick with nothing to do should cost no filesystem
+     * work at all. Retention still runs with every snapshot that is actually written.
+     */
+    prune?: boolean;
+}
+
 /**
  * Take an automatic backup when the configured interval has elapsed.
  * Safe to call on every startup and app foreground; concurrent calls (startup
@@ -277,6 +290,7 @@ let _autoBackupInFlight: Promise<{ didRun: boolean; fileName?: string }> | null 
  */
 export function runAutoBackupIfDue(
     deps: BackupDeps = {},
+    options: AutoBackupOptions = {},
 ): Promise<{ didRun: boolean; fileName?: string }> {
     if (_autoBackupInFlight) return _autoBackupInFlight;
 
@@ -285,13 +299,12 @@ export function runAutoBackupIfDue(
         if (!d.isWriter()) return { didRun: false };
         if (!d.autoBackupEnabled()) return { didRun: false };
 
-        // Apply the new retention policy immediately on startup, even when the next
-        // weekly snapshot is not due yet. This clears collections accumulated by the
-        // former high-frequency policy without forcing an extra backup.
-        try {
-            await pruneBackups(d.store, d.maxCopies());
-        } catch (error) {
-            console.warn('[Backup] startup prune failed:', error);
+        if (options.prune !== false) {
+            try {
+                await pruneBackups(d.store, d.maxCopies());
+            } catch (error) {
+                console.warn('[Backup] startup prune failed:', error);
+            }
         }
 
         const now = d.now();

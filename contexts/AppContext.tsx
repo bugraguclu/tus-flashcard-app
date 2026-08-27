@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { AppSettings } from '../lib/types';
 import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
 import { useAppStartup } from '../hooks/useAppStartup';
@@ -21,27 +29,44 @@ import { dbIndexAllCards } from '../lib/db';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { invalidateSubjectsCache } from '../lib/subjects';
 import { reconcileCatalogAccessWithInstall } from '../lib/catalogReconciliation';
+import { DeferredSchedulingInvalidation } from '../lib/deferredInvalidation';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
 export type StudyPosition = { subject: string; topic: string } | null;
 
-export type AppContextType = {
+type SettingsContextValue = {
+    settings: AppSettings;
+    refreshSettings: () => void;
+};
+
+type CollectionContextValue = {
+    /** Structural/content changes that mounted data views must observe immediately. */
+    collectionVersion: number;
+    invalidateCollection: () => void;
+    /**
+     * Scheduler-only changes are deliberately passive. A card answer marks the revision without
+     * publishing a React update; count-heavy screens consume it when they regain focus.
+     */
+    markSchedulingStale: () => void;
+    getSchedulingRevision: () => number;
+};
+
+type StudyScopeContextValue = {
     selectedSubject: string | null;
-    setSelectedSubject: (s: string | null) => void;
+    setSelectedSubject: (subject: string | null) => void;
     selectedTopic: string | null;
-    setSelectedTopic: (t: string | null) => void;
-    studyPosition: StudyPosition;
-    setStudyPosition: (position: StudyPosition) => void;
-    /** Anki's "current deck": the deck last opened for studying; null when studying by
-     *  course/topic scope. Deck-aware screens (stats) default to it. */
+    setSelectedTopic: (topic: string | null) => void;
+    /** Anki's "current deck": the deck last opened for studying. */
     activeDeckName: string | null;
     setActiveDeckName: (name: string | null) => void;
-    settings: AppSettings;
-    refreshData: () => void;
-    dataVersion: number;
-    bumpDataVersion: () => void;
+};
+
+type StartupContextValue = {
     startupError: string | null;
     isLoading: boolean;
+};
+
+type CatalogContextValue = {
     catalogAccess: CatalogAccessState;
     /** True while either the trial or purchased catalog is physically present. */
     catalogInstalled: boolean;
@@ -52,21 +77,37 @@ export type AppContextType = {
     restoreCatalogPurchase: () => Promise<CatalogPurchaseResult>;
 };
 
-export const AppContext = createContext<AppContextType>({
+const SettingsContext = createContext<SettingsContextValue>({
+    settings: DEFAULT_SETTINGS,
+    refreshSettings: () => { },
+});
+const LanguagePreferenceContext = createContext<AppSettings['language']>(DEFAULT_SETTINGS.language);
+
+const CollectionContext = createContext<CollectionContextValue>({
+    collectionVersion: 0,
+    invalidateCollection: () => { },
+    markSchedulingStale: () => { },
+    getSchedulingRevision: () => 0,
+});
+
+const StudyScopeContext = createContext<StudyScopeContextValue>({
     selectedSubject: null,
     setSelectedSubject: () => { },
     selectedTopic: null,
     setSelectedTopic: () => { },
-    studyPosition: null,
-    setStudyPosition: () => { },
     activeDeckName: null,
     setActiveDeckName: () => { },
-    settings: DEFAULT_SETTINGS,
-    refreshData: () => { },
-    dataVersion: 0,
-    bumpDataVersion: () => { },
+});
+
+const StudyPositionContext = createContext<StudyPosition>(null);
+const SetStudyPositionContext = createContext<(position: StudyPosition) => void>(() => { });
+
+const StartupContext = createContext<StartupContextValue>({
     startupError: null,
     isLoading: true,
+});
+
+const CatalogContext = createContext<CatalogContextValue>({
     catalogAccess: INITIAL_CATALOG_ACCESS,
     catalogInstalled: false,
     catalogInstalling: false,
@@ -76,10 +117,8 @@ export const AppContext = createContext<AppContextType>({
 });
 
 /**
- * Hosts the shared app state and runs startup. Must wrap the ROOT navigator, not just
- * the (tabs) layout: modal screens (editor, import, backups, note types) live outside
- * (tabs) and call bumpDataVersion/refreshData — inside (tabs) they would silently get
- * the no-op default context and leave the rest of the app stale.
+ * Hosts shared app state and runs startup. The narrow providers prevent unrelated consumers
+ * from subscribing to the card-by-card study position or collection invalidations.
  */
 export function AppProvider({ children }: { children: React.ReactNode }) {
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -87,24 +126,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [studyPosition, setStudyPosition] = useState<StudyPosition>(null);
     const [activeDeckName, setActiveDeckName] = useState<string | null>(null);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-    const [dataVersion, setDataVersion] = useState(0);
+    const [collectionVersion, setCollectionVersion] = useState(0);
+    const schedulingInvalidationRef = useRef(new DeferredSchedulingInvalidation());
     const [catalogAccess, setCatalogAccess] = useState<CatalogAccessState>(INITIAL_CATALOG_ACCESS);
     const [catalogInstalled, setCatalogInstalled] = useState(false);
     const [catalogInstalling, setCatalogInstalling] = useState(false);
 
-    const refreshData = useCallback(() => {
+    const refreshSettings = useCallback(() => {
         setSettings(loadSettings());
     }, []);
 
-    const bumpDataVersion = useCallback(() => {
-        setDataVersion((prev) => prev + 1);
+    const markSchedulingStale = useCallback(() => {
+        schedulingInvalidationRef.current.markStale();
     }, []);
 
-    const { startupError, isLoading } = useAppStartup(refreshData, bumpDataVersion);
+    const getSchedulingRevision = useCallback(() => schedulingInvalidationRef.current.current(), []);
+
+    const invalidateCollection = useCallback(() => {
+        schedulingInvalidationRef.current.markStale();
+        setCollectionVersion((previous) => previous + 1);
+    }, []);
+
+    const { startupError, isLoading } = useAppStartup(refreshSettings, invalidateCollection);
     useStudyNotifications(settings, isLoading);
 
-    /** Match the physical collection to the entitlement. Locked users only see the manifest-
-     * backed store preview: no paid note, card, template or media row remains studyable locally. */
+    /** Match physical catalog rows to entitlement without exposing partial installation state. */
     const matchCatalogToAccess = useCallback(async (hasAccess: boolean) => {
         setCatalogInstalling(true);
         try {
@@ -113,19 +159,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 : uninstallBkaCatalog().removed;
             if (changed) {
                 invalidateSubjectsCache();
-                // Entitlement changes thousands of searchable rows; keep native FTS in lockstep.
                 dbIndexAllCards(getSearchIndexCards());
-                bumpDataVersion();
+                invalidateCollection();
             }
             setCatalogInstalled(isBkaCatalogInstalled());
         } finally {
             setCatalogInstalling(false);
         }
-    }, [bumpDataVersion]);
+    }, [invalidateCollection]);
 
     const applyAccessState = useCallback(async (raw: CatalogAccessState) => {
-        // Reconcile before acting: a store error while the catalog is installed must never
-        // uninstall paid content, no matter which call (refresh, purchase, restore) hit it.
         const next = reconcileCatalogAccessWithInstall(raw, getBkaCatalogTier() === 'full');
         try {
             await matchCatalogToAccess(next.hasAccess);
@@ -166,34 +209,74 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         void refreshCatalogAccess();
     }, [isLoading, startupError, refreshCatalogAccess]);
 
+    const settingsValue = useMemo<SettingsContextValue>(() => ({
+        settings,
+        refreshSettings,
+    }), [settings, refreshSettings]);
+
+    const collectionValue = useMemo<CollectionContextValue>(() => ({
+        collectionVersion,
+        invalidateCollection,
+        markSchedulingStale,
+        getSchedulingRevision,
+    }), [collectionVersion, invalidateCollection, markSchedulingStale, getSchedulingRevision]);
+
+    const studyScopeValue = useMemo<StudyScopeContextValue>(() => ({
+        selectedSubject,
+        setSelectedSubject,
+        selectedTopic,
+        setSelectedTopic,
+        activeDeckName,
+        setActiveDeckName,
+    }), [selectedSubject, selectedTopic, activeDeckName]);
+
+    const startupValue = useMemo<StartupContextValue>(() => ({
+        startupError,
+        isLoading,
+    }), [startupError, isLoading]);
+
+    const catalogValue = useMemo<CatalogContextValue>(() => ({
+        catalogAccess,
+        catalogInstalled,
+        catalogInstalling,
+        refreshCatalogAccess,
+        purchaseCatalog,
+        restoreCatalogPurchase,
+    }), [
+        catalogAccess,
+        catalogInstalled,
+        catalogInstalling,
+        refreshCatalogAccess,
+        purchaseCatalog,
+        restoreCatalogPurchase,
+    ]);
+
     return (
-        <AppContext.Provider
-            value={{
-                selectedSubject,
-                setSelectedSubject,
-                selectedTopic,
-                setSelectedTopic,
-                studyPosition,
-                setStudyPosition,
-                activeDeckName,
-                setActiveDeckName,
-                settings,
-                refreshData,
-                dataVersion,
-                bumpDataVersion,
-                startupError,
-                isLoading,
-                catalogAccess,
-                catalogInstalled,
-                catalogInstalling,
-                refreshCatalogAccess,
-                purchaseCatalog,
-                restoreCatalogPurchase,
-            }}
-        >
-            {children}
-        </AppContext.Provider>
+        <LanguagePreferenceContext.Provider value={settings.language}>
+            <SettingsContext.Provider value={settingsValue}>
+                <CollectionContext.Provider value={collectionValue}>
+                    <StudyScopeContext.Provider value={studyScopeValue}>
+                        <StudyPositionContext.Provider value={studyPosition}>
+                            <SetStudyPositionContext.Provider value={setStudyPosition}>
+                                <StartupContext.Provider value={startupValue}>
+                                    <CatalogContext.Provider value={catalogValue}>
+                                        {children}
+                                    </CatalogContext.Provider>
+                                </StartupContext.Provider>
+                            </SetStudyPositionContext.Provider>
+                        </StudyPositionContext.Provider>
+                    </StudyScopeContext.Provider>
+                </CollectionContext.Provider>
+            </SettingsContext.Provider>
+        </LanguagePreferenceContext.Provider>
     );
 }
 
-export const useApp = () => useContext(AppContext);
+export const useAppSettings = () => useContext(SettingsContext);
+export const useLanguagePreference = () => useContext(LanguagePreferenceContext);
+export const useCollectionInvalidation = () => useContext(CollectionContext);
+export const useStudyScope = () => useContext(StudyScopeContext);
+export const useStudyPosition = () => useContext(StudyPositionContext);
+export const useSetStudyPosition = () => useContext(SetStudyPositionContext);
+export const useStartupStatus = () => useContext(StartupContext);
+export const useCatalogStatus = () => useContext(CatalogContext);

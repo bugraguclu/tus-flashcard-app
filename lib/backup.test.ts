@@ -188,6 +188,49 @@ describe('runAutoBackupIfDue', () => {
         const retry = await runAutoBackupIfDue(h.deps);
         expect(retry.didRun).toBe(true);
     });
+
+    it('touches no storage on a not-due poll when retention is left to the snapshot', async () => {
+        const h = makeHarness();
+        await runAutoBackupIfDue(h.deps);
+
+        // The in-app poll runs while the learner is using the app; a tick with nothing due
+        // must not walk the backup directory on every interval.
+        const list = vi.spyOn(h.deps.store!, 'list');
+        const remove = vi.spyOn(h.deps.store!, 'remove');
+        h.setNow('2026-07-05T12:05:00');
+
+        expect((await runAutoBackupIfDue(h.deps, { prune: false })).didRun).toBe(false);
+        expect(list).not.toHaveBeenCalled();
+        expect(remove).not.toHaveBeenCalled();
+    });
+
+    it('still applies retention on the poll that does write a snapshot', async () => {
+        const h = makeHarness('2026-07-01T12:00:00', { maxCopies: 2 });
+        for (let day = 1; day <= 3; day++) {
+            h.setNow(`2026-07-${String(day).padStart(2, '0')}T12:00:00`);
+            await createBackupNow(h.deps);
+        }
+        h.setNow('2026-07-20T12:00:00');
+
+        expect((await runAutoBackupIfDue(h.deps, { prune: false })).didRun).toBe(true);
+        expect([...h.files.keys()].filter((name) => name.startsWith('tus-backup-'))).toHaveLength(2);
+        expect(h.files.has('tus-backup-2026-07-20-120000000.json')).toBe(true);
+    });
+
+    it('prunes on startup even when no snapshot is due', async () => {
+        const h = makeHarness('2026-07-01T12:00:00', { maxCopies: 2 });
+        for (let day = 1; day <= 4; day++) {
+            h.setNow(`2026-07-${String(day).padStart(2, '0')}T12:00:00`);
+            await createBackupNow(h.deps);
+        }
+        // Retention already ran with each write; re-widen the store so the startup pass has
+        // something to retire, exactly as a collection from the former policy would.
+        h.files.set('tus-backup-2026-06-01-120000000.json', { contents: '{}', createdAt: 0 });
+        h.setNow('2026-07-04T12:05:00');
+
+        expect((await runAutoBackupIfDue(h.deps)).didRun).toBe(false);
+        expect(h.files.has('tus-backup-2026-06-01-120000000.json')).toBe(false);
+    });
 });
 
 describe('createBackupNow', () => {

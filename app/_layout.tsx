@@ -2,18 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
-import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
+import {
+    ActivityIndicator,
+    Appearance,
+    Linking,
+    Platform,
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
     Colors,
     DARK_MODE_UI_ENABLED,
     FontSize,
+    Spacing,
     ThemeColorsProvider,
     useThemeColors,
 } from '../constants/theme';
 import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
-import { AppProvider, useApp } from '../contexts/AppContext';
+import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { isStudyReminderData } from '../lib/studyNotifications';
 import { inferImportFileType } from '../lib/importFile';
@@ -21,6 +32,18 @@ import { parseExternalAppUrl } from '../lib/externalLinking';
 import { getAllNoteTypes } from '../lib/noteManager';
 import { getDeckByName } from '../lib/deckManager';
 import { userFacingErrorMessage } from '../lib/userFacingError';
+
+// Hold the native splash until a real screen can paint. Without this it disappears the moment
+// the JS bundle mounts — long before migrations finish — so a cold launch shows the launch
+// image, then a blank frame, then a placeholder, before any content exists. Called in global
+// scope (not an effect) because by the first render the splash may already be gone.
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+SplashScreen.setOptions({ duration: 250, fade: true });
+
+// Startup is normally over well inside this budget and the handover is a single fade. A first
+// install or a large migration can outlast it; rather than hold a frozen launch image, hand off
+// to a matching in-app surface that can at least show progress.
+const SPLASH_GRACE_MS = 1500;
 
 // Expo's default web template pins html/body/#root to 100% height; without it every
 // ScrollView/FlatList on web computes a 0px viewport — content still paints (overflow)
@@ -44,6 +67,8 @@ class AppErrorBoundary extends React.Component<
 
     componentDidCatch(error: Error) {
         console.error('[AppErrorBoundary]', error);
+        // A crash during startup would otherwise sit behind the launch image forever.
+        hideSplash();
     }
 
     render() {
@@ -105,6 +130,49 @@ const dismissibleSheetPresentation = Platform.OS === 'ios'
         sheetGrabberVisible: true,
     }
     : { presentation: 'modal' as const };
+
+/** Idempotent: hideAsync rejects when the splash is already gone, which is not a failure. */
+function hideSplash(): void {
+    void SplashScreen.hideAsync().catch(() => undefined);
+}
+
+/**
+ * Hands the screen over from the native splash exactly once, when a real surface is ready.
+ * Every terminal state counts as ready — a startup failure must reach the user, not stay
+ * hidden behind the launch image. Returns whether the splash has been released.
+ */
+function useSplashHandoff(ready: boolean): boolean {
+    const [graceElapsed, setGraceElapsed] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setGraceElapsed(true), SPLASH_GRACE_MS);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const released = ready || graceElapsed;
+    useEffect(() => {
+        if (released) hideSplash();
+    }, [released]);
+
+    return released;
+}
+
+/**
+ * Shown only when startup outlives the splash. It repeats the splash's own background so the
+ * handover reads as the launch image gaining a spinner rather than as a second loading screen.
+ */
+function StartupProgress() {
+    const colors = useThemeColors();
+    const { t } = useSystemI18n();
+    return (
+        <View style={[errorStyles.container, { backgroundColor: colors.bgPrimary }]}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={{ fontSize: FontSize.md, color: colors.textMuted, marginTop: Spacing.lg }}>
+                {t('common.loading')}
+            </Text>
+        </View>
+    );
+}
 
 /** Ensures the web SQLite (sql.js) database is ready before any screen renders. */
 function WebDbGate({ children }: { children: React.ReactNode }) {
@@ -175,8 +243,18 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
 
 /** Applies the persisted system/light/dark preference to every theme-aware screen. */
 function ThemeGate({ children }: { children: React.ReactNode }) {
-    const { settings } = useApp();
+    const { settings } = useAppSettings();
     const activeMode = DARK_MODE_UI_ENABLED ? settings.themeMode : 'light';
+
+    // Our palette only covers what this app draws. Keyboards, native form sheets, scroll
+    // indicators and the status bar follow the process-wide trait instead, so an explicit
+    // Light/Dark preference has to reach UIKit as well — otherwise a dark collection is
+    // reviewed with a white keyboard over it. 'system' clears the override.
+    useEffect(() => {
+        if (Platform.OS === 'web') return;
+        Appearance.setColorScheme(activeMode === 'system' ? null : activeMode);
+    }, [activeMode]);
+
     return <ThemeColorsProvider mode={activeMode}>{children}</ThemeColorsProvider>;
 }
 
@@ -186,18 +264,14 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
  * later, from the store screen, so this gate never waits on the network.
  */
 function StartupGate({ children }: { children: React.ReactNode }) {
-    const { isLoading, startupError } = useApp();
-    const { t } = useSystemI18n();
+    const { isLoading, startupError } = useStartupStatus();
+    const ready = !isLoading || Boolean(startupError);
+    const splashReleased = useSplashHandoff(ready);
 
-    if (isLoading && !startupError) {
-        return (
-            <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>🧠</Text>
-                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
-            </View>
-        );
-    }
-    return children;
+    if (ready) return children;
+    // Still covered by the launch image: render nothing rather than a placeholder that would
+    // be revealed for one frame during the fade.
+    return splashReleased ? <StartupProgress /> : null;
 }
 
 /** Renders the navigator + DialogHost; lives inside ThemeGate so it can read live theme colors. */
@@ -282,6 +356,10 @@ function AppStack() {
                 screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: colors.bgPrimary },
+                    // Screens left behind on the stack keep their state but stop rendering, so a
+                    // collection invalidation only costs a re-render on the screen being looked
+                    // at instead of on every editor, browser and stats screen still mounted.
+                    freezeOnBlur: true,
                 }}
             >
                 <Stack.Screen name="(tabs)" />

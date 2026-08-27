@@ -19,11 +19,16 @@ import { getNavigationCardCounts } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
 import { buildDeckTree, getAllDecks, getCardCountsByDeck } from '../../lib/deckManager';
 import { getDeckPathNames, getRootDeckName, getScopedBrowserPath } from '../../lib/deckNavigation';
-import { useApp } from '../../contexts/AppContext';
+import {
+    useAppSettings,
+    useCollectionInvalidation,
+    useStartupStatus,
+    useStudyPosition,
+    useStudyScope,
+} from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
 import { useI18n } from '../../hooks/useI18n';
-
-export { useApp } from '../../contexts/AppContext';
+import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
 export default function TabLayout() {
     const router = useRouter();
@@ -32,24 +37,24 @@ export default function TabLayout() {
     const colors = useThemeColors();
     const { t, l, localeTag } = useI18n();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { settings } = useAppSettings();
+    const { collectionVersion, getSchedulingRevision } = useCollectionInvalidation();
+    const { startupError, isLoading } = useStartupStatus();
+    const studyPosition = useStudyPosition();
     const {
         selectedSubject,
         setSelectedSubject,
         selectedTopic,
         setSelectedTopic,
-        studyPosition,
         activeDeckName,
         setActiveDeckName,
-        settings,
-        dataVersion,
-        startupError,
-        isLoading,
-    } = useApp();
+    } = useStudyScope();
 
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
     const [expandedDeckNames, setExpandedDeckNames] = useState<Set<string>>(new Set());
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
+    const [visibleSchedulingRevision, setVisibleSchedulingRevision] = useState(getSchedulingRevision);
     const lastAndroidBackPressRef = useRef(0);
 
     const isWide = windowWidth >= 768;
@@ -78,6 +83,19 @@ export default function TabLayout() {
     }
     const isDeckScreen = lastTabPath.current === '/decks';
     const isStudyScreen = lastTabPath.current === '/';
+
+    // Card answers only mark the scheduler revision. Consume it at a navigation boundary (or
+    // when the drawer is explicitly opened) instead of querying counts on every answer.
+    const refreshVisibleSchedulingData = useCallback(() => {
+        const next = getSchedulingRevision();
+        setVisibleSchedulingRevision((previous) => (
+            consumeSchedulingRevision(previous, next, () => { })
+        ));
+    }, [getSchedulingRevision]);
+
+    useEffect(() => {
+        refreshVisibleSchedulingData();
+    }, [pathname, refreshVisibleSchedulingData]);
 
     useEffect(() => {
         if (Platform.OS !== 'android' || !settings.doubleBackToExit) return;
@@ -138,7 +156,7 @@ export default function TabLayout() {
             console.warn('[Layout] navigation counts failed:', e);
             return [];
         }
-    }, [dataVersion, isLoading]);
+    }, [collectionVersion, visibleSchedulingRevision, isLoading]);
 
     // Courses are deck-specific: the sidebar lists only the active deck's own courses
     // (an empty deck lists none). Without a deck context the full list stays visible.
@@ -150,7 +168,7 @@ export default function TabLayout() {
             console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [dataVersion, activeDeckName, isLoading]);
+    }, [collectionVersion, activeDeckName, isLoading]);
 
     // The reviewer menu is a deck navigator while a deck is active. A selected subdeck is a
     // highlight inside its top-level tree, not a new tree root: otherwise opening the hamburger
@@ -174,7 +192,7 @@ export default function TabLayout() {
             console.warn('[Layout] sidebar deck tree failed:', e);
             return [];
         }
-    }, [activeDeckName, dataVersion, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes]);
+    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes]);
 
     // Reveal only the selected deck's ancestor chain. Opening every parent in a large catalog
     // would flood the drawer with unrelated branches; manual expansion of siblings is preserved.
@@ -301,6 +319,7 @@ export default function TabLayout() {
                         style={styles.hamburger}
                         onPress={() => {
                             if (!sidebarOpen) Keyboard.dismiss();
+                            if (!sidebarOpen) refreshVisibleSchedulingData();
                             setSidebarOpen((prev) => !prev);
                         }}
                         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}

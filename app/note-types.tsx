@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
-import { useApp } from '../contexts/AppContext';
+import { useCollectionInvalidation } from '../contexts/AppContext';
 import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
 import { uniqueId, BUILTIN_NOTE_TYPES, isLegacyTusNoteType } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
@@ -12,7 +12,7 @@ import { localizeNoteTypeName } from '../lib/i18n';
 export default function NoteTypesScreen() {
     const { l, locale } = useI18n();
     const router = useRouter();
-    const { dataVersion, bumpDataVersion } = useApp();
+    const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const noteTypes = useMemo(() => getAllNoteTypes().filter((noteType) => !isLegacyTusNoteType(noteType)), [dataVersion]);

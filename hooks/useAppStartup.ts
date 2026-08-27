@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState, InteractionManager, Platform, type AppStateStatus } from 'react-native';
 import {
     loadCardStates,
     loadCustomCards,
@@ -11,7 +11,13 @@ import {
 import { initDB, dbIndexAllCards, getDB } from '../lib/db';
 import { createDeck, getDeckByName } from '../lib/deckManager';
 import { runDailyMaintenance } from '../lib/maintenance';
-import { createBackupNow, runAutoBackupIfDue } from '../lib/backup';
+import { createBackupNow, runAutoBackupIfDue, type AutoBackupOptions } from '../lib/backup';
+import {
+    canRunAutoBackup,
+    isStudyActive,
+    subscribeToStudyIdle,
+    type ForegroundState,
+} from '../lib/backupWindow';
 import {
     initAnkiData,
     ensureBuiltinNoteTypesSeeded,
@@ -149,16 +155,57 @@ async function runStartupCore(): Promise<void> {
 // fire while runStartupCore is still migrating, so it only backs up after this flips.
 let startupComplete = false;
 
-// Fire-and-forget: a backup failure must never block startup or foregrounding.
-function scheduleAutoBackup(): void {
+// How often the app asks whether the weekly snapshot has come due. Ticks are deliberately
+// cheap: when nothing is due they read one settings row and stop.
+const AUTO_BACKUP_POLL_MS = 5 * 60 * 1000;
+
+let appForegroundState: ForegroundState = 'active';
+// Set when a due snapshot was held back because the learner was mid-review, so the next quiet
+// window runs it instead of waiting out another poll interval.
+let autoBackupDeferred = false;
+
+/**
+ * Fire-and-forget: a backup failure must never block startup or foregrounding.
+ *
+ * The snapshot serialises the whole collection in one synchronous pass, so it only starts in a
+ * quiet window. When the window is closed the request is remembered and replayed as soon as the
+ * reviewer loses focus or the app leaves the foreground.
+ */
+function scheduleAutoBackup(options: AutoBackupOptions = {}): void {
     if (!startupComplete) return;
-    void runAutoBackupIfDue()
-        .then((result) => {
-            if (result.didRun) {
-                console.log(`[App] Auto backup written: ${result.fileName}`);
-            }
-        })
-        .catch((e) => console.warn('[App] Auto backup failed:', e));
+
+    if (!canRunAutoBackup({ appState: appForegroundState, studyActive: isStudyActive() })) {
+        autoBackupDeferred = true;
+        return;
+    }
+    autoBackupDeferred = false;
+
+    const start = () => {
+        void runAutoBackupIfDue({}, options)
+            .then((result) => {
+                if (result.didRun) {
+                    console.log(`[App] Auto backup written: ${result.fileName}`);
+                }
+            })
+            .catch((e) => console.warn('[App] Auto backup failed:', e));
+    };
+
+    // In the foreground even a quiet window can still be mid-transition, so let navigation and
+    // layout animations settle first. Off the foreground the run starts immediately: iOS grants
+    // only a short tail before suspension, and an interrupted write is discarded, not kept.
+    if (appForegroundState === 'active') InteractionManager.runAfterInteractions(start);
+    else start();
+}
+
+/** Replays a snapshot that was held back, without re-checking storage when none was. */
+function runDeferredAutoBackup(): void {
+    if (!autoBackupDeferred) return;
+    scheduleAutoBackup({ prune: false });
+}
+
+function toForegroundState(status: AppStateStatus): ForegroundState {
+    if (status === 'active') return 'active';
+    return status === 'background' ? 'background' : 'inactive';
 }
 
 export function useAppStartup(refreshData: () => void, bumpDataVersion: () => void) {
@@ -209,8 +256,16 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
     // Re-run day-rollover housekeeping when the app returns to the foreground, so a
     // new day (past the rollover hour) unburies cards even if the app stayed open.
     useEffect(() => {
-        const sub = AppState.addEventListener('change', (state) => {
-            if (state !== 'active') return;
+        const sub = AppState.addEventListener('change', (status) => {
+            appForegroundState = toForegroundState(status);
+
+            if (appForegroundState !== 'active') {
+                // Leaving the foreground is the best window for the weekly snapshot: there is no
+                // frame budget left to protect, and anything held back during review runs here.
+                scheduleAutoBackup({ prune: false });
+                return;
+            }
+
             try {
                 const { didRun } = runDailyMaintenance();
                 if (didRun) {
@@ -218,7 +273,7 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
                     refreshData();
                 }
                 // Interval-guarded, so returning to the foreground catches up safely.
-                scheduleAutoBackup();
+                scheduleAutoBackup({ prune: false });
             } catch (e) {
                 console.warn('[App] Foreground maintenance failed:', e);
             }
@@ -226,10 +281,14 @@ export function useAppStartup(refreshData: () => void, bumpDataVersion: () => vo
         return () => sub.remove();
     }, [bumpDataVersion, refreshData]);
 
-    // AnkiDroid-style interval backups while the reviewer stays open. Mobile operating systems
-    // pause this timer in the background; the foreground listener above catches up on return.
+    // A snapshot held back during review runs the moment the reviewer loses focus, rather than
+    // waiting out the rest of the poll interval on the screen the learner moved to.
+    useEffect(() => subscribeToStudyIdle(runDeferredAutoBackup), []);
+
+    // AnkiDroid-style interval backups while the app stays open. Mobile operating systems pause
+    // this timer in the background; the AppState listener above catches up on return.
     useEffect(() => {
-        const timer = setInterval(scheduleAutoBackup, 5 * 60 * 1000);
+        const timer = setInterval(() => scheduleAutoBackup({ prune: false }), AUTO_BACKUP_POLL_MS);
         return () => clearInterval(timer);
     }, []);
 

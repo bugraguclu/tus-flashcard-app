@@ -21,7 +21,7 @@ import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorSch
 import { resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import {
     createTusCard,
     updateTusCardByCardId,
@@ -234,7 +234,8 @@ export default function EditorScreen() {
     const { t, l, locale } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { bumpDataVersion, dataVersion, activeDeckName } = useApp();
+    const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
+    const { activeDeckName } = useStudyScope();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { width: screenWidth } = useWindowDimensions();

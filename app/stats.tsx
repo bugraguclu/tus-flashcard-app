@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -11,33 +11,24 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
-import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
-import { perDeckBucketsSql } from '../lib/statsHelpers';
-import { createDeck, getAllDecks, getAvailableDeckName, getDeckByName, getDirectDecksForScope } from '../lib/deckManager';
-import { getDeckDisplayName } from '../lib/models';
-import {
-    getStudyStreak,
-    getTodayAnswerStats,
-    type StudyStreak,
-    type TodayAnswerStats,
-} from '../lib/reviewLogger';
-import type { AppSettings } from '../lib/types';
-import { useApp } from '../contexts/AppContext';
+import { createDeck, getAvailableDeckName } from '../lib/deckManager';
+import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import WeekStreakStrip from '../components/WeekStreakStrip';
 import StatsBarChart from '../components/StatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { useI18n } from '../hooks/useI18n';
 import { formatCount } from '../lib/i18n';
-import {
-    getAnkiStatsSnapshot,
-    resolveStatsDateRange,
-    type AnkiStatsSnapshot,
-    type StatsRangeKey,
-} from '../lib/ankiStats';
-import { getFilteredDeckCardIds } from '../lib/studyRepository';
+import { resolveStatsDateRange, type StatsRangeKey } from '../lib/ankiStats';
 import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
+import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
+import {
+    EMPTY_ANKI_STATS,
+    EMPTY_STUDY_STREAK,
+    EMPTY_TODAY_STATS,
+    getStatsScreenSnapshot,
+} from '../lib/screenSnapshots';
 import {
     formatChartMinutes,
     formatIntervalDays,
@@ -45,41 +36,6 @@ import {
     formatStudyDuration,
     perDayAverage,
 } from '../lib/statsPresentation';
-
-const EMPTY_TODAY: TodayAnswerStats = {
-    reviewed: 0,
-    passed: 0,
-    failed: 0,
-    newCardsIntroduced: 0,
-    studyTimeMs: 0,
-};
-
-const EMPTY_ANKI_STATS: AnkiStatsSnapshot = {
-    futureDue: [],
-    futureDueTotal: 0,
-    futureDueTodayIndex: 0,
-    backlogTotal: 0,
-    dueTomorrow: 0,
-    dailyLoad: 0,
-    reviews: [],
-    reviewMinutes: [],
-    reviewTotal: 0,
-    reviewTimeMs: 0,
-    daysStudied: 0,
-    answerButtons: [1, 2, 3, 4].map((ease) => ({
-        ease: ease as 1 | 2 | 3 | 4,
-        learning: 0,
-        young: 0,
-        mature: 0,
-    })),
-    intervals: [],
-    averageInterval: 0,
-    longestInterval: 0,
-    cardCounts: { mature: 0, youngLearn: 0, unseen: 0, suspendedBuried: 0, totalCards: 0, totalNotes: 0 },
-    added: [],
-    addedTotal: 0,
-    addedSpanDays: 0,
-};
 
 export default function StatsScreen() {
     const { t, l, locale, localeTag } = useI18n();
@@ -89,9 +45,13 @@ export default function StatsScreen() {
     const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { dataVersion, bumpDataVersion } = useApp();
-    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-    const [loading, setLoading] = useState(true);
+    const { settings } = useAppSettings();
+    const {
+        collectionVersion: dataVersion,
+        invalidateCollection: bumpDataVersion,
+        getSchedulingRevision,
+    } = useCollectionInvalidation();
+    const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [rangePickerVisible, setRangePickerVisible] = useState(false);
     const [rangeKey, setRangeKey] = useState<StatsRangeKey>('year');
@@ -106,6 +66,10 @@ export default function StatsScreen() {
     });
     const [customEnd, setCustomEnd] = useState(() => new Date());
 
+    useFocusEffect(useCallback(() => {
+        setSchedulingRevision(getSchedulingRevision());
+    }, [getSchedulingRevision]));
+
     // The route establishes the entry/deep-link scope. Further deck choices are filters on this
     // screen, so keep them local and preserve range/chart controls instead of navigating again.
     const routeDeckScope = typeof params.deck === 'string' && params.deck.length > 0 ? params.deck : null;
@@ -114,15 +78,6 @@ export default function StatsScreen() {
         ? deckScope.replaceAll('::', ' › ')
         : l('Tüm koleksiyon', 'Whole Collection');
 
-    const deckPickerItems = useMemo(() => {
-        try {
-            return getAllDecks()
-                .sort((a, b) => a.name.localeCompare(b.name, localeTag));
-        } catch (e) {
-            console.warn('[Stats] deck picker list failed:', e);
-            return [];
-        }
-    }, [dataVersion, localeTag]);
     const handlePickDeck = (name: string | null) => {
         setDeckPickerVisible(false);
         setDeckScope(name);
@@ -145,27 +100,40 @@ export default function StatsScreen() {
         [rangeKey, customStart, customEnd, settings.dayRolloverHour],
     );
 
-    const filteredScopeCardIds = useMemo(() => {
-        if (!deckScope || !getDeckByName(deckScope)?.isFiltered) return undefined;
-        try {
-            return getFilteredDeckCardIds(deckScope, settings);
-        } catch (e) {
-            console.warn('[Stats] filtered deck membership failed:', e);
-            return [];
-        }
-    }, [deckScope, settings, dataVersion]);
-
-    const ankiStats = useMemo<AnkiStatsSnapshot>(() => {
-        try {
-            return getAnkiStatsSnapshot(
-                deckScope, statsRange, settings.dayRolloverHour, localeTag, filteredScopeCardIds,
-                { includeBacklog: showBacklog },
-            );
-        } catch (e) {
-            console.warn('[Stats] Anki graphs failed:', e);
-            return EMPTY_ANKI_STATS;
-        }
-    }, [dataVersion, deckScope, statsRange, settings.dayRolloverHour, localeTag, filteredScopeCardIds, showBacklog]);
+    const statsSnapshotKey = useMemo(() => JSON.stringify([
+        'stats',
+        dataVersion,
+        schedulingRevision,
+        deckScope,
+        statsRange.startMs,
+        statsRange.endMs,
+        statsRange.spanDays,
+        localeTag,
+        showBacklog,
+        settings,
+    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, showBacklog, settings]);
+    const loadStatsSnapshot = useCallback(() => getStatsScreenSnapshot({
+        deckName: deckScope,
+        range: statsRange,
+        settings,
+        localeTag,
+        includeBacklog: showBacklog,
+    }), [deckScope, statsRange, settings, localeTag, showBacklog]);
+    const {
+        snapshot: statsSnapshot,
+        loading,
+        error: statsError,
+    } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot);
+    const ankiStats = statsSnapshot?.ankiStats ?? EMPTY_ANKI_STATS;
+    const todayStats = statsSnapshot?.todayStats ?? EMPTY_TODAY_STATS;
+    const streak = statsSnapshot?.streak ?? EMPTY_STUDY_STREAK;
+    const deckStats = statsSnapshot?.deckStats ?? [];
+    const deckPickerItems = useMemo(
+        () => deckPickerVisible
+            ? [...(statsSnapshot?.decks ?? [])].sort((a, b) => a.name.localeCompare(b.name, localeTag))
+            : [],
+        [deckPickerVisible, statsSnapshot?.decks, localeTag],
+    );
 
     /** Share of answers that were not "Again", per card type (Anki's "correct" figure). */
     const correctShares = useMemo(() => {
@@ -215,76 +183,6 @@ export default function StatsScreen() {
         router.replace('/decks' as any);
     };
 
-    useEffect(() => {
-        setSettings(loadSettings());
-        setLoading(false);
-    }, [dataVersion]);
-
-    // All "today" numbers come from the review log — the durable source that survives
-    // restarts, OS sleep and day rollovers (unlike the old cached session blob).
-    const todayStats = useMemo(() => {
-        try {
-            return getTodayAnswerStats(settings.dayRolloverHour, deckScope ?? undefined, filteredScopeCardIds);
-        } catch (e) {
-            console.warn('[Stats] getTodayAnswerStats failed:', e);
-            return EMPTY_TODAY;
-        }
-    }, [dataVersion, settings.dayRolloverHour, deckScope, filteredScopeCardIds]);
-
-    const streak = useMemo<StudyStreak>(() => {
-        try {
-            return getStudyStreak(settings.dayRolloverHour);
-        } catch (e) {
-            console.warn('[Stats] getStudyStreak failed:', e);
-            return { current: 0, studiedToday: false, best: 0 };
-        }
-    }, [dataVersion, settings.dayRolloverHour]);
-
-    // Per-deck progress, aggregated over each deck's subtree ("Parent::Child" naming).
-    // Collection view lists the top-level decks; deck view lists the scope's direct
-    // subdecks. Filtered decks own no cards (they gather live), so they are skipped.
-    const deckStats = useMemo(() => {
-        try {
-            const decks = getAllDecks().filter((deck) => !deck.isFiltered);
-            const perDeck = perDeckBucketsSql();
-
-            const listed = getDirectDecksForScope(decks, deckScope);
-
-            return listed
-                .map((root) => {
-                    const totals = {
-                        total: 0, newCount: 0, learningCount: 0,
-                        reviewCount: 0, youngCount: 0, matureCount: 0,
-                    };
-                    for (const deck of decks) {
-                        if (deck.name !== root.name && !deck.name.startsWith(`${root.name}::`)) continue;
-                        const bucket = perDeck.get(deck.id);
-                        if (!bucket) continue;
-                        totals.total += bucket.total;
-                        totals.newCount += bucket.newCount;
-                        totals.learningCount += bucket.learningCount;
-                        totals.reviewCount += bucket.reviewCount;
-                        totals.youngCount += bucket.youngCount;
-                        totals.matureCount += bucket.matureCount;
-                    }
-
-                    const studied = totals.total - totals.newCount;
-                    const pct = totals.total > 0 ? Math.round((studied / totals.total) * 100) : 0;
-                    return {
-                        name: root.name,
-                        displayName: getDeckDisplayName(root.name),
-                        ...totals,
-                        studied,
-                        pct,
-                    };
-                })
-                .sort((a, b) => a.name.localeCompare(b.name, localeTag));
-        } catch (e) {
-            console.warn('[Stats] deck stats failed:', e);
-            return [];
-        }
-    }, [dataVersion, deckScope, localeTag]);
-
     const accuracy = todayStats.reviewed > 0
         ? Math.round((todayStats.passed / todayStats.reviewed) * 100)
         : 0;
@@ -300,17 +198,6 @@ export default function StatsScreen() {
     );
     const reviewAverage = ankiStats.daysStudied > 0 ? ankiStats.reviewTotal / ankiStats.daysStudied : 0;
     const answerSeconds = ankiStats.reviewTotal > 0 ? ankiStats.reviewTimeMs / ankiStats.reviewTotal / 1000 : 0;
-
-    if (loading) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 48 }}>📊</Text>
-                    <Text style={{ color: colors.textMuted }}>{t('common.loading')}</Text>
-                </View>
-            </SafeAreaView>
-        );
-    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -350,6 +237,18 @@ export default function StatsScreen() {
                         <Text style={styles.scopeSelectorCaret}>▾</Text>
                     </TouchableOpacity>
                 </View>
+                {(loading || Boolean(statsError)) && (
+                    <View style={styles.inlineLoadState} pointerEvents="none" accessible>
+                        <Text style={styles.inlineLoadIcon}>{statsError ? '!' : '📊'}</Text>
+                        <Text style={styles.inlineLoadText}>
+                            {statsError
+                                ? l('İstatistikler yüklenemedi.', 'Statistics could not be loaded.')
+                                : t('common.loading')}
+                        </Text>
+                    </View>
+                )}
+                {statsSnapshot && (
+                <>
                 <View style={styles.todayCard}>
                     <View style={styles.cardHeaderRow}>
                         <View>
@@ -401,7 +300,11 @@ export default function StatsScreen() {
                             </View>
                         </View>
                         <View style={styles.streakStripWrap}>
-                            <WeekStreakStrip rolloverHour={settings.dayRolloverHour} dataVersion={dataVersion} />
+                            <WeekStreakStrip
+                                rolloverHour={settings.dayRolloverHour}
+                                dataVersion={dataVersion + schedulingRevision}
+                                initialWeekStudiedDays={statsSnapshot.currentWeekStudiedDays}
+                            />
                         </View>
                     </View>
                 </View>
@@ -720,9 +623,11 @@ export default function StatsScreen() {
                 )}
 
                 <View style={{ height: 40 }} />
+                </>
+                )}
             </ScrollView>
 
-            <DeckPickerModal
+            {deckPickerVisible && <DeckPickerModal
                 visible={deckPickerVisible}
                 colors={colors}
                 decks={deckPickerItems}
@@ -742,7 +647,7 @@ export default function StatsScreen() {
                     bumpDataVersion();
                     return created.name;
                 }}
-            />
+            />}
 
             <Modal
                 visible={rangePickerVisible}
@@ -861,6 +766,16 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
     selectorsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+    inlineLoadState: {
+        minHeight: 88,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.xs,
+        borderRadius: BorderRadius.md,
+        backgroundColor: colors.bgSecondary,
+    },
+    inlineLoadIcon: { fontSize: 24, color: colors.textMuted },
+    inlineLoadText: { color: colors.textMuted, fontSize: FontSize.sm },
     scopeSelector: {
         flex: 1,
         minWidth: 0,

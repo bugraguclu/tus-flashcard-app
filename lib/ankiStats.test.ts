@@ -10,6 +10,9 @@ vi.mock('./db', () => ({
 
 import { getAnkiStatsSnapshot, resolveStatsDateRange } from './ankiStats';
 import { localDayNumber } from './ankiState';
+import { getStatsScreenSnapshot } from './screenSnapshots';
+import { DEFAULT_SETTINGS } from './storage';
+import { getStudyStreak, getTodayAnswerStats } from './reviewLogger';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -61,6 +64,32 @@ function addReview(id: number, cardId: number, ease: number, lastIvl: number, ty
 }
 
 describe('Anki statistics snapshot', () => {
+    it('keeps the deferred screen snapshot equal to the existing statistics functions', () => {
+        const now = Date.now();
+        const today = localDayNumber(now, 4);
+        addDeck(10, 'TUS');
+        addDeck(11, 'TUS::Dahiliye');
+        addCard(now - 20_000, 1, 10, 2, today + 1, 10);
+        addCard(now - 10_000, 2, 11, 0, 1, 0);
+        addReview(now - 1_000, now - 20_000, 3, 10);
+        const range = resolveStatsDateRange('week', new Date(), new Date(), 4, now);
+        const settings = { ...DEFAULT_SETTINGS, dayRolloverHour: 4 };
+
+        const screen = getStatsScreenSnapshot({
+            deckName: 'TUS',
+            range,
+            settings,
+            localeTag: 'tr-TR',
+            includeBacklog: true,
+        });
+
+        expect(screen.ankiStats).toEqual(
+            getAnkiStatsSnapshot('TUS', range, 4, 'tr-TR', undefined, { includeBacklog: true }),
+        );
+        expect(screen.todayStats).toEqual(getTodayAnswerStats(4, 'TUS'));
+        expect(screen.streak).toEqual(getStudyStreak(4));
+    });
+
     it('uses the selected deck subtree and preserves Anki category rules', () => {
         const now = Date.now();
         const today = localDayNumber(now, 4);

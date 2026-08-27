@@ -17,20 +17,16 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
-import { getAllSubjects } from '../lib/subjects';
 import { compileCardMatcher } from '../lib/cardSearchMatch';
 import { localDayNumber, nextRolloverMs, ymdToLocalDayNumber } from '../lib/ankiState';
-import { useApp } from '../contexts/AppContext';
+import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import type { CardState, StudyCard } from '../lib/types';
 import { FLAG_COLORS, isLegacyTusNoteType, type CardFlag, type Note } from '../lib/models';
 import {
-    getBrowserCardCount,
-    getBrowserRowIdsMatchingText,
     getBrowserCards,
-    getFilteredDeckCardIds,
     setCardSuspended,
     type BrowserCardQuery,
     type BrowserCardStateFilter,
@@ -46,9 +42,7 @@ import {
     buildDeckTree,
     createDeck,
     flattenDeckTree,
-    getAllDecks,
     getAvailableDeckName,
-    getCardCountsByDeck,
     getDeck,
     getDeckByName,
 } from '../lib/deckManager';
@@ -56,7 +50,6 @@ import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
 import {
     changeNotesType,
     deleteNote,
-    getAllNoteTypes,
     getAllTags,
     moveCardsToDeck,
     setCardFlag,
@@ -81,6 +74,16 @@ import {
     toggleSelectedBury,
     toggleSelectedSuspend,
 } from '../lib/browserSelection';
+import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
+import {
+    getBrowserScopeSnapshot,
+    getBrowserScreenSnapshot,
+    type BrowserScopeSnapshot,
+} from '../lib/screenSnapshots';
+import {
+    LatestSnapshotGeneration,
+    ScreenSnapshotRepository,
+} from '../lib/screenSnapshotLoader';
 
 const BROWSER_SORT_KEYS: BrowserCardSortKey[] = [
     'sortField',
@@ -174,39 +177,24 @@ function formatNextDue(state: CardState, rolloverHour: number, locale: Supported
 
 export default function BrowserScreen() {
     const { t, l, locale, localeTag } = useI18n();
-    const { settings, bumpDataVersion, dataVersion } = useApp();
+    const { settings } = useAppSettings();
+    const {
+        collectionVersion: dataVersion,
+        invalidateCollection: bumpDataVersion,
+        getSchedulingRevision,
+    } = useCollectionInvalidation();
     const router = useRouter();
     const params = useLocalSearchParams();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const browserFontScale = (settings.browserFontScalePercent ?? 100) / 100;
-    const subjects = useMemo(() => getAllSubjects(), [dataVersion]);
     const routeDeckName = typeof params.deck === 'string' && params.deck ? params.deck : null;
     // The route supplies the initial/deep-linked scope. From that point on, changing scope is a
     // local filter operation: it must not remount the browser or discard search/filter context.
     const [deckName, setDeckName] = useRouteDeckScope(routeDeckName);
-    const scopeDeck = useMemo(
-        () => (deckName ? getDeckByName(deckName) : null),
-        [deckName, dataVersion],
-    );
-    const scopedDeckIds = useMemo(() => {
-        if (!deckName || scopeDeck?.isFiltered) return null;
-        return new Set(getAllDecks()
-            .filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`))
-            .map((deck) => deck.id));
-    }, [deckName, scopeDeck, dataVersion]);
-
-    const filteredScopeCardIds = useMemo(() => {
-        if (!scopeDeck?.isFiltered) return null;
-        try {
-            return new Set(getFilteredDeckCardIds(scopeDeck.name, settings));
-        } catch (error) {
-            console.warn('[Browser] filtered deck membership failed:', error);
-            return new Set<number>();
-        }
-    }, [scopeDeck, settings, dataVersion]);
 
     const [allCards, setAllCards] = useState<StudyCard[]>([]);
+    const [cardsSnapshotKey, setCardsSnapshotKey] = useState('');
     const initialRouteSearch = typeof params.initialSearch === 'string' ? params.initialSearch : '';
     const [rawQuery, setRawQuery] = useState(initialRouteSearch);
     const [searchQuery, setSearchQuery] = useState(initialRouteSearch);
@@ -247,16 +235,23 @@ export default function BrowserScreen() {
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [previewAnswerVisible, setPreviewAnswerVisible] = useState(false);
     const [lastDeckMove, setLastDeckMove] = useState<CardDeckMoveSnapshot[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [reloadToken, setReloadToken] = useState(0);
+    const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [loadingMore, setLoadingMore] = useState(false);
     const [loadingError, setLoadingError] = useState<string | null>(null);
     const [totalCardCount, setTotalCardCount] = useState(0);
     const [hasMoreCards, setHasMoreCards] = useState(false);
-    const [textSearchResult, setTextSearchResult] = useState<{ key: string; ids: number[] } | null>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const loadedCountRef = useRef(0);
     const totalCardCountRef = useRef(0);
     const pageLoadInProgressRef = useRef(false);
+    const pageGenerationRef = useRef(new LatestSnapshotGeneration());
+    const pageTaskRef = useRef<{ cancel: () => void } | null>(null);
+    const scopeRepositoryRef = useRef(new ScreenSnapshotRepository<BrowserScopeSnapshot>());
+
+    useFocusEffect(useCallback(() => {
+        setSchedulingRevision(getSchedulingRevision());
+    }, [getSchedulingRevision]));
 
     useEffect(() => {
         if (!initialRouteSearch) return;
@@ -290,7 +285,85 @@ export default function BrowserScreen() {
         if (!showOverflowMenu) setShowFlagFilterMenu(false);
     }, [showOverflowMenu]);
 
-    const allDecks = useMemo(() => getAllDecks(), [dataVersion]);
+    const allFilterActive = !markedOnly
+        && !suspendedOnly
+        && tagCardState === 'all'
+        && tagFilters.length === 0
+        && flagFilters.length === ALL_CARD_FLAGS.length;
+    const browserQueryOptions = useMemo<Omit<BrowserCardQuery, 'deckIds' | 'cardIds' | 'limit' | 'offset'>>(() => ({
+        tableMode,
+        sortKey,
+        descending: sortDescending,
+        markedOnly,
+        suspendedOnly,
+        cardState: tagCardState,
+        tags: tagFilters,
+        flags: flagFilters.length === ALL_CARD_FLAGS.length ? undefined : flagFilters,
+    }), [
+        tableMode,
+        sortKey,
+        sortDescending,
+        markedOnly,
+        suspendedOnly,
+        tagCardState,
+        tagFilters,
+        flagFilters,
+    ]);
+    const browserScopeKey = useMemo(() => JSON.stringify([
+        'browser-scope',
+        deckName,
+        dataVersion,
+        schedulingRevision,
+        reloadToken,
+        settings,
+    ]), [deckName, dataVersion, schedulingRevision, reloadToken, settings]);
+    const browserSnapshotKey = useMemo(() => JSON.stringify([
+        'browser',
+        browserScopeKey,
+        reloadToken,
+        browserQueryOptions,
+        searchQuery.trim(),
+    ]), [browserScopeKey, reloadToken, browserQueryOptions, searchQuery]);
+    const loadBrowserSnapshot = useCallback(() => {
+        const scope = scopeRepositoryRef.current.getOrCreate(
+            browserScopeKey,
+            () => getBrowserScopeSnapshot(deckName, settings),
+        );
+        return getBrowserScreenSnapshot({
+            scope,
+            settings,
+            query: browserQueryOptions,
+            searchQuery,
+            pageSize: BROWSER_PAGE_SIZE,
+            hasActiveFilters: !allFilterActive,
+        });
+    }, [browserScopeKey, deckName, settings, browserQueryOptions, searchQuery, allFilterActive]);
+    const {
+        snapshot: browserSnapshot,
+        loading,
+        error: browserSnapshotError,
+    } = useDeferredScreenSnapshot(browserSnapshotKey, loadBrowserSnapshot);
+    const allDecks = browserSnapshot?.scope.allDecks ?? [];
+    const scopeDeck = browserSnapshot?.scope.scopeDeck ?? null;
+    const scopedDeckIds = useMemo(
+        () => browserSnapshot?.scope.scopedDeckIds
+            ? new Set(browserSnapshot.scope.scopedDeckIds)
+            : null,
+        [browserSnapshot?.scope.scopedDeckIds],
+    );
+    const filteredScopeCardIds = useMemo(
+        () => browserSnapshot?.scope.filteredScopeCardIds
+            ? new Set(browserSnapshot.scope.filteredScopeCardIds)
+            : null,
+        [browserSnapshot?.scope.filteredScopeCardIds],
+    );
+    const subjects = browserSnapshot?.scope.subjects ?? [];
+    const noteTypes = browserSnapshot?.scope.noteTypes ?? [];
+    const browserDbQuery = browserSnapshot?.query ?? browserQueryOptions;
+    const activeSearchRowIds = browserSnapshot?.searchRowIds ?? null;
+    const scopeCardCount = browserSnapshot?.scopeCardCount ?? 0;
+    const scopeHasCards = browserSnapshot?.scopeHasCards ?? false;
+    const visibleAllCards = cardsSnapshotKey === browserSnapshotKey ? allCards : [];
     const deckById = useMemo(() => new Map(allDecks.map((deck) => [deck.id, deck])), [allDecks]);
     // Anki's search language, compiled once per query (lib/cardSearchMatch.ts).
     const pageMatcher = useMemo(() => {
@@ -302,14 +375,6 @@ export default function BrowserScreen() {
             dayCutoffMs: nextRolloverMs(nowMs, settings.dayRolloverHour) - 86_400_000,
         });
     }, [searchQuery, settings.dayRolloverHour, settings.learnAheadMinutes]);
-    const deckCardCounts = useMemo(
-        () => getCardCountsByDeck(
-            Date.now(),
-            settings.dayRolloverHour,
-            settings.learnAheadMinutes,
-        ),
-        [dataVersion, settings.dayRolloverHour, settings.learnAheadMinutes],
-    );
     const tagCollectionScope = useMemo(() => ({
         deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
         cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
@@ -319,76 +384,19 @@ export default function BrowserScreen() {
         [tagCollectionScope],
     );
 
-    const browserDbQuery = useMemo<BrowserCardQuery>(() => ({
-        tableMode,
-        sortKey,
-        descending: sortDescending,
-        deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
-        cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
-        markedOnly,
-        suspendedOnly,
-        cardState: tagCardState,
-        tags: tagFilters,
-        flags: flagFilters.length === ALL_CARD_FLAGS.length ? undefined : flagFilters,
-    }), [
-        tableMode,
-        sortKey,
-        sortDescending,
-        scopedDeckIds,
-        filteredScopeCardIds,
-        markedOnly,
-        suspendedOnly,
-        tagCardState,
-        tagFilters,
-        flagFilters,
-    ]);
-    const scopeCardCount = useMemo(
-        () => getBrowserCardCount(browserDbQuery),
-        [browserDbQuery, dataVersion],
-    );
     const trimmedSearchQuery = searchQuery.trim();
-    const textSearchKey = useMemo(
-        () => JSON.stringify([trimmedSearchQuery, browserDbQuery, dataVersion]),
-        [browserDbQuery, dataVersion, trimmedSearchQuery],
-    );
-    const activeSearchRowIds = textSearchResult?.key === textSearchKey
-        ? textSearchResult.ids
-        : null;
-
-    useEffect(() => {
-        if (!trimmedSearchQuery) {
-            setTextSearchResult(null);
-            return;
-        }
-
-        // Anki keeps the complete ordered ID result, but builds row objects lazily. Do the same
-        // after navigation/input interactions so a large collection cannot stall typing.
-        setLoading(true);
-        const task = InteractionManager.runAfterInteractions(() => {
-            try {
-                const ids = getBrowserRowIdsMatchingText(browserDbQuery, trimmedSearchQuery);
-                setTextSearchResult({ key: textSearchKey, ids });
-                setLoadingError(null);
-            } catch (error) {
-                console.error('[Browser] text search failed:', error);
-                setTextSearchResult({ key: textSearchKey, ids: [] });
-                setLoadingError(userFacingErrorMessage(
-                    error,
-                    l('Arama tamamlanamadı. Lütfen tekrar deneyin.', 'Search could not be completed. Please try again.'),
-                ));
-            }
-        });
-        return () => task.cancel();
-    }, [browserDbQuery, textSearchKey, trimmedSearchQuery]);
 
     const deckPickerRows = useMemo(
-        () => flattenDeckTree(buildDeckTree(allDecks), true).filter((node) => !node.deck.isFiltered),
-        [allDecks],
+        () => showDeckPicker
+            ? flattenDeckTree(buildDeckTree(allDecks), true).filter((node) => !node.deck.isFiltered)
+            : [],
+        [allDecks, showDeckPicker],
     );
     const deckScopePickerItems = useMemo(
-        () => allDecks
-            .sort((a, b) => a.name.localeCompare(b.name, localeTag)),
-        [allDecks, localeTag],
+        () => deckScopePickerVisible
+            ? [...allDecks].sort((a, b) => a.name.localeCompare(b.name, localeTag))
+            : [],
+        [allDecks, deckScopePickerVisible, localeTag],
     );
     const scopeTitle = deckName
         ? deckName.replaceAll('::', ' › ')
@@ -413,35 +421,62 @@ export default function BrowserScreen() {
     };
     const noteById = useMemo(() => {
         const notes = new Map<number, Note>();
-        for (const card of allCards) {
+        for (const card of visibleAllCards) {
             if (notes.has(card.noteId)) continue;
             const note = card.rawNote;
             if (note) notes.set(card.noteId, note);
         }
         return notes;
-    }, [allCards]);
+    }, [visibleAllCards]);
     const noteTagsById = useMemo(
         () => new Map([...noteById].map(([noteId, note]) => [noteId, note.tags])),
         [noteById],
     );
-    const noteTypes = useMemo(() => getAllNoteTypes(), [dataVersion]);
     const selectableNoteTypes = useMemo(
-        () => noteTypes.filter((noteType) => !isLegacyTusNoteType(noteType)),
-        [noteTypes],
+        () => showNoteTypePicker
+            ? noteTypes.filter((noteType) => !isLegacyTusNoteType(noteType))
+            : [],
+        [noteTypes, showNoteTypePicker],
     );
 
-    const loadPage = useCallback((reset: boolean, pageSize = BROWSER_PAGE_SIZE) => {
-        if (pageLoadInProgressRef.current) return;
-        if (trimmedSearchQuery && activeSearchRowIds === null) return;
+    useEffect(() => {
+        pageTaskRef.current?.cancel();
+        pageTaskRef.current = null;
+        pageGenerationRef.current.cancel();
+        pageLoadInProgressRef.current = false;
+        setLoadingMore(false);
+        if (!browserSnapshot) return;
+        loadedCountRef.current = browserSnapshot.cards.length;
+        totalCardCountRef.current = browserSnapshot.totalCardCount;
+        setAllCards(browserSnapshot.cards);
+        setCardsSnapshotKey(browserSnapshotKey);
+        setTotalCardCount(browserSnapshot.totalCardCount);
+        setHasMoreCards(
+            browserSnapshot.cards.length < browserSnapshot.totalCardCount
+            && browserSnapshot.cards.length > 0,
+        );
+        setLoadingError(null);
+    }, [browserSnapshot, browserSnapshotKey]);
+
+    useEffect(() => {
+        if (!browserSnapshotError) return;
+        setLoadingError(userFacingErrorMessage(
+            browserSnapshotError,
+            l('Kartlar yüklenemedi. Lütfen tekrar deneyin.', 'Cards could not be loaded. Please try again.'),
+        ));
+    }, [browserSnapshotError, l]);
+
+    const reload = useCallback(() => setReloadToken((value) => value + 1), []);
+    const loadNextPage = useCallback(() => {
+        if (!browserSnapshot || !hasMoreCards || loading || loadingMore || pageLoadInProgressRef.current) return;
         pageLoadInProgressRef.current = true;
-        if (reset) setLoading(true);
-        else setLoadingMore(true);
-        try {
-            const total = reset
-                ? (activeSearchRowIds?.length ?? getBrowserCardCount(browserDbQuery))
-                : totalCardCountRef.current;
-            const offset = reset ? 0 : loadedCountRef.current;
-            const pageRowIds = activeSearchRowIds?.slice(offset, offset + pageSize);
+        setLoadingMore(true);
+        const token = pageGenerationRef.current.begin();
+        const task = InteractionManager.runAfterInteractions(() => {
+            try {
+            const total = totalCardCountRef.current;
+            const offset = loadedCountRef.current;
+            const pageRowIds = activeSearchRowIds?.slice(offset, offset + BROWSER_PAGE_SIZE);
             const cards = getBrowserCards(settings, {
                 ...browserDbQuery,
                 ...(pageRowIds
@@ -449,50 +484,34 @@ export default function BrowserScreen() {
                         ? { noteIds: pageRowIds }
                         : { cardIds: pageRowIds }
                     : {}),
-                limit: pageSize,
+                limit: BROWSER_PAGE_SIZE,
                 offset: pageRowIds ? 0 : offset,
             });
             const nextLoadedCount = offset + cards.length;
-            loadedCountRef.current = nextLoadedCount;
-            setAllCards((current) => reset ? cards : [...current, ...cards]);
-            if (reset) {
-                totalCardCountRef.current = total;
-                setTotalCardCount(total);
-            }
-            setHasMoreCards(nextLoadedCount < total && cards.length > 0);
-            setLoadingError(null);
+            pageGenerationRef.current.commit(token, () => {
+                loadedCountRef.current = nextLoadedCount;
+                setAllCards((current) => [...current, ...cards]);
+                setHasMoreCards(nextLoadedCount < total && cards.length > 0);
+                setLoadingError(null);
+            });
         } catch (error) {
             console.error('[Browser] card load failed:', error);
-            setLoadingError(userFacingErrorMessage(
-                error,
-                l('Kartlar yüklenemedi. Lütfen tekrar deneyin.', 'Cards could not be loaded. Please try again.'),
-            ));
+            pageGenerationRef.current.commit(token, () => {
+                setLoadingError(userFacingErrorMessage(
+                    error,
+                    l('Kartlar yüklenemedi. Lütfen tekrar deneyin.', 'Cards could not be loaded. Please try again.'),
+                ));
+            });
         } finally {
-            pageLoadInProgressRef.current = false;
-            if (reset) setLoading(false);
-            else setLoadingMore(false);
+            if (pageGenerationRef.current.isCurrent(token)) {
+                pageLoadInProgressRef.current = false;
+                setLoadingMore(false);
+                pageTaskRef.current = null;
+            }
         }
-    }, [activeSearchRowIds, browserDbQuery, settings, tableMode, trimmedSearchQuery]);
-
-    const reload = useCallback(() => loadPage(true), [loadPage]);
-    const loadNextPage = useCallback(() => {
-        if (!hasMoreCards || loading || loadingMore) return;
-        loadPage(false);
-    }, [hasMoreCards, loading, loadingMore, loadPage]);
-
-    useEffect(() => {
-        // Let the navigation transition and first frame finish before parsing a large collection.
-        // This keeps the back gesture responsive and prevents iOS from treating the transition as
-        // a hung screen while thousands of imported cards are materialized.
-        loadedCountRef.current = 0;
-        totalCardCountRef.current = 0;
-        setAllCards([]);
-        setTotalCardCount(0);
-        setHasMoreCards(false);
-        setLoading(true);
-        const task = InteractionManager.runAfterInteractions(reload);
-        return () => task.cancel();
-    }, [reload, dataVersion]);
+        });
+        pageTaskRef.current = task;
+    }, [activeSearchRowIds, browserDbQuery, browserSnapshot, hasMoreCards, loading, loadingMore, settings, tableMode, l]);
 
     useEffect(() => () => {
         if (debounceRef.current) {
@@ -537,7 +556,7 @@ export default function BrowserScreen() {
 
     const filteredCards = useMemo(() => {
         const query = searchQuery.trim();
-        let cards = allCards;
+        let cards = visibleAllCards;
 
         // Notes-mode rows are already the authoritative, deduplicated database result. A note
         // may have matched because of a sibling card that is not its representative first card,
@@ -601,7 +620,7 @@ export default function BrowserScreen() {
         }
 
         return cards;
-    }, [allCards, tableMode, filteredScopeCardIds, scopedDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery, pageMatcher, noteTagsById, deckById]);
+    }, [visibleAllCards, tableMode, filteredScopeCardIds, scopedDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery, pageMatcher, noteTagsById, deckById]);
 
     useEffect(() => {
         const visibleIds = new Set(filteredCards.map((card) => card.cardId));
@@ -813,23 +832,10 @@ export default function BrowserScreen() {
         return terms.join(' ');
     }, [scopeDeck, markedOnly, suspendedOnly, tagCardState, tagFilters, flagFilters, searchQuery]);
 
-    const allFilterActive = !markedOnly
-        && !suspendedOnly
-        && tagCardState === 'all'
-        && tagFilters.length === 0
-        && flagFilters.length === ALL_CARD_FLAGS.length;
-    const scopeHasCards = useMemo(() => {
-        if (filteredScopeCardIds) return filteredScopeCardIds.size > 0;
-        const ids = scopedDeckIds ?? new Set(allDecks.filter((deck) => !deck.isFiltered).map((deck) => deck.id));
-        for (const id of ids) {
-            if ((deckCardCounts.get(id)?.total ?? 0) > 0) return true;
-        }
-        return false;
-    }, [allDecks, deckCardCounts, filteredScopeCardIds, scopedDeckIds]);
     const hasResultFilter = Boolean(searchQuery.trim()) || !allFilterActive;
     // Loaded-page progress is an implementation detail. Keep the toolbar stable and show only
     // the total number of cards in the current scope/filter, including while search is scanning.
-    const scopeCountText = String(scopeCardCount);
+    const scopeCountText = loading ? '…' : String(scopeCardCount);
 
     const clearBrowserFilters = useCallback(() => {
         setMarkedOnly(false);
@@ -1073,7 +1079,7 @@ export default function BrowserScreen() {
                         {scopeCountText} {tableMode === 'notes' ? l('not', 'notes') : l('kart', 'cards')}
                     </Text>
                 </View>
-                {!scopeDeck?.isFiltered && (
+                {browserSnapshot && !scopeDeck?.isFiltered && (
                     <TouchableOpacity
                         style={styles.addCardBtn}
                         onPress={() => router.push({
@@ -1278,7 +1284,7 @@ export default function BrowserScreen() {
                 </View>
             )}
 
-            <DeckPickerModal
+            {deckScopePickerVisible && <DeckPickerModal
                 visible={deckScopePickerVisible}
                 colors={colors}
                 decks={deckScopePickerItems}
@@ -1298,7 +1304,7 @@ export default function BrowserScreen() {
                     bumpDataVersion();
                     return created.name;
                 }}
-            />
+            />}
 
             <Modal visible={showSelectionMenu} transparent animationType="fade" onRequestClose={() => setShowSelectionMenu(false)}>
                 <View style={styles.selectionMenuOverlay}>
@@ -1554,7 +1560,7 @@ export default function BrowserScreen() {
                 </View>
             </Modal>
 
-            <TagPickerModal
+            {showTagFilter && <TagPickerModal
                 visible={showTagFilter}
                 selectedTags={tagFilters}
                 allowCreate={false}
@@ -1568,9 +1574,9 @@ export default function BrowserScreen() {
                     setTagCardState(cardState);
                     setShowTagFilter(false);
                 }}
-            />
+            />}
 
-            <TagPickerModal
+            {showSelectionTags && <TagPickerModal
                 visible={showSelectionTags}
                 selectedTags={selectionTagBaseline}
                 allowCreate
@@ -1584,7 +1590,7 @@ export default function BrowserScreen() {
                     setShowSelectionTags(false);
                     runSelectionAction(() => updateNotesTags(selectedNoteIds, addTags, removeTags));
                 }}
-            />
+            />}
 
             <Modal visible={showNoteTypePicker} transparent animationType="fade" onRequestClose={() => setShowNoteTypePicker(false)}>
                 <View style={styles.modalOverlay}>
@@ -1799,7 +1805,7 @@ export default function BrowserScreen() {
                 </View>
             </Modal>
 
-            <DeckPickerModal
+            {showDeckPicker && <DeckPickerModal
                 visible={showDeckPicker}
                 colors={colors}
                 decks={deckPickerRows.map((node) => node.deck)}
@@ -1823,7 +1829,7 @@ export default function BrowserScreen() {
                     bumpDataVersion();
                     return created.name;
                 }}
-            />
+            />}
 
         </SafeAreaView>
     );

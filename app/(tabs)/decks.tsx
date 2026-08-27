@@ -25,7 +25,7 @@ import {
     ActivityIndicator,
     useWindowDimensions,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import {
@@ -56,7 +56,12 @@ import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/mode
 import { alert, confirm } from '../../lib/confirm';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount, getStudyQueue } from '../../lib/studyRepository';
 import { createBackupNow } from '../../lib/backup';
-import { useApp } from './_layout';
+import {
+    useAppSettings,
+    useCatalogStatus,
+    useCollectionInvalidation,
+    useStudyScope,
+} from '../../contexts/AppContext';
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel, formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
@@ -75,6 +80,7 @@ import { sanitizeUnsignedIntegerDraft } from '../../lib/boundedNumber';
 import { FILTERED_DECK_ORDER_UI } from '../../lib/filteredDeckOptions';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
+import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -157,7 +163,10 @@ export default function DecksScreen() {
     const supportsDeckDrag = isDesktopWeb || Platform.OS === 'ios' || Platform.OS === 'android';
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { settings, dataVersion, bumpDataVersion, activeDeckName, catalogAccess, catalogInstalled, catalogInstalling } = useApp();
+    const { settings } = useAppSettings();
+    const { collectionVersion, invalidateCollection, getSchedulingRevision } = useCollectionInvalidation();
+    const { activeDeckName } = useStudyScope();
+    const { catalogAccess, catalogInstalled, catalogInstalling } = useCatalogStatus();
     const [expandedDecks, setExpandedDecks] = useState<Set<string>>(getPersistedExpandedDeckNames);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
@@ -169,6 +178,7 @@ export default function DecksScreen() {
     const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
     const [filteredDeckScreenTitle, setFilteredDeckScreenTitle] = useState('');
     const [refreshToken, setRefreshToken] = useState(0);
+    const [visibleSchedulingRevision, setVisibleSchedulingRevision] = useState(getSchedulingRevision);
     const [modal, setModal] = useState<ModalState>(null);
 
     // Modal form fields (filled when the corresponding modal opens).
@@ -198,8 +208,17 @@ export default function DecksScreen() {
     const secondFilterOrderRef = useRef<View>(null);
     const catalogTier = useMemo(
         () => getBkaCatalogTier(),
-        [catalogInstalled, dataVersion],
+        [catalogInstalled, collectionVersion],
     );
+
+    // Tabs remain mounted while studying. Pull the passive scheduler revision only when the
+    // deck list is visible again, then compute all deck/filtered-deck counts once.
+    useFocusEffect(useCallback(() => {
+        const next = getSchedulingRevision();
+        setVisibleSchedulingRevision((previous) => (
+            consumeSchedulingRevision(previous, next, () => { })
+        ));
+    }, [getSchedulingRevision]));
 
     // Drag-and-drop state: rows report their content-space layout; the active drag
     // tracks the pointer against those rows to pick a drop target.
@@ -291,7 +310,7 @@ export default function DecksScreen() {
         }
         const tree = buildDeckTree(decks, counts, settings.dayRolloverHour);
         return tree;
-    }, [refreshToken, dataVersion, settings, catalogTier]);
+    }, [refreshToken, collectionVersion, visibleSchedulingRevision, settings, catalogTier]);
 
     // The context learns the install state one effect after this screen first renders, which would
     // flash the locked row at a learner who already owns the pack; the collection itself is the
@@ -344,8 +363,8 @@ export default function DecksScreen() {
 
     const refresh = useCallback(() => {
         setRefreshToken((value) => value + 1);
-        bumpDataVersion();
-    }, [bumpDataVersion]);
+        invalidateCollection();
+    }, [invalidateCollection]);
 
     const toggleExpand = (deck: Deck) => {
         animateDeckTreeLayout();

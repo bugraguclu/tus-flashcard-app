@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useLocales } from 'expo-localization';
-import { useApp } from '../contexts/AppContext';
+import { useLanguagePreference } from '../contexts/AppContext';
 import {
     localeTag,
     resolveAppLocale,
@@ -28,9 +28,9 @@ export function useSystemI18n() {
 }
 
 export function useI18n() {
-    const { settings } = useApp();
+    const languagePreference = useLanguagePreference();
     const deviceLanguageCodes = useDeviceLanguageCodes();
-    const locale = resolveAppLocale(settings.language, deviceLanguageCodes);
+    const locale = resolveAppLocale(languagePreference, deviceLanguageCodes);
 
     useEffect(() => {
         setActiveLocale(locale);
@@ -47,7 +47,7 @@ export function useI18n() {
         l,
         locale,
         localeTag: localeTag(locale),
-        preference: settings.language,
+        preference: languagePreference,
         deviceLanguage: resolveAppLocale('system', deviceLanguageCodes),
     };
 }

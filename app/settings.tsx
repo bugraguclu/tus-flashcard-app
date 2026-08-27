@@ -36,7 +36,7 @@ import {
 } from '../lib/storage';
 import { checkDatabase } from '../lib/maintenance';
 import { alert, confirm } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import type {
     AppLanguage,
@@ -348,7 +348,9 @@ export default function SettingsScreen() {
     const router = useRouter();
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 600;
-    const { refreshData, bumpDataVersion, refreshCatalogAccess } = useApp();
+    const { refreshSettings: refreshData } = useAppSettings();
+    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
+    const { refreshCatalogAccess } = useCatalogStatus();
     const { l, deviceLanguage } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);

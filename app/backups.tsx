@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     createBackupNow,
     deleteBackup,
@@ -41,7 +41,9 @@ function formatDate(epochMs: number, localeTag: string): string {
 export default function BackupsScreen() {
     const { t, l, localeTag } = useI18n();
     const router = useRouter();
-    const { refreshData, bumpDataVersion, refreshCatalogAccess } = useApp();
+    const { refreshSettings: refreshData } = useAppSettings();
+    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
+    const { refreshCatalogAccess } = useCatalogStatus();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [backups, setBackups] = useState<BackupInfo[]>([]);

@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useCollectionInvalidation } from '../contexts/AppContext';
 import { findEmptyCards, deleteAnkiCardOnly, type EmptyCardEntry } from '../lib/noteManager';
 import { dbDeleteFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
@@ -19,7 +19,7 @@ import { useI18n } from '../hooks/useI18n';
 export default function EmptyCardsScreen() {
     const { t, l } = useI18n();
     const router = useRouter();
-    const { bumpDataVersion, dataVersion } = useApp();
+    const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
 

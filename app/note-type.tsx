@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useCollectionInvalidation } from '../contexts/AppContext';
 import { getNoteType, saveNoteType } from '../lib/noteManager';
 import {
     renameNoteType,
@@ -50,7 +50,7 @@ export default function NoteTypeScreen() {
     const { t, l } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { bumpDataVersion } = useApp();
+    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
 

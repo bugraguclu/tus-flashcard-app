@@ -2,7 +2,7 @@
 // counts, the deck description, buried-card count with a manual Unbury, and the
 // Study Now button that actually enters the queue.
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -12,23 +12,22 @@ import {
     Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { useApp } from '../contexts/AppContext';
+import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     emptyFilteredDeck,
-    getBuriedCountForDeck,
-    getDeckByName,
     rebuildFilteredDeck,
     unburyDeck,
 } from '../lib/deckManager';
 import { getDeckDisplayName } from '../lib/models';
-import { getStudyQueue } from '../lib/studyRepository';
 import { alert, confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
+import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
+import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
 export default function DeckOverviewScreen() {
     const { t, l, locale } = useI18n();
@@ -36,33 +35,72 @@ export default function DeckOverviewScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { settings, dataVersion, bumpDataVersion } = useApp();
+    const { settings } = useAppSettings();
+    const {
+        collectionVersion: dataVersion,
+        invalidateCollection: bumpDataVersion,
+        getSchedulingRevision,
+    } = useCollectionInvalidation();
     const [refreshToken, setRefreshToken] = useState(0);
     const [customStudyOpen, setCustomStudyOpen] = useState(false);
     const [filterOptionsOpen, setFilterOptionsOpen] = useState(false);
+    const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
+
+    useFocusEffect(useCallback(() => {
+        setSchedulingRevision(getSchedulingRevision());
+    }, [getSchedulingRevision]));
 
     const deckName = typeof params.deck === 'string' ? params.deck : '';
-    const deck = useMemo(() => (deckName ? getDeckByName(deckName) : null), [deckName, dataVersion, refreshToken]);
-
-    const queue = useMemo(() => {
-        if (!deck) return null;
-        try {
-            return getStudyQueue({ settings, selectedDeckName: deck.name });
-        } catch (e) {
-            console.warn('[DeckOverview] queue peek failed:', e);
-            return null;
-        }
-    }, [deck, settings, dataVersion, refreshToken]);
-
-    const buriedCount = useMemo(
-        () => (deck ? getBuriedCountForDeck(deck.id) : 0),
-        [deck, dataVersion, refreshToken],
+    const overviewSnapshotKey = useMemo(() => JSON.stringify([
+        'deck-overview',
+        deckName,
+        dataVersion,
+        schedulingRevision,
+        refreshToken,
+        settings,
+    ]), [deckName, dataVersion, schedulingRevision, refreshToken, settings]);
+    const loadOverviewSnapshot = useCallback(
+        () => getDeckOverviewSnapshot(deckName, settings),
+        [deckName, settings],
     );
+    const {
+        snapshot: overviewSnapshot,
+        loading,
+        error: overviewError,
+    } = useDeferredScreenSnapshot(overviewSnapshotKey, loadOverviewSnapshot);
+    const deck = overviewSnapshot?.deck ?? null;
+    const queue = overviewSnapshot?.queue ?? null;
+    const buriedCount = overviewSnapshot?.buriedCount ?? 0;
 
     if (!deck) {
         return (
             <SafeAreaView style={styles.container}>
-                <Text style={styles.missing}>{l('Deste bulunamadı.', 'Deck not found.')}</Text>
+                <View style={styles.navBar}>
+                    <TouchableOpacity
+                        style={styles.navButton}
+                        onPress={() => router.back()}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('tabs.backToDecks')}
+                    >
+                        <Text style={styles.navButtonText}>‹</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.navTitle} numberOfLines={1}>
+                        {deckName ? getDeckDisplayName(deckName) : l('Deste', 'Deck')}
+                    </Text>
+                    <View style={styles.navButton} />
+                </View>
+                <ScrollView contentContainerStyle={styles.content}>
+                    <View style={styles.inlineLoadState} pointerEvents="none" accessible>
+                        <Text style={styles.inlineLoadIcon}>{overviewError ? '!' : '▤'}</Text>
+                        <Text style={styles.missing}>
+                            {loading
+                                ? t('common.loading')
+                                : overviewError
+                                    ? l('Deste özeti yüklenemedi.', 'Deck overview could not be loaded.')
+                                    : l('Deste bulunamadı.', 'Deck not found.')}
+                        </Text>
+                    </View>
+                </ScrollView>
             </SafeAreaView>
         );
     }
@@ -257,7 +295,7 @@ export default function DeckOverviewScreen() {
                 </TouchableOpacity>
             </ScrollView>
 
-            <CustomStudyModal
+            {customStudyOpen && <CustomStudyModal
                 visible={customStudyOpen}
                 deck={deck}
                 dayRolloverHour={settings.dayRolloverHour}
@@ -267,8 +305,8 @@ export default function DeckOverviewScreen() {
                     setRefreshToken((value) => value + 1);
                 }}
                 onStudy={(nextDeckName) => router.push({ pathname: '/', params: { deck: nextDeckName } } as any)}
-            />
-            <FilteredDeckOptionsModal
+            />}
+            {filterOptionsOpen && <FilteredDeckOptionsModal
                 visible={filterOptionsOpen}
                 deck={deck}
                 settings={settings}
@@ -278,7 +316,7 @@ export default function DeckOverviewScreen() {
                     setRefreshToken((value) => value + 1);
                     if (nextDeckName !== deckName) router.setParams({ deck: nextDeckName } as any);
                 }}
-            />
+            />}
         </SafeAreaView>
     );
 }
@@ -301,7 +339,16 @@ function createStyles(colors: ColorScheme) {
         navMoreText: { fontSize: 16, color: colors.textMuted, fontWeight: '800', letterSpacing: -1 },
         navTitle: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
         content: { padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch', paddingBottom: Spacing.xxxl },
-        missing: { margin: Spacing.xl, color: colors.textMuted, fontSize: FontSize.md },
+        missing: { color: colors.textMuted, fontSize: FontSize.md },
+        inlineLoadState: {
+            minHeight: 120,
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: Spacing.sm,
+            borderRadius: BorderRadius.md,
+            backgroundColor: colors.bgSecondary,
+        },
+        inlineLoadIcon: { color: colors.textMuted, fontSize: 28, fontWeight: '700' },
         hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
         deckIcon: {
             width: 52,

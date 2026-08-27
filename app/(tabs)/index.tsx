@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platform, Modal, Pressable, PanResponder, useWindowDimensions, AppState, type ViewProps } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, FontSize, Shadows, BorderRadius, useThemeColors, type ColorScheme } from '../../constants/theme';
@@ -12,7 +12,12 @@ import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
 import { getAverageAnswerMs, getNewCardsIntroducedTodayInDeck, getStudyStreak, getTodayAnswerStats, type StudyStreak } from '../../lib/reviewLogger';
 import { resolveSettingsFromConfig } from '../../lib/settingsResolver';
-import { useApp } from './_layout';
+import {
+    useAppSettings,
+    useCollectionInvalidation,
+    useSetStudyPosition,
+    useStudyScope,
+} from '../../contexts/AppContext';
 import type { Grade, ReviewGestureAction, SessionStats, StudyCard } from '../../lib/types';
 import { DEFAULT_DECK_CONFIG, FLAG_COLORS, getDeckDisplayName, type AnkiCard, type CardFlag } from '../../lib/models';
 import {
@@ -57,6 +62,7 @@ import { alert, choose } from '../../lib/confirm';
 import { gradeForHardwareKey, matchesKeyBinding, matchesShowAnswerKey, normalizeHardwareKey } from '../../lib/hardwareKeyboard';
 import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
+import { beginStudyActivity } from '../../lib/backupWindow';
 import { TimeboxTracker } from '../../lib/timebox';
 import {
     DEFAULT_ANSWER_TAP_ACTIONS,
@@ -77,6 +83,7 @@ import {
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
+import { coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -186,7 +193,14 @@ function readTodaySessionStats(rolloverHour: number): SessionStats {
 
 export default function StudyScreen() {
     const { t, l, locale } = useI18n();
-    const { selectedSubject, selectedTopic, settings, bumpDataVersion, dataVersion, setStudyPosition, setActiveDeckName } = useApp();
+    const { settings } = useAppSettings();
+    const {
+        collectionVersion,
+        invalidateCollection,
+        markSchedulingStale,
+    } = useCollectionInvalidation();
+    const { selectedSubject, selectedTopic, setActiveDeckName } = useStudyScope();
+    const setStudyPosition = useSetStudyPosition();
     const params = useLocalSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -340,6 +354,12 @@ export default function StudyScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // The weekly collection snapshot reads every table in one synchronous pass. Hold it while
+    // this screen is the one in front of the learner; it runs as soon as focus moves away, or
+    // when the app leaves the foreground. Focus rather than mount: the reviewer stays mounted
+    // underneath Settings and the editor, and a backup must not be blocked by a hidden screen.
+    useFocusEffect(useCallback(() => beginStudyActivity(), []));
+
     // Anki resolves limits per deck: studying a deck uses that deck's daily limits (plus any
     // "today only" boost), and a filtered / custom-study deck is exempt from daily limits.
     const scopeSettings = useMemo(() => {
@@ -350,14 +370,14 @@ export default function StudyScreen() {
             return { ...settings, dailyNewLimit: 9999, dailyReviewLimit: 9999 };
         }
         return resolveSettingsFromConfig(getDeckConfigForDeck(deck.id, settings.dayRolloverHour), settings);
-    }, [selectedDeckName, settings, dataVersion]);
+    }, [selectedDeckName, settings, collectionVersion]);
 
     // Filtered deck with "reschedule" off => Anki preview mode: answers never touch cards.
     const previewMode = useMemo(() => {
         if (!selectedDeckName) return false;
         const deck = getDeckByName(selectedDeckName);
         return Boolean(deck?.isFiltered && deck.reschedule === false);
-    }, [selectedDeckName, dataVersion]);
+    }, [selectedDeckName, collectionVersion]);
 
     // Preview leaves the DB untouched, so a rebuilt queue would re-gather every card the
     // user already went through. Track them per session; a scope change starts fresh.
@@ -468,12 +488,12 @@ export default function StudyScreen() {
     // just-created card appears immediately instead of waiting for the fallback timer.
     // preserveCurrent keeps the card being studied in place; answers from this screen
     // bump dataVersion too, which makes this a cheap merge behind the current card.
-    const lastDataVersionRef = useRef(dataVersion);
+    const lastCollectionVersionRef = useRef(collectionVersion);
     useEffect(() => {
-        if (loading || dataVersion === lastDataVersionRef.current) return;
-        lastDataVersionRef.current = dataVersion;
+        if (loading || collectionVersion === lastCollectionVersionRef.current) return;
+        lastCollectionVersionRef.current = collectionVersion;
         buildQueue(undefined, false, true);
-    }, [dataVersion, loading, buildQueue]);
+    }, [collectionVersion, loading, buildQueue]);
 
     useEffect(() => () => {
         if (scheduledRefreshRef.current) {
@@ -523,7 +543,7 @@ export default function StudyScreen() {
             skipQuestionWhenReplayingAnswer: config.skipQuestionWhenReplayingAnswer === true,
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentCard?.deckId, settings.dayRolloverHour, dataVersion]);
+    }, [currentCard?.deckId, settings.dayRolloverHour, collectionVersion]);
 
     // The on-screen timer counts the same foreground-only time the review log records, and stops
     // at the deck's maximum answer seconds, exactly as the manual describes. "Stop timer on
@@ -682,6 +702,9 @@ export default function StudyScreen() {
             // The review log row is already committed, so re-reading it gives exact numbers
             // (reviewed / passed / new-introduced) with no drift to hand-maintain.
             const nextStats = refreshSessionStats();
+            // Do not publish a React context update here. Count-heavy screens consume this
+            // passive scheduler revision when they become visible again.
+            markSchedulingStale();
 
             // Anki checks Timebox only after a repetition has completed. The answered card stays
             // on screen while the learner chooses, so the next card (and its audio) cannot start
@@ -708,7 +731,6 @@ export default function StudyScreen() {
 
                 if (!shouldContinue) {
                     setShowingAnswer(false);
-                    bumpDataVersion();
                     router.replace('/decks' as any);
                     return;
                 }
@@ -786,16 +808,17 @@ export default function StudyScreen() {
             // Reset here as well as in the card-id effect. A single-card queue can
             // immediately deal the same id again after "Again", so its id does not change.
             answerTimerRef.current.reset(Date.now(), appIsActiveRef.current);
-            bumpDataVersion();
 
             answersSinceRefreshRef.current += 1;
             // Always do a full DB rebuild when the queue empties — the in-memory queue
             // may not contain learning cards from earlier answers that are still waiting.
-            if (queueBecameEmpty || answersSinceRefreshRef.current >= 8 || queue.length <= 1) {
-                buildQueue(nextStats.newCardsToday);
-            } else {
-                scheduleFullRefresh(15000, nextStats.newCardsToday);
-            }
+            coordinatePostAnswerQueueRefresh(
+                queueBecameEmpty || answersSinceRefreshRef.current >= 8 || queue.length <= 1,
+                {
+                    refreshImmediately: () => buildQueue(nextStats.newCardsToday),
+                    scheduleDeferredRefresh: () => scheduleFullRefresh(15000, nextStats.newCardsToday),
+                },
+            );
         } finally {
             isMutatingRef.current = false;
         }
@@ -805,7 +828,7 @@ export default function StudyScreen() {
         previewMode,
         selectedDeckName,
         buildQueue,
-        bumpDataVersion,
+        markSchedulingStale,
         queue.length,
         scheduleFullRefresh,
         refreshSessionStats,
@@ -848,12 +871,12 @@ export default function StudyScreen() {
 
             // Deleting the revlog row already reverted the day's numbers; re-read them.
             const restoredStats = refreshSessionStats();
-            bumpDataVersion();
+            markSchedulingStale();
             buildQueue(restoredStats.newCardsToday);
         } finally {
             isMutatingRef.current = false;
         }
-    }, [undoStack, buildQueue, bumpDataVersion, refreshSessionStats]);
+    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats]);
 
     const redoLast = useCallback(async () => {
         if (redoStack.length === 0 || isMutatingRef.current) return;
@@ -887,55 +910,55 @@ export default function StudyScreen() {
             ]);
 
             const restoredStats = refreshSessionStats();
-            bumpDataVersion();
+            markSchedulingStale();
             buildQueue(restoredStats.newCardsToday);
         } finally {
             isMutatingRef.current = false;
         }
-    }, [redoStack, settings, buildQueue, bumpDataVersion, refreshSessionStats]);
+    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats]);
 
     const handleSuspend = useCallback(() => {
         if (!currentCard) return;
         setCardSuspended(currentCard.cardId, true, settings.dayRolloverHour);
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
 
     const handleBury = useCallback(() => {
         if (!currentCard) return;
         setCardBuried(currentCard.cardId, true, settings.dayRolloverHour);
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
 
     // --- Card options menu (Anki-style) ---
 
     const handleToggleSuspendCard = useCallback(() => {
         if (!currentCard) return;
         setCardSuspended(currentCard.cardId, !currentCard.state.suspended, settings.dayRolloverHour);
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
 
     const handleFlag = useCallback((flag: CardFlag) => {
         if (!currentCard) return;
         setCardFlag(currentCard.cardId, flag);
-        bumpDataVersion();
-    }, [currentCard, bumpDataVersion]);
+        invalidateCollection();
+    }, [currentCard, invalidateCollection]);
 
     const handleForgetCard = useCallback(() => {
         if (!currentCard) return;
         forgetCard(currentCard.cardId, settings);
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings, markSchedulingStale, buildQueue]);
 
     const handleSetDueDate = useCallback((days: number) => {
         if (!currentCard) return;
         setCardDueInDays(currentCard.cardId, days, settings);
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings, markSchedulingStale, buildQueue]);
 
     const handleSaveTags = useCallback((raw: string) => {
         if (!currentCard) return;
@@ -943,9 +966,9 @@ export default function StudyScreen() {
         if (!note) return;
         note.tags = raw.split(/\s+/).map((tag) => tag.trim()).filter(Boolean);
         saveNote(note);
-        bumpDataVersion();
+        invalidateCollection();
         buildQueue();
-    }, [currentCard, bumpDataVersion, buildQueue]);
+    }, [currentCard, invalidateCollection, buildQueue]);
 
     const handleDeckOptions = useCallback(() => {
         if (!currentCard) return;
@@ -957,33 +980,33 @@ export default function StudyScreen() {
     const handleToggleMarkNote = useCallback(() => {
         if (!currentCard) return;
         toggleNoteMark(currentCard.noteId);
-        bumpDataVersion();
-    }, [currentCard, bumpDataVersion]);
+        invalidateCollection();
+    }, [currentCard, invalidateCollection]);
 
     const handleBuryNote = useCallback(() => {
         if (!currentCard) return;
         for (const card of getCardsForNote(currentCard.noteId)) {
             setCardBuried(card.id, true, settings.dayRolloverHour);
         }
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
 
     const handleSuspendNote = useCallback(() => {
         if (!currentCard) return;
         for (const card of getCardsForNote(currentCard.noteId)) {
             setCardSuspended(card.id, true, settings.dayRolloverHour);
         }
-        bumpDataVersion();
+        markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, bumpDataVersion, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
 
     const handleDeleteNote = useCallback(() => {
         if (!currentCard) return;
         deleteNote(currentCard.noteId);
-        bumpDataVersion();
+        invalidateCollection();
         buildQueue();
-    }, [currentCard, bumpDataVersion, buildQueue]);
+    }, [currentCard, invalidateCollection, buildQueue]);
 
     // Anki Auto Advance. The preset owns the dwell times and the follow-up action; the
     // reviewer's own switch decides whether any of it runs. Zero seconds disables that half, so a
@@ -1147,7 +1170,7 @@ export default function StudyScreen() {
         if (!noteType) return null;
         const deck = getDeck(card.deckId);
         return { card, note, noteType, deck };
-    }, [currentCard?.cardId, dataVersion]);
+    }, [currentCard?.cardId, collectionVersion]);
 
     const currentNoteMarked = renderPayload ? isNoteMarked(renderPayload.note) : false;
     const hasSiblingCards = useMemo(
@@ -1244,7 +1267,7 @@ export default function StudyScreen() {
             return [];
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataVersion, locale]);
+    }, [collectionVersion, locale]);
     const openMoreMenu = useCallback(() => {
         setOptionsInitialView('menu');
         setOptionsMenuVisible(true);
@@ -1521,7 +1544,7 @@ export default function StudyScreen() {
         if (!selectedDeckName) return '';
         return getDeckByName(selectedDeckName)?.description?.trim() ?? '';
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDeckName, dataVersion]);
+    }, [selectedDeckName, collectionVersion]);
 
     const reviewerDeckTitle = useMemo(() => {
         if (!selectedDeckName) return l('Bugünün kartları', 'Cards for Today');
@@ -1531,7 +1554,7 @@ export default function StudyScreen() {
             ? localizeFilteredDeckDisplayName(displayName, locale)
             : displayName;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDeckName, dataVersion, locale, l]);
+    }, [selectedDeckName, collectionVersion, locale, l]);
 
     // Present only for note types whose template embeds {{type:Field}} (built-in or custom).
     // Depending on the preference, the trusted input is either inserted at the template marker
@@ -2326,7 +2349,7 @@ export default function StudyScreen() {
                 onSelect={handlePickDeck}
                 onCreateDeck={(name) => {
                     const created = createDeck(getAvailableDeckName(name));
-                    bumpDataVersion();
+                    invalidateCollection();
                     return created.name;
                 }}
             />
