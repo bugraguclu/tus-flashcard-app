@@ -11,6 +11,7 @@ import AudioRecordModal from './AudioRecordModal';
 import DrawingCanvasModal from './DrawingCanvasModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
 import { useI18n } from '../hooks/useI18n';
+import SwipeDismissSheet from './SwipeDismissSheet';
 
 interface MediaAttachButtonProps {
     /** Appends an Anki-style media reference (`<img src="…">`, `[sound:…]`, …) to the field. */
@@ -83,7 +84,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         try {
             const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin Gerekli', 'Permission Required'), l('Galeriye erişmek için izin vermeniz gerekiyor.', 'Allow photo library access to choose a photo.'));
+                alert(l('İzin gerekli', 'Permission Required'), l('Galeriye erişmek için izin vermeniz gerekiyor.', 'Allow photo library access to choose a photo.'));
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -111,7 +112,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         try {
             const perm = await ImagePicker.requestCameraPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin Gerekli', 'Permission Required'), l('Kamerayı kullanmak için izin vermeniz gerekiyor.', 'Allow camera access to take a photo.'));
+                alert(l('İzin gerekli', 'Permission Required'), l('Kamerayı kullanmak için izin vermeniz gerekiyor.', 'Allow camera access to take a photo.'));
                 return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -173,13 +174,13 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     const options: { icon: string; label: string; onPress: () => void }[] = [
-        { icon: '🖼️', label: l('Fotoğraf Seç ve Düzenle', 'Choose & Edit Photo'), onPress: pickFromGallery },
-        { icon: '📷', label: l('Fotoğraf Çek ve Düzenle', 'Take & Edit Photo'), onPress: captureFromCamera },
-        { icon: '✏️', label: l('Boş Tuvale Çiz', 'Draw on Blank Canvas'), onPress: () => { closeMenu(); setShowDrawing(true); } },
-        { icon: '🎙️', label: l('Ses Kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
-        { icon: '🎵', label: l('Ses Klibi Ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
-        { icon: '🎬', label: l('Video Klibi Ekle', 'Attach Video Clip'), onPress: pickVideoClip },
-        { icon: '📄', label: l('Dosya Ekle', 'Attach File'), onPress: pickFile },
+        { icon: '🖼️', label: l('Fotoğraf seç ve düzenle', 'Choose & Edit Photo'), onPress: pickFromGallery },
+        { icon: '📷', label: l('Fotoğraf çek ve düzenle', 'Take & Edit Photo'), onPress: captureFromCamera },
+        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => { closeMenu(); setShowDrawing(true); } },
+        { icon: '🎙️', label: l('Ses kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
+        { icon: '🎵', label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
+        { icon: '🎬', label: l('Video klibi ekle', 'Attach Video Clip'), onPress: pickVideoClip },
+        { icon: '📄', label: l('Dosya ekle', 'Attach File'), onPress: pickFile },
     ];
 
     return (
@@ -210,9 +211,8 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeMenu}>
                 <View style={styles.overlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
-                    <View style={styles.sheet}>
-                        <View style={styles.sheetHandle} />
-                        <Text style={styles.sheetTitle}>{l('Ek Ekle', 'Add Attachment')}</Text>
+                    <SwipeDismissSheet active={menuVisible} style={styles.sheet} onDismiss={closeMenu}>
+                        <Text style={styles.sheetTitle}>{l('Ek ekle', 'Add Attachment')}</Text>
                         {options.map((opt) => (
                             <TouchableOpacity
                                 key={opt.label}
@@ -228,7 +228,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                         <TouchableOpacity style={styles.cancelRow} onPress={closeMenu}>
                             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
-                    </View>
+                    </SwipeDismissSheet>
                 </View>
             </Modal>
 
@@ -271,18 +271,10 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgCard,
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
-            padding: Spacing.lg,
+            paddingHorizontal: Spacing.lg,
+            paddingTop: 44,
             paddingBottom: 32,
             ...Shadows.lg,
-        },
-        sheetHandle: {
-            width: 42,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: colors.border,
-            alignSelf: 'center',
-            marginTop: -8,
-            marginBottom: Spacing.md,
         },
         sheetTitle: {
             fontSize: FontSize.md,

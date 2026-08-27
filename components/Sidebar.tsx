@@ -8,11 +8,14 @@ import {
     Linking,
     Platform,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import type { Subject } from '../lib/types';
+import type { DeckTreeNode } from '../lib/deckManager';
+import { getDeckDisplayName } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
 
-export const SIDEBAR_WIDTH = 260;
+export const SIDEBAR_WIDTH = 292;
 
 type SidebarProps = {
     isWide: boolean;
@@ -25,6 +28,12 @@ type SidebarProps = {
     getSubjectCount: (subjectId: string) => number;
     getTopicCount: (subjectId: string, topic: string) => number;
     getTopicsForSubject: (subjectId: string) => string[];
+    /** When a deck is being studied, replace the course list with that deck's live subtree. */
+    deckTree?: DeckTreeNode[];
+    activeDeckName?: string | null;
+    expandedDeckNames?: Set<string>;
+    onDeckPress?: (deckName: string) => void;
+    onToggleDeckExpand?: (deckName: string) => void;
     onAllPress: () => void;
     onSubjectPress: (subjectId: string) => void;
     onToggleExpand: (subjectId: string) => void;
@@ -38,6 +47,47 @@ type SidebarProps = {
 function webTitle(text: string): Record<string, string> {
     return Platform.OS === 'web' ? { title: text } : {};
 }
+
+function DeckFolderIcon({ color, root = false }: { color: string; root?: boolean }) {
+    return (
+        <Svg width={18} height={18} viewBox="0 0 24 24">
+            <Path
+                d={root
+                    ? 'M4 7.5h16v11H4zM7 4.5h7l2 3H7zM8 11h8M8 14.5h5'
+                    : 'M3.5 7h6l2-2h9v13.5h-17z'}
+                fill="none"
+                stroke={color}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
+function DeckChevron({ color, expanded }: { color: string; expanded: boolean }) {
+    return (
+        <Svg
+            width={14}
+            height={14}
+            viewBox="0 0 14 14"
+            style={expanded ? stylesForIcon.chevronExpanded : undefined}
+        >
+            <Path
+                d="M5 3.5 9 7l-4 3.5"
+                fill="none"
+                stroke={color}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
+const stylesForIcon = StyleSheet.create({
+    chevronExpanded: { transform: [{ rotate: '90deg' }] },
+});
 
 export function Sidebar(props: SidebarProps) {
     const { t } = useI18n();
@@ -54,6 +104,11 @@ export function Sidebar(props: SidebarProps) {
         getSubjectCount,
         getTopicCount,
         getTopicsForSubject,
+        deckTree = [],
+        activeDeckName = null,
+        expandedDeckNames = new Set<string>(),
+        onDeckPress,
+        onToggleDeckExpand,
         onAllPress,
         onSubjectPress,
         onToggleExpand,
@@ -61,6 +116,78 @@ export function Sidebar(props: SidebarProps) {
         navigate,
         statsPath = '/stats',
     } = props;
+
+    const renderDeckNodes = (nodes: DeckTreeNode[], depth = 0): React.ReactNode => nodes.map((node) => {
+        const { deck, children } = node;
+        const hasChildren = children.length > 0;
+        const isExpanded = expandedDeckNames.has(deck.name);
+        const isSelected = activeDeckName === deck.name;
+
+        return (
+            <View key={deck.id}>
+                <View
+                    style={[
+                        styles.deckRow,
+                        depth === 0 && styles.deckRootRow,
+                        isSelected && styles.deckRowActive,
+                        { marginLeft: Math.min(depth, 4) * 14 },
+                    ]}
+                >
+                    {hasChildren ? (
+                        <TouchableOpacity
+                            style={styles.deckExpandBtn}
+                            onPress={() => onToggleDeckExpand?.(deck.name)}
+                            accessibilityRole="button"
+                            accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                            accessibilityState={{ expanded: isExpanded }}
+                        >
+                            <DeckChevron
+                                color={isExpanded || isSelected ? colors.accent : colors.textMuted}
+                                expanded={isExpanded}
+                            />
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.deckLeafMarker}>
+                            <View style={[styles.deckLeafDot, isSelected && styles.deckLeafDotActive]} />
+                        </View>
+                    )}
+                    <TouchableOpacity
+                        style={styles.deckItem}
+                        onPress={() => onDeckPress?.(deck.name)}
+                        accessibilityRole="button"
+                        accessibilityLabel={deck.name.replaceAll('::', ' › ')}
+                    >
+                        <View style={[
+                            styles.deckIcon,
+                            depth === 0 && styles.deckRootIcon,
+                            isSelected && styles.deckIconActive,
+                        ]}>
+                            <DeckFolderIcon
+                                color={isSelected ? colors.white : colors.accent}
+                                root={depth === 0}
+                            />
+                        </View>
+                        <Text
+                            numberOfLines={1}
+                            style={[
+                                styles.deckName,
+                                depth === 0 && styles.deckRootName,
+                                isSelected && styles.deckNameActive,
+                            ]}
+                        >
+                            {getDeckDisplayName(deck.name)}
+                        </Text>
+                        <View style={[styles.deckCount, isSelected && styles.deckCountActive]}>
+                            <Text style={[styles.deckCountText, isSelected && styles.deckCountTextActive]}>
+                                {node.totalCards}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+                {hasChildren && isExpanded ? renderDeckNodes(children, depth + 1) : null}
+            </View>
+        );
+    });
 
     return (
         <View
@@ -79,7 +206,7 @@ export function Sidebar(props: SidebarProps) {
             </TouchableOpacity>
 
             <ScrollView style={styles.subjectList} showsVerticalScrollIndicator={false}>
-                <TouchableOpacity
+                {deckTree.length > 0 ? renderDeckNodes(deckTree) : <><TouchableOpacity
                     style={[styles.subjectItem, !selectedSubject && !selectedTopic && styles.subjectItemActive]}
                     onPress={onAllPress}
                 >
@@ -149,7 +276,7 @@ export function Sidebar(props: SidebarProps) {
                             })}
                         </View>
                     );
-                })}
+                })}</>}
             </ScrollView>
 
             <View style={styles.sidebarActions}>
@@ -224,6 +351,72 @@ function createStyles(colors: ColorScheme) {
         paddingVertical: 9,
         paddingHorizontal: Spacing.lg,
     },
+    deckItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        minWidth: 0,
+        minHeight: 42,
+        paddingVertical: 6,
+        paddingRight: Spacing.sm,
+    },
+    deckRow: {
+        minHeight: 44,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: Spacing.sm,
+        marginVertical: 1,
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+    },
+    deckRootRow: {
+        marginBottom: Spacing.xs,
+        backgroundColor: colors.bgSecondary,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+    },
+    deckRowActive: { backgroundColor: colors.accentLight },
+    deckExpandBtn: {
+        width: 32,
+        minHeight: 42,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    deckLeafMarker: { width: 32, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
+    deckLeafDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.border },
+    deckLeafDotActive: { backgroundColor: colors.accent },
+    deckIcon: {
+        width: 30,
+        height: 30,
+        marginRight: Spacing.sm,
+        borderRadius: BorderRadius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.accentLight,
+    },
+    deckRootIcon: { backgroundColor: colors.bgCard },
+    deckIconActive: { backgroundColor: colors.accent },
+    deckName: {
+        flex: 1,
+        minWidth: 0,
+        marginRight: Spacing.sm,
+        fontSize: FontSize.md,
+        color: colors.textSecondary,
+        fontWeight: '600',
+    },
+    deckRootName: { color: colors.textPrimary, fontWeight: '700' },
+    deckNameActive: { color: colors.accent, fontWeight: '700' },
+    deckCount: {
+        minWidth: 38,
+        paddingHorizontal: 7,
+        paddingVertical: 3,
+        borderRadius: BorderRadius.full,
+        alignItems: 'center',
+        backgroundColor: colors.bgInput,
+    },
+    deckCountActive: { backgroundColor: colors.accent },
+    deckCountText: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '700' },
+    deckCountTextActive: { color: colors.white },
     subjectItemActive: { backgroundColor: colors.accentLight },
     expandBtn: {
         paddingVertical: 9,

@@ -41,9 +41,10 @@ export interface DatabaseCheckResult {
 }
 
 /**
- * Lite version of Anki's Check Database: verify SQLite file integrity, count
- * orphaned rows, and rebuild the search index. Read-only apart from the FTS
- * rebuild — orphan cleanup stays a manual/post-launch concern.
+ * Anki-style Check Database maintenance: verify SQLite file integrity, count
+ * orphaned rows, compact/reindex/analyze the collection, and rebuild the search index.
+ * Orphan cleanup stays a manual/post-launch concern so this operation never silently
+ * deletes learner data.
  */
 export function checkDatabase(): DatabaseCheckResult {
     const db = getDB();
@@ -52,9 +53,13 @@ export function checkDatabase(): DatabaseCheckResult {
     try {
         const row = db.getFirstSync<Record<string, unknown>>('PRAGMA quick_check');
         const value = row ? String(Object.values(row)[0] ?? '') : '';
-        if (value) integrity = value;
+        if (value) {
+            integrity = value;
+            if (value !== 'ok') console.warn('[Maintenance] Database integrity issue:', value);
+        }
     } catch (e) {
-        integrity = e instanceof Error ? e.message : String(e);
+        console.warn('[Maintenance] Database integrity check failed:', e);
+        integrity = 'check_failed';
     }
 
     const orphanCards = db.getFirstSync<{ cnt: number }>(
@@ -68,6 +73,11 @@ export function checkDatabase(): DatabaseCheckResult {
          WHERE n.tombstone = 0
            AND NOT EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND c.tombstone = 0)`,
     )?.cnt ?? 0;
+
+    // Anki's storage optimization runs these in this order. VACUUM compacts deleted pages,
+    // REINDEX refreshes persistent indexes, and ANALYZE lets SQLite choose the composite
+    // scheduler/browser indexes using current collection statistics.
+    db.execSync('VACUUM; REINDEX; ANALYZE;');
 
     let ftsReindexed = 0;
     if (Platform.OS !== 'web') {

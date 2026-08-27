@@ -20,6 +20,7 @@ import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } fro
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
+import { sanitizeUnsignedIntegerDraft } from '../lib/boundedNumber';
 
 type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
@@ -122,7 +123,9 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
     const close = () => {
         if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
-        setView('menu');
+        // Keep the current panel rendered while the native Modal fades out. Switching a flag
+        // panel back to the main menu here makes the overflow menu flash for one frame during
+        // dismissal. The opening effect selects the correct view on the next presentation.
         setDueDateInput('1');
         props.onClose();
     };
@@ -150,9 +153,9 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
             : view === 'bury'
                 ? l('Göm', 'Bury')
                 : view === 'suspend'
-                    ? l('Askıya Al', 'Suspend')
+                    ? l('Askıya al', 'Suspend')
                     : view === 'reschedule'
-                        ? l('Yeniden Zamanla', 'Reschedule')
+                        ? l('Yeniden zamanla', 'Reschedule')
                         : l('Etiketleri düzenle', 'Edit tags');
 
     const flagNames = [
@@ -171,7 +174,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         : props.canRedo
             ? { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: true, action: props.onRedo }
             : props.canUndo
-                ? { icon: 'undo' as const, label: l('Geri Al', 'Undo'), enabled: true, action: props.onUndo }
+                ? { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: true, action: props.onUndo }
                 : { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: false, action: props.onRedo };
 
     return (
@@ -274,7 +277,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
                                 )}
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
+                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya al', 'Suspend')} chevron onPress={() => setView('suspend')} />
                                 ) : (
                                     <MenuRow
                                         styles={styles}
@@ -303,12 +306,12 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     label={props.noteMarked ? l('Not işaretini kaldır', 'Unmark note') : l('Notu işaretle', 'Mark note')}
                                     onPress={() => runAndClose(props.onToggleMarkNote)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
+                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
                                 <MenuRow
                                     styles={styles}
                                     colors={colors}
                                     icon="replay"
-                                    label={l('Medyayı yeniden oynat', 'Replay media')}
+                                    label={l('Sesi yeniden oynat', 'Replay audio')}
                                     disabled={!props.cardHasAudio}
                                     onPress={() => runAndClose(props.onReplayAudio)}
                                 />
@@ -317,8 +320,8 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     colors={colors}
                                     icon="voice"
                                     label={props.voicePlaybackEnabled
-                                        ? l('Ses yeniden oynatmayı kapat', 'Disable voice playback')
-                                        : l('Ses yeniden oynatmayı aç', 'Enable voice playback')}
+                                        ? l('Metin okumayı kapat', 'Disable text to speech')
+                                        : l('Metin okumayı aç', 'Enable text to speech')}
                                     onPress={() => runAndClose(props.onToggleVoicePlayback)}
                                 />
                                 <MenuRow styles={styles} colors={colors} icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
@@ -405,7 +408,8 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     style={styles.textInput}
                                     keyboardType="number-pad"
                                     value={dueDateInput}
-                                    onChangeText={setDueDateInput}
+                                    onChangeText={(value) => setDueDateInput(sanitizeUnsignedIntegerDraft(value, 5))}
+                                    maxLength={5}
                                     placeholder={l('gün', 'days')}
                                     placeholderTextColor={colors.textMuted}
                                 />

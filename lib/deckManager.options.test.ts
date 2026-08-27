@@ -28,6 +28,7 @@ import {
     getDeckConfig,
     getDeckConfigForDeck,
     getDeckTodayBoost,
+    getDeckTodayLimits,
     addDeckTodayBoost,
     moveDeckUnder,
     reorderDeckRelative,
@@ -35,7 +36,10 @@ import {
     saveDeck,
     saveDeckConfig,
     setDeckLimits,
+    setDeckLimitOverrides,
+    setDeckTodayLimits,
     createPreset,
+    restoreDeckConfigDefaults,
     deletePreset,
     assignDeckConfig,
     applyConfigToSubdecks,
@@ -45,6 +49,7 @@ import {
     updateFilteredDeck,
     buildDeckTree,
     getDirectDecksForScope,
+    getPopulatedDecksForScope,
     initializeDeckDisclosureDefaults,
     setDeckCollapsed,
     completeFilteredCard,
@@ -192,12 +197,52 @@ describe('getDirectDecksForScope', () => {
             'Tıp',
         ]);
         expect(getDirectDecksForScope(getAllDecks(), 'Python').map((deck) => deck.name)).toEqual([
-            'Python::Fonksiyonlar',
             'Python::Temeller',
+            'Python::Fonksiyonlar',
         ]);
         expect(getDirectDecksForScope(getAllDecks(), 'Python::Temeller').map((deck) => deck.name)).toEqual([
             'Python::Temeller::Yazdırma',
         ]);
+    });
+});
+
+describe('getPopulatedDecksForScope', () => {
+    it('hides empty ghost branches in every deck while retaining ancestors of real cards', () => {
+        const python = createDeck('Python');
+        const emptyModule = createDeck('Python::Modüller & Hata Ayıklama');
+        createDeck('Python::Modüller & Hata Ayıklama::random');
+        const tus = createDeck('BKA TUS');
+        const medicine = createDeck('BKA TUS::Dahiliye');
+        const cardiology = createDeck('BKA TUS::Dahiliye::Kardiyoloji');
+        createDeck('BKA TUS::Dahiliye::Boş Konu');
+        const counts = new Map([
+            [python.id, { total: 0 }],
+            [emptyModule.id, { total: 0 }],
+            [tus.id, { total: 0 }],
+            [medicine.id, { total: 0 }],
+            [cardiology.id, { total: 12 }],
+        ]);
+
+        expect(getPopulatedDecksForScope(getAllDecks(), counts, 'Python')).toEqual([]);
+        expect(getPopulatedDecksForScope(getAllDecks(), counts, 'BKA TUS').map((deck) => deck.name)).toEqual([
+            'BKA TUS::Dahiliye',
+            'BKA TUS::Dahiliye::Kardiyoloji',
+        ]);
+        expect(getPopulatedDecksForScope(getAllDecks(), counts, null).map((deck) => deck.name)).toEqual([
+            'BKA TUS',
+            'BKA TUS::Dahiliye',
+            'BKA TUS::Dahiliye::Kardiyoloji',
+        ]);
+        // Browser scope chips expose one useful level at a time: the populated ancestor remains
+        // reachable, while a grandchild appears only after entering its parent scope.
+        expect(getDirectDecksForScope(
+            getPopulatedDecksForScope(getAllDecks(), counts, null),
+            null,
+        ).map((deck) => deck.name)).toEqual(['BKA TUS']);
+        expect(getDirectDecksForScope(
+            getPopulatedDecksForScope(getAllDecks(), counts, 'BKA TUS'),
+            'BKA TUS',
+        ).map((deck) => deck.name)).toEqual(['BKA TUS::Dahiliye']);
     });
 });
 
@@ -254,6 +299,53 @@ describe('reorderDeckRelative', () => {
     });
 });
 
+describe('new deck ordering', () => {
+    it('always appends a new root deck instead of inserting it alphabetically', () => {
+        createDeck('Zooloji');
+        createDeck('Anatomi');
+        createDeck('Biyokimya');
+
+        expect(buildDeckTree(getAllDecks()).map((node) => node.deck.name)).toEqual([
+            'Zooloji',
+            'Anatomi',
+            'Biyokimya',
+        ]);
+    });
+
+    it('always appends a new subdeck to the end of its siblings', () => {
+        createDeck('TUS');
+        createDeck('TUS::Zooloji');
+        createDeck('TUS::Anatomi');
+
+        expect(buildDeckTree(getAllDecks())[0].children.map((node) => node.deck.name)).toEqual([
+            'TUS::Zooloji',
+            'TUS::Anatomi',
+        ]);
+    });
+
+    it('keeps legacy unordered decks in place and appends after them', () => {
+        saveDeck({
+            id: 10,
+            name: 'Zooloji',
+            configId: DEFAULT_DECK_CONFIG.id,
+            mod: 0,
+            usn: -1,
+            description: '',
+            collapsed: false,
+            isFiltered: false,
+        });
+
+        createDeck('Anatomi');
+
+        expect(buildDeckTree(getAllDecks()).map((node) => node.deck.name)).toEqual([
+            'Zooloji',
+            'Anatomi',
+        ]);
+        expect(getDeckByName('Zooloji')?.sortOrder).toBe(0);
+        expect(getDeckByName('Anatomi')?.sortOrder).toBe(1);
+    });
+});
+
 describe('setDeckLimits', () => {
     it('splits the deck off the shared preset on first edit', () => {
         const deck = createDeck('Limitli');
@@ -282,6 +374,36 @@ describe('setDeckLimits', () => {
     });
 });
 
+describe('Anki daily-limit scopes', () => {
+    it('keeps this-deck limits separate from a shared preset', () => {
+        const first = createDeck('A');
+        const second = createDeck('B');
+
+        setDeckLimitOverrides(first.id, 7, 70);
+
+        expect(getDeckByName('A')).toMatchObject({ configId: DEFAULT_DECK_CONFIG.id, newLimit: 7, reviewLimit: 70 });
+        expect(getDeckConfigForDeck(first.id, rolloverHour)).toMatchObject({ newPerDay: 7, maxReviewsPerDay: 70 });
+        expect(getDeckConfigForDeck(second.id, rolloverHour)).toMatchObject({
+            newPerDay: DEFAULT_DECK_CONFIG.newPerDay,
+            maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+        });
+    });
+
+    it('clears this-deck limits when the tab value is left blank', () => {
+        const deck = createDeck('A');
+        setDeckLimitOverrides(deck.id, 7, 70);
+
+        setDeckLimitOverrides(deck.id, undefined, undefined);
+
+        expect(getDeckByName('A')?.newLimit).toBeUndefined();
+        expect(getDeckByName('A')?.reviewLimit).toBeUndefined();
+        expect(getDeckConfigForDeck(deck.id, rolloverHour)).toMatchObject({
+            newPerDay: DEFAULT_DECK_CONFIG.newPerDay,
+            maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+        });
+    });
+});
+
 describe('deck tree counts', () => {
     it('caps an aggregated parent row by the parent daily limits', () => {
         const parent = createDeck('TUS');
@@ -297,6 +419,50 @@ describe('deck tree counts', () => {
             reviewCount: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
             totalCards: 573,
         });
+    });
+
+    it('shows what today\'s limits still allow, not the full daily allowance again', () => {
+        // Anki subtracts each deck's newToday/revToday from its limits, so a learner who already
+        // used the allowance sees the remainder rather than a badge that refills on every rebuild.
+        const parent = createDeck('TUS');
+        const child = createDeck('TUS::Dahiliye');
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 90, name: 'Sınırlı', newPerDay: 5, maxReviewsPerDay: 10 });
+        assignDeckConfig(parent.id, 90);
+        assignDeckConfig(child.id, 90);
+
+        // Two cards in the child deck: one introduced today, one review answered today. "Now"
+        // is always inside the current study day, whatever the rollover hour is.
+        const nowMs = Date.now();
+        db.runSync(
+            'INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone) VALUES (?, 1, ?, 0, 1, 1, 0, 0, 2500, 1, 0, 0, 0, NULL, 0, 0, -1, 0)',
+            501, child.id,
+        );
+        db.runSync(
+            'INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone) VALUES (?, 2, ?, 0, 2, 2, 0, 9, 2500, 4, 0, 0, 0, NULL, 0, 0, -1, 0)',
+            502, child.id,
+        );
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 501, -1, 3, -600, 0, 2500, 900, 0)',
+            nowMs,
+        );
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 502, -1, 3, 5, 2, 2500, 900, 1)',
+            nowMs - 40 * 86_400_000,
+        );
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 502, -1, 3, 9, 5, 2500, 900, 1)',
+            nowMs + 1,
+        );
+
+        const tree = buildDeckTree([parent, child], new Map([
+            [parent.id, { new: 0, learn: 0, review: 0, total: 0 }],
+            [child.id, { new: 40, learn: 0, review: 40, total: 80 }],
+        ]), rolloverHour);
+
+        // The child spent one new card and one review of its own allowance; the parent's
+        // allowance is spent by everything below it.
+        expect(tree[0].children[0]).toMatchObject({ newCount: 4, reviewCount: 9 });
+        expect(tree[0]).toMatchObject({ newCount: 4, reviewCount: 9 });
     });
 
     it('persists the disclosure state used by the mobile deck tree', () => {
@@ -329,6 +495,21 @@ describe('deck tree counts', () => {
 });
 
 describe('today-only limit boost', () => {
+    it('supports absolute today-only limits without changing the preset or deck override', () => {
+        const deck = createDeck('Bugün');
+        setDeckLimitOverrides(deck.id, 8, 80);
+
+        setDeckTodayLimits(deck.id, 3, 30, rolloverHour);
+
+        expect(getDeckTodayLimits(deck.id, rolloverHour)).toEqual({ newLimit: 3, reviewLimit: 30 });
+        expect(getDeckConfigForDeck(deck.id, rolloverHour)).toMatchObject({ newPerDay: 3, maxReviewsPerDay: 30 });
+        expect(getDeckByName('Bugün')).toMatchObject({ newLimit: 8, reviewLimit: 80 });
+        expect(getDeckConfig(DEFAULT_DECK_CONFIG.id)).toMatchObject({
+            newPerDay: DEFAULT_DECK_CONFIG.newPerDay,
+            maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+        });
+    });
+
     it('adds on top of the persistent limits for today only', () => {
         const deck = createDeck('Boostlu');
         setDeckLimits(deck.id, 10, 100);
@@ -381,6 +562,36 @@ describe('presets', () => {
         // The default preset itself refuses deletion.
         deletePreset(DEFAULT_DECK_CONFIG.id);
         expect(getDeckConfig(DEFAULT_DECK_CONFIG.id).id).toBe(DEFAULT_DECK_CONFIG.id);
+    });
+
+    it('restores preset scheduling defaults without changing its identity or deck limits', () => {
+        const deck = createDeck('A');
+        const preset = createPreset('Sınav modu');
+        assignDeckConfig(deck.id, preset.id);
+        saveDeckConfig({
+            ...preset,
+            newPerDay: 77,
+            maxReviewsPerDay: 888,
+            learningSteps: [2, 20],
+            autoPlayAudio: false,
+            ankiRaw: { opaque: 'preserved' },
+        });
+        setDeckLimitOverrides(deck.id, 31, 310);
+        setDeckTodayLimits(deck.id, 12, 120, rolloverHour);
+
+        const restored = restoreDeckConfigDefaults(preset.id);
+
+        expect(restored.id).toBe(preset.id);
+        expect(restored.name).toBe('Sınav modu');
+        expect(restored.newPerDay).toBe(DEFAULT_DECK_CONFIG.newPerDay);
+        expect(restored.maxReviewsPerDay).toBe(DEFAULT_DECK_CONFIG.maxReviewsPerDay);
+        expect(restored.learningSteps).toEqual(DEFAULT_DECK_CONFIG.learningSteps);
+        expect(restored.autoPlayAudio).toBe(DEFAULT_DECK_CONFIG.autoPlayAudio);
+        expect(restored.ankiRaw).toEqual({ opaque: 'preserved' });
+        expect(restored.usn).toBe(-1);
+        expect(getDeckByName('A')!.configId).toBe(preset.id);
+        expect(getDeckConfigForDeck(deck.id, rolloverHour).newPerDay).toBe(12);
+        expect(getDeckConfigForDeck(deck.id, rolloverHour).maxReviewsPerDay).toBe(120);
     });
 
     it('applyConfigToSubdecks pushes the preset down the subtree only', () => {

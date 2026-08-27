@@ -1,5 +1,7 @@
 // Anki-compatible data models: notes, cards, note types, decks, deck config, revlog.
 
+import type { AutoAdvanceAnswerAction, AutoAdvanceQuestionAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './types';
+
 export type NoteTypeKind = 'standard' | 'cloze';
 
 export interface NoteTypeField {
@@ -25,6 +27,12 @@ export interface NoteType {
     css: string;
     sortFieldIdx: number;
     mod: number;
+    /** Complete source model JSON for lossless Anki package re-export. */
+    ankiRaw?: Record<string, unknown>;
+    /** Package provenance; used to invalidate byte-identical passthrough after edits. */
+    sourcePackageId?: string;
+    /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
+    catalogPack?: string;
 }
 
 /** Stable local ids for the stock note types that this editor fully supports. */
@@ -166,9 +174,14 @@ export interface Note {
     sfld: string;        // sort-field value
     csum: number;        // FNV-1a hash of the first field for dup detection (not Anki's SHA1 csum)
     flags: number;       // reserved; color flags live on the card (AnkiCard.flags)
+    /** Anki's opaque notes.data column. */
+    ankiData?: string;
+    sourcePackageId?: string;
     /** Catalog navigation metadata. Source Anki tags remain untouched. */
     catalogSubject?: string;
     catalogTopic?: string;
+    /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
+    catalogPack?: string;
 }
 
 export type CardType = 0 | 1 | 2 | 3;  // 0=new, 1=learning, 2=review, 3=relearning
@@ -197,6 +210,9 @@ export interface AnkiCard {
     odid: number;        // original deck id (filtered decks)
     flags: CardFlag;
     lastReview: number;  // epoch ms; denormalized (Anki derives this from the revlog)
+    /** Anki's opaque cards.data column. */
+    ankiData?: string;
+    sourcePackageId?: string;
     /** Original root deck before the curated TUS subdeck categorization. */
     sourceDeckId?: number;
 }
@@ -208,11 +224,17 @@ export interface Deck {
     /** Manual order among decks that share the same parent. Missing values keep legacy A–Z order. */
     sortOrder?: number;
     configId: number;
+    /** Anki's per-deck daily-limit overrides; absent means use the selected preset. */
+    newLimit?: number;
+    reviewLimit?: number;
     mod: number;
     usn: number;
     description: string;
     collapsed: boolean;
     isFiltered: boolean;
+    /** Complete source deck JSON for lossless Anki package re-export. */
+    ankiRaw?: Record<string, unknown>;
+    sourcePackageId?: string;
     searchQuery?: string;
     searchLimit?: number;
     /** Gather order for a filtered deck's search: see FILTERED_ORDERS. */
@@ -235,6 +257,8 @@ export interface Deck {
     filteredDoneCardIds?: number[];
     /** Millisecond timestamp of the last Build/Rebuild action. */
     filteredBuildAt?: number;
+    /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
+    catalogPack?: string;
 }
 
 /** Gather orders for filtered decks (index = the stored searchOrder value). */
@@ -256,6 +280,9 @@ export interface DeckConfig {
     name: string;
     mod: number;
     usn: number;
+    /** Complete source deck-options JSON for lossless Anki package re-export. */
+    ankiRaw?: Record<string, unknown>;
+    sourcePackageId?: string;
 
     // New cards
     newPerDay: number;
@@ -290,24 +317,47 @@ export interface DeckConfig {
     // Display
     showTimer: boolean;
     maxAnswerSecs: number;
+    /** Anki Timers: freeze the answer timer the moment the answer is revealed. */
+    stopTimerOnAnswer?: boolean;
+
+    // Auto Advance (Anki 23.12+). Zero disables the matching step; the reviewer's own
+    // auto-advance toggle still has to be on for any of these to fire.
+    secondsToShowQuestion?: number;
+    secondsToShowAnswer?: number;
+    /** What auto-advance does when the question's dwell time runs out. */
+    questionAction?: AutoAdvanceQuestionAction;
+    /** Hold auto-advance until the side's audio has finished playing. */
+    waitForAudio?: boolean;
+    /** What auto-advance does when the answer's dwell time runs out. */
+    answerAction?: AutoAdvanceAnswerAction;
 
     // Display order (Anki v3 "Display Order"). Optional: configs saved by older builds
     // lack them; readers fall back to the DEFAULT_DECK_CONFIG values.
-    newCardGatherOrder?: 'topic' | 'position' | 'random';
+    newCardGatherOrder?: NewCardGatherOrder;
     newReviewOrder?: 'mix' | 'before' | 'after';
-    reviewSortOrder?: 'dueRandom' | 'intervalsAsc' | 'intervalsDesc';
+    /** Where interday (day-boundary) learning cards sit relative to reviews. */
+    interdayLearningMix?: 'mix' | 'before' | 'after';
+    reviewSortOrder?: ReviewSortOrder;
+    /** Anki's NewCardSortOrder, applied after the gather step. */
+    newCardSortOrder?: NewCardSortOrder;
 
     // Audio
     autoPlayAudio?: boolean;
+    /** Anki `replayq` inverted: replaying on the answer side skips the question's audio. */
+    skipQuestionWhenReplayingAnswer?: boolean;
 
     // Easy days: per-weekday load factor, Monday-first. 1 = normal, 0.5 = reduced
     // (half the reviews land here), 0 = no reviews scheduled on that day.
     easyDays?: number[];
+
+    /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
+    catalogPack?: string;
 }
 
 export const DEFAULT_DECK_CONFIG: DeckConfig = {
     id: 1,
-    name: 'Default',
+    // User-facing preset labels follow their deck; never expose Anki's technical "Default" name.
+    name: 'TUS Kartları',
     mod: 0,
     usn: 0,
     newPerDay: 20,
@@ -324,17 +374,31 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     relearningSteps: [10],
     minIvl: 1,
     leechThreshold: 8,
-    leechAction: 'suspend',
+    // Anki's own default is Tag Only (rslib DEFAULT_DECK_CONFIG_INNER: LeechAction::TagOnly).
+    // Suspending by default silently removes a card the learner is still struggling with.
+    leechAction: 'tag',
     newIvlPercent: 0,
-    buryNewSiblings: true,
-    buryReviewSiblings: true,
-    buryInterdayLearningSiblings: true,
+    // Anki ships sibling burying off; a new collection should behave the way its manual says.
+    buryNewSiblings: false,
+    buryReviewSiblings: false,
+    buryInterdayLearningSiblings: false,
     showTimer: false,
     maxAnswerSecs: 60,
-    newCardGatherOrder: 'topic',
+    stopTimerOnAnswer: false,
+    secondsToShowQuestion: 0,
+    secondsToShowAnswer: 0,
+    questionAction: 'showAnswer',
+    waitForAudio: true,
+    answerAction: 'bury',
+    // NewCardGatherPriority::Deck — subdeck by subdeck, in the order the deck list shows them.
+    newCardGatherOrder: 'deck',
     newReviewOrder: 'mix',
+    interdayLearningMix: 'mix',
     reviewSortOrder: 'dueRandom',
+    // NewCardSortOrder::Template — ascending card template ordinal.
+    newCardSortOrder: 'template',
     autoPlayAudio: true,
+    skipQuestionWhenReplayingAnswer: false,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
 };
 
@@ -367,14 +431,11 @@ export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
     7: { name: 'Mor', color: '#8844ff' },
 };
 
+// A first launch opens on one empty deck, the way Anki does. The demo curriculum these ids used
+// to seed is gone; existing installs keep whatever decks they already have, because initAnkiData
+// runs only once per collection.
 export const DEFAULT_DECKS: Deck[] = [
-    { id: 1, name: 'Python', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 2, name: 'Python::Temeller', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 3, name: 'Python::Mantık & Döngüler', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 4, name: 'Python::Veri Yapıları', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 5, name: 'Python::Fonksiyonlar', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 6, name: 'Python::Nesne Yönelimli (OOP)', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
-    { id: 7, name: 'Python::Modüller & Hata Ayıklama', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
+    { id: 1, name: 'Varsayılan', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
 ];
 
 // Sync deletion tombstones.
@@ -451,6 +512,11 @@ export function getParentDeckName(fullName: string): string | null {
 }
 
 /** Map a subject slug to its seeded deck id. */
+/**
+ * Home deck for a legacy seeded course id. The seed curriculum was removed, so only collections
+ * created by an older build still contain these decks; everything else resolves to the root deck
+ * and, for real courses, to UserSubject.deckId via lib/subjects.
+ */
 export function subjectToDeckId(subject: string): number {
     const map: Record<string, number> = {
         'temeller': 2, 'mantik': 3, 'veri': 4,

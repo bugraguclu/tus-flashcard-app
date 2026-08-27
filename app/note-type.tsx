@@ -6,8 +6,8 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
@@ -98,7 +98,7 @@ export default function NoteTypeScreen() {
             alert(l('Uyarı', 'Warning'), l('Bir not türünde en az bir alan bulunmalıdır.', 'A note type must have at least one field.'));
             return;
         }
-        confirm(l('Alanı Sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted.`), () =>
+        confirm(l('Alanı sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted.`), () =>
             applyStructural(removeField(nt, ord)),
             { destructive: true },
         );
@@ -161,8 +161,8 @@ export default function NoteTypeScreen() {
                 {isCloze ? (
                     <Text style={styles.help}>{l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.')}</Text>
                 ) : (
-                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, l('Yeni Alan', 'New Field')))}>
-                        <Text style={styles.addFieldText}>+ {l('Alan Ekle', 'Add Field')}</Text>
+                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, l('Yeni alan', 'New Field')))}>
+                        <Text style={styles.addFieldText}>+ {l('Alan ekle', 'Add Field')}</Text>
                     </TouchableOpacity>
                 )}
 

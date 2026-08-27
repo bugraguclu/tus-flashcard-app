@@ -5,9 +5,9 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
     ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
@@ -49,7 +49,7 @@ export default function EmptyCardsScreen() {
     const deleteAll = () => {
         if (!entries || entries.length === 0) return;
         confirm(
-            l('Boş Kartları Sil', 'Delete Empty Cards'),
+            l('Boş kartları sil', 'Delete Empty Cards'),
             l(`${entries.length} boş kart kalıcı olarak silinecek. Notların kendisi ve diğer geçerli kartları etkilenmeyecek.`, `${entries.length} empty cards will be permanently deleted. Their notes and other valid cards will not be affected.`),
             () => {
                 setBusy(true);
@@ -95,7 +95,7 @@ export default function EmptyCardsScreen() {
                             onPress={deleteAll}
                             disabled={busy}
                         >
-                            <Text style={styles.deleteAllText}>🗑️ {l('Tümünü Sil', 'Delete All')} ({entries.length})</Text>
+                            <Text style={styles.deleteAllText}>🗑️ {l('Tümünü sil', 'Delete All')} ({entries.length})</Text>
                         </TouchableOpacity>
 
                         {entries.map((entry) => (

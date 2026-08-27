@@ -1,5 +1,10 @@
 # App Store inceleme ve uygulama içi satın alma teslimi
 
+> Güncel ürün kararı: ödeme akışı kapalıdır. Preview ve production profilleri
+> `EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED=false` ile derlenir; “Kartları ücretsiz aç” Apple veya
+> RevenueCat’e bağlanmadan tam paketi kurar. Aşağıdaki IAP yapılandırması gelecekte yeniden
+> etkinleştirme için saklanan plandır ve mevcut build ile gönderilmemelidir.
+
 ## Non-consumable ürün
 
 - Reference Name: `BKA TUS Complete Lifetime`
@@ -7,36 +12,32 @@
 - Type: `Non-Consumable`
 - Türkiye temel fiyatı: App Store Connect’te `₺1.500` fiyat noktası (mevcutsa; son tutarı Apple belirler)
 - Display Name (TR): `BKA TUS Tam Koleksiyon`
-- Description (TR): `9.583 TUS kartı ve tüm alt konu desteleri`
+- Description (TR): `12 dersi kapsayan 9.583 hazır TUS kartı`
 - Display Name (EN): `BKA TUS Complete Catalog`
-- Description (EN): `9,583 TUS cards and every topic subdeck`
+- Description (EN): `9,583 ready-made TUS cards across 12 courses`
 - RevenueCat entitlement: `bka_tus_complete`
 - RevenueCat offering: `default`
 
-İlk non-consumable ürün uygulamanın yeni sürümüyle aynı inceleme gönderimine eklenmelidir. İnceleme ekran görüntüsü, teklif ekranını ve 1.500 TL fiyatı açıkça göstermeli; desteklenen iPhone ekran görüntüsü ölçülerinden biri kullanılmalıdır.
+İlk non-consumable ürün uygulamanın yeni sürümüyle aynı inceleme gönderimine eklenmelidir. İnceleme ekran görüntüsü, mağaza ekranını ve 1.500 TL fiyatı açıkça göstermeli; desteklenen iPhone ekran görüntüsü ölçülerinden biri kullanılmalıdır.
 
 ## App Review notu
 
-TusAnkiM is a free, accountless spaced-repetition flashcard app. On first launch it presents the 1,500 TRY complete-catalog offer before the deck list. The user can explicitly choose “1.200 ücretsiz kartla devam et” to enter the physical trial containing exactly 100 cards from each of 12 TUS courses (1,200 cards total). The complete catalog is not unlocked initially. Users may also create/import/export their own Anki-style decks without purchasing.
+TusAnkiM is a free, accountless, Anki-style spaced-repetition flashcard app. Every study feature is free and there is no launch paywall: the app opens straight into the deck list, where the user can create decks, import/export Anki packages, review, and see statistics without paying anything.
 
-To find the IAP: launch the app → Desteler (Decks) → tap the “Ücretsiz deneme sürümü” banner or the “Deneme” badge → tap the gold purchase button. Product ID: com.tusankim.bka.complete.lifetime. It is a one-time non-consumable that unlocks the physical 9,583-card catalog and all topic subdecks. “Satın almayı geri yükle” is on the same screen.
+The current build contains no active purchase flow. To open the optional pre-made card pack: launch the app → Desteler (Decks) → tap “BKA TUS” → tap “Kartları ücretsiz aç” (Unlock cards for free). The full pack is installed locally without contacting Apple or RevenueCat.
 
-No account or review credentials are required. Please use the Apple sandbox environment. Development builds contain an explicitly labeled local payment simulation for UI testing; production builds compile that path out and unlock only when RevenueCat reports the active bka_tus_complete entitlement.
+The dormant product ID is com.tusankim.bka.complete.lifetime. It must not be submitted or advertised while payment is disabled. Installing the 9,583 cards does not modify anything the user created.
+
+No account, review credentials or sandbox purchase is required for the current build.
 
 The app is for medical exam education only. It does not diagnose, treat, monitor, or provide clinical decision support.
 
 ## App Privacy yanıtları
 
-RevenueCat anonim kimlik kullanımı ve mevcut uygulama davranışı için:
-
-- Data collected: `Purchases → Purchase History`
-- Purposes: `App Functionality` ve `Analytics`
-- Linked to identity: `No`
-- Used for tracking: `No`
-- Advertising: `No`
-- Kart içeriği/çalışma geçmişi: geliştirici veya RevenueCat sunucusuna gönderilmez
-
-RevenueCat’e özel kullanıcı kimliği, reklam entegrasyonu veya başka analiz SDK’sı eklenirse bu yanıtlar yeniden değerlendirilmelidir.
+Mevcut ücretsiz erişim Apple veya RevenueCat’i çağırmadığı için uygulama tarafından satın alma geçmişi
+toplanmaz. `NSPrivacyCollectedDataTypes` boştur; kart içeriği ve çalışma geçmişi de cihazdan çıkmaz.
+Ödeme yolu yeniden etkinleştirilirse Purchase History beyanı, RevenueCat gizlilik bildirimi ve App Store
+Privacy cevapları aynı sürümde yeniden eklenmelidir.
 
 ## İnceleme öncesi mağaza kontrolleri
 

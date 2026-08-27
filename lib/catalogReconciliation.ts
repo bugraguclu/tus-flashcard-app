@@ -1,22 +1,21 @@
-import type { BkaCatalogTier } from './bkaCatalog';
 import type { CatalogAccessState } from './catalogPurchases';
 
 /**
- * A lifetime purchase should remain usable through a temporary network/RevenueCat outage.
- * The physical `full` tier is written only after a verified entitlement (or the explicitly
- * development-only preview), so it is a safe local cache while the store is unreachable.
- * A successful locked response or a missing production configuration still fails closed.
+ * A lifetime purchase must stay usable through a temporary network or RevenueCat outage.
+ * The catalog is only ever installed after a verified entitlement, so its presence on the
+ * device is a safe local cache while the store is unreachable. A successful "no entitlement"
+ * answer, or a build with no production store key, still fails closed and re-locks the cards.
  */
-export function reconcileCatalogAccessWithInstalledTier(
+export function reconcileCatalogAccessWithInstall(
     next: CatalogAccessState,
-    installedTier: BkaCatalogTier | null,
+    catalogInstalled: boolean,
 ): CatalogAccessState {
-    if (next.status !== 'error' || installedTier !== 'full') return next;
+    if (next.status !== 'error' || !catalogInstalled) return next;
     return {
         ...next,
         hasAccess: true,
         error: next.error
-            ? `${next.error} Tam paket daha önce doğrulandığı için çevrimdışı erişim korunuyor.`
-            : 'Tam paket daha önce doğrulandığı için çevrimdışı erişim korunuyor.',
+            ? `${next.error} Satın alma daha önce doğrulandığı için çevrimdışı erişim korunuyor.`
+            : 'Satın alma daha önce doğrulandığı için çevrimdışı erişim korunuyor.',
     };
 }

@@ -5,6 +5,9 @@ import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getParentDeckName, uniqueId } 
 import { getDB } from './db';
 import { dayNumberToYmd, localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
+import { markSourcePackageDirty } from './ankiPackageArchive';
+import { assertCatalogDeckConfigMutable, assertCatalogDeckMutable, isCatalogDeck } from './catalogProtection';
+import { getTodayLimitUsageByDeck } from './reviewLogger';
 
 /** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
 function escapeLikePattern(value: string): string {
@@ -92,7 +95,14 @@ export function getAvailableDeckSubtreeName(deckId: number, desiredName: string)
 }
 
 export function saveDeck(deck: Deck): void {
+    assertCatalogDeckMutable(deck);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', deck.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as Deck).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
         deck.id,
@@ -125,6 +135,7 @@ export function initializeDeckDisclosureDefaults(): void {
     }
 
     for (const deck of decks) {
+        if (isCatalogDeck(deck)) continue;
         const depth = deck.name.split('::').length - 1;
         if (depth >= 1 && parentNames.has(deck.name) && deck.collapsed !== true) {
             saveDeck({ ...deck, collapsed: true });
@@ -148,6 +159,7 @@ export function deleteDeck(id: number): void {
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
+    assertCatalogDeckMutable(deck);
 
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -227,6 +239,7 @@ export function renameDeck(id: number, newName: string): void {
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
+    assertCatalogDeckMutable(deck);
     if (newName === deck.name) return;
 
     // Deck names are unique; refuse to rename onto an existing (different) deck.
@@ -336,6 +349,7 @@ export function createDeck(name: string, configId?: number): Deck {
     }
 
     const now = uniqueId();
+    const parent = getParentDeckName(name);
     const deck: Deck = {
         id: now,
         name,
@@ -345,11 +359,11 @@ export function createDeck(name: string, configId?: number): Deck {
         description: '',
         collapsed: false,
         isFiltered: false,
+        sortOrder: nextSiblingSortOrderForAppend(parent),
     };
     saveDeck(deck);
 
     // Ensure parent decks exist
-    const parent = getParentDeckName(name);
     if (parent && !getDeckByName(parent)) {
         createDeck(parent, configId);
     }
@@ -375,6 +389,7 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
         filteredBuildAt: now,
+        sortOrder: nextSiblingSortOrderForAppend(null),
     };
     saveDeck(deck);
     return deck;
@@ -401,6 +416,35 @@ function compareDeckDisplayOrder(a: Deck, b: Deck): number {
 }
 
 /**
+ * Freeze any legacy alphabetical siblings into their currently visible order, then return the
+ * next position. This makes every newly created deck append to its sibling list instead of being
+ * inserted alphabetically. Catalog decks already carry explicit positions and are never edited.
+ */
+function nextSiblingSortOrderForAppend(parentName: string | null): number {
+    const siblings = getAllDecks()
+        .filter((deck) => getParentDeckName(deck.name) === parentName)
+        .sort(compareDeckDisplayOrder);
+    let nextOrder = siblings.reduce(
+        (max, sibling) => Number.isFinite(sibling.sortOrder) ? Math.max(max, sibling.sortOrder!) : max,
+        -1,
+    ) + 1;
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    for (const sibling of siblings) {
+        if (Number.isFinite(sibling.sortOrder)) continue;
+        // Bundled catalog trees are installed with explicit positions. Keep this guard so an
+        // older catalog row can never be mutated merely because the learner adds a personal deck.
+        if (isCatalogDeck(sibling)) continue;
+        sibling.sortOrder = nextOrder++;
+        sibling.mod = nowSec;
+        sibling.usn = -1;
+        saveDeck(sibling);
+    }
+
+    return nextOrder;
+}
+
+/**
  * Deck shortcuts for a collection/deck scope. Collection scope exposes root decks;
  * a deck scope exposes only its immediate children. Each returned deck can then be
  * treated as the root of its complete subtree by consumers such as Browser/Stats.
@@ -414,6 +458,38 @@ export function getDirectDecksForScope(
         .filter((deck) => (includeFiltered || !deck.isFiltered)
             && getParentDeckName(deck.name) === scopeName)
         .sort(compareDeckDisplayOrder);
+}
+
+/**
+ * Return only deck branches that actually contain at least one card in the requested scope.
+ *
+ * Browser shortcuts used to include every persisted descendant. An early Ders/Konu migration
+ * created empty descendants, so those rows surfaced as "ghost" chips even though the selected
+ * deck correctly reported zero cards. Keeping the empty decks themselves is intentional (users
+ * may have created them), but an empty branch is not a useful card filter.
+ */
+export function getPopulatedDecksForScope(
+    decks: Deck[],
+    cardCounts: Map<number, { total: number }>,
+    scopeName: string | null,
+): Deck[] {
+    const candidates = decks.filter((deck) => !deck.isFiltered && (
+        scopeName ? deck.name.startsWith(`${scopeName}::`) : true
+    ));
+    const candidateNames = new Set(candidates.map((deck) => deck.name));
+    const populatedNames = new Set<string>();
+
+    for (const deck of candidates) {
+        if ((cardCounts.get(deck.id)?.total ?? 0) <= 0) continue;
+
+        let branchName: string | null = deck.name;
+        while (branchName) {
+            if (candidateNames.has(branchName)) populatedNames.add(branchName);
+            branchName = getParentDeckName(branchName);
+        }
+    }
+
+    return candidates.filter((deck) => populatedNames.has(deck.name));
 }
 
 export function buildDeckTree(
@@ -459,8 +535,17 @@ export function buildDeckTree(
     };
     sortBranch(roots);
 
+    // What each deck already spent of today's allowance, so the tree shows what is still to come
+    // rather than the full daily allotment all over again (Anki's per-deck newToday/revToday).
+    const usageByDeckId = getTodayLimitUsageByDeck(rolloverHour);
+    const spent = new Map<string, { newIntroduced: number; reviewsAnswered: number }>();
+
     // Aggregate counts from children up
     function aggregateCounts(node: DeckTreeNode): void {
+        const own = usageByDeckId.get(node.deck.id);
+        const used = { newIntroduced: own?.newIntroduced ?? 0, reviewsAnswered: own?.reviewsAnswered ?? 0 };
+        spent.set(node.deck.name, used);
+
         for (const child of node.children) {
             aggregateCounts(child);
             // Filtered decks reference cards from their home decks. In this app they are gathered
@@ -470,15 +555,21 @@ export function buildDeckTree(
             node.learnCount += child.learnCount;
             node.reviewCount += child.reviewCount;
             node.totalCards += child.totalCards;
+            const childUsed = spent.get(child.deck.name);
+            if (childUsed) {
+                used.newIntroduced += childUsed.newIntroduced;
+                used.reviewsAnswered += childUsed.reviewsAnswered;
+            }
         }
 
         // When the parent is selected, its own limits cap the total drawn from all children.
         // This keeps the deck-list number aligned with the overview/study queue instead of
-        // advertising the uncapped sum of every subdeck.
+        // advertising the uncapped sum of every subdeck. The cap is what today's limits still
+        // allow: Anki does not hand out a deck's full allowance twice in one day.
         if (!node.deck.isFiltered) {
             const config = getDeckConfigForDeck(node.deck.id, rolloverHour);
-            node.newCount = Math.min(node.newCount, Math.max(0, config.newPerDay));
-            node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay));
+            node.newCount = Math.min(node.newCount, Math.max(0, config.newPerDay - used.newIntroduced));
+            node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay - used.reviewsAnswered));
         }
     }
     roots.forEach(aggregateCounts);
@@ -519,17 +610,32 @@ export function getDeckConfigForDeck(deckId: number, rolloverHour: number = 4): 
     const deck = getDeck(deckId);
     const config = getDeckConfig(deck?.configId || DEFAULT_DECK_CONFIG.id);
 
+    // Anki keeps per-deck limits separate from the shared preset, so two decks can share every
+    // scheduling option while retaining different daily caps.
+    if (Number.isFinite(deck?.newLimit)) config.newPerDay = Math.max(0, Math.floor(deck!.newLimit!));
+    if (Number.isFinite(deck?.reviewLimit)) config.maxReviewsPerDay = Math.max(0, Math.floor(deck!.reviewLimit!));
+
     // Anki's "today only" limit bump (custom study / deck options): layered on top of the
     // persistent config so every consumer — queue build, counts, previews — sees it at once.
     const boost = getDeckTodayBoost(deckId, rolloverHour);
     if (boost.extraNew > 0) config.newPerDay += boost.extraNew;
     if (boost.extraReview > 0) config.maxReviewsPerDay += boost.extraReview;
+    const today = getDeckTodayLimits(deckId, rolloverHour);
+    if (today.newLimit !== undefined) config.newPerDay = today.newLimit;
+    if (today.reviewLimit !== undefined) config.maxReviewsPerDay = today.reviewLimit;
 
     return config;
 }
 
 export function saveDeckConfig(config: DeckConfig): void {
+    assertCatalogDeckConfigMutable(config);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM deck_configs WHERE id = ?', config.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as DeckConfig).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         'INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)',
         config.id, JSON.stringify(config)
@@ -555,6 +661,22 @@ export function renamePreset(configId: number, name: string): void {
     const config = getDeckConfig(configId);
     config.name = name.trim() || config.name;
     saveDeckConfig(config);
+}
+
+/** Restore a preset's scheduling values while keeping its identity and import metadata. */
+export function restoreDeckConfigDefaults(configId: number): DeckConfig {
+    const current = getDeckConfig(configId);
+    assertCatalogDeckConfigMutable(current);
+    const restored: DeckConfig = {
+        ...current,
+        ...DEFAULT_DECK_CONFIG,
+        id: current.id,
+        name: current.name,
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+    };
+    saveDeckConfig(restored);
+    return restored;
 }
 
 /** Delete a preset; decks using it fall back to the shared default. The default itself stays. */
@@ -620,6 +742,16 @@ interface DeckTodayBoost {
     extraReview: number;
 }
 
+interface DeckTodayLimits {
+    ymd: string;
+    newLimit?: number;
+    reviewLimit?: number;
+}
+
+function deckTodayLimitsKey(deckId: number): string {
+    return `deck_today_limits:${deckId}`;
+}
+
 function todayBoostYmd(rolloverHour: number): string {
     return dayNumberToYmd(localDayNumber(Date.now(), rolloverHour), rolloverHour);
 }
@@ -647,6 +779,19 @@ export function getDeckTodayBoost(deckId: number, rolloverHour: number = 4): { e
 
 /** Anki custom study "increase today's limits": adds on top of any bump already granted today. */
 export function addDeckTodayBoost(deckId: number, extraNew: number, extraReview: number, rolloverHour: number = 4): void {
+    const todayLimits = getDeckTodayLimits(deckId, rolloverHour);
+    if (todayLimits.newLimit !== undefined || todayLimits.reviewLimit !== undefined) {
+        const effective = getDeckConfigForDeck(deckId, rolloverHour);
+        const addNew = Math.max(0, Math.floor(extraNew) || 0);
+        const addReview = Math.max(0, Math.floor(extraReview) || 0);
+        setDeckTodayLimits(
+            deckId,
+            todayLimits.newLimit !== undefined || addNew > 0 ? effective.newPerDay + addNew : undefined,
+            todayLimits.reviewLimit !== undefined || addReview > 0 ? effective.maxReviewsPerDay + addReview : undefined,
+            rolloverHour,
+        );
+        return;
+    }
     const current = getDeckTodayBoost(deckId, rolloverHour);
     const next: DeckTodayBoost = {
         ymd: todayBoostYmd(rolloverHour),
@@ -658,6 +803,60 @@ export function addDeckTodayBoost(deckId: number, extraNew: number, extraReview:
         deckBoostKey(deckId),
         JSON.stringify(next),
     );
+}
+
+/** Absolute "Today only" limits from Anki's deck-options tabs. */
+export function getDeckTodayLimits(deckId: number, rolloverHour: number = 4): { newLimit?: number; reviewLimit?: number } {
+    const row = getDB().getFirstSync<{ value: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        deckTodayLimitsKey(deckId),
+    );
+    if (!row?.value) return {};
+    try {
+        const parsed = JSON.parse(row.value) as DeckTodayLimits;
+        if (parsed.ymd !== todayBoostYmd(rolloverHour)) return {};
+        const clamp = (value: unknown) => Number.isFinite(value)
+            ? Math.max(0, Math.min(9999, Math.floor(value as number)))
+            : undefined;
+        return { newLimit: clamp(parsed.newLimit), reviewLimit: clamp(parsed.reviewLimit) };
+    } catch {
+        return {};
+    }
+}
+
+export function setDeckTodayLimits(
+    deckId: number,
+    newLimit: number | undefined,
+    reviewLimit: number | undefined,
+    rolloverHour: number = 4,
+): void {
+    const clamp = (value: number | undefined) => Number.isFinite(value)
+        ? Math.max(0, Math.min(9999, Math.floor(value as number)))
+        : undefined;
+    const next: DeckTodayLimits = {
+        ymd: todayBoostYmd(rolloverHour),
+        newLimit: clamp(newLimit),
+        reviewLimit: clamp(reviewLimit),
+    };
+    getDB().runSync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        deckTodayLimitsKey(deckId),
+        JSON.stringify(next),
+    );
+}
+
+/** Save/clear Anki's "This deck" limit overrides without cloning the shared preset. */
+export function setDeckLimitOverrides(deckId: number, newLimit?: number, reviewLimit?: number): void {
+    const deck = getDeck(deckId);
+    if (!deck) return;
+    const clamp = (value: number | undefined) => Number.isFinite(value)
+        ? Math.max(0, Math.min(9999, Math.floor(value as number)))
+        : undefined;
+    deck.newLimit = clamp(newLimit);
+    deck.reviewLimit = clamp(reviewLimit);
+    deck.mod = Math.floor(Date.now() / 1000);
+    deck.usn = -1;
+    saveDeck(deck);
 }
 
 /**

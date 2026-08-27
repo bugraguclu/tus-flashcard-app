@@ -2,16 +2,22 @@
   "name": "tus-flashcard-app",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test",
+    "verify:ios": "node scripts/verify-ios-readiness.mjs",
+    "quality": "npm run check && npm run verify:ios",
     "doctor": "npx --yes expo-doctor",
     "start": "expo start",
-    "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:web": "expo export --platform web"
+    "build:web": "expo export --platform web",
+    "build:catalog-manifest": "sucrase-node scripts/build-catalog-manifest.ts",
+    "audit:catalog": "sucrase-node scripts/audit-catalog.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -56,6 +62,22 @@
     "vitest": "^4.0.18"
   },
   "overrides": {
+    "metro": "0.83.8",
+    "metro-core": "0.83.8",
+    "metro-cache": "0.83.8",
+    "metro-config": "0.83.8",
+    "metro-runtime": "0.83.8",
+    "metro-file-map": "0.83.8",
+    "metro-resolver": "0.83.8",
+    "metro-cache-key": "0.83.8",
+    "metro-source-map": "0.83.8",
+    "metro-symbolicate": "0.83.8",
+    "metro-minify-terser": "0.83.8",
+    "metro-transform-worker": "0.83.8",
+    "metro-babel-transformer": "0.83.8",
+    "metro-transform-plugins": "0.83.8",
+    "postcss": "8.5.26",
+    "uuid": "11.1.1",
     "tar": "^7.5.11",
     "undici": "^6.24.0"
   },

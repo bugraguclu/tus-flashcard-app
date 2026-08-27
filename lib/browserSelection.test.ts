@@ -10,6 +10,7 @@ const harness = vi.hoisted(() => ({
 vi.mock('./noteManager', () => ({
     getAllAnkiCards: () => [...harness.cards.values()],
     getAnkiCard: (cardId: number) => harness.cards.get(cardId) ?? null,
+    getCardsForNote: (noteId: number) => [...harness.cards.values()].filter((card) => card.noteId === noteId),
     saveAnkiCard: (card: AnkiCard) => harness.cards.set(card.id, { ...card }),
 }));
 
@@ -32,6 +33,7 @@ vi.mock('./studyRepository', () => ({
 }));
 
 import {
+    expandSelectedCardsToNotes,
     gradeSelectedNow,
     parseDueRange,
     repositionSelectedNewCards,
@@ -86,6 +88,14 @@ describe('parseDueRange', () => {
 });
 
 describe('browser selection scheduling operations', () => {
+    it('expands a notes-mode row selection to every sibling card without duplicates', () => {
+        harness.cards.set(1, card(1, { noteId: 10, ord: 0 }));
+        harness.cards.set(2, card(2, { noteId: 10, ord: 1 }));
+        harness.cards.set(3, card(3, { noteId: 20, ord: 0 }));
+
+        expect(expandSelectedCardsToNotes([1, 2, 3])).toEqual([1, 2, 3]);
+    });
+
     it('toggles suspend and bury for every card based on the current card', () => {
         harness.cards.set(1, card(1));
         harness.cards.set(2, card(2, { queue: -1 }));

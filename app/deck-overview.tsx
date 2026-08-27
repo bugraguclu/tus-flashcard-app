@@ -9,9 +9,9 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
     Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
@@ -27,6 +27,8 @@ import { getStudyQueue } from '../lib/studyRepository';
 import { alert, confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
+import CustomStudyModal from '../components/CustomStudyModal';
+import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
 
 export default function DeckOverviewScreen() {
     const { t, l, locale } = useI18n();
@@ -36,6 +38,8 @@ export default function DeckOverviewScreen() {
     const params = useLocalSearchParams();
     const { settings, dataVersion, bumpDataVersion } = useApp();
     const [refreshToken, setRefreshToken] = useState(0);
+    const [customStudyOpen, setCustomStudyOpen] = useState(false);
+    const [filterOptionsOpen, setFilterOptionsOpen] = useState(false);
 
     const deckName = typeof params.deck === 'string' ? params.deck : '';
     const deck = useMemo(() => (deckName ? getDeckByName(deckName) : null), [deckName, dataVersion, refreshToken]);
@@ -69,19 +73,19 @@ export default function DeckOverviewScreen() {
         const count = unburyDeck(deck.id, settings.dayRolloverHour);
         bumpDataVersion();
         setRefreshToken((value) => value + 1);
-        alert(l('Gömülü Kartlar Açıldı', 'Cards Unburied'), l(`${count} kart yeniden çalışılabilir.`, `${count} cards are available to study again.`));
+        alert(l('Gömülü kartlar açıldı', 'Cards Unburied'), l(`${count} kart yeniden çalışılabilir.`, `${count} ${count === 1 ? 'card is' : 'cards are'} available to study again.`));
     };
 
     const handleRebuild = () => {
         rebuildFilteredDeck(deck.id);
         bumpDataVersion();
         setRefreshToken((value) => value + 1);
-        alert(l('Deste Yeniden Oluşturuldu', 'Deck Rebuilt'), l('Kartlar kayıtlı filtre kurallarıyla yeniden toplandı.', 'Cards were gathered again using the saved filter rules.'));
+        alert(l('Deste yeniden oluşturuldu', 'Deck Rebuilt'), l('Kartlar kayıtlı filtre kurallarıyla yeniden toplandı.', 'Cards were gathered again using the saved filter rules.'));
     };
 
     const handleEmpty = () => {
         confirm(
-            l('Filtrelenmiş Desteyi Boşalt', 'Empty Filtered Deck'),
+            l('Filtrelenmiş desteyi boşalt', 'Empty Filtered Deck'),
             l('Kartlar silinmez; ait oldukları destelerde kalır. Filtre ve deste daha sonra yeniden oluşturulmak üzere korunur.', 'Cards are not deleted; they remain in their original decks. The deck and filter are kept so you can rebuild them later.'),
             () => {
                 emptyFilteredDeck(deck.id);
@@ -125,7 +129,9 @@ export default function DeckOverviewScreen() {
                     <View style={styles.heroText}>
                         <Text style={styles.heroEyebrow}>{deck.isFiltered ? t('anki.filteredDeck').toLocaleUpperCase() : l('BUGÜNKÜ ÇALIŞMA', 'TODAY’S STUDY')}</Text>
                         <Text style={styles.deckTitle}>{getDeckDisplayName(deck.name)}</Text>
-                        {deck.name.includes('::') && <Text style={styles.deckPath}>{deck.name}</Text>}
+                        {deck.name.includes('::') && (
+                            <Text style={styles.deckPath}>{deck.name.replaceAll('::', ' › ')}</Text>
+                        )}
                     </View>
                 </View>
 
@@ -157,7 +163,7 @@ export default function DeckOverviewScreen() {
                             <Text style={styles.filterLabel}>{l('KAYITLI ARAMA', 'SAVED SEARCH')}</Text>
                             <View style={styles.filterModePill}>
                                 <Text style={styles.filterModeText}>
-                                    {deck.reschedule === false ? l('Önizleme', 'Preview') : l('Yeniden Zamanla', 'Reschedule')}
+                                    {deck.reschedule === false ? l('Önizleme', 'Preview') : l('Yeniden zamanla', 'Reschedule')}
                                 </Text>
                             </View>
                         </View>
@@ -185,15 +191,15 @@ export default function DeckOverviewScreen() {
                         {studyDisabled
                             ? l('Deste boş — yeniden oluşturun', 'Deck is empty — rebuild it')
                             : totalReady > 0
-                                ? l(`Şimdi Çalış · ${totalReady} kart`, `Study Now · ${totalReady} cards`)
-                                : l('Çalışma Ekranını Aç', 'Open Study Screen')}
+                                ? l(`Şimdi çalış · ${totalReady} kart`, `Study Now · ${totalReady} ${totalReady === 1 ? 'card' : 'cards'}`)
+                                : l('Çalışma ekranını aç', 'Open Study Screen')}
                     </Text>
                 </TouchableOpacity>
 
                 {totalReady === 0 && (
                     <Text style={styles.doneNote}>
                         {deck.filteredDeckEmpty
-                            ? l('Filtre korunuyor. Kartları geri getirmek için “Yeniden Oluştur”u kullanın.', 'The filter is preserved. Use Rebuild to gather the cards again.')
+                            ? l('Filtre korunuyor. Kartları geri getirmek için “Yeniden oluştur”u kullanın.', 'The filter is preserved. Use Rebuild to gather the cards again.')
                             : l('Bugün için hazır kart yok. Sayaç ve limit ayrıntıları çalışma ekranında.', 'No cards are ready today. Open the study screen for timer and limit details.')}
                     </Text>
                 )}
@@ -201,7 +207,7 @@ export default function DeckOverviewScreen() {
                 {deck.isFiltered && (
                     <View style={styles.filteredActions}>
                         <TouchableOpacity style={styles.lifecycleBtn} onPress={handleRebuild}>
-                            <Text style={styles.lifecycleBtnText}>↻ {l('Yeniden Oluştur', 'Rebuild')}</Text>
+                            <Text style={styles.lifecycleBtnText}>↻ {l('Yeniden oluştur', 'Rebuild')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.lifecycleBtn, styles.lifecycleBtnDanger, totalReady === 0 && styles.buttonDisabled]}
@@ -216,9 +222,9 @@ export default function DeckOverviewScreen() {
                 {deck.isFiltered && (
                     <TouchableOpacity
                         style={styles.secondaryBtn}
-                        onPress={() => router.push(`/decks?filter=${encodeURIComponent(deck.name)}` as any)}
+                        onPress={() => setFilterOptionsOpen(true)}
                     >
-                        <Text style={styles.secondaryText}>{l('Filtre Seçenekleri', 'Filtered Deck Options')}</Text>
+                        <Text style={styles.secondaryText}>{l('Filtre seçenekleri', 'Filtered Deck Options')}</Text>
                         <Text style={styles.secondaryCaption}>{l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}</Text>
                     </TouchableOpacity>
                 )}
@@ -227,7 +233,7 @@ export default function DeckOverviewScreen() {
                     <>
                         <TouchableOpacity
                             style={styles.secondaryBtn}
-                            onPress={() => router.push(`/decks?custom=${encodeURIComponent(deck.name)}` as any)}
+                            onPress={() => setCustomStudyOpen(true)}
                         >
                             <Text style={styles.secondaryText}>{t('anki.customStudy')}</Text>
                             <Text style={styles.secondaryCaption}>{l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}</Text>
@@ -236,7 +242,7 @@ export default function DeckOverviewScreen() {
                             style={styles.secondaryBtn}
                             onPress={() => router.push(`/deck-options?deckId=${deck.id}` as any)}
                         >
-                            <Text style={styles.secondaryText}>{l('Deste Seçenekleri', 'Deck Options')}</Text>
+                            <Text style={styles.secondaryText}>{l('Deste seçenekleri', 'Deck Options')}</Text>
                             <Text style={styles.secondaryCaption}>{l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}</Text>
                         </TouchableOpacity>
                     </>
@@ -246,10 +252,33 @@ export default function DeckOverviewScreen() {
                     style={styles.secondaryBtn}
                     onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
                 >
-                    <Text style={styles.secondaryText}>{l('Deste İstatistikleri', 'Deck Statistics')}</Text>
+                    <Text style={styles.secondaryText}>{l('Deste istatistikleri', 'Deck Statistics')}</Text>
                     <Text style={styles.secondaryCaption}>{l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            <CustomStudyModal
+                visible={customStudyOpen}
+                deck={deck}
+                dayRolloverHour={settings.dayRolloverHour}
+                onClose={() => setCustomStudyOpen(false)}
+                onChanged={() => {
+                    bumpDataVersion();
+                    setRefreshToken((value) => value + 1);
+                }}
+                onStudy={(nextDeckName) => router.push({ pathname: '/', params: { deck: nextDeckName } } as any)}
+            />
+            <FilteredDeckOptionsModal
+                visible={filterOptionsOpen}
+                deck={deck}
+                settings={settings}
+                onClose={() => setFilterOptionsOpen(false)}
+                onSaved={(nextDeckName) => {
+                    bumpDataVersion();
+                    setRefreshToken((value) => value + 1);
+                    if (nextDeckName !== deckName) router.setParams({ deck: nextDeckName } as any);
+                }}
+            />
         </SafeAreaView>
     );
 }

@@ -11,10 +11,16 @@ import {
     type CatalogAccessState,
     type CatalogPurchaseResult,
 } from '../lib/catalogPurchases';
-import { ensureBkaCatalogTier, getBkaCatalogTier } from '../lib/bkaCatalog';
+import {
+    ensureBkaCatalogTier,
+    getBkaCatalogTier,
+    isBkaCatalogInstalled,
+    uninstallBkaCatalog,
+} from '../lib/bkaCatalog';
 import { dbIndexAllCards } from '../lib/db';
 import { getSearchIndexCards } from '../lib/noteManager';
-import { reconcileCatalogAccessWithInstalledTier } from '../lib/catalogReconciliation';
+import { invalidateSubjectsCache } from '../lib/subjects';
+import { reconcileCatalogAccessWithInstall } from '../lib/catalogReconciliation';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
 export type StudyPosition = { subject: string; topic: string } | null;
@@ -37,6 +43,10 @@ export type AppContextType = {
     startupError: string | null;
     isLoading: boolean;
     catalogAccess: CatalogAccessState;
+    /** True while either the trial or purchased catalog is physically present. */
+    catalogInstalled: boolean;
+    /** True while cards are being written to or removed from the collection. */
+    catalogInstalling: boolean;
     refreshCatalogAccess: () => Promise<CatalogAccessState>;
     purchaseCatalog: () => Promise<CatalogPurchaseResult>;
     restoreCatalogPurchase: () => Promise<CatalogPurchaseResult>;
@@ -58,6 +68,8 @@ export const AppContext = createContext<AppContextType>({
     startupError: null,
     isLoading: true,
     catalogAccess: INITIAL_CATALOG_ACCESS,
+    catalogInstalled: false,
+    catalogInstalling: false,
     refreshCatalogAccess: async () => INITIAL_CATALOG_ACCESS,
     purchaseCatalog: async () => ({ hasAccess: false, cancelled: false, state: INITIAL_CATALOG_ACCESS }),
     restoreCatalogPurchase: async () => ({ hasAccess: false, cancelled: false, state: INITIAL_CATALOG_ACCESS }),
@@ -77,6 +89,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [dataVersion, setDataVersion] = useState(0);
     const [catalogAccess, setCatalogAccess] = useState<CatalogAccessState>(INITIAL_CATALOG_ACCESS);
+    const [catalogInstalled, setCatalogInstalled] = useState(false);
+    const [catalogInstalling, setCatalogInstalling] = useState(false);
 
     const refreshData = useCallback(() => {
         setSettings(loadSettings());
@@ -87,76 +101,68 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const { startupError, isLoading } = useAppStartup(refreshData, bumpDataVersion);
-    useStudyNotifications(settings, dataVersion, isLoading);
+    useStudyNotifications(settings, isLoading);
 
-    const matchCatalogTier = useCallback(async (tier: 'trial' | 'full') => {
-        const result = await ensureBkaCatalogTier(tier);
-        // Tier replacement clears the native FTS table. Rebuild immediately so search sees
-        // the same physical catalog (plus personal cards) as the rest of the app.
-        if (result.installed) dbIndexAllCards(getSearchIndexCards());
-        return result;
-    }, []);
-
-    const refreshCatalogAccess = useCallback(async () => {
-        const loaded = await loadCatalogAccess();
-        const next = reconcileCatalogAccessWithInstalledTier(loaded, getBkaCatalogTier());
+    /** Match the physical collection to the entitlement. Locked users only see the manifest-
+     * backed store preview: no paid note, card, template or media row remains studyable locally. */
+    const matchCatalogToAccess = useCallback(async (hasAccess: boolean) => {
+        setCatalogInstalling(true);
         try {
-            await matchCatalogTier(next.hasAccess ? 'full' : 'trial');
+            const changed = hasAccess
+                ? (await ensureBkaCatalogTier('full')).installed
+                : uninstallBkaCatalog().removed;
+            if (changed) {
+                invalidateSubjectsCache();
+                // Entitlement changes thousands of searchable rows; keep native FTS in lockstep.
+                dbIndexAllCards(getSearchIndexCards());
+                bumpDataVersion();
+            }
+            setCatalogInstalled(isBkaCatalogInstalled());
+        } finally {
+            setCatalogInstalling(false);
+        }
+    }, [bumpDataVersion]);
+
+    const applyAccessState = useCallback(async (raw: CatalogAccessState) => {
+        // Reconcile before acting: a store error while the catalog is installed must never
+        // uninstall paid content, no matter which call (refresh, purchase, restore) hit it.
+        const next = reconcileCatalogAccessWithInstall(raw, getBkaCatalogTier() === 'full');
+        try {
+            await matchCatalogToAccess(next.hasAccess);
             setCatalogAccess(next);
-            bumpDataVersion();
             return next;
         } catch (error) {
             const failed: CatalogAccessState = {
                 ...next,
                 status: 'error',
-                hasAccess: false,
+                hasAccess: getBkaCatalogTier() === 'full',
                 error: error instanceof Error ? error.message : String(error),
             };
+            setCatalogInstalled(isBkaCatalogInstalled());
             setCatalogAccess(failed);
             return failed;
         }
-    }, [bumpDataVersion, matchCatalogTier]);
+    }, [matchCatalogToAccess]);
+
+    const refreshCatalogAccess = useCallback(async () => applyAccessState(await loadCatalogAccess()), [applyAccessState]);
 
     const purchaseCatalog = useCallback(async () => {
         const result = await purchaseBkaCatalog();
-        if (result.hasAccess) {
-            try {
-                await matchCatalogTier('full');
-                bumpDataVersion();
-            } catch (error) {
-                result.hasAccess = false;
-                result.state = {
-                    ...result.state,
-                    status: 'error',
-                    hasAccess: false,
-                    error: error instanceof Error ? error.message : String(error),
-                };
-            }
-        }
-        setCatalogAccess(result.state);
+        result.state = await applyAccessState(result.state);
+        result.hasAccess = result.state.hasAccess;
         return result;
-    }, [bumpDataVersion, matchCatalogTier]);
+    }, [applyAccessState]);
 
     const restoreCatalogPurchase = useCallback(async () => {
         const result = await restoreBkaCatalogPurchase();
-        try {
-            await matchCatalogTier(result.hasAccess ? 'full' : 'trial');
-            bumpDataVersion();
-        } catch (error) {
-            result.hasAccess = false;
-            result.state = {
-                ...result.state,
-                status: 'error',
-                hasAccess: false,
-                error: error instanceof Error ? error.message : String(error),
-            };
-        }
-        setCatalogAccess(result.state);
+        result.state = await applyAccessState(result.state);
+        result.hasAccess = result.state.hasAccess;
         return result;
-    }, [bumpDataVersion, matchCatalogTier]);
+    }, [applyAccessState]);
 
     useEffect(() => {
         if (isLoading || startupError) return;
+        setCatalogInstalled(isBkaCatalogInstalled());
         void refreshCatalogAccess();
     }, [isLoading, startupError, refreshCatalogAccess]);
 
@@ -178,6 +184,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 startupError,
                 isLoading,
                 catalogAccess,
+                catalogInstalled,
+                catalogInstalling,
                 refreshCatalogAccess,
                 purchaseCatalog,
                 restoreCatalogPurchase,

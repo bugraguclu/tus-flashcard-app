@@ -20,6 +20,7 @@ function webTitle(text: string): Record<string, string> {
 interface DayCell {
     dayNumber: number;
     ymd: string;
+    dateOfMonth: number;
     isToday: boolean;
     isFuture: boolean;
 }
@@ -77,6 +78,7 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
             return {
                 dayNumber,
                 ymd: dayNumberToYmd(dayNumber, rolloverHour),
+                dateOfMonth: new Date(dayNumber * DAY_MS).getUTCDate(),
                 isToday: dayNumber === today,
                 isFuture: dayNumber > today,
             };
@@ -164,7 +166,14 @@ export default function WeekStreakStrip({ rolloverHour, dataVersion }: WeekStrea
                                         : `${dayLabels[i]}, ${day.ymd}, ${studied ? l('çalışıldı', 'studied') : l('çalışılmadı', 'not studied')}`
                                 }
                             >
-                                {studied && <Text style={styles.dayCheck}>✓</Text>}
+                                <Text style={[
+                                    styles.dayDate,
+                                    studied && styles.dayDateStudied,
+                                    day.isFuture && styles.dayDateFuture,
+                                ]}>
+                                    {day.dateOfMonth}
+                                </Text>
+                                {studied && <View style={styles.studiedDot} />}
                             </View>
                         </View>
                     );
@@ -241,10 +250,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.streakBg,
     },
     dayBoxFuture: { opacity: 0.45 },
-    dayCheck: {
-        color: colors.white,
-        fontSize: FontSize.md,
-        fontWeight: '800',
-    },
+    dayDate: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '800' },
+    dayDateStudied: { color: colors.white },
+    dayDateFuture: { color: colors.textMuted },
+    studiedDot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.white },
     });
 }

@@ -2,17 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
-import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Colors, FontSize, ThemeColorsProvider, useThemeColors } from '../constants/theme';
-import { getDB, initWebDb, isPrimaryTab } from '../lib/db';
+import {
+    Colors,
+    DARK_MODE_UI_ENABLED,
+    FontSize,
+    ThemeColorsProvider,
+    useThemeColors,
+} from '../constants/theme';
+import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useApp } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { isStudyReminderData } from '../lib/studyNotifications';
-import { CatalogScreen } from './catalog';
-
-const CATALOG_OFFER_SEEN_KEY = 'bka_catalog_offer_seen_v1';
+import { inferImportFileType } from '../lib/importFile';
+import { parseExternalAppUrl } from '../lib/externalLinking';
+import { getAllNoteTypes } from '../lib/noteManager';
+import { getDeckByName } from '../lib/deckManager';
+import { userFacingErrorMessage } from '../lib/userFacingError';
 
 // Expo's default web template pins html/body/#root to 100% height; without it every
 // ScrollView/FlatList on web computes a 0px viewport — content still paints (overflow)
@@ -53,11 +61,12 @@ class AppErrorBoundary extends React.Component<
 
 function LocalizedErrorFallback({ message, onRetry }: { message: string; onRetry: () => void }) {
     const { t } = useSystemI18n();
+    const safeMessage = userFacingErrorMessage(message, t('root.startupErrorMessage'));
     return (
         <View style={errorStyles.container}>
             <Text style={errorStyles.icon}>⚠️</Text>
             <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
-            <Text style={errorStyles.message}>{message}</Text>
+            <Text style={errorStyles.message}>{safeMessage}</Text>
             <TouchableOpacity style={errorStyles.button} onPress={onRetry}>
                 <Text style={errorStyles.buttonText}>{t('common.retry')}</Text>
             </TouchableOpacity>
@@ -87,6 +96,16 @@ const errorStyles = StyleSheet.create({
     secondaryBarText: { fontSize: 12, color: Colors.badgeNew, textAlign: 'center' },
 });
 
+// Routed utility screens behave as native iPhone sheets: UIKit owns the grabber, rounded
+// surface and pull-down dismissal. Other platforms keep their existing modal presentation.
+const dismissibleSheetPresentation = Platform.OS === 'ios'
+    ? {
+        presentation: 'formSheet' as const,
+        sheetAllowedDetents: [1],
+        sheetGrabberVisible: true,
+    }
+    : { presentation: 'modal' as const };
+
 /** Ensures the web SQLite (sql.js) database is ready before any screen renders. */
 function WebDbGate({ children }: { children: React.ReactNode }) {
     const { t } = useSystemI18n();
@@ -106,11 +125,12 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     }, []);
 
     if (error) {
+        const safeMessage = userFacingErrorMessage(error, t('common.genericError'));
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>⚠️</Text>
                 <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
-                <Text style={errorStyles.message}>{error}</Text>
+                <Text style={errorStyles.message}>{safeMessage}</Text>
                 <TouchableOpacity
                     style={errorStyles.button}
                     onPress={() => {
@@ -131,7 +151,10 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>🧠</Text>
-                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
+                {/* Locale discovery differs between static rendering and the user's browser.
+                    Keep the hydration placeholder language-neutral so React can attach without
+                    replacing the security-hardened server document. */}
+                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>TusAnkiM</Text>
             </View>
         );
     }
@@ -150,56 +173,29 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     );
 }
 
-/** Resolves the persisted themeMode against the OS scheme; must sit inside AppProvider. */
+/** Applies the persisted system/light/dark preference to every theme-aware screen. */
 function ThemeGate({ children }: { children: React.ReactNode }) {
     const { settings } = useApp();
-    return <ThemeColorsProvider mode={settings.themeMode}>{children}</ThemeColorsProvider>;
+    const activeMode = DARK_MODE_UI_ENABLED ? settings.themeMode : 'light';
+    return <ThemeColorsProvider mode={activeMode}>{children}</ThemeColorsProvider>;
 }
 
-/** Hold route screens until database/receipt reconciliation, then show the one-time freemium
- * offer. The learner can explicitly choose the 1,200-card trial without purchasing. */
-function CatalogGate({ children }: { children: React.ReactNode }) {
-    const { isLoading, startupError, catalogAccess } = useApp();
+/**
+ * Holds route screens until startup finishes. Several screens read SQLite in state initializers,
+ * and a fresh install has no tables until migrations complete. Purchased content is installed
+ * later, from the store screen, so this gate never waits on the network.
+ */
+function StartupGate({ children }: { children: React.ReactNode }) {
+    const { isLoading, startupError } = useApp();
     const { t } = useSystemI18n();
-    const [offerChecked, setOfferChecked] = useState(false);
-    const [showInitialOffer, setShowInitialOffer] = useState(false);
 
-    useEffect(() => {
-        if (isLoading || startupError || catalogAccess.status === 'loading') return;
-        if (catalogAccess.hasAccess) {
-            setShowInitialOffer(false);
-            setOfferChecked(true);
-            return;
-        }
-        const seen = getDB().getFirstSync<{ value: string }>(
-            'SELECT value FROM settings WHERE key = ?',
-            CATALOG_OFFER_SEEN_KEY,
-        )?.value === 'true';
-        setShowInitialOffer(!seen);
-        setOfferChecked(true);
-    }, [isLoading, startupError, catalogAccess.status, catalogAccess.hasAccess]);
-
-    const continueWithTrial = () => {
-        getDB().runSync(
-            'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-            CATALOG_OFFER_SEEN_KEY,
-            'true',
-        );
-        setShowInitialOffer(false);
-    };
-    // Do not mount route screens until migrations and the one-time catalog replacement finish;
-    // several screens read SQLite in state initializers and a fresh web/native install has no
-    // tables before startup completes.
-    if (isLoading || (!startupError && (catalogAccess.status === 'loading' || !offerChecked))) {
+    if (isLoading && !startupError) {
         return (
             <View style={errorStyles.container}>
                 <Text style={errorStyles.icon}>🧠</Text>
                 <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>{t('common.loading')}</Text>
             </View>
         );
-    }
-    if (!startupError && showInitialOffer && !catalogAccess.hasAccess) {
-        return <CatalogScreen embedded onContinueTrial={continueWithTrial} />;
     }
     return children;
 }
@@ -208,7 +204,55 @@ function CatalogGate({ children }: { children: React.ReactNode }) {
 function AppStack() {
     const router = useRouter();
     const colors = useThemeColors();
-    const { t, l } = useI18n();
+    const { t } = useI18n();
+
+    useEffect(() => {
+        if (Platform.OS === 'web') return;
+        let active = true;
+        const openIncomingUrl = (url: string | null) => {
+            if (!active || !url) return;
+            const externalAction = parseExternalAppUrl(url);
+            if (externalAction?.kind === 'search') {
+                router.push({ pathname: '/browser', params: { initialSearch: externalAction.query } } as any);
+                return;
+            }
+            if (externalAction?.kind === 'addnote') {
+                const noteType = getAllNoteTypes().find((entry) => (
+                    entry.name.normalize('NFC').toLocaleLowerCase() === externalAction.noteTypeName.normalize('NFC').toLocaleLowerCase()
+                ));
+                const deck = getDeckByName(externalAction.deckName);
+                if (!noteType || !deck || deck.isFiltered) {
+                    console.warn('[Linking] add-note target not found:', externalAction.noteTypeName, externalAction.deckName);
+                    return;
+                }
+                const fieldValues = noteType.fields.map((field) => externalAction.fields[field.name] ?? '');
+                router.push({
+                    pathname: '/editor',
+                    params: {
+                        deckId: String(deck.id),
+                        noteTypeId: String(noteType.id),
+                        question: fieldValues[0] ?? '',
+                        answer: fieldValues[1] ?? '',
+                        fieldValues: JSON.stringify(fieldValues),
+                        tags: externalAction.tags.join(' '),
+                        externalSuccessUrl: externalAction.successUrl ?? '',
+                    },
+                } as any);
+                return;
+            }
+            if (!inferImportFileType(url)) return;
+            router.push({ pathname: '/import', params: { incomingUri: url } } as any);
+        };
+
+        void Linking.getInitialURL()
+            .then(openIncomingUrl)
+            .catch((error) => console.warn('[Linking] initial URL failed:', error));
+        const subscription = Linking.addEventListener('url', ({ url }) => openIncomingUrl(url));
+        return () => {
+            active = false;
+            subscription.remove();
+        };
+    }, [router]);
 
     useEffect(() => {
         if (Platform.OS !== 'ios') return;
@@ -233,7 +277,7 @@ function AppStack() {
 
     return (
         <>
-            <StatusBar style="auto" />
+            <StatusBar style={DARK_MODE_UI_ENABLED ? 'auto' : 'dark'} />
             <Stack
                 screenOptions={{
                     headerShown: false,
@@ -288,7 +332,9 @@ function AppStack() {
                 <Stack.Screen
                     name="card-info"
                     options={{
-                        presentation: 'modal',
+                        ...dismissibleSheetPresentation,
+                        gestureEnabled: true,
+                        gestureDirection: 'vertical',
                         headerShown: true,
                         title: t('root.cardInfo'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
@@ -298,27 +344,27 @@ function AppStack() {
                 <Stack.Screen
                     name="import"
                     options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: t('root.import'),
-                        headerStyle: { backgroundColor: colors.bgSecondary },
-                        headerTintColor: colors.accent,
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        gestureDirection: 'horizontal',
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen
                     name="export"
                     options={{
-                        presentation: 'modal',
-                        headerShown: true,
-                        title: l('Dışa Aktar', 'Export'),
-                        headerStyle: { backgroundColor: colors.bgSecondary },
-                        headerTintColor: colors.accent,
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        gestureDirection: 'horizontal',
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen
                     name="backups"
                     options={{
-                        presentation: 'modal',
+                        ...dismissibleSheetPresentation,
+                        gestureEnabled: true,
+                        gestureDirection: 'vertical',
                         headerShown: true,
                         title: t('root.backups'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
@@ -328,7 +374,9 @@ function AppStack() {
                 <Stack.Screen
                     name="note-types"
                     options={{
-                        presentation: 'modal',
+                        ...dismissibleSheetPresentation,
+                        gestureEnabled: true,
+                        gestureDirection: 'vertical',
                         headerShown: true,
                         title: t('root.noteTypes'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
@@ -357,9 +405,9 @@ export default function RootLayout() {
                 <WebDbGate>
                     <AppProvider>
                         <ThemeGate>
-                            <CatalogGate>
+                            <StartupGate>
                                 <AppStack />
-                            </CatalogGate>
+                            </StartupGate>
                         </ThemeGate>
                     </AppProvider>
                 </WebDbGate>

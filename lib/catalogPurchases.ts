@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Purchases, { LOG_LEVEL, type CustomerInfo, type PurchasesPackage } from 'react-native-purchases';
 import { getDB } from './db';
+import { CATALOG_INSTALL_KEY } from './catalogRows';
 
 /** RevenueCat/App Store/Play Console identifiers that must match the store setup. */
 export const BKA_PRODUCT = {
@@ -13,13 +14,14 @@ export const BKA_PRODUCT = {
 
 const STORE_REFRESH_TIMEOUT_MS = 8_000;
 const DEV_PREVIEW_ENTITLEMENT_KEY = 'bka_catalog_dev_preview_entitled_v1';
+const CATALOG_PAYMENT_REQUIRED = process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED === 'true';
 
 export type CatalogAccessStatus = 'loading' | 'ready' | 'unconfigured' | 'error';
 
 export interface CatalogAccessState {
     status: CatalogAccessStatus;
     hasAccess: boolean;
-    /** Development-only access when no live store key is present. Never true in release builds. */
+    /** Local access granted without contacting the store while payment is disabled. */
     previewAccess: boolean;
     configured: boolean;
     price: string;
@@ -45,23 +47,27 @@ export const INITIAL_CATALOG_ACCESS: CatalogAccessState = {
 let configuredKey: string | null = null;
 let catalogPackage: PurchasesPackage | null = null;
 
-function isDevelopmentPreview(): boolean {
-    return typeof __DEV__ !== 'undefined' && __DEV__;
+/**
+ * Payment is currently disabled by product decision. Setting the explicit build-time switch to
+ * true restores the receipt-backed RevenueCat path without changing the catalog installer.
+ */
+export function isCatalogPurchaseSimulationEnabled(): boolean {
+    return !CATALOG_PAYMENT_REQUIRED;
 }
 
-function developmentPreviewState(): CatalogAccessState {
+function localAccessState(hasAccess: boolean): CatalogAccessState {
     return {
         status: 'ready',
-        hasAccess: true,
-        previewAccess: true,
-        configured: Boolean(apiKeyForPlatform()),
+        hasAccess,
+        previewAccess: hasAccess,
+        configured: false,
         price: BKA_PRODUCT.fallbackPrice,
         productAvailable: true,
     };
 }
 
 function hasPersistedDevelopmentPreview(): boolean {
-    if (!isDevelopmentPreview()) return false;
+    if (!isCatalogPurchaseSimulationEnabled()) return false;
     try {
         return getDB().getFirstSync<{ value: string }>(
             'SELECT value FROM settings WHERE key = ?',
@@ -74,8 +80,20 @@ function hasPersistedDevelopmentPreview(): boolean {
     }
 }
 
+function hasInstalledFullCatalog(): boolean {
+    try {
+        const value = getDB().getFirstSync<{ value: string }>(
+            'SELECT value FROM settings WHERE key = ?',
+            CATALOG_INSTALL_KEY,
+        )?.value;
+        return value === 'true' || value === 'full';
+    } catch {
+        return false;
+    }
+}
+
 function persistDevelopmentPreview(): void {
-    if (!isDevelopmentPreview()) return;
+    if (!isCatalogPurchaseSimulationEnabled()) return;
     getDB().runSync(
         'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
         DEV_PREVIEW_ENTITLEMENT_KEY,
@@ -85,8 +103,8 @@ function persistDevelopmentPreview(): void {
 
 function apiKeyForPlatform(): string {
     if (Platform.OS === 'ios') return process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?.trim() ?? '';
-    // The first commercial release is iOS-only. Other platforms remain the free trial until a
-    // separate store product and billing implementation are deliberately shipped.
+    // The first commercial release is iOS-only. On every other platform the catalog stays locked
+    // until a separate store product and billing implementation are deliberately shipped.
     return '';
 }
 
@@ -120,7 +138,7 @@ function configurePurchases(): boolean {
     if (!apiKey) return false;
     if (configuredKey === apiKey) return true;
 
-    if (isDevelopmentPreview()) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    if (isCatalogPurchaseSimulationEnabled()) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
     Purchases.configure({ apiKey });
     configuredKey = apiKey;
     return true;
@@ -133,7 +151,7 @@ function selectCatalogPackage(packages: readonly PurchasesPackage[]): PurchasesP
 function withTimeout<T>(operation: Promise<T>, label: string): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         const timeout = setTimeout(
-            () => reject(new Error(`${label} zaman aşımına uğradı. Ücretsiz deneme kullanılabilir.`)),
+            () => reject(new Error(`${label} zaman aşımına uğradı. Bağlantınızı kontrol edip yeniden deneyin.`)),
             STORE_REFRESH_TIMEOUT_MS,
         );
         operation.then(
@@ -146,7 +164,9 @@ function withTimeout<T>(operation: Promise<T>, label: string): Promise<T> {
 /** Refresh entitlement and store-localized price. Receipt-backed state is the only release gate. */
 export async function loadCatalogAccess(): Promise<CatalogAccessState> {
     try {
-        if (hasPersistedDevelopmentPreview()) return developmentPreviewState();
+        if (isCatalogPurchaseSimulationEnabled()) {
+            return localAccessState(hasPersistedDevelopmentPreview() || hasInstalledFullCatalog());
+        }
         if (!configurePurchases()) return unconfiguredState();
         const [customerInfo, offerings] = await withTimeout(Promise.all([
             Purchases.getCustomerInfo(),
@@ -178,12 +198,10 @@ export async function loadCatalogAccess(): Promise<CatalogAccessState> {
 
 export async function purchaseBkaCatalog(): Promise<CatalogPurchaseResult> {
     try {
-        // Local development intentionally simulates the paywall outcome so the complete
-        // 9,583-card experience can be reviewed without a sandbox transaction. This branch
-        // is eliminated from production bundles; release access remains receipt-backed.
-        if (isDevelopmentPreview()) {
+        // Current product mode grants local access without contacting Apple or RevenueCat.
+        if (isCatalogPurchaseSimulationEnabled()) {
             persistDevelopmentPreview();
-            const state = developmentPreviewState();
+            const state = localAccessState(true);
             return { hasAccess: true, cancelled: false, state };
         }
         if (!configurePurchases()) {
@@ -220,6 +238,11 @@ export async function purchaseBkaCatalog(): Promise<CatalogPurchaseResult> {
 
 export async function restoreBkaCatalogPurchase(): Promise<CatalogPurchaseResult> {
     try {
+        if (isCatalogPurchaseSimulationEnabled()) {
+            persistDevelopmentPreview();
+            const state = localAccessState(true);
+            return { hasAccess: true, cancelled: false, state };
+        }
         if (!configurePurchases()) {
             const state = unconfiguredState();
             return { hasAccess: state.hasAccess, cancelled: false, state };

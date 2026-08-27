@@ -1,5 +1,6 @@
 import type { AppSettings } from './types';
 import type { DeckConfig } from './models';
+import { normalizeNewCardGatherOrder } from './queueBuild';
 
 /**
  * Resolves AppSettings from a DeckConfig, using `base` for fallback values.
@@ -35,9 +36,23 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         // Display order / audio / easy days arrived after the first configs were written;
         // absent fields fall back to the app-wide defaults.
         queueOrder: config.newReviewOrder ?? base.queueOrder,
-        newCardGatherOrder: config.newCardGatherOrder ?? base.newCardGatherOrder,
+        newCardGatherOrder: normalizeNewCardGatherOrder(config.newCardGatherOrder ?? base.newCardGatherOrder),
+        interdayLearningMix: config.interdayLearningMix ?? base.interdayLearningMix,
         reviewSortOrder: config.reviewSortOrder ?? base.reviewSortOrder,
+        newCardSortOrder: config.newCardSortOrder ?? base.newCardSortOrder,
         autoPlayAudio: config.autoPlayAudio ?? base.autoPlayAudio,
+        skipQuestionWhenReplayingAnswer: config.skipQuestionWhenReplayingAnswer
+            ?? base.skipQuestionWhenReplayingAnswer,
+        // Timers and Auto Advance live on the preset in Anki, so the reviewer has to read them
+        // from the deck being studied rather than from the collection-wide preferences.
+        showAnswerTimer: config.showTimer,
+        maxAnswerSeconds: config.maxAnswerSecs > 0 ? config.maxAnswerSecs : base.maxAnswerSeconds,
+        stopTimerOnAnswer: config.stopTimerOnAnswer ?? base.stopTimerOnAnswer,
+        secondsToShowQuestion: Math.max(0, config.secondsToShowQuestion ?? 0),
+        secondsToShowAnswer: Math.max(0, config.secondsToShowAnswer ?? 0),
+        questionAction: config.questionAction ?? base.questionAction,
+        waitForAudio: config.waitForAudio ?? base.waitForAudio,
+        answerAction: config.answerAction ?? base.answerAction,
         easyDays: Array.isArray(config.easyDays) && config.easyDays.length === 7
             ? [...config.easyDays]
             : base.easyDays,

@@ -19,7 +19,7 @@ import {
 } from '../lib/ankiInit';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../lib/legacyMigration';
-import { installBkaCatalogIfNeeded, isBkaCatalogInstalled } from '../lib/bkaCatalog';
+import { removeLegacyBkaInstall } from '../lib/bkaCatalog';
 import { invalidateSubjectsCache } from '../lib/subjects';
 
 let startupPromise: Promise<void> | null = null;
@@ -28,9 +28,9 @@ let startupPromise: Promise<void> | null = null;
 // splash screen forever. This is especially important after a simulator restore
 // or an interrupted migration, where a legacy AsyncStorage promise can remain
 // unresolved even though the rest of the app is usable.
-// The first launch of the catalog build validates and writes 9,583 cards plus media. Subsequent
-// launches are still fast, but the one-time atomic migration needs more room on older devices.
-const STARTUP_TIMEOUT_MS = 60_000;
+// Purchased catalog content is installed after startup, from the store screen, so this budget
+// only has to cover schema migration and legacy AsyncStorage imports.
+const STARTUP_TIMEOUT_MS = 30_000;
 
 function withStartupTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
@@ -51,7 +51,15 @@ function withStartupTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<
     });
 }
 
+/** True only on devices that still carry the withdrawn pre-release trial installation. */
+function needsLegacyCatalogRemoval(): boolean {
+    return (getDB().getFirstSync<{ count: number }>(
+        "SELECT COUNT(*) AS count FROM settings WHERE key = 'bka_tus_catalog_tier_v4'",
+    )?.count ?? 0) > 0;
+}
+
 async function runStartupCore(): Promise<void> {
+    const startedAt = Date.now();
     // Web DB is initialized in root _layout.tsx (WebDbGate) before any screen renders.
     initDB();
     console.log('[App] SQLite DB initialized.');
@@ -61,29 +69,20 @@ async function runStartupCore(): Promise<void> {
         console.log(`[App] Anki data initialized: ${ankiResult.notesCreated} notes, ${ankiResult.cardsCreated} cards.`);
     }
 
-    // This release intentionally replaces the active card collection with the licensed BKA
-    // catalog. Take a recoverable snapshot first; if that safety copy fails, do not delete data.
-    if (!isBkaCatalogInstalled()) {
-        const db = getDB();
-        const activeCards = db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM anki_cards')?.count ?? 0;
-        if (activeCards > 0) {
-            const backup = await createBackupNow();
-            console.log(`[App] Pre-catalog safety backup written: ${backup.fileName}`);
+    // Pre-release builds replaced the whole collection with a 1,200-card trial. That model was
+    // dropped: the app ships as a free Anki client and the catalog is bought, not bundled in.
+    // Back up before touching anything, then remove only the rows the old build installed.
+    if (needsLegacyCatalogRemoval()) {
+        const backup = await createBackupNow();
+        console.log(`[App] Pre-removal safety backup written: ${backup.fileName}`);
+        if (removeLegacyBkaInstall()) {
+            invalidateSubjectsCache();
+            console.log('[App] Legacy bundled catalog removed; personal content preserved.');
         }
-        const catalog = await installBkaCatalogIfNeeded();
-        invalidateSubjectsCache();
-        console.log(
-            `[App] BKA catalog installed: ${catalog.notes} notes, ${catalog.cards} cards, `
-            + `${catalog.decks} decks, ${catalog.media} media files.`,
-        );
     }
 
-    // A general-purpose install keeps app-native note types and a default deck. This catalog
-    // edition intentionally contains only the two source note types and twelve source decks.
-    if (!isBkaCatalogInstalled()) {
-        ensureBuiltinNoteTypesSeeded();
-        if (!getDeckByName('Varsayılan')) createDeck('Varsayılan');
-    }
+    ensureBuiltinNoteTypesSeeded();
+    if (!getDeckByName('Varsayılan')) createDeck('Varsayılan');
 
     const settingsMigration = await migrateLegacySettingsIfNeeded();
     if (settingsMigration.migrated) {
@@ -141,6 +140,7 @@ async function runStartupCore(): Promise<void> {
         console.log(`[App] Maintenance ran: ${unburiedCount} cards unburied.`);
     }
 
+    console.log(`[App] Başlangıç tamamlandı: ${Math.round((Date.now() - startedAt) / 100) / 10}s`);
     startupComplete = true;
     scheduleAutoBackup();
 }

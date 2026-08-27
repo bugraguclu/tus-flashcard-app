@@ -246,6 +246,18 @@ function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): nu
     return clampInterval(relearnGood + 1, settings);
 }
 
+/**
+ * Days since the card was last answered. The decoded state already carries Anki's fallback for
+ * cards with no recorded review time (ankiState `elapsedSinceLastReview`), so a card imported
+ * without a review log still reports a real elapsed count instead of "answered today".
+ */
+function elapsedDaysFor(cs: CardState, now: number, settings: AppSettings): number {
+    if (cs.lastReviewedAtMs && cs.lastReviewedAtMs > 0) {
+        return elapsedStudyDays(cs.lastReviewedAtMs, now, settings.dayRolloverHour);
+    }
+    return Math.max(0, cs.elapsedDays || 0);
+}
+
 const AnkiV3Engine: SchedulerEngine = {
     name: 'ANKI_V3',
     description: 'Anki V3 compatible scheduler (learning/relearning/review)',
@@ -255,7 +267,7 @@ const AnkiV3Engine: SchedulerEngine = {
             throw new Error(`Invalid grade: ${grade}. Expected 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy).`);
         }
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = elapsedStudyDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
+        const elapsedDays = elapsedDaysFor(cs, now, settings);
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
 
@@ -266,7 +278,7 @@ const AnkiV3Engine: SchedulerEngine = {
 
     previewIntervals: (cs: CardState, settings: AppSettings, nowMs?: number): IntervalPreview => {
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = elapsedStudyDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
+        const elapsedDays = elapsedDaysFor(cs, now, settings);
         const learningSteps = settings.learningSteps;
         const lapseSteps = settings.lapseSteps;
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;

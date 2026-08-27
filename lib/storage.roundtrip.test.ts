@@ -210,7 +210,16 @@ vi.mock('./noteManager', () => ({
     getSearchIndexCards: () => [],
 }));
 
-import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSettings, saveSessionStats, saveSettings } from './storage';
+import {
+    DEFAULT_SETTINGS,
+    exportAllData,
+    importAllData,
+    loadSettings,
+    saveCollectionDeckOptions,
+    saveSessionStats,
+    saveSettings,
+} from './storage';
+import { CATALOG_PACK_ID, CATALOG_PROGRESS_KEY } from './catalogRows';
 
 describe('storage import/export canonical round-trip', () => {
     beforeEach(() => {
@@ -271,5 +280,132 @@ describe('storage import/export canonical round-trip', () => {
 
         saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
         expect(loadSettings().language).toBe('tr');
+    });
+
+    it('persists both typed-answer presentation preferences', () => {
+        saveSettings({
+            ...DEFAULT_SETTINGS,
+            typeAnswerInCard: true,
+            focusTypeAnswer: false,
+        });
+
+        expect(loadSettings()).toMatchObject({
+            typeAnswerInCard: true,
+            focusTypeAnswer: false,
+        });
+    });
+
+    it('preserves a one-percent swipe sensitivity selected in Controls', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, swipeSensitivity: 1 });
+        expect(loadSettings().swipeSensitivity).toBe(1);
+    });
+
+    it('persists separate question and answer actions for all nine tap zones', () => {
+        saveSettings({
+            ...DEFAULT_SETTINGS,
+            ninePointTouchEnabled: true,
+            questionTapActions: { ...DEFAULT_SETTINGS.questionTapActions!, topLeft: 'replayAudio' },
+            answerTapActions: { ...DEFAULT_SETTINGS.answerTapActions!, bottomCenter: 'easy' },
+        });
+
+        expect(loadSettings()).toMatchObject({
+            ninePointTouchEnabled: true,
+            questionTapActions: { topLeft: 'replayAudio', middleCenter: 'showAnswer' },
+            answerTapActions: { bottomCenter: 'easy', middleLeft: 'again', middleRight: 'good' },
+        });
+    });
+
+    it('persists collection-wide deck options independently from a preset', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, newCardsIgnoreReviewLimit: true, limitsStartFromTop: true });
+
+        saveCollectionDeckOptions({ newCardsIgnoreReviewLimit: false, limitsStartFromTop: false });
+
+        expect(loadSettings()).toMatchObject({
+            newCardsIgnoreReviewLimit: false,
+            limitsStartFromTop: false,
+        });
+    });
+
+    it('rejects an incomplete canonical file before changing settings or tables', async () => {
+        saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
+        const originalNotes = [...dbState.notes];
+
+        const ok = await importAllData(JSON.stringify({
+            version: 6,
+            canonical: true,
+            settings: { ...DEFAULT_SETTINGS, language: 'en' },
+            tables: { notes: [] },
+        }));
+
+        expect(ok).toBe(false);
+        expect(loadSettings().language).toBe('tr');
+        expect(dbState.notes).toEqual(originalNotes);
+    });
+});
+
+describe('backups and the purchased card pack', () => {
+    const catalogNote = {
+        id: 11,
+        noteTypeId: 1,
+        sfld: 'BKA sorusu',
+        csum: 2,
+        tags: '',
+        data: JSON.stringify({ id: 11, catalogPack: CATALOG_PACK_ID, fields: ['BKA sorusu', 'BKA cevabı'] }),
+        updated_at: 0,
+        usn: -1,
+        tombstone: 0,
+    };
+    const studiedCatalogCard = {
+        id: 31, noteId: 11, deckId: 5, ord: 0, type: 2, queue: 2, due: 12, ivl: 21,
+        factor: 2350, reps: 4, lapses: 1, flags: 0, updated_at: 0, usn: -1, tombstone: 0,
+        data: JSON.stringify({
+            id: 31, noteId: 11, deckId: 5, type: 2, queue: 2, due: 12, ivl: 21, factor: 2350,
+            reps: 4, lapses: 1, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
+        }),
+    };
+    const untouchedCatalogCard = {
+        id: 32, noteId: 11, deckId: 5, ord: 0, type: 0, queue: 0, due: 1, ivl: 0,
+        factor: 2500, reps: 0, lapses: 0, flags: 0, updated_at: 0, usn: -1, tombstone: 0,
+        data: JSON.stringify({
+            id: 32, noteId: 11, deckId: 5, type: 0, queue: 0, due: 1, ivl: 0, factor: 2500,
+            reps: 0, lapses: 0, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
+        }),
+    };
+
+    beforeEach(() => {
+        dbState.notes = dbState.notes.filter((row: any) => row.id !== 11);
+        dbState.anki_cards = dbState.anki_cards.filter((row: any) => row.noteId !== 11);
+        dbState.decks = dbState.decks.filter((row: any) => row.id !== 5);
+        dbState.notes.push(catalogNote);
+        dbState.anki_cards.push(studiedCatalogCard, untouchedCatalogCard);
+        dbState.decks.push({ id: 5, name: 'BKA TUS', data: JSON.stringify({ id: 5, catalogPack: CATALOG_PACK_ID }), updated_at: 0, usn: -1, tombstone: 0 });
+    });
+
+    it('omits pack content but keeps the learner collection and their progress on it', async () => {
+        const json = await exportAllData();
+        const data = JSON.parse(json);
+
+        expect(data.tables.notes.map((row: any) => row.id)).toEqual([10]);
+        expect(data.tables.anki_cards.map((row: any) => row.id)).toEqual([20]);
+        // Paid card text must not travel inside a backup file the learner can share.
+        expect(json).not.toContain('BKA cevabı');
+        // Only the card with real study state is worth carrying.
+        expect(data.catalogProgress).toEqual({ '31': [2, 2, 12, 21, 2350, 4, 1, 0, 0, 0, 0, 0] });
+        // Note types, decks and presets stay whole so nothing the learner owns is orphaned.
+        expect(data.tables.decks.map((row: any) => row.id)).toEqual([1, 5]);
+        expect(data.tables.note_types).toHaveLength(1);
+    });
+
+    it('hands the pack progress to the installer when a backup is restored', async () => {
+        const json = await exportAllData();
+        dbState.settings.clear();
+
+        await importAllData(json);
+
+        expect(dbState.notes.map((row: any) => row.id)).toEqual([10]);
+        expect(dbState.anki_cards.map((row: any) => row.id)).toEqual([20]);
+        expect(JSON.parse(dbState.settings.get(CATALOG_PROGRESS_KEY)!)).toEqual({
+            '31': [2, 2, 12, 21, 2350, 4, 1, 0, 0, 0, 0, 0],
+        });
     });
 });

@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "lastVerified": "2026-08-26",
+  "product": "TusAnkiM",
+  "sources": [
+    {
+      "id": "anki-manual",
+      "priority": 1,
+      "platform": "cross-platform behavior",
+      "url": "https://docs.ankiweb.net/intro.html",
+      "useFor": ["studying", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
+    },
+    {
+      "id": "anki-manual-deck-options",
+      "priority": 1,
+      "platform": "cross-platform deck-option behavior",
+      "url": "https://docs.ankiweb.net/deck-options.html",
+      "useFor": ["presets", "daily limits", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
+    },
+    {
+      "id": "anki-manual-preferences",
+      "priority": 1,
+      "platform": "cross-platform preferences",
+      "url": "https://docs.ankiweb.net/preferences.html",
+      "useFor": ["timebox time limit", "learn ahead limit", "reviewer preferences"]
+    },
+    {
+      "id": "anki-manual-typed-answer",
+      "priority": 1,
+      "platform": "cross-platform typed-answer behavior",
+      "url": "https://docs.ankiweb.net/templates/fields.html#checking-your-answer",
+      "useFor": ["typed-answer template marker", "Enter to reveal", "typed-answer diff", "#typeans styling"]
+    },
+    {
+      "id": "anki-manual-filtered-decks",
+      "priority": 1,
+      "platform": "cross-platform filtered-deck behavior",
+      "url": "https://docs.ankiweb.net/filtered-decks.html",
+      "useFor": ["filtered deck creation", "filtered deck gather order", "second filter", "rescheduling", "home decks", "excluded cards"]
+    },
+    {
+      "id": "anki-manual-statistics",
+      "priority": 1,
+      "platform": "cross-platform statistics behavior",
+      "url": "https://docs.ankiweb.net/stats.html",
+      "useFor": ["statistics time periods", "today summary", "future due", "reviews", "review time", "card counts", "review intervals", "answer buttons", "true retention"]
+    },
+    {
+      "id": "ankimobile-manual",
+      "priority": 1,
+      "platform": "iOS and iPadOS UX",
+      "url": "https://docs.ankimobile.net/",
+      "useFor": ["deck list", "reviewer", "study tools", "gestures", "notifications", "file hand-off", "accessibility"]
+    },
+    {
+      "id": "ankimobile-preferences",
+      "priority": 1,
+      "platform": "iOS and iPadOS preferences",
+      "url": "https://docs.ankimobile.net/preferences.html",
+      "useFor": ["review feedback", "tools overlay", "typed answers", "nine-zone question and answer taps", "interactive tap pass-through", "swipes", "general settings", "study notifications", "media maintenance"]
+    },
+    {
+      "id": "ankimobile-url-schemes",
+      "priority": 1,
+      "platform": "iOS and iPadOS automation",
+      "url": "https://docs.ankimobile.net/url-schemes.html",
+      "useFor": ["x-callback-url", "add-note automation", "browser search automation", "Shortcuts interoperability"]
+    },
+    {
+      "id": "anki-manual-browsing",
+      "priority": 1,
+      "platform": "cross-platform browser behavior",
+      "url": "https://docs.ankiweb.net/browsing.html#table-modes",
+      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "Notes-mode row aggregation and first-card semantics", "flag filtering"]
+    },
+    {
+      "id": "anki-source",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki",
+      "license": "AGPL-3.0-or-later/GPL-family; inspect behavior, do not copy into MIT code",
+      "useFor": ["ambiguous scheduler behavior", "collection schema", "package format", "template rendering", "timebox checkpoint flow"]
+    },
+    {
+      "id": "anki-source-timebox-collection",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/collection.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["timebox wall-clock limit", "timebox repetition count", "timebox block reset"]
+    },
+    {
+      "id": "anki-source-timebox-reviewer",
+      "priority": 2,
+      "platform": "desktop reviewer",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/reviewer.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["post-answer timebox check", "Continue and Finish choices", "deck-browser exit"]
+    },
+    {
+      "id": "ankidroid-source",
+      "priority": 3,
+      "platform": "Android",
+      "url": "https://github.com/ankidroid/Anki-Android",
+      "license": "GPL-3.0-family; inspect behavior, do not copy into MIT code",
+      "useFor": ["Android-specific UI", "filtered deck options layout", "whiteboard", "TTS", "Android file integration"]
+    },
+    {
+      "id": "ankidroid-manual-typed-answer",
+      "priority": 3,
+      "platform": "Android typed-answer presentation reference",
+      "url": "https://docs.ankidroid.org/manual.html#type-in-the-answer-feature",
+      "useFor": ["in-card versus separate typed-answer input", "typed-answer focus preference"]
+    },
+    {
+      "id": "ankidroid-manual-notifications",
+      "priority": 3,
+      "platform": "Android notification behavior reference",
+      "url": "https://docs.ankidroid.org/manual.html#notifications",
+      "useFor": ["due-card notification thresholds", "Android vibration", "Android notification LED"]
+    },
+    {
+      "id": "ankidroid-new-study-screen",
+      "priority": 3,
+      "platform": "Android reviewer presentation reference",
+      "url": "https://forums.ankiweb.net/t/new-study-screen-official-thread/67394",
+      "useFor": ["new study screen opt-in", "compact reviewer toolbar", "directional answer feedback", "two-button mode", "reviewer control placement"]
+    },
+    {
+      "id": "android-shortcut-manager",
+      "priority": 1,
+      "platform": "Android launcher integration",
+      "url": "https://developer.android.com/reference/android/content/pm/ShortcutManager",
+      "useFor": ["pinned deck shortcuts", "launcher approval behavior", "unsupported-launcher fallback"]
+    },
+    {
+      "id": "apple-add-voice-shortcut-ui",
+      "priority": 1,
+      "platform": "iOS and iPadOS system shortcuts",
+      "url": "https://developer.apple.com/documentation/intentsui/inuiaddvoiceshortcutviewcontroller",
+      "useFor": ["deck-specific Apple Shortcuts confirmation", "Shortcuts app hand-off", "user-approved shortcut creation"]
+    },
+    {
+      "id": "owasp-masvs",
+      "priority": 1,
+      "platform": "mobile application security",
+      "url": "https://mas.owasp.org/MASVS/",
+      "useFor": ["local data protection", "untrusted WebView content", "platform security boundaries"]
+    },
+    {
+      "id": "owasp-csp-cheat-sheet",
+      "priority": 1,
+      "platform": "web and embedded HTML",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html",
+      "useFor": ["card HTML isolation", "web content security policy", "XSS defense in depth"]
+    },
+    {
+      "id": "apple-default-data-protection",
+      "priority": 1,
+      "platform": "iOS local data protection",
+      "url": "https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.default-data-protection",
+      "useFor": ["complete file protection", "device-lock storage boundary"]
+    },
+    {
+      "id": "apple-app-transport-security",
+      "priority": 1,
+      "platform": "iOS network transport policy",
+      "url": "https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity",
+      "useFor": ["arbitrary-load denial", "local-network load denial", "HTTPS transport boundary"]
+    },
+    {
+      "id": "apple-notification-authorization",
+      "priority": 1,
+      "platform": "iOS local notifications",
+      "url": "https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications",
+      "useFor": ["notification permission", "provisional authorization", "system-owned delivery controls"]
+    },
+    {
+      "id": "apple-local-notification-scheduling",
+      "priority": 1,
+      "platform": "iOS local notifications",
+      "url": "https://developer.apple.com/documentation/usernotifications/scheduling-a-notification-locally-from-your-app",
+      "useFor": ["local notification content", "calendar delivery", "pending request cancellation"]
+    },
+    {
+      "id": "github-actions-secure-use",
+      "priority": 1,
+      "platform": "software supply chain",
+      "url": "https://docs.github.com/en/actions/reference/security/secure-use",
+      "useFor": ["immutable action SHA pins", "least-privilege workflow permissions", "CI hardening"]
+    }
+  ],
+  "requiredDocs": [
+    "docs/ANKI_COMPATIBILITY.md",
+    "docs/IOS_RELEASE_CHECKLIST.md"
+  ]
+}

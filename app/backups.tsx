@@ -5,22 +5,18 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
     ActivityIndicator,
-    Platform,
 } from 'react-native';
-import * as Sharing from 'expo-sharing';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
-import { downloadTextFileWeb } from '../lib/files';
 import { useApp } from '../contexts/AppContext';
 import {
     createBackupNow,
     deleteBackup,
-    getNativeBackupDir,
     isPreRestoreBackup,
     listBackups,
-    readBackup,
     restoreBackup,
     type BackupInfo,
 } from '../lib/backup';
@@ -44,7 +40,8 @@ function formatDate(epochMs: number, localeTag: string): string {
 
 export default function BackupsScreen() {
     const { t, l, localeTag } = useI18n();
-    const { refreshData, bumpDataVersion } = useApp();
+    const router = useRouter();
+    const { refreshData, bumpDataVersion, refreshCatalogAccess } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [backups, setBackups] = useState<BackupInfo[]>([]);
@@ -80,6 +77,7 @@ export default function BackupsScreen() {
             try {
                 await createBackupNow();
                 await reload();
+                alert(t('common.completed'), l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'));
             } catch (e) {
                 console.warn('[Backups] manual backup failed:', e);
                 alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
@@ -88,16 +86,19 @@ export default function BackupsScreen() {
 
     const handleRestore = (name: string) => {
         confirm(
-            l('Yedeği Geri Yükle', 'Restore Backup'),
+            l('Yedeği geri yükle', 'Restore Backup'),
             l('Bu yedek mevcut koleksiyonun yerini alacak. Geri yüklemeden önce mevcut durumun otomatik bir kopyası oluşturulur.', 'This backup will replace the current collection. A copy of the current state is created automatically before restoring.'),
             () =>
                 void withBusy(async () => {
                     try {
                         const result = await restoreBackup(name);
+                        // Backups leave the purchased pack out, so a restore has to put it back:
+                        // this reinstalls it for an entitled learner and re-applies their progress.
                         await reload();
-                        refreshData();
-                        bumpDataVersion();
                         if (result.ok) {
+                            await refreshCatalogAccess();
+                            refreshData();
+                            bumpDataVersion();
                             alert(t('common.completed'), l('Yedek geri yüklendi.', 'Backup restored.'));
                         } else {
                             alert(t('common.error'), l('Yedek geri yüklenemedi. Mevcut veriler değişmedi.', 'Could not restore the backup. Existing data was not changed.'));
@@ -112,7 +113,7 @@ export default function BackupsScreen() {
     };
 
     const handleDelete = (name: string) => {
-        confirm(l('Yedeği Sil', 'Delete Backup'), l(`${name} kalıcı olarak silinecek.`, `${name} will be permanently deleted.`), () =>
+        confirm(l('Yedeği sil', 'Delete Backup'), l(`${name} kalıcı olarak silinecek.`, `${name} will be permanently deleted.`), () =>
             void withBusy(async () => {
                 try {
                     await deleteBackup(name);
@@ -126,33 +127,17 @@ export default function BackupsScreen() {
         );
     };
 
-    const handleShare = (name: string) =>
-        withBusy(async () => {
-            try {
-                if (Platform.OS === 'web') {
-                    downloadTextFileWeb(name, await readBackup(name));
-                    return;
-                }
-
-                if (!(await Sharing.isAvailableAsync())) {
-                    alert(l('Bilgi', 'Info'), l('Paylaşım bu cihazda kullanılamıyor.', 'Sharing is not available on this device.'));
-                    return;
-                }
-                await Sharing.shareAsync(`${getNativeBackupDir()}${name}`, {
-                    mimeType: 'application/json',
-                    dialogTitle: name,
-                });
-            } catch (e) {
-                console.warn('[Backups] share failed:', e);
-                alert(t('common.error'), l('Yedek paylaşılamadı.', 'Could not share the backup.'));
-            }
-        });
+    const handleShare = (name: string) => {
+        // Backups is an iOS form sheet. Replacing that route keeps the canonical
+        // full-screen export workflow visible instead of pushing it behind the sheet.
+        router.replace({ pathname: '/export', params: { backup: name } } as any);
+    };
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    {l('Uygulama haftada bir otomatik yedek oluşturur ve en yeni 7 koleksiyon yedeğini saklar. Geri yükleme öncesi oluşturulan güvenlik kopyaları ayrıca burada listelenir.', 'The app creates one automatic backup per week and keeps the latest 7 collection backups. Safety snapshots created before a restore also appear here.')}
+                    {l('Uygulama haftada bir özel uygulama alanında otomatik yedek oluşturur ve en yeni 7 koleksiyon yedeğini saklar. Paylaş ile seçilen yedek için dışa aktarma seçeneklerini açabilirsiniz.', 'The app creates one automatic backup per week in private app storage and keeps the latest 7 collection backups. Use Share to open export options for the selected backup.')}
                 </Text>
 
                 <TouchableOpacity
@@ -160,7 +145,7 @@ export default function BackupsScreen() {
                     onPress={handleBackupNow}
                     disabled={busy}
                 >
-                    <Text style={styles.primaryBtnText}>💾 {l('Şimdi Yedekle', 'Back Up Now')}</Text>
+                    <Text style={styles.primaryBtnText}>💾 {l('Şimdi yedekle', 'Back Up Now')}</Text>
                 </TouchableOpacity>
 
                 {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}
@@ -187,7 +172,7 @@ export default function BackupsScreen() {
                                 onPress={() => handleRestore(backup.name)}
                                 disabled={busy}
                             >
-                                <Text style={styles.actionText}>{l('Geri Yükle', 'Restore')}</Text>
+                                <Text style={styles.actionText}>{l('Geri yükle', 'Restore')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.actionBtn}

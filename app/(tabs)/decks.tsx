@@ -1,5 +1,5 @@
 // Anki-style deck list: the app's landing screen. Deck tree with per-deck counts,
-// tap-to-study (parents include their subdecks), a gear menu per deck (rename, move,
+// tap-to-study (parents include their subdecks), a gear menu per deck (rename,
 // options/limits, custom study, delete) and drag-and-drop nesting via the row handle.
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -12,7 +12,6 @@ import {
     ScrollView,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
     TextInput,
     Modal,
     PanResponder,
@@ -23,10 +22,11 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Switch,
+    ActivityIndicator,
     useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import {
     getAllDecks,
@@ -58,8 +58,23 @@ import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount, getStudyQueue 
 import { createBackupNow } from '../../lib/backup';
 import { useApp } from './_layout';
 import { useI18n } from '../../hooks/useI18n';
-import { filteredOrderLabel } from '../../lib/i18n';
+import { filteredOrderLabel, formatCount } from '../../lib/i18n';
+import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
 import DisclosureChevron from '../../components/DisclosureChevron';
+import LockGlyph from '../../components/LockGlyph';
+import SwipeDismissSheet from '../../components/SwipeDismissSheet';
+import { BKA_MANIFEST } from '../../lib/bkaManifest';
+import {
+    BKA_CATALOG_DEFAULT_ROOT_DECK,
+    BKA_CATALOG_PACK,
+    BKA_CATALOG_ROOT_DECK_ID,
+    getBkaCatalogTier,
+} from '../../lib/bkaCatalog';
+import { requestDeckShortcut } from '../../modules/deck-shortcuts';
+import { sanitizeUnsignedIntegerDraft } from '../../lib/boundedNumber';
+import { FILTERED_DECK_ORDER_UI } from '../../lib/filteredDeckOptions';
+import { userFacingErrorMessage } from '../../lib/userFacingError';
+import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -69,7 +84,6 @@ function webTitle(text: string): Record<string, string> {
 type ModalState =
     | { kind: 'menu'; deck: Deck }
     | { kind: 'rename'; deck: Deck }
-    | { kind: 'move'; deck: Deck }
     | { kind: 'create-subdeck'; deck: Deck }
     | { kind: 'description'; deck: Deck }
     | { kind: 'custom'; deck: Deck }
@@ -83,7 +97,6 @@ function parseCount(text: string, fallback: number = 0): number {
 }
 
 const ROOT_DROP_TARGET = '__root_deck_drop_target__';
-const FILTER_ORDER_UI = [7, 1, 2, 3, 6, 4, 0, 5, 8, 9] as const;
 type DeckDropPlacement = 'before' | 'inside' | 'after';
 
 function decodeDeckDropTarget(target: string | null):
@@ -135,7 +148,7 @@ export default function DecksScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const insets = useSafeAreaInsets();
-    const { width } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
     const isCompact = width < 600;
     // Bottom-sheet modals fill most of the screen; a top inset keeps the tap-to-dismiss backdrop
     // reachable below the status bar/notch instead of hiding under it.
@@ -144,17 +157,17 @@ export default function DecksScreen() {
     const supportsDeckDrag = isDesktopWeb || Platform.OS === 'ios' || Platform.OS === 'android';
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { settings, dataVersion, bumpDataVersion, activeDeckName, catalogAccess } = useApp();
+    const { settings, dataVersion, bumpDataVersion, activeDeckName, catalogAccess, catalogInstalled, catalogInstalling } = useApp();
     const [expandedDecks, setExpandedDecks] = useState<Set<string>>(getPersistedExpandedDeckNames);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
-    const handledCreateDeckTokenRef = useRef<string | null>(null);
     const pendingOverflowRouteRef = useRef<string | null>(null);
     const pendingOverflowActionRef = useRef<(() => void) | null>(null);
     const pendingDeckMenuRouteRef = useRef<string | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
     const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
+    const [filteredDeckScreenTitle, setFilteredDeckScreenTitle] = useState('');
     const [refreshToken, setRefreshToken] = useState(0);
     const [modal, setModal] = useState<ModalState>(null);
 
@@ -180,15 +193,13 @@ export default function DecksScreen() {
     const [filterAllowEmpty, setFilterAllowEmpty] = useState(false);
     const [filterHelpVisible, setFilterHelpVisible] = useState(false);
     const [filterOrderPicker, setFilterOrderPicker] = useState<1 | 2 | null>(null);
-
-    const createDeckToken = typeof params.create === 'string' ? params.create : null;
-    useEffect(() => {
-        if (!createDeckToken || handledCreateDeckTokenRef.current === createDeckToken) return;
-        handledCreateDeckTokenRef.current = createDeckToken;
-        setShowAddMenu(false);
-        setShowAddDeck(true);
-        router.setParams({ create: undefined } as any);
-    }, [createDeckToken, router]);
+    const [filterOrderAnchor, setFilterOrderAnchor] = useState<{ x: number; y: number; width: number } | null>(null);
+    const firstFilterOrderRef = useRef<View>(null);
+    const secondFilterOrderRef = useRef<View>(null);
+    const catalogTier = useMemo(
+        () => getBkaCatalogTier(),
+        [catalogInstalled, dataVersion],
+    );
 
     // Drag-and-drop state: rows report their content-space layout; the active drag
     // tracks the pointer against those rows to pick a drop target.
@@ -278,14 +289,14 @@ export default function DecksScreen() {
                 console.warn('[Decks] filtered deck count failed:', e);
             }
         }
-        return buildDeckTree(decks, counts, settings.dayRolloverHour);
-    }, [refreshToken, dataVersion, settings]);
+        const tree = buildDeckTree(decks, counts, settings.dayRolloverHour);
+        return tree;
+    }, [refreshToken, dataVersion, settings, catalogTier]);
 
-    const todaySummary = useMemo(() => deckTree.reduce((summary, node) => ({
-        new: summary.new + node.newCount,
-        learn: summary.learn + node.learnCount,
-        review: summary.review + node.reviewCount,
-    }), { new: 0, learn: 0, review: 0 }), [deckTree]);
+    // The context learns the install state one effect after this screen first renders, which would
+    // flash the locked row at a learner who already owns the pack; the collection itself is the
+    // authority on the first frame.
+    const fullCatalogPresent = catalogTier === 'full';
 
     // Flat list of visible rows: keeps drag math simple and layout depth-independent.
     const visibleRows = useMemo(() => {
@@ -358,7 +369,7 @@ export default function DecksScreen() {
     };
 
     const handleAddDeck = () => {
-        const name = newDeckName.trim();
+        const name = normalizeDeckLeafInput(newDeckName);
         if (!name) return;
 
         try {
@@ -412,7 +423,7 @@ export default function DecksScreen() {
                 try {
                     await createBackupNow();
                     alert(
-                        l('Yedek Oluşturuldu', 'Backup Created'),
+                        l('Yedek oluşturuldu', 'Backup Created'),
                         l('Koleksiyonunuzun bir yedeği kaydedildi.', 'A backup of your collection was saved.'),
                     );
                 } catch (e) {
@@ -455,7 +466,7 @@ export default function DecksScreen() {
         router.push('/editor' as any);
     };
 
-    const openCreateFilteredDeck = () => {
+    const openCreateFilteredDeck = (initialSearch?: string) => {
         const now = new Date();
         const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         const baseName = `${l('Filtrelenmiş Deste', 'Filtered Deck')} ${timestamp}`;
@@ -468,6 +479,7 @@ export default function DecksScreen() {
 
         setShowAddMenu(false);
         setNewFilteredDeckName(availableName);
+        setFilteredDeckScreenTitle(availableName);
         // Anki scopes a newly-created filtered deck to the current deck. The deck-list FAB
         // has no row of its own, so prefer the last deck opened for study and fall back to
         // the first regular deck in the collection.
@@ -483,7 +495,7 @@ export default function DecksScreen() {
             : '';
         const sourceDeckSearch = sourceDeckTerm ? `${sourceDeckTerm} is:due` : 'is:due';
 
-        setFilterSearch(sourceDeckSearch);
+        setFilterSearch(initialSearch === undefined ? sourceDeckSearch : initialSearch.trim());
         setFilterLimit('100');
         setFilterOrder(1);
         setFilterSearch2('');
@@ -496,6 +508,18 @@ export default function DecksScreen() {
         setFilterOrderPicker(null);
         setModal({ kind: 'create-filter' });
     };
+
+    // The browser launches the same full options screen and supplies its composed search.
+    // A token prevents the modal from reopening when Expo preserves tab-route parameters.
+    const createFilterToken = typeof params.createFilter === 'string' ? params.createFilter : null;
+    const initialFilterSearch = typeof params.filterSearch === 'string' ? params.filterSearch : undefined;
+    const openedCreateFilterParam = useRef<string | null>(null);
+    useEffect(() => {
+        if (!createFilterToken || openedCreateFilterParam.current === createFilterToken) return;
+        openedCreateFilterParam.current = createFilterToken;
+        openCreateFilteredDeck(initialFilterSearch);
+        router.setParams({ createFilter: undefined, filterSearch: undefined } as any);
+    }, [createFilterToken, initialFilterSearch, router]);
 
     const getPendingFilteredDeckMatchCount = () => getFilteredDeckMatchCount(settings, {
         searchQuery: filterSearch.trim(),
@@ -561,8 +585,7 @@ export default function DecksScreen() {
     const openMenu = (deck: Deck) => setModal({ kind: 'menu', deck });
 
     const openRename = (deck: Deck) => {
-        // AnkiDroid exposes the full name here, so editing the :: path can also move a deck.
-        setRenameText(deck.name);
+        setRenameText(getDeckDisplayName(deck.name));
         setModal({ kind: 'rename', deck });
     };
 
@@ -571,32 +594,23 @@ export default function DecksScreen() {
         setModal({ kind: 'create-subdeck', deck });
     };
 
-    const openMoveDeck = (deck: Deck) => setModal({ kind: 'move', deck });
-
     const handleCreateSubdeck = () => {
         if (modal?.kind !== 'create-subdeck') return;
-        const segments = newSubdeckName.split('::').map((segment) => segment.trim());
-        if (segments.length === 0 || segments.some((segment) => !segment)) {
+        const leafName = normalizeDeckLeafInput(newSubdeckName);
+        if (!leafName) {
             alert(t('common.error'), l('Alt deste adı boş olamaz.', 'The subdeck name cannot be empty.'));
             return;
         }
 
-        const relativePath = segments.join('::');
-        const fullName = `${modal.deck.name}::${relativePath}`;
+        const fullName = `${modal.deck.name}::${leafName}`;
 
         try {
             const availableName = getAvailableDeckName(fullName);
             createDeck(availableName, modal.deck.configId);
-            const availableSegments = availableName.slice(`${modal.deck.name}::`.length).split('::');
             setDeckCollapsed(modal.deck.id, false);
             setExpandedDecks((prev) => {
                 const next = new Set(prev);
-                let path = modal.deck.name;
-                next.add(path);
-                for (const segment of availableSegments) {
-                    path = `${path}::${segment}`;
-                    next.add(path);
-                }
+                next.add(modal.deck.name);
                 return next;
             });
             setModal(null);
@@ -606,7 +620,10 @@ export default function DecksScreen() {
             }
         } catch (e) {
             console.warn('[Decks] create subdeck failed:', e);
-            alert(t('common.error'), e instanceof Error ? e.message : l('Alt deste oluşturulamadı.', 'Could not create the subdeck.'));
+            alert(t('common.error'), userFacingErrorMessage(
+                e,
+                l('Alt deste oluşturulamadı. Lütfen tekrar deneyin.', 'Could not create the subdeck. Please try again.'),
+            ));
         }
     };
 
@@ -629,24 +646,73 @@ export default function DecksScreen() {
 
     const handleCreateShortcut = async (deck: Deck) => {
         try {
-            // AnkiDroid's launcher shortcut enters study for the selected deck; keep the same
-            // semantics in the cross-platform deep link used by iOS Shortcuts.
             const url = Linking.createURL('/', { queryParams: { deck: deck.name } });
+            const visibleDeckName = deck.name.replaceAll('::', ' › ');
+
+            if (Platform.OS === 'android') {
+                const status = await requestDeckShortcut(String(deck.id), visibleDeckName, url);
+                setModal(null);
+
+                if (status === 'requested') {
+                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+                    setTimeout(() => alert(
+                        l('Kısayol isteği gönderildi', 'Shortcut requested'),
+                        l(
+                            `Ana ekran başlatıcınız onay istediğinde kabul edin. Kısayol “${visibleDeckName}” destesini doğrudan açar.`,
+                            `Accept the request when your Home Screen launcher asks. The shortcut opens “${visibleDeckName}” directly.`,
+                        ),
+                    ), 0);
+                    return;
+                }
+
+                await Clipboard.setStringAsync(url);
+                setTimeout(() => alert(
+                    l('Kısayol bağlantısı hazır', 'Shortcut link ready'),
+                    l(
+                        `Ana ekran başlatıcınız otomatik kısayol eklemeyi desteklemiyor. “${visibleDeckName}” destesini açan bağlantı panoya kopyalandı.`,
+                        `Your Home Screen launcher does not support automatic shortcut creation. A link that opens “${visibleDeckName}” was copied to the clipboard.`,
+                    ),
+                ), 0);
+                return;
+            }
+
+            if (Platform.OS === 'ios') {
+                const status = await requestDeckShortcut(String(deck.id), visibleDeckName, url);
+                setModal(null);
+
+                if (status === 'created') {
+                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+                    setTimeout(() => alert(
+                        l('Kestirme eklendi', 'Shortcut added'),
+                        l(
+                            `“${visibleDeckName}” kestirmesi Apple Kestirmeler’e eklendi. Çalıştırdığınızda bu deste doğrudan açılır.`,
+                            `The “${visibleDeckName}” shortcut was added to Apple Shortcuts. Running it opens this deck directly.`,
+                        ),
+                    ), 300);
+                    return;
+                }
+
+                if (status === 'cancelled') return;
+
+                setTimeout(() => alert(
+                    l('Kestirme eklenemedi', 'Could not add shortcut'),
+                    l(
+                        'Bu özellik Expo Go yerine TusAnkiM uygulama yapısında çalışır. Uygulamayı yeniden derleyip tekrar deneyin.',
+                        'This feature works in a TusAnkiM app build rather than Expo Go. Rebuild the app and try again.',
+                    ),
+                ), 300);
+                return;
+            }
+
             await Clipboard.setStringAsync(url);
             setModal(null);
-            const message = Platform.OS === 'ios'
-                ? l(
-                    `iOS uygulamaların Ana Ekran'a otomatik kısayol eklemesine izin vermiyor. “${deck.name}” destesini doğrudan açan bağlantı panoya kopyalandı.`,
-                    `iOS does not allow apps to add Home Screen shortcuts automatically. A link that opens “${deck.name}” directly was copied to the clipboard.`,
-                )
-                : l(
-                    `“${deck.name}” destesini doğrudan açan kısayol bağlantısı panoya kopyalandı.`,
-                    `A shortcut link that opens “${deck.name}” directly was copied to the clipboard.`,
-                );
-            const title = Platform.OS === 'ios'
-                ? l('Bağlantı Kopyalandı', 'Link Copied')
-                : l('Kısayol Hazır', 'Shortcut Ready');
-            setTimeout(() => alert(title, message), Platform.OS === 'ios' ? 300 : 0);
+            setTimeout(() => alert(
+                l('Kısayol bağlantısı hazır', 'Shortcut link ready'),
+                l(
+                    `“${visibleDeckName}” destesini doğrudan açan bağlantı panoya kopyalandı.`,
+                    `A link that opens “${visibleDeckName}” directly was copied to the clipboard.`,
+                ),
+            ), 0);
         } catch (e) {
             console.warn('[Decks] shortcut creation failed:', e);
             alert(t('common.error'), l('Deste kısayolu oluşturulamadı.', 'Could not create the deck shortcut.'));
@@ -663,20 +729,9 @@ export default function DecksScreen() {
         setModal({ kind: 'custom', deck });
     };
 
-    // The Anki overview exposes Custom Study directly. It returns here with a deck query and
-    // opens the same sheet used by the deck-row menu.
-    const customDeckParam = typeof params.custom === 'string' ? params.custom : null;
-    const openedCustomParam = useRef<string | null>(null);
-    useEffect(() => {
-        if (!customDeckParam || openedCustomParam.current === customDeckParam) return;
-        const deck = getAllDecks().find((entry) => entry.name === customDeckParam);
-        if (!deck || deck.isFiltered) return;
-        openedCustomParam.current = customDeckParam;
-        openCustomStudy(deck);
-    }, [customDeckParam]);
-
     const openFilterOptions = (deck: Deck) => {
         setNewFilteredDeckName(deck.name);
+        setFilteredDeckScreenTitle(getDeckDisplayName(deck.name));
         setFilterSearch(deck.searchQuery ?? '');
         setFilterLimit(String(deck.searchLimit ?? 100));
         setFilterOrder(deck.searchOrder ?? 0);
@@ -690,16 +745,6 @@ export default function DecksScreen() {
         setFilterOrderPicker(null);
         setModal({ kind: 'filter', deck });
     };
-
-    const filterDeckParam = typeof params.filter === 'string' ? params.filter : null;
-    const openedFilterParam = useRef<string | null>(null);
-    useEffect(() => {
-        if (!filterDeckParam || openedFilterParam.current === filterDeckParam) return;
-        const deck = getAllDecks().find((entry) => entry.name === filterDeckParam);
-        if (!deck?.isFiltered) return;
-        openedFilterParam.current = filterDeckParam;
-        openFilterOptions(deck);
-    }, [filterDeckParam]);
 
     const handleSaveFilterOptions = () => {
         if (modal?.kind !== 'filter') return;
@@ -764,12 +809,10 @@ export default function DecksScreen() {
 
     const handleRename = () => {
         if (modal?.kind !== 'rename') return;
-        const nextName = renameText.trim();
-        if (!nextName) return;
-        if (nextName.split('::').some((segment) => !segment.trim())) {
-            alert(t('common.error'), l('Deste yolunda boş bir seviye olamaz.', 'A deck path cannot contain an empty level.'));
-            return;
-        }
+        const nextLeafName = normalizeDeckLeafInput(renameText);
+        if (!nextLeafName) return;
+        const parentName = getParentDeckName(modal.deck.name);
+        const nextName = parentName ? `${parentName}::${nextLeafName}` : nextLeafName;
 
         try {
             const availableName = getAvailableDeckSubtreeName(modal.deck.id, nextName);
@@ -779,25 +822,10 @@ export default function DecksScreen() {
             refresh();
         } catch (e) {
             console.warn('[Decks] rename failed:', e);
-            alert(t('common.error'), e instanceof Error ? e.message : l('Yeniden adlandırılamadı.', 'Could not rename the deck.'));
-        }
-    };
-
-    const handleMoveTo = (targetName: string | null) => {
-        if (modal?.kind !== 'move') return;
-        try {
-            const nextName = moveDeckUnder(modal.deck.id, targetName) ?? modal.deck.name;
-            setExpandedDecks((prev) => remapExpandedDeckPaths(
-                prev,
-                modal.deck.name,
-                nextName,
-                targetName,
+            alert(t('common.error'), userFacingErrorMessage(
+                e,
+                l('Deste yeniden adlandırılamadı. Lütfen tekrar deneyin.', 'Could not rename the deck. Please try again.'),
             ));
-            setModal(null);
-            refresh();
-        } catch (e) {
-            console.warn('[Decks] move failed:', e);
-            alert(t('common.error'), e instanceof Error ? e.message : l('Deste taşınamadı.', 'Could not move the deck.'));
         }
     };
 
@@ -837,7 +865,7 @@ export default function DecksScreen() {
 
     const handleDelete = (deck: Deck) => {
         confirm(
-            l('Desteyi Sil', 'Delete Deck'),
+            l('Desteyi sil', 'Delete Deck'),
             deck.isFiltered
                 ? l(`"${getDeckDisplayName(deck.name)}" silinecek; kartlar ait oldukları destelere dönecek.`, `"${getDeckDisplayName(deck.name)}" will be deleted; its cards will return to their original decks.`)
                 : l(`"${getDeckDisplayName(deck.name)}" tüm alt desteleri ve içindeki kartlarla birlikte silinecek. Bu işlem geri alınamaz.`, `"${getDeckDisplayName(deck.name)}" and all of its subdecks and cards will be deleted. This cannot be undone.`),
@@ -863,7 +891,7 @@ export default function DecksScreen() {
     const requestEmptyFilteredDeck = (deck: Deck) => {
         setModal(null);
         setTimeout(() => confirm(
-            l('Filtrelenmiş Desteyi Boşalt', 'Empty Filtered Deck'),
+            l('Filtrelenmiş desteyi boşalt', 'Empty Filtered Deck'),
             l('Kartlar silinmez; ait oldukları destelere döner.', 'Cards are not deleted; they return to their home decks.'),
             () => {
                 emptyFilteredDeck(deck.id);
@@ -918,7 +946,11 @@ export default function DecksScreen() {
             const layout = rowLayouts.current.get(row.deck.name);
             if (!layout) continue;
             const name = row.deck.name;
-            const isInvalidTarget = name === dragged || isDescendantOf(name, dragged);
+            const isLockedCatalogTarget = catalogTier === 'trial'
+                && row.deck.catalogPack === BKA_CATALOG_PACK;
+            const isInvalidTarget = name === dragged
+                || isDescendantOf(name, dragged)
+                || isLockedCatalogTarget;
             if (!isInvalidTarget) {
                 if (!firstValidRow || layout.y < firstValidRow.y) firstValidRow = { name, y: layout.y };
                 if (!lastValidRow || layout.y + layout.h > lastValidRow.bottom) {
@@ -1140,7 +1172,10 @@ export default function DecksScreen() {
                 if (Platform.OS !== 'web') {
                     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
                 }
-                alert(t('common.error'), e instanceof Error ? e.message : l('Deste sıralanamadı.', 'Could not reorder the deck.'));
+                alert(t('common.error'), userFacingErrorMessage(
+                    e,
+                    l('Deste sıralanamadı. Lütfen tekrar deneyin.', 'Could not reorder the deck. Please try again.'),
+                ));
             }
             return;
         }
@@ -1173,7 +1208,10 @@ export default function DecksScreen() {
             if (Platform.OS !== 'web') {
                 void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
             }
-            alert(t('common.error'), e instanceof Error ? e.message : l('Deste taşınamadı.', 'Could not move the deck.'));
+            alert(t('common.error'), userFacingErrorMessage(
+                e,
+                l('Deste taşınamadı. Lütfen tekrar deneyin.', 'Could not move the deck. Please try again.'),
+            ));
         }
     };
 
@@ -1234,7 +1272,11 @@ export default function DecksScreen() {
         const isDropBefore = rowDropTarget?.placement === 'before';
         const isDropAfter = rowDropTarget?.placement === 'after';
         const rowDropFeedback = rowDropTarget ? dragDropFeedback : null;
-        const dragResponder = supportsDeckDrag && !deck.isFiltered ? getDragResponder(node) : null;
+        const isTrialCatalogDeck = catalogTier === 'trial' && deck.catalogPack === BKA_CATALOG_PACK;
+        const isTrialCatalogRoot = isTrialCatalogDeck && deck.id === BKA_CATALOG_ROOT_DECK_ID;
+        const dragResponder = supportsDeckDrag && !deck.isFiltered
+            ? getDragResponder(node)
+            : null;
         const maxIndentDepth = isCompact ? 4 : 10;
         const visualDepth = Math.min(node.depth, maxIndentDepth);
         const isChild = node.depth > 0;
@@ -1318,16 +1360,25 @@ export default function DecksScreen() {
                     accessibilityLabel={l(`${displayName} destesini aç`, `Open ${displayName} deck`)}
                     {...webTitle(l(`${displayName}: genel bakış`, `${displayName}: overview`))}
                 >
-                    <Text
-                        style={[styles.deckName, deck.isFiltered && styles.deckNameFiltered]}
-                        numberOfLines={isCompact ? 2 : 1}
-                    >
-                        {displayName}
-                    </Text>
+                    <View style={styles.deckNameRow}>
+                        <Text
+                            style={[
+                                styles.deckName,
+                                deck.isFiltered && styles.deckNameFiltered,
+                            ]}
+                            numberOfLines={isCompact ? 2 : 1}
+                        >
+                            {displayName}
+                        </Text>
+                    </View>
                     {isCompact && (
                         <>
-                            <Text style={styles.deckMeta} numberOfLines={1}>
-                                {l(`${node.totalCards} kart`, `${node.totalCards} cards`)}{hasChildren ? l(` · ${node.children.length} alt deste`, ` · ${node.children.length} subdecks`) : ''}
+                            <Text
+                                style={styles.deckMeta}
+                                numberOfLines={isTrialCatalogRoot ? 2 : 1}
+                            >
+                                {l(`${formatCount(node.totalCards, 'tr')} kart`, `${formatCount(node.totalCards, 'en')} cards`)}{hasChildren ? l(` · ${node.children.length} alt deste`, ` · ${node.children.length} subdecks`) : ''}
+                                {isTrialCatalogRoot ? l(' · her alt başlıktan en iyi 30 ücretsiz soru', ' · best 30 free questions from every subtopic') : ''}
                                 {deck.isFiltered ? (deck.filteredDeckEmpty ? l(' · boşaltıldı', ' · emptied') : l(' · filtreli', ' · filtered')) : ''}
                                 {node.depth > maxIndentDepth ? l(` · ${node.depth + 1}. seviye`, ` · level ${node.depth + 1}`) : ''}
                             </Text>
@@ -1361,8 +1412,8 @@ export default function DecksScreen() {
                         accessible
                         accessibilityRole="button"
                         accessibilityLabel={l(`${displayName} destesini taşı`, `Move ${displayName} deck`)}
-                        accessibilityHint={l('Satırın üstüne veya altına bırakarak sıralayın; ortasına bırakarak alt deste yapın', 'Drop at a row edge to reorder, or at its centre to make a subdeck')}
-                        {...webTitle(l('Kenarlara bırakın: sırala · Ortaya bırakın: alt deste yap', 'Drop at edges: reorder · Drop at centre: make a subdeck'))}
+                        accessibilityHint={l('Satırın üstüne veya altına bırakarak sıralayın; ortasına bırakarak alt deste yapın', 'Drop at a row edge to reorder, or at its center to make a subdeck')}
+                        {...webTitle(l('Kenarlara bırakın: sırala · Ortaya bırakın: alt deste yap', 'Drop at edges: reorder · Drop at center: make a subdeck'))}
                     >
                         <Text style={styles.dragHandleText}>⠿</Text>
                     </View>
@@ -1430,6 +1481,44 @@ export default function DecksScreen() {
         );
     };
 
+    /**
+     * The optional catalog appears in the deck list exactly where a deck would, with its real
+     * size and a clear free-unlock action instead of an ad banner above the tree.
+     */
+    const renderLockedCatalogCard = () => (
+        <TouchableOpacity
+            style={styles.lockedDeckCard}
+            onPress={() => router.push('/catalog' as any)}
+            accessibilityRole="button"
+            accessibilityLabel={l(
+                `${BKA_CATALOG_DEFAULT_ROOT_DECK} kart paketi, ${BKA_MANIFEST.totals.cards} kart, ücretsiz açmak için dokun`,
+                `${BKA_CATALOG_DEFAULT_ROOT_DECK} card pack, ${BKA_MANIFEST.totals.cards} cards, tap to unlock for free`,
+            )}
+        >
+            <View style={styles.lockedDeckIcon}>
+                {catalogInstalling
+                    ? <ActivityIndicator size="small" color={colors.accent} />
+                    : <LockGlyph color={colors.accent} size={18} />}
+            </View>
+            <View style={styles.lockedDeckCopy}>
+                <Text style={styles.lockedDeckName} numberOfLines={1}>{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
+                <Text style={styles.lockedDeckMeta} numberOfLines={2}>
+                    {catalogInstalling
+                        ? l('Kartlar kuruluyor…', 'Installing cards…')
+                        : l(
+                            `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kart · ${BKA_MANIFEST.totals.courses} ders · ${BKA_MANIFEST.totals.topics} alt deste`,
+                            `${formatCount(BKA_MANIFEST.totals.cards, 'en')} cards · ${BKA_MANIFEST.totals.courses} courses · ${BKA_MANIFEST.totals.topics} subdecks`,
+                        )}
+                </Text>
+            </View>
+            {!catalogInstalling && (
+                <View style={styles.lockedDeckPricePill}>
+                    <Text style={styles.lockedDeckPriceText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
+                </View>
+            )}
+        </TouchableOpacity>
+    );
+
     const renderMenuModal = (deck: Deck) => {
         const MenuAction = ({ label, onPress, danger = false }: {
             label: string;
@@ -1448,7 +1537,7 @@ export default function DecksScreen() {
 
         return (
             <View style={styles.deckMenuCard} accessibilityViewIsModal>
-                <Text style={styles.deckMenuTitle}>{deck.name}</Text>
+                <Text style={styles.deckMenuTitle}>{deck.name.replaceAll('::', ' › ')}</Text>
                 <ScrollView
                     style={styles.deckMenuScroll}
                     contentContainerStyle={styles.deckMenuContent}
@@ -1469,7 +1558,6 @@ export default function DecksScreen() {
                     {!deck.isFiltered ? (
                         <>
                             <MenuAction label={l('Alt deste oluştur', 'Create subdeck')} onPress={() => openCreateSubdeck(deck)} />
-                            <MenuAction label={l('Desteyi taşı', 'Move deck')} onPress={() => openMoveDeck(deck)} />
                             <MenuAction
                                 label={l('Deste seçenekleri', 'Deck options')}
                                 onPress={() => openDeckMenuRoute(`/deck-options?deckId=${deck.id}`)}
@@ -1489,7 +1577,7 @@ export default function DecksScreen() {
                     )}
 
                     <MenuAction
-                        label={Platform.OS === 'ios' ? l('Deste bağlantısını kopyala', 'Copy deck link') : l('Kısayol oluştur', 'Create shortcut')}
+                        label={l('Kısayol oluştur', 'Create shortcut')}
                         onPress={() => { void handleCreateShortcut(deck); }}
                     />
                     <MenuAction label={l('Açıklamayı düzenle', 'Edit description')} onPress={() => openDescription(deck)} />
@@ -1500,78 +1588,102 @@ export default function DecksScreen() {
     };
 
     const renderRenameModal = (deck: Deck) => (
-        <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
-            {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalTitle}>{l('Yeniden Adlandır', 'Rename')}</Text>
-            <Text style={styles.modalHint}>
-                {l('Tam deste yolu. :: işaretleri alt deste seviyelerini belirler.', 'Full deck path. Double colons (::) define subdeck levels.')}
-            </Text>
-            <TextInput
-                style={styles.modalInput}
-                value={renameText}
-                onChangeText={setRenameText}
-                onSubmitEditing={handleRename}
-                autoFocus
-                placeholder={l('Deste adı', 'Deck name')}
-                placeholderTextColor={colors.textMuted}
-            />
-            <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
-                    <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
+        <View
+            style={[styles.modalCard, styles.createDeckDialog]}
+            accessibilityViewIsModal
+            accessibilityLabel={l(
+                `${getDeckDisplayName(deck.name)} destesini yeniden adlandır`,
+                `Rename deck ${getDeckDisplayName(deck.name)}`,
+            )}
+        >
+            <Text style={styles.createDeckDialogTitle}>{l('Desteyi yeniden adlandır', 'Rename deck')}</Text>
+            <View style={styles.createDeckField}>
+                <Text style={styles.createDeckFieldLabel}>{l('Yeni ad', 'New name')}</Text>
+                <TextInput
+                    style={styles.createDeckInput}
+                    value={renameText}
+                    onChangeText={setRenameText}
+                    onSubmitEditing={handleRename}
+                    autoFocus
+                    selectTextOnFocus
+                    returnKeyType="done"
+                    accessibilityLabel={l('Yeni deste adı', 'New deck name')}
+                />
+            </View>
+            <View style={[styles.modalActions, styles.createDeckActions]}>
+                <TouchableOpacity style={styles.createDeckTextButton} onPress={() => setModal(null)}>
+                    <Text style={styles.createDeckCancelText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleRename}>
-                    <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
+                <TouchableOpacity
+                    style={styles.createDeckTextButton}
+                    onPress={handleRename}
+                    disabled={!normalizeDeckLeafInput(renameText)}
+                >
+                    <Text
+                        style={[
+                            styles.createDeckCreateText,
+                            !normalizeDeckLeafInput(renameText) && styles.createDeckCreateTextDisabled,
+                        ]}
+                    >
+                        {l('Yeniden adlandır', 'Rename')}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
 
     const renderCreateSubdeckModal = (deck: Deck) => (
-        <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
-            {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalEyebrow}>{l('ALT DESTE OLUŞTUR', 'CREATE SUBDECK')}</Text>
-            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
-            <Text style={styles.modalHint}>
-                {l(
-                    'Yeni deste bu destenin doğrudan altında oluşturulur. Bir kerede daha derin yol için adları :: ile ayırabilirsiniz.',
-                    'The new deck is created directly below this deck. To create a deeper path at once, separate names with ::.',
-                )}
-            </Text>
-            <TextInput
-                style={styles.modalInput}
-                value={newSubdeckName}
-                onChangeText={setNewSubdeckName}
-                onSubmitEditing={handleCreateSubdeck}
-                autoFocus
-                placeholder={l('Alt deste adı', 'Subdeck name')}
-                placeholderTextColor={colors.textMuted}
-                returnKeyType="done"
-            />
-            <Text style={styles.subdeckPathPreview} numberOfLines={3}>
-                {newSubdeckName.trim()
-                    ? `${deck.name}::${newSubdeckName.trim()}`
-                    : `${deck.name}::…`}
-            </Text>
-            <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
-                    <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
+        <View
+            style={[styles.modalCard, styles.createDeckDialog]}
+            accessibilityViewIsModal
+            accessibilityLabel={l(
+                `${getDeckDisplayName(deck.name)} için alt deste oluştur`,
+                `Create a subdeck for ${getDeckDisplayName(deck.name)}`,
+            )}
+        >
+            <Text style={styles.createDeckDialogTitle}>{l('Alt deste oluştur', 'Create subdeck')}</Text>
+            <View style={styles.createDeckField}>
+                <Text style={styles.createDeckFieldLabel}>{l('Ad', 'Name')}</Text>
+                <TextInput
+                    style={styles.createDeckInput}
+                    value={newSubdeckName}
+                    onChangeText={setNewSubdeckName}
+                    onSubmitEditing={handleCreateSubdeck}
+                    autoFocus
+                    returnKeyType="done"
+                    accessibilityLabel={l('Alt deste adı', 'Subdeck name')}
+                />
+            </View>
+            <View style={[styles.modalActions, styles.createDeckActions]}>
+                <TouchableOpacity style={styles.createDeckTextButton} onPress={() => setModal(null)}>
+                    <Text style={styles.createDeckCancelText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.modalBtnPrimary, !newSubdeckName.trim() && styles.buttonDisabled]}
+                    style={styles.createDeckTextButton}
                     onPress={handleCreateSubdeck}
-                    disabled={!newSubdeckName.trim()}
+                    disabled={!normalizeDeckLeafInput(newSubdeckName)}
                 >
-                    <Text style={styles.modalBtnPrimaryText}>{l('Alt Desteyi Oluştur', 'Create Subdeck')}</Text>
+                    <Text
+                        style={[
+                            styles.createDeckCreateText,
+                            !normalizeDeckLeafInput(newSubdeckName) && styles.createDeckCreateTextDisabled,
+                        ]}
+                    >
+                        {l('Oluştur', 'Create')}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
 
     const renderDescriptionModal = (deck: Deck) => (
-        <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
-            {isCompact && <View style={styles.sheetHandle} />}
+        <SwipeDismissSheet
+            style={[styles.modalCard, isCompact && styles.modalCardCompact]}
+            enabled={isCompact}
+            onDismiss={() => setModal(null)}
+        >
             <Text style={styles.modalEyebrow}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
-            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
+            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name.replaceAll('::', ' › ')}</Text>
             <TextInput
                 style={[styles.modalInput, styles.descriptionInput]}
                 value={descriptionText}
@@ -1590,67 +1702,34 @@ export default function DecksScreen() {
                     <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </SwipeDismissSheet>
     );
 
-    const renderMoveModal = (deck: Deck) => {
-        const targets = getAllDecks().filter((candidate) =>
-            !candidate.isFiltered
-            && candidate.name !== deck.name
-            && !isDescendantOf(candidate.name, deck.name)
-            && candidate.name !== (getParentDeckName(deck.name) ?? ''));
-
-        return (
-            <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
-                {isCompact && <View style={styles.sheetHandle} />}
-                <Text style={styles.modalTitle}>{l('Nereye taşınsın?', 'Move deck to…')}</Text>
-                <ScrollView style={styles.moveList}>
-                    {getParentDeckName(deck.name) && (
-                        <TouchableOpacity
-                            style={styles.menuItem}
-                            onPress={() => handleMoveTo(null)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kök seviyeye taşı', 'Move to top level')}
-                        >
-                            <Text style={styles.menuItemText}>📂  {l('Kök seviyeye taşı', 'Move to top level')}</Text>
-                        </TouchableOpacity>
-                    )}
-                    {targets.map((target) => (
-                        <TouchableOpacity
-                            key={target.id}
-                            style={styles.menuItem}
-                            onPress={() => handleMoveTo(target.name)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l(`${target.name} altına taşı`, `Move under ${target.name}`)}
-                        >
-                            <Text style={styles.menuItemText} numberOfLines={1}>📁  {target.name}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-                <TouchableOpacity style={styles.modalCancel} onPress={() => setModal(null)}>
-                    <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    };
-
     const renderCustomModal = (deck: Deck) => (
-        <ScrollView
+        <SwipeDismissSheet
             style={[styles.modalCard, isCompact && styles.modalCardCompact, styles.modalCardScrollable]}
-            contentContainerStyle={styles.modalCardScrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+            enabled={isCompact}
+            onDismiss={() => setModal(null)}
         >
-            {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalTitle}>{t('anki.customStudy')} — {getDeckDisplayName(deck.name)}</Text>
+            <ScrollView
+                style={styles.modalSheetScroll}
+                contentContainerStyle={[
+                    styles.modalCardScrollContent,
+                    isCompact && styles.modalCardScrollContentCompact,
+                ]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={styles.modalTitle}>{t('anki.customStudy')} — {getDeckDisplayName(deck.name)}</Text>
 
-            <View style={styles.customSection}>
+                <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('Bugünkü yeni kart limitini artır', 'Increase today’s new card limit')}</Text>
                 <View style={styles.inlineRow}>
                     <TextInput
                         style={[styles.modalInput, styles.inlineInput]}
                         value={boostNew}
-                        onChangeText={setBoostNew}
+                        onChangeText={(value) => setBoostNew(sanitizeUnsignedIntegerDraft(value, 4))}
+                        maxLength={4}
                         keyboardType="number-pad"
                     />
                     <TouchableOpacity
@@ -1660,15 +1739,16 @@ export default function DecksScreen() {
                         <Text style={styles.modalBtnPrimaryText}>{l('Uygula', 'Apply')}</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+                </View>
 
-            <View style={styles.customSection}>
+                <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('Bugünkü tekrar limitini artır', 'Increase today’s review limit')}</Text>
                 <View style={styles.inlineRow}>
                     <TextInput
                         style={[styles.modalInput, styles.inlineInput]}
                         value={boostReview}
-                        onChangeText={setBoostReview}
+                        onChangeText={(value) => setBoostReview(sanitizeUnsignedIntegerDraft(value, 4))}
+                        maxLength={4}
                         keyboardType="number-pad"
                     />
                     <TouchableOpacity
@@ -1678,15 +1758,16 @@ export default function DecksScreen() {
                         <Text style={styles.modalBtnPrimaryText}>{l('Uygula', 'Apply')}</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+                </View>
 
-            <View style={styles.customSection}>
+                <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('Çalışma oturumu oluştur (filtrelenmiş deste)', 'Create a study session (Filtered Deck)')}</Text>
                 <View style={styles.inlineRow}>
                     <TextInput
                         style={[styles.modalInput, styles.inlineInput]}
                         value={customLimit}
-                        onChangeText={setCustomLimit}
+                        onChangeText={(value) => setCustomLimit(sanitizeUnsignedIntegerDraft(value, 4))}
+                        maxLength={4}
                         keyboardType="number-pad"
                         placeholder={l('Kart sayısı', 'Card count')}
                         placeholderTextColor={colors.textMuted}
@@ -1700,17 +1781,18 @@ export default function DecksScreen() {
                     />
                 </View>
                 <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleCreateCustomSession}>
-                    <Text style={styles.modalBtnPrimaryText}>🎯 {l('Oturum Oluştur', 'Create Session')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>🎯 {l('Oturum oluştur', 'Create Session')}</Text>
                 </TouchableOpacity>
-            </View>
+                </View>
 
-            <View style={styles.customSection}>
+                <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('Unutulanları çalış (son N günde “Tekrar” verilenler)', 'Review forgotten cards (answered Again in the last N days)')}</Text>
                 <View style={styles.inlineRow}>
                     <TextInput
                         style={[styles.modalInput, styles.inlineInput]}
                         value={forgottenDays}
-                        onChangeText={setForgottenDays}
+                        onChangeText={(value) => setForgottenDays(sanitizeUnsignedIntegerDraft(value, 4))}
+                        maxLength={4}
                         keyboardType="number-pad"
                         placeholder={l('Gün', 'Days')}
                         placeholderTextColor={colors.textMuted}
@@ -1725,15 +1807,16 @@ export default function DecksScreen() {
                         <Text style={styles.modalBtnPrimaryText}>{t('common.create')}</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+                </View>
 
-            <View style={styles.customSection}>
+                <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('İleriye çalış (N gün içinde zamanı gelecekler)', 'Study ahead (cards due within N days)')}</Text>
                 <View style={styles.inlineRow}>
                     <TextInput
                         style={[styles.modalInput, styles.inlineInput]}
                         value={aheadDays}
-                        onChangeText={setAheadDays}
+                        onChangeText={(value) => setAheadDays(sanitizeUnsignedIntegerDraft(value, 4))}
+                        maxLength={4}
                         keyboardType="number-pad"
                         placeholder={l('Gün', 'Days')}
                         placeholderTextColor={colors.textMuted}
@@ -1748,9 +1831,9 @@ export default function DecksScreen() {
                         <Text style={styles.modalBtnPrimaryText}>{t('common.create')}</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+                </View>
 
-            <View style={styles.customSection}>
+                <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('Yeni kartları önizle (zamanlamayı değiştirmez)', 'Preview new cards (does not affect scheduling)')}</Text>
                 <TouchableOpacity
                     style={styles.modalBtnPrimary}
@@ -1759,25 +1842,29 @@ export default function DecksScreen() {
                         { reschedule: false, searchOrder: 4 },
                     )}
                 >
-                    <Text style={styles.modalBtnPrimaryText}>👁️ {l('Önizleme Oturumu', 'Preview Session')}</Text>
+                    <Text style={styles.modalBtnPrimaryText}>👁️ {l('Önizleme oturumu', 'Preview Session')}</Text>
                 </TouchableOpacity>
-            </View>
+                </View>
 
-            <Text style={styles.modalHint}>
-                {l('Bu seçenekler Anki’deki gibi tek bir “Özel Çalışma” oturumu oluşturur. Mevcut oturum yeniden kurulur; saklamak istediğiniz oturumu yeniden adlandırabilirsiniz.', 'As in Anki, these options create a single Custom Study session. The existing session is rebuilt; rename it if you want to keep it.')}
-            </Text>
+                <Text style={styles.modalHint}>
+                    {l(
+                        'Seçtiğiniz işlem mevcut “Özel Çalışma” oturumunu yeniden oluşturur. Bu oturumu korumak istiyorsanız yeni bir işlem başlatmadan önce adını değiştirin.',
+                        'The selected action rebuilds the existing Custom Study session. To keep that session, rename it before starting another action.',
+                    )}
+                </Text>
 
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setModal(null)}>
-                <Text style={styles.modalCancelText}>{t('common.close')}</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                <TouchableOpacity style={styles.modalCancel} onPress={() => setModal(null)}>
+                    <Text style={styles.modalCancelText}>{t('common.close')}</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </SwipeDismissSheet>
     );
 
     const renderFilterModal = (deck?: Deck) => {
         const isCreating = !deck;
         const buildDisabled = !newFilteredDeckName.trim()
-            || !filterSearch.trim()
-            || (filterSecondEnabled && !filterSearch2.trim());
+            || !/^\d{1,5}$/.test(filterLimit)
+            || (filterSecondEnabled && !/^\d{1,5}$/.test(filterLimit2));
         const closeFilteredDeckModal = () => {
             Keyboard.dismiss();
             setFilterHelpVisible(false);
@@ -1792,6 +1879,10 @@ export default function DecksScreen() {
         const openFilterOrderPicker = (filter: 1 | 2) => {
             Keyboard.dismiss();
             setFilterHelpVisible(false);
+            const target = filter === 1 ? firstFilterOrderRef.current : secondFilterOrderRef.current;
+            target?.measureInWindow((x, y, measuredWidth, measuredHeight) => {
+                setFilterOrderAnchor({ x, y: y + measuredHeight, width: measuredWidth });
+            });
             setFilterOrderPicker(filter);
         };
         const showSearchInfo = (search: string) => {
@@ -1804,8 +1895,28 @@ export default function DecksScreen() {
             alert(
                 l('Arama filtresi', 'Search filter'),
                 l(
-                    `Bu sorguyla ${matchCount} uygun kart bulundu.\n\n${search || '—'}\n\nÖrnekler: is:due, deck:"Deste", tag:etiket, rated:7:1`,
-                    `${matchCount} eligible cards matched this query.\n\n${search || '—'}\n\nExamples: is:due, deck:"Deck", tag:tag, rated:7:1`,
+                    `Bu sorguyla ${matchCount} uygun kart bulundu.\n\n${search || '—'}\n\n`
+                    + 'Kullanılabilir terimler\n'
+                    + 'deck:"Deste"  ·  tag:etiket  ·  tag:none\n'
+                    + 'is:due  is:new  is:learn  is:review  is:relearn  is:suspended  is:buried\n'
+                    + 'flag:0–7  ·  rated:7  ·  rated:7:1\n'
+                    + 'prop:ivl>=21 (aralık)  ·  prop:reps<10 (tekrar)\n'
+                    + 'prop:lapses>=5 (unutma)  ·  prop:ease<2.0 (kolaylık)\n'
+                    + 'prop:pos<=50 (yeni kart sırası)  ·  prop:due<=3 (gün)\n\n'
+                    + 'Terimleri boşlukla ayırarak birleştirebilirsiniz.\n'
+                    + 'Dışlamak için terimin başına - koy: -is:suspended\n'
+                    + 'Alternatifler için or, gruplamak için parantez: (tag:a or tag:b)',
+                    `${matchCount} eligible cards matched this query.\n\n${search || '—'}\n\n`
+                    + 'Available terms\n'
+                    + 'deck:"Deck"  ·  tag:tag  ·  tag:none\n'
+                    + 'is:due  is:new  is:learn  is:review  is:relearn  is:suspended  is:buried\n'
+                    + 'flag:0–7  ·  rated:7  ·  rated:7:1\n'
+                    + 'prop:ivl>=21 (interval)  ·  prop:reps<10 (reps)\n'
+                    + 'prop:lapses>=5 (lapses)  ·  prop:ease<2.0 (ease)\n'
+                    + 'prop:pos<=50 (new card position)  ·  prop:due<=3 (days)\n\n'
+                    + 'Separate terms with a space to combine them.\n'
+                    + 'Prefix a term with - to exclude it: -is:suspended\n'
+                    + 'Use or for alternatives and parentheses to group: (tag:a or tag:b)',
                 ),
             );
         };
@@ -1842,7 +1953,7 @@ export default function DecksScreen() {
                         <Text style={styles.filteredCloseIcon}>×</Text>
                     </TouchableOpacity>
                     <Text style={styles.filteredToolbarTitle} numberOfLines={1}>
-                        {isCreating ? newFilteredDeckName : getDeckDisplayName(deck.name)}
+                        {filteredDeckScreenTitle}
                     </Text>
                     <TouchableOpacity
                         style={[styles.filteredBuildButton, buildDisabled && styles.filteredBuildButtonDisabled]}
@@ -1851,7 +1962,7 @@ export default function DecksScreen() {
                         accessibilityRole="button"
                     >
                         <Text style={styles.filteredBuildButtonText}>
-                            {isCreating ? l('Oluştur', 'Build') : l('Yeniden Oluştur', 'Rebuild')}
+                            {isCreating ? l('Oluştur', 'Build') : l('Yeniden oluştur', 'Rebuild')}
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -1919,6 +2030,7 @@ export default function DecksScreen() {
                     </View>
                     <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
                     <TouchableOpacity
+                        ref={firstFilterOrderRef}
                         style={styles.filteredPickerRow}
                         onPress={() => openFilterOrderPicker(1)}
                         accessibilityRole="button"
@@ -1972,6 +2084,7 @@ export default function DecksScreen() {
                             </View>
                             <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
                             <TouchableOpacity
+                                ref={secondFilterOrderRef}
                                 style={styles.filteredPickerRow}
                                 onPress={() => openFilterOrderPicker(2)}
                                 accessibilityRole="button"
@@ -2045,12 +2158,77 @@ export default function DecksScreen() {
                                 showsVerticalScrollIndicator={false}
                                 bounces={false}
                             >
-                                <Text style={styles.filteredHelpBody}>
+                                <Text style={styles.filteredHelpIntro}>
                                     {l(
-                                        '• Arama, hangi kartların geçici çalışma destesine alınacağını belirler.\n\n• Limit ve sıralama, eşleşen kartlardan hangilerinin önce seçileceğini belirler.\n\n• İkinci filtreyle farklı arama, limit ve sıralamaya sahip iki kart grubunu birleştirebilirsiniz.\n\n• Yeniden zamanlama açıksa yanıtlar kart programını değiştirir; kapalıysa deste önizleme gibi çalışır.\n\n• Askıdaki, gömülü veya başka filtrelenmiş destedeki kartlar alınmaz. Kartlar çalışma bitince ana destelerinde kalır.',
-                                        '• Search decides which cards enter the temporary study deck.\n\n• Limit and order decide which matching cards are selected first.\n\n• A second filter combines two groups with separate searches, limits, and orders.\n\n• With rescheduling on, answers change scheduling; with it off, the deck acts as a preview.\n\n• Suspended, buried, or already-filtered cards are excluded. Cards remain linked to their home decks.',
+                                        'Filtrelenmiş deste, normal günlük sınırların dışında belirli kartlarla geçici bir çalışma oturumu oluşturur.',
+                                        'A filtered deck creates a temporary study session with specific cards outside the normal daily limits.',
                                     )}
                                 </Text>
+
+                                <View style={styles.filteredHelpSection}>
+                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>1</Text></View>
+                                    <View style={styles.filteredHelpSectionCopy}>
+                                        <Text style={styles.filteredHelpSectionTitle}>{l('Kartları belirleyin', 'Choose the cards')}</Text>
+                                        <Text style={styles.filteredHelpBody}>
+                                            {l(
+                                                'Arama alanı, Kart Tarayıcı ile aynı sorgu dilini kullanır. Deste, etiket ve kart durumunu birlikte yazabilirsiniz.',
+                                                'Search uses the same query language as Browse. You can combine deck, tag, and card-state terms.',
+                                            )}
+                                        </Text>
+                                        <View style={styles.filteredHelpCodeBox}>
+                                            <Text style={styles.filteredHelpCode}>deck:&quot;TUS Kartları&quot; is:due -is:suspended</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.filteredHelpSection}>
+                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>2</Text></View>
+                                    <View style={styles.filteredHelpSectionCopy}>
+                                        <Text style={styles.filteredHelpSectionTitle}>{l('Limit ve sırayı ayarlayın', 'Set the limit and order')}</Text>
+                                        <Text style={styles.filteredHelpBody}>
+                                            {l(
+                                                'Limit, desteye alınacak en yüksek kart sayısıdır. Seçim sırası hem hangi kartların limite gireceğini hem de çalışma sırasını belirler.',
+                                                'The limit is the maximum number of cards gathered. The selected order controls both which cards fit the limit and their study order.',
+                                            )}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.filteredHelpSection}>
+                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>3</Text></View>
+                                    <View style={styles.filteredHelpSectionCopy}>
+                                        <Text style={styles.filteredHelpSectionTitle}>{l('İsterseniz ikinci filtre ekleyin', 'Optionally add a second filter')}</Text>
+                                        <Text style={styles.filteredHelpBody}>
+                                            {l(
+                                                'İki ayrı arama, limit ve sıralama grubunu tek destede birleştirir; örneğin vadesi gelmiş kartlarla az sayıda yeni kartı birlikte çalışabilirsiniz.',
+                                                'Combine two groups with separate searches, limits, and orders; for example, due cards plus a small number of new cards.',
+                                            )}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.filteredHelpSection}>
+                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>4</Text></View>
+                                    <View style={styles.filteredHelpSectionCopy}>
+                                        <Text style={styles.filteredHelpSectionTitle}>{l('Zamanlamayı seçin', 'Choose scheduling behavior')}</Text>
+                                        <Text style={styles.filteredHelpBody}>
+                                            {l(
+                                                'Yeniden zamanlama açıksa verdiğiniz yanıtlar kartın programını günceller. Kapalıysa deste önizleme modunda çalışır ve kartlar önceki zamanlamalarıyla ana destelerine döner.',
+                                                'With rescheduling on, your answers update each card’s schedule. With it off, the deck acts as a preview and cards return home with their prior schedule.',
+                                            )}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.filteredHelpNotice}>
+                                    <Text style={styles.filteredHelpNoticeTitle}>{l('Bilmeniz gerekenler', 'Good to know')}</Text>
+                                    <Text style={styles.filteredHelpNoticeText}>
+                                        {l(
+                                            'Askıdaki, gömülü veya başka bir filtrelenmiş destede bulunan kartlar eklenemez. Kartlar silinmez; ana desteleriyle bağlantılarını korur. Aynı ayarlarla kartları yeniden toplamak için desteyi yeniden oluşturabilirsiniz.',
+                                            'Suspended, buried, or already-filtered cards cannot be gathered. Cards are never deleted and keep their home-deck link. Rebuild the deck to gather cards again with the same settings.',
+                                        )}
+                                    </Text>
+                                </View>
                             </ScrollView>
                             <View style={styles.filteredHelpFooter}>
                                 <TouchableOpacity style={styles.filteredHelpDoneButton} onPress={() => setFilterHelpVisible(false)}>
@@ -2070,9 +2248,20 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={t('common.close')}
                         />
-                        <View style={styles.filteredOrderMenu}>
+                        <View
+                            style={[
+                                styles.filteredOrderMenu,
+                                filterOrderAnchor && {
+                                    position: 'absolute',
+                                    left: Math.max(Spacing.lg, Math.min(filterOrderAnchor.x, width - filterOrderAnchor.width - Spacing.lg)),
+                                    top: filterOrderAnchor.y,
+                                    width: Math.min(filterOrderAnchor.width, width - (Spacing.lg * 2)),
+                                    maxHeight: Math.max(240, height - filterOrderAnchor.y - Math.max(insets.bottom, Spacing.lg)),
+                                },
+                            ]}
+                        >
                             <ScrollView showsVerticalScrollIndicator={false}>
-                                {FILTER_ORDER_UI.map((order) => (
+                                {FILTERED_DECK_ORDER_UI.map((order) => (
                                     <TouchableOpacity
                                         key={order}
                                         style={[styles.filteredOrderOption, selectedOrder === order && styles.filteredOrderOptionSelected]}
@@ -2094,26 +2283,13 @@ export default function DecksScreen() {
     };
 
     const isFilteredDeckModal = modal?.kind === 'filter' || modal?.kind === 'create-filter';
+    const isCenteredDeckDialog = modal?.kind === 'create-subdeck' || modal?.kind === 'rename';
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <View>
-                    <Text style={styles.title}>{t('tabs.decks')}</Text>
-                    <Text style={styles.headerSubtitle}>
-                        {l(`${todaySummary.new + todaySummary.learn + todaySummary.review} kart bugün hazır`, `${todaySummary.new + todaySummary.learn + todaySummary.review} cards ready today`)}
-                    </Text>
-                </View>
+                <Text style={styles.title}>{t('tabs.decks')}</Text>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        style={styles.catalogButton}
-                        onPress={() => router.push('/catalog' as any)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('BKA TUS Complete paketini görüntüle', 'View the BKA TUS Complete package')}
-                    >
-                        <Text style={styles.catalogButtonIcon}>{catalogAccess.hasAccess ? '◆' : '◇'}</Text>
-                        <Text style={styles.catalogButtonText}>{catalogAccess.hasAccess ? l('Tam Paket', 'Full') : l('Deneme', 'Trial')}</Text>
-                    </TouchableOpacity>
                     {isDesktopWeb && (
                         <TouchableOpacity
                             style={styles.headerBtn}
@@ -2138,27 +2314,6 @@ export default function DecksScreen() {
                 </View>
             </View>
 
-            <TouchableOpacity
-                style={[styles.accessBanner, catalogAccess.hasAccess && styles.accessBannerFull]}
-                onPress={() => router.push('/catalog' as any)}
-                accessibilityRole="button"
-                accessibilityLabel={catalogAccess.hasAccess
-                    ? l('Tam BKA kataloğu açık', 'Full BKA catalog unlocked')
-                    : l('Ücretsiz deneme sürümü, tam paketi görüntüle', 'Free trial, view full package')}
-            >
-                <View style={styles.accessBannerIcon}><Text style={styles.accessBannerIconText}>{catalogAccess.hasAccess ? '✓' : '100'}</Text></View>
-                <View style={styles.accessBannerCopy}>
-                    <Text style={styles.accessBannerTitle}>
-                        {catalogAccess.hasAccess ? l('Tam katalog açık', 'Full catalog unlocked') : l('Ücretsiz deneme sürümü', 'Free trial')}
-                    </Text>
-                    <Text style={styles.accessBannerText}>
-                        {catalogAccess.hasAccess
-                            ? l('9.583 kart ve tüm alt konu desteleri', '9,583 cards and all topic subdecks')
-                            : l('Her dersten 100 kart · Toplam 1.200 kart', '100 cards per course · 1,200 cards total')}
-                    </Text>
-                </View>
-                <Text style={styles.accessBannerArrow}>›</Text>
-            </TouchableOpacity>
 
             <Modal
                 visible={showOverflowMenu}
@@ -2181,21 +2336,21 @@ export default function DecksScreen() {
                             onPress={() => openOverflowRoute('/empty-cards')}
                         >
                             <Text style={styles.overflowIcon}>🧹</Text>
-                            <Text style={styles.overflowLabel}>{l('Boş Kartlar', 'Empty Cards')}</Text>
+                            <Text style={styles.overflowLabel}>{l('Boş kartlar', 'Empty Cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
-                            onPress={() => openOverflowRoute('/import')}
+                            onPress={() => openOverflowRoute(DATA_IMPORT_ROUTE)}
                         >
                             <Text style={styles.overflowIcon}>📥</Text>
                             <Text style={styles.overflowLabel}>{t('root.import')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
-                            onPress={() => openOverflowRoute('/export')}
+                            onPress={() => openOverflowRoute(DATA_EXPORT_ROUTE)}
                         >
                             <Text style={styles.overflowIcon}>📤</Text>
-                            <Text style={styles.overflowLabel}>{l('Dışa Aktar', 'Export')}</Text>
+                            <Text style={styles.overflowLabel}>{l('Dışa aktar', 'Export')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
@@ -2204,7 +2359,7 @@ export default function DecksScreen() {
                             accessibilityLabel={l('Yedek oluştur', 'Create backup')}
                         >
                             <Text style={styles.overflowIcon}>🗄️</Text>
-                            <Text style={styles.overflowLabel}>{l('Yedek Oluştur', 'Create Backup')}</Text>
+                            <Text style={styles.overflowLabel}>{l('Yedek oluştur', 'Create Backup')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
@@ -2213,7 +2368,7 @@ export default function DecksScreen() {
                             accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
                         >
                             <Text style={styles.overflowIcon}>↩️</Text>
-                            <Text style={styles.overflowLabel}>{l('Yedekten Geri Yükle', 'Restore from Backup')}</Text>
+                            <Text style={styles.overflowLabel}>{l('Yedekten geri yükle', 'Restore from Backup')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -2299,6 +2454,7 @@ export default function DecksScreen() {
                     }}
                     contentContainerStyle={isCompact ? styles.deckListContentCompact : undefined}
                 >
+                    {!fullCatalogPresent && renderLockedCatalogCard()}
                     {visibleRows.length > 0 ? (
                         isCompact
                             ? deckTree.map((node, index) => renderCompactDeckBranch(
@@ -2394,7 +2550,7 @@ export default function DecksScreen() {
                             </View>
                             <TouchableOpacity
                                 style={styles.fabActionButton}
-                                onPress={openCreateFilteredDeck}
+                                onPress={() => openCreateFilteredDeck()}
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
                             >
@@ -2481,7 +2637,11 @@ export default function DecksScreen() {
             <Modal
                 visible={modal !== null}
                 transparent
-                animationType={isFilteredDeckModal ? 'slide' : modal?.kind === 'menu' ? 'fade' : isCompact ? 'slide' : 'fade'}
+                animationType={isFilteredDeckModal
+                    ? 'slide'
+                    : modal?.kind === 'menu' || isCenteredDeckDialog
+                        ? 'fade'
+                        : isCompact ? 'slide' : 'fade'}
                 onRequestClose={() => {
                     setFilterHelpVisible(false);
                     setFilterOrderPicker(null);
@@ -2493,8 +2653,8 @@ export default function DecksScreen() {
                     style={[
                         styles.modalOverlay,
                         isFilteredDeckModal && styles.filteredModalOverlay,
-                        isCompact && modal?.kind !== 'menu' && !isFilteredDeckModal && styles.modalOverlayCompact,
-                        isCompact && modal?.kind !== 'menu' && !isFilteredDeckModal && compactSheetTopInset,
+                        isCompact && modal?.kind !== 'menu' && !isFilteredDeckModal && !isCenteredDeckDialog && styles.modalOverlayCompact,
+                        isCompact && modal?.kind !== 'menu' && !isFilteredDeckModal && !isCenteredDeckDialog && compactSheetTopInset,
                     ]}
                     behavior={Platform.OS === 'ios'
                         && !isFilteredDeckModal
@@ -2514,7 +2674,6 @@ export default function DecksScreen() {
                     )}
                     {modal?.kind === 'menu' && renderMenuModal(modal.deck)}
                     {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
-                    {modal?.kind === 'move' && renderMoveModal(modal.deck)}
                     {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
                     {modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
                     {modal?.kind === 'custom' && renderCustomModal(modal.deck)}
@@ -2540,31 +2699,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.borderLight,
     },
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
-    headerSubtitle: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
     headerActions: { flexDirection: 'row', gap: 8 },
-    catalogButton: {
-        minHeight: 38,
-        paddingHorizontal: 12,
-        borderRadius: BorderRadius.full,
-        backgroundColor: '#123f34',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    catalogButtonIcon: { color: '#d4b66b', fontSize: 11, marginRight: 6 },
-    catalogButtonText: { color: '#f5f2e8', fontSize: FontSize.sm, fontWeight: '800' },
-    accessBanner: {
-        flexDirection: 'row', alignItems: 'center', marginHorizontal: Spacing.md, marginVertical: Spacing.sm,
-        paddingHorizontal: Spacing.md, paddingVertical: 11, borderRadius: BorderRadius.md,
-        backgroundColor: '#fff8e7', borderWidth: 1, borderColor: '#ead59d',
-    },
-    accessBannerFull: { backgroundColor: '#e8f5ef', borderColor: '#a9d7c4' },
-    accessBannerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#123f34', alignItems: 'center', justifyContent: 'center' },
-    accessBannerIconText: { color: '#f2d98d', fontSize: 11, fontWeight: '900' },
-    accessBannerCopy: { flex: 1, marginHorizontal: Spacing.sm },
-    accessBannerTitle: { color: '#123f34', fontSize: FontSize.sm, fontWeight: '800' },
-    accessBannerText: { color: '#587069', fontSize: FontSize.xs, marginTop: 2 },
-    accessBannerArrow: { color: '#123f34', fontSize: 24, fontWeight: '400' },
     headerBtn: {
         paddingHorizontal: Spacing.md,
         minHeight: 44,
@@ -2660,6 +2795,22 @@ function createStyles(colors: ColorScheme) {
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
+    // Content that is not the learner's yet reads as an outline rather than a solid card: a
+    // dashed accent border and muted title, the same treatment the store screen uses.
+    deckRowLocked: {
+        borderWidth: 1,
+        // The shared row style ends in a hairline bottom border; a dashed outline only renders
+        // its dashes when all four edges share one width.
+        borderBottomWidth: 1,
+        borderColor: colors.accent,
+        borderBottomColor: colors.accent,
+        borderStyle: 'dashed',
+        borderRadius: BorderRadius.md,
+        backgroundColor: colors.accentLight,
+    },
+    deckNameRow: { flexDirection: 'row', alignItems: 'center' },
+    deckNameLock: { marginRight: 6, opacity: 0.75 },
+    deckNameLocked: { color: colors.textSecondary },
     deckRowCompact: {
         minHeight: 76,
         paddingVertical: 7,
@@ -2681,6 +2832,42 @@ function createStyles(colors: ColorScheme) {
         overflow: 'visible',
         ...Shadows.sm,
     },
+    lockedDeckCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: Spacing.sm,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.md,
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.accent,
+        borderStyle: 'dashed',
+        borderRadius: BorderRadius.md,
+        minHeight: 72,
+        ...Shadows.sm,
+    },
+    lockedDeckIcon: {
+        width: 40, height: 40, borderRadius: BorderRadius.sm,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.accentLight,
+    },
+    lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.md },
+    lockedDeckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+    lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
+    lockedDeckPricePill: {
+        paddingHorizontal: 12, paddingVertical: 7,
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.accent,
+    },
+    lockedDeckPriceText: { color: '#ffffff', fontSize: FontSize.sm, fontWeight: '800' },
+    catalogBuyPill: {
+        marginHorizontal: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.accent,
+    },
+    catalogBuyPillText: { color: colors.white, fontSize: FontSize.sm, fontWeight: '800' },
     deckNestedBranch: { position: 'relative' },
     deckNestedBranchLast: {},
     deckChildrenWell: {
@@ -3180,6 +3367,72 @@ function createStyles(colors: ColorScheme) {
         fontSize: FontSize.md,
         lineHeight: 21,
     },
+    filteredHelpIntro: {
+        marginBottom: Spacing.lg,
+        color: colors.textPrimary,
+        fontSize: FontSize.md,
+        lineHeight: 22,
+        fontWeight: '600',
+    },
+    filteredHelpSection: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: Spacing.md,
+        marginBottom: Spacing.lg,
+    },
+    filteredHelpNumber: {
+        width: 28,
+        height: 28,
+        flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.accentLight,
+    },
+    filteredHelpNumberText: {
+        color: colors.accent,
+        fontSize: FontSize.sm,
+        fontWeight: '900',
+    },
+    filteredHelpSectionCopy: { flex: 1 },
+    filteredHelpSectionTitle: {
+        marginBottom: 4,
+        color: colors.textPrimary,
+        fontSize: FontSize.md,
+        lineHeight: 21,
+        fontWeight: '800',
+    },
+    filteredHelpCodeBox: {
+        marginTop: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.bgSecondary,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+    },
+    filteredHelpCode: {
+        color: colors.textPrimary,
+        fontSize: FontSize.xs,
+        lineHeight: 18,
+        fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    },
+    filteredHelpNotice: {
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        backgroundColor: colors.accentLight,
+    },
+    filteredHelpNoticeTitle: {
+        marginBottom: 5,
+        color: colors.accent,
+        fontSize: FontSize.sm,
+        fontWeight: '900',
+    },
+    filteredHelpNoticeText: {
+        color: colors.textPrimary,
+        fontSize: FontSize.sm,
+        lineHeight: 20,
+    },
     filteredHelpScroll: {
         flexShrink: 1,
     },
@@ -3278,7 +3531,9 @@ function createStyles(colors: ColorScheme) {
         maxHeight: '90%',
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
-        padding: Spacing.xl,
+        paddingHorizontal: Spacing.xl,
+        paddingTop: 44,
+        paddingBottom: Spacing.xl,
     },
     createDeckDialog: {
         width: '88%',
@@ -3344,16 +3599,10 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '700',
     },
     createDeckCreateTextDisabled: { color: colors.textMuted },
-    modalCardScrollable: { padding: 0 },
+    modalCardScrollable: { padding: 0, overflow: 'hidden' },
+    modalSheetScroll: { flexShrink: 1 },
     modalCardScrollContent: { padding: Spacing.xl, paddingBottom: Spacing.xxl },
-    sheetHandle: {
-        width: 40,
-        height: 4,
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.border,
-        alignSelf: 'center',
-        marginBottom: Spacing.lg,
-    },
+    modalCardScrollContentCompact: { paddingTop: 48 },
     modalEyebrow: {
         fontSize: 11,
         fontWeight: '800',
@@ -3370,13 +3619,6 @@ function createStyles(colors: ColorScheme) {
     modalHint: {
         fontSize: FontSize.sm,
         color: colors.textMuted,
-        marginBottom: Spacing.sm,
-    },
-    subdeckPathPreview: {
-        fontSize: FontSize.sm,
-        lineHeight: 19,
-        color: colors.accent,
-        fontWeight: '600',
         marginBottom: Spacing.sm,
     },
     descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
@@ -3437,16 +3679,7 @@ function createStyles(colors: ColorScheme) {
     modalCancel: { marginTop: Spacing.md, alignItems: 'center', paddingVertical: 6 },
     modalCancelText: { color: colors.textMuted, fontWeight: '600' },
 
-    menuItem: {
-        minHeight: 48,
-        paddingVertical: 13,
-        justifyContent: 'center',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    menuItemText: { fontSize: FontSize.md, color: colors.textPrimary },
     menuItemDanger: { color: colors.btnAgain },
-    moveList: { maxHeight: 320 },
     orderWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     orderChip: {
         paddingHorizontal: 10,

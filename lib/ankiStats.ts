@@ -15,7 +15,6 @@ export interface StatsDateRange {
 export interface StatsSeriesPoint {
     label: string;
     values: number[];
-    cumulative?: number;
 }
 
 export interface AnswerButtonPoint {
@@ -37,9 +36,15 @@ export interface CardCountStats {
 export interface AnkiStatsSnapshot {
     futureDue: StatsSeriesPoint[];
     futureDueTotal: number;
+    /** Index of the bucket holding today, so the chart can rule off the backlog. */
+    futureDueTodayIndex: number;
+    /** Cards already overdue. Only counted when the backlog is being shown. */
+    backlogTotal: number;
     dueTomorrow: number;
     dailyLoad: number;
     reviews: StatsSeriesPoint[];
+    /** The same buckets as `reviews`, but each series holds minutes instead of card counts. */
+    reviewMinutes: StatsSeriesPoint[];
     reviewTotal: number;
     reviewTimeMs: number;
     daysStudied: number;
@@ -50,6 +55,8 @@ export interface AnkiStatsSnapshot {
     cardCounts: CardCountStats;
     added: StatsSeriesPoint[];
     addedTotal: number;
+    /** Calendar span used by the Added graph's daily average, including all-history mode. */
+    addedSpanDays: number;
 }
 
 type DailyReviewRow = {
@@ -59,6 +66,11 @@ type DailyReviewRow = {
     mature: number;
     relearning: number;
     filtered: number;
+    learningMs: number;
+    youngMs: number;
+    matureMs: number;
+    relearningMs: number;
+    filteredMs: number;
     timeMs: number;
 };
 
@@ -74,6 +86,14 @@ function dateAtRollover(date: Date, rolloverHour: number): number {
         0,
         0,
     ).getTime();
+}
+
+function currentStudyDayStart(nowMs: number, rolloverHour: number): number {
+    const now = new Date(nowMs);
+    const candidate = dateAtRollover(now, rolloverHour);
+    if (candidate <= nowMs) return candidate;
+    const previous = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, rolloverHour, 0, 0, 0);
+    return previous.getTime();
 }
 
 export function resolveStatsDateRange(
@@ -96,8 +116,7 @@ export function resolveStatsDateRange(
     }
 
     const days = key === 'week' ? 7 : key === 'month' ? 31 : key === 'threeMonths' ? 90 : 365;
-    const today = new Date(nowMs);
-    const todayStart = dateAtRollover(today, rolloverHour);
+    const todayStart = currentStudyDayStart(nowMs, rolloverHour);
     return {
         startMs: todayStart - (days - 1) * DAY_MS,
         endMs: nowMs + 1,
@@ -162,14 +181,35 @@ function bucketLabel(date: Date, unit: TimeBucketUnit, localeTag: string): strin
 
 function bucketDailyRows<T extends { day: string }>(
     rows: T[],
-    spanDays: number | null,
+    range: StatsDateRange,
     localeTag: string,
     valuesForRow: (row: T) => number[],
 ): StatsSeriesPoint[] {
     if (rows.length === 0) return [];
-    const unit = chooseHistoryUnit(spanDays, rows);
-    const firstDate = parseYmd(rows[0].day);
+    const unit = chooseHistoryUnit(range.spanDays, rows);
+    const firstDataDate = parseYmd(rows[0].day);
+    const firstDate = range.spanDays === null
+        ? firstDataDate
+        : new Date(new Date(range.startMs).getFullYear(), new Date(range.startMs).getMonth(), new Date(range.startMs).getDate(), 12);
+    const endInstant = new Date(Math.max(range.startMs, range.endMs - 1));
+    const lastDate = range.spanDays === null
+        ? new Date(endInstant.getFullYear(), endInstant.getMonth(), endInstant.getDate(), 12)
+        : new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate() + range.spanDays - 1, 12);
     const grouped = new Map<string, { date: Date; values: number[] }>();
+    const valueCount = valuesForRow(rows[0]).length;
+
+    // Materialize empty buckets as well as buckets containing data. Otherwise a seven-day
+    // selection with activity on one day renders as a single, visually static bar and its axis
+    // no longer describes the selected period.
+    let cursor = new Date(firstDate);
+    while (cursor.getTime() <= lastDate.getTime()) {
+        const key = bucketIdentity(cursor, unit, firstDate);
+        if (!grouped.has(key)) grouped.set(key, { date: new Date(cursor), values: Array(valueCount).fill(0) });
+        if (unit === 'day') cursor.setDate(cursor.getDate() + 1);
+        else if (unit === 'week') cursor.setDate(cursor.getDate() + 7);
+        else if (unit === 'month') cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1, 12);
+        else cursor = new Date(cursor.getFullYear() + 1, 0, 1, 12);
+    }
 
     for (const row of rows) {
         const date = parseYmd(row.day);
@@ -183,13 +223,10 @@ function bucketDailyRows<T extends { day: string }>(
         values.forEach((value, index) => { existing.values[index] = (existing.values[index] ?? 0) + value; });
     }
 
-    let cumulative = 0;
     return [...grouped.values()].map((bucket) => {
-        cumulative += bucket.values.reduce((sum, value) => sum + value, 0);
         return {
             label: bucketLabel(bucket.date, unit, localeTag),
             values: bucket.values,
-            cumulative,
         };
     });
 }
@@ -199,12 +236,16 @@ function futureHorizonDays(range: StatsDateRange, maxFutureDay: number): number 
     return Math.max(31, Math.min(3_650, maxFutureDay + 1));
 }
 
+/** How far back the backlog view reaches; Anki caps it at a year of overdue cards. */
+const MAX_BACKLOG_DAYS = 365;
+
 function getFutureDue(
     deckName: string | null,
     range: StatsDateRange,
     rolloverHour: number,
     localeTag: string,
     scopedCardIds?: number[],
+    includeBacklog: boolean = false,
 ) {
     const db = getDB();
     const today = localDayNumber(Date.now(), rolloverHour);
@@ -216,7 +257,27 @@ function getFutureDue(
         today, today, ...deck.params,
     );
     const horizon = futureHorizonDays(range, Math.max(0, maxRow?.maxDay ?? 0));
-    const chunk = horizon <= 35 ? 1 : horizon <= 180 ? 7 : horizon <= 730 ? 14 : 31;
+
+    // Anki's backlog checkbox extends the same chart to the left: overdue cards keep their real
+    // due day, so they pile up in negative buckets ahead of today rather than being folded into
+    // it. Without the checkbox the chart starts at today, exactly as Anki draws it.
+    const oldestRow = includeBacklog
+        ? db.getFirstSync<{ minDay: number | null }>(
+            `SELECT MIN(c.due - ?) AS minDay
+             FROM anki_cards c ${deck.join}
+             WHERE c.queue IN (2, 3) AND c.due < ? ${deck.where}`,
+            today, today, ...deck.params,
+        )
+        : null;
+    const backlogDays = includeBacklog
+        ? Math.min(MAX_BACKLOG_DAYS, Math.max(0, -(oldestRow?.minDay ?? 0)))
+        : 0;
+
+    const span = horizon + backlogDays;
+    const chunk = span <= 35 ? 1 : span <= 180 ? 7 : span <= 730 ? 14 : 31;
+    // Bucket 0 starts at the oldest day shown, so today keeps a whole bucket boundary.
+    const firstDay = -Math.ceil(backlogDays / chunk) * chunk;
+    const bucketCount = Math.ceil((horizon - firstDay) / chunk);
     const rows = db.getAllSync<{ bucket: number; young: number; mature: number }>(
         `SELECT CAST((c.due - ?) / ? AS INTEGER) AS bucket,
                 SUM(CASE WHEN c.ivl < ${MATURE_MIN_IVL} THEN 1 ELSE 0 END) AS young,
@@ -224,20 +285,24 @@ function getFutureDue(
          FROM anki_cards c ${deck.join}
          WHERE c.queue IN (2, 3) AND c.due >= ? AND c.due < ? ${deck.where}
          GROUP BY bucket ORDER BY bucket`,
-        today, chunk, today, today + horizon, ...deck.params,
+        today + firstDay, chunk, today + firstDay, today + horizon, ...deck.params,
     );
 
-    let cumulative = 0;
-    const points = rows.map((row) => {
-        const values = [row.young ?? 0, row.mature ?? 0];
-        cumulative += values[0] + values[1];
-        const date = parseYmd(dayNumberToYmd(today + row.bucket * chunk, rolloverHour));
+    const rowByBucket = new Map(rows.map((row) => [row.bucket, row]));
+    const points = Array.from({ length: bucketCount }, (_, bucket) => {
+        const row = rowByBucket.get(bucket);
+        const values = [row?.young ?? 0, row?.mature ?? 0];
+        const dayOffset = firstDay + bucket * chunk;
+        const date = parseYmd(dayNumberToYmd(today + dayOffset, rolloverHour));
         return {
             label: date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' }),
             values,
-            cumulative,
         };
     });
+    const todayIndex = Math.round(-firstDay / chunk);
+    const backlogTotal = points
+        .slice(0, todayIndex)
+        .reduce((sum, point) => sum + point.values[0] + point.values[1], 0);
 
     const dueTomorrow = db.getFirstSync<{ count: number }>(
         `SELECT COUNT(*) AS count FROM anki_cards c ${deck.join}
@@ -251,7 +316,11 @@ function getFutureDue(
         ...deck.params,
     )?.load ?? 0;
 
-    return { points, total: cumulative, dueTomorrow, dailyLoad };
+    const total = points.reduce(
+        (sum, point) => sum + point.values.reduce((pointSum, value) => pointSum + value, 0),
+        0,
+    );
+    return { points, total, dueTomorrow, dailyLoad, todayIndex, backlogTotal };
 }
 
 function getReviews(deckName: string | null, range: StatsDateRange, rolloverHour: number, localeTag: string, scopedCardIds?: number[]) {
@@ -264,6 +333,11 @@ function getReviews(deckName: string | null, range: StatsDateRange, rolloverHour
                 SUM(CASE WHEN r.type = 1 AND r.lastIvl >= ${MATURE_MIN_IVL} THEN 1 ELSE 0 END) AS mature,
                 SUM(CASE WHEN r.type = 2 THEN 1 ELSE 0 END) AS relearning,
                 SUM(CASE WHEN r.type = 3 THEN 1 ELSE 0 END) AS filtered,
+                COALESCE(SUM(CASE WHEN r.type = 0 THEN r.time ELSE 0 END), 0) AS learningMs,
+                COALESCE(SUM(CASE WHEN r.type = 1 AND r.lastIvl < ${MATURE_MIN_IVL} THEN r.time ELSE 0 END), 0) AS youngMs,
+                COALESCE(SUM(CASE WHEN r.type = 1 AND r.lastIvl >= ${MATURE_MIN_IVL} THEN r.time ELSE 0 END), 0) AS matureMs,
+                COALESCE(SUM(CASE WHEN r.type = 2 THEN r.time ELSE 0 END), 0) AS relearningMs,
+                COALESCE(SUM(CASE WHEN r.type = 3 THEN r.time ELSE 0 END), 0) AS filteredMs,
                 COALESCE(SUM(r.time), 0) AS timeMs
          FROM revlog r
          ${deckName || scopedCardIds !== undefined ? 'JOIN anki_cards c ON c.id = r.cardId' : ''}
@@ -277,12 +351,22 @@ function getReviews(deckName: string | null, range: StatsDateRange, rolloverHour
     );
     const points = bucketDailyRows(
         rows,
-        range.spanDays,
+        range,
         localeTag,
         (row) => [row.learning, row.young, row.mature, row.relearning, row.filtered],
     );
+    // Anki's "Time" toggle keeps the same buckets and only swaps what is measured in them, so
+    // both series are built from one query and share an identical x axis.
+    const minutePoints = bucketDailyRows(
+        rows,
+        range,
+        localeTag,
+        (row) => [row.learningMs, row.youngMs, row.matureMs, row.relearningMs, row.filteredMs]
+            .map((ms) => ms / 60_000),
+    );
     return {
         points,
+        minutePoints,
         total: rows.reduce((sum, row) => sum + row.learning + row.young + row.mature + row.relearning + row.filtered, 0),
         timeMs: rows.reduce((sum, row) => sum + row.timeMs, 0),
         daysStudied: rows.length,
@@ -342,14 +426,10 @@ function getIntervals(deckName: string | null, range: StatsDateRange, localeTag:
         const bucket = Math.floor(row.ivl / chunk) * chunk;
         grouped.set(bucket, (grouped.get(bucket) ?? 0) + row.count);
     }
-    const total = rows.reduce((sum, row) => sum + row.count, 0);
-    let cumulative = 0;
     const points = [...grouped].map(([bucket, count]) => {
-        cumulative += count;
         return {
             label: chunk === 1 ? `${bucket}g` : `${bucket}–${bucket + chunk - 1}g`,
             values: [count],
-            cumulative: total > 0 ? Math.round((cumulative / total) * 100) : 0,
         };
     });
     void localeTag;
@@ -373,18 +453,34 @@ function getCardCounts(deckName: string | null, scopedCardIds?: number[]): CardC
     return row ?? { mature: 0, youngLearn: 0, unseen: 0, suspendedBuried: 0, totalCards: 0, totalNotes: 0 };
 }
 
-function getAdded(deckName: string | null, range: StatsDateRange, localeTag: string, scopedCardIds?: number[]) {
+function getAdded(
+    deckName: string | null,
+    range: StatsDateRange,
+    rolloverHour: number,
+    localeTag: string,
+    scopedCardIds?: number[],
+) {
     const db = getDB();
     const deck = deckClause(deckName, 'c', scopedCardIds);
     const rows = db.getAllSync<DailyCountRow>(
-        `SELECT date(c.id / 1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS count
+        `SELECT date(COALESCE(NULLIF(c.created_at, 0), c.id) / 1000 - ?, 'unixepoch', 'localtime') AS day,
+                COUNT(*) AS count
          FROM anki_cards c ${deck.join}
-         WHERE c.id >= ? AND c.id < ? ${deck.where}
+         WHERE COALESCE(NULLIF(c.created_at, 0), c.id) >= ?
+           AND COALESCE(NULLIF(c.created_at, 0), c.id) < ? ${deck.where}
          GROUP BY day ORDER BY day`,
-        range.startMs, range.endMs, ...deck.params,
+        rolloverHour * 3600, range.startMs, range.endMs, ...deck.params,
     );
-    const points = bucketDailyRows(rows, range.spanDays, localeTag, (row) => [row.count]);
-    return { points, total: rows.reduce((sum, row) => sum + row.count, 0) };
+    const points = bucketDailyRows(rows, range, localeTag, (row) => [row.count]);
+    const firstDay = rows[0]?.day;
+    const allHistorySpanDays = firstDay
+        ? Math.max(1, Math.floor((range.endMs - parseYmd(firstDay).getTime()) / DAY_MS) + 1)
+        : 0;
+    return {
+        points,
+        total: rows.reduce((sum, row) => sum + row.count, 0),
+        spanDays: range.spanDays ?? allHistorySpanDays,
+    };
 }
 
 export function getAnkiStatsSnapshot(
@@ -393,17 +489,23 @@ export function getAnkiStatsSnapshot(
     rolloverHour: number,
     localeTag: string,
     scopedCardIds?: number[],
+    options?: { includeBacklog?: boolean },
 ): AnkiStatsSnapshot {
-    const future = getFutureDue(deckName, range, rolloverHour, localeTag, scopedCardIds);
+    const future = getFutureDue(
+        deckName, range, rolloverHour, localeTag, scopedCardIds, options?.includeBacklog,
+    );
     const reviews = getReviews(deckName, range, rolloverHour, localeTag, scopedCardIds);
     const intervals = getIntervals(deckName, range, localeTag, scopedCardIds);
-    const added = getAdded(deckName, range, localeTag, scopedCardIds);
+    const added = getAdded(deckName, range, rolloverHour, localeTag, scopedCardIds);
     return {
         futureDue: future.points,
         futureDueTotal: future.total,
+        futureDueTodayIndex: future.todayIndex,
+        backlogTotal: future.backlogTotal,
         dueTomorrow: future.dueTomorrow,
         dailyLoad: future.dailyLoad,
         reviews: reviews.points,
+        reviewMinutes: reviews.minutePoints,
         reviewTotal: reviews.total,
         reviewTimeMs: reviews.timeMs,
         daysStudied: reviews.daysStudied,
@@ -414,5 +516,6 @@ export function getAnkiStatsSnapshot(
         cardCounts: getCardCounts(deckName, scopedCardIds),
         added: added.points,
         addedTotal: added.total,
+        addedSpanDays: added.spanDays,
     };
 }

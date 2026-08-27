@@ -122,6 +122,12 @@ describe('parseDelimited — comments and directives', () => {
         expect(metadata.columns).toEqual(['Front', 'Back', 'Extra']);
     });
 
+    it('reads Anki deck and notetype column headers', () => {
+        const { metadata } = parseDelimited('#deck column:2\n#notetype column:3\nfront,Deck,Type');
+        expect(metadata.deckColumn).toBe(2);
+        expect(metadata.notetypeColumn).toBe(3);
+    });
+
     it('reads a 1-based #tags column:', () => {
         const { metadata } = parseDelimited('#tags column:3\nq,a,t');
         expect(metadata.tagsColumn).toBe(3);

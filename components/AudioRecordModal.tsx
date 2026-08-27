@@ -39,7 +39,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
         try {
             const perm = await requestRecordingPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin Gerekli', 'Permission Required'), l('Ses kaydetmek için mikrofon izni vermeniz gerekiyor.', 'Allow microphone access to record audio.'));
+                alert(l('İzin gerekli', 'Permission Required'), l('Ses kaydetmek için mikrofon izni vermeniz gerekiyor.', 'Allow microphone access to record audio.'));
                 return;
             }
             await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -109,7 +109,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                     accessibilityLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
                 />
                 <View style={styles.card}>
-                    <Text style={styles.title}>🎙️ {l('Ses Kaydet', 'Record Audio')}</Text>
+                    <Text style={styles.title}>🎙️ {l('Ses kaydet', 'Record Audio')}</Text>
                     <Text style={styles.duration}>{formatDuration(state.durationMillis)}</Text>
                     <Text style={styles.status}>
                         {state.isRecording ? l('Kayıt sürüyor…', 'Recording…') : saving ? l('Dosya kaydediliyor…', 'Saving recording…') : l('Başlamak için mikrofona dokunun', 'Tap the microphone to start')}

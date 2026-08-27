@@ -6,7 +6,6 @@ import {
     Modal,
     PanResponder,
     Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -16,6 +15,7 @@ import {
     Pressable,
     useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, {
     Ellipse,
     Line,
@@ -589,7 +589,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                         <Text style={styles.headerButtonText}>{t('common.cancel')}</Text>
                     </TouchableOpacity>
                     <View style={styles.headerCenter}>
-                        <Text style={styles.title}>{l('Fotoğrafı Düzenle', 'Edit Photo')}</Text>
+                        <Text style={styles.title}>{l('Fotoğrafı düzenle', 'Edit Photo')}</Text>
                         <Text style={styles.subtitle} numberOfLines={1}>{activeToolLabel}</Text>
                     </View>
                     <TouchableOpacity
@@ -738,7 +738,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                             accessibilityLabel={l('Metin penceresini kapat', 'Close text dialog')}
                         />
                         <View style={styles.textCard}>
-                            <Text style={styles.textTitle}>{l('Fotoğrafa Metin Ekle', 'Add Text to Photo')}</Text>
+                            <Text style={styles.textTitle}>{l('Fotoğrafa metin ekle', 'Add Text to Photo')}</Text>
                             <TextInput
                                 style={styles.textInput}
                                 value={textDraft}

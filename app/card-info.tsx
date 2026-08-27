@@ -4,9 +4,9 @@ import {
     Text,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS } from '../lib/models';
@@ -136,7 +136,7 @@ export default function CardInfoScreen() {
                 {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Genel Bilgi', 'General Information')}</Text>
+                    <Text style={styles.sectionTitle}>{l('Genel bilgi', 'General Information')}</Text>
                     <InfoRow label="Kart ID" value={`#${card.id}`} />
                     <InfoRow label="Not ID" value={`#${card.noteId}`} />
                     <InfoRow label={t('common.deck')} value={deck?.name || '-'} />
@@ -191,12 +191,12 @@ export default function CardInfoScreen() {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Teknik Bilgi', 'Technical Information')}</Text>
+                    <Text style={styles.sectionTitle}>{l('Teknik bilgi', 'Technical Information')}</Text>
                     <InfoRow label={l('Son çalışma', 'Last review')} value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Çalışma Geçmişi', 'Review History')} ({reviews.length})</Text>
+                    <Text style={styles.sectionTitle}>{l('Çalışma geçmişi', 'Review History')} ({reviews.length})</Text>
 
                     <View style={styles.tableHeader}>
                         <Text style={[styles.th, { flex: 2 }]}>{l('Tarih', 'Date')}</Text>

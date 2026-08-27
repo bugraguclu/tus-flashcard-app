@@ -23,6 +23,7 @@ vi.mock('./models', () => ({ checksumField: h.fnv }));
 vi.mock('./db', () => ({
     getDB: () => ({
         execSync: (sql: string) => h.store.exec.push(sql.trim()),
+        getFirstSync: () => null,
         getAllSync: (_sql: string, csum: number, noteTypeId: number) =>
             h.store.notes
                 .filter((n) => n.csum === csum && n.noteTypeId === noteTypeId)
@@ -32,12 +33,29 @@ vi.mock('./db', () => ({
 
 vi.mock('./noteManager', () => ({
     createNote: vi.fn(),
+    saveNote: vi.fn((note: any) => {
+        const index = h.store.notes.findIndex((row) => JSON.parse(row.data).id === note.id);
+        const stored = { csum: note.csum, noteTypeId: note.noteTypeId, data: JSON.stringify(note) };
+        if (index >= 0) h.store.notes[index] = stored;
+        else h.store.notes.push(stored);
+    }),
+    getCardsForNote: () => [],
+    getAllNoteTypes: () => [],
     searchIndexCardFromNote: (_note: any, cardId: number) => ({ id: cardId }),
-    getAllNotes: () => h.store.existingGuids.map((guid) => ({ guid })),
+    getAllNotes: () => [
+        ...h.store.notes.map((row) => JSON.parse(row.data)),
+        ...h.store.existingGuids.map((guid) => ({ guid })),
+    ],
+}));
+
+vi.mock('./deckManager', () => ({
+    getAllDecks: () => [],
+    createDeck: (name: string) => ({ id: 99, name }),
 }));
 
 import { importDelimitedNotes, importRows } from './importNotes';
 import { createNote } from './noteManager';
+import { BKA_MANIFEST } from './bkaManifest';
 
 const createNoteMock = vi.mocked(createNote);
 const NT: any = { id: 4, fields: [{}, {}], sortFieldIdx: 0 };
@@ -49,8 +67,9 @@ beforeEach(() => {
     createNoteMock.mockReset();
     createNoteMock.mockImplementation((noteType: any, fields: string[], _deckId: number, tags: string[] = []) => {
         const id = 1000 + h.store.notes.length;
-        h.store.notes.push({ csum: h.fnv(fields[0]), noteTypeId: noteType.id, data: JSON.stringify({ fields }) });
-        return { note: { tags } as any, cards: [{ id } as any] };
+        const note = { id, guid: `g-${id}`, noteTypeId: noteType.id, fields, tags };
+        h.store.notes.push({ csum: h.fnv(fields[0]), noteTypeId: noteType.id, data: JSON.stringify(note) });
+        return { note: note as any, cards: [{ id } as any] };
     });
 });
 
@@ -74,20 +93,21 @@ describe('importDelimitedNotes', () => {
         expect(res.added).toBe(1);
     });
 
-    it('skips duplicates of existing notes by first field', () => {
-        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ fields: ['Heart', 'Kalp'] }) });
+    it('updates duplicates of existing notes by first field by default', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, guid: 'old', noteTypeId: 4, fields: ['Heart', 'Eski'], tags: [], sortFieldIdx: 0 }) });
         const res = importDelimitedNotes('Heart,Kalp\nLung,Akciğer', { noteType: NT, deckId: 1 });
-        expect(res).toMatchObject({ added: 1, duplicates: 1 });
+        expect(res).toMatchObject({ added: 1, updated: 1, duplicates: 0 });
         expect(createNoteMock.mock.calls.map((c) => (c[1] as string[])[0])).toEqual(['Lung']);
+        expect(JSON.parse(h.store.notes.find((row) => JSON.parse(row.data).id === 10)!.data).fields).toEqual(['Heart', 'Kalp']);
     });
 
-    it('skips duplicate rows within the same file', () => {
+    it('updates duplicate rows within the same file', () => {
         const res = importDelimitedNotes('Heart,Kalp\nHeart,Kalp', { noteType: NT, deckId: 1 });
-        expect(res).toMatchObject({ added: 1, duplicates: 1 });
+        expect(res).toMatchObject({ added: 1, updated: 1, duplicates: 0 });
     });
 
     it('imports duplicates when allowDuplicates is set', () => {
-        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ fields: ['Heart', 'Kalp'] }) });
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 4, fields: ['Heart', 'Kalp'] }) });
         const res = importDelimitedNotes('Heart,Kalp', { noteType: NT, deckId: 1, allowDuplicates: true });
         expect(res).toMatchObject({ added: 1, duplicates: 0 });
     });
@@ -129,13 +149,22 @@ describe('importDelimitedNotes', () => {
         h.store.existingGuids.push('g-existing');
         const res = importDelimitedNotes(
             '#separator:comma\n#guid column:1\ng-new,Front,Back\ng-existing,Dup,X',
-            { noteType: NT, deckId: 1 },
+            { noteType: NT, deckId: 1, duplicateResolution: 'preserve' },
         );
 
         expect(res).toMatchObject({ added: 1, duplicates: 1 });
         // The guid column (col 0) is skipped, so fields come from cols 1-2, and the guid is preserved.
         expect(createNoteMock.mock.calls[0][1]).toEqual(['Front', 'Back']);
         expect(createNoteMock.mock.calls[0][4]).toBe('g-new');
+    });
+
+    it('rejects a paid catalog text export before opening a write transaction', () => {
+        expect(() => importDelimitedNotes(
+            `#separator:comma\n#guid column:1\n${BKA_MANIFEST.protectedNoteGuids[0]},Paid,Answer`,
+            { noteType: NT, deckId: 1 },
+        )).toThrow(/ücretli BKA/i);
+        expect(h.store.exec).toEqual([]);
+        expect(createNoteMock).not.toHaveBeenCalled();
     });
 });
 
@@ -162,8 +191,8 @@ describe('importRows guid dedup (.apkg identity)', () => {
         expect(res).toMatchObject({ added: 1, duplicates: 1 });
     });
 
-    it('mints a fresh guid when allowDuplicates re-adds an existing guid', () => {
-        // Guids are unique note identity in Anki; a forced duplicate must not clone one.
+    it('never clones an existing non-empty guid when duplicate mode is selected', () => {
+        // Anki documents that duplicate mode does not apply to non-empty GUIDs.
         h.store.existingGuids.push('g1');
         const res = importRows([['Heart', 'Kalp']], {
             noteType: NT,
@@ -171,7 +200,7 @@ describe('importRows guid dedup (.apkg identity)', () => {
             rowGuids: ['g1'],
             allowDuplicates: true,
         });
-        expect(res).toMatchObject({ added: 1, duplicates: 0 });
-        expect(createNoteMock.mock.calls[0][4]).toBeUndefined();
+        expect(res).toMatchObject({ added: 0, duplicates: 1 });
+        expect(createNoteMock).not.toHaveBeenCalled();
     });
 });

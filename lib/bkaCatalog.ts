@@ -1,15 +1,20 @@
 /**
- * One-time installation of the bundled BKA TUS catalog.
+ * Install and remove the bundled BKA TUS catalog.
  *
- * The source is kept as an Anki package asset so the original note fields, card ordinals,
- * deck assignment, templates, CSS and media stay together. Installation is deliberately
- * strict: an incomplete package never replaces the user's active collection.
+ * The catalog is paid content inside an otherwise free Anki-style app, so installation is
+ * strictly additive: the learner's own decks, notes, note types and review history are never
+ * touched. Card fields, ordinals, templates, CSS and media come from the source Anki package
+ * unchanged; only the deck path is re-parented under one lockable root deck.
+ *
+ * Access is granted by `lib/catalogPurchases.ts`. This module never decides entitlement — it
+ * only makes the physical collection match the decision it is handed.
  */
 
+import { Platform } from 'react-native';
 import { Asset } from 'expo-asset';
 import type JSZipType from 'jszip';
 import { getDB } from './db';
-import { readUriBytes } from './files';
+import { getLegacyFileSystem, readUriBytes } from './files';
 import {
     extractCollectionFromZip,
     importMediaFromZip,
@@ -19,22 +24,46 @@ import {
 } from './importApkg';
 import { checksumField, type AnkiCard, type Deck, type DeckConfig, type Note, type NoteType } from './models';
 import type { UserSubject } from './subjects';
-import { listStoredMediaFilenames, removeMediaExcept } from './mediaStore';
-import { classifyBkaTopic, getBkaTopicNames } from './bkaTaxonomy';
+import { BKA_UNGROUPED_TOPIC, classifyBkaTopic, getBkaTopicNames } from './bkaTaxonomy';
+import {
+    CATALOG_PACK_ID,
+    CATALOG_INSTALL_KEY,
+    CATALOG_PROGRESS_KEY,
+    applyCatalogProgress,
+    encodeCatalogProgress,
+    hasStudyProgress,
+    parseCatalogProgress,
+    type CatalogProgress,
+} from './catalogRows';
+import { requireBkaCatalogAsset } from './bkaCatalogAsset';
+import { BKA_MANIFEST } from './bkaManifest';
+import { humanizeCardText } from './displayText';
 
-export const BKA_CATALOG_INSTALL_KEY = 'bka_tus_catalog_tier_v4';
-export const BKA_TRIAL_CARDS_PER_SUBJECT = 100;
-export const BKA_TRIAL_TOTAL_CARDS = 1200;
+/** Marks every row this module owns, so removal can never reach the learner's own content. */
+export const BKA_CATALOG_PACK = CATALOG_PACK_ID;
+export const BKA_CATALOG_DEFAULT_ROOT_DECK = 'TUS Kartları';
+export const BKA_TRIAL_DEFAULT_ROOT_DECK = 'TUS Deneme';
+export const BKA_CATALOG_INSTALL_KEY = CATALOG_INSTALL_KEY;
+export const BKA_TRIAL_CARDS_PER_SUBDECK = 30;
 export type BkaCatalogTier = 'trial' | 'full';
-export const BKA_CATALOG_EXPECTED = {
-    notes: 7737,
-    cards: 9583,
-    rootDecks: 12,
-    noteTypes: 2,
-    media: 49,
-} as const;
+const ROOT_DECK_NAME_KEY = 'bka_tus_catalog_root_deck_v5';
+const SEPARATE_TRIAL_LAYOUT_KEY = 'bka_tus_separate_trial_deck_v1';
+const PROGRESS_KEY = CATALOG_PROGRESS_KEY;
+/** Pre-release builds replaced the whole collection with a trial tier; see removeLegacyBkaInstall. */
+const LEGACY_TIER_KEY = 'bka_tus_catalog_tier_v4';
 
+export const BKA_CATALOG_ROOT_DECK_ID = 8_000_000_000_000;
 const SUBDECK_ID_BASE = 8_000_000_000_000;
+const DECK_CONFIG_ID_BASE = 8_100_000_000_000;
+
+export const BKA_CATALOG_EXPECTED = {
+    notes: BKA_MANIFEST.totals.notes,
+    cards: BKA_MANIFEST.totals.cards,
+    courseDecks: BKA_MANIFEST.totals.courses,
+    topicDecks: BKA_MANIFEST.totals.topics,
+    noteTypes: BKA_MANIFEST.noteTypes.length,
+    media: BKA_MANIFEST.totals.media,
+} as const;
 
 type SourceCol = { models: string; decks: string; dconf: string };
 type SourceNote = {
@@ -126,6 +155,7 @@ type SourceDeckConfig = {
 };
 
 export interface BkaCatalogSnapshot {
+    rootDeckName: string;
     noteTypes: NoteType[];
     decks: Deck[];
     deckConfigs: DeckConfig[];
@@ -136,30 +166,24 @@ export interface BkaCatalogSnapshot {
 
 export interface BkaCatalogInstallResult {
     installed: boolean;
-    tier: BkaCatalogTier;
-    previousNotes: number;
-    previousCards: number;
+    rootDeckName: string;
     notes: number;
     cards: number;
     decks: number;
     noteTypes: number;
     media: number;
+    /** Cards whose scheduling state was carried over from an earlier install. */
+    restoredProgress: number;
 }
 
-const DECK_ICONS: Record<string, string> = {
-    'Deneme ve Soru BKA': '📝',
-    'Anatomi BKA': '🫀',
-    'FHE BKA': '🩺',
-    'Biyokimya BKA': '🧪',
-    'Mikrobiyoloji BKA': '🦠',
-    'Patoloji BKA': '🔬',
-    'Farmakoloji BKA': '💊',
-    'Dahiliye BKA': '🩻',
-    'Pediatri BKA': '👶',
-    'Genel Cerrahi BKA': '🏥',
-    'Küçük Stajlar BKA': '🧑‍⚕️',
-    'Kadın Doğum BKA': '🤰',
-};
+export interface BkaCatalogRemovalResult {
+    removed: boolean;
+    notes: number;
+    cards: number;
+    decks: number;
+    /** Cards whose scheduling state was stashed for a future reinstall. */
+    storedProgress: number;
+}
 
 function parseJsonMap<T>(raw: string, label: string): Record<string, T> {
     try {
@@ -169,21 +193,6 @@ function parseJsonMap<T>(raw: string, label: string): Record<string, T> {
     } catch (error) {
         throw new Error(`BKA paketindeki ${label} verisi okunamadı: ${error instanceof Error ? error.message : String(error)}`);
     }
-}
-
-function slugifyDeck(name: string): string {
-    const replacements: Record<string, string> = {
-        ç: 'c', Ç: 'c', ğ: 'g', Ğ: 'g', ı: 'i', I: 'i', İ: 'i',
-        ö: 'o', Ö: 'o', ş: 's', Ş: 's', ü: 'u', Ü: 'u',
-    };
-    return `bka-${name
-        .split('')
-        .map((char) => replacements[char] ?? char)
-        .join('')
-        .toLowerCase()
-        .replace(/\bbka\b/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')}`;
 }
 
 function splitAnkiTags(raw: string): string[] {
@@ -217,13 +226,16 @@ function mapNoteType(source: SourceModel): NoteType {
         css: source.css ?? '',
         sortFieldIdx: Number(source.sortf ?? 0),
         mod: Number(source.mod ?? 0),
+        catalogPack: BKA_CATALOG_PACK,
     };
 }
 
-function mapDeckConfig(source: SourceDeckConfig): DeckConfig {
+function mapDeckConfig(source: SourceDeckConfig, catalogId: number, rootDeckName: string): DeckConfig {
+    const sourceName = source.name?.trim();
+    const technicalDefaultName = !sourceName || /^(default|varsayılan)$/i.test(sourceName);
     return {
-        id: Number(source.id),
-        name: source.name || 'BKA Varsayılan',
+        id: catalogId,
+        name: technicalDefaultName ? rootDeckName : `${rootDeckName} · ${sourceName}`,
         mod: Number(source.mod ?? 0),
         usn: Number(source.usn ?? -1),
         newPerDay: Number(source.new?.perDay ?? 20),
@@ -240,103 +252,153 @@ function mapDeckConfig(source: SourceDeckConfig): DeckConfig {
         relearningSteps: (source.lapse?.delays ?? [10]).map(Number),
         minIvl: Number(source.lapse?.minInt ?? 1),
         leechThreshold: Number(source.lapse?.leechFails ?? 8),
-        leechAction: Number(source.lapse?.leechAction ?? 1) === 0 ? 'tag' : 'suspend',
+        // Anki's enum is LEECH_ACTION_SUSPEND = 0, LEECH_ACTION_TAG_ONLY = 1 — this read the
+        // two the wrong way round, so an imported preset arrived with the opposite behaviour.
+        leechAction: Number(source.lapse?.leechAction ?? 1) === 0 ? 'suspend' : 'tag',
         newIvlPercent: Number(source.lapse?.mult ?? 0),
         buryNewSiblings: Boolean(source.new?.bury),
         buryReviewSiblings: Boolean(source.rev?.bury),
         buryInterdayLearningSiblings: Boolean(source.buryInterdayLearning),
         showTimer: Boolean(source.timer),
         maxAnswerSecs: Number(source.maxTaken ?? 60),
-        newCardGatherOrder: 'position',
+        newCardGatherOrder: 'ascendingPosition',
+        newCardSortOrder: 'template',
         newReviewOrder: 'mix',
         reviewSortOrder: 'dueRandom',
         autoPlayAudio: source.autoplay !== false,
         easyDays: [1, 1, 1, 1, 1, 1, 1],
+        catalogPack: BKA_CATALOG_PACK,
     };
 }
 
 function assertSnapshot(snapshot: BkaCatalogSnapshot): void {
-    const rootDecks = snapshot.decks.filter((deck) => !deck.name.includes('::'));
+    const courseDecks = snapshot.decks.filter((deck) => deck.name.split('::').length === 2);
+    const topicDecks = snapshot.decks.filter((deck) => deck.name.split('::').length === 3);
     if (
         snapshot.notes.length !== BKA_CATALOG_EXPECTED.notes
         || snapshot.cards.length !== BKA_CATALOG_EXPECTED.cards
-        || rootDecks.length !== BKA_CATALOG_EXPECTED.rootDecks
+        || courseDecks.length !== BKA_CATALOG_EXPECTED.courseDecks
+        || topicDecks.length !== BKA_CATALOG_EXPECTED.topicDecks
         || snapshot.noteTypes.length !== BKA_CATALOG_EXPECTED.noteTypes
     ) {
         throw new Error(
             `BKA paket bütünlüğü hatası: ${snapshot.notes.length} not, ${snapshot.cards.length} kart, `
-            + `${rootDecks.length} kök deste, ${snapshot.noteTypes.length} not tipi. Aktif koleksiyon değiştirilmedi.`,
+            + `${courseDecks.length} ders destesi, ${topicDecks.length} konu destesi, `
+            + `${snapshot.noteTypes.length} not türü. Koleksiyon değiştirilmedi.`,
         );
     }
 
     const deckIds = new Set(snapshot.decks.map((deck) => deck.id));
     const noteIds = new Set(snapshot.notes.map((note) => note.id));
     const noteTypeIds = new Set(snapshot.noteTypes.map((type) => type.id));
+    const configIds = new Set(snapshot.deckConfigs.map((config) => config.id));
     if (snapshot.cards.some((card) => !deckIds.has(card.deckId) || !noteIds.has(card.noteId))) {
-        throw new Error('BKA paketinde destesi veya notu bulunmayan kart var. Aktif koleksiyon değiştirilmedi.');
+        throw new Error('BKA paketinde destesi veya notu bulunmayan kart var. Koleksiyon değiştirilmedi.');
     }
     if (snapshot.notes.some((note) => !noteTypeIds.has(note.noteTypeId))) {
-        throw new Error('BKA paketinde not türü bulunmayan not var. Aktif koleksiyon değiştirilmedi.');
+        throw new Error('BKA paketinde not türü bulunmayan not var. Koleksiyon değiştirilmedi.');
+    }
+    if (snapshot.decks.some((deck) => !configIds.has(deck.configId))) {
+        throw new Error('BKA paketinde deste ayarı bulunmayan deste var. Koleksiyon değiştirilmedi.');
     }
 }
 
-export function readBkaCatalog(reader: SqliteReader): BkaCatalogSnapshot {
+/**
+ * Read the package into the app's own model. The 12 source course decks keep their Anki ids and
+ * are re-parented under a single root deck so the whole catalog can be presented — and locked —
+ * as one purchasable item in the deck list.
+ */
+export function readBkaCatalog(
+    reader: SqliteReader,
+    rootDeckName: string = BKA_CATALOG_DEFAULT_ROOT_DECK,
+): BkaCatalogSnapshot {
     const col = reader.getFirstSync<SourceCol>('SELECT models, decks, dconf FROM col LIMIT 1');
     if (!col) throw new Error('BKA paketinde koleksiyon üst bilgisi bulunamadı.');
 
     const noteTypes = Object.values(parseJsonMap<SourceModel>(col.models, 'not türü'))
         .map(mapNoteType)
         .sort((left, right) => left.id - right.id);
+
+    // Source deck-config ids start at 1, which is also the app's default preset. Catalog presets
+    // get their own id space so installing paid content can never rewrite the learner's defaults.
+    const sourceConfigs = Object.values(parseJsonMap<SourceDeckConfig>(col.dconf, 'deste ayarı'))
+        .sort((left, right) => Number(left.id) - Number(right.id));
+    const configIdBySourceId = new Map<number, number>();
+    const deckConfigs = sourceConfigs.map((config, index) => {
+        const catalogId = DECK_CONFIG_ID_BASE + index;
+        configIdBySourceId.set(Number(config.id), catalogId);
+        return mapDeckConfig(config, catalogId, rootDeckName);
+    });
+    const defaultConfigId = deckConfigs[0]?.id ?? DECK_CONFIG_ID_BASE;
+
     const sourceDecks = Object.values(parseJsonMap<SourceDeck>(col.decks, 'deste'))
         .filter((deck) => Number(deck.id) !== 1 && deck.name !== 'Default')
         .sort((left, right) => Number(left.id) - Number(right.id));
-    const rootDecks: Deck[] = sourceDecks.map((deck, index) => ({
+
+    const rootDeck: Deck = {
+        id: BKA_CATALOG_ROOT_DECK_ID,
+        name: rootDeckName,
+        sortOrder: 0,
+        configId: defaultConfigId,
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+        description: '',
+        collapsed: true,
+        isFiltered: false,
+        catalogPack: BKA_CATALOG_PACK,
+    };
+
+    const courseDecks: Deck[] = sourceDecks.map((deck, index) => ({
         id: Number(deck.id),
-        name: deck.name,
+        name: `${rootDeckName}::${String(deck.name).replace(/\s+BKA$/, '')}`,
         sortOrder: index,
-        configId: Number(deck.conf ?? 1),
+        configId: configIdBySourceId.get(Number(deck.conf ?? 1)) ?? defaultConfigId,
         mod: Number(deck.mod ?? 0),
         usn: Number(deck.usn ?? -1),
         description: deck.desc ?? '',
-        // More than one hundred curated children exist; iPhone starts with a clean 12-course
-        // overview and lets the learner expand only the course they need.
+        // Over a hundred curated children exist; the deck list opens on the 12 courses and the
+        // learner expands only the one they need.
         collapsed: true,
-        isFiltered: Boolean(deck.dyn),
+        isFiltered: false,
+        catalogPack: BKA_CATALOG_PACK,
     }));
-    const deckConfigs = Object.values(parseJsonMap<SourceDeckConfig>(col.dconf, 'deste ayarı'))
-        .map(mapDeckConfig)
-        .sort((left, right) => left.id - right.id);
 
-    const subjects: UserSubject[] = rootDecks.map((deck) => ({
-        id: slugifyDeck(deck.name),
-        name: deck.name.replace(/\s+BKA$/, ''),
-        icon: DECK_ICONS[deck.name] ?? '📘',
-        topics: getBkaTopicNames(deck.name),
-        deckId: deck.id,
-        isCustom: true,
-    }));
+    const subjects: UserSubject[] = sourceDecks.map((deck) => {
+        const course = BKA_MANIFEST.courses.find((entry) => entry.sourceDeckId === Number(deck.id));
+        return {
+            id: course?.id ?? slugifyDeck(deck.name),
+            name: String(deck.name).replace(/\s+BKA$/, ''),
+            icon: course?.icon ?? '📘',
+            topics: getBkaTopicNames(deck.name),
+            deckId: Number(deck.id),
+            isCustom: true as const,
+        };
+    });
+
     const sourceDeckIdByNoteId = new Map(
         reader.getAllSync<{ nid: number; did: number }>('SELECT nid, MIN(did) AS did FROM cards GROUP BY nid')
             .map((row) => [Number(row.nid), Number(row.did)]),
     );
-    const rootById = new Map(rootDecks.map((deck) => [deck.id, deck]));
-    const subjectByRootId = new Map(subjects.map((subject) => [subject.deckId, subject]));
+    const sourceDeckById = new Map(sourceDecks.map((deck) => [Number(deck.id), deck]));
+    const subjectByDeckId = new Map(subjects.map((subject) => [subject.deckId, subject]));
     const subdeckIdByKey = new Map<string, number>();
     const subdecks: Deck[] = [];
-    rootDecks.forEach((deck, rootIndex) => {
-        getBkaTopicNames(deck.name).forEach((topic, topicIndex) => {
-            const id = SUBDECK_ID_BASE + rootIndex * 1000 + topicIndex + 1;
-            subdeckIdByKey.set(`${deck.id}\x1f${topic}`, id);
+    courseDecks.forEach((course, courseIndex) => {
+        const sourceName = sourceDeckById.get(course.id)?.name ?? course.name;
+        getBkaTopicNames(sourceName).forEach((topic, topicIndex) => {
+            const id = SUBDECK_ID_BASE + courseIndex * 1000 + topicIndex + 1;
+            subdeckIdByKey.set(`${course.id}\x1f${topic}`, id);
             subdecks.push({
                 id,
-                name: `${deck.name}::${topic}`,
+                name: `${course.name}::${topic}`,
                 sortOrder: topicIndex,
-                configId: deck.configId,
-                mod: deck.mod,
-                usn: deck.usn,
+                configId: course.configId,
+                mod: course.mod,
+                usn: course.usn,
                 description: '',
                 collapsed: false,
                 isFiltered: false,
+                catalogPack: BKA_CATALOG_PACK,
             });
         });
     });
@@ -346,11 +408,14 @@ export function readBkaCatalog(reader: SqliteReader): BkaCatalogSnapshot {
     ).map((row) => {
         const fields = (row.flds ?? '').split('\x1f');
         const tags = splitAnkiTags(row.tags ?? '');
-        const rootDeckId = sourceDeckIdByNoteId.get(Number(row.id));
-        const rootDeck = rootDeckId === undefined ? undefined : rootById.get(rootDeckId);
-        const subject = rootDeckId === undefined ? undefined : subjectByRootId.get(rootDeckId);
-        if (!rootDeck || !subject) throw new Error(`BKA notu için kök deste bulunamadı: ${row.id}`);
-        const topic = classifyBkaTopic(rootDeck.name, fields, tags);
+        const sourceDeckId = sourceDeckIdByNoteId.get(Number(row.id));
+        const sourceDeck = sourceDeckId === undefined ? undefined : sourceDeckById.get(sourceDeckId);
+        const subject = sourceDeckId === undefined ? undefined : subjectByDeckId.get(sourceDeckId);
+        if (!sourceDeck || !subject) throw new Error(`BKA notu için kök deste bulunamadı: ${row.id}`);
+        // An author label becomes a subdeck; a note they left unlabeled is placed by the subject
+        // terms in its own text. A note that matches neither keeps the course deck the source put
+        // it in and is only marked as ungrouped for the sidebar's course/topic filter.
+        const topic = classifyBkaTopic(sourceDeck.name, tags, fields.join(' '));
         return {
             id: Number(row.id),
             guid: row.guid,
@@ -363,7 +428,8 @@ export function readBkaCatalog(reader: SqliteReader): BkaCatalogSnapshot {
             csum: Number(row.csum ?? checksumField(fields[0] ?? '')),
             flags: Number(row.flags ?? 0),
             catalogSubject: subject.id,
-            catalogTopic: topic,
+            catalogTopic: topic ?? BKA_UNGROUPED_TOPIC,
+            catalogPack: BKA_CATALOG_PACK,
         };
     });
     const noteById = new Map(notes.map((note) => [note.id, note]));
@@ -375,9 +441,13 @@ export function readBkaCatalog(reader: SqliteReader): BkaCatalogSnapshot {
     ).map((row) => {
         const sourceDeckId = Number(row.did);
         const note = noteById.get(Number(row.nid));
-        const topic = note?.catalogTopic;
-        const deckId = topic ? subdeckIdByKey.get(`${sourceDeckId}\x1f${topic}`) : undefined;
-        if (!note || deckId === undefined) throw new Error(`BKA kartı alt deste ile eşleştirilemedi: ${row.id}`);
+        if (!note) throw new Error(`BKA kartının notu bulunamadı: ${row.id}`);
+        const topic = note.catalogTopic;
+        // Labeled notes go to their subdeck; the rest stay in the course deck, as in the source.
+        const deckId = topic === BKA_UNGROUPED_TOPIC
+            ? sourceDeckId
+            : subdeckIdByKey.get(`${sourceDeckId}\x1f${topic}`);
+        if (deckId === undefined) throw new Error(`BKA kartı alt deste ile eşleştirilemedi: ${row.id}`);
         return {
             id: Number(row.id),
             noteId: Number(row.nid),
@@ -401,181 +471,351 @@ export function readBkaCatalog(reader: SqliteReader): BkaCatalogSnapshot {
         };
     });
 
-    const usedSubdeckIds = new Set(cards.map((card) => card.deckId));
-    const usedSubdecks = subdecks.filter((deck) => usedSubdeckIds.has(deck.id));
+    const usedDeckIds = new Set(cards.map((card) => card.deckId));
+    const usedSubdecks = subdecks.filter((deck) => usedDeckIds.has(deck.id));
+    const usedCourseDeckIds = new Set(cards.map((card) => card.sourceDeckId));
+    const usedCourseDecks = courseDecks.filter((deck) => usedCourseDeckIds.has(deck.id));
     for (const subject of subjects) {
         const usedTopics = new Set(notes
             .filter((note) => note.catalogSubject === subject.id)
             .map((note) => note.catalogTopic));
-        subject.topics = subject.topics.filter((topic) => usedTopics.has(topic));
+        // The sidebar filters by course/topic, so the ungrouped bucket belongs in the list even
+        // though it never becomes a deck.
+        subject.topics = [...subject.topics.filter((topic) => usedTopics.has(topic))];
+        if (usedTopics.has(BKA_UNGROUPED_TOPIC)) subject.topics.push(BKA_UNGROUPED_TOPIC);
     }
-    const snapshot = { noteTypes, decks: [...rootDecks, ...usedSubdecks], deckConfigs, notes, cards, subjects };
+    const snapshot: BkaCatalogSnapshot = {
+        rootDeckName,
+        noteTypes,
+        decks: [rootDeck, ...usedCourseDecks, ...usedSubdecks],
+        deckConfigs,
+        notes,
+        cards,
+        subjects,
+    };
     assertSnapshot(snapshot);
     return snapshot;
 }
 
-/** Select exactly 100 cards per source course, rotating through its subtopics for broad coverage. */
-export function buildBkaTrialCatalog(full: BkaCatalogSnapshot): BkaCatalogSnapshot {
-    const selectedIds = new Set<number>();
-    for (const subject of full.subjects) {
-        const perSubdeck = new Map<number, AnkiCard[]>();
-        for (const card of full.cards) {
-            if (card.sourceDeckId !== subject.deckId) continue;
-            const bucket = perSubdeck.get(card.deckId) ?? [];
-            bucket.push(card);
-            perSubdeck.set(card.deckId, bucket);
-        }
-        const queues = [...perSubdeck.values()].map((cards) => cards.sort((a, b) => a.id - b.id));
-        let cursor = 0;
-        let selectedForSubject = 0;
-        while (selectedForSubject < BKA_TRIAL_CARDS_PER_SUBJECT) {
-            let added = false;
-            for (const queue of queues) {
-                const next = queue[cursor];
-                if (!next) continue;
-                selectedIds.add(next.id);
-                selectedForSubject++;
-                added = true;
-                if (selectedForSubject >= BKA_TRIAL_CARDS_PER_SUBJECT) break;
-            }
-            if (!added) break;
-            cursor++;
-        }
-        if (selectedForSubject !== BKA_TRIAL_CARDS_PER_SUBJECT) {
-            throw new Error(`${subject.name} deneme seçimi 100 karta ulaşmadı: ${selectedForSubject}`);
-        }
-    }
-    const cards = full.cards.filter((card) => selectedIds.has(card.id));
-    const noteIds = new Set(cards.map((card) => card.noteId));
-    const notes = full.notes.filter((note) => noteIds.has(note.id));
-    if (cards.length !== BKA_TRIAL_TOTAL_CARDS) throw new Error(`BKA deneme kartı sayısı ${cards.length}/${BKA_TRIAL_TOTAL_CARDS}.`);
-    return { ...full, notes, cards };
+function slugifyDeck(name: string): string {
+    const replacements: Record<string, string> = {
+        ç: 'c', Ç: 'c', ğ: 'g', Ğ: 'g', ı: 'i', I: 'i', İ: 'i',
+        ö: 'o', Ö: 'o', ş: 's', Ş: 's', ü: 'u', Ü: 'u',
+    };
+    return `bka-${name
+        .split('')
+        .map((char) => replacements[char] ?? char)
+        .join('')
+        .toLowerCase()
+        .replace(/\bbka\b/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')}`;
 }
 
-function parseStoredRows<T>(table: 'note_types' | 'decks' | 'deck_configs' | 'notes' | 'anki_cards'): T[] {
-    return getDB().getAllSync<{ data: string }>(`SELECT data FROM ${table}`).flatMap((row) => {
-        try { return [JSON.parse(row.data) as T]; } catch { return []; }
+// ---- Installed-state helpers -------------------------------------------------------------
+
+function readSetting(key: string): string | null {
+    try {
+        return getDB().getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key)?.value ?? null;
+    } catch {
+        // Access can be queried before SQLite startup in isolated tests; treat that as "not installed".
+        return null;
+    }
+}
+
+function writeSetting(key: string, value: string): void {
+    getDB().runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
+}
+
+export function getBkaCatalogTier(): BkaCatalogTier | null {
+    const value = readSetting(BKA_CATALOG_INSTALL_KEY);
+    // Builds before the trial tier stored a boolean marker after installing the paid catalog.
+    if (value === 'true') return 'full';
+    return value === 'trial' || value === 'full' ? value : null;
+}
+
+export function isBkaCatalogInstalled(): boolean {
+    return getBkaCatalogTier() !== null;
+}
+
+/** Deck path the installed catalog lives under; also used to build a collision-free name. */
+export function getBkaCatalogRootDeckName(): string {
+    try {
+        const root = getDB().getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', BKA_CATALOG_ROOT_DECK_ID);
+        if (root?.data) {
+            const deck = JSON.parse(root.data) as Deck;
+            if (isCatalogRow(deck) && deck.name) return deck.name;
+        }
+    } catch { /* fall through to the persisted install name */ }
+    return readSetting(ROOT_DECK_NAME_KEY) ?? BKA_CATALOG_DEFAULT_ROOT_DECK;
+}
+
+function parseRows<T>(table: 'note_types' | 'decks' | 'deck_configs' | 'notes'): Array<{ id: number; value: T }> {
+    return getDB().getAllSync<{ id: number; data: string }>(`SELECT id, data FROM ${table}`).flatMap((row) => {
+        try { return [{ id: Number(row.id), value: JSON.parse(row.data) as T }]; } catch { return []; }
     });
 }
 
-/**
- * Tier changes replace only the bundled catalog. Cards/decks a learner creates or imports
- * after the first migration remain untouched, which keeps the free app genuinely Anki-like.
- */
-export function mergePreservedUserContent(
-    fullCatalog: BkaCatalogSnapshot,
-    targetCatalog: BkaCatalogSnapshot,
-): BkaCatalogSnapshot {
-    const catalogIds = {
-        noteTypes: new Set(fullCatalog.noteTypes.map((entry) => entry.id)),
-        decks: new Set(fullCatalog.decks.map((entry) => entry.id)),
-        deckConfigs: new Set(fullCatalog.deckConfigs.map((entry) => entry.id)),
-        notes: new Set(fullCatalog.notes.map((entry) => entry.id)),
-        cards: new Set(fullCatalog.cards.map((entry) => entry.id)),
-        subjects: new Set(fullCatalog.subjects.map((entry) => entry.id)),
-    };
-    const userNoteTypes = parseStoredRows<NoteType>('note_types')
-        .filter((entry) => !catalogIds.noteTypes.has(entry.id));
-    const userDecks = parseStoredRows<Deck>('decks')
-        .filter((entry) => !catalogIds.decks.has(entry.id));
-    const userDeckConfigs = parseStoredRows<DeckConfig>('deck_configs')
-        .filter((entry) => !catalogIds.deckConfigs.has(entry.id));
-    const userNotes = parseStoredRows<Note>('notes')
-        .filter((entry) => !catalogIds.notes.has(entry.id));
-    const userNoteIds = new Set(userNotes.map((entry) => entry.id));
-    const userCards = parseStoredRows<AnkiCard>('anki_cards')
-        .filter((entry) => !catalogIds.cards.has(entry.id) && userNoteIds.has(entry.noteId));
+function isCatalogRow(value: { catalogPack?: string } | null | undefined): boolean {
+    return value?.catalogPack === BKA_CATALOG_PACK;
+}
 
-    let storedSubjects: UserSubject[] = [];
-    const rawSubjects = getDB().getFirstSync<{ value: string }>(
-        'SELECT value FROM settings WHERE key = ?',
-        'user_subjects_v1',
-    )?.value;
-    if (rawSubjects) {
-        try {
-            const parsed = JSON.parse(rawSubjects) as unknown;
-            if (Array.isArray(parsed)) storedSubjects = parsed as UserSubject[];
-        } catch { /* malformed legacy setting is replaced by the catalog */ }
+/** SQLite caps bound parameters per statement, so id lists are deleted in chunks. */
+function deleteByIds(sql: string, ids: Array<number | string>): void {
+    for (let index = 0; index < ids.length; index += 400) {
+        const chunk = ids.slice(index, index + 400);
+        getDB().runSync(`${sql} (${chunk.map(() => '?').join(',')})`, ...chunk);
     }
-    const userSubjects = storedSubjects.filter((entry) => entry?.id && !catalogIds.subjects.has(entry.id));
+}
 
+/** A root deck name the learner's own collection does not already use. */
+function chooseRootDeckName(): string {
+    const takenByLearner = new Set(
+        parseRows<Deck>('decks')
+            .filter((row) => !isCatalogRow(row.value))
+            .map((row) => row.value.name.split('::')[0]),
+    );
+    let candidate = BKA_CATALOG_DEFAULT_ROOT_DECK;
+    let suffix = 2;
+    while (takenByLearner.has(candidate)) candidate = `${BKA_CATALOG_DEFAULT_ROOT_DECK} ${suffix++}`;
+    return candidate;
+}
+
+function chooseTrialRootDeckName(): string {
+    const takenByLearner = new Set(
+        parseRows<Deck>('decks')
+            .filter((row) => !isCatalogRow(row.value))
+            .map((row) => row.value.name.split('::')[0]),
+    );
+    let candidate = BKA_TRIAL_DEFAULT_ROOT_DECK;
+    let suffix = 2;
+    while (takenByLearner.has(candidate)) candidate = `${BKA_TRIAL_DEFAULT_ROOT_DECK} ${suffix++}`;
+    return candidate;
+}
+
+function stashCatalogProgress(cardIds: Set<number>): number {
+    // Progress stashed by an earlier removal is kept: a learner can lose access, study their own
+    // cards for a month, restore the purchase, and still find both sets of scheduling intact.
+    const progress: CatalogProgress = { ...readStashedProgress() };
+    for (const row of getDB().getAllSync<{ id: number; data: string }>('SELECT id, data FROM anki_cards')) {
+        const id = Number(row.id);
+        if (!cardIds.has(id)) continue;
+        let card: AnkiCard;
+        try { card = JSON.parse(row.data) as AnkiCard; } catch { continue; }
+        // Untouched cards reinstall identically from the package; only real study state is worth keeping.
+        if (!hasStudyProgress(card)) continue;
+        progress[String(id)] = encodeCatalogProgress(card);
+    }
+    const count = Object.keys(progress).length;
+    if (count === 0) getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
+    else writeSetting(PROGRESS_KEY, JSON.stringify(progress));
+    return count;
+}
+
+function readStashedProgress(): CatalogProgress {
+    return parseCatalogProgress(readSetting(PROGRESS_KEY));
+}
+
+function readStoredSubjects(): UserSubject[] {
+    const raw = readSetting('user_subjects_v1');
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw) as unknown;
+        return Array.isArray(parsed) ? parsed as UserSubject[] : [];
+    } catch {
+        return [];
+    }
+}
+
+/** Drop every catalog course from the shared subject registry, keeping the learner's own. */
+function removeCatalogSubjects(): void {
+    writeSetting(
+        'user_subjects_v1',
+        JSON.stringify(readStoredSubjects().filter((subject) => subject?.id && !subject.id.startsWith('bka-'))),
+    );
+}
+
+/** Replace the catalog's course entries in the shared subject registry, keeping the learner's own. */
+function writeCatalogSubjects(catalogSubjects: UserSubject[]): void {
+    const catalogIds = new Set(catalogSubjects.map((subject) => subject.id));
+    const learnerSubjects = readStoredSubjects().filter((subject) => subject?.id && !catalogIds.has(subject.id));
+    writeSetting('user_subjects_v1', JSON.stringify([...learnerSubjects, ...catalogSubjects]));
+}
+
+async function loadBundledPackage(): Promise<{ zip: JSZipType; cachedUri: string | null }> {
+    const asset = Asset.fromModule(requireBkaCatalogAsset());
+    await asset.downloadAsync();
+    const uri = asset.localUri ?? asset.uri;
+    if (!uri) throw new Error('BKA katalog varlığı indirilemedi.');
+    return { zip: await loadAnkiZip(await readUriBytes(uri)), cachedUri: uri };
+}
+
+/**
+ * expo-asset stages the 9 MB package into the cache directory to read it. Once the cards are in
+ * the collection that copy is dead weight, so it is dropped — but only if it really is the cache
+ * copy: the same call can hand back a path inside the read-only app bundle.
+ */
+async function dropCachedPackageCopy(uri: string | null): Promise<void> {
+    if (!uri || Platform.OS === 'web') return;
+    try {
+        const fs = getLegacyFileSystem();
+        const cacheDirectory = fs.cacheDirectory;
+        if (!cacheDirectory || !uri.startsWith(cacheDirectory)) return;
+        await fs.deleteAsync(uri, { idempotent: true });
+    } catch (error) {
+        // A leftover cache file costs disk, never correctness: iOS purges it under pressure.
+        console.warn('[BKA] Önbellek kopyası silinemedi:', error);
+    }
+}
+
+/**
+ * Reclaim the space a bulk install or removal leaves behind. Writing (or deleting) ~17.000 rows
+ * grows the write-ahead log past 11 MB and leaves free pages in the database file; without this
+ * the app keeps both long after the work is done.
+ */
+function compactDatabase(): void {
+    if (Platform.OS === 'web') return;
+    try {
+        const db = getDB();
+        db.execSync('PRAGMA wal_checkpoint(TRUNCATE);');
+        db.execSync('VACUUM;');
+    } catch (error) {
+        console.warn('[BKA] Veritabanı sıkıştırılamadı:', error);
+    }
+}
+
+/**
+ * Build the locked preview in the catalog's real hierarchy: BKA TUS → course → topic. Every
+ * physical card bucket contributes up to 30 cards. Some author subtopics contain fewer than 30
+ * cards; those expose everything they have rather than duplicating questions.
+ */
+export function buildBkaTrialCatalog(
+    full: BkaCatalogSnapshot,
+    trialRootName: string = BKA_TRIAL_DEFAULT_ROOT_DECK,
+): BkaCatalogSnapshot {
+    const root = full.decks.find((deck) => deck.name === full.rootDeckName);
+    if (!root) throw new Error('BKA deneme kök destesi oluşturulamadı.');
+
+    const cardsByDeck = new Map<number, AnkiCard[]>();
+    for (const card of full.cards) {
+        const bucket = cardsByDeck.get(card.deckId) ?? [];
+        bucket.push(card);
+        cardsByDeck.set(card.deckId, bucket);
+    }
+
+    const notesById = new Map(full.notes.map((note) => [note.id, note]));
+    const noteTypesById = new Map(full.noteTypes.map((noteType) => [noteType.id, noteType]));
+    const selectedCards = [...cardsByDeck.values()].flatMap((cards) => {
+        const ranked = cards.map((card) => {
+            const note = notesById.get(card.noteId);
+            return {
+                card,
+                score: note
+                    ? scoreBkaTrialCard(card, note, noteTypesById.get(note.noteTypeId))
+                    : Number.NEGATIVE_INFINITY,
+            };
+        }).sort((left, right) => right.score - left.score || left.card.id - right.card.id)
+            .map((entry) => entry.card);
+
+        // Prefer breadth: take the highest-quality card from each note before allowing a second
+        // cloze/reverse sibling from the same note into the sample.
+        const selected: AnkiCard[] = [];
+        const selectedIds = new Set<number>();
+        const usedNoteIds = new Set<number>();
+        for (const card of ranked) {
+            if (usedNoteIds.has(card.noteId)) continue;
+            selected.push(card);
+            selectedIds.add(card.id);
+            usedNoteIds.add(card.noteId);
+            if (selected.length === BKA_TRIAL_CARDS_PER_SUBDECK) return selected;
+        }
+        for (const card of ranked) {
+            if (selectedIds.has(card.id)) continue;
+            selected.push(card);
+            if (selected.length === BKA_TRIAL_CARDS_PER_SUBDECK) break;
+        }
+        return selected;
+    });
+    const selectedNoteIds = new Set(selectedCards.map((card) => card.noteId));
     return {
-        noteTypes: [...targetCatalog.noteTypes, ...userNoteTypes],
-        decks: [...targetCatalog.decks, ...userDecks],
-        deckConfigs: [...targetCatalog.deckConfigs, ...userDeckConfigs],
-        notes: [...targetCatalog.notes, ...userNotes],
-        cards: [...targetCatalog.cards, ...userCards],
-        subjects: [...targetCatalog.subjects, ...userSubjects],
+        ...full,
+        rootDeckName: trialRootName,
+        // The preview is a separate, ordinary deck tree — not a wrapper inside the paid BKA TUS
+        // tree. Renaming only the root prefix preserves every real course/topic relationship.
+        decks: full.decks.map((deck) => ({
+            ...deck,
+            name: deck.name === full.rootDeckName
+                ? trialRootName
+                : `${trialRootName}${deck.name.slice(full.rootDeckName.length)}`,
+            ...(deck.id === root.id ? { collapsed: false, sortOrder: -1 } : {}),
+        })),
+        notes: full.notes.filter((note) => selectedNoteIds.has(note.id)),
+        cards: selectedCards,
     };
 }
 
-function writeSnapshot(
-    snapshot: BkaCatalogSnapshot,
-    options: { preserveProgress?: boolean } = {},
-): { previousNotes: number; previousCards: number } {
-    const db = getDB();
-    const previousNotes = db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM notes')?.count ?? 0;
-    const previousCards = db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM anki_cards')?.count ?? 0;
-    const now = Date.now();
-    const targetCardIds = new Set(snapshot.cards.map((card) => card.id));
-    const existingCards = new Map<number, AnkiCard>();
-    const existingReviews: any[] = [];
-    const existingSessions: Array<{ date: string; data: string }> = [];
-    const existingGraves: Array<{ oid: number; type: number; usn: number }> = [];
-    if (options.preserveProgress) {
-        for (const row of db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM anki_cards')) {
-            if (!targetCardIds.has(Number(row.id))) continue;
-            try { existingCards.set(Number(row.id), JSON.parse(row.data) as AnkiCard); } catch { /* source state wins */ }
-        }
-        existingReviews.push(...db.getAllSync<any>('SELECT * FROM revlog ORDER BY id')
-            .filter((row) => targetCardIds.has(Number(row.cardId))));
-        existingSessions.push(...db.getAllSync<{ date: string; data: string }>('SELECT date, data FROM session_stats'));
-        const targetNoteIds = new Set(snapshot.notes.map((note) => note.id));
-        const targetDeckIds = new Set(snapshot.decks.map((deck) => deck.id));
-        existingGraves.push(...db.getAllSync<{ oid: number; type: number; usn: number }>('SELECT oid, type, usn FROM graves')
-            .filter((row) => (
-                (row.type === 0 && !targetCardIds.has(Number(row.oid)))
-                || (row.type === 1 && !targetNoteIds.has(Number(row.oid)))
-                || (row.type === 2 && !targetDeckIds.has(Number(row.oid)))
-                || ![0, 1, 2].includes(Number(row.type))
-            )));
+/** A deterministic editorial-quality heuristic for choosing preview cards from the package. */
+export function scoreBkaTrialCard(card: AnkiCard, note: Note, noteType?: NoteType): number {
+    const fields = note.fields.map((field) => humanizeCardText(field));
+    const primary = fields[0] ?? '';
+    const secondary = fields.slice(1).join(' ').trim();
+    const isCloze = noteType?.kind === 'cloze' || /\{\{c\d+::/i.test(note.fields[0] ?? '');
+    const hasMedia = note.fields.some((field) => /\[sound:[^\]]+\]|<(?:img|audio|video)\b/i.test(field));
+
+    let score = 0;
+    // A useful prompt needs enough context, without becoming an unedited wall of text.
+    if (primary.length >= 24) score += 45;
+    else score += primary.length - 30;
+    if (primary.length >= 60 && primary.length <= 900) score += 25;
+    if (primary.length > 1800) score -= Math.min(60, Math.floor((primary.length - 1800) / 80));
+    if (/[?.!:;]/.test(primary)) score += 6;
+
+    if (isCloze) {
+        // A cloze card is only valid when its own ordinal has a matching deletion marker.
+        const marker = new RegExp(`\\{\\{c${card.ord + 1}::`, 'i');
+        score += marker.test(note.fields[0] ?? '') ? 55 : -120;
+        if (secondary.length >= 8) score += 8;
+    } else {
+        // Basic cards need an actual answer; richer but still readable answers rank higher.
+        if (secondary.length >= 6) score += 55;
+        else score += secondary.length - 45;
+        if (secondary.length >= 24 && secondary.length <= 1200) score += 18;
+        if (secondary.length > 2400) score -= 30;
     }
+
+    if (hasMedia) score += 8;
+    score += Math.min(6, note.tags.length);
+    return score;
+}
+
+function writeCatalog(snapshot: BkaCatalogSnapshot): { restoredProgress: number } {
+    const db = getDB();
+    const now = Date.now();
+    const stashed = readStashedProgress();
+    let restoredProgress = 0;
 
     db.execSync('BEGIN TRANSACTION;');
     try {
-        db.execSync(`
-            DELETE FROM revlog;
-            DELETE FROM cards_fts;
-            DELETE FROM anki_cards;
-            DELETE FROM notes;
-            DELETE FROM decks;
-            DELETE FROM deck_configs;
-            DELETE FROM note_types;
-            DELETE FROM graves;
-            DELETE FROM session_stats;
-        `);
-        db.runSync("DELETE FROM settings WHERE key LIKE 'bka_tus_%catalog%v%'");
-
         for (const config of snapshot.deckConfigs) {
-            db.runSync('INSERT INTO deck_configs (id, data) VALUES (?, ?)', config.id, JSON.stringify(config));
+            db.runSync('INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)', config.id, JSON.stringify(config));
         }
         for (const deck of snapshot.decks) {
             db.runSync(
-                `INSERT INTO decks (id, name, data, updated_at, usn, tombstone)
+                `INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone)
                  VALUES (?, ?, ?, ?, ?, 0)`,
                 deck.id, deck.name, JSON.stringify(deck), now, deck.usn,
             );
         }
         for (const noteType of snapshot.noteTypes) {
             db.runSync(
-                `INSERT INTO note_types (id, name, data, updated_at, usn, tombstone)
+                `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
                  VALUES (?, ?, ?, ?, -1, 0)`,
                 noteType.id, noteType.name, JSON.stringify(noteType), now,
             );
         }
         for (const note of snapshot.notes) {
             db.runSync(
-                `INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
+                `INSERT OR REPLACE INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
                 note.id,
                 note.noteTypeId,
@@ -588,200 +828,350 @@ function writeSnapshot(
             );
         }
         for (const sourceCard of snapshot.cards) {
-            const previous = existingCards.get(sourceCard.id);
-            const card = previous ? {
-                ...sourceCard,
-                type: previous.type,
-                queue: previous.queue,
-                due: previous.due,
-                ivl: previous.ivl,
-                factor: previous.factor,
-                reps: previous.reps,
-                lapses: previous.lapses,
-                left: previous.left,
-                odue: previous.odue,
-                odid: previous.odid,
-                flags: previous.flags,
-                lastReview: previous.lastReview,
-            } : sourceCard;
+            const stored = stashed[String(sourceCard.id)];
+            if (stored) restoredProgress++;
+            const card = applyCatalogProgress(sourceCard, stored);
             db.runSync(
-                `INSERT INTO anki_cards
+                `INSERT OR REPLACE INTO anki_cards
                  (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags,
-                  data, updated_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-                card.id,
-                card.noteId,
-                card.deckId,
-                card.ord,
-                card.type,
-                card.queue,
-                card.due,
-                card.ivl,
-                card.factor,
-                card.reps,
-                card.lapses,
-                card.left,
-                card.flags,
-                JSON.stringify(card),
-                now,
-                card.usn,
+                  data, updated_at, created_at, usn, tombstone)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+                card.id, card.noteId, card.deckId, card.ord, card.type, card.queue, card.due,
+                card.ivl, card.factor, card.reps, card.lapses, card.left, card.flags,
+                JSON.stringify(card), now, now, card.usn,
             );
         }
-
-        for (const row of existingReviews) {
-            db.runSync(
-                `INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                row.id, row.cardId, row.usn, row.ease, row.ivl, row.lastIvl, row.factor, row.time, row.type,
-            );
-        }
-        for (const row of existingSessions) {
-            db.runSync('INSERT INTO session_stats (date, data) VALUES (?, ?)', row.date, row.data);
-        }
-        for (const row of existingGraves) {
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, ?, ?)', row.oid, row.type, row.usn);
-        }
-
-        const migrationSettings: Record<string, string> = {
-            tus_anki_initialized: 'true',
-            tus_legacy_custom_cards_migrated_v1: 'true',
-            tus_legacy_card_state_migrated_v1: 'true',
-            subject_topic_decks_v1: 'true',
-            user_subjects_v1: JSON.stringify(snapshot.subjects),
-        };
-        for (const [key, value] of Object.entries(migrationSettings)) {
-            db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
-        }
-
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
     }
-    return { previousNotes, previousCards };
+    return { restoredProgress };
 }
 
 function assertInstalledDatabase(snapshot: BkaCatalogSnapshot): void {
     const db = getDB();
-    const counts = {
-        notes: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM notes')?.count ?? -1,
-        cards: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM anki_cards')?.count ?? -1,
-        decks: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM decks')?.count ?? -1,
-        noteTypes: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM note_types')?.count ?? -1,
-    };
-    if (
-        counts.notes !== snapshot.notes.length
-        || counts.cards !== snapshot.cards.length
-        || counts.decks !== snapshot.decks.length
-        || counts.noteTypes !== snapshot.noteTypes.length
-    ) {
-        throw new Error(`BKA kurulum sonrası bütünlük hatası: ${JSON.stringify(counts)}. Kurulum sonraki açılışta yeniden denenecek.`);
+    const noteIds = new Set(snapshot.notes.map((note) => note.id));
+    const cardIds = new Set(snapshot.cards.map((card) => card.id));
+    const storedNotes = db.getAllSync<{ id: number }>('SELECT id FROM notes').filter((row) => noteIds.has(Number(row.id))).length;
+    const storedCards = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards').filter((row) => cardIds.has(Number(row.id))).length;
+    if (storedNotes !== snapshot.notes.length || storedCards !== snapshot.cards.length) {
+        throw new Error(
+            `BKA kurulum sonrası bütünlük hatası: ${storedNotes}/${snapshot.notes.length} not, `
+            + `${storedCards}/${snapshot.cards.length} kart. Kurulum yeniden denenecek.`,
+        );
     }
-}
-
-export function getBkaCatalogTier(): BkaCatalogTier | null {
-    const value = getDB().getFirstSync<{ value: string }>(
-        'SELECT value FROM settings WHERE key = ?',
-        BKA_CATALOG_INSTALL_KEY,
-    )?.value;
-    return value === 'trial' || value === 'full' ? value : null;
-}
-
-/** True once this release has replaced the active collection with a trial or full catalog. */
-export function isBkaCatalogInstalled(): boolean {
-    return getBkaCatalogTier() !== null;
-}
-
-async function loadBundledPackage(): Promise<{ bytes: Uint8Array; zip: JSZipType }> {
-    // Metro needs a static require so every platform includes the package in the build.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const asset = Asset.fromModule(require('../assets/catalog/bka-tus-complete.apkg'));
-    await asset.downloadAsync();
-    const uri = asset.localUri ?? asset.uri;
-    if (!uri) throw new Error('BKA katalog varlığı indirilemedi.');
-    const bytes = await readUriBytes(uri);
-    return { bytes, zip: await loadAnkiZip(bytes) };
 }
 
 /**
- * Install exactly once. Media is validated and stored before the destructive DB transaction;
- * if parsing or any media copy fails, the active collection is left untouched.
+ * Add the full catalog to the collection. Safe to call repeatedly: an already-installed catalog
+ * returns immediately, and a failed attempt leaves the learner's collection exactly as it was.
  */
-async function replaceCatalogTier(tier: BkaCatalogTier, preserveProgress: boolean): Promise<BkaCatalogInstallResult> {
-    const { zip } = await loadBundledPackage();
+async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogInstallResult> {
+    const currentTier = getBkaCatalogTier();
+    const installedCards = getInstalledBkaCardCount();
+    const rootDeckName = getBkaCatalogRootDeckName();
+    const hasLegacyTrialWrapper = tier === 'trial' && parseRows<Deck>('decks').some((row) => (
+        isCatalogRow(row.value) && row.value.name === `${rootDeckName}::Deneme`
+    ));
+    const hasSeparateTrialLayout = tier !== 'trial' || readSetting(SEPARATE_TRIAL_LAYOUT_KEY) === 'true';
+    if (currentTier === tier && installedCards > 0 && !hasLegacyTrialWrapper && hasSeparateTrialLayout) {
+        return {
+            installed: false,
+            rootDeckName: getBkaCatalogRootDeckName(),
+            notes: tier === 'full' ? BKA_CATALOG_EXPECTED.notes : 0,
+            cards: installedCards,
+            decks: parseRows<Deck>('decks').filter((row) => isCatalogRow(row.value)).length,
+            noteTypes: BKA_CATALOG_EXPECTED.noteTypes,
+            media: BKA_CATALOG_EXPECTED.media,
+            restoredProgress: 0,
+        };
+    }
+
+    // Tier replacement removes only catalog-marked rows and stashes scheduling progress. User
+    // decks remain untouched, and matching card ids recover their progress in the new tier.
+    if (currentTier !== null || parseRows<Deck>('decks').some((row) => isCatalogRow(row.value))) {
+        uninstallBkaCatalog();
+    }
+
+    // Installation is the first thing a buyer sees after paying, so each phase is timed and
+    // reported once: a support question about a slow install has an answer in the log.
+    const startedAt = Date.now();
+    const { zip, cachedUri } = await loadBundledPackage();
     const collectionBytes = await extractCollectionFromZip(zip);
     const reader = await openAnkiReader(collectionBytes);
-    let full: BkaCatalogSnapshot;
+    let snapshot: BkaCatalogSnapshot;
     try {
-        full = readBkaCatalog(reader);
+        const full = readBkaCatalog(reader, chooseRootDeckName());
+        snapshot = tier === 'full' ? full : buildBkaTrialCatalog(full, chooseTrialRootDeckName());
     } finally {
         reader.close();
     }
-    const catalogSnapshot = tier === 'full' ? full : buildBkaTrialCatalog(full);
-    const snapshot = preserveProgress
-        ? mergePreservedUserContent(full, catalogSnapshot)
-        : catalogSnapshot;
+    const parsedAt = Date.now();
 
-    const preservedMedia = preserveProgress ? await listStoredMediaFilenames() : [];
-
+    // Media is validated and written before the database transaction: a half-copied media
+    // store must never end up referenced by installed cards.
     const media = await importMediaFromZip(zip);
     if (media.imported !== BKA_CATALOG_EXPECTED.media || media.skipped !== 0) {
         throw new Error(
-            `BKA medya bütünlüğü hatası: ${media.imported}/${BKA_CATALOG_EXPECTED.media} aktarıldı, ${media.skipped} atlandı. Aktif koleksiyon değiştirilmedi.`,
+            `BKA medya bütünlüğü hatası: ${media.imported}/${BKA_CATALOG_EXPECTED.media} aktarıldı, `
+            + `${media.skipped} atlandı. Koleksiyon değiştirilmedi.`,
         );
     }
 
-    const previous = writeSnapshot(snapshot, { preserveProgress });
-    const keptMedia = new Set([...preservedMedia, ...media.filenames]);
-    const mediaCleanup = await removeMediaExcept(keptMedia);
-    if (mediaCleanup.remaining !== keptMedia.size) {
-        throw new Error(
-            `BKA medya değiştirme hatası: depoda ${mediaCleanup.remaining}/${keptMedia.size} dosya kaldı. Kurulum sonraki açılışta yeniden denenecek.`,
-        );
-    }
+    const mediaAt = Date.now();
+
+    const { restoredProgress } = writeCatalog(snapshot);
+    const writtenAt = Date.now();
     assertInstalledDatabase(snapshot);
-    getDB().runSync(
-        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-        BKA_CATALOG_INSTALL_KEY,
-        tier,
+    writeCatalogSubjects(snapshot.subjects);
+    writeSetting(ROOT_DECK_NAME_KEY, snapshot.rootDeckName);
+    writeSetting(BKA_CATALOG_INSTALL_KEY, tier);
+    if (tier === 'trial') writeSetting(SEPARATE_TRIAL_LAYOUT_KEY, 'true');
+    else {
+        getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
+        getDB().runSync('DELETE FROM settings WHERE key = ?', SEPARATE_TRIAL_LAYOUT_KEY);
+    }
+
+    console.log(
+        `[BKA] ${tier === 'full' ? 'Tam katalog' : 'Deneme'} kuruldu: ${snapshot.cards.length} kart, ${Math.round((Date.now() - startedAt) / 100) / 10}s `
+        + `(paket ${Math.round((parsedAt - startedAt) / 100) / 10}s, medya ${Math.round((mediaAt - parsedAt) / 100) / 10}s, `
+        + `veritabanı ${Math.round((writtenAt - mediaAt) / 100) / 10}s)`,
     );
+
     return {
         installed: true,
-        tier,
-        ...previous,
+        rootDeckName: snapshot.rootDeckName,
         notes: snapshot.notes.length,
         cards: snapshot.cards.length,
         decks: snapshot.decks.length,
         noteTypes: snapshot.noteTypes.length,
         media: media.imported,
+        restoredProgress,
     };
 }
 
-export async function installBkaCatalogIfNeeded(): Promise<BkaCatalogInstallResult> {
-    const currentTier = getBkaCatalogTier();
-    if (currentTier) {
-        const db = getDB();
-        return {
-            installed: false,
-            tier: currentTier,
-            previousNotes: 0,
-            previousCards: 0,
-            notes: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM notes')?.count ?? 0,
-            cards: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM anki_cards')?.count ?? 0,
-            decks: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM decks')?.count ?? 0,
-            noteTypes: db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM note_types')?.count ?? 0,
-            media: BKA_CATALOG_EXPECTED.media,
-        };
-    }
-    const legacyCatalog = (getDB().getFirstSync<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM settings WHERE key LIKE 'bka_tus_%catalog%v%'",
-    )?.count ?? 0) > 0;
-    return replaceCatalogTier('trial', legacyCatalog);
+export async function installBkaCatalog(): Promise<BkaCatalogInstallResult> {
+    return installBkaCatalogTier('full');
 }
 
-/** Match physical card storage to the receipt: 1,200-card trial when locked, full when owned. */
-export async function ensureBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogInstallResult> {
-    const current = getBkaCatalogTier();
-    if (current === tier) return installBkaCatalogIfNeeded();
-    return replaceCatalogTier(tier, current !== null);
+export async function installBkaTrialCatalog(): Promise<BkaCatalogInstallResult> {
+    return installBkaCatalogTier('trial');
+}
+
+let catalogTierFlight: { tier: BkaCatalogTier; promise: Promise<BkaCatalogInstallResult> } | null = null;
+
+/**
+ * Make physical catalog content match the verified entitlement without touching user decks.
+ * React development remounts and overlapping entitlement refresh/purchase calls can otherwise
+ * start two package installs against the same SQLite connection. Coalesce an identical request,
+ * and serialize a different tier behind the operation already in progress.
+ */
+export function ensureBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogInstallResult> {
+    if (catalogTierFlight?.tier === tier) return catalogTierFlight.promise;
+    if (catalogTierFlight) {
+        return catalogTierFlight.promise.then(
+            () => ensureBkaCatalogTier(tier),
+            () => ensureBkaCatalogTier(tier),
+        );
+    }
+
+    const promise = tier === 'full' ? installBkaCatalog() : installBkaTrialCatalog();
+    const flight = { tier, promise };
+    catalogTierFlight = flight;
+    void promise.then(
+        () => { if (catalogTierFlight === flight) catalogTierFlight = null; },
+        () => { if (catalogTierFlight === flight) catalogTierFlight = null; },
+    );
+    return promise;
+}
+
+/**
+ * Remove catalog content when the store reports the entitlement is gone (refund, family sharing
+ * change, a different Apple ID). Only rows this module installed are touched, and the learner's
+ * scheduling progress on those cards is stashed so a restore brings it back.
+ */
+export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
+    const db = getDB();
+    const catalogNotes = parseRows<Note>('notes').filter((row) => isCatalogRow(row.value));
+    const catalogDecks = parseRows<Deck>('decks').filter((row) => isCatalogRow(row.value));
+    const catalogConfigs = parseRows<DeckConfig>('deck_configs').filter((row) => isCatalogRow(row.value));
+    const catalogNoteTypes = parseRows<NoteType>('note_types').filter((row) => isCatalogRow(row.value));
+    const noteIds = new Set(catalogNotes.map((row) => row.id));
+    const catalogDeckIds = new Set(catalogDecks.map((row) => row.id));
+    const catalogCardIds = new Set(
+        db.getAllSync<{ id: number; noteId: number }>('SELECT id, noteId FROM anki_cards')
+            .filter((row) => noteIds.has(Number(row.noteId)))
+            .map((row) => Number(row.id)),
+    );
+
+    if (noteIds.size === 0 && catalogDecks.length === 0) {
+        db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+        return { removed: false, notes: 0, cards: 0, decks: 0, storedProgress: 0 };
+    }
+
+    const storedProgress = stashCatalogProgress(catalogCardIds);
+
+    // A purchased deck behaves normally, so a learner may have moved their own cards into it.
+    // Revoking the catalog must never delete or orphan those cards: move them to an existing
+    // learner-owned deck before removing the protected tree.
+    const learnerDecks = parseRows<Deck>('decks')
+        .filter((row) => !isCatalogRow(row.value))
+        .sort((left, right) => left.value.name === 'Default' ? -1 : right.value.name === 'Default' ? 1 : left.id - right.id);
+    const fallbackDeck: Deck = learnerDecks[0]?.value ?? {
+        id: 1,
+        name: 'Kurtarılan Kartlar',
+        configId: 1,
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+        description: '',
+        collapsed: false,
+        isFiltered: false,
+    };
+    const learnerCardsInCatalogDecks = db.getAllSync<{ id: number; noteId: number; deckId: number; data: string }>(
+        'SELECT id, noteId, deckId, data FROM anki_cards',
+    ).filter((row) => catalogDeckIds.has(Number(row.deckId)) && !noteIds.has(Number(row.noteId)));
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        if (!learnerDecks.length && learnerCardsInCatalogDecks.length > 0) {
+            db.runSync(
+                'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, -1, 0)',
+                fallbackDeck.id, fallbackDeck.name, JSON.stringify(fallbackDeck), Date.now(),
+            );
+        }
+        for (const row of learnerCardsInCatalogDecks) {
+            try {
+                const card = { ...(JSON.parse(row.data) as AnkiCard), deckId: fallbackDeck.id, mod: Math.floor(Date.now() / 1000), usn: -1 };
+                db.runSync('UPDATE anki_cards SET deckId = ?, data = ?, updated_at = ?, usn = -1 WHERE id = ?',
+                    fallbackDeck.id, JSON.stringify(card), Date.now(), row.id);
+            } catch {
+                // Preserve even a malformed learner row; the normalized column is enough to keep
+                // it out of the catalog-deck deletion and later repair tools can rebuild the blob.
+                db.runSync('UPDATE anki_cards SET deckId = ?, updated_at = ?, usn = -1 WHERE id = ?',
+                    fallbackDeck.id, Date.now(), row.id);
+            }
+        }
+        const cardIds = [...catalogCardIds];
+        deleteByIds('DELETE FROM anki_cards WHERE id IN', cardIds);
+        // cards_fts.card_id is TEXT, so it must be matched with string ids, not numbers.
+        deleteByIds('DELETE FROM cards_fts WHERE card_id IN', cardIds.map(String));
+        deleteByIds('DELETE FROM notes WHERE id IN', [...noteIds]);
+        deleteByIds('DELETE FROM decks WHERE id IN', catalogDecks.map((row) => row.id));
+        const referencedConfigIds = new Set(
+            parseRows<Deck>('decks')
+                .filter((row) => !catalogDeckIds.has(row.id))
+                .map((row) => Number(row.value.configId)),
+        );
+        deleteByIds(
+            'DELETE FROM deck_configs WHERE id IN',
+            catalogConfigs.map((row) => row.id).filter((id) => !referencedConfigIds.has(id)),
+        );
+        // Note types are only removed when nothing else references them; a learner may have
+        // authored their own notes on the AnKing cloze type while the catalog was unlocked.
+        const referenced = new Set(
+            db.getAllSync<{ noteTypeId: number }>('SELECT DISTINCT noteTypeId FROM notes').map((row) => Number(row.noteTypeId)),
+        );
+        deleteByIds(
+            'DELETE FROM note_types WHERE id IN',
+            catalogNoteTypes.map((row) => row.id).filter((id) => !referenced.has(id)),
+        );
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    removeCatalogSubjects();
+    db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+    db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
+    compactDatabase();
+
+    return {
+        removed: true,
+        notes: noteIds.size,
+        cards: catalogCardIds.size,
+        decks: catalogDecks.length,
+        storedProgress,
+    };
+}
+
+/**
+ * Pre-release builds installed a 1,200-card trial by replacing the whole collection. That model
+ * was dropped before launch: the app ships as a free Anki client and the catalog is purchased
+ * content. Devices still carrying that state get those rows removed on the next launch.
+ *
+ * Legacy rows predate the `catalogPack` marker, so they are matched the way that build wrote
+ * them: notes carry a `bka-` course id, decks end in "BKA" or sit under one. Review progress on
+ * the trial cards is stashed, so a later purchase restores it card for card.
+ */
+export function removeLegacyBkaInstall(): boolean {
+    const db = getDB();
+    if (readSetting(LEGACY_TIER_KEY) === null) return false;
+
+    const legacyNoteIds = new Set(
+        parseRows<Note>('notes')
+            .filter((row) => row.value.catalogSubject?.startsWith('bka-') || isCatalogRow(row.value))
+            .map((row) => row.id),
+    );
+    const legacyDeckIds = parseRows<Deck>('decks')
+        .filter((row) => /(^|::)[^:]*\bBKA\b/.test(row.value.name) || isCatalogRow(row.value))
+        .map((row) => row.id);
+    const legacyCardIds = db.getAllSync<{ id: number; noteId: number }>('SELECT id, noteId FROM anki_cards')
+        .filter((row) => legacyNoteIds.has(Number(row.noteId)))
+        .map((row) => Number(row.id));
+
+    stashCatalogProgress(new Set(legacyCardIds));
+
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        deleteByIds('DELETE FROM anki_cards WHERE id IN', legacyCardIds);
+        deleteByIds('DELETE FROM cards_fts WHERE card_id IN', legacyCardIds.map(String));
+        deleteByIds('DELETE FROM notes WHERE id IN', [...legacyNoteIds]);
+        deleteByIds('DELETE FROM decks WHERE id IN', legacyDeckIds);
+        const referenced = new Set(
+            db.getAllSync<{ noteTypeId: number }>('SELECT DISTINCT noteTypeId FROM notes').map((row) => Number(row.noteTypeId)),
+        );
+        deleteByIds(
+            'DELETE FROM note_types WHERE id IN',
+            BKA_MANIFEST.noteTypes.map((noteType) => noteType.id).filter((id) => !referenced.has(id)),
+        );
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    removeCatalogSubjects();
+    db.runSync("DELETE FROM settings WHERE key LIKE 'bka_tus_%catalog%v4'");
+    db.runSync('DELETE FROM settings WHERE key = ?', LEGACY_TIER_KEY);
+    db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+    db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
+    return true;
+}
+
+/**
+ * Cards still sitting in the catalog's own decks. A collection holds few deck rows, so the deck
+ * ids are read from their JSON marker and the card count itself stays an indexed lookup.
+ */
+export function getInstalledBkaCardCount(): number {
+    try {
+        const deckIds = parseRows<Deck>('decks').filter((row) => isCatalogRow(row.value)).map((row) => row.id);
+        if (deckIds.length === 0) return 0;
+        return getDB().getFirstSync<{ count: number }>(
+            `SELECT COUNT(*) AS count FROM anki_cards WHERE deckId IN (${deckIds.map(() => '?').join(',')})`,
+            ...deckIds,
+        )?.count ?? 0;
+    } catch {
+        return 0;
+    }
+}
+
+/**
+ * True when the entitlement is held but the cards are not on the device: a fresh device, or a
+ * learner who deleted the deck after buying it. Either way the next reconciliation reinstalls.
+ */
+export function needsBkaCatalogInstall(): boolean {
+    return getBkaCatalogTier() !== 'full'
+        || getInstalledBkaCardCount() !== BKA_CATALOG_EXPECTED.cards;
 }

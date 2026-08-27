@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
+    FlatList,
+    InteractionManager,
     Keyboard,
     KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -20,11 +22,18 @@ interface TagPickerModalProps {
     visible: boolean;
     selectedTags: string[];
     onCancel: () => void;
-    onConfirm: (tags: string[]) => void;
+    onConfirm: (tags: string[], cardState: TagCardStateFilter) => void;
     /** Browser filters select existing collection tags; the editor keeps creation enabled. */
     allowCreate?: boolean;
     title?: string;
+    /** Browser filters load only tags reachable from the active deck/card scope. */
+    loadTags?: () => string[];
+    /** Mirrors AnkiDroid's tag-filter card-state row; hidden in note editing. */
+    showCardStateFilter?: boolean;
+    selectedCardState?: TagCardStateFilter;
 }
+
+export type TagCardStateFilter = 'all' | 'new' | 'due';
 
 function tagKey(tag: string): string {
     return tag.normalize('NFC').toLowerCase();
@@ -61,6 +70,9 @@ export default function TagPickerModal({
     onConfirm,
     allowCreate = true,
     title,
+    loadTags = getAllTags,
+    showCardStateFilter = false,
+    selectedCardState = 'all',
 }: TagPickerModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
@@ -71,20 +83,38 @@ export default function TagPickerModal({
     const [addVisible, setAddVisible] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [newTagText, setNewTagText] = useState('');
+    const [loadingTags, setLoadingTags] = useState(false);
+    const [draftCardState, setDraftCardState] = useState<TagCardStateFilter>(selectedCardState);
 
     useEffect(() => {
         if (!visible) return;
         Keyboard.dismiss();
         const selected = uniqueTags(selectedTags);
-        const all = uniqueTags([...getAllTags(), ...selected])
-            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-        setKnownTags(all);
+        // Paint the modal first. A collection can contain thousands of distinct tags; the SQL
+        // aggregation and sort must not compete with the opening animation on the JS thread.
+        setKnownTags(selected);
         setDraftTags(selected);
         setSearchText('');
         setNewTagText('');
         setSearchVisible(false);
         setAddVisible(false);
-    }, [visible, selectedTags]);
+        setDraftCardState(selectedCardState);
+        setLoadingTags(true);
+        let cancelled = false;
+        const task = InteractionManager.runAfterInteractions(() => {
+            try {
+                const all = uniqueTags([...loadTags(), ...selected])
+                    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+                if (!cancelled) setKnownTags(all);
+            } finally {
+                if (!cancelled) setLoadingTags(false);
+            }
+        });
+        return () => {
+            cancelled = true;
+            task.cancel();
+        };
+    }, [visible, selectedTags, selectedCardState, loadTags]);
 
     const selectedKeys = useMemo(() => new Set(draftTags.map(tagKey)), [draftTags]);
     const filteredTags = useMemo(() => {
@@ -245,8 +275,22 @@ export default function TagPickerModal({
                         </View>
                     )}
 
-                    <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
-                        {filteredTags.length === 0 ? (
+                    {loadingTags ? (
+                        <View style={styles.loadingState}>
+                            <ActivityIndicator color={colors.accent} />
+                            <Text style={styles.loadingText}>{l('Etiketler yükleniyor…', 'Loading tags…')}</Text>
+                        </View>
+                    ) : (
+                    <FlatList
+                        style={styles.list}
+                        data={filteredTags}
+                        keyExtractor={tagKey}
+                        keyboardShouldPersistTaps="handled"
+                        initialNumToRender={16}
+                        maxToRenderPerBatch={16}
+                        windowSize={7}
+                        removeClippedSubviews={Platform.OS !== 'web'}
+                        ListEmptyComponent={(
                             <View style={styles.emptyState}>
                                 <Text style={styles.emptyTitle}>{l('Etiket bulunamadı', 'No tags found')}</Text>
                                 <Text style={styles.emptyText}>
@@ -255,7 +299,8 @@ export default function TagPickerModal({
                                         : l('Koleksiyonda bu aramayla eşleşen etiket yok.', 'No collection tag matches this search.')}
                                 </Text>
                             </View>
-                        ) : filteredTags.map((tag) => {
+                        )}
+                        renderItem={({ item: tag }) => {
                             const selected = selectedKeys.has(tagKey(tag));
                             const depth = Math.max(0, tag.split('::').length - 1);
                             return (
@@ -275,8 +320,34 @@ export default function TagPickerModal({
                                     </View>
                                 </TouchableOpacity>
                             );
-                        })}
-                    </ScrollView>
+                        }}
+                    />
+                    )}
+
+                    {showCardStateFilter && (
+                        <View style={styles.cardStateRow} accessibilityRole="radiogroup">
+                            {([
+                                { value: 'new', label: l('Yeni', 'New') },
+                                { value: 'due', label: l('Süresi gelen', 'Due') },
+                            ] as Array<{ value: TagCardStateFilter; label: string }>).map((option) => {
+                                const selected = draftCardState === option.value;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={styles.cardStateOption}
+                                        onPress={() => setDraftCardState(option.value)}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ selected }}
+                                    >
+                                        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+                                            {selected && <View style={styles.radioInner} />}
+                                        </View>
+                                        <Text style={[styles.cardStateLabel, selected && styles.cardStateLabelSelected]}>{option.label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
 
                     <View style={styles.footer}>
                         <Text style={styles.selectionCount}>
@@ -285,7 +356,7 @@ export default function TagPickerModal({
                         <TouchableOpacity style={styles.footerButton} onPress={onCancel}>
                             <Text style={styles.footerButtonText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.footerButton} onPress={() => onConfirm(uniqueTags(draftTags))}>
+                        <TouchableOpacity style={styles.footerButton} onPress={() => onConfirm(uniqueTags(draftTags), draftCardState)}>
                             <Text style={styles.footerButtonText}>{l('Onayla', 'Confirm')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -399,6 +470,33 @@ function createStyles(colors: ColorScheme) {
         addButtonText: { color: colors.white, fontSize: FontSize.sm, fontWeight: '700' },
         buttonDisabled: { opacity: 0.45 },
         list: { flex: 1 },
+        cardStateRow: {
+            minHeight: 54,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: Spacing.lg,
+            paddingHorizontal: Spacing.md,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.border,
+            backgroundColor: colors.bgCard,
+        },
+        cardStateOption: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6 },
+        radioOuter: {
+            width: 18,
+            height: 18,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1.5,
+            borderColor: colors.textMuted,
+            borderRadius: 9,
+        },
+        radioOuterSelected: { borderColor: colors.accent },
+        radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
+        cardStateLabel: { color: colors.textSecondary, fontSize: FontSize.sm },
+        cardStateLabelSelected: { color: colors.accent, fontWeight: '700' },
+        loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
+        loadingText: { color: colors.textMuted, fontSize: FontSize.sm },
         tagRow: {
             minHeight: 56,
             flexDirection: 'row',

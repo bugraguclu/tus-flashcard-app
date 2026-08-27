@@ -16,13 +16,31 @@ export function getLegacyFileSystem(): LegacyFileSystem {
     return _fs;
 }
 
+export function assertKnownFileSize(size: number | null | undefined, maxBytes: number): void {
+    if (typeof size === 'number' && Number.isFinite(size) && size > maxBytes) {
+        throw new Error('FILE_TOO_LARGE');
+    }
+}
+
+async function assertNativeUriSize(uri: string, maxBytes?: number): Promise<void> {
+    if (!maxBytes) return;
+    const info = await getLegacyFileSystem().getInfoAsync(uri);
+    if (info.exists && !info.isDirectory) assertKnownFileSize(info.size, maxBytes);
+}
+
 /** Read a picked/bundled asset as text: fetch on web (object/blob URLs), FS read on native. */
-export async function readUriText(uri: string): Promise<string> {
+export async function readUriText(uri: string, maxBytes?: number): Promise<string> {
     if (Platform.OS === 'web') {
         const response = await fetch(uri);
-        return response.text();
+        if (!response.ok) throw new Error('FILE_READ_FAILED');
+        const blob = await response.blob();
+        assertKnownFileSize(blob.size, maxBytes ?? Number.POSITIVE_INFINITY);
+        return blob.text();
     }
-    return getLegacyFileSystem().readAsStringAsync(uri);
+    await assertNativeUriSize(uri, maxBytes);
+    const text = await getLegacyFileSystem().readAsStringAsync(uri);
+    if (maxBytes) assertKnownFileSize(new TextEncoder().encode(text).byteLength, maxBytes);
+    return text;
 }
 
 const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -51,14 +69,20 @@ export function base64ToBytes(value: string): Uint8Array {
 }
 
 /** Read a picked asset as bytes on every platform, including native file/content URIs. */
-export async function readUriBytes(uri: string): Promise<Uint8Array> {
+export async function readUriBytes(uri: string, maxBytes?: number): Promise<Uint8Array> {
     if (Platform.OS === 'web') {
         const response = await fetch(uri);
-        return new Uint8Array(await response.arrayBuffer());
+        if (!response.ok) throw new Error('FILE_READ_FAILED');
+        const blob = await response.blob();
+        assertKnownFileSize(blob.size, maxBytes ?? Number.POSITIVE_INFINITY);
+        return new Uint8Array(await blob.arrayBuffer());
     }
+    await assertNativeUriSize(uri, maxBytes);
     const fs = getLegacyFileSystem();
     const encoded = await fs.readAsStringAsync(uri, { encoding: fs.EncodingType.Base64 });
-    return base64ToBytes(encoded);
+    const bytes = base64ToBytes(encoded);
+    if (maxBytes) assertKnownFileSize(bytes.byteLength, maxBytes);
+    return bytes;
 }
 
 /** Trigger a browser download of the given text. Web only. */

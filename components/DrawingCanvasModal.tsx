@@ -174,7 +174,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
 
     const handleSave = async () => {
         if (strokes.length === 0) {
-            alert(l('Uyarı', 'Nothing to Save'), l('Kaydetmeden önce bir şeyler çizin.', 'Draw something before saving.'));
+            alert(l('Kaydedilecek bir şey yok', 'Nothing to Save'), l('Kaydetmeden önce bir şeyler çizin.', 'Draw something before saving.'));
             return;
         }
         setSaving(true);
@@ -287,7 +287,7 @@ export default function DrawingCanvasModal({ visible, onClose, onSaved }: Drawin
 
                     <View style={styles.actionRow}>
                         <TouchableOpacity style={styles.smallBtn} onPress={undo} disabled={strokes.length === 0}>
-                            <Text style={styles.smallBtnText}>↩️ {l('Geri Al', 'Undo')}</Text>
+                            <Text style={styles.smallBtnText}>↩️ {l('Geri al', 'Undo')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.smallBtn} onPress={reset} disabled={strokes.length === 0}>
                             <Text style={styles.smallBtnText}>🗑️ {l('Temizle', 'Clear')}</Text>

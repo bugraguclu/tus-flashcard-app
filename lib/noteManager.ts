@@ -8,6 +8,12 @@ import { buildFtsPrefixQuery, dbUpsertFtsCard, getDB } from './db';
 import { TUS_CARDS } from './data';
 import { getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import { humanizeCardText } from './displayText';
+import { markSourcePackageDirty } from './ankiPackageArchive';
+import {
+    assertCatalogCardMutable,
+    assertCatalogNoteMutable,
+    assertCatalogNoteTypeMutable,
+} from './catalogProtection';
 
 /** Anki stores tags space-separated with a leading and trailing space (" a b "), so that a
  *  whole-tag search (`LIKE '% a %'`) cannot partially match a longer tag. Empty -> "". */
@@ -30,7 +36,14 @@ export function getNote(id: number): Note | null {
 }
 
 export function saveNote(note: Note): void {
+    assertCatalogNoteMutable(note);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as Note).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         `INSERT OR REPLACE INTO notes
          (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
@@ -48,6 +61,7 @@ export function saveNote(note: Note): void {
 }
 
 export function deleteNote(id: number): void {
+    assertCatalogNoteMutable(id);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -225,9 +239,15 @@ export function getCardsForDeck(deckId: number): AnkiCard[] {
 }
 
 export function saveAnkiCard(card: AnkiCard): void {
+    assertCatalogCardMutable(card);
     const db = getDB();
     const nowMs = Date.now();
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = ?', card.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as AnkiCard).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
 
     // Preserve any forward-compat keys the stored blob may carry that aren't on AnkiCard.
     let serializedData = JSON.stringify(card);
@@ -243,8 +263,8 @@ export function saveAnkiCard(card: AnkiCard): void {
     if (!existing) {
         db.runSync(
             `INSERT INTO anki_cards
-             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, usn, tombstone)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             card.id,
             card.noteId,
             card.deckId,
@@ -259,6 +279,7 @@ export function saveAnkiCard(card: AnkiCard): void {
             card.left ?? 0,
             card.flags,
             serializedData,
+            nowMs,
             nowMs,
             card.usn ?? -1,
             0,
@@ -478,7 +499,14 @@ export function getNoteType(id: number): NoteType | null {
 }
 
 export function saveNoteType(nt: NoteType): void {
+    assertCatalogNoteTypeMutable(nt);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', nt.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as NoteType).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -718,6 +746,46 @@ export function getSearchIndexCards(): SearchIndexCard[] {
     return rows.map((row) => searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId));
 }
 
+export interface NavigationCardCount {
+    subject: string;
+    topic: string;
+    count: number;
+}
+
+/** Sidebar counts without materializing every card/question/answer into JS. Native builds read
+ * the already-maintained FTS projection; the web fallback parses each distinct note once. */
+export function getNavigationCardCounts(): NavigationCardCount[] {
+    const db = getDB();
+    try {
+        const indexed = db.getAllSync<{ subject: string; topic: string; count: number }>(
+            `SELECT subject, topic, COUNT(*) AS count
+             FROM cards_fts
+             GROUP BY subject, topic`,
+        ).map((row) => ({ subject: row.subject, topic: row.topic, count: Number(row.count) || 0 }));
+        if (indexed.some((row) => row.count > 0)) return indexed;
+    } catch { /* FTS can be unavailable during early web/database migration startup. */ }
+
+    const subjectTags = getSubjectIdSet();
+    const counts = new Map<string, NavigationCardCount>();
+    for (const row of db.getAllSync<{ noteData: string; count: number }>(
+        `SELECT n.data AS noteData, COUNT(c.id) AS count
+         FROM notes n
+         JOIN anki_cards c ON c.noteId = n.id
+         GROUP BY n.id`,
+    )) {
+        try {
+            const note = JSON.parse(row.noteData) as Note;
+            const subject = note.catalogSubject ?? note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
+            const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General');
+            const key = `${subject}\u001f${topic}`;
+            const existing = counts.get(key);
+            if (existing) existing.count += Number(row.count) || 0;
+            else counts.set(key, { subject, topic, count: Number(row.count) || 0 });
+        } catch { /* Skip malformed legacy note blobs; maintenance can repair them. */ }
+    }
+    return [...counts.values()];
+}
+
 /**
  * Find an existing bundled/basic card by its question (first field), matching how Anki dedupes text imports
  * (first field within a note type). Returns the primary card id of the first match, or null.
@@ -763,6 +831,8 @@ export function createTusCard(input: {
     noteTypeId?: number;
     /** Value for Anki's Add Reverse field (type 7); legacy type 6 keeps its old override. */
     reverseAnswer?: string;
+    /** Complete field list supplied by an external add-note integration. */
+    fieldValues?: string[];
 }): { note: Note; card: AnkiCard; cards: AnkiCard[] } {
     const noteTypeId = input.noteTypeId ?? 1;
     const noteType = getNoteType(noteTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId);
@@ -774,7 +844,7 @@ export function createTusCard(input: {
         topic ? topic.replace(/\s+/g, '-') : undefined,
     ].filter((tag): tag is string => Boolean(tag));
 
-    const fields = noteType.fields.map(() => '');
+    const fields = noteType.fields.map((_, index) => input.fieldValues?.[index] ?? '');
     fields[0] = input.question;
     if (fields.length > 1) fields[1] = input.answer;
     if (noteTypeId === 7 && fields.length > 2) fields[2] = (input.reverseAnswer ?? '').trim();
@@ -960,15 +1030,44 @@ export function deleteAnkiCardOnly(cardId: number): void {
 
 // ---- Tag Management ----
 
-export function getAllTags(): string[] {
+export interface TagCollectionScope {
+    deckIds?: number[];
+    cardIds?: number[];
+}
+
+/**
+ * Return the exact tags stored by Anki, optionally limited to cards in the active browser scope.
+ * No display cleanup is performed here: short tags such as `+` or `1` can be author-owned data
+ * and must survive import/export unchanged.
+ */
+export function getAllTags(scope: TagCollectionScope = {}): string[] {
     const db = getDB();
+    const clauses: string[] = [];
+    const params: number[] = [];
+    const addIds = (column: string, ids: number[] | undefined) => {
+        if (!ids) return;
+        if (ids.length === 0) {
+            clauses.push('1 = 0');
+            return;
+        }
+        clauses.push(`${column} IN (${ids.map(() => '?').join(', ')})`);
+        params.push(...ids);
+    };
+    addIds('c.deckId', scope.deckIds);
+    addIds('c.id', scope.cardIds);
+    const cardScope = clauses.length
+        ? ` AND EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND ${clauses.join(' AND ')})`
+        : '';
 
     // Extract distinct space-separated tags fully in SQL to avoid JS-side full-table splitting.
     const rows = db.getAllSync<{ tag: string }>(
-        `WITH RECURSIVE split(tag, rest) AS (
-            SELECT '', TRIM(tags) || ' '
-            FROM notes
-            WHERE tags IS NOT NULL AND TRIM(tags) != ''
+        `WITH RECURSIVE scoped(tags) AS (
+            SELECT n.tags
+            FROM notes n
+            WHERE n.tags IS NOT NULL AND TRIM(n.tags) != ''${cardScope}
+        ),
+        split(tag, rest) AS (
+            SELECT '', TRIM(tags) || ' ' FROM scoped
             UNION ALL
             SELECT
                 TRIM(SUBSTR(rest, 1, INSTR(rest, ' ') - 1)),
@@ -980,6 +1079,7 @@ export function getAllTags(): string[] {
         FROM split
         WHERE tag != ''
         ORDER BY tag COLLATE NOCASE`,
+        ...params,
     );
 
     return rows.map((row) => row.tag);

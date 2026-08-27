@@ -147,4 +147,23 @@ describe('apkg glue (real sql.js + jszip)', () => {
             { filename: 'ses.mp3', size: 2 },
         ]);
     });
+
+    it('does not store active document/code media from an untrusted package', async () => {
+        media.saved.length = 0;
+        const zip = new JSZip();
+        zip.file('media', JSON.stringify({
+            '0': 'safe.png',
+            '1': 'active.svg',
+            '2': 'page.html',
+            '3': 'code.js',
+        }));
+        zip.file('0', new Uint8Array([1]));
+        zip.file('1', new Uint8Array([2]));
+        zip.file('2', new Uint8Array([3]));
+        zip.file('3', new Uint8Array([4]));
+
+        const counts = await importMediaFromZip(zip);
+        expect(counts).toEqual({ imported: 1, skipped: 3, filenames: ['safe.png'] });
+        expect(media.saved).toEqual([{ filename: 'safe.png', size: 1 }]);
+    });
 });

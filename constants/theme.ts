@@ -4,6 +4,9 @@ import { useColorScheme } from 'react-native';
 export type ColorScheme = typeof LightColors;
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+/** Theme selection is user-facing and applied live throughout theme-aware screens. */
+export const DARK_MODE_UI_ENABLED = true;
+
 const LightColors = {
     bgPrimary: '#e8f5f0',
     bgSecondary: '#f4faf7',
@@ -45,30 +48,30 @@ const LightColors = {
 };
 
 const DarkColors: ColorScheme = {
-    bgPrimary: '#1a2520',
-    bgSecondary: '#212e28',
-    bgCard: '#2a3832',
-    bgSidebar: '#1e2b25',
-    bgInput: '#253028',
-    border: '#3a4f46',
-    borderLight: '#33453c',
+    bgPrimary: '#000000',
+    bgSecondary: '#0b0d0c',
+    bgCard: '#151816',
+    bgSidebar: '#080a09',
+    bgInput: '#1c211e',
+    border: '#343b37',
+    borderLight: '#292f2c',
 
-    textPrimary: '#e0ede7',
-    textSecondary: '#a8c2b6',
-    textMuted: '#7a9a8c',
+    textPrimary: '#f1f6f3',
+    textSecondary: '#bac7c0',
+    textMuted: '#87948e',
 
     accent: '#4db88a',
-    accentLight: '#2a3f34',
+    accentLight: '#173126',
     accentHover: '#5ccf9c',
 
     btnAgain: '#e05545',
-    btnAgainBg: '#3a2525',
+    btnAgainBg: '#321d1d',
     btnHard: '#e8a020',
-    btnHardBg: '#3a3020',
+    btnHardBg: '#322916',
     btnGood: '#3aad60',
-    btnGoodBg: '#253828',
+    btnGoodBg: '#17301f',
     btnEasy: '#4a9ad0',
-    btnEasyBg: '#253040',
+    btnEasyBg: '#17283a',
 
     badgeNew: '#4a9ad0',
     badgeNewBg: '#253040',
@@ -90,6 +93,16 @@ const DarkColors: ColorScheme = {
 export const Colors = LightColors;
 
 const ThemeColorsContext = createContext<ColorScheme>(LightColors);
+const ThemeIsDarkContext = createContext<boolean>(false);
+
+export function resolveThemeColors(
+    mode: ThemeMode,
+    systemScheme: 'light' | 'dark' | null | undefined,
+): { colors: ColorScheme; isDark: boolean } {
+    const effective = mode === 'system' ? systemScheme : mode;
+    const isDark = effective === 'dark';
+    return { colors: isDark ? DarkColors : LightColors, isDark };
+}
 
 /**
  * Wraps the app and resolves the user's `themeMode` preference ('system' | 'light' | 'dark')
@@ -98,14 +111,26 @@ const ThemeColorsContext = createContext<ColorScheme>(LightColors);
  */
 export function ThemeColorsProvider({ mode, children }: { mode: ThemeMode; children: React.ReactNode }) {
     const systemScheme = useColorScheme();
-    const effective = mode === 'system' ? systemScheme : mode;
-    const colors = effective === 'dark' ? DarkColors : LightColors;
-    return React.createElement(ThemeColorsContext.Provider, { value: colors }, children);
+    const { colors, isDark } = resolveThemeColors(mode, systemScheme);
+    return React.createElement(
+        ThemeIsDarkContext.Provider,
+        { value: isDark },
+        React.createElement(ThemeColorsContext.Provider, { value: colors }, children),
+    );
 }
 
 /** Hook that returns the color palette for the current theme (preference + system fallback). */
 export function useThemeColors(): ColorScheme {
     return useContext(ThemeColorsContext);
+}
+
+/**
+ * Whether the resolved theme is dark. Card rendering needs the answer as a boolean, not as a
+ * palette: Anki hands note types `nightMode night_mode` classes and lets their own stylesheet
+ * decide, so an imported deck themes itself instead of being recoloured from outside.
+ */
+export function useIsDarkTheme(): boolean {
+    return useContext(ThemeIsDarkContext);
 }
 
 export const Spacing = {

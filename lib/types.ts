@@ -1,4 +1,4 @@
-import type { AnkiCard } from './models';
+import type { AnkiCard, Note } from './models';
 
 /**
  * Simple flashcard shape used for legacy data and seed content.
@@ -27,6 +27,49 @@ export interface Subject {
     /** Topics belonging to this subject. */
     topics: string[];
 }
+
+/** Anki's ReviewCardOrder, minus the two FSRS-only retrievability orders. */
+export type ReviewSortOrder =
+    | 'dueRandom'
+    | 'dueThenDeck'
+    | 'deckThenDue'
+    | 'intervalsAsc'
+    | 'intervalsDesc'
+    | 'easeAsc'
+    | 'easeDesc'
+    | 'relativeOverdueness'
+    | 'random'
+    | 'added'
+    | 'reverseAdded';
+
+/**
+ * Anki's AnswerAction: what Auto Advance does once the answer's dwell time expires.
+ * 'showReminder' leaves the card in place and only nudges the learner.
+ */
+export type AutoAdvanceAnswerAction = 'bury' | 'again' | 'good' | 'hard' | 'showReminder';
+
+/** What Auto Advance does when the question-side dwell time expires. */
+export type AutoAdvanceQuestionAction = 'showAnswer' | 'showReminder';
+
+/**
+ * Anki's NewCardGatherPriority: which new cards are collected for today, and in what order they
+ * arrive. The gather step runs before the sort step, so "order gathered" stays meaningful.
+ */
+export type NewCardGatherOrder =
+    | 'deck'
+    | 'deckThenRandomNotes'
+    | 'ascendingPosition'
+    | 'descendingPosition'
+    | 'randomNotes'
+    | 'randomCards';
+
+/** Anki's NewCardSortOrder. */
+export type NewCardSortOrder =
+    | 'template'
+    | 'noSort'
+    | 'templateThenRandom'
+    | 'randomNoteThenTemplate'
+    | 'randomCard';
 
 export interface CardState {
     cardId: number;
@@ -105,6 +148,42 @@ export interface KeyBindings {
     markNote: string;
 }
 
+export type ReviewGestureAction =
+    | 'off'
+    | 'showAnswer'
+    | 'again'
+    | 'hard'
+    | 'good'
+    | 'easy'
+    | 'undo'
+    | 'edit'
+    | 'mark'
+    | 'bury'
+    | 'suspend'
+    | 'replayAudio'
+    | 'flag'
+    | 'tools'
+    | 'decks';
+
+/** Backwards-compatible name for settings/import code written before vertical gestures. */
+export type ReviewSwipeAction = ReviewGestureAction;
+
+export type ReviewTapZone =
+    | 'topLeft'
+    | 'topCenter'
+    | 'topRight'
+    | 'middleLeft'
+    | 'middleCenter'
+    | 'middleRight'
+    | 'bottomLeft'
+    | 'bottomCenter'
+    | 'bottomRight';
+
+export type ReviewTapActionMap = Record<ReviewTapZone, ReviewGestureAction>;
+
+/** AnkiDroid-compatible "more than n reviews due" reminder thresholds. */
+export type StudyNotificationThreshold = 0 | 10 | 25 | 50 | 75 | 100 | 150 | 200 | 500;
+
 export interface AppSettings {
     language: AppLanguage;
     themeMode: ThemeMode;
@@ -124,32 +203,56 @@ export interface AppSettings {
     editorCapitalizeSentences?: boolean;
     editorToolbarVisible?: boolean;
     editorToolbarScrollable?: boolean;
+    /** Convert an image pasted into the rich editor to a collection-owned PNG attachment. */
+    pasteClipboardImagesAsPng?: boolean;
     /** Reviewer presentation preferences shared by the study screen and CardWebView. */
+    /** Opt in to the redesigned reviewer; false keeps the established classic reviewer. */
+    newStudyScreenEnabled?: boolean;
     studyFrameStyle?: 'card' | 'plain';
     showAudioPlayButtons?: boolean;
     showAnswerFeedback?: boolean;
     showAnswerButtons?: boolean;
     hideHardAndEasy?: boolean;
     showStudyTopBar?: boolean;
+    /** Compact reviewer toolbar placement; the answer controls remain in their fixed footer. */
+    reviewerToolbarPosition?: 'top' | 'bottom';
+    /** AnkiMobile's floating Tools button, useful when the top toolbar is hidden. */
+    showToolsOverlayButton?: boolean;
+    toolsOverlayPosition?: 'left' | 'right';
+    /** AnkiMobile's "Never Type Answer" preference. */
+    neverTypeAnswer?: boolean;
+    /** Put the trusted {{type:Field}} input at the template marker so #typeans CSS applies. */
+    typeAnswerInCard?: boolean;
+    /** Focus a visible typed-answer input when a new question opens. */
+    focusTypeAnswer?: boolean;
     showDeckTitle?: boolean;
     centerCardContent?: boolean;
     showRemainingTime?: boolean;
-    answerButtonsPosition?: 'top' | 'bottom';
-    /** App-owned local image URI used behind the reviewer. */
-    studyBackgroundImageUri?: string | null;
-    /** Anki's timebox reminder. Zero disables it. */
+    /** Anki's reviewer Timebox length in whole minutes (0-9999); zero disables it. */
     timeboxMinutes?: number;
     /** Prevent the device from sleeping while the reviewer is open. */
     keepScreenOn?: boolean;
-    /** Touch reviewer controls. Swipes are intentionally opt-in. */
+    /** Touch reviewer controls. Nine-zone taps follow AnkiMobile's question/answer defaults. */
+    ninePointTouchEnabled?: boolean;
+    questionTapActions?: ReviewTapActionMap;
+    answerTapActions?: ReviewTapActionMap;
     gesturesEnabled?: boolean;
     swipeSensitivity?: number;
+    swipeLeftAction?: ReviewGestureAction;
+    swipeRightAction?: ReviewGestureAction;
+    swipeUpAction?: ReviewGestureAction;
+    swipeDownAction?: ReviewGestureAction;
+    /** Android-only AnkiDroid navigation conveniences. */
+    fullScreenNavigationDrawer?: boolean;
+    doubleBackToExit?: boolean;
     /** Accessibility scaling and accidental-tap protection. Values are percentages/ms. */
     cardZoomPercent?: number;
     imageZoomPercent?: number;
     answerButtonScalePercent?: number;
     twoRowAnswerButtons?: boolean;
     browserFontScalePercent?: number;
+    /** AnkiDroid Appearance: show audio attachment names in browser question/answer text. */
+    showBrowserAudioFilenames?: boolean;
     showAnswerLongPressMs?: number;
     answerDoubleTapMs?: number;
     /** Automatic local collection backup policy. */
@@ -160,6 +263,8 @@ export interface AppSettings {
     backupMonthlyCopies?: number;
     /** AnkiMobile: show one local reminder at the selected time when reviews are waiting. */
     studyNotificationsEnabled?: boolean;
+    /** Zero means any pending review; other values mean strictly more than that many reviews. */
+    studyNotificationThreshold?: StudyNotificationThreshold;
     /** Local clock time used by the daily review reminder. */
     studyNotificationHour?: number;
     studyNotificationMinute?: number;
@@ -190,12 +295,40 @@ export interface AppSettings {
      */
     queueOrder: 'mix' | 'before' | 'after';
     newCardOrder: 'sequential' | 'random';
-    /** Anki v3 "new card gather order": course/topic order (our default), raw position, or random. */
-    newCardGatherOrder: 'topic' | 'position' | 'random';
+    /** Anki v3 "new card gather order". Configs written by older builds carry legacy names. */
+    newCardGatherOrder: NewCardGatherOrder;
     /** Anki v3 "review sort order": due date + daily random tiebreak, or by interval length. */
-    reviewSortOrder: 'dueRandom' | 'intervalsAsc' | 'intervalsDesc';
+    reviewSortOrder: ReviewSortOrder;
+    /** Anki's "new card sort order": how gathered new cards are ordered before being served. */
+    newCardSortOrder?: NewCardSortOrder;
+    /** Anki v3 "interday learning/review order": where day-boundary learning cards sit. */
+    interdayLearningMix?: 'mix' | 'before' | 'after';
     /** Play a card's [sound:] attachments automatically when the side is shown. */
     autoPlayAudio: boolean;
+    /** Anki Audio: replaying on the answer side plays only the answer's own sounds. */
+    skipQuestionWhenReplayingAnswer?: boolean;
+    /** Anki Timers (per preset): show the elapsed answer timer while studying. */
+    showAnswerTimer?: boolean;
+    /** Anki Timers (per preset): cap recorded answer time, and the displayed timer, at this. */
+    maxAnswerSeconds?: number;
+    /** Anki Timers (per preset): freeze the timer as soon as the answer is revealed. */
+    stopTimerOnAnswer?: boolean;
+    /** Anki Auto Advance (per preset). Zero disables that step. */
+    secondsToShowQuestion?: number;
+    secondsToShowAnswer?: number;
+    questionAction?: AutoAdvanceQuestionAction;
+    waitForAudio?: boolean;
+    answerAction?: AutoAdvanceAnswerAction;
+    /**
+     * Anki Daily Limits, collection-wide: when false, new cards also consume the review limit,
+     * so a day's total workload never exceeds the review cap.
+     */
+    newCardsIgnoreReviewLimit?: boolean;
+    /**
+     * Anki Daily Limits, collection-wide: when true, a parent deck's limit still caps a subdeck
+     * studied on its own. When false, only the selected deck and its descendants apply.
+     */
+    limitsStartFromTop?: boolean;
     /** Per-weekday review load factor, Monday-first (1 normal, 0.5 reduced, 0 none). */
     easyDays: number[];
     hardIntervalMultiplier: number;
@@ -234,6 +367,26 @@ export interface StudyCard {
     answer: string;
     /** The note carries Anki's reserved "marked" tag (browser star / filters). */
     noteMarked: boolean;
+    /** Card template ordinal, needed by Anki's new-card sort orders. */
+    templateOrd: number;
     state: CardState;
     rawCard?: AnkiCard;
+    /** Present on browser/detail reads to avoid one SQLite note lookup per rendered card. */
+    rawNote?: Note;
+    /**
+     * Present only for a browser row in Notes mode. Anki treats that row as the note and
+     * aggregates card-specific columns across every card generated by the note.
+     */
+    browserNoteSummary?: {
+        cardCount: number;
+        deckCount: number;
+        deckNames: string[];
+        totalReviews: number;
+        totalLapses: number;
+        averageIntervalDays: number | null;
+        averageEaseFactor: number | null;
+        suspendedCardCount: number;
+        buriedCardCount: number;
+        flaggedCardCount: number;
+    };
 }

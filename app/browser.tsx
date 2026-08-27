@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     TextInput,
     StyleSheet,
-    SafeAreaView,
     FlatList,
     Keyboard,
     KeyboardAvoidingView,
@@ -14,16 +13,30 @@ import {
     Platform,
     Pressable,
     Switch,
+    InteractionManager,
+    ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { getAllSubjects } from '../lib/subjects';
-import { matchesSearch } from '../lib/searchText';
-import { localDayNumber, ymdToLocalDayNumber } from '../lib/ankiState';
+import { compileCardMatcher } from '../lib/cardSearchMatch';
+import { localDayNumber, nextRolloverMs, ymdToLocalDayNumber } from '../lib/ankiState';
 import { useApp } from '../contexts/AppContext';
 import type { CardState, StudyCard } from '../lib/types';
 import { FLAG_COLORS, isLegacyTusNoteType, type CardFlag, type Note } from '../lib/models';
-import { getBrowserCards, getFilteredDeckCardIds, setCardSuspended } from '../lib/studyRepository';
+import {
+    getBrowserCardCount,
+    getBrowserRowIdsMatchingText,
+    getBrowserCards,
+    getFilteredDeckCardIds,
+    setCardSuspended,
+    type BrowserCardQuery,
+    type BrowserCardStateFilter,
+    type BrowserCardSortKey,
+    type BrowserTableMode,
+} from '../lib/studyRepository';
 import { humanizeCardText } from '../lib/displayText';
 import { useI18n } from '../hooks/useI18n';
 import type { SupportedLocale } from '../lib/i18n';
@@ -31,19 +44,20 @@ import { cardFlagName } from '../lib/i18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 import {
     buildDeckTree,
-    createFilteredDeck,
+    createDeck,
     flattenDeckTree,
     getAllDecks,
     getAvailableDeckName,
+    getCardCountsByDeck,
     getDeck,
     getDeckByName,
-    getDirectDecksForScope,
 } from '../lib/deckManager';
+import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
 import {
     changeNotesType,
     deleteNote,
     getAllNoteTypes,
-    getNote,
+    getAllTags,
     moveCardsToDeck,
     setCardFlag,
     undoCardsMovedToDeck,
@@ -54,8 +68,11 @@ import { getDbSetting, setDbSetting } from '../lib/storage';
 import TagPickerModal from '../components/TagPickerModal';
 import CardWebView from '../components/CardWebView';
 import DeckPickerModal from '../components/DeckPickerModal';
+import SwipeDismissSheet from '../components/SwipeDismissSheet';
 import { alert, confirm } from '../lib/confirm';
+import { userFacingErrorMessage } from '../lib/userFacingError';
 import {
+    expandSelectedCardsToNotes,
     gradeSelectedNow,
     parseDueRange,
     repositionSelectedNewCards,
@@ -65,9 +82,7 @@ import {
     toggleSelectedSuspend,
 } from '../lib/browserSelection';
 
-type BrowserSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified' | 'interval' | 'ease' | 'lapses' | 'reviews';
-
-const BROWSER_SORT_KEYS: BrowserSortKey[] = [
+const BROWSER_SORT_KEYS: BrowserCardSortKey[] = [
     'sortField',
     'cardType',
     'due',
@@ -86,9 +101,32 @@ function readBrowserBoolean(key: string, fallback: boolean): boolean {
     return stored === '1';
 }
 
-function readBrowserSortKey(): BrowserSortKey {
-    const stored = getDbSetting('browser_sort_key') as BrowserSortKey | null;
+function readBrowserSortKey(): BrowserCardSortKey {
+    const stored = getDbSetting('browser_sort_key') as BrowserCardSortKey | null;
     return stored && BROWSER_SORT_KEYS.includes(stored) ? stored : 'sortField';
+}
+
+function readBrowserTableMode(): BrowserTableMode {
+    return getDbSetting('browser_table_mode') === 'notes' ? 'notes' : 'cards';
+}
+
+const BROWSER_PAGE_SIZE = 200;
+const ALL_CARD_FLAGS: CardFlag[] = [0, 1, 2, 3, 4, 5, 6, 7];
+
+function SearchIcon({ color }: { color: string }) {
+    return (
+        <Svg
+            width={18}
+            height={18}
+            viewBox="0 0 24 24"
+            fill="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+        >
+            <Circle cx={10.5} cy={10.5} r={6.5} stroke={color} strokeWidth={1.8} />
+            <Path d="M15.4 15.4 21 21" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+        </Svg>
+    );
 }
 
 function quoteAnkiSearchValue(value: string): string {
@@ -143,7 +181,10 @@ export default function BrowserScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const browserFontScale = (settings.browserFontScalePercent ?? 100) / 100;
     const subjects = useMemo(() => getAllSubjects(), [dataVersion]);
-    const deckName = typeof params.deck === 'string' && params.deck ? params.deck : null;
+    const routeDeckName = typeof params.deck === 'string' && params.deck ? params.deck : null;
+    // The route supplies the initial/deep-linked scope. From that point on, changing scope is a
+    // local filter operation: it must not remount the browser or discard search/filter context.
+    const [deckName, setDeckName] = useRouteDeckScope(routeDeckName);
     const scopeDeck = useMemo(
         () => (deckName ? getDeckByName(deckName) : null),
         [deckName, dataVersion],
@@ -166,14 +207,16 @@ export default function BrowserScreen() {
     }, [scopeDeck, settings, dataVersion]);
 
     const [allCards, setAllCards] = useState<StudyCard[]>([]);
-    const [rawQuery, setRawQuery] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedQuickDeckName, setSelectedQuickDeckName] = useState<string | null>(null);
+    const initialRouteSearch = typeof params.initialSearch === 'string' ? params.initialSearch : '';
+    const [rawQuery, setRawQuery] = useState(initialRouteSearch);
+    const [searchQuery, setSearchQuery] = useState(initialRouteSearch);
     const [markedOnly, setMarkedOnly] = useState(false);
     const [suspendedOnly, setSuspendedOnly] = useState(false);
     const [tagFilters, setTagFilters] = useState<string[]>([]);
-    const [flagFilter, setFlagFilter] = useState<CardFlag | null>(null);
-    const [sortKey, setSortKey] = useState<BrowserSortKey>(readBrowserSortKey);
+    const [tagCardState, setTagCardState] = useState<BrowserCardStateFilter>('all');
+    const [flagFilters, setFlagFilters] = useState<CardFlag[]>(() => [...ALL_CARD_FLAGS]);
+    const [sortKey, setSortKey] = useState<BrowserCardSortKey>(readBrowserSortKey);
+    const [tableMode, setTableMode] = useState<BrowserTableMode>(readBrowserTableMode);
     const [sortDescending, setSortDescending] = useState(() => readBrowserBoolean('browser_sort_desc', false));
     const [showAnswerSnippet, setShowAnswerSnippet] = useState(() => readBrowserBoolean('browser_show_answer', false));
     const [showScheduleDetails, setShowScheduleDetails] = useState(() => readBrowserBoolean('browser_show_schedule', true));
@@ -183,7 +226,8 @@ export default function BrowserScreen() {
     const [deckScopePickerVisible, setDeckScopePickerVisible] = useState(false);
     const [showSortPicker, setShowSortPicker] = useState(false);
     const [showTagFilter, setShowTagFilter] = useState(false);
-    const [flagPickerMode, setFlagPickerMode] = useState<'filter' | 'selection' | null>(null);
+    const [flagPickerMode, setFlagPickerMode] = useState<'selection' | null>(null);
+    const [showFlagFilterMenu, setShowFlagFilterMenu] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedCardIds, setSelectedCardIds] = useState<Set<number>>(() => new Set());
@@ -203,16 +247,28 @@ export default function BrowserScreen() {
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [previewAnswerVisible, setPreviewAnswerVisible] = useState(false);
     const [lastDeckMove, setLastDeckMove] = useState<CardDeckMoveSnapshot[]>([]);
-    const [showFilteredDeckDialog, setShowFilteredDeckDialog] = useState(false);
-    const [filteredDeckName, setFilteredDeckName] = useState('');
-    const [filteredDeckLimit, setFilteredDeckLimit] = useState('100');
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [loadingError, setLoadingError] = useState<string | null>(null);
+    const [totalCardCount, setTotalCardCount] = useState(0);
+    const [hasMoreCards, setHasMoreCards] = useState(false);
+    const [textSearchResult, setTextSearchResult] = useState<{ key: string; ids: number[] } | null>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const loadedCountRef = useRef(0);
+    const totalCardCountRef = useRef(0);
+    const pageLoadInProgressRef = useRef(false);
+
+    useEffect(() => {
+        if (!initialRouteSearch) return;
+        setRawQuery(initialRouteSearch);
+        setSearchQuery(initialRouteSearch);
+    }, [initialRouteSearch]);
 
     const transientSurfaceOpen = showOverflowMenu
         || deckScopePickerVisible
         || showSortPicker
         || showTagFilter
+        || showFlagFilterMenu
         || flagPickerMode !== null
         || showOptions
         || showDeckPicker
@@ -222,8 +278,7 @@ export default function BrowserScreen() {
         || showRepositionDialog
         || showDueDialog
         || showGradePicker
-        || previewIndex !== null
-        || showFilteredDeckDialog;
+        || previewIndex !== null;
 
     // Browser actions can be launched while its search field owns the keyboard. Every new
     // popup starts from the full window; input dialogs then use their own avoiding layer.
@@ -231,30 +286,101 @@ export default function BrowserScreen() {
         if (transientSurfaceOpen) Keyboard.dismiss();
     }, [transientSurfaceOpen]);
 
+    useEffect(() => {
+        if (!showOverflowMenu) setShowFlagFilterMenu(false);
+    }, [showOverflowMenu]);
+
     const allDecks = useMemo(() => getAllDecks(), [dataVersion]);
     const deckById = useMemo(() => new Map(allDecks.map((deck) => [deck.id, deck])), [allDecks]);
-    const quickDecks = useMemo(
-        () => getDirectDecksForScope(allDecks, deckName),
-        [allDecks, deckName],
+    // Anki's search language, compiled once per query (lib/cardSearchMatch.ts).
+    const pageMatcher = useMemo(() => {
+        const nowMs = Date.now();
+        return compileCardMatcher(searchQuery.trim(), {
+            today: localDayNumber(nowMs, settings.dayRolloverHour),
+            nowMs,
+            learnAheadMinutes: settings.learnAheadMinutes,
+            dayCutoffMs: nextRolloverMs(nowMs, settings.dayRolloverHour) - 86_400_000,
+        });
+    }, [searchQuery, settings.dayRolloverHour, settings.learnAheadMinutes]);
+    const deckCardCounts = useMemo(
+        () => getCardCountsByDeck(
+            Date.now(),
+            settings.dayRolloverHour,
+            settings.learnAheadMinutes,
+        ),
+        [dataVersion, settings.dayRolloverHour, settings.learnAheadMinutes],
     );
-    const selectedQuickDeck = useMemo(
-        () => quickDecks.find((deck) => deck.name === selectedQuickDeckName) ?? null,
-        [quickDecks, selectedQuickDeckName],
+    const tagCollectionScope = useMemo(() => ({
+        deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
+        cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
+    }), [filteredScopeCardIds, scopedDeckIds]);
+    const loadScopedTags = useCallback(
+        () => getAllTags(tagCollectionScope),
+        [tagCollectionScope],
     );
-    const selectedQuickDeckIds = useMemo(() => {
-        if (!selectedQuickDeckName) return null;
-        const prefix = `${selectedQuickDeckName}::`;
-        return new Set(allDecks
-            .filter((deck) => !deck.isFiltered
-                && (deck.name === selectedQuickDeckName || deck.name.startsWith(prefix)))
-            .map((deck) => deck.id));
-    }, [allDecks, selectedQuickDeckName]);
+
+    const browserDbQuery = useMemo<BrowserCardQuery>(() => ({
+        tableMode,
+        sortKey,
+        descending: sortDescending,
+        deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
+        cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
+        markedOnly,
+        suspendedOnly,
+        cardState: tagCardState,
+        tags: tagFilters,
+        flags: flagFilters.length === ALL_CARD_FLAGS.length ? undefined : flagFilters,
+    }), [
+        tableMode,
+        sortKey,
+        sortDescending,
+        scopedDeckIds,
+        filteredScopeCardIds,
+        markedOnly,
+        suspendedOnly,
+        tagCardState,
+        tagFilters,
+        flagFilters,
+    ]);
+    const scopeCardCount = useMemo(
+        () => getBrowserCardCount(browserDbQuery),
+        [browserDbQuery, dataVersion],
+    );
+    const trimmedSearchQuery = searchQuery.trim();
+    const textSearchKey = useMemo(
+        () => JSON.stringify([trimmedSearchQuery, browserDbQuery, dataVersion]),
+        [browserDbQuery, dataVersion, trimmedSearchQuery],
+    );
+    const activeSearchRowIds = textSearchResult?.key === textSearchKey
+        ? textSearchResult.ids
+        : null;
 
     useEffect(() => {
-        if (selectedQuickDeckName && !selectedQuickDeck) {
-            setSelectedQuickDeckName(null);
+        if (!trimmedSearchQuery) {
+            setTextSearchResult(null);
+            return;
         }
-    }, [selectedQuickDeck, selectedQuickDeckName]);
+
+        // Anki keeps the complete ordered ID result, but builds row objects lazily. Do the same
+        // after navigation/input interactions so a large collection cannot stall typing.
+        setLoading(true);
+        const task = InteractionManager.runAfterInteractions(() => {
+            try {
+                const ids = getBrowserRowIdsMatchingText(browserDbQuery, trimmedSearchQuery);
+                setTextSearchResult({ key: textSearchKey, ids });
+                setLoadingError(null);
+            } catch (error) {
+                console.error('[Browser] text search failed:', error);
+                setTextSearchResult({ key: textSearchKey, ids: [] });
+                setLoadingError(userFacingErrorMessage(
+                    error,
+                    l('Arama tamamlanamadı. Lütfen tekrar deneyin.', 'Search could not be completed. Please try again.'),
+                ));
+            }
+        });
+        return () => task.cancel();
+    }, [browserDbQuery, textSearchKey, trimmedSearchQuery]);
+
     const deckPickerRows = useMemo(
         () => flattenDeckTree(buildDeckTree(allDecks), true).filter((node) => !node.deck.isFiltered),
         [allDecks],
@@ -266,11 +392,12 @@ export default function BrowserScreen() {
     );
     const scopeTitle = deckName
         ? deckName.replaceAll('::', ' › ')
-        : l('Tüm Koleksiyon', 'Whole Collection');
+        : l('Tüm koleksiyon', 'Whole Collection');
 
     const handlePickDeckScope = (name: string | null) => {
         setDeckScopePickerVisible(false);
-        router.replace((name ? `/browser?deck=${encodeURIComponent(name)}` : '/browser') as any);
+        setDeckName(name);
+        setExpandedCard(null);
     };
 
     const handleBack = () => {
@@ -278,8 +405,8 @@ export default function BrowserScreen() {
             router.back();
             return;
         }
-        if (deckName) {
-            router.replace(`/deck-overview?deck=${encodeURIComponent(deckName)}` as any);
+        if (routeDeckName) {
+            router.replace(`/deck-overview?deck=${encodeURIComponent(routeDeckName)}` as any);
             return;
         }
         router.replace('/decks' as any);
@@ -288,7 +415,7 @@ export default function BrowserScreen() {
         const notes = new Map<number, Note>();
         for (const card of allCards) {
             if (notes.has(card.noteId)) continue;
-            const note = getNote(card.noteId);
+            const note = card.rawNote;
             if (note) notes.set(card.noteId, note);
         }
         return notes;
@@ -303,14 +430,68 @@ export default function BrowserScreen() {
         [noteTypes],
     );
 
-    const reload = useCallback(() => {
-        const cards = getBrowserCards(settings);
-        setAllCards(cards);
-        setLoading(false);
-    }, [settings]);
+    const loadPage = useCallback((reset: boolean, pageSize = BROWSER_PAGE_SIZE) => {
+        if (pageLoadInProgressRef.current) return;
+        if (trimmedSearchQuery && activeSearchRowIds === null) return;
+        pageLoadInProgressRef.current = true;
+        if (reset) setLoading(true);
+        else setLoadingMore(true);
+        try {
+            const total = reset
+                ? (activeSearchRowIds?.length ?? getBrowserCardCount(browserDbQuery))
+                : totalCardCountRef.current;
+            const offset = reset ? 0 : loadedCountRef.current;
+            const pageRowIds = activeSearchRowIds?.slice(offset, offset + pageSize);
+            const cards = getBrowserCards(settings, {
+                ...browserDbQuery,
+                ...(pageRowIds
+                    ? tableMode === 'notes'
+                        ? { noteIds: pageRowIds }
+                        : { cardIds: pageRowIds }
+                    : {}),
+                limit: pageSize,
+                offset: pageRowIds ? 0 : offset,
+            });
+            const nextLoadedCount = offset + cards.length;
+            loadedCountRef.current = nextLoadedCount;
+            setAllCards((current) => reset ? cards : [...current, ...cards]);
+            if (reset) {
+                totalCardCountRef.current = total;
+                setTotalCardCount(total);
+            }
+            setHasMoreCards(nextLoadedCount < total && cards.length > 0);
+            setLoadingError(null);
+        } catch (error) {
+            console.error('[Browser] card load failed:', error);
+            setLoadingError(userFacingErrorMessage(
+                error,
+                l('Kartlar yüklenemedi. Lütfen tekrar deneyin.', 'Cards could not be loaded. Please try again.'),
+            ));
+        } finally {
+            pageLoadInProgressRef.current = false;
+            if (reset) setLoading(false);
+            else setLoadingMore(false);
+        }
+    }, [activeSearchRowIds, browserDbQuery, settings, tableMode, trimmedSearchQuery]);
+
+    const reload = useCallback(() => loadPage(true), [loadPage]);
+    const loadNextPage = useCallback(() => {
+        if (!hasMoreCards || loading || loadingMore) return;
+        loadPage(false);
+    }, [hasMoreCards, loading, loadingMore, loadPage]);
 
     useEffect(() => {
-        reload();
+        // Let the navigation transition and first frame finish before parsing a large collection.
+        // This keeps the back gesture responsive and prevents iOS from treating the transition as
+        // a hung screen while thousands of imported cards are materialized.
+        loadedCountRef.current = 0;
+        totalCardCountRef.current = 0;
+        setAllCards([]);
+        setTotalCardCount(0);
+        setHasMoreCards(false);
+        setLoading(true);
+        const task = InteractionManager.runAfterInteractions(reload);
+        return () => task.cancel();
     }, [reload, dataVersion]);
 
     useEffect(() => () => {
@@ -319,6 +500,34 @@ export default function BrowserScreen() {
             debounceRef.current = null;
         }
     }, []);
+
+    const showSearchSyntaxHelp = useCallback(() => {
+        alert(
+            l('Arama', 'Search'),
+            l(
+                'Kelime yazarak kart metninde, etiketlerde ve deste adında arama yapabilirsiniz.\n\n'
+                + 'Anki terimleri\n'
+                + 'deck:"Deste"  ·  tag:etiket  ·  tag:none\n'
+                + 'is:new  is:learn  is:review  is:relearn  is:due  is:suspended  is:buried\n'
+                + 'flag:0–7  ·  rated:7  ·  rated:7:1  ·  added:7  ·  edited:7\n'
+                + 'prop:ivl>=21  ·  prop:reps<10  ·  prop:lapses>=5  ·  prop:ease<2.0  ·  prop:due<=3\n'
+                + 'note:"Not türü"  ·  card:1  ·  nid:123  ·  cid:123  ·  re:desen\n'
+                + 'Alan adıyla: Cevap:"tam içerik"\n\n'
+                + 'Dışlamak için -, alternatif için or, gruplamak için parantez:\n'
+                + 'deck:TUS -is:suspended  ·  (tag:a or tag:b)',
+                'Type words to search the card text, its tags and its deck name.\n\n'
+                + 'Anki terms\n'
+                + 'deck:"Deck"  ·  tag:tag  ·  tag:none\n'
+                + 'is:new  is:learn  is:review  is:relearn  is:due  is:suspended  is:buried\n'
+                + 'flag:0–7  ·  rated:7  ·  rated:7:1  ·  added:7  ·  edited:7\n'
+                + 'prop:ivl>=21  ·  prop:reps<10  ·  prop:lapses>=5  ·  prop:ease<2.0  ·  prop:due<=3\n'
+                + 'note:"Note type"  ·  card:1  ·  nid:123  ·  cid:123  ·  re:pattern\n'
+                + 'By field name: Back:"exact content"\n\n'
+                + 'Use - to exclude, or for alternatives, parentheses to group:\n'
+                + 'deck:TUS -is:suspended  ·  (tag:a or tag:b)',
+            ),
+        );
+    }, [l]);
 
     const handleSearch = useCallback((text: string) => {
         setRawQuery(text);
@@ -330,14 +539,15 @@ export default function BrowserScreen() {
         const query = searchQuery.trim();
         let cards = allCards;
 
+        // Notes-mode rows are already the authoritative, deduplicated database result. A note
+        // may have matched because of a sibling card that is not its representative first card,
+        // so reapplying card-level filters here would incorrectly hide the whole note.
+        if (tableMode === 'notes') return cards;
+
         if (filteredScopeCardIds) {
             cards = cards.filter((card) => filteredScopeCardIds.has(card.cardId));
         } else if (scopedDeckIds) {
             cards = cards.filter((card) => scopedDeckIds.has(card.deckId));
-        }
-
-        if (selectedQuickDeckIds) {
-            cards = cards.filter((card) => selectedQuickDeckIds.has(card.deckId));
         }
 
         if (markedOnly) {
@@ -353,48 +563,45 @@ export default function BrowserScreen() {
             cards = cards.filter((card) => {
                 const noteTags = (noteTagsById.get(card.noteId) ?? [])
                     .map((tag) => tag.normalize('NFC').toLocaleLowerCase());
-                return required.every((tag) => noteTags.some((candidate) => candidate === tag || candidate.startsWith(`${tag}::`)));
+                // AnkiDroid combines multiple selected tags with OR. Keep this client-side
+                // safeguard aligned with the database query so pagination never changes the
+                // meaning of the active tag filter.
+                return required.some((tag) => noteTags.some((candidate) => candidate === tag || candidate.startsWith(`${tag}::`)));
             });
         }
 
-        if (flagFilter !== null) {
-            cards = cards.filter((card) => (card.rawCard?.flags ?? 0) === flagFilter);
+        if (flagFilters.length < ALL_CARD_FLAGS.length) {
+            const selectedFlags = new Set(flagFilters);
+            // The flag is the low three bits of the field; Anki reserves the rest. Import masks
+            // them off on the way in, so this is belt-and-braces — but it keeps the one rule for
+            // reading a flag in every place that reads one.
+            cards = cards.filter((card) => selectedFlags.has(((card.rawCard?.flags ?? 0) & 0b111) as CardFlag));
         }
 
-        if (query) {
-            // Turkish/ASCII-insensitive, multi-word AND search (see lib/searchText). Include deck
-            // and tags as Anki's browser search operates across collection metadata too.
-            cards = cards.filter((card) => matchesSearch([
-                card.question,
-                card.answer,
-                card.topic,
-                deckById.get(card.deckId)?.name ?? '',
-                ...(noteTagsById.get(card.noteId) ?? []),
-            ].join(' '), query));
+        if (query && pageMatcher) {
+            // The authoritative result is the id list the database search produced; this pass only
+            // keeps an already-loaded page from contradicting it while a new search is in flight.
+            // Terms this context cannot answer (rated:, introduced:) pass through untouched.
+            cards = cards.filter((card) => pageMatcher({
+                cardId: card.cardId,
+                noteId: card.noteId,
+                deckName: deckById.get(card.deckId)?.name ?? '',
+                text: [card.question, card.answer, card.topic].join(' '),
+                tags: noteTagsById.get(card.noteId) ?? [],
+                templateOrd: card.templateOrd,
+                queue: card.rawCard?.queue ?? 0,
+                type: card.rawCard?.type ?? 0,
+                due: card.rawCard?.due ?? 0,
+                ivl: card.rawCard?.ivl ?? 0,
+                factor: card.rawCard?.factor ?? 0,
+                reps: card.rawCard?.reps ?? 0,
+                lapses: card.rawCard?.lapses ?? 0,
+                flags: card.rawCard?.flags ?? 0,
+            }));
         }
 
-        const direction = sortDescending ? -1 : 1;
-        const sorted = [...cards];
-        sorted.sort((left, right) => {
-            const a = left.rawCard;
-            const b = right.rawCard;
-            let compared = 0;
-            switch (sortKey) {
-                case 'cardType': compared = (a?.ord ?? 0) - (b?.ord ?? 0); break;
-                case 'due': compared = (a?.due ?? 0) - (b?.due ?? 0); break;
-                case 'deck': compared = (deckById.get(left.deckId)?.name ?? '').localeCompare(deckById.get(right.deckId)?.name ?? '', locale); break;
-                case 'created': compared = left.noteId - right.noteId; break;
-                case 'modified': compared = (a?.mod ?? 0) - (b?.mod ?? 0); break;
-                case 'interval': compared = (a?.ivl ?? 0) - (b?.ivl ?? 0); break;
-                case 'ease': compared = (a?.factor ?? 0) - (b?.factor ?? 0); break;
-                case 'lapses': compared = (a?.lapses ?? 0) - (b?.lapses ?? 0); break;
-                case 'reviews': compared = (a?.reps ?? 0) - (b?.reps ?? 0); break;
-                case 'sortField': compared = humanizeCardText(noteById.get(left.noteId)?.sfld ?? left.question).localeCompare(humanizeCardText(noteById.get(right.noteId)?.sfld ?? right.question), locale, { sensitivity: 'base' }); break;
-            }
-            return compared === 0 ? (left.cardId - right.cardId) * direction : compared * direction;
-        });
-        return sorted;
-    }, [allCards, filteredScopeCardIds, scopedDeckIds, selectedQuickDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilter, searchQuery, noteTagsById, noteById, deckById, sortDescending, sortKey, locale]);
+        return cards;
+    }, [allCards, tableMode, filteredScopeCardIds, scopedDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery, pageMatcher, noteTagsById, deckById]);
 
     useEffect(() => {
         const visibleIds = new Set(filteredCards.map((card) => card.cardId));
@@ -411,17 +618,17 @@ export default function BrowserScreen() {
         reload();
     }, [reload, bumpDataVersion, settings.dayRolloverHour]);
 
-    const sortLabels: Record<BrowserSortKey, string> = {
-        sortField: l('Sıralama Alanı', 'Sort Field'),
-        cardType: l('Kart Türü', 'Card Type'),
-        due: l('Vade', 'Due'),
+    const sortLabels: Record<BrowserCardSortKey, string> = {
+        sortField: l('Sıralama alanı', 'Sort Field'),
+        cardType: tableMode === 'notes' ? l('Kart sayısı', 'Card Count') : l('Kart türü', 'Card Type'),
+        due: tableMode === 'notes' ? l('En yakın vade', 'Earliest Due') : l('Vade', 'Due'),
         deck: l('Deste', 'Deck'),
         created: l('Oluşturulma', 'Created'),
         modified: l('Değiştirilme', 'Modified'),
-        interval: l('Aralık', 'Interval'),
-        ease: l('Kolaylık', 'Ease'),
-        lapses: l('Unutma Sayısı', 'Lapses'),
-        reviews: l('Tekrar Sayısı', 'Reviews'),
+        interval: tableMode === 'notes' ? l('Ortalama aralık', 'Average Interval') : l('Aralık', 'Interval'),
+        ease: tableMode === 'notes' ? l('Ortalama kolaylık', 'Average Ease') : l('Kolaylık', 'Ease'),
+        lapses: tableMode === 'notes' ? l('Toplam unutma', 'Total Lapses') : l('Unutma sayısı', 'Lapses'),
+        reviews: tableMode === 'notes' ? l('Toplam tekrar', 'Total Reviews') : l('Tekrar sayısı', 'Reviews'),
     };
 
     const closeSelection = useCallback(() => {
@@ -453,9 +660,11 @@ export default function BrowserScreen() {
     );
     const selectedActionCardIds = useMemo(() => {
         const ids = selectedCards.map((card) => card.cardId);
-        if (currentSelectedCardId === null || !selectedCardIds.has(currentSelectedCardId)) return ids;
-        return [currentSelectedCardId, ...ids.filter((cardId) => cardId !== currentSelectedCardId)];
-    }, [selectedCards, selectedCardIds, currentSelectedCardId]);
+        const orderedIds = currentSelectedCardId === null || !selectedCardIds.has(currentSelectedCardId)
+            ? ids
+            : [currentSelectedCardId, ...ids.filter((cardId) => cardId !== currentSelectedCardId)];
+        return tableMode === 'notes' ? expandSelectedCardsToNotes(orderedIds) : orderedIds;
+    }, [selectedCards, selectedCardIds, currentSelectedCardId, tableMode]);
     const selectedNoteIds = useMemo(
         () => [...new Set(selectedCards.map((card) => card.noteId))],
         [selectedCards],
@@ -482,7 +691,10 @@ export default function BrowserScreen() {
             refreshSelection();
         } catch (error) {
             console.warn('[Browser] selection action failed:', error);
-            alert(t('common.error'), error instanceof Error ? error.message : l('İşlem tamamlanamadı.', 'The action could not be completed.'));
+            alert(t('common.error'), userFacingErrorMessage(
+                error,
+                l('İşlem tamamlanamadı. Lütfen tekrar deneyin.', 'The action could not be completed. Please try again.'),
+            ));
         }
     }, [refreshSelection, t, l]);
 
@@ -497,11 +709,10 @@ export default function BrowserScreen() {
     }, [selectedNotes]);
 
     const openFlagFilter = useCallback(() => {
-        setShowOverflowMenu(false);
-        setFlagPickerMode('filter');
+        setShowFlagFilterMenu((visible) => !visible);
     }, []);
 
-    const updateSort = useCallback((nextSortKey: BrowserSortKey) => {
+    const updateSort = useCallback((nextSortKey: BrowserCardSortKey) => {
         setSortKey(nextSortKey);
         setDbSetting('browser_sort_key', nextSortKey);
         setShowSortPicker(false);
@@ -520,27 +731,47 @@ export default function BrowserScreen() {
         setDbSetting(settingKey, value ? '1' : '0');
     }, []);
 
+    const updateTableMode = useCallback((mode: BrowserTableMode) => {
+        setTableMode(mode);
+        setDbSetting('browser_table_mode', mode);
+        setExpandedCard(null);
+        closeSelection();
+        setShowOptions(false);
+    }, [closeSelection]);
+
     const applyFlag = useCallback((flag: CardFlag) => {
-        if (flagPickerMode === 'filter') {
-            setFlagFilter(flag);
-        } else if (flagPickerMode === 'selection') {
-            for (const cardId of selectedCardIds) setCardFlag(cardId, flag);
+        if (flagPickerMode === 'selection') {
+            for (const cardId of selectedActionCardIds) setCardFlag(cardId, flag);
             bumpDataVersion();
             reload();
         }
         setFlagPickerMode(null);
-    }, [flagPickerMode, selectedCardIds, bumpDataVersion, reload]);
+    }, [flagPickerMode, selectedActionCardIds, bumpDataVersion, reload]);
+
+    const toggleFlagFilter = useCallback((flag: CardFlag) => {
+        setFlagFilters((current) => (
+            current.includes(flag)
+                ? current.filter((candidate) => candidate !== flag)
+                : [...current, flag].sort((a, b) => a - b)
+        ));
+    }, []);
+
+    const toggleAllFlagFilters = useCallback(() => {
+        setFlagFilters((current) => (
+            current.length === ALL_CARD_FLAGS.length ? [] : [...ALL_CARD_FLAGS]
+        ));
+    }, []);
 
     const moveSelectionToDeck = useCallback((targetDeckId: number) => {
         const targetDeck = getDeck(targetDeckId);
         if (!targetDeck || targetDeck.isFiltered) return;
-        const move = moveCardsToDeck([...selectedCardIds], targetDeckId);
+        const move = moveCardsToDeck(selectedActionCardIds, targetDeckId);
         if (move.length > 0) setLastDeckMove(move);
         setShowDeckPicker(false);
         closeSelection();
         bumpDataVersion();
         reload();
-    }, [selectedCardIds, closeSelection, bumpDataVersion, reload]);
+    }, [selectedActionCardIds, closeSelection, bumpDataVersion, reload]);
 
     const undoDeckMove = useCallback(() => {
         setShowOverflowMenu(false);
@@ -564,46 +795,62 @@ export default function BrowserScreen() {
         } else if (scopeDeck) {
             terms.push(`deck:${quoteAnkiSearchValue(scopeDeck.name)}`);
         }
-        if (selectedQuickDeckName) terms.push(`deck:${quoteAnkiSearchValue(selectedQuickDeckName)}`);
         if (markedOnly) terms.push('tag:marked');
         if (suspendedOnly) terms.push('is:suspended');
-        for (const tag of tagFilters) terms.push(`tag:${quoteAnkiSearchValue(tag)}`);
-        if (flagFilter !== null) terms.push(`flag:${flagFilter}`);
+        if (tagCardState !== 'all') terms.push(`is:${tagCardState}`);
+        if (tagFilters.length === 1) {
+            terms.push(`tag:${quoteAnkiSearchValue(tagFilters[0])}`);
+        } else if (tagFilters.length > 1) {
+            terms.push(`(${tagFilters.map((tag) => `tag:${quoteAnkiSearchValue(tag)}`).join(' OR ')})`);
+        }
+        if (flagFilters.length === 0) {
+            terms.push(`-(${ALL_CARD_FLAGS.map((flag) => `flag:${flag}`).join(' OR ')})`);
+        } else if (flagFilters.length < ALL_CARD_FLAGS.length) {
+            const flags = flagFilters.map((flag) => `flag:${flag}`);
+            terms.push(flags.length === 1 ? flags[0] : `(${flags.join(' OR ')})`);
+        }
         if (searchQuery.trim()) terms.push(searchQuery.trim());
         return terms.join(' ');
-    }, [scopeDeck, selectedQuickDeckName, markedOnly, suspendedOnly, tagFilters, flagFilter, searchQuery]);
+    }, [scopeDeck, markedOnly, suspendedOnly, tagCardState, tagFilters, flagFilters, searchQuery]);
 
-    const allFilterActive = !selectedQuickDeckName
-        && !markedOnly
+    const allFilterActive = !markedOnly
         && !suspendedOnly
+        && tagCardState === 'all'
         && tagFilters.length === 0
-        && flagFilter === null;
+        && flagFilters.length === ALL_CARD_FLAGS.length;
+    const scopeHasCards = useMemo(() => {
+        if (filteredScopeCardIds) return filteredScopeCardIds.size > 0;
+        const ids = scopedDeckIds ?? new Set(allDecks.filter((deck) => !deck.isFiltered).map((deck) => deck.id));
+        for (const id of ids) {
+            if ((deckCardCounts.get(id)?.total ?? 0) > 0) return true;
+        }
+        return false;
+    }, [allDecks, deckCardCounts, filteredScopeCardIds, scopedDeckIds]);
+    const hasResultFilter = Boolean(searchQuery.trim()) || !allFilterActive;
+    // Loaded-page progress is an implementation detail. Keep the toolbar stable and show only
+    // the total number of cards in the current scope/filter, including while search is scanning.
+    const scopeCountText = String(scopeCardCount);
 
     const clearBrowserFilters = useCallback(() => {
-        setSelectedQuickDeckName(null);
         setMarkedOnly(false);
         setSuspendedOnly(false);
+        setTagCardState('all');
         setTagFilters([]);
-        setFlagFilter(null);
+        setFlagFilters([...ALL_CARD_FLAGS]);
     }, []);
 
     const openFilteredDeckDialog = useCallback(() => {
         setShowOverflowMenu(false);
-        setFilteredDeckName(getAvailableDeckName(l('Kartlarım Filtresi', 'My Cards Filter')));
-        setFilteredDeckLimit('100');
-        setShowFilteredDeckDialog(true);
-    }, [l]);
-
-    const createDeckFromBrowser = useCallback(() => {
-        const requestedName = filteredDeckName.trim() || l('Kartlarım Filtresi', 'My Cards Filter');
-        const name = getAvailableDeckName(requestedName);
-        const parsedLimit = Number.parseInt(filteredDeckLimit, 10);
-        const limit = Number.isFinite(parsedLimit) ? Math.min(99_999, Math.max(1, parsedLimit)) : 100;
-        const deck = createFilteredDeck(name, browserSearch, limit);
-        setShowFilteredDeckDialog(false);
-        bumpDataVersion();
-        router.push(`/deck-overview?deck=${encodeURIComponent(deck.name)}` as any);
-    }, [filteredDeckName, filteredDeckLimit, browserSearch, l, bumpDataVersion, router]);
+        InteractionManager.runAfterInteractions(() => {
+            router.push({
+                pathname: '/decks',
+                params: {
+                    createFilter: String(Date.now()),
+                    filterSearch: browserSearch,
+                },
+            } as any);
+        });
+    }, [browserSearch, router]);
 
     const subject = (id: string) => subjects.find((s) => s.id === id);
 
@@ -612,18 +859,28 @@ export default function BrowserScreen() {
         const isSelected = selectedCardIds.has(item.cardId);
         const sub = subject(item.subject);
         const flag = (item.rawCard?.flags ?? 0) as CardFlag;
+        const noteSummary = item.browserNoteSummary;
+        const isNotesMode = tableMode === 'notes' && noteSummary !== undefined;
+        const rowNoteType = item.rawNote
+            ? noteTypes.find((noteType) => noteType.id === item.rawNote?.noteTypeId)
+            : undefined;
 
-        const statusColor = item.state.status === 'new'
-            ? colors.badgeNew
-            : item.state.status === 'learning'
-                ? colors.badgeLearn
-                : colors.badgeReview;
-
-        const statusBg = item.state.status === 'new'
-            ? colors.badgeNewBg
-            : item.state.status === 'learning'
-                ? colors.badgeLearnBg
-                : colors.badgeReviewBg;
+        const statusColor = item.state.status === 'learning' ? colors.badgeLearn : colors.badgeReview;
+        const statusBg = item.state.status === 'learning' ? colors.badgeLearnBg : colors.badgeReviewBg;
+        const noteDeckText = isNotesMode
+            ? noteSummary.deckCount > 1
+                ? l(`${noteSummary.deckCount} deste`, `${noteSummary.deckCount} decks`)
+                : (noteSummary.deckNames[0] ?? deckById.get(item.deckId)?.name ?? item.subject).replaceAll('::', ' › ')
+            : '';
+        const noteScheduleText = isNotesMode
+            ? [
+                l(`${noteSummary.cardCount} kart`, `${noteSummary.cardCount} cards`),
+                noteSummary.averageIntervalDays == null
+                    ? null
+                    : l(`Ort. aralık ${noteSummary.averageIntervalDays.toFixed(1)} gün`, `Avg. interval ${noteSummary.averageIntervalDays.toFixed(1)} days`),
+                l(`${noteSummary.totalReviews} tekrar`, `${noteSummary.totalReviews} reviews`),
+            ].filter(Boolean).join(' · ')
+            : '';
 
         return (
             <TouchableOpacity
@@ -643,36 +900,41 @@ export default function BrowserScreen() {
                 accessibilityRole={selectionMode ? 'checkbox' : 'button'}
                 accessibilityState={selectionMode ? { checked: isSelected } : undefined}
             >
-                <View style={[styles.cardItemHeader, item.state.suspended && styles.cardSuspended]}>
+                <View style={[styles.cardItemHeader, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
                     {selectionMode && (
                         <View style={[styles.selectionCheckbox, isSelected && styles.selectionCheckboxActive]}>
                             {isSelected && <Text style={styles.selectionCheckboxTick}>✓</Text>}
                         </View>
                     )}
-                    <Text style={styles.cardIcon}>{sub?.icon || '📝'}</Text>
+                    <Text style={styles.cardIcon}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
                     <View style={styles.cardBody}>
                         <Text style={[styles.cardQuestion, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]} numberOfLines={isExpanded ? undefined : 2}>
-                            {humanizeCardText(item.question) || l('🃏 (boş)', '🃏 (empty)')}
+                            {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames }) || l('🃏 (boş)', '🃏 (empty)')}
                         </Text>
                         <View style={styles.cardMeta}>
                             <Text style={styles.cardTopic} numberOfLines={1}>
-                                {(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}
-                                {item.topic ? ` · ${item.topic}` : ''}
+                                {isNotesMode
+                                    ? `${rowNoteType ? localizeNoteTypeName(locale, rowNoteType.name) : l('Not', 'Note')} · ${noteDeckText}`
+                                    : `${(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}${item.topic ? ` · ${item.topic}` : ''}`}
                             </Text>
-                            <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
-                                <Text style={[styles.statusDotText, { color: statusColor }]}>
-                                    {item.state.status === 'new' ? t('anki.new') : item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
-                                </Text>
-                            </View>
+                            {!isNotesMode && item.state.status !== 'new' ? (
+                                <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
+                                    <Text style={[styles.statusDotText, { color: statusColor }]}>
+                                        {item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
+                                    </Text>
+                                </View>
+                            ) : null}
                         </View>
                         {showAnswerSnippet && !isExpanded && (
                             <Text style={[styles.answerSnippet, { fontSize: FontSize.sm * browserFontScale, lineHeight: 18 * browserFontScale }]} numberOfLines={compactRows ? 1 : 2}>
-                                {humanizeCardText(item.answer) || '—'}
+                                {humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}
                             </Text>
                         )}
                         {showScheduleDetails && (
                             <Text style={styles.scheduleMeta} numberOfLines={compactRows ? 1 : 2}>
-                                ⏱ {l('Son:', 'Last:')} {formatLastReview(item.state.lastReviewedAtMs, locale)} · {l('Sonraki:', 'Next:')} {formatNextDue(item.state, settings.dayRolloverHour, locale)}
+                                {isNotesMode
+                                    ? `▤ ${noteScheduleText}`
+                                    : `⏱ ${l('Son:', 'Last:')} ${formatLastReview(item.state.lastReviewedAtMs, locale)} · ${l('Sonraki:', 'Next:')} ${formatNextDue(item.state, settings.dayRolloverHour, locale)}`}
                             </Text>
                         )}
                     </View>
@@ -682,7 +944,7 @@ export default function BrowserScreen() {
                                 style={styles.editBtn}
                                 onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
                                 accessibilityRole="button"
-                                accessibilityLabel={l('Kartı düzenle', 'Edit card')}
+                                accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                             >
                                 <Text style={styles.editBtnText}>✏️</Text>
                             </TouchableOpacity>
@@ -690,7 +952,7 @@ export default function BrowserScreen() {
                         {item.noteMarked && (
                             <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
                         )}
-                        {flag > 0 && (
+                        {!isNotesMode && flag > 0 && (
                             <Text
                                 style={[styles.flagIcon, { color: FLAG_COLORS[flag].color }]}
                                 accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
@@ -698,38 +960,79 @@ export default function BrowserScreen() {
                                 ⚑
                             </Text>
                         )}
-                        {item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
+                        {!isNotesMode && item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
                     </View>
                 </View>
 
                 {isExpanded && !selectionMode && (
                     <View style={styles.expandedContent}>
-                        <View style={[styles.answerBox, item.state.suspended && styles.cardSuspended]}>
-                            <Text style={styles.answerLabel}>{l('CEVAP', 'ANSWER')}</Text>
-                            <Text style={[styles.answerContent, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]}>{humanizeCardText(item.answer) || '—'}</Text>
+                        <View style={[styles.answerBox, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
+                            <Text style={styles.answerLabel}>{isNotesMode ? l('İLK KARTIN CEVABI', 'FIRST CARD ANSWER') : l('CEVAP', 'ANSWER')}</Text>
+                            <Text style={[styles.answerContent, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]}>{humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}</Text>
                         </View>
 
-                        <View style={[styles.cardDetails, item.state.suspended && styles.cardSuspended]}>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>{l('Aralık', 'Interval')}</Text>
-                                <Text style={styles.detailValue}>{item.state.interval} {l('gün', 'days')}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>{l('Kolaylık', 'Ease')}</Text>
-                                <Text style={styles.detailValue}>{item.state.easeFactor.toFixed(2)}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                                <Text style={styles.detailLabel}>{l('Sonraki gösterim', 'Due')}</Text>
-                                <Text style={styles.detailValue}>{item.state.status === 'learning' ? l('Öğrenme sırasında', 'In learning') : item.state.dueDate}</Text>
-                            </View>
+                        <View style={[styles.cardDetails, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
+                            {isNotesMode ? (
+                                <>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Oluşturulan kartlar', 'Generated cards')}</Text>
+                                        <Text style={styles.detailValue}>{noteSummary.cardCount}</Text>
+                                    </View>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Desteler', 'Decks')}</Text>
+                                        <Text style={styles.detailValue}>{noteSummary.deckCount}</Text>
+                                    </View>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Ortalama aralık', 'Average interval')}</Text>
+                                        <Text style={styles.detailValue}>{noteSummary.averageIntervalDays == null ? '—' : `${noteSummary.averageIntervalDays.toFixed(1)} ${l('gün', 'days')}`}</Text>
+                                    </View>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Ortalama kolaylık', 'Average ease')}</Text>
+                                        <Text style={styles.detailValue}>{noteSummary.averageEaseFactor == null ? l('Yeni', 'New') : noteSummary.averageEaseFactor.toFixed(2)}</Text>
+                                    </View>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Toplam tekrar / unutma', 'Total reviews / lapses')}</Text>
+                                        <Text style={styles.detailValue}>{noteSummary.totalReviews} / {noteSummary.totalLapses}</Text>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Aralık', 'Interval')}</Text>
+                                        <Text style={styles.detailValue}>{item.state.interval} {l('gün', 'days')}</Text>
+                                    </View>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Kolaylık', 'Ease')}</Text>
+                                        <Text style={styles.detailValue}>{item.state.easeFactor.toFixed(2)}</Text>
+                                    </View>
+                                    <View style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{l('Sonraki gösterim', 'Due')}</Text>
+                                        <Text style={styles.detailValue}>{item.state.status === 'learning' ? l('Öğrenme sırasında', 'In learning') : item.state.dueDate}</Text>
+                                    </View>
+                                </>
+                            )}
                         </View>
 
                         <TouchableOpacity
                             style={[styles.suspendBtn, item.state.suspended && styles.suspendBtnActive]}
-                            onPress={() => toggleSuspend(item.cardId, item.state.suspended)}
+                            onPress={() => {
+                                if (isNotesMode) {
+                                    toggleSelectedSuspend(expandSelectedCardsToNotes([item.cardId]), settings.dayRolloverHour);
+                                    bumpDataVersion();
+                                    reload();
+                                } else {
+                                    toggleSuspend(item.cardId, item.state.suspended);
+                                }
+                            }}
                         >
                             <Text style={styles.suspendBtnText}>
-                                {item.state.suspended ? l('▶️ Askıdan Çıkar', '▶️ Unsuspend') : `⏸️ ${t('anki.suspend')}`}
+                                {isNotesMode
+                                    ? item.state.suspended
+                                        ? l('▶️ Notun kartlarını askıdan çıkar', '▶️ Unsuspend Note Cards')
+                                        : l('⏸️ Notun kartlarını askıya al', '⏸️ Suspend Note Cards')
+                                    : item.state.suspended
+                                        ? l('▶️ Askıdan Çıkar', '▶️ Unsuspend')
+                                        : `⏸️ ${t('anki.suspend')}`}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -766,7 +1069,9 @@ export default function BrowserScreen() {
                         <Text style={styles.scopeSelectorText} numberOfLines={1}>{scopeTitle}</Text>
                         <Text style={styles.scopeSelectorCaret}>▾</Text>
                     </TouchableOpacity>
-                    <Text style={styles.scopeCount}>{filteredCards.length} {l('kart', 'cards')}</Text>
+                    <Text style={styles.scopeCount}>
+                        {scopeCountText} {tableMode === 'notes' ? l('not', 'notes') : l('kart', 'cards')}
+                    </Text>
                 </View>
                 {!scopeDeck?.isFiltered && (
                     <TouchableOpacity
@@ -774,15 +1079,15 @@ export default function BrowserScreen() {
                         onPress={() => router.push({
                             pathname: '/editor',
                             params: {
-                                ...(selectedQuickDeck || scopeDeck
-                                    ? { deckId: String((selectedQuickDeck ?? scopeDeck)!.id) }
+                                ...(scopeDeck
+                                    ? { deckId: String(scopeDeck.id) }
                                     : {}),
                             },
                         } as any)}
                         accessibilityRole="button"
-                        accessibilityLabel={l('Yeni kart ekle', 'Add new card')}
+                        accessibilityLabel={tableMode === 'notes' ? l('Yeni not ekle', 'Add new note') : l('Yeni kart ekle', 'Add new card')}
                     >
-                        <Text style={styles.addCardBtnText}>＋ {l('Yeni Kart', 'New Card')}</Text>
+                        <Text style={styles.addCardBtnText}>＋ {tableMode === 'notes' ? l('Yeni not', 'New Note') : l('Yeni kart', 'New Card')}</Text>
                     </TouchableOpacity>
                 )}
                 <TouchableOpacity
@@ -798,15 +1103,34 @@ export default function BrowserScreen() {
             </View>
 
             <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder={l('🔍 Kart ara…', '🔍 Search cards…')}
-                    placeholderTextColor={colors.textMuted}
-                    value={rawQuery}
-                    onChangeText={handleSearch}
-                />
+                <View style={styles.searchField}>
+                    <View style={styles.searchIcon} pointerEvents="none">
+                        <SearchIcon color={colors.textMuted} />
+                    </View>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder={tableMode === 'notes'
+                            ? l('Not ara veya deck: tag: is:due', 'Search notes, or deck: tag: is:due')
+                            : l('Kart ara veya deck: tag: is:due', 'Search cards, or deck: tag: is:due')}
+                        placeholderTextColor={colors.textMuted}
+                        value={rawQuery}
+                        onChangeText={handleSearch}
+                        accessibilityLabel={tableMode === 'notes' ? l('Not ara', 'Search notes') : l('Kart ara', 'Search cards')}
+                        returnKeyType="search"
+                    />
+                    <TouchableOpacity
+                        style={styles.searchHelpButton}
+                        onPress={showSearchSyntaxHelp}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Arama sözdizimi yardımı', 'Search syntax help')}
+                    >
+                        <Text style={styles.searchHelpButtonText}>?</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
+            {scopeHasCards && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
                 <TouchableOpacity
                     style={[styles.filterChip, allFilterActive && styles.filterChipActive]}
@@ -832,31 +1156,29 @@ export default function BrowserScreen() {
                         <Text style={[styles.filterChipText, styles.filterChipTextActive]}>⌗ {l(`${tagFilters.length} etiket`, `${tagFilters.length} tags`)} ×</Text>
                     </TouchableOpacity>
                 )}
-                {flagFilter !== null && (
-                    <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setFlagFilter(null)}>
-                        <View style={[styles.filterFlagDot, { backgroundColor: flagFilter === 0 ? colors.border : FLAG_COLORS[flagFilter].color }]} />
-                        <Text style={[styles.filterChipText, styles.filterChipTextActive]}>{flagFilter === 0 ? l('Bayraksız', 'No flag') : cardFlagName(locale, flagFilter)} ×</Text>
-                    </TouchableOpacity>
-                )}
-                {quickDecks.map((deck) => (
-                    <TouchableOpacity
-                        key={deck.id}
-                        style={[styles.filterChip, selectedQuickDeckName === deck.name && styles.filterChipActive]}
-                        onPress={() => setSelectedQuickDeckName(
-                            selectedQuickDeckName === deck.name ? null : deck.name,
-                        )}
-                        accessibilityRole="button"
-                        accessibilityLabel={l(
-                            `${deck.name.replaceAll('::', ' › ')} alt destesindeki kartları göster`,
-                            `Show cards in the ${deck.name.replaceAll('::', ' › ')} subdeck`,
-                        )}
-                    >
-                        <Text style={[styles.filterChipText, selectedQuickDeckName === deck.name && styles.filterChipTextActive]}>
-                            {deck.name.split('::').at(-1)}
+                {tagCardState !== 'all' && (
+                    <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setTagCardState('all')}>
+                        <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
+                            {tagCardState === 'new' ? l('Yeni', 'New') : l('Süresi gelen', 'Due')} ×
                         </Text>
                     </TouchableOpacity>
-                ))}
+                )}
+                {flagFilters.length < ALL_CARD_FLAGS.length && (
+                    <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setFlagFilters([...ALL_CARD_FLAGS])}>
+                        {flagFilters.length === 1 && (
+                            <View style={[styles.filterFlagDot, { backgroundColor: flagFilters[0] === 0 ? colors.border : FLAG_COLORS[flagFilters[0]].color }]} />
+                        )}
+                        <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
+                            {flagFilters.length === 0
+                                ? l('Bayrak seçilmedi', 'No flags selected')
+                                : flagFilters.length === 1
+                                    ? (flagFilters[0] === 0 ? l('Bayraksız', 'No flag') : cardFlagName(locale, flagFilters[0]))
+                                    : l(`${flagFilters.length} bayrak`, `${flagFilters.length} flags`)} ×
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
+            )}
 
             <FlatList
                 data={filteredCards}
@@ -867,6 +1189,43 @@ export default function BrowserScreen() {
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
                 onRefresh={reload}
+                onEndReached={loadNextPage}
+                onEndReachedThreshold={0.55}
+                initialNumToRender={12}
+                maxToRenderPerBatch={12}
+                updateCellsBatchingPeriod={40}
+                windowSize={7}
+                removeClippedSubviews={Platform.OS !== 'web'}
+                ListFooterComponent={loadingMore ? (
+                    <View style={styles.pageLoader}>
+                        <ActivityIndicator color={colors.accent} />
+                        <Text style={styles.pageLoaderText}>{tableMode === 'notes' ? l('Notlar yükleniyor…', 'Loading notes…') : l('Kartlar yükleniyor…', 'Loading cards…')}</Text>
+                    </View>
+                ) : null}
+                ListEmptyComponent={!loading ? (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyTitle}>
+                            {loadingError
+                                ? tableMode === 'notes' ? l('Notlar yüklenemedi', 'Notes could not be loaded') : l('Kartlar yüklenemedi', 'Cards could not be loaded')
+                                : tableMode === 'notes' ? l('Gösterilecek not yok', 'No notes to show') : l('Gösterilecek kart yok', 'No cards to show')}
+                        </Text>
+                        <Text style={styles.emptyText}>
+                            {loadingError
+                                ? loadingError
+                                : hasResultFilter
+                                    ? tableMode === 'notes'
+                                        ? l('Arama veya filtrelerle eşleşen not bulunamadı.', 'No notes match the search or filters.')
+                                        : l('Arama veya filtrelerle eşleşen kart bulunamadı.', 'No cards match the search or filters.')
+                                    : deckName
+                                        ? tableMode === 'notes'
+                                            ? l('Bu destede henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'This deck has no notes yet. Use New Note to add the first one.')
+                                            : l('Bu destede henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın.', 'This deck has no cards yet. Use New Card to add the first one.')
+                                        : tableMode === 'notes'
+                                            ? l('Koleksiyonda henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'There are no notes in the collection yet. Use New Note to add the first one.')
+                                            : l('Koleksiyonda henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın.', 'There are no cards in the collection yet. Use New Card to add the first one.')}
+                        </Text>
+                    </View>
+                ) : null}
             />
 
             {selectionMode && (
@@ -877,7 +1236,9 @@ export default function BrowserScreen() {
                         accessibilityLabel={l('Seçimi kapat', 'Close selection')}
                     >
                         <Text style={styles.selectionBarClose}>×</Text>
-                        <Text style={styles.selectionBarCountText}>{selectedCardIds.size} {l('seçili', 'selected')}</Text>
+                        <Text style={styles.selectionBarCountText}>
+                            {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.selectionAction}
@@ -922,8 +1283,8 @@ export default function BrowserScreen() {
                 colors={colors}
                 decks={deckScopePickerItems}
                 selectedDeckName={deckName}
-                title={l('Deste Seç', 'Select Deck')}
-                allDecksLabel={l('Tüm Koleksiyon', 'Whole Collection')}
+                title={l('Deste seç', 'Select Deck')}
+                allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
                 emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
                 cancelLabel={t('common.cancel')}
@@ -932,15 +1293,26 @@ export default function BrowserScreen() {
                 createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
                 onClose={() => setDeckScopePickerVisible(false)}
                 onSelect={handlePickDeckScope}
-                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+                onCreateDeck={(name) => {
+                    const created = createDeck(getAvailableDeckName(name));
+                    bumpDataVersion();
+                    return created.name;
+                }}
             />
 
             <Modal visible={showSelectionMenu} transparent animationType="fade" onRequestClose={() => setShowSelectionMenu(false)}>
                 <View style={styles.selectionMenuOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSelectionMenu(false)} />
-                    <View style={styles.selectionMenuCard} accessibilityViewIsModal>
+                    <SwipeDismissSheet
+                        active={showSelectionMenu}
+                        style={styles.selectionMenuCard}
+                        onDismiss={() => setShowSelectionMenu(false)}
+                        accessibilityViewIsModal
+                    >
                         <View style={styles.selectionMenuHeader}>
-                            <Text style={styles.selectionMenuTitle}>{selectedCardIds.size} {l('kart seçili', 'cards selected')}</Text>
+                            <Text style={styles.selectionMenuTitle}>
+                                {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
+                            </Text>
                             <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)}>
                                 <Text style={styles.selectionMenuCloseText}>×</Text>
                             </TouchableOpacity>
@@ -975,8 +1347,8 @@ export default function BrowserScreen() {
                                 onPress={() => {
                                     setShowSelectionMenu(false);
                                     confirm(
-                                        l('İlerlemeyi Sıfırla', 'Reset Progress'),
-                                        l(`${selectedCardIds.size} kart yeni kuyruğunun sonuna taşınacak. İnceleme geçmişi korunur.`, `${selectedCardIds.size} cards will be moved to the end of the new queue. Review history is preserved.`),
+                                        l('İlerlemeyi sıfırla', 'Reset Progress'),
+                                        l(`${selectedActionCardIds.length} kart yeni kuyruğunun sonuna taşınacak. İnceleme geçmişi korunur.`, `${selectedActionCardIds.length} cards will be moved to the end of the new queue. Review history is preserved.`),
                                         () => runSelectionAction(() => resetSelectedProgress(selectedActionCardIds, settings)),
                                         { destructive: true },
                                     );
@@ -995,14 +1367,14 @@ export default function BrowserScreen() {
                                     router.push('/export?selection=browser' as any);
                                 }}
                             >
-                                <Text style={styles.selectionMenuIcon}>⇧</Text><Text style={styles.selectionMenuText}>{l('Kartları dışa aktar', 'Export cards')}</Text>
+                                <Text style={styles.selectionMenuIcon}>⇧</Text><Text style={styles.selectionMenuText}>{tableMode === 'notes' ? l('Notları dışa aktar', 'Export notes') : l('Kartları dışa aktar', 'Export cards')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.selectionMenuItem}
                                 onPress={() => {
                                     setShowSelectionMenu(false);
                                     confirm(
-                                        l('Notları Sil', 'Delete Notes'),
+                                        l('Notları sil', 'Delete Notes'),
                                         l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar kalıcı olarak silinecek.`, `${selectedNoteIds.length} notes and all cards belonging to them will be permanently deleted.`),
                                         () => {
                                             try {
@@ -1021,7 +1393,7 @@ export default function BrowserScreen() {
                                 <Text style={[styles.selectionMenuIcon, styles.selectionMenuDanger]}>⌫</Text><Text style={[styles.selectionMenuText, styles.selectionMenuDanger]}>{l('Notları sil', 'Delete notes')}</Text>
                             </TouchableOpacity>
                         </ScrollView>
-                    </View>
+                    </SwipeDismissSheet>
                 </View>
             </Modal>
 
@@ -1029,6 +1401,7 @@ export default function BrowserScreen() {
                 <View style={styles.overflowOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOverflowMenu(false)} />
                     <View style={styles.overflowMenu} accessibilityViewIsModal>
+                        <ScrollView bounces={false} showsVerticalScrollIndicator={showFlagFilterMenu}>
                         <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowSortPicker(true); }}>
                             <Text style={styles.overflowItemIcon}>↕</Text>
                             <Text style={styles.overflowItemText}>{l('Görüntüleme sırasını değiştir', 'Change display order')}</Text>
@@ -1046,16 +1419,72 @@ export default function BrowserScreen() {
                         <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowTagFilter(true); }}>
                             <Text style={styles.overflowItemIcon}>⌗</Text>
                             <Text style={styles.overflowItemText}>{l('Etikete göre filtrele', 'Filter by tag')}</Text>
-                            {tagFilters.length > 0 && <Text style={styles.overflowBadge}>{tagFilters.length}</Text>}
+                            {tagFilters.length > 0
+                                ? <Text style={styles.overflowBadge}>{tagFilters.length}</Text>
+                                : tagCardState !== 'all' && <Text style={styles.overflowCheck}>✓</Text>}
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter}>
                             <Text style={styles.overflowItemIcon}>⚑</Text>
                             <Text style={styles.overflowItemText}>{l('Bayrağa göre filtrele', 'Filter by flag')}</Text>
-                            {flagFilter !== null && (
-                                <View style={[styles.menuFlagDot, { backgroundColor: flagFilter === 0 ? colors.border : FLAG_COLORS[flagFilter].color }]} />
+                            {flagFilters.length === 1 && (
+                                <View style={[styles.menuFlagDot, { backgroundColor: flagFilters[0] === 0 ? colors.border : FLAG_COLORS[flagFilters[0]].color }]} />
                             )}
-                            <Text style={styles.overflowChevron}>›</Text>
+                            {flagFilters.length !== ALL_CARD_FLAGS.length && flagFilters.length !== 1 && (
+                                <Text style={styles.overflowBadge}>{flagFilters.length}</Text>
+                            )}
+                            <Text style={styles.overflowChevron}>{showFlagFilterMenu ? '⌄' : '›'}</Text>
                         </TouchableOpacity>
+                        {showFlagFilterMenu && (
+                            <View style={styles.overflowFlagPanel}>
+                                <TouchableOpacity
+                                    style={[styles.overflowFlagRow, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagRowActive]}
+                                    onPress={toggleAllFlagFilters}
+                                    accessibilityRole="checkbox"
+                                    accessibilityState={{ checked: flagFilters.length === ALL_CARD_FLAGS.length }}
+                                >
+                                    <View style={[
+                                        styles.checkbox,
+                                        flagFilters.length > 0 && styles.checkboxChecked,
+                                        flagFilters.length > 0 && flagFilters.length < ALL_CARD_FLAGS.length && styles.checkboxPartial,
+                                    ]}>
+                                        {flagFilters.length > 0 && (
+                                            <Text style={styles.checkboxTick}>
+                                                {flagFilters.length === ALL_CARD_FLAGS.length ? '✓' : '−'}
+                                            </Text>
+                                        )}
+                                    </View>
+                                    <Text style={[styles.overflowFlagText, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagTextActive]}>
+                                        {l('Tümünü seç', 'Select all')}
+                                    </Text>
+                                </TouchableOpacity>
+                                {ALL_CARD_FLAGS.map((flag) => {
+                                    const selected = flagFilters.includes(flag);
+                                    return (
+                                        <TouchableOpacity
+                                            key={flag}
+                                            style={[styles.overflowFlagRow, selected && styles.overflowFlagRowActive]}
+                                            onPress={() => toggleFlagFilter(flag)}
+                                            accessibilityRole="checkbox"
+                                            accessibilityState={{ checked: selected }}
+                                            accessibilityLabel={flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
+                                        >
+                                            <View style={[styles.flagDot, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
+                                            <Text style={[styles.overflowFlagText, selected && styles.overflowFlagTextActive]}>
+                                                {flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
+                                            </Text>
+                                            <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
+                                                {selected && <Text style={styles.checkboxTick}>✓</Text>}
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                                <View style={styles.overflowFlagFooter}>
+                                    <Text style={styles.overflowFlagCount}>
+                                        {l(`${flagFilters.length} seçenek seçili`, `${flagFilters.length} selected`)}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
                         <View style={styles.overflowSeparator} />
                         <TouchableOpacity
                             style={[styles.overflowItem, lastDeckMove.length === 0 && styles.overflowItemDisabled]}
@@ -1063,7 +1492,7 @@ export default function BrowserScreen() {
                             onPress={undoDeckMove}
                         >
                             <Text style={styles.overflowItemIcon}>↶</Text>
-                            <Text style={styles.overflowItemText}>{l('Geri Al: Deste Güncelleme', 'Undo Update Deck')}</Text>
+                            <Text style={styles.overflowItemText}>{l('Geri al: Deste güncelleme', 'Undo Update Deck')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.overflowItem, filteredCards.length === 0 && styles.overflowItemDisabled]}
@@ -1071,7 +1500,11 @@ export default function BrowserScreen() {
                             onPress={() => { setShowOverflowMenu(false); selectAllVisible(); }}
                         >
                             <Text style={styles.overflowItemIcon}>☑</Text>
-                            <Text style={styles.overflowItemText}>{l('Tümünü seç', 'Select all')}</Text>
+                            <Text style={styles.overflowItemText}>
+                                {hasMoreCards
+                                    ? l(`Yüklenenleri seç (${filteredCards.length})`, `Select loaded (${filteredCards.length})`)
+                                    : l('Tümünü seç', 'Select all')}
+                            </Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowOptions(true); }}>
                             <Text style={styles.overflowItemIcon}>⚙</Text>
@@ -1082,6 +1515,7 @@ export default function BrowserScreen() {
                             <Text style={styles.overflowItemIcon}>⧉</Text>
                             <Text style={styles.overflowItemText}>{l('Filtrelenmiş deste oluştur', 'Create filtered deck')}</Text>
                         </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -1090,7 +1524,7 @@ export default function BrowserScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSortPicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Görüntüleme Sırası', 'Display Order')}</Text>
+                        <Text style={styles.modalTitle}>{l('Görüntüleme sırası', 'Display Order')}</Text>
                         <View style={styles.directionRow}>
                             <TouchableOpacity
                                 style={[styles.directionButton, !sortDescending && styles.directionButtonActive]}
@@ -1124,10 +1558,14 @@ export default function BrowserScreen() {
                 visible={showTagFilter}
                 selectedTags={tagFilters}
                 allowCreate={false}
-                title={l('Etikete Göre Filtrele', 'Filter by Tag')}
+                loadTags={loadScopedTags}
+                showCardStateFilter
+                selectedCardState={tagCardState}
+                title={l('Etikete göre filtrele', 'Filter by Tag')}
                 onCancel={() => setShowTagFilter(false)}
-                onConfirm={(tags) => {
+                onConfirm={(tags, cardState) => {
                     setTagFilters(tags);
+                    setTagCardState(cardState);
                     setShowTagFilter(false);
                 }}
             />
@@ -1136,7 +1574,7 @@ export default function BrowserScreen() {
                 visible={showSelectionTags}
                 selectedTags={selectionTagBaseline}
                 allowCreate
-                title={l('Seçili Notların Etiketleri', 'Tags for Selected Notes')}
+                title={l('Seçili notların etiketleri', 'Tags for Selected Notes')}
                 onCancel={() => setShowSelectionTags(false)}
                 onConfirm={(tags) => {
                     const baselineKeys = new Set(selectionTagBaseline.map((tag) => tag.normalize('NFC').toLocaleLowerCase()));
@@ -1152,7 +1590,7 @@ export default function BrowserScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowNoteTypePicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Not Türünü Değiştir', 'Change Note Type')}</Text>
+                        <Text style={styles.modalTitle}>{l('Not türünü değiştir', 'Change Note Type')}</Text>
                         <Text style={styles.modalCaption}>{l('Aynı adlı alanlar eşleştirilir; kartların mevcut zamanlaması korunur.', 'Fields with matching names are mapped; existing card scheduling is preserved.')}</Text>
                         <ScrollView style={styles.pickerList}>
                             {selectableNoteTypes.map((noteType) => (
@@ -1213,7 +1651,7 @@ export default function BrowserScreen() {
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDueDialog(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Vade Tarihini Ayarla', 'Set Due Date')}</Text>
+                        <Text style={styles.modalTitle}>{l('Vade tarihini ayarla', 'Set Due Date')}</Text>
                         <Text style={styles.modalCaption}>{l('Örnek: 5, 3-7 veya aralığı da değiştirmek için 3-7!', 'Examples: 5, 3-7, or 3-7! to also change the interval.')}</Text>
                         <TextInput style={styles.dialogInput} value={dueInput} onChangeText={setDueInput} autoCapitalize="none" autoCorrect={false} keyboardType="numbers-and-punctuation" placeholder="0" placeholderTextColor={colors.textMuted} />
                         <View style={styles.dialogActions}>
@@ -1239,7 +1677,7 @@ export default function BrowserScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowGradePicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Şimdi Derecelendir', 'Grade Now')}</Text>
+                        <Text style={styles.modalTitle}>{l('Şimdi derecelendir', 'Grade Now')}</Text>
                         <Text style={styles.modalCaption}>{l('Seçili kartlar normal zamanlayıcı ve inceleme geçmişi kullanılarak derecelendirilir.', 'Selected cards are graded through the normal scheduler and review history.')}</Text>
                         {([
                             { grade: 1 as const, label: l('Tekrar', 'Again'), color: colors.btnAgain },
@@ -1263,8 +1701,17 @@ export default function BrowserScreen() {
                 </View>
             </Modal>
 
-            <Modal visible={previewIndex !== null} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setPreviewIndex(null)}>
+            <Modal
+                visible={previewIndex !== null}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                allowSwipeDismissal
+                onRequestClose={() => setPreviewIndex(null)}
+            >
                 <SafeAreaView style={styles.previewContainer}>
+                    <View style={styles.previewGrabberArea} pointerEvents="none">
+                        <View style={styles.previewGrabber} />
+                    </View>
                     <View style={styles.previewHeader}>
                         <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewIndex(null)}><Text style={styles.previewHeaderButtonText}>×</Text></TouchableOpacity>
                         <Text style={styles.previewTitle}>{l('Önizleme', 'Preview')} · {(previewIndex ?? 0) + 1}/{selectedCards.length}</Text>
@@ -1273,7 +1720,7 @@ export default function BrowserScreen() {
                     <View style={styles.previewBody}>
                         {previewNote && previewNoteType && previewRawCard ? (
                             <CardWebView noteType={previewNoteType} note={previewNote} card={previewRawCard} deck={previewDeck} side={previewAnswerVisible ? 'answer' : 'question'} />
-                        ) : <Text style={styles.modalCaption}>{l('Kart önizlenemedi.', 'The card could not be previewed.')}</Text>}
+                        ) : <Text style={styles.modalCaption}>{tableMode === 'notes' ? l('Notun ilk kartı önizlenemedi.', "The note's first card could not be previewed.") : l('Kart önizlenemedi.', 'The card could not be previewed.')}</Text>}
                     </View>
                     <View style={styles.previewNavigation}>
                         <TouchableOpacity style={styles.previewNavButton} disabled={(previewIndex ?? 0) <= 0} onPress={() => { setPreviewAnswerVisible(false); setPreviewIndex((index) => Math.max(0, (index ?? 0) - 1)); }}><Text style={styles.previewNavText}>‹ {l('Önceki', 'Previous')}</Text></TouchableOpacity>
@@ -1286,23 +1733,13 @@ export default function BrowserScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setFlagPickerMode(null)} />
                     <View style={[styles.modalCard, styles.flagPickerCard]} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>
-                            {flagPickerMode === 'selection' ? l('Seçili Kartları Bayrakla', 'Flag Selected Cards') : l('Bayrağa Göre Filtrele', 'Filter by Flag')}
-                        </Text>
-                        {flagPickerMode === 'filter' && (
-                            <TouchableOpacity style={[styles.pickerRow, flagFilter === null && styles.pickerRowActive]} onPress={() => { setFlagFilter(null); setFlagPickerMode(null); }}>
-                                <View style={[styles.flagDot, { backgroundColor: colors.border }]} />
-                                <Text style={[styles.pickerRowText, flagFilter === null && styles.pickerRowTextActive]}>{l('Tüm bayraklar', 'All flags')}</Text>
-                                {flagFilter === null && <Text style={styles.pickerCheck}>✓</Text>}
-                            </TouchableOpacity>
-                        )}
-                        {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                            <TouchableOpacity key={flag} style={[styles.pickerRow, flagPickerMode === 'filter' && flagFilter === flag && styles.pickerRowActive]} onPress={() => applyFlag(flag)}>
+                        <Text style={styles.modalTitle}>{tableMode === 'notes' ? l('Seçili notların kartlarını bayrakla', 'Flag Cards of Selected Notes') : l('Seçili kartları bayrakla', 'Flag Selected Cards')}</Text>
+                        {ALL_CARD_FLAGS.map((flag) => (
+                            <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)}>
                                 <View style={[styles.flagDot, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
-                                <Text style={[styles.pickerRowText, flagPickerMode === 'filter' && flagFilter === flag && styles.pickerRowTextActive]}>
+                                <Text style={styles.pickerRowText}>
                                     {flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
                                 </Text>
-                                {flagPickerMode === 'filter' && flagFilter === flag && <Text style={styles.pickerCheck}>✓</Text>}
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -1313,7 +1750,27 @@ export default function BrowserScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOptions(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Kart Tarayıcı Seçenekleri', 'Card Browser Options')}</Text>
+                        <Text style={styles.modalTitle}>{l('Kart tarayıcısı seçenekleri', 'Card Browser Options')}</Text>
+                        <Text style={styles.optionTitle}>{l('Görünüm', 'View')}</Text>
+                        <Text style={styles.optionCaption}>{l('Listede kartları veya her notu tek satır olarak göster.', 'Show cards, or show each note as a single row.')}</Text>
+                        <View style={styles.directionRow}>
+                            <TouchableOpacity
+                                style={[styles.directionButton, tableMode === 'cards' && styles.directionButtonActive]}
+                                onPress={() => updateTableMode('cards')}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: tableMode === 'cards' }}
+                            >
+                                <Text style={[styles.directionText, tableMode === 'cards' && styles.directionTextActive]}>{l('Kartlar', 'Cards')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.directionButton, tableMode === 'notes' && styles.directionButtonActive]}
+                                onPress={() => updateTableMode('notes')}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: tableMode === 'notes' }}
+                            >
+                                <Text style={[styles.directionText, tableMode === 'notes' && styles.directionTextActive]}>{l('Notlar', 'Notes')}</Text>
+                            </TouchableOpacity>
+                        </View>
                         <View style={styles.optionRow}>
                             <View style={styles.optionCopy}>
                                 <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
@@ -1361,33 +1818,13 @@ export default function BrowserScreen() {
                     const deck = getDeckByName(name);
                     if (deck) moveSelectionToDeck(deck.id);
                 }}
-                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+                onCreateDeck={(name) => {
+                    const created = createDeck(getAvailableDeckName(name));
+                    bumpDataVersion();
+                    return created.name;
+                }}
             />
 
-            <Modal visible={showFilteredDeckDialog} transparent animationType="fade" onRequestClose={() => setShowFilteredDeckDialog(false)}>
-                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowFilteredDeckDialog(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Filtrelenmiş Deste Oluştur', 'Create Filtered Deck')}</Text>
-                        <Text style={styles.fieldLabel}>{l('Deste adı', 'Deck name')}</Text>
-                        <TextInput style={styles.dialogInput} value={filteredDeckName} onChangeText={setFilteredDeckName} placeholderTextColor={colors.textMuted} autoCorrect={false} />
-                        <Text style={styles.fieldLabel}>{l('Arama', 'Search')}</Text>
-                        <View style={styles.searchPreviewBox}>
-                            <Text style={styles.searchPreviewText}>{browserSearch || l('Tüm kartlar', 'All cards')}</Text>
-                        </View>
-                        <Text style={styles.fieldLabel}>{l('Kart sınırı', 'Card limit')}</Text>
-                        <TextInput style={styles.dialogInput} value={filteredDeckLimit} onChangeText={(value) => setFilteredDeckLimit(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" placeholder="100" placeholderTextColor={colors.textMuted} />
-                        <View style={styles.dialogActions}>
-                            <TouchableOpacity style={styles.dialogButton} onPress={() => setShowFilteredDeckDialog(false)}>
-                                <Text style={styles.dialogButtonText}>{t('common.cancel')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.dialogButton, styles.dialogButtonPrimary]} onPress={createDeckFromBrowser}>
-                                <Text style={styles.dialogButtonPrimaryText}>{l('Oluştur', 'Create')}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
         </SafeAreaView>
     );
 }
@@ -1441,13 +1878,38 @@ function createStyles(colors: ColorScheme) {
     moreButtonText: { color: colors.textSecondary, fontSize: 28, lineHeight: 30, fontWeight: '700' },
 
     searchContainer: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
+    searchField: {
+        height: 44,
+        justifyContent: 'center',
+    },
+    searchIcon: {
+        position: 'absolute',
+        left: Spacing.md,
+        top: 0,
+        bottom: 0,
+        zIndex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    searchHelpButton: {
+        position: 'absolute',
+        right: Spacing.xs,
+        top: 0,
+        bottom: 0,
+        width: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    searchHelpButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textMuted },
     searchInput: {
+        height: 44,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
+        paddingLeft: 42,
+        paddingRight: 44,
+        paddingVertical: 0,
         fontSize: FontSize.md,
         color: colors.textPrimary,
     },
@@ -1473,7 +1935,12 @@ function createStyles(colors: ColorScheme) {
     filterFlagDot: { width: 10, height: 10, borderRadius: 5 },
 
     list: { flex: 1 },
-    listContent: { padding: Spacing.lg, gap: 8 },
+    listContent: { flexGrow: 1, padding: Spacing.lg, gap: 8 },
+    emptyState: { flex: 1, justifyContent: 'center', paddingVertical: 48, paddingHorizontal: Spacing.xl, alignItems: 'center', gap: Spacing.sm },
+    emptyTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700', textAlign: 'center' },
+    emptyText: { color: colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center' },
+    pageLoader: { paddingVertical: Spacing.lg, alignItems: 'center', gap: Spacing.sm },
+    pageLoaderText: { color: colors.textSecondary, fontSize: FontSize.sm },
 
     cardItem: {
         backgroundColor: colors.bgCard,
@@ -1582,6 +2049,7 @@ function createStyles(colors: ColorScheme) {
     },
     selectionMenuCard: {
         maxHeight: '78%',
+        paddingTop: 32,
         paddingBottom: Spacing.xl,
         overflow: 'hidden',
         backgroundColor: colors.bgCard,
@@ -1624,7 +2092,9 @@ function createStyles(colors: ColorScheme) {
     overflowMenu: {
         width: 310,
         maxWidth: '92%',
+        maxHeight: '88%',
         paddingVertical: Spacing.xs,
+        overflow: 'hidden',
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
@@ -1658,6 +2128,29 @@ function createStyles(colors: ColorScheme) {
     overflowChevron: { color: colors.textMuted, fontSize: 24, fontWeight: '400' },
     overflowSeparator: { height: StyleSheet.hairlineWidth, marginVertical: 3, backgroundColor: colors.borderLight },
     menuFlagDot: { width: 13, height: 13, borderRadius: 7 },
+    overflowFlagPanel: {
+        marginHorizontal: Spacing.sm,
+        marginBottom: Spacing.xs,
+        overflow: 'hidden',
+        backgroundColor: colors.bgSecondary,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+    },
+    overflowFlagRow: {
+        minHeight: 43,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingHorizontal: Spacing.sm,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.borderLight,
+    },
+    overflowFlagRowActive: { backgroundColor: colors.accentLight },
+    overflowFlagText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '500' },
+    overflowFlagTextActive: { color: colors.accent, fontWeight: '800' },
+    overflowFlagFooter: { minHeight: 38, justifyContent: 'center', paddingHorizontal: Spacing.sm },
+    overflowFlagCount: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '600' },
 
     modalOverlay: {
         flex: 1,
@@ -1736,12 +2229,15 @@ function createStyles(colors: ColorScheme) {
     checkboxRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
     checkbox: { width: 22, height: 22, borderWidth: 1.5, borderColor: colors.border, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
     checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
+    checkboxPartial: { opacity: 0.8 },
     checkboxTick: { color: colors.white, fontSize: 15, lineHeight: 17, fontWeight: '900' },
     checkboxLabel: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md },
     gradeRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight },
     gradeDot: { width: 12, height: 12, borderRadius: 6 },
     gradeText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
     previewContainer: { flex: 1, backgroundColor: colors.bgPrimary },
+    previewGrabberArea: { height: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgCard },
+    previewGrabber: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border },
     previewHeader: { minHeight: 58, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.bgCard },
     previewHeaderButton: { minWidth: 54, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     previewHeaderButtonText: { color: colors.textMuted, fontSize: 30, lineHeight: 32, fontWeight: '300' },

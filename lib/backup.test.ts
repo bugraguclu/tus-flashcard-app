@@ -26,6 +26,7 @@ import {
     readBackup,
     restoreBackup,
     runAutoBackupIfDue,
+    validateBackupContents,
     type BackupDeps,
     type BackupInfo,
     type BackupStore,
@@ -63,7 +64,14 @@ function makeHarness(startIso = '2026-07-05T12:00:00', policy: {
 } = {}) {
     let now = new Date(startIso);
     let guard: string | null = null;
-    let exported = '{"version":6,"canonical":true}';
+    let exported = JSON.stringify({
+        version: 6,
+        canonical: true,
+        tables: {
+            note_types: [], notes: [], anki_cards: [], decks: [], deck_configs: [],
+            revlog: [], graves: [], session_stats: [],
+        },
+    });
     const imports: string[] = [];
     let importResult = true;
 
@@ -114,8 +122,8 @@ describe('runAutoBackupIfDue', () => {
 
         const result = await runAutoBackupIfDue(h.deps);
 
-        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-120000.json' });
-        expect(h.files.get('tus-backup-2026-07-05-120000.json')?.contents).toContain('"canonical":true');
+        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-120000000.json' });
+        expect(h.files.get('tus-backup-2026-07-05-120000000.json')?.contents).toContain('"canonical":true');
         expect(h.getGuard()).toBe(String(new Date('2026-07-05T12:00:00').getTime()));
     });
 
@@ -129,7 +137,7 @@ describe('runAutoBackupIfDue', () => {
         h.setNow('2026-07-12T12:01:00');
         const due = await runAutoBackupIfDue(h.deps);
 
-        expect(due).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-12-120100.json' });
+        expect(due).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-12-120100000.json' });
         expect(h.files.size).toBe(2);
     });
 
@@ -137,7 +145,7 @@ describe('runAutoBackupIfDue', () => {
         const h = makeHarness('2026-07-06T03:00:00');
         const result = await runAutoBackupIfDue(h.deps);
 
-        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-030000.json' });
+        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-030000000.json' });
     });
 
     it('keeps only the newest seven collection snapshots', async () => {
@@ -146,9 +154,9 @@ describe('runAutoBackupIfDue', () => {
             h.setNow(`2026-07-${String(day).padStart(2, '0')}T12:00:00`);
             await createBackupNow(h.deps);
         }
-        expect(h.files.has('tus-backup-2026-07-01-120000.json')).toBe(false);
+        expect(h.files.has('tus-backup-2026-07-01-120000000.json')).toBe(false);
         expect([...h.files.keys()].filter((name) => name.startsWith('tus-backup-'))).toHaveLength(7);
-        expect(h.files.has('tus-backup-2026-07-08-120000.json')).toBe(true);
+        expect(h.files.has('tus-backup-2026-07-08-120000000.json')).toBe(true);
     });
 
     it('skips entirely on a non-writer tab', async () => {
@@ -188,11 +196,13 @@ describe('createBackupNow', () => {
         await createBackupNow(h.deps);
 
         h.setNow('2026-07-05T12:05:00');
-        h.setExported('{"version":6,"canonical":true,"changed":1}');
+        const changed = JSON.parse([...h.files.values()][0].contents);
+        changed.changed = 1;
+        h.setExported(JSON.stringify(changed));
         await createBackupNow(h.deps);
 
         expect(h.files.size).toBe(2);
-        expect(h.files.get('tus-backup-2026-07-05-120500.json')?.contents).toContain('"changed":1');
+        expect(h.files.get('tus-backup-2026-07-05-120500000.json')?.contents).toContain('"changed":1');
     });
 });
 
@@ -202,7 +212,9 @@ describe('restoreBackup', () => {
         const { fileName } = await createBackupNow(h.deps);
         const backupJson = h.files.get(fileName)!.contents;
 
-        h.setExported('{"version":6,"canonical":true,"current":"state"}');
+        const current = JSON.parse(backupJson);
+        current.current = 'state';
+        h.setExported(JSON.stringify(current));
         const result = await restoreBackup(fileName, h.deps);
 
         expect(result.ok).toBe(true);
@@ -220,6 +232,7 @@ describe('restoreBackup', () => {
 
         expect(result.ok).toBe(false);
         expect(h.files.has(result.preRestoreName!)).toBe(true);
+        expect(h.imports).toHaveLength(2);
     });
 
     it('does not write a snapshot when the backup itself cannot be read', async () => {
@@ -260,8 +273,8 @@ describe('listBackups / readBackup / deleteBackup', () => {
         const listed = await listBackups(h.deps);
 
         expect(listed.map((b) => b.name)).toEqual([
-            'tus-backup-2026-07-08-120000.json',
-            'tus-backup-2026-07-01-120000.json',
+            'tus-backup-2026-07-08-120000000.json',
+            'tus-backup-2026-07-01-120000000.json',
         ]);
         expect(listed[0].size).toBeGreaterThan(0);
     });
@@ -284,9 +297,32 @@ describe('isBackupFileName', () => {
     it('accepts only generated names', () => {
         expect(isBackupFileName('tus-backup-2026-07-05.json')).toBe(true);
         expect(isBackupFileName('tus-backup-2026-07-05-120000.json')).toBe(true);
+        expect(isBackupFileName('tus-backup-2026-07-05-120000123.json')).toBe(true);
         expect(isBackupFileName('tus-prerestore-1751700000000.json')).toBe(true);
         expect(isBackupFileName('tus-backup-2026-07-05.json.bak')).toBe(false);
         expect(isBackupFileName('../tus-backup-2026-07-05.json')).toBe(false);
         expect(isBackupFileName('collection.anki2')).toBe(false);
+    });
+});
+
+describe('validateBackupContents', () => {
+    it('rejects truncated, unknown and future backup formats before they can mutate data', () => {
+        expect(validateBackupContents('{"version":6')).toEqual({ valid: false, reason: 'invalid-json' });
+        expect(validateBackupContents('{"version":6,"hello":"world"}')).toEqual({ valid: false, reason: 'unknown-format' });
+        expect(validateBackupContents('{"version":7,"settings":{}}')).toEqual({ valid: false, reason: 'newer-version' });
+    });
+
+    it('rejects canonical rows whose contents are not safe to insert', () => {
+        const malformed = {
+            version: 6,
+            canonical: true,
+            tables: {
+                note_types: [{ id: 1, name: 'Basic', data: '{' }],
+                notes: [], anki_cards: [], decks: [], deck_configs: [],
+                revlog: [], graves: [], session_stats: [],
+            },
+        };
+        expect(validateBackupContents(JSON.stringify(malformed)))
+            .toEqual({ valid: false, reason: 'invalid-row:note_types' });
     });
 });

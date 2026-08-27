@@ -34,6 +34,7 @@ const IDB_KEY = 'collection';
 const LEGACY_STORAGE_KEY = 'tus_flashcard_sqljs_db';
 
 let _sqlDb: SqlJsDatabase | null = null;
+let _initPromise: Promise<WebSQLiteDatabase> | null = null;
 let _saveTimer: ReturnType<typeof setTimeout> | null = null;
 let _saveInFlight = false;
 let _saveDirty = false;
@@ -285,13 +286,23 @@ function createWrapper(db: SqlJsDatabase): WebSQLiteDatabase {
 
 // Module loading & public API
 
-const locateSqlJs = (file: string) => `https://cdn.jsdelivr.net/npm/sql.js@1.14.1/dist/${file}`;
-
 let _sqlModule: ReturnType<typeof initSqlJs> | null = null;
 
-/** Boot and memoize the sql.js WASM module (shared by the app DB and any readers). */
-function loadSqlJs() {
-    if (!_sqlModule) _sqlModule = initSqlJs({ locateFile: locateSqlJs });
+/** Boot sql.js from the integrity-pinned app bundle, never from a runtime CDN. */
+export function loadSqlJs() {
+    if (!_sqlModule) {
+        // Metro turns the static require into a same-origin, content-hashed asset URL. Node-based
+        // package tests use the installed local file directly; neither path contacts a CDN.
+        const wasmUri = typeof window === 'undefined'
+            ? 'node_modules/sql.js/dist/sql-wasm.wasm'
+            : (() => {
+                const bundled = require('sql.js/dist/sql-wasm.wasm') as string | { default?: string };
+                const uri = typeof bundled === 'string' ? bundled : bundled.default;
+                if (!uri) throw new Error('Bundled sql.js WASM asset could not be resolved.');
+                return uri;
+            })();
+        _sqlModule = initSqlJs({ locateFile: () => wasmUri });
+    }
     return _sqlModule;
 }
 
@@ -312,23 +323,36 @@ async function requestPersistentStorage(): Promise<void> {
 }
 
 /** Initialise the web database: boot WASM, restore the snapshot, and wire unload flushes. */
-export async function initWebDatabase(): Promise<WebSQLiteDatabase> {
-    const SQL = await loadSqlJs();
+export function initWebDatabase(): Promise<WebSQLiteDatabase> {
+    // React development/static hydration can mount an effect twice. Without a shared promise,
+    // two initializers can race: startup migrates one database, then the slower initializer
+    // replaces it with the old empty IndexedDB snapshot. One process-wide initialization keeps
+    // both schema and learner data attached to the same handle.
+    if (_initPromise) return _initPromise;
+    if (_sqlDb) return Promise.resolve(createWrapper(_sqlDb));
 
-    const savedData = await loadPersisted();
-    _sqlDb = savedData ? new SQL.Database(savedData) : new SQL.Database();
+    _initPromise = (async () => {
+        const SQL = await loadSqlJs();
+        const savedData = await loadPersisted();
+        _sqlDb = savedData ? new SQL.Database(savedData) : new SQL.Database();
 
-    await electWriter();
-    void requestPersistentStorage();
+        await electWriter();
+        void requestPersistentStorage();
 
-    // IndexedDB writes are async and cannot complete during `beforeunload`, so flush
-    // on the events that fire reliably before the page is discarded.
-    window.addEventListener('pagehide', flushPersist);
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') flushPersist();
+        // IndexedDB writes are async and cannot complete during `beforeunload`, so flush
+        // on the events that fire reliably before the page is discarded.
+        window.addEventListener('pagehide', flushPersist);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') flushPersist();
+        });
+
+        return createWrapper(_sqlDb);
+    })().catch((error) => {
+        _sqlDb = null;
+        _initPromise = null;
+        throw error;
     });
-
-    return createWrapper(_sqlDb);
+    return _initPromise;
 }
 
 /** The synchronous handle, available only after initWebDatabase() has resolved. */
@@ -345,6 +369,7 @@ export function isPrimaryTab(): boolean {
 export interface SqlJsReader {
     getAllSync<T = any>(sql: string, ...params: any[]): T[];
     getFirstSync<T = any>(sql: string, ...params: any[]): T | null;
+    execSync(sql: string): void;
     close(): void;
 }
 
@@ -363,6 +388,7 @@ export async function openSqlJsReader(bytes: Uint8Array): Promise<SqlJsReader> {
             const rows = getAllSync<T>(sql, ...params);
             return rows.length > 0 ? rows[0] : null;
         },
+        execSync: (sql: string) => { db.run(sql); },
         close: () => db.close(),
     };
 }

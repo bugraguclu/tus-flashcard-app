@@ -5,7 +5,7 @@ import {
     applyHierarchicalLimit,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
-    sortReviewsDueThenRandom,
+    sortReviewCards,
     splitIntradayLearning,
 } from './queueBuild';
 
@@ -197,14 +197,17 @@ describe('splitIntradayLearning (Anki learn-ahead serving order)', () => {
     });
 });
 
-describe('sortReviewsDueThenRandom', () => {
+describe('sortReviewCards: due date, then random', () => {
     function due(cardId: number, dueDate: string): StudyCard {
         return { cardId, state: { dueDate } } as unknown as StudyCard;
     }
 
+    const dueRandom = (cards: StudyCard[], daySeed: string) =>
+        sortReviewCards(cards, 'dueRandom', { daySeed, fallbackDay: 0, today: 0 });
+
     it('orders by due day first, regardless of input order', () => {
         const cards = [due(1, '2026-06-22'), due(2, '2026-06-20'), due(3, '2026-06-21')];
-        const sorted = sortReviewsDueThenRandom(cards, 'seed', 0);
+        const sorted = dueRandom(cards, 'seed');
         expect(sorted.map((c) => c.cardId)).toEqual([2, 3, 1]);
     });
 
@@ -212,8 +215,8 @@ describe('sortReviewsDueThenRandom', () => {
         const ids = Array.from({ length: 20 }, (_, i) => i);
         const sameDay = ids.map((i) => due(i, '2026-06-20'));
 
-        const a = sortReviewsDueThenRandom(sameDay, 'monday', 0).map((c) => c.cardId);
-        const b = sortReviewsDueThenRandom(sameDay, 'monday', 0).map((c) => c.cardId);
+        const a = dueRandom(sameDay, 'monday').map((c) => c.cardId);
+        const b = dueRandom(sameDay, 'monday').map((c) => c.cardId);
 
         expect(a).toEqual(b);                          // deterministic per seed
         expect(a).not.toEqual(ids);                    // actually shuffled (20! makes identity ~impossible)

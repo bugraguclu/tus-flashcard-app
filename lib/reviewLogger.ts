@@ -235,6 +235,130 @@ export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour:
     return row?.cnt ?? 0;
 }
 
+/**
+ * Average time one answer has been taking recently, in milliseconds — the pace the reviewer's
+ * remaining-time estimate is built on. Anki derives the same figure from the review log rather
+ * than from a session counter, so it survives restarts and reflects how the learner actually
+ * works. Manual reschedules (type 4) carry no answer time and are excluded.
+ *
+ * Returns null when the log holds nothing to average, which is the reviewer's cue to show no
+ * estimate at all instead of inventing a pace.
+ */
+export function getAverageAnswerMs(rolloverHour: number = 4, days: number = 7): number | null {
+    const db = getDB();
+    const windowDays = Math.max(1, Math.floor(days) || 1);
+    const cutoffMs = startOfStudyDayMs(Date.now(), rolloverHour) - (windowDays - 1) * 86_400_000;
+
+    const row = db.getFirstSync<{ average: number | null; samples: number }>(
+        `SELECT AVG(time) AS average, COUNT(*) AS samples
+         FROM revlog
+         WHERE id >= ? AND type != 4 AND time > 0`,
+        cutoffMs,
+    );
+
+    if (!row || !row.samples || row.average === null) return null;
+    return Math.max(0, Math.round(Number(row.average)));
+}
+
+/**
+ * How much of today's daily allowance a deck has already spent.
+ *
+ * Anki keeps `newToday` / `revToday` counters on every deck and subtracts them from the deck's
+ * limits, which is what makes "Maximum reviews/day" hold for the rest of the day instead of
+ * refilling on the next queue rebuild. This app has no per-deck counters, so the same numbers are
+ * derived from the review log: a card's first-ever answer today introduced a new card, and an
+ * answer logged as a review (type 1) spent a review slot.
+ */
+export interface DailyLimitUsage {
+    newIntroduced: number;
+    reviewsAnswered: number;
+}
+
+export const EMPTY_DAILY_LIMIT_USAGE: DailyLimitUsage = { newIntroduced: 0, reviewsAnswered: 0 };
+
+/**
+ * Today's spent allowance for every deck that has one, keyed by deck id. Cards answered in a deck
+ * and moved elsewhere afterwards count where they live now, exactly as Anki's counters would after
+ * the move. Two grouped queries cover the whole collection, so callers can build a deck tree
+ * without a query per node.
+ */
+export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, DailyLimitUsage> {
+    const db = getDB();
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+    const usage = new Map<number, DailyLimitUsage>();
+
+    const entryFor = (deckId: number): DailyLimitUsage => {
+        let entry = usage.get(deckId);
+        if (!entry) {
+            entry = { newIntroduced: 0, reviewsAnswered: 0 };
+            usage.set(deckId, entry);
+        }
+        return entry;
+    };
+
+    try {
+        for (const row of db.getAllSync<{ deckId: number; cnt: number }>(
+            `SELECT c.deckId AS deckId, COUNT(*) AS cnt
+             FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog GROUP BY cardId) f
+             JOIN anki_cards c ON c.id = f.cardId
+             WHERE f.firstReview >= ?
+             GROUP BY c.deckId`,
+            startMs,
+        )) entryFor(Number(row.deckId)).newIntroduced = Number(row.cnt) || 0;
+
+        for (const row of db.getAllSync<{ deckId: number; cnt: number }>(
+            `SELECT c.deckId AS deckId, COUNT(*) AS cnt
+             FROM revlog r
+             JOIN anki_cards c ON c.id = r.cardId
+             WHERE r.id >= ? AND r.type = 1
+             GROUP BY c.deckId`,
+            startMs,
+        )) entryFor(Number(row.deckId)).reviewsAnswered = Number(row.cnt) || 0;
+    } catch (error) {
+        // A collection mid-migration must not block the deck list; an empty map simply means
+        // "nothing spent yet", which is the same answer as before the counters existed.
+        console.warn('[Revlog] daily limit usage unavailable:', error);
+        return new Map();
+    }
+
+    return usage;
+}
+
+/**
+ * Reviews answered today in a deck subtree — the number Anki subtracts from "Maximum reviews/day".
+ * Only answers on cards that were already in review state count; learning and relearning steps
+ * are not review slots.
+ */
+export function getReviewsAnsweredTodayInDeck(deckName: string, rolloverHour: number = 4): number {
+    const db = getDB();
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+    const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;
+
+    const row = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) AS cnt
+         FROM revlog r
+         JOIN anki_cards c ON c.id = r.cardId
+         JOIN decks d ON d.id = c.deckId
+         WHERE r.id >= ? AND r.type = 1 AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+        startMs,
+        deckName,
+        escapedPrefix,
+    );
+
+    return row?.cnt ?? 0;
+}
+
+/** Reviews answered today across the whole collection. */
+export function getReviewsAnsweredToday(rolloverHour: number = 4): number {
+    const db = getDB();
+    const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
+    const row = db.getFirstSync<{ cnt: number }>(
+        'SELECT COUNT(*) AS cnt FROM revlog WHERE id >= ? AND type = 1',
+        startMs,
+    );
+    return row?.cnt ?? 0;
+}
+
 export interface StudyStreak {
     /** Consecutive study days ending today (or yesterday, if today has no reviews yet). */
     current: number;
@@ -426,18 +550,17 @@ export function getFutureDueCounts(days: number, rolloverHour: number = 4): { da
     const dueMap = new Map(rows.map((row) => [row.due, row.cnt]));
     const result: { date: string; count: number }[] = [];
 
-    // Overdue cards (due < today) are all waiting now, so seed the running total with them.
-    let cumulative = 0;
+    // Overdue cards are waiting now, so include them only in today's forecast bucket.
+    let overdue = 0;
     for (const [due, cnt] of dueMap) {
-        if (due < today) cumulative += cnt;
+        if (due < today) overdue += cnt;
     }
 
     for (let i = 0; i < days; i++) {
         const dueDay = today + i;
-        cumulative += dueMap.get(dueDay) || 0;
         result.push({
             date: dayNumberToYmd(dueDay, rolloverHour),
-            count: cumulative,
+            count: (dueMap.get(dueDay) || 0) + (i === 0 ? overdue : 0),
         });
     }
 

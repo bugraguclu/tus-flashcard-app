@@ -6,14 +6,15 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
     Modal,
     KeyboardAvoidingView,
     Keyboard,
     Platform,
     Pressable,
     useWindowDimensions,
+    Linking,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -29,10 +30,10 @@ import {
     getCardsForNote,
     getNote,
     getNoteType,
-    getSearchIndexCards,
     searchIndexCardFromNote,
 } from '../lib/noteManager';
-import { buildDeckTree, flattenDeckTree, getAllDecks, getDeck, getDeckByName } from '../lib/deckManager';
+import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
+import { safeExternalCallbackUrl } from '../lib/externalLinking';
 import { ANKI_STOCK_NOTE_TYPE_IDS, BUILTIN_NOTE_TYPES, type AnkiCard, type Note } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import MediaAttachButton, { FIELD_MEDIA_RE, type MediaAttachButtonHandle } from '../components/MediaAttachButton';
@@ -41,12 +42,13 @@ import RichTextEditor, {
 } from '../components/RichTextEditor';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
-import { dbDeleteFtsCard, dbIndexAllCards, dbUpsertFtsCard } from '../lib/db';
+import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { extractClozeNumbers } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged } from '../lib/editorDraft';
+import { userFacingErrorMessage } from '../lib/userFacingError';
 
 function parseCardId(raw: string | string[] | undefined): number | null {
     if (!raw) return null;
@@ -236,6 +238,7 @@ export default function EditorScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { width: screenWidth } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
 
     const routeCardId = useMemo(() => {
         const explicitCardId = parseCardId(params.cardId);
@@ -248,6 +251,19 @@ export default function EditorScreen() {
     }, [params.cardId, params.id]);
 
     const routeDeckId = useMemo(() => parseCardId(params.deckId), [params.deckId]);
+    const routeNoteTypeId = useMemo(() => parseCardId(params.noteTypeId), [params.noteTypeId]);
+    const routeFieldValues = useMemo(() => {
+        if (typeof params.fieldValues !== 'string') return [];
+        try {
+            const values = JSON.parse(params.fieldValues);
+            return Array.isArray(values) ? values.map((value) => String(value ?? '')) : [];
+        } catch {
+            return [];
+        }
+    }, [params.fieldValues]);
+    const externalSuccessUrl = safeExternalCallbackUrl(
+        typeof params.externalSuccessUrl === 'string' ? params.externalSuccessUrl : null,
+    ) ?? '';
 
     // Anki's add dialog has one explicit destination deck. Legacy routes that still pass a
     // subject are translated to that subject's deck, but subject/topic are no longer editor rows.
@@ -303,6 +319,7 @@ export default function EditorScreen() {
             capitalizeSentences: settings.editorCapitalizeSentences !== false,
             toolbarVisible: settings.editorToolbarVisible !== false,
             toolbarScrollable: settings.editorToolbarScrollable !== false,
+            pasteClipboardImagesAsPng: Boolean(settings.pasteClipboardImagesAsPng),
         };
     });
     const [activeField, setActiveField] = useState<EditorField>('question');
@@ -320,14 +337,18 @@ export default function EditorScreen() {
 
     const [question, setQuestion] = useState((params.question as string) || stickyFieldDefaults.question?.value || '');
     const [answer, setAnswer] = useState((params.answer as string) || stickyFieldDefaults.answer?.value || '');
-    const [cardTypeId, setCardTypeId] = useState(1);
-    const [reverseAnswer, setReverseAnswer] = useState(stickyFieldDefaults.reverseAnswer?.value || '');
+    const [cardTypeId, setCardTypeId] = useState(() => routeNoteTypeId ?? 1);
+    const [reverseAnswer, setReverseAnswer] = useState(
+        (routeNoteTypeId === 7 ? routeFieldValues[2] : '') || stickyFieldDefaults.reverseAnswer?.value || '',
+    );
     const [pinnedFields, setPinnedFields] = useState<Set<EditorField>>(() => new Set(
         (['question', 'answer', 'reverseAnswer'] as EditorField[])
             .filter((field) => stickyFieldDefaults[field]?.pinned),
     ));
-    const [noteTags, setNoteTags] = useState<string[]>([]);
-    const [preservedFields, setPreservedFields] = useState<string[]>([]);
+    const [noteTags, setNoteTags] = useState<string[]>(() => (
+        typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : []
+    ));
+    const [preservedFields, setPreservedFields] = useState<string[]>(routeFieldValues);
     const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
     const initialDraftKeyRef = useRef<string | null>(null);
 
@@ -344,9 +365,12 @@ export default function EditorScreen() {
         return getDeck(1);
     }, [targetDeckId, activeDeckName, dataVersion]);
 
-    const deckPickerRows = useMemo(
-        () => flattenDeckTree(buildDeckTree(getAllDecks()), true)
-            .filter((node) => !node.deck.isFiltered),
+    // The hidden picker needs no data. Loading/building its complete hierarchy during the editor
+    // transition only competes with the rich editor WebViews for the first frame.
+    const deckPickerDecks = useMemo(
+        () => showDeckPicker
+            ? getAllDecks().filter((deck) => !deck.isFiltered)
+            : [],
         [dataVersion, showDeckPicker],
     );
 
@@ -359,7 +383,10 @@ export default function EditorScreen() {
     const handleCreateSubject = () => {
         const result = createCourse(newSubjectName);
         if (!result.created) {
-            alert(t('common.error'), result.error ?? l('Ders oluşturulamadı.', 'Could not create the course.'));
+            alert(t('common.error'), userFacingErrorMessage(
+                result.error,
+                l('Ders oluşturulamadı. Lütfen tekrar deneyin.', 'Could not create the course. Please try again.'),
+            ));
             return;
         }
         setTargetDeckId(resolveSubjectDeckId(result.subject.id));
@@ -537,7 +564,7 @@ export default function EditorScreen() {
     const requestDeleteCustomToolbarButton = () => {
         if (!editingToolbarButtonId) return;
         confirm(
-            l('Araç Çubuğu Öğesini Sil?', 'Remove Toolbar Item?'),
+            l('Araç çubuğu öğesi silinsin mi?', 'Remove Toolbar Item?'),
             l('Bu özel düğme araç çubuğundan kaldırılacak.', 'This custom button will be removed from the toolbar.'),
             () => {
                 setCustomToolbarButtons((current) => {
@@ -587,7 +614,7 @@ export default function EditorScreen() {
             return;
         }
         confirm(
-            l('Değişiklikleri At?', 'Discard Changes?'),
+            l('Değişiklikler atılsın mı?', 'Discard Changes?'),
             isEditing
                 ? l('Kaydetmeden kart düzenleme ekranından çıkılsın mı?', 'Leave the card editor without saving?')
                 : l('Kaydetmeden kart ekleme ekranından çıkılsın mı?', 'Leave the add card screen without saving?'),
@@ -599,7 +626,7 @@ export default function EditorScreen() {
     const requestClearFields = () => {
         setShowOverflowMenu(false);
         confirm(
-            l('Alanları Temizle', 'Clear Fields'),
+            l('Alanları temizle', 'Clear Fields'),
             l('Soru ve cevap alanlarındaki içerik temizlensin mi?', 'Clear the contents of the question and answer fields?'),
             () => {
                 setQuestion('');
@@ -640,11 +667,6 @@ export default function EditorScreen() {
             });
             return next;
         });
-    };
-
-    const rebuildSearchIndex = () => {
-        const cards = getSearchIndexCards();
-        dbIndexAllCards(cards);
     };
 
     const handleSave = () => {
@@ -698,6 +720,9 @@ export default function EditorScreen() {
                     deckId: targetDeck.id,
                     noteTypeId: cardTypeId,
                     reverseAnswer: cardTypeId === 7 ? reverseAnswer : undefined,
+                    fieldValues: preservedFields.length > 0
+                        ? preservedFields.map((value, index) => index === 0 ? question.trim() : index === 1 ? answer.trim() : value)
+                        : undefined,
                 });
 
                 for (const generatedCard of created.cards) {
@@ -706,7 +731,13 @@ export default function EditorScreen() {
 
                 persistStickyFieldValues();
                 bumpDataVersion();
-                alert(t('common.completed'), l('Kart kaydedildi.', 'Card saved.'), () => router.back());
+                alert(t('common.completed'), l('Kart kaydedildi.', 'Card saved.'), () => {
+                    if (externalSuccessUrl) {
+                        void Linking.openURL(externalSuccessUrl).catch(() => router.back());
+                    } else {
+                        router.back();
+                    }
+                });
             }
         } catch (e) {
             console.warn('[Editor] save failed:', e);
@@ -717,11 +748,9 @@ export default function EditorScreen() {
     const handleDelete = () => {
         if (!routeCardId) return;
 
-        confirm(l('Kartı Sil', 'Delete Card'), l('Bu kartı silmek istediğinizden emin misiniz?', 'Are you sure you want to delete this card?'), () => {
+        confirm(l('Kartı sil', 'Delete Card'), l('Bu kartı silmek istediğinizden emin misiniz?', 'Are you sure you want to delete this card?'), () => {
             try {
                 deleteTusCardByCardId(routeCardId);
-                dbDeleteFtsCard(routeCardId);
-                rebuildSearchIndex();
                 bumpDataVersion();
                 alert(l('Silindi', 'Deleted'), l('Kart silindi.', 'Card deleted.'), () => router.back());
             } catch (e) {
@@ -813,8 +842,9 @@ export default function EditorScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
+            <View style={{ height: insets.top, backgroundColor: colors.accent }} pointerEvents="none" />
             <View style={styles.editorHeader}>
                 <TouchableOpacity
                     style={styles.headerAction}
@@ -825,7 +855,7 @@ export default function EditorScreen() {
                     <BackIcon color={colors.white} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>
-                    {isEditing ? t('root.editCard') : l('Yeni Kart', 'Add')}
+                    {isEditing ? t('root.editCard') : l('Yeni kart', 'Add')}
                 </Text>
                 <View style={styles.headerSpacer} />
                 <TouchableOpacity
@@ -902,8 +932,8 @@ export default function EditorScreen() {
                             disabled={isEditing}
                             accessibilityRole="button"
                             accessibilityLabel={pinnedFields.has('question')
-                                ? (isCloze ? l('Metin alanının zımbasını kaldır', 'Unpin Text field') : l('Ön alanının zımbasını kaldır', 'Unpin Front field'))
-                                : (isCloze ? l('Metin alanını zımbala', 'Pin Text field') : l('Ön alanını zımbala', 'Pin Front field'))}
+                                ? (isCloze ? l('Metin alanının sabitlemesini kaldır', 'Unpin Text field') : l('Ön alanının sabitlemesini kaldır', 'Unpin Front field'))
+                                : (isCloze ? l('Metin alanını sabitle', 'Pin Text field') : l('Ön alanını sabitle', 'Pin Front field'))}
                             accessibilityState={{ selected: pinnedFields.has('question'), disabled: isEditing }}
                         >
                             <PinIcon color={pinnedFields.has('question') ? colors.accent : colors.textMuted} />
@@ -926,6 +956,8 @@ export default function EditorScreen() {
                     colors={colors}
                     fontSize={editorPreferences.fontSize}
                     capitalizeSentences={editorPreferences.capitalizeSentences}
+                    pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                    mountDelayMs={0}
                 />
 
                 <View style={styles.fieldLabelRow}>
@@ -937,8 +969,8 @@ export default function EditorScreen() {
                             disabled={isEditing}
                             accessibilityRole="button"
                             accessibilityLabel={pinnedFields.has('answer')
-                                ? (isCloze ? l('Arka Ek alanının zımbasını kaldır', 'Unpin Back Extra field') : l('Arka alanının zımbasını kaldır', 'Unpin Back field'))
-                                : (isCloze ? l('Arka Ek alanını zımbala', 'Pin Back Extra field') : l('Arka alanını zımbala', 'Pin Back field'))}
+                                ? (isCloze ? l('Arka Ek alanının sabitlemesini kaldır', 'Unpin Back Extra field') : l('Arka alanının sabitlemesini kaldır', 'Unpin Back field'))
+                                : (isCloze ? l('Arka Ek alanını sabitle', 'Pin Back Extra field') : l('Arka alanını sabitle', 'Pin Back field'))}
                             accessibilityState={{ selected: pinnedFields.has('answer'), disabled: isEditing }}
                         >
                             <PinIcon color={pinnedFields.has('answer') ? colors.accent : colors.textMuted} />
@@ -959,6 +991,8 @@ export default function EditorScreen() {
                     colors={colors}
                     fontSize={editorPreferences.fontSize}
                     capitalizeSentences={editorPreferences.capitalizeSentences}
+                    pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                    mountDelayMs={140}
                 />
 
                 {isOptionalReverse && (
@@ -971,7 +1005,7 @@ export default function EditorScreen() {
                                     onPress={() => togglePinnedField('reverseAnswer')}
                                     disabled={isEditing}
                                     accessibilityRole="button"
-                                    accessibilityLabel={pinnedFields.has('reverseAnswer') ? l('Tersini Ekle alanının zımbasını kaldır', 'Unpin Add Reverse field') : l('Tersini Ekle alanını zımbala', 'Pin Add Reverse field')}
+                                    accessibilityLabel={pinnedFields.has('reverseAnswer') ? l('Tersini Ekle alanının sabitlemesini kaldır', 'Unpin Add Reverse field') : l('Tersini Ekle alanını sabitle', 'Pin Add Reverse field')}
                                     accessibilityState={{ selected: pinnedFields.has('reverseAnswer'), disabled: isEditing }}
                                 >
                                     <PinIcon color={pinnedFields.has('reverseAnswer') ? colors.accent : colors.textMuted} />
@@ -992,6 +1026,8 @@ export default function EditorScreen() {
                             colors={colors}
                             fontSize={editorPreferences.fontSize}
                             capitalizeSentences={editorPreferences.capitalizeSentences}
+                            pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                            mountDelayMs={280}
                         />
                     </>
                 )}
@@ -1050,6 +1086,7 @@ export default function EditorScreen() {
             </View>
             )}
             </KeyboardAvoidingView>
+            <View style={{ height: insets.bottom, backgroundColor: colors.bgCard }} pointerEvents="none" />
 
             {showOverflowMenu && (
                 <View style={styles.overflowOverlay}>
@@ -1109,7 +1146,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowFontSizePicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
+                        <Text style={styles.modalTitle}>{l('Yazı boyutu', 'Font Size')}</Text>
                         {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
                             <TouchableOpacity
                                 key={size}
@@ -1142,7 +1179,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowHeadingPicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Başlık Ekle', 'Insert Heading')}</Text>
+                        <Text style={styles.modalTitle}>{l('Başlık ekle', 'Insert Heading')}</Text>
                         {['h1', 'h2', 'h3', 'h4', 'h5'].map((heading) => (
                             <TouchableOpacity
                                 key={heading}
@@ -1174,7 +1211,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowInlineFontSizePicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
+                        <Text style={styles.modalTitle}>{l('Yazı boyutu', 'Font Size')}</Text>
                         {['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'].map((size) => (
                             <TouchableOpacity
                                 key={size}
@@ -1206,7 +1243,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMathPicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('MathJax Ekle', 'Insert MathJax')}</Text>
+                        <Text style={styles.modalTitle}>{l('MathJax ekle', 'Insert MathJax')}</Text>
                         <TouchableOpacity
                             style={styles.formatPickerOption}
                             onPress={() => {
@@ -1251,8 +1288,8 @@ export default function EditorScreen() {
                     <View style={styles.modalCard} accessibilityViewIsModal>
                         <Text style={styles.modalTitle}>
                             {editingToolbarButtonId
-                                ? l('Araç Çubuğu Öğesini Düzenle', 'Edit Toolbar Item')
-                                : l('Araç Çubuğu Öğesi Oluştur', 'Create Toolbar Item')}
+                                ? l('Araç çubuğu öğesini düzenle', 'Edit Toolbar Item')
+                                : l('Araç çubuğu öğesi oluştur', 'Create Toolbar Item')}
                         </Text>
                         <Text style={styles.customToolbarExplanation}>
                             {l(
@@ -1318,7 +1355,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCustomToolbarHelp(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Özel Araç Düğmeleri', 'Custom Toolbar Buttons')}</Text>
+                        <Text style={styles.modalTitle}>{l('Özel araç düğmeleri', 'Custom Toolbar Buttons')}</Text>
                         <Text style={styles.customToolbarHelpText}>
                             {l(
                                 'Düğmeye dokunulduğunda, seçili metin “önce” ve “sonra” alanlarındaki HTML ile sarılır. Metin seçili değilse imleç iki değer arasına yerleşir.',
@@ -1332,7 +1369,7 @@ export default function EditorScreen() {
                             <Text style={styles.customToolbarCode}>{l('Sonra:', 'After:')} {'</button>'}</Text>
                         </View>
                         <TouchableOpacity style={styles.modalPrimary} onPress={useToolbarButtonTemplate}>
-                            <Text style={styles.modalPrimaryText}>{l('Bu Şablonu Kullan', 'Use This Template')}</Text>
+                            <Text style={styles.modalPrimaryText}>{l('Bu şablonu kullan', 'Use This Template')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowCustomToolbarHelp(false)}>
                             <Text style={styles.modalCloseText}>{t('common.close')}</Text>
@@ -1350,7 +1387,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCardTypePicker(false)} />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Kart Türü', 'Note Type')}</Text>
+                        <Text style={styles.modalTitle}>{l('Not türü', 'Note Type')}</Text>
                         {CARD_TYPE_CHOICES.map((choice) => {
                             const noteType = getNoteType(choice) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === choice);
                             if (!noteType) return null;
@@ -1382,9 +1419,9 @@ export default function EditorScreen() {
             <DeckPickerModal
                 visible={showDeckPicker}
                 colors={colors}
-                decks={deckPickerRows.map((node) => node.deck)}
+                decks={deckPickerDecks}
                 selectedDeckName={targetDeck?.name ?? null}
-                title={l('Hedef Deste', 'Target Deck')}
+                title={l('Hedef deste', 'Target Deck')}
                 allDecksLabel={null}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
                 emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
@@ -1400,7 +1437,11 @@ export default function EditorScreen() {
                     setTargetDeckId(deck.id);
                     setShowDeckPicker(false);
                 }}
-                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+                onCreateDeck={(name) => {
+                    const created = createDeck(getAvailableDeckName(name));
+                    bumpDataVersion();
+                    return created.name;
+                }}
             />
 
             <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
@@ -1411,7 +1452,7 @@ export default function EditorScreen() {
                         accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
                     />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
+                        <Text style={styles.modalTitle}>{l('Yeni ders', 'New Course')}</Text>
                         <TextInput
                             style={styles.modalInput}
                             value={newSubjectName}
@@ -1486,7 +1527,7 @@ export default function EditorScreen() {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -1508,7 +1549,13 @@ function createStyles(colors: ColorScheme) {
         justifyContent: 'center',
         borderRadius: BorderRadius.full,
     },
-    headerTitle: { color: colors.white, fontSize: FontSize.xl, fontWeight: '600', marginLeft: 4 },
+    headerTitle: {
+        flexShrink: 1,
+        color: colors.white,
+        fontSize: FontSize.xl,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
     headerSpacer: { flex: 1 },
     editorScroll: { flex: 1, backgroundColor: colors.bgCard },
     content: {

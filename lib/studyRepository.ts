@@ -14,6 +14,8 @@ import {
 } from './ankiState';
 import { getDeckAncestors } from './models';
 import { addDaysLocalYMD, getScheduler, todayLocalYMD } from './scheduler';
+import { foldSearchNode, parseSearchQuery, unquoteSearchValue } from './searchQuery';
+import { compileCardMatcher, type CardSearchContext } from './cardSearchMatch';
 import {
     buryCard,
     getAnkiCard,
@@ -25,16 +27,28 @@ import {
     MARKED_TAG,
     saveAnkiCard,
 } from './noteManager';
-import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
+import { getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
     applyHierarchicalLimit,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
-    sortReviewsDueThenRandom,
+    mixInterdayLearning,
+    normalizeNewCardGatherOrder,
+    shuffleNewCardsByNote,
+    sortNewCards,
+    sortReviewCards,
     splitIntradayLearning,
 } from './queueBuild';
-import { deleteReviewById, logReview } from './reviewLogger';
+import {
+    deleteReviewById,
+    getReviewsAnsweredToday,
+    getReviewsAnsweredTodayInDeck,
+    getTodayLimitUsageByDeck,
+    logReview,
+    type DailyLimitUsage,
+} from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
+import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
 
 export interface QueueStats {
     newCount: number;
@@ -51,6 +65,8 @@ export interface StudyQueueResult {
     dailyNewLimitReached: boolean;
     /** New cards in scope that daily limits kept out of today's queue. */
     heldBackNewCount: number;
+    /** Due reviews in scope that the daily review limit kept out of today's queue. */
+    heldBackReviewCount: number;
 }
 
 export interface StudyQueueParams {
@@ -59,6 +75,12 @@ export interface StudyQueueParams {
     selectedTopic?: string | null;
     selectedDeckName?: string | null;
     newCardsStudiedToday?: number;
+    /**
+     * Reviews already answered today in this scope. Anki subtracts them from "Maximum
+     * reviews/day", so the limit holds for the rest of the day instead of refilling on the next
+     * queue rebuild. Read from the review log when the caller does not supply it.
+     */
+    reviewsStudiedToday?: number;
     /**
      * Learning cards to serve even though their step timer has not expired. Powers the
      * one-shot "study ahead" button: the UI captures the waiting ids once at press time
@@ -233,111 +255,216 @@ function escapeLikePattern(s: string): string {
 }
 
 /**
- * Parse a simplified Anki-style search query into individual SQL clauses.
- * Returns { clauses, params } where clauses is an array of SQL fragments
- * WITHOUT any leading AND — the caller decides how to join them.
+ * The collection's day rollover hour. Anki keeps this in the collection config and every
+ * day-relative search term (`is:due`, `prop:due`, `rated:`) reads it from there, so a learner who
+ * moved their day boundary gets the same answer from search as from the deck list. Only the terms
+ * that need it pay for the lookup, and a collection that has never saved settings uses Anki's
+ * own 4 AM default.
+ */
+const APP_SETTINGS_META_KEY = 'tus_app_settings_meta_v1';
+
+interface CollectionSearchSettings {
+    rolloverHour: number;
+    learnAheadMinutes: number;
+}
+
+function collectionSearchSettings(): CollectionSearchSettings {
+    try {
+        const row = getDB().getFirstSync<{ value: string }>(
+            'SELECT value FROM settings WHERE key = ?',
+            APP_SETTINGS_META_KEY,
+        );
+        const meta = row?.value ? JSON.parse(row.value) : null;
+        const hour = Number(meta?.dayRolloverHour);
+        const learnAhead = Number(meta?.learnAheadMinutes);
+        return {
+            rolloverHour: Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : 4,
+            learnAheadMinutes: Number.isFinite(learnAhead) && learnAhead > 0 ? learnAhead : 0,
+        };
+    } catch {
+        return { rolloverHour: 4, learnAheadMinutes: 0 };
+    }
+}
+
+interface SearchFragment {
+    sql: string;
+    params: Array<string | number>;
+}
+
+/**
+ * SQL for a single Anki search term, or null when the term carries no usable filter (an empty
+ * `tag:`, an unparsable `prop:`), in which case the term is ignored the way Anki ignores it.
  *
  * Supported prefixes (matching Anki's search syntax):
- *   tag:<name>   — substring match on n.tags
+ *   tag:<name>   — that tag or anything nested under it; tag:none for untagged notes
  *   deck:<name>  — exact match OR child deck match (deck::child)
+ *   flag:0-7     — the card's flag (low three bits of c.flags)
+ *   is:<state>   — new / learn / review / relearn / due / suspended / buried[-sibling|-manually]
+ *   rated:N[:E]  — answered in the last N study days, optionally with ease E
+ *   prop:<key><op>N — ivl / reps / lapses / ease / pos / due
  *   <term>       — substring match on sfld, note data, and tags
  */
-function buildFilteredSearchClause(searchQuery: string): { clauses: string[]; params: Array<string | number> } {
-    // Tokenize honoring double quotes (Anki syntax): deck:"A B" stays one term.
-    const terms = searchQuery.trim().match(/(?:[^\s"]+|"[^"]*")+/g) ?? [];
-    const unquote = (value: string) =>
-        value.startsWith('"') && value.endsWith('"') && value.length >= 2
-            ? value.slice(1, -1)
-            : value;
-    const clauses: string[] = [];
-    const params: Array<string | number> = [];
+function clauseForSearchTerm(term: string): SearchFragment | null {
+    const unquote = unquoteSearchValue;
 
-    for (const term of terms) {
-        if (term.startsWith('tag:')) {
-            const tag = unquote(term.slice(4));
-            if (tag) {
-                // Whole-tag match (same rationale as buildScopeClause): "tag:veri" must not
-                // match a note tagged "Veri-Tipleri".
-                clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
-                params.push(`% ${escapeLikePattern(tag)} %`);
-            }
-            continue;
-        }
-
-        if (term.startsWith('deck:')) {
-            const deckName = unquote(term.slice(5));
-            if (deckName) {
-                clauses.push("(d.name = ? OR d.name LIKE ? ESCAPE '\\')");
-                params.push(deckName, `${escapeLikePattern(deckName)}::%`);
-            }
-            continue;
-        }
-
-        // Anki's flag search: flag:1..7 matches that flag, flag:0 matches unflagged cards.
-        if (term.startsWith('flag:')) {
-            const value = Number(unquote(term.slice(5)));
-            if (Number.isInteger(value) && value >= 0 && value <= 7) {
-                clauses.push('c.flags = ?');
-                params.push(value);
-            }
-            continue;
-        }
-
-        // Anki's card-state search (is:new / is:learn / is:review / is:due / is:suspended / is:buried).
-        if (term.startsWith('is:')) {
-            const state = unquote(term.slice(3)).toLowerCase();
-            const today = localDayNumber(Date.now(), 4);
-            if (state === 'new') clauses.push('c.queue = 0');
-            else if (state === 'learn') clauses.push('c.queue IN (1, 3)');
-            else if (state === 'review') clauses.push('c.queue = 2');
-            else if (state === 'suspended') clauses.push('c.queue = -1');
-            else if (state === 'buried') clauses.push('c.queue IN (-2, -3)');
-            else if (state === 'due') {
-                clauses.push('((c.queue = 2 AND c.due <= ?) OR (c.queue = 3 AND c.due <= ?) OR (c.queue = 1 AND c.due <= ?))');
-                params.push(today, today, Date.now());
-            }
-            continue;
-        }
-
-        // Anki's rated search: rated:N (answered in the last N days), rated:N:E (with ease E —
-        // rated:7:1 = forgotten in the last week). Uses a rolling 24h·N window.
-        if (term.startsWith('rated:')) {
-            const parts = unquote(term.slice(6)).split(':');
-            const days = Number(parts[0]);
-            const ease = parts.length > 1 ? Number(parts[1]) : null;
-            if (Number.isFinite(days) && days > 0) {
-                const cutoff = Date.now() - Math.min(365, Math.floor(days)) * 86400000;
-                if (ease !== null && Number.isInteger(ease) && ease >= 1 && ease <= 4) {
-                    clauses.push('c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease = ?)');
-                    params.push(cutoff, ease);
-                } else {
-                    clauses.push('c.id IN (SELECT cardId FROM revlog WHERE id >= ?)');
-                    params.push(cutoff);
-                }
-            }
-            continue;
-        }
-
-        // Anki's prop:due comparison — days relative to today ("prop:due<=3" = due within 3 days).
-        // Only day-scheduled queues (review / interday learning) carry a day-number due.
-        if (term.startsWith('prop:due')) {
-            const match = unquote(term.slice(8)).match(/^(<=|>=|=|<|>)(-?\d+)$/);
-            if (match) {
-                const op = match[1] === '=' ? '=' : match[1];
-                const days = Number(match[2]);
-                const today = localDayNumber(Date.now(), 4);
-                clauses.push(`(c.queue IN (2, 3) AND (c.due - ?) ${op} ?)`);
-                params.push(today, days);
-            }
-            continue;
-        }
-
-        const escaped = escapeLikePattern(unquote(term));
-        clauses.push("(n.sfld LIKE ? ESCAPE '\\' OR n.data LIKE ? ESCAPE '\\' OR n.tags LIKE ? ESCAPE '\\')");
-        params.push(`%${escaped}%`, `%${escaped}%`, `%${escaped}%`);
+    if (term.startsWith('tag:')) {
+        const tag = unquote(term.slice(4));
+        if (tag === 'none') return { sql: "TRIM(n.tags) = ''", params: [] };
+        if (!tag) return null;
+        // Anki matches a tag and everything nested under it: "tag:animal" also finds
+        // "animal::mammal". The match still has to start at a tag boundary, so
+        // "tag:veri" must not match a note tagged "Veri-Tipleri". `*` is Anki's
+        // wildcard and survives escaping as a LIKE `%`.
+        const pattern = escapeLikePattern(tag).replace(/\*/g, '%');
+        return {
+            sql: "((' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'"
+                + " OR (' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\')",
+            params: [`% ${pattern} %`, `% ${pattern}::%`],
+        };
     }
 
-    return { clauses, params };
+    if (term.startsWith('deck:')) {
+        const deckName = unquote(term.slice(5));
+        if (!deckName) return null;
+        return {
+            sql: "(d.name = ? OR d.name LIKE ? ESCAPE '\\')",
+            params: [deckName, `${escapeLikePattern(deckName)}::%`],
+        };
+    }
+
+    // Anki's flag search: flag:1..7 matches that flag, flag:0 matches unflagged cards. The
+    // flag lives in the low three bits of the field; the rest is reserved, so it is masked
+    // off rather than compared whole (rslib sqlwriter.rs: `(c.flags & 7) == n`).
+    if (term.startsWith('flag:')) {
+        const value = Number(unquote(term.slice(5)));
+        if (!Number.isInteger(value) || value < 0 || value > 7) return null;
+        return { sql: '(c.flags & 7) = ?', params: [value] };
+    }
+
+    // Anki's card-state search. new/learn/review/relearn read the card's *type*, not its
+    // queue, so a suspended or buried card still reports the state it is in — and a
+    // relearning card counts as both learning and review (rslib sqlwriter.rs write_state).
+    // Only due/suspended/buried are queue-based, because those *are* queue states.
+    if (term.startsWith('is:')) {
+        const state = unquote(term.slice(3)).toLowerCase();
+        const { rolloverHour, learnAheadMinutes } = collectionSearchSettings();
+        const today = localDayNumber(Date.now(), rolloverHour);
+        if (state === 'new') return { sql: 'c.type = 0', params: [] };
+        if (state === 'learn') return { sql: 'c.type IN (1, 3)', params: [] };
+        if (state === 'review') return { sql: 'c.type IN (2, 3)', params: [] };
+        if (state === 'relearn') return { sql: 'c.type = 3', params: [] };
+        if (state === 'suspended') return { sql: 'c.queue = -1', params: [] };
+        if (state === 'buried') return { sql: 'c.queue IN (-2, -3)', params: [] };
+        if (state === 'buried-sibling') return { sql: 'c.queue = -2', params: [] };
+        if (state === 'buried-manually') return { sql: 'c.queue = -3', params: [] };
+        if (state === 'due') {
+            // Anki's cutoff for intraday learning is now + the learn-ahead limit, so a card
+            // the reviewer would already hand you counts as due here too.
+            return {
+                sql: '((c.queue IN (2, 3) AND c.due <= ?) OR (c.queue = 1 AND c.due <= ?))',
+                params: [today, Date.now() + learnAheadMinutes * 60_000],
+            };
+        }
+        return null;
+    }
+
+    // Anki's rated search: rated:N (answered in the last N days), rated:N:E (with ease E —
+    // rated:7:1 = forgotten in the last week). The window is aligned to the day rollover,
+    // not to a rolling 24 hours, so "rated:1" means "answered today" the way the rest of the
+    // app counts a day. Manual reschedules are logged with ease 0 and are never "answers",
+    // so they are excluded exactly as Anki does (`and ease > 0`).
+    if (term.startsWith('rated:')) {
+        const parts = unquote(term.slice(6)).split(':');
+        const days = Number(parts[0]);
+        const ease = parts.length > 1 ? Number(parts[1]) : null;
+        if (!Number.isFinite(days) || days <= 0) return null;
+
+        const now = Date.now();
+        const cutoff = nextRolloverMs(now, collectionSearchSettings().rolloverHour)
+            - Math.min(365, Math.floor(days)) * 86400000;
+        if (ease !== null && Number.isInteger(ease) && ease >= 1 && ease <= 4) {
+            return {
+                sql: 'c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease = ?)',
+                params: [cutoff, ease],
+            };
+        }
+        return {
+            sql: 'c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease > 0)',
+            params: [cutoff],
+        };
+    }
+
+    // Anki's numeric property comparisons (rslib sqlwriter.rs `write_prop`):
+    //   prop:ivl>=21     interval in days
+    //   prop:reps<10     times answered
+    //   prop:lapses>3    times forgotten after graduating
+    //   prop:ease<2.0    ease factor, written as a multiplier but stored per mille
+    //   prop:pos<=50     a new card's queue position
+    //   prop:due=1       days until due, relative to today
+    //
+    // Anki reads the due/position through `case when c.odue != 0 then c.odue else c.due end`,
+    // because a card it has *moved* into a filtered deck parks its real due in odue. Filtered
+    // decks here are a view over the collection and never move a card, so odid/odue stay 0
+    // and the plain column is the same value.
+    if (term.startsWith('prop:')) {
+        const match = unquote(term.slice(5))
+            .match(/^(ivl|reps|lapses|ease|pos|due)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
+        if (!match) return null;
+
+        const [, key, op, rawValue] = match;
+        const value = Number(rawValue);
+        if (!Number.isFinite(value)) return null;
+
+        if (key === 'due') {
+            const today = localDayNumber(Date.now(), collectionSearchSettings().rolloverHour);
+            return {
+                sql: `(c.queue IN (2, 3) AND (c.due - ?) ${op} ?)`,
+                params: [today, Math.trunc(value)],
+            };
+        }
+
+        if (key === 'ease') {
+            // "prop:ease=2.5" is stored as factor 2500 — Anki multiplies by 1000.
+            return { sql: `c.factor ${op} ?`, params: [Math.round(value * 1000)] };
+        }
+
+        if (key === 'pos') {
+            // Only new cards carry a position; for them `due` *is* the queue position.
+            return { sql: `(c.type = 0 AND c.due ${op} ?)`, params: [Math.trunc(value)] };
+        }
+
+        const column = { ivl: 'c.ivl', reps: 'c.reps', lapses: 'c.lapses' }[key]!;
+        return { sql: `${column} ${op} ?`, params: [Math.trunc(value)] };
+    }
+
+    const escaped = escapeLikePattern(unquote(term));
+    return {
+        sql: "(n.sfld LIKE ? ESCAPE '\\' OR n.data LIKE ? ESCAPE '\\' OR n.tags LIKE ? ESCAPE '\\')",
+        params: [`%${escaped}%`, `%${escaped}%`, `%${escaped}%`],
+    };
+}
+
+/**
+ * Parse an Anki-style search query into SQL clauses the caller joins with AND. The grammar lives
+ * in lib/searchQuery.ts, so a filtered deck's saved search and the browser's search box accept
+ * exactly the same query; only the evaluation differs.
+ */
+function buildFilteredSearchClause(searchQuery: string): { clauses: string[]; params: Array<string | number> } {
+    const parsed = parseSearchQuery(searchQuery);
+    const fragment = parsed && foldSearchNode<SearchFragment>(parsed, {
+        term: (text) => clauseForSearchTerm(text),
+        not: (child) => ({ sql: `NOT (${child.sql})`, params: child.params }),
+        and: (parts) => ({
+            sql: `(${parts.map((part) => part.sql).join(' AND ')})`,
+            params: parts.flatMap((part) => part.params),
+        }),
+        or: (parts) => ({
+            sql: `(${parts.map((part) => part.sql).join(' OR ')})`,
+            params: parts.flatMap((part) => part.params),
+        }),
+    });
+
+    return fragment ? { clauses: [fragment.sql], params: fragment.params } : { clauses: [], params: [] };
 }
 
 /**
@@ -542,6 +669,7 @@ function makeStudyCard(
     nowMs: number,
     includeRawCard: boolean,
     stateOverride?: CardState,
+    includeRawNote: boolean = false,
 ): StudyCard {
     const payload = parseNotePayload(note, noteType);
 
@@ -555,9 +683,11 @@ function makeStudyCard(
         question: payload.question,
         answer: payload.answer,
         noteMarked: note.tags.includes(MARKED_TAG),
+        templateOrd: card.ord,
         // TODO(boundary): remove CardState materialization from queue path once scheduler works directly on AnkiCard.
         state: stateOverride ?? ankiCardToCardState(card, settings, nowMs),
         rawCard: includeRawCard ? card : undefined,
+        rawNote: includeRawNote ? note : undefined,
     };
 }
 
@@ -565,14 +695,28 @@ function toStudyCards(
     rows: QueueCardRow[],
     baseSettings: AppSettings,
     nowMs: number,
-    options: { includeRawCard?: boolean; settingsCache?: Map<number, AppSettings> } = {},
+    options: { includeRawCard?: boolean; includeRawNote?: boolean; settingsCache?: Map<number, AppSettings> } = {},
 ): StudyCard[] {
     const settingsCache = options.settingsCache ?? new Map<number, AppSettings>();
+    const catalogUnlocked = isPaidCatalogUnlocked();
+    const noteCache = new Map<number, Note>();
+    const noteTypeCache = new Map<number, NoteType | null>();
 
     return rows.reduce<StudyCard[]>((acc, row) => {
         try {
-            const note = JSON.parse(row.noteData) as Note;
-            const noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
+            let note = noteCache.get(row.noteId);
+            if (!note) {
+                note = JSON.parse(row.noteData) as Note;
+                noteCache.set(row.noteId, note);
+            }
+            // Fail closed for stale/deep-linked rows while entitlement reconciliation removes
+            // the physical catalog. No reviewer/browser path may materialize the paid fields.
+            if (!catalogUnlocked && isCatalogNote(note)) return acc;
+            let noteType = noteTypeCache.get(note.noteTypeId);
+            if (noteType === undefined) {
+                noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
+                noteTypeCache.set(note.noteTypeId, noteType);
+            }
 
             // Parse full card blob only for learning queues (left/decode needed)
             // or when caller explicitly needs a full raw card object.
@@ -601,6 +745,8 @@ function toStudyCards(
                 cardSettings,
                 nowMs,
                 Boolean(options.includeRawCard),
+                undefined,
+                Boolean(options.includeRawNote),
             ));
         } catch (e) {
             console.warn('[StudyRepo] Skipping corrupt row:', row.cardId, e);
@@ -658,28 +804,75 @@ function sortNewCardsByCourseOrder(cards: StudyCard[]): StudyCard[] {
         .map((entry) => entry.card);
 }
 
-/** Anki v3 "new card gather order": topic/course order (default), raw position, or random. */
-function applyNewCardOrder(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
-    if (settings.newCardGatherOrder === 'random') {
-        return deterministicShuffle(cards, `${daySeed}-${newCount}`);
+/**
+ * Anki v3 "new card gather order" (proto NewCardGatherPriority): which cards are collected and in
+ * what order they arrive. The two position orders are already satisfied by the SQL the rows were
+ * loaded with (`newRowOrderSql`), so they only have to leave the list alone.
+ */
+function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
+    const seed = `${daySeed}-${newCount}`;
+
+    switch (normalizeNewCardGatherOrder(settings.newCardGatherOrder)) {
+        case 'ascendingPosition':
+        case 'descendingPosition':
+            return cards;
+        case 'randomCards':
+            return deterministicShuffle(cards, seed);
+        case 'randomNotes':
+            return shuffleNewCardsByNote(cards, seed);
+        case 'deckThenRandomNotes':
+            // Deck by deck as usual, but the notes inside a deck arrive in a shuffled order.
+            return sortNewCardsByCourseOrder(shuffleNewCardsByNote(cards, seed));
+        case 'deck':
+        default: {
+            const base = settings.newCardOrder === 'random'
+                ? deterministicShuffle(cards, seed)
+                : cards;
+            return sortNewCardsByCourseOrder(base);
+        }
     }
-    if (settings.newCardGatherOrder === 'position') {
-        return cards; // already loaded in due/position order
-    }
-    const base = settings.newCardOrder === 'random'
-        ? deterministicShuffle(cards, `${daySeed}-${newCount}`)
-        : cards;
-    return sortNewCardsByCourseOrder(base);
 }
 
-/** Anki v3 "review sort order": due-then-random (default) or by interval length. */
+/**
+ * How the new-card rows are read from SQLite. "Descending position" has to take the *highest*
+ * positions, so reversing an ascending page after the fact would hand back the wrong cards
+ * whenever the fetch is capped.
+ */
+function newRowOrderSql(settings: AppSettings): string {
+    return normalizeNewCardGatherOrder(settings.newCardGatherOrder) === 'descendingPosition'
+        ? 'c.due DESC, c.id DESC'
+        : 'c.due ASC, c.id ASC';
+}
+
+/**
+ * Anki runs two separate steps over new cards: a gather step that decides *which* cards and in
+ * what order they arrive, then a sort step that reorders the gathered set. Keeping them apart is
+ * what makes "order gathered" a meaningful option rather than a no-op.
+ */
+function applyNewCardOrder(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
+    const gathered = gatherNewCards(cards, settings, daySeed, newCount);
+    return sortNewCards(gathered, settings.newCardSortOrder ?? 'template', daySeed);
+}
+
+/**
+ * Anki v3 "review sort order". The deck rank comes from the deck list so the two deck-aware
+ * orders follow the tree the learner sees, which is what Anki's `active_decks` rowid amounts to.
+ */
 function applyReviewOrder(cards: StudyCard[], settings: AppSettings, daySeed: string, today: number): StudyCard[] {
-    if (settings.reviewSortOrder === 'intervalsAsc' || settings.reviewSortOrder === 'intervalsDesc') {
-        const direction = settings.reviewSortOrder === 'intervalsAsc' ? 1 : -1;
-        return [...cards].sort((a, b) =>
-            direction * (a.state.interval - b.state.interval) || a.cardId - b.cardId);
-    }
-    return sortReviewsDueThenRandom(cards, daySeed, today);
+    const order = settings.reviewSortOrder ?? 'dueRandom';
+    const needsDeckRank = order === 'dueThenDeck' || order === 'deckThenDue';
+    const deckRank = needsDeckRank ? buildDeckRank() : undefined;
+    return sortReviewCards(cards, order, { daySeed, fallbackDay: today, today, deckRank });
+}
+
+/** Display position of each deck, by the same name ordering the deck list uses. */
+function buildDeckRank(): (deckId: number) => number {
+    const ranks = new Map<number, number>();
+    getAllDecks()
+        .slice()
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .forEach((deck, index) => ranks.set(deck.id, index));
+    return (deckId) => ranks.get(deckId) ?? Number.MAX_SAFE_INTEGER;
 }
 
 /**
@@ -787,6 +980,7 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
             nextLearningDue: null,
             dailyNewLimitReached: false,
             heldBackNewCount: 0,
+            heldBackReviewCount: 0,
         };
     }
 
@@ -841,7 +1035,9 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
         stats,
         nextLearningDue: futureLearningTimes.length > 0 ? Math.min(...futureLearningTimes) : null,
         dailyNewLimitReached: false,
+        // A filtered deck's saved search is the session: daily limits never apply to it.
         heldBackNewCount: 0,
+        heldBackReviewCount: 0,
     };
 }
 
@@ -908,7 +1104,14 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     }
 
     const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
-    const reviewLimit = Math.max(0, params.settings.dailyReviewLimit);
+
+    // Anki: "When this limit is reached, Anki will not show any more review cards for the day,
+    // even if there are more waiting." Answered reviews leave the due queue on their own, so
+    // without subtracting them the cap would silently refill on every rebuild.
+    const reviewsStudiedToday = params.reviewsStudiedToday ?? (params.selectedDeckName
+        ? getReviewsAnsweredTodayInDeck(params.selectedDeckName, params.settings.dayRolloverHour)
+        : getReviewsAnsweredToday(params.settings.dayRolloverHour));
+    const reviewLimit = Math.max(0, params.settings.dailyReviewLimit - reviewsStudiedToday);
 
     // Anki's "learn ahead limit" (rslib: learn_ahead_secs): intraday learning cards due within
     // this window are gathered too, but they are served strictly AFTER everything else — never
@@ -1000,7 +1203,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             params.selectedSubject,
             params.selectedTopic,
             params.selectedDeckName,
-            'c.due ASC, c.id ASC',
+            newRowOrderSql(params.settings),
             false,
             newFetchLimit,
         )
@@ -1032,6 +1235,12 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         buryBuildTimeSiblings(learningCards, reviewCards, newCards, configForDeck, (cardId) => buryCard(cardId, true)));
 
     // Hierarchical daily limits: a card counts against its deck and every ancestor deck.
+    // Anki's collection-wide "limits start from top" decides how far up that chain goes — with it
+    // off, studying a subdeck answers only to that subdeck and its own children, so a parent's
+    // stricter cap no longer bleeds down into a deck the learner opened directly.
+    const limitRoot = params.settings.limitsStartFromTop === false ? params.selectedDeckName : null;
+    const withinLimitRoot = (key: string): boolean =>
+        !limitRoot || key === limitRoot || key.startsWith(`${limitRoot}::`);
     const deckNameCache = new Map<number, string | null>();
     const deckKeysForCard = (card: StudyCard): string[] => {
         let name = deckNameCache.get(card.deckId);
@@ -1039,7 +1248,8 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             name = getDeck(card.deckId)?.name ?? null;
             deckNameCache.set(card.deckId, name);
         }
-        return name ? getDeckAncestors(name) : [`#${card.deckId}`];
+        const keys = name ? getDeckAncestors(name) : [`#${card.deckId}`];
+        return limitRoot ? keys.filter(withinLimitRoot) : keys;
     };
     const settingsForDeckKey = (key: string): AppSettings => {
         if (key.startsWith('#')) {
@@ -1048,11 +1258,32 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         const deck = getDeckByName(key);
         return deck ? resolveSettingsForDeck(deck.id, params.settings, settingsCache) : params.settings;
     };
+
+    // Every deck's own limits shrink by what that subtree already spent today, the way Anki's
+    // per-deck newToday/revToday counters do. Without this a parent deck would hand out its full
+    // allowance again as soon as the queue was rebuilt.
+    const usageByDeckKey = new Map<string, DailyLimitUsage>();
+    for (const [usedDeckId, used] of getTodayLimitUsageByDeck(params.settings.dayRolloverHour)) {
+        let name = deckNameCache.get(usedDeckId);
+        if (name === undefined) {
+            name = getDeck(usedDeckId)?.name ?? null;
+            deckNameCache.set(usedDeckId, name);
+        }
+        for (const key of name ? getDeckAncestors(name) : [`#${usedDeckId}`]) {
+            const entry = usageByDeckKey.get(key) ?? { newIntroduced: 0, reviewsAnswered: 0 };
+            entry.newIntroduced += used.newIntroduced;
+            entry.reviewsAnswered += used.reviewsAnswered;
+            usageByDeckKey.set(key, entry);
+        }
+    }
+    const usedForDeckKey = (key: string): DailyLimitUsage =>
+        usageByDeckKey.get(key) ?? { newIntroduced: 0, reviewsAnswered: 0 };
+
     const newLimitByKey = new Map<string, number>();
     const newLimitForDeckKey = (key: string): number => {
         let limit = newLimitByKey.get(key);
         if (limit === undefined) {
-            limit = settingsForDeckKey(key).dailyNewLimit;
+            limit = Math.max(0, settingsForDeckKey(key).dailyNewLimit - usedForDeckKey(key).newIntroduced);
             newLimitByKey.set(key, limit);
         }
         return limit;
@@ -1061,14 +1292,13 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const reviewLimitForDeckKey = (key: string): number => {
         let limit = reviewLimitByKey.get(key);
         if (limit === undefined) {
-            limit = settingsForDeckKey(key).dailyReviewLimit;
+            limit = Math.max(0, settingsForDeckKey(key).dailyReviewLimit - usedForDeckKey(key).reviewsAnswered);
             reviewLimitByKey.set(key, limit);
         }
         return limit;
     };
 
     let reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
-    let newCardsForQueue = applyHierarchicalLimit(newCards, availableNewLimit, deckKeysForCard, newLimitForDeckKey);
 
     // Fallback for strict per-deck limits: if the limited fetch under-fills, do one full fetch.
     // Siblings buried above are persisted, so a full re-fetch stays free of sibling pairs.
@@ -1095,7 +1325,32 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
     }
 
-    if (newCardsForQueue.length < Math.min(availableNewLimit, newCount) && newRows.length < newCount) {
+    // Anki's collection-wide "new cards ignore review limit". With it off, the review cap covers
+    // the whole day: every review already taken shrinks the room left for new cards, so a large
+    // backlog stops the app from also piling new material on top. Reviews are selected first
+    // (above) precisely so their final count is known here.
+    const newCardsShareReviewLimit = params.settings.newCardsIgnoreReviewLimit === false;
+    const reviewsTakenByKey = new Map<string, number>();
+    if (newCardsShareReviewLimit) {
+        for (const card of reviewCardsForQueue) {
+            for (const key of deckKeysForCard(card)) {
+                reviewsTakenByKey.set(key, (reviewsTakenByKey.get(key) ?? 0) + 1);
+            }
+        }
+    }
+    const effectiveNewLimit = newCardsShareReviewLimit
+        ? Math.min(availableNewLimit, Math.max(0, reviewLimit - reviewCardsForQueue.length))
+        : availableNewLimit;
+    const newLimitForDeckKeyCapped = newCardsShareReviewLimit
+        ? (key: string): number => Math.min(
+            newLimitForDeckKey(key),
+            Math.max(0, reviewLimitForDeckKey(key) - (reviewsTakenByKey.get(key) ?? 0)),
+        )
+        : newLimitForDeckKey;
+
+    let newCardsForQueue = applyHierarchicalLimit(newCards, effectiveNewLimit, deckKeysForCard, newLimitForDeckKeyCapped);
+
+    if (newCardsForQueue.length < Math.min(effectiveNewLimit, newCount) && newRows.length < newCount) {
         newCards = applyNewCardOrder(
             toStudyCards(
                 loadRowsByQueue(
@@ -1104,7 +1359,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
                     params.selectedSubject,
                     params.selectedTopic,
                     params.selectedDeckName,
-                    'c.due ASC, c.id ASC',
+                    newRowOrderSql(params.settings),
                     false,
                 ),
                 params.settings,
@@ -1116,22 +1371,32 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             newCount,
         );
 
-        newCardsForQueue = applyHierarchicalLimit(newCards, availableNewLimit, deckKeysForCard, newLimitForDeckKey);
+        newCardsForQueue = applyHierarchicalLimit(newCards, effectiveNewLimit, deckKeysForCard, newLimitForDeckKeyCapped);
     }
 
-    // Anki serving order (rslib scheduler/queue/mod.rs `iter`): learning cards whose timer has
-    // expired lead, then the main queue (new/review per queueOrder), and learning cards still
-    // inside the learn-ahead window trail at the very end — they only surface once everything
-    // else is exhausted, instead of storming back in front on every queue rebuild.
-    const { dueNow: learningDueNow, learnAhead: learningAhead } = splitIntradayLearning(learningCards, nowMs);
+    // Anki serving order (rslib scheduler/queue/mod.rs `iter`): intraday learning cards whose
+    // timer has expired lead, then the main queue, and intraday learning cards still inside the
+    // learn-ahead window trail at the very end — they only surface once everything else is
+    // exhausted, instead of storming back in front on every queue rebuild.
+    //
+    // Interday learning cards (dueTime 0) carry no step timer, so the preset's "interday
+    // learning/review order" decides where they sit against the reviews instead.
+    const intradayForQueue = learningCards.filter((card) => card.state.dueTime !== 0);
+    const interdayForQueue = learningCards.filter((card) => card.state.dueTime === 0);
+    const { dueNow: learningDueNow, learnAhead: learningAhead } = splitIntradayLearning(intradayForQueue, nowMs);
+    const reviewQueue = mixInterdayLearning(
+        reviewCardsForQueue,
+        interdayForQueue,
+        params.settings.interdayLearningMix ?? 'mix',
+    );
 
     let cards: StudyCard[];
     if (params.settings.queueOrder === 'before') {
-        cards = [...learningDueNow, ...newCardsForQueue, ...reviewCardsForQueue, ...learningAhead];
+        cards = [...learningDueNow, ...newCardsForQueue, ...reviewQueue, ...learningAhead];
     } else if (params.settings.queueOrder === 'after') {
-        cards = [...learningDueNow, ...reviewCardsForQueue, ...newCardsForQueue, ...learningAhead];
+        cards = [...learningDueNow, ...reviewQueue, ...newCardsForQueue, ...learningAhead];
     } else {
-        cards = [...learningDueNow, ...interleaveNewWithReviews(reviewCardsForQueue, newCardsForQueue), ...learningAhead];
+        cards = [...learningDueNow, ...interleaveNewWithReviews(reviewQueue, newCardsForQueue), ...learningAhead];
     }
 
     // Cards inside the learn-ahead window are already queued; report the first one due beyond it.
@@ -1142,22 +1407,25 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         params.selectedDeckName,
     );
 
-    // Report the new count the way Anki's deck list does: what today's limits still allow,
-    // not the raw backlog. The uncapped remainder feeds the "held back" message instead of
-    // silently inflating the badge past what the queue will ever serve.
+    // Report both counts the way Anki's deck list does: what today's limits still allow, not the
+    // raw backlog. The uncapped remainder feeds the "held back" message instead of silently
+    // inflating the badge past what the queue will ever serve. Learning cards have no daily
+    // limit in Anki, so that count stays raw.
     const servableNewCount = newCardsForQueue.length;
+    const servableReviewCount = reviewCardsForQueue.length;
 
     return {
         cards,
         stats: {
             newCount: servableNewCount,
             learningCount: intradayLearningCount + interdayLearningCount,
-            reviewCount,
+            reviewCount: servableReviewCount,
         },
         nextLearningDue,
         // Reached when new cards exist in scope but none survived the global/per-deck limits.
         dailyNewLimitReached: newCount > 0 && servableNewCount === 0,
         heldBackNewCount: Math.max(0, newCount - servableNewCount),
+        heldBackReviewCount: Math.max(0, reviewCount - servableReviewCount),
     };
 }
 
@@ -1278,19 +1546,6 @@ export function answerStudyCard(
 
     const scheduler = getScheduler(cardSettings.algorithm);
     const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
-
-    // Anki's "review ahead": a review answered before its due date grows from the time
-    // actually elapsed, not the full scheduled interval — reviewing early gives a
-    // proportionally smaller next interval. Only filtered decks can serve early reviews.
-    const todayNumber = localDayNumber(nowMs, cardSettings.dayRolloverHour);
-    if (!scheduleResult.isLearning && grade > 1
-        && currentAnkiCard.queue === 2 && currentAnkiCard.due > todayNumber
-        && currentAnkiCard.ivl > 0) {
-        const daysEarly = currentAnkiCard.due - todayNumber;
-        const elapsed = Math.max(0, currentAnkiCard.ivl - daysEarly);
-        const earlyRatio = Math.min(1, elapsed / currentAnkiCard.ivl);
-        scheduleResult.interval = Math.max(1, Math.round(scheduleResult.interval * earlyRatio));
-    }
 
     // Easy days: nudge the review interval so the due date lands on an allowed weekday.
     const scheduledInterval = scheduleResult.isLearning
@@ -1460,38 +1715,487 @@ export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSe
     return getStudyCardById(ankiCardIdFromLegacyCardId(legacyCardId), settings);
 }
 
-export function getBrowserCards(settings: AppSettings, limit?: number, offset?: number): StudyCard[] {
+export type BrowserCardSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified' | 'interval' | 'ease' | 'lapses' | 'reviews';
+export type BrowserCardStateFilter = 'all' | 'new' | 'due';
+export type BrowserTableMode = 'cards' | 'notes';
+
+export interface BrowserCardQuery {
+    tableMode?: BrowserTableMode;
+    limit?: number;
+    offset?: number;
+    sortKey?: BrowserCardSortKey;
+    descending?: boolean;
+    deckIds?: number[];
+    cardIds?: number[];
+    /** Restrict Notes-mode rows by note id. Card mode callers normally leave this unset. */
+    noteIds?: number[];
+    markedOnly?: boolean;
+    suspendedOnly?: boolean;
+    cardState?: BrowserCardStateFilter;
+    tags?: string[];
+    flag?: number | null;
+    /** Selected card flags joined with OR. An empty array intentionally matches no cards. */
+    flags?: number[];
+}
+
+function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Array<string | number> } {
+    const clauses: string[] = [];
+    const params: Array<string | number> = [];
+    const addIds = (column: string, ids: number[] | undefined) => {
+        if (!ids) return;
+        if (ids.length === 0) {
+            clauses.push('1 = 0');
+            return;
+        }
+        clauses.push(`${column} IN (${ids.map(() => '?').join(', ')})`);
+        params.push(...ids);
+    };
+    addIds('c.deckId', query.deckIds);
+    addIds('c.id', query.cardIds);
+    addIds('n.id', query.noteIds);
+    if (query.markedOnly) {
+        clauses.push("n.tags LIKE '% marked %'");
+    }
+    if (query.suspendedOnly) clauses.push('c.queue = -1');
+    if (query.cardState && query.cardState !== 'all') {
+        const state = clauseForSearchTerm(`is:${query.cardState}`);
+        if (state) {
+            clauses.push(state.sql);
+            params.push(...state.params);
+        }
+    }
+    if (query.flags) {
+        if (query.flags.length === 0) {
+            clauses.push('1 = 0');
+        } else {
+            clauses.push(`(c.flags & 7) IN (${query.flags.map(() => '?').join(', ')})`);
+            params.push(...query.flags);
+        }
+    } else if (query.flag !== null && query.flag !== undefined) {
+        clauses.push('(c.flags & 7) = ?');
+        params.push(query.flag);
+    }
+    const tagClauses: string[] = [];
+    const tagParams: string[] = [];
+    for (const rawTag of query.tags ?? []) {
+        const tag = rawTag.trim().toLocaleLowerCase('en-US').replace(/[\\%_]/g, (ch) => `\\${ch}`);
+        if (!tag) continue;
+        tagClauses.push("(LOWER(n.tags) LIKE ? ESCAPE '\\' OR LOWER(n.tags) LIKE ? ESCAPE '\\')");
+        tagParams.push(`% ${tag} %`, `% ${tag}::%`);
+    }
+    if (tagClauses.length > 0) {
+        // AnkiDroid's multi-select tag filter joins selected tags with OR. Requiring every tag
+        // would make ordinary category selections unexpectedly empty.
+        clauses.push(`(${tagClauses.join(' OR ')})`);
+        params.push(...tagParams);
+    }
+    return { sql: clauses.length ? ` WHERE ${clauses.join(' AND ')}` : '', params };
+}
+
+const BROWSER_SORT_SQL: Record<BrowserCardSortKey, string> = {
+    sortField: 'n.sfld COLLATE NOCASE',
+    cardType: 'c.ord',
+    due: 'c.due',
+    deck: 'd.name COLLATE NOCASE',
+    created: 'c.noteId',
+    modified: 'c.updated_at',
+    interval: 'c.ivl',
+    ease: 'c.factor',
+    lapses: 'c.lapses',
+    reviews: 'c.reps',
+};
+
+interface BrowserNoteRow {
+    noteId: number;
+    representativeCardId: number;
+    cardCount: number;
+    deckCount: number;
+    deckNames: string;
+    totalReviews: number;
+    totalLapses: number;
+    averageIntervalDays: number | null;
+    averageEasePermille: number | null;
+    suspendedCardCount: number;
+    buriedCardCount: number;
+    flaggedCardCount: number;
+}
+
+/**
+ * Notes mode searches for matching cards, but renders and sorts one row per matching note.
+ * The row's current card is always the note's first template card, even when another sibling
+ * was the card that matched a flag, queue or search term. This mirrors Anki's RowContext.
+ */
+function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
     const db = getDB();
-    const hasLimit = Number.isFinite(limit) && (limit as number) > 0;
-    const hasOffset = Number.isFinite(offset) && (offset as number) > 0;
+    const where = buildBrowserWhere(query);
+    const direction = query.descending ? 'DESC' : 'ASC';
+    const sortSql: Record<BrowserCardSortKey, string> = {
+        sortField: 'n.sfld COLLATE NOCASE',
+        cardType: 'COUNT(c_all.id)',
+        due: 'MIN(CASE WHEN c_all.type != 0 AND c_all.queue >= 0 THEN c_all.due END)',
+        deck: "CASE WHEN COUNT(DISTINCT c_all.deckId) > 1 THEN printf('(%d)', COUNT(DISTINCT c_all.deckId)) ELSE MIN(d_all.name) END COLLATE NOCASE",
+        created: 'n.id',
+        modified: 'MAX(c_all.updated_at)',
+        interval: 'AVG(CASE WHEN c_all.type IN (2, 3) THEN c_all.ivl END)',
+        ease: 'AVG(CASE WHEN c_all.type != 0 THEN c_all.factor END)',
+        lapses: 'SUM(c_all.lapses)',
+        reviews: 'SUM(c_all.reps)',
+    };
+
+    return db.getAllSync<BrowserNoteRow>(
+        `WITH matched_notes AS (
+            SELECT DISTINCT c.noteId AS noteId
+            FROM anki_cards c
+            JOIN notes n ON n.id = c.noteId
+            JOIN note_types nt ON nt.id = n.noteTypeId
+            JOIN decks d ON d.id = c.deckId
+            ${where.sql}
+        )
+        SELECT
+            n.id AS noteId,
+            (
+                SELECT first_card.id
+                FROM anki_cards first_card
+                WHERE first_card.noteId = n.id
+                ORDER BY first_card.ord ASC, first_card.id ASC
+                LIMIT 1
+            ) AS representativeCardId,
+            COUNT(c_all.id) AS cardCount,
+            COUNT(DISTINCT c_all.deckId) AS deckCount,
+            GROUP_CONCAT(DISTINCT d_all.name) AS deckNames,
+            COALESCE(SUM(c_all.reps), 0) AS totalReviews,
+            COALESCE(SUM(c_all.lapses), 0) AS totalLapses,
+            AVG(CASE WHEN c_all.type IN (2, 3) THEN c_all.ivl END) AS averageIntervalDays,
+            AVG(CASE WHEN c_all.type != 0 THEN c_all.factor END) AS averageEasePermille,
+            SUM(CASE WHEN c_all.queue = -1 THEN 1 ELSE 0 END) AS suspendedCardCount,
+            SUM(CASE WHEN c_all.queue IN (-2, -3) THEN 1 ELSE 0 END) AS buriedCardCount,
+            SUM(CASE WHEN (c_all.flags & 7) != 0 THEN 1 ELSE 0 END) AS flaggedCardCount
+        FROM matched_notes matched
+        JOIN notes n ON n.id = matched.noteId
+        JOIN anki_cards c_all ON c_all.noteId = n.id
+        JOIN decks d_all ON d_all.id = c_all.deckId
+        GROUP BY n.id
+        ORDER BY ${sortSql[query.sortKey ?? 'sortField']} ${direction}, n.id ${direction}`,
+        ...where.params,
+    );
+}
+
+function loadJsonRowsByIds(db: ReturnType<typeof getDB>, table: 'notes' | 'note_types', ids: number[]): Map<number, string> {
+    const result = new Map<number, string>();
+    for (let index = 0; index < ids.length; index += 400) {
+        const chunk = ids.slice(index, index + 400);
+        if (!chunk.length) continue;
+        for (const row of db.getAllSync<{ id: number; data: string }>(
+            `SELECT id, data FROM ${table} WHERE id IN (${chunk.map(() => '?').join(', ')})`,
+            ...chunk,
+        )) result.set(Number(row.id), row.data);
+    }
+    return result;
+}
+
+/**
+ * Return only the ordered row IDs for a browser text search: card IDs in Cards mode and note
+ * IDs in Notes mode. This follows the architecture used by
+ * Anki's desktop browser and AnkiDroid: search/sort the lightweight identifier list first, then
+ * hydrate row content only as pages become visible.
+ *
+ * Keep the app's existing search semantics exactly: Turkish/ASCII-insensitive prefix matching
+ * across rendered question/answer projections, topic, deck path and tags. Notes and note types
+ * are parsed once even when they generate multiple cards.
+ */
+export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuery: string): number[] {
+    const rawQuery = searchQuery.trim();
+    if (!rawQuery) return [];
+
+    const db = getDB();
+    const nowMs = Date.now();
+    const { rolloverHour, learnAheadMinutes } = collectionSearchSettings();
+    const matcher = compileCardMatcher(rawQuery, {
+        today: localDayNumber(nowMs, rolloverHour),
+        nowMs,
+        learnAheadMinutes,
+        dayCutoffMs: nextRolloverMs(nowMs, rolloverHour) - 86_400_000,
+        ratedWithin: reviewLogLookup(db, rolloverHour),
+        introducedWithin: firstReviewLookup(db, rolloverHour),
+    });
+    if (!matcher) return [];
+
+    const where = buildBrowserWhere(query);
+    const sortSql = BROWSER_SORT_SQL[query.sortKey ?? 'sortField'];
+    const direction = query.descending ? 'DESC' : 'ASC';
+    const rows = db.getAllSync<{
+        cardId: number;
+        noteId: number;
+        noteTypeId: number;
+        deckName: string;
+        ord: number;
+        type: number;
+        queue: number;
+        due: number;
+        ivl: number;
+        factor: number;
+        reps: number;
+        lapses: number;
+        flags: number;
+        createdAt: number;
+        noteEditedAt: number;
+    }>(
+        `SELECT
+            c.id AS cardId,
+            c.noteId AS noteId,
+            n.noteTypeId AS noteTypeId,
+            d.name AS deckName,
+            c.ord AS ord, c.type AS type, c.queue AS queue, c.due AS due,
+            c.ivl AS ivl, c.factor AS factor, c.reps AS reps, c.lapses AS lapses,
+            c.flags AS flags, c.created_at AS createdAt,
+            n.updated_at AS noteEditedAt
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId
+         ${where.sql}
+         ORDER BY ${sortSql} ${direction}, c.id ${direction}`,
+        ...where.params,
+    );
+
+    const noteData = loadJsonRowsByIds(db, 'notes', [...new Set(rows.map((row) => row.noteId))]);
+    const noteTypeData = loadJsonRowsByIds(db, 'note_types', [...new Set(rows.map((row) => row.noteTypeId))]);
+    const parsedByNoteId = new Map<number, ParsedSearchNote | null>();
+    const matchedNoteIds = new Set<number>();
+    const ids: number[] = [];
+
+    for (const row of rows) {
+        let parsed = parsedByNoteId.get(row.noteId);
+        if (parsed === undefined) {
+            const storedNote = noteData.get(row.noteId);
+            const storedType = noteTypeData.get(row.noteTypeId);
+            try {
+                const note = storedNote ? JSON.parse(storedNote) as Note : null;
+                const noteType = storedType ? JSON.parse(storedType) as NoteType : null;
+                const payload = note && noteType ? parseNotePayload(note, noteType) : null;
+                parsed = note && noteType && payload
+                    ? {
+                        note,
+                        noteType,
+                        text: [payload.question, payload.answer, payload.topic].join(' '),
+                        // Built once per note: a note with siblings would otherwise rebuild the
+                        // same field map for every card it generated.
+                        fields: Object.fromEntries(
+                            noteType.fields.map((field, index) => [field.name, note.fields[index] ?? '']),
+                        ),
+                    }
+                    : null;
+            } catch {
+                parsed = null;
+            }
+            parsedByNoteId.set(row.noteId, parsed);
+        }
+        if (!parsed) continue;
+
+        if (matcher(browserSearchContext(row, parsed))) {
+            matchedNoteIds.add(row.noteId);
+            if (query.tableMode !== 'notes') ids.push(row.cardId);
+        }
+    }
+
+    if (query.tableMode !== 'notes') return ids;
+    if (matchedNoteIds.size === 0) return [];
+
+    // The search can match any sibling card, but Anki's Notes-mode table is identified by note
+    // IDs and sorted using note aggregates. Do not leak the matching sibling card into the row.
+    return getBrowserNoteRows({
+        ...query,
+        cardIds: undefined,
+        noteIds: [...matchedNoteIds],
+    }).map((row) => row.noteId);
+}
+
+/** @deprecated Prefer getBrowserRowIdsMatchingText(), whose name reflects Notes mode too. */
+export function getBrowserCardIdsMatchingText(query: BrowserCardQuery, searchQuery: string): number[] {
+    return getBrowserRowIdsMatchingText(query, searchQuery);
+}
+
+interface ParsedSearchNote {
+    note: Note;
+    noteType: NoteType;
+    /** Rendered question, answer and topic — what a bare search word matches. */
+    text: string;
+    fields: Record<string, string>;
+}
+
+/** One card, in the shape the search terms read (lib/cardSearchMatch.ts). */
+function browserSearchContext(
+    row: {
+        cardId: number; noteId: number; deckName: string; ord: number; type: number; queue: number;
+        due: number; ivl: number; factor: number; reps: number; lapses: number; flags: number;
+        createdAt: number; noteEditedAt: number;
+    },
+    parsed: ParsedSearchNote,
+): CardSearchContext {
+    const { note, noteType, text, fields } = parsed;
+
+    return {
+        cardId: row.cardId,
+        noteId: row.noteId,
+        deckName: row.deckName,
+        text,
+        tags: note.tags,
+        templateOrd: row.ord,
+        queue: row.queue,
+        type: row.type,
+        due: row.due,
+        ivl: row.ivl,
+        factor: row.factor,
+        reps: row.reps,
+        lapses: row.lapses,
+        flags: row.flags,
+        fields,
+        noteTypeName: noteType.name,
+        templateName: noteType.templates[row.ord]?.name,
+        // Cards imported before the created_at column existed fall back to their id, which is the
+        // epoch millisecond Anki assigned when the card was made.
+        createdAtMs: Number(row.createdAt) || row.cardId,
+        noteEditedAtMs: Number(row.noteEditedAt) || (note.mod ? note.mod * 1000 : undefined),
+    };
+}
+
+/** `rated:N[:E]` — one query per distinct window, reused for every card in the result. */
+function reviewLogLookup(db: ReturnType<typeof getDB>, rolloverHour: number) {
+    const cache = new Map<string, Set<number>>();
+    return (cardId: number, days: number, ease: number | null): boolean => {
+        const key = `${days}:${ease ?? ''}`;
+        let matched = cache.get(key);
+        if (!matched) {
+            const cutoff = nextRolloverMs(Date.now(), rolloverHour) - days * 86_400_000;
+            const rows = ease !== null && Number.isInteger(ease) && ease >= 1 && ease <= 4
+                ? db.getAllSync<{ cardId: number }>(
+                    'SELECT DISTINCT cardId FROM revlog WHERE id >= ? AND ease = ?', cutoff, ease)
+                : db.getAllSync<{ cardId: number }>(
+                    'SELECT DISTINCT cardId FROM revlog WHERE id >= ? AND ease > 0', cutoff);
+            matched = new Set(rows.map((row) => Number(row.cardId)));
+            cache.set(key, matched);
+        }
+        return matched.has(cardId);
+    };
+}
+
+/** `introduced:N` — cards whose first-ever answer falls inside the window. */
+function firstReviewLookup(db: ReturnType<typeof getDB>, rolloverHour: number) {
+    const cache = new Map<number, Set<number>>();
+    return (cardId: number, days: number): boolean => {
+        let matched = cache.get(days);
+        if (!matched) {
+            const cutoff = nextRolloverMs(Date.now(), rolloverHour) - days * 86_400_000;
+            const rows = db.getAllSync<{ cardId: number }>(
+                `SELECT cardId FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog GROUP BY cardId)
+                 WHERE firstReview >= ?`,
+                cutoff,
+            );
+            matched = new Set(rows.map((row) => Number(row.cardId)));
+            cache.set(days, matched);
+        }
+        return matched.has(cardId);
+    };
+}
+
+export function getBrowserCards(settings: AppSettings, query: BrowserCardQuery = {}): StudyCard[] {
+    const db = getDB();
+
+    if (query.tableMode === 'notes') {
+        const noteRows = getBrowserNoteRows(query);
+        const offset = Number.isFinite(query.offset) ? Math.max(0, Math.floor(query.offset as number)) : 0;
+        const end = Number.isFinite(query.limit) && (query.limit as number) > 0
+            ? offset + Math.floor(query.limit as number)
+            : undefined;
+        const pageRows = noteRows.slice(offset, end);
+        const representativeIds = pageRows.map((row) => Number(row.representativeCardId));
+        if (representativeIds.length === 0) return [];
+
+        // Hydrate the note's first card without reapplying the card-level filter that caused a
+        // sibling to match. In Anki, Notes mode always uses the first card as the current card.
+        const representatives = getBrowserCards(settings, {
+            tableMode: 'cards',
+            cardIds: representativeIds,
+            sortKey: 'cardType',
+        });
+        const representativeById = new Map(representatives.map((card) => [card.cardId, card]));
+
+        return pageRows.flatMap((row) => {
+            const card = representativeById.get(Number(row.representativeCardId));
+            if (!card) return [];
+            return [{
+                ...card,
+                browserNoteSummary: {
+                    cardCount: Number(row.cardCount) || 0,
+                    deckCount: Number(row.deckCount) || 0,
+                    deckNames: String(row.deckNames ?? '').split(',').filter(Boolean),
+                    totalReviews: Number(row.totalReviews) || 0,
+                    totalLapses: Number(row.totalLapses) || 0,
+                    averageIntervalDays: row.averageIntervalDays == null ? null : Number(row.averageIntervalDays),
+                    averageEaseFactor: row.averageEasePermille == null ? null : Number(row.averageEasePermille) / 1000,
+                    suspendedCardCount: Number(row.suspendedCardCount) || 0,
+                    buriedCardCount: Number(row.buriedCardCount) || 0,
+                    flaggedCardCount: Number(row.flaggedCardCount) || 0,
+                },
+            }];
+        });
+    }
+
+    const hasLimit = Number.isFinite(query.limit) && (query.limit as number) > 0;
+    const hasOffset = Number.isFinite(query.offset) && (query.offset as number) > 0;
     const limitSql = hasLimit ? ' LIMIT ?' : '';
-    const offsetSql = hasOffset ? ' OFFSET ?' : '';
+    const offsetSql = hasOffset ? (hasLimit ? ' OFFSET ?' : ' LIMIT -1 OFFSET ?') : '';
     const paginationParams: number[] = [
-        ...(hasLimit ? [Math.floor(limit as number)] : []),
-        ...(hasOffset ? [Math.floor(offset as number)] : []),
+        ...(hasLimit ? [Math.floor(query.limit as number)] : []),
+        ...(hasOffset ? [Math.floor(query.offset as number)] : []),
     ];
+    const where = buildBrowserWhere(query);
+    const sortSql = BROWSER_SORT_SQL[query.sortKey ?? 'sortField'];
+    const direction = query.descending ? 'DESC' : 'ASC';
 
     // Full card blobs are needed here: the browser shows last-review timestamps, which only
     // live in the stored card JSON (the shallow row projection zeroes lastReview).
-    const rows = db.getAllSync<QueueCardRow>(
+    // Do not project the large note/notetype JSON blobs through the cards JOIN. A reverse-card
+    // note would duplicate its note JSON and a shared notetype (CSS + templates) would otherwise
+    // be copied thousands of times into JS memory. Load each unique blob once and hydrate by id.
+    const rows = db.getAllSync<QueueCardRow & { noteTypeId: number }>(
         `SELECT
             c.id AS cardId, c.noteId AS noteId, c.deckId AS deckId,
             c.ord AS ord, c.type AS type, c.queue AS queue,
             c.due AS due, c.ivl AS ivl, c.factor AS factor,
             c.reps AS reps, c.lapses AS lapses, c."left" AS "left",
             c.flags AS flags, c.data AS cardData,
-            n.data AS noteData, nt.data AS noteTypeData
+            n.noteTypeId AS noteTypeId,
+            NULL AS noteData, NULL AS noteTypeData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          JOIN note_types nt ON nt.id = n.noteTypeId
-         ORDER BY c.id ASC${limitSql}${offsetSql}`,
+         JOIN decks d ON d.id = c.deckId
+         ${where.sql}
+         ORDER BY ${sortSql} ${direction}, c.id ${direction}${limitSql}${offsetSql}`,
+        ...where.params,
         ...paginationParams,
     );
-    return toStudyCards(rows, settings, Date.now(), { includeRawCard: true });
+    const noteData = loadJsonRowsByIds(db, 'notes', [...new Set(rows.map((row) => row.noteId))]);
+    const noteTypeData = loadJsonRowsByIds(db, 'note_types', [...new Set(rows.map((row) => row.noteTypeId))]);
+    const hydratedRows = rows.flatMap((row) => {
+        const storedNote = noteData.get(row.noteId);
+        const storedType = noteTypeData.get(row.noteTypeId);
+        return storedNote && storedType ? [{ ...row, noteData: storedNote, noteTypeData: storedType }] : [];
+    });
+    return toStudyCards(hydratedRows, settings, Date.now(), { includeRawCard: true, includeRawNote: true });
 }
 
-export function getBrowserCardCount(): number {
+export function getBrowserCardCount(query: BrowserCardQuery = {}): number {
     const db = getDB();
-    const row = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM anki_cards');
+    const where = buildBrowserWhere(query);
+    const row = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(${query.tableMode === 'notes' ? 'DISTINCT c.noteId' : '*'}) as cnt
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId${where.sql}`,
+        ...where.params,
+    );
     return row?.cnt || 0;
 }

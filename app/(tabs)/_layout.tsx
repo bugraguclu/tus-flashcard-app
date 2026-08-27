@@ -7,12 +7,18 @@ import {
     Dimensions,
     Keyboard,
     Pressable,
+    BackHandler,
+    PanResponder,
+    Platform,
+    ToastAndroid,
 } from 'react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
-import { getSearchIndexCards } from '../../lib/noteManager';
+import { getNavigationCardCounts } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
+import { buildDeckTree, getAllDecks, getCardCountsByDeck } from '../../lib/deckManager';
+import { getDeckPathNames, getRootDeckName, getScopedBrowserPath } from '../../lib/deckNavigation';
 import { useApp } from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
 import { useI18n } from '../../hooks/useI18n';
@@ -24,7 +30,7 @@ export default function TabLayout() {
     const pathname = usePathname();
     const insets = useSafeAreaInsets();
     const colors = useThemeColors();
-    const { t, localeTag } = useI18n();
+    const { t, l, localeTag } = useI18n();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {
         selectedSubject,
@@ -33,14 +39,18 @@ export default function TabLayout() {
         setSelectedTopic,
         studyPosition,
         activeDeckName,
+        setActiveDeckName,
+        settings,
         dataVersion,
         startupError,
         isLoading,
     } = useApp();
 
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+    const [expandedDeckNames, setExpandedDeckNames] = useState<Set<string>>(new Set());
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
+    const lastAndroidBackPressRef = useRef(0);
 
     const isWide = windowWidth >= 768;
 
@@ -67,6 +77,51 @@ export default function TabLayout() {
         lastTabPath.current = pathname;
     }
     const isDeckScreen = lastTabPath.current === '/decks';
+    const isStudyScreen = lastTabPath.current === '/';
+
+    useEffect(() => {
+        if (Platform.OS !== 'android' || !settings.doubleBackToExit) return;
+        const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (sidebarOpen) {
+                setSidebarOpen(false);
+                return true;
+            }
+            if (pathname !== '/' && pathname !== '/decks') return false;
+            const now = Date.now();
+            if (now - lastAndroidBackPressRef.current <= 2_000) {
+                lastAndroidBackPressRef.current = 0;
+                if (pathname === '/') router.replace('/decks' as any);
+                else BackHandler.exitApp();
+                return true;
+            }
+            lastAndroidBackPressRef.current = now;
+            ToastAndroid.show(
+                pathname === '/'
+                    ? l('Çalışmadan çıkmak için tekrar geri basın', 'Press back again to leave study')
+                    : l('Uygulamadan çıkmak için tekrar geri basın', 'Press back again to exit'),
+                ToastAndroid.SHORT,
+            );
+            return true;
+        });
+        return () => subscription.remove();
+    }, [l, pathname, router, settings.doubleBackToExit, sidebarOpen]);
+
+    const fullScreenDrawerPanResponder = useMemo(() => PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (_event, gesture) => Boolean(
+            Platform.OS === 'android'
+            && settings.fullScreenNavigationDrawer
+            && !isWide
+            && !isDeckScreen
+            && !sidebarOpen
+            && gesture.dx > 18
+            && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5
+        ),
+        onPanResponderRelease: (_event, gesture) => {
+            if (gesture.dx < 54) return;
+            Keyboard.dismiss();
+            setSidebarOpen(true);
+        },
+    }), [isDeckScreen, isWide, settings.fullScreenNavigationDrawer, sidebarOpen]);
 
     useEffect(() => {
         const sub = Dimensions.addEventListener('change', ({ window }) => {
@@ -75,12 +130,12 @@ export default function TabLayout() {
         return () => sub?.remove();
     }, []);
 
-    const searchableCards = useMemo(() => {
+    const navigationCounts = useMemo(() => {
         if (isLoading) return [];
         try {
-            return getSearchIndexCards();
+            return getNavigationCardCounts();
         } catch (e) {
-            console.warn('[Layout] getSearchIndexCards failed:', e);
+            console.warn('[Layout] navigation counts failed:', e);
             return [];
         }
     }, [dataVersion, isLoading]);
@@ -97,26 +152,60 @@ export default function TabLayout() {
         }
     }, [dataVersion, activeDeckName, isLoading]);
 
+    // The reviewer menu is a deck navigator while a deck is active. A selected subdeck is a
+    // highlight inside its top-level tree, not a new tree root: otherwise opening the hamburger
+    // from `Parent::Child` would make every parent and sibling disappear.
+    const sidebarDeckTree = useMemo(() => {
+        if (isLoading || !activeDeckName) return [];
+        try {
+            const rootDeckName = getRootDeckName(activeDeckName);
+            if (!rootDeckName) return [];
+            const decks = getAllDecks().filter((deck) => (
+                deck.name === rootDeckName || deck.name.startsWith(`${rootDeckName}::`)
+            ));
+            if (decks.length === 0) return [];
+            const counts = getCardCountsByDeck(
+                Date.now(),
+                settings.dayRolloverHour,
+                settings.learnAheadMinutes,
+            );
+            return buildDeckTree(decks, counts, settings.dayRolloverHour);
+        } catch (e) {
+            console.warn('[Layout] sidebar deck tree failed:', e);
+            return [];
+        }
+    }, [activeDeckName, dataVersion, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes]);
+
+    // Reveal only the selected deck's ancestor chain. Opening every parent in a large catalog
+    // would flood the drawer with unrelated branches; manual expansion of siblings is preserved.
+    useEffect(() => {
+        setExpandedDeckNames((previous) => {
+            const next = new Set(previous);
+            for (const name of getDeckPathNames(activeDeckName)) next.add(name);
+            return next;
+        });
+    }, [activeDeckName, sidebarDeckTree]);
+
     const { subjectCounts, topicCounts } = useMemo(() => {
         const nextSubjectCounts = new Map<string, number>();
         const nextTopicCounts = new Map<string, Map<string, number>>();
 
-        for (const card of searchableCards) {
-            nextSubjectCounts.set(card.subject, (nextSubjectCounts.get(card.subject) ?? 0) + 1);
+        for (const row of navigationCounts) {
+            nextSubjectCounts.set(row.subject, (nextSubjectCounts.get(row.subject) ?? 0) + row.count);
 
-            let perTopic = nextTopicCounts.get(card.subject);
+            let perTopic = nextTopicCounts.get(row.subject);
             if (!perTopic) {
                 perTopic = new Map<string, number>();
-                nextTopicCounts.set(card.subject, perTopic);
+                nextTopicCounts.set(row.subject, perTopic);
             }
-            perTopic.set(card.topic, (perTopic.get(card.topic) ?? 0) + 1);
+            perTopic.set(row.topic, (perTopic.get(row.topic) ?? 0) + row.count);
         }
 
         return {
             subjectCounts: nextSubjectCounts,
             topicCounts: nextTopicCounts,
         };
-    }, [searchableCards]);
+    }, [navigationCounts]);
 
     const getSubjectCount = useCallback(
         (subjectId: string) => subjectCounts.get(subjectId) ?? 0,
@@ -148,9 +237,12 @@ export default function TabLayout() {
     );
 
     const navigate = useCallback((path: string) => {
-        router.push(path as any);
+        // The drawer belongs to the active study scope. Opening Kartlarım from a root deck or a
+        // deeply nested subdeck must browse that exact branch, never the whole collection.
+        const target = path === '/browser' ? getScopedBrowserPath(activeDeckName) : path;
+        router.push(target as any);
         if (!isWide) setSidebarOpen(false);
-    }, [isWide, router]);
+    }, [activeDeckName, isWide, router]);
 
     const handleSubjectPress = (subjectId: string) => {
         setSelectedSubject(subjectId);
@@ -166,6 +258,22 @@ export default function TabLayout() {
         setSelectedSubject(subjectId);
         setSelectedTopic(topic);
         navigate('/');
+    };
+
+    const handleDeckPress = (deckName: string) => {
+        setSelectedSubject(null);
+        setSelectedTopic(null);
+        setActiveDeckName(deckName);
+        navigate(`/?deck=${encodeURIComponent(deckName)}`);
+    };
+
+    const handleToggleDeckExpand = (deckName: string) => {
+        setExpandedDeckNames((previous) => {
+            const next = new Set(previous);
+            if (next.has(deckName)) next.delete(deckName);
+            else next.add(deckName);
+            return next;
+        });
     };
 
     const handleAllPress = () => {
@@ -186,8 +294,8 @@ export default function TabLayout() {
     }
 
     return (
-        <View style={styles.container}>
-            {!isWide && !isDeckScreen && (
+        <View style={styles.container} {...fullScreenDrawerPanResponder.panHandlers}>
+            {!isWide && !isDeckScreen && !isStudyScreen && (
                 <View style={[styles.mobileHeader, { paddingTop: insets.top + Spacing.sm }]}>
                     <TouchableOpacity
                         style={styles.hamburger}
@@ -220,6 +328,11 @@ export default function TabLayout() {
                         getSubjectCount={getSubjectCount}
                         getTopicCount={getTopicCount}
                         getTopicsForSubject={getTopicsForSubject}
+                        deckTree={sidebarDeckTree}
+                        activeDeckName={activeDeckName}
+                        expandedDeckNames={expandedDeckNames}
+                        onDeckPress={handleDeckPress}
+                        onToggleDeckExpand={handleToggleDeckExpand}
                         onAllPress={handleAllPress}
                         onSubjectPress={handleSubjectPress}
                         onToggleExpand={handleToggleExpand}
@@ -238,9 +351,9 @@ export default function TabLayout() {
                     {startupError ? (
                         <View style={styles.startupErrorContainer}>
                             <Text style={styles.startupErrorIcon}>📱</Text>
-                            <Text style={styles.startupErrorTitle}>{startupError}</Text>
+                            <Text style={styles.startupErrorTitle}>{t('root.errorTitle')}</Text>
                             <Text style={styles.startupErrorText}>
-                                {t('tabs.nativeOnly')}
+                                {t('root.startupErrorMessage')}
                             </Text>
                         </View>
                     ) : (

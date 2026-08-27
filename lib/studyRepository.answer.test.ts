@@ -108,9 +108,10 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard, forgetCard, setCardDueInDays } from './studyRepository';
+import { answerStudyCard, forgetCard, setCardDueInDays, undoAnswer } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
+import { deleteReviewById } from './reviewLogger';
 
 const settings: AppSettings = {
     language: 'system',
@@ -131,7 +132,7 @@ const settings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'after',
     newCardOrder: 'sequential',
-    newCardGatherOrder: 'topic',
+    newCardGatherOrder: 'deck',
     reviewSortOrder: 'dueRandom',
     autoPlayAudio: true,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
@@ -233,7 +234,7 @@ describe('answerStudyCard', () => {
         expect(shared.txLog).toContain('ROLLBACK;');
     });
 
-    it('scales an early review (review ahead) by elapsed time, not the full interval', () => {
+    it('grows an early review from elapsed time, the way Anki does', () => {
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
         // 10-day interval, still 8 days from due => only 2 days elapsed.
         shared.cards.set(30, {
@@ -247,9 +248,29 @@ describe('answerStudyCard', () => {
         answerStudyCard(30, 3, settings, 900);
         const updated = shared.cards.get(30)!;
 
-        // A due-today Good would give ~ivl * ease (≈25); reviewing 80% early shrinks it to ~1/5 of that.
-        expect(updated.ivl).toBeGreaterThanOrEqual(1);
-        expect(updated.ivl).toBeLessThanOrEqual(6);
+        // Anki's early-review Good is max(elapsed x ease, scheduled) — rslib review.rs
+        // `passing_early_review_intervals`. Two elapsed days x 2.5 stays under the scheduled 10,
+        // so the card keeps its 10 days instead of earning the ~25 an on-time Good would give.
+        expect(updated.ivl).toBe(10);
+    });
+
+    it('reconstructs elapsed days for an early review with no recorded review time', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        // Imported without a review log: lastReview is 0, so elapsed comes from due - ivl.
+        shared.cards.set(31, {
+            ...baseCard(31, 1, 2, 2),
+            ivl: 20,
+            reps: 6,
+            due: today + 12,
+            lastReview: 0,
+        });
+
+        answerStudyCard(31, 3, settings, 900);
+        const updated = shared.cards.get(31)!;
+
+        // 8 days elapsed x 2.5 = 20, which ties the scheduled interval — an on-time answer would
+        // have given ~50. Without the fallback the card would look due today and jump to 50.
+        expect(updated.ivl).toBe(20);
     });
 
     it('preview mode leaves the card and the revlog untouched', () => {
@@ -343,6 +364,39 @@ describe('answerStudyCard', () => {
         } finally {
             deckConfig.relearningSteps = original;
         }
+    });
+});
+
+describe('undoAnswer', () => {
+    beforeEach(() => {
+        shared.cards.clear();
+        shared.txLog = [];
+        shared.throwOnSave = false;
+        vi.mocked(deleteReviewById).mockClear();
+    });
+
+    afterEach(() => {
+        shared.throwOnSave = false;
+    });
+
+    it('restores the complete card snapshot and removes the matching review log atomically', () => {
+        const snapshot = { ...baseCard(10, 1, 2, 2), due: 42, ivl: 12, reps: 7 };
+        shared.cards.set(10, { ...snapshot, due: 99, ivl: 30, reps: 8 });
+
+        undoAnswer(snapshot, 1234);
+
+        expect(shared.cards.get(10)).toEqual(snapshot);
+        expect(deleteReviewById).toHaveBeenCalledOnce();
+        expect(deleteReviewById).toHaveBeenCalledWith(1234);
+        expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'COMMIT;']);
+    });
+
+    it('rolls back without deleting review history when the card cannot be restored', () => {
+        shared.throwOnSave = true;
+
+        expect(() => undoAnswer(baseCard(10, 1, 2, 2), 1234)).toThrow('save failed');
+        expect(deleteReviewById).not.toHaveBeenCalled();
+        expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
     });
 });
 

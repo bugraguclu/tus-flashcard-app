@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
@@ -19,7 +20,7 @@ export default function NoteTypesScreen() {
     const createNoteType = () => {
         const base = getNoteType(1) ?? BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!;
         const id = uniqueId();
-        saveNoteType({ ...base, id, name: l('Yeni Not Türü', 'New Note Type'), mod: Math.floor(Date.now() / 1000) });
+        saveNoteType({ ...base, id, name: l('Yeni not türü', 'New Note Type'), mod: Math.floor(Date.now() / 1000) });
         bumpDataVersion();
         router.push(`/note-type?id=${id}`);
     };
@@ -47,7 +48,7 @@ export default function NoteTypesScreen() {
                 ))}
 
                 <TouchableOpacity style={styles.addBtn} onPress={createNoteType}>
-                    <Text style={styles.addBtnText}>+ {l('Yeni Not Türü', 'New Note Type')}</Text>
+                    <Text style={styles.addBtnText}>+ {l('Yeni not türü', 'New Note Type')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

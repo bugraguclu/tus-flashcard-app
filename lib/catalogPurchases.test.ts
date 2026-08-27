@@ -40,7 +40,7 @@ const offering = (productId = 'com.tusankim.bka.complete.lifetime') => ({
     current: null,
 });
 
-describe('BKA receipt-backed catalog access', () => {
+describe('BKA catalog access', () => {
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
@@ -49,31 +49,46 @@ describe('BKA receipt-backed catalog access', () => {
         fixture.platform.OS = 'ios';
         delete process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
         delete process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
+        delete process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED;
         fixture.purchases.getCustomerInfo.mockResolvedValue(lockedCustomer());
         fixture.purchases.getOfferings.mockResolvedValue(offering());
         fixture.purchases.purchasePackage.mockResolvedValue({ customerInfo: unlockedCustomer() });
         fixture.purchases.restorePurchases.mockResolvedValue(unlockedCustomer());
     });
 
-    it('stays locked in a release build when the store key is absent', async () => {
+    it('offers a direct local unlock without contacting the store', async () => {
         const { loadCatalogAccess } = await import('./catalogPurchases');
 
         await expect(loadCatalogAccess()).resolves.toMatchObject({
-            status: 'unconfigured', hasAccess: false, previewAccess: false, configured: false,
+            status: 'ready', hasAccess: false, previewAccess: false, configured: false, productAvailable: true,
         });
         expect(fixture.purchases.configure).not.toHaveBeenCalled();
+        expect(fixture.purchases.getCustomerInfo).not.toHaveBeenCalled();
+        expect(fixture.purchases.getOfferings).not.toHaveBeenCalled();
     });
 
-    it('ignores a persisted development preview flag in a release build', async () => {
+    it('keeps locally unlocked cards open after the app module reloads', async () => {
         fixture.settings.set('bka_catalog_dev_preview_entitled_v1', 'true');
         const { loadCatalogAccess } = await import('./catalogPurchases');
 
         await expect(loadCatalogAccess()).resolves.toMatchObject({
-            status: 'unconfigured', hasAccess: false, previewAccess: false,
+            status: 'ready', hasAccess: true, previewAccess: true, configured: false,
         });
+        expect(fixture.purchases.getCustomerInfo).not.toHaveBeenCalled();
+    });
+
+    it('never removes a complete catalog that is already installed locally', async () => {
+        fixture.settings.set('bka_tus_catalog_installed_v5', 'full');
+        const { loadCatalogAccess } = await import('./catalogPurchases');
+
+        await expect(loadCatalogAccess()).resolves.toMatchObject({
+            status: 'ready', hasAccess: true, previewAccess: true,
+        });
+        expect(fixture.purchases.getCustomerInfo).not.toHaveBeenCalled();
     });
 
     it('uses only the exact product and the store-localized price', async () => {
+        process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
         process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';
         fixture.purchases.getCustomerInfo.mockResolvedValue(unlockedCustomer());
         const { loadCatalogAccess } = await import('./catalogPurchases');
@@ -86,6 +101,7 @@ describe('BKA receipt-backed catalog access', () => {
     });
 
     it('does not offer a differently identified store product', async () => {
+        process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
         process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';
         fixture.purchases.getOfferings.mockResolvedValue(offering('wrong.product'));
         const { loadCatalogAccess } = await import('./catalogPurchases');
@@ -96,6 +112,7 @@ describe('BKA receipt-backed catalog access', () => {
     });
 
     it('opens access only after the entitlement appears on the purchase receipt', async () => {
+        process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
         process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';
         const { loadCatalogAccess, purchaseBkaCatalog } = await import('./catalogPurchases');
         await loadCatalogAccess();
@@ -106,8 +123,7 @@ describe('BKA receipt-backed catalog access', () => {
         expect(result.cancelled).toBe(false);
     });
 
-    it('unlocks the complete preview in development without charging or checking a receipt', async () => {
-        vi.stubGlobal('__DEV__', true);
+    it('unlocks the complete catalog without charging or checking a receipt', async () => {
         const { purchaseBkaCatalog } = await import('./catalogPurchases');
 
         const result = await purchaseBkaCatalog();
@@ -115,11 +131,11 @@ describe('BKA receipt-backed catalog access', () => {
         expect(result.hasAccess).toBe(true);
         expect(result.state.previewAccess).toBe(true);
         expect(result.cancelled).toBe(false);
+        expect(fixture.purchases.configure).not.toHaveBeenCalled();
         expect(fixture.purchases.purchasePackage).not.toHaveBeenCalled();
     });
 
-    it('keeps the development preview unlocked after the app module is reloaded', async () => {
-        vi.stubGlobal('__DEV__', true);
+    it('keeps the local unlock after the purchase module is reloaded', async () => {
         const firstModule = await import('./catalogPurchases');
         await firstModule.purchaseBkaCatalog();
 
@@ -131,7 +147,22 @@ describe('BKA receipt-backed catalog access', () => {
         expect(fixture.purchases.getCustomerInfo).not.toHaveBeenCalled();
     });
 
+    it('returns to the unlock state after a collection reset clears local catalog markers', async () => {
+        fixture.settings.set('bka_catalog_dev_preview_entitled_v1', 'true');
+        fixture.settings.set('bka_tus_catalog_installed_v5', 'full');
+        const { loadCatalogAccess } = await import('./catalogPurchases');
+
+        await expect(loadCatalogAccess()).resolves.toMatchObject({ hasAccess: true, previewAccess: true });
+
+        fixture.settings.clear();
+
+        await expect(loadCatalogAccess()).resolves.toMatchObject({
+            status: 'ready', hasAccess: false, previewAccess: false, productAvailable: true,
+        });
+    });
+
     it('fails closed when native SDK configuration throws', async () => {
+        process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
         process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';
         fixture.purchases.configure.mockImplementationOnce(() => { throw new Error('native SDK unavailable'); });
         const { loadCatalogAccess } = await import('./catalogPurchases');
@@ -143,6 +174,7 @@ describe('BKA receipt-backed catalog access', () => {
     });
 
     it('restores the lifetime entitlement from the current store account', async () => {
+        process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
         process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';
         const { restoreBkaCatalogPurchase } = await import('./catalogPurchases');
 

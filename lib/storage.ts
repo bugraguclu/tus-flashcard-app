@@ -9,14 +9,34 @@ import type { CardState, SessionStats, AppSettings, AlgorithmType, ThemeMode, Ke
 import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
+import {
+    CATALOG_PROGRESS_KEY,
+    encodeCatalogProgress,
+    hasStudyProgress,
+    isCatalogPackRow,
+    parseCatalogProgress,
+    type CatalogProgress,
+} from './catalogRows';
 import { getDeckConfig, saveDeckConfig } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
+import { normalizeNewCardGatherOrder } from './queueBuild';
 import {
     migrateLegacyCardStatesToAnki,
     migrateLegacyCustomCardsToAnki,
 } from './legacyMigration';
 import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
+import { canonicalBackupContainsCatalog } from './catalogProtection';
+import { validateCanonicalBackupData } from './backupValidation';
+import { normalizeReviewerToolbarPosition } from './reviewerPresentation';
+import { normalizeStudyNotificationThreshold } from './studyNotificationPolicy';
+import {
+    DEFAULT_ANSWER_TAP_ACTIONS,
+    DEFAULT_QUESTION_TAP_ACTIONS,
+    normalizeReviewGestureAction,
+    normalizeReviewTapActions,
+    normalizeSwipeSensitivity,
+} from './reviewerTouchControls';
 
 const KEYS = {
     CARD_STATES: 'tus_card_states_v2',
@@ -64,26 +84,42 @@ export const DEFAULT_SETTINGS: AppSettings = {
     editorCapitalizeSentences: true,
     editorToolbarVisible: true,
     editorToolbarScrollable: true,
+    pasteClipboardImagesAsPng: false,
+    newStudyScreenEnabled: false,
     studyFrameStyle: 'card',
     showAudioPlayButtons: true,
     showAnswerFeedback: true,
     showAnswerButtons: true,
     hideHardAndEasy: false,
     showStudyTopBar: true,
+    reviewerToolbarPosition: 'top',
+    showToolsOverlayButton: false,
+    toolsOverlayPosition: 'right',
+    neverTypeAnswer: false,
+    typeAnswerInCard: false,
+    focusTypeAnswer: true,
     showDeckTitle: true,
     centerCardContent: false,
     showRemainingTime: false,
-    answerButtonsPosition: 'bottom',
-    studyBackgroundImageUri: null,
     timeboxMinutes: 0,
     keepScreenOn: false,
+    ninePointTouchEnabled: true,
+    questionTapActions: DEFAULT_QUESTION_TAP_ACTIONS,
+    answerTapActions: DEFAULT_ANSWER_TAP_ACTIONS,
     gesturesEnabled: false,
     swipeSensitivity: 100,
+    swipeLeftAction: 'tools',
+    swipeRightAction: 'decks',
+    swipeUpAction: 'off',
+    swipeDownAction: 'off',
+    fullScreenNavigationDrawer: false,
+    doubleBackToExit: false,
     cardZoomPercent: 100,
     imageZoomPercent: 100,
     answerButtonScalePercent: 100,
     twoRowAnswerButtons: false,
     browserFontScalePercent: 100,
+    showBrowserAudioFilenames: false,
     showAnswerLongPressMs: 0,
     answerDoubleTapMs: 200,
     autoBackupEnabled: true,
@@ -91,7 +127,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     backupDailyCopies: 0,
     backupWeeklyCopies: 7,
     backupMonthlyCopies: 0,
-    studyNotificationsEnabled: false,
+    studyNotificationsEnabled: true,
+    studyNotificationThreshold: 0,
     studyNotificationHour: 9,
     studyNotificationMinute: 0,
     dailyNewLimit: 20,
@@ -105,18 +142,33 @@ export const DEFAULT_SETTINGS: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'mix',
     newCardOrder: 'sequential',
-    newCardGatherOrder: 'topic',
+    newCardGatherOrder: 'deck',
     reviewSortOrder: 'dueRandom',
+    newCardSortOrder: 'template',
+    interdayLearningMix: 'mix',
     autoPlayAudio: true,
+    skipQuestionWhenReplayingAnswer: false,
+    showAnswerTimer: false,
+    maxAnswerSeconds: 60,
+    stopTimerOnAnswer: false,
+    secondsToShowQuestion: 0,
+    secondsToShowAnswer: 0,
+    questionAction: 'showAnswer',
+    waitForAudio: true,
+    answerAction: 'bury',
+    // The queue has always counted new cards and reviews against separate allowances; keeping
+    // that as the default means enabling the option is an opt-in change, never a silent one.
+    newCardsIgnoreReviewLimit: true,
+    limitsStartFromTop: true,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
     intervalModifier: 1.0,
     maxInterval: 36500,
     dayRolloverHour: 4,
-    // Anki defaults its learn-ahead limit to 20 minutes; we default to 0 ("always wait for the
-    // step timer") because the study screen has a dedicated countdown for waiting cards.
-    learnAheadMinutes: 0,
+    // Anki's learn-ahead limit: when nothing else is left, a learning card whose step timer runs
+    // out within this window is shown early rather than making the learner wait it out.
+    learnAheadMinutes: 20,
     algorithm: 'ANKI_V3' as AlgorithmType,
 };
 
@@ -431,28 +483,42 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             showRemainingCount: parsed.showRemainingCount !== false,
             showNextReviewTimes: parsed.showNextReviewTimes !== false,
             newCardDeckMode: parsed.newCardDeckMode === 'default' ? 'default' : 'current',
+            pasteClipboardImagesAsPng: Boolean(parsed.pasteClipboardImagesAsPng),
+            newStudyScreenEnabled: Boolean(parsed.newStudyScreenEnabled),
             studyFrameStyle: parsed.studyFrameStyle === 'plain' ? 'plain' : 'card',
             showAudioPlayButtons: parsed.showAudioPlayButtons !== false,
             showAnswerFeedback: parsed.showAnswerFeedback !== false,
             showAnswerButtons: parsed.showAnswerButtons !== false,
             hideHardAndEasy: Boolean(parsed.hideHardAndEasy),
             showStudyTopBar: parsed.showStudyTopBar !== false,
+            reviewerToolbarPosition: normalizeReviewerToolbarPosition(parsed.reviewerToolbarPosition),
+            showToolsOverlayButton: Boolean(parsed.showToolsOverlayButton),
+            toolsOverlayPosition: parsed.toolsOverlayPosition === 'left' ? 'left' : 'right',
+            neverTypeAnswer: Boolean(parsed.neverTypeAnswer),
+            typeAnswerInCard: Boolean(parsed.typeAnswerInCard),
+            focusTypeAnswer: parsed.focusTypeAnswer !== false,
             showDeckTitle: parsed.showDeckTitle !== false,
             centerCardContent: Boolean(parsed.centerCardContent),
             showRemainingTime: Boolean(parsed.showRemainingTime),
-            answerButtonsPosition: parsed.answerButtonsPosition === 'top' ? 'top' : 'bottom',
-            studyBackgroundImageUri: typeof parsed.studyBackgroundImageUri === 'string' && parsed.studyBackgroundImageUri.length <= 2048
-                ? parsed.studyBackgroundImageUri
-                : null,
-            timeboxMinutes: Math.max(0, Math.min(180, Number(parsed.timeboxMinutes ?? 0) || 0)),
+            timeboxMinutes: Math.max(0, Math.min(9999, Math.round(Number(parsed.timeboxMinutes ?? 0) || 0))),
             keepScreenOn: Boolean(parsed.keepScreenOn),
+            ninePointTouchEnabled: parsed.ninePointTouchEnabled !== false,
+            questionTapActions: normalizeReviewTapActions(parsed.questionTapActions, DEFAULT_QUESTION_TAP_ACTIONS),
+            answerTapActions: normalizeReviewTapActions(parsed.answerTapActions, DEFAULT_ANSWER_TAP_ACTIONS),
             gesturesEnabled: Boolean(parsed.gesturesEnabled),
-            swipeSensitivity: Math.max(25, Math.min(200, Number(parsed.swipeSensitivity ?? 100) || 100)),
+            swipeSensitivity: normalizeSwipeSensitivity(parsed.swipeSensitivity),
+            swipeLeftAction: normalizeReviewSwipeAction(parsed.swipeLeftAction, 'tools'),
+            swipeRightAction: normalizeReviewSwipeAction(parsed.swipeRightAction, 'decks'),
+            swipeUpAction: normalizeReviewSwipeAction(parsed.swipeUpAction, 'off'),
+            swipeDownAction: normalizeReviewSwipeAction(parsed.swipeDownAction, 'off'),
+            fullScreenNavigationDrawer: Boolean(parsed.fullScreenNavigationDrawer),
+            doubleBackToExit: Boolean(parsed.doubleBackToExit),
             cardZoomPercent: Math.max(50, Math.min(200, Number(parsed.cardZoomPercent ?? 100) || 100)),
             imageZoomPercent: Math.max(50, Math.min(200, Number(parsed.imageZoomPercent ?? 100) || 100)),
-            answerButtonScalePercent: Math.max(75, Math.min(175, Number(parsed.answerButtonScalePercent ?? 100) || 100)),
+            answerButtonScalePercent: Math.max(100, Math.min(175, Number(parsed.answerButtonScalePercent ?? 100) || 100)),
             twoRowAnswerButtons: Boolean(parsed.twoRowAnswerButtons),
             browserFontScalePercent: Math.max(75, Math.min(175, Number(parsed.browserFontScalePercent ?? 100) || 100)),
+            showBrowserAudioFilenames: Boolean(parsed.showBrowserAudioFilenames),
             showAnswerLongPressMs: Math.max(0, Math.min(2000, Number(parsed.showAnswerLongPressMs ?? 0) || 0)),
             answerDoubleTapMs: Math.max(0, Math.min(2000, Number(parsed.answerDoubleTapMs ?? 200) || 0)),
             autoBackupEnabled: parsed.autoBackupEnabled !== false,
@@ -460,10 +526,13 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             backupDailyCopies: 0,
             backupWeeklyCopies: 7,
             backupMonthlyCopies: 0,
-            studyNotificationsEnabled: Boolean(parsed.studyNotificationsEnabled),
+            studyNotificationsEnabled: parsed.studyNotificationsEnabled !== false,
+            studyNotificationThreshold: normalizeStudyNotificationThreshold(parsed.studyNotificationThreshold),
             studyNotificationHour: Math.max(0, Math.min(23, Number(parsed.studyNotificationHour ?? 9) || 0)),
             studyNotificationMinute: Math.max(0, Math.min(59, Number(parsed.studyNotificationMinute ?? 0) || 0)),
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
+            newCardsIgnoreReviewLimit: parsed.newCardsIgnoreReviewLimit !== false,
+            limitsStartFromTop: parsed.limitsStartFromTop !== false,
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
@@ -484,26 +553,42 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         showRemainingCount: settings.showRemainingCount,
         showNextReviewTimes: settings.showNextReviewTimes,
         newCardDeckMode: settings.newCardDeckMode,
+        pasteClipboardImagesAsPng: settings.pasteClipboardImagesAsPng,
+        newStudyScreenEnabled: settings.newStudyScreenEnabled,
         studyFrameStyle: settings.studyFrameStyle,
         showAudioPlayButtons: settings.showAudioPlayButtons,
         showAnswerFeedback: settings.showAnswerFeedback,
         showAnswerButtons: settings.showAnswerButtons,
         hideHardAndEasy: settings.hideHardAndEasy,
         showStudyTopBar: settings.showStudyTopBar,
+        reviewerToolbarPosition: settings.reviewerToolbarPosition,
+        showToolsOverlayButton: settings.showToolsOverlayButton,
+        toolsOverlayPosition: settings.toolsOverlayPosition,
+        neverTypeAnswer: settings.neverTypeAnswer,
+        typeAnswerInCard: settings.typeAnswerInCard,
+        focusTypeAnswer: settings.focusTypeAnswer,
         showDeckTitle: settings.showDeckTitle,
         centerCardContent: settings.centerCardContent,
         showRemainingTime: settings.showRemainingTime,
-        answerButtonsPosition: settings.answerButtonsPosition,
-        studyBackgroundImageUri: settings.studyBackgroundImageUri,
         timeboxMinutes: settings.timeboxMinutes,
         keepScreenOn: settings.keepScreenOn,
+        ninePointTouchEnabled: settings.ninePointTouchEnabled,
+        questionTapActions: settings.questionTapActions,
+        answerTapActions: settings.answerTapActions,
         gesturesEnabled: settings.gesturesEnabled,
         swipeSensitivity: settings.swipeSensitivity,
+        swipeLeftAction: settings.swipeLeftAction,
+        swipeRightAction: settings.swipeRightAction,
+        swipeUpAction: settings.swipeUpAction,
+        swipeDownAction: settings.swipeDownAction,
+        fullScreenNavigationDrawer: settings.fullScreenNavigationDrawer,
+        doubleBackToExit: settings.doubleBackToExit,
         cardZoomPercent: settings.cardZoomPercent,
         imageZoomPercent: settings.imageZoomPercent,
         answerButtonScalePercent: settings.answerButtonScalePercent,
         twoRowAnswerButtons: settings.twoRowAnswerButtons,
         browserFontScalePercent: settings.browserFontScalePercent,
+        showBrowserAudioFilenames: settings.showBrowserAudioFilenames,
         showAnswerLongPressMs: settings.showAnswerLongPressMs,
         answerDoubleTapMs: settings.answerDoubleTapMs,
         autoBackupEnabled: settings.autoBackupEnabled,
@@ -512,15 +597,30 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         backupWeeklyCopies: settings.backupWeeklyCopies,
         backupMonthlyCopies: settings.backupMonthlyCopies,
         studyNotificationsEnabled: settings.studyNotificationsEnabled,
+        studyNotificationThreshold: settings.studyNotificationThreshold,
         studyNotificationHour: settings.studyNotificationHour,
         studyNotificationMinute: settings.studyNotificationMinute,
         queueOrder: settings.queueOrder,
+        newCardsIgnoreReviewLimit: settings.newCardsIgnoreReviewLimit,
+        limitsStartFromTop: settings.limitsStartFromTop,
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
         algorithm: settings.algorithm,
     };
 
     setDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META, JSON.stringify(meta));
+}
+
+/**
+ * Save the two collection-wide controls that Anki places in Deck Options without rewriting the
+ * default preset. `saveSettings()` also synchronizes preset fields, which would otherwise be able
+ * to overwrite unsaved edits when this screen is opened for the default preset.
+ */
+export function saveCollectionDeckOptions(options: Pick<AppSettings,
+    'newCardsIgnoreReviewLimit' | 'limitsStartFromTop'>): void {
+    const current = loadSettings();
+    const validated = validateSettings({ ...current, ...options } as unknown as Record<string, unknown>);
+    persistAppSettingsMeta(validated);
 }
 
 // --- Settings (source of truth: SQLite deck config + SQLite settings metadata) ---
@@ -608,6 +708,10 @@ function sanitizeStepArray(value: unknown, fallback: number[]): number[] {
     return clean.length > 0 ? clean : fallback;
 }
 
+function normalizeReviewSwipeAction(value: unknown, fallback: 'tools' | 'decks' | 'off') {
+    return normalizeReviewGestureAction(value, fallback);
+}
+
 function validateSettings(settings: Record<string, unknown>): AppSettings {
     const validated = { ...DEFAULT_SETTINGS, ...settings } as AppSettings;
     validated.dailyNewLimit = Math.max(0, Math.min(9999, Number(validated.dailyNewLimit) || 20));
@@ -625,7 +729,11 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
     validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
+    // Settings saved before the app had all six of Anki's gather orders carry the old names.
+    validated.newCardGatherOrder = normalizeNewCardGatherOrder(validated.newCardGatherOrder);
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
+    validated.newCardsIgnoreReviewLimit = validated.newCardsIgnoreReviewLimit !== false;
+    validated.limitsStartFromTop = validated.limitsStartFromTop !== false;
     validated.algorithm = 'ANKI_V3';
     validated.language = normalizeLanguage(validated.language);
     validated.themeMode = normalizeThemeMode(validated.themeMode);
@@ -636,28 +744,42 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.editorCapitalizeSentences = validated.editorCapitalizeSentences !== false;
     validated.editorToolbarVisible = validated.editorToolbarVisible !== false;
     validated.editorToolbarScrollable = validated.editorToolbarScrollable !== false;
+    validated.pasteClipboardImagesAsPng = Boolean(validated.pasteClipboardImagesAsPng);
+    validated.newStudyScreenEnabled = Boolean(validated.newStudyScreenEnabled);
     validated.studyFrameStyle = validated.studyFrameStyle === 'plain' ? 'plain' : 'card';
     validated.showAudioPlayButtons = validated.showAudioPlayButtons !== false;
     validated.showAnswerFeedback = validated.showAnswerFeedback !== false;
     validated.showAnswerButtons = validated.showAnswerButtons !== false;
     validated.hideHardAndEasy = Boolean(validated.hideHardAndEasy);
     validated.showStudyTopBar = validated.showStudyTopBar !== false;
+    validated.reviewerToolbarPosition = normalizeReviewerToolbarPosition(validated.reviewerToolbarPosition);
+    validated.showToolsOverlayButton = Boolean(validated.showToolsOverlayButton);
+    validated.toolsOverlayPosition = validated.toolsOverlayPosition === 'left' ? 'left' : 'right';
+    validated.neverTypeAnswer = Boolean(validated.neverTypeAnswer);
+    validated.typeAnswerInCard = Boolean(validated.typeAnswerInCard);
+    validated.focusTypeAnswer = validated.focusTypeAnswer !== false;
     validated.showDeckTitle = validated.showDeckTitle !== false;
     validated.centerCardContent = Boolean(validated.centerCardContent);
     validated.showRemainingTime = Boolean(validated.showRemainingTime);
-    validated.answerButtonsPosition = validated.answerButtonsPosition === 'top' ? 'top' : 'bottom';
-    validated.studyBackgroundImageUri = typeof validated.studyBackgroundImageUri === 'string' && validated.studyBackgroundImageUri.length <= 2048
-        ? validated.studyBackgroundImageUri
-        : null;
-    validated.timeboxMinutes = Math.max(0, Math.min(180, Number(validated.timeboxMinutes ?? 0) || 0));
+    validated.timeboxMinutes = Math.max(0, Math.min(9999, Math.round(Number(validated.timeboxMinutes ?? 0) || 0)));
     validated.keepScreenOn = Boolean(validated.keepScreenOn);
+    validated.ninePointTouchEnabled = validated.ninePointTouchEnabled !== false;
+    validated.questionTapActions = normalizeReviewTapActions(validated.questionTapActions, DEFAULT_QUESTION_TAP_ACTIONS);
+    validated.answerTapActions = normalizeReviewTapActions(validated.answerTapActions, DEFAULT_ANSWER_TAP_ACTIONS);
     validated.gesturesEnabled = Boolean(validated.gesturesEnabled);
-    validated.swipeSensitivity = Math.max(25, Math.min(200, Number(validated.swipeSensitivity ?? 100) || 100));
+    validated.swipeSensitivity = normalizeSwipeSensitivity(validated.swipeSensitivity);
+    validated.swipeLeftAction = normalizeReviewSwipeAction(validated.swipeLeftAction, 'tools');
+    validated.swipeRightAction = normalizeReviewSwipeAction(validated.swipeRightAction, 'decks');
+    validated.swipeUpAction = normalizeReviewSwipeAction(validated.swipeUpAction, 'off');
+    validated.swipeDownAction = normalizeReviewSwipeAction(validated.swipeDownAction, 'off');
+    validated.fullScreenNavigationDrawer = Boolean(validated.fullScreenNavigationDrawer);
+    validated.doubleBackToExit = Boolean(validated.doubleBackToExit);
     validated.cardZoomPercent = Math.max(50, Math.min(200, Number(validated.cardZoomPercent ?? 100) || 100));
     validated.imageZoomPercent = Math.max(50, Math.min(200, Number(validated.imageZoomPercent ?? 100) || 100));
-    validated.answerButtonScalePercent = Math.max(75, Math.min(175, Number(validated.answerButtonScalePercent ?? 100) || 100));
+    validated.answerButtonScalePercent = Math.max(100, Math.min(175, Number(validated.answerButtonScalePercent ?? 100) || 100));
     validated.twoRowAnswerButtons = Boolean(validated.twoRowAnswerButtons);
     validated.browserFontScalePercent = Math.max(75, Math.min(175, Number(validated.browserFontScalePercent ?? 100) || 100));
+    validated.showBrowserAudioFilenames = Boolean(validated.showBrowserAudioFilenames);
     validated.showAnswerLongPressMs = Math.max(0, Math.min(2000, Number(validated.showAnswerLongPressMs ?? 0) || 0));
     validated.answerDoubleTapMs = Math.max(0, Math.min(2000, Number(validated.answerDoubleTapMs ?? 200) || 0));
     validated.autoBackupEnabled = validated.autoBackupEnabled !== false;
@@ -665,17 +787,27 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.backupDailyCopies = 0;
     validated.backupWeeklyCopies = 7;
     validated.backupMonthlyCopies = 0;
-    validated.studyNotificationsEnabled = Boolean(validated.studyNotificationsEnabled);
+    validated.studyNotificationsEnabled = validated.studyNotificationsEnabled !== false;
+    validated.studyNotificationThreshold = normalizeStudyNotificationThreshold(validated.studyNotificationThreshold);
     validated.studyNotificationHour = Math.max(0, Math.min(23, Number(validated.studyNotificationHour ?? 9) || 0));
     validated.studyNotificationMinute = Math.max(0, Math.min(59, Number(validated.studyNotificationMinute ?? 0) || 0));
     return validated;
 }
 
+/**
+ * Full-collection snapshot, minus the purchased card pack.
+ *
+ * Those 9,583 notes and cards are ~6.4 MB of the collection and can always be reinstalled from
+ * the bundled package, so copying them into every weekly backup would waste tens of megabytes and
+ * would also spread paid content as plain text. What cannot be recreated — the learner's own
+ * decks and notes, their review log, and their scheduling progress on catalog cards — is kept.
+ */
 export async function exportAllData(): Promise<string> {
     const settings = loadSettings();
     const sessionStats = await loadSessionStats();
 
     let schemaVersion = 0;
+    let catalogProgress: CatalogProgress = {};
     let tables = {
         note_types: [] as any[],
         notes: [] as any[],
@@ -691,10 +823,26 @@ export async function exportAllData(): Promise<string> {
         const db = getDB();
 
         schemaVersion = dbGetSchemaVersion();
+        const catalogNoteIds = new Set<number>();
+        const notes = db.getAllSync<any>('SELECT * FROM notes ORDER BY id').filter((row) => {
+            if (!isCatalogPackRow(row.data)) return true;
+            catalogNoteIds.add(Number(row.id));
+            return false;
+        });
+        const cards = db.getAllSync<any>('SELECT * FROM anki_cards ORDER BY id').filter((row) => {
+            if (!catalogNoteIds.has(Number(row.noteId))) return true;
+            try {
+                const card = JSON.parse(row.data);
+                if (hasStudyProgress(card)) catalogProgress[String(row.id)] = encodeCatalogProgress(card);
+            } catch { /* an unreadable row simply carries no progress worth restoring */ }
+            return false;
+        });
+        // Note types, decks and deck presets stay in full: they are a few kilobytes, and dropping
+        // one would orphan a learner's own note or card that happens to reference it.
         tables = {
             note_types: db.getAllSync('SELECT * FROM note_types ORDER BY id'),
-            notes: db.getAllSync('SELECT * FROM notes ORDER BY id'),
-            anki_cards: db.getAllSync('SELECT * FROM anki_cards ORDER BY id'),
+            notes,
+            anki_cards: cards,
             decks: db.getAllSync('SELECT * FROM decks ORDER BY id'),
             deck_configs: db.getAllSync('SELECT * FROM deck_configs ORDER BY id'),
             revlog: db.getAllSync('SELECT * FROM revlog ORDER BY id'),
@@ -713,6 +861,7 @@ export async function exportAllData(): Promise<string> {
         canonical: true,
         settings,
         sessionStats,
+        catalogProgress,
         tables,
     });
 }
@@ -769,8 +918,8 @@ function importCanonicalTables(data: any): void {
         for (const row of data.tables.anki_cards || []) {
             db.runSync(
                 `INSERT INTO anki_cards
-                 (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 row.id,
                 row.noteId,
                 row.deckId,
@@ -786,6 +935,7 @@ function importCanonicalTables(data: any): void {
                 row.flags,
                 row.data,
                 row.updated_at ?? 0,
+                row.created_at || row.updated_at || row.id || Date.now(),
                 row.usn ?? -1,
                 row.tombstone ?? 0,
             );
@@ -836,7 +986,29 @@ function importCanonicalTables(data: any): void {
         throw error;
     }
 
-    dbIndexAllCards(getSearchIndexCards());
+    try {
+        dbIndexAllCards(getSearchIndexCards());
+    } catch (error) {
+        // The collection transaction has already committed. Search indexing is
+        // recoverable maintenance and must not misreport the whole restore as failed.
+        console.warn('[Storage] post-import search index rebuild failed:', error);
+    }
+}
+
+const CANONICAL_IMPORT_TABLES = [
+    'note_types',
+    'notes',
+    'anki_cards',
+    'decks',
+    'deck_configs',
+    'revlog',
+    'graves',
+    'session_stats',
+] as const;
+
+function hasValidCanonicalTableShape(data: any): boolean {
+    if (!isCanonicalImport(data)) return false;
+    return CANONICAL_IMPORT_TABLES.every((name) => Array.isArray(data.tables[name]));
 }
 
 export async function importAllData(jsonString: string): Promise<boolean> {
@@ -849,7 +1021,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
         let data = JSON.parse(jsonString);
         data = sanitizeObject(data);
 
-        if (!data.version || typeof data.version !== 'number') {
+        if (!Number.isInteger(data.version) || data.version < 1 || data.version > 6) {
             console.error('Import: Geçersiz version alanı');
             return false;
         }
@@ -859,17 +1031,37 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             return false;
         }
 
-        if (data.settings) {
-            data.settings = validateSettings(data.settings);
-            saveSettings(data.settings);
-        }
-
-        if (data.sessionStats) {
-            await saveSessionStats(data.sessionStats as SessionStats);
-        }
-
         if (isCanonicalImport(data)) {
+            // Validate the complete container before touching settings or tables.
+            // This keeps truncated/hand-edited files as a true no-op.
+            const validation = validateCanonicalBackupData(data);
+            if (!validation.valid || !hasValidCanonicalTableShape(data)) {
+                console.error(`Import: Geçersiz canonical yedek (${validation.valid ? 'shape' : validation.reason})`);
+                return false;
+            }
+            if (canonicalBackupContainsCatalog(data)) {
+                console.error('Import: Ücretli katalog satırları yedekten geri yüklenemez');
+                return false;
+            }
+
             importCanonicalTables(data);
+            if (data.settings) {
+                data.settings = validateSettings(data.settings);
+                saveSettings(data.settings);
+            }
+            if (data.sessionStats) {
+                await saveSessionStats(data.sessionStats as SessionStats);
+            }
+            // The backup deliberately omits the purchased pack; hand its scheduling state to the
+            // installer, which re-applies it card by card the next time the pack is installed.
+            const restoredProgress = parseCatalogProgress(
+                typeof data.catalogProgress === 'object' && data.catalogProgress !== null
+                    ? JSON.stringify(data.catalogProgress)
+                    : null,
+            );
+            // Always replace the pending progress map; otherwise an empty/older
+            // backup could inherit progress left over from the collection it replaced.
+            setDbSetting(CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
             await clearLegacyCardStates();
             await saveCustomCards([]);
             return true;
@@ -884,6 +1076,16 @@ export async function importAllData(jsonString: string): Promise<boolean> {
         if (data.customCards && !Array.isArray(data.customCards)) {
             console.error('Import: customCards bir dizi değil');
             return false;
+        }
+
+        // Legacy migration uses these settings to translate due dates correctly.
+        // Callers that replace a collection wrap this path in a safety snapshot.
+        if (data.settings) {
+            data.settings = validateSettings(data.settings);
+            saveSettings(data.settings);
+        }
+        if (data.sessionStats) {
+            await saveSessionStats(data.sessionStats as SessionStats);
         }
 
         let customCardIdMap: Record<number, number> = {};

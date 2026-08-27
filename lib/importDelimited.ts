@@ -16,6 +16,8 @@ export interface DelimitedMetadata {
     tags?: string[];
     tagsColumn?: number;
     guidColumn?: number;
+    deckColumn?: number;
+    notetypeColumn?: number;
     deck?: string;
     notetype?: string;
 }
@@ -107,6 +109,16 @@ function parseMetaLine(line: string, metadata: DelimitedMetadata): string | unde
         case 'guid column': {
             const n = parseInt(value, 10);
             if (n > 0) metadata.guidColumn = n;
+            return undefined;
+        }
+        case 'deck column': {
+            const n = parseInt(value, 10);
+            if (n > 0) metadata.deckColumn = n;
+            return undefined;
+        }
+        case 'notetype column': {
+            const n = parseInt(value, 10);
+            if (n > 0) metadata.notetypeColumn = n;
             return undefined;
         }
         case 'columns':

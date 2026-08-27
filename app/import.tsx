@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -6,35 +6,46 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
     ActivityIndicator,
     KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
-import { getAllDecks, getDeck } from '../lib/deckManager';
+import { createDeck, getAllDecks, getAvailableDeckName, getDeck } from '../lib/deckManager';
 import { alert } from '../lib/confirm';
-import { readUriBytes, readUriText } from '../lib/files';
+import { assertKnownFileSize, readUriBytes, readUriText } from '../lib/files';
 import { useApp } from '../contexts/AppContext';
-import { importDelimitedNotes } from '../lib/importNotes';
-import { importApkg } from '../lib/importApkg';
+import { importDelimitedNotes, type DuplicateResolution, type MatchScope } from '../lib/importNotes';
+import { importApkg, MAX_APKG_BYTES } from '../lib/importApkg';
 import { getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { parseDelimited } from '../lib/importDelimited';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import DeckPickerModal from '../components/DeckPickerModal';
+import { createBackupNow } from '../lib/backup';
+import {
+    getImportFileExtension,
+    importFileNameFromUri,
+    inferImportFileType,
+    IMPORT_FORMATS,
+    type ImportFileType,
+} from '../lib/importFile';
+import ScreenHeader from '../components/ScreenHeader';
+import { userFacingErrorMessage } from '../lib/userFacingError';
 
 const ANKI_BASIC_NOTETYPE_ID = 1;
 
 type ImportSummary = {
     added: number;
+    updated?: number;
     duplicates: number;
     emptyRows: number;
     clozeImported?: number;
@@ -43,45 +54,13 @@ type ImportSummary = {
     progressReviews?: number;
     mediaImported?: number;
     mediaSkipped?: number;
-};
-
-type ImportFileType = 'csv' | 'tsv' | 'txt' | 'apkg' | 'colpkg';
-
-type ImportFormat = {
-    id: ImportFileType;
-    mimeTypes: string[];
-    extensions: string[];
+    mediaRenamed?: number;
+    cardsImported?: number;
+    structurePreserved?: boolean;
 };
 
 const MAX_TEXT_CHARS = 50_000_000;
-
-const IMPORT_FORMATS: ImportFormat[] = [
-    {
-        id: 'csv',
-        mimeTypes: ['text/csv', 'application/csv', 'text/comma-separated-values'],
-        extensions: ['csv'],
-    },
-    {
-        id: 'tsv',
-        mimeTypes: ['text/tab-separated-values', 'text/tsv', 'text/plain'],
-        extensions: ['tsv'],
-    },
-    {
-        id: 'txt',
-        mimeTypes: ['text/plain'],
-        extensions: ['txt'],
-    },
-    {
-        id: 'apkg',
-        mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
-        extensions: ['apkg'],
-    },
-    {
-        id: 'colpkg',
-        mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
-        extensions: ['colpkg'],
-    },
-];
+const MAX_TEXT_BYTES = 50 * 1024 * 1024;
 
 function delimiterForFileType(fileType: ImportFileType): string | undefined {
     return fileType === 'tsv' ? '\t' : undefined;
@@ -92,17 +71,11 @@ function delimitedParseOptions(fileType: ImportFileType): { delimiter?: string }
     return delimiter ? { delimiter } : {};
 }
 
-function getFileExtension(name: string): string | undefined {
-    const trimmed = name.trim().toLowerCase();
-    const dot = trimmed.lastIndexOf('.');
-    if (dot <= 0 || dot === trimmed.length - 1) return undefined;
-    return trimmed.slice(dot + 1);
-}
-
 export default function ImportScreen() {
     const { t, l } = useI18n();
     const router = useRouter();
-    const { bumpDataVersion, settings, dataVersion } = useApp();
+    const { incomingUri } = useLocalSearchParams<{ incomingUri?: string | string[] }>();
+    const { bumpDataVersion, settings, dataVersion, refreshCatalogAccess } = useApp();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const availableFormats = IMPORT_FORMATS;
@@ -128,12 +101,26 @@ export default function ImportScreen() {
     const [fileText, setFileText] = useState<string | null>(null);
     const [fileBytes, setFileBytes] = useState<Uint8Array | null>(null);
     const [rowCount, setRowCount] = useState(0);
+    const [withScheduling, setWithScheduling] = useState(false);
+    const [withDeckConfigs, setWithDeckConfigs] = useState(true);
+    const [updateNotes, setUpdateNotes] = useState<'ifNewer' | 'always' | 'never'>('ifNewer');
+    const [updateNoteTypes, setUpdateNoteTypes] = useState<'ifNewer' | 'always' | 'never'>('ifNewer');
+    const [duplicateResolution, setDuplicateResolution] = useState<DuplicateResolution>('update');
+    const [matchScope, setMatchScope] = useState<MatchScope>('notetype');
+    const [textHtml, setTextHtml] = useState(false);
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState<ImportSummary | null>(null);
+    const handledIncomingUri = useRef<string | null>(null);
 
     const selectedFormat = availableFormats.find((format) => format.id === fileType) ?? availableFormats[0] ?? IMPORT_FORMATS[0]!;
     const selectedSubject = subjects.find((entry) => entry.id === subject);
     const hasFile = fileText !== null || fileBytes !== null;
+    const packageImport = fileType === 'apkg' || fileType === 'colpkg';
+
+    const handleBack = () => {
+        if (router.canGoBack()) router.back();
+        else router.replace('/decks' as any);
+    };
 
     const resetPickedFile = () => {
         setFileName(null);
@@ -183,13 +170,13 @@ export default function ImportScreen() {
                 );
             case 'apkg':
                 return l(
-                    '.apkg seçildi: notlar, cloze kartlar, çalışma geçmişi ve uygun medya dosyaları paketten alınır.',
-                    '.apkg selected: notes, cloze cards, review history, and eligible media files are imported from the package.',
+                    '.apkg seçildi: paket koleksiyona eklenir; deste ağacı, not türleri, alanlar, şablonlar, CSS ve medya korunur.',
+                    '.apkg selected: the package is added to the collection; deck tree, note types, fields, templates, CSS, and media are retained.',
                 );
             case 'colpkg':
                 return l(
-                    '.colpkg seçildi: tüm Anki koleksiyon paketindeki notlar, cloze kartlar, çalışma geçmişi ve medya alınır.',
-                    '.colpkg selected: notes, cloze cards, review history, and media are imported from the full Anki collection package.',
+                    '.colpkg seçildi: Anki’deki gibi mevcut koleksiyon silinip paketteki koleksiyonla değiştirilir. Mevcut medya dosyaları silinmez.',
+                    '.colpkg selected: as in Anki, the current collection is deleted and replaced by the package. Existing media files are not deleted.',
                 );
         }
     };
@@ -208,25 +195,28 @@ export default function ImportScreen() {
                 );
             case 'apkg':
             case 'colpkg':
-                return l('Güncel ve eski Anki paket biçimleri desteklenir.', 'Current and legacy Anki package formats are supported.');
+                return l(
+                    'Paketin kendi deste adları korunur; Anki paketi için hedef deste seçimi kullanılmaz.',
+                    'The package keeps its own deck names; target-deck selection is not used for Anki packages.',
+                );
             case 'tsv':
                 return null;
         }
     };
 
     const pickFileButtonLabel = () => {
-        if (fileName) return l('Dosyayı Değiştir', 'Change File');
+        if (fileName) return l('Dosyayı değiştir', 'Change File');
         switch (fileType) {
             case 'csv':
-                return l('CSV Dosyası Seç', 'Choose CSV File');
+                return l('CSV dosyası seç', 'Choose CSV File');
             case 'tsv':
-                return l('TSV Dosyası Seç', 'Choose TSV File');
+                return l('TSV dosyası seç', 'Choose TSV File');
             case 'txt':
-                return l('TXT Dosyası Seç', 'Choose TXT File');
+                return l('TXT dosyası seç', 'Choose TXT File');
             case 'apkg':
-                return l('Anki .apkg Paketi Seç', 'Choose Anki .apkg Package');
+                return l('Anki .apkg paketi seç', 'Choose Anki .apkg Package');
             case 'colpkg':
-                return l('Anki .colpkg Paketi Seç', 'Choose Anki .colpkg Package');
+                return l('Anki .colpkg paketi seç', 'Choose Anki .colpkg Package');
         }
     };
 
@@ -238,7 +228,10 @@ export default function ImportScreen() {
     const handleCreateSubject = () => {
         const result = createCourse(newSubjectName);
         if (!result.created) {
-            alert(t('common.error'), result.error ?? l('Ders oluşturulamadı.', 'Could not create the course.'));
+            alert(t('common.error'), userFacingErrorMessage(
+                result.error,
+                l('Ders oluşturulamadı. Lütfen tekrar deneyin.', 'Could not create the course. Please try again.'),
+            ));
             return;
         }
         setSubject(result.subject.id);
@@ -249,6 +242,51 @@ export default function ImportScreen() {
         bumpDataVersion();
     };
 
+    const loadFile = async (uri: string, name: string, nextType: ImportFileType, knownSize?: number) => {
+        setFileType(nextType);
+        setFileName(name);
+        setResult(null);
+
+        if (nextType === 'apkg' || nextType === 'colpkg') {
+            assertKnownFileSize(knownSize, MAX_APKG_BYTES);
+            setFileBytes(await readUriBytes(uri, MAX_APKG_BYTES));
+            setFileText(null);
+            setRowCount(0);
+            return;
+        }
+
+        assertKnownFileSize(knownSize, MAX_TEXT_BYTES);
+        const text = await readUriText(uri, MAX_TEXT_BYTES);
+        if (text.length > MAX_TEXT_CHARS) {
+            resetPickedFile();
+            throw new Error('IMPORT_TEXT_TOO_LARGE');
+        }
+        setFileText(text);
+        setFileBytes(null);
+        const parsed = parseDelimited(text, delimitedParseOptions(nextType));
+        setRowCount(parsed.rows.length);
+        setTextHtml(parsed.metadata.html ?? false);
+    };
+
+    useEffect(() => {
+        const uri = Array.isArray(incomingUri) ? incomingUri[0] : incomingUri;
+        if (!uri || handledIncomingUri.current === uri) return;
+        const incomingType = inferImportFileType(uri);
+        if (!incomingType) return;
+        handledIncomingUri.current = uri;
+        void loadFile(uri, importFileNameFromUri(uri), incomingType).catch((error) => {
+            console.warn('[Import] incoming file read failed:', error);
+            alert(
+                t('common.error'),
+                error instanceof Error && (error.message === 'IMPORT_TEXT_TOO_LARGE' || error.message === 'FILE_TOO_LARGE')
+                    ? l('Dosya güvenli boyut sınırını aşıyor.', 'The file exceeds the safe size limit.')
+                    : l('Paylaşılan dosya okunamadı.', 'The shared file could not be read.'),
+            );
+        });
+    // The URI is the event identity; localization changes must not re-import the file.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [incomingUri]);
+
     const pickFile = async () => {
         try {
             const picked = await DocumentPicker.getDocumentAsync({
@@ -258,12 +296,12 @@ export default function ImportScreen() {
             if (picked.canceled || !picked.assets?.length) return;
 
             const asset = picked.assets[0];
-            const extension = getFileExtension(asset.name);
+            const extension = getImportFileExtension(asset.name);
             const extensionMatches = !extension || selectedFormat.extensions.includes(extension);
 
             if (!extensionMatches) {
                 alert(
-                    l('Dosya Tipi Uyuşmuyor', 'File Type Mismatch'),
+                    l('Dosya türü uyuşmuyor', 'File Type Mismatch'),
                     l(
                         `${formatLabel(fileType)} seçili. Lütfen bu biçime uygun bir dosya seçin.`,
                         `${formatLabel(fileType)} is selected. Please choose a file that matches this format.`,
@@ -272,27 +310,15 @@ export default function ImportScreen() {
                 return;
             }
 
-            setFileName(asset.name);
-            setResult(null);
-
-            if (fileType === 'apkg' || fileType === 'colpkg') {
-                setFileBytes(await readUriBytes(asset.uri));
-                setFileText(null);
-                setRowCount(0);
-            } else {
-                const text = await readUriText(asset.uri);
-                if (text.length > MAX_TEXT_CHARS) {
-                    setFileName(null);
-                    alert(t('common.error'), l('Metin dosyası çok büyük (en fazla yaklaşık 50 MB).', 'The text file is too large (maximum about 50 MB).'));
-                    return;
-                }
-                setFileText(text);
-                setFileBytes(null);
-                setRowCount(parseDelimited(text, delimitedParseOptions(fileType)).rows.length);
-            }
+            await loadFile(asset.uri, asset.name, fileType, asset.size);
         } catch (e) {
             console.warn('[Import] file read failed:', e);
-            alert(t('common.error'), l('Dosya okunamadı.', 'Could not read the file.'));
+            alert(
+                t('common.error'),
+                e instanceof Error && (e.message === 'IMPORT_TEXT_TOO_LARGE' || e.message === 'FILE_TOO_LARGE')
+                    ? l('Dosya güvenli boyut sınırını aşıyor.', 'The file exceeds the safe size limit.')
+                    : l('Dosya okunamadı.', 'Could not read the file.'),
+            );
         }
     };
 
@@ -311,10 +337,19 @@ export default function ImportScreen() {
             let imported: (ImportSummary & { indexed: SearchIndexCard[] }) | null = null;
 
             if ((fileType === 'apkg' || fileType === 'colpkg') && fileBytes) {
+                // A package can update existing notes as well as add new ones. Snapshot every
+                // package import so an unexpected device/storage failure is recoverable.
+                await createBackupNow();
                 imported = await importApkg(fileBytes, {
                     subject,
                     topic: topicValue,
                     rolloverHour: settings.dayRolloverHour,
+                    fileName: fileName ?? undefined,
+                    withScheduling: fileType === 'colpkg' ? true : withScheduling,
+                    withDeckConfigs: fileType === 'colpkg' ? true : withDeckConfigs,
+                    updateNotes,
+                    updateNoteTypes,
+                    replaceCollection: fileType === 'colpkg',
                 });
             } else if (fileText !== null) {
                 const noteType =
@@ -325,7 +360,9 @@ export default function ImportScreen() {
                     deckId: targetDeckId ?? resolveSubjectDeckId(subject),
                     ...delimitedParseOptions(fileType),
                     defaultFields: ['', ''],
-                    tags: [subject, topicValue.replace(/\s+/g, '-')],
+                    duplicateResolution,
+                    matchScope,
+                    isHtml: textHtml,
                 });
             }
 
@@ -333,11 +370,15 @@ export default function ImportScreen() {
                 // Index only the imported cards, not the whole collection (native FTS; no-op on web).
                 for (const card of imported.indexed) dbUpsertFtsCard(card);
                 bumpDataVersion();
+                if (fileType === 'colpkg') await refreshCatalogAccess();
                 setResult(imported);
             }
         } catch (e) {
             console.warn('[Import] import failed:', e);
-            alert(t('common.error'), e instanceof Error ? e.message : l('İçe aktarma başarısız oldu.', 'Import failed.'));
+            alert(t('common.error'), userFacingErrorMessage(
+                e,
+                l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.'),
+            ));
         } finally {
             setImporting(false);
         }
@@ -347,52 +388,59 @@ export default function ImportScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <ScreenHeader
+                title={t('root.import')}
+                onBack={handleBack}
+                backAccessibilityLabel={l('Geri dön', 'Go back')}
+            />
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.label}>{l('HEDEF DESTE', 'TARGET DECK')}</Text>
-                <TouchableOpacity
-                    style={styles.deckSelector}
-                    onPress={() => setShowDeckPicker(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
-                >
-                    <Text style={styles.deckSelectorText} numberOfLines={1}>
-                        🗃️ {targetDeck?.name ?? '—'} ▾
-                    </Text>
-                </TouchableOpacity>
-
-                <Text style={styles.label}>{l('DERS', 'SUBJECT')}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
-                    <TouchableOpacity
-                        style={[styles.subjectChip, styles.subjectChipNew]}
-                        onPress={openNewSubject}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Yeni ders oluştur', 'Create new course')}
-                    >
-                        <Text style={[styles.subjectChipText, styles.subjectChipNewText]}>{l('+ Yeni', '+ New')}</Text>
-                    </TouchableOpacity>
-                    {subjects.map((entry) => (
+                {!packageImport ? (
+                    <>
+                        <Text style={styles.label}>{l('HEDEF DESTE', 'TARGET DECK')}</Text>
                         <TouchableOpacity
-                            key={entry.id}
-                            style={[styles.subjectChip, subject === entry.id && styles.subjectChipActive]}
-                            onPress={() => setSubject(entry.id)}
+                            style={styles.deckSelector}
+                            onPress={() => setShowDeckPicker(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
                         >
-                            <Text
-                                style={[styles.subjectChipText, subject === entry.id && styles.subjectChipTextActive]}
-                            >
-                                {entry.icon} {entry.name}
+                            <Text style={styles.deckSelectorText} numberOfLines={1}>
+                                🗃️ {targetDeck?.name ?? '—'} ▾
                             </Text>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
 
-                <Text style={styles.label}>{l('KONU (Kaynak sütunu yoksa)', 'TOPIC (when there is no Source column)')}</Text>
-                <TextInput
-                    style={styles.input}
-                    value={topic}
-                    onChangeText={setTopic}
-                    placeholder={selectedSubject?.topics[0] || l('Genel', 'General')}
-                    placeholderTextColor={colors.textMuted}
-                />
+                        <Text style={styles.label}>{l('DERS', 'SUBJECT')}</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
+                            <TouchableOpacity
+                                style={[styles.subjectChip, styles.subjectChipNew]}
+                                onPress={openNewSubject}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Yeni ders oluştur', 'Create new course')}
+                            >
+                                <Text style={[styles.subjectChipText, styles.subjectChipNewText]}>{l('+ Yeni', '+ New')}</Text>
+                            </TouchableOpacity>
+                            {subjects.map((entry) => (
+                                <TouchableOpacity
+                                    key={entry.id}
+                                    style={[styles.subjectChip, subject === entry.id && styles.subjectChipActive]}
+                                    onPress={() => setSubject(entry.id)}
+                                >
+                                    <Text style={[styles.subjectChipText, subject === entry.id && styles.subjectChipTextActive]}>
+                                        {entry.icon} {entry.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+
+                        <Text style={styles.label}>{l('KONU (Kaynak sütunu yoksa)', 'TOPIC (when there is no Source column)')}</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={topic}
+                            onChangeText={setTopic}
+                            placeholder={selectedSubject?.topics[0] || l('Genel', 'General')}
+                            placeholderTextColor={colors.textMuted}
+                        />
+                    </>
+                ) : null}
 
                 <Text style={styles.label}>{l('DOSYA TİPİ', 'FILE TYPE')}</Text>
                 <View style={styles.formatGrid}>
@@ -419,6 +467,85 @@ export default function ImportScreen() {
                     {selectedFormatNotice ? <Text style={styles.formatNoticeText}>{selectedFormatNotice}</Text> : null}
                 </View>
 
+                {packageImport ? (
+                    <View style={styles.packageOptionsCard}>
+                        <Text style={styles.label}>{l('ANKI İÇE AKTARMA SEÇENEKLERİ', 'ANKI IMPORT OPTIONS')}</Text>
+                        {fileType === 'apkg' ? (
+                            <>
+                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setWithScheduling((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: withScheduling }}>
+                                    <View style={[styles.checkbox, withScheduling && styles.checkboxChecked]}>{withScheduling ? <Text style={styles.checkmark}>✓</Text> : null}</View>
+                                    <View style={styles.optionCopy}>
+                                        <Text style={styles.optionText}>{l('Çalışma ilerlemesini içe aktar', 'Import learning progress')}</Text>
+                                        <Text style={styles.optionHint}>{l('Kapalıysa kartlar yeni başlar; “marked” ve “leech” etiketleri ile kaynak çalışma geçmişi içe aktarılmaz.', 'When off, cards start as new; “marked” and “leech” tags and source review history are not imported.')}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setWithDeckConfigs((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: withDeckConfigs }}>
+                                    <View style={[styles.checkbox, withDeckConfigs && styles.checkboxChecked]}>{withDeckConfigs ? <Text style={styles.checkmark}>✓</Text> : null}</View>
+                                    <Text style={styles.optionText}>{l('Deste ayarlarını içe aktar', 'Import deck presets')}</Text>
+                                </TouchableOpacity>
+                                <Text style={styles.optionLabel}>{l('Mevcut notlar', 'Existing notes')}</Text>
+                                <View style={styles.updateChoiceRow}>
+                                    {([
+                                        ['ifNewer', l('Yeniyse güncelle', 'Update if newer')],
+                                        ['always', l('Her zaman güncelle', 'Always update')],
+                                        ['never', l('Güncelleme', 'Never update')],
+                                    ] as const).map(([value, label]) => (
+                                        <TouchableOpacity key={value} style={[styles.updateChoice, updateNotes === value && styles.updateChoiceActive]} onPress={() => setUpdateNotes(value)} accessibilityRole="radio" accessibilityState={{ selected: updateNotes === value }}>
+                                            <Text style={[styles.updateChoiceText, updateNotes === value && styles.updateChoiceTextActive]}>{label}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <Text style={styles.optionLabel}>{l('Mevcut not türleri', 'Existing note types')}</Text>
+                                <View style={styles.updateChoiceRow}>
+                                    {([
+                                        ['ifNewer', l('Yeniyse güncelle', 'Update if newer')],
+                                        ['always', l('Her zaman güncelle', 'Always update')],
+                                        ['never', l('Güncelleme', 'Never update')],
+                                    ] as const).map(([value, label]) => (
+                                        <TouchableOpacity key={value} style={[styles.updateChoice, updateNoteTypes === value && styles.updateChoiceActive]} onPress={() => setUpdateNoteTypes(value)} accessibilityRole="radio" accessibilityState={{ selected: updateNoteTypes === value }}>
+                                            <Text style={[styles.updateChoiceText, updateNoteTypes === value && styles.updateChoiceTextActive]}>{label}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </>
+                        ) : (
+                            <Text style={styles.destructiveNotice}>{l('⚠️ Bu işlem kartlarınızı, destelerinizi ve çalışma geçmişinizi paketteki koleksiyonla değiştirecek.', '⚠️ This will replace your cards, decks, and review history with the collection in the package.')}</Text>
+                        )}
+                    </View>
+                ) : (
+                    <View style={styles.packageOptionsCard}>
+                        <Text style={styles.label}>{l('ANKI METİN İÇE AKTARMA SEÇENEKLERİ', 'ANKI TEXT IMPORT OPTIONS')}</Text>
+                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setTextHtml((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: textHtml }}>
+                            <View style={[styles.checkbox, textHtml && styles.checkboxChecked]}>{textHtml ? <Text style={styles.checkmark}>✓</Text> : null}</View>
+                            <Text style={styles.optionText}>{l('Alanlarda HTML’e izin ver', 'Allow HTML in fields')}</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.optionLabel}>{l('Aynı ilk alana sahip not', 'Same first field')}</Text>
+                        <View style={styles.updateChoiceRow}>
+                            {([
+                                ['update', l('Güncelle', 'Update')],
+                                ['preserve', l('Atla', 'Ignore')],
+                                ['duplicate', l('Yeni not ekle', 'Import as new')],
+                            ] as const).map(([value, label]) => (
+                                <TouchableOpacity key={value} style={[styles.updateChoice, duplicateResolution === value && styles.updateChoiceActive]} onPress={() => setDuplicateResolution(value)} accessibilityRole="radio" accessibilityState={{ selected: duplicateResolution === value }}>
+                                    <Text style={[styles.updateChoiceText, duplicateResolution === value && styles.updateChoiceTextActive]}>{label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <Text style={styles.optionLabel}>{l('Eşleşme kapsamı', 'Match scope')}</Text>
+                        <View style={styles.updateChoiceRow}>
+                            {([
+                                ['notetype', l('Not türü', 'Note type')],
+                                ['notetypeAndDeck', l('Not türü ve deste', 'Note type and deck')],
+                            ] as const).map(([value, label]) => (
+                                <TouchableOpacity key={value} style={[styles.updateChoice, matchScope === value && styles.updateChoiceActive]} onPress={() => setMatchScope(value)} accessibilityRole="radio" accessibilityState={{ selected: matchScope === value }}>
+                                    <Text style={[styles.updateChoiceText, matchScope === value && styles.updateChoiceTextActive]}>{label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <Text style={styles.optionHint}>{l('#deck, #notetype ve bunların sütun başlıkları dosyada varsa otomatik uygulanır.', '#deck, #notetype, and their column headers are applied automatically when present.')}</Text>
+                    </View>
+                )}
+
                 <Text style={styles.label}>{l('DOSYA', 'FILE')}</Text>
                 <TouchableOpacity
                     style={styles.fileBtn}
@@ -436,11 +563,28 @@ export default function ImportScreen() {
 
                 {result ? (
                     <View style={styles.resultCard}>
-                        <Text style={styles.resultTitle}>{l('İçe Aktarma Tamamlandı', 'Import Complete')}</Text>
+                        <Text style={styles.resultTitle}>{l('İçe aktarma tamamlandı', 'Import Complete')}</Text>
                         <View style={styles.resultRow}>
                             <Text style={styles.resultLabel}>{l('Eklenen', 'Added')}</Text>
                             <Text style={[styles.resultValue, styles.resultAdded]}>{result.added}</Text>
                         </View>
+                        {result.updated ? (
+                            <View style={styles.resultRow}>
+                                <Text style={styles.resultLabel}>{l('Güncellenen', 'Updated')}</Text>
+                                <Text style={styles.resultValue}>{result.updated}</Text>
+                            </View>
+                        ) : null}
+                        {result.cardsImported !== undefined ? (
+                            <View style={styles.resultRow}>
+                                <Text style={styles.resultLabel}>{l('Korunan Anki kartı', 'Anki cards retained')}</Text>
+                                <Text style={styles.resultValue}>{result.cardsImported}</Text>
+                            </View>
+                        ) : null}
+                        {result.structurePreserved ? (
+                            <Text style={styles.resultNote}>
+                                {l('✓ Deste yapısı, not türleri, alanlar, şablonlar ve CSS korundu.', '✓ Deck structure, note types, fields, templates, and CSS were retained.')}
+                            </Text>
+                        ) : null}
                         <View style={styles.resultRow}>
                             <Text style={styles.resultLabel}>{l('Zaten var (atlandı)', 'Duplicates (skipped)')}</Text>
                             <Text style={styles.resultValue}>{result.duplicates}</Text>
@@ -477,7 +621,12 @@ export default function ImportScreen() {
                                 {l(`⚠️ ${result.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).`, `⚠️ ${result.mediaSkipped} media files were skipped (missing or too large).`)}
                             </Text>
                         ) : null}
-                        <TouchableOpacity style={styles.doneBtn} onPress={() => router.back()}>
+                        {result.mediaRenamed ? (
+                            <Text style={styles.resultNote}>
+                                {l(`ℹ️ ${result.mediaRenamed} çakışan medya dosyası güvenli bir adla eklendi.`, `ℹ️ ${result.mediaRenamed} conflicting media files were added under safe new names.`)}
+                            </Text>
+                        ) : null}
+                        <TouchableOpacity style={styles.doneBtn} onPress={handleBack}>
                             <Text style={styles.doneBtnText}>{t('common.completed')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -495,9 +644,6 @@ export default function ImportScreen() {
                     </TouchableOpacity>
                 )}
 
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
             </ScrollView>
 
             <DeckPickerModal
@@ -505,7 +651,7 @@ export default function ImportScreen() {
                 colors={colors}
                 decks={deckPickerDecks}
                 selectedDeckName={targetDeckId === null ? null : targetDeck?.name ?? null}
-                title={l('Hedef Deste', 'Target Deck')}
+                title={l('Hedef deste', 'Target Deck')}
                 allDecksLabel={l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
                 emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
@@ -525,7 +671,11 @@ export default function ImportScreen() {
                     setTargetDeckId(deck.id);
                     setShowDeckPicker(false);
                 }}
-                onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
+                onCreateDeck={(name) => {
+                    const created = createDeck(getAvailableDeckName(name));
+                    bumpDataVersion();
+                    return created.name;
+                }}
             />
 
             <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
@@ -536,7 +686,7 @@ export default function ImportScreen() {
                         accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
                     />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
+                        <Text style={styles.modalTitle}>{l('Yeni ders', 'New Course')}</Text>
                         <TextInput
                             style={styles.input}
                             value={newSubjectName}
@@ -563,7 +713,7 @@ export default function ImportScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    content: { padding: Spacing.lg, gap: Spacing.md },
+    content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
     label: {
         fontSize: 10,
         fontWeight: '700',
@@ -591,6 +741,21 @@ function createStyles(colors: ColorScheme) {
         flexWrap: 'wrap',
         gap: 8,
     },
+    packageOptionsCard: { gap: 10, padding: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard },
+    checkboxRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    checkbox: { width: 22, height: 22, borderRadius: 3, borderWidth: 2, borderColor: colors.textMuted, alignItems: 'center', justifyContent: 'center' },
+    checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
+    checkmark: { color: colors.white, fontSize: 16, fontWeight: '800', lineHeight: 18 },
+    optionCopy: { flex: 1, gap: 2 },
+    optionText: { flex: 1, fontSize: FontSize.sm, color: colors.textPrimary, fontWeight: '600' },
+    optionHint: { fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted },
+    optionLabel: { fontSize: FontSize.xs, color: colors.textSecondary, fontWeight: '700', marginTop: 2 },
+    updateChoiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    updateChoice: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 10, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border },
+    updateChoiceActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
+    updateChoiceText: { fontSize: FontSize.xs, color: colors.textSecondary },
+    updateChoiceTextActive: { color: colors.accent, fontWeight: '700' },
+    destructiveNotice: { color: colors.btnAgain, fontSize: FontSize.sm, lineHeight: 20, fontWeight: '600' },
     formatChip: {
         minWidth: 72,
         alignItems: 'center',

@@ -4,9 +4,10 @@
     "slug": "tusankim",
     "owner": "smbg",
     "version": "1.0.0",
+    "platforms": ["ios", "web"],
     "orientation": "portrait",
     "icon": "./assets/icon-appstore.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/app-mark.png",
@@ -17,41 +18,71 @@
       "supportsTablet": false,
       "buildNumber": "1",
       "bundleIdentifier": "com.tusankim.app",
+      "entitlements": {
+        "com.apple.developer.default-data-protection": "NSFileProtectionComplete"
+      },
+      "infoPlist": {
+        "NSUserActivityTypes": [
+          "$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route",
+          "com.tusankim.deck-shortcut"
+        ],
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Anki Package",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "com.tusankim.apkg",
+              "com.tusankim.colpkg"
+            ]
+          },
+          {
+            "CFBundleTypeName": "Flashcard Text Import",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "public.comma-separated-values-text",
+              "public.tab-separated-values-text",
+              "public.plain-text"
+            ]
+          }
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": false
+        },
+        "UTImportedTypeDeclarations": [
+          {
+            "UTTypeIdentifier": "com.tusankim.apkg",
+            "UTTypeDescription": "Anki Deck Package",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["apkg"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.tusankim.colpkg",
+            "UTTypeDescription": "Anki Collection Package",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["colpkg"]
+            }
+          }
+        ]
+      },
       "config": {
         "usesNonExemptEncryption": false
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,
-        "NSPrivacyCollectedDataTypes": [
-          {
-            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePurchaseHistory",
-            "NSPrivacyCollectedDataTypeLinked": false,
-            "NSPrivacyCollectedDataTypeTracking": false,
-            "NSPrivacyCollectedDataTypePurposes": [
-              "NSPrivacyCollectedDataTypePurposeAppFunctionality",
-              "NSPrivacyCollectedDataTypePurposeAnalytics"
-            ]
-          }
-        ],
+        "NSPrivacyCollectedDataTypes": [],
         "NSPrivacyTrackingDomains": []
       }
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/app-mark.png",
-        "backgroundColor": "#e8f5f0"
-      },
-      "package": "com.tusankim.app",
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "permissions": [],
-      "blockedPermissions": [
-        "android.permission.READ_EXTERNAL_STORAGE"
-      ]
-    },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static"
     },
     "scheme": "tusankim",
     "plugins": [

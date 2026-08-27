@@ -5,20 +5,26 @@
   },
   "build": {
     "development": {
+      "environment": "development",
+      "node": "24.16.0",
       "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "preview": {
+      "environment": "preview",
+      "node": "24.16.0",
       "distribution": "internal",
-      "android": {
-        "buildType": "apk"
+      "env": {
+        "EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED": "false"
       }
     },
     "production": {
-      "autoIncrement": true
+      "environment": "production",
+      "node": "24.16.0",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED": "false"
+      }
     }
   },
   "submit": {

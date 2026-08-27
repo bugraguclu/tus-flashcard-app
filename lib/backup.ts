@@ -18,6 +18,7 @@ import { todayLocalYMD } from './scheduler';
 import { isPrimaryTab } from './db';
 import { getLegacyFileSystem } from './files';
 import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting } from './storage';
+import { validateCanonicalBackupData } from './backupValidation';
 
 const DAILY_PREFIX = 'tus-backup-';
 const PRE_RESTORE_PREFIX = 'tus-prerestore-';
@@ -27,8 +28,10 @@ const WEEKLY_INTERVAL_MINUTES = 7 * 24 * 60;
 const KEEP_COLLECTION_BACKUPS = 7;
 
 // Accept old once-per-day filenames as well as the interval-aware timestamp form.
-const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6})?\.json$/;
+const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6}(?:\d{3})?)?\.json$/;
 const PRE_RESTORE_NAME_RE = /^tus-prerestore-\d+\.json$/;
+const MAX_BACKUP_SIZE = 50 * 1024 * 1024;
+const MAX_SUPPORTED_BACKUP_VERSION = 6;
 
 export interface BackupInfo {
     name: string;
@@ -69,6 +72,43 @@ export function isPreRestoreBackup(name: string): boolean {
     return PRE_RESTORE_NAME_RE.test(name);
 }
 
+/** Parse and preflight a backup without mutating any application state. */
+export function validateBackupContents(contents: string): { valid: true } | { valid: false; reason: string } {
+    if (!contents.trim()) return { valid: false, reason: 'empty' };
+    if (contents.length > MAX_BACKUP_SIZE) return { valid: false, reason: 'too-large' };
+
+    try {
+        const data = JSON.parse(contents) as Record<string, unknown>;
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+            return { valid: false, reason: 'not-an-object' };
+        }
+        if (!Number.isInteger(data.version) || Number(data.version) < 1) {
+            return { valid: false, reason: 'invalid-version' };
+        }
+        if (Number(data.version) > MAX_SUPPORTED_BACKUP_VERSION) {
+            return { valid: false, reason: 'newer-version' };
+        }
+
+        if (data.canonical === true) {
+            return validateCanonicalBackupData(data);
+        }
+
+        // Older TusAnkiM exports predate canonical SQLite snapshots. Require at
+        // least one known payload field so an arbitrary JSON object cannot replace data.
+        const legacyKeys = ['settings', 'sessionStats', 'cardStates', 'customCards'];
+        return legacyKeys.some((key) => Object.prototype.hasOwnProperty.call(data, key))
+            ? { valid: true }
+            : { valid: false, reason: 'unknown-format' };
+    } catch {
+        return { valid: false, reason: 'invalid-json' };
+    }
+}
+
+function assertValidBackupContents(contents: string): void {
+    const result = validateBackupContents(contents);
+    if (!result.valid) throw new Error(`Invalid backup contents: ${result.reason}`);
+}
+
 // --- Native filesystem store ---
 
 export function getNativeBackupDir(): string {
@@ -94,6 +134,11 @@ function createNativeStore(): BackupStore {
             const dir = await ensureNativeBackupDir();
             const fs = getLegacyFileSystem();
             const names = await fs.readDirectoryAsync(dir);
+            // A process kill during an atomic write may leave only the hidden
+            // temporary file. It is never a valid backup; clean it on the next list.
+            await Promise.all(names
+                .filter((name) => /^\.tus-(?:backup|prerestore)-.+\.json\.\d+\.tmp$/.test(name))
+                .map((name) => fs.deleteAsync(`${dir}${name}`, { idempotent: true }).catch(() => undefined)));
             const stats = await Promise.all(
                 names
                     .filter(isBackupFileName)
@@ -112,7 +157,20 @@ function createNativeStore(): BackupStore {
         },
         async write(name, contents) {
             const dir = await ensureNativeBackupDir();
-            await getLegacyFileSystem().writeAsStringAsync(`${dir}${name}`, contents);
+            const fs = getLegacyFileSystem();
+            const target = `${dir}${name}`;
+            const temp = `${dir}.${name}.${Date.now()}.tmp`;
+            try {
+                await fs.writeAsStringAsync(temp, contents);
+                // A rename makes the snapshot appear all at once. If the process is
+                // interrupted during the write, only an ignored .tmp file can remain.
+                await fs.moveAsync({ from: temp, to: target });
+            } catch (error) {
+                try {
+                    await fs.deleteAsync(temp, { idempotent: true });
+                } catch { /* best-effort cleanup */ }
+                throw error;
+            }
         },
         remove(name) {
             return getLegacyFileSystem().deleteAsync(`${getNativeBackupDir()}${name}`, { idempotent: true });
@@ -191,10 +249,11 @@ export async function createBackupNow(deps: BackupDeps = {}): Promise<{ fileName
     const d = resolveDeps(deps);
     const now = d.now();
     const today = todayLocalYMD(now, d.rolloverHour());
-    const stamp = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+    const stamp = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}${String(now.getMilliseconds()).padStart(3, '0')}`;
     const fileName = `${DAILY_PREFIX}${today}-${stamp}.json`;
 
     const json = await d.exportData();
+    assertValidBackupContents(json);
     await d.store.write(fileName, json);
     // Mark the time only after the write succeeds, so a failure retries next launch.
     d.setLastBackupAt(String(now.getTime()));
@@ -285,11 +344,33 @@ export async function restoreBackup(
 
     // Read before snapshotting: an unreadable backup should not leave junk behind.
     const contents = await d.store.read(name);
+    return importBackupContents(contents, deps);
+}
 
+/** Import a picked JSON export with the same safety guarantees as a stored backup. */
+export async function importBackupContents(
+    contents: string,
+    deps: BackupDeps = {},
+): Promise<{ ok: boolean; preRestoreName: string | null }> {
+    assertValidBackupContents(contents);
+    const d = resolveDeps(deps);
+
+    const currentContents = await d.exportData();
+    assertValidBackupContents(currentContents);
     const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
-    await d.store.write(preRestoreName, await d.exportData());
+    await d.store.write(preRestoreName, currentContents);
 
     const ok = await d.importData(contents);
+    if (!ok) {
+        // importAllData is designed to be transactional, but legacy imports and
+        // future migrations may touch more than SQLite. Reapply the known-good
+        // snapshot so a failed attempt cannot leave mixed settings or progress.
+        try {
+            await d.importData(currentContents);
+        } catch (error) {
+            console.error('[Backup] automatic restore rollback failed:', error);
+        }
+    }
 
     try {
         await pruneBackups(d.store, d.maxCopies());
