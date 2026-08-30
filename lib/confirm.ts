@@ -1,5 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import { translateActive } from './i18n';
+import { hapticWarning } from './haptics';
 
 export interface ConfirmOptions {
     /** Style the confirm action as destructive (red) — for delete/overwrite actions. */
@@ -41,6 +42,10 @@ export function confirm(
     onConfirm: () => void,
     options: ConfirmOptions = {},
 ): void {
+    // A delete/overwrite prompt is the one dialog the user must not dismiss on autopilot; the
+    // warning tap arrives with it. Central here so all fourteen destructive call sites get it.
+    if (options.destructive) hapticWarning();
+
     if (Platform.OS === 'web') {
         if (webHandler) {
             webHandler({ kind: 'confirm', title, message, destructive: !!options.destructive, onAccept: onConfirm });

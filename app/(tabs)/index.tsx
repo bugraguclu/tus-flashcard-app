@@ -3,6 +3,7 @@ import { Animated, Easing, View, ScrollView, StyleSheet, Platform, Modal, Pressa
 import { Text, TextInput } from '../../components/Typography';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { TouchableOpacity } from '../../components/Touchable';
+import { AppPressable } from '../../components/AppPressable';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -51,6 +52,7 @@ import {
     undoAnswer,
 } from '../../lib/studyRepository';
 import { useI18n } from '../../hooks/useI18n';
+import { resolveAnswerFeedback } from '../../lib/answerFeedback';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { hapticAnswer, hapticError, hapticLight, hapticSelection, hapticSuccess } from '../../lib/haptics';
 import { cardFlagName } from '../../lib/i18n';
@@ -507,31 +509,32 @@ export default function StudyScreen() {
     };
 
     /**
-     * 260 ms grade-coloured wash across the card. Runs on the native driver so it stays smooth
-     * while the answer is being written to SQLite, and is skipped entirely under "Hareketi Azalt"
-     * (the haptic tap still fires, so the answer is still acknowledged).
+     * Grade-coloured wash across the card. Every grade gets its own colour, so "İyi" and "Kolay"
+     * are acknowledged visually and not only by the haptic tap. Runs on the native driver so it
+     * stays smooth while the answer is written to SQLite; lib/answerFeedback decides whether
+     * there is anything to draw at all.
      */
     const triggerAnswerFlash = useCallback((grade: Grade) => {
-        if (reduceMotion) return;
-        const flashColor = grade <= 1
-            ? colors.btnAgain
-            : grade === 2
-                ? colors.btnHard
-                : grade === 3
-                    ? colors.btnGood
-                    : colors.btnEasy;
-        setAnswerFlashColor(flashColor);
+        const feedback = resolveAnswerFeedback(grade, {
+            again: colors.btnAgain,
+            hard: colors.btnHard,
+            good: colors.btnGood,
+            easy: colors.btnEasy,
+        }, { enabled: true, reduceMotion });
+        if (!feedback) return;
+
+        setAnswerFlashColor(feedback.color);
         answerFlash.setValue(0);
         Animated.sequence([
             Animated.timing(answerFlash, {
                 toValue: 1,
-                duration: 80,
+                duration: feedback.riseMs,
                 easing: Easing.out(Easing.quad),
                 useNativeDriver: Platform.OS !== 'web',
             }),
             Animated.timing(answerFlash, {
                 toValue: 0,
-                duration: 180,
+                duration: feedback.fallMs,
                 easing: Easing.in(Easing.quad),
                 useNativeDriver: Platform.OS !== 'web',
             }),
@@ -1259,15 +1262,17 @@ export default function StudyScreen() {
     const subject = currentCard ? findSubject(currentCard.subject) : null;
     const answerScale = (settings.answerButtonScalePercent ?? 100) / 100;
     const gradeButton = (grade: Grade, label: string, time: string, color: string, backgroundColor: string, borderColor: string) => (
-        <TouchableOpacity
+        <AppPressable
             key={grade}
+            // Four buttons share one row: their own gap is the separation, so the default hit
+            // slop would make neighbours overlap and steal each other's edge taps.
+            hitSlop={0}
             style={[
                 styles.answerBtn,
                 settings.twoRowAnswerButtons && styles.answerBtnTwoRow,
                 { backgroundColor, borderColor, minHeight: 52 * answerScale },
             ]}
             onPress={() => answerCard(grade)}
-            accessibilityRole="button"
             accessibilityLabel={l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
         >
             {/* Four buttons share one row, so system Dynamic Type is capped tighter here than
@@ -1275,7 +1280,7 @@ export default function StudyScreen() {
                 making them genuinely larger, and it grows the button with the text. */}
             {settings.showNextReviewTimes && <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.btnTime, { color, fontSize: FontSize.xs * answerScale }]}>{time}</Text>}
             <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.btnLabel, { color, fontSize: (isCompact ? 14 : 16) * answerScale }]}>{label}</Text>
-        </TouchableOpacity>
+        </AppPressable>
     );
     const answerButtons = showingAnswer && preview && settings.showAnswerButtons !== false ? (
         <View style={[styles.answerButtons, settings.twoRowAnswerButtons && styles.answerButtonsTwoRows]}>
@@ -1297,20 +1302,20 @@ export default function StudyScreen() {
             {settings.keepScreenOn ? <KeepAwakeGuard /> : null}
             {settings.showStudyTopBar !== false && <View style={styles.topBar}>
                 <View style={styles.topBarLeft}>
-                    <TouchableOpacity
+                    <AppPressable
                         style={styles.topIconBtn}
                         onPress={handleExitStudy}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        accessibilityRole="button"
                         accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                         {...webTitle(l('Geri', 'Back'))}
                     >
                         <Text style={styles.topBackIcon}>‹</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </AppPressable>
+                    <AppPressable
                         style={styles.topTitleTap}
+                        // A full-width title row does not shrink on tap; only the icon buttons do.
+                        scaleOnPress={false}
+                        hitSlop={0}
                         onPress={openDeckPicker}
-                        accessibilityRole="button"
                         accessibilityLabel={l('Deste seç', 'Select deck')}
                         {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
                     >
@@ -1332,28 +1337,30 @@ export default function StudyScreen() {
                                 <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
                             </View>
                         )}
-                    </TouchableOpacity>
+                    </AppPressable>
                 </View>
                 {currentCard && (
                     <View style={styles.topBarActions}>
-                        <TouchableOpacity
+                        <AppPressable
                             style={styles.topIconBtn}
+                            // 40pt targets sitting 2-6pt apart: slop here would cross into the
+                            // neighbour, and the buttons are already large enough without it.
+                            hitSlop={0}
                             onPress={openFlagMenu}
-                            accessibilityRole="button"
                             accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}
                             {...webTitle(l('Bayrak', 'Flag'))}
                         >
                             <Text style={[styles.topActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        </AppPressable>
+                        <AppPressable
                             style={styles.topIconBtn}
+                            hitSlop={0}
                             onPress={openMoreMenu}
-                            accessibilityRole="button"
                             accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
                             {...webTitle(l('Diğer seçenekler', 'More options'))}
                         >
                             <Text style={styles.topActionIcon}>⋮</Text>
-                        </TouchableOpacity>
+                        </AppPressable>
                     </View>
                 )}
             </View>}

@@ -12,12 +12,15 @@ vi.mock('expo-haptics', () => ({
 
 import {
     configureHaptics,
+    haptic,
     hapticAnswer,
     hapticError,
     hapticLight,
     hapticMedium,
     hapticSelection,
     hapticSuccess,
+    hapticWarning,
+    type HapticIntent,
 } from './haptics';
 
 describe('haptics facade', () => {
@@ -64,5 +67,38 @@ describe('haptics facade', () => {
 
     it('never throws when the native module rejects', () => {
         expect(() => hapticSuccess()).not.toThrow();
+    });
+
+    it('maps every intent to the matching effect', () => {
+        haptic('selection');
+        haptic('impact');
+        haptic('success');
+        haptic('warning');
+        haptic('error');
+
+        expect(calls.selection).toBe(1);
+        expect(calls.impact).toEqual(['light']);
+        expect(calls.notification).toEqual(['success', 'warning', 'error']);
+    });
+
+    it('honours the preference for intent dispatch too', () => {
+        configureHaptics(false);
+
+        const intents: HapticIntent[] = ['selection', 'impact', 'success', 'warning', 'error'];
+        for (const intent of intents) haptic(intent);
+
+        expect(calls.selection).toBe(0);
+        expect(calls.impact).toEqual([]);
+        expect(calls.notification).toEqual([]);
+    });
+
+    it('ignores an intent the map does not know instead of throwing', () => {
+        expect(() => haptic('nope' as HapticIntent)).not.toThrow();
+        expect(calls.selection).toBe(0);
+    });
+
+    it('warns without throwing', () => {
+        expect(() => hapticWarning()).not.toThrow();
+        expect(calls.notification).toEqual(['warning']);
     });
 });

@@ -63,3 +63,19 @@ export function hapticAnswer(grade: number): void {
     if (grade <= 1) hapticMedium();
     else hapticLight();
 }
+
+/** What a press means, independent of which effect the platform uses to express it. */
+export type HapticIntent = 'selection' | 'impact' | 'success' | 'warning' | 'error';
+
+const INTENTS: Record<HapticIntent, () => void> = {
+    selection: hapticSelection,
+    impact: hapticLight,
+    success: hapticSuccess,
+    warning: hapticWarning,
+    error: hapticError,
+};
+
+/** Dispatches by intent, for call sites that carry the meaning in a variable. */
+export function haptic(intent: HapticIntent): void {
+    INTENTS[intent]?.();
+}
