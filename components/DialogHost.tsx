@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    useEffect,
+    useMemo,
+    useState } from 'react';
+import { Modal,
+    Platform,
+    StyleSheet,
+    View,
+} from 'react-native';
+import { Text } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { registerDialogHost, type DialogRequest } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';

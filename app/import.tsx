@@ -1,9 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     SafeAreaView,
@@ -13,6 +10,8 @@ import {
     Platform,
     Pressable,
 } from 'react-native';
+import { Text, TextInput } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';

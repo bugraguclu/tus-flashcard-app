@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { BorderRadius, FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
@@ -8,6 +10,7 @@ import { downloadBytesFileWeb, downloadTextFileWeb, getLegacyFileSystem } from '
 import { buildAnkiExport, type AnkiExportFormat } from '../lib/exportAnkiPackage';
 import { bytesToBase64 } from '../lib/mediaStore';
 import { useI18n } from '../hooks/useI18n';
+import SheetModal from '../components/SheetModal';
 import { getDbSetting } from '../lib/storage';
 
 const FORMATS: { id: AnkiExportFormat; tr: string; en: string }[] = [
@@ -113,20 +116,15 @@ export default function ExportScreen() {
                 </View>
             </View>
 
-            <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}>
-                <View style={styles.overlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerOpen(false)} />
-                    <View style={styles.pickerCard}>
-                        <ScrollView>
-                            {availableFormats.map((item) => (
-                                <TouchableOpacity key={item.id} style={[styles.formatOption, item.id === format && styles.formatOptionActive]} onPress={() => { setFormat(item.id); setPickerOpen(false); }}>
-                                    <Text style={[styles.formatOptionText, item.id === format && styles.formatOptionTextActive]}>{l(item.tr, item.en)}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={pickerOpen} onClose={() => setPickerOpen(false)}>
+                <ScrollView>
+                    {availableFormats.map((item) => (
+                        <TouchableOpacity key={item.id} style={[styles.formatOption, item.id === format && styles.formatOptionActive]} onPress={() => { setFormat(item.id); setPickerOpen(false); }}>
+                            <Text style={[styles.formatOptionText, item.id === format && styles.formatOptionTextActive]}>{l(item.tr, item.en)}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </SheetModal>
         </SafeAreaView>
     );
 }
@@ -149,8 +147,6 @@ function createStyles(colors: ColorScheme) {
         actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: Spacing.lg },
         actionButton: { minHeight: 44, minWidth: 90, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md },
         actionText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '700' },
-        overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
-        pickerCard: { width: '100%', maxWidth: 520, backgroundColor: colors.bgCard, borderRadius: BorderRadius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
         formatOption: { minHeight: 54, justifyContent: 'center', paddingHorizontal: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
         formatOptionActive: { backgroundColor: colors.accentLight },
         formatOptionText: { fontSize: FontSize.md, color: colors.textPrimary },

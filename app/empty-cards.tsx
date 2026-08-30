@@ -1,13 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
+    FlatList,
     StyleSheet,
     SafeAreaView,
     ActivityIndicator,
+    type ListRenderItemInfo,
 } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
@@ -71,58 +72,69 @@ export default function EmptyCardsScreen() {
         );
     };
 
+    // A botched import can leave thousands of empty cards; every row was being mounted at once.
+    const renderRow = useCallback(({ item }: ListRenderItemInfo<EmptyCardEntry>) => (
+        <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+                <Text style={styles.rowQuestion} numberOfLines={2}>
+                    {item.question || l('(boş)', '(empty)')}
+                </Text>
+                <Text style={styles.rowReason}>{item.reason}</Text>
+            </View>
+            <TouchableOpacity
+                style={styles.rowDeleteBtn}
+                onPress={() => deleteOne(item.cardId)}
+                accessibilityRole="button"
+                accessibilityLabel={l('Bu kartı sil', 'Delete this card')}
+            >
+                <Text style={styles.rowDeleteText}>✕</Text>
+            </TouchableOpacity>
+        </View>
+    ), [styles, l]);
+
+    const header = (
+        <>
+            <Text style={styles.help}>
+                {l('Şablonu artık bulunmayan, alanı boş olan veya metinden kaldırılmış bir kapama numarasına ait kartlar burada listelenir. Bunlar notun kendisini değil, yalnızca geçersiz kartı temsil eder.', 'Cards whose template no longer exists, whose field is empty, or whose cloze number was removed from the text appear here. These represent only the invalid card, not the note itself.')}
+            </Text>
+
+            {entries === null ? (
+                <View style={styles.loadingBox}>
+                    <ActivityIndicator color={colors.accent} />
+                    <Text style={styles.help}>{l('Taranıyor…', 'Scanning…')}</Text>
+                </View>
+            ) : entries.length === 0 ? (
+                <View style={styles.emptyBox}>
+                    <Text style={styles.emptyIcon}>✅</Text>
+                    <Text style={styles.emptyText}>{l('Boş kart bulunamadı.', 'No empty cards found.')}</Text>
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={[styles.deleteAllBtn, busy && styles.btnDisabled]}
+                    onPress={deleteAll}
+                    disabled={busy}
+                >
+                    <Text style={styles.deleteAllText}>🗑️ {l('Tümünü Sil', 'Delete All')} ({entries.length})</Text>
+                </TouchableOpacity>
+            )}
+        </>
+    );
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>
-                    {l('Şablonu artık bulunmayan, alanı boş olan veya metinden kaldırılmış bir kapama numarasına ait kartlar burada listelenir. Bunlar notun kendisini değil, yalnızca geçersiz kartı temsil eder.', 'Cards whose template no longer exists, whose field is empty, or whose cloze number was removed from the text appear here. These represent only the invalid card, not the note itself.')}
-                </Text>
-
-                {entries === null ? (
-                    <View style={styles.loadingBox}>
-                        <ActivityIndicator color={colors.accent} />
-                        <Text style={styles.help}>{l('Taranıyor…', 'Scanning…')}</Text>
-                    </View>
-                ) : entries.length === 0 ? (
-                    <View style={styles.emptyBox}>
-                        <Text style={styles.emptyIcon}>✅</Text>
-                        <Text style={styles.emptyText}>{l('Boş kart bulunamadı.', 'No empty cards found.')}</Text>
-                    </View>
-                ) : (
-                    <>
-                        <TouchableOpacity
-                            style={[styles.deleteAllBtn, busy && styles.btnDisabled]}
-                            onPress={deleteAll}
-                            disabled={busy}
-                        >
-                            <Text style={styles.deleteAllText}>🗑️ {l('Tümünü Sil', 'Delete All')} ({entries.length})</Text>
-                        </TouchableOpacity>
-
-                        {entries.map((entry) => (
-                            <View key={entry.cardId} style={styles.row}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.rowQuestion} numberOfLines={2}>
-                                        {entry.question || l('(boş)', '(empty)')}
-                                    </Text>
-                                    <Text style={styles.rowReason}>{entry.reason}</Text>
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.rowDeleteBtn}
-                                    onPress={() => deleteOne(entry.cardId)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Bu kartı sil', 'Delete this card')}
-                                >
-                                    <Text style={styles.rowDeleteText}>✕</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </>
+            <FlatList
+                data={entries ?? []}
+                renderItem={renderRow}
+                keyExtractor={(item) => String(item.cardId)}
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator
+                ListHeaderComponent={header}
+                ListFooterComponent={(
+                    <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+                        <Text style={styles.cancelText}>{t('common.close')}</Text>
+                    </TouchableOpacity>
                 )}
-
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelText}>{t('common.close')}</Text>
-                </TouchableOpacity>
-            </ScrollView>
+            />
         </SafeAreaView>
     );
 }

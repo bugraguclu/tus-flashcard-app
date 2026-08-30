@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, FlatList, StyleSheet, SafeAreaView, type ListRenderItemInfo } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';
 import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
-import { uniqueId, BUILTIN_NOTE_TYPES, isLegacyTusNoteType } from '../lib/models';
+import { uniqueId, BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type NoteType } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 
@@ -24,32 +26,38 @@ export default function NoteTypesScreen() {
         router.push(`/note-type?id=${id}`);
     };
 
+    // An imported Anki collection can carry dozens of note types; the header/footer belong to the
+    // list so only the rows on screen are ever mounted.
+    const renderRow = useCallback(({ item }: ListRenderItemInfo<NoteType>) => (
+        <TouchableOpacity style={styles.row} onPress={() => router.push(`/note-type?id=${item.id}`)}>
+            <View style={styles.rowText}>
+                <Text style={styles.rowTitle}>{localizeNoteTypeName(locale, item.name)}</Text>
+                <Text style={styles.rowSub}>
+                    {l(`${item.fields.length} alan`, `${item.fields.length} fields`)} · {l(`${item.templates.length} şablon`, `${item.templates.length} templates`)} ·{' '}
+                    {item.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}
+                </Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+    ), [styles, router, locale, l]);
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin.', 'Edit note types, fields, and card templates.')}</Text>
-
-                {noteTypes.map((nt) => (
-                    <TouchableOpacity
-                        key={nt.id}
-                        style={styles.row}
-                        onPress={() => router.push(`/note-type?id=${nt.id}`)}
-                    >
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>{localizeNoteTypeName(locale, nt.name)}</Text>
-                            <Text style={styles.rowSub}>
-                                {l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · {l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} ·{' '}
-                                {nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}
-                            </Text>
-                        </View>
-                        <Text style={styles.chevron}>›</Text>
+            <FlatList
+                data={noteTypes}
+                renderItem={renderRow}
+                keyExtractor={(item) => String(item.id)}
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator
+                ListHeaderComponent={(
+                    <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin.', 'Edit note types, fields, and card templates.')}</Text>
+                )}
+                ListFooterComponent={(
+                    <TouchableOpacity style={styles.addBtn} onPress={createNoteType}>
+                        <Text style={styles.addBtnText}>+ {l('Yeni Not Türü', 'New Note Type')}</Text>
                     </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity style={styles.addBtn} onPress={createNoteType}>
-                    <Text style={styles.addBtnText}>+ {l('Yeni Not Türü', 'New Note Type')}</Text>
-                </TouchableOpacity>
-            </ScrollView>
+                )}
+            />
         </SafeAreaView>
     );
 }

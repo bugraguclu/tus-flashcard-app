@@ -4,7 +4,9 @@
 // the stats charts always agree on which day a review belongs to.
 
 import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, PanResponder, Platform, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, PanResponder, Platform, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import { useThemeColors, type ColorScheme, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { getStudiedDaysBetween } from '../lib/reviewLogger';

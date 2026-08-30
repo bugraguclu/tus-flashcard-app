@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     SafeAreaView,
 } from 'react-native';
+import { Text, TextInput } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';

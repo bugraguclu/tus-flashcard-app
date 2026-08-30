@@ -272,4 +272,14 @@ describe('storage import/export canonical round-trip', () => {
         saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
         expect(loadSettings().language).toBe('tr');
     });
+
+    it('keeps haptic feedback on unless it was explicitly turned off', () => {
+        expect(DEFAULT_SETTINGS.hapticsEnabled).toBe(true);
+
+        saveSettings({ ...DEFAULT_SETTINGS, hapticsEnabled: false });
+        expect(loadSettings().hapticsEnabled).toBe(false);
+
+        saveSettings({ ...DEFAULT_SETTINGS, hapticsEnabled: true });
+        expect(loadSettings().hapticsEnabled).toBe(true);
+    });
 });

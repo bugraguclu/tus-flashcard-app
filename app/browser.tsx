@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     View,
-    Text,
     ScrollView,
-    TouchableOpacity,
-    TextInput,
     StyleSheet,
     SafeAreaView,
     FlatList,
@@ -15,6 +12,8 @@ import {
     Pressable,
     Switch,
 } from 'react-native';
+import { Text, TextInput } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { getAllSubjects } from '../lib/subjects';
@@ -26,6 +25,8 @@ import { FLAG_COLORS, isLegacyTusNoteType, type CardFlag, type Note } from '../l
 import { getBrowserCards, getFilteredDeckCardIds, setCardSuspended } from '../lib/studyRepository';
 import { humanizeCardText } from '../lib/displayText';
 import { useI18n } from '../hooks/useI18n';
+import SheetModal from '../components/SheetModal';
+import { hapticError, hapticLight, hapticMedium, hapticSelection, hapticSuccess } from '../lib/haptics';
 import type { SupportedLocale } from '../lib/i18n';
 import { cardFlagName } from '../lib/i18n';
 import { localizeNoteTypeName } from '../lib/i18n';
@@ -442,6 +443,7 @@ export default function BrowserScreen() {
     }, []);
 
     const selectAllVisible = useCallback(() => {
+        hapticLight();
         setSelectionMode(true);
         setSelectedCardIds(new Set(filteredCards.map((card) => card.cardId)));
         setCurrentSelectedCardId(filteredCards[0]?.cardId ?? null);
@@ -479,8 +481,10 @@ export default function BrowserScreen() {
         setShowSelectionMenu(false);
         try {
             action();
+            hapticSuccess();
             refreshSelection();
         } catch (error) {
+            hapticError();
             console.warn('[Browser] selection action failed:', error);
             alert(t('common.error'), error instanceof Error ? error.message : l('İşlem tamamlanamadı.', 'The action could not be completed.'));
         }
@@ -524,6 +528,7 @@ export default function BrowserScreen() {
         if (flagPickerMode === 'filter') {
             setFlagFilter(flag);
         } else if (flagPickerMode === 'selection') {
+            hapticSelection();
             for (const cardId of selectedCardIds) setCardFlag(cardId, flag);
             bumpDataVersion();
             reload();
@@ -632,10 +637,19 @@ export default function BrowserScreen() {
                     compactRows && styles.cardItemCompact,
                     isSelected && styles.cardItemSelected,
                 ]}
-                onPress={() => selectionMode
-                    ? toggleCardSelection(item.cardId)
-                    : setExpandedCard(isExpanded ? null : item.cardId)}
+                onPress={() => {
+                    if (selectionMode) {
+                        hapticSelection();
+                        toggleCardSelection(item.cardId);
+                        return;
+                    }
+                    setExpandedCard(isExpanded ? null : item.cardId);
+                }}
                 onLongPress={() => {
+                    // Entering selection mode is a mode change, so it gets the heavier tap; the
+                    // per-row check that follows is just a selection.
+                    if (!selectionMode) hapticMedium();
+                    else hapticSelection();
                     if (!selectionMode) setSelectionMode(true);
                     toggleCardSelection(item.cardId);
                 }}
@@ -864,7 +878,7 @@ export default function BrowserScreen() {
                 keyExtractor={(item) => String(item.cardId)}
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
+                showsVerticalScrollIndicator
                 refreshing={loading}
                 onRefresh={reload}
             />
@@ -935,95 +949,95 @@ export default function BrowserScreen() {
                 onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
             />
 
-            <Modal visible={showSelectionMenu} transparent animationType="fade" onRequestClose={() => setShowSelectionMenu(false)}>
-                <View style={styles.selectionMenuOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSelectionMenu(false)} />
-                    <View style={styles.selectionMenuCard} accessibilityViewIsModal>
-                        <View style={styles.selectionMenuHeader}>
-                            <Text style={styles.selectionMenuTitle}>{selectedCardIds.size} {l('kart seçili', 'cards selected')}</Text>
-                            <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)}>
-                                <Text style={styles.selectionMenuCloseText}>×</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}>
-                                <Text style={styles.selectionMenuIcon}>⏸</Text><Text style={styles.selectionMenuText}>{l('Askıya al / askıdan çıkar', 'Toggle suspend')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}>
-                                <Text style={styles.selectionMenuIcon}>💤</Text><Text style={styles.selectionMenuText}>{l('Göm / gömmeden çıkar', 'Toggle bury')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowNoteTypePicker(true); }}>
-                                <Text style={styles.selectionMenuIcon}>🗂</Text><Text style={styles.selectionMenuText}>{l('Not türünü değiştir', 'Change note type')}</Text><Text style={styles.overflowChevron}>›</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowDeckPicker(true); }}>
-                                <Text style={styles.selectionMenuIcon}>▤</Text><Text style={styles.selectionMenuText}>{l('Desteyi değiştir', 'Change deck')}</Text><Text style={styles.overflowChevron}>›</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('1'); setRepositionStep('1'); setRepositionShiftExisting(true); setShowRepositionDialog(true); }}>
-                                <Text style={styles.selectionMenuIcon}>↕</Text><Text style={styles.selectionMenuText}>{l('Yeniden konumlandır', 'Reposition')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInput('0'); setShowDueDialog(true); }}>
-                                <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Vade tarihini ayarla', 'Set due date')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={openSelectionTags}>
-                                <Text style={styles.selectionMenuIcon}>🏷</Text><Text style={styles.selectionMenuText}>{l('Etiketleri düzenle', 'Edit tags')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowGradePicker(true); }}>
-                                <Text style={styles.selectionMenuIcon}>✓</Text><Text style={styles.selectionMenuText}>{l('Şimdi derecelendir', 'Grade now')}</Text><Text style={styles.overflowChevron}>›</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.selectionMenuItem}
-                                onPress={() => {
-                                    setShowSelectionMenu(false);
-                                    confirm(
-                                        l('İlerlemeyi Sıfırla', 'Reset Progress'),
-                                        l(`${selectedCardIds.size} kart yeni kuyruğunun sonuna taşınacak. İnceleme geçmişi korunur.`, `${selectedCardIds.size} cards will be moved to the end of the new queue. Review history is preserved.`),
-                                        () => runSelectionAction(() => resetSelectedProgress(selectedActionCardIds, settings)),
-                                        { destructive: true },
-                                    );
-                                }}
-                            >
-                                <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('İlerlemeyi sıfırla', 'Reset progress')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
-                                <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.selectionMenuItem}
-                                onPress={() => {
-                                    setDbSetting('browser_export_card_ids', JSON.stringify(selectedActionCardIds));
-                                    setShowSelectionMenu(false);
-                                    router.push('/export?selection=browser' as any);
-                                }}
-                            >
-                                <Text style={styles.selectionMenuIcon}>⇧</Text><Text style={styles.selectionMenuText}>{l('Kartları dışa aktar', 'Export cards')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.selectionMenuItem}
-                                onPress={() => {
-                                    setShowSelectionMenu(false);
-                                    confirm(
-                                        l('Notları Sil', 'Delete Notes'),
-                                        l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar kalıcı olarak silinecek.`, `${selectedNoteIds.length} notes and all cards belonging to them will be permanently deleted.`),
-                                        () => {
-                                            try {
-                                                for (const noteId of selectedNoteIds) deleteNote(noteId);
-                                                closeSelection();
-                                                refreshSelection();
-                                            } catch (error) {
-                                                console.warn('[Browser] delete selected notes failed:', error);
-                                                alert(t('common.error'), l('Notlar silinemedi.', 'The notes could not be deleted.'));
-                                            }
-                                        },
-                                        { destructive: true },
-                                    );
-                                }}
-                            >
-                                <Text style={[styles.selectionMenuIcon, styles.selectionMenuDanger]}>⌫</Text><Text style={[styles.selectionMenuText, styles.selectionMenuDanger]}>{l('Notları sil', 'Delete notes')}</Text>
-                            </TouchableOpacity>
-                        </ScrollView>
-                    </View>
+            <SheetModal
+                visible={showSelectionMenu}
+                onClose={() => setShowSelectionMenu(false)}
+                showGrabber={false}
+                cardStyle={styles.selectionMenuSheet}
+            >
+                <View style={styles.selectionMenuHeader}>
+                    <Text style={styles.selectionMenuTitle}>{selectedCardIds.size} {l('kart seçili', 'cards selected')}</Text>
+                    <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)}>
+                        <Text style={styles.selectionMenuCloseText}>×</Text>
+                    </TouchableOpacity>
                 </View>
-            </Modal>
+                <ScrollView showsVerticalScrollIndicator>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}>
+                        <Text style={styles.selectionMenuIcon}>⏸</Text><Text style={styles.selectionMenuText}>{l('Askıya al / askıdan çıkar', 'Toggle suspend')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}>
+                        <Text style={styles.selectionMenuIcon}>💤</Text><Text style={styles.selectionMenuText}>{l('Göm / gömmeden çıkar', 'Toggle bury')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowNoteTypePicker(true); }}>
+                        <Text style={styles.selectionMenuIcon}>🗂</Text><Text style={styles.selectionMenuText}>{l('Not türünü değiştir', 'Change note type')}</Text><Text style={styles.overflowChevron}>›</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowDeckPicker(true); }}>
+                        <Text style={styles.selectionMenuIcon}>▤</Text><Text style={styles.selectionMenuText}>{l('Desteyi değiştir', 'Change deck')}</Text><Text style={styles.overflowChevron}>›</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('1'); setRepositionStep('1'); setRepositionShiftExisting(true); setShowRepositionDialog(true); }}>
+                        <Text style={styles.selectionMenuIcon}>↕</Text><Text style={styles.selectionMenuText}>{l('Yeniden konumlandır', 'Reposition')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInput('0'); setShowDueDialog(true); }}>
+                        <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Vade tarihini ayarla', 'Set due date')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={openSelectionTags}>
+                        <Text style={styles.selectionMenuIcon}>🏷</Text><Text style={styles.selectionMenuText}>{l('Etiketleri düzenle', 'Edit tags')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowGradePicker(true); }}>
+                        <Text style={styles.selectionMenuIcon}>✓</Text><Text style={styles.selectionMenuText}>{l('Şimdi derecelendir', 'Grade now')}</Text><Text style={styles.overflowChevron}>›</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.selectionMenuItem}
+                        onPress={() => {
+                            setShowSelectionMenu(false);
+                            confirm(
+                                l('İlerlemeyi Sıfırla', 'Reset Progress'),
+                                l(`${selectedCardIds.size} kart yeni kuyruğunun sonuna taşınacak. İnceleme geçmişi korunur.`, `${selectedCardIds.size} cards will be moved to the end of the new queue. Review history is preserved.`),
+                                () => runSelectionAction(() => resetSelectedProgress(selectedActionCardIds, settings)),
+                                { destructive: true },
+                            );
+                        }}
+                    >
+                        <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('İlerlemeyi sıfırla', 'Reset progress')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
+                        <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.selectionMenuItem}
+                        onPress={() => {
+                            setDbSetting('browser_export_card_ids', JSON.stringify(selectedActionCardIds));
+                            setShowSelectionMenu(false);
+                            router.push('/export?selection=browser' as any);
+                        }}
+                    >
+                        <Text style={styles.selectionMenuIcon}>⇧</Text><Text style={styles.selectionMenuText}>{l('Kartları dışa aktar', 'Export cards')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.selectionMenuItem}
+                        onPress={() => {
+                            setShowSelectionMenu(false);
+                            confirm(
+                                l('Notları Sil', 'Delete Notes'),
+                                l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar kalıcı olarak silinecek.`, `${selectedNoteIds.length} notes and all cards belonging to them will be permanently deleted.`),
+                                () => {
+                                    try {
+                                        for (const noteId of selectedNoteIds) deleteNote(noteId);
+                                        closeSelection();
+                                        refreshSelection();
+                                    } catch (error) {
+                                        console.warn('[Browser] delete selected notes failed:', error);
+                                        alert(t('common.error'), l('Notlar silinemedi.', 'The notes could not be deleted.'));
+                                    }
+                                },
+                                { destructive: true },
+                            );
+                        }}
+                    >
+                        <Text style={[styles.selectionMenuIcon, styles.selectionMenuDanger]}>⌫</Text><Text style={[styles.selectionMenuText, styles.selectionMenuDanger]}>{l('Notları sil', 'Delete notes')}</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </SheetModal>
 
             <Modal visible={showOverflowMenu} transparent animationType="fade" onRequestClose={() => setShowOverflowMenu(false)}>
                 <View style={styles.overflowOverlay}>
@@ -1046,7 +1060,7 @@ export default function BrowserScreen() {
                         <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowTagFilter(true); }}>
                             <Text style={styles.overflowItemIcon}>⌗</Text>
                             <Text style={styles.overflowItemText}>{l('Etikete göre filtrele', 'Filter by tag')}</Text>
-                            {tagFilters.length > 0 && <Text style={styles.overflowBadge}>{tagFilters.length}</Text>}
+                            {tagFilters.length > 0 && <Text maxFontSizeMultiplier={1} style={styles.overflowBadge}>{tagFilters.length}</Text>}
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter}>
                             <Text style={styles.overflowItemIcon}>⚑</Text>
@@ -1086,39 +1100,34 @@ export default function BrowserScreen() {
                 </View>
             </Modal>
 
-            <Modal visible={showSortPicker} transparent animationType="fade" onRequestClose={() => setShowSortPicker(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSortPicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Görüntüleme Sırası', 'Display Order')}</Text>
-                        <View style={styles.directionRow}>
-                            <TouchableOpacity
-                                style={[styles.directionButton, !sortDescending && styles.directionButtonActive]}
-                                onPress={() => updateSortDirection(false)}
-                            >
-                                <Text style={[styles.directionText, !sortDescending && styles.directionTextActive]}>↑ {l('Artan', 'Ascending')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.directionButton, sortDescending && styles.directionButtonActive]}
-                                onPress={() => updateSortDirection(true)}
-                            >
-                                <Text style={[styles.directionText, sortDescending && styles.directionTextActive]}>↓ {l('Azalan', 'Descending')}</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView style={styles.pickerList}>
-                            {BROWSER_SORT_KEYS.map((key) => (
-                                <TouchableOpacity key={key} style={[styles.pickerRow, sortKey === key && styles.pickerRowActive]} onPress={() => updateSort(key)}>
-                                    <Text style={[styles.pickerRowText, sortKey === key && styles.pickerRowTextActive]}>{sortLabels[key]}</Text>
-                                    {sortKey === key && <Text style={styles.pickerCheck}>✓</Text>}
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowSortPicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.close')}</Text>
-                        </TouchableOpacity>
-                    </View>
+            <SheetModal visible={showSortPicker} onClose={() => setShowSortPicker(false)}>
+                <Text style={styles.modalTitle}>{l('Görüntüleme Sırası', 'Display Order')}</Text>
+                <View style={styles.directionRow}>
+                    <TouchableOpacity
+                        style={[styles.directionButton, !sortDescending && styles.directionButtonActive]}
+                        onPress={() => updateSortDirection(false)}
+                    >
+                        <Text style={[styles.directionText, !sortDescending && styles.directionTextActive]}>↑ {l('Artan', 'Ascending')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.directionButton, sortDescending && styles.directionButtonActive]}
+                        onPress={() => updateSortDirection(true)}
+                    >
+                        <Text style={[styles.directionText, sortDescending && styles.directionTextActive]}>↓ {l('Azalan', 'Descending')}</Text>
+                    </TouchableOpacity>
                 </View>
-            </Modal>
+                <ScrollView style={styles.pickerList}>
+                    {BROWSER_SORT_KEYS.map((key) => (
+                        <TouchableOpacity key={key} style={[styles.pickerRow, sortKey === key && styles.pickerRowActive]} onPress={() => updateSort(key)}>
+                            <Text style={[styles.pickerRowText, sortKey === key && styles.pickerRowTextActive]}>{sortLabels[key]}</Text>
+                            {sortKey === key && <Text style={styles.pickerCheck}>✓</Text>}
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+                <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowSortPicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.close')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <TagPickerModal
                 visible={showTagFilter}
@@ -1148,33 +1157,28 @@ export default function BrowserScreen() {
                 }}
             />
 
-            <Modal visible={showNoteTypePicker} transparent animationType="fade" onRequestClose={() => setShowNoteTypePicker(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowNoteTypePicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Not Türünü Değiştir', 'Change Note Type')}</Text>
-                        <Text style={styles.modalCaption}>{l('Aynı adlı alanlar eşleştirilir; kartların mevcut zamanlaması korunur.', 'Fields with matching names are mapped; existing card scheduling is preserved.')}</Text>
-                        <ScrollView style={styles.pickerList}>
-                            {selectableNoteTypes.map((noteType) => (
-                                <TouchableOpacity
-                                    key={noteType.id}
-                                    style={styles.pickerRow}
-                                    onPress={() => {
-                                        setShowNoteTypePicker(false);
-                                        runSelectionAction(() => changeNotesType(selectedNoteIds, noteType.id));
-                                    }}
-                                >
-                                    <Text style={styles.pickerRowText}>{localizeNoteTypeName(locale, noteType.name)}</Text>
-                                    <Text style={styles.overflowChevron}>›</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowNoteTypePicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+            <SheetModal visible={showNoteTypePicker} onClose={() => setShowNoteTypePicker(false)}>
+                <Text style={styles.modalTitle}>{l('Not Türünü Değiştir', 'Change Note Type')}</Text>
+                <Text style={styles.modalCaption}>{l('Aynı adlı alanlar eşleştirilir; kartların mevcut zamanlaması korunur.', 'Fields with matching names are mapped; existing card scheduling is preserved.')}</Text>
+                <ScrollView style={styles.pickerList}>
+                    {selectableNoteTypes.map((noteType) => (
+                        <TouchableOpacity
+                            key={noteType.id}
+                            style={styles.pickerRow}
+                            onPress={() => {
+                                setShowNoteTypePicker(false);
+                                runSelectionAction(() => changeNotesType(selectedNoteIds, noteType.id));
+                            }}
+                        >
+                            <Text style={styles.pickerRowText}>{localizeNoteTypeName(locale, noteType.name)}</Text>
+                            <Text style={styles.overflowChevron}>›</Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                    ))}
+                </ScrollView>
+                <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowNoteTypePicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <Modal visible={showRepositionDialog} transparent animationType="fade" onRequestClose={() => setShowRepositionDialog(false)}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -1235,33 +1239,28 @@ export default function BrowserScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-            <Modal visible={showGradePicker} transparent animationType="fade" onRequestClose={() => setShowGradePicker(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowGradePicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Şimdi Derecelendir', 'Grade Now')}</Text>
-                        <Text style={styles.modalCaption}>{l('Seçili kartlar normal zamanlayıcı ve inceleme geçmişi kullanılarak derecelendirilir.', 'Selected cards are graded through the normal scheduler and review history.')}</Text>
-                        {([
-                            { grade: 1 as const, label: l('Tekrar', 'Again'), color: colors.btnAgain },
-                            { grade: 2 as const, label: l('Zor', 'Hard'), color: colors.btnHard },
-                            { grade: 3 as const, label: l('İyi', 'Good'), color: colors.btnGood },
-                            { grade: 4 as const, label: l('Kolay', 'Easy'), color: colors.btnEasy },
-                        ]).map((option) => (
-                            <TouchableOpacity
-                                key={option.grade}
-                                style={styles.gradeRow}
-                                onPress={() => {
-                                    setShowGradePicker(false);
-                                    runSelectionAction(() => gradeSelectedNow(selectedActionCardIds, option.grade, settings));
-                                }}
-                            >
-                                <View style={[styles.gradeDot, { backgroundColor: option.color }]} />
-                                <Text style={styles.gradeText}>{option.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={showGradePicker} onClose={() => setShowGradePicker(false)}>
+                <Text style={styles.modalTitle}>{l('Şimdi Derecelendir', 'Grade Now')}</Text>
+                <Text style={styles.modalCaption}>{l('Seçili kartlar normal zamanlayıcı ve inceleme geçmişi kullanılarak derecelendirilir.', 'Selected cards are graded through the normal scheduler and review history.')}</Text>
+                {([
+                    { grade: 1 as const, label: l('Tekrar', 'Again'), color: colors.btnAgain },
+                    { grade: 2 as const, label: l('Zor', 'Hard'), color: colors.btnHard },
+                    { grade: 3 as const, label: l('İyi', 'Good'), color: colors.btnGood },
+                    { grade: 4 as const, label: l('Kolay', 'Easy'), color: colors.btnEasy },
+                ]).map((option) => (
+                    <TouchableOpacity
+                        key={option.grade}
+                        style={styles.gradeRow}
+                        onPress={() => {
+                            setShowGradePicker(false);
+                            runSelectionAction(() => gradeSelectedNow(selectedActionCardIds, option.grade, settings));
+                        }}
+                    >
+                        <View style={[styles.gradeDot, { backgroundColor: option.color }]} />
+                        <Text style={styles.gradeText}>{option.label}</Text>
+                    </TouchableOpacity>
+                ))}
+            </SheetModal>
 
             <Modal visible={previewIndex !== null} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setPreviewIndex(null)}>
                 <SafeAreaView style={styles.previewContainer}>
@@ -1282,65 +1281,55 @@ export default function BrowserScreen() {
                 </SafeAreaView>
             </Modal>
 
-            <Modal visible={flagPickerMode !== null} transparent animationType="fade" onRequestClose={() => setFlagPickerMode(null)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setFlagPickerMode(null)} />
-                    <View style={[styles.modalCard, styles.flagPickerCard]} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>
-                            {flagPickerMode === 'selection' ? l('Seçili Kartları Bayrakla', 'Flag Selected Cards') : l('Bayrağa Göre Filtrele', 'Filter by Flag')}
+            <SheetModal visible={flagPickerMode !== null} onClose={() => setFlagPickerMode(null)}>
+                <Text style={styles.modalTitle}>
+                    {flagPickerMode === 'selection' ? l('Seçili Kartları Bayrakla', 'Flag Selected Cards') : l('Bayrağa Göre Filtrele', 'Filter by Flag')}
+                </Text>
+                {flagPickerMode === 'filter' && (
+                    <TouchableOpacity style={[styles.pickerRow, flagFilter === null && styles.pickerRowActive]} onPress={() => { setFlagFilter(null); setFlagPickerMode(null); }}>
+                        <View style={[styles.flagDot, { backgroundColor: colors.border }]} />
+                        <Text style={[styles.pickerRowText, flagFilter === null && styles.pickerRowTextActive]}>{l('Tüm bayraklar', 'All flags')}</Text>
+                        {flagFilter === null && <Text style={styles.pickerCheck}>✓</Text>}
+                    </TouchableOpacity>
+                )}
+                {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
+                    <TouchableOpacity key={flag} style={[styles.pickerRow, flagPickerMode === 'filter' && flagFilter === flag && styles.pickerRowActive]} onPress={() => applyFlag(flag)}>
+                        <View style={[styles.flagDot, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
+                        <Text style={[styles.pickerRowText, flagPickerMode === 'filter' && flagFilter === flag && styles.pickerRowTextActive]}>
+                            {flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
                         </Text>
-                        {flagPickerMode === 'filter' && (
-                            <TouchableOpacity style={[styles.pickerRow, flagFilter === null && styles.pickerRowActive]} onPress={() => { setFlagFilter(null); setFlagPickerMode(null); }}>
-                                <View style={[styles.flagDot, { backgroundColor: colors.border }]} />
-                                <Text style={[styles.pickerRowText, flagFilter === null && styles.pickerRowTextActive]}>{l('Tüm bayraklar', 'All flags')}</Text>
-                                {flagFilter === null && <Text style={styles.pickerCheck}>✓</Text>}
-                            </TouchableOpacity>
-                        )}
-                        {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                            <TouchableOpacity key={flag} style={[styles.pickerRow, flagPickerMode === 'filter' && flagFilter === flag && styles.pickerRowActive]} onPress={() => applyFlag(flag)}>
-                                <View style={[styles.flagDot, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
-                                <Text style={[styles.pickerRowText, flagPickerMode === 'filter' && flagFilter === flag && styles.pickerRowTextActive]}>
-                                    {flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
-                                </Text>
-                                {flagPickerMode === 'filter' && flagFilter === flag && <Text style={styles.pickerCheck}>✓</Text>}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            </Modal>
+                        {flagPickerMode === 'filter' && flagFilter === flag && <Text style={styles.pickerCheck}>✓</Text>}
+                    </TouchableOpacity>
+                ))}
+            </SheetModal>
 
-            <Modal visible={showOptions} transparent animationType="fade" onRequestClose={() => setShowOptions(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOptions(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Kart Tarayıcı Seçenekleri', 'Card Browser Options')}</Text>
-                        <View style={styles.optionRow}>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
-                                <Text style={styles.optionCaption}>{l('Kart satırında cevabın kısa bir bölümünü gösterir.', 'Shows a short answer excerpt in each row.')}</Text>
-                            </View>
-                            <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} />
-                        </View>
-                        <View style={styles.optionRow}>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionTitle}>{l('Zamanlama ayrıntıları', 'Scheduling details')}</Text>
-                                <Text style={styles.optionCaption}>{l('Son çalışma ve sonraki gösterim bilgisini gösterir.', 'Shows last review and next due information.')}</Text>
-                            </View>
-                            <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} />
-                        </View>
-                        <View style={styles.optionRow}>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionTitle}>{l('Kompakt satırlar', 'Compact rows')}</Text>
-                                <Text style={styles.optionCaption}>{l('Daha fazla kartı aynı ekranda gösterir.', 'Fits more cards on screen.')}</Text>
-                            </View>
-                            <Switch value={compactRows} onValueChange={(value) => updateBrowserOption('compact', value)} trackColor={{ true: colors.accentLight }} thumbColor={compactRows ? colors.accent : colors.textMuted} />
-                        </View>
-                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.close')}</Text>
-                        </TouchableOpacity>
+            <SheetModal visible={showOptions} onClose={() => setShowOptions(false)}>
+                <Text style={styles.modalTitle}>{l('Kart Tarayıcı Seçenekleri', 'Card Browser Options')}</Text>
+                <View style={styles.optionRow}>
+                    <View style={styles.optionCopy}>
+                        <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
+                        <Text style={styles.optionCaption}>{l('Kart satırında cevabın kısa bir bölümünü gösterir.', 'Shows a short answer excerpt in each row.')}</Text>
                     </View>
+                    <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} />
                 </View>
-            </Modal>
+                <View style={styles.optionRow}>
+                    <View style={styles.optionCopy}>
+                        <Text style={styles.optionTitle}>{l('Zamanlama ayrıntıları', 'Scheduling details')}</Text>
+                        <Text style={styles.optionCaption}>{l('Son çalışma ve sonraki gösterim bilgisini gösterir.', 'Shows last review and next due information.')}</Text>
+                    </View>
+                    <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} />
+                </View>
+                <View style={styles.optionRow}>
+                    <View style={styles.optionCopy}>
+                        <Text style={styles.optionTitle}>{l('Kompakt satırlar', 'Compact rows')}</Text>
+                        <Text style={styles.optionCaption}>{l('Daha fazla kartı aynı ekranda gösterir.', 'Fits more cards on screen.')}</Text>
+                    </View>
+                    <Switch value={compactRows} onValueChange={(value) => updateBrowserOption('compact', value)} trackColor={{ true: colors.accentLight }} thumbColor={compactRows ? colors.accent : colors.textMuted} />
+                </View>
+                <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.close')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <DeckPickerModal
                 visible={showDeckPicker}
@@ -1589,6 +1578,8 @@ function createStyles(colors: ColorScheme) {
         borderTopRightRadius: BorderRadius.lg,
         ...Shadows.lg,
     },
+    // The rows and header inside this sheet already pad themselves edge to edge.
+    selectionMenuSheet: { paddingHorizontal: 0, paddingTop: 0, maxHeight: '78%' },
     selectionMenuHeader: {
         minHeight: 58,
         flexDirection: 'row',
@@ -1644,7 +1635,7 @@ function createStyles(colors: ColorScheme) {
     overflowCheck: { color: colors.accent, fontSize: 19, fontWeight: '900' },
     overflowBadge: {
         minWidth: 22,
-        height: 22,
+        minHeight: 22,
         paddingHorizontal: 6,
         borderRadius: 11,
         overflow: 'hidden',

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
+import { Text } from './Typography';
 import Svg, { Line, Polyline, Rect } from 'react-native-svg';
 import { FontSize, Spacing, type ColorScheme } from '../constants/theme';
 import type { StatsSeriesPoint } from '../lib/ankiStats';

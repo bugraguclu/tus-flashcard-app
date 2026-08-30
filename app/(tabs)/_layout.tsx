@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
     View,
-    Text,
-    TouchableOpacity,
     StyleSheet,
     Dimensions,
     Keyboard,
     Pressable,
 } from 'react-native';
+import { Text } from '../../components/Typography';
+import { TouchableOpacity } from '../../components/Touchable';
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
@@ -15,6 +16,7 @@ import { getSearchIndexCards } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
 import { useApp } from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
+import { useDrawerProgress } from '../../hooks/useDrawerAnimation';
 import { useI18n } from '../../hooks/useI18n';
 
 export { useApp } from '../../contexts/AppContext';
@@ -43,6 +45,9 @@ export default function TabLayout() {
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
 
     const isWide = windowWidth >= 768;
+    // One progress value drives both the drawer slide and the overlay fade, so they cannot
+    // drift apart. On wide layouts the drawer is permanently open.
+    const drawerProgress = useDrawerProgress(isWide || sidebarOpen);
 
     useEffect(() => {
         if (!isWide) setSidebarOpen(false);
@@ -176,15 +181,8 @@ export default function TabLayout() {
         navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/');
     };
 
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.loadingEmoji}>🧠</Text>
-                <Text style={styles.loadingText}>{t('tabs.loadingApp')}</Text>
-            </View>
-        );
-    }
-
+    // No loading branch here: the root CatalogGate holds the native splash until startup
+    // finishes, so this layout only ever mounts with a ready collection.
     return (
         <View style={styles.container}>
             {!isWide && !isDeckScreen && (
@@ -225,13 +223,26 @@ export default function TabLayout() {
                         onToggleExpand={handleToggleExpand}
                         onTopicPress={handleTopicPress}
                         navigate={navigate}
+                        drawerProgress={drawerProgress}
                         // Anki scopes the stats screen to the current deck by default.
                         statsPath={activeDeckName ? `/stats?deck=${encodeURIComponent(activeDeckName)}` : '/stats'}
                     />
                 )}
 
-                {!isWide && sidebarOpen && !isDeckScreen ? (
-                    <Pressable style={styles.overlay} onPress={() => setSidebarOpen(false)} />
+                {!isWide && !isDeckScreen ? (
+                    // Kept mounted while closed so it can fade out with the drawer; taps pass
+                    // straight through to the screen underneath until it is open.
+                    <Animated.View
+                        pointerEvents={sidebarOpen ? 'auto' : 'none'}
+                        style={[styles.overlay, { opacity: drawerProgress }]}
+                    >
+                        <Pressable
+                            style={StyleSheet.absoluteFill}
+                            onPress={() => setSidebarOpen(false)}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('tabs.closeMenu')}
+                        />
+                    </Animated.View>
                 ) : null}
 
                 <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
@@ -255,14 +266,6 @@ export default function TabLayout() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.bgPrimary,
-    },
-    loadingEmoji: { fontSize: 48, marginBottom: 12 },
-    loadingText: { fontSize: FontSize.lg, color: colors.textMuted, fontWeight: '500' },
     appLayout: { flex: 1, flexDirection: 'row' },
 
     mobileHeader: {

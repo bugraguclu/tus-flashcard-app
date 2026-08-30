@@ -5,9 +5,6 @@
 import React, { useMemo, useState } from 'react';
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     SafeAreaView,
@@ -18,6 +15,8 @@ import {
     Switch,
     Pressable,
 } from 'react-native';
+import { Text, TextInput } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
@@ -37,6 +36,7 @@ import {
 } from '../lib/deckManager';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
+import SheetModal from '../components/SheetModal';
 import LeechExplainer from '../components/LeechExplainer';
 
 const DAY_FACTORS = [1, 0.5, 0] as const;
@@ -283,7 +283,7 @@ export default function DeckOptionsScreen() {
             <ScrollView
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
+                showsVerticalScrollIndicator
             >
 
                 <View style={styles.presetCard}>
@@ -455,30 +455,21 @@ export default function DeckOptionsScreen() {
                 <Text style={styles.bottomHint}>{l('Değişiklikleri uygulamak için sağ üstteki Kaydet düğmesini kullanın.', 'Use Save in the top-right corner to apply your changes.')}</Text>
             </ScrollView>
 
-            <Modal visible={presetPickerOpen} transparent animationType="fade" onRequestClose={() => setPresetPickerOpen(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setPresetPickerOpen(false)}
-                        accessibilityLabel={l('Ayar grubu seçiciyi kapat', 'Close preset picker')}
-                    />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
-                        <ScrollView style={{ maxHeight: 320 }}>
-                            {getAllDeckConfigs().map((preset) => (
-                                <TouchableOpacity key={preset.id} style={styles.presetOption} onPress={() => switchPreset(preset.id)}>
-                                    <Text style={[styles.presetOptionText, preset.id === configId && styles.presetOptionActive]}>
-                                        {preset.name || l(`Grup ${preset.id}`, `Preset ${preset.id}`)} · {l(`${getDecksUsingConfig(preset.id).length} deste`, `${getDecksUsingConfig(preset.id).length} decks`)}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setPresetPickerOpen(false)}>
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+            <SheetModal visible={presetPickerOpen} onClose={() => setPresetPickerOpen(false)}>
+                <Text style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
+                <ScrollView style={{ maxHeight: 320 }}>
+                    {getAllDeckConfigs().map((preset) => (
+                        <TouchableOpacity key={preset.id} style={styles.presetOption} onPress={() => switchPreset(preset.id)}>
+                            <Text style={[styles.presetOptionText, preset.id === configId && styles.presetOptionActive]}>
+                                {preset.name || l(`Grup ${preset.id}`, `Preset ${preset.id}`)} · {l(`${getDecksUsingConfig(preset.id).length} deste`, `${getDecksUsingConfig(preset.id).length} decks`)}
+                            </Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                    ))}
+                </ScrollView>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setPresetPickerOpen(false)}>
+                    <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <Modal visible={renameOpen} transparent animationType="fade" onRequestClose={() => setRenameOpen(false)}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

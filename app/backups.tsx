@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
-    Text,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     SafeAreaView,
     ActivityIndicator,
     Platform,
 } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import * as Sharing from 'expo-sharing';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';

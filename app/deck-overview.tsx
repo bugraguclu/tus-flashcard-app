@@ -5,13 +5,13 @@
 import React, { useMemo, useState } from 'react';
 import {
     View,
-    Text,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     SafeAreaView,
     Platform,
 } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useApp } from '../contexts/AppContext';

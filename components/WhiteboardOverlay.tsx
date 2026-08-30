@@ -4,7 +4,9 @@
 // imperatively so that same menu can drive the drawing tools like AnkiDroid's entries.
 
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, PanResponder, Platform } from 'react-native';
+import { View, StyleSheet, PanResponder, Platform } from 'react-native';
+import { Text } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import Svg, { Path } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';

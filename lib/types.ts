@@ -1,4 +1,4 @@
-import type { AnkiCard } from './models';
+import type { AnkiCard, Note } from './models';
 
 /**
  * Simple flashcard shape used for legacy data and seed content.
@@ -143,6 +143,8 @@ export interface AppSettings {
     keepScreenOn?: boolean;
     /** Touch reviewer controls. Swipes are intentionally opt-in. */
     gesturesEnabled?: boolean;
+    /** Taptic feedback on answers, toggles, drag-and-drop and completed operations. */
+    hapticsEnabled?: boolean;
     swipeSensitivity?: number;
     /** Accessibility scaling and accidental-tap protection. Values are percentages/ms. */
     cardZoomPercent?: number;
@@ -236,4 +238,7 @@ export interface StudyCard {
     noteMarked: boolean;
     state: CardState;
     rawCard?: AnkiCard;
+    /** Parsed note blob, carried alongside rawCard so browser-style screens never re-query
+     *  each note row one by one (the join already returned it). */
+    rawNote?: Note;
 }

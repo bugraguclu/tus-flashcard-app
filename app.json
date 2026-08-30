@@ -8,11 +8,6 @@
     "icon": "./assets/icon-appstore.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/app-mark.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#e8f5f0"
-    },
     "ios": {
       "supportsTablet": false,
       "buildNumber": "1",
@@ -55,6 +50,19 @@
     },
     "scheme": "tusankim",
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/app-mark.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#e8f5f0",
+          "dark": {
+            "image": "./assets/app-mark.png",
+            "backgroundColor": "#1a2520"
+          }
+        }
+      ],
       "expo-sqlite",
       "expo-router",
       [

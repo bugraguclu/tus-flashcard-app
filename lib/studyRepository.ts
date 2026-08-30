@@ -558,6 +558,7 @@ function makeStudyCard(
         // TODO(boundary): remove CardState materialization from queue path once scheduler works directly on AnkiCard.
         state: stateOverride ?? ankiCardToCardState(card, settings, nowMs),
         rawCard: includeRawCard ? card : undefined,
+        rawNote: includeRawCard ? note : undefined,
     };
 }
 

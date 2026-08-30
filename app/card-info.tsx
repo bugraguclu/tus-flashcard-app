@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
     View,
-    Text,
-    ScrollView,
+    FlatList,
     StyleSheet,
     SafeAreaView,
-    TouchableOpacity,
+    type ListRenderItemInfo,
 } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS } from '../lib/models';
@@ -122,6 +123,102 @@ export default function CardInfoScreen() {
         return l('El ile', 'Manual');
     };
 
+    // A mature card can carry hundreds of review rows. Everything above the history table is
+    // the list header, so only the rows actually on screen are mounted.
+    const renderReviewRow = useCallback(({ item, index }: ListRenderItemInfo<typeof reviews[number]>) => {
+        const ease = easeLabel(item.ease);
+        const dateStr = new Date(item.id).toLocaleDateString(localeTag);
+        return (
+            <View style={[styles.historyRow, index % 2 === 0 && styles.tableRowEven]}>
+                <Text style={[styles.td, { flex: 2 }]}>{dateStr}</Text>
+                <Text style={[styles.td, { flex: 1, color: ease.color, fontWeight: '700' }]}>{ease.text}</Text>
+                <Text style={[styles.td, { flex: 1 }]}>{formatIvl(item.ivl)}</Text>
+                <Text style={[styles.td, { flex: 1 }]}>{(item.factor / 10).toFixed(0)}%</Text>
+                <Text style={[styles.td, { flex: 1 }]}>{formatTime(item.time)}</Text>
+                <Text style={[styles.td, { flex: 1 }]}>{reviewTypeLabel(item.type)}</Text>
+            </View>
+        );
+    }, [styles, localeTag]);
+
+    const header = (
+        <>
+            {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{l('Genel Bilgi', 'General Information')}</Text>
+                <InfoRow label="Kart ID" value={`#${card.id}`} />
+                <InfoRow label="Not ID" value={`#${card.noteId}`} />
+                <InfoRow label={t('common.deck')} value={deck?.name || '-'} />
+                <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '-'} />
+                <InfoRow label={l('Oluşturulma', 'Created')} value={createdAt} />
+                <InfoRow label={l('Değiştirilme', 'Modified')} value={modifiedAt} />
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{l('Etiketler', 'Tags')}</Text>
+                <View style={styles.tagsRow}>
+                    {(note?.tags || []).map((tag) => (
+                        <View key={tag} style={styles.tag}>
+                            <Text style={styles.tagText}>{tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag}</Text>
+                        </View>
+                    ))}
+                </View>
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{l('Bayrak', 'Flag')}</Text>
+                <View style={styles.flagsRow}>
+                    {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
+                        <View
+                            key={flag}
+                            style={[
+                                styles.flagBtn,
+                                card.flags === flag && styles.flagBtnActive,
+                                { borderColor: flag === 0 ? colors.border : FLAG_COLORS[flag].color },
+                            ]}
+                        >
+                            <View
+                                style={[
+                                    styles.flagDot,
+                                    { backgroundColor: flag === 0 ? 'transparent' : FLAG_COLORS[flag].color },
+                                ]}
+                            />
+                        </View>
+                    ))}
+                </View>
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
+                <InfoRow label={l('Kart durumu', 'Card state')} value={typeLabel} />
+                <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
+                <InfoRow label={l('Vade', 'Due')} value={String(card.due)} />
+                <InfoRow label={l('Aralık', 'Interval')} value={formatIvl(card.ivl)} />
+                <InfoRow label={l('Kolaylık', 'Ease')} value={`${(card.factor / 10).toFixed(0)}%`} />
+                <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
+                <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{l('Teknik Bilgi', 'Technical Information')}</Text>
+                <InfoRow label={l('Son çalışma', 'Last review')} value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
+            </View>
+
+            <View style={[styles.section, styles.historyHead]}>
+                <Text style={styles.sectionTitle}>{l('Çalışma Geçmişi', 'Review History')} ({reviews.length})</Text>
+
+                <View style={styles.tableHeader}>
+                    <Text style={[styles.th, { flex: 2 }]}>{l('Tarih', 'Date')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{l('Yanıt', 'Answer')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{l('Aralık', 'Interval')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{l('Kolaylık', 'Ease')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{l('Süre', 'Time')}</Text>
+                    <Text style={[styles.th, { flex: 1 }]}>{l('Tür', 'Type')}</Text>
+                </View>
+            </View>
+        </>
+    );
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -132,100 +229,15 @@ export default function CardInfoScreen() {
                 <View style={{ width: 60 }} />
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Genel Bilgi', 'General Information')}</Text>
-                    <InfoRow label="Kart ID" value={`#${card.id}`} />
-                    <InfoRow label="Not ID" value={`#${card.noteId}`} />
-                    <InfoRow label={t('common.deck')} value={deck?.name || '-'} />
-                    <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '-'} />
-                    <InfoRow label={l('Oluşturulma', 'Created')} value={createdAt} />
-                    <InfoRow label={l('Değiştirilme', 'Modified')} value={modifiedAt} />
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Etiketler', 'Tags')}</Text>
-                    <View style={styles.tagsRow}>
-                        {(note?.tags || []).map((tag) => (
-                            <View key={tag} style={styles.tag}>
-                                <Text style={styles.tagText}>{tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Bayrak', 'Flag')}</Text>
-                    <View style={styles.flagsRow}>
-                        {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                            <View
-                                key={flag}
-                                style={[
-                                    styles.flagBtn,
-                                    card.flags === flag && styles.flagBtnActive,
-                                    { borderColor: flag === 0 ? colors.border : FLAG_COLORS[flag].color },
-                                ]}
-                            >
-                                <View
-                                    style={[
-                                        styles.flagDot,
-                                        { backgroundColor: flag === 0 ? 'transparent' : FLAG_COLORS[flag].color },
-                                    ]}
-                                />
-                            </View>
-                        ))}
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
-                    <InfoRow label={l('Kart durumu', 'Card state')} value={typeLabel} />
-                    <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
-                    <InfoRow label={l('Vade', 'Due')} value={String(card.due)} />
-                    <InfoRow label={l('Aralık', 'Interval')} value={formatIvl(card.ivl)} />
-                    <InfoRow label={l('Kolaylık', 'Ease')} value={`${(card.factor / 10).toFixed(0)}%`} />
-                    <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
-                    <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Teknik Bilgi', 'Technical Information')}</Text>
-                    <InfoRow label={l('Son çalışma', 'Last review')} value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Çalışma Geçmişi', 'Review History')} ({reviews.length})</Text>
-
-                    <View style={styles.tableHeader}>
-                        <Text style={[styles.th, { flex: 2 }]}>{l('Tarih', 'Date')}</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>{l('Yanıt', 'Answer')}</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>{l('Aralık', 'Interval')}</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>{l('Kolaylık', 'Ease')}</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>{l('Süre', 'Time')}</Text>
-                        <Text style={[styles.th, { flex: 1 }]}>{l('Tür', 'Type')}</Text>
-                    </View>
-
-                    {reviews.map((rev, index) => {
-                        const ease = easeLabel(rev.ease);
-                        const date = new Date(rev.id);
-                        const dateStr = date.toLocaleDateString(localeTag);
-                        return (
-                            <View key={rev.id} style={[styles.tableRow, index % 2 === 0 && styles.tableRowEven]}>
-                                <Text style={[styles.td, { flex: 2 }]}>{dateStr}</Text>
-                                <Text style={[styles.td, { flex: 1, color: ease.color, fontWeight: '700' }]}>{ease.text}</Text>
-                                <Text style={[styles.td, { flex: 1 }]}>{formatIvl(rev.ivl)}</Text>
-                                <Text style={[styles.td, { flex: 1 }]}>{(rev.factor / 10).toFixed(0)}%</Text>
-                                <Text style={[styles.td, { flex: 1 }]}>{formatTime(rev.time)}</Text>
-                                <Text style={[styles.td, { flex: 1 }]}>{reviewTypeLabel(rev.type)}</Text>
-                            </View>
-                        );
-                    })}
-                </View>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
+            <FlatList
+                style={styles.content}
+                data={reviews}
+                renderItem={renderReviewRow}
+                keyExtractor={(item) => String(item.id)}
+                showsVerticalScrollIndicator
+                ListHeaderComponent={header}
+                ListFooterComponent={<View style={styles.historyFoot} />}
+            />
         </SafeAreaView>
     );
 }
@@ -313,7 +325,30 @@ function createStyles(colors: ColorScheme) {
         letterSpacing: 0.3,
         textTransform: 'uppercase',
     },
-    tableRow: { flexDirection: 'row', paddingVertical: 6 },
+    // The review table is virtualised, so the section card is split into a head (title + column
+    // labels), the rows themselves, and a foot. Each part carries the wall it needs to keep
+    // looking like one card.
+    historyHead: { marginBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, paddingBottom: 0 },
+    historyRow: {
+        flexDirection: 'row',
+        paddingVertical: 6,
+        paddingHorizontal: Spacing.lg,
+        backgroundColor: colors.bgCard,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderColor: colors.border,
+    },
+    historyFoot: {
+        height: Spacing.lg,
+        marginBottom: Spacing.xxl,
+        backgroundColor: colors.bgCard,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: colors.border,
+        borderBottomLeftRadius: BorderRadius.md,
+        borderBottomRightRadius: BorderRadius.md,
+    },
     tableRowEven: { backgroundColor: colors.bgSecondary },
     td: { fontSize: FontSize.xs, color: colors.textSecondary },
 

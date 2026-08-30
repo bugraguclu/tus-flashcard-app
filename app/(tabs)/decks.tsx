@@ -3,17 +3,12 @@
 // options/limits, custom study, delete) and drag-and-drop nesting via the row handle.
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import {
     View,
-    Text,
     ScrollView,
-    TouchableOpacity,
-    StyleSheet,
     SafeAreaView,
-    TextInput,
     Modal,
     PanResponder,
     Animated,
@@ -25,9 +20,11 @@ import {
     Switch,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../../components/Typography';
+import { TouchableOpacity } from '../../components/Touchable';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
+import { useThemeColors, Spacing } from '../../constants/theme';
 import {
     getAllDecks,
     getDeckByName,
@@ -46,7 +43,6 @@ import {
     updateFilteredDeck,
     rebuildFilteredDeck,
     setDeckCollapsed,
-    initializeDeckDisclosureDefaults,
     setDeckDescription,
     emptyFilteredDeck,
     reorderDeckRelative,
@@ -58,8 +54,22 @@ import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount, getStudyQueue 
 import { createBackupNow } from '../../lib/backup';
 import { useApp } from './_layout';
 import { useI18n } from '../../hooks/useI18n';
+import { isReduceMotionEnabled } from '../../hooks/useReduceMotion';
+import { hapticError, hapticMedium, hapticSelection, hapticSuccess } from '../../lib/haptics';
 import { filteredOrderLabel } from '../../lib/i18n';
 import DisclosureChevron from '../../components/DisclosureChevron';
+import { createStyles } from '../../components/decks/decks.styles';
+import {
+    parseCount,
+    ROOT_DROP_TARGET,
+    FILTER_ORDER_UI,
+    decodeDeckDropTarget,
+    encodeDeckDropTarget,
+    DECK_HOVER_EXPAND_DELAY_MS,
+    getPersistedExpandedDeckNames,
+    remapExpandedDeckPaths,
+    type DeckDropPlacement,
+} from '../../lib/decksScreen';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -76,59 +86,6 @@ type ModalState =
     | { kind: 'filter'; deck: Deck }
     | { kind: 'create-filter' }
     | null;
-
-function parseCount(text: string, fallback: number = 0): number {
-    const value = parseInt(text, 10);
-    return Number.isFinite(value) ? Math.max(0, value) : fallback;
-}
-
-const ROOT_DROP_TARGET = '__root_deck_drop_target__';
-const FILTER_ORDER_UI = [7, 1, 2, 3, 6, 4, 0, 5, 8, 9] as const;
-type DeckDropPlacement = 'before' | 'inside' | 'after';
-
-function decodeDeckDropTarget(target: string | null):
-    | { kind: 'root' }
-    | { kind: 'deck'; name: string; placement: DeckDropPlacement }
-    | null {
-    if (!target) return null;
-    if (target === ROOT_DROP_TARGET) return { kind: 'root' };
-    const separator = target.indexOf(':');
-    if (separator < 0) return null;
-    const placement = target.slice(0, separator) as DeckDropPlacement;
-    if (placement !== 'before' && placement !== 'inside' && placement !== 'after') return null;
-    return { kind: 'deck', placement, name: target.slice(separator + 1) };
-}
-
-function encodeDeckDropTarget(name: string, placement: DeckDropPlacement): string {
-    return `${placement}:${name}`;
-}
-// A deliberate spring-open delay prevents a parent from expanding while the pointer merely
-// passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
-const DECK_HOVER_EXPAND_DELAY_MS = 800;
-
-function getPersistedExpandedDeckNames(): Set<string> {
-    initializeDeckDisclosureDefaults();
-    return new Set(getAllDecks().filter((deck) => !deck.collapsed).map((deck) => deck.name));
-}
-
-/** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
-function remapExpandedDeckPaths(
-    paths: Set<string>,
-    oldPath: string,
-    newPath: string,
-    additionallyExpand?: string | null,
-): Set<string> {
-    const next = new Set<string>();
-    for (const path of paths) {
-        if (path === oldPath || path.startsWith(`${oldPath}::`)) {
-            next.add(`${newPath}${path.slice(oldPath.length)}`);
-        } else {
-            next.add(path);
-        }
-    }
-    if (additionallyExpand) next.add(additionallyExpand);
-    return next;
-}
 
 export default function DecksScreen() {
     const { t, l, locale } = useI18n();
@@ -233,6 +190,9 @@ export default function DecksScreen() {
     }, []);
 
     const animateDeckTreeLayout = () => {
+        // "Hareketi Azalt" asks apps to drop non-essential motion: the rows still appear and
+        // disappear, they just do it without the expand/collapse slide.
+        if (isReduceMotionEnabled()) return;
         LayoutAnimation.configureNext({
             duration: 190,
             update: { type: LayoutAnimation.Types.easeInEaseOut },
@@ -602,7 +562,7 @@ export default function DecksScreen() {
             setModal(null);
             refresh();
             if (Platform.OS !== 'web') {
-                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+                hapticSuccess();
             }
         } catch (e) {
             console.warn('[Decks] create subdeck failed:', e);
@@ -973,7 +933,7 @@ export default function DecksScreen() {
         setDropTarget(target);
 
         if (target && Platform.OS !== 'web') {
-            void Haptics.selectionAsync().catch(() => undefined);
+            hapticSelection();
         }
 
         const decoded = decodeDeckDropTarget(target);
@@ -1104,7 +1064,7 @@ export default function DecksScreen() {
             }
         });
         if (Platform.OS !== 'web') {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+            hapticMedium();
         }
     };
 
@@ -1133,12 +1093,12 @@ export default function DecksScreen() {
                 ));
                 refresh();
                 if (Platform.OS !== 'web') {
-                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+                    hapticSuccess();
                 }
             } catch (e) {
                 console.warn('[Decks] drag reorder failed:', e);
                 if (Platform.OS !== 'web') {
-                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+                    hapticError();
                 }
                 alert(t('common.error'), e instanceof Error ? e.message : l('Deste sıralanamadı.', 'Could not reorder the deck.'));
             }
@@ -1166,12 +1126,12 @@ export default function DecksScreen() {
             ));
             refresh();
             if (Platform.OS !== 'web') {
-                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+                hapticSuccess();
             }
         } catch (e) {
             console.warn('[Decks] drag move failed:', e);
             if (Platform.OS !== 'web') {
-                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+                hapticError();
             }
             alert(t('common.error'), e instanceof Error ? e.message : l('Deste taşınamadı.', 'Could not move the deck.'));
         }
@@ -1452,7 +1412,7 @@ export default function DecksScreen() {
                 <ScrollView
                     style={styles.deckMenuScroll}
                     contentContainerStyle={styles.deckMenuContent}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator
                 >
                     {!deck.isFiltered && (
                         <MenuAction
@@ -1639,7 +1599,7 @@ export default function DecksScreen() {
             style={[styles.modalCard, isCompact && styles.modalCardCompact, styles.modalCardScrollable]}
             contentContainerStyle={styles.modalCardScrollContent}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator
         >
             {isCompact && <View style={styles.sheetHandle} />}
             <Text style={styles.modalTitle}>{t('anki.customStudy')} — {getDeckDisplayName(deck.name)}</Text>
@@ -1872,7 +1832,7 @@ export default function DecksScreen() {
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                     automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator
                 >
                     <View style={styles.filteredOutlinedField}>
                         <Text style={styles.filteredOutlinedLabel}>{l('Deste adı', 'Name')}</Text>
@@ -2042,7 +2002,7 @@ export default function DecksScreen() {
                             <ScrollView
                                 style={styles.filteredHelpScroll}
                                 contentContainerStyle={styles.filteredHelpScrollContent}
-                                showsVerticalScrollIndicator={false}
+                                showsVerticalScrollIndicator
                                 bounces={false}
                             >
                                 <Text style={styles.filteredHelpBody}>
@@ -2071,7 +2031,7 @@ export default function DecksScreen() {
                             accessibilityLabel={t('common.close')}
                         />
                         <View style={styles.filteredOrderMenu}>
-                            <ScrollView showsVerticalScrollIndicator={false}>
+                            <ScrollView showsVerticalScrollIndicator>
                                 {FILTER_ORDER_UI.map((order) => (
                                     <TouchableOpacity
                                         key={order}
@@ -2288,7 +2248,7 @@ export default function DecksScreen() {
                 <ScrollView
                     ref={deckScrollRef}
                     style={styles.deckList}
-                    showsVerticalScrollIndicator={false}
+                    showsVerticalScrollIndicator
                     scrollEnabled={!draggingDeck}
                     onScroll={(e) => {
                         scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
@@ -2524,941 +2484,4 @@ export default function DecksScreen() {
             </Modal>
         </SafeAreaView>
     );
-}
-
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.bgPrimary },
-
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
-    },
-    title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
-    headerSubtitle: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
-    headerActions: { flexDirection: 'row', gap: 8 },
-    catalogButton: {
-        minHeight: 38,
-        paddingHorizontal: 12,
-        borderRadius: BorderRadius.full,
-        backgroundColor: '#123f34',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    catalogButtonIcon: { color: '#d4b66b', fontSize: 11, marginRight: 6 },
-    catalogButtonText: { color: '#f5f2e8', fontSize: FontSize.sm, fontWeight: '800' },
-    accessBanner: {
-        flexDirection: 'row', alignItems: 'center', marginHorizontal: Spacing.md, marginVertical: Spacing.sm,
-        paddingHorizontal: Spacing.md, paddingVertical: 11, borderRadius: BorderRadius.md,
-        backgroundColor: '#fff8e7', borderWidth: 1, borderColor: '#ead59d',
-    },
-    accessBannerFull: { backgroundColor: '#e8f5ef', borderColor: '#a9d7c4' },
-    accessBannerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#123f34', alignItems: 'center', justifyContent: 'center' },
-    accessBannerIconText: { color: '#f2d98d', fontSize: 11, fontWeight: '900' },
-    accessBannerCopy: { flex: 1, marginHorizontal: Spacing.sm },
-    accessBannerTitle: { color: '#123f34', fontSize: FontSize.sm, fontWeight: '800' },
-    accessBannerText: { color: '#587069', fontSize: FontSize.xs, marginTop: 2 },
-    accessBannerArrow: { color: '#123f34', fontSize: 24, fontWeight: '400' },
-    headerBtn: {
-        paddingHorizontal: Spacing.md,
-        minHeight: 44,
-        minWidth: 44,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
-
-    // Keep the native-sized 44 pt touch target, but render a compact 15 pt `more_vert` glyph.
-    headerMenuBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 3,
-    },
-    headerMenuDot: {
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: colors.textSecondary,
-    },
-
-    overflowOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-        alignItems: 'flex-end',
-        paddingTop: 56,
-        paddingRight: Spacing.lg,
-    },
-    overflowBackdrop: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    overflowSheet: {
-        minWidth: 200,
-        zIndex: 1,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        paddingVertical: Spacing.xs,
-        ...Shadows.lg,
-    },
-    overflowRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        minHeight: 48,
-    },
-    overflowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
-    overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
-
-    columnHeaders: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: 6,
-        backgroundColor: colors.bgSecondary,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    columnLabel: {
-        flex: 1,
-        fontSize: FontSize.xs,
-        fontWeight: '600',
-        color: colors.textMuted,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-    },
-    columnCount: { fontSize: FontSize.xs, fontWeight: '700', width: 48, textAlign: 'center' },
-
-    listWrap: { flex: 1, position: 'relative' },
-    deckList: { flex: 1 },
-    deckListContentCompact: {
-        paddingHorizontal: Spacing.md,
-        paddingTop: Spacing.xs,
-        paddingBottom: Spacing.sm,
-    },
-
-    deckRow: {
-        position: 'relative',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingRight: Spacing.sm,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    deckRowCompact: {
-        minHeight: 76,
-        paddingVertical: 7,
-        paddingRight: 4,
-        borderBottomWidth: 0,
-    },
-    deckRowCompactChild: {
-        minHeight: 70,
-    },
-    // A top-level deck is one surface. Its recursively rendered child wells below are physically
-    // inside this card instead of being painted behind unrelated flat rows.
-    deckGroupCard: {
-        position: 'relative',
-        marginTop: Spacing.sm,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        overflow: 'visible',
-        ...Shadows.sm,
-    },
-    deckNestedBranch: { position: 'relative' },
-    deckNestedBranchLast: {},
-    deckChildrenWell: {
-        marginLeft: 18,
-        marginRight: 0,
-        marginBottom: 4,
-        paddingLeft: 6,
-        backgroundColor: colors.bgCard,
-        borderLeftWidth: 0,
-        overflow: 'visible',
-    },
-    deckChildrenWellNested: {
-        marginLeft: 14,
-        marginRight: 0,
-        marginBottom: 3,
-    },
-    // After four visual levels, preserve usable title width while keeping the hierarchy guide.
-    deckChildrenWellDeep: {
-        marginLeft: 6,
-        marginRight: 0,
-    },
-    deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
-    deckRowDropTarget: {
-        backgroundColor: colors.accentLight,
-        transform: [{ scale: 1.006 }],
-    },
-    deckDropLabel: {
-        position: 'absolute',
-        left: 42,
-        right: 52,
-        zIndex: 8,
-        alignItems: 'flex-start',
-    },
-    deckDropLabelBefore: { top: -18 },
-    deckDropLabelAfter: { bottom: -18 },
-    deckDropLabelText: {
-        maxWidth: '100%',
-        overflow: 'hidden',
-        paddingHorizontal: 9,
-        paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
-        backgroundColor: colors.accent,
-        color: colors.white,
-        fontSize: 11,
-        fontWeight: '800',
-    },
-    deckInsideDropBadge: {
-        position: 'absolute',
-        left: 42,
-        right: 52,
-        top: 4,
-        zIndex: 8,
-        alignItems: 'flex-start',
-    },
-    deckInsideDropBadgeText: {
-        maxWidth: '100%',
-        overflow: 'hidden',
-        paddingHorizontal: 9,
-        paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
-        backgroundColor: colors.accent,
-        color: colors.white,
-        fontSize: 11,
-        fontWeight: '800',
-    },
-    expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    expandDot: { fontSize: 10, color: colors.border },
-    deckNameTouchable: { flex: 1, marginLeft: 2, minHeight: 44, justifyContent: 'center' },
-    deckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-    deckNameFiltered: { color: colors.badgeNew, fontStyle: 'italic' },
-    deckMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-    mobileCountsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 7 },
-    mobileCountPill: { borderRadius: BorderRadius.full, paddingHorizontal: 7, paddingVertical: 3 },
-    mobileCountText: { fontSize: 10, fontWeight: '700', fontVariant: ['tabular-nums'] },
-
-    countsRow: { flexDirection: 'row', gap: 0 },
-    countBadge: { fontSize: FontSize.md, fontWeight: '700', width: 48, textAlign: 'center' },
-    countNew: { color: colors.badgeNew },
-    countLearn: { color: colors.badgeLearn },
-    countReview: { color: colors.badgeReview },
-
-    dragHandle: {
-        width: 44,
-        height: 44,
-        borderRadius: BorderRadius.sm,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...(Platform.OS === 'web' ? ({ cursor: 'grab' } as object) : null),
-    },
-    dragHandleActive: { backgroundColor: colors.accentLight, transform: [{ scale: 1.08 }] },
-    dragHandleDisabled: { opacity: 0.25 },
-    dragHandleText: { fontSize: 18, color: colors.textMuted },
-    gearBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    gearText: { fontSize: 16, fontWeight: '800', color: colors.textMuted, letterSpacing: -1 },
-
-    rootDropZone: {
-        position: 'absolute',
-        top: -64,
-        left: Spacing.md,
-        right: Spacing.md,
-        minHeight: 58,
-        zIndex: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1.5,
-        borderStyle: 'dashed',
-        borderColor: colors.accent,
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgCard,
-        ...Shadows.md,
-    },
-    rootDropZoneActive: {
-        borderStyle: 'solid',
-        backgroundColor: colors.accent,
-        transform: [{ scale: 1.015 }],
-    },
-    rootDropZoneText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '800' },
-    rootDropZoneTextActive: { color: colors.white },
-    mobileDragPreview: {
-        position: 'absolute',
-        top: 0,
-        left: Spacing.lg,
-        right: Spacing.lg,
-        zIndex: 30,
-        minHeight: 58,
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 8,
-        backgroundColor: colors.bgCard,
-        borderWidth: 2,
-        borderColor: colors.accent,
-        borderRadius: BorderRadius.md,
-        ...Shadows.lg,
-    },
-    mobileDragPreviewTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
-    mobileDragPreviewHint: {
-        marginTop: 4,
-        color: colors.accent,
-        fontSize: 12,
-        fontWeight: '800',
-    },
-    mobileDragPreviewHintOrder: { color: colors.textSecondary },
-
-    fabDismissLayer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 20,
-    },
-    fabWrap: {
-        position: 'absolute',
-        right: Spacing.lg,
-        bottom: 112,
-        zIndex: 30,
-        alignItems: 'flex-end',
-    },
-    fabActions: {
-        gap: Spacing.md,
-        marginBottom: Spacing.md,
-        alignItems: 'flex-end',
-    },
-    fabActionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: Spacing.md,
-    },
-    fabActionLabel: {
-        maxWidth: 240,
-        borderRadius: 4,
-        backgroundColor: 'rgba(65, 65, 65, 0.82)',
-        paddingHorizontal: 10,
-        paddingVertical: 7,
-    },
-    fabActionLabelText: {
-        color: colors.white,
-        fontSize: FontSize.sm,
-        fontWeight: '600',
-    },
-    fabActionButton: {
-        width: 46,
-        height: 46,
-        borderRadius: BorderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.accent,
-        ...Shadows.md,
-    },
-    fabActionIcon: {
-        color: colors.white,
-        fontSize: 21,
-        fontWeight: '700',
-    },
-    fabMain: {
-        width: 56,
-        height: 56,
-        borderRadius: BorderRadius.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.accent,
-        ...Shadows.lg,
-    },
-    fabMainOpen: { backgroundColor: colors.accentHover },
-    fabMainIcon: {
-        color: colors.white,
-        fontSize: 30,
-        fontWeight: '400',
-        lineHeight: 32,
-    },
-
-    bottomBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        minHeight: 66,
-        paddingVertical: 6,
-        backgroundColor: colors.bgCard,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        ...Shadows.md,
-    },
-    bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
-    bottomBtnIcon: { fontSize: 20 },
-    bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 },
-
-    emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },
-    emptyStateIcon: { fontSize: 36, color: colors.accent, marginBottom: Spacing.sm },
-    emptyStateTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-    emptyStateText: { marginTop: Spacing.xs, fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
-
-    dragBanner: {
-        position: 'absolute',
-        bottom: 16,
-        left: 16,
-        right: 16,
-        backgroundColor: colors.accent,
-        borderRadius: BorderRadius.md,
-        paddingVertical: Spacing.sm,
-        paddingHorizontal: Spacing.lg,
-        ...Shadows.md,
-    },
-    dragBannerText: { color: colors.white, fontWeight: '600', textAlign: 'center' },
-
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.35)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-    },
-    filteredModalOverlay: {
-        padding: 0,
-        alignItems: 'stretch',
-        justifyContent: 'flex-start',
-        backgroundColor: colors.bgCard,
-    },
-    filteredDeckScreen: {
-        flex: 1,
-        backgroundColor: colors.bgCard,
-    },
-    filteredDeckToolbar: {
-        minHeight: 60,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingBottom: 8,
-        paddingHorizontal: 8,
-        gap: 4,
-        backgroundColor: colors.bgCard,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    filteredToolbarIconButton: {
-        width: 44,
-        height: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-    },
-    filteredCloseIcon: {
-        color: colors.textSecondary,
-        fontSize: 34,
-        lineHeight: 36,
-        fontWeight: '300',
-    },
-    filteredToolbarTitle: {
-        flex: 1,
-        minWidth: 0,
-        color: colors.textPrimary,
-        fontSize: FontSize.lg,
-        fontWeight: '600',
-    },
-    filteredBuildButton: {
-        minWidth: 78,
-        minHeight: 44,
-        paddingHorizontal: Spacing.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.accent,
-    },
-    filteredBuildButtonDisabled: { opacity: 0.42 },
-    filteredBuildButtonText: {
-        color: colors.white,
-        fontSize: FontSize.sm,
-        fontWeight: '800',
-    },
-    filteredHelpCircle: {
-        width: 25,
-        height: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: colors.textSecondary,
-        borderRadius: BorderRadius.full,
-    },
-    filteredHelpIcon: {
-        color: colors.textSecondary,
-        fontSize: 16,
-        lineHeight: 19,
-        fontWeight: '800',
-    },
-    filteredDeckScroll: { flex: 1 },
-    filteredDeckContent: {
-        width: '100%',
-        maxWidth: 620,
-        alignSelf: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.lg,
-        paddingBottom: 56,
-    },
-    filteredOutlinedField: {
-        position: 'relative',
-        minHeight: 58,
-        justifyContent: 'center',
-        borderWidth: 1.5,
-        borderColor: colors.textMuted,
-        borderRadius: 5,
-        paddingHorizontal: Spacing.lg,
-        marginBottom: Spacing.md,
-        backgroundColor: colors.bgCard,
-    },
-    filteredOutlinedLabel: {
-        position: 'absolute',
-        top: -9,
-        left: 12,
-        paddingHorizontal: 5,
-        color: colors.textSecondary,
-        backgroundColor: colors.bgCard,
-        fontSize: FontSize.xs,
-        lineHeight: 18,
-        fontWeight: '500',
-    },
-    filteredTextInput: {
-        minHeight: 52,
-        paddingVertical: 8,
-        color: colors.textPrimary,
-        fontSize: FontSize.lg,
-    },
-    filteredSearchInput: { paddingRight: 44 },
-    filteredSearchButton: {
-        position: 'absolute',
-        right: 3,
-        top: 6,
-        width: 44,
-        height: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-    },
-    filteredSearchIcon: {
-        color: colors.textSecondary,
-        fontSize: 31,
-        lineHeight: 33,
-        transform: [{ rotate: '-18deg' }],
-    },
-    filteredSectionTitle: {
-        marginTop: 2,
-        marginBottom: Spacing.md,
-        color: colors.textPrimary,
-        fontSize: FontSize.xl,
-        fontWeight: '700',
-    },
-    filteredPickerLabel: {
-        marginTop: -2,
-        color: colors.textPrimary,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    filteredPickerRow: {
-        minHeight: 52,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
-        marginBottom: Spacing.md,
-    },
-    filteredPickerValue: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: FontSize.lg,
-    },
-    filteredPickerChevron: {
-        color: colors.textSecondary,
-        fontSize: 22,
-        fontWeight: '700',
-    },
-    filteredSwitchRow: {
-        minHeight: 64,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.md,
-    },
-    filteredSwitchLabel: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-        lineHeight: 20,
-        fontWeight: '500',
-    },
-    filteredSecondFilter: {
-        paddingTop: Spacing.sm,
-        paddingLeft: Spacing.sm,
-        borderLeftWidth: 2,
-        borderLeftColor: colors.borderLight,
-    },
-    filteredPreviewHint: {
-        marginTop: -4,
-        marginBottom: Spacing.sm,
-        paddingHorizontal: Spacing.sm,
-        color: colors.textMuted,
-        fontSize: FontSize.sm,
-        lineHeight: 18,
-    },
-    filteredExcludedButton: {
-        minHeight: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: Spacing.sm,
-        paddingHorizontal: Spacing.lg,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.borderLight,
-        backgroundColor: colors.bgCard,
-    },
-    filteredExcludedText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-    filteredOverlayLayer: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-    },
-    filteredOverlayBackdrop: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.42)',
-    },
-    filteredHelpCard: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '88%',
-        overflow: 'hidden',
-        borderRadius: 24,
-        backgroundColor: colors.bgCard,
-        ...Shadows.lg,
-    },
-    filteredHelpHeader: {
-        flexShrink: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingTop: Spacing.lg,
-        paddingLeft: Spacing.xl,
-        paddingRight: Spacing.md,
-        paddingBottom: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    filteredHelpTitle: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: FontSize.xxl,
-        fontWeight: '700',
-    },
-    filteredHelpCloseButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-    },
-    filteredHelpCloseText: {
-        color: colors.textSecondary,
-        fontSize: 30,
-        lineHeight: 32,
-    },
-    filteredHelpBody: {
-        color: colors.textSecondary,
-        fontSize: FontSize.md,
-        lineHeight: 21,
-    },
-    filteredHelpScroll: {
-        flexShrink: 1,
-    },
-    filteredHelpScrollContent: {
-        paddingHorizontal: Spacing.xl,
-        paddingVertical: Spacing.lg,
-    },
-    filteredHelpFooter: {
-        flexShrink: 0,
-        minHeight: 56,
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.md,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.borderLight,
-    },
-    filteredHelpDoneButton: {
-        minHeight: 44,
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.sm,
-    },
-    filteredHelpDoneText: {
-        color: colors.accent,
-        fontSize: FontSize.md,
-        fontWeight: '800',
-    },
-    filteredOrderMenu: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '72%',
-        overflow: 'hidden',
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgCard,
-        ...Shadows.lg,
-    },
-    filteredOrderOption: {
-        minHeight: 56,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    filteredOrderOptionSelected: { backgroundColor: colors.accentLight },
-    filteredOrderOptionText: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-    },
-    filteredOrderOptionTextSelected: {
-        color: colors.accent,
-        fontWeight: '700',
-    },
-    filteredOrderCheck: {
-        color: colors.accent,
-        fontSize: 18,
-        fontWeight: '900',
-    },
-    modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
-    modalBackdropHit: { ...StyleSheet.absoluteFillObject },
-    deckMenuCard: {
-        width: '100%',
-        maxWidth: 520,
-        maxHeight: '88%',
-        zIndex: 1,
-        overflow: 'hidden',
-        backgroundColor: colors.badgeNewBg,
-        borderRadius: 28,
-        paddingTop: Spacing.xl,
-        ...Shadows.lg,
-    },
-    deckMenuTitle: {
-        paddingHorizontal: 30,
-        paddingBottom: Spacing.sm,
-        fontSize: 20,
-        lineHeight: 27,
-        fontWeight: '500',
-        color: colors.textPrimary,
-    },
-    deckMenuScroll: { flexGrow: 0 },
-    deckMenuContent: { paddingHorizontal: 30, paddingBottom: Spacing.xl },
-    deckMenuItem: { minHeight: 66, justifyContent: 'center' },
-    deckMenuItemText: { fontSize: 17, lineHeight: 23, fontWeight: '400', color: colors.textPrimary },
-    modalCard: {
-        width: '100%',
-        maxWidth: 420,
-        zIndex: 1,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.xl,
-        ...Shadows.lg,
-    },
-    modalCardCompact: {
-        maxWidth: undefined,
-        maxHeight: '90%',
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
-        padding: Spacing.xl,
-    },
-    createDeckDialog: {
-        width: '88%',
-        maxWidth: 380,
-        borderRadius: 28,
-        paddingTop: 26,
-        paddingHorizontal: Spacing.xl,
-        paddingBottom: Spacing.md,
-    },
-    createDeckDialogTitle: {
-        color: colors.textPrimary,
-        fontSize: 24,
-        lineHeight: 31,
-        fontWeight: '600',
-        marginBottom: 24,
-    },
-    createDeckField: {
-        minHeight: 62,
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: colors.accent,
-        borderRadius: 5,
-        marginBottom: Spacing.md,
-        paddingHorizontal: Spacing.md,
-    },
-    createDeckFieldLabel: {
-        position: 'absolute',
-        top: -9,
-        left: 12,
-        paddingHorizontal: 4,
-        color: colors.accent,
-        backgroundColor: colors.bgCard,
-        fontSize: FontSize.xs,
-        lineHeight: 18,
-        fontWeight: '500',
-    },
-    createDeckInput: {
-        minHeight: 48,
-        paddingVertical: 8,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-    },
-    createDeckActions: {
-        marginTop: 4,
-        gap: 10,
-    },
-    createDeckTextButton: {
-        minWidth: 68,
-        minHeight: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.sm,
-        borderRadius: BorderRadius.sm,
-    },
-    createDeckCancelText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    createDeckCreateText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    createDeckCreateTextDisabled: { color: colors.textMuted },
-    modalCardScrollable: { padding: 0 },
-    modalCardScrollContent: { padding: Spacing.xl, paddingBottom: Spacing.xxl },
-    sheetHandle: {
-        width: 40,
-        height: 4,
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.border,
-        alignSelf: 'center',
-        marginBottom: Spacing.lg,
-    },
-    modalEyebrow: {
-        fontSize: 11,
-        fontWeight: '800',
-        letterSpacing: 1.2,
-        color: colors.accent,
-        marginBottom: Spacing.xs,
-    },
-    modalTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        marginBottom: Spacing.md,
-    },
-    modalHint: {
-        fontSize: FontSize.sm,
-        color: colors.textMuted,
-        marginBottom: Spacing.sm,
-    },
-    subdeckPathPreview: {
-        fontSize: FontSize.sm,
-        lineHeight: 19,
-        color: colors.accent,
-        fontWeight: '600',
-        marginBottom: Spacing.sm,
-    },
-    descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
-    fieldLabel: {
-        fontSize: FontSize.sm,
-        fontWeight: '600',
-        color: colors.textSecondary,
-        marginTop: Spacing.sm,
-        marginBottom: 4,
-    },
-    modalInput: {
-        backgroundColor: colors.bgInput,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        minHeight: 44,
-        paddingVertical: 10,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-        marginBottom: Spacing.sm,
-    },
-    inlineRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-    inlineInput: { flex: 1, marginBottom: 0 },
-    customSection: {
-        marginBottom: Spacing.lg,
-        gap: 6,
-    },
-    modalActions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-end',
-        gap: 8,
-        marginTop: Spacing.md,
-    },
-    modalBtnPrimary: {
-        backgroundColor: colors.accent,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.lg,
-        minHeight: 44,
-        paddingVertical: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalBtnPrimaryText: { color: colors.white, fontWeight: '700', fontSize: FontSize.sm },
-    modalBtnSecondary: {
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.lg,
-        minHeight: 44,
-        paddingVertical: 10,
-        borderWidth: 1,
-        borderColor: colors.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonDisabled: { opacity: 0.45 },
-    modalBtnSecondaryText: { color: colors.textSecondary, fontWeight: '600', fontSize: FontSize.sm },
-    modalCancel: { marginTop: Spacing.md, alignItems: 'center', paddingVertical: 6 },
-    modalCancelText: { color: colors.textMuted, fontWeight: '600' },
-
-    menuItem: {
-        minHeight: 48,
-        paddingVertical: 13,
-        justifyContent: 'center',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    menuItemText: { fontSize: FontSize.md, color: colors.textPrimary },
-    menuItemDanger: { color: colors.btnAgain },
-    moveList: { maxHeight: 320 },
-    orderWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    orderChip: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: BorderRadius.full,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.bgInput,
-    },
-    orderChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-    orderChipText: { fontSize: FontSize.xs, color: colors.textSecondary },
-    orderChipTextActive: { color: colors.accent, fontWeight: '700' },
-    rescheduleRow: { paddingVertical: 8 },
-    });
 }

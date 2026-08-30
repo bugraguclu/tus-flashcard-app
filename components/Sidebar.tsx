@@ -1,18 +1,30 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
+    Animated,
     View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
+    FlatList,
     StyleSheet,
     Linking,
     Platform,
+    type ListRenderItemInfo,
 } from 'react-native';
+import { Text } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import type { Subject } from '../lib/types';
 import { useI18n } from '../hooks/useI18n';
 
 export const SIDEBAR_WIDTH = 260;
+
+/**
+ * The drawer is rebuilt every time it opens, so a recursive `.map()` over every course and its
+ * topics paid for rows nobody could see. Flattening the tree into one row list lets a FlatList
+ * mount only the visible slice; expanding a course changes the list rather than the JSX shape.
+ */
+type SidebarRow =
+    | { key: string; kind: 'all' }
+    | { key: string; kind: 'subject'; subject: Subject }
+    | { key: string; kind: 'topic'; subjectId: string; topic: string };
 
 type SidebarProps = {
     isWide: boolean;
@@ -32,6 +44,8 @@ type SidebarProps = {
     navigate: (path: string) => void;
     /** Stats screen target; the layout points it at the active deck's stats when one is open. */
     statsPath?: string;
+    /** 0 = off-screen, 1 = fully open. Owned by the layout so the overlay fades in step. */
+    drawerProgress: Animated.Value;
 };
 
 /** Web-only tooltip via HTML title attribute */
@@ -60,12 +74,124 @@ export function Sidebar(props: SidebarProps) {
         onTopicPress,
         navigate,
         statsPath = '/stats',
+        drawerProgress,
     } = props;
 
+    const isOpen = isWide || sidebarOpen;
+    const translateX = useMemo(
+        () => drawerProgress.interpolate({ inputRange: [0, 1], outputRange: [-SIDEBAR_WIDTH, 0] }),
+        [drawerProgress],
+    );
+
+    const rows = useMemo<SidebarRow[]>(() => {
+        const built: SidebarRow[] = [{ key: 'all', kind: 'all' }];
+        for (const subject of subjects) {
+            built.push({ key: `subject:${subject.id}`, kind: 'subject', subject });
+            if (expandedSubject !== subject.id) continue;
+            for (const topic of getTopicsForSubject(subject.id)) {
+                built.push({ key: `topic:${subject.id}:${topic}`, kind: 'topic', subjectId: subject.id, topic });
+            }
+        }
+        return built;
+    }, [subjects, expandedSubject, getTopicsForSubject]);
+
+    const keyExtractor = useCallback((row: SidebarRow) => row.key, []);
+
+    const renderRow = useCallback(({ item }: ListRenderItemInfo<SidebarRow>) => {
+        if (item.kind === 'all') {
+            const isActive = !selectedSubject && !selectedTopic;
+            return (
+                <TouchableOpacity
+                    style={[styles.subjectItem, isActive && styles.subjectItemActive]}
+                    onPress={onAllPress}
+                >
+                    <Text style={styles.subjectIcon}>📚</Text>
+                    <Text style={[styles.subjectName, isActive && styles.subjectNameActive]}>
+                        {t('sidebar.allCourses')}
+                    </Text>
+                    <View style={[styles.subjectCount, isActive && styles.subjectCountActive]}>
+                        <Text style={[styles.subjectCountText, isActive && styles.subjectCountTextActive]}>
+                            {totalCards}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            );
+        }
+
+        if (item.kind === 'subject') {
+            const subject = item.subject;
+            const isExpanded = expandedSubject === subject.id;
+            const isSelected = selectedSubject === subject.id && !selectedTopic;
+            return (
+                <View style={[styles.subjectRow, isSelected && styles.subjectItemActive]}>
+                    <TouchableOpacity
+                        style={styles.subjectItem}
+                        onPress={() => onSubjectPress(subject.id)}
+                        {...webTitle(`${subject.name} — ${t('common.study')}`)}
+                    >
+                        <Text style={styles.subjectIcon}>{subject.icon}</Text>
+                        <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
+                            {subject.name}
+                        </Text>
+                        <View style={[styles.subjectCount, isSelected && styles.subjectCountActive]}>
+                            <Text style={[styles.subjectCountText, isSelected && styles.subjectCountTextActive]}>
+                                {getSubjectCount(subject.id)}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.expandBtn}
+                        onPress={() => onToggleExpand(subject.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                        {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
+                    >
+                        <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
+                            {isExpanded ? '▾' : '▸'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        const isTopicSelected = selectedSubject === item.subjectId && selectedTopic === item.topic;
+        return (
+            <TouchableOpacity
+                style={[styles.topicItem, isTopicSelected && styles.topicItemActive]}
+                onPress={() => onTopicPress(item.subjectId, item.topic)}
+            >
+                <View style={[styles.topicDot, isTopicSelected && styles.topicDotActive]} />
+                <Text style={[styles.topicName, isTopicSelected && styles.topicNameActive]}>
+                    {item.topic}
+                </Text>
+                <Text style={[styles.topicCount, isTopicSelected && styles.topicCountActive]}>
+                    {getTopicCount(item.subjectId, item.topic)}
+                </Text>
+            </TouchableOpacity>
+        );
+    }, [
+        styles,
+        t,
+        totalCards,
+        selectedSubject,
+        selectedTopic,
+        expandedSubject,
+        getSubjectCount,
+        getTopicCount,
+        onAllPress,
+        onSubjectPress,
+        onToggleExpand,
+        onTopicPress,
+    ]);
+
     return (
-        <View
-            pointerEvents={isWide || sidebarOpen ? 'auto' : 'none'}
-            style={[styles.sidebar, !isWide && !sidebarOpen && styles.sidebarHidden]}
+        <Animated.View
+            pointerEvents={isOpen ? 'auto' : 'none'}
+            // The drawer stays mounted while closed so it can animate; hide it from assistive
+            // tech too, otherwise VoiceOver still walks an off-screen menu.
+            accessibilityElementsHidden={!isOpen}
+            importantForAccessibility={isOpen ? 'auto' : 'no-hide-descendants'}
+            style={[styles.sidebar, { transform: [{ translateX }] }]}
         >
             <TouchableOpacity
                 style={styles.sidebarHeader}
@@ -78,79 +204,19 @@ export function Sidebar(props: SidebarProps) {
                 <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
             </TouchableOpacity>
 
-            <ScrollView style={styles.subjectList} showsVerticalScrollIndicator={false}>
-                <TouchableOpacity
-                    style={[styles.subjectItem, !selectedSubject && !selectedTopic && styles.subjectItemActive]}
-                    onPress={onAllPress}
-                >
-                    <Text style={styles.subjectIcon}>📚</Text>
-                    <Text style={[styles.subjectName, !selectedSubject && !selectedTopic && styles.subjectNameActive]}>
-                        {t('sidebar.allCourses')}
-                    </Text>
-                    <View style={[styles.subjectCount, !selectedSubject && !selectedTopic && styles.subjectCountActive]}>
-                        <Text style={[styles.subjectCountText, !selectedSubject && !selectedTopic && styles.subjectCountTextActive]}>
-                            {totalCards}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-
-                {subjects.map((subject) => {
-                    const isExpanded = expandedSubject === subject.id;
-                    const isSelected = selectedSubject === subject.id && !selectedTopic;
-
-                    return (
-                        <View key={subject.id}>
-                            <View style={[styles.subjectRow, isSelected && styles.subjectItemActive]}>
-                                <TouchableOpacity
-                                    style={styles.subjectItem}
-                                    onPress={() => onSubjectPress(subject.id)}
-                                    {...webTitle(`${subject.name} — ${t('common.study')}`)}
-                                >
-                                    <Text style={styles.subjectIcon}>{subject.icon}</Text>
-                                    <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
-                                        {subject.name}
-                                    </Text>
-                                    <View style={[styles.subjectCount, isSelected && styles.subjectCountActive]}>
-                                        <Text style={[styles.subjectCountText, isSelected && styles.subjectCountTextActive]}>
-                                            {getSubjectCount(subject.id)}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.expandBtn}
-                                    onPress={() => onToggleExpand(subject.id)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
-                                    {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
-                                >
-                                    <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
-                                        {isExpanded ? '▾' : '▸'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            {isExpanded && getTopicsForSubject(subject.id).map((topic) => {
-                                const isTopicSelected = selectedSubject === subject.id && selectedTopic === topic;
-                                return (
-                                    <TouchableOpacity
-                                        key={topic}
-                                        style={[styles.topicItem, isTopicSelected && styles.topicItemActive]}
-                                        onPress={() => onTopicPress(subject.id, topic)}
-                                    >
-                                        <View style={[styles.topicDot, isTopicSelected && styles.topicDotActive]} />
-                                        <Text style={[styles.topicName, isTopicSelected && styles.topicNameActive]}>
-                                            {topic}
-                                        </Text>
-                                        <Text style={[styles.topicCount, isTopicSelected && styles.topicCountActive]}>
-                                            {getTopicCount(subject.id, topic)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    );
-                })}
-            </ScrollView>
+            <FlatList
+                style={styles.subjectList}
+                data={rows}
+                renderItem={renderRow}
+                keyExtractor={keyExtractor}
+                keyboardShouldPersistTaps="handled"
+                // The drawer is a scrollable surface with no other affordance, so the indicator
+                // is the only cue that the course list continues below the fold.
+                showsVerticalScrollIndicator
+                initialNumToRender={14}
+                windowSize={7}
+                removeClippedSubviews={Platform.OS !== 'web'}
+            />
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
@@ -181,7 +247,7 @@ export function Sidebar(props: SidebarProps) {
                     </Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </Animated.View>
     );
 }
 
@@ -195,11 +261,6 @@ function createStyles(colors: ColorScheme) {
         ...(Platform.OS === 'web'
             ? { position: 'fixed' as any, top: 0, left: 0, bottom: 0, zIndex: 100 }
             : { position: 'absolute', top: 0, left: 0, bottom: 0, zIndex: 100 }),
-    },
-    sidebarHidden: {
-        ...(Platform.OS === 'web'
-            ? { transform: [{ translateX: -SIDEBAR_WIDTH }] as any }
-            : { transform: [{ translateX: -SIDEBAR_WIDTH }] }),
     },
     sidebarHeader: {
         paddingHorizontal: Spacing.lg,

@@ -8,18 +8,18 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 
 type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
@@ -94,6 +94,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const panelWidth = Math.min(300, Math.max(232, screenWidth * 0.55));
     const styles = useMemo(() => createStyles(colors), [colors]);
     const translateX = useRef(new Animated.Value(360)).current;
+    const reduceMotion = useReduceMotion();
     const [view, setView] = useState<MenuView>('menu');
     const [dueDateInput, setDueDateInput] = useState('1');
     const [tagsInput, setTagsInput] = useState('');
@@ -105,16 +106,19 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         Keyboard.dismiss();
         setView(props.initialView ?? 'menu');
         translateX.setValue(panelWidth + 16);
-        const animation = Animated.spring(translateX, {
-            toValue: 0,
-            damping: 24,
-            stiffness: 260,
-            mass: 0.8,
-            useNativeDriver: true,
-        });
+        // "Hareketi Azalt": land the panel in place instead of sliding it in.
+        const animation = reduceMotion
+            ? Animated.timing(translateX, { toValue: 0, duration: 0, useNativeDriver: true })
+            : Animated.spring(translateX, {
+                toValue: 0,
+                damping: 24,
+                stiffness: 260,
+                mass: 0.8,
+                useNativeDriver: true,
+            });
         animation.start();
         return () => animation.stop();
-    }, [props.visible, props.initialView, panelWidth, translateX]);
+    }, [props.visible, props.initialView, panelWidth, translateX, reduceMotion]);
 
     useEffect(() => {
         if (view === 'tags') setTagsInput(props.noteTags);
@@ -213,7 +217,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
                     <ScrollView
                         style={styles.sheetScroll}
-                        showsVerticalScrollIndicator={false}
+                        showsVerticalScrollIndicator
                         keyboardShouldPersistTaps="handled"
                         contentContainerStyle={styles.sheetContent}
                     >

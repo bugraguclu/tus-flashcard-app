@@ -5,10 +5,10 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    Text,
-    TouchableOpacity,
     View,
 } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
@@ -90,7 +90,7 @@ export function CatalogScreen({ embedded = false, onContinueTrial }: Props) {
             <View style={styles.ambientBottom} />
             <ScrollView
                 contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, Spacing.xl) + Spacing.xl }]}
-                showsVerticalScrollIndicator={false}
+                showsVerticalScrollIndicator
             >
                 <View style={styles.topBar}>
                     <View style={styles.brandMark}><Text style={styles.brandMarkText}>B</Text></View>

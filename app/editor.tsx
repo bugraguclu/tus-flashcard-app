@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     SafeAreaView,
@@ -14,6 +11,8 @@ import {
     Pressable,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -43,6 +42,7 @@ import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { dbDeleteFtsCard, dbIndexAllCards, dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
+import SheetModal from '../components/SheetModal';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { extractClozeNumbers } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
@@ -1105,136 +1105,98 @@ export default function EditorScreen() {
                 </View>
             )}
 
-            <Modal visible={showFontSizePicker} transparent animationType="fade" onRequestClose={() => setShowFontSizePicker(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowFontSizePicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
-                        {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
-                            <TouchableOpacity
-                                key={size}
-                                style={[styles.fontSizeOption, editorPreferences.fontSize === size && styles.pickerOptionActive]}
-                                onPress={() => {
-                                    updateEditorPreferences({ fontSize: size });
-                                    setShowFontSizePicker(false);
-                                }}
-                                accessibilityRole="radio"
-                                accessibilityState={{ selected: editorPreferences.fontSize === size }}
-                            >
-                                <Text style={[styles.fontSizeSample, { fontSize: size }]}>{size}</Text>
-                                {editorPreferences.fontSize === size && <Text style={styles.pickerCheck}>✓</Text>}
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowFontSizePicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={showFontSizePicker} onClose={() => setShowFontSizePicker(false)}>
+                <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
+                {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
+                    <TouchableOpacity
+                        key={size}
+                        style={[styles.fontSizeOption, editorPreferences.fontSize === size && styles.pickerOptionActive]}
+                        onPress={() => {
+                            updateEditorPreferences({ fontSize: size });
+                            setShowFontSizePicker(false);
+                        }}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: editorPreferences.fontSize === size }}
+                    >
+                        <Text style={[styles.fontSizeSample, { fontSize: size }]}>{size}</Text>
+                        {editorPreferences.fontSize === size && <Text style={styles.pickerCheck}>✓</Text>}
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.modalClose} onPress={() => setShowFontSizePicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
-            <Modal
-                visible={showHeadingPicker}
-                transparent
-                animationType="fade"
-                presentationStyle="overFullScreen"
-                onRequestClose={() => setShowHeadingPicker(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowHeadingPicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Başlık Ekle', 'Insert Heading')}</Text>
-                        {['h1', 'h2', 'h3', 'h4', 'h5'].map((heading) => (
-                            <TouchableOpacity
-                                key={heading}
-                                style={styles.formatPickerOption}
-                                onPress={() => {
-                                    runAfterFormattingDialogClose(
-                                        () => setShowHeadingPicker(false),
-                                        () => wrapEditorSelection(`<${heading}>`, `</${heading}>`),
-                                    );
-                                }}
-                            >
-                                <Text style={styles.formatPickerOptionText}>{heading}</Text>
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowHeadingPicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={showHeadingPicker} onClose={() => setShowHeadingPicker(false)}>
+                <Text style={styles.modalTitle}>{l('Başlık Ekle', 'Insert Heading')}</Text>
+                {['h1', 'h2', 'h3', 'h4', 'h5'].map((heading) => (
+                    <TouchableOpacity
+                        key={heading}
+                        style={styles.formatPickerOption}
+                        onPress={() => {
+                            runAfterFormattingDialogClose(
+                                () => setShowHeadingPicker(false),
+                                () => wrapEditorSelection(`<${heading}>`, `</${heading}>`),
+                            );
+                        }}
+                    >
+                        <Text style={styles.formatPickerOptionText}>{heading}</Text>
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.modalClose} onPress={() => setShowHeadingPicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
-            <Modal
-                visible={showInlineFontSizePicker}
-                transparent
-                animationType="fade"
-                presentationStyle="overFullScreen"
-                onRequestClose={() => setShowInlineFontSizePicker(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowInlineFontSizePicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
-                        {['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'].map((size) => (
-                            <TouchableOpacity
-                                key={size}
-                                style={styles.formatPickerOption}
-                                onPress={() => {
-                                    runAfterFormattingDialogClose(
-                                        () => setShowInlineFontSizePicker(false),
-                                        () => wrapEditorSelection(`<span style="font-size:${size}">`, '</span>'),
-                                    );
-                                }}
-                            >
-                                <Text style={styles.formatPickerOptionText}>{size}</Text>
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowInlineFontSizePicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={showInlineFontSizePicker} onClose={() => setShowInlineFontSizePicker(false)}>
+                <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
+                {['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'].map((size) => (
+                    <TouchableOpacity
+                        key={size}
+                        style={styles.formatPickerOption}
+                        onPress={() => {
+                            runAfterFormattingDialogClose(
+                                () => setShowInlineFontSizePicker(false),
+                                () => wrapEditorSelection(`<span style="font-size:${size}">`, '</span>'),
+                            );
+                        }}
+                    >
+                        <Text style={styles.formatPickerOptionText}>{size}</Text>
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.modalClose} onPress={() => setShowInlineFontSizePicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
-            <Modal
-                visible={showMathPicker}
-                transparent
-                animationType="fade"
-                presentationStyle="overFullScreen"
-                onRequestClose={() => setShowMathPicker(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMathPicker(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('MathJax Ekle', 'Insert MathJax')}</Text>
-                        <TouchableOpacity
-                            style={styles.formatPickerOption}
-                            onPress={() => {
-                                runAfterFormattingDialogClose(
-                                    () => setShowMathPicker(false),
-                                    () => wrapEditorSelection('\\[', '\\]'),
-                                );
-                            }}
-                        >
-                            <Text style={styles.formatPickerOptionText}>{l('Blok denklem', 'Block equation')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.formatPickerOption}
-                            onPress={() => {
-                                runAfterFormattingDialogClose(
-                                    () => setShowMathPicker(false),
-                                    () => wrapEditorSelection('\\( \\ce{', '} \\)'),
-                                );
-                            }}
-                        >
-                            <Text style={styles.formatPickerOptionText}>{l('Kimya denklemi', 'Chemistry equation')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowMathPicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={showMathPicker} onClose={() => setShowMathPicker(false)}>
+                <Text style={styles.modalTitle}>{l('MathJax Ekle', 'Insert MathJax')}</Text>
+                <TouchableOpacity
+                    style={styles.formatPickerOption}
+                    onPress={() => {
+                        runAfterFormattingDialogClose(
+                            () => setShowMathPicker(false),
+                            () => wrapEditorSelection('\\[', '\\]'),
+                        );
+                    }}
+                >
+                    <Text style={styles.formatPickerOptionText}>{l('Blok denklem', 'Block equation')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.formatPickerOption}
+                    onPress={() => {
+                        runAfterFormattingDialogClose(
+                            () => setShowMathPicker(false),
+                            () => wrapEditorSelection('\\( \\ce{', '} \\)'),
+                        );
+                    }}
+                >
+                    <Text style={styles.formatPickerOptionText}>{l('Kimya denklemi', 'Chemistry equation')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalClose} onPress={() => setShowMathPicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <Modal
                 visible={showCustomToolbarEditor}
@@ -1341,43 +1303,33 @@ export default function EditorScreen() {
                 </View>
             </Modal>
 
-            <Modal
-                visible={showCardTypePicker}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowCardTypePicker(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCardTypePicker(false)} />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Kart Türü', 'Note Type')}</Text>
-                        {CARD_TYPE_CHOICES.map((choice) => {
-                            const noteType = getNoteType(choice) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === choice);
-                            if (!noteType) return null;
-                            const label = localizeNoteTypeName(locale, noteType.name);
-                            const selected = cardTypeId === choice;
-                            return (
-                                <TouchableOpacity
-                                    key={choice}
-                                    style={[styles.pickerOption, selected && styles.pickerOptionActive]}
-                                    onPress={() => {
-                                        setCardTypeId(choice);
-                                        if (choice !== 7) setReverseAnswer('');
-                                        setShowCardTypePicker(false);
-                                    }}
-                                    accessibilityState={{ selected }}
-                                >
-                                    <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>{label}</Text>
-                                    {selected && <Text style={styles.pickerCheck}>✓</Text>}
-                                </TouchableOpacity>
-                            );
-                        })}
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowCardTypePicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+            <SheetModal visible={showCardTypePicker} onClose={() => setShowCardTypePicker(false)}>
+                <Text style={styles.modalTitle}>{l('Kart Türü', 'Note Type')}</Text>
+                {CARD_TYPE_CHOICES.map((choice) => {
+                    const noteType = getNoteType(choice) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === choice);
+                    if (!noteType) return null;
+                    const label = localizeNoteTypeName(locale, noteType.name);
+                    const selected = cardTypeId === choice;
+                    return (
+                        <TouchableOpacity
+                            key={choice}
+                            style={[styles.pickerOption, selected && styles.pickerOptionActive]}
+                            onPress={() => {
+                                setCardTypeId(choice);
+                                if (choice !== 7) setReverseAnswer('');
+                                setShowCardTypePicker(false);
+                            }}
+                            accessibilityState={{ selected }}
+                        >
+                            <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>{label}</Text>
+                            {selected && <Text style={styles.pickerCheck}>✓</Text>}
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                    );
+                })}
+                <TouchableOpacity style={styles.modalClose} onPress={() => setShowCardTypePicker(false)}>
+                    <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <DeckPickerModal
                 visible={showDeckPicker}

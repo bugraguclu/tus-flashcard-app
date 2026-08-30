@@ -3,7 +3,9 @@
 // view, web replays the strokes onto a 2D canvas — so the feature works on both.
 
 import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, PanResponder, Platform, Pressable } from 'react-native';
+import { View, StyleSheet, Modal, PanResponder, Platform, Pressable } from 'react-native';
+import { Text } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import Svg, { Path } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';

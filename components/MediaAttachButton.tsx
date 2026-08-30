@@ -1,5 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
+import { Text } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
@@ -11,6 +13,7 @@ import AudioRecordModal from './AudioRecordModal';
 import DrawingCanvasModal from './DrawingCanvasModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
 import { useI18n } from '../hooks/useI18n';
+import SheetModal from './SheetModal';
 
 interface MediaAttachButtonProps {
     /** Appends an Anki-style media reference (`<img src="…">`, `[sound:…]`, …) to the field. */
@@ -207,30 +210,24 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 )}
             </TouchableOpacity>
 
-            <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeMenu}>
-                <View style={styles.overlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
-                    <View style={styles.sheet}>
-                        <View style={styles.sheetHandle} />
-                        <Text style={styles.sheetTitle}>{l('Ek Ekle', 'Add Attachment')}</Text>
-                        {options.map((opt) => (
-                            <TouchableOpacity
-                                key={opt.label}
-                                style={styles.optionRow}
-                                onPress={opt.onPress}
-                                accessibilityRole="button"
-                                accessibilityLabel={opt.label}
-                            >
-                                <Text style={styles.optionIcon}>{opt.icon}</Text>
-                                <Text style={styles.optionLabel}>{opt.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={styles.cancelRow} onPress={closeMenu}>
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            <SheetModal visible={menuVisible} onClose={closeMenu}>
+                <Text style={styles.sheetTitle}>{l('Ek Ekle', 'Add Attachment')}</Text>
+                {options.map((opt) => (
+                    <TouchableOpacity
+                        key={opt.label}
+                        style={styles.optionRow}
+                        onPress={opt.onPress}
+                        accessibilityRole="button"
+                        accessibilityLabel={opt.label}
+                    >
+                        <Text style={styles.optionIcon}>{opt.icon}</Text>
+                        <Text style={styles.optionLabel}>{opt.label}</Text>
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.cancelRow} onPress={closeMenu}>
+                    <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+            </SheetModal>
 
             <AudioRecordModal
                 visible={showRecorder}
@@ -262,28 +259,6 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
         },
         addBtnHasMedia: { backgroundColor: colors.accentLight },
-        overlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
-            justifyContent: 'flex-end',
-        },
-        sheet: {
-            backgroundColor: colors.bgCard,
-            borderTopLeftRadius: BorderRadius.lg,
-            borderTopRightRadius: BorderRadius.lg,
-            padding: Spacing.lg,
-            paddingBottom: 32,
-            ...Shadows.lg,
-        },
-        sheetHandle: {
-            width: 42,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: colors.border,
-            alignSelf: 'center',
-            marginTop: -8,
-            marginBottom: Spacing.md,
-        },
         sheetTitle: {
             fontSize: FontSize.md,
             fontWeight: '700',

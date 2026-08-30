@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platform, Modal, Pressable, PanResponder, Image, useWindowDimensions, type ViewProps } from 'react-native';
+import { Animated, Easing, View, ScrollView, StyleSheet, Platform, Modal, Pressable, Image, useWindowDimensions, type ViewProps } from 'react-native';
+import { Text, TextInput } from '../../components/Typography';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { TouchableOpacity } from '../../components/Touchable';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -48,6 +51,8 @@ import {
     undoAnswer,
 } from '../../lib/studyRepository';
 import { useI18n } from '../../hooks/useI18n';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { hapticAnswer, hapticError, hapticLight, hapticSelection, hapticSuccess } from '../../lib/haptics';
 import { cardFlagName } from '../../lib/i18n';
 import { alert } from '../../lib/confirm';
 import { gradeForHardwareKey, matchesKeyBinding, matchesShowAnswerKey, normalizeHardwareKey } from '../../lib/hardwareKeyboard';
@@ -193,6 +198,11 @@ export default function StudyScreen() {
         });
     }, []);
     const [answerStartedAt, setAnswerStartedAt] = useState<number>(Date.now());
+    // Answer confirmation: a short grade-coloured wash over the card so every rating — not just
+    // "Tekrar" — visibly acknowledges the tap before the next card slides in.
+    const answerFlash = useRef(new Animated.Value(0)).current;
+    const [answerFlashColor, setAnswerFlashColor] = useState<string | null>(null);
+    const reduceMotion = useReduceMotion();
 
     const sessionStatsRef = useRef(sessionStats);
     const currentCardRef = useRef<StudyCard | null>(null);
@@ -204,12 +214,27 @@ export default function StudyScreen() {
     const lastGradeTapAtRef = useRef(0);
     const studySessionStartedAtRef = useRef(Date.now());
     const lastTimeboxBucketRef = useRef(0);
-    const nativeShortcutCaptureRef = useRef<TextInput>(null);
+    const nativeShortcutCaptureRef = useRef<React.ComponentRef<typeof TextInput>>(null);
     const reviewerScrollRef = useRef<ScrollView>(null);
 
     useEffect(() => {
         sessionStatsRef.current = sessionStats;
     }, [sessionStats]);
+
+    // Session finished: one success tap when the queue clears, so the user feels the end of the
+    // deck without watching the counter. The ref keeps a background refill from repeating it.
+    const queueCompletedRef = useRef(false);
+    useEffect(() => {
+        if (loading) return;
+        const finished = currentCard === null && queue.length === 0;
+        if (!finished) {
+            queueCompletedRef.current = false;
+            return;
+        }
+        if (queueCompletedRef.current) return;
+        queueCompletedRef.current = true;
+        if (sessionStatsRef.current.reviewed > 0) hapticSuccess();
+    }, [loading, currentCard, queue.length]);
 
     useEffect(() => {
         currentCardRef.current = currentCard;
@@ -481,6 +506,40 @@ export default function StudyScreen() {
         return true;
     };
 
+    /**
+     * 260 ms grade-coloured wash across the card. Runs on the native driver so it stays smooth
+     * while the answer is being written to SQLite, and is skipped entirely under "Hareketi Azalt"
+     * (the haptic tap still fires, so the answer is still acknowledged).
+     */
+    const triggerAnswerFlash = useCallback((grade: Grade) => {
+        if (reduceMotion) return;
+        const flashColor = grade <= 1
+            ? colors.btnAgain
+            : grade === 2
+                ? colors.btnHard
+                : grade === 3
+                    ? colors.btnGood
+                    : colors.btnEasy;
+        setAnswerFlashColor(flashColor);
+        answerFlash.setValue(0);
+        Animated.sequence([
+            Animated.timing(answerFlash, {
+                toValue: 1,
+                duration: 80,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: Platform.OS !== 'web',
+            }),
+            Animated.timing(answerFlash, {
+                toValue: 0,
+                duration: 180,
+                easing: Easing.in(Easing.quad),
+                useNativeDriver: Platform.OS !== 'web',
+            }),
+        ]).start(({ finished }) => {
+            if (finished) setAnswerFlashColor(null);
+        });
+    }, [answerFlash, colors, reduceMotion]);
+
     const answerCard = useCallback(async (grade: Grade) => {
         if (!currentCard || isMutatingRef.current) return;
         const now = Date.now();
@@ -490,11 +549,9 @@ export default function StudyScreen() {
         isMutatingRef.current = true;
 
         try {
-            if (Platform.OS !== 'web' && settings.showAnswerFeedback !== false) {
-                try {
-                    const Haptics = require('expo-haptics');
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch { /* haptics unavailable */ }
+            if (settings.showAnswerFeedback !== false) {
+                hapticAnswer(grade);
+                triggerAnswerFlash(grade);
             }
 
             const elapsed = Math.max(0, Date.now() - answerStartedAt);
@@ -507,6 +564,7 @@ export default function StudyScreen() {
                 // import) while this screen holds a stale queue. Resync instead of crashing;
                 // the undo stack refers to the old collection, so it must go too.
                 console.warn('[Study] answer failed, rebuilding queue:', e);
+                hapticError();
                 setUndoStack([]);
                 setRedoStack([]);
                 setShowingAnswer(false);
@@ -638,27 +696,31 @@ export default function StudyScreen() {
         queue.length,
         scheduleFullRefresh,
         refreshSessionStats,
+        triggerAnswerFlash,
     ]);
 
-    const gesturePanResponder = useMemo(() => PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gesture) => Boolean(
-            settings.gesturesEnabled
-            && currentCard
-            && Math.abs(gesture.dx) > 12
-            && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.6
-        ),
-        onPanResponderRelease: (_event, gesture) => {
+    // Recognized natively rather than through the JS responder system: the card body is a
+    // WKWebView with its own scroll view, which used to swallow the first swipe, and a busy
+    // JS thread could drop the gesture entirely.
+    const swipeGesture = useMemo(() => Gesture.Pan()
+        .enabled(Boolean(settings.gesturesEnabled && currentCard))
+        // Horizontal intent only; a vertical drag must fail here so the reviewer ScrollView
+        // and the card's own scrolling keep working.
+        .activeOffsetX([-12, 12])
+        .failOffsetY([-18, 18])
+        .runOnJS(true)
+        .onEnd((event) => {
             if (!settings.gesturesEnabled || !currentCard) return;
             const sensitivity = settings.swipeSensitivity ?? 100;
             const threshold = Math.max(28, 82 - sensitivity * 0.32);
-            if (Math.abs(gesture.dx) < threshold) return;
+            if (Math.abs(event.translationX) < threshold) return;
             if (!showingAnswer) {
                 setShowingAnswer(true);
                 return;
             }
-            void answerCard(gesture.dx > 0 ? 3 : 1);
-        },
-    }), [settings.gesturesEnabled, settings.swipeSensitivity, currentCard, showingAnswer, answerCard]);
+            void answerCard(event.translationX > 0 ? 3 : 1);
+        }),
+    [settings.gesturesEnabled, settings.swipeSensitivity, currentCard, showingAnswer, answerCard]);
 
     const undoLast = useCallback(async () => {
         // Same re-entrancy guard as answerCard: repeated Ctrl+Z presses would pop two
@@ -673,6 +735,7 @@ export default function StudyScreen() {
             // a card that no longer exists — drop the stale stack instead of resurrecting it.
             if (!getAnkiCard(undo.cardId)) {
                 console.warn('[Study] undo target missing, clearing stale undo stack.');
+                hapticError();
                 setUndoStack([]);
                 setRedoStack([]);
                 buildQueue();
@@ -683,6 +746,7 @@ export default function StudyScreen() {
             setRedoStack((prev) => [...prev.slice(-29), undo]);
 
             undoAnswer(undo.previousSnapshot, undo.reviewLogId);
+            hapticSuccess();
             if (undo.filteredDeckId) {
                 restoreFilteredCard(undo.filteredDeckId, undo.cardId);
             }
@@ -704,6 +768,7 @@ export default function StudyScreen() {
             const redo = redoStack[redoStack.length - 1];
             if (!getAnkiCard(redo.cardId)) {
                 console.warn('[Study] redo target missing, clearing stale redo stack.');
+                hapticError();
                 setRedoStack([]);
                 buildQueue();
                 return;
@@ -714,6 +779,7 @@ export default function StudyScreen() {
                 completeFilteredCard(redo.filteredDeckId, redo.cardId);
             }
 
+            hapticSuccess();
             setRedoStack((prev) => prev.slice(0, -1));
             setUndoStack((prev) => [
                 ...prev.slice(-29),
@@ -737,6 +803,7 @@ export default function StudyScreen() {
 
     const handleSuspend = useCallback(() => {
         if (!currentCard) return;
+        hapticLight();
         setCardSuspended(currentCard.cardId, true, settings.dayRolloverHour);
         bumpDataVersion();
         buildQueue();
@@ -744,6 +811,7 @@ export default function StudyScreen() {
 
     const handleBury = useCallback(() => {
         if (!currentCard) return;
+        hapticLight();
         setCardBuried(currentCard.cardId, true, settings.dayRolloverHour);
         bumpDataVersion();
         buildQueue();
@@ -760,6 +828,7 @@ export default function StudyScreen() {
 
     const handleFlag = useCallback((flag: CardFlag) => {
         if (!currentCard) return;
+        hapticSelection();
         setCardFlag(currentCard.cardId, flag);
         bumpDataVersion();
     }, [currentCard, bumpDataVersion]);
@@ -797,6 +866,7 @@ export default function StudyScreen() {
 
     const handleToggleMarkNote = useCallback(() => {
         if (!currentCard) return;
+        hapticSelection();
         toggleNoteMark(currentCard.noteId);
         bumpDataVersion();
     }, [currentCard, bumpDataVersion]);
@@ -1200,8 +1270,11 @@ export default function StudyScreen() {
             accessibilityRole="button"
             accessibilityLabel={l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
         >
-            {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { color, fontSize: FontSize.xs * answerScale }]}>{time}</Text>}
-            <Text numberOfLines={1} style={[styles.btnLabel, { color, fontSize: (isCompact ? 14 : 16) * answerScale }]}>{label}</Text>
+            {/* Four buttons share one row, so system Dynamic Type is capped tighter here than
+                elsewhere; Ayarlar > Erişilebilirlik > "Yanıt düğmesi boyutu" is the knob for
+                making them genuinely larger, and it grows the button with the text. */}
+            {settings.showNextReviewTimes && <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.btnTime, { color, fontSize: FontSize.xs * answerScale }]}>{time}</Text>}
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.btnLabel, { color, fontSize: (isCompact ? 14 : 16) * answerScale }]}>{label}</Text>
         </TouchableOpacity>
     );
     const answerButtons = showingAnswer && preview && settings.showAnswerButtons !== false ? (
@@ -1292,175 +1365,191 @@ export default function StudyScreen() {
 
             <ScrollView ref={reviewerScrollRef} contentContainerStyle={styles.cardArea}>
                 {currentCard ? (
-                    <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardSubject}>{subject ? `${subject.icon} ${subject.name}` : '📝'}</Text>
-                            <Text style={styles.cardTopic}>{currentCard.topic}</Text>
-                            <View
-                                style={[
-                                    styles.statusBadge,
-                                    {
-                                        backgroundColor: currentCardState?.status === 'new'
-                                            ? colors.badgeNewBg
-                                            : currentCardState?.status === 'learning'
-                                                ? colors.badgeLearnBg
-                                                : colors.badgeReviewBg,
-                                    },
-                                ]}
-                            >
-                                <Text
+                    <GestureDetector gesture={swipeGesture}>
+                        <View style={styles.cardContainer}>
+                            <View style={styles.cardHeader}>
+                                <Text style={styles.cardSubject}>{subject ? `${subject.icon} ${subject.name}` : '📝'}</Text>
+                                <Text style={styles.cardTopic}>{currentCard.topic}</Text>
+                                <View
                                     style={[
-                                        styles.statusText,
+                                        styles.statusBadge,
                                         {
-                                            color: currentCardState?.status === 'new'
-                                                ? colors.badgeNew
+                                            backgroundColor: currentCardState?.status === 'new'
+                                                ? colors.badgeNewBg
                                                 : currentCardState?.status === 'learning'
-                                                    ? colors.badgeLearn
-                                                    : colors.badgeReview,
+                                                    ? colors.badgeLearnBg
+                                                    : colors.badgeReviewBg,
                                         },
                                     ]}
                                 >
-                                    {currentCardState?.status === 'new'
-                                        ? t('anki.new').toLocaleUpperCase()
-                                        : currentCardState?.status === 'learning'
-                                            ? t('anki.learn').toLocaleUpperCase()
-                                            : t('anki.review').toLocaleUpperCase()}
-                                </Text>
+                                    <Text
+                                        style={[
+                                            styles.statusText,
+                                            {
+                                                color: currentCardState?.status === 'new'
+                                                    ? colors.badgeNew
+                                                    : currentCardState?.status === 'learning'
+                                                        ? colors.badgeLearn
+                                                        : colors.badgeReview,
+                                            },
+                                        ]}
+                                    >
+                                        {currentCardState?.status === 'new'
+                                            ? t('anki.new').toLocaleUpperCase()
+                                            : currentCardState?.status === 'learning'
+                                                ? t('anki.learn').toLocaleUpperCase()
+                                                : t('anki.review').toLocaleUpperCase()}
+                                    </Text>
+                                </View>
+
+                                {currentFlag > 0 && (
+                                    <TouchableOpacity
+                                        onPress={openFlagMenu}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, currentFlag)} — değiştirmek için dokunun`, `Flag: ${cardFlagName(locale, currentFlag)} — tap to change`)}
+                                        {...webTitle(l(`Bayrak: ${cardFlagName(locale, currentFlag)}`, `Flag: ${cardFlagName(locale, currentFlag)}`))}
+                                    >
+                                        <Text style={[styles.flagIndicator, { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {currentNoteMarked && (
+                                    <TouchableOpacity
+                                        onPress={openMoreMenu}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l('Not işaretli — kaldırmak için dokunun', 'Note is marked — tap to remove mark')}
+                                        {...webTitle(l('Not işaretli (Kartlarım > İşaretli filtresinde bulunur)', 'Note is marked (shown in Browse > Marked)'))}
+                                    >
+                                        <Text style={styles.markedIndicator}>⭐</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {previewMode && (
+                                    <View style={styles.previewBadge}>
+                                        <Text style={styles.previewBadgeText}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
+                                    </View>
+                                )}
+
                             </View>
 
-                            {currentFlag > 0 && (
-                                <TouchableOpacity
-                                    onPress={openFlagMenu}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, currentFlag)} — değiştirmek için dokunun`, `Flag: ${cardFlagName(locale, currentFlag)} — tap to change`)}
-                                    {...webTitle(l(`Bayrak: ${cardFlagName(locale, currentFlag)}`, `Flag: ${cardFlagName(locale, currentFlag)}`))}
-                                >
-                                    <Text style={[styles.flagIndicator, { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
-                                </TouchableOpacity>
-                            )}
+                            {settings.answerButtonsPosition === 'top' ? answerButtons : null}
 
-                            {currentNoteMarked && (
-                                <TouchableOpacity
-                                    onPress={openMoreMenu}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Not işaretli — kaldırmak için dokunun', 'Note is marked — tap to remove mark')}
-                                    {...webTitle(l('Not işaretli (Kartlarım > İşaretli filtresinde bulunur)', 'Note is marked (shown in Browse > Marked)'))}
-                                >
-                                    <Text style={styles.markedIndicator}>⭐</Text>
-                                </TouchableOpacity>
-                            )}
-
-                            {previewMode && (
-                                <View style={styles.previewBadge}>
-                                    <Text style={styles.previewBadgeText}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
-                                </View>
-                            )}
-
-                        </View>
-
-                        {settings.answerButtonsPosition === 'top' ? answerButtons : null}
-
-                        <View style={[
-                            styles.cardBody,
-                            settings.studyFrameStyle === 'plain' && styles.cardBodyPlain,
-                            settings.centerCardContent && styles.cardBodyCentered,
-                        ]}>
-                            {renderPayload && !showingAnswer ? (
-                                <CardWebView
-                                    noteType={renderPayload.noteType}
-                                    note={renderPayload.note}
-                                    card={renderPayload.card}
-                                    deck={renderPayload.deck}
-                                    side="question"
-                                    // On the answer side the signal falls back here only when the
-                                    // back has no sound of its own (Anki's replay covers the front).
-                                    playAudioSignal={!showingAnswer || !answerSideHasAudio ? audioSignal : undefined}
-                                    pauseAudioSignal={pauseSignal}
-                                    cardZoomPercent={settings.cardZoomPercent}
-                                    imageZoomPercent={settings.imageZoomPercent}
-                                    showAudioPlayButtons={settings.showAudioPlayButtons}
-                                    centerContent={settings.centerCardContent}
-                                    frameStyle={settings.studyFrameStyle}
-                                />
-                            ) : !renderPayload ? (
-                                <Text style={styles.questionText}>{currentCard.question}</Text>
-                            ) : null}
-
-                            {typeAnswerField && !showingAnswer && (
-                                <TextInput
-                                    style={styles.typeAnswerInput}
-                                    value={typedAnswer}
-                                    onChangeText={setTypedAnswer}
-                                    placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
-                                    placeholderTextColor={colors.textMuted}
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    onSubmitEditing={() => setShowingAnswer(true)}
-                                />
-                            )}
-
-                            {showingAnswer && renderPayload ? (
-                                // Match Anki's reviewer: the back template replaces the front.
-                                // It may contain {{FrontSide}} itself, so stacking both sides
-                                // duplicates imported AnKing cards and wastes the iPhone viewport.
-                                <CardWebView
-                                    noteType={renderPayload.noteType}
-                                    note={renderPayload.note}
-                                    card={renderPayload.card}
-                                    deck={renderPayload.deck}
-                                    side="answer"
-                                    typedAnswer={typeAnswerField ? typedAnswer : undefined}
-                                    playAudioSignal={answerSideHasAudio ? audioSignal : undefined}
-                                    pauseAudioSignal={pauseSignal}
-                                    cardZoomPercent={settings.cardZoomPercent}
-                                    imageZoomPercent={settings.imageZoomPercent}
-                                    showAudioPlayButtons={settings.showAudioPlayButtons}
-                                    centerContent={settings.centerCardContent}
-                                    frameStyle={settings.studyFrameStyle}
-                                />
-                            ) : showingAnswer ? (
-                                <View style={styles.answerSection}>
-                                    <View style={styles.answerDivider} />
-                                    <Text style={styles.answerText}>{currentCard.answer}</Text>
-                                </View>
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.showAnswerBtn}
-                                    onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
-                                    onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
-                                    delayLongPress={settings.showAnswerLongPressMs ?? 0}
-                                    activeOpacity={0.7}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={t('anki.showAnswer')}
-                                >
-                                    <Text style={styles.showAnswerText}>👁️ {t('anki.showAnswer')}</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-
-                        {settings.answerButtonsPosition !== 'top' ? answerButtons : null}
-
-                        <View style={styles.queueInfo}>
-                            {settings.showRemainingCount && (
-                                <View style={styles.queueCounts}>
-                                    <Text style={[styles.queueCount, { color: colors.badgeNew }]}>{queueStats.newCount}</Text>
-                                    <Text style={styles.queueCountPlus}>+</Text>
-                                    <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
-                                    <Text style={styles.queueCountPlus}>+</Text>
-                                    <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
-                                </View>
-                            )}
-                            <Text style={styles.queueText}>
-                                {settings.showRemainingCount && (
-                                    <>{l('Kalan:', 'Remaining:')} <Text style={{ fontWeight: '700' }}>{queue.length}</Text> {l('kart', 'cards')} · </>
-                                )}
-                                {t('common.today')}: <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('tekrar', 'reviews')}
-                                {settings.showRemainingTime && queue.length > 0 ? (
-                                    <> · {l('Tahmini', 'Estimated')}: <Text style={{ fontWeight: '700' }}>{Math.max(1, Math.ceil(queue.length * (sessionStats.reviewed > 0 ? (Date.now() - studySessionStartedAtRef.current) / sessionStats.reviewed : 30_000) / 60_000))} {l('dk.', 'min')}</Text></>
+                            <View style={[
+                                styles.cardBody,
+                                settings.studyFrameStyle === 'plain' && styles.cardBodyPlain,
+                                settings.centerCardContent && styles.cardBodyCentered,
+                            ]}>
+                                {renderPayload && !showingAnswer ? (
+                                    <CardWebView
+                                        noteType={renderPayload.noteType}
+                                        note={renderPayload.note}
+                                        card={renderPayload.card}
+                                        deck={renderPayload.deck}
+                                        side="question"
+                                        // On the answer side the signal falls back here only when the
+                                        // back has no sound of its own (Anki's replay covers the front).
+                                        playAudioSignal={!showingAnswer || !answerSideHasAudio ? audioSignal : undefined}
+                                        pauseAudioSignal={pauseSignal}
+                                        cardZoomPercent={settings.cardZoomPercent}
+                                        imageZoomPercent={settings.imageZoomPercent}
+                                        showAudioPlayButtons={settings.showAudioPlayButtons}
+                                        centerContent={settings.centerCardContent}
+                                        frameStyle={settings.studyFrameStyle}
+                                    />
+                                ) : !renderPayload ? (
+                                    <Text style={styles.questionText}>{currentCard.question}</Text>
                                 ) : null}
-                            </Text>
+
+                                {typeAnswerField && !showingAnswer && (
+                                    <TextInput
+                                        style={styles.typeAnswerInput}
+                                        value={typedAnswer}
+                                        onChangeText={setTypedAnswer}
+                                        placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
+                                        placeholderTextColor={colors.textMuted}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        onSubmitEditing={() => setShowingAnswer(true)}
+                                    />
+                                )}
+
+                                {showingAnswer && renderPayload ? (
+                                    // Match Anki's reviewer: the back template replaces the front.
+                                    // It may contain {{FrontSide}} itself, so stacking both sides
+                                    // duplicates imported AnKing cards and wastes the iPhone viewport.
+                                    <CardWebView
+                                        noteType={renderPayload.noteType}
+                                        note={renderPayload.note}
+                                        card={renderPayload.card}
+                                        deck={renderPayload.deck}
+                                        side="answer"
+                                        typedAnswer={typeAnswerField ? typedAnswer : undefined}
+                                        playAudioSignal={answerSideHasAudio ? audioSignal : undefined}
+                                        pauseAudioSignal={pauseSignal}
+                                        cardZoomPercent={settings.cardZoomPercent}
+                                        imageZoomPercent={settings.imageZoomPercent}
+                                        showAudioPlayButtons={settings.showAudioPlayButtons}
+                                        centerContent={settings.centerCardContent}
+                                        frameStyle={settings.studyFrameStyle}
+                                    />
+                                ) : showingAnswer ? (
+                                    <View style={styles.answerSection}>
+                                        <View style={styles.answerDivider} />
+                                        <Text style={styles.answerText}>{currentCard.answer}</Text>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.showAnswerBtn}
+                                        onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
+                                        onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
+                                        delayLongPress={settings.showAnswerLongPressMs ?? 0}
+                                        activeOpacity={0.7}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={t('anki.showAnswer')}
+                                    >
+                                        <Text style={styles.showAnswerText}>👁️ {t('anki.showAnswer')}</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {answerFlashColor ? (
+                                    <Animated.View
+                                        pointerEvents="none"
+                                        style={[
+                                            styles.answerFlash,
+                                            settings.studyFrameStyle === 'plain' && styles.answerFlashPlain,
+                                            {
+                                                backgroundColor: answerFlashColor,
+                                                opacity: answerFlash.interpolate({ inputRange: [0, 1], outputRange: [0, 0.2] }),
+                                            },
+                                        ]}
+                                    />
+                                ) : null}
+                            </View>
+
+                            {settings.answerButtonsPosition !== 'top' ? answerButtons : null}
+
+                            <View style={styles.queueInfo}>
+                                {settings.showRemainingCount && (
+                                    <View style={styles.queueCounts}>
+                                        <Text style={[styles.queueCount, { color: colors.badgeNew }]}>{queueStats.newCount}</Text>
+                                        <Text style={styles.queueCountPlus}>+</Text>
+                                        <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
+                                        <Text style={styles.queueCountPlus}>+</Text>
+                                        <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
+                                    </View>
+                                )}
+                                <Text style={styles.queueText}>
+                                    {settings.showRemainingCount && (
+                                        <>{l('Kalan:', 'Remaining:')} <Text style={{ fontWeight: '700' }}>{queue.length}</Text> {l('kart', 'cards')} · </>
+                                    )}
+                                    {t('common.today')}: <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('tekrar', 'reviews')}
+                                    {settings.showRemainingTime && queue.length > 0 ? (
+                                        <> · {l('Tahmini', 'Estimated')}: <Text style={{ fontWeight: '700' }}>{Math.max(1, Math.ceil(queue.length * (sessionStats.reviewed > 0 ? (Date.now() - studySessionStartedAtRef.current) / sessionStats.reviewed : 30_000) / 60_000))} {l('dk.', 'min')}</Text></>
+                                    ) : null}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
+                    </GestureDetector>
                 ) : nextLearningDue ? (
                     <View style={styles.emptyState}>
                         <Text style={styles.emptyIcon}>⏳</Text>
@@ -1739,6 +1828,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         elevation: 0,
     },
     cardBodyCentered: { minHeight: isCompact ? 360 : 460, justifyContent: 'center' },
+    answerFlash: { ...StyleSheet.absoluteFillObject, borderRadius: 10 },
+    answerFlashPlain: { borderRadius: 0 },
     questionText: { fontSize: 22, fontWeight: '500', lineHeight: 32, color: colors.textPrimary },
 
     typeAnswerInput: {

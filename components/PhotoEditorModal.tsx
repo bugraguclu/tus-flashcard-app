@@ -9,13 +9,12 @@ import {
     SafeAreaView,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View,
     Pressable,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import Svg, {
     Ellipse,
     Line,

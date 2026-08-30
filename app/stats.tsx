@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     View,
-    Text,
     ScrollView,
     StyleSheet,
     SafeAreaView,
-    TouchableOpacity,
     useWindowDimensions,
-    Modal,
-    Pressable,
 } from 'react-native';
+import { Text } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
@@ -29,6 +27,7 @@ import WeekStreakStrip from '../components/WeekStreakStrip';
 import StatsBarChart from '../components/StatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { useI18n } from '../hooks/useI18n';
+import SheetModal from '../components/SheetModal';
 import {
     getAnkiStatsSnapshot,
     resolveStatsDateRange,
@@ -278,7 +277,7 @@ export default function StatsScreen() {
                 <Text style={styles.screenTitle} numberOfLines={1}>{t('common.statistics')}</Text>
                 <View style={styles.headerSpacer} />
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView showsVerticalScrollIndicator contentContainerStyle={styles.scrollContent}>
                 <View style={styles.selectorsRow}>
                     <TouchableOpacity
                         style={styles.scopeSelector}
@@ -545,95 +544,91 @@ export default function StatsScreen() {
                 onCreateDeck={() => router.push(`/decks?create=${Date.now()}` as any)}
             />
 
-            <Modal
+            <SheetModal
                 visible={rangePickerVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setRangePickerVisible(false)}
+                onClose={() => setRangePickerVisible(false)}
+                showGrabber={false}
+                cardStyle={styles.pickerSheet}
             >
-                <Pressable style={styles.pickerOverlay} onPress={() => setRangePickerVisible(false)}>
-                    <Pressable style={styles.pickerCard} onPress={() => {}} accessibilityViewIsModal>
-                        <View style={styles.pickerHeader}>
-                            <View>
-                                <Text style={styles.pickerEyebrow}>{t('common.statistics')}</Text>
-                                <Text style={styles.pickerTitle}>{l('Zaman Aralığı', 'Time Range')}</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.pickerClose}
-                                onPress={() => setRangePickerVisible(false)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Zaman seçiciyi kapat', 'Close time range picker')}
-                            >
-                                <Text style={styles.pickerCloseText}>×</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                            {([
-                                ['week', l('Son Hafta', 'Last Week')],
-                                ['month', l('Son Ay', 'Last Month')],
-                                ['threeMonths', l('Son 3 Ay', 'Last 3 Months')],
-                                ['year', l('Son 1 Yıl', 'Last Year')],
-                                ['all', l('Tüm Zamanlar', 'All Time')],
-                            ] as [StatsRangeKey, string][]).map(([key, label]) => (
-                                <TouchableOpacity
-                                    key={key}
-                                    style={[styles.pickerRow, rangeKey === key && styles.pickerRowActive]}
-                                    onPress={() => {
-                                        setRangeKey(key);
-                                        setRangePickerVisible(false);
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected: rangeKey === key }}
-                                >
-                                    <Text style={styles.pickerRowIcon}>◷</Text>
-                                    <Text style={[styles.pickerRowText, rangeKey === key && styles.pickerRowTextActive]}>{label}</Text>
-                                    {rangeKey === key && <Text style={styles.pickerCheck}>✓</Text>}
-                                </TouchableOpacity>
-                            ))}
+                <View style={styles.pickerHeader}>
+                    <View>
+                        <Text style={styles.pickerEyebrow}>{t('common.statistics')}</Text>
+                        <Text style={styles.pickerTitle}>{l('Zaman Aralığı', 'Time Range')}</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.pickerClose}
+                        onPress={() => setRangePickerVisible(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Zaman seçiciyi kapat', 'Close time range picker')}
+                    >
+                        <Text style={styles.pickerCloseText}>×</Text>
+                    </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator>
+                    {([
+                        ['week', l('Son Hafta', 'Last Week')],
+                        ['month', l('Son Ay', 'Last Month')],
+                        ['threeMonths', l('Son 3 Ay', 'Last 3 Months')],
+                        ['year', l('Son 1 Yıl', 'Last Year')],
+                        ['all', l('Tüm Zamanlar', 'All Time')],
+                    ] as [StatsRangeKey, string][]).map(([key, label]) => (
+                        <TouchableOpacity
+                            key={key}
+                            style={[styles.pickerRow, rangeKey === key && styles.pickerRowActive]}
+                            onPress={() => {
+                                setRangeKey(key);
+                                setRangePickerVisible(false);
+                            }}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: rangeKey === key }}
+                        >
+                            <Text style={styles.pickerRowIcon}>◷</Text>
+                            <Text style={[styles.pickerRowText, rangeKey === key && styles.pickerRowTextActive]}>{label}</Text>
+                            {rangeKey === key && <Text style={styles.pickerCheck}>✓</Text>}
+                        </TouchableOpacity>
+                    ))}
 
-                            <View style={[styles.customRangeBlock, rangeKey === 'custom' && styles.customRangeBlockActive]}>
-                                <View style={styles.customRangeHeading}>
-                                    <Text style={styles.customRangeTitle}>{l('Özel Tarih Aralığı', 'Custom Date Range')}</Text>
-                                    {rangeKey === 'custom' && <Text style={styles.pickerCheck}>✓</Text>}
-                                </View>
-                                <View style={styles.datePickerRow}>
-                                    <Text style={styles.datePickerLabel}>{l('Başlangıç', 'Start')}</Text>
-                                    <DateTimePicker
-                                        value={customStart}
-                                        mode="date"
-                                        display="compact"
-                                        maximumDate={customEnd}
-                                        locale={localeTag}
-                                        onChange={(_event, value) => value && setCustomStart(value)}
-                                    />
-                                </View>
-                                <View style={styles.datePickerRow}>
-                                    <Text style={styles.datePickerLabel}>{l('Bitiş', 'End')}</Text>
-                                    <DateTimePicker
-                                        value={customEnd}
-                                        mode="date"
-                                        display="compact"
-                                        minimumDate={customStart}
-                                        maximumDate={new Date()}
-                                        locale={localeTag}
-                                        onChange={(_event, value) => value && setCustomEnd(value)}
-                                    />
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.applyRangeButton}
-                                    onPress={() => {
-                                        setRangeKey('custom');
-                                        setRangePickerVisible(false);
-                                    }}
-                                    accessibilityRole="button"
-                                >
-                                    <Text style={styles.applyRangeButtonText}>{l('Bu Aralığı Kullan', 'Use This Range')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </ScrollView>
-                    </Pressable>
-                </Pressable>
-            </Modal>
+                    <View style={[styles.customRangeBlock, rangeKey === 'custom' && styles.customRangeBlockActive]}>
+                        <View style={styles.customRangeHeading}>
+                            <Text style={styles.customRangeTitle}>{l('Özel Tarih Aralığı', 'Custom Date Range')}</Text>
+                            {rangeKey === 'custom' && <Text style={styles.pickerCheck}>✓</Text>}
+                        </View>
+                        <View style={styles.datePickerRow}>
+                            <Text style={styles.datePickerLabel}>{l('Başlangıç', 'Start')}</Text>
+                            <DateTimePicker
+                                value={customStart}
+                                mode="date"
+                                display="compact"
+                                maximumDate={customEnd}
+                                locale={localeTag}
+                                onChange={(_event, value) => value && setCustomStart(value)}
+                            />
+                        </View>
+                        <View style={styles.datePickerRow}>
+                            <Text style={styles.datePickerLabel}>{l('Bitiş', 'End')}</Text>
+                            <DateTimePicker
+                                value={customEnd}
+                                mode="date"
+                                display="compact"
+                                minimumDate={customStart}
+                                maximumDate={new Date()}
+                                locale={localeTag}
+                                onChange={(_event, value) => value && setCustomEnd(value)}
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={styles.applyRangeButton}
+                            onPress={() => {
+                                setRangeKey('custom');
+                                setRangePickerVisible(false);
+                            }}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.applyRangeButtonText}>{l('Bu Aralığı Kullan', 'Use This Range')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </SheetModal>
         </SafeAreaView>
     );
 }
@@ -788,24 +783,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     subjectDetail: {},
     subjectDetailText: { fontSize: FontSize.xs, color: colors.textMuted },
 
-    pickerOverlay: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    pickerCard: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '82%',
-        overflow: 'hidden',
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
-        ...Shadows.lg,
-    },
+    // Header and rows pad themselves, so the sheet surface stays flush.
+    pickerSheet: { paddingHorizontal: 0, paddingTop: 0, maxHeight: '82%' },
     pickerHeader: {
         minHeight: 72,
         flexDirection: 'row',

@@ -7,12 +7,11 @@ import {
     ScrollView,
     StyleSheet,
     Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/Typography';
+import { TouchableOpacity } from '../components/Touchable';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -34,6 +33,7 @@ import { downloadTextFileWeb, getLegacyFileSystem, readUriText } from '../lib/fi
 import { alert, confirm } from '../lib/confirm';
 import { useApp } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
+import { hapticError, hapticSelection, hapticSuccess } from '../lib/haptics';
 import type { AppLanguage, AppSettings, KeyBindings, ThemeMode } from '../lib/types';
 import { normalizeHardwareKey } from '../lib/hardwareKeyboard';
 import {
@@ -105,10 +105,17 @@ function ToggleRow({ label, summary, value, onChange, styles }: {
     onChange: (value: boolean) => void;
     styles: ReturnType<typeof createStyles>;
 }) {
+    // Both the row and the switch itself commit the change, so the tap feedback lives in one
+    // handler rather than firing twice when the switch is dragged.
+    const commit = (next: boolean) => {
+        hapticSelection();
+        onChange(next);
+    };
+
     return (
         <TouchableOpacity
             style={styles.preferenceRow}
-            onPress={() => onChange(!value)}
+            onPress={() => commit(!value)}
             activeOpacity={0.7}
             accessibilityRole="switch"
             accessibilityState={{ checked: value }}
@@ -117,7 +124,7 @@ function ToggleRow({ label, summary, value, onChange, styles }: {
                 <Text style={styles.preferenceLabel}>{label}</Text>
                 {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
             </View>
-            <Switch value={value} onValueChange={onChange} trackColor={{ true: '#71c7a5' }} />
+            <Switch value={value} onValueChange={commit} trackColor={{ true: '#71c7a5' }} />
         </TouchableOpacity>
     );
 }
@@ -139,7 +146,10 @@ function ChoiceRow<T extends string>({ label, summary, value, options, onChange,
                     <TouchableOpacity
                         key={option.value}
                         style={[styles.choiceButton, value === option.value && styles.choiceButtonActive]}
-                        onPress={() => onChange(option.value)}
+                        onPress={() => {
+                            if (option.value !== value) hapticSelection();
+                            onChange(option.value);
+                        }}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: value === option.value }}
                     >
@@ -162,16 +172,23 @@ function StepperRow({ label, summary, value, display, step, min, max, onChange, 
     onChange: (value: number) => void;
     styles: ReturnType<typeof createStyles>;
 }) {
+    // Silent at the ends of the range: an unchanged value should not feel like a committed step.
+    const commitStep = (next: number) => {
+        if (next === value) return;
+        hapticSelection();
+        onChange(next);
+    };
+
     return (
         <View style={styles.preferenceBlock}>
             <Text style={styles.preferenceLabel}>{label}</Text>
             {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
             <View style={styles.stepperRow}>
-                <TouchableOpacity style={styles.stepButton} onPress={() => onChange(Math.max(min, value - step))}>
+                <TouchableOpacity style={styles.stepButton} onPress={() => commitStep(Math.max(min, value - step))}>
                     <Text style={styles.stepButtonText}>−</Text>
                 </TouchableOpacity>
                 <Text style={styles.stepValue}>{display ?? value}</Text>
-                <TouchableOpacity style={styles.stepButton} onPress={() => onChange(Math.min(max, value + step))}>
+                <TouchableOpacity style={styles.stepButton} onPress={() => commitStep(Math.min(max, value + step))}>
                     <Text style={styles.stepButtonText}>+</Text>
                 </TouchableOpacity>
             </View>
@@ -322,7 +339,7 @@ export default function SettingsScreen() {
                 : l('Kapalı', 'Off'),
         },
         { id: 'appearance', icon: '🎨', title: l('Görünüm', 'Appearance'), summary: l('Temalar • Çalışma ekranı', 'Themes • Study screen') },
-        { id: 'controls', icon: '☝️', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Klavye', 'Gestures • Keyboard') },
+        { id: 'controls', icon: '☝️', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Titreşim • Klavye', 'Gestures • Haptics • Keyboard') },
         { id: 'accessibility', icon: '♿️', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
         { id: 'backups', icon: '💾', title: l('Yedekler', 'Backups'), summary: l('Sıklık • Saklama süresi', 'Frequency • Lifetime') },
         { id: 'data', icon: '🗄️', title: l('Veri Yönetimi', 'Data management'), summary: l('İçe aktar • Dışa aktar • Veritabanı', 'Import • Export • Database') },
@@ -375,9 +392,11 @@ export default function SettingsScreen() {
                 async () => {
                     const ok = await importAllData(json);
                     if (!ok) {
+                        hapticError();
                         alert(l('Hata', 'Error'), l('Geçersiz yedek dosyası.', 'Invalid backup file.'));
                         return;
                     }
+                    hapticSuccess();
                     setSettings(loadSettings());
                     refreshData();
                     bumpDataVersion();
@@ -412,6 +431,7 @@ export default function SettingsScreen() {
     const handleResetSettings = () => {
         confirm(l('Varsayılan Ayarlar', 'Default Settings'), l('Tüm uygulama ayarları varsayılana döndürülsün mü?', 'Restore all app settings to defaults?'), () => {
             resetSettingsToDefaults();
+            hapticSuccess();
             setSettings(loadSettings());
             refreshData();
             bumpDataVersion();
@@ -663,6 +683,15 @@ export default function SettingsScreen() {
                 />
                 <StepperRow label={l('Kaydırma hassasiyeti', 'Swipe sensitivity')} value={settings.swipeSensitivity ?? 100} display={`${settings.swipeSensitivity ?? 100}%`} step={25} min={25} max={200} onChange={(value) => updateSetting('swipeSensitivity', value)} styles={styles} />
             </Group>
+            <Group title={l('Dokunsal geri bildirim', 'Haptic feedback')} styles={styles}>
+                <ToggleRow
+                    label={l('Titreşimli geri bildirim', 'Haptic feedback')}
+                    summary={l('Yanıt düğmeleri, ayar değişiklikleri, sürükle-bırak ve tamamlanan işlemler için kısa titreşim.', 'A short tap on answer buttons, setting changes, drag-and-drop and completed operations.')}
+                    value={settings.hapticsEnabled !== false}
+                    onChange={(value) => updateSetting('hapticsEnabled', value)}
+                    styles={styles}
+                />
+            </Group>
             <Group title={l('Klavye', 'Keyboard')} description={l('Bir satırda Değiştir’e basın, ardından fiziksel klavyedeki yeni tuşa basın.', 'Choose Change on a row, then press the new key on the physical keyboard.')} styles={styles}>
                 {Platform.OS !== 'web' && recordingField ? (
                     <TextInput
@@ -716,6 +745,20 @@ export default function SettingsScreen() {
             </Group>
             <Group title={l('Kart tarayıcısı', 'Card browser')} styles={styles}>
                 <StepperRow label={l('Yazı ölçeği', 'Font scaling')} value={settings.browserFontScalePercent ?? 100} display={`${settings.browserFontScalePercent ?? 100}%`} step={10} min={75} max={175} onChange={(value) => updateSetting('browserFontScalePercent', value)} styles={styles} />
+            </Group>
+            <Group
+                title={l('Sistem ayarları', 'System settings')}
+                description={l('Uygulama, iOS Ayarlar > Erişilebilirlik altındaki tercihleri izler; burada ayrıca ayarlamanız gerekmez.', 'The app follows the preferences under iOS Settings > Accessibility; there is nothing extra to set here.')}
+                styles={styles}
+            >
+                <View style={styles.preferenceBlock}>
+                    <Text style={styles.preferenceLabel}>{l('Daha Büyük Metin', 'Larger Text')}</Text>
+                    <Text style={styles.preferenceSummary}>{l('Sistem yazı boyutu uygulamadaki tüm metinlere uygulanır; satırlar ve düğmeler taşmayacak şekilde büyür.', 'The system font size applies to all text in the app; rows and buttons grow with it instead of clipping.')}</Text>
+                </View>
+                <View style={styles.preferenceBlock}>
+                    <Text style={styles.preferenceLabel}>{l('Hareketi Azalt', 'Reduce Motion')}</Text>
+                    <Text style={styles.preferenceSummary}>{l('Açıkken menü, çekmece ve liste animasyonları kapatılır; geri bildirim titreşimleri çalışmaya devam eder.', 'When on, menu, drawer and list animations are turned off; haptic feedback keeps working.')}</Text>
+                </View>
             </Group>
         </>
     );
@@ -786,7 +829,7 @@ export default function SettingsScreen() {
                 </Text>
                 {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : <View style={styles.headerSpacer} />}
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} automaticallyAdjustContentInsets>
+            <ScrollView showsVerticalScrollIndicator contentContainerStyle={styles.scrollContent} automaticallyAdjustContentInsets>
                 {activeSection && activeCategory ? (
                     renderActiveSection()
                 ) : (
@@ -839,7 +882,7 @@ function createStyles(colors: ColorScheme) {
         headerSpacer: { width: 72 },
         scrollContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
         savedText: { fontSize: FontSize.xs, fontWeight: '700', color: colors.btnGood },
-        searchBox: { height: 50, flexDirection: 'row', alignItems: 'center', borderRadius: BorderRadius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, paddingHorizontal: Spacing.lg, ...Shadows.sm },
+        searchBox: { minHeight: 50, flexDirection: 'row', alignItems: 'center', borderRadius: BorderRadius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, paddingHorizontal: Spacing.lg, ...Shadows.sm },
         searchIcon: { fontSize: 25, color: colors.textSecondary, marginRight: Spacing.sm, transform: [{ rotate: '-20deg' }] },
         searchInput: { flex: 1, fontSize: FontSize.lg, color: colors.textPrimary, paddingVertical: 0 },
         categoryList: { backgroundColor: colors.bgCard, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', ...Shadows.sm },

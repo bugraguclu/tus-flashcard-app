@@ -7,11 +7,10 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native';
+import { Text, TextInput } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
 import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
@@ -206,7 +205,7 @@ export default function DeckPickerModal({
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                    <ScrollView style={styles.scroll} showsVerticalScrollIndicator keyboardShouldPersistTaps="handled">
                         {!query.trim() && allDecksLabel !== null && (
                             <TouchableOpacity
                                 style={[styles.row, selectedDeckName === null && styles.rowActive]}

@@ -7,11 +7,10 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native';
+import { Text, TextInput } from './Typography';
+import { TouchableOpacity } from './Touchable';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { getAllTags } from '../lib/noteManager';
 import { useI18n } from '../hooks/useI18n';

@@ -15,6 +15,7 @@ import { ensureBkaCatalogTier, getBkaCatalogTier } from '../lib/bkaCatalog';
 import { dbIndexAllCards } from '../lib/db';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { reconcileCatalogAccessWithInstalledTier } from '../lib/catalogReconciliation';
+import { configureHaptics } from '../lib/haptics';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
 export type StudyPosition = { subject: string; topic: string } | null;
@@ -85,6 +86,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const bumpDataVersion = useCallback(() => {
         setDataVersion((prev) => prev + 1);
     }, []);
+
+    // lib/haptics is a plain module so press handlers stay synchronous; mirror the preference
+    // into it whenever settings change instead of reading storage on every tap.
+    useEffect(() => {
+        configureHaptics(settings.hapticsEnabled !== false);
+    }, [settings.hapticsEnabled]);
 
     const { startupError, isLoading } = useAppStartup(refreshData, bumpDataVersion);
     useStudyNotifications(settings, dataVersion, isLoading);

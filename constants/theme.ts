@@ -1,8 +1,9 @@
-import React, { createContext, useContext } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useEffect } from 'react';
+import { Appearance, Platform, useColorScheme } from 'react-native';
 
 export type ColorScheme = typeof LightColors;
 export type ThemeMode = 'system' | 'light' | 'dark';
+export type ResolvedScheme = 'light' | 'dark';
 
 const LightColors = {
     bgPrimary: '#e8f5f0',
@@ -89,7 +90,30 @@ const DarkColors: ColorScheme = {
 // of the user's theme preference.
 export const Colors = LightColors;
 
+/** Background painted by the native launch screen; matches bgPrimary so startup never flashes. */
+export const SplashBackground: Record<ResolvedScheme, string> = {
+    light: LightColors.bgPrimary,
+    dark: DarkColors.bgPrimary,
+};
+
+export function schemeColors(scheme: ResolvedScheme): ColorScheme {
+    return scheme === 'dark' ? DarkColors : LightColors;
+}
+
 const ThemeColorsContext = createContext<ColorScheme>(LightColors);
+const ThemeSchemeContext = createContext<ResolvedScheme>('light');
+
+/**
+ * Mirrors an explicit theme choice onto the native appearance. iOS applies it as
+ * `overrideUserInterfaceStyle` on every window, so the keyboard, native sheets, alerts and
+ * scroll indicators follow the in-app theme instead of the device setting; 'system' clears it.
+ */
+function useNativeAppearanceSync(mode: ThemeMode): void {
+    useEffect(() => {
+        if (Platform.OS === 'web' || typeof Appearance.setColorScheme !== 'function') return;
+        Appearance.setColorScheme(mode === 'system' ? null : mode);
+    }, [mode]);
+}
 
 /**
  * Wraps the app and resolves the user's `themeMode` preference ('system' | 'light' | 'dark')
@@ -98,14 +122,26 @@ const ThemeColorsContext = createContext<ColorScheme>(LightColors);
  */
 export function ThemeColorsProvider({ mode, children }: { mode: ThemeMode; children: React.ReactNode }) {
     const systemScheme = useColorScheme();
-    const effective = mode === 'system' ? systemScheme : mode;
-    const colors = effective === 'dark' ? DarkColors : LightColors;
-    return React.createElement(ThemeColorsContext.Provider, { value: colors }, children);
+    useNativeAppearanceSync(mode);
+    // With an explicit mode the native override also changes what useColorScheme() reports, so
+    // only the 'system' branch reads it; switching back to 'system' re-resolves once the
+    // override is cleared and the appearance change event lands.
+    const scheme: ResolvedScheme = mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : mode;
+    return React.createElement(
+        ThemeSchemeContext.Provider,
+        { value: scheme },
+        React.createElement(ThemeColorsContext.Provider, { value: schemeColors(scheme) }, children),
+    );
 }
 
 /** Hook that returns the color palette for the current theme (preference + system fallback). */
 export function useThemeColors(): ColorScheme {
     return useContext(ThemeColorsContext);
+}
+
+/** Resolved 'light' | 'dark' for surfaces that need the scheme itself (status bar, keyboards). */
+export function useThemeScheme(): ResolvedScheme {
+    return useContext(ThemeSchemeContext);
 }
 
 export const Spacing = {
