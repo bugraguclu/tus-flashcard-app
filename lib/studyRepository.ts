@@ -23,6 +23,7 @@ import {
     handleLeech,
     isLeech,
     MARKED_TAG,
+    nextNewCardPosition,
     saveAnkiCard,
 } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
@@ -33,8 +34,15 @@ import {
     sortReviewsDueThenRandom,
     splitIntradayLearning,
 } from './queueBuild';
-import { deleteReviewById, logReview } from './reviewLogger';
+import { deleteReviewById, logManualReschedule, logReview } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
+import {
+    cardScheduledAsNew,
+    cardWithDueDate,
+    sampleDaysFromToday,
+    type DueDateSpecifier,
+    type ForgetOptions,
+} from './setDueDate';
 
 export interface QueueStats {
     newCount: number;
@@ -311,7 +319,7 @@ function buildFilteredSearchClause(searchQuery: string): { clauses: string[]; pa
                     clauses.push('c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease = ?)');
                     params.push(cutoff, ease);
                 } else {
-                    clauses.push('c.id IN (SELECT cardId FROM revlog WHERE id >= ?)');
+                    clauses.push('c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease > 0)');
                     params.push(cutoff);
                 }
             }
@@ -1421,30 +1429,89 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
     });
 }
 
-/** Anki's "Forget": discards all scheduling progress and returns the card to brand-new. */
-export function forgetCard(cardId: number, settings: AppSettings): void {
-    const card = getAnkiCard(cardId);
-    if (!card) return;
-    const freshState = makeDefaultCardState(cardId, settings);
-    saveAnkiCard(cardStateToAnkiCard(card, freshState, settings));
+/** Existing cards for the given ids, de-duplicated and in the order Anki would load them. */
+function existingCards(cardIds: number[]): AnkiCard[] {
+    return [...new Set(cardIds)]
+        .map((cardId) => getAnkiCard(cardId))
+        .filter((card): card is AnkiCard => card !== null);
 }
 
-/** Anki's "Set Due Date": pins the card into the review queue, due in `days` days from today. */
-export function setCardDueInDays(cardId: number, days: number, settings: AppSettings): void {
-    const card = getAnkiCard(cardId);
-    if (!card) return;
+/**
+ * Anki's "Set Due Date" (`Collection::set_due_date`): pins each card into the review queue with a
+ * delay drawn from `spec`. Review and relearning cards keep their interval unless the spec carries
+ * the trailing "!". Returns how many cards were updated.
+ */
+export function setCardsDueDate(
+    cardIds: number[],
+    spec: DueDateSpecifier,
+    settings: AppSettings,
+    random: () => number = Math.random,
+): number {
+    const cards = existingCards(cardIds);
+    if (cards.length === 0) return 0;
+
     const today = localDayNumber(Date.now(), settings.dayRolloverHour);
-    const clampedDays = Math.max(0, Math.floor(days) || 0);
-    saveAnkiCard({
-        ...card,
-        type: 2,
-        queue: 2,
-        due: today + clampedDays,
-        ivl: Math.max(1, clampedDays),
-        left: 0,
-        mod: Math.floor(Date.now() / 1000),
-        usn: -1,
-    });
+    const modSeconds = Math.floor(Date.now() / 1000);
+    // Anki seeds a missing ease from the card's home deck preset, looked up once per deck.
+    const initialEase = new Map<number, number>();
+
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const card of cards) {
+            const homeDeckId = card.odid || card.deckId;
+            let ease = initialEase.get(homeDeckId);
+            if (ease === undefined) {
+                ease = getDeckConfigForDeck(homeDeckId).startingEase;
+                initialEase.set(homeDeckId, ease);
+            }
+            const updated = cardWithDueDate(
+                card,
+                today,
+                sampleDaysFromToday(spec, random),
+                ease,
+                spec.forceReset,
+            );
+            saveAnkiCard({ ...updated, mod: modSeconds, usn: -1 });
+            logManualReschedule(updated, card.ivl);
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return cards.length;
+}
+
+/**
+ * Anki's "Forget" (`Collection::reschedule_cards_as_new`): sends cards back to the new queue.
+ * Upstream defaults both options to off, so the review counters and the queue position survive
+ * unless the user ticks them.
+ */
+export function forgetCards(cardIds: number[], options: ForgetOptions): number {
+    const cards = existingCards(cardIds);
+    if (cards.length === 0) return 0;
+
+    const modSeconds = Math.floor(Date.now() / 1000);
+    let position = nextNewCardPosition();
+
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const card of cards) {
+            const { card: updated, positionUsed } = cardScheduledAsNew(card, position, options);
+            if (positionUsed) position += 1;
+            saveAnkiCard({ ...updated, mod: modSeconds, usn: -1 });
+            logManualReschedule(updated, card.ivl);
+        }
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return cards.length;
 }
 
 export function getCardState(cardId: number, settings: AppSettings): CardState {

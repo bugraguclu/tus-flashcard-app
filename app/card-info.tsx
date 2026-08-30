@@ -107,6 +107,8 @@ export default function CardInfoScreen() {
 
     const easeLabel = (ease: number) => {
         switch (ease) {
+            // Manual entries (Set Due Date, Forget) carry no button, as in Anki.
+            case 0: return { text: '–', color: colors.textMuted };
             case 1: return { text: t('anki.again'), color: colors.btnAgain };
             case 2: return { text: t('anki.hard'), color: colors.btnHard };
             case 3: return { text: t('anki.good'), color: colors.btnGood };

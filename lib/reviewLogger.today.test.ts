@@ -41,6 +41,18 @@ function logAt(idMs: number, cardId: number, ease: number, timeMs = 4000) {
     );
 }
 
+/**
+ * A row with no button pressed. Anki writes these for Set Due Date and Reset (kind 4, manual) and
+ * for "reschedule cards on change" (kind 5), and excludes both from statistics via
+ * RevlogEntry::has_rating() — that is, `ease > 0`.
+ */
+function logUnratedAt(idMs: number, cardId: number, reviewKind: 4 | 5) {
+    db.runSync(
+        'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, 0, 1, 0, 2500, 0, ?)',
+        idMs, cardId, reviewKind,
+    );
+}
+
 describe('getTodayAnswerStats', () => {
     it('derives reviewed/passed/failed/time from today\'s revlog rows', () => {
         const now = Date.now();
@@ -116,6 +128,41 @@ describe('getTodayAnswerStats', () => {
 
         // The global numbers still cover everything.
         expect(getTodayAnswerStats(rolloverHour).reviewed).toBe(3);
+    });
+
+    it('ignores rows with no button pressed, which Anki does not count as reviews', () => {
+        const addDeck = (id: number, name: string) => db.runSync(
+            'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)',
+            id, name, JSON.stringify({ id, name }),
+        );
+        const addCard = (id: number, deckId: number) => db.runSync(
+            `INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor,
+                reps, lapses, "left", flags, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, 0, 0, 0, 0, 0, 2500, 0, 0, 0, 0, '{}', 0, -1, 0)`,
+            id, id, deckId,
+        );
+
+        addDeck(10, 'Python');
+        addCard(1, 10);
+        addCard(2, 10);
+        addCard(3, 10);
+
+        const now = Date.now();
+        logAt(now - 3000, 1, 3, 5000);
+        // Card 2 was only rescheduled today, so it is neither reviewed nor introduced.
+        logUnratedAt(now - 2000, 2, 4);
+        // Card 3 carries an imported "rescheduled" row, which Anki also leaves out.
+        logUnratedAt(now - 1000, 3, 5);
+
+        for (const stats of [
+            getTodayAnswerStats(rolloverHour),
+            getTodayAnswerStats(rolloverHour, 'Python'),
+            getTodayAnswerStats(rolloverHour, undefined, [1, 2, 3]),
+        ]) {
+            expect(stats.reviewed).toBe(1);
+            expect(stats.newCardsIntroduced).toBe(1);
+            expect(stats.studyTimeMs).toBe(5000);
+        }
     });
 });
 

@@ -5,6 +5,8 @@ import type { AppSettings } from './types';
 const harness = vi.hoisted(() => ({
     cards: new Map<number, AnkiCard>(),
     grades: [] as Array<{ cardId: number; grade: number }>,
+    dueDateCalls: [] as Array<{ cardIds: number[]; spec: unknown }>,
+    forgetCalls: [] as Array<{ cardIds: number[]; options: unknown }>,
 }));
 
 vi.mock('./noteManager', () => ({
@@ -22,9 +24,13 @@ vi.mock('./studyRepository', () => ({
         const card = harness.cards.get(cardId)!;
         harness.cards.set(cardId, { ...card, queue: buried ? -3 : card.type === 0 ? 0 : 2 });
     },
-    forgetCard: (cardId: number) => {
-        const card = harness.cards.get(cardId)!;
-        harness.cards.set(cardId, { ...card, type: 0, queue: 0, ivl: 0, reps: 0, lapses: 0, left: 0 });
+    setCardsDueDate: (cardIds: number[], spec: unknown) => {
+        harness.dueDateCalls.push({ cardIds, spec });
+        return cardIds.length;
+    },
+    forgetCards: (cardIds: number[], options: unknown) => {
+        harness.forgetCalls.push({ cardIds, options });
+        return cardIds.length;
     },
     answerStudyCard: (cardId: number, grade: number) => {
         harness.grades.push({ cardId, grade });
@@ -32,10 +38,9 @@ vi.mock('./studyRepository', () => ({
 }));
 
 import {
+    forgetSelectedCards,
     gradeSelectedNow,
-    parseDueRange,
     repositionSelectedNewCards,
-    resetSelectedProgress,
     setSelectedDueDate,
     toggleSelectedBury,
     toggleSelectedSuspend,
@@ -70,19 +75,8 @@ function card(id: number, overrides: Partial<AnkiCard> = {}): AnkiCard {
 beforeEach(() => {
     harness.cards.clear();
     harness.grades.length = 0;
-});
-
-describe('parseDueRange', () => {
-    it('accepts Anki single-day, range, negative, and force-interval syntax', () => {
-        expect(parseDueRange('5')).toEqual({ minDays: 5, maxDays: 5, forceInterval: false });
-        expect(parseDueRange('7-3!')).toEqual({ minDays: 3, maxDays: 7, forceInterval: true });
-        expect(parseDueRange('-2')).toEqual({ minDays: -2, maxDays: -2, forceInterval: false });
-    });
-
-    it('rejects malformed input', () => {
-        expect(parseDueRange('tomorrow')).toBeNull();
-        expect(parseDueRange('2..5')).toBeNull();
-    });
+    harness.dueDateCalls.length = 0;
+    harness.forgetCalls.length = 0;
 });
 
 describe('browser selection scheduling operations', () => {
@@ -111,24 +105,21 @@ describe('browser selection scheduling operations', () => {
         expect(harness.cards.get(4)?.due).toBe(99);
     });
 
-    it('preserves a review interval unless ! is used and gives new cards an interval', () => {
-        harness.cards.set(1, card(1, { type: 2, queue: 2, ivl: 30 }));
-        harness.cards.set(2, card(2));
-        setSelectedDueDate([1, 2], { minDays: 5, maxDays: 5, forceInterval: false }, settings);
-        expect(harness.cards.get(1)?.ivl).toBe(30);
-        expect(harness.cards.get(2)?.ivl).toBe(5);
-        expect(harness.cards.get(2)?.type).toBe(2);
-
-        setSelectedDueDate([1], { minDays: 7, maxDays: 7, forceInterval: true }, settings);
-        expect(harness.cards.get(1)?.ivl).toBe(7);
+    it('passes the whole selection to Set Due Date', () => {
+        const spec = { min: 3, max: 7, forceReset: true };
+        expect(setSelectedDueDate([1, 2], spec, settings)).toBe(2);
+        expect(harness.dueDateCalls).toEqual([{ cardIds: [1, 2], spec }]);
     });
 
-    it('resets cards to the end of the new queue and grades through the scheduler path', () => {
+    it('passes the whole selection to Forget, options included', () => {
+        const options = { restorePosition: true, resetCounts: false };
+        expect(forgetSelectedCards([1], options)).toBe(1);
+        expect(harness.forgetCalls).toEqual([{ cardIds: [1], options }]);
+    });
+
+    it('grades through the scheduler path', () => {
         harness.cards.set(1, card(1, { type: 2, queue: 2, due: 100, ivl: 20, reps: 4 }));
         harness.cards.set(2, card(2, { due: 8 }));
-
-        expect(resetSelectedProgress([1], settings)).toBe(1);
-        expect(harness.cards.get(1)).toMatchObject({ type: 0, queue: 0, due: 9, ivl: 0, reps: 0 });
 
         expect(gradeSelectedNow([1, 2], 3, settings)).toBe(2);
         expect(harness.grades).toEqual([{ cardId: 1, grade: 3 }, { cardId: 2, grade: 3 }]);

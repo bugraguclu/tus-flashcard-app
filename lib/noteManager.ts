@@ -157,7 +157,7 @@ function generateUniqueCardId(): number {
 }
 
 /** Next new-card position: Anki gives each new card an incrementing `due` that sets its order. */
-function nextNewCardPosition(): number {
+export function nextNewCardPosition(): number {
     const db = getDB();
     const row = db.getFirstSync<{ maxDue: number | null }>(
         'SELECT MAX(due) AS maxDue FROM anki_cards WHERE type = 0',

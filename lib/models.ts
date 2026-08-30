@@ -197,6 +197,8 @@ export interface AnkiCard {
     odid: number;        // original deck id (filtered decks)
     flags: CardFlag;
     lastReview: number;  // epoch ms; denormalized (Anki derives this from the revlog)
+    /** Anki's `original_position`: the new-queue position Forget can restore. */
+    originalPosition?: number;
     /** Original root deck before the curated TUS subdeck categorization. */
     sourceDeckId?: number;
 }
@@ -343,7 +345,7 @@ export interface ReviewLog {
     id: number;          // epoch ms
     cardId: number;
     usn: number;
-    ease: 1 | 2 | 3 | 4;
+    ease: 0 | 1 | 2 | 3 | 4; // 0 = manual reschedule; Anki logs no button for those
     ivl: number;         // new interval (negative = seconds)
     lastIvl: number;     // previous interval
     factor: number;      // new ease (permille)

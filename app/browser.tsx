@@ -57,14 +57,22 @@ import CardWebView from '../components/CardWebView';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { alert, confirm } from '../lib/confirm';
 import {
+    forgetSelectedCards,
     gradeSelectedNow,
-    parseDueRange,
     repositionSelectedNewCards,
-    resetSelectedProgress,
     setSelectedDueDate,
     toggleSelectedBury,
     toggleSelectedSuspend,
 } from '../lib/browserSelection';
+import { SetDueDateDialog } from '../components/SetDueDateDialog';
+import { ForgetCardsDialog } from '../components/ForgetCardsDialog';
+import type { DueDateSpecifier, ForgetOptions } from '../lib/setDueDate';
+import {
+    getForgetOptions,
+    getSetDueDateInput,
+    rememberForgetOptions,
+    rememberSetDueDateInput,
+} from '../lib/schedulingPrefs';
 
 type BrowserSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified' | 'interval' | 'ease' | 'lapses' | 'reviews';
 
@@ -199,7 +207,8 @@ export default function BrowserScreen() {
     const [repositionStep, setRepositionStep] = useState('1');
     const [repositionShiftExisting, setRepositionShiftExisting] = useState(true);
     const [showDueDialog, setShowDueDialog] = useState(false);
-    const [dueInput, setDueInput] = useState('0');
+    const [dueInitialValue, setDueInitialValue] = useState('');
+    const [forgetOptions, setForgetOptions] = useState<ForgetOptions | null>(null);
     const [showGradePicker, setShowGradePicker] = useState(false);
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [previewAnswerVisible, setPreviewAnswerVisible] = useState(false);
@@ -977,8 +986,8 @@ export default function BrowserScreen() {
                     <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('1'); setRepositionStep('1'); setRepositionShiftExisting(true); setShowRepositionDialog(true); }}>
                         <Text style={styles.selectionMenuIcon}>↕</Text><Text style={styles.selectionMenuText}>{l('Yeniden konumlandır', 'Reposition')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInput('0'); setShowDueDialog(true); }}>
-                        <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Vade tarihini ayarla', 'Set due date')}</Text>
+                    <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInitialValue(getSetDueDateInput('browser')); setShowDueDialog(true); }}>
+                        <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Son tarihi ayarla', 'Set due date')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.selectionMenuItem} onPress={openSelectionTags}>
                         <Text style={styles.selectionMenuIcon}>🏷</Text><Text style={styles.selectionMenuText}>{l('Etiketleri düzenle', 'Edit tags')}</Text>
@@ -988,17 +997,9 @@ export default function BrowserScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.selectionMenuItem}
-                        onPress={() => {
-                            setShowSelectionMenu(false);
-                            confirm(
-                                l('İlerlemeyi Sıfırla', 'Reset Progress'),
-                                l(`${selectedCardIds.size} kart yeni kuyruğunun sonuna taşınacak. İnceleme geçmişi korunur.`, `${selectedCardIds.size} cards will be moved to the end of the new queue. Review history is preserved.`),
-                                () => runSelectionAction(() => resetSelectedProgress(selectedActionCardIds, settings)),
-                                { destructive: true },
-                            );
-                        }}
+                        onPress={() => { setShowSelectionMenu(false); setForgetOptions(getForgetOptions('browser')); }}
                     >
-                        <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('İlerlemeyi sıfırla', 'Reset progress')}</Text>
+                        <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('Sıfırla', 'Reset')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
                         <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>
@@ -1213,31 +1214,29 @@ export default function BrowserScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-            <Modal visible={showDueDialog} transparent animationType="fade" onRequestClose={() => setShowDueDialog(false)}>
-                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDueDialog(false)} />
-                    <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text scaleRole="title" style={styles.modalTitle}>{l('Vade Tarihini Ayarla', 'Set Due Date')}</Text>
-                        <Text style={styles.modalCaption}>{l('Örnek: 5, 3-7 veya aralığı da değiştirmek için 3-7!', 'Examples: 5, 3-7, or 3-7! to also change the interval.')}</Text>
-                        <TextInput style={styles.dialogInput} value={dueInput} onChangeText={setDueInput} autoCapitalize="none" autoCorrect={false} keyboardType="numbers-and-punctuation" placeholder="0" placeholderTextColor={colors.textMuted} />
-                        <View style={styles.dialogActions}>
-                            <TouchableOpacity style={styles.dialogButton} onPress={() => setShowDueDialog(false)}><Text style={styles.dialogButtonText}>{t('common.cancel')}</Text></TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.dialogButton, styles.dialogButtonPrimary]}
-                                onPress={() => {
-                                    const range = parseDueRange(dueInput);
-                                    if (!range) {
-                                        alert(l('Geçersiz vade', 'Invalid due date'), l('Tek bir gün veya 3-7 biçiminde bir aralık girin.', 'Enter one day or a range such as 3-7.'));
-                                        return;
-                                    }
-                                    setShowDueDialog(false);
-                                    runSelectionAction(() => setSelectedDueDate(selectedActionCardIds, range, settings));
-                                }}
-                            ><Text style={styles.dialogButtonPrimaryText}>{l('Uygula', 'Apply')}</Text></TouchableOpacity>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
+            <SetDueDateDialog
+                visible={showDueDialog}
+                cardCount={selectedActionCardIds.length}
+                initialValue={dueInitialValue}
+                onCancel={() => setShowDueDialog(false)}
+                onConfirm={(spec: DueDateSpecifier, raw: string) => {
+                    setShowDueDialog(false);
+                    rememberSetDueDateInput('browser', raw);
+                    runSelectionAction(() => setSelectedDueDate(selectedActionCardIds, spec, settings));
+                }}
+            />
+
+            <ForgetCardsDialog
+                visible={forgetOptions !== null}
+                cardCount={selectedActionCardIds.length}
+                initialOptions={forgetOptions ?? { restorePosition: false, resetCounts: false }}
+                onCancel={() => setForgetOptions(null)}
+                onConfirm={(options: ForgetOptions) => {
+                    setForgetOptions(null);
+                    rememberForgetOptions('browser', options);
+                    runSelectionAction(() => forgetSelectedCards(selectedActionCardIds, options));
+                }}
+            />
 
             <SheetModal visible={showGradePicker} onClose={() => setShowGradePicker(false)}>
                 <Text scaleRole="title" style={styles.modalTitle}>{l('Şimdi Derecelendir', 'Grade Now')}</Text>

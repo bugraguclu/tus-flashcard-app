@@ -22,7 +22,7 @@ import { useI18n } from '../hooks/useI18n';
 import { MotionSpring, resolveSpring } from '../lib/motion';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 
-type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
+type MenuView = 'menu' | 'flag' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
     | 'undo'
     | 'redo'
@@ -57,7 +57,9 @@ export interface CardOptionsMenuProps {
     onBuryCard: () => void;
     onSuspendCard: () => void;
     onForgetCard: () => void;
-    onSetDueDate: (days: number) => void;
+    onForgetNote: () => void;
+    onSetDueDateCard: () => void;
+    onSetDueDateNote: () => void;
     onDeckOptions: () => void;
     onToggleMarkNote: () => void;
     onBuryNote: () => void;
@@ -97,7 +99,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const translateX = useRef(new Animated.Value(360)).current;
     const reduceMotion = useReduceMotion();
     const [view, setView] = useState<MenuView>('menu');
-    const [dueDateInput, setDueDateInput] = useState('1');
     const [tagsInput, setTagsInput] = useState('');
 
     useEffect(() => {
@@ -121,9 +122,8 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     }, [view, props.noteTags]);
 
     const close = () => {
-        if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
+        if (view === 'tags') Keyboard.dismiss();
         setView('menu');
-        setDueDateInput('1');
         props.onClose();
     };
 
@@ -140,20 +140,18 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     };
 
     const goToParent = () => {
-        if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
-        setView(view === 'dueDate' ? 'reschedule' : 'menu');
+        if (view === 'tags') Keyboard.dismiss();
+        setView('menu');
     };
     const sheetTitle = view === 'flag'
         ? l('Bayrak rengi', 'Flag color')
-        : view === 'dueDate'
-            ? l('Son tarihi ayarla', 'Set due date')
-            : view === 'bury'
-                ? l('Göm', 'Bury')
-                : view === 'suspend'
-                    ? l('Askıya Al', 'Suspend')
-                    : view === 'reschedule'
-                        ? l('Yeniden Zamanla', 'Reschedule')
-                        : l('Etiketleri düzenle', 'Edit tags');
+        : view === 'bury'
+            ? l('Göm', 'Bury')
+            : view === 'suspend'
+                ? l('Askıya Al', 'Suspend')
+                : view === 'reschedule'
+                    ? l('Yeniden Zamanla', 'Reschedule')
+                    : l('Etiketleri düzenle', 'Edit tags');
 
     const flagNames = [
         l('Bayrak yok', 'No flag'), l('Kırmızı', 'Red'), l('Turuncu', 'Orange'),
@@ -184,7 +182,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         >
             <KeyboardAvoidingView
                 style={[styles.overlay, { paddingTop: insets.top + 8, paddingBottom: Math.max(insets.bottom, 8) }]}
-                behavior={Platform.OS === 'ios' && (view === 'tags' || view === 'dueDate') ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' && view === 'tags' ? 'padding' : undefined}
             >
                 <Pressable
                     style={styles.scrim}
@@ -347,19 +345,14 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
                         {view === 'reschedule' && (
                             <>
-                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Son tarihi ayarla…', 'Set due date…')} onPress={() => setView('dueDate')} />
-                                <MenuRow
-                                    styles={styles}
-                                    colors={colors}
-                                    icon="redo"
-                                    label={l('Kartı unut…', 'Forget card…')}
-                                    onPress={() => confirmAndClose(
-                                        l('Kartı unut', 'Forget card'),
-                                        l('Bu kartın tüm zamanlama ilerlemesi silinir ve kart Yeni durumuna sıfırlanır. Bu işlem geri alınamaz.', 'All scheduling progress for this card will be deleted and the card will be reset to New. This cannot be undone.'),
-                                        props.onForgetCard,
-                                        true,
-                                    )}
-                                />
+                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Son tarihi ayarla…', 'Set due date…')} onPress={() => runAndClose(props.onSetDueDateCard)} />
+                                {props.hasSiblingCards && (
+                                    <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Notun son tarihini ayarla…', 'Set due date of note…')} onPress={() => runAndClose(props.onSetDueDateNote)} />
+                                )}
+                                <MenuRow styles={styles} colors={colors} icon="redo" label={l('Kartı sıfırla…', 'Reset Card…')} onPress={() => runAndClose(props.onForgetCard)} />
+                                {props.hasSiblingCards && (
+                                    <MenuRow styles={styles} colors={colors} icon="redo" label={l('Notu sıfırla…', 'Reset Note…')} onPress={() => runAndClose(props.onForgetNote)} />
+                                )}
                             </>
                         )}
 
@@ -398,28 +391,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                             </>
                         )}
 
-                        {view === 'dueDate' && (
-                            <View style={styles.formContent}>
-                                <Text style={styles.subDesc}>{l('Kart kaç gün sonra yeniden gösterilsin?', 'Show this card again in how many days?')}</Text>
-                                <TextInput
-                                    style={styles.textInput}
-                                    keyboardType="number-pad"
-                                    value={dueDateInput}
-                                    onChangeText={setDueDateInput}
-                                    placeholder={l('gün', 'days')}
-                                    placeholderTextColor={colors.textMuted}
-                                />
-                                <TouchableOpacity
-                                    style={styles.confirmBtn}
-                                    onPress={() => {
-                                        const days = Math.max(0, Math.floor(Number(dueDateInput) || 0));
-                                        runAndClose(() => props.onSetDueDate(days));
-                                    }}
-                                >
-                                    <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
                     </ScrollView>
                 </Animated.View>
             </KeyboardAvoidingView>

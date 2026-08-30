@@ -43,14 +43,23 @@ import { WhiteboardOverlay, type WhiteboardHandle } from '../../components/White
 import DeckPickerModal from '../../components/DeckPickerModal';
 import {
     answerStudyCard,
-    forgetCard,
+    forgetCards,
     getStudyQueue,
     getWaitingLearningCardIds,
     setCardBuried,
-    setCardDueInDays,
+    setCardsDueDate,
     setCardSuspended,
     undoAnswer,
 } from '../../lib/studyRepository';
+import { SetDueDateDialog } from '../../components/SetDueDateDialog';
+import { ForgetCardsDialog } from '../../components/ForgetCardsDialog';
+import type { DueDateSpecifier, ForgetOptions } from '../../lib/setDueDate';
+import {
+    getForgetOptions,
+    getSetDueDateInput,
+    rememberForgetOptions,
+    rememberSetDueDateInput,
+} from '../../lib/schedulingPrefs';
 import { useI18n } from '../../hooks/useI18n';
 import { resolveAnswerFeedback } from '../../lib/answerFeedback';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
@@ -159,6 +168,11 @@ export default function StudyScreen() {
     const [whiteboardStylusOnly, setWhiteboardStylusOnly] = useState(false);
     const [whiteboardHasContent, setWhiteboardHasContent] = useState(false);
     const whiteboardRef = useRef<WhiteboardHandle>(null);
+
+    // Anki's Set Due Date / Forget dialogs. The target holds the cards the chosen menu row covers
+    // (this card, or every card on the note) plus the defaults remembered for the reviewer.
+    const [dueDateTarget, setDueDateTarget] = useState<{ ids: number[]; initial: string } | null>(null);
+    const [forgetTarget, setForgetTarget] = useState<{ ids: number[]; options: ForgetOptions } | null>(null);
     // Voice playback (TTS): reads the visible side aloud. Off by default; when on it also speaks
     // automatically as each side is shown.
     const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(false);
@@ -836,19 +850,55 @@ export default function StudyScreen() {
         bumpDataVersion();
     }, [currentCard, bumpDataVersion]);
 
-    const handleForgetCard = useCallback(() => {
-        if (!currentCard) return;
-        forgetCard(currentCard.cardId, settings);
-        bumpDataVersion();
-        buildQueue();
-    }, [currentCard, settings, bumpDataVersion, buildQueue]);
+    // Anki's Set Due Date and Forget both run over a set of card ids, so the reviewer only has to
+    // decide whether the menu row meant this card or every card on the note.
+    const noteCardIds = useCallback(() => (
+        currentCard ? getCardsForNote(currentCard.noteId).map((card) => card.id) : []
+    ), [currentCard]);
 
-    const handleSetDueDate = useCallback((days: number) => {
-        if (!currentCard) return;
-        setCardDueInDays(currentCard.cardId, days, settings);
+    const openSetDueDate = useCallback((ids: number[]) => {
+        if (ids.length === 0) return;
+        setDueDateTarget({ ids, initial: getSetDueDateInput('reviewer') });
+    }, []);
+
+    const openForget = useCallback((ids: number[]) => {
+        if (ids.length === 0) return;
+        setForgetTarget({ ids, options: getForgetOptions('reviewer') });
+    }, []);
+
+    const handleSetDueDateCard = useCallback(() => {
+        openSetDueDate(currentCard ? [currentCard.cardId] : []);
+    }, [currentCard, openSetDueDate]);
+
+    const handleSetDueDateNote = useCallback(() => openSetDueDate(noteCardIds()), [noteCardIds, openSetDueDate]);
+
+    const handleForgetCard = useCallback(() => {
+        openForget(currentCard ? [currentCard.cardId] : []);
+    }, [currentCard, openForget]);
+
+    const handleForgetNote = useCallback(() => openForget(noteCardIds()), [noteCardIds, openForget]);
+
+    const applySetDueDate = useCallback((spec: DueDateSpecifier, raw: string) => {
+        const target = dueDateTarget;
+        setDueDateTarget(null);
+        if (!target) return;
+        setCardsDueDate(target.ids, spec, settings);
+        rememberSetDueDateInput('reviewer', raw);
+        hapticSuccess();
         bumpDataVersion();
         buildQueue();
-    }, [currentCard, settings, bumpDataVersion, buildQueue]);
+    }, [dueDateTarget, settings, bumpDataVersion, buildQueue]);
+
+    const applyForget = useCallback((options: ForgetOptions) => {
+        const target = forgetTarget;
+        setForgetTarget(null);
+        if (!target) return;
+        forgetCards(target.ids, options);
+        rememberForgetOptions('reviewer', options);
+        hapticSuccess();
+        bumpDataVersion();
+        buildQueue();
+    }, [forgetTarget, bumpDataVersion, buildQueue]);
 
     const handleSaveTags = useCallback((raw: string) => {
         if (!currentCard) return;
@@ -1689,7 +1739,9 @@ export default function StudyScreen() {
                     onBuryCard={handleBury}
                     onSuspendCard={handleToggleSuspendCard}
                     onForgetCard={handleForgetCard}
-                    onSetDueDate={handleSetDueDate}
+                    onForgetNote={handleForgetNote}
+                    onSetDueDateCard={handleSetDueDateCard}
+                    onSetDueDateNote={handleSetDueDateNote}
                     onDeckOptions={handleDeckOptions}
                     onToggleMarkNote={handleToggleMarkNote}
                     onBuryNote={handleBuryNote}
@@ -1716,6 +1768,22 @@ export default function StudyScreen() {
                     onToggleVoicePlayback={handleToggleVoicePlayback}
                 />
             )}
+
+            <SetDueDateDialog
+                visible={dueDateTarget !== null}
+                cardCount={dueDateTarget?.ids.length ?? 1}
+                initialValue={dueDateTarget?.initial ?? ''}
+                onCancel={() => setDueDateTarget(null)}
+                onConfirm={applySetDueDate}
+            />
+
+            <ForgetCardsDialog
+                visible={forgetTarget !== null}
+                cardCount={forgetTarget?.ids.length ?? 1}
+                initialOptions={forgetTarget?.options ?? { restorePosition: false, resetCounts: false }}
+                onCancel={() => setForgetTarget(null)}
+                onConfirm={applyForget}
+            />
 
             <DeckPickerModal
                 visible={deckPickerVisible}

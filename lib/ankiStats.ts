@@ -268,7 +268,7 @@ function getReviews(deckName: string | null, range: StatsDateRange, rolloverHour
          FROM revlog r
          ${deckName || scopedCardIds !== undefined ? 'JOIN anki_cards c ON c.id = r.cardId' : ''}
          ${deck.join}
-         WHERE r.type != 4 AND r.id >= ? AND r.id < ? ${deck.where}
+         WHERE r.ease > 0 AND r.id >= ? AND r.id < ? ${deck.where}
          GROUP BY day ORDER BY day`,
         rolloverHour * 3600,
         range.startMs,
@@ -299,7 +299,7 @@ function getAnswerButtons(deckName: string | null, range: StatsDateRange, scoped
          FROM revlog r
          ${deckName || scopedCardIds !== undefined ? 'JOIN anki_cards c ON c.id = r.cardId' : ''}
          ${deck.join}
-         WHERE r.type != 4 AND r.id >= ? AND r.id < ? ${deck.where}
+         WHERE r.ease > 0 AND r.id >= ? AND r.id < ? ${deck.where}
          GROUP BY category, r.ease ORDER BY r.ease, category`,
         range.startMs, range.endMs, ...deck.params,
     );

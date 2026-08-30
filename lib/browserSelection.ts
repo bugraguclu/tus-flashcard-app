@@ -1,6 +1,5 @@
 import type { AppSettings, Grade } from './types';
 import type { AnkiCard } from './models';
-import { localDayNumber } from './ankiState';
 import {
     getAllAnkiCards,
     getAnkiCard,
@@ -8,30 +7,12 @@ import {
 } from './noteManager';
 import {
     answerStudyCard,
-    forgetCard,
+    forgetCards,
     setCardBuried,
+    setCardsDueDate,
     setCardSuspended,
 } from './studyRepository';
-
-export interface DueRange {
-    minDays: number;
-    maxDays: number;
-    forceInterval: boolean;
-}
-
-/** Parse Anki's browser due syntax: `5`, `3-7`, `-2`, and an optional trailing `!`. */
-export function parseDueRange(input: string): DueRange | null {
-    const match = input.trim().match(/^(-?\d+)(?:\s*-\s*(-?\d+))?\s*(!)?$/);
-    if (!match) return null;
-    const first = Number(match[1]);
-    const second = match[2] === undefined ? first : Number(match[2]);
-    if (!Number.isSafeInteger(first) || !Number.isSafeInteger(second)) return null;
-    return {
-        minDays: Math.min(first, second),
-        maxDays: Math.max(first, second),
-        forceInterval: match[3] === '!',
-    };
-}
+import type { DueDateSpecifier, ForgetOptions } from './setDueDate';
 
 function selectedCards(cardIds: number[]): AnkiCard[] {
     return [...new Set(cardIds)]
@@ -94,46 +75,14 @@ export function repositionSelectedNewCards(
     return cards.length;
 }
 
-/** Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`. */
-export function setSelectedDueDate(cardIds: number[], range: DueRange, settings: AppSettings): number {
-    const cards = selectedCards(cardIds);
-    const today = localDayNumber(Date.now(), settings.dayRolloverHour);
-    const span = range.maxDays - range.minDays + 1;
-
-    cards.forEach((card, index) => {
-        // Stable spread makes a range useful and repeatable without clumping every card on one day.
-        const days = range.minDays + (span <= 1 ? 0 : index % span);
-        const wasNew = card.type === 0;
-        saveAnkiCard({
-            ...card,
-            type: 2,
-            queue: 2,
-            due: today + days,
-            ivl: wasNew || range.forceInterval ? Math.max(1, Math.abs(days)) : card.ivl,
-            left: 0,
-            mod: Math.floor(Date.now() / 1000),
-            usn: -1,
-        });
-    });
-    return cards.length;
+/** Anki's Set Due Date over the browser selection. */
+export function setSelectedDueDate(cardIds: number[], spec: DueDateSpecifier, settings: AppSettings): number {
+    return setCardsDueDate(cardIds, spec, settings);
 }
 
-/** Reset scheduling and append cards to the end of the new queue; review history is preserved. */
-export function resetSelectedProgress(cardIds: number[], settings: AppSettings): number {
-    const cards = selectedCards(cardIds);
-    if (cards.length === 0) return 0;
-    const selectedIds = new Set(cards.map((card) => card.id));
-    let nextPosition = getAllAnkiCards()
-        .filter((card) => card.type === 0 && !selectedIds.has(card.id))
-        .reduce((max, card) => Math.max(max, card.due), 0) + 1;
-
-    for (const card of cards) {
-        forgetCard(card.id, settings);
-        const reset = getAnkiCard(card.id);
-        if (!reset) continue;
-        saveAnkiCard({ ...reset, due: nextPosition++, mod: Math.floor(Date.now() / 1000), usn: -1 });
-    }
-    return cards.length;
+/** Anki's Forget over the browser selection. */
+export function forgetSelectedCards(cardIds: number[], options: ForgetOptions): number {
+    return forgetCards(cardIds, options);
 }
 
 /** Grade selected cards immediately using the normal scheduler and review log path. */

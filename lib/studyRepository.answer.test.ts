@@ -9,6 +9,8 @@ const shared = vi.hoisted(() => ({
     reviewId: 1000,
     throwOnSave: false,
     lastRevlogInterval: 0,
+    manualLogs: [] as Array<{ cardId: number; ivl: number; lastIvl: number }>,
+    nextPosition: 9,
 }));
 
 const testNoteType: NoteType = {
@@ -74,10 +76,15 @@ vi.mock('./reviewLogger', () => ({
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
+    logManualReschedule: (card: AnkiCard, lastIvl: number) => {
+        shared.manualLogs.push({ cardId: card.id, ivl: card.ivl, lastIvl });
+        return { id: ++shared.reviewId } as ReviewLog;
+    },
 }));
 
 vi.mock('./noteManager', () => ({
     MARKED_TAG: 'marked',
+    nextNewCardPosition: () => shared.nextPosition,
     getAnkiCard: (id: number) => {
         const card = shared.cards.get(id);
         return card ? JSON.parse(JSON.stringify(card)) : null;
@@ -108,7 +115,7 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard, forgetCard, setCardDueInDays } from './studyRepository';
+import { answerStudyCard, forgetCards, setCardsDueDate } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
 
@@ -346,42 +353,75 @@ describe('answerStudyCard', () => {
     });
 });
 
-describe('forgetCard', () => {
+describe('forgetCards', () => {
     beforeEach(() => {
         shared.cards.clear();
         shared.notes.clear();
+        shared.manualLogs.length = 0;
     });
 
-    it('resets a reviewed card back to brand-new, discarding scheduling progress', () => {
-        shared.cards.set(30, {
-            ...baseCard(30, 1, 2, 2),
-            ivl: 45,
-            reps: 12,
-            lapses: 3,
-            factor: 2100,
-        });
+    it('returns a reviewed card to the new queue and keeps the counters, as Anki does', () => {
+        shared.cards.set(30, { ...baseCard(30, 1, 2, 2), ivl: 45, reps: 12, lapses: 3, factor: 2100 });
 
-        forgetCard(30, settings);
+        expect(forgetCards([30], { restorePosition: false, resetCounts: false })).toBe(1);
 
         const updated = shared.cards.get(30)!;
         expect(updated.type).toBe(0);
         expect(updated.queue).toBe(0);
         expect(updated.ivl).toBe(0);
+        expect(updated.factor).toBe(0);
+        expect(updated.due).toBe(shared.nextPosition);
+        expect(updated.reps).toBe(12);
+        expect(updated.lapses).toBe(3);
+    });
+
+    it('zeroes the counters when the option is ticked', () => {
+        shared.cards.set(30, { ...baseCard(30, 1, 2, 2), ivl: 45, reps: 12, lapses: 3 });
+
+        forgetCards([30], { restorePosition: false, resetCounts: true });
+
+        const updated = shared.cards.get(30)!;
         expect(updated.reps).toBe(0);
         expect(updated.lapses).toBe(0);
-        expect(updated.left).toBe(0);
+    });
+
+    it('puts the card back where it started when the position is known', () => {
+        shared.cards.set(30, { ...baseCard(30, 1, 2, 2), ivl: 45, originalPosition: 4 });
+
+        forgetCards([30], { restorePosition: true, resetCounts: false });
+
+        expect(shared.cards.get(30)!.due).toBe(4);
+    });
+
+    it('gives consecutive positions to cards that have none to restore', () => {
+        shared.cards.set(30, { ...baseCard(30, 1, 2, 2), ivl: 45 });
+        shared.cards.set(31, { ...baseCard(31, 1, 2, 2), ivl: 45 });
+
+        forgetCards([30, 31], { restorePosition: true, resetCounts: false });
+
+        expect(shared.cards.get(30)!.due).toBe(shared.nextPosition);
+        expect(shared.cards.get(31)!.due).toBe(shared.nextPosition + 1);
+    });
+
+    it('records a manual review-log entry per card', () => {
+        shared.cards.set(30, { ...baseCard(30, 1, 2, 2), ivl: 45 });
+
+        forgetCards([30], { restorePosition: false, resetCounts: false });
+
+        expect(shared.manualLogs).toEqual([{ cardId: 30, ivl: 0, lastIvl: 45 }]);
     });
 
     it('is a no-op when the card does not exist', () => {
-        expect(() => forgetCard(999, settings)).not.toThrow();
+        expect(forgetCards([999], { restorePosition: false, resetCounts: false })).toBe(0);
         expect(shared.cards.has(999)).toBe(false);
     });
 });
 
-describe('setCardDueInDays', () => {
+describe('setCardsDueDate', () => {
     beforeEach(() => {
         shared.cards.clear();
         shared.notes.clear();
+        shared.manualLogs.length = 0;
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 5, 20, 12, 0, 0));
     });
@@ -390,23 +430,53 @@ describe('setCardDueInDays', () => {
         vi.useRealTimers();
     });
 
-    it('pins a card into the review queue, due N days from today', () => {
-        shared.cards.set(31, baseCard(31, 1, 0, 0)); // starts as a new card
+    it('pins a new card into the review queue, due N days from today', () => {
+        shared.cards.set(31, baseCard(31, 1, 0, 0));
 
-        setCardDueInDays(31, 3, settings);
+        expect(setCardsDueDate([31], { min: 3, max: 3, forceReset: false }, settings)).toBe(1);
 
         const updated = shared.cards.get(31)!;
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
         expect(updated.type).toBe(2);
         expect(updated.queue).toBe(2);
+        expect(updated.due).toBe(today + 3);
         expect(updated.ivl).toBe(3);
+        expect(updated.factor).toBe(2500);
     });
 
-    it('clamps negative/invalid day counts to today (0)', () => {
-        shared.cards.set(32, baseCard(32, 1, 2, 2));
+    it('keeps a review card interval unless the spec forces a reset', () => {
+        shared.cards.set(32, { ...baseCard(32, 1, 2, 2), ivl: 40, factor: 2100 });
 
-        setCardDueInDays(32, -5, settings);
+        setCardsDueDate([32], { min: 5, max: 5, forceReset: false }, settings);
+        expect(shared.cards.get(32)!.ivl).toBe(40);
+        expect(shared.cards.get(32)!.factor).toBe(2100);
 
-        const updated = shared.cards.get(32)!;
-        expect(updated.ivl).toBe(1); // ivl is floored at 1 even when days clamp to 0
+        setCardsDueDate([32], { min: 7, max: 7, forceReset: true }, settings);
+        expect(shared.cards.get(32)!.ivl).toBe(7);
+    });
+
+    it('floors the interval at one day when the card is made due today', () => {
+        shared.cards.set(33, baseCard(33, 1, 0, 0));
+
+        setCardsDueDate([33], { min: 0, max: 0, forceReset: false }, settings);
+
+        expect(shared.cards.get(33)!.ivl).toBe(1);
+    });
+
+    it('draws each card a day from the range', () => {
+        shared.cards.set(34, baseCard(34, 1, 0, 0));
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+
+        setCardsDueDate([34], { min: 3, max: 7, forceReset: false }, settings, () => 0.999999);
+
+        expect(shared.cards.get(34)!.due).toBe(today + 7);
+    });
+
+    it('records a manual review-log entry carrying the previous interval', () => {
+        shared.cards.set(35, { ...baseCard(35, 1, 2, 2), ivl: 40 });
+
+        setCardsDueDate([35], { min: 9, max: 9, forceReset: true }, settings);
+
+        expect(shared.manualLogs).toEqual([{ cardId: 35, ivl: 9, lastIvl: 40 }]);
     });
 });
