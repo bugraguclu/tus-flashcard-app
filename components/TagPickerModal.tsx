@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+    Animated,
     FlatList,
     Keyboard,
     KeyboardAvoidingView,
@@ -21,6 +22,7 @@ import {
     uniqueTags,
     type TagPickerRow,
 } from '../lib/tagPickerRows';
+import { useBottomSheet } from '../hooks/useBottomSheet';
 import { useI18n } from '../hooks/useI18n';
 
 interface TagPickerModalProps {
@@ -64,6 +66,10 @@ export default function TagPickerModal({
         setSearchVisible(false);
         setAddVisible(false);
     }, [visible, selectedTags]);
+
+    // A list of choices is a sheet, not a centred dialog: it rises from the bottom edge and
+    // can be pulled back down by its grabber.
+    const sheet = useBottomSheet(visible, onCancel);
 
     const rows = useMemo(
         () => buildTagPickerRows({
@@ -166,9 +172,21 @@ export default function TagPickerModal({
                     onPress={onCancel}
                     accessibilityLabel={l('Etiket penceresini kapat', 'Close tags dialog')}
                 />
-                <View style={styles.card} accessibilityViewIsModal>
+                <Animated.View
+                    style={[styles.card, { transform: [{ translateY: sheet.translateY }] }]}
+                    onLayout={(event) => sheet.onSheetLayout(event.nativeEvent.layout.height)}
+                    accessibilityViewIsModal
+                >
+                    <View
+                        {...sheet.panHandlers}
+                        style={styles.grabberArea}
+                        accessibilityRole="adjustable"
+                        accessibilityLabel={l('Etiket penceresini kapat', 'Close tags dialog')}
+                    >
+                        <View style={styles.grabber} />
+                    </View>
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>{title ?? l('Etiketler', 'Tags')}</Text>
+                        <Text scaleRole="title" style={styles.headerTitle}>{title ?? l('Etiketler', 'Tags')}</Text>
                         <TouchableOpacity
                             style={[styles.headerAction, searchVisible && styles.headerActionActive]}
                             onPress={toggleSearch}
@@ -283,7 +301,7 @@ export default function TagPickerModal({
                             <Text style={styles.footerButtonText}>{l('Onayla', 'Confirm')}</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </Modal>
     );
@@ -293,21 +311,23 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         overlay: {
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.xxl,
+            justifyContent: 'flex-end',
             backgroundColor: 'rgba(0,0,0,0.38)',
         },
         card: {
             width: '100%',
-            maxWidth: 440,
-            height: '82%',
+            maxWidth: 560,
+            alignSelf: 'center',
+            height: '86%',
             overflow: 'hidden',
             backgroundColor: colors.bgSecondary,
-            borderRadius: BorderRadius.lg,
+            borderTopLeftRadius: BorderRadius.lg,
+            borderTopRightRadius: BorderRadius.lg,
             ...Shadows.lg,
         },
+        // A full row around the 5pt bar, so the drag is reachable without hunting for it.
+        grabberArea: { paddingTop: Spacing.sm, paddingBottom: Spacing.xs, alignItems: 'center' },
+        grabber: { width: 38, height: 5, borderRadius: 3, backgroundColor: colors.border },
         header: {
             minHeight: 58,
             flexDirection: 'row',

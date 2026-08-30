@@ -535,7 +535,7 @@ export default function ImportScreen() {
                         accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
                     />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
                         <TextInput
                             style={styles.input}
                             value={newSubjectName}

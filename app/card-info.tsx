@@ -145,7 +145,7 @@ export default function CardInfoScreen() {
             {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('Genel Bilgi', 'General Information')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('Genel Bilgi', 'General Information')}</Text>
                 <InfoRow label="Kart ID" value={`#${card.id}`} />
                 <InfoRow label="Not ID" value={`#${card.noteId}`} />
                 <InfoRow label={t('common.deck')} value={deck?.name || '-'} />
@@ -155,7 +155,7 @@ export default function CardInfoScreen() {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('Etiketler', 'Tags')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('Etiketler', 'Tags')}</Text>
                 <View style={styles.tagsRow}>
                     {(note?.tags || []).map((tag) => (
                         <View key={tag} style={styles.tag}>
@@ -166,7 +166,7 @@ export default function CardInfoScreen() {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('Bayrak', 'Flag')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('Bayrak', 'Flag')}</Text>
                 <View style={styles.flagsRow}>
                     {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
                         <View
@@ -189,7 +189,7 @@ export default function CardInfoScreen() {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
                 <InfoRow label={l('Kart durumu', 'Card state')} value={typeLabel} />
                 <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
                 <InfoRow label={l('Vade', 'Due')} value={String(card.due)} />
@@ -200,12 +200,12 @@ export default function CardInfoScreen() {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('Teknik Bilgi', 'Technical Information')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('Teknik Bilgi', 'Technical Information')}</Text>
                 <InfoRow label={l('Son çalışma', 'Last review')} value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
             </View>
 
             <View style={[styles.section, styles.historyHead]}>
-                <Text style={styles.sectionTitle}>{l('Çalışma Geçmişi', 'Review History')} ({reviews.length})</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('Çalışma Geçmişi', 'Review History')} ({reviews.length})</Text>
 
                 <View style={styles.tableHeader}>
                     <Text style={[styles.th, { flex: 2 }]}>{l('Tarih', 'Date')}</Text>

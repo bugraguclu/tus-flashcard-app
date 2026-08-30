@@ -824,7 +824,7 @@ export default function EditorScreen() {
                 >
                     <BackIcon color={colors.white} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle} numberOfLines={1}>
+                <Text scaleRole="title" style={styles.headerTitle} numberOfLines={1}>
                     {isEditing ? t('root.editCard') : l('Yeni Kart', 'Add')}
                 </Text>
                 <View style={styles.headerSpacer} />
@@ -1106,7 +1106,7 @@ export default function EditorScreen() {
             )}
 
             <SheetModal visible={showFontSizePicker} onClose={() => setShowFontSizePicker(false)}>
-                <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
                 {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
                     <TouchableOpacity
                         key={size}
@@ -1128,7 +1128,7 @@ export default function EditorScreen() {
             </SheetModal>
 
             <SheetModal visible={showHeadingPicker} onClose={() => setShowHeadingPicker(false)}>
-                <Text style={styles.modalTitle}>{l('Başlık Ekle', 'Insert Heading')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Başlık Ekle', 'Insert Heading')}</Text>
                 {['h1', 'h2', 'h3', 'h4', 'h5'].map((heading) => (
                     <TouchableOpacity
                         key={heading}
@@ -1149,7 +1149,7 @@ export default function EditorScreen() {
             </SheetModal>
 
             <SheetModal visible={showInlineFontSizePicker} onClose={() => setShowInlineFontSizePicker(false)}>
-                <Text style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Yazı Boyutu', 'Font Size')}</Text>
                 {['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'].map((size) => (
                     <TouchableOpacity
                         key={size}
@@ -1170,7 +1170,7 @@ export default function EditorScreen() {
             </SheetModal>
 
             <SheetModal visible={showMathPicker} onClose={() => setShowMathPicker(false)}>
-                <Text style={styles.modalTitle}>{l('MathJax Ekle', 'Insert MathJax')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('MathJax Ekle', 'Insert MathJax')}</Text>
                 <TouchableOpacity
                     style={styles.formatPickerOption}
                     onPress={() => {
@@ -1211,7 +1211,7 @@ export default function EditorScreen() {
                 >
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCustomToolbarEditor(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>
+                        <Text scaleRole="title" style={styles.modalTitle}>
                             {editingToolbarButtonId
                                 ? l('Araç Çubuğu Öğesini Düzenle', 'Edit Toolbar Item')
                                 : l('Araç Çubuğu Öğesi Oluştur', 'Create Toolbar Item')}
@@ -1280,7 +1280,7 @@ export default function EditorScreen() {
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCustomToolbarHelp(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Özel Araç Düğmeleri', 'Custom Toolbar Buttons')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Özel Araç Düğmeleri', 'Custom Toolbar Buttons')}</Text>
                         <Text style={styles.customToolbarHelpText}>
                             {l(
                                 'Düğmeye dokunulduğunda, seçili metin “önce” ve “sonra” alanlarındaki HTML ile sarılır. Metin seçili değilse imleç iki değer arasına yerleşir.',
@@ -1304,7 +1304,7 @@ export default function EditorScreen() {
             </Modal>
 
             <SheetModal visible={showCardTypePicker} onClose={() => setShowCardTypePicker(false)}>
-                <Text style={styles.modalTitle}>{l('Kart Türü', 'Note Type')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Kart Türü', 'Note Type')}</Text>
                 {CARD_TYPE_CHOICES.map((choice) => {
                     const noteType = getNoteType(choice) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === choice);
                     if (!noteType) return null;
@@ -1363,7 +1363,7 @@ export default function EditorScreen() {
                         accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
                     />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Yeni Ders', 'New Course')}</Text>
                         <TextInput
                             style={styles.modalInput}
                             value={newSubjectName}

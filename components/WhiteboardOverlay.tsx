@@ -341,7 +341,9 @@ function createStyles(colors: ColorScheme) {
         swatchActive: { borderColor: colors.accent },
         toolBtn: {
             minWidth: 34,
-            height: 34,
+            // minHeight, not height: these buttons carry glyph labels that grow with Dynamic Type.
+            minHeight: 34,
+            paddingVertical: 4,
             paddingHorizontal: 6,
             borderRadius: BorderRadius.sm,
             backgroundColor: colors.bgInput,

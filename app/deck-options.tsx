@@ -282,7 +282,7 @@ export default function DeckOptionsScreen() {
                 </TouchableOpacity>
                 <View style={styles.headerTitleWrap}>
                     <Text style={styles.headerEyebrow}>{l('DESTE SEÇENEKLERİ', 'DECK OPTIONS')}</Text>
-                    <Text style={styles.headerTitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
+                    <Text scaleRole="title" style={styles.headerTitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.headerSaveButton}
@@ -301,7 +301,7 @@ export default function DeckOptionsScreen() {
             >
 
                 <View style={styles.presetCard}>
-                    <Text style={styles.sectionTitle}>{l('AYAR GRUBU', 'PRESET')}</Text>
+                    <Text scaleRole="title" style={styles.sectionTitle}>{l('AYAR GRUBU', 'PRESET')}</Text>
                     <Text style={styles.presetName}>{presetName}</Text>
                     <Text style={styles.presetMeta}>
                         {l(`Bu grubu ${usedBy} deste kullanıyor${usedBy > 1 ? ' — değişiklikler hepsini etkiler.' : '.'}`, `${usedBy} decks use this preset${usedBy > 1 ? ' — changes affect all of them.' : '.'}`)}
@@ -331,12 +331,12 @@ export default function DeckOptionsScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.sectionTitle}>{l('GÜNLÜK LİMİTLER', 'DAILY LIMITS')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('GÜNLÜK LİMİTLER', 'DAILY LIMITS')}</Text>
                 <Field label={l('Günlük yeni kart', 'New cards/day')} value={form.newPerDay} onChange={(t) => set('newPerDay', t)} />
                 <Field label={l('Günlük en fazla tekrar', 'Maximum reviews/day')} value={form.maxReviewsPerDay} onChange={(t) => set('maxReviewsPerDay', t)} />
                 <Text style={styles.fieldHint}>{l('“Yalnızca bugün” için ek limitler deste menüsündeki Özel Çalışma bölümündedir.', 'Use Custom Study from the deck menu for “today only” limit increases.')}</Text>
 
-                <Text style={styles.sectionTitle}>{l('YENİ KARTLAR', 'NEW CARDS')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('YENİ KARTLAR', 'NEW CARDS')}</Text>
                 <Field
                     label={l('Öğrenme adımları (dakika)', 'Learning steps (minutes)')}
                     value={form.learningSteps}
@@ -352,7 +352,7 @@ export default function DeckOptionsScreen() {
                     onChange={(key) => set('insertionOrder', key as 'sequential' | 'random')}
                 />
 
-                <Text style={styles.sectionTitle}>{l('UNUTMALAR', 'LAPSES')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('UNUTMALAR', 'LAPSES')}</Text>
                 <Field
                     label={l('Yeniden öğrenme adımları (dakika)', 'Relearning steps (minutes)')}
                     value={form.relearningSteps}
@@ -379,7 +379,7 @@ export default function DeckOptionsScreen() {
                 />
                 <LeechExplainer context="settings" />
 
-                <Text style={styles.sectionTitle}>{l('GÖRÜNTÜLEME SIRASI', 'DISPLAY ORDER')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('GÖRÜNTÜLEME SIRASI', 'DISPLAY ORDER')}</Text>
                 <Text style={styles.fieldLabel}>{l('Yeni kart toplama sırası', 'New card gather order')}</Text>
                 <Choice
                     value={form.newCardGatherOrder}
@@ -411,7 +411,7 @@ export default function DeckOptionsScreen() {
                     onChange={(key) => set('reviewSortOrder', key as 'dueRandom' | 'intervalsAsc' | 'intervalsDesc')}
                 />
 
-                <Text style={styles.sectionTitle}>{l('GÖMME', 'BURYING')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('GÖMME', 'BURYING')}</Text>
                 <SwitchRow label={l('Yeni kardeş kartları göm', 'Bury new siblings')} value={form.buryNewSiblings} onChange={(v) => set('buryNewSiblings', v)} />
                 <SwitchRow label={l('Tekrar kardeş kartları göm', 'Bury review siblings')} value={form.buryReviewSiblings} onChange={(v) => set('buryReviewSiblings', v)} />
                 <SwitchRow
@@ -420,11 +420,11 @@ export default function DeckOptionsScreen() {
                     onChange={(v) => set('buryInterdayLearningSiblings', v)}
                 />
 
-                <Text style={styles.sectionTitle}>{l('SES', 'AUDIO')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('SES', 'AUDIO')}</Text>
                 <SwitchRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={form.autoPlayAudio} onChange={(v) => set('autoPlayAudio', v)} />
                 <Text style={styles.fieldHint}>{l('Kapalıyken kart üzerindeki 🔊 düğmesiyle veya R tuşuyla oynatılır.', 'When off, use the 🔊 button on the card or press R to play audio.')}</Text>
 
-                <Text style={styles.sectionTitle}>{l('KOLAY GÜNLER — HAFTALIK YÜK', 'EASY DAYS — WEEKLY LOAD')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('KOLAY GÜNLER — HAFTALIK YÜK', 'EASY DAYS — WEEKLY LOAD')}</Text>
                 <Text style={styles.fieldHint}>{l('Değiştirmek için güne dokunun: Normal → Azaltılmış → Yok. Tekrarlar o günlerden kaydırılır.', 'Tap a day to cycle: Normal → Reduced → None. Reviews are shifted away from those days.')}</Text>
                 <View style={styles.easyDaysRow}>
                     {dayLabels.map((label, index) => {
@@ -448,7 +448,7 @@ export default function DeckOptionsScreen() {
                     })}
                 </View>
 
-                <Text style={styles.sectionTitle}>{l('GELİŞMİŞ', 'ADVANCED')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('GELİŞMİŞ', 'ADVANCED')}</Text>
                 <Field label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('Örn. 2,50', 'E.g. 2.50')} />
                 <Field label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} />
                 <Field label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} />
@@ -456,7 +456,7 @@ export default function DeckOptionsScreen() {
                 <Field label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
                 <Field label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
 
-                <Text style={styles.sectionTitle}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
+                <Text scaleRole="title" style={styles.sectionTitle}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
                 <TextInput
                     style={[styles.input, styles.descriptionInput]}
                     value={form.description}
@@ -470,7 +470,7 @@ export default function DeckOptionsScreen() {
             </ScrollView>
 
             <SheetModal visible={presetPickerOpen} onClose={() => setPresetPickerOpen(false)}>
-                <Text style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
                 <FlatList
                     style={{ maxHeight: 320 }}
                     data={presetRows}
@@ -498,7 +498,7 @@ export default function DeckOptionsScreen() {
                         accessibilityLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
                     />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Ayar Grubunu Adlandır', 'Rename Preset')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Ayar Grubunu Adlandır', 'Rename Preset')}</Text>
                         <TextInput style={styles.input} value={renameText} onChangeText={setRenameText} autoFocus />
                         <View style={styles.modalActions}>
                             <TouchableOpacity style={styles.cancelBtn} onPress={() => setRenameOpen(false)}>

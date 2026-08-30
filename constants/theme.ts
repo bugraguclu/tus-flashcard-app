@@ -1,5 +1,16 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { Appearance, Platform, useColorScheme } from 'react-native';
+import {
+    DEFAULT_TYPE_ROLE,
+    FONT_SCALE_CAPS,
+    INPUT_FONT_SCALE_CAP,
+    MIN_TOUCH_TARGET,
+    clampFontScale,
+    fontScaleCap,
+    scaledFontSize,
+    scaledRowHeight,
+    type TypeRole,
+} from '../lib/typography';
 
 export type ColorScheme = typeof LightColors;
 export type ThemeMode = 'system' | 'light' | 'dark';
@@ -172,6 +183,25 @@ export const FontSize = {
     xxxl: 28,
     title: 32,
 };
+
+/**
+ * Dynamic Type policy, re-exported from lib/typography so screens reach it through the same
+ * module as the rest of the design tokens while the arithmetic stays unit tested. Text growth is
+ * capped per role rather than globally: body copy is what the reader actually needs bigger, and a
+ * title sharing a row with controls has far less room to give.
+ */
+export const Typography = {
+    scaleCaps: FONT_SCALE_CAPS,
+    defaultRole: DEFAULT_TYPE_ROLE,
+    inputScaleCap: INPUT_FONT_SCALE_CAP,
+    minTouchTarget: MIN_TOUCH_TARGET,
+    capFor: fontScaleCap,
+    clamp: clampFontScale,
+    fontSize: scaledFontSize,
+    rowHeight: scaledRowHeight,
+} as const;
+
+export type { TypeRole };
 
 export const Shadows = {
     sm: {

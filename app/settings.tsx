@@ -629,7 +629,7 @@ export default function SettingsScreen() {
                             <Text style={styles.badgePreviewMark}>🧠</Text>
                             {settings.studyNotificationsEnabled && notificationPermission.allowsBadge && currentDueReviews > 0 ? (
                                 <View style={styles.badgePreviewCount}>
-                                    <Text style={styles.badgePreviewCountText}>{currentDueReviews > 99 ? '99+' : currentDueReviews}</Text>
+                                    <Text scaleRole="badge" style={styles.badgePreviewCountText}>{currentDueReviews > 99 ? '99+' : currentDueReviews}</Text>
                                 </View>
                             ) : null}
                         </View>
@@ -824,7 +824,7 @@ export default function SettingsScreen() {
                 >
                     <Text style={styles.backButtonText}>‹</Text>
                 </TouchableOpacity>
-                <Text style={styles.screenTitle} numberOfLines={1}>
+                <Text scaleRole="title" style={styles.screenTitle} numberOfLines={1}>
                     {activeCategory?.title ?? l('Ayarlar', 'Settings')}
                 </Text>
                 {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : <View style={styles.headerSpacer} />}

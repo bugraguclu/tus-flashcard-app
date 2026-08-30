@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
     FlatList,
     Keyboard,
     KeyboardAvoidingView,
@@ -19,6 +20,7 @@ import {
     expandableDeckNames,
     type DeckPickerRow,
 } from '../lib/deckPickerRows';
+import { useBottomSheet } from '../hooks/useBottomSheet';
 import DisclosureChevron from './DisclosureChevron';
 
 type Props = {
@@ -62,6 +64,9 @@ export default function DeckPickerModal({
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const createAfterDismissRef = useRef(false);
     const tree = useMemo(() => buildDeckTree(decks), [decks]);
+    // A list of choices is a sheet, not a centred dialog: it rises from the bottom edge and can
+    // be pulled back down by its grabber.
+    const sheet = useBottomSheet(visible, onClose);
 
     useEffect(() => {
         if (!visible) return;
@@ -175,7 +180,19 @@ export default function DeckPickerModal({
                 behavior={Platform.OS === 'ios' && searching ? 'padding' : undefined}
             >
                 <Pressable style={styles.overlay} onPress={onClose}>
-                    <Pressable style={styles.card} onPress={() => {}} accessibilityViewIsModal>
+                    <Animated.View
+                        style={[styles.card, { transform: [{ translateY: sheet.translateY }] }]}
+                        onLayout={(event) => sheet.onSheetLayout(event.nativeEvent.layout.height)}
+                    >
+                    <Pressable style={styles.sheetBody} onPress={() => {}} accessibilityViewIsModal>
+                    <View
+                        {...sheet.panHandlers}
+                        style={styles.grabberArea}
+                        accessibilityRole="adjustable"
+                        accessibilityLabel={closeAccessibilityLabel}
+                    >
+                        <View style={styles.grabber} />
+                    </View>
                     <View style={styles.toolbar}>
                         <TouchableOpacity
                             style={styles.toolbarButton}
@@ -246,6 +263,7 @@ export default function DeckPickerModal({
                         <Text style={styles.cancelText}>{cancelLabel}</Text>
                     </TouchableOpacity>
                     </Pressable>
+                    </Animated.View>
                 </Pressable>
             </KeyboardAvoidingView>
         </Modal>
@@ -257,21 +275,25 @@ function createStyles(colors: ColorScheme) {
         keyboardLayer: { flex: 1 },
         overlay: {
             flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: Spacing.xl,
+            justifyContent: 'flex-end',
             backgroundColor: 'rgba(0,0,0,0.42)',
         },
         card: {
             width: '100%',
-            maxWidth: 420,
-            height: '78%',
-            maxHeight: 680,
+            maxWidth: 560,
+            alignSelf: 'center',
+            height: '82%',
+            maxHeight: 720,
             overflow: 'hidden',
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
+            borderTopLeftRadius: BorderRadius.lg,
+            borderTopRightRadius: BorderRadius.lg,
             ...Shadows.lg,
         },
+        sheetBody: { flex: 1 },
+        // A full row around the 5pt bar, so the drag is reachable without hunting for it.
+        grabberArea: { paddingTop: Spacing.sm, paddingBottom: Spacing.xs, alignItems: 'center' },
+        grabber: { width: 38, height: 5, borderRadius: 3, backgroundColor: colors.border },
         toolbar: {
             minHeight: 58,
             flexDirection: 'row',
@@ -289,7 +311,9 @@ function createStyles(colors: ColorScheme) {
         searchInput: {
             flex: 1,
             minWidth: 0,
-            height: 44,
+            // minHeight, not height: the field has to grow with Dynamic Type instead of clipping.
+            minHeight: 44,
+            paddingVertical: Spacing.xs,
             paddingHorizontal: Spacing.sm,
             color: colors.white,
             fontSize: FontSize.lg,

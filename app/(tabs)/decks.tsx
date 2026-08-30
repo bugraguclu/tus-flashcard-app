@@ -1299,13 +1299,13 @@ export default function DecksScreen() {
                             </Text>
                             <View style={styles.mobileCountsRow}>
                                 <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeNewBg }]}>
-                                    <Text style={[styles.mobileCountText, { color: colors.badgeNew }]}>{t('anki.new')} {node.newCount}</Text>
+                                    <Text scaleRole="badge" style={[styles.mobileCountText, { color: colors.badgeNew }]}>{t('anki.new')} {node.newCount}</Text>
                                 </View>
                                 <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeLearnBg }]}>
-                                    <Text style={[styles.mobileCountText, { color: colors.badgeLearn }]}>{t('anki.learn')} {node.learnCount}</Text>
+                                    <Text scaleRole="badge" style={[styles.mobileCountText, { color: colors.badgeLearn }]}>{t('anki.learn')} {node.learnCount}</Text>
                                 </View>
                                 <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeReviewBg }]}>
-                                    <Text style={[styles.mobileCountText, { color: colors.badgeReview }]}>{t('anki.review')} {node.reviewCount}</Text>
+                                    <Text scaleRole="badge" style={[styles.mobileCountText, { color: colors.badgeReview }]}>{t('anki.review')} {node.reviewCount}</Text>
                                 </View>
                             </View>
                         </>
@@ -1468,7 +1468,7 @@ export default function DecksScreen() {
     const renderRenameModal = (deck: Deck) => (
         <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
             {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalTitle}>{l('Yeniden Adlandır', 'Rename')}</Text>
+            <Text scaleRole="title" style={styles.modalTitle}>{l('Yeniden Adlandır', 'Rename')}</Text>
             <Text style={styles.modalHint}>
                 {l('Tam deste yolu. :: işaretleri alt deste seviyelerini belirler.', 'Full deck path. Double colons (::) define subdeck levels.')}
             </Text>
@@ -1496,7 +1496,7 @@ export default function DecksScreen() {
         <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
             {isCompact && <View style={styles.sheetHandle} />}
             <Text style={styles.modalEyebrow}>{l('ALT DESTE OLUŞTUR', 'CREATE SUBDECK')}</Text>
-            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
+            <Text scaleRole="title" style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
             <Text style={styles.modalHint}>
                 {l(
                     'Yeni deste bu destenin doğrudan altında oluşturulur. Bir kerede daha derin yol için adları :: ile ayırabilirsiniz.',
@@ -1537,7 +1537,7 @@ export default function DecksScreen() {
         <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
             {isCompact && <View style={styles.sheetHandle} />}
             <Text style={styles.modalEyebrow}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
-            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
+            <Text scaleRole="title" style={styles.modalTitle} numberOfLines={2}>{deck.name}</Text>
             <TextInput
                 style={[styles.modalInput, styles.descriptionInput]}
                 value={descriptionText}
@@ -1569,7 +1569,7 @@ export default function DecksScreen() {
         return (
             <View style={[styles.modalCard, isCompact && styles.modalCardCompact]}>
                 {isCompact && <View style={styles.sheetHandle} />}
-                <Text style={styles.modalTitle}>{l('Nereye taşınsın?', 'Move deck to…')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Nereye taşınsın?', 'Move deck to…')}</Text>
                 <ScrollView style={styles.moveList}>
                     {getParentDeckName(deck.name) && (
                         <TouchableOpacity
@@ -1608,7 +1608,7 @@ export default function DecksScreen() {
             showsVerticalScrollIndicator
         >
             {isCompact && <View style={styles.sheetHandle} />}
-            <Text style={styles.modalTitle}>{t('anki.customStudy')} — {getDeckDisplayName(deck.name)}</Text>
+            <Text scaleRole="title" style={styles.modalTitle}>{t('anki.customStudy')} — {getDeckDisplayName(deck.name)}</Text>
 
             <View style={styles.customSection}>
                 <Text style={styles.fieldLabel}>{l('Bugünkü yeni kart limitini artır', 'Increase today’s new card limit')}</Text>
@@ -2276,7 +2276,7 @@ export default function DecksScreen() {
                     ) : (
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyStateIcon}>＋</Text>
-                            <Text style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
+                            <Text scaleRole="title" style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
                             <Text style={styles.emptyStateText}>{l('Kartlarınızı ders ve konuya göre düzenlemeye buradan başlayın.', 'Start organizing your cards by subject and topic.')}</Text>
                         </View>
                     )}

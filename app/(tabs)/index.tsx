@@ -1319,7 +1319,7 @@ export default function StudyScreen() {
                         accessibilityLabel={l('Deste seç', 'Select deck')}
                         {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
                     >
-                        <Text style={styles.topBarTitle} numberOfLines={1}>
+                        <Text scaleRole="title" style={styles.topBarTitle} numberOfLines={1}>
                             {settings.showDeckTitle !== false && selectedDeckName
                                 ? reviewerDeckTitle
                                 : l('Bugünün Kartları', 'Cards for Today')}
@@ -1334,7 +1334,7 @@ export default function StudyScreen() {
                                     ? l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)
                                     : l(`Seri ${streak.current} günde — bugün çalışarak sürdürün!`, `${streak.current}-day streak — study today to keep it going!`))}
                             >
-                                <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
+                                <Text scaleRole="badge" style={styles.streakChipText}>🔥 {streak.current}</Text>
                             </View>
                         )}
                     </AppPressable>

@@ -274,7 +274,7 @@ export default function StatsScreen() {
                 >
                     <Text style={styles.backButtonText}>‹</Text>
                 </TouchableOpacity>
-                <Text style={styles.screenTitle} numberOfLines={1}>{t('common.statistics')}</Text>
+                <Text scaleRole="title" style={styles.screenTitle} numberOfLines={1}>{t('common.statistics')}</Text>
                 <View style={styles.headerSpacer} />
             </View>
             <ScrollView showsVerticalScrollIndicator contentContainerStyle={styles.scrollContent}>
@@ -302,7 +302,7 @@ export default function StatsScreen() {
                 </View>
 
                 <View style={styles.todayCard}>
-                    <Text style={styles.sectionTitle}>{l('Bugünün Özeti', 'Today')}</Text>
+                    <Text scaleRole="title" style={styles.sectionTitle}>{l('Bugünün Özeti', 'Today')}</Text>
                     <View style={styles.todayGrid}>
                         <View style={styles.todayStat}>
                             <Text style={styles.todayNumber}>{todayStats.reviewed}</Text>
@@ -325,7 +325,7 @@ export default function StatsScreen() {
 
                 <View style={styles.streakCard}>
                     <View style={styles.streakHeader}>
-                        <Text style={styles.sectionTitle}>🔥 {l('Günlük Seri', 'Daily Streak')}</Text>
+                        <Text scaleRole="title" style={styles.sectionTitle}>🔥 {l('Günlük Seri', 'Daily Streak')}</Text>
                         <Text style={styles.streakBest}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>
                     </View>
                     <View style={styles.streakBody}>

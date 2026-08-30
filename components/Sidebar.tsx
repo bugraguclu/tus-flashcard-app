@@ -74,7 +74,7 @@ const AllCoursesRow = memo(function AllCoursesRow(props: {
             <Text style={styles.subjectIcon}>📚</Text>
             <Text style={[styles.subjectName, selected && styles.subjectNameActive]}>{label}</Text>
             <View style={[styles.subjectCount, selected && styles.subjectCountActive]}>
-                <Text style={[styles.subjectCountText, selected && styles.subjectCountTextActive]}>
+                <Text scaleRole="badge" style={[styles.subjectCountText, selected && styles.subjectCountTextActive]}>
                     {count}
                 </Text>
             </View>
@@ -112,7 +112,7 @@ const SubjectRow = memo(function SubjectRow(props: {
                 <Text style={styles.subjectIcon}>{icon}</Text>
                 <Text style={[styles.subjectName, selected && styles.subjectNameActive]}>{name}</Text>
                 <View style={[styles.subjectCount, selected && styles.subjectCountActive]}>
-                    <Text style={[styles.subjectCountText, selected && styles.subjectCountTextActive]}>
+                    <Text scaleRole="badge" style={[styles.subjectCountText, selected && styles.subjectCountTextActive]}>
                         {count}
                     </Text>
                 </View>
@@ -149,7 +149,7 @@ const TopicRow = memo(function TopicRow(props: {
         >
             <View style={[styles.topicDot, selected && styles.topicDotActive]} />
             <Text style={[styles.topicName, selected && styles.topicNameActive]}>{topic}</Text>
-            <Text style={[styles.topicCount, selected && styles.topicCountActive]}>{count}</Text>
+            <Text scaleRole="badge" style={[styles.topicCount, selected && styles.topicCountActive]}>{count}</Text>
         </AppPressable>
     );
 });
@@ -287,7 +287,7 @@ export function Sidebar(props: SidebarProps) {
                 accessibilityLabel={t('tabs.backToDecks')}
                 {...webTitle(t('tabs.backToDecks'))}
             >
-                <Text style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
+                <Text scaleRole="title" style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
                 <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
             </AppPressable>
 

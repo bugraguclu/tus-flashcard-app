@@ -764,7 +764,7 @@ export default function BrowserScreen() {
                 >
                     <Text style={styles.backButtonText}>‹</Text>
                 </TouchableOpacity>
-                <Text style={styles.screenTitle} numberOfLines={1}>{t('sidebar.myCards')}</Text>
+                <Text scaleRole="title" style={styles.screenTitle} numberOfLines={1}>{t('sidebar.myCards')}</Text>
                 <View style={styles.headerSpacer} />
             </View>
 
@@ -891,7 +891,7 @@ export default function BrowserScreen() {
                         accessibilityLabel={l('Seçimi kapat', 'Close selection')}
                     >
                         <Text style={styles.selectionBarClose}>×</Text>
-                        <Text style={styles.selectionBarCountText}>{selectedCardIds.size} {l('seçili', 'selected')}</Text>
+                        <Text scaleRole="badge" style={styles.selectionBarCountText}>{selectedCardIds.size} {l('seçili', 'selected')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.selectionAction}
@@ -1101,7 +1101,7 @@ export default function BrowserScreen() {
             </Modal>
 
             <SheetModal visible={showSortPicker} onClose={() => setShowSortPicker(false)}>
-                <Text style={styles.modalTitle}>{l('Görüntüleme Sırası', 'Display Order')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Görüntüleme Sırası', 'Display Order')}</Text>
                 <View style={styles.directionRow}>
                     <TouchableOpacity
                         style={[styles.directionButton, !sortDescending && styles.directionButtonActive]}
@@ -1158,7 +1158,7 @@ export default function BrowserScreen() {
             />
 
             <SheetModal visible={showNoteTypePicker} onClose={() => setShowNoteTypePicker(false)}>
-                <Text style={styles.modalTitle}>{l('Not Türünü Değiştir', 'Change Note Type')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Not Türünü Değiştir', 'Change Note Type')}</Text>
                 <Text style={styles.modalCaption}>{l('Aynı adlı alanlar eşleştirilir; kartların mevcut zamanlaması korunur.', 'Fields with matching names are mapped; existing card scheduling is preserved.')}</Text>
                 <ScrollView style={styles.pickerList}>
                     {selectableNoteTypes.map((noteType) => (
@@ -1184,7 +1184,7 @@ export default function BrowserScreen() {
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowRepositionDialog(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Yeniden Konumlandır', 'Reposition')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Yeniden Konumlandır', 'Reposition')}</Text>
                         <Text style={styles.modalCaption}>{l('Yalnızca seçili yeni kartlar etkilenir.', 'Only selected new cards are affected.')}</Text>
                         <Text style={styles.fieldLabel}>{l('Başlangıç konumu', 'Start position')}</Text>
                         <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" />
@@ -1217,7 +1217,7 @@ export default function BrowserScreen() {
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDueDialog(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Vade Tarihini Ayarla', 'Set Due Date')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Vade Tarihini Ayarla', 'Set Due Date')}</Text>
                         <Text style={styles.modalCaption}>{l('Örnek: 5, 3-7 veya aralığı da değiştirmek için 3-7!', 'Examples: 5, 3-7, or 3-7! to also change the interval.')}</Text>
                         <TextInput style={styles.dialogInput} value={dueInput} onChangeText={setDueInput} autoCapitalize="none" autoCorrect={false} keyboardType="numbers-and-punctuation" placeholder="0" placeholderTextColor={colors.textMuted} />
                         <View style={styles.dialogActions}>
@@ -1240,7 +1240,7 @@ export default function BrowserScreen() {
             </Modal>
 
             <SheetModal visible={showGradePicker} onClose={() => setShowGradePicker(false)}>
-                <Text style={styles.modalTitle}>{l('Şimdi Derecelendir', 'Grade Now')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Şimdi Derecelendir', 'Grade Now')}</Text>
                 <Text style={styles.modalCaption}>{l('Seçili kartlar normal zamanlayıcı ve inceleme geçmişi kullanılarak derecelendirilir.', 'Selected cards are graded through the normal scheduler and review history.')}</Text>
                 {([
                     { grade: 1 as const, label: l('Tekrar', 'Again'), color: colors.btnAgain },
@@ -1282,7 +1282,7 @@ export default function BrowserScreen() {
             </Modal>
 
             <SheetModal visible={flagPickerMode !== null} onClose={() => setFlagPickerMode(null)}>
-                <Text style={styles.modalTitle}>
+                <Text scaleRole="title" style={styles.modalTitle}>
                     {flagPickerMode === 'selection' ? l('Seçili Kartları Bayrakla', 'Flag Selected Cards') : l('Bayrağa Göre Filtrele', 'Filter by Flag')}
                 </Text>
                 {flagPickerMode === 'filter' && (
@@ -1304,7 +1304,7 @@ export default function BrowserScreen() {
             </SheetModal>
 
             <SheetModal visible={showOptions} onClose={() => setShowOptions(false)}>
-                <Text style={styles.modalTitle}>{l('Kart Tarayıcı Seçenekleri', 'Card Browser Options')}</Text>
+                <Text scaleRole="title" style={styles.modalTitle}>{l('Kart Tarayıcı Seçenekleri', 'Card Browser Options')}</Text>
                 <View style={styles.optionRow}>
                     <View style={styles.optionCopy}>
                         <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
@@ -1357,7 +1357,7 @@ export default function BrowserScreen() {
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowFilteredDeckDialog(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Filtrelenmiş Deste Oluştur', 'Create Filtered Deck')}</Text>
+                        <Text scaleRole="title" style={styles.modalTitle}>{l('Filtrelenmiş Deste Oluştur', 'Create Filtered Deck')}</Text>
                         <Text style={styles.fieldLabel}>{l('Deste adı', 'Deck name')}</Text>
                         <TextInput style={styles.dialogInput} value={filteredDeckName} onChangeText={setFilteredDeckName} placeholderTextColor={colors.textMuted} autoCorrect={false} />
                         <Text style={styles.fieldLabel}>{l('Arama', 'Search')}</Text>
@@ -1443,7 +1443,9 @@ function createStyles(colors: ColorScheme) {
 
     // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
     // row stretches into leftover space when the list below is short, inflating the chips.
-    filterScroll: { minHeight: 42, maxHeight: 42, flexGrow: 0 },
+    // No maxHeight: a hard ceiling here clipped the chip labels at the larger Dynamic Type
+    // sizes, which is exactly the text the filter row exists to show.
+    filterScroll: { minHeight: 42, flexGrow: 0 },
     filterContent: { paddingHorizontal: Spacing.lg, gap: 6, alignItems: 'center' },
     filterChip: {
         flexDirection: 'row',
