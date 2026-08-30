@@ -157,29 +157,31 @@ export default function TabLayout() {
         if (!isWide) setSidebarOpen(false);
     }, [isWide, router]);
 
-    const handleSubjectPress = (subjectId: string) => {
+    // Stable identities: the sidebar's rows are memoized on their props, so a handler that
+    // changed every render would re-render the whole course list on any layout state change.
+    const handleSubjectPress = useCallback((subjectId: string) => {
         setSelectedSubject(subjectId);
         setSelectedTopic(null);
         navigate('/');
-    };
+    }, [navigate, setSelectedSubject, setSelectedTopic]);
 
-    const handleToggleExpand = (subjectId: string) => {
+    const handleToggleExpand = useCallback((subjectId: string) => {
         setExpandedSubject((prev) => (prev === subjectId ? null : subjectId));
-    };
+    }, []);
 
-    const handleTopicPress = (subjectId: string, topic: string) => {
+    const handleTopicPress = useCallback((subjectId: string, topic: string) => {
         setSelectedSubject(subjectId);
         setSelectedTopic(topic);
         navigate('/');
-    };
+    }, [navigate, setSelectedSubject, setSelectedTopic]);
 
-    const handleAllPress = () => {
+    const handleAllPress = useCallback(() => {
         setSelectedSubject(null);
         setSelectedTopic(null);
         setExpandedSubject(null);
         // Inside a deck, "Tüm Dersler" means that whole deck — not the whole collection.
         navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/');
-    };
+    }, [activeDeckName, navigate, setSelectedSubject, setSelectedTopic]);
 
     // No loading branch here: the root CatalogGate holds the native splash until startup
     // finishes, so this layout only ever mounts with a ready collection.

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import {
     Animated,
     View,
@@ -9,22 +9,21 @@ import {
     type ListRenderItemInfo,
 } from 'react-native';
 import { Text } from './Typography';
-import { TouchableOpacity } from './Touchable';
+import { AppPressable } from './AppPressable';
+
+// Drawer rows sit flush against each other, so none of them take the default hit slop: an 8pt
+// halo would cross into the neighbouring row and hand its edge taps to the wrong target. They
+// are already at least 40pt tall. Full-width rows also keep the dim but skip the inward scale,
+// which UIKit table rows never do.
+const ROW_PRESS = { hitSlop: 0, scaleOnPress: false } as const;
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import type { Subject } from '../lib/types';
+import { buildSidebarRows, type SidebarRow } from '../lib/sidebarRows';
 import { useI18n } from '../hooks/useI18n';
 
 export const SIDEBAR_WIDTH = 260;
 
-/**
- * The drawer is rebuilt every time it opens, so a recursive `.map()` over every course and its
- * topics paid for rows nobody could see. Flattening the tree into one row list lets a FlatList
- * mount only the visible slice; expanding a course changes the list rather than the JSX shape.
- */
-type SidebarRow =
-    | { key: string; kind: 'all' }
-    | { key: string; kind: 'subject'; subject: Subject }
-    | { key: string; kind: 'topic'; subjectId: string; topic: string };
+type SidebarStyles = ReturnType<typeof createStyles>;
 
 type SidebarProps = {
     isWide: boolean;
@@ -52,6 +51,108 @@ type SidebarProps = {
 function webTitle(text: string): Record<string, string> {
     return Platform.OS === 'web' ? { title: text } : {};
 }
+
+/**
+ * Rows take primitive props only, so a memoized row re-renders when its own count, selection
+ * or disclosure changes. Opening a course therefore touches that row and its new topic rows
+ * instead of the whole catalogue.
+ */
+const AllCoursesRow = memo(function AllCoursesRow(props: {
+    styles: SidebarStyles;
+    label: string;
+    count: number;
+    selected: boolean;
+    onPress: () => void;
+}) {
+    const { styles, label, count, selected, onPress } = props;
+    return (
+        <AppPressable
+            {...ROW_PRESS}
+            style={[styles.subjectItem, selected && styles.subjectItemActive]}
+            onPress={onPress}
+        >
+            <Text style={styles.subjectIcon}>📚</Text>
+            <Text style={[styles.subjectName, selected && styles.subjectNameActive]}>{label}</Text>
+            <View style={[styles.subjectCount, selected && styles.subjectCountActive]}>
+                <Text style={[styles.subjectCountText, selected && styles.subjectCountTextActive]}>
+                    {count}
+                </Text>
+            </View>
+        </AppPressable>
+    );
+});
+
+const SubjectRow = memo(function SubjectRow(props: {
+    styles: SidebarStyles;
+    subjectId: string;
+    name: string;
+    icon: string;
+    count: number;
+    expanded: boolean;
+    selected: boolean;
+    studyLabel: string;
+    showTopicsLabel: string;
+    hideTopicsLabel: string;
+    onPress: (subjectId: string) => void;
+    onToggleExpand: (subjectId: string) => void;
+}) {
+    const {
+        styles, subjectId, name, icon, count, expanded, selected,
+        studyLabel, showTopicsLabel, hideTopicsLabel, onPress, onToggleExpand,
+    } = props;
+    const expandLabel = expanded ? hideTopicsLabel : showTopicsLabel;
+    return (
+        <View style={[styles.subjectRow, selected && styles.subjectItemActive]}>
+            <AppPressable
+                {...ROW_PRESS}
+                style={styles.subjectItem}
+                onPress={() => onPress(subjectId)}
+                {...webTitle(`${name} — ${studyLabel}`)}
+            >
+                <Text style={styles.subjectIcon}>{icon}</Text>
+                <Text style={[styles.subjectName, selected && styles.subjectNameActive]}>{name}</Text>
+                <View style={[styles.subjectCount, selected && styles.subjectCountActive]}>
+                    <Text style={[styles.subjectCountText, selected && styles.subjectCountTextActive]}>
+                        {count}
+                    </Text>
+                </View>
+            </AppPressable>
+            <AppPressable
+                hitSlop={0}
+                style={styles.expandBtn}
+                onPress={() => onToggleExpand(subjectId)}
+                accessibilityLabel={expandLabel}
+                {...webTitle(expandLabel)}
+            >
+                <Text style={[styles.expandArrow, expanded && styles.expandArrowOpen]}>
+                    {expanded ? '▾' : '▸'}
+                </Text>
+            </AppPressable>
+        </View>
+    );
+});
+
+const TopicRow = memo(function TopicRow(props: {
+    styles: SidebarStyles;
+    subjectId: string;
+    topic: string;
+    count: number;
+    selected: boolean;
+    onPress: (subjectId: string, topic: string) => void;
+}) {
+    const { styles, subjectId, topic, count, selected, onPress } = props;
+    return (
+        <AppPressable
+            {...ROW_PRESS}
+            style={[styles.topicItem, selected && styles.topicItemActive]}
+            onPress={() => onPress(subjectId, topic)}
+        >
+            <View style={[styles.topicDot, selected && styles.topicDotActive]} />
+            <Text style={[styles.topicName, selected && styles.topicNameActive]}>{topic}</Text>
+            <Text style={[styles.topicCount, selected && styles.topicCountActive]}>{count}</Text>
+        </AppPressable>
+    );
+});
 
 export function Sidebar(props: SidebarProps) {
     const { t } = useI18n();
@@ -83,101 +184,87 @@ export function Sidebar(props: SidebarProps) {
         [drawerProgress],
     );
 
-    const rows = useMemo<SidebarRow[]>(() => {
-        const built: SidebarRow[] = [{ key: 'all', kind: 'all' }];
-        for (const subject of subjects) {
-            built.push({ key: `subject:${subject.id}`, kind: 'subject', subject });
-            if (expandedSubject !== subject.id) continue;
-            for (const topic of getTopicsForSubject(subject.id)) {
-                built.push({ key: `topic:${subject.id}:${topic}`, kind: 'topic', subjectId: subject.id, topic });
-            }
-        }
-        return built;
-    }, [subjects, expandedSubject, getTopicsForSubject]);
+    // The drawer is rebuilt every time it opens, so a recursive walk over every course and its
+    // topics paid for rows nobody could see. The flat model lets the FlatList mount only the
+    // visible slice, and a collapsed course costs exactly one row.
+    const rows = useMemo(
+        () => buildSidebarRows({
+            subjects,
+            expandedSubject,
+            selectedSubject,
+            selectedTopic,
+            totalCards,
+            getSubjectCount,
+            getTopicCount,
+            getTopicsForSubject,
+        }),
+        [
+            subjects,
+            expandedSubject,
+            selectedSubject,
+            selectedTopic,
+            totalCards,
+            getSubjectCount,
+            getTopicCount,
+            getTopicsForSubject,
+        ],
+    );
 
     const keyExtractor = useCallback((row: SidebarRow) => row.key, []);
 
+    const allCoursesLabel = t('sidebar.allCourses');
+    const studyLabel = t('common.study');
+    const showTopicsLabel = t('sidebar.showTopics');
+    const hideTopicsLabel = t('sidebar.hideTopics');
+
     const renderRow = useCallback(({ item }: ListRenderItemInfo<SidebarRow>) => {
         if (item.kind === 'all') {
-            const isActive = !selectedSubject && !selectedTopic;
             return (
-                <TouchableOpacity
-                    style={[styles.subjectItem, isActive && styles.subjectItemActive]}
+                <AllCoursesRow
+                    styles={styles}
+                    label={allCoursesLabel}
+                    count={item.count}
+                    selected={item.selected}
                     onPress={onAllPress}
-                >
-                    <Text style={styles.subjectIcon}>📚</Text>
-                    <Text style={[styles.subjectName, isActive && styles.subjectNameActive]}>
-                        {t('sidebar.allCourses')}
-                    </Text>
-                    <View style={[styles.subjectCount, isActive && styles.subjectCountActive]}>
-                        <Text style={[styles.subjectCountText, isActive && styles.subjectCountTextActive]}>
-                            {totalCards}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
+                />
             );
         }
 
         if (item.kind === 'subject') {
-            const subject = item.subject;
-            const isExpanded = expandedSubject === subject.id;
-            const isSelected = selectedSubject === subject.id && !selectedTopic;
             return (
-                <View style={[styles.subjectRow, isSelected && styles.subjectItemActive]}>
-                    <TouchableOpacity
-                        style={styles.subjectItem}
-                        onPress={() => onSubjectPress(subject.id)}
-                        {...webTitle(`${subject.name} — ${t('common.study')}`)}
-                    >
-                        <Text style={styles.subjectIcon}>{subject.icon}</Text>
-                        <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
-                            {subject.name}
-                        </Text>
-                        <View style={[styles.subjectCount, isSelected && styles.subjectCountActive]}>
-                            <Text style={[styles.subjectCountText, isSelected && styles.subjectCountTextActive]}>
-                                {getSubjectCount(subject.id)}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.expandBtn}
-                        onPress={() => onToggleExpand(subject.id)}
-                        accessibilityRole="button"
-                        accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
-                        {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
-                    >
-                        <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
-                            {isExpanded ? '▾' : '▸'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                <SubjectRow
+                    styles={styles}
+                    subjectId={item.subjectId}
+                    name={item.name}
+                    icon={item.icon}
+                    count={item.count}
+                    expanded={item.expanded}
+                    selected={item.selected}
+                    studyLabel={studyLabel}
+                    showTopicsLabel={showTopicsLabel}
+                    hideTopicsLabel={hideTopicsLabel}
+                    onPress={onSubjectPress}
+                    onToggleExpand={onToggleExpand}
+                />
             );
         }
 
-        const isTopicSelected = selectedSubject === item.subjectId && selectedTopic === item.topic;
         return (
-            <TouchableOpacity
-                style={[styles.topicItem, isTopicSelected && styles.topicItemActive]}
-                onPress={() => onTopicPress(item.subjectId, item.topic)}
-            >
-                <View style={[styles.topicDot, isTopicSelected && styles.topicDotActive]} />
-                <Text style={[styles.topicName, isTopicSelected && styles.topicNameActive]}>
-                    {item.topic}
-                </Text>
-                <Text style={[styles.topicCount, isTopicSelected && styles.topicCountActive]}>
-                    {getTopicCount(item.subjectId, item.topic)}
-                </Text>
-            </TouchableOpacity>
+            <TopicRow
+                styles={styles}
+                subjectId={item.subjectId}
+                topic={item.topic}
+                count={item.count}
+                selected={item.selected}
+                onPress={onTopicPress}
+            />
         );
     }, [
         styles,
-        t,
-        totalCards,
-        selectedSubject,
-        selectedTopic,
-        expandedSubject,
-        getSubjectCount,
-        getTopicCount,
+        allCoursesLabel,
+        studyLabel,
+        showTopicsLabel,
+        hideTopicsLabel,
         onAllPress,
         onSubjectPress,
         onToggleExpand,
@@ -193,16 +280,16 @@ export function Sidebar(props: SidebarProps) {
             importantForAccessibility={isOpen ? 'auto' : 'no-hide-descendants'}
             style={[styles.sidebar, { transform: [{ translateX }] }]}
         >
-            <TouchableOpacity
+            <AppPressable
+                {...ROW_PRESS}
                 style={styles.sidebarHeader}
                 onPress={() => navigate('/decks')}
-                accessibilityRole="button"
                 accessibilityLabel={t('tabs.backToDecks')}
                 {...webTitle(t('tabs.backToDecks'))}
             >
                 <Text style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
                 <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
-            </TouchableOpacity>
+            </AppPressable>
 
             <FlatList
                 style={styles.subjectList}
@@ -220,32 +307,34 @@ export function Sidebar(props: SidebarProps) {
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
+                    <AppPressable hitSlop={0} style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
                         <Text style={styles.actionIcon}>🗂️</Text>
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
+                    </AppPressable>
+                    <AppPressable hitSlop={0} style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
                         <Text style={styles.actionIcon}>📊</Text>
                         <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
-                    </TouchableOpacity>
+                    </AppPressable>
                 </View>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
+                <AppPressable {...ROW_PRESS} style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
                     <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
-                </TouchableOpacity>
+                </AppPressable>
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
+                <AppPressable {...ROW_PRESS} style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
                     <Text style={styles.settingsBtnText}>⚙️ {t('tabs.settings')}</Text>
-                </TouchableOpacity>
+                </AppPressable>
 
-                <TouchableOpacity
+                <AppPressable
+                    scaleOnPress={false}
                     style={styles.creditContainer}
+                    accessibilityLabel="Kürşad Güçlü"
                     onPress={() => Linking.openURL('https://www.instagram.com/kursatguclu1/')}
                 >
                     <Text style={styles.creditText}>
                         Powered by <Text style={styles.creditName}>Kürşad Güçlü</Text>
                     </Text>
-                </TouchableOpacity>
+                </AppPressable>
             </View>
         </Animated.View>
     );
