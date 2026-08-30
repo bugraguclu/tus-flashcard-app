@@ -5,6 +5,7 @@
 // it. The grammar is shared with the filtered-deck builder (lib/searchQuery.ts); only the term
 // evaluation lives here.
 
+import { FSRS6_DEFAULT_DECAY, fsrsRetrievability, type FsrsMemoryState } from './fsrs';
 import { matchesSearch, normalizeSearchText } from './searchText';
 import { foldSearchNode, isQuotedTerm, parseSearchQuery, unquoteSearchValue } from './searchQuery';
 
@@ -33,6 +34,12 @@ export interface CardSearchContext {
     createdAtMs?: number;
     /** Epoch ms the note was last edited, for `edited:N`. */
     noteEditedAtMs?: number;
+    /** FSRS memory state, for `prop:s`, `prop:d` and `prop:r`. */
+    memoryState?: FsrsMemoryState | null;
+    /** The forgetting-curve decay the card was scheduled with. */
+    decay?: number;
+    /** Epoch ms of the card's last review, for `prop:r`. */
+    lastReviewedAtMs?: number;
 }
 
 export interface CardMatcherOptions {
@@ -148,7 +155,7 @@ function statePredicate(state: string, options: CardMatcherOptions): Predicate |
 }
 
 function propPredicate(body: string, options: CardMatcherOptions): Predicate | null {
-    const match = body.match(/^(ivl|reps|lapses|ease|pos|due)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
+    const match = body.match(/^(ivl|reps|lapses|ease|pos|due|s|d|r)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
     if (!match) return null;
 
     const [, key, op, rawValue] = match;
@@ -156,6 +163,33 @@ function propPredicate(body: string, options: CardMatcherOptions): Predicate | n
     if (!Number.isFinite(value)) return null;
 
     switch (key) {
+        // FSRS properties. Difficulty is written as a 0-1 fraction in searches but stored on the
+        // 1-10 scale, and a new card has no retrievability at all.
+        case 's': {
+            const compare = numericComparison(op, value);
+            return (card) => (card.memoryState ? compare(card.memoryState.stability) : false);
+        }
+        case 'd': {
+            const compare = numericComparison(op, value * 9 + 1);
+            return (card) => (card.memoryState ? compare(card.memoryState.difficulty) : false);
+        }
+        case 'r': {
+            const compare = numericComparison(op, value);
+            return (card) => {
+                if (card.type === 0 || !card.memoryState) return false;
+                // Days since the last answer, falling back to the schedule for a card whose
+                // review time was never recorded — the same fallback the scheduler uses.
+                const elapsedDays = card.lastReviewedAtMs && card.lastReviewedAtMs > 0
+                    ? Math.max(0, (options.dayCutoffMs - card.lastReviewedAtMs) / DAY_MS)
+                    : Math.max(0, options.today - (card.due - card.ivl));
+                const retrievability = fsrsRetrievability(
+                    card.memoryState.stability,
+                    elapsedDays,
+                    card.decay ?? FSRS6_DEFAULT_DECAY,
+                );
+                return compare(retrievability);
+            };
+        }
         case 'due': {
             const compare = numericComparison(op, Math.trunc(value));
             return (card) => (card.queue === 2 || card.queue === 3) && compare(card.due - options.today);

@@ -10,6 +10,7 @@
  * flattened into the chosen subject.
  */
 
+import { normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
 import JSZip from 'jszip';
 import { importRows, type RowImportCounts } from './importNotes';
 import { getNoteType, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
@@ -327,6 +328,12 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 answerAction: protoNumber(cfg, 43),
                 waitForAudio: Boolean(protoNumber(cfg, 44, 1)),
                 easyDays: protoFloats(cfg, 4),
+                fsrsWeights: protoFloats(cfg, 3),
+                fsrsParams5: protoFloats(cfg, 5),
+                fsrsParams6: protoFloats(cfg, 6),
+                desiredRetention: protoFloat(cfg, 37),
+                sm2Retention: protoFloat(cfg, 40),
+                ignoreRevlogsBeforeDate: protoString(cfg, 46),
             };
         }
         return Object.keys(models).length && Object.keys(decks).length ? { crt, models, decks, dconf } : null;
@@ -390,6 +397,15 @@ function importedNoteType(raw: Record<string, any>, id: number, packageId: strin
     };
 }
 
+/** The newest FSRS parameter list a package carries, normalized to FSRS-6's 21 values. */
+function importedFsrsParams(raw: Record<string, any>): number[] | undefined {
+    for (const key of ['fsrsParams6', 'fsrsParams5', 'fsrsWeights', 'fsrsParams4']) {
+        const values = raw[key];
+        if (Array.isArray(values) && values.length > 0) return normalizeFsrsParameters(values.map(Number));
+    }
+    return undefined;
+}
+
 function importedDeckConfig(raw: Record<string, any>, id: number, packageId: string): DeckConfig {
     const newOptions = raw.new && typeof raw.new === 'object' ? raw.new : {};
     const review = raw.rev && typeof raw.rev === 'object' ? raw.rev : {};
@@ -441,6 +457,16 @@ function importedDeckConfig(raw: Record<string, any>, id: number, packageId: str
         easyDays: Array.isArray(raw.easyDays) && raw.easyDays.length === 7
             ? floatArray(raw.easyDays, [1, 1, 1, 1, 1, 1, 1])
             : [1, 1, 1, 1, 1, 1, 1],
+        // FSRS: the newest parameter generation the package carries wins, and older ones are
+        // converted rather than dropped (lib/fsrs.ts normalizeFsrsParameters).
+        fsrsParams: importedFsrsParams(raw),
+        desiredRetention: Number.isFinite(Number(raw.desiredRetention)) && Number(raw.desiredRetention) > 0
+            ? Number(raw.desiredRetention)
+            : undefined,
+        historicalRetention: Number.isFinite(Number(raw.sm2Retention)) && Number(raw.sm2Retention) > 0
+            ? Number(raw.sm2Retention)
+            : undefined,
+        ignoreRevlogsBeforeMs: parseFsrsCutoffDate(raw.ignoreRevlogsBeforeDate),
         ankiRaw: raw,
         sourcePackageId: packageId,
     };

@@ -1014,13 +1014,22 @@ export function findEmptyCards(): EmptyCardEntry[] {
  * findEmptyCards(), where the note (and its other cards) may still be perfectly valid.
  */
 export function deleteAnkiCardOnly(cardId: number): void {
+    deleteAnkiCardsOnly([cardId]);
+}
+
+/** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
+export function deleteAnkiCardsOnly(cardIds: number[]): void {
+    if (cardIds.length === 0) return;
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
-        db.runSync('DELETE FROM revlog WHERE cardId = ?', cardId);
-        db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
-        db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
-        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+        const uniqueIds = [...new Set(cardIds)];
+        for (const cardId of uniqueIds) {
+            db.runSync('DELETE FROM revlog WHERE cardId = ?', cardId);
+            db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
+            db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
+            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+        }
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');

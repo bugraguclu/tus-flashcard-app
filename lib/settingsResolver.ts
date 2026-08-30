@@ -1,4 +1,11 @@
 import type { AppSettings } from './types';
+import {
+    FSRS_DEFAULT_DESIRED_RETENTION,
+    FSRS_DEFAULT_HISTORICAL_RETENTION,
+    FSRS_DESIRED_RETENTION_MAX,
+    FSRS_DESIRED_RETENTION_MIN,
+    normalizeFsrsParameters,
+} from './fsrs';
 import type { DeckConfig } from './models';
 import { normalizeNewCardGatherOrder } from './queueBuild';
 
@@ -56,5 +63,26 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         easyDays: Array.isArray(config.easyDays) && config.easyDays.length === 7
             ? [...config.easyDays]
             : base.easyDays,
+        // FSRS parameters and retention targets live on the preset; the on/off switch and the
+        // reschedule preference are collection-wide and stay on `base`.
+        fsrsParameters: normalizeFsrsParameters(config.fsrsParams ?? base.fsrsParameters),
+        desiredRetention: clampDesiredRetention(config.desiredRetention ?? base.desiredRetention),
+        historicalRetention: clampHistoricalRetention(config.historicalRetention ?? base.historicalRetention),
+        ignoreRevlogsBeforeMs: Number.isFinite(config.ignoreRevlogsBeforeMs)
+            ? config.ignoreRevlogsBeforeMs
+            : base.ignoreRevlogsBeforeMs,
     };
+}
+
+/** Anki refuses to schedule outside this band; a stray stored value is pulled back into it. */
+export function clampDesiredRetention(value: unknown): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return FSRS_DEFAULT_DESIRED_RETENTION;
+    return Math.min(FSRS_DESIRED_RETENTION_MAX, Math.max(FSRS_DESIRED_RETENTION_MIN, parsed));
+}
+
+export function clampHistoricalRetention(value: unknown): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return FSRS_DEFAULT_HISTORICAL_RETENTION;
+    return Math.min(0.99, Math.max(0.5, parsed));
 }

@@ -77,8 +77,11 @@ public final class DeckShortcutsModule: Module {
       }
       presentationDelegate = delegate
       controller.delegate = delegate
-      controller.presentationController?.delegate = delegate
-      presenter.present(controller, animated: true)
+      presenter.present(controller, animated: true) {
+        // UIKit creates the presentation controller during `present`. Installing this delegate
+        // before that call returns leaves pull-down dismissal without a completion callback.
+        controller.presentationController?.delegate = delegate
+      }
     }
     .runOnQueue(.main)
   }

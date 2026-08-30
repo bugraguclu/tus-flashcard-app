@@ -651,3 +651,46 @@ describe('custom study gather probe', () => {
         expect(probe('deck:"Tıp" rated:7:1')).toBe(0);
     });
 });
+
+describe('FSRS search properties', () => {
+    const withFsrs = (cardId: number, noteId: number, state: { s: number; d: number }, lastReviewDaysAgo: number) => {
+        saveNote(makeNote(noteId, [], ['fsrs kartı', 'cevap', '']));
+        saveAnkiCard({
+            ...makeCard(cardId, noteId, 1, { type: 2, queue: 2, due: 5, ivl: 10 }),
+            lastReview: Date.now() - lastReviewDaysAgo * 86_400_000,
+            ankiData: JSON.stringify({ s: state.s, d: state.d, dr: 0.9, decay: 0.1542 }),
+        });
+    };
+
+    it('matches on stability and on difficulty’s 0-1 scale', () => {
+        withFsrs(3001, 61, { s: 40, d: 8.2 }, 5);
+        withFsrs(3002, 62, { s: 4, d: 2.8 }, 5);
+
+        expect(search('prop:s>10')).toBe(1);
+        expect(search('prop:s<10')).toBe(1);
+        // d 8.2 on the stored scale is 0.8 as a fraction; 2.8 is 0.2.
+        expect(search('prop:d>0.5')).toBe(1);
+        expect(search('prop:d<0.5')).toBe(1);
+        expect(search('prop:s>0')).toBe(2);
+    });
+
+    it('matches on retrievability, and never matches a new card', () => {
+        // Stability 10 with 10 days elapsed sits exactly on 90% retrievability.
+        withFsrs(3003, 63, { s: 10, d: 5 }, 10);
+        // Stability 100 with 1 day elapsed is still near-perfectly retrievable.
+        withFsrs(3004, 64, { s: 100, d: 5 }, 1);
+        saveNote(makeNote(65, [], ['yeni kart', 'cevap', '']));
+        saveAnkiCard(makeCard(3005, 65, 1, { type: 0, queue: 0, due: 1, ivl: 0 }));
+
+        expect(search('prop:r<0.95')).toBe(1);
+        expect(search('prop:r>0.95')).toBe(1);
+        expect(search('prop:r>0')).toBe(2);
+    });
+
+    it('ignores an FSRS property a card has no state for', () => {
+        saveNote(makeNote(66, [], ['durumsuz', 'cevap', '']));
+        saveAnkiCard(makeCard(3006, 66, 1, { type: 2, queue: 2, due: 5, ivl: 10 }));
+        expect(search('prop:s>0')).toBe(0);
+        expect(search('prop:r>0')).toBe(0);
+    });
+});

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
+    TextInput,
     TouchableOpacity,
     ScrollView,
     StyleSheet,
@@ -14,13 +15,17 @@ import { confirm, alert } from '../lib/confirm';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     createBackupNow,
+    BackupNameError,
     deleteBackup,
+    displayBackupName,
+    getDefaultBackupFileName,
     isPreRestoreBackup,
     listBackups,
     restoreBackup,
     type BackupInfo,
 } from '../lib/backup';
 import { useI18n } from '../hooks/useI18n';
+import ScreenHeader from '../components/ScreenHeader';
 
 function formatSize(bytes: number): string {
     if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -48,13 +53,19 @@ export default function BackupsScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [backups, setBackups] = useState<BackupInfo[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [defaultBackupName, setDefaultBackupName] = useState(() => getDefaultBackupFileName());
+    const [backupName, setBackupName] = useState(defaultBackupName);
 
     const reload = useCallback(async () => {
+        setLoading(true);
+        setLoadError(false);
         try {
             setBackups(await listBackups());
         } catch (e) {
             console.warn('[Backups] list failed:', e);
+            setLoadError(true);
         } finally {
             setLoading(false);
         }
@@ -77,12 +88,30 @@ export default function BackupsScreen() {
     const handleBackupNow = () =>
         withBusy(async () => {
             try {
-                await createBackupNow();
+                // Leaving the suggested name untouched keeps the existing timestamp-based
+                // automatic naming behavior. A changed value is normalized and namespaced by
+                // the backup layer before it reaches the filesystem.
+                const name = backupName.trim() === defaultBackupName ? undefined : backupName;
+                await createBackupNow({}, { name });
                 await reload();
+                const nextDefaultName = getDefaultBackupFileName();
+                setDefaultBackupName(nextDefaultName);
+                setBackupName(nextDefaultName);
                 alert(t('common.completed'), l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'));
             } catch (e) {
                 console.warn('[Backups] manual backup failed:', e);
-                alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
+                const message = e instanceof BackupNameError && e.code === 'duplicate'
+                    ? l('Bu adla bir yedek zaten var. Başka bir ad seçin.', 'A backup with this name already exists. Choose another name.')
+                    : e instanceof BackupNameError && e.code === 'empty'
+                        ? l('Bir yedek adı girin.', 'Enter a backup name.')
+                        : e instanceof BackupNameError && e.code === 'invalid-extension'
+                            ? l('Yedek adı .json uzantılı olmalı.', 'Backup names must use the .json extension.')
+                            : e instanceof BackupNameError && e.code === 'too-long'
+                                ? l('Yedek adı çok uzun.', 'Backup name is too long.')
+                                : e instanceof BackupNameError
+                                    ? l('Yedek adı geçersiz karakterler içeriyor.', 'Backup name contains unsupported characters.')
+                                    : l('Yedek oluşturulamadı.', 'Could not create a backup.');
+                alert(t('common.error'), message);
             }
         });
 
@@ -137,10 +166,30 @@ export default function BackupsScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <ScreenHeader
+                title={l('Yedekler', 'Backups')}
+                onBack={() => router.canGoBack() ? router.back() : router.replace('/decks' as any)}
+                backAccessibilityLabel={l('Destelere dön', 'Back to decks')}
+            />
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    {l('Uygulama haftada bir özel uygulama alanında otomatik yedek oluşturur ve en yeni 7 koleksiyon yedeğini saklar. Paylaş ile seçilen yedek için dışa aktarma seçeneklerini açabilirsiniz.', 'The app creates one automatic backup per week in private app storage and keeps the latest 7 collection backups. Use Share to open export options for the selected backup.')}
+                    {l('Yedekler cihazda yerel tutulur. Adı kaydetmeden önce değiştirebilirsiniz.', 'Backups stay on this device. You can change the name before saving.')}
                 </Text>
+
+                <Text style={styles.label}>{l('YEDEK ADI', 'BACKUP NAME')}</Text>
+                <TextInput
+                    style={styles.nameInput}
+                    value={backupName}
+                    onChangeText={setBackupName}
+                    placeholder={defaultBackupName}
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={() => { void handleBackupNow(); }}
+                    accessibilityLabel={l('Yedek adı', 'Backup name')}
+                    editable={!busy}
+                />
 
                 <TouchableOpacity
                     style={[styles.primaryBtn, busy && styles.btnDisabled]}
@@ -152,11 +201,20 @@ export default function BackupsScreen() {
 
                 {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}
 
-                {!loading && backups.length === 0 && (
+                {!loading && loadError && (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.empty}>{l('Yedekler yüklenemedi.', 'Backups could not be loaded.')}</Text>
+                        <TouchableOpacity style={styles.retryBtn} onPress={() => { void reload(); }} accessibilityRole="button" accessibilityLabel={l('Yedekleri tekrar yükle', 'Reload backups')}>
+                            <Text style={styles.retryText}>{t('common.retry')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {!loading && !loadError && backups.length === 0 && (
                     <Text style={styles.empty}>{l('Henüz yedek yok.', 'No backups yet.')}</Text>
                 )}
 
-                {backups.map((backup) => (
+                {!loadError && backups.map((backup) => (
                     <View key={backup.name} style={styles.row}>
                         <View style={styles.rowText}>
                             <Text style={styles.rowTitle}>
@@ -164,6 +222,9 @@ export default function BackupsScreen() {
                                     ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
                                     : l('📦 Koleksiyon yedeği', '📦 Collection backup')}
                             </Text>
+                            {!isPreRestoreBackup(backup.name) && (
+                                <Text style={styles.rowName} numberOfLines={1}>{displayBackupName(backup.name)}</Text>
+                            )}
                             <Text style={styles.rowSub}>
                                 {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}
                             </Text>
@@ -203,6 +264,17 @@ function createStyles(colors: ColorScheme) {
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 20 },
+    label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.7, color: colors.textMuted, marginTop: Spacing.xs },
+    nameInput: {
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.bgInput,
+        color: colors.textPrimary,
+        fontSize: FontSize.md,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+    },
     primaryBtn: {
         borderWidth: 1,
         borderColor: colors.accent,
@@ -214,6 +286,9 @@ function createStyles(colors: ColorScheme) {
     primaryBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
     btnDisabled: { opacity: 0.5 },
     empty: { fontSize: FontSize.md, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
+    emptyState: { alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.lg },
+    retryBtn: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.sm },
+    retryText: { color: colors.accent, fontWeight: '600' },
     row: {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
@@ -224,6 +299,7 @@ function createStyles(colors: ColorScheme) {
     },
     rowText: {},
     rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    rowName: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 3 },
     rowSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
     rowActions: { flexDirection: 'row', gap: Spacing.sm },
     actionBtn: {

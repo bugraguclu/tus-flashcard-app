@@ -12,9 +12,15 @@ import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
 import { useCollectionInvalidation } from '../contexts/AppContext';
-import { findEmptyCards, deleteAnkiCardOnly, type EmptyCardEntry } from '../lib/noteManager';
-import { dbDeleteFtsCard } from '../lib/db';
+import { findEmptyCards, deleteAnkiCardOnly, deleteAnkiCardsOnly, type EmptyCardEntry } from '../lib/noteManager';
 import { useI18n } from '../hooks/useI18n';
+import ScreenHeader from '../components/ScreenHeader';
+
+function emptyCardReason(reason: EmptyCardEntry['reason'], l: (tr: string, en: string) => string): string {
+    if (reason.includes('Kapama')) return l('Kapama metinde yok', 'Cloze is missing from the text');
+    if (reason.includes('Şablon')) return l('Şablon artık yok', 'Template no longer exists');
+    return l('Ön yüz boş', 'Front is empty');
+}
 
 export default function EmptyCardsScreen() {
     const { t, l } = useI18n();
@@ -25,25 +31,41 @@ export default function EmptyCardsScreen() {
 
     const [entries, setEntries] = useState<EmptyCardEntry[] | null>(null);
     const [busy, setBusy] = useState(false);
+    const [error, setError] = useState(false);
 
     const scan = () => {
         setEntries(null);
+        setError(false);
         // findEmptyCards is synchronous SQLite work; defer one tick so the loading state paints.
-        setTimeout(() => setEntries(findEmptyCards()), 0);
+        setTimeout(() => {
+            try {
+                setEntries(findEmptyCards());
+            } catch (e) {
+                console.warn('[EmptyCards] scan failed:', e);
+                setError(true);
+                setEntries([]);
+            }
+        }, 0);
     };
 
     useEffect(() => { scan(); }, [dataVersion]);
 
-    const deleteOne = (cardId: number) => {
-        try {
-            deleteAnkiCardOnly(cardId);
-            dbDeleteFtsCard(cardId);
-            bumpDataVersion();
-            setEntries((prev) => (prev ? prev.filter((e) => e.cardId !== cardId) : prev));
-        } catch (e) {
-            console.warn('[EmptyCards] delete failed:', e);
-            alert(t('common.error'), l('Kart silinemedi.', 'Could not delete the card.'));
-        }
+    const deleteOne = (entry: EmptyCardEntry) => {
+        confirm(
+            l('Boş kartı sil', 'Delete Empty Card'),
+            l('Bu kart silinecek. Not ve diğer kartlar korunur.', 'This card will be deleted. The note and other cards stay intact.'),
+            () => {
+                try {
+                    deleteAnkiCardOnly(entry.cardId);
+                    bumpDataVersion();
+                    setEntries((prev) => (prev ? prev.filter((e) => e.cardId !== entry.cardId) : prev));
+                } catch (e) {
+                    console.warn('[EmptyCards] delete failed:', e);
+                    alert(t('common.error'), l('Kart silinemedi.', 'Could not delete the card.'));
+                }
+            },
+            { destructive: true },
+        );
     };
 
     const deleteAll = () => {
@@ -54,10 +76,7 @@ export default function EmptyCardsScreen() {
             () => {
                 setBusy(true);
                 try {
-                    for (const entry of entries) {
-                        deleteAnkiCardOnly(entry.cardId);
-                        dbDeleteFtsCard(entry.cardId);
-                    }
+                    deleteAnkiCardsOnly(entries.map((entry) => entry.cardId));
                     bumpDataVersion();
                     setEntries([]);
                 } catch (e) {
@@ -73,15 +92,27 @@ export default function EmptyCardsScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <ScreenHeader
+                title={l('Boş kartlar', 'Empty Cards')}
+                onBack={() => router.canGoBack() ? router.back() : router.replace('/decks' as any)}
+                backAccessibilityLabel={l('Destelere dön', 'Back to decks')}
+            />
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    {l('Şablonu artık bulunmayan, alanı boş olan veya metinden kaldırılmış bir kapama numarasına ait kartlar burada listelenir. Bunlar notun kendisini değil, yalnızca geçersiz kartı temsil eder.', 'Cards whose template no longer exists, whose field is empty, or whose cloze number was removed from the text appear here. These represent only the invalid card, not the note itself.')}
+                    {l('Ön yüzü artık üretilemeyen kartlar burada görünür. Silmek kartı kaldırır; notu ve diğer kartları korur.', 'Cards whose front can no longer be generated appear here. Deleting one keeps its note and other cards.')}
                 </Text>
 
                 {entries === null ? (
                     <View style={styles.loadingBox}>
                         <ActivityIndicator color={colors.accent} />
                         <Text style={styles.help}>{l('Taranıyor…', 'Scanning…')}</Text>
+                    </View>
+                ) : error ? (
+                    <View style={styles.emptyBox}>
+                        <Text style={styles.emptyText}>{l('Kartlar taranamadı.', 'Cards could not be scanned.')}</Text>
+                        <TouchableOpacity style={styles.secondaryBtn} onPress={scan} accessibilityRole="button" accessibilityLabel={l('Tekrar tara', 'Scan again')}>
+                            <Text style={styles.secondaryBtnText}>{t('common.retry')}</Text>
+                        </TouchableOpacity>
                     </View>
                 ) : entries.length === 0 ? (
                     <View style={styles.emptyBox}>
@@ -104,11 +135,11 @@ export default function EmptyCardsScreen() {
                                     <Text style={styles.rowQuestion} numberOfLines={2}>
                                         {entry.question || l('(boş)', '(empty)')}
                                     </Text>
-                                    <Text style={styles.rowReason}>{entry.reason}</Text>
+                                    <Text style={styles.rowReason}>{emptyCardReason(entry.reason, l)}</Text>
                                 </View>
                                 <TouchableOpacity
                                     style={styles.rowDeleteBtn}
-                                    onPress={() => deleteOne(entry.cardId)}
+                                    onPress={() => deleteOne(entry)}
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Bu kartı sil', 'Delete this card')}
                                 >
@@ -119,9 +150,6 @@ export default function EmptyCardsScreen() {
                     </>
                 )}
 
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelText}>{t('common.close')}</Text>
-                </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
     );
@@ -136,6 +164,15 @@ function createStyles(colors: ColorScheme) {
         emptyBox: { alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xxl },
         emptyIcon: { fontSize: 32 },
         emptyText: { fontSize: FontSize.md, color: colors.textSecondary },
+        secondaryBtn: {
+            marginTop: Spacing.sm,
+            paddingHorizontal: Spacing.lg,
+            paddingVertical: Spacing.sm,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.sm,
+        },
+        secondaryBtnText: { color: colors.accent, fontWeight: '600' },
         deleteAllBtn: {
             backgroundColor: colors.badgeNewBg,
             borderWidth: 1,
@@ -167,7 +204,5 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgInput,
         },
         rowDeleteText: { color: colors.badgeNew, fontWeight: '700' },
-        cancelBtn: { paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.md },
-        cancelText: { fontSize: FontSize.md, color: colors.textMuted },
     });
 }

@@ -440,13 +440,24 @@ function AppStack() {
                 <Stack.Screen
                     name="backups"
                     options={{
-                        ...dismissibleSheetPresentation,
+                        // Backup management is a canonical full-screen workflow. Keep it out of
+                        // a nested sheet so iOS owns the horizontal back gesture and the screen's
+                        // own header provides the visible back affordance.
+                        presentation: 'card',
                         gestureEnabled: true,
-                        gestureDirection: 'vertical',
-                        headerShown: true,
-                        title: t('root.backups'),
-                        headerStyle: { backgroundColor: colors.bgSecondary },
-                        headerTintColor: colors.accent,
+                        gestureDirection: 'horizontal',
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="empty-cards"
+                    options={{
+                        // Empty Cards can delete persisted cards, so it is a distinct route with
+                        // native back navigation rather than a modal embedded in Decks.
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        gestureDirection: 'horizontal',
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen

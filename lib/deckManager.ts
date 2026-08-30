@@ -669,7 +669,10 @@ export function createPreset(name: string, cloneFromId: number = DEFAULT_DECK_CO
 
 export function renamePreset(configId: number, name: string): void {
     const config = getDeckConfig(configId);
-    config.name = name.trim() || config.name;
+    const nextName = name.normalize('NFC').trim();
+    if (!nextName) throw new Error('A preset name cannot be empty.');
+    if (nextName === config.name) return;
+    config.name = nextName;
     saveDeckConfig(config);
 }
 

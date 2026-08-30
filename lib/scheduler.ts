@@ -8,130 +8,23 @@ import type {
     AppSettings,
 } from './types';
 import { elapsedStudyDays } from './ankiState';
-
-const HOUR_MS = 3600000;
-const MINUTES_PER_DAY = 1440;
+import { FsrsEngine } from './fsrsScheduler';
+import {
+    MINUTES_PER_DAY,
+    addDaysLocalYMD,
+    constrainInterval,
+    formatDays,
+    formatMinutes,
+    getToday,
+    hardDelayMinutes,
+    todayLocalYMD,
+} from './schedulingIntervals';
 
 // Ease deltas, matching Anki rslib/src/scheduler/states/review.rs.
 const MINIMUM_EASE_FACTOR = 1.3;
 const EASE_FACTOR_AGAIN_DELTA = -0.20;
 const EASE_FACTOR_HARD_DELTA = -0.15;
 const EASE_FACTOR_EASY_DELTA = 0.15;
-
-/** Shift a Date back by the rollover hour to derive the Anki "study day". */
-function toRolloverShiftedDate(input: Date, rolloverHour: number): Date {
-    return new Date(input.getTime() - rolloverHour * HOUR_MS);
-}
-
-function formatYMD(d: Date): string {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-}
-
-/** Today's study day as YYYY-MM-DD, respecting the rollover hour. */
-function todayLocalYMD(now?: Date, rolloverHour: number = 4): string {
-    return formatYMD(toRolloverShiftedDate(now ?? new Date(), rolloverHour));
-}
-
-/** The study day `days` after `baseDate` as YYYY-MM-DD. */
-function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: number = 4): string {
-    const shifted = toRolloverShiftedDate(baseDate ?? new Date(), rolloverHour);
-    const result = new Date(shifted.getTime());
-    result.setDate(result.getDate() + days);
-    return formatYMD(result);
-}
-
-function getToday(rolloverHour: number = 4): string {
-    return todayLocalYMD(undefined, rolloverHour);
-}
-
-// Duration formatting for the UI (Turkish strings are intentional).
-function formatDays(days: number): string {
-    if (days <= 0) return '< 1dk';
-    if (days === 1) return '1 gün';
-    if (days < 30) return `${days} gün`;
-    if (days < 365) {
-        const months = days / 30;
-        return months < 1.5 ? '1 ay' : `${Math.round(months)} ay`;
-    }
-    return `${(days / 365).toFixed(1)} yıl`;
-}
-
-function formatMinutes(minutes: number): string {
-    if (minutes < 60) return `${Math.round(minutes)}dk`;
-    if (minutes < MINUTES_PER_DAY) return `${Math.round(minutes / 60)}sa`;
-    return formatDays(Math.round(minutes / MINUTES_PER_DAY));
-}
-
-/** DJB2 hash → deterministic 32-bit unsigned int, so a card gets stable fuzz within a day. */
-function hashSeed(text: string): number {
-    let h = 0;
-    for (let i = 0; i < text.length; i++) {
-        h = ((h << 5) - h + text.charCodeAt(i)) | 0;
-    }
-    return h >>> 0;
-}
-
-/**
- * Fuzz range for an interval, matching Anki's fuzz_delta (states/fuzz.rs).
- * Ranges: 2.5–7d 15%, 7–20d 10%, 20d+ 5%. Base delta: 1 day.
- */
-function fuzzRangeForInterval(interval: number): { min: number; max: number } {
-    if (interval < 2.5) {
-        return { min: Math.max(1, Math.round(interval)), max: Math.max(1, Math.round(interval)) };
-    }
-
-    const RANGES: [number, number, number][] = [
-        [2.5, 7.0, 0.15],
-        [7.0, 20.0, 0.10],
-        [20.0, Infinity, 0.05],
-    ];
-
-    let delta = 1.0;
-    for (const [start, end, factor] of RANGES) {
-        delta += Math.max(0, Math.min(interval, end) - start) * factor;
-    }
-
-    let min = Math.max(2, Math.round(interval - delta));
-    let max = Math.round(interval + delta);
-
-    if (max - min < 2) {
-        max = min + 2;
-    }
-
-    return { min, max };
-}
-
-/** Round durations over a day to whole days, matching Anki's maybe_round_in_days (states/steps.rs). */
-function maybeRoundInDays(minutes: number): number {
-    if (minutes > MINUTES_PER_DAY) {
-        return Math.round(minutes / MINUTES_PER_DAY) * MINUTES_PER_DAY;
-    }
-    return minutes;
-}
-
-/**
- * Hard-button delay for learning/relearning steps, matching Anki's hard_delay_secs (states/steps.rs).
- * Step 0: avg(current, next) if a next step exists, else current × 1.5 capped at +1 day.
- * Later steps: the current step delay, unchanged.
- */
-function hardDelayMinutes(steps: number[], stepIndex: number): number {
-    const curMin = steps[stepIndex] ?? 1;
-
-    if (stepIndex === 0) {
-        const nextMin = steps[1];
-        if (nextMin !== undefined) {
-            return maybeRoundInDays(Math.round((curMin + nextMin) / 2));
-        }
-        const hardMin = Math.ceil(curMin * 1.5);
-        const cappedMin = Math.min(hardMin, curMin + MINUTES_PER_DAY);
-        return maybeRoundInDays(Math.max(1, cappedMin));
-    }
-
-    return curMin;
-}
 
 /** Clamp an interval to [1, maxInterval]. */
 function clampInterval(interval: number, settings: AppSettings): number {
@@ -149,37 +42,6 @@ function lapsedReviewInterval(currentInterval: number, settings: AppSettings): n
         Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)),
         settings,
     );
-}
-
-/**
- * Constrain (and optionally fuzz) an interval within [minimum, maximum].
- * Matches Anki's constrain_passing_interval + with_review_fuzz + constrained_fuzz_bounds.
- */
-function constrainInterval(
-    interval: number,
-    minimum: number,
-    maximum: number,
-    fuzz?: { cardId: number; nowMs: number; rolloverHour: number },
-): number {
-    if (fuzz) {
-        const clamped = Math.max(minimum, Math.min(maximum, interval));
-        const range = fuzzRangeForInterval(clamped);
-
-        let lower = Math.max(minimum, Math.min(maximum, range.min));
-        let upper = Math.max(minimum, Math.min(maximum, range.max));
-
-        if (upper === lower && upper > 2 && upper < maximum) {
-            upper = lower + 1;
-        }
-
-        if (lower === upper) return lower;
-
-        const seed = hashSeed(`${todayLocalYMD(new Date(fuzz.nowMs), fuzz.rolloverHour)}-${fuzz.cardId}`);
-        const span = upper - lower + 1;
-        return lower + (seed % span);
-    }
-
-    return Math.max(minimum, Math.min(maximum, Math.round(interval)));
 }
 
 /**
@@ -635,7 +497,16 @@ function ankiV3Review(
 
 const engines: Record<AlgorithmType, SchedulerEngine> = {
     ANKI_V3: AnkiV3Engine,
+    FSRS: FsrsEngine,
 };
+
+/**
+ * Anki keeps one scheduler and switches only the interval maths, so the engine follows the
+ * collection's FSRS toggle rather than a separately stored algorithm name.
+ */
+export function schedulerForSettings(settings: AppSettings): SchedulerEngine {
+    return settings.fsrsEnabled ? FsrsEngine : AnkiV3Engine;
+}
 
 export function getScheduler(type: AlgorithmType = 'ANKI_V3'): SchedulerEngine {
     return engines[type] || AnkiV3Engine;

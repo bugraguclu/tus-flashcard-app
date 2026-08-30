@@ -2,7 +2,7 @@
 // display-order, burying, audio and easy-days setting the queue engine honors.
 // Edits the deck's RAW config (boost-free) — "today only" extras live in custom study.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -20,7 +20,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
@@ -55,9 +55,32 @@ import {
     sanitizeNumericDraft,
     type NumericDraftIssue,
 } from '../lib/deckOptionsForm';
+import {
+    FSRS_DEFAULT_DESIRED_RETENTION,
+    FSRS_DEFAULT_HISTORICAL_RETENTION,
+    FSRS_DESIRED_RETENTION_MAX,
+    FSRS_DESIRED_RETENTION_MIN,
+    formatFsrsCutoffDate,
+    formatFsrsParameterText,
+    parseFsrsCutoffDate,
+    parseFsrsParameterText,
+} from '../lib/fsrs';
+import {
+    FSRS_MIN_TRAINING_REVIEWS,
+    FSRS_RECOMMENDED_TRAINING_REVIEWS,
+    buildFsrsTrainingItems,
+    optimizeFsrsParameters,
+} from '../lib/fsrsOptimizer';
+import {
+    collectFsrsTrainingHistories,
+    countFsrsTrainingReviews,
+    rebuildFsrsMemoryStates,
+} from '../lib/fsrsMaintenance';
 import { useI18n } from '../hooks/useI18n';
 import { getDB } from '../lib/db';
 import SwipeDismissSheet from '../components/SwipeDismissSheet';
+import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 
 const DAY_FACTORS = [1, 0.5, 0] as const;
 
@@ -179,6 +202,38 @@ function OptionCard({ title, children, styles, wide = false, help }: {
     );
 }
 
+/** Full-width text block, for values too long to sit beside their label (FSRS parameters). */
+function TextBlockSetting({ label, value, onChange, styles, colors, hint, error, placeholder }: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    styles: ScreenStyles;
+    colors: ColorScheme;
+    hint?: string;
+    error?: string;
+    placeholder?: string;
+}) {
+    return (
+        <View style={styles.settingBlock}>
+            <Text style={styles.settingLabel}>{label}</Text>
+            <TextInput
+                style={[styles.input, styles.parameterInput, error && styles.numberInputInvalid]}
+                value={value}
+                onChangeText={onChange}
+                placeholder={placeholder}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                autoCorrect={false}
+                autoCapitalize="none"
+                accessibilityLabel={label}
+                accessibilityHint={error}
+            />
+            {error ? <Text style={styles.fieldError} accessibilityLiveRegion="polite">{error}</Text> : null}
+            {hint && !error ? <Text style={styles.fieldHint}>{hint}</Text> : null}
+        </View>
+    );
+}
+
 function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'integer', error }: {
     label: string;
     value: string;
@@ -186,7 +241,7 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
     styles: ScreenStyles;
     suffix?: string;
     hint?: string;
-    kind?: 'integer' | 'decimal' | 'steps';
+    kind?: 'integer' | 'decimal' | 'steps' | 'text';
     error?: string;
 }) {
     const keyboardType = kind === 'integer'
@@ -194,7 +249,8 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
         : kind === 'decimal'
             ? 'decimal-pad' as const
             : 'default' as const;
-    const maxLength = kind === 'steps' ? 128 : kind === 'decimal' ? 10 : 5;
+    const freeText = kind === 'steps' || kind === 'text';
+    const maxLength = kind === 'steps' ? 128 : kind === 'text' ? 32 : kind === 'decimal' ? 10 : 5;
     return (
         <View style={styles.settingBlock}>
             <View style={styles.settingRow}>
@@ -204,7 +260,7 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
                         style={[styles.numberInput, error && styles.numberInputInvalid]}
                         value={value}
                         onChangeText={(text) => onChange(
-                            kind === 'steps'
+                            freeText
                                 ? text.slice(0, maxLength)
                                 : sanitizeNumericDraft(text, kind === 'decimal').slice(0, maxLength),
                         )}
@@ -335,7 +391,6 @@ export default function DeckOptionsScreen() {
     const { width } = useWindowDimensions();
     const useTwoColumns = width >= 900;
     const router = useRouter();
-    const navigation = useNavigation();
     const params = useLocalSearchParams();
     const { settings, refreshSettings: refreshData } = useAppSettings();
     const { markSchedulingStale } = useCollectionInvalidation();
@@ -358,13 +413,13 @@ export default function DeckOptionsScreen() {
 
     // Form state, re-seeded whenever the preset changes.
     const [form, setForm] = useState(() => formFromConfig(initialConfig, deck?.description ?? ''));
-    const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify({
+    const [savedSnapshot, setSavedSnapshot] = useState(() => stableSnapshot({
         configId: deck?.configId || DEFAULT_DECK_CONFIG.id,
         form: formFromConfig(initialConfig, deck?.description ?? ''),
     }));
     const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [optimizing, setOptimizing] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
-    const allowNavigationRef = useRef(false);
     const [deckPickerOpen, setDeckPickerOpen] = useState(false);
     const [presetPickerOpen, setPresetPickerOpen] = useState(false);
     const [presetActionsOpen, setPresetActionsOpen] = useState(false);
@@ -423,32 +478,30 @@ export default function DeckOptionsScreen() {
             ivlModifier: String(config.ivlModifier),
             maxIvl: String(config.maxIvl),
             newIvlPercent: String(Math.round((config.newIvlPercent ?? 0) * 100)),
+            // FSRS: the switches are collection-wide, the rest belongs to this preset.
+            fsrsEnabled: settings.fsrsEnabled === true,
+            fsrsRescheduleOnChange: settings.fsrsRescheduleOnChange === true,
+            fsrsShortTermWithSteps: settings.fsrsShortTermWithSteps === true,
+            desiredRetention: (config.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION).toFixed(2),
+            historicalRetention: (config.historicalRetention ?? FSRS_DEFAULT_HISTORICAL_RETENTION).toFixed(2),
+            fsrsParams: formatFsrsParameterText(config.fsrsParams),
+            ignoreRevlogsBefore: formatFsrsCutoffDate(config.ignoreRevlogsBeforeMs),
             description,
         };
     }
 
-    const snapshotForm = (nextConfigId: number, nextForm: typeof form) => JSON.stringify({
+    const snapshotForm = (nextConfigId: number, nextForm: typeof form) => stableSnapshot({
         configId: nextConfigId,
         form: nextForm,
     });
-    const isDirty = snapshotForm(configId, form) !== savedSnapshot;
-
-    useEffect(() => navigation.addListener('beforeRemove', (event: any) => {
-        if (!isDirty || allowNavigationRef.current) return;
-        event.preventDefault();
-        confirm(
-            l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
-            l(
-                'Bu sayfada kaydedilmemiş ayarlar var. Çıkarsanız değişiklikler kaybolacak.',
-                'There are unsaved settings on this page. They will be lost if you leave.',
-            ),
-            () => {
-                allowNavigationRef.current = true;
-                navigation.dispatch(event.data.action);
-            },
-            { destructive: true },
-        );
-    }), [isDirty, l, navigation]);
+    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form });
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
+        message: l(
+            'Bu sayfada kaydedilmemiş ayarlar var. Çıkarsanız değişiklikler kaybolacak.',
+            'There are unsaved settings on this page. They will be lost if you leave.',
+        ),
+    });
 
     const applyPresetSelection = (nextId: number, markSaved = false) => {
         const currentDeck = getDeck(activeDeckId) ?? deck;
@@ -615,6 +668,18 @@ export default function DeckOptionsScreen() {
         decimal('easyBonus', 1, 2);
         decimal('hardIvl', 1, 2);
         decimal('ivlModifier', 0.1, 3);
+        decimal('desiredRetention', FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX);
+        decimal('historicalRetention', 0.5, 0.99);
+
+        if (parseFsrsParameterText(form.fsrsParams) === null) {
+            errors.fsrsParams = l(
+                'FSRS parametreleri 17, 19 veya 21 sayıdan oluşmalıdır.',
+                'FSRS parameters must be a list of 17, 19 or 21 numbers.',
+            );
+        }
+        if (form.ignoreRevlogsBefore.trim() !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(form.ignoreRevlogsBefore.trim())) {
+            errors.ignoreRevlogsBefore = l('Tarihi YYYY-AA-GG olarak yazın.', 'Enter the date as YYYY-MM-DD.');
+        }
 
         const learningSteps = parseAnkiStepText(form.learningSteps);
         if (!learningSteps) {
@@ -640,6 +705,73 @@ export default function DeckOptionsScreen() {
         }
 
         return { errors, integers, decimals, learningSteps, relearningSteps };
+    };
+
+    /**
+     * Anki's "Optimize" button. Training runs on the JS thread, so the interactive path is capped
+     * to a few thousand reviews and a short schedule; that is enough to move the parameters off
+     * the defaults without freezing the screen.
+     */
+    const INTERACTIVE_TRAINING_ITEM_CAP = 2000;
+    const INTERACTIVE_TRAINING_ITERATIONS = 15;
+
+    const handleOptimizeFsrs = () => {
+        Keyboard.dismiss();
+        if (optimizing) return;
+        setOptimizing(true);
+        try {
+            const ignoreBefore = parseFsrsCutoffDate(form.ignoreRevlogsBefore);
+            const histories = collectFsrsTrainingHistories(settings, { ignoreRevlogsBeforeMs: ignoreBefore });
+            const reviewCount = countFsrsTrainingReviews(histories);
+
+            if (reviewCount < FSRS_MIN_TRAINING_REVIEWS) {
+                alert(
+                    l('Yeterli geçmiş yok', 'Not enough history'),
+                    l(
+                        `Optimizasyon için en az ${FSRS_MIN_TRAINING_REVIEWS} tekrar gerekiyor; şu an ${reviewCount} var. Bir süre daha çalışıp tekrar deneyin.`,
+                        `Optimizing needs at least ${FSRS_MIN_TRAINING_REVIEWS} reviews; there are ${reviewCount}. Study a while longer and try again.`,
+                    ),
+                );
+                return;
+            }
+
+            const items = buildFsrsTrainingItems(histories, INTERACTIVE_TRAINING_ITEM_CAP);
+            const result = optimizeFsrsParameters(items, {
+                initialParameters: parseFsrsParameterText(form.fsrsParams) ?? undefined,
+                iterations: INTERACTIVE_TRAINING_ITERATIONS,
+            });
+
+            if (!result.improved) {
+                alert(
+                    l('Parametreler zaten uygun', 'Parameters already fit'),
+                    l(
+                        'Mevcut parametreler bu geçmişi daha iyi açıklıyor; değişiklik yapılmadı.',
+                        'The current parameters already explain this history best; nothing was changed.',
+                    ),
+                );
+                return;
+            }
+
+            set('fsrsParams', formatFsrsParameterText(result.parameters));
+            const warning = reviewCount < FSRS_RECOMMENDED_TRAINING_REVIEWS
+                ? l(
+                    `\n\nUyarı: ${FSRS_RECOMMENDED_TRAINING_REVIEWS} tekrarın altında sonuçlar oynak olabilir.`,
+                    `\n\nNote: below ${FSRS_RECOMMENDED_TRAINING_REVIEWS} reviews the result can be unstable.`,
+                )
+                : '';
+            alert(
+                l('Parametreler güncellendi', 'Parameters updated'),
+                l(
+                    `${result.after.reviewCount} tekrar üzerinde tahmin hatası ${result.before.logLoss.toFixed(4)} → ${result.after.logLoss.toFixed(4)}. Uygulamak için Kaydet'e basın.${warning}`,
+                    `Prediction error over ${result.after.reviewCount} reviews: ${result.before.logLoss.toFixed(4)} → ${result.after.logLoss.toFixed(4)}. Press Save to apply.${warning}`,
+                ),
+            );
+        } catch (error) {
+            console.warn('[DeckOptions] FSRS optimization failed:', error);
+            alert(t('common.error'), l('Parametreler hesaplanamadı.', 'Could not compute the parameters.'));
+        } finally {
+            setOptimizing(false);
+        }
     };
 
     const validation = validateFormDraft();
@@ -703,6 +835,10 @@ export default function DeckOptionsScreen() {
                 ivlModifier: decimal('ivlModifier'),
                 maxIvl: integer('maxIvl'),
                 newIvlPercent: integer('newIvlPercent') / 100,
+                fsrsParams: parseFsrsParameterText(form.fsrsParams) ?? undefined,
+                desiredRetention: decimal('desiredRetention'),
+                historicalRetention: decimal('historicalRetention'),
+                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore),
             };
 
             db.execSync('BEGIN TRANSACTION;');
@@ -720,10 +856,32 @@ export default function DeckOptionsScreen() {
             saveCollectionDeckOptions({
                 newCardsIgnoreReviewLimit: form.newCardsIgnoreReviewLimit,
                 limitsStartFromTop: form.limitsStartFromTop,
+                fsrsEnabled: form.fsrsEnabled,
+                fsrsRescheduleOnChange: form.fsrsRescheduleOnChange,
+                fsrsShortTermWithSteps: form.fsrsShortTermWithSteps,
             });
             if (includeSubdecks) subdecksChanged = applyConfigToSubdecks(deck.id);
             db.execSync('COMMIT;');
             transactionOpen = false;
+
+            // Anki recomputes memory states when an FSRS input changes, and rewrites due dates
+            // too when the learner asked for it. Nothing runs while FSRS is off.
+            const fsrsInputsChanged = form.fsrsEnabled
+                && (settings.fsrsEnabled !== true
+                    || formatFsrsParameterText(base.fsrsParams) !== formatFsrsParameterText(updated.fsrsParams)
+                    || base.desiredRetention !== updated.desiredRetention
+                    || base.historicalRetention !== updated.historicalRetention
+                    || base.ignoreRevlogsBeforeMs !== updated.ignoreRevlogsBeforeMs);
+            if (fsrsInputsChanged) {
+                try {
+                    rebuildFsrsMemoryStates(
+                        { ...settings, fsrsEnabled: true },
+                        { reschedule: form.fsrsRescheduleOnChange },
+                    );
+                } catch (memoryError) {
+                    console.warn('[DeckOptions] FSRS memory rebuild failed:', memoryError);
+                }
+            }
 
             // The transaction is already durable here. A presentation refresh must never turn a
             // successful commit into a false “nothing was saved” error.
@@ -894,6 +1052,24 @@ export default function DeckOptionsScreen() {
         dismissLabel: l('Anladım', 'Got it'),
     };
     const optionHelp = {
+        fsrs: {
+            title: l('FSRS nasıl çalışır?', 'How FSRS works'),
+            summary: l(
+                'FSRS, her kart için hafıza gücünü (stability) ve zorluğunu takip eder ve aralığı bu iki sayıdan hesaplar; klasik zamanlayıcının kolaylık çarpanını kullanmaz.',
+                'FSRS tracks each card’s memory strength (stability) and difficulty, and derives the interval from those two numbers instead of the classic scheduler’s ease multiplier.',
+            ),
+            points: [
+                l('Stability, hatırlama olasılığının %90’a düştüğü gün sayısıdır. Hedeflenen hatırlama oranı 0,90 iken bir sonraki aralık tam olarak stability kadar olur.', 'Stability is the number of days until recall probability falls to 90%. At a desired retention of 0.90 the next interval is exactly the stability.'),
+                l('Öğrenme ve yeniden öğrenme adımları aynen korunur; FSRS yalnızca gün ölçeğindeki aralıkları belirler.', 'Learning and relearning steps are unchanged; FSRS only decides the day-scale intervals.'),
+                l('Hedeflenen hatırlama oranını yükseltmek tekrar yükünü hızla artırır: 0,90 yerine 0,97 seçmek günlük tekrar sayısını katlayabilir.', 'Raising the desired retention increases the workload quickly: 0.97 instead of 0.90 can multiply your daily reviews.'),
+                l('“Optimize et”, parametreleri kendi tekrar geçmişinizden yeniden hesaplar ve yalnızca daha iyi tahmin ediyorsa yazar.', '“Optimize” refits the parameters from your own review history and only writes them when they predict better.'),
+            ],
+            note: l(
+                'FSRS açıldığında mevcut kartların hafıza durumu tekrar geçmişinden yeniden hesaplanır. Geçmişi olmayan kartlar için aralık ve kolaylık çarpanından tahmin edilir.',
+                'Switching FSRS on recomputes memory states from the review log. Cards with no usable history are estimated from their interval and ease factor.',
+            ),
+            ...helpChrome,
+        },
         dailyLimits: {
             title: l('Günlük limitler nasıl uygulanır?', 'How daily limits are applied'),
             summary: l(
@@ -1035,7 +1211,7 @@ export default function DeckOptionsScreen() {
         onChange: (value: string) => void;
         hint?: string;
         suffix?: string;
-        kind?: 'integer' | 'decimal' | 'steps';
+        kind?: 'integer' | 'decimal' | 'steps' | 'text';
     }) => (
         <NumberSetting
             label={label}
@@ -1233,6 +1409,96 @@ export default function DeckOptionsScreen() {
                     colors={colors}
                     cancelLabel={cancelLabel}
                 />
+                </OptionCard>
+
+                <OptionCard wide={useTwoColumns} title="FSRS" styles={styles} help={optionHelp.fsrs}>
+                    <SwitchRow
+                        label={l('FSRS zamanlayıcısını kullan', 'Use the FSRS scheduler')}
+                        value={form.fsrsEnabled}
+                        onChange={(value) => set('fsrsEnabled', value)}
+                    />
+                    <Text style={styles.fieldHint}>
+                        {l(
+                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için, aşağıdaki değerler bu ön ayar içindir.',
+                            'FSRS tracks each card’s memory strength and difficulty, and derives intervals from those instead of an ease multiplier. The switch is collection-wide; the values below belong to this preset.',
+                        )}
+                    </Text>
+
+                    {form.fsrsEnabled && (
+                        <>
+                            <Field
+                                field="desiredRetention"
+                                kind="decimal"
+                                label={l('Hedeflenen hatırlama oranı', 'Desired retention')}
+                                value={form.desiredRetention}
+                                onChange={(value) => set('desiredRetention', value)}
+                                hint={l(
+                                    '0,70–0,99. Yüksek değer daha sık tekrar demektir; Anki 0,90 önerir.',
+                                    '0.70–0.99. A higher value means more frequent reviews; Anki recommends 0.90.',
+                                )}
+                            />
+                            <SwitchRow
+                                label={l('Değişiklikte kartları yeniden zamanla', 'Reschedule cards on change')}
+                                value={form.fsrsRescheduleOnChange}
+                                onChange={(value) => set('fsrsRescheduleOnChange', value)}
+                            />
+                            <Text style={styles.fieldHint}>
+                                {l(
+                                    'Kapalıyken yeni ayarlar yalnızca bundan sonraki cevapları etkiler; açıkken mevcut vade tarihleri de yeniden hesaplanır.',
+                                    'While off, new settings affect only future answers; while on, existing due dates are recomputed as well.',
+                                )}
+                            </Text>
+
+                            <TouchableOpacity
+                                style={[styles.optimizeButton, optimizing && styles.optimizeButtonBusy]}
+                                onPress={handleOptimizeFsrs}
+                                disabled={optimizing}
+                                accessibilityRole="button"
+                                accessibilityState={{ disabled: optimizing }}
+                            >
+                                <Text style={styles.optimizeButtonText}>
+                                    {optimizing
+                                        ? l('Hesaplanıyor…', 'Optimizing…')
+                                        : l('Parametreleri optimize et', 'Optimize parameters')}
+                                </Text>
+                            </TouchableOpacity>
+                            <Text style={styles.fieldHint}>
+                                {l(
+                                    'Kendi tekrar geçmişinizden 21 parametreyi yeniden hesaplar. Sonuç yalnızca mevcut parametrelerden daha iyi tahmin ediyorsa alana yazılır.',
+                                    'Refits the 21 parameters from your own review history. The result is written to the field only when it predicts better than the current one.',
+                                )}
+                            </Text>
+
+                            <TextBlockSetting
+                                label={l('FSRS parametreleri', 'FSRS parameters')}
+                                value={form.fsrsParams}
+                                onChange={(value) => set('fsrsParams', value)}
+                                styles={styles}
+                                colors={colors}
+                                error={validation.errors.fsrsParams}
+                                hint={l('17, 19 veya 21 sayı. Boş bırakmak varsayılanlara döner.', '17, 19 or 21 numbers. Leaving it empty restores the defaults.')}
+                            />
+                            <Field
+                                field="historicalRetention"
+                                kind="decimal"
+                                label={l('Geçmiş hatırlama oranı', 'Historical retention')}
+                                value={form.historicalRetention}
+                                onChange={(value) => set('historicalRetention', value)}
+                                hint={l(
+                                    'Tekrar kaydı olmayan eski kartların hafıza durumu bu orana göre tahmin edilir.',
+                                    'Used to estimate the memory state of older cards that have no review log.',
+                                )}
+                            />
+                            <Field
+                                field="ignoreRevlogsBefore"
+                                kind="text"
+                                label={l('Şu tarihten önceki tekrarları yok say', 'Ignore reviews before')}
+                                value={form.ignoreRevlogsBefore}
+                                onChange={(value) => set('ignoreRevlogsBefore', value)}
+                                hint={l('YYYY-AA-GG. Boş bırakılırsa tüm geçmiş kullanılır.', 'YYYY-MM-DD. Leave empty to use the whole history.')}
+                            />
+                        </>
+                    )}
                 </OptionCard>
 
                 <OptionCard wide={useTwoColumns} title={l('Görüntüleme sırası', 'Display Order')} styles={styles} help={optionHelp.displayOrder}>
@@ -1453,7 +1719,7 @@ export default function DeckOptionsScreen() {
                             { label: l('Bu deste için ayrı ayar grubu oluştur', 'Create a Separate Preset for This Deck'), action: handleClonePreset },
                             { label: l('Varsayılana dön', 'Restore Defaults'), action: handleRestoreDefaults },
                             { label: l('Ayar grubu ekle', 'Add Preset'), action: handleAddPreset },
-                            { label: l('Yeniden adlandır', 'Rename'), action: () => { setRenameText(presetName); setRenameOpen(true); } },
+                            { label: l('Ayar grubunu yeniden adlandır', 'Rename preset'), action: () => { setRenameText(presetName); setRenameOpen(true); } },
                             { label: l('Kaydet ve tüm alt destelere uygula', 'Save and Apply to All Subdecks'), action: handleApplyToSubdecks },
                             { label: l('Sil', 'Delete'), action: handleDeletePreset, destructive: true },
                         ].map((item) => (
@@ -1552,7 +1818,7 @@ export default function DeckOptionsScreen() {
                         accessibilityLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
                     />
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Ayar grubunu adlandır', 'Rename Preset')}</Text>
+                        <Text style={styles.modalTitle}>{l('Ayar grubunu yeniden adlandır', 'Rename Preset')}</Text>
                         <TextInput style={styles.input} value={renameText} onChangeText={setRenameText} autoFocus />
                         <View style={styles.modalActions}>
                             <TouchableOpacity style={styles.cancelBtn} onPress={() => setRenameOpen(false)}>
@@ -1561,10 +1827,19 @@ export default function DeckOptionsScreen() {
                             <TouchableOpacity
                                 style={styles.saveBtnSmall}
                                 onPress={() => {
-                                    renamePreset(configId, renameText);
-                                    setPresetRevision((value) => value + 1);
-                                    setRenameOpen(false);
-                                    setForm((prev) => ({ ...prev }));
+                                    const nextName = renameText.trim();
+                                    if (!nextName) {
+                                        alert(l('Geçersiz ad', 'Invalid name'), l('Ayar grubu adı boş olamaz.', 'The preset name cannot be empty.'));
+                                        return;
+                                    }
+                                    try {
+                                        renamePreset(configId, nextName);
+                                        setPresetRevision((value) => value + 1);
+                                        setRenameOpen(false);
+                                    } catch (error) {
+                                        console.warn('[DeckOptions] preset rename failed:', error);
+                                        alert(t('common.error'), l('Ayar grubu yeniden adlandırılamadı.', 'Could not rename the preset.'));
+                                    }
                                 }}
                             >
                                 <Text style={styles.saveBtnText}>{t('common.save')}</Text>
@@ -1845,6 +2120,23 @@ function createStyles(colors: ColorScheme) {
         warningBox: { backgroundColor: colors.btnHardBg, borderWidth: 1, borderColor: colors.btnHard, borderRadius: BorderRadius.sm, padding: Spacing.sm, marginTop: Spacing.sm },
         warningText: { color: colors.btnHard, fontSize: FontSize.xs, lineHeight: 17 },
 
+        parameterInput: {
+            minHeight: 96,
+            paddingTop: Spacing.sm,
+            textAlignVertical: 'top',
+            fontSize: FontSize.sm,
+        },
+        optimizeButton: {
+            minHeight: 46,
+            borderRadius: BorderRadius.sm,
+            borderWidth: 1,
+            borderColor: colors.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: Spacing.sm,
+        },
+        optimizeButtonBusy: { opacity: 0.6 },
+        optimizeButtonText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
         sectionTitle: {
             fontSize: 11,
             fontWeight: '700',

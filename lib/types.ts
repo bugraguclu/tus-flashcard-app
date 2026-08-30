@@ -1,4 +1,5 @@
 import type { AnkiCard, Note } from './models';
+import type { FsrsMemoryState } from './fsrs';
 
 /**
  * Simple flashcard shape used for legacy data and seed content.
@@ -91,6 +92,16 @@ export interface CardState {
     lastReviewedAtMs: number;
     elapsedDays: number;
     lapses: number;
+
+    /**
+     * FSRS memory state, when the card has one. Null/undefined means the card has never been
+     * scheduled by FSRS, which is also how a brand-new card starts.
+     */
+    memoryState?: FsrsMemoryState | null;
+    /** The desired retention the card was last scheduled with (Anki's `dr`). */
+    desiredRetention?: number;
+    /** The forgetting-curve decay the card was last scheduled with (Anki's `decay`). */
+    decay?: number;
 }
 
 export interface ScheduleResult {
@@ -113,7 +124,11 @@ export interface IntervalPreview {
 /** 1=Again, 2=Hard, 3=Good, 4=Easy. */
 export type Grade = 1 | 2 | 3 | 4;
 
-export type AlgorithmType = 'ANKI_V3';
+/**
+ * The scheduler in use. FSRS replaces only the interval maths; learning steps, burying, limits
+ * and the queue builder are shared, exactly as in Anki.
+ */
+export type AlgorithmType = 'ANKI_V3' | 'FSRS';
 
 export interface SchedulerEngine {
     name: string;
@@ -156,6 +171,8 @@ export type ReviewGestureAction =
     | 'good'
     | 'easy'
     | 'undo'
+    /** Open the note editor with the current study deck as its destination. */
+    | 'addNote'
     | 'edit'
     | 'mark'
     | 'bury'
@@ -344,6 +361,27 @@ export interface AppSettings {
      */
     learnAheadMinutes: number;
     algorithm: AlgorithmType;
+
+    /**
+     * FSRS. The toggle is collection-wide in Anki; the parameters, desired retention and the
+     * historical-retention assumption belong to the deck preset.
+     */
+    fsrsEnabled?: boolean;
+    /** 21 FSRS-6 parameters. An empty/short list means "use the shipped defaults". */
+    fsrsParameters?: number[];
+    /** Target recall probability at review time (0.70–0.99). */
+    desiredRetention?: number;
+    /** Assumed past retention when converting an SM-2 card that has no usable review log. */
+    historicalRetention?: number;
+    /** Reviews logged before this epoch-ms timestamp are ignored when deriving memory states. */
+    ignoreRevlogsBeforeMs?: number;
+    /**
+     * Anki's "reschedule cards on change": whether enabling FSRS or re-optimizing also rewrites
+     * existing due dates, rather than only affecting future answers.
+     */
+    fsrsRescheduleOnChange?: boolean;
+    /** Anki's collection-wide "short-term scheduling with learning steps" switch. */
+    fsrsShortTermWithSteps?: boolean;
 }
 
 export interface SessionStats {

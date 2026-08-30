@@ -17,12 +17,11 @@ import {
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
-import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import { sanitizeUnsignedIntegerDraft } from '../lib/boundedNumber';
 
-type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
+type MenuView = 'menu' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
     | 'undo'
     | 'redo'
@@ -44,8 +43,6 @@ type ReviewerMenuIcon =
 
 export interface CardOptionsMenuProps {
     visible: boolean;
-    /** The separate reviewer flag button opens this same side panel directly on flag colors. */
-    initialView?: 'menu' | 'flag';
     onClose: () => void;
     cardSuspended: boolean;
     noteMarked: boolean;
@@ -53,7 +50,6 @@ export interface CardOptionsMenuProps {
     hasSiblingCards: boolean;
     cardHasAudio: boolean;
     onReplayAudio: () => void;
-    onFlag: (flag: CardFlag) => void;
     onBuryCard: () => void;
     onSuspendCard: () => void;
     onForgetCard: () => void;
@@ -67,7 +63,7 @@ export interface CardOptionsMenuProps {
     onUndo: () => void;
     canRedo: boolean;
     onRedo: () => void;
-    onAddCard: () => void;
+    onAddNote: () => void;
     onEditNote: () => void;
     noteTags: string;
     onSaveTags: (tags: string) => void;
@@ -104,7 +100,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         // The reviewer menu is a full-height side surface. Do not let a keyboard left open
         // by typed-answer/editor content reduce its opening bounds.
         Keyboard.dismiss();
-        setView(props.initialView ?? 'menu');
+        setView('menu');
         translateX.setValue(panelWidth + 16);
         const animation = Animated.spring(translateX, {
             toValue: 0,
@@ -115,7 +111,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         });
         animation.start();
         return () => animation.stop();
-    }, [props.visible, props.initialView, panelWidth, translateX]);
+    }, [props.visible, panelWidth, translateX]);
 
     useEffect(() => {
         if (view === 'tags') setTagsInput(props.noteTags);
@@ -146,23 +142,15 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
         setView(view === 'dueDate' ? 'reschedule' : 'menu');
     };
-    const sheetTitle = view === 'flag'
-        ? l('Bayrak rengi', 'Flag color')
-        : view === 'dueDate'
-            ? l('Son tarihi ayarla', 'Set due date')
-            : view === 'bury'
-                ? l('Göm', 'Bury')
-                : view === 'suspend'
-                    ? l('Askıya al', 'Suspend')
-                    : view === 'reschedule'
-                        ? l('Yeniden zamanla', 'Reschedule')
-                        : l('Etiketleri düzenle', 'Edit tags');
-
-    const flagNames = [
-        l('Bayrak yok', 'No flag'), l('Kırmızı', 'Red'), l('Turuncu', 'Orange'),
-        l('Yeşil', 'Green'), l('Mavi', 'Blue'), l('Pembe', 'Pink'),
-        l('Turkuaz', 'Turquoise'), l('Mor', 'Purple'),
-    ];
+    const sheetTitle = view === 'dueDate'
+        ? l('Son tarihi ayarla', 'Set due date')
+        : view === 'bury'
+            ? l('Göm', 'Bury')
+            : view === 'suspend'
+                ? l('Askıya al', 'Suspend')
+                : view === 'reschedule'
+                    ? l('Yeniden zamanla', 'Reschedule')
+                    : l('Etiketleri düzenle', 'Edit tags');
 
     const historyAction = props.whiteboardActive && props.whiteboardHasContent
         ? {
@@ -269,7 +257,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     onPress={() => runAndClose(props.whiteboardActive ? props.onDisableWhiteboard : props.onToggleWhiteboard)}
                                 />
                                 <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} onPress={() => runAndClose(props.onEditNote)} />
-                                <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddCard)} />
+                                <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddNote)} />
                                 <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} onPress={() => setView('tags')} />
                                 {props.hasSiblingCards ? (
                                     <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
@@ -382,23 +370,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>
                             </View>
-                        )}
-
-                        {view === 'flag' && (
-                            <>
-                                {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                                    <TouchableOpacity
-                                        key={flag}
-                                        style={styles.row}
-                                        onPress={() => runAndClose(() => props.onFlag(flag))}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={flagNames[flag]}
-                                    >
-                                        <View style={[styles.flagSwatch, { backgroundColor: FLAG_COLORS[flag].color }]} />
-                                        <Text style={styles.rowLabel}>{flagNames[flag]}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </>
                         )}
 
                         {view === 'dueDate' && (

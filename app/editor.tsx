@@ -47,7 +47,9 @@ import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { extractClozeNumbers } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
-import { editorDraftKey, hasEditorDraftChanged } from '../lib/editorDraft';
+import { editorDraftKey } from '../lib/editorDraft';
+import { hasSnapshotChanged } from '../lib/dirtyState';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
 function parseCardId(raw: string | string[] | undefined): number | null {
@@ -481,6 +483,22 @@ export default function EditorScreen() {
         });
     }, [routeCardId, targetDeckId, question, answer, reverseAnswer, cardTypeId, noteTags]);
 
+    const currentDraft = useMemo(() => ({
+        question,
+        answer,
+        reverseAnswer,
+        cardTypeId,
+        deckId: targetDeckId,
+        tags: noteTags,
+    }), [answer, cardTypeId, noteTags, question, reverseAnswer, targetDeckId]);
+    const isDirty = hasSnapshotChanged(initialDraftKeyRef.current, currentDraft);
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
+        message: isEditing
+            ? l('Kaydetmeden kart düzenleme ekranından çıkılsın mı?', 'Leave the card editor without saving?')
+            : l('Kaydetmeden not ekleme ekranından çıkılsın mı?', 'Leave the add note screen without saving?'),
+    });
+
     const cardTypeLabel = selectedNoteType
         ? localizeNoteTypeName(locale, selectedNoteType.name)
         : l('Bilinmeyen', 'Unknown');
@@ -601,27 +619,7 @@ export default function EditorScreen() {
     };
 
     const handleBack = () => {
-        const hasUnsavedChanges = hasEditorDraftChanged(initialDraftKeyRef.current, {
-            question,
-            answer,
-            reverseAnswer,
-            cardTypeId,
-            deckId: targetDeckId,
-            tags: noteTags,
-        });
-
-        if (!hasUnsavedChanges) {
-            router.back();
-            return;
-        }
-        confirm(
-            l('Değişiklikler atılsın mı?', 'Discard Changes?'),
-            isEditing
-                ? l('Kaydetmeden kart düzenleme ekranından çıkılsın mı?', 'Leave the card editor without saving?')
-                : l('Kaydetmeden kart ekleme ekranından çıkılsın mı?', 'Leave the add card screen without saving?'),
-            () => router.back(),
-            { destructive: true },
-        );
+        router.back();
     };
 
     const requestClearFields = () => {
@@ -686,7 +684,7 @@ export default function EditorScreen() {
             return;
         }
         if (!targetDeck || targetDeck.isFiltered) {
-            alert(t('common.error'), l('Lütfen kart için bir deste seçin.', 'Please choose a deck for the card.'));
+            alert(t('common.error'), l('Lütfen not için bir deste seçin.', 'Please choose a deck for the note.'));
             return;
         }
 
@@ -711,6 +709,7 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
                 }
 
+                initialDraftKeyRef.current = editorDraftKey(currentDraft);
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
             } else {
@@ -731,18 +730,26 @@ export default function EditorScreen() {
                 }
 
                 persistStickyFieldValues();
+                initialDraftKeyRef.current = editorDraftKey(currentDraft);
                 bumpDataVersion();
-                alert(t('common.completed'), l('Kart kaydedildi.', 'Card saved.'), () => {
-                    if (externalSuccessUrl) {
-                        void Linking.openURL(externalSuccessUrl).catch(() => router.back());
-                    } else {
-                        router.back();
-                    }
-                });
+                alert(
+                    t('common.completed'),
+                    l(
+                        `Not kaydedildi; ${created.cards.length} kart oluşturuldu.`,
+                        `Note saved; ${created.cards.length} card${created.cards.length === 1 ? '' : 's'} created.`,
+                    ),
+                    () => {
+                        if (externalSuccessUrl) {
+                            void Linking.openURL(externalSuccessUrl).catch(() => router.back());
+                        } else {
+                            router.back();
+                        }
+                    },
+                );
             }
         } catch (e) {
             console.warn('[Editor] save failed:', e);
-            alert(t('common.error'), l('Kart kaydedilemedi.', 'Could not save the card.'));
+            alert(t('common.error'), l('Not kaydedilemedi.', 'Could not save the note.'));
         }
     };
 
@@ -856,14 +863,14 @@ export default function EditorScreen() {
                     <BackIcon color={colors.white} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>
-                    {isEditing ? t('root.editCard') : l('Yeni kart', 'Add')}
+                    {isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
                 </Text>
                 <View style={styles.headerSpacer} />
                 <TouchableOpacity
                     style={styles.headerAction}
                     onPress={handleSave}
                     accessibilityRole="button"
-                    accessibilityLabel={isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Kartı kaydet', 'Save card')}
+                    accessibilityLabel={isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
                 >
                     <CheckIcon color={colors.white} />
                 </TouchableOpacity>

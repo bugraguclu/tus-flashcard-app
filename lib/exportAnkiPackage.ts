@@ -2,6 +2,7 @@
  * interchange database under the scheduler-v2 collection name understood by
  * current Anki, AnkiMobile and AnkiDroid. */
 
+import { FSRS_DEFAULT_DESIRED_RETENTION, FSRS_DEFAULT_HISTORICAL_RETENTION, formatFsrsCutoffDate } from './fsrs';
 import { Platform } from 'react-native';
 import JSZip from 'jszip';
 import { deleteNativeDatabaseSync, openFtsSafeDatabaseSync } from './sqliteOpenOptions';
@@ -252,6 +253,12 @@ function deckConfigMap(
             newSortOrder: NEW_SORT_ORDER_ORDINAL[config.newCardSortOrder ?? 'template'] ?? 0,
             reviewOrder: REVIEW_ORDER_ORDINAL[config.reviewSortOrder ?? 'dueRandom'] ?? 0,
             easyDays: config.easyDays ?? [1, 1, 1, 1, 1, 1, 1],
+            // FSRS, under Anki's schema11 names. The parameters are written to the FSRS-6 slot;
+            // an importer that only understands older generations falls back to its own defaults.
+            fsrsParams6: config.fsrsParams ?? [],
+            desiredRetention: config.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION,
+            sm2Retention: config.historicalRetention ?? FSRS_DEFAULT_HISTORICAL_RETENTION,
+            ignoreRevlogsBeforeDate: formatFsrsCutoffDate(config.ignoreRevlogsBeforeMs),
             maxTaken: config.maxAnswerSecs, rev: { ...rawReview, perDay: config.maxReviewsPerDay, ease4: config.easyBonus,
                 hardFactor: config.hardIvl, ivlFct: config.ivlModifier, maxIvl: config.maxIvl, bury: config.buryReviewSiblings },
             new: { ...rawNew, perDay: config.newPerDay, delays: config.learningSteps, ints: [config.graduatingIvl, config.easyIvl],
@@ -262,7 +269,9 @@ function deckConfigMap(
         // FSRS parameters describe the learner's scheduling history, and Anki removes them from
         // a shareable package when scheduling is excluded.
         if (!includeScheduling) {
-            for (const key of ['fsrsWeights', 'fsrsParams4', 'fsrsParams5', 'fsrsParams6']) delete (map[String(config.id)] as any)[key];
+            for (const key of ['fsrsWeights', 'fsrsParams4', 'fsrsParams5', 'fsrsParams6', 'desiredRetention', 'sm2Retention', 'ignoreRevlogsBeforeDate']) {
+                delete (map[String(config.id)] as any)[key];
+            }
         }
     }
     return JSON.stringify(map);

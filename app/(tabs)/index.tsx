@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, FontSize, Shadows, BorderRadius, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject } from '../../lib/subjects';
-import { getScheduler, todayLocalYMD } from '../../lib/scheduler';
+import { schedulerForSettings, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
 import { getAverageAnswerMs, getNewCardsIntroducedTodayInDeck, getStudyStreak, getTodayAnswerStats, type StudyStreak } from '../../lib/reviewLogger';
@@ -43,6 +43,7 @@ import {
 } from '../../lib/deckManager';
 import CardWebView from '../../components/CardWebView';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
+import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import { WhiteboardOverlay, type WhiteboardHandle } from '../../components/WhiteboardOverlay';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import CatalogUnlockSheet from '../../components/CatalogUnlockSheet';
@@ -51,6 +52,7 @@ import {
     forgetCard,
     getStudyQueue,
     getWaitingLearningCardIds,
+    resolveSettingsForDeck,
     setCardBuried,
     setCardDueInDays,
     setCardSuspended,
@@ -85,6 +87,10 @@ import {
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
 import { coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
+import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
+import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from '../../lib/reviewerSurface';
+import { ReviewerTtsLifecycle } from '../../lib/reviewerTtsLifecycle';
+import { loadReviewerTtsEnabled, saveReviewerTtsEnabled } from '../../lib/reviewerTtsState';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -214,8 +220,9 @@ export default function StudyScreen() {
     const [selectedDeckName, setSelectedDeckName] = useRouteDeckScope(routeSelectedDeckName);
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
-    const [optionsMenuVisible, setOptionsMenuVisible] = useState(false);
-    const [optionsInitialView, setOptionsInitialView] = useState<'menu' | 'flag'>('menu');
+    const [reviewerSurface, setReviewerSurface] = useState<ReviewerSurface>('none');
+    const toolsMenuVisible = reviewerSurface === 'tools';
+    const flagMenuVisible = reviewerSurface === 'flag';
     // Anki whiteboard: an ink layer over the card, enabled from the reviewer overflow menu.
     // Clear/save/undo run through this ref so the same menu can drive the drawing tools.
     const [whiteboardActive, setWhiteboardActive] = useState(false);
@@ -225,7 +232,7 @@ export default function StudyScreen() {
     const whiteboardRef = useRef<WhiteboardHandle>(null);
     // AnkiDroid-compatible whole-card TTS. Explicit Anki TTS regions take precedence; otherwise
     // only visible learner text is read (never stylesheet or script contents).
-    const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(false);
+    const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(loadReviewerTtsEnabled);
     // Tapping the header opens a deck picker (Anki's "Select deck"), switching what's being studied.
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [catalogUnlockVisible, setCatalogUnlockVisible] = useState(false);
@@ -280,6 +287,8 @@ export default function StudyScreen() {
     const isMutatingRef = useRef(false);
     const lastGradeTapAtRef = useRef(0);
     const appIsActiveRef = useRef(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
+    const [appForegrounded, setAppForegrounded] = useState(appIsActiveRef.current);
+    const [reviewerFocused, setReviewerFocused] = useState(false);
     const answerTimerRef = useRef(new ActiveElapsedTimer(Date.now(), appIsActiveRef.current));
     const timeboxTrackerRef = useRef(new TimeboxTracker(Date.now()));
     // Auto Advance measures each SIDE, not the whole card, so it needs its own clock.
@@ -319,6 +328,7 @@ export default function StudyScreen() {
             const active = nextState === 'active';
             const now = Date.now();
             appIsActiveRef.current = active;
+            setAppForegrounded(active);
             answerTimerRef.current.setActive(active, now);
             autoAdvanceTimerRef.current.setActive(active, now);
         });
@@ -1155,8 +1165,11 @@ export default function StudyScreen() {
 
     const getPreview = useCallback(() => {
         if (!currentCard) return null;
-        const scheduler = getScheduler(settings.algorithm);
-        return scheduler.previewIntervals(currentCard.state, settings);
+        // The labels have to be produced with the card's own preset: learning steps, maximum
+        // interval and the FSRS parameters all live there, not on the collection defaults.
+        const cardSettings = resolveSettingsForDeck(currentCard.deckId, settings);
+        const scheduler = schedulerForSettings(cardSettings);
+        return scheduler.previewIntervals(currentCard.state, cardSettings);
     }, [currentCard, settings]);
 
     const renderPayload = useMemo(() => {
@@ -1236,6 +1249,12 @@ export default function StudyScreen() {
             ttsActiveRef.current = active;
         });
     }
+    const ttsLifecycleRef = useRef<ReviewerTtsLifecycle | null>(null);
+    if (!ttsLifecycleRef.current) {
+        ttsLifecycleRef.current = new ReviewerTtsLifecycle(() => {
+            void speechQueueRef.current?.stop();
+        });
+    }
     const anyAudioActive = () => questionAudioActiveRef.current
         || answerAudioActiveRef.current
         || ttsActiveRef.current;
@@ -1279,16 +1298,16 @@ export default function StudyScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [collectionVersion, locale]);
     const openMoreMenu = useCallback(() => {
-        setOptionsInitialView('menu');
-        setOptionsMenuVisible(true);
+        setReviewerSurface(openReviewerSurface('tools'));
     }, []);
     const openFlagMenu = useCallback(() => {
-        setOptionsInitialView('flag');
-        setOptionsMenuVisible(true);
+        setReviewerSurface(openReviewerSurface('flag'));
     }, []);
     const closeOptionsMenu = useCallback(() => {
-        setOptionsMenuVisible(false);
-        setOptionsInitialView('menu');
+        setReviewerSurface((current) => closeReviewerSurface(current, 'tools'));
+    }, []);
+    const closeFlagMenu = useCallback(() => {
+        setReviewerSurface((current) => closeReviewerSurface(current, 'flag'));
     }, []);
 
     // --- Whiteboard (Anki) ---
@@ -1304,8 +1323,26 @@ export default function StudyScreen() {
     const stopSpeech = useCallback(() => {
         void speechQueueRef.current?.stop();
     }, []);
+
+    // `StudyScreen` remains mounted under the tab layout, so unmount cleanup alone is not enough:
+    // a route blur or background transition must revoke the native speech owner immediately.
+    useFocusEffect(useCallback(() => {
+        setReviewerFocused(true);
+        ttsLifecycleRef.current?.setFocused(true);
+        return () => {
+            setReviewerFocused(false);
+            ttsLifecycleRef.current?.setFocused(false);
+        };
+    }, []));
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextState) => {
+            ttsLifecycleRef.current?.setForeground(nextState === 'active');
+        });
+        return () => subscription.remove();
+    }, []);
     const speakSide = useCallback((answerSide: boolean) => {
-        if (!renderPayload) return;
+        if (!renderPayload || !ttsLifecycleRef.current?.canSpeak()) return;
         const html = renderCardHtml(renderPayload.noteType, renderPayload.note, renderPayload.card.ord, answerSide ? 'answer' : 'question', {
             deckName: renderPayload.deck?.name,
             clozeOrd: renderPayload.card.ord + 1,
@@ -1323,11 +1360,11 @@ export default function StudyScreen() {
         );
     }, [renderPayload, locale]);
     const handleToggleVoicePlayback = useCallback(() => {
-        setVoicePlaybackEnabled((enabled) => {
-            if (enabled) stopSpeech();
-            return !enabled;
-        });
-    }, [stopSpeech]);
+        const next = !voicePlaybackEnabled;
+        setVoicePlaybackEnabled(next);
+        saveReviewerTtsEnabled(next);
+        if (!next) stopSpeech();
+    }, [stopSpeech, voicePlaybackEnabled]);
     const replayAudio = useCallback(() => {
         // Anki's `replayq`: replaying on the answer side normally plays the question's sounds
         // first and the answer's afterwards. "Skip question when replaying answer" turns that
@@ -1354,18 +1391,14 @@ export default function StudyScreen() {
         cardDeckOptions.skipQuestionWhenReplayingAnswer,
     ]);
 
-    const handleAddCard = useCallback(() => {
+    const handleAddNote = useCallback(() => {
         const selectedDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
         const homeDeckId = renderPayload
             ? (renderPayload.card.odid || renderPayload.card.deckId)
             : null;
         const homeDeck = homeDeckId ? getDeck(homeDeckId) : null;
-        const target = selectedDeck && !selectedDeck.isFiltered
-            ? selectedDeck
-            : homeDeck && !homeDeck.isFiltered
-                ? homeDeck
-                : null;
-        router.push((target ? `/editor?deckId=${target.id}` : '/editor') as any);
+        const targetDeckId = reviewerAddNoteDeckId({ selectedDeck, homeDeck });
+        router.push((targetDeckId ? `/editor?deckId=${targetDeckId}` : '/editor') as any);
     }, [renderPayload, router, selectedDeckName]);
 
     const handleEditNote = useCallback(() => {
@@ -1397,6 +1430,7 @@ export default function StudyScreen() {
         }
 
         if (action === 'undo') void undoLast();
+        else if (action === 'addNote') handleAddNote();
         else if (action === 'edit') handleEditNote();
         else if (action === 'mark') handleToggleMarkNote();
         else if (action === 'bury') handleBury();
@@ -1410,6 +1444,7 @@ export default function StudyScreen() {
         showingAnswer,
         answerCard,
         undoLast,
+        handleAddNote,
         handleEditNote,
         handleToggleMarkNote,
         handleBury,
@@ -1499,7 +1534,7 @@ export default function StudyScreen() {
         const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
         const shouldReadWholeCard = voicePlaybackEnabled;
         const shouldAutoPlayExplicitTts = scopeSettings.autoPlayAudio && sideHasExplicitTts;
-        if (!shouldReadWholeCard && !shouldAutoPlayExplicitTts) return;
+        if (!reviewerFocused || !appForegrounded || (!shouldReadWholeCard && !shouldAutoPlayExplicitTts)) return;
         const timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
         return () => {
             clearTimeout(timer);
@@ -1507,6 +1542,8 @@ export default function StudyScreen() {
         };
     }, [
         voicePlaybackEnabled,
+        reviewerFocused,
+        appForegrounded,
         scopeSettings.autoPlayAudio,
         showingAnswer,
         currentCard?.cardId,
@@ -1574,7 +1611,7 @@ export default function StudyScreen() {
     useEffect(() => {
         if (Platform.OS === 'web' || !typeAnswerField || typeAnswerInCard
             || settings.focusTypeAnswer === false || showingAnswer
-            || optionsMenuVisible || deckPickerVisible) return;
+            || toolsMenuVisible || flagMenuVisible || deckPickerVisible) return;
         const timer = setTimeout(() => nativeTypeAnswerRef.current?.focus(), 50);
         return () => clearTimeout(timer);
     }, [
@@ -1583,12 +1620,13 @@ export default function StudyScreen() {
         typeAnswerInCard,
         settings.focusTypeAnswer,
         showingAnswer,
-        optionsMenuVisible,
+        toolsMenuVisible,
+        flagMenuVisible,
         deckPickerVisible,
     ]);
 
     const handleNativeShortcutKey = useCallback((rawKey: string) => {
-        if (!currentCard || optionsMenuVisible || deckPickerVisible) return;
+        if (!currentCard || toolsMenuVisible || flagMenuVisible || deckPickerVisible) return;
         const key = normalizeHardwareKey(rawKey);
         const bindings = settings.keyBindings;
 
@@ -1619,7 +1657,8 @@ export default function StudyScreen() {
         if (grade !== null) void answerCard(grade);
     }, [
         currentCard,
-        optionsMenuVisible,
+        toolsMenuVisible,
+        flagMenuVisible,
         deckPickerVisible,
         settings.keyBindings,
         replayAudio,
@@ -1634,7 +1673,7 @@ export default function StudyScreen() {
     // physical-keyboard events. Real type-answer inputs take focus normally; after the answer is
     // revealed this capture regains focus so Anki's 1-4 grading shortcuts work again.
     useEffect(() => {
-        if (Platform.OS === 'web' || pathname !== '/' || !currentCard || optionsMenuVisible || deckPickerVisible || catalogUnlockVisible) {
+        if (Platform.OS === 'web' || pathname !== '/' || !currentCard || toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) {
             nativeShortcutCaptureRef.current?.blur();
             return;
         }
@@ -1648,7 +1687,8 @@ export default function StudyScreen() {
         pathname,
         currentCard?.cardId,
         showingAnswer,
-        optionsMenuVisible,
+        toolsMenuVisible,
+        flagMenuVisible,
         deckPickerVisible,
         catalogUnlockVisible,
         typeAnswerField,
@@ -2240,7 +2280,7 @@ export default function StudyScreen() {
                 </View>
             ) : null}
 
-            {Platform.OS !== 'web' && pathname === '/' && currentCard && !optionsMenuVisible && !deckPickerVisible && !catalogUnlockVisible && (
+            {Platform.OS !== 'web' && pathname === '/' && currentCard && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible && (
                 <TextInput
                     ref={nativeShortcutCaptureRef}
                     value=""
@@ -2257,7 +2297,7 @@ export default function StudyScreen() {
                 />
             )}
 
-            {currentCard && settings.showToolsOverlayButton && !optionsMenuVisible && !deckPickerVisible && !catalogUnlockVisible ? (
+            {currentCard && settings.showToolsOverlayButton && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible ? (
                 <TouchableOpacity
                     style={[
                         styles.toolsOverlayButton,
@@ -2287,15 +2327,13 @@ export default function StudyScreen() {
 
             {currentCard && (
                 <CardOptionsMenu
-                    visible={optionsMenuVisible}
-                    initialView={optionsInitialView}
+                    visible={toolsMenuVisible}
                     onClose={closeOptionsMenu}
                     cardSuspended={currentCard.state.suspended}
                     noteMarked={currentNoteMarked}
                     hasSiblingCards={hasSiblingCards}
                     cardHasAudio={cardHasAudio}
                     onReplayAudio={replayAudio}
-                    onFlag={handleFlag}
                     onBuryCard={handleBury}
                     onSuspendCard={handleToggleSuspendCard}
                     onForgetCard={handleForgetCard}
@@ -2309,7 +2347,7 @@ export default function StudyScreen() {
                     onUndo={undoLast}
                     canRedo={redoStack.length > 0}
                     onRedo={redoLast}
-                    onAddCard={handleAddCard}
+                    onAddNote={handleAddNote}
                     onEditNote={handleEditNote}
                     noteTags={renderPayload?.note.tags.join(' ') ?? ''}
                     onSaveTags={handleSaveTags}
@@ -2324,6 +2362,15 @@ export default function StudyScreen() {
                     onDisableWhiteboard={handleDisableWhiteboard}
                     voicePlaybackEnabled={voicePlaybackEnabled}
                     onToggleVoicePlayback={handleToggleVoicePlayback}
+                />
+            )}
+
+            {currentCard && (
+                <ReviewerFlagMenu
+                    visible={flagMenuVisible}
+                    currentFlag={currentFlag}
+                    onClose={closeFlagMenu}
+                    onSelect={handleFlag}
                 />
             )}
 

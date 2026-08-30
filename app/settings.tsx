@@ -58,6 +58,8 @@ import {
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
 import { createBackupNow } from '../lib/backup';
 import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
+import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import {
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
@@ -115,9 +117,7 @@ function formatKeyLabel(key: string): string {
 }
 
 function settingsMatch(actual: AppSettings, expected: AppSettings): boolean {
-    return (Object.keys(expected) as Array<keyof AppSettings>).every((key) => (
-        JSON.stringify(actual[key]) === JSON.stringify(expected[key])
-    ));
+    return stableSnapshot(actual) === stableSnapshot(expected);
 }
 
 const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
@@ -394,6 +394,7 @@ export default function SettingsScreen() {
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
     const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
     const lastSaveFailedRef = useRef(false);
     const sectionScrollRef = useRef<ScrollView>(null);
 
@@ -405,6 +406,7 @@ export default function SettingsScreen() {
         { value: 'good', label: l('Yanıtla: İyi', 'Answer: Good') },
         { value: 'easy', label: l('Yanıtla: Kolay', 'Answer: Easy') },
         { value: 'undo', label: l('Son işlemi geri al', 'Undo last action') },
+        { value: 'addNote', label: l('Not ekle', 'Add note') },
         { value: 'edit', label: l('Notu düzenle', 'Edit note') },
         { value: 'mark', label: l('Notu işaretle / işareti kaldır', 'Mark / unmark note') },
         { value: 'bury', label: l('Kartı göm', 'Bury card') },
@@ -447,7 +449,9 @@ export default function SettingsScreen() {
     };
 
     useEffect(() => {
-        setSettings(loadSettings());
+        const loaded = loadSettings();
+        setSettings(loaded);
+        setSavedSnapshot(stableSnapshot(loaded));
         setLoading(false);
         return () => {
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -463,10 +467,9 @@ export default function SettingsScreen() {
     const persistAndRefreshSettings = useCallback((next: AppSettings): boolean => {
         const result = saveSettings(next);
         const persisted = loadSettings();
-        setSettings(persisted);
-        refreshData();
         if (!result.ok || !settingsMatch(persisted, result.settings)) {
             lastSaveFailedRef.current = true;
+            setSettings(next);
             setSaved(false);
             alert(
                 l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
@@ -474,6 +477,9 @@ export default function SettingsScreen() {
             );
             return false;
         }
+        setSettings(persisted);
+        setSavedSnapshot(stableSnapshot(persisted));
+        refreshData();
         lastSaveFailedRef.current = false;
         showSavedState();
         return true;
@@ -509,6 +515,15 @@ export default function SettingsScreen() {
         Keyboard.dismiss();
         if (!lastSaveFailedRef.current) showSavedState();
     };
+
+    const isDirty = hasSnapshotChanged(savedSnapshot, settings);
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
+        message: l(
+            'Ayarlarınız kaydedilmedi. Çıkarsanız değişiklikler kaybolacak.',
+            'Your settings have not been saved. They will be lost if you leave.',
+        ),
+    });
 
     const handleStudyNotificationsToggle = async (
         enabled: boolean,
@@ -705,7 +720,9 @@ export default function SettingsScreen() {
                 alert(l('Ayarlar sıfırlanamadı', 'Settings Not Reset'), l('Varsayılan ayarlar cihaz depolamasına yazılamadı.', 'Default settings could not be written to device storage.'));
                 return;
             }
-            setSettings(loadSettings());
+            const persisted = loadSettings();
+            setSettings(persisted);
+            setSavedSnapshot(stableSnapshot(persisted));
             refreshData();
             markSchedulingStale();
         });

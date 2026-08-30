@@ -1,5 +1,7 @@
 import { getDB } from './db';
 import { CUSTOM_STUDY_MAX_VALUE } from './customStudy';
+import { FSRS6_DEFAULT_DECAY } from './fsrs';
+import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import { getAllSubjects, getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
 import type { AnkiCard, Deck, Note, DeckConfig, NoteType } from './models';
@@ -14,7 +16,7 @@ import {
     restoreQueueFromType,
 } from './ankiState';
 import { getDeckAncestors } from './models';
-import { addDaysLocalYMD, getScheduler, todayLocalYMD } from './scheduler';
+import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
 import { foldSearchNode, parseSearchQuery, unquoteSearchValue } from './searchQuery';
 import { compileCardMatcher, type CardSearchContext } from './cardSearchMatch';
 import {
@@ -303,6 +305,7 @@ interface SearchFragment {
  *   is:<state>   — new / learn / review / relearn / due / suspended / buried[-sibling|-manually]
  *   rated:N[:E]  — answered in the last N study days, optionally with ease E
  *   added:N      — created in the last N study days
+ *   prop:s/d/r   — FSRS stability, difficulty (0-1 in the query) and retrievability
  *   prop:<key><op>N — ivl / reps / lapses / ease / pos / due
  *   <term>       — substring match on sfld, note data, and tags
  */
@@ -425,12 +428,51 @@ function clauseForSearchTerm(term: string): SearchFragment | null {
     // and the plain column is the same value.
     if (term.startsWith('prop:')) {
         const match = unquote(term.slice(5))
-            .match(/^(ivl|reps|lapses|ease|pos|due)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
+            .match(/^(ivl|reps|lapses|ease|pos|due|s|d|r)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
         if (!match) return null;
 
         const [, key, op, rawValue] = match;
         const value = Number(rawValue);
         if (!Number.isFinite(value)) return null;
+
+        // FSRS memory state lives in Anki's own data blob, which this app keeps inside the card
+        // JSON under `ankiData`. Difficulty is written as a 0-1 fraction in searches and stored
+        // on the 1-10 scale.
+        if (key === 's' || key === 'd') {
+            const column = `CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.${key}') AS REAL)`;
+            return { sql: `${column} ${op} ?`, params: [key === 'd' ? value * 9 + 1 : value] };
+        }
+
+        if (key === 'r') {
+            // Retrievability is monotonic in elapsed time, so instead of raising a power in SQL
+            // the comparison is inverted: R(t) op v holds exactly when the elapsed days sit on the
+            // matching side of the interval that would produce retrievability v. Cards scheduled
+            // under a non-default decay are compared with the default curve here; the browser
+            // (lib/cardSearchMatch.ts) evaluates them exactly.
+            if (value < 0 || value > 1) return null;
+            const invertedOp = { '>': '<', '>=': '<=', '<': '>', '<=': '>=', '=': '=', '!=': '!=' }[op];
+            if (!invertedOp) return null;
+
+            const { rolloverHour } = collectionSearchSettings();
+            const nowMs = Date.now();
+            const dayCutoffMs = nextRolloverMs(nowMs, rolloverHour) - 86400000;
+            const today = localDayNumber(nowMs, rolloverHour);
+            // Days per unit of stability at which retrievability equals `value`. Search accepts
+            // any retention, so the curve is evaluated directly rather than through the
+            // scheduler's helper, which clamps to the range FSRS is allowed to schedule in.
+            const exponent = -1 / FSRS6_DEFAULT_DECAY;
+            const safeValue = Math.min(1, Math.max(1e-9, value));
+            const intervalPerStabilityDay = (Math.pow(safeValue, exponent) - 1) / (Math.pow(0.9, exponent) - 1);
+            const stability = "CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.s') AS REAL)";
+            const elapsed = `(CASE WHEN COALESCE(json_extract(c.data, '$.lastReview'), 0) > 0
+                    THEN (? - json_extract(c.data, '$.lastReview')) / 86400000.0
+                    ELSE (? - (c.due - c.ivl)) END)`;
+
+            return {
+                sql: `(c.type != 0 AND ${stability} IS NOT NULL AND ${elapsed} ${invertedOp} (${stability} * ?))`,
+                params: [dayCutoffMs, today, intervalPerStabilityDay],
+            };
+        }
 
         if (key === 'due') {
             const today = localDayNumber(Date.now(), collectionSearchSettings().rolloverHour);
@@ -666,7 +708,7 @@ function loadNextLearningDue(
     return row?.nextDue ?? null;
 }
 
-function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?: Map<number, AppSettings>): AppSettings {
+export function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?: Map<number, AppSettings>): AppSettings {
     if (cache?.has(deckId)) {
         return cache.get(deckId)!;
     }
@@ -1717,7 +1759,7 @@ export function answerStudyCard(
         };
     }
 
-    const scheduler = getScheduler(cardSettings.algorithm);
+    const scheduler = schedulerForSettings(cardSettings);
     const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
 
     // Easy days: nudge the review interval so the due date lands on an allowed weekday.
@@ -1888,7 +1930,21 @@ export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSe
     return getStudyCardById(ankiCardIdFromLegacyCardId(legacyCardId), settings);
 }
 
-export type BrowserCardSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified' | 'interval' | 'ease' | 'lapses' | 'reviews';
+export type BrowserCardSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified'
+    | 'interval' | 'ease' | 'lapses' | 'reviews' | 'stability' | 'difficulty' | 'retrievability';
+
+/** FSRS memory state, read out of the card JSON's Anki data blob. */
+const FSRS_STABILITY_SQL = "CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.s') AS REAL)";
+const FSRS_DIFFICULTY_SQL = "CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.d') AS REAL)";
+/**
+ * Retrievability itself needs a power function SQLite may not have, but it falls monotonically as
+ * elapsed time grows relative to stability. Sorting on the negated ratio therefore orders cards
+ * exactly as retrievability would — ascending puts the most-forgotten cards first. The day figure
+ * is UTC rather than rollover-aligned, which can only matter for cards within a day of each other.
+ */
+const FSRS_RETRIEVABILITY_SQL = `(CASE WHEN ${FSRS_STABILITY_SQL} > 0 AND c.type != 0
+    THEN ((c.due - c.ivl - CAST(strftime('%s', 'now') AS REAL) / 86400.0) / ${FSRS_STABILITY_SQL})
+    END)`;
 export type BrowserCardStateFilter = 'all' | 'new' | 'due';
 export type BrowserTableMode = 'cards' | 'notes';
 
@@ -1976,6 +2032,9 @@ const BROWSER_SORT_SQL: Record<BrowserCardSortKey, string> = {
     ease: 'c.factor',
     lapses: 'c.lapses',
     reviews: 'c.reps',
+    stability: FSRS_STABILITY_SQL,
+    difficulty: FSRS_DIFFICULTY_SQL,
+    retrievability: FSRS_RETRIEVABILITY_SQL,
 };
 
 interface BrowserNoteRow {
@@ -2013,6 +2072,10 @@ function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
         ease: 'AVG(CASE WHEN c_all.type != 0 THEN c_all.factor END)',
         lapses: 'SUM(c_all.lapses)',
         reviews: 'SUM(c_all.reps)',
+        // A note's FSRS figures are the average across its cards, matching the interval column.
+        stability: `AVG(${FSRS_STABILITY_SQL.replaceAll('c.data', 'c_all.data')})`,
+        difficulty: `AVG(${FSRS_DIFFICULTY_SQL.replaceAll('c.data', 'c_all.data')})`,
+        retrievability: `AVG(${FSRS_RETRIEVABILITY_SQL.replaceAll('c.data', 'c_all.data').replaceAll('c.due', 'c_all.due').replaceAll('c.ivl', 'c_all.ivl').replaceAll('c.type', 'c_all.type')})`,
     };
 
     return db.getAllSync<BrowserNoteRow>(
@@ -2112,6 +2175,8 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
         flags: number;
         createdAt: number;
         noteEditedAt: number;
+        ankiData: string | null;
+        lastReview: number | null;
     }>(
         `SELECT
             c.id AS cardId,
@@ -2121,7 +2186,9 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
             c.ord AS ord, c.type AS type, c.queue AS queue, c.due AS due,
             c.ivl AS ivl, c.factor AS factor, c.reps AS reps, c.lapses AS lapses,
             c.flags AS flags, c.created_at AS createdAt,
-            n.updated_at AS noteEditedAt
+            n.updated_at AS noteEditedAt,
+            json_extract(c.data, '$.ankiData') AS ankiData,
+            json_extract(c.data, '$.lastReview') AS lastReview
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          JOIN note_types nt ON nt.id = n.noteTypeId
@@ -2202,10 +2269,12 @@ function browserSearchContext(
         cardId: number; noteId: number; deckName: string; ord: number; type: number; queue: number;
         due: number; ivl: number; factor: number; reps: number; lapses: number; flags: number;
         createdAt: number; noteEditedAt: number;
+        ankiData?: string | null; lastReview?: number | null;
     },
     parsed: ParsedSearchNote,
 ): CardSearchContext {
     const { note, noteType, text, fields } = parsed;
+    const fsrsData = parseAnkiCardData(row.ankiData ?? undefined);
 
     return {
         cardId: row.cardId,
@@ -2229,6 +2298,10 @@ function browserSearchContext(
         // epoch millisecond Anki assigned when the card was made.
         createdAtMs: Number(row.createdAt) || row.cardId,
         noteEditedAtMs: Number(row.noteEditedAt) || (note.mod ? note.mod * 1000 : undefined),
+        // FSRS state for prop:s / prop:d / prop:r.
+        memoryState: memoryStateFromCardData(fsrsData),
+        decay: fsrsData.decay,
+        lastReviewedAtMs: Number(row.lastReview) || undefined,
     };
 }
 

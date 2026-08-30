@@ -42,7 +42,7 @@ export function normalizeReviewGestureAction(
 ): ReviewGestureAction {
     return value === 'showAnswer' || value === 'again' || value === 'hard'
         || value === 'good' || value === 'easy' || value === 'undo'
-        || value === 'edit' || value === 'mark' || value === 'bury'
+        || value === 'addNote' || value === 'edit' || value === 'mark' || value === 'bury'
         || value === 'suspend' || value === 'replayAudio' || value === 'flag'
         || value === 'tools' || value === 'decks' || value === 'off'
         ? value

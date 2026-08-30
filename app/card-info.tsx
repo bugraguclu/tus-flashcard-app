@@ -15,6 +15,8 @@ import { getAnkiCard, getNote, getNoteType } from '../lib/noteManager';
 import { getDeck } from '../lib/deckManager';
 import { getReviewsForCard } from '../lib/reviewLogger';
 import { useI18n } from '../hooks/useI18n';
+import { FSRS6_DEFAULT_DECAY, fsrsRetrievability } from '../lib/fsrs';
+import { memoryStateFromCardData, parseAnkiCardData } from '../lib/fsrsCardData';
 import { localizeNoteTypeName } from '../lib/i18n';
 import LeechExplainer from '../components/LeechExplainer';
 
@@ -73,6 +75,18 @@ export default function CardInfoScreen() {
     }
 
     const { card, note, noteType, deck, reviews, createdAt, modifiedAt } = payload;
+
+    // FSRS state, when the card has been scheduled by it. Retrievability is "how likely you are to
+    // remember this right now", derived from the stability and the days since the last review.
+    const cardData = parseAnkiCardData(card.ankiData);
+    const memory = memoryStateFromCardData(cardData);
+    const retrievability = memory && card.lastReview > 0
+        ? fsrsRetrievability(
+            memory.stability,
+            Math.max(0, (Date.now() - card.lastReview) / 86_400_000),
+            cardData.decay ?? FSRS6_DEFAULT_DECAY,
+        )
+        : null;
 
     const typeLabel = card.type === 0 ? t('anki.new') : card.type === 1 ? t('anki.learn') : card.type === 2 ? t('anki.review') : t('anki.relearn');
     const queueLabel = card.queue === -1
@@ -189,6 +203,32 @@ export default function CardInfoScreen() {
                     <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
                     <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
                 </View>
+
+                {memory ? (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>{l('FSRS hafıza durumu', 'FSRS Memory State')}</Text>
+                        <InfoRow
+                            label={l('Hafıza gücü (stability)', 'Stability')}
+                            value={l(`${memory.stability.toFixed(2)} gün`, `${memory.stability.toFixed(2)} days`)}
+                        />
+                        <InfoRow
+                            label={l('Zorluk', 'Difficulty')}
+                            value={`${(((memory.difficulty - 1) / 9) * 100).toFixed(0)}%`}
+                        />
+                        {retrievability !== null && (
+                            <InfoRow
+                                label={l('Hatırlanabilirlik', 'Retrievability')}
+                                value={`${(retrievability * 100).toFixed(1)}%`}
+                            />
+                        )}
+                        {cardData.desiredRetention !== undefined && (
+                            <InfoRow
+                                label={l('Hedeflenen hatırlama', 'Desired retention')}
+                                value={cardData.desiredRetention.toFixed(2)}
+                            />
+                        )}
+                    </View>
+                ) : null}
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Teknik bilgi', 'Technical Information')}</Text>

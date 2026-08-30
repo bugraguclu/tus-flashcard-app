@@ -19,10 +19,14 @@ vi.mock('./storage', () => ({
 }));
 
 import {
+    BackupNameError,
     createBackupNow,
     deleteBackup,
+    displayBackupName,
+    getDefaultBackupFileName,
     isBackupFileName,
     listBackups,
+    normalizeManualBackupName,
     readBackup,
     restoreBackup,
     runAutoBackupIfDue,
@@ -247,6 +251,26 @@ describe('createBackupNow', () => {
         expect(h.files.size).toBe(2);
         expect(h.files.get('tus-backup-2026-07-05-120500000.json')?.contents).toContain('"changed":1');
     });
+
+    it('writes a normalized custom name without changing the snapshot payload', async () => {
+        const h = makeHarness();
+        const result = await createBackupNow(h.deps, { name: 'Morning review' });
+
+        expect(result.fileName).toBe('tus-backup-custom-Morning review.json');
+        expect(h.files.get(result.fileName)?.contents).toContain('"canonical":true');
+        expect(displayBackupName(result.fileName)).toBe('Morning review.json');
+    });
+
+    it('rejects a custom-name collision before exporting or writing', async () => {
+        const h = makeHarness();
+        await createBackupNow(h.deps, { name: 'Recovery' });
+        const exportData = vi.fn(h.deps.exportData);
+
+        await expect(createBackupNow({ ...h.deps, exportData }, { name: 'recovery.json' }))
+            .rejects.toMatchObject({ code: 'duplicate' });
+        expect(exportData).not.toHaveBeenCalled();
+        expect(h.files.size).toBe(1);
+    });
 });
 
 describe('restoreBackup', () => {
@@ -345,6 +369,28 @@ describe('isBackupFileName', () => {
         expect(isBackupFileName('tus-backup-2026-07-05.json.bak')).toBe(false);
         expect(isBackupFileName('../tus-backup-2026-07-05.json')).toBe(false);
         expect(isBackupFileName('collection.anki2')).toBe(false);
+        expect(isBackupFileName('tus-backup-custom-Recovery.json')).toBe(true);
+        expect(isBackupFileName('tus-backup-custom-../Recovery.json')).toBe(false);
+    });
+});
+
+describe('backup name validation', () => {
+    it('keeps the automatic default format and normalizes the optional extension', () => {
+        expect(getDefaultBackupFileName(new Date('2026-07-05T12:00:00'), 4))
+            .toBe('tus-backup-2026-07-05-120000000.json');
+        expect(normalizeManualBackupName(' My recovery ')).toEqual({
+            fileName: 'tus-backup-custom-My recovery.json',
+            displayName: 'My recovery.json',
+        });
+        expect(normalizeManualBackupName('My recovery.JSON').fileName)
+            .toBe('tus-backup-custom-My recovery.json');
+    });
+
+    it('rejects empty, unsafe, wrong-extension and oversized names', () => {
+        expect(() => normalizeManualBackupName('   ')).toThrowError(BackupNameError);
+        expect(() => normalizeManualBackupName('../recovery')).toThrowError(BackupNameError);
+        expect(() => normalizeManualBackupName('recovery.txt')).toThrowError(BackupNameError);
+        expect(() => normalizeManualBackupName('x'.repeat(121))).toThrowError(BackupNameError);
     });
 });
 

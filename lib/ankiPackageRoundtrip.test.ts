@@ -22,7 +22,9 @@ import { importAnkiReaderLossless, importApkg } from './importApkg';
 import { buildAnkiExport } from './exportAnkiPackage';
 import { parseBackupExportSource } from './backupExport';
 import { getAllAnkiCards, getAllNotes, getAllNoteTypes, saveAnkiCard, saveNote } from './noteManager';
-import { createDeck, getAllDeckConfigs, getAllDecks } from './deckManager';
+import { createDeck, getAllDeckConfigs, getAllDecks, saveDeckConfig } from './deckManager';
+import { DEFAULT_FSRS_PARAMETERS, clampFsrsParameters } from './fsrs';
+import { parseAnkiCardData } from './fsrsCardData';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -276,6 +278,57 @@ describe('lossless Anki package roundtrip', () => {
         expect(decks.map((deck) => deck.name)).toEqual(expect.arrayContaining(['Medicine', 'Medicine::Cardiology']));
         expect(decks.every((deck) => deck.conf === 1)).toBe(true);
         reader.close();
+    });
+
+    it('round-trips FSRS deck options and per-card memory state', async () => {
+        await importApkg(await fixturePackage(), {
+            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+
+        // Give the imported preset FSRS settings and one card a memory state, the way the
+        // scheduler and deck options would.
+        const config = getAllDeckConfigs()[0];
+        saveDeckConfig({
+            ...config,
+            fsrsParams: clampFsrsParameters(DEFAULT_FSRS_PARAMETERS),
+            desiredRetention: 0.85,
+            historicalRetention: 0.8,
+            ignoreRevlogsBeforeMs: Date.parse('2025-06-01T00:00:00'),
+        });
+        const card = getAllAnkiCards()[0];
+        saveAnkiCard({ ...card, ankiData: JSON.stringify({ s: 31.7, d: 7.4, dr: 0.85, decay: 0.1542 }) });
+
+        const artifact = await buildAnkiExport('apkg', 'Medicine', true, undefined, {
+            includeScheduling: true,
+            includeDeckConfigs: true,
+        });
+        const zip = await JSZip.loadAsync(artifact.bytes!);
+        const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+
+        const dconf = Object.values(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)) as any[];
+        expect(dconf[0].fsrsParams6).toHaveLength(21);
+        expect(dconf[0].desiredRetention).toBeCloseTo(0.85, 6);
+        expect(dconf[0].sm2Retention).toBeCloseTo(0.8, 6);
+        expect(dconf[0].ignoreRevlogsBeforeDate).toBe('2025-06-01');
+        // Anki keeps the memory state in the card's own data column.
+        const exportedCard = reader.getFirstSync<{ data: string }>('SELECT data FROM cards ORDER BY id');
+        expect(JSON.parse(exportedCard!.data)).toMatchObject({ s: 31.7, d: 7.4 });
+        reader.close();
+
+        // Re-importing the package restores the same preset values.
+        db = createAppDb(SQL);
+        holder.db = db;
+        await importApkg(artifact.bytes!, {
+            subject: 'medicine', topic: 'Imported', fileName: 'fsrs.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        const reimported = getAllDeckConfigs().find((entry) => (entry.fsrsParams?.length ?? 0) > 0);
+        expect(reimported?.fsrsParams).toHaveLength(21);
+        expect(reimported?.desiredRetention).toBeCloseTo(0.85, 5);
+        expect(reimported?.historicalRetention).toBeCloseTo(0.8, 5);
+        expect(reimported?.ignoreRevlogsBeforeMs).toBe(Date.parse('2025-06-01T00:00:00'));
+        expect(parseAnkiCardData(getAllAnkiCards()[0].ankiData).stability).toBeCloseTo(31.7, 4);
     });
 
     it('exports only cards from the exact deck ids selected in the deck tree', async () => {

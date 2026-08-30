@@ -30,11 +30,12 @@ describe('reviewer touch controls', () => {
 
     it('sanitizes each persisted zone independently', () => {
         const normalized = normalizeReviewTapActions(
-            { topLeft: 'easy', topCenter: 'invalid', bottomRight: 'tools' },
+            { topLeft: 'easy', topCenter: 'invalid', middleCenter: 'addNote', bottomRight: 'tools' },
             DEFAULT_ANSWER_TAP_ACTIONS,
         );
         expect(normalized.topLeft).toBe('easy');
         expect(normalized.topCenter).toBe('off');
+        expect(normalized.middleCenter).toBe('addNote');
         expect(normalized.bottomRight).toBe('tools');
         expect(normalized.middleRight).toBe('good');
     });

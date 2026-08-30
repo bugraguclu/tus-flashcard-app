@@ -24,6 +24,7 @@ import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting 
 import { validateCanonicalBackupData } from './backupValidation';
 
 const DAILY_PREFIX = 'tus-backup-';
+const CUSTOM_PREFIX = 'tus-backup-custom-';
 const PRE_RESTORE_PREFIX = 'tus-prerestore-';
 const KEEP_PRE_RESTORE = 3;
 const GUARD_KEY = 'tus_last_auto_backup_at';
@@ -35,6 +36,8 @@ const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6}(?:\d{3})?)?\.json$
 const PRE_RESTORE_NAME_RE = /^tus-prerestore-\d+\.json$/;
 const MAX_BACKUP_SIZE = 50 * 1024 * 1024;
 const MAX_SUPPORTED_BACKUP_VERSION = 6;
+const MAX_MANUAL_BACKUP_NAME_LENGTH = 120;
+const FORBIDDEN_BACKUP_NAME_CHARS = /[<>:"/\\|?*\u0000-\u001F]/u;
 
 export interface BackupInfo {
     name: string;
@@ -66,9 +69,66 @@ export interface BackupDeps {
     isWriter?: () => boolean;
 }
 
+export interface CreateBackupOptions {
+    /** A user-facing name. The .json extension is optional and is normalized on write. */
+    name?: string;
+}
+
+export type BackupNameErrorCode = 'empty' | 'too-long' | 'invalid-extension' | 'invalid-characters' | 'invalid-name' | 'duplicate';
+
+export class BackupNameError extends Error {
+    constructor(public readonly code: BackupNameErrorCode, message: string) {
+        super(message);
+        this.name = 'BackupNameError';
+    }
+}
+
+function isSafeCustomStem(stem: string): boolean {
+    return Boolean(stem)
+        && stem !== '.'
+        && stem !== '..'
+        && !stem.endsWith('.')
+        && !FORBIDDEN_BACKUP_NAME_CHARS.test(stem);
+}
+
+/** Convert an editable title into a private, path-safe backup store key. */
+export function normalizeManualBackupName(value: string): { fileName: string; displayName: string } {
+    const trimmed = value.trim();
+    if (!trimmed) throw new BackupNameError('empty', 'Backup name cannot be empty.');
+    if (trimmed.length > MAX_MANUAL_BACKUP_NAME_LENGTH) {
+        throw new BackupNameError('too-long', 'Backup name is too long.');
+    }
+
+    const hasJsonExtension = /\.json$/iu.test(trimmed);
+    const hasOtherExtension = /\.[^./\\]+$/u.test(trimmed) && !hasJsonExtension;
+    if (hasOtherExtension) throw new BackupNameError('invalid-extension', 'Backup name must use the .json extension.');
+
+    const stem = hasJsonExtension ? trimmed.slice(0, -'.json'.length) : trimmed;
+    if (!isSafeCustomStem(stem)) throw new BackupNameError('invalid-characters', 'Backup name contains unsupported characters.');
+
+    return {
+        fileName: `${CUSTOM_PREFIX}${stem}.json`,
+        displayName: `${stem}.json`,
+    };
+}
+
+/** The default name remains the same timestamped name used by automatic backups. */
+export function getDefaultBackupFileName(now = new Date(), rolloverHour = loadSettings().dayRolloverHour): string {
+    const today = todayLocalYMD(now, rolloverHour);
+    const stamp = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}${String(now.getMilliseconds()).padStart(3, '0')}`;
+    return `${DAILY_PREFIX}${today}-${stamp}.json`;
+}
+
+/** Hide the private custom-name namespace from the management screen. */
+export function displayBackupName(name: string): string {
+    return name.startsWith(CUSTOM_PREFIX) ? name.slice(CUSTOM_PREFIX.length) : name;
+}
+
 /** Accept only filenames this module generates — store keys come from UI params. */
 export function isBackupFileName(name: string): boolean {
-    return DAILY_NAME_RE.test(name) || PRE_RESTORE_NAME_RE.test(name);
+    if (DAILY_NAME_RE.test(name) || PRE_RESTORE_NAME_RE.test(name)) return true;
+    if (!name.startsWith(CUSTOM_PREFIX) || !name.endsWith('.json')) return false;
+    return isSafeCustomStem(name.slice(CUSTOM_PREFIX.length, -'.json'.length));
 }
 
 export function isPreRestoreBackup(name: string): boolean {
@@ -248,12 +308,23 @@ function parseTimestamp(preRestoreName: string): number {
 }
 
 /** Write today's snapshot unconditionally (manual backup / due auto backup). */
-export async function createBackupNow(deps: BackupDeps = {}): Promise<{ fileName: string }> {
+export async function createBackupNow(
+    deps: BackupDeps = {},
+    options: CreateBackupOptions = {},
+): Promise<{ fileName: string }> {
     const d = resolveDeps(deps);
     const now = d.now();
-    const today = todayLocalYMD(now, d.rolloverHour());
-    const stamp = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}${String(now.getMilliseconds()).padStart(3, '0')}`;
-    const fileName = `${DAILY_PREFIX}${today}-${stamp}.json`;
+    const customName = options.name === undefined ? undefined : normalizeManualBackupName(options.name);
+    const fileName = customName?.fileName ?? getDefaultBackupFileName(now, d.rolloverHour());
+
+    // Never let a manual name (or a same-millisecond automatic name) replace an existing
+    // snapshot. Check before exporting so a collision cannot waste work or alter snapshot time.
+    const existing = await d.store.list();
+    // Native iOS storage is commonly case-insensitive; use the same conservative rule on web
+    // so a backup cannot become inaccessible after moving between platforms.
+    if (existing.some((entry) => entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase())) {
+        throw new BackupNameError('duplicate', 'A backup with this name already exists.');
+    }
 
     const json = await d.exportData();
     assertValidBackupContents(json);

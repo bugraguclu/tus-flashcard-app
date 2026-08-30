@@ -1,5 +1,10 @@
 // Anki-compatible data models: notes, cards, note types, decks, deck config, revlog.
 
+import {
+    DEFAULT_FSRS_PARAMETERS,
+    FSRS_DEFAULT_DESIRED_RETENTION,
+    FSRS_DEFAULT_HISTORICAL_RETENTION,
+} from './fsrs';
 import type { AutoAdvanceAnswerAction, AutoAdvanceQuestionAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './types';
 
 export type NoteTypeKind = 'standard' | 'cloze';
@@ -350,6 +355,19 @@ export interface DeckConfig {
     // (half the reviews land here), 0 = no reviews scheduled on that day.
     easyDays?: number[];
 
+    // FSRS (Anki's "FSRS" deck-options section). The on/off switch is collection-wide; the
+    // parameters and the retention targets belong to the preset.
+    /** 21 FSRS-6 parameters. Empty/absent means the shipped defaults. */
+    fsrsParams?: number[];
+    /** Target recall probability at review time, 0.70–0.99 (Anki `desiredRetention`). */
+    desiredRetention?: number;
+    /** Assumed past retention when converting SM-2 cards with no usable review log. */
+    historicalRetention?: number;
+    /** Reviews before this epoch-ms timestamp are ignored when deriving memory states. */
+    ignoreRevlogsBeforeMs?: number;
+    /** When the preset's parameters were last optimized, for the deck-options summary line. */
+    fsrsParamsOptimizedAtMs?: number;
+
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
 }
@@ -400,6 +418,10 @@ export const DEFAULT_DECK_CONFIG: DeckConfig = {
     autoPlayAudio: true,
     skipQuestionWhenReplayingAnswer: false,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
+    // FSRS: upstream's defaults, Anki's 0.9 retention targets. Inert until FSRS is switched on.
+    fsrsParams: [...DEFAULT_FSRS_PARAMETERS],
+    desiredRetention: FSRS_DEFAULT_DESIRED_RETENTION,
+    historicalRetention: FSRS_DEFAULT_HISTORICAL_RETENTION,
 };
 
 // Mirrors Anki's revlog: one immutable row per answer.

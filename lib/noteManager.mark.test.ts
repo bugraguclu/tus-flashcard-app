@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Note } from './models';
 
 const store = new Map<number, Note>();
+const dbCalls: string[] = [];
+let failOnCard: number | null = null;
 
 vi.mock('./db', () => ({
     getDB: () => ({
@@ -13,16 +15,19 @@ vi.mock('./db', () => ({
             return null;
         },
         runSync: (sql: string, ...params: any[]) => {
+            dbCalls.push(sql);
+            if (failOnCard !== null && /DELETE FROM revlog/.test(sql) && params[0] === failOnCard) throw new Error('write failed');
             if (/INSERT OR REPLACE INTO notes/.test(sql)) {
                 const [id, , , , , data] = params;
                 store.set(id as number, JSON.parse(data as string));
             }
         },
+        execSync: (sql: string) => { dbCalls.push(sql); },
     }),
     buildFtsPrefixQuery: (q: string) => q,
 }));
 
-import { isNoteMarked, MARKED_TAG, toggleNoteMark } from './noteManager';
+import { deleteAnkiCardsOnly, isNoteMarked, MARKED_TAG, toggleNoteMark } from './noteManager';
 
 function note(overrides: Partial<Note> = {}): Note {
     return {
@@ -33,7 +38,11 @@ function note(overrides: Partial<Note> = {}): Note {
 }
 
 describe('note marking (Anki-style "marked" tag)', () => {
-    beforeEach(() => store.clear());
+    beforeEach(() => {
+        store.clear();
+        dbCalls.length = 0;
+        failOnCard = null;
+    });
 
     it('toggles the reserved tag on and off', () => {
         store.set(1, note());
@@ -59,5 +68,22 @@ describe('note marking (Anki-style "marked" tag)', () => {
 
     it('is a no-op when the note does not exist', () => {
         expect(toggleNoteMark(999)).toBe(false);
+    });
+
+    it('deletes a bulk empty-card selection in one transaction', () => {
+        deleteAnkiCardsOnly([10, 11, 10]);
+
+        expect(dbCalls[0]).toBe('BEGIN TRANSACTION;');
+        expect(dbCalls.at(-1)).toBe('COMMIT;');
+        expect(dbCalls.filter((sql) => /DELETE FROM anki_cards/.test(sql))).toHaveLength(2);
+        expect(dbCalls.filter((sql) => /INSERT INTO graves/.test(sql))).toHaveLength(2);
+    });
+
+    it('rolls back when a bulk empty-card deletion fails', () => {
+        failOnCard = 11;
+
+        expect(() => deleteAnkiCardsOnly([10, 11])).toThrow('write failed');
+        expect(dbCalls[0]).toBe('BEGIN TRANSACTION;');
+        expect(dbCalls.at(-1)).toBe('ROLLBACK;');
     });
 });

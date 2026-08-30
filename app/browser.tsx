@@ -650,6 +650,9 @@ export default function BrowserScreen() {
         ease: tableMode === 'notes' ? l('Ortalama kolaylık', 'Average Ease') : l('Kolaylık', 'Ease'),
         lapses: tableMode === 'notes' ? l('Toplam unutma', 'Total Lapses') : l('Unutma sayısı', 'Lapses'),
         reviews: tableMode === 'notes' ? l('Toplam tekrar', 'Total Reviews') : l('Tekrar sayısı', 'Reviews'),
+        stability: tableMode === 'notes' ? l('Ortalama hafıza gücü', 'Average Stability') : l('Hafıza gücü', 'Stability'),
+        difficulty: tableMode === 'notes' ? l('Ortalama zorluk', 'Average Difficulty') : l('Zorluk', 'Difficulty'),
+        retrievability: tableMode === 'notes' ? l('Ortalama hatırlanabilirlik', 'Average Retrievability') : l('Hatırlanabilirlik', 'Retrievability'),
     };
 
     const closeSelection = useCallback(() => {

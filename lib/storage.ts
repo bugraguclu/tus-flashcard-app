@@ -4,6 +4,11 @@
 // AsyncStorage is used only for legacy import/migration sources.
 // ============================================================
 
+import {
+    DEFAULT_FSRS_PARAMETERS,
+    FSRS_DEFAULT_DESIRED_RETENTION,
+    FSRS_DEFAULT_HISTORICAL_RETENTION,
+} from './fsrs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, AppSettings, AlgorithmType, ThemeMode, KeyBindings } from './types';
 import type { Card } from './types';
@@ -170,6 +175,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // out within this window is shown early rather than making the learner wait it out.
     learnAheadMinutes: 20,
     algorithm: 'ANKI_V3' as AlgorithmType,
+    // FSRS is off until the learner turns it on, exactly as in Anki. The preset supplies the
+    // parameters and retention targets once it is enabled.
+    fsrsEnabled: false,
+    fsrsRescheduleOnChange: false,
+    fsrsShortTermWithSteps: false,
+    fsrsParameters: [...DEFAULT_FSRS_PARAMETERS],
+    desiredRetention: FSRS_DEFAULT_DESIRED_RETENTION,
+    historicalRetention: FSRS_DEFAULT_HISTORICAL_RETENTION,
 };
 
 /** Read a raw key from the SQLite settings table (guard keys, metadata blobs). */
@@ -531,6 +544,11 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
+            // Collection-wide FSRS switches. Parameters and retention live on the preset and are
+            // resolved per deck, so they are deliberately not stored here.
+            fsrsEnabled: parsed.fsrsEnabled === true,
+            fsrsRescheduleOnChange: parsed.fsrsRescheduleOnChange === true,
+            fsrsShortTermWithSteps: parsed.fsrsShortTermWithSteps === true,
         };
     } catch (e) {
         console.warn('[Storage] loadAppSettingsMeta failed:', e);
@@ -601,6 +619,9 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
         algorithm: settings.algorithm,
+        fsrsEnabled: settings.fsrsEnabled === true,
+        fsrsRescheduleOnChange: settings.fsrsRescheduleOnChange === true,
+        fsrsShortTermWithSteps: settings.fsrsShortTermWithSteps === true,
     };
 
     setDbSetting(DB_SETTINGS_KEYS.APP_SETTINGS_META, JSON.stringify(meta));
@@ -612,7 +633,8 @@ function persistAppSettingsMeta(settings: AppSettings): void {
  * to overwrite unsaved edits when this screen is opened for the default preset.
  */
 export function saveCollectionDeckOptions(options: Pick<AppSettings,
-    'newCardsIgnoreReviewLimit' | 'limitsStartFromTop'>): void {
+    'newCardsIgnoreReviewLimit' | 'limitsStartFromTop'>
+    & Partial<Pick<AppSettings, 'fsrsEnabled' | 'fsrsRescheduleOnChange' | 'fsrsShortTermWithSteps'>>): void {
     const current = loadSettings();
     const validated = validateSettings({ ...current, ...options } as unknown as Record<string, unknown>);
     persistAppSettingsMeta(validated);

@@ -11,11 +11,39 @@
       "useFor": ["studying", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
     },
     {
+      "id": "anki-manual-empty-cards",
+      "priority": 1,
+      "platform": "cross-platform card generation and maintenance behavior",
+      "url": "https://docs.ankiweb.net/templates/generation.html#card-generation--deletion",
+      "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
+    },
+    {
+      "id": "anki-manual-text-import",
+      "priority": 1,
+      "platform": "cross-platform text import behavior",
+      "url": "https://docs.ankiweb.net/importing/text-files.html",
+      "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives", "deck columns", "GUID columns"]
+    },
+    {
+      "id": "anki-manual-editing",
+      "priority": 1,
+      "platform": "cross-platform note/card semantics",
+      "url": "https://docs.ankiweb.net/editing.html",
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes"]
+    },
+    {
+      "id": "anki-manual-collection-packages",
+      "priority": 1,
+      "platform": "cross-platform collection package behavior",
+      "url": "https://docs.ankiweb.net/exporting.html#collection-colpkg",
+      "useFor": ["colpkg collection replacement", "collection package scheduling", "replacement media semantics"]
+    },
+    {
       "id": "anki-manual-deck-options",
       "priority": 1,
       "platform": "cross-platform deck-option behavior",
       "url": "https://docs.ankiweb.net/deck-options.html",
-      "useFor": ["presets", "daily limits", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
+      "useFor": ["presets", "rename current preset", "separate subdeck presets", "save to all subdecks", "daily limits", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
     },
     {
       "id": "anki-manual-preferences",
@@ -23,6 +51,13 @@
       "platform": "cross-platform preferences",
       "url": "https://docs.ankiweb.net/preferences.html",
       "useFor": ["timebox time limit", "learn ahead limit", "reviewer preferences"]
+    },
+    {
+      "id": "anki-manual-tts",
+      "priority": 1,
+      "platform": "cross-platform text-to-speech behavior",
+      "url": "https://docs.ankiweb.net/templates/fields.html#text-to-speech-for-individual-fields",
+      "useFor": ["TTS template tags", "TTS language", "ordered voice preferences", "speech speed", "multi-field TTS"]
     },
     {
       "id": "anki-manual-typed-answer",
@@ -50,7 +85,21 @@
       "priority": 1,
       "platform": "iOS and iPadOS UX",
       "url": "https://docs.ankimobile.net/",
-      "useFor": ["deck list", "reviewer", "study tools", "gestures", "notifications", "file hand-off", "accessibility"]
+      "useFor": ["deck list", "rename deck", "reviewer", "study tools", "gestures", "notifications", "file hand-off", "accessibility"]
+    },
+    {
+      "id": "ankimobile-study-tools",
+      "priority": 1,
+      "platform": "iOS and iPadOS reviewer actions",
+      "url": "https://docs.ankimobile.net/study-tools.html",
+      "useFor": ["Add action", "study tools actions", "assigning actions to taps/swipes/top bar", "frequent actions"]
+    },
+    {
+      "id": "ankimobile-editing",
+      "priority": 1,
+      "platform": "iOS and iPadOS note/card editing",
+      "url": "https://docs.ankimobile.net/editing.html",
+      "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study"]
     },
     {
       "id": "ankimobile-preferences",
@@ -58,6 +107,13 @@
       "platform": "iOS and iPadOS preferences",
       "url": "https://docs.ankimobile.net/preferences.html",
       "useFor": ["review feedback", "tools overlay", "typed answers", "nine-zone question and answer taps", "interactive tap pass-through", "swipes", "general settings", "study notifications", "media maintenance"]
+    },
+    {
+      "id": "ankimobile-tts",
+      "priority": 1,
+      "platform": "iOS and iPadOS text-to-speech",
+      "url": "https://docs.ankimobile.net/tts.html",
+      "useFor": ["iOS system voices", "Enhanced voice installation", "TTS mute-switch behavior"]
     },
     {
       "id": "ankimobile-url-schemes",
@@ -122,6 +178,30 @@
       "useFor": ["filtered deck search term ordinals", "filtered deck config fields"]
     },
     {
+      "id": "fsrs-rs",
+      "priority": 2,
+      "platform": "scheduler algorithm",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs",
+      "license": "BSD-3-Clause; algorithm reference, implemented independently",
+      "useFor": ["FSRS-6 formulas", "default parameters", "parameter bounds", "memory state from SM-2", "reference test vectors"]
+    },
+    {
+      "id": "anki-source-fsrs",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/scheduler/fsrs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["memory state from the review log", "reviews_for_fsrs selection rules", "rescheduling on change", "desired/historical retention"]
+    },
+    {
+      "id": "anki-source-scheduler-states",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/scheduler/states",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["learning/review/relearning state machine", "FSRS interval constraints and fuzz", "short-term scheduling threshold"]
+    },
+    {
       "id": "ankidroid-source",
       "priority": 3,
       "platform": "Android",
@@ -163,6 +243,13 @@
       "platform": "iOS and iPadOS system shortcuts",
       "url": "https://developer.apple.com/documentation/intentsui/inuiaddvoiceshortcutviewcontroller",
       "useFor": ["deck-specific Apple Shortcuts confirmation", "Shortcuts app hand-off", "user-approved shortcut creation"]
+    },
+    {
+      "id": "apple-speech-voice-quality",
+      "priority": 1,
+      "platform": "iOS and iPadOS speech synthesis",
+      "url": "https://developer.apple.com/documentation/avfaudio/avspeechsynthesisvoicequality",
+      "useFor": ["system TTS voice quality", "Enhanced and Premium installed voices"]
     },
     {
       "id": "owasp-masvs",

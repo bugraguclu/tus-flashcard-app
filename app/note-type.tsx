@@ -27,6 +27,8 @@ import {
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import { useI18n } from '../hooks/useI18n';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 
 const MONOSPACE = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
@@ -56,10 +58,19 @@ export default function NoteTypeScreen() {
 
     const id = Number(Array.isArray(params.id) ? params.id[0] : params.id);
     const [nt, setNt] = useState<NoteType | null>(null);
+    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
     useEffect(() => {
-        setNt(getNoteType(id));
+        const loaded = getNoteType(id);
+        setNt(loaded);
+        setSavedSnapshot(loaded ? stableSnapshot(loaded) : null);
     }, [id]);
+
+    const isDirty = hasSnapshotChanged(savedSnapshot, nt);
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
+        message: l('Kaydetmeden not türü düzenleme ekranından çıkılsın mı?', 'Leave the note type editor without saving?'),
+    });
 
     const preview = useMemo(() => (nt ? makePreview(nt, l('örneği', 'example')) : null), [nt, l]);
 
@@ -82,6 +93,7 @@ export default function NoteTypeScreen() {
         try {
             applyFieldEdit(nt.id, edit);
             setNt(edit.noteType);
+            setSavedSnapshot(stableSnapshot(edit.noteType));
             bumpDataVersion();
         } catch (e) {
             console.warn('[NoteType] field edit failed:', e);
@@ -107,6 +119,7 @@ export default function NoteTypeScreen() {
     const handleSave = () => {
         try {
             saveNoteType(nt);
+            setSavedSnapshot(stableSnapshot(nt));
             bumpDataVersion();
             alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => router.back());
         } catch (e) {

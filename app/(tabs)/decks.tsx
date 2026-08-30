@@ -52,7 +52,6 @@ import {
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
 import { alert, confirm } from '../../lib/confirm';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../../lib/studyRepository';
-import { createBackupNow } from '../../lib/backup';
 import {
     useAppSettings,
     useCatalogStatus,
@@ -430,20 +429,9 @@ export default function DecksScreen() {
     };
 
     const handleCreateBackup = () => {
-        runAfterOverflowClose(() => {
-            void (async () => {
-                try {
-                    await createBackupNow();
-                    alert(
-                        l('Yedek oluşturuldu', 'Backup Created'),
-                        l('Koleksiyonunuzun bir yedeği kaydedildi.', 'A backup of your collection was saved.'),
-                    );
-                } catch (e) {
-                    console.warn('[Decks] manual backup failed:', e);
-                    alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
-                }
-            })();
-        });
+        // Route to the canonical backup workflow so the learner can name the snapshot before
+        // it is written; the overflow menu itself never owns a second backup modal.
+        openOverflowRoute('/backups');
     };
 
     const openDeckMenuRoute = (path: string) => {
