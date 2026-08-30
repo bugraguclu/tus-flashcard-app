@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-08-26",
+  "lastVerified": "2026-08-30",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -96,6 +96,30 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/reviewer.py",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["post-answer timebox check", "Continue and Finish choices", "deck-browser exit"]
+    },
+    {
+      "id": "anki-source-custom-study",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/custom_study.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["custom study search per option", "custom study gather order and reschedule flag", "custom study deck reuse", "empty-result refusal", "cram kinds and tag include/exclude"]
+    },
+    {
+      "id": "anki-source-custom-study-dialog",
+      "priority": 2,
+      "platform": "desktop dialog",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/customstudy.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["custom study option list", "spinner bounds and defaults", "available new/review card labels", "choose-tags step"]
+    },
+    {
+      "id": "anki-source-deck-proto",
+      "priority": 2,
+      "platform": "collection schema",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["filtered deck search term ordinals", "filtered deck config fields"]
     },
     {
       "id": "ankidroid-source",

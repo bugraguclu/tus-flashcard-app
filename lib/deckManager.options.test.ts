@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 import { DEFAULT_DECK_CONFIG, type Deck } from './models';
+import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
@@ -28,6 +29,9 @@ import {
     getDeckConfig,
     getDeckConfigForDeck,
     getDeckTodayBoost,
+    getCustomStudyDefaults,
+    rememberCustomStudyExtend,
+    rememberCustomStudyTags,
     getDeckTodayLimits,
     addDeckTodayBoost,
     moveDeckUnder,
@@ -524,6 +528,20 @@ describe('today-only limit boost', () => {
         expect(config.maxReviewsPerDay).toBe(120);
     });
 
+    it('shrinks today\'s allowance when the delta is negative', () => {
+        // Anki's custom study spinner goes below zero: the limit can be reduced for today only,
+        // and the effective limit is floored at zero rather than going negative.
+        const deck = createDeck('Azaltılmış');
+        setDeckLimits(deck.id, 10, 100);
+
+        addDeckTodayBoost(deck.id, -4, -150, rolloverHour);
+
+        expect(getDeckTodayBoost(deck.id, rolloverHour)).toEqual({ extraNew: -4, extraReview: -150 });
+        const config = getDeckConfigForDeck(deck.id, rolloverHour);
+        expect(config.newPerDay).toBe(6);
+        expect(config.maxReviewsPerDay).toBe(0);
+    });
+
     it('expires when the stored day no longer matches', () => {
         const deck = createDeck('Boostlu');
         addDeckTodayBoost(deck.id, 5, 5, rolloverHour);
@@ -611,11 +629,23 @@ describe('presets', () => {
     });
 });
 
+const customStudySession = (
+    deckId: number,
+    search: string,
+    limit = 50,
+    overrides: { order?: number; reschedule?: boolean } = {},
+) => createOrReplaceCustomStudySession(deckId, {
+    search,
+    limit,
+    order: overrides.order ?? FILTERED_SEARCH_ORDER.due,
+    reschedule: overrides.reschedule ?? true,
+});
+
 describe('createOrReplaceCustomStudySession', () => {
     it('creates Anki\'s single conventional custom-study deck', () => {
         const deck = createDeck('Python::Temeller');
 
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50);
+        const session = customStudySession(deck.id, 'deck:"Python::Temeller"', 50);
 
         expect(session).not.toBeNull();
         expect(session!.name).toBe('Özel Çalışma Oturumu');
@@ -625,9 +655,9 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('rebuilds the existing session instead of stacking duplicates', () => {
         const deck = createDeck('Python::Temeller');
-        const first = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
+        const first = customStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
 
-        const second = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller" tag:"zor"', 20)!;
+        const second = customStudySession(deck.id, 'deck:"Python::Temeller" tag:"zor"', 20)!;
 
         expect(second.id).toBe(first.id);
         expect(second.searchQuery).toContain('tag:"zor"');
@@ -636,14 +666,14 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('refuses to build a session on a filtered deck', () => {
         const deck = createDeck('Python::Temeller');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
 
-        expect(createOrReplaceCustomStudySession(session.id, 'deck:x', 10)).toBeNull();
+        expect(customStudySession(session.id, 'deck:x', 10)).toBeNull();
     });
 
     it('supports Anki-style empty and rebuild without deleting the filtered deck', () => {
         const deck = createDeck('Python');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
 
         expect(emptyFilteredDeck(session.id)).toBe(true);
         expect(getDeckByName(session.name)?.filteredDeckEmpty).toBe(true);
@@ -654,7 +684,7 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('saving filter options rebuilds an emptied session', () => {
         const deck = createDeck('Python');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
         emptyFilteredDeck(session.id);
 
         updateFilteredDeck(session.id, {
@@ -674,7 +704,7 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('retires a completed card from the current build and restores it on undo', () => {
         const deck = createDeck('Python');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
 
         expect(completeFilteredCard(session.id, 123)).toBe(true);
         expect(completeFilteredCard(session.id, 123)).toBe(false);
@@ -682,5 +712,41 @@ describe('createOrReplaceCustomStudySession', () => {
 
         expect(restoreFilteredCard(session.id, 123)).toBe(true);
         expect(getDeckByName(session.name)?.filteredDoneCardIds).toEqual([]);
+    });
+});
+
+describe('custom study defaults', () => {
+    it('remembers the last positive limit delta per deck, but never a reduction', () => {
+        const deck = createDeck('Hatırlanan');
+
+        rememberCustomStudyExtend(deck.id, 'extendNew', 15);
+        rememberCustomStudyExtend(deck.id, 'extendReview', 40);
+        expect(getCustomStudyDefaults(deck.id)).toMatchObject({ extendNew: 15, extendReview: 40 });
+
+        rememberCustomStudyExtend(deck.id, 'extendNew', -5);
+        expect(getCustomStudyDefaults(deck.id).extendNew).toBe(15);
+    });
+
+    it('remembers the include/exclude tags of the last cram session, scoped to one deck', () => {
+        const deck = createDeck('Etiketli');
+        const other = createDeck('Diğer');
+
+        rememberCustomStudyTags(deck.id, ['Anatomi', 'Fizyoloji'], ['Zor']);
+
+        expect(getCustomStudyDefaults(deck.id)).toMatchObject({
+            includeTags: ['Anatomi', 'Fizyoloji'],
+            excludeTags: ['Zor'],
+        });
+        expect(getCustomStudyDefaults(other.id)).toMatchObject({ includeTags: [], excludeTags: [] });
+    });
+
+    it('starts from zero for a deck that has never run custom study', () => {
+        const deck = createDeck('Yeni');
+        expect(getCustomStudyDefaults(deck.id)).toEqual({
+            extendNew: 0,
+            extendReview: 0,
+            includeTags: [],
+            excludeTags: [],
+        });
     });
 });

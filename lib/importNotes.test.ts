@@ -5,6 +5,7 @@ const h = vi.hoisted(() => {
         notes: [] as { csum: number; noteTypeId: number; data: string }[],
         exec: [] as string[],
         existingGuids: [] as string[],
+        createdDecks: [] as string[],
     };
     function fnv(field: string): number {
         let hash = 0x811c9dc5;
@@ -50,10 +51,14 @@ vi.mock('./noteManager', () => ({
 
 vi.mock('./deckManager', () => ({
     getAllDecks: () => [],
-    createDeck: (name: string) => ({ id: 99, name }),
+    createDeck: (name: string) => {
+        h.store.createdDecks.push(name);
+        h.store.exec.push(`CREATE DECK:${name}`);
+        return { id: 99, name };
+    },
 }));
 
-import { importDelimitedNotes, importRows } from './importNotes';
+import { importDelimitedNotes, importRows, previewDelimitedNotes } from './importNotes';
 import { createNote } from './noteManager';
 import { BKA_MANIFEST } from './bkaManifest';
 
@@ -64,6 +69,7 @@ beforeEach(() => {
     h.store.notes.length = 0;
     h.store.exec.length = 0;
     h.store.existingGuids.length = 0;
+    h.store.createdDecks.length = 0;
     createNoteMock.mockReset();
     createNoteMock.mockImplementation((noteType: any, fields: string[], _deckId: number, tags: string[] = []) => {
         const id = 1000 + h.store.notes.length;
@@ -99,6 +105,22 @@ describe('importDelimitedNotes', () => {
         expect(res).toMatchObject({ added: 1, updated: 1, duplicates: 0 });
         expect(createNoteMock.mock.calls.map((c) => (c[1] as string[])[0])).toEqual(['Lung']);
         expect(JSON.parse(h.store.notes.find((row) => JSON.parse(row.data).id === 10)!.data).fields).toEqual(['Heart', 'Kalp']);
+    });
+
+    it('previews additions and updates without writing notes or decks', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, guid: 'old', noteTypeId: 4, fields: ['Heart', 'Eski'], tags: [] }) });
+
+        const preview = previewDelimitedNotes('#deck:Imported\nHeart,Kalp\nLung,Akciğer\nLung,Yeni', {
+            noteType: NT,
+            deckId: 1,
+            duplicateResolution: 'update',
+        });
+
+        expect(preview).toMatchObject({ totalRows: 3, added: 1, updated: 2, duplicates: 0, emptyRows: 0 });
+        expect(h.store.exec).toEqual([]);
+        expect(h.store.createdDecks).toEqual([]);
+        expect(createNoteMock).not.toHaveBeenCalled();
+        expect(JSON.parse(h.store.notes[0].data).fields).toEqual(['Heart', 'Eski']);
     });
 
     it('updates duplicate rows within the same file', () => {
@@ -143,6 +165,22 @@ describe('importDelimitedNotes', () => {
         });
         expect(() => importDelimitedNotes('A,B', { noteType: NT, deckId: 1 })).toThrow('boom');
         expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
+    });
+
+    it('creates directive decks inside the same transaction so a row failure rolls them back', () => {
+        createNoteMock.mockImplementationOnce(() => {
+            throw new Error('boom');
+        });
+        expect(() => importDelimitedNotes('#deck:Imported\nA,B', { noteType: NT, deckId: 1 })).toThrow('boom');
+        expect(h.store.createdDecks).toEqual(['Imported']);
+        expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'CREATE DECK:Imported', 'ROLLBACK;']);
+    });
+
+    it('commits directive deck creation and note writes together', () => {
+        const result = importDelimitedNotes('#deck:Imported\nA,B', { noteType: NT, deckId: 1 });
+        expect(result.added).toBe(1);
+        expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'CREATE DECK:Imported', 'COMMIT;']);
+        expect(createNoteMock.mock.calls[0][2]).toBe(99);
     });
 
     it('honours #guid column: dedupes by guid and maps fields past the guid column', () => {

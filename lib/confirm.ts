@@ -64,6 +64,50 @@ export function confirm(
     ]);
 }
 
+/** Promise variant for workflows that must not start until the user explicitly accepts. */
+export function confirmAsync(
+    title: string,
+    message: string,
+    options: ConfirmOptions = {},
+): Promise<boolean> {
+    const safeMessage = userFacingErrorMessage(message);
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (accepted: boolean) => {
+            if (settled) return;
+            settled = true;
+            resolve(accepted);
+        };
+
+        if (webHandler) {
+            webHandler({
+                kind: 'confirm',
+                title,
+                message: safeMessage,
+                destructive: !!options.destructive,
+                onAccept: () => finish(true),
+                onCancel: () => finish(false),
+            });
+            return;
+        }
+
+        if (Platform.OS === 'web') {
+            finish(window.confirm(`${title}\n${safeMessage}`));
+            return;
+        }
+
+        Alert.alert(
+            title,
+            safeMessage,
+            [
+                { text: translateActive('common.cancel'), style: 'cancel', onPress: () => finish(false) },
+                { text: translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: () => finish(true) },
+            ],
+            { cancelable: true, onDismiss: () => finish(false) },
+        );
+    });
+}
+
 /** Cross-platform alert (info only, no yes/no). */
 export function alert(title: string, message: string, onDismiss?: () => void): void {
     const safeMessage = userFacingErrorMessage(message);

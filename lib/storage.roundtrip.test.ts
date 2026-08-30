@@ -10,6 +10,9 @@ const dbState = vi.hoisted(() => ({
     revlog: [] as any[],
     graves: [] as any[],
     session_stats: [] as any[],
+    exec: [] as string[],
+    failOnExec: null as string | null,
+    transactionSnapshot: null as null | Record<string, unknown>,
 }));
 
 const asyncStorageState = vi.hoisted(() => new Map<string, string>());
@@ -21,6 +24,36 @@ function normalize(sql: string): string {
 const fakeDb = {
     execSync(sql: string) {
         const q = normalize(sql);
+        dbState.exec.push(q);
+        if (q === 'BEGIN TRANSACTION;' || q === 'BEGIN;') {
+            dbState.transactionSnapshot = {
+                settings: new Map(dbState.settings),
+                note_types: [...dbState.note_types],
+                notes: [...dbState.notes],
+                anki_cards: [...dbState.anki_cards],
+                decks: [...dbState.decks],
+                deck_configs: [...dbState.deck_configs],
+                revlog: [...dbState.revlog],
+                graves: [...dbState.graves],
+                session_stats: [...dbState.session_stats],
+            };
+        }
+        if (dbState.failOnExec && q.includes(dbState.failOnExec)) throw new Error(`forced failure: ${dbState.failOnExec}`);
+        if (q === 'ROLLBACK;' && dbState.transactionSnapshot) {
+            const snapshot = dbState.transactionSnapshot as any;
+            dbState.settings = new Map(snapshot.settings);
+            dbState.note_types = snapshot.note_types;
+            dbState.notes = snapshot.notes;
+            dbState.anki_cards = snapshot.anki_cards;
+            dbState.decks = snapshot.decks;
+            dbState.deck_configs = snapshot.deck_configs;
+            dbState.revlog = snapshot.revlog;
+            dbState.graves = snapshot.graves;
+            dbState.session_stats = snapshot.session_stats;
+            dbState.transactionSnapshot = null;
+            return;
+        }
+        if (q === 'COMMIT;') dbState.transactionSnapshot = null;
         if (q.includes('DELETE FROM REVLOG')) dbState.revlog = [];
         if (q.includes('DELETE FROM ANKI_CARDS')) dbState.anki_cards = [];
         if (q.includes('DELETE FROM NOTES')) dbState.notes = [];
@@ -29,6 +62,7 @@ const fakeDb = {
         if (q.includes('DELETE FROM NOTE_TYPES')) dbState.note_types = [];
         if (q.includes('DELETE FROM GRAVES')) dbState.graves = [];
         if (q.includes('DELETE FROM SESSION_STATS')) dbState.session_stats = [];
+        if (q.includes('DELETE FROM SETTINGS')) dbState.settings.clear();
     },
     getFirstSync<T>(sql: string, ...params: any[]): T | null {
         const q = normalize(sql);
@@ -204,6 +238,7 @@ vi.mock('./legacyMigration', () => ({
 
 vi.mock('./ankiInit', () => ({
     initAnkiData: vi.fn(),
+    migrateLegacySubjectTopicsToDecks: vi.fn(),
 }));
 
 vi.mock('./noteManager', () => ({
@@ -218,7 +253,9 @@ import {
     saveCollectionDeckOptions,
     saveSessionStats,
     saveSettings,
+    resetAllData,
 } from './storage';
+import { saveDeckConfig } from './deckManager';
 import { CATALOG_PACK_ID, CATALOG_PROGRESS_KEY } from './catalogRows';
 
 describe('storage import/export canonical round-trip', () => {
@@ -233,6 +270,10 @@ describe('storage import/export canonical round-trip', () => {
         dbState.graves = [];
         dbState.session_stats = [];
         asyncStorageState.clear();
+        dbState.exec = [];
+        dbState.failOnExec = null;
+        dbState.transactionSnapshot = null;
+        vi.mocked(saveDeckConfig).mockReset();
 
         dbState.note_types.push({ id: 1, name: 'Basic', data: '{}', updated_at: 0, usn: -1, tombstone: 0 });
         dbState.notes.push({ id: 10, noteTypeId: 1, sfld: 'Q', csum: 1, tags: 'anatomi', data: '{}', updated_at: 0, usn: -1, tombstone: 0 });
@@ -280,6 +321,32 @@ describe('storage import/export canonical round-trip', () => {
 
         saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
         expect(loadSettings().language).toBe('tr');
+    });
+
+    it('rolls settings metadata back and reports failure when deck-config persistence fails', () => {
+        expect(saveSettings({ ...DEFAULT_SETTINGS, language: 'en' }).ok).toBe(true);
+        const before = new Map(dbState.settings);
+        dbState.exec = [];
+        vi.mocked(saveDeckConfig).mockImplementationOnce(() => { throw new Error('disk full'); });
+
+        const result = saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
+
+        expect(result.ok).toBe(false);
+        expect(dbState.settings).toEqual(before);
+        expect(dbState.exec).toContain('BEGIN TRANSACTION;');
+        expect(dbState.exec).toContain('ROLLBACK;');
+    });
+
+    it('rolls back database deletion and preserves legacy storage when reset fails', async () => {
+        asyncStorageState.set('tus_settings_v2', '{"language":"tr"}');
+        const notesBefore = [...dbState.notes];
+        dbState.failOnExec = 'DELETE FROM NOTES';
+
+        await expect(resetAllData()).rejects.toThrow('forced failure');
+
+        expect(dbState.notes).toEqual(notesBefore);
+        expect(asyncStorageState.get('tus_settings_v2')).toBe('{"language":"tr"}');
+        expect(dbState.exec.at(-1)).toBe('ROLLBACK;');
     });
 
     it('persists both typed-answer presentation preferences', () => {

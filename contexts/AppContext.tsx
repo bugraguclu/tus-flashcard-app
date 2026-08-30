@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import type { AppSettings } from '../lib/types';
 import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
-import { useAppStartup } from '../hooks/useAppStartup';
+import { useAppStartup, type StartupIssue } from '../hooks/useAppStartup';
 import { useStudyNotifications } from '../hooks/useStudyNotifications';
 import {
     INITIAL_CATALOG_ACCESS,
@@ -62,8 +62,11 @@ type StudyScopeContextValue = {
 };
 
 type StartupContextValue = {
-    startupError: string | null;
+    startupError: StartupIssue | null;
     isLoading: boolean;
+    startupActionPending: boolean;
+    continueStartupWait: () => void;
+    retryStartup: () => void;
 };
 
 type CatalogContextValue = {
@@ -105,6 +108,9 @@ const SetStudyPositionContext = createContext<(position: StudyPosition) => void>
 const StartupContext = createContext<StartupContextValue>({
     startupError: null,
     isLoading: true,
+    startupActionPending: false,
+    continueStartupWait: () => { },
+    retryStartup: () => { },
 });
 
 const CatalogContext = createContext<CatalogContextValue>({
@@ -147,7 +153,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCollectionVersion((previous) => previous + 1);
     }, []);
 
-    const { startupError, isLoading } = useAppStartup(refreshSettings, invalidateCollection);
+    const {
+        startupError,
+        isLoading,
+        startupActionPending,
+        continueStartupWait,
+        retryStartup,
+    } = useAppStartup(refreshSettings, invalidateCollection);
     useStudyNotifications(settings, isLoading);
 
     /** Match physical catalog rows to entitlement without exposing partial installation state. */
@@ -233,7 +245,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const startupValue = useMemo<StartupContextValue>(() => ({
         startupError,
         isLoading,
-    }), [startupError, isLoading]);
+        startupActionPending,
+        continueStartupWait,
+        retryStartup,
+    }), [
+        startupError,
+        isLoading,
+        startupActionPending,
+        continueStartupWait,
+        retryStartup,
+    ]);
 
     const catalogValue = useMemo<CatalogContextValue>(() => ({
         catalogAccess,

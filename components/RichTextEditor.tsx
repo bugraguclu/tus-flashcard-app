@@ -7,6 +7,11 @@ import { base64ToBytes } from '../lib/files';
 import { saveMediaBytes } from '../lib/mediaStore';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { sanitizeUntrustedHtml } from '../lib/templates';
+import {
+    embeddedWebViewLayout,
+    stableMeasuredHeight,
+    type EmbeddedWebViewScrollMode,
+} from '../lib/embeddedWebViewScroll';
 
 export type RichTextCommand =
     | 'bold'
@@ -43,6 +48,10 @@ interface RichTextEditorProps {
     fontSize?: number;
     capitalizeSentences?: boolean;
     pasteClipboardImagesAsPng?: boolean;
+    /** Keep the same vertical scroll owner across native fallback and WebView rendering. */
+    scrollMode: EmbeddedWebViewScrollMode;
+    /** Maximum growing viewport height when `scrollMode` is `contained`. */
+    maxHeight?: number;
     /** Stagger native WebView startup when a screen contains multiple editor fields. */
     mountDelayMs?: number;
 }
@@ -75,6 +84,7 @@ function editorDocument(
     minHeight: number,
     pasteClipboardImagesAsPng: boolean,
     nonce: string,
+    scrollMode: EmbeddedWebViewScrollMode,
 ): string {
     const policy = editorContentSecurityPolicy(nonce);
     const safeValue = sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS);
@@ -85,7 +95,7 @@ function editorDocument(
 <meta http-equiv="Content-Security-Policy" content="${policy}" />
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: ${colors.bgCard}; color: ${colors.textPrimary}; }
+  html, body { margin: 0; padding: 0; background: ${colors.bgCard}; color: ${colors.textPrimary}; overflow: ${scrollMode === 'contained' ? 'auto' : 'hidden'}; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   #editor {
     min-height: ${Math.max(48, minHeight - 2)}px;
@@ -316,6 +326,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     fontSize = 16,
     capitalizeSentences = true,
     pasteClipboardImagesAsPng = false,
+    scrollMode,
+    maxHeight,
     mountDelayMs = 0,
 }, ref) {
     const webViewRef = useRef<WebView>(null);
@@ -327,6 +339,21 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const editorNonceRef = useRef(createEditorNonce());
     latestValueRef.current = value;
     const [contentHeight, setContentHeight] = useState(minHeight);
+    const containedLimit = Math.max(minHeight, maxHeight ?? 320);
+    const layout = embeddedWebViewLayout({
+        scrollMode,
+        minHeight,
+        measuredHeight: contentHeight,
+        initialHeight: minHeight,
+        containedHeight: scrollMode === 'contained' ? contentHeight : containedLimit,
+    });
+    const { frameHeight, scrollEnabled: scrollsInside } = layout;
+    const updateContentHeight = (reportedHeight: number) => {
+        const boundedHeight = scrollMode === 'contained'
+            ? Math.min(containedLimit, reportedHeight)
+            : reportedHeight;
+        setContentHeight((current) => stableMeasuredHeight(current, boundedHeight, minHeight) ?? minHeight);
+    };
     const [webViewMounted, setWebViewMounted] = useState(Platform.OS === 'web');
     const fallbackFocusedRef = useRef(false);
     const mountPendingRef = useRef(false);
@@ -357,10 +384,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         };
     }, [mountDelayMs, webViewMounted]);
     const source = useMemo(
-        () => ({ html: editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current) }),
+        () => ({ html: editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode) }),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng],
+        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode],
     );
 
     useEffect(() => {
@@ -421,7 +448,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             } else if (message.type === 'focus') {
                 onFocus?.();
             } else if (message.type === 'height' && typeof message.height === 'number') {
-                setContentHeight(Math.min(320, Math.max(minHeight, message.height)));
+                updateContentHeight(message.height);
             } else if (message.type === 'formats' && Array.isArray(message.formats)) {
                 onFormatStateChange?.(message.formats.filter((format): format is RichTextCommand => KNOWN_FORMATS.has(format as RichTextCommand)));
             } else if (message.type === 'pasteImage' && pasteClipboardImagesAsPng && typeof message.dataUrl === 'string') {
@@ -441,7 +468,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
 
     if (!webViewMounted) {
         return (
-            <View style={[styles.frame, { minHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
+            <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
                 <TextInput
                     value={value}
                     onChangeText={onChange}
@@ -459,11 +486,15 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     placeholder={placeholder}
                     placeholderTextColor={colors.textMuted}
                     multiline
+                    scrollEnabled={scrollsInside}
+                    onContentSizeChange={(event) => {
+                        updateContentHeight(event.nativeEvent.contentSize.height);
+                    }}
                     autoCapitalize={capitalizeSentences ? 'sentences' : 'none'}
                     autoCorrect
                     style={[
                         styles.fallbackInput,
-                        { minHeight, color: colors.textPrimary, fontSize, backgroundColor: colors.bgCard },
+                        { minHeight, height: frameHeight, color: colors.textPrimary, fontSize, backgroundColor: colors.bgCard },
                     ]}
                 />
             </View>
@@ -471,7 +502,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     }
 
     return (
-        <View style={[styles.frame, { minHeight, height: contentHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
+        <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
             <WebView
                 ref={webViewRef}
                 source={source}
@@ -480,7 +511,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 onShouldStartLoadWithRequest={(request) => request.url === 'about:blank'}
                 style={{ backgroundColor: colors.bgCard }}
                 containerStyle={{ backgroundColor: colors.bgCard }}
-                scrollEnabled={contentHeight >= 320}
+                scrollEnabled={scrollsInside}
+                nestedScrollEnabled={scrollsInside}
+                automaticallyAdjustContentInsets={false}
+                contentInsetAdjustmentBehavior="never"
                 keyboardDisplayRequiresUserAction={false}
                 hideKeyboardAccessoryView
                 setSupportMultipleWindows={false}

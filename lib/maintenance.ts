@@ -36,15 +36,11 @@ export interface DatabaseCheckResult {
     orphanCards: number;
     /** Live notes that no longer have any cards. */
     orphanNotes: number;
-    /** Cards rebuilt into the FTS index (always 0 on web, which has no FTS). */
-    ftsReindexed: number;
 }
 
 /**
- * Anki-style Check Database maintenance: verify SQLite file integrity, count
- * orphaned rows, compact/reindex/analyze the collection, and rebuild the search index.
- * Orphan cleanup stays a manual/post-launch concern so this operation never silently
- * deletes learner data.
+ * Read-only database audit. Repair/optimization is deliberately separate so a button labelled
+ * "Check" never rewrites the learner's collection without explicit consent.
  */
 export function checkDatabase(): DatabaseCheckResult {
     const db = getDB();
@@ -74,17 +70,23 @@ export function checkDatabase(): DatabaseCheckResult {
            AND NOT EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND c.tombstone = 0)`,
     )?.cnt ?? 0;
 
+    return { integrity, orphanCards, orphanNotes };
+}
+
+export interface DatabaseOptimizeResult {
+    /** Cards rebuilt into the FTS index (always 0 on web, which has no FTS). */
+    ftsReindexed: number;
+}
+
+/** Mutating maintenance; callers must obtain confirmation and a safety backup first. */
+export function optimizeDatabase(): DatabaseOptimizeResult {
+    const db = getDB();
     // Anki's storage optimization runs these in this order. VACUUM compacts deleted pages,
-    // REINDEX refreshes persistent indexes, and ANALYZE lets SQLite choose the composite
-    // scheduler/browser indexes using current collection statistics.
+    // REINDEX refreshes persistent indexes, and ANALYZE refreshes query planner statistics.
     db.execSync('VACUUM; REINDEX; ANALYZE;');
 
-    let ftsReindexed = 0;
-    if (Platform.OS !== 'web') {
-        const cards = getSearchIndexCards();
-        dbIndexAllCards(cards);
-        ftsReindexed = cards.length;
-    }
-
-    return { integrity, orphanCards, orphanNotes, ftsReindexed };
+    if (Platform.OS === 'web') return { ftsReindexed: 0 };
+    const cards = getSearchIndexCards();
+    dbIndexAllCards(cards);
+    return { ftsReindexed: cards.length };
 }

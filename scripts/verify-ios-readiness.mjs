@@ -3,10 +3,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const app = JSON.parse(fs.readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
+const eas = JSON.parse(fs.readFileSync(new URL('../eas.json', import.meta.url), 'utf8'));
 const sources = JSON.parse(fs.readFileSync(new URL('../docs/anki-reference-sources.json', import.meta.url), 'utf8'));
 const failures = [];
+const warnings = [];
 const requireValue = (condition, message) => { if (!condition) failures.push(message); };
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
+const appStoreReleaseCheck = process.argv.includes('--app-store');
+
+function readProjectFile(relativePath) {
+    return fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+}
 
 function plistHasBoolean(contents, key, expected) {
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -27,6 +34,12 @@ function verifyGeneratedNativeIos() {
     if (!nativeAppDirectory) return;
 
     const infoPlist = fs.readFileSync(path.join(nativeAppDirectory, 'Info.plist'), 'utf8');
+    // A pinned Light trait leaves keyboards, form sheets and native scroll indicators white
+    // while the app renders its dark palette, so the shipped plist must not carry one.
+    requireValue(
+        !/<key>\s*UIUserInterfaceStyle\s*<\/key>\s*<string>\s*Light\s*<\/string>/.test(infoPlist),
+        'Generated iOS Info.plist must not force the Light interface style while dark mode ships',
+    );
     requireValue(plistHasBoolean(infoPlist, 'NSAllowsArbitraryLoads', false), 'Generated iOS Info.plist must disable arbitrary network loads');
     requireValue(plistHasBoolean(infoPlist, 'NSAllowsLocalNetworking', false), 'Generated iOS Info.plist must disable local-network access');
     requireValue(plistHasBoolean(infoPlist, 'LSSupportsOpeningDocumentsInPlace', false), 'Generated iOS Info.plist must declare copied import handling');
@@ -57,11 +70,25 @@ requireValue(app.ios?.infoPlist?.NSAppTransportSecurity?.NSAllowsLocalNetworking
 requireValue(app.ios?.infoPlist?.LSSupportsOpeningDocumentsInPlace === false, 'Imported files must be copied instead of edited in place');
 requireValue(app.ios?.infoPlist?.NSUserActivityTypes?.includes('com.tusankim.deck-shortcut'), 'Deck Shortcuts user activity is missing');
 
+// The app ships a Light/Dark/System preference, and ThemeGate pushes the explicit choices to
+// UIKit via Appearance.setColorScheme. That override is only honoured when the process itself
+// is allowed to adopt a dark trait.
+requireValue(app.userInterfaceStyle === 'automatic', 'Dark mode ships, so userInterfaceStyle must be "automatic"');
+
 const plugins = app.plugins ?? [];
 const pluginNames = plugins.map((plugin) => Array.isArray(plugin) ? plugin[0] : plugin);
-for (const required of ['expo-router', 'expo-sqlite', 'expo-image-picker', 'expo-audio', 'expo-notifications']) {
+for (const required of ['expo-router', 'expo-sqlite', 'expo-image-picker', 'expo-audio', 'expo-notifications', 'expo-splash-screen']) {
     requireValue(pluginNames.includes(required), `Missing required Expo plugin: ${required}`);
 }
+
+// The launch image is held until startup finishes, so it must come from the plugin (which also
+// carries the dark variant) rather than the legacy top-level key.
+requireValue(app.splash === undefined, 'Configure the splash screen through the expo-splash-screen plugin, not the legacy "splash" key');
+const splashPlugin = plugins.find((plugin) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen');
+requireValue(
+    typeof splashPlugin?.[1]?.backgroundColor === 'string' && typeof splashPlugin?.[1]?.dark?.backgroundColor === 'string',
+    'Splash screen needs both a light and a dark background colour',
+);
 
 const documentTypes = app.ios?.infoPlist?.CFBundleDocumentTypes ?? [];
 const declaredTypes = new Set(documentTypes.flatMap((entry) => entry.LSItemContentTypes ?? []));
@@ -78,11 +105,56 @@ for (const doc of sources.requiredDocs ?? []) {
     requireValue(fs.existsSync(new URL(`../${doc}`, import.meta.url)), `Missing required compatibility document: ${doc}`);
 }
 
+const publicPagePaths = ['docs/index.html', 'docs/privacy.html', 'docs/support.html', 'docs/terms.html'];
+for (const pagePath of publicPagePaths) {
+    requireValue(fs.existsSync(path.join(projectRoot, pagePath)), `Missing App Store public page: ${pagePath}`);
+}
+
+const productionPaymentRequired = eas.build?.production?.env?.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED;
+const previewPaymentRequired = eas.build?.preview?.env?.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED;
+requireValue(productionPaymentRequired === previewPaymentRequired, 'Preview and production catalog payment modes must match for release QA');
+
+if (productionPaymentRequired === 'false') {
+    const activeDeliveryText = [
+        readProjectFile('docs/app-store/metadata-tr.md'),
+        readProjectFile('docs/support.html'),
+    ].join('\n');
+    const paidClaims = [
+        /tek ödeme/i,
+        /tek seferlik satın alma/i,
+        /satın almayı geri yükle/i,
+        /Apple processes payments/i,
+        /restore purchase/i,
+    ];
+    for (const pattern of paidClaims) {
+        requireValue(!pattern.test(activeDeliveryText), `Payment-disabled release material still contains an active paid-flow claim: ${pattern}`);
+    }
+}
+
+const legalPages = [readProjectFile('docs/privacy.html'), readProjectFile('docs/app-store/metadata-tr.md')].join('\n');
+const legalPlaceholders = [
+    /\[YAYINCI YASAL ADI\]/,
+    /\[LEGAL PUBLISHER NAME\]/,
+    /\[AÇIK ADRES\]/,
+    /\[ADDRESS\]/,
+    /\[E-POSTA\]/,
+    /\[EMAIL\]/,
+    /\[APP STORE CONNECT HESAP SAHİBİNİN YASAL ADI\]/,
+];
+const unresolvedLegalPlaceholders = legalPlaceholders.filter((pattern) => pattern.test(legalPages));
+if (unresolvedLegalPlaceholders.length > 0) {
+    const message = 'App Store legal identity still contains publisher/address/contact placeholders';
+    if (appStoreReleaseCheck) failures.push(message);
+    else warnings.push(`${message}; run npm run verify:app-store before submission`);
+}
+
 verifyGeneratedNativeIos();
 
 if (failures.length) {
     console.error(failures.map((failure) => `- ${failure}`).join('\n'));
     process.exit(1);
 }
+
+if (warnings.length) console.warn(warnings.map((warning) => `- ${warning}`).join('\n'));
 
 console.log('iOS configuration and Anki compatibility registry verified.');

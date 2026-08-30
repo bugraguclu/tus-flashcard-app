@@ -20,6 +20,7 @@ import {
     rebuildFilteredDeck,
     unburyDeck,
 } from '../lib/deckManager';
+import { FILTERED_SEARCH_ORDER } from '../lib/filteredDeckOptions';
 import { getDeckDisplayName } from '../lib/models';
 import { alert, confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
@@ -207,7 +208,7 @@ export default function DeckOverviewScreen() {
                         </View>
                         <Text style={styles.filterQuery}>{deck.searchQuery || l('(boş arama)', '(empty search)')}</Text>
                         <Text style={styles.filterMeta}>
-                            {filteredOrderLabel(locale, deck.searchOrder ?? 0)} · {l(`En fazla ${deck.searchLimit ?? 100} kart`, `Up to ${deck.searchLimit ?? 100} cards`)}
+                            {filteredOrderLabel(locale, deck.searchOrder ?? FILTERED_SEARCH_ORDER.due)} · {l(`En fazla ${deck.searchLimit ?? 100} kart`, `Up to ${deck.searchLimit ?? 100} cards`)}
                             {deck.filteredDeckEmpty ? l(' · Şu anda boş', ' · Currently empty') : ''}
                         </Text>
                     </View>
@@ -298,7 +299,7 @@ export default function DeckOverviewScreen() {
             {customStudyOpen && <CustomStudyModal
                 visible={customStudyOpen}
                 deck={deck}
-                dayRolloverHour={settings.dayRolloverHour}
+                settings={settings}
                 onClose={() => setCustomStudyOpen(false)}
                 onChanged={() => {
                     bumpDataVersion();

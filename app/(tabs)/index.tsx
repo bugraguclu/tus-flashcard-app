@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platform, Modal, Pressable, PanResponder, useWindowDimensions, AppState, type ViewProps } from 'react-native';
+import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platform, Modal, Pressable, PanResponder, useWindowDimensions, AppState, type ViewProps } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
@@ -71,6 +71,7 @@ import {
     swipeThresholdForSensitivity,
 } from '../../lib/reviewerTouchControls';
 import { extractAnkiTtsSegments } from '../../lib/ankiTts';
+import { AnkiSpeechQueue } from '../../lib/ankiSpeechQueue';
 import {
     answerTimerSeconds,
     estimateStudyMinutes,
@@ -225,7 +226,6 @@ export default function StudyScreen() {
     // AnkiDroid-compatible whole-card TTS. Explicit Anki TTS regions take precedence; otherwise
     // only visible learner text is read (never stylesheet or script contents).
     const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(false);
-    const speechRunRef = useRef(0);
     // Tapping the header opens a deck picker (Anki's "Select deck"), switching what's being studied.
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [catalogUnlockVisible, setCatalogUnlockVisible] = useState(false);
@@ -287,7 +287,6 @@ export default function StudyScreen() {
     const nativeShortcutCaptureRef = useRef<TextInput>(null);
     const nativeTypeAnswerRef = useRef<TextInput>(null);
     const reviewerScrollRef = useRef<ScrollView>(null);
-    const [reviewerViewport, setReviewerViewport] = useState(0);
     const [fallbackTapSurface, setFallbackTapSurface] = useState({ width: 1, height: 1 });
 
     useEffect(() => {
@@ -1226,6 +1225,17 @@ export default function StudyScreen() {
     const questionAudioActiveRef = useRef(false);
     const answerAudioActiveRef = useRef(false);
     const ttsActiveRef = useRef(false);
+    const speechQueueRef = useRef<AnkiSpeechQueue | null>(null);
+    if (!speechQueueRef.current) {
+        speechQueueRef.current = new AnkiSpeechQueue({
+            stop: Speech.stop,
+            speak: Speech.speak,
+            getAvailableVoices: Speech.getAvailableVoicesAsync,
+            maximumInputLength: Speech.maxSpeechInputLength,
+        }, (active) => {
+            ttsActiveRef.current = active;
+        });
+    }
     const anyAudioActive = () => questionAudioActiveRef.current
         || answerAudioActiveRef.current
         || ttsActiveRef.current;
@@ -1292,9 +1302,7 @@ export default function StudyScreen() {
 
     // --- Text to speech (Anki / AnkiDroid) ---
     const stopSpeech = useCallback(() => {
-        speechRunRef.current += 1;
-        ttsActiveRef.current = false;
-        void Speech.stop();
+        void speechQueueRef.current?.stop();
     }, []);
     const speakSide = useCallback((answerSide: boolean) => {
         if (!renderPayload) return;
@@ -1306,26 +1314,13 @@ export default function StudyScreen() {
         });
         const segments = extractAnkiTtsSegments(html);
         if (segments.length === 0) return;
-
-        const run = speechRunRef.current + 1;
-        speechRunRef.current = run;
-        void Speech.stop();
-        ttsActiveRef.current = true;
-        const speakAt = (index: number) => {
-            if (speechRunRef.current !== run || index >= segments.length) {
-                if (speechRunRef.current === run) ttsActiveRef.current = false;
-                return;
-            }
-            const segment = segments[index];
-            Speech.speak(segment.text, {
-                language: (segment.language || (locale === 'tr' ? 'tr_TR' : 'en_US')).replace('_', '-'),
-                rate: Math.max(0.1, Math.min(2, segment.rate)),
-                onDone: () => speakAt(index + 1),
-                onStopped: () => { /* an intentional card change/toggle invalidates the run */ },
-                onError: () => speakAt(index + 1),
-            });
-        };
-        speakAt(0);
+        void speechQueueRef.current?.play(
+            segments,
+            locale === 'tr' ? 'tr-TR' : 'en-US',
+            Platform.OS === 'ios' || Platform.OS === 'android' || Platform.OS === 'web'
+                ? Platform.OS
+                : 'unknown',
+        );
     }, [renderPayload, locale]);
     const handleToggleVoicePlayback = useCallback(() => {
         setVoicePlaybackEnabled((enabled) => {
@@ -1497,21 +1492,28 @@ export default function StudyScreen() {
     // The whiteboard resets on each new card, mirroring AnkiDroid (ink clears as the card advances).
     useEffect(() => { whiteboardRef.current?.clear(); }, [currentCard?.cardId]);
 
+    // One automatic TTS owner covers both whole-card reading and explicit Anki template tags.
+    // The short debounce lets React discard superseded side/card effects before native speech is
+    // enqueued; the generation-safe queue then serializes stop -> speak across the native bridge.
     useEffect(() => {
-        if (!voicePlaybackEnabled) return;
-        speakSide(showingAnswer);
-        return stopSpeech;
-    }, [voicePlaybackEnabled, currentCard?.cardId, showingAnswer, speakSide, stopSpeech]);
-
-    // Anki's explicit TTS template tags are audio and obey the same per-deck autoplay option as
-    // attached sound files. Whole-card AnkiDroid TTS remains controlled by the toggle above.
-    useEffect(() => {
-        if (voicePlaybackEnabled || !scopeSettings.autoPlayAudio) return;
         const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
-        if (!sideHasExplicitTts) return;
-        const timer = setTimeout(() => speakSide(showingAnswer), 450);
-        return () => clearTimeout(timer);
-    }, [voicePlaybackEnabled, scopeSettings.autoPlayAudio, showingAnswer, currentCard?.cardId, explicitTtsSides, speakSide]);
+        const shouldReadWholeCard = voicePlaybackEnabled;
+        const shouldAutoPlayExplicitTts = scopeSettings.autoPlayAudio && sideHasExplicitTts;
+        if (!shouldReadWholeCard && !shouldAutoPlayExplicitTts) return;
+        const timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
+        return () => {
+            clearTimeout(timer);
+            stopSpeech();
+        };
+    }, [
+        voicePlaybackEnabled,
+        scopeSettings.autoPlayAudio,
+        showingAnswer,
+        currentCard?.cardId,
+        explicitTtsSides,
+        speakSide,
+        stopSpeech,
+    ]);
 
     useEffect(() => stopSpeech, [stopSpeech]);
 
@@ -1527,8 +1529,9 @@ export default function StudyScreen() {
         answerAudioActiveRef.current = false;
         if (settings.interruptAudioOnAnswer) {
             setPauseSignal((value) => value + 1);
+            stopSpeech();
         }
-    }, [currentCard?.cardId, showingAnswer, settings.interruptAudioOnAnswer]);
+    }, [currentCard?.cardId, showingAnswer, settings.interruptAudioOnAnswer, stopSpeech]);
 
     useEffect(() => {
         if (!scopeSettings.autoPlayAudio || !cardHasAudio) return;
@@ -1656,7 +1659,7 @@ export default function StudyScreen() {
         return (
             <View style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <Text style={styles.loadingEmoji}>🧠</Text>
+                    <ActivityIndicator size="large" color={colors.accent} />
                     <Text style={styles.loadingText}>{t('common.loading')}</Text>
                 </View>
             </View>
@@ -1682,13 +1685,6 @@ export default function StudyScreen() {
             <Text numberOfLines={1} style={[styles.btnLabel, { fontSize: (isCompact ? 14 : 16) * answerScale }]}>{label}</Text>
         </TouchableOpacity>
     );
-    /** How tall the rendered note may be inside the card surface. Longer notes scroll in place. */
-    // The answer controls now live in their own fixed footer, so the ScrollView's measured
-    // viewport has already excluded them. Only reserve the card context row and its padding.
-    const reviewerChrome = isCompact ? 54 : 68;
-    const cardMaxHeight = reviewerViewport > 0
-        ? Math.max(200, reviewerViewport - reviewerChrome)
-        : undefined;
     // Reserve the measured compact toolbar (and its optional palette) above the question. The
     // fallback protects the first frame before native layout measurement arrives.
     const whiteboardTopInset = whiteboardActive
@@ -1930,7 +1926,6 @@ export default function StudyScreen() {
                 ref={reviewerScrollRef}
                 style={styles.cardScroll}
                 contentContainerStyle={styles.cardArea}
-                onLayout={(event) => setReviewerViewport(event.nativeEvent.layout.height)}
             >
                 {currentCard ? (
                     <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
@@ -2004,7 +1999,7 @@ export default function StudyScreen() {
                                     showAudioPlayButtons={settings.showAudioPlayButtons}
                                     centerContent={settings.centerCardContent}
                                     frameStyle={settings.studyFrameStyle}
-                                    maxHeight={cardMaxHeight}
+                                    scrollMode="intrinsic"
                                     typeAnswerInCard={typeAnswerInCard}
                                     autoFocusTypeAnswer={typeAnswerInCard && settings.focusTypeAnswer !== false}
                                     onTypedAnswerChange={typeAnswerInCard ? setTypedAnswer : undefined}
@@ -2063,7 +2058,7 @@ export default function StudyScreen() {
                                     showAudioPlayButtons={settings.showAudioPlayButtons}
                                     centerContent={settings.centerCardContent}
                                     frameStyle={settings.studyFrameStyle}
-                                    maxHeight={cardMaxHeight}
+                                    scrollMode="intrinsic"
                                     onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
                                 />
                             ) : showingAnswer ? (
@@ -2382,9 +2377,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     answerFeedbackLeft: { left: Spacing.lg },
     answerFeedbackAgain: { backgroundColor: colors.btnAgain },
     answerFeedbackText: { color: colors.white, fontSize: 27, lineHeight: 31, fontWeight: '800' },
-    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    loadingEmoji: { fontSize: 48, marginBottom: 12 },
-    loadingText: { fontSize: FontSize.lg, color: colors.textMuted },
+    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.lg },
+    loadingText: { fontSize: FontSize.md, color: colors.textMuted },
 
     reviewerToolbar: {
         flexDirection: 'row',

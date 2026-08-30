@@ -45,6 +45,8 @@ export interface ImportResult {
     indexed: SearchIndexCard[];
 }
 
+export type DelimitedImportPreview = Omit<ImportResult, 'indexed'>;
+
 function firstFieldMatch(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): Note | undefined {
     const target = firstField.trim();
     const candidates = getDB().getAllSync<{ data: string }>(
@@ -106,14 +108,23 @@ export interface RowImportCounts {
     addedNotes: { guid: string; noteId: number }[];
 }
 
-/** Writes rows of field values as notes in one transaction, deduped by first field. */
-export function importRows(rows: string[][], options: RowImportOptions): RowImportCounts {
+function fieldsForRow(row: string[], noteType: NoteType, fieldColumns?: number[], defaultFields?: string[]): string[] {
+    const fields: string[] = [];
+    for (let f = 0; f < noteType.fields.length; f++) {
+        const col = fieldColumns ? fieldColumns[f] : f;
+        const value = (col >= 0 ? row[col] : undefined) ?? '';
+        fields.push(value !== '' ? value : (defaultFields?.[f] ?? ''));
+    }
+    return fields;
+}
+
+/** Writes rows while the caller owns the active transaction. */
+function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts {
     const {
         noteType, deckId, fieldColumns, defaultFields, tags = [], rowTags, tagsColumn,
         rowNoteTypes, rowDeckIds, matchScope = 'notetype', allowDuplicates = false, rowGuids,
     } = options;
     const duplicateResolution = allowDuplicates ? 'duplicate' : (options.duplicateResolution ?? 'update');
-    assertNoProtectedCatalogGuids(rowGuids ?? []);
     const counts: RowImportCounts = { added: 0, updated: 0, duplicates: 0, emptyRows: 0, indexed: [], addedNotes: [] };
 
     // When guids are supplied (.apkg import) Anki identifies notes by guid, not by first field:
@@ -122,81 +133,82 @@ export function importRows(rows: string[][], options: RowImportOptions): RowImpo
     const existingGuids = rowGuids ? new Map(getAllNotes().map((note) => [note.guid, note])) : null;
     const seenGuids = new Set<string>();
 
+    for (let r = 0; r < rows.length; r++) {
+        const row = rows[r];
+        const activeNoteType = rowNoteTypes?.[r] ?? noteType;
+        const activeDeckId = rowDeckIds?.[r] ?? deckId;
+        const fields = fieldsForRow(row, activeNoteType, fieldColumns, defaultFields);
+
+        if (fields[0].trim() === '') {
+            counts.emptyRows++;
+            continue;
+        }
+
+        const noteTags = [...tags, ...(rowTags?.[r] ?? [])];
+        if (tagsColumn) {
+            for (const tag of (row[tagsColumn - 1] ?? '').split(/\s+/).filter(Boolean)) noteTags.push(tag);
+        }
+        const finalTags = uniqueTags(noteTags);
+
+        const guid = rowGuids?.[r] || undefined;
+        let existing: Note | undefined;
+        if (guid) {
+            // A GUID is stable note identity. Anki never clones an existing non-empty GUID,
+            // even when the duplicate action is set to "import as new".
+            if (seenGuids.has(guid)) {
+                counts.duplicates++;
+                continue;
+            }
+            seenGuids.add(guid);
+            existing = existingGuids!.get(guid);
+        } else if (duplicateResolution !== 'duplicate') {
+            existing = firstFieldMatch(activeNoteType.id, fields[0], activeDeckId, matchScope);
+        }
+
+        if (existing) {
+            if (duplicateResolution === 'preserve' || existing.noteTypeId !== activeNoteType.id) {
+                counts.duplicates++;
+                continue;
+            }
+            const updatedNote: Note = {
+                ...existing,
+                fields,
+                tags: finalTags,
+                sfld: fields[activeNoteType.sortFieldIdx] || fields[0] || '',
+                csum: checksumField(fields[0] ?? ''),
+                mod: Math.floor(Date.now() / 1000),
+                usn: -1,
+            };
+            saveNote(updatedNote);
+            for (const card of getCardsForNote(updatedNote.id)) {
+                counts.indexed.push(searchIndexCardFromNote(updatedNote, card.id));
+            }
+            counts.updated++;
+            continue;
+        }
+
+        const { note, cards } = createNote(activeNoteType, fields, activeDeckId, finalTags, guid);
+        for (const card of cards) counts.indexed.push(searchIndexCardFromNote(note, card.id));
+        counts.addedNotes.push({ guid: note.guid, noteId: note.id });
+        counts.added++;
+    }
+
+    return counts;
+}
+
+/** Writes rows of field values as notes in one transaction, deduped by first field. */
+export function importRows(rows: string[][], options: RowImportOptions): RowImportCounts {
+    assertNoProtectedCatalogGuids(options.rowGuids ?? []);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
-        for (let r = 0; r < rows.length; r++) {
-            const row = rows[r];
-            const activeNoteType = rowNoteTypes?.[r] ?? noteType;
-            const activeDeckId = rowDeckIds?.[r] ?? deckId;
-            const fieldCount = activeNoteType.fields.length;
-            const fields: string[] = [];
-            for (let f = 0; f < fieldCount; f++) {
-                const col = fieldColumns ? fieldColumns[f] : f;
-                const value = (col >= 0 ? row[col] : undefined) ?? '';
-                fields.push(value !== '' ? value : (defaultFields?.[f] ?? ''));
-            }
-
-            if (fields[0].trim() === '') {
-                counts.emptyRows++;
-                continue;
-            }
-
-            const noteTags = [...tags, ...(rowTags?.[r] ?? [])];
-            if (tagsColumn) {
-                for (const tag of (row[tagsColumn - 1] ?? '').split(/\s+/).filter(Boolean)) noteTags.push(tag);
-            }
-            const finalTags = uniqueTags(noteTags);
-
-            const guid = rowGuids?.[r] || undefined;
-            let existing: Note | undefined;
-            if (guid) {
-                // A GUID is stable note identity. Anki never clones an existing non-empty GUID,
-                // even when the duplicate action is set to "import as new".
-                if (seenGuids.has(guid)) {
-                    counts.duplicates++;
-                    continue;
-                }
-                seenGuids.add(guid);
-                existing = existingGuids!.get(guid);
-            } else if (duplicateResolution !== 'duplicate') {
-                existing = firstFieldMatch(activeNoteType.id, fields[0], activeDeckId, matchScope);
-            }
-
-            if (existing) {
-                if (duplicateResolution === 'preserve' || existing.noteTypeId !== activeNoteType.id) {
-                    counts.duplicates++;
-                    continue;
-                }
-                const updatedNote: Note = {
-                    ...existing,
-                    fields,
-                    tags: finalTags,
-                    sfld: fields[activeNoteType.sortFieldIdx] || fields[0] || '',
-                    csum: checksumField(fields[0] ?? ''),
-                    mod: Math.floor(Date.now() / 1000),
-                    usn: -1,
-                };
-                saveNote(updatedNote);
-                for (const card of getCardsForNote(updatedNote.id)) {
-                    counts.indexed.push(searchIndexCardFromNote(updatedNote, card.id));
-                }
-                counts.updated++;
-                continue;
-            }
-
-            const { note, cards } = createNote(activeNoteType, fields, activeDeckId, finalTags, guid);
-            for (const card of cards) counts.indexed.push(searchIndexCardFromNote(note, card.id));
-            counts.addedNotes.push({ guid: note.guid, noteId: note.id });
-            counts.added++;
-        }
+        const counts = writeRows(rows, options);
         db.execSync('COMMIT;');
+        return counts;
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
     }
-
-    return counts;
 }
 
 /**
@@ -217,7 +229,20 @@ function deriveFieldColumns(fieldCount: number, ...specialColumns: Array<number 
     return columns;
 }
 
-export function importDelimitedNotes(text: string, options: ImportOptions): ImportResult {
+interface PreparedDelimitedImport {
+    rows: string[][];
+    delimiter: string;
+    totalRows: number;
+    metadata: ReturnType<typeof parseDelimited>['metadata'];
+    noteType: NoteType;
+    rowNoteTypes?: NoteType[];
+    fieldColumns?: number[];
+    rowGuids?: string[];
+    tags: string[];
+    tagsColumn?: number;
+}
+
+function prepareDelimitedImport(text: string, options: ImportOptions): PreparedDelimitedImport {
     const parsed = parseDelimited(text, options.delimiter ? { delimiter: options.delimiter } : {});
     const { guidColumn, tagsColumn, deckColumn, notetypeColumn } = parsed.metadata;
     const incomingGuids = guidColumn ? parsed.rows.map((row) => row[guidColumn - 1] ?? '') : undefined;
@@ -237,29 +262,11 @@ export function importDelimitedNotes(text: string, options: ImportOptions): Impo
         ? parsed.rows.map((row) => resolveNoteType(row[notetypeColumn - 1]))
         : undefined;
 
-    const deckByKey = new Map<string, number>();
-    for (const deck of getAllDecks()) {
-        deckByKey.set(String(deck.id), deck.id);
-        deckByKey.set(deck.name.toLocaleLowerCase(), deck.id);
-    }
-    const resolveDeck = (raw: string | undefined): number => {
-        const value = raw?.trim();
-        if (!value) return options.deckId;
-        const existing = deckByKey.get(value) ?? deckByKey.get(value.toLocaleLowerCase());
-        if (existing) return existing;
-        const created = createDeck(value);
-        deckByKey.set(value.toLocaleLowerCase(), created.id);
-        return created.id;
-    };
-    const globalDeckId = resolveDeck(parsed.metadata.deck);
-    const rowDeckIds = deckColumn ? parsed.rows.map((row) => resolveDeck(row[deckColumn - 1])) : undefined;
-
     // Honour Anki's column directives: read per-row guids from #guid column and keep the guid/tags
     // columns out of the field mapping. An explicit UI mapping still wins.
     const maxFieldCount = Math.max(globalNoteType.fields.length, ...(rowNoteTypes ?? []).map((type) => type.fields.length));
     const fieldColumns = options.fieldColumns
         ?? deriveFieldColumns(maxFieldCount, guidColumn, tagsColumn, deckColumn, notetypeColumn);
-    const rowGuids = incomingGuids;
 
     // Fields are rendered as HTML by the reviewer. Escape literal markup when Anki's
     // "Allow HTML" setting/header is off, so '<b>' remains visible text.
@@ -272,20 +279,135 @@ export function importDelimitedNotes(text: string, options: ImportOptions): Impo
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')));
 
-    const counts = importRows(rows, {
+    return {
+        rows,
+        delimiter: parsed.delimiter,
+        totalRows: parsed.rows.length,
+        metadata: parsed.metadata,
         noteType: globalNoteType,
-        deckId: globalDeckId,
+        rowNoteTypes,
         fieldColumns,
-        defaultFields: options.defaultFields,
+        rowGuids: incomingGuids,
         tags: [...(options.tags ?? []), ...(parsed.metadata.tags ?? [])],
         tagsColumn,
-        allowDuplicates: options.allowDuplicates,
-        duplicateResolution: options.duplicateResolution,
-        matchScope: options.matchScope,
-        rowGuids,
-        rowNoteTypes,
-        rowDeckIds,
-    });
+    };
+}
 
-    return { totalRows: parsed.rows.length, delimiter: parsed.delimiter, ...counts };
+function resolveDelimitedDeckIds(
+    prepared: PreparedDelimitedImport,
+    defaultDeckId: number,
+    createMissing: boolean,
+): { deckId: number; rowDeckIds?: number[] } {
+    const deckByKey = new Map<string, number>();
+    for (const deck of getAllDecks()) {
+        deckByKey.set(String(deck.id), deck.id);
+        deckByKey.set(deck.name.toLocaleLowerCase(), deck.id);
+    }
+    let nextPreviewDeckId = -1;
+    const resolveDeck = (raw: string | undefined): number => {
+        const value = raw?.trim();
+        if (!value) return defaultDeckId;
+        const existing = deckByKey.get(value) ?? deckByKey.get(value.toLocaleLowerCase());
+        if (existing) return existing;
+        const resolvedId = createMissing ? createDeck(value).id : nextPreviewDeckId--;
+        deckByKey.set(value.toLocaleLowerCase(), resolvedId);
+        return resolvedId;
+    };
+    const deckId = resolveDeck(prepared.metadata.deck);
+    const rowDeckIds = prepared.metadata.deckColumn
+        ? prepared.rows.map((row) => resolveDeck(row[prepared.metadata.deckColumn! - 1]))
+        : undefined;
+    return { deckId, rowDeckIds };
+}
+
+function firstFieldPreviewKey(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): string {
+    return `${noteTypeId}\u001f${scope === 'notetypeAndDeck' ? deckId : '*'}\u001f${firstField.trim()}`;
+}
+
+function previewPreparedRows(
+    prepared: PreparedDelimitedImport,
+    options: ImportOptions,
+    deckId: number,
+    rowDeckIds?: number[],
+): Pick<DelimitedImportPreview, 'added' | 'updated' | 'duplicates' | 'emptyRows'> {
+    const duplicateResolution = options.allowDuplicates ? 'duplicate' : (options.duplicateResolution ?? 'update');
+    const matchScope = options.matchScope ?? 'notetype';
+    const counts = { added: 0, updated: 0, duplicates: 0, emptyRows: 0 };
+    const existingGuids = prepared.rowGuids ? new Map(getAllNotes().map((note) => [note.guid, note])) : null;
+    const seenGuids = new Set<string>();
+    const virtualFirstFields = new Set<string>();
+
+    for (let r = 0; r < prepared.rows.length; r++) {
+        const activeNoteType = prepared.rowNoteTypes?.[r] ?? prepared.noteType;
+        const activeDeckId = rowDeckIds?.[r] ?? deckId;
+        const fields = fieldsForRow(prepared.rows[r], activeNoteType, prepared.fieldColumns, options.defaultFields);
+        if (fields[0].trim() === '') {
+            counts.emptyRows++;
+            continue;
+        }
+
+        const guid = prepared.rowGuids?.[r] || undefined;
+        let existing: Note | undefined;
+        if (guid) {
+            if (seenGuids.has(guid)) {
+                counts.duplicates++;
+                continue;
+            }
+            seenGuids.add(guid);
+            existing = existingGuids!.get(guid);
+        } else if (duplicateResolution !== 'duplicate') {
+            const key = firstFieldPreviewKey(activeNoteType.id, fields[0], activeDeckId, matchScope);
+            existing = virtualFirstFields.has(key)
+                ? ({ noteTypeId: activeNoteType.id } as Note)
+                : firstFieldMatch(activeNoteType.id, fields[0], activeDeckId, matchScope);
+            if (!existing) virtualFirstFields.add(key);
+        }
+
+        if (existing) {
+            if (duplicateResolution === 'preserve' || existing.noteTypeId !== activeNoteType.id) counts.duplicates++;
+            else counts.updated++;
+        } else {
+            counts.added++;
+        }
+    }
+
+    return counts;
+}
+
+/** Read-only preview used to obtain explicit consent before overwriting matching text-import notes. */
+export function previewDelimitedNotes(text: string, options: ImportOptions): DelimitedImportPreview {
+    const prepared = prepareDelimitedImport(text, options);
+    const decks = resolveDelimitedDeckIds(prepared, options.deckId, false);
+    const counts = previewPreparedRows(prepared, options, decks.deckId, decks.rowDeckIds);
+    return { totalRows: prepared.totalRows, delimiter: prepared.delimiter, ...counts };
+}
+
+export function importDelimitedNotes(text: string, options: ImportOptions): ImportResult {
+    const prepared = prepareDelimitedImport(text, options);
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        // Deck directives are resolved only after the transaction starts, so failed imports cannot
+        // leave empty decks or auto-created parent paths behind.
+        const decks = resolveDelimitedDeckIds(prepared, options.deckId, true);
+        const counts = writeRows(prepared.rows, {
+            noteType: prepared.noteType,
+            deckId: decks.deckId,
+            fieldColumns: prepared.fieldColumns,
+            defaultFields: options.defaultFields,
+            tags: prepared.tags,
+            tagsColumn: prepared.tagsColumn,
+            allowDuplicates: options.allowDuplicates,
+            duplicateResolution: options.duplicateResolution,
+            matchScope: options.matchScope,
+            rowGuids: prepared.rowGuids,
+            rowNoteTypes: prepared.rowNoteTypes,
+            rowDeckIds: decks.rowDeckIds,
+        });
+        db.execSync('COMMIT;');
+        return { totalRows: prepared.totalRows, delimiter: prepared.delimiter, ...counts };
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
 }

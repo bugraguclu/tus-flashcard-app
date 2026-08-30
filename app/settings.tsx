@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Keyboard,
     Linking,
@@ -30,11 +30,10 @@ import {
     DEFAULT_KEY_BINDINGS,
     DEFAULT_SETTINGS,
     loadSettings,
-    resetAllData,
     resetSettingsToDefaults,
     saveSettings,
 } from '../lib/storage';
-import { checkDatabase } from '../lib/maintenance';
+import { checkDatabase, optimizeDatabase } from '../lib/maintenance';
 import { alert, confirm } from '../lib/confirm';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
@@ -57,6 +56,8 @@ import {
     STUDY_NOTIFICATION_THRESHOLDS,
 } from '../lib/studyNotificationPolicy';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
+import { createBackupNow } from '../lib/backup';
+import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
 import {
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
@@ -90,9 +91,33 @@ type GesturePickerTarget =
     | { kind: 'swipe'; field: GestureSettingKey }
     | { kind: 'tap'; side: TapSide; zone: ReviewTapZone };
 
+type MemoizedSectionProps = { render: () => React.ReactNode };
+
+const GeneralSettingsSection = React.memo(function GeneralSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
+const ReviewingSettingsSection = React.memo(function ReviewingSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
+const ControlsSettingsSection = React.memo(function ControlsSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
+const DataManagementSettingsSection = React.memo(function DataManagementSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
 function formatKeyLabel(key: string): string {
     if (key === ' ') return 'Space';
     return key.length === 1 ? key.toUpperCase() : key;
+}
+
+function settingsMatch(actual: AppSettings, expected: AppSettings): boolean {
+    return (Object.keys(expected) as Array<keyof AppSettings>).every((key) => (
+        JSON.stringify(actual[key]) === JSON.stringify(expected[key])
+    ));
 }
 
 const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
@@ -162,20 +187,23 @@ function GestureActionRow({ icon, label, value, onPress, styles }: {
     );
 }
 
-function DataActionRow({ icon, label, detail, onPress, danger = false, divider = true, styles }: {
+function DataActionRow({ icon, label, detail, onPress, danger = false, divider = true, disabled = false, styles }: {
     icon: string;
     label: string;
     detail?: string;
     onPress: () => void;
     danger?: boolean;
     divider?: boolean;
+    disabled?: boolean;
     styles: ReturnType<typeof createStyles>;
 }) {
     return (
         <TouchableOpacity
-            style={[styles.dataActionRow, !divider && styles.dataActionRowNoDivider]}
+            style={[styles.dataActionRow, !divider && styles.dataActionRowNoDivider, disabled && { opacity: 0.5 }]}
             onPress={onPress}
+            disabled={disabled}
             accessibilityRole="button"
+            accessibilityState={{ disabled }}
         >
             <View style={[styles.dataActionIcon, danger && styles.dataActionIconDanger]}>
                 <Text style={[styles.dataActionIconText, danger && styles.dataActionIconTextDanger]}>{icon}</Text>
@@ -349,7 +377,7 @@ export default function SettingsScreen() {
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 600;
     const { refreshSettings: refreshData } = useAppSettings();
-    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
+    const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
     const { l, deviceLanguage } = useI18n();
     const colors = useThemeColors();
@@ -364,7 +392,10 @@ export default function SettingsScreen() {
     const [gesturePickerTarget, setGesturePickerTarget] = useState<GesturePickerTarget | null>(null);
     const [tapSide, setTapSide] = useState<TapSide>('question');
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
+    const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastSaveFailedRef = useRef(false);
+    const sectionScrollRef = useRef<ScrollView>(null);
 
     const gestureActionOptions = useMemo<Array<{ value: ReviewGestureAction; label: string }>>(() => [
         { value: 'off', label: l('Eylem yok', 'No action') },
@@ -384,10 +415,10 @@ export default function SettingsScreen() {
         { value: 'decks', label: l('Destelere dön', 'Return to decks') },
     ], [l]);
 
-    const gestureActionLabel = (action: ReviewGestureAction | undefined) => (
+    const gestureActionLabel = useCallback((action: ReviewGestureAction | undefined) => (
         gestureActionOptions.find((option) => option.value === action)?.label
         ?? gestureActionOptions[0].label
-    );
+    ), [gestureActionOptions]);
 
     const notificationThresholdOptions = useMemo<Array<{
         value: StudyNotificationThreshold | null;
@@ -423,37 +454,60 @@ export default function SettingsScreen() {
         };
     }, []);
 
-    const showSavedState = () => {
+    const showSavedState = useCallback(() => {
         setSaved(true);
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaved(false), 1400);
-    };
+    }, []);
 
-    const persistAndRefreshSettings = (next: AppSettings): AppSettings => {
-        saveSettings(next);
+    const persistAndRefreshSettings = useCallback((next: AppSettings): boolean => {
+        const result = saveSettings(next);
         const persisted = loadSettings();
         setSettings(persisted);
         refreshData();
-        bumpDataVersion();
+        if (!result.ok || !settingsMatch(persisted, result.settings)) {
+            lastSaveFailedRef.current = true;
+            setSaved(false);
+            alert(
+                l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
+                l('Değişiklik cihaz depolamasına yazılamadı. Önceki ayarlar korunuyor.', 'The change could not be written to device storage. Your previous settings are preserved.'),
+            );
+            return false;
+        }
+        lastSaveFailedRef.current = false;
         showSavedState();
-        return persisted;
-    };
+        return true;
+    }, [l, refreshData, showSavedState]);
 
-    const updateSettings = (patch: Partial<AppSettings>): AppSettings => {
+    const updateSettings = useCallback((patch: Partial<AppSettings>): boolean => {
         const updated = { ...settings, ...patch };
         return persistAndRefreshSettings(updated);
-    };
+    }, [persistAndRefreshSettings, settings]);
 
-    const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-        updateSettings({ [key]: value } as Pick<AppSettings, K>);
-    };
+    const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+        const didSave = updateSettings({ [key]: value } as Pick<AppSettings, K>);
+        if (didSave && (key === 'dayRolloverHour' || key === 'learnAheadMinutes')) {
+            markSchedulingStale();
+        }
+        return didSave;
+    }, [markSchedulingStale, updateSettings]);
+
+    const openSection = useCallback((section: SectionId) => {
+        Keyboard.dismiss();
+        setActiveSection(section);
+    }, []);
+
+    useEffect(() => {
+        if (!activeSection) return;
+        sectionScrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [activeSection]);
 
     const handleSaveSettings = () => {
         // Every preference is persisted by updateSetting. Dismissing the keyboard commits an
         // active numeric draft via onBlur; re-saving this render's older settings object here
         // could otherwise overwrite that freshly committed number.
         Keyboard.dismiss();
-        showSavedState();
+        if (!lastSaveFailedRef.current) showSavedState();
     };
 
     const handleStudyNotificationsToggle = async (
@@ -561,10 +615,10 @@ export default function SettingsScreen() {
         router.replace('/decks' as any);
     };
 
-    const handleExport = () => router.push(DATA_EXPORT_ROUTE);
-    const handleImport = () => router.push(DATA_IMPORT_ROUTE);
+    const handleExport = useCallback(() => router.push(DATA_EXPORT_ROUTE), [router]);
+    const handleImport = useCallback(() => router.push(DATA_IMPORT_ROUTE), [router]);
 
-    const handleCheckDatabase = () => {
+    const handleCheckDatabase = useCallback(() => {
         try {
             const result = checkDatabase();
             const integrityMessage = result.integrity === 'ok'
@@ -578,16 +632,51 @@ export default function SettingsScreen() {
                     integrityMessage,
                     `${l('Sahipsiz kartlar', 'Orphan cards')}: ${result.orphanCards}`,
                     `${l('Sahipsiz notlar', 'Orphan notes')}: ${result.orphanNotes}`,
-                    result.ftsReindexed > 0 ? `${l('Arama dizini yenilendi', 'Search index rebuilt')}: ${result.ftsReindexed}` : '',
                 ].filter(Boolean).join('\n'),
             );
         } catch (error) {
             console.warn('[Settings] database check failed:', error);
             alert(l('Hata', 'Error'), l('Veritabanı kontrol edilemedi.', 'Database check failed.'));
         }
-    };
+    }, [l]);
 
-    const handleCheckMedia = async () => {
+    const handleOptimizeDatabase = useCallback(() => {
+        if (maintenanceAction) return;
+        confirm(
+            l('Veritabanını onar ve optimize et', 'Repair and Optimize Database'),
+            l(
+                'Bu işlem veritabanını sıkıştırır, indeksleri yeniler ve arama dizinini yeniden oluşturur. Başlamadan önce güvenlik yedeği alınacaktır.',
+                'This compacts the database, refreshes indexes, and rebuilds search. A safety backup will be created first.',
+            ),
+            () => {
+                void (async () => {
+                    setMaintenanceAction('optimize');
+                    try {
+                        await createBackupNow();
+                        // Allow the busy state to paint before synchronous SQLite maintenance.
+                        await new Promise((resolve) => setTimeout(resolve, 0));
+                        const result = optimizeDatabase();
+                        alert(
+                            l('Optimizasyon tamamlandı', 'Optimization Complete'),
+                            result.ftsReindexed > 0
+                                ? l(`${result.ftsReindexed} kartın arama dizini yenilendi.`, `Search was rebuilt for ${result.ftsReindexed} cards.`)
+                                : l('Veritabanı indeksleri yenilendi.', 'Database indexes were refreshed.'),
+                        );
+                    } catch (error) {
+                        console.warn('[Settings] database optimization failed:', error);
+                        alert(
+                            l('Optimizasyon tamamlanamadı', 'Optimization Failed'),
+                            l('Hiçbir onarım güvenlik yedeği alınmadan başlatılmaz. Yedekler ekranını kontrol edip tekrar deneyin.', 'No repair starts without a safety backup. Check Backups and try again.'),
+                        );
+                    } finally {
+                        setMaintenanceAction(null);
+                    }
+                })();
+            },
+        );
+    }, [l, maintenanceAction]);
+
+    const handleCheckMedia = useCallback(async () => {
         try {
             const result = await checkMedia();
             const preview = (items: string[]) => items.slice(0, 5).join('\n');
@@ -607,32 +696,54 @@ export default function SettingsScreen() {
             console.warn('[Settings] media check failed:', error);
             alert(l('Hata', 'Error'), l('Medya kontrolü tamamlanamadı.', 'Media check could not be completed.'));
         }
-    };
+    }, [l]);
 
-    const handleResetSettings = () => {
+    const handleResetSettings = useCallback(() => {
         confirm(l('Varsayılan ayarlar', 'Default Settings'), l('Tüm uygulama ayarları varsayılana döndürülsün mü?', 'Restore all app settings to defaults?'), () => {
-            resetSettingsToDefaults();
+            const result = resetSettingsToDefaults();
+            if (!result.ok) {
+                alert(l('Ayarlar sıfırlanamadı', 'Settings Not Reset'), l('Varsayılan ayarlar cihaz depolamasına yazılamadı.', 'Default settings could not be written to device storage.'));
+                return;
+            }
             setSettings(loadSettings());
             refreshData();
-            bumpDataVersion();
+            markSchedulingStale();
         });
-    };
+    }, [l, markSchedulingStale, refreshData]);
 
-    const handleResetProgress = () => {
-        confirm(l('İlerlemeyi sıfırla', 'Reset Progress'), l('Kartlar, çalışma geçmişi ve ilerleme silinecek.', 'Cards, review history, and progress will be deleted.'), async () => {
-            await resetAllData();
-            saveSettings(DEFAULT_SETTINGS);
-            setSettings(loadSettings());
-            refreshData();
-            bumpDataVersion();
-            // Reset removes both the installed catalog rows and its local access marker. Refresh
-            // the shared access state immediately so the catalog screen cannot keep showing the
-            // stale "owned" action and send the learner back to an empty deck list.
-            await refreshCatalogAccess();
+    const handleResetProgress = useCallback(() => {
+        if (maintenanceAction) return;
+        confirm(l('İlerlemeyi sıfırla', 'Reset Progress'), l('Kartlar, çalışma geçmişi ve ilerleme silinecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulacak.', 'Cards, review history, and progress will be deleted after a restorable safety backup is created.'), () => {
+            void (async () => {
+                setMaintenanceAction('reset');
+                try {
+                    const { backupFileName } = await resetAllDataWithBackup();
+                    setSettings(loadSettings());
+                    refreshData();
+                    invalidateCollection();
+                    // Reset removes both the installed catalog rows and its local access marker.
+                    await refreshCatalogAccess();
+                    alert(
+                        l('İlerleme sıfırlandı', 'Progress Reset'),
+                        l(`Geri dönüş için ${backupFileName} yedeği saklandı.`, `The backup ${backupFileName} was kept for recovery.`),
+                    );
+                } catch (error) {
+                    console.warn('[Settings] reset progress failed:', error);
+                    const retained = error instanceof ResetWorkflowError && error.backupFileName;
+                    alert(
+                        l('Sıfırlama tamamlanamadı', 'Reset Failed'),
+                        retained
+                            ? l(`Veriler tamamen sıfırlanamadı. ${retained} güvenlik yedeği korundu.`, `The reset did not complete. Safety backup ${retained} was retained.`)
+                            : l('Güvenlik yedeği oluşturulamadığı için hiçbir veri silinmedi.', 'No data was deleted because the safety backup could not be created.'),
+                    );
+                } finally {
+                    setMaintenanceAction(null);
+                }
+            })();
         }, { destructive: true });
-    };
+    }, [invalidateCollection, l, maintenanceAction, refreshCatalogAccess, refreshData]);
 
-    const renderGeneral = () => (
+    const renderGeneral = useCallback(() => (
         <>
             <Group title={l('Dil', 'Language')} styles={styles}>
                 <ChoiceRow
@@ -737,7 +848,7 @@ export default function SettingsScreen() {
                 <Text style={styles.outlineButtonText}>↺ {l('Varsayılan ayarlara dön', 'Restore default settings')}</Text>
             </TouchableOpacity>
         </>
-    );
+    ), [deviceLanguage, handleResetSettings, l, settings, styles, updateSetting]);
 
     const renderNewStudy = () => (
         <>
@@ -807,7 +918,7 @@ export default function SettingsScreen() {
         </>
     );
 
-    const renderReviewing = () => (
+    const renderReviewing = useCallback(() => (
         <>
             <Group title={l('Zamanlama', 'Scheduling')} styles={styles}>
                 <StepperRow label={l('Sonraki günün başlangıcı', 'Start of next day')} summary={l('Günlük istatistikler ve limitler bu saatte yenilenir.', 'Daily statistics and limits reset at this hour.')} value={settings.dayRolloverHour} suffix=":00" minimumDigits={2} step={1} min={0} max={23} onChange={(value) => updateSetting('dayRolloverHour', value)} styles={styles} />
@@ -820,7 +931,7 @@ export default function SettingsScreen() {
                 <ToggleRow label={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} value={settings.interruptAudioOnAnswer} onChange={(value) => updateSetting('interruptAudioOnAnswer', value)} styles={styles} />
             </Group>
         </>
-    );
+    ), [l, settings, styles, updateSetting]);
 
     const renderNotifications = () => (
         <Group title={l('Bildirimler', 'Notifications')} styles={styles}>
@@ -883,7 +994,7 @@ export default function SettingsScreen() {
         </Group>
     );
 
-    const renderControls = () => (
+    const renderControls = useCallback(() => (
         <>
             <Group
                 title={l('Dokunma ve kaydırma', 'Taps and swipes')}
@@ -1055,7 +1166,7 @@ export default function SettingsScreen() {
                 </Group>
             ) : null}
         </>
-    );
+    ), [gestureActionLabel, isDesktopWeb, l, recordingField, settings, styles, tapSide, updateSetting, updateSettings]);
 
     const renderAccessibility = () => (
         <>
@@ -1075,7 +1186,7 @@ export default function SettingsScreen() {
         </>
     );
 
-    const renderData = () => (
+    const renderData = useCallback(() => (
         <>
             <View style={styles.dataStatusCard}>
                 <View style={styles.dataStatusIcon}><Text style={styles.dataStatusIconText}>✓</Text></View>
@@ -1114,12 +1225,35 @@ export default function SettingsScreen() {
             </Group>
 
             <Group title={l('Bakım', 'Maintenance')} styles={styles}>
-                <DataActionRow icon="✓" label={l('Veritabanını kontrol et', 'Check database')} onPress={handleCheckDatabase} divider={false} styles={styles} />
-                <DataActionRow icon="▧" label={l('Medyayı kontrol et', 'Check media')} onPress={() => void handleCheckMedia()} styles={styles} />
-                <DataActionRow icon="↺" label={l('İlerlemeyi sıfırla', 'Reset progress')} onPress={handleResetProgress} danger styles={styles} />
+                <DataActionRow
+                    icon="✓"
+                    label={l('Veritabanını kontrol et', 'Check database')}
+                    detail={l('Salt okunur bütünlük denetimi', 'Read-only integrity audit')}
+                    onPress={handleCheckDatabase}
+                    disabled={maintenanceAction !== null}
+                    divider={false}
+                    styles={styles}
+                />
+                <DataActionRow
+                    icon="⌁"
+                    label={maintenanceAction === 'optimize' ? l('Optimize ediliyor…', 'Optimizing…') : l('Onar ve optimize et', 'Repair and optimize')}
+                    detail={l('Yedek alır; veritabanı ve arama indekslerini yeniler', 'Backs up, then refreshes database and search indexes')}
+                    onPress={handleOptimizeDatabase}
+                    disabled={maintenanceAction !== null}
+                    styles={styles}
+                />
+                <DataActionRow icon="▧" label={l('Medyayı kontrol et', 'Check media')} onPress={() => void handleCheckMedia()} disabled={maintenanceAction !== null} styles={styles} />
+                <DataActionRow
+                    icon="↺"
+                    label={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('İlerlemeyi sıfırla', 'Reset progress')}
+                    onPress={handleResetProgress}
+                    disabled={maintenanceAction !== null}
+                    danger
+                    styles={styles}
+                />
             </Group>
         </>
-    );
+    ), [handleCheckDatabase, handleCheckMedia, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
 
     const renderAbout = () => (
         <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paket desteğine sahip yerel öncelikli kart uygulaması`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • Local-first flashcard app with Anki package support`)} styles={styles}>
@@ -1130,13 +1264,13 @@ export default function SettingsScreen() {
 
     const renderActiveSection = () => {
         switch (activeSection) {
-            case 'general': return renderGeneral();
+            case 'general': return <GeneralSettingsSection render={renderGeneral} />;
             case 'newStudy': return renderNewStudy();
-            case 'reviewing': return renderReviewing();
+            case 'reviewing': return <ReviewingSettingsSection render={renderReviewing} />;
             case 'notifications': return renderNotifications();
-            case 'controls': return renderControls();
+            case 'controls': return <ControlsSettingsSection render={renderControls} />;
             case 'accessibility': return renderAccessibility();
-            case 'data': return renderData();
+            case 'data': return <DataManagementSettingsSection render={renderData} />;
             case 'about': return renderAbout();
             default: return null;
         }
@@ -1175,9 +1309,13 @@ export default function SettingsScreen() {
                 ) : <View style={styles.headerSpacer} />}
             </View>
             <ScrollView
+                key={activeSection ?? 'settings-root'}
+                ref={sectionScrollRef}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
-                automaticallyAdjustContentInsets
+                contentInsetAdjustmentBehavior="never"
+                automaticallyAdjustContentInsets={false}
+                automaticallyAdjustKeyboardInsets={false}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             >
@@ -1194,7 +1332,7 @@ export default function SettingsScreen() {
                                 <TouchableOpacity
                                     key={category.id}
                                     style={[styles.categoryRow, index > 0 && styles.categoryDivider]}
-                                    onPress={() => setActiveSection(category.id)}
+                                    onPress={() => openSection(category.id)}
                                     accessibilityRole="button"
                                 >
                                     <Text style={styles.categoryIcon}>{category.icon}</Text>
@@ -1210,7 +1348,7 @@ export default function SettingsScreen() {
                     </>
                 )}
             </ScrollView>
-            <Modal
+            {controlsHelpVisible ? <Modal
                 visible={controlsHelpVisible}
                 transparent
                 animationType="fade"
@@ -1345,8 +1483,8 @@ export default function SettingsScreen() {
                         </View>
                     </View>
                 </View>
-            </Modal>
-            <Modal
+            </Modal> : null}
+            {gesturePickerTarget !== null ? <Modal
                 visible={gesturePickerTarget !== null}
                 transparent
                 animationType="fade"
@@ -1413,8 +1551,8 @@ export default function SettingsScreen() {
                         </ScrollView>
                     </View>
                 </View>
-            </Modal>
-            <Modal
+            </Modal> : null}
+            {notificationThresholdPickerVisible ? <Modal
                 visible={notificationThresholdPickerVisible}
                 transparent
                 animationType="fade"
@@ -1456,7 +1594,7 @@ export default function SettingsScreen() {
                         </ScrollView>
                     </View>
                 </View>
-            </Modal>
+            </Modal> : null}
         </SafeAreaView>
         </TouchableWithoutFeedback>
     );

@@ -67,6 +67,7 @@ import {
     needsBkaCatalogInstall,
     uninstallBkaCatalog,
 } from './bkaCatalog';
+import { BKA_MANIFEST } from './bkaManifest';
 import { getAllNotes, saveNote } from './noteManager';
 import { getBrowserCardCount, getBrowserCardIdsMatchingText, getBrowserCards } from './studyRepository';
 import { DEFAULT_SETTINGS } from './storage';
@@ -316,6 +317,39 @@ describe('BKA catalog installation', () => {
         )!;
         expect({ ivl: restored.ivl, reps: restored.reps }).toEqual({ ivl: 21, reps: 4 });
         expect(JSON.parse(restored.data).factor).toBe(2350);
+    }, 120_000);
+
+    it('refreshes an install that came from an older package, keeping study progress', async () => {
+        await installBkaCatalog();
+        const studied = db.getFirstSync<{ id: number; data: string }>(
+            'SELECT id, data FROM anki_cards WHERE id != ?', LEARNER.cardId)!;
+        db.runSync(
+            'UPDATE anki_cards SET type = 2, queue = 2, due = 12, ivl = 21, factor = 2350, reps = 4, lapses = 1, data = ? WHERE id = ?',
+            JSON.stringify({ ...JSON.parse(studied.data), type: 2, queue: 2, due: 12, ivl: 21, factor: 2350, reps: 4, lapses: 1 }),
+            studied.id,
+        );
+
+        // Installing again with nothing changed is a no-op: the package marker still matches.
+        expect((await installBkaCatalog()).installed).toBe(false);
+
+        // A corrected package ships under a different hash. That is what tells an existing
+        // install its cards are stale.
+        db.runSync(
+            'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+            'bka_tus_catalog_package_v1', 'onceki-paketin-hash-i',
+        );
+
+        const refreshed = await installBkaCatalog();
+        expect(refreshed.installed).toBe(true);
+        expect(refreshed.cards).toBe(BKA_MANIFEST.totals.cards);
+        expect(refreshed.restoredProgress).toBe(1);
+
+        const restored = db.getFirstSync<{ ivl: number; reps: number }>(
+            'SELECT ivl, reps FROM anki_cards WHERE id = ?', studied.id)!;
+        expect({ ivl: restored.ivl, reps: restored.reps }).toEqual({ ivl: 21, reps: 4 });
+        expect(db.getFirstSync<{ value: string }>(
+            'SELECT value FROM settings WHERE key = ?', 'bka_tus_catalog_package_v1')?.value,
+        ).toBe(BKA_MANIFEST.sha256);
     }, 120_000);
 
     it('gives the catalog its own root deck when the learner already owns that name', async () => {

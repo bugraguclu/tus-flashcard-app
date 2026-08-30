@@ -16,7 +16,7 @@ import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeCol
 import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
 import { renameDeck, updateFilteredDeck } from '../lib/deckManager';
-import { FILTERED_DECK_ORDER_UI } from '../lib/filteredDeckOptions';
+import { FILTERED_DECK_ORDER_UI, FILTERED_SEARCH_ORDER } from '../lib/filteredDeckOptions';
 import { filteredOrderLabel } from '../lib/i18n';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../lib/studyRepository';
@@ -66,10 +66,10 @@ export default function FilteredDeckOptionsModal({
         setName(deck.name);
         setSearch(deck.searchQuery ?? '');
         setLimit(String(deck.searchLimit ?? 100));
-        setOrder(deck.searchOrder ?? 0);
+        setOrder(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due);
         setSearch2(deck.searchQuery2 ?? '');
         setLimit2(String(deck.searchLimit2 ?? 100));
-        setOrder2(deck.searchOrder2 ?? 0);
+        setOrder2(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due);
         setSecondEnabled(Boolean(deck.searchQuery2?.trim()));
         setReschedule(deck.reschedule ?? true);
         setAllowEmpty(deck.filteredAllowEmpty ?? false);

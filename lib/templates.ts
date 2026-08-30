@@ -393,8 +393,9 @@ function applyTemplateFilter(
         const options = name.trim().split(/\s+/).slice(1);
         const language = options.find((option) => !option.includes('=')) ?? '';
         const speed = options.find((option) => option.startsWith('speed='))?.slice(6) ?? '1';
+        const voices = options.find((option) => option.startsWith('voices='))?.slice(7) ?? '';
         if (!language || !value.trim()) return '';
-        return `<tts service="anki" voice="${escapeHtml(language)}" data-speed="${escapeHtml(speed)}" hidden>${value}</tts>`;
+        return `<tts service="anki" voice="${escapeHtml(language)}" data-speed="${escapeHtml(speed)}" data-voices="${escapeHtml(voices)}" hidden>${value}</tts>`;
     }
     if (!BUILTIN_FILTERS.has(name)) return null;
 
@@ -508,8 +509,9 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
     return result.replace(/\[anki:tts\s+([^\]]+)\]([\s\S]*?)\[\/anki:tts\]/gi, (_match, rawOptions: string, content: string) => {
         const language = attributeValueFromTtsOptions(rawOptions, 'lang');
         const speed = attributeValueFromTtsOptions(rawOptions, 'speed') || '1';
+        const voices = attributeValueFromTtsOptions(rawOptions, 'voices');
         if (!language || !content.trim()) return '';
-        return `<tts service="anki" voice="${escapeHtml(language)}" data-speed="${escapeHtml(speed)}" hidden>${content}</tts>`;
+        return `<tts service="anki" voice="${escapeHtml(language)}" data-speed="${escapeHtml(speed)}" data-voices="${escapeHtml(voices)}" hidden>${content}</tts>`;
     });
 }
 

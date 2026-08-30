@@ -203,9 +203,9 @@ export default function NoteTypeScreen() {
                 <Text style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
                 <View style={styles.previewBox}>
                     <Text style={styles.previewCaption}>{l('Soru', 'Question')}</Text>
-                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="question" />
+                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="question" scrollMode="intrinsic" />
                     <Text style={styles.previewCaption}>{l('Cevap', 'Answer')}</Text>
-                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="answer" />
+                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="answer" scrollMode="intrinsic" />
                 </View>
 
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>

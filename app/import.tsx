@@ -19,10 +19,16 @@ import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } fro
 import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck } from '../lib/deckManager';
-import { alert } from '../lib/confirm';
+import { alert, confirmAsync } from '../lib/confirm';
 import { assertKnownFileSize, readUriBytes, readUriText } from '../lib/files';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
-import { importDelimitedNotes, type DuplicateResolution, type MatchScope } from '../lib/importNotes';
+import {
+    importDelimitedNotes,
+    previewDelimitedNotes,
+    type DuplicateResolution,
+    type ImportOptions,
+    type MatchScope,
+} from '../lib/importNotes';
 import { importApkg, MAX_APKG_BYTES } from '../lib/importApkg';
 import { getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
@@ -324,12 +330,22 @@ export default function ImportScreen() {
         }
     };
 
-    const handleImport = async () => {
-        if (!hasFile) {
-            alert(t('common.error'), l('Önce bir dosya seçin.', 'Select a file first.'));
-            return;
-        }
+    const buildTextImportOptions = (): ImportOptions => {
+        const noteType =
+            getNoteType(ANKI_BASIC_NOTETYPE_ID) ??
+            BUILTIN_NOTE_TYPES.find((nt) => nt.id === ANKI_BASIC_NOTETYPE_ID)!;
+        return {
+            noteType,
+            deckId: targetDeckId ?? resolveSubjectDeckId(subject),
+            ...delimitedParseOptions(fileType),
+            defaultFields: ['', ''],
+            duplicateResolution,
+            matchScope,
+            isHtml: textHtml,
+        };
+    };
 
+    const executeImport = async (textOptions: ImportOptions | null, backupTextUpdates: boolean) => {
         setImporting(true);
         // Let the spinner paint before the synchronous, possibly large import blocks the thread.
         await new Promise((resolve) => setTimeout(resolve, 0));
@@ -353,19 +369,11 @@ export default function ImportScreen() {
                     updateNoteTypes,
                     replaceCollection: fileType === 'colpkg',
                 });
-            } else if (fileText !== null) {
-                const noteType =
-                    getNoteType(ANKI_BASIC_NOTETYPE_ID) ??
-                    BUILTIN_NOTE_TYPES.find((nt) => nt.id === ANKI_BASIC_NOTETYPE_ID)!;
-                imported = importDelimitedNotes(fileText, {
-                    noteType,
-                    deckId: targetDeckId ?? resolveSubjectDeckId(subject),
-                    ...delimitedParseOptions(fileType),
-                    defaultFields: ['', ''],
-                    duplicateResolution,
-                    matchScope,
-                    isHtml: textHtml,
-                });
+            } else if (fileText !== null && textOptions) {
+                // A same-first-field update replaces the existing note's fields and tags. Keep the
+                // exact same recovery guarantee as package imports whenever the preview found one.
+                if (backupTextUpdates) await createBackupNow();
+                imported = importDelimitedNotes(fileText, textOptions);
             }
 
             if (imported) {
@@ -383,6 +391,54 @@ export default function ImportScreen() {
             ));
         } finally {
             setImporting(false);
+        }
+    };
+
+    const handleImport = async () => {
+        if (!hasFile) {
+            alert(t('common.error'), l('Önce bir dosya seçin.', 'Select a file first.'));
+            return;
+        }
+
+        try {
+            if (fileType === 'colpkg') {
+                const accepted = await confirmAsync(
+                    l('Koleksiyon değiştirilsin mi?', 'Replace Collection?'),
+                    l(
+                        'Bu işlem tüm kartlarınızı, destelerinizi ve çalışma geçmişinizi paketteki koleksiyonla değiştirecek. İşlem başlamadan önce güvenlik yedeği alınacaktır.',
+                        'This will replace all cards, decks, and review history with the collection in the package. A safety backup will be created before it starts.',
+                    ),
+                    { destructive: true },
+                );
+                if (!accepted) return;
+            }
+
+            let textOptions: ImportOptions | null = null;
+            let backupTextUpdates = false;
+            if (fileText !== null) {
+                textOptions = buildTextImportOptions();
+                const preview = previewDelimitedNotes(fileText, textOptions);
+                backupTextUpdates = preview.updated > 0;
+                if (backupTextUpdates) {
+                    const accepted = await confirmAsync(
+                        l('Mevcut notlar güncellensin mi?', 'Update Existing Notes?'),
+                        l(
+                            `${preview.added} yeni not eklenecek, ${preview.updated} mevcut notun alanları ve etiketleri değiştirilecek, ${preview.duplicates} not atlanacak. İşlemden önce güvenlik yedeği alınacaktır.`,
+                            `${preview.added} new notes will be added, ${preview.updated} existing notes will have their fields and tags replaced, and ${preview.duplicates} notes will be skipped. A safety backup will be created first.`,
+                        ),
+                        { destructive: true },
+                    );
+                    if (!accepted) return;
+                }
+            }
+
+            await executeImport(textOptions, backupTextUpdates);
+        } catch (e) {
+            console.warn('[Import] import preview failed:', e);
+            alert(t('common.error'), userFacingErrorMessage(
+                e,
+                l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.'),
+            ));
         }
     };
 

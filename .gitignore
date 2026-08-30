@@ -30,6 +30,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# local analysis scratch (large exports, inspection dumps)
+outputs/
+
 # IDEs and local tooling
 .claude/
 .idea/

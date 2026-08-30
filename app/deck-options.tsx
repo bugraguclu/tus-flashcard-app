@@ -26,6 +26,7 @@ import { alert, confirm } from '../lib/confirm';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     getDeck,
+    getAllDecks,
     getDeckConfig,
     getAllDeckConfigs,
     getDecksUsingConfig,
@@ -42,6 +43,7 @@ import {
     setDeckLimitOverrides,
 } from '../lib/deckManager';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
+import { getDeckOptionsScopes } from '../lib/deckOptionsScope';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
 import { normalizeNewCardGatherOrder } from '../lib/queueBuild';
 import { saveCollectionDeckOptions } from '../lib/storage';
@@ -107,7 +109,7 @@ function OptionCard({ title, children, styles, wide = false, help }: {
                 ) : null}
             </View>
             <View style={styles.optionCardBody}>{children}</View>
-            {help ? (
+            {help && helpOpen ? (
                 <Modal
                     visible={helpOpen}
                     transparent
@@ -270,7 +272,7 @@ function SelectSetting({ label, value, options, onChange, styles, colors, cancel
                 <Text style={styles.selectControlText} numberOfLines={1}>{selected?.label ?? ''}</Text>
                 <Text style={styles.selectChevron}>⌄</Text>
             </TouchableOpacity>
-            <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+            {open ? <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
                     <View style={styles.modalCard}>
@@ -296,7 +298,7 @@ function SelectSetting({ label, value, options, onChange, styles, colors, cancel
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
+            </Modal> : null}
         </View>
     );
 }
@@ -336,10 +338,15 @@ export default function DeckOptionsScreen() {
     const navigation = useNavigation();
     const params = useLocalSearchParams();
     const { settings, refreshSettings: refreshData } = useAppSettings();
-    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
+    const { markSchedulingStale } = useCollectionInvalidation();
 
-    const deckId = Number(Array.isArray(params.deckId) ? params.deckId[0] : params.deckId);
-    const deck = useMemo(() => (Number.isFinite(deckId) ? getDeck(deckId) : null), [deckId]);
+    const routeDeckId = Number(Array.isArray(params.deckId) ? params.deckId[0] : params.deckId);
+    const [activeDeckId, setActiveDeckId] = useState(routeDeckId);
+    const [deckRevision, setDeckRevision] = useState(0);
+    const deck = useMemo(
+        () => (Number.isFinite(activeDeckId) ? getDeck(activeDeckId) : null),
+        [activeDeckId, deckRevision],
+    );
     const todayLimits = useMemo(
         () => deck ? getDeckTodayLimits(deck.id, settings.dayRolloverHour) : {},
         [deck?.id, settings.dayRolloverHour],
@@ -358,6 +365,7 @@ export default function DeckOptionsScreen() {
     const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const [saveMessage, setSaveMessage] = useState('');
     const allowNavigationRef = useRef(false);
+    const [deckPickerOpen, setDeckPickerOpen] = useState(false);
     const [presetPickerOpen, setPresetPickerOpen] = useState(false);
     const [presetActionsOpen, setPresetActionsOpen] = useState(false);
     const [renameOpen, setRenameOpen] = useState(false);
@@ -443,13 +451,62 @@ export default function DeckOptionsScreen() {
     }), [isDirty, l, navigation]);
 
     const applyPresetSelection = (nextId: number, markSaved = false) => {
-        const nextForm = formFromConfig(getDeckConfig(nextId), form.description, getDeck(deckId) ?? deck);
+        const currentDeck = getDeck(activeDeckId) ?? deck;
+        const currentTodayLimits = currentDeck
+            ? getDeckTodayLimits(currentDeck.id, settings.dayRolloverHour)
+            : {};
+        const nextForm = formFromConfig(
+            getDeckConfig(nextId),
+            form.description,
+            currentDeck,
+            currentTodayLimits,
+        );
         setConfigId(nextId);
         setForm(nextForm);
         if (markSaved) setSavedSnapshot(snapshotForm(nextId, nextForm));
         setSaveState('idle');
         setSaveMessage('');
         setPresetPickerOpen(false);
+    };
+
+    const applyDeckSelection = (nextDeckId: number) => {
+        const nextDeck = getDeck(nextDeckId);
+        if (!nextDeck) return;
+        const nextConfigId = nextDeck.configId || DEFAULT_DECK_CONFIG.id;
+        const nextTodayLimits = getDeckTodayLimits(nextDeck.id, settings.dayRolloverHour);
+        const nextForm = formFromConfig(
+            getDeckConfig(nextConfigId),
+            nextDeck.description,
+            nextDeck,
+            nextTodayLimits,
+        );
+        setActiveDeckId(nextDeck.id);
+        setConfigId(nextConfigId);
+        setForm(nextForm);
+        setSavedSnapshot(snapshotForm(nextConfigId, nextForm));
+        setSaveState('idle');
+        setSaveMessage('');
+        setDeckPickerOpen(false);
+    };
+
+    const switchDeck = (nextDeckId: number) => {
+        if (nextDeckId === activeDeckId) {
+            setDeckPickerOpen(false);
+            return;
+        }
+        if (!isDirty) {
+            applyDeckSelection(nextDeckId);
+            return;
+        }
+        confirm(
+            l('Kaydedilmemiş ayarlar', 'Unsaved settings'),
+            l(
+                'Başka bir desteye geçerseniz bu formdaki kaydedilmemiş değişiklikler silinecek.',
+                'Switching decks will discard the unsaved changes in this form.',
+            ),
+            () => applyDeckSelection(nextDeckId),
+            { destructive: true },
+        );
     };
 
     const switchPreset = (nextId: number) => {
@@ -472,6 +529,22 @@ export default function DeckOptionsScreen() {
         );
     };
 
+    // The visible toolbar summary is stable while the form is edited. Avoid repeating deck
+    // ownership queries for every keystroke or toggle change.
+    const currentPresetSummary = useMemo(() => {
+        const presetDecks = getDecksUsingConfig(configId);
+        return {
+            usedBy: presetDecks.length,
+            name: getDeckConfig(configId).name,
+        };
+    }, [configId, presetRevision]);
+    const usedBy = currentPresetSummary.usedBy;
+    const presetName = currentPresetSummary.name;
+    const deckScopes = useMemo(
+        () => getDeckOptionsScopes(getAllDecks()),
+        [deckRevision, presetRevision],
+    );
+
     if (!deck) {
         return (
             <SafeAreaView style={styles.container}>
@@ -479,20 +552,6 @@ export default function DeckOptionsScreen() {
             </SafeAreaView>
         );
     }
-
-    const usedBy = getDecksUsingConfig(configId).length;
-    // Imported/internal names such as "Default" describe a config record, not a deck. Resolve
-    // each config to the root deck that owns/uses it; the app's built-in config is TUS Kartları.
-    const presetDisplayName = (presetId: number): string => {
-        if (presetId === DEFAULT_DECK_CONFIG.id) return 'TUS Kartları';
-        const presetDecks = getDecksUsingConfig(presetId);
-        const representative = presetDecks.find((candidate) => !candidate.name.includes('::'))
-            ?? presetDecks[0];
-        return representative
-            ? getDeckDisplayName(representative.name)
-            : 'TUS Kartları';
-    };
-    const presetName = presetDisplayName(configId);
 
     const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
         setSaveState('idle');
@@ -675,12 +734,13 @@ export default function DeckOptionsScreen() {
                 setForm(normalizedForm);
                 setSavedSnapshot(snapshotForm(configId, normalizedForm));
                 setPresetRevision((value) => value + 1);
+                setDeckRevision((value) => value + 1);
                 refreshData();
-                bumpDataVersion();
+                markSchedulingStale();
             } catch (refreshError) {
                 console.warn('[DeckOptions] saved but refresh failed:', refreshError);
                 setSavedSnapshot(snapshotForm(configId, form));
-                bumpDataVersion();
+                markSchedulingStale();
             }
             return { saved: true, subdecksChanged };
         } catch (e) {
@@ -720,7 +780,7 @@ export default function DeckOptionsScreen() {
             const preset = createPreset(getDeckDisplayName(deck.name), DEFAULT_DECK_CONFIG.id);
             assignDeckConfig(deck.id, preset.id);
             applyPresetSelection(preset.id, true);
-            bumpDataVersion();
+            markSchedulingStale();
         };
         if (!isDirty) create();
         else confirm(
@@ -736,12 +796,15 @@ export default function DeckOptionsScreen() {
             const preset = createPreset(l(`${getDeckDisplayName(deck.name)} ayarları`, `${getDeckDisplayName(deck.name)} options`), configId);
             assignDeckConfig(deck.id, preset.id);
             applyPresetSelection(preset.id, true);
-            bumpDataVersion();
+            markSchedulingStale();
         };
         if (!isDirty) clone();
         else confirm(
-            l('Ayar grubunu klonla', 'Clone preset'),
-            l('Klon, son kaydedilen ayarlardan oluşturulacak; kaydedilmemiş değişiklikler bırakılacak.', 'The clone will use the last saved settings; unsaved changes will be discarded.'),
+            l('Bu deste için ayrı ayar grubu', 'Separate preset for this deck'),
+            l(
+                'Seçili ayar grubu kopyalanıp yalnızca bu desteye atanacak; kaydedilmemiş değişiklikler bırakılacak.',
+                'The selected preset will be copied and assigned only to this deck; unsaved changes will be discarded.',
+            ),
             clone,
             { destructive: true },
         );
@@ -770,7 +833,7 @@ export default function DeckOptionsScreen() {
                     setSaveState('saved');
                     setSaveMessage(l('Ayar grubu varsayılan değerlere döndürüldü.', 'The preset was restored to default values.'));
                     setPresetRevision((value) => value + 1);
-                    bumpDataVersion();
+                    markSchedulingStale();
                     alert(
                         l('Varsayılanlara dönüldü', 'Defaults Restored'),
                         l('Ayar grubunun zamanlama seçenekleri varsayılanlara döndürüldü.', 'The preset scheduling options were restored to defaults.'),
@@ -794,7 +857,7 @@ export default function DeckOptionsScreen() {
             l(`“${presetName}” silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`, `“${presetName}” will be deleted; ${usedBy} decks using it will return to the default preset.`),
             () => {
                 deletePreset(configId);
-                bumpDataVersion();
+                markSchedulingStale();
                 applyPresetSelection(DEFAULT_DECK_CONFIG.id, true);
             },
             { destructive: true },
@@ -1014,12 +1077,15 @@ export default function DeckOptionsScreen() {
                 </TouchableOpacity>
                 <View style={styles.headerTitleWrap}>
                     <Text style={styles.headerTitle} numberOfLines={1}>{l('Deste seçenekleri', 'Deck Options')}</Text>
-                    <Text style={styles.headerSubtitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
+                    <Text style={styles.headerSubtitle} numberOfLines={1}>{deck.name.replaceAll('::', ' › ')}</Text>
                 </View>
             </View>
 
             <ScrollView
                 contentContainerStyle={styles.content}
+                contentInsetAdjustmentBehavior="never"
+                automaticallyAdjustContentInsets={false}
+                automaticallyAdjustKeyboardInsets={false}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
@@ -1027,14 +1093,14 @@ export default function DeckOptionsScreen() {
                 <View style={styles.presetToolbar}>
                     <TouchableOpacity
                         style={styles.presetSelector}
-                        onPress={() => { Keyboard.dismiss(); setPresetPickerOpen(true); }}
+                        onPress={() => { Keyboard.dismiss(); setDeckPickerOpen(true); }}
                         accessibilityRole="button"
-                        accessibilityLabel={l(`Ayar grubu: ${presetName}`, `Preset: ${presetName}`)}
+                        accessibilityLabel={l(`Deste: ${deck.name.replaceAll('::', ' › ')}`, `Deck: ${deck.name.replaceAll('::', ' › ')}`)}
                     >
                         <View style={styles.presetSelectorTextWrap}>
-                            <Text style={styles.presetSelectorName} numberOfLines={1}>{presetName}</Text>
+                            <Text style={styles.presetSelectorName} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
                             <Text style={styles.presetSelectorMeta} numberOfLines={1}>
-                                {l(`${usedBy} deste tarafından kullanılıyor`, `Used by ${usedBy} decks`)}
+                                {l(`Ayar grubu: ${presetName} · ${usedBy} deste`, `Preset: ${presetName} · ${usedBy} decks`)}
                             </Text>
                         </View>
                         <Text style={styles.presetSelectorChevron}>⌄</Text>
@@ -1377,15 +1443,16 @@ export default function DeckOptionsScreen() {
 
             </ScrollView>
 
-            <Modal visible={presetActionsOpen} transparent animationType="fade" onRequestClose={() => setPresetActionsOpen(false)}>
+            {presetActionsOpen ? <Modal visible transparent animationType="fade" onRequestClose={() => setPresetActionsOpen(false)}>
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setPresetActionsOpen(false)} />
                     <View style={styles.actionMenu}>
                         {[
                             { label: l('Kaydet', 'Save'), action: handleSave },
+                            { label: l('Ayar grubunu değiştir', 'Change Preset'), action: () => setPresetPickerOpen(true) },
+                            { label: l('Bu deste için ayrı ayar grubu oluştur', 'Create a Separate Preset for This Deck'), action: handleClonePreset },
                             { label: l('Varsayılana dön', 'Restore Defaults'), action: handleRestoreDefaults },
                             { label: l('Ayar grubu ekle', 'Add Preset'), action: handleAddPreset },
-                            { label: l('Klonla', 'Clone'), action: handleClonePreset },
                             { label: l('Yeniden adlandır', 'Rename'), action: () => { setRenameText(presetName); setRenameOpen(true); } },
                             { label: l('Kaydet ve tüm alt destelere uygula', 'Save and Apply to All Subdecks'), action: handleApplyToSubdecks },
                             { label: l('Sil', 'Delete'), action: handleDeletePreset, destructive: true },
@@ -1400,9 +1467,50 @@ export default function DeckOptionsScreen() {
                         ))}
                     </View>
                 </View>
-            </Modal>
+            </Modal> : null}
 
-            <Modal visible={presetPickerOpen} transparent animationType="fade" onRequestClose={() => setPresetPickerOpen(false)}>
+            {deckPickerOpen ? <Modal visible transparent animationType="fade" onRequestClose={() => setDeckPickerOpen(false)}>
+                <View style={styles.modalOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setDeckPickerOpen(false)}
+                        accessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                    />
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>{l('Deste seç', 'Choose Deck')}</Text>
+                        <Text style={styles.modalDescription}>
+                            {l(
+                                'Ayarlarını düzenlemek istediğiniz üst veya alt desteyi seçin.',
+                                'Choose the parent deck or subdeck whose options you want to edit.',
+                            )}
+                        </Text>
+                        <ScrollView style={{ maxHeight: 360 }}>
+                            {deckScopes.map((scope) => (
+                                <TouchableOpacity
+                                    key={scope.deck.id}
+                                    style={[styles.presetOption, { paddingLeft: Math.min(scope.depth, 8) * 18 }]}
+                                    onPress={() => switchDeck(scope.deck.id)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: scope.deck.id === deck.id }}
+                                    accessibilityLabel={scope.pathLabel}
+                                >
+                                    <Text style={[
+                                        styles.presetOptionText,
+                                        scope.deck.id === deck.id && styles.presetOptionActive,
+                                    ]}>
+                                        {scope.depth > 0 ? '└ ' : ''}{scope.displayName}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeckPickerOpen(false)}>
+                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal> : null}
+
+            {presetPickerOpen ? <Modal visible transparent animationType="fade" onRequestClose={() => setPresetPickerOpen(false)}>
                 <View style={styles.modalOverlay}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
@@ -1414,12 +1522,17 @@ export default function DeckOptionsScreen() {
                         <ScrollView style={{ maxHeight: 320 }}>
                             {getAllDeckConfigs().map((preset) => {
                                 const presetDecks = getDecksUsingConfig(preset.id);
-                                const displayName = presetDisplayName(preset.id);
+                                const representative = presetDecks[0];
                                 return (
                                     <TouchableOpacity key={preset.id} style={styles.presetOption} onPress={() => switchPreset(preset.id)}>
                                         <Text style={[styles.presetOptionText, preset.id === configId && styles.presetOptionActive]}>
-                                            {displayName} · {l(`${presetDecks.length} deste`, `${presetDecks.length} decks`)}
+                                            {preset.name} · {l(`${presetDecks.length} deste`, `${presetDecks.length} decks`)}
                                         </Text>
+                                        {representative ? (
+                                            <Text style={styles.presetOptionMeta} numberOfLines={1}>
+                                                {representative.name.replaceAll('::', ' › ')}
+                                            </Text>
+                                        ) : null}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -1429,9 +1542,9 @@ export default function DeckOptionsScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
+            </Modal> : null}
 
-            <Modal visible={renameOpen} transparent animationType="fade" onRequestClose={() => setRenameOpen(false)}>
+            {renameOpen ? <Modal visible transparent animationType="fade" onRequestClose={() => setRenameOpen(false)}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
@@ -1459,7 +1572,7 @@ export default function DeckOptionsScreen() {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
-            </Modal>
+            </Modal> : null}
         </SafeAreaView>
     );
 }
@@ -1853,6 +1966,7 @@ function createStyles(colors: ColorScheme) {
             ...Shadows.lg,
         },
         modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+        modalDescription: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textMuted },
         modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.sm },
         actionMenu: {
             width: '100%',
@@ -1871,6 +1985,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomColor: colors.borderLight,
         },
         presetOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
+        presetOptionMeta: { marginTop: 2, fontSize: FontSize.xs, color: colors.textMuted },
         presetOptionActive: { color: colors.accent, fontWeight: '700' },
     });
 }

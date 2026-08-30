@@ -958,6 +958,8 @@ export default function EditorScreen() {
                     fontSize={editorPreferences.fontSize}
                     capitalizeSentences={editorPreferences.capitalizeSentences}
                     pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                    scrollMode="contained"
+                    maxHeight={320}
                     mountDelayMs={0}
                 />
 
@@ -993,6 +995,8 @@ export default function EditorScreen() {
                     fontSize={editorPreferences.fontSize}
                     capitalizeSentences={editorPreferences.capitalizeSentences}
                     pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                    scrollMode="contained"
+                    maxHeight={320}
                     mountDelayMs={140}
                 />
 
@@ -1028,6 +1032,8 @@ export default function EditorScreen() {
                             fontSize={editorPreferences.fontSize}
                             capitalizeSentences={editorPreferences.capitalizeSentences}
                             pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                            scrollMode="contained"
+                            maxHeight={320}
                             mountDelayMs={280}
                         />
                     </>
@@ -1508,6 +1514,7 @@ export default function EditorScreen() {
                                     card={previewPayload.card}
                                     deck={targetDeck}
                                     side="question"
+                                    scrollMode="intrinsic"
                                 />
                             )}
                             <Text style={styles.label}>{l('CEVAP', 'ANSWER')}</Text>
@@ -1519,6 +1526,7 @@ export default function EditorScreen() {
                                     deck={targetDeck}
                                     side="answer"
                                     omitFrontSide
+                                    scrollMode="intrinsic"
                                 />
                             )}
                         </ScrollView>

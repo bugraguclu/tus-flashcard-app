@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "c868ce3393ab3b820ae1b167d1be22ba8f5a74f0ad916a245eaa9fc90c3760dd",
+  "sha256": "8aa5cab3881e79d4c397aabff85093cd099ca712fc40eecf788125dd310baa53",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -576,7 +576,6 @@
     "CuK$Bdg=~W",
     "CwIF8Qo:H)",
     "Cwe*6[!za>",
-    "Cx-1|o,us)",
     "CxL!7y0;^$",
     "CxStrl-msb",
     "CxXV>9[e-]",
@@ -983,7 +982,6 @@
     "F=!?,q,8~;",
     "F>1![-E:SA",
     "F>Zl+!N|YE",
-    "F?O=#RF++N",
     "FAXiOe>Qff",
     "FAe/KQ=@+p",
     "FB|_:8LEc]",
@@ -1201,7 +1199,6 @@
     "GSL6u_TZb,",
     "GTlwyX1CEy",
     "GW)8sQyuuU",
-    "GWA0LViOfV",
     "GWs%23_6K-",
     "GW|->BNH0y",
     "GXZ>UX?z?b",
@@ -1278,7 +1275,6 @@
     "H#A*.;k1NR",
     "H#GT[KmeO;",
     "H#V[WSstcd",
-    "H#_R&1IF;`",
     "H#l#^ZFGlC",
     "H#wWe]^</@",
     "H$14rhX$OQ",
@@ -1334,7 +1330,6 @@
     "H9V|#+2n-[",
     "H9m%4uxV-;",
     "H;vfqw}N:,",
-    "H<-<PFZda$",
     "H<Wb5`sF@]",
     "H=UMFhXsy)",
     "H=e!<JqpG,",
@@ -1349,7 +1344,6 @@
     "HAu#&AIY(2",
     "HB.umU8]Q7",
     "HC7F^6|k8W",
-    "HFoX0{R;Q4",
     "HGHlaw8[%t",
     "HG`=`]to_g",
     "HH$gS7#OHm",
@@ -3567,7 +3561,6 @@
     "cw~ph7Y-cP",
     "cx!GbyZV2*",
     "cxf/Je0@:=",
-    "cy,`ZMPJrq",
     "cz)Tf{n}{{",
     "czb?p?~6LU",
     "c{>Eq,J>e]",
@@ -5057,7 +5050,6 @@
     "lE!/U*>]<T",
     "lEdm+UN?9S",
     "lE{[!DHv99",
-    "lF&,5H)h-[",
     "lF0^c{t?r|",
     "lFw7CbU@>W",
     "lGBrzHqN5I",
@@ -5176,7 +5168,6 @@
     "m(0s&t9ttW",
     "m)7qxu<#Tl",
     "m);9e+lJ<e",
-    "m);lN66KzP",
     "m)x+K)iNd*",
     "m*C/8)I3E@",
     "m*r_4l1nJ|",
@@ -5782,7 +5773,6 @@
     "pARZVSQB1#",
     "pAyw=Ezf1%",
     "pB[RNbDma;",
-    "pC!Si%k0AY",
     "pC*sSo~;8}",
     "pCwlsksW2#",
     "pDQx6Z%0AW",
@@ -6184,7 +6174,6 @@
     "rK7~ZG*O3L",
     "rL*0rw#,CE",
     "rM5!0Zi_a[",
-    "rM6t%Wcmw(",
     "rMl0}NRB@1",
     "rOSsU^>t&v",
     "rOe)v9Q%i5",
@@ -6395,7 +6384,6 @@
     "sW%43}S0pn",
     "sX<YT:bh]2",
     "sXJBrU9fYo",
-    "sZhn^CCS7&",
     "sZz_c$gFZ#",
     "s[m$,7/JXW",
     "s^QM6M(McU",
@@ -6503,7 +6491,6 @@
     "t6caN<W;hs",
     "t6uud-jQ*s",
     "t7VA)y0H&|",
-    "t8UM7#^,*Z",
     "t8]/eUvAmu",
     "t8d,Q%=`@w",
     "t90(qIvJH:",
@@ -6718,7 +6705,6 @@
     "uB7^#||8C.",
     "uBWY8D([MF",
     "uBe,moqKq0",
-    "uBfw<2AfF?",
     "uC1J:FT_nY",
     "uC]r6~PAH]",
     "uD)JS8gu)-",
@@ -7749,11 +7735,11 @@
     "~_nPud=(Z"
   ],
   "totals": {
-    "notes": 7735,
-    "cards": 9581,
+    "notes": 7721,
+    "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 3337,
+    "ungroupedCards": 3332,
     "media": 49
   },
   "courses": [
@@ -7763,13 +7749,13 @@
       "sourceDeckName": "Deneme ve Soru BKA",
       "sourceDeckId": 1748430717050,
       "icon": "📝",
-      "notes": 749,
-      "cards": 810,
+      "notes": 745,
+      "cards": 806,
       "topics": [
         {
           "name": "Deneme 1",
-          "notes": 118,
-          "cards": 124,
+          "notes": 115,
+          "cards": 121,
           "deck": true
         },
         {
@@ -7792,8 +7778,8 @@
         },
         {
           "name": "Genel",
-          "notes": 508,
-          "cards": 527,
+          "notes": 507,
+          "cards": 526,
           "deck": false
         }
       ]
@@ -7804,19 +7790,19 @@
       "sourceDeckName": "Anatomi BKA",
       "sourceDeckId": 1748430717051,
       "icon": "🫀",
-      "notes": 386,
+      "notes": 381,
       "cards": 477,
       "topics": [
         {
           "name": "Nöroanatomi",
-          "notes": 59,
-          "cards": 84,
+          "notes": 58,
+          "cards": 85,
           "deck": true
         },
         {
           "name": "Baş ve Boyun",
-          "notes": 99,
-          "cards": 131,
+          "notes": 95,
+          "cards": 130,
           "deck": true
         },
         {
@@ -7869,7 +7855,7 @@
       "sourceDeckName": "FHE BKA",
       "sourceDeckId": 1748430717052,
       "icon": "🩺",
-      "notes": 512,
+      "notes": 510,
       "cards": 597,
       "topics": [
         {
@@ -7886,7 +7872,7 @@
         },
         {
           "name": "Kardiyovasküler Fizyoloji",
-          "notes": 34,
+          "notes": 32,
           "cards": 37,
           "deck": true
         },
@@ -7946,13 +7932,13 @@
       "sourceDeckName": "Biyokimya BKA",
       "sourceDeckId": 1748430717053,
       "icon": "🧪",
-      "notes": 485,
-      "cards": 603,
+      "notes": 484,
+      "cards": 602,
       "topics": [
         {
           "name": "Proteinler",
           "notes": 112,
-          "cards": 153,
+          "cards": 154,
           "deck": true
         },
         {
@@ -7981,8 +7967,8 @@
         },
         {
           "name": "Genel",
-          "notes": 181,
-          "cards": 216,
+          "notes": 180,
+          "cards": 214,
           "deck": false
         }
       ]
@@ -8123,8 +8109,8 @@
       "sourceDeckName": "Farmakoloji BKA",
       "sourceDeckId": 1748430717056,
       "icon": "💊",
-      "notes": 670,
-      "cards": 828,
+      "notes": 669,
+      "cards": 827,
       "topics": [
         {
           "name": "Genel Farmakoloji ve Toksikoloji",
@@ -8182,8 +8168,8 @@
         },
         {
           "name": "Genel",
-          "notes": 373,
-          "cards": 435,
+          "notes": 372,
+          "cards": 434,
           "deck": false
         }
       ]
@@ -8194,7 +8180,7 @@
       "sourceDeckName": "Dahiliye BKA",
       "sourceDeckId": 1748430717057,
       "icon": "🩻",
-      "notes": 996,
+      "notes": 995,
       "cards": 1183,
       "topics": [
         {
@@ -8218,7 +8204,7 @@
         {
           "name": "Nefroloji",
           "notes": 70,
-          "cards": 97,
+          "cards": 98,
           "deck": true
         },
         {
@@ -8247,8 +8233,8 @@
         },
         {
           "name": "Genel",
-          "notes": 302,
-          "cards": 324,
+          "notes": 301,
+          "cards": 323,
           "deck": false
         }
       ]

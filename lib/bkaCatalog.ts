@@ -48,6 +48,12 @@ export const BKA_TRIAL_CARDS_PER_SUBDECK = 30;
 export type BkaCatalogTier = 'trial' | 'full';
 const ROOT_DECK_NAME_KEY = 'bka_tus_catalog_root_deck_v5';
 const SEPARATE_TRIAL_LAYOUT_KEY = 'bka_tus_separate_trial_deck_v1';
+/**
+ * Hash of the package the installed cards came from. A content correction ships as a new
+ * package, and a learner who already installed the old one has to end up with the corrected
+ * text — without this marker the installer sees "already installed" and never refreshes.
+ */
+const PACKAGE_VERSION_KEY = 'bka_tus_catalog_package_v1';
 const PROGRESS_KEY = CATALOG_PROGRESS_KEY;
 /** Pre-release builds replaced the whole collection with a trial tier; see removeLegacyBkaInstall. */
 const LEGACY_TIER_KEY = 'bka_tus_catalog_tier_v4';
@@ -875,7 +881,12 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
         isCatalogRow(row.value) && row.value.name === `${rootDeckName}::Deneme`
     ));
     const hasSeparateTrialLayout = tier !== 'trial' || readSetting(SEPARATE_TRIAL_LAYOUT_KEY) === 'true';
-    if (currentTier === tier && installedCards > 0 && !hasLegacyTrialWrapper && hasSeparateTrialLayout) {
+    // Cards installed from an older package are refreshed rather than left in place. The
+    // reinstall below stashes and restores study progress, so a correction costs the learner
+    // nothing but the seconds it takes to write the collection.
+    const hasCurrentPackage = readSetting(PACKAGE_VERSION_KEY) === BKA_MANIFEST.sha256;
+    if (currentTier === tier && installedCards > 0 && !hasLegacyTrialWrapper && hasSeparateTrialLayout
+        && hasCurrentPackage) {
         return {
             installed: false,
             rootDeckName: getBkaCatalogRootDeckName(),
@@ -927,6 +938,7 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     writeCatalogSubjects(snapshot.subjects);
     writeSetting(ROOT_DECK_NAME_KEY, snapshot.rootDeckName);
     writeSetting(BKA_CATALOG_INSTALL_KEY, tier);
+    writeSetting(PACKAGE_VERSION_KEY, BKA_MANIFEST.sha256);
     if (tier === 'trial') writeSetting(SEPARATE_TRIAL_LAYOUT_KEY, 'true');
     else {
         getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
@@ -1007,6 +1019,7 @@ export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
 
     if (noteIds.size === 0 && catalogDecks.length === 0) {
         db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+        db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
         return { removed: false, notes: 0, cards: 0, decks: 0, storedProgress: 0 };
     }
 
@@ -1084,6 +1097,7 @@ export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
 
     removeCatalogSubjects();
     db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+    db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
     db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
     compactDatabase();
 
@@ -1146,6 +1160,7 @@ export function removeLegacyBkaInstall(): boolean {
     db.runSync("DELETE FROM settings WHERE key LIKE 'bka_tus_%catalog%v4'");
     db.runSync('DELETE FROM settings WHERE key = ?', LEGACY_TIER_KEY);
     db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+    db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
     db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
     return true;
 }

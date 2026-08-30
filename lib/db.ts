@@ -6,6 +6,7 @@
 
 import { Platform } from 'react-native';
 import type { WebSQLiteDatabase } from './webDb';
+import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import { openFtsSafeDatabaseSync } from './sqliteOpenOptions';
 
 // Both expo-sqlite and the web wrapper implement this surface, so callers never
@@ -293,6 +294,35 @@ const migrations: Migration[] = [
                 CREATE INDEX IF NOT EXISTS idx_ac_sched
                 ON anki_cards(deckId, queue, due);
             `);
+        },
+    },
+    {
+        version: 10,
+        description: 'Store filtered-deck gather order using Anki ordinals',
+        up: (db) => {
+            // Filtered decks used to store a local order numbering in which 0 meant "order due".
+            // Anki's ordinals are stored from here on, so an imported deck and a locally built one
+            // finally mean the same thing; saved decks are rewritten once through the legacy table.
+            const rows = db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM decks');
+            for (const row of rows) {
+                let deck: Record<string, unknown>;
+                try {
+                    deck = JSON.parse(row.data) as Record<string, unknown>;
+                } catch {
+                    continue;
+                }
+                if (deck.isFiltered !== true) continue;
+
+                let changed = false;
+                for (const key of ['searchOrder', 'searchOrder2'] as const) {
+                    if (deck[key] === undefined || deck[key] === null) continue;
+                    const remapped = ankiFilteredOrderFromLegacy(deck[key]);
+                    if (remapped === deck[key]) continue;
+                    deck[key] = remapped;
+                    changed = true;
+                }
+                if (changed) db.runSync('UPDATE decks SET data = ? WHERE id = ?', JSON.stringify(deck), row.id);
+            }
         },
     },
 ];

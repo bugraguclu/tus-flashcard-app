@@ -362,16 +362,21 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(queue.cards.map((card) => card.cardId)).toEqual([1020]);
     });
 
-    it('applies the gather limit and the latest-added order', () => {
-        makeFiltered('deck:"Python"');
-        saveDeck({
-            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
-            description: '', collapsed: false, isFiltered: true,
-            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
-        });
+    it('applies the gather limit and Anki\'s added / reverse-added orders', () => {
+        // Gather order is stored with Anki's own ordinals: 5 is "order added", 7 is
+        // "latest added first" (proto Deck.Filtered.SearchTerm.Order).
+        const gatherWithOrder = (searchOrder: number) => {
+            makeFiltered('deck:"Python"');
+            saveDeck({
+                id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+                description: '', collapsed: false, isFiltered: true,
+                searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder,
+            });
+            return getStudyQueue({ settings, selectedDeckName: 'Oturum' }).cards.map((card) => card.cardId);
+        };
 
-        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
-        expect(queue.cards.map((card) => card.cardId)).toEqual([1030, 1020]);
+        expect(gatherWithOrder(5)).toEqual([1010, 1020]);
+        expect(gatherWithOrder(7)).toEqual([1030, 1020]);
     });
 
     it('merges a second filter without duplicating cards', () => {

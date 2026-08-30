@@ -34,7 +34,7 @@ export function DialogHost() {
         close();
         request.onCancel?.();
     };
-    const dismiss = isChoice ? undefined : isConfirm ? close : accept;
+    const dismiss = isChoice ? undefined : isConfirm ? cancel : accept;
     const icon = request.destructive ? '!' : isConfirm ? '?' : 'i';
 
     // Alerts have a single button, so dismissing (Escape / back) must still run the
@@ -74,7 +74,7 @@ export function DialogHost() {
                         {(isConfirm || isChoice) && (
                             <Pressable
                                 style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.buttonPressed]}
-                                onPress={isChoice ? cancel : close}
+                                onPress={cancel}
                                 accessibilityRole="button"
                             >
                                 <Text style={styles.cancelText}>{request.cancelLabel ?? t('common.cancel')}</Text>

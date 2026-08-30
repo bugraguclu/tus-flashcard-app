@@ -15,6 +15,7 @@ import {
     Switch,
     InteractionManager,
     ActivityIndicator,
+    useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -176,6 +177,7 @@ function formatNextDue(state: CardState, rolloverHour: number, locale: Supported
 }
 
 export default function BrowserScreen() {
+    const { height: windowHeight } = useWindowDimensions();
     const { t, l, locale, localeTag } = useI18n();
     const { settings } = useAppSettings();
     const {
@@ -1725,7 +1727,15 @@ export default function BrowserScreen() {
                     </View>
                     <View style={styles.previewBody}>
                         {previewNote && previewNoteType && previewRawCard ? (
-                            <CardWebView noteType={previewNoteType} note={previewNote} card={previewRawCard} deck={previewDeck} side={previewAnswerVisible ? 'answer' : 'question'} />
+                            <CardWebView
+                                noteType={previewNoteType}
+                                note={previewNote}
+                                card={previewRawCard}
+                                deck={previewDeck}
+                                side={previewAnswerVisible ? 'answer' : 'question'}
+                                scrollMode="contained"
+                                maxHeight={Math.max(260, Math.min(520, windowHeight - 210))}
+                            />
                         ) : <Text style={styles.modalCaption}>{tableMode === 'notes' ? l('Notun ilk kartı önizlenemedi.', "The note's first card could not be previewed.") : l('Kart önizlenemedi.', 'The card could not be previewed.')}</Text>}
                     </View>
                     <View style={styles.previewNavigation}>

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Linking, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { NoteType, Note, AnkiCard, Deck } from '../lib/models';
 import { renderCardHtml } from '../lib/templates';
@@ -14,8 +14,13 @@ import {
     parseTypeAnswerBridgeMessage,
     typeAnswerBridgeScript,
 } from '../lib/typeAnswerBridge';
+import {
+    embeddedWebViewLayout,
+    stableMeasuredHeight,
+    type EmbeddedWebViewScrollMode,
+} from '../lib/embeddedWebViewScroll';
 
-/** Used until the document reports its real height, and when no ceiling is supplied. */
+/** Intrinsic frame height used until the document reports its real height. */
 const DEFAULT_HEIGHT = 260;
 
 /**
@@ -53,6 +58,7 @@ const HINT_BINDER = `(function(){
  * resize the frame instead of being clipped.
  */
 const HEIGHT_REPORTER = `(function(){
+    var lastHeight = 0;
     function report(){
         var body = document.body;
         if (!body) return;
@@ -60,6 +66,8 @@ const HEIGHT_REPORTER = `(function(){
         // the viewport, so measuring it would lock the frame at whatever height it already has.
         var card = document.querySelector('.card');
         var height = card ? Math.ceil(card.getBoundingClientRect().height) : body.scrollHeight;
+        if (Math.abs(height - lastHeight) <= 1) return;
+        lastHeight = height;
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(String(height));
     }
     report();
@@ -108,9 +116,14 @@ interface CardWebViewProps {
     showAudioPlayButtons?: boolean;
     centerContent?: boolean;
     frameStyle?: 'card' | 'plain';
+    /**
+     * `intrinsic`: the parent owns vertical scrolling and this frame grows with its document.
+     * `contained`: this fixed-height frame owns vertical scrolling from its first render.
+     */
+    scrollMode: EmbeddedWebViewScrollMode;
     /** Never render shorter than this, so a one-word answer still has a card-sized surface. */
     minHeight?: number;
-    /** Never render taller than this. Longer cards scroll inside their own frame, Anki-style. */
+    /** Fixed viewport height for `contained` mode. */
     maxHeight?: number;
     /** Reports a non-interactive tap as normalized x/y coordinates within the visible card. */
     onCardTap?: (xRatio: number, yRatio: number) => void;
@@ -136,6 +149,7 @@ export default function CardWebView({
     showAudioPlayButtons = true,
     centerContent = false,
     frameStyle = 'card',
+    scrollMode,
     minHeight = 140,
     maxHeight,
     onCardTap,
@@ -143,16 +157,21 @@ export default function CardWebView({
     const colors = useThemeColors();
     const { l } = useI18n();
     const isDark = useIsDarkTheme();
+    const { height: windowHeight } = useWindowDimensions();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const plainFrame = frameStyle === 'plain';
-    // A fixed card frame either clips long questions or wastes half the phone screen on short
-    // ones. The rendered document measures itself and reports back, so the frame is exactly as
-    // tall as the card needs, up to the space the reviewer has available.
+    // Scroll ownership is a usage-context decision, never a consequence of an asynchronous
+    // height report. Reviewer cards grow intrinsically inside the outer ScrollView; a bounded
+    // preview gives the WebView a fixed viewport and enables its scrolling on the first frame.
     const [contentHeight, setContentHeight] = useState<number | null>(null);
-    const ceiling = maxHeight && maxHeight > minHeight ? maxHeight : undefined;
-    const measured = contentHeight ?? Math.min(ceiling ?? DEFAULT_HEIGHT, DEFAULT_HEIGHT);
-    const frameHeight = Math.round(Math.min(ceiling ?? measured, Math.max(minHeight, measured)));
-    const scrollsInside = contentHeight !== null && ceiling !== undefined && contentHeight > ceiling;
+    const layout = embeddedWebViewLayout({
+        scrollMode,
+        minHeight,
+        measuredHeight: contentHeight,
+        initialHeight: DEFAULT_HEIGHT,
+        containedHeight: maxHeight,
+    });
+    const { frameHeight, scrollEnabled: scrollsInside } = layout;
     const surfaceColor = plainFrame ? 'transparent' : colors.bgCard;
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
     const webViewRef = useRef<WebView | null>(null);
@@ -184,9 +203,8 @@ export default function CardWebView({
         platformClasses: ankiPlatformClasses(),
     });
     // The base template caps media at 60vh. Inside a self-sizing frame that unit would feed back
-    // into the measurement (smaller frame → smaller image → smaller frame), so media is capped
-    // against the reviewer's fixed budget instead.
-    const mediaCap = Math.round((ceiling ?? DEFAULT_HEIGHT) * 0.7);
+    // into measurement, so media is capped against the stable screen/contained-frame budget.
+    const mediaCap = Math.round((scrollMode === 'contained' ? frameHeight : windowHeight) * 0.7);
     const preferenceCss = `<style>
         /* Imported note types are written for Anki's full-screen reviewer: the AnKing templates
            stretch html/body/.card to the viewport height. In a frame that sizes itself to the
@@ -237,6 +255,7 @@ export default function CardWebView({
     const typedAnswerBinder = typeAnswerInCard && side === 'question'
         ? typeAnswerBridgeScript(typeAnswerToken, autoFocusTypeAnswer)
         : '';
+    const sizingScript = scrollMode === 'intrinsic' ? HEIGHT_REPORTER : `${HINT_BINDER}true;`;
 
     const openExternalLink = useCallback((rawUrl: string) => {
         const url = safeExternalCardUrl(rawUrl);
@@ -253,7 +272,7 @@ export default function CardWebView({
     }, [l]);
 
     // A new card starts unmeasured so the previous card's height is never reused.
-    useEffect(() => { setContentHeight(null); }, [html]);
+    useLayoutEffect(() => { setContentHeight(null); }, [html]);
 
     // Web media lives in IndexedDB, so bare filename refs must be swapped for object
     // URLs asynchronously; until that resolves the raw html renders (text is intact,
@@ -340,7 +359,7 @@ export default function CardWebView({
     }, [pauseAudioSignal]);
 
     if (Platform.OS === 'web') {
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:${plainFrame ? 0 : 12}px;background:${surfaceColor};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;}</style></head><body>${webHtml}</body></html>`;
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:${plainFrame ? 0 : 12}px;background:${surfaceColor};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};}</style></head><body>${webHtml}</body></html>`;
         return (
             <iframe
                 ref={iframeRef}
@@ -359,7 +378,9 @@ export default function CardWebView({
                             if (!target) return;
                             target.style.display = 'block';
                             anchor.style.display = 'none';
-                            setContentHeight(doc.body.scrollHeight);
+                            if (scrollMode === 'intrinsic') {
+                                setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));
+                            }
                         });
                     });
                     doc.querySelectorAll('a[href]:not(.hint)').forEach((link) => {
@@ -399,7 +420,9 @@ export default function CardWebView({
                             onCardTap(pointer.clientX / width, pointer.clientY / height);
                         }, true);
                     }
-                    setContentHeight(doc.body.scrollHeight);
+                    if (scrollMode === 'intrinsic') {
+                        setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));
+                    }
                 }}
                 style={{
                     border: 'none',
@@ -433,7 +456,7 @@ export default function CardWebView({
             originWhitelist={['about:blank', 'file://*']}
             source={nativeSource}
             style={[styles.webView, { height: frameHeight }, plainFrame && styles.webViewPlain]}
-            injectedJavaScript={`${HEIGHT_REPORTER}${tapReporter}${typedAnswerBinder}true;`}
+            injectedJavaScript={`${sizingScript}${tapReporter}${typedAnswerBinder}true;`}
             onMessage={(event) => {
                 const data = String(event.nativeEvent.data);
                 if (data.startsWith('AUDIO:')) {
@@ -458,8 +481,9 @@ export default function CardWebView({
                     }
                     return;
                 }
+                if (scrollMode !== 'intrinsic') return;
                 const reported = Number(data);
-                if (Number.isFinite(reported) && reported > 0) setContentHeight(reported);
+                setContentHeight((current) => stableMeasuredHeight(current, reported, minHeight));
             }}
             scrollEnabled={scrollsInside}
             nestedScrollEnabled={scrollsInside}
@@ -479,7 +503,8 @@ export default function CardWebView({
             allowUniversalAccessFromFileURLs={false}
             allowFileAccessFromFileURLs={false}
             onShouldStartLoadWithRequest={shouldStartNavigation}
-            automaticallyAdjustContentInsets
+            automaticallyAdjustContentInsets={false}
+            contentInsetAdjustmentBehavior="never"
             allowsPictureInPictureMediaPlayback={false}
             allowsAirPlayForMediaPlayback={false}
             useSharedProcessPool={false}

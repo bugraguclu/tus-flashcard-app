@@ -373,29 +373,24 @@ export async function saveSessionStats(stats: SessionStats): Promise<void> {
 }
 
 function syncDefaultDeckConfig(settings: AppSettings): void {
-    try {
-        const config = getDeckConfig(1);
-        config.newPerDay = settings.dailyNewLimit;
-        config.maxReviewsPerDay = settings.dailyReviewLimit;
-        config.learningSteps = [...settings.learningSteps];
-        config.relearningSteps = [...settings.lapseSteps];
-        config.graduatingIvl = settings.graduatingInterval;
-        config.easyIvl = settings.easyInterval;
-        config.startingEase = Math.round(settings.startingEase * 1000);
-        config.newIvlPercent = settings.lapseIntervalMultiplier;
-        config.minIvl = settings.minLapseInterval;
-        config.insertionOrder = settings.newCardOrder;
-        config.hardIvl = settings.hardIntervalMultiplier;
-        config.easyBonus = settings.easyBonus;
-        config.ivlModifier = settings.intervalModifier;
-        config.maxIvl = settings.maxInterval;
-        config.mod = Math.floor(Date.now() / 1000);
-        config.usn = -1;
-        saveDeckConfig(config);
-    } catch (e) {
-        console.warn('[Storage] syncDefaultDeckConfig failed:', e);
-        // DB may not be initialized yet.
-    }
+    const config = getDeckConfig(1);
+    config.newPerDay = settings.dailyNewLimit;
+    config.maxReviewsPerDay = settings.dailyReviewLimit;
+    config.learningSteps = [...settings.learningSteps];
+    config.relearningSteps = [...settings.lapseSteps];
+    config.graduatingIvl = settings.graduatingInterval;
+    config.easyIvl = settings.easyInterval;
+    config.startingEase = Math.round(settings.startingEase * 1000);
+    config.newIvlPercent = settings.lapseIntervalMultiplier;
+    config.minIvl = settings.minLapseInterval;
+    config.insertionOrder = settings.newCardOrder;
+    config.hardIvl = settings.hardIntervalMultiplier;
+    config.easyBonus = settings.easyBonus;
+    config.ivlModifier = settings.intervalModifier;
+    config.maxIvl = settings.maxInterval;
+    config.mod = Math.floor(Date.now() / 1000);
+    config.usn = -1;
+    saveDeckConfig(config);
 }
 
 function hydrateSettingsFromDeckConfig(base: AppSettings): AppSettings {
@@ -632,55 +627,87 @@ export function loadSettings(): AppSettings {
 }
 
 /** Resets only the app settings (not decks/cards/history) to factory defaults. */
-export function resetSettingsToDefaults(): void {
-    saveSettings({ ...DEFAULT_SETTINGS });
+export function resetSettingsToDefaults(): SaveSettingsResult {
+    return saveSettings({ ...DEFAULT_SETTINGS });
 }
 
-export function saveSettings(settings: AppSettings): void {
+export type SaveSettingsResult =
+    | { ok: true; settings: AppSettings }
+    | { ok: false; error: unknown };
+
+export function saveSettings(settings: AppSettings): SaveSettingsResult {
+    const db = getDB();
+    let transactionStarted = false;
     try {
         const validated = validateSettings(settings as unknown as Record<string, unknown>);
+        db.execSync('BEGIN TRANSACTION;');
+        transactionStarted = true;
         syncDefaultDeckConfig(validated);
         persistAppSettingsMeta(validated);
+        db.execSync('COMMIT;');
+        return { ok: true, settings: validated };
     } catch (e) {
         console.error('Settings kayıt hatası:', e);
+        if (transactionStarted) {
+            try {
+                db.execSync('ROLLBACK;');
+            } catch (rollbackError) {
+                console.error('[Storage] settings rollback failed:', rollbackError);
+            }
+        }
+        return { ok: false, error: e };
     }
 }
 
 // --- Reset ---
 export async function resetAllData(): Promise<void> {
+    const db = getDB();
+    let transactionStarted = false;
+    try {
+        db.execSync('BEGIN TRANSACTION;');
+        transactionStarted = true;
+        for (const table of [
+            'revlog',
+            'anki_cards',
+            'notes',
+            'decks',
+            'deck_configs',
+            'note_types',
+            'graves',
+            'cards_fts',
+            'session_stats',
+            'settings',
+        ]) {
+            db.execSync(`DELETE FROM ${table};`);
+        }
+        db.execSync('COMMIT;');
+        transactionStarted = false;
+    } catch (error) {
+        if (transactionStarted) {
+            try {
+                db.execSync('ROLLBACK;');
+            } catch (rollbackError) {
+                console.error('[Storage] resetAllData rollback failed:', rollbackError);
+            }
+        }
+        throw error;
+    }
+
+    // Re-seed only after the destructive transaction commits. Any failure is propagated to the
+    // UI; the pre-reset backup remains available for recovery.
+    initAnkiData();
+    migrateLegacySubjectTopicsToDecks();
+    const settingsResult = saveSettings({ ...DEFAULT_SETTINGS });
+    if (!settingsResult.ok) throw settingsResult.error;
+    dbIndexAllCards(getSearchIndexCards());
+
+    // Legacy keys are removed last. A database failure therefore cannot erase their only copy.
     await Promise.all([
         clearLegacyCardStates(),
         AsyncStorage.removeItem(KEYS.SESSION_STATS),
         AsyncStorage.removeItem(KEYS.CUSTOM_CARDS),
         AsyncStorage.removeItem(KEYS.SETTINGS),
     ]);
-
-    try {
-        const db = getDB();
-
-        db.execSync(`
-            BEGIN TRANSACTION;
-            DELETE FROM revlog;
-            DELETE FROM anki_cards;
-            DELETE FROM notes;
-            DELETE FROM decks;
-            DELETE FROM deck_configs;
-            DELETE FROM note_types;
-            DELETE FROM graves;
-            DELETE FROM cards_fts;
-            DELETE FROM session_stats;
-            DELETE FROM settings;
-            COMMIT;
-        `);
-
-        initAnkiData();
-        migrateLegacySubjectTopicsToDecks();
-        saveSettings({ ...DEFAULT_SETTINGS });
-        dbIndexAllCards(getSearchIndexCards());
-    } catch (e) {
-        console.warn('[Storage] resetAllData DB cleanup failed:', e);
-        /* Database may not be initialized yet. */
-    }
 }
 
 // --- Export / Import ---

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     commitBoundedInteger,
+    sanitizeSignedIntegerDraft,
     sanitizeUnsignedIntegerDraft,
     stepBoundedIntegerDraft,
 } from './boundedNumber';
@@ -33,5 +34,23 @@ describe('bounded numeric preference input', () => {
     it('uses the persisted value when an active draft is empty', () => {
         expect(stepBoundedIntegerDraft('', 25, 5, 0, 120)).toBe(30);
         expect(stepBoundedIntegerDraft('', 25, Number.NaN, 0, 120)).toBe(25);
+    });
+});
+
+describe('signed integer drafts', () => {
+    it('keeps a single leading minus and discards everything else', () => {
+        expect(sanitizeSignedIntegerDraft('-42')).toBe('-42');
+        expect(sanitizeSignedIntegerDraft('-4-2')).toBe('-42');
+        expect(sanitizeSignedIntegerDraft('4-2')).toBe('42');
+        expect(sanitizeSignedIntegerDraft('-')).toBe('-');
+        expect(sanitizeSignedIntegerDraft('-1234', 2)).toBe('-12');
+    });
+
+    it('commits a negative draft inside a range that allows it', () => {
+        expect(commitBoundedInteger('-20', 0, -99, 99)).toBe(-20);
+        expect(commitBoundedInteger('-200', 0, -99, 99)).toBe(-99);
+        // A range that starts at zero still refuses to go below it.
+        expect(commitBoundedInteger('-20', 5, 0, 99)).toBe(0);
+        expect(commitBoundedInteger('-', 7, -99, 99)).toBe(7);
     });
 });

@@ -1,3 +1,4 @@
+import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import type { AppLanguage } from './types';
 
 export type SupportedLocale = 'tr' | 'en';
@@ -145,7 +146,6 @@ const tr = {
     'tabs.cards': 'Kartlar',
     'tabs.statistics': 'İstatistik',
     'tabs.settings': 'Ayarlar',
-    'tabs.loadingApp': 'TusAnkiM yükleniyor…',
     'tabs.openMenu': 'Menüyü aç',
     'tabs.closeMenu': 'Menüyü kapat',
     'tabs.backToDecks': 'Deste listesine dön',
@@ -304,7 +304,6 @@ const en: Record<TranslationKey, string> = {
     'tabs.cards': 'Cards',
     'tabs.statistics': 'Stats',
     'tabs.settings': 'Settings',
-    'tabs.loadingApp': 'Loading TusAnkiM…',
     'tabs.openMenu': 'Open menu',
     'tabs.closeMenu': 'Close menu',
     'tabs.backToDecks': 'Back to deck list',
@@ -369,34 +368,37 @@ export function localizeNoteTypeName(locale: SupportedLocale, name: string): str
     return name;
 }
 
-/** Display labels for Anki filtered-deck gather order; the stored numeric value never changes. */
-export function filteredOrderLabel(locale: SupportedLocale, index: number): string {
+/**
+ * Display labels for Anki's filtered-deck gather order, indexed by Anki's own ordinal.
+ * See lib/filteredDeckOptions.ts for the ordinal table.
+ */
+export function filteredOrderLabel(locale: SupportedLocale, order: number): string {
     const labels = locale === 'tr'
         ? [
-            'Vade sırası',
+            'En eski görülen önce',
             'Rastgele',
             'Aralıklar (artan)',
             'Aralıklar (azalan)',
-            'Ekleniş sırası',
-            'Son eklenen önce',
             'En çok unutulan',
-            'En eski görülen önce',
+            'Ekleniş sırası',
+            'Vade sırası',
+            'Son eklenen önce',
             'Hatırlanabilirlik (artan)',
             'Hatırlanabilirlik (azalan)',
         ]
         : [
-            'Order due',
+            'Oldest seen first',
             'Random',
             'Increasing intervals',
             'Decreasing intervals',
-            'Order added',
-            'Latest added first',
             'Most lapses',
-            'Oldest seen first',
+            'Order added',
+            'Order due',
+            'Latest added first',
             'Ascending retrievability',
             'Descending retrievability',
         ];
-    return labels[index] ?? labels[0];
+    return labels[order] ?? labels[FILTERED_SEARCH_ORDER.due];
 }
 
 export function cardFlagName(locale: SupportedLocale, flag: number): string {

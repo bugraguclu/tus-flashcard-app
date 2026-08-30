@@ -18,7 +18,10 @@
 - RevenueCat entitlement: `bka_tus_complete`
 - RevenueCat offering: `default`
 
-İlk non-consumable ürün uygulamanın yeni sürümüyle aynı inceleme gönderimine eklenmelidir. İnceleme ekran görüntüsü, mağaza ekranını ve 1.500 TL fiyatı açıkça göstermeli; desteklenen iPhone ekran görüntüsü ölçülerinden biri kullanılmalıdır.
+Bu ürün yalnız ödeme yeniden etkinleştirilecek gelecekteki bir sürüm içindir. Mevcut ücretsiz build ile
+App Store Connect incelemesine eklenmemeli, metadata veya ekran görüntülerinde tanıtılmamalıdır. Gelecekte
+etkinleştirilirse ilk non-consumable ürün ilgili uygulama sürümüyle aynı inceleme gönderimine eklenmeli ve
+gerçek fiyatı gösteren ayrı IAP inceleme görseli sağlanmalıdır.
 
 ## App Review notu
 
@@ -39,7 +42,18 @@ toplanmaz. `NSPrivacyCollectedDataTypes` boştur; kart içeriği ve çalışma g
 Ödeme yolu yeniden etkinleştirilirse Purchase History beyanı, RevenueCat gizlilik bildirimi ve App Store
 Privacy cevapları aynı sürümde yeniden eklenmelidir.
 
-## İnceleme öncesi mağaza kontrolleri
+## Mevcut ücretsiz sürüm için inceleme öncesi kontroller
+
+- [ ] Production build `EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED=false` ile alındı.
+- [ ] App Store metadata ve ekran görüntüleri yalnız ücretsiz açma akışını anlatıyor.
+- [ ] Dormant non-consumable ürün bu sürümün inceleme gönderimine eklenmedi.
+- [ ] Paket ağ, Apple hesabı veya RevenueCat olmadan kurulabiliyor.
+- [ ] 6,9 inç iPhone ekran görüntüleri alfa kanalsız yüklendi.
+- [ ] Gizlilik, destek ve koşullar URL’leri herkese açık ve HTTPS üzerinden erişilebilir.
+- [ ] Güncel yaş derecelendirme soruları yanıtlandı.
+- [ ] İçerik hakları beyanı yalnızca gerekli dağıtım lisansı doğrulandıktan sonra onaylandı.
+
+## Gelecekte ödeme yeniden etkinleştirilirse
 
 - [ ] Paid Apps Agreement kabul edildi; banka ve vergi bilgileri tamamlandı.
 - [ ] Non-consumable fiyat ve Türkiye kullanılabilirliği ayarlandı.
@@ -48,7 +62,3 @@ Privacy cevapları aynı sürümde yeniden eklenmelidir.
 - [ ] Sandbox’ta başarı, kullanıcı iptali, Ask to Buy/deferred, ağ hatası ve restore sınandı.
 - [ ] İlk IAP, 1.0.0 uygulama sürümüyle aynı gönderime eklendi.
 - [ ] App Review screenshot yüklendi.
-- [ ] 6,9 inç iPhone ekran görüntüleri alfa kanalsız yüklendi.
-- [ ] Gizlilik, destek ve koşullar URL’leri herkese açık ve HTTPS üzerinden erişilebilir.
-- [ ] Güncel yaş derecelendirme soruları yanıtlandı.
-- [ ] İçerik hakları beyanı yalnızca imzalı ticari lisans alındıktan sonra onaylandı.

@@ -12,7 +12,7 @@ import {
     Platform,
     ToastAndroid,
 } from 'react-native';
-import { Slot, usePathname, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
 import { getNavigationCardCounts } from '../../lib/noteManager';
@@ -258,9 +258,22 @@ export default function TabLayout() {
         // The drawer belongs to the active study scope. Opening Kartlarım from a root deck or a
         // deeply nested subdeck must browse that exact branch, never the whole collection.
         const target = path === '/browser' ? getScopedBrowserPath(activeDeckName) : path;
-        router.push(target as any);
+        const targetPathname = target.split('?')[0] || '/';
+
+        if (targetPathname === pathname) {
+            // Re-selecting the screen already on top is a scope change, not a screen change:
+            // update its params in place instead of stacking a second copy of the reviewer.
+            router.replace(target as any);
+        } else if (targetPathname === '/decks') {
+            // The deck list is the root of this stack. Returning to it pops back with the
+            // native pop animation rather than pushing a second deck list over the reviewer.
+            router.dismissTo(target as any);
+        } else {
+            router.push(target as any);
+        }
+
         if (!isWide) setSidebarOpen(false);
-    }, [activeDeckName, isWide, router]);
+    }, [activeDeckName, isWide, pathname, router]);
 
     const handleSubjectPress = (subjectId: string) => {
         setSelectedSubject(subjectId);
@@ -301,15 +314,6 @@ export default function TabLayout() {
         // Inside a deck, "Tüm Dersler" means that whole deck — not the whole collection.
         navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/');
     };
-
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.loadingEmoji}>🧠</Text>
-                <Text style={styles.loadingText}>{t('tabs.loadingApp')}</Text>
-            </View>
-        );
-    }
 
     return (
         <View style={styles.container} {...fullScreenDrawerPanResponder.panHandlers}>
@@ -376,7 +380,18 @@ export default function TabLayout() {
                             </Text>
                         </View>
                     ) : (
-                        <Slot />
+                        <Stack
+                            screenOptions={{
+                                headerShown: false,
+                                contentStyle: { backgroundColor: colors.bgPrimary },
+                                // A Slot renders one child with no transition and tears the
+                                // previous screen down, so switching between the deck list and
+                                // the reviewer rebuilt a 2,000-line screen with no animation and
+                                // lost its scroll position. A real stack keeps both alive, gives
+                                // iOS its push/pop and back gesture, and freezes what is behind.
+                                freezeOnBlur: true,
+                            }}
+                        />
                     )}
                 </View>
             </View>
@@ -387,14 +402,6 @@ export default function TabLayout() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.bgPrimary,
-    },
-    loadingEmoji: { fontSize: 48, marginBottom: 12 },
-    loadingText: { fontSize: FontSize.lg, color: colors.textMuted, fontWeight: '500' },
     appLayout: { flex: 1, flexDirection: 'row' },
 
     mobileHeader: {

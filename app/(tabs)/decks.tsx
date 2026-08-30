@@ -40,8 +40,6 @@ import {
     deleteDeck,
     renameDeck,
     moveDeckUnder,
-    addDeckTodayBoost,
-    createOrReplaceCustomStudySession,
     updateFilteredDeck,
     rebuildFilteredDeck,
     setDeckCollapsed,
@@ -64,6 +62,7 @@ import {
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel, formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
+import CustomStudyModal from '../../components/CustomStudyModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
@@ -75,8 +74,7 @@ import {
     getBkaCatalogTier,
 } from '../../lib/bkaCatalog';
 import { requestDeckShortcut } from '../../modules/deck-shortcuts';
-import { sanitizeUnsignedIntegerDraft } from '../../lib/boundedNumber';
-import { FILTERED_DECK_ORDER_UI } from '../../lib/filteredDeckOptions';
+import { FILTERED_DECK_ORDER_UI, FILTERED_SEARCH_ORDER } from '../../lib/filteredDeckOptions';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
 import { getDeckListSnapshot } from '../../lib/deckListSnapshot';
@@ -214,12 +212,6 @@ export default function DecksScreen() {
     const [renameText, setRenameText] = useState('');
     const [newSubdeckName, setNewSubdeckName] = useState('');
     const [descriptionText, setDescriptionText] = useState('');
-    const [boostNew, setBoostNew] = useState('10');
-    const [boostReview, setBoostReview] = useState('20');
-    const [customLimit, setCustomLimit] = useState('50');
-    const [customTag, setCustomTag] = useState('');
-    const [forgottenDays, setForgottenDays] = useState('7');
-    const [aheadDays, setAheadDays] = useState('3');
     // Filtered-deck options form.
     const [filterSearch, setFilterSearch] = useState('');
     const [filterLimit, setFilterLimit] = useState('100');
@@ -519,8 +511,9 @@ export default function DecksScreen() {
         setFilterLimit('100');
         setFilterOrder(1);
         setFilterSearch2('');
-        setFilterLimit2('100');
-        setFilterOrder2(1);
+        // Anki's second filter starts at twenty cards in due order.
+        setFilterLimit2('20');
+        setFilterOrder2(FILTERED_SEARCH_ORDER.due);
         setFilterSecondEnabled(false);
         setFilterReschedule(true);
         setFilterAllowEmpty(false);
@@ -739,25 +732,17 @@ export default function DecksScreen() {
         }
     };
 
-    const openCustomStudy = (deck: Deck) => {
-        setBoostNew('10');
-        setBoostReview('20');
-        setCustomLimit('50');
-        setCustomTag('');
-        setForgottenDays('7');
-        setAheadDays('3');
-        setModal({ kind: 'custom', deck });
-    };
+    const openCustomStudy = (deck: Deck) => setModal({ kind: 'custom', deck });
 
     const openFilterOptions = (deck: Deck) => {
         setNewFilteredDeckName(deck.name);
         setFilteredDeckScreenTitle(getDeckDisplayName(deck.name));
         setFilterSearch(deck.searchQuery ?? '');
         setFilterLimit(String(deck.searchLimit ?? 100));
-        setFilterOrder(deck.searchOrder ?? 0);
+        setFilterOrder(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due);
         setFilterSearch2(deck.searchQuery2 ?? '');
         setFilterLimit2(String(deck.searchLimit2 ?? 100));
-        setFilterOrder2(deck.searchOrder2 ?? 0);
+        setFilterOrder2(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due);
         setFilterSecondEnabled(Boolean(deck.searchQuery2?.trim()));
         setFilterReschedule(deck.reschedule ?? true);
         setFilterAllowEmpty(deck.filteredAllowEmpty ?? false);
@@ -806,26 +791,6 @@ export default function DecksScreen() {
     };
 
     /** Custom study variants (forgotten / ahead / preview): build the session and offer to study. */
-    const handleCreateSpecialSession = (search: string, options: { reschedule: boolean; searchOrder: number }) => {
-        if (modal?.kind !== 'custom') return;
-        const deck = modal.deck;
-        try {
-            const session = createOrReplaceCustomStudySession(deck.id, search, 999, options);
-            setModal(null);
-            refresh();
-            if (session) {
-                updateExpandedDecks((prev) => new Set(prev).add(deck.name));
-                confirm(
-                    l('Özel çalışma oturumu hazır', 'Custom Study session ready'),
-                    l(`"${getDeckDisplayName(session.name)}" güncellendi. Şimdi çalışmak ister misiniz?`, `"${getDeckDisplayName(session.name)}" was updated. Study now?`),
-                    () => handleStudy(session.name),
-                );
-            }
-        } catch (e) {
-            console.warn('[Decks] special session failed:', e);
-            alert(t('common.error'), l('Özel çalışma oturumu oluşturulamadı.', 'Could not create the Custom Study session.'));
-        }
-    };
 
     const handleRename = () => {
         if (modal?.kind !== 'rename') return;
@@ -849,39 +814,7 @@ export default function DecksScreen() {
         }
     };
 
-    const handleBoost = (extraNew: number, extraReview: number) => {
-        if (modal?.kind !== 'custom') return;
-        addDeckTodayBoost(modal.deck.id, extraNew, extraReview, settings.dayRolloverHour);
-        setModal(null);
-        refresh();
-        alert(l('✅ Bugünkü limit artırıldı', '✅ Today’s limit increased'), extraNew > 0
-            ? l(`Bugün bu desteden ${extraNew} ek yeni kart gösterilecek.`, `${extraNew} additional new cards will be shown from this deck today.`)
-            : l(`Bugün bu destede ${extraReview} ek tekrara izin verildi.`, `${extraReview} additional reviews are allowed in this deck today.`));
-    };
 
-    const handleCreateCustomSession = () => {
-        if (modal?.kind !== 'custom') return;
-        const deck = modal.deck;
-        const tag = customTag.trim();
-        const search = tag ? `deck:"${deck.name}" tag:"${tag}"` : `deck:"${deck.name}"`;
-
-        try {
-            const session = createOrReplaceCustomStudySession(deck.id, search, parseCount(customLimit, 50) || 50);
-            setModal(null);
-            refresh();
-            if (session) {
-                updateExpandedDecks((prev) => new Set(prev).add(deck.name));
-                confirm(
-                    l('Özel çalışma oturumu hazır', 'Custom Study session ready'),
-                    l(`"${getDeckDisplayName(session.name)}" oluşturuldu. Şimdi çalışmak ister misiniz?`, `"${getDeckDisplayName(session.name)}" was created. Study now?`),
-                    () => handleStudy(session.name),
-                );
-            }
-        } catch (e) {
-            console.warn('[Decks] custom study failed:', e);
-            alert(t('common.error'), l('Özel çalışma oturumu oluşturulamadı.', 'Could not create the Custom Study session.'));
-        }
-    };
 
     const handleDelete = (deck: Deck) => {
         confirm(
@@ -1705,161 +1638,6 @@ export default function DecksScreen() {
         </SwipeDismissSheet>
     );
 
-    const renderCustomModal = (deck: Deck) => (
-        <SwipeDismissSheet
-            style={[styles.modalCard, isCompact && styles.modalCardCompact, styles.modalCardScrollable]}
-            enabled={isCompact}
-            onDismiss={() => setModal(null)}
-        >
-            <ScrollView
-                style={styles.modalSheetScroll}
-                contentContainerStyle={[
-                    styles.modalCardScrollContent,
-                    isCompact && styles.modalCardScrollContentCompact,
-                ]}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                <Text style={styles.modalTitle}>{t('anki.customStudy')} — {getDeckDisplayName(deck.name)}</Text>
-
-                <View style={styles.customSection}>
-                <Text style={styles.fieldLabel}>{l('Bugünkü yeni kart limitini artır', 'Increase today’s new card limit')}</Text>
-                <View style={styles.inlineRow}>
-                    <TextInput
-                        style={[styles.modalInput, styles.inlineInput]}
-                        value={boostNew}
-                        onChangeText={(value) => setBoostNew(sanitizeUnsignedIntegerDraft(value, 4))}
-                        maxLength={4}
-                        keyboardType="number-pad"
-                    />
-                    <TouchableOpacity
-                        style={styles.modalBtnPrimary}
-                        onPress={() => handleBoost(parseCount(boostNew, 0), 0)}
-                    >
-                        <Text style={styles.modalBtnPrimaryText}>{l('Uygula', 'Apply')}</Text>
-                    </TouchableOpacity>
-                </View>
-                </View>
-
-                <View style={styles.customSection}>
-                <Text style={styles.fieldLabel}>{l('Bugünkü tekrar limitini artır', 'Increase today’s review limit')}</Text>
-                <View style={styles.inlineRow}>
-                    <TextInput
-                        style={[styles.modalInput, styles.inlineInput]}
-                        value={boostReview}
-                        onChangeText={(value) => setBoostReview(sanitizeUnsignedIntegerDraft(value, 4))}
-                        maxLength={4}
-                        keyboardType="number-pad"
-                    />
-                    <TouchableOpacity
-                        style={styles.modalBtnPrimary}
-                        onPress={() => handleBoost(0, parseCount(boostReview, 0))}
-                    >
-                        <Text style={styles.modalBtnPrimaryText}>{l('Uygula', 'Apply')}</Text>
-                    </TouchableOpacity>
-                </View>
-                </View>
-
-                <View style={styles.customSection}>
-                <Text style={styles.fieldLabel}>{l('Çalışma oturumu oluştur (filtrelenmiş deste)', 'Create a study session (Filtered Deck)')}</Text>
-                <View style={styles.inlineRow}>
-                    <TextInput
-                        style={[styles.modalInput, styles.inlineInput]}
-                        value={customLimit}
-                        onChangeText={(value) => setCustomLimit(sanitizeUnsignedIntegerDraft(value, 4))}
-                        maxLength={4}
-                        keyboardType="number-pad"
-                        placeholder={l('Kart sayısı', 'Card count')}
-                        placeholderTextColor={colors.textMuted}
-                    />
-                    <TextInput
-                        style={[styles.modalInput, styles.inlineInput]}
-                        value={customTag}
-                        onChangeText={setCustomTag}
-                        placeholder={l('Etiket (isteğe bağlı)', 'Tag (optional)')}
-                        placeholderTextColor={colors.textMuted}
-                    />
-                </View>
-                <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleCreateCustomSession}>
-                    <Text style={styles.modalBtnPrimaryText}>🎯 {l('Oturum oluştur', 'Create Session')}</Text>
-                </TouchableOpacity>
-                </View>
-
-                <View style={styles.customSection}>
-                <Text style={styles.fieldLabel}>{l('Unutulanları çalış (son N günde “Tekrar” verilenler)', 'Review forgotten cards (answered Again in the last N days)')}</Text>
-                <View style={styles.inlineRow}>
-                    <TextInput
-                        style={[styles.modalInput, styles.inlineInput]}
-                        value={forgottenDays}
-                        onChangeText={(value) => setForgottenDays(sanitizeUnsignedIntegerDraft(value, 4))}
-                        maxLength={4}
-                        keyboardType="number-pad"
-                        placeholder={l('Gün', 'Days')}
-                        placeholderTextColor={colors.textMuted}
-                    />
-                    <TouchableOpacity
-                        style={styles.modalBtnPrimary}
-                        onPress={() => handleCreateSpecialSession(
-                            `deck:"${deck.name}" rated:${parseCount(forgottenDays, 7) || 7}:1`,
-                            { reschedule: true, searchOrder: 6 },
-                        )}
-                    >
-                        <Text style={styles.modalBtnPrimaryText}>{t('common.create')}</Text>
-                    </TouchableOpacity>
-                </View>
-                </View>
-
-                <View style={styles.customSection}>
-                <Text style={styles.fieldLabel}>{l('İleriye çalış (N gün içinde zamanı gelecekler)', 'Study ahead (cards due within N days)')}</Text>
-                <View style={styles.inlineRow}>
-                    <TextInput
-                        style={[styles.modalInput, styles.inlineInput]}
-                        value={aheadDays}
-                        onChangeText={(value) => setAheadDays(sanitizeUnsignedIntegerDraft(value, 4))}
-                        maxLength={4}
-                        keyboardType="number-pad"
-                        placeholder={l('Gün', 'Days')}
-                        placeholderTextColor={colors.textMuted}
-                    />
-                    <TouchableOpacity
-                        style={styles.modalBtnPrimary}
-                        onPress={() => handleCreateSpecialSession(
-                            `deck:"${deck.name}" prop:due<=${parseCount(aheadDays, 3) || 3}`,
-                            { reschedule: true, searchOrder: 0 },
-                        )}
-                    >
-                        <Text style={styles.modalBtnPrimaryText}>{t('common.create')}</Text>
-                    </TouchableOpacity>
-                </View>
-                </View>
-
-                <View style={styles.customSection}>
-                <Text style={styles.fieldLabel}>{l('Yeni kartları önizle (zamanlamayı değiştirmez)', 'Preview new cards (does not affect scheduling)')}</Text>
-                <TouchableOpacity
-                    style={styles.modalBtnPrimary}
-                    onPress={() => handleCreateSpecialSession(
-                        `deck:"${deck.name}" is:new`,
-                        { reschedule: false, searchOrder: 4 },
-                    )}
-                >
-                    <Text style={styles.modalBtnPrimaryText}>👁️ {l('Önizleme oturumu', 'Preview Session')}</Text>
-                </TouchableOpacity>
-                </View>
-
-                <Text style={styles.modalHint}>
-                    {l(
-                        'Seçtiğiniz işlem mevcut “Özel Çalışma” oturumunu yeniden oluşturur. Bu oturumu korumak istiyorsanız yeni bir işlem başlatmadan önce adını değiştirin.',
-                        'The selected action rebuilds the existing Custom Study session. To keep that session, rename it before starting another action.',
-                    )}
-                </Text>
-
-                <TouchableOpacity style={styles.modalCancel} onPress={() => setModal(null)}>
-                    <Text style={styles.modalCancelText}>{t('common.close')}</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        </SwipeDismissSheet>
-    );
-
     const renderFilterModal = (deck?: Deck) => {
         const isCreating = !deck;
         const buildDisabled = !newFilteredDeckName.trim()
@@ -2653,7 +2431,8 @@ export default function DecksScreen() {
             )}
 
             <Modal
-                visible={modal !== null}
+                // Custom study brings its own sheet, so it stays out of this shared container.
+                visible={modal !== null && modal.kind !== 'custom'}
                 transparent
                 animationType={isFilteredDeckModal
                     ? 'slide'
@@ -2694,11 +2473,24 @@ export default function DecksScreen() {
                     {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
                     {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
                     {modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
-                    {modal?.kind === 'custom' && renderCustomModal(modal.deck)}
                     {modal?.kind === 'filter' && renderFilterModal(modal.deck)}
                     {modal?.kind === 'create-filter' && renderFilterModal()}
                 </KeyboardAvoidingView>
             </Modal>
+
+            {modal?.kind === 'custom' && (
+                <CustomStudyModal
+                    visible
+                    deck={modal.deck}
+                    settings={settings}
+                    onClose={() => setModal(null)}
+                    onChanged={refresh}
+                    onStudy={(deckName) => {
+                        updateExpandedDecks((previous) => new Set(previous).add(deckName));
+                        handleStudy(deckName);
+                    }}
+                />
+            )}
         </SafeAreaView>
     );
 }
@@ -3642,11 +3434,6 @@ function createStyles(colors: ColorScheme) {
         color: colors.textPrimary,
         marginBottom: Spacing.md,
     },
-    modalHint: {
-        fontSize: FontSize.sm,
-        color: colors.textMuted,
-        marginBottom: Spacing.sm,
-    },
     descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
     fieldLabel: {
         fontSize: FontSize.sm,
@@ -3666,12 +3453,6 @@ function createStyles(colors: ColorScheme) {
         fontSize: FontSize.md,
         color: colors.textPrimary,
         marginBottom: Spacing.sm,
-    },
-    inlineRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-    inlineInput: { flex: 1, marginBottom: 0 },
-    customSection: {
-        marginBottom: Spacing.lg,
-        gap: 6,
     },
     modalActions: {
         flexDirection: 'row',

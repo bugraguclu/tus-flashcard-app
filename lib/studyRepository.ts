@@ -1,4 +1,5 @@
 import { getDB } from './db';
+import { CUSTOM_STUDY_MAX_VALUE } from './customStudy';
 import { getAllSubjects, getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
 import type { AnkiCard, Deck, Note, DeckConfig, NoteType } from './models';
@@ -301,6 +302,7 @@ interface SearchFragment {
  *   flag:0-7     — the card's flag (low three bits of c.flags)
  *   is:<state>   — new / learn / review / relearn / due / suspended / buried[-sibling|-manually]
  *   rated:N[:E]  — answered in the last N study days, optionally with ease E
+ *   added:N      — created in the last N study days
  *   prop:<key><op>N — ivl / reps / lapses / ease / pos / due
  *   <term>       — substring match on sfld, note data, and tags
  */
@@ -390,6 +392,21 @@ function clauseForSearchTerm(term: string): SearchFragment | null {
         }
         return {
             sql: 'c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease > 0)',
+            params: [cutoff],
+        };
+    }
+
+    // Anki's `added:N`: cards created within the last N study days, the window aligned to the day
+    // rollover exactly as `rated:` is. The creation stamp is `created_at`, falling back to the card
+    // id for rows written before that column existed — the same value lib/cardSearchMatch.ts reads,
+    // so the term means one thing in a filtered deck and in the browser.
+    if (term.startsWith('added:')) {
+        const days = Number(unquote(term.slice(6)));
+        if (!Number.isFinite(days) || days <= 0) return null;
+        const cutoff = nextRolloverMs(Date.now(), collectionSearchSettings().rolloverHour)
+            - Math.min(365, Math.floor(days)) * 86400000;
+        return {
+            sql: '(CASE WHEN c.created_at > 0 THEN c.created_at ELSE c.id END) >= ?',
             params: [cutoff],
         };
     }
@@ -936,19 +953,22 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): voi
 }
 
 /** SQL ORDER BY for a filtered deck's gather order (see FILTERED_ORDERS in models). */
+/** Gather order for one filtered-deck term, keyed by Anki's `SearchTerm.Order` ordinal. */
 function filteredOrderSql(order: number | undefined): string {
     switch (order) {
+        case 0: return 'COALESCE((SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id), 0) ASC, c.id ASC';
         case 1: return 'RANDOM()';
         case 2: return 'c.ivl ASC, c.id ASC';
         case 3: return 'c.ivl DESC, c.id ASC';
-        case 4: return 'c.id ASC';
-        case 5: return 'c.id DESC';
-        case 6: return 'c.lapses DESC, c.id ASC';
-        case 7: return 'COALESCE((SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id), 0) ASC, c.id ASC';
+        case 4: return 'c.lapses DESC, c.id ASC';
+        case 5: return 'c.id ASC';
+        case 7: return 'c.id DESC';
         // The local scheduler does not persist FSRS stability per card. Relative overdue time
         // is the closest deterministic retrievability proxy and matches Anki's SM-2 intent:
-        // cards further beyond their interval are less retrievable.
-        case 8: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) ASC, c.id ASC';
+        // cards further beyond their interval are less retrievable. Anki's separate "relative
+        // overdueness" ordinal asks the same question, so it resolves to the same expression.
+        case 8:
+        case 10: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) ASC, c.id ASC';
         case 9: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) DESC, c.id ASC';
         default: return 'c.due ASC, c.id ASC';
     }
@@ -997,7 +1017,7 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
             null,
             filteredOrderSql(order),
             true,
-            Math.max(1, Math.min(9999, Math.floor(limit ?? 100))),
+            Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(limit ?? 100))),
         ).filter((row) => !completedIds.has(row.cardId) && row.cardId <= buildAt + 999);
     };
 
@@ -1105,7 +1125,7 @@ export function getFilteredDeckCountCards(
         groups.forEach((group, groupIndex) => {
             const filtered = buildFilteredSearchClause(group.search);
             const where = filtered.clauses.length > 0 ? filtered.clauses.join(' AND ') : '1=1';
-            const limit = Math.max(1, Math.min(9999, Math.floor(group.limit ?? 100)));
+            const limit = Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(group.limit ?? 100)));
             branches.push(
                 `SELECT * FROM (
                     SELECT
@@ -1197,6 +1217,29 @@ export function getFilteredDeckMatchCount(
         filteredBuildAt: nowMs,
     }, settings, nowMs);
     return preview.allSessionCards?.length ?? preview.cards.length;
+}
+
+/**
+ * How many cards a prospective filtered-deck term would gather. Anki refuses to build a custom
+ * study session whose search returns nothing, so the dialog asks this before creating the deck.
+ * Counting through the deck-list path keeps the answer identical to what the session will hold —
+ * suspended, buried and locked catalog cards are excluded — without materializing study cards.
+ */
+export function getFilteredDeckGatherCount(
+    settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes'>,
+    term: { search: string; limit: number; order: number },
+): number {
+    const probeDeckId = -1;
+    const counts = getFilteredDeckCountCards([{
+        id: probeDeckId,
+        searchQuery: term.search,
+        searchLimit: term.limit,
+        searchOrder: term.order,
+        filteredDeckEmpty: false,
+        filteredDoneCardIds: [],
+        filteredBuildAt: Date.now(),
+    }], settings);
+    return counts.get(probeDeckId)?.length ?? 0;
 }
 
 /** Count suspended/buried cards that match one or more filters but cannot be gathered. */

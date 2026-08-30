@@ -10,7 +10,21 @@ export function sanitizeUnsignedIntegerDraft(input: string, maxDigits = 9): stri
         .slice(0, safeMaxDigits);
 }
 
-/** Resolve an editable integer draft without allowing NaN, Infinity, or out-of-range values. */
+/**
+ * Same as the unsigned sanitizer, but a single leading minus survives — for inputs whose range
+ * genuinely goes below zero, such as Anki's custom study limit deltas.
+ */
+export function sanitizeSignedIntegerDraft(input: string, maxDigits = 9): string {
+    const normalized = String(input).normalize('NFKC');
+    const negative = normalized.trimStart().startsWith('-');
+    const digits = sanitizeUnsignedIntegerDraft(normalized, maxDigits);
+    return negative ? `-${digits}` : digits;
+}
+
+/**
+ * Resolve an editable integer draft without allowing NaN, Infinity, or out-of-range values.
+ * A leading minus is honoured, so a draft always resolves inside the range the caller declared.
+ */
 export function commitBoundedInteger(
     input: string,
     fallback: number,
@@ -22,9 +36,10 @@ export function commitBoundedInteger(
     const safeFallback = Number.isFinite(fallback)
         ? Math.max(lower, Math.min(upper, Math.round(fallback)))
         : lower;
-    const digits = sanitizeUnsignedIntegerDraft(input, 12);
+    const draft = sanitizeSignedIntegerDraft(input, 12);
+    const digits = draft.startsWith('-') ? draft.slice(1) : draft;
     if (!digits) return safeFallback;
-    const parsed = Number.parseInt(digits, 10);
+    const parsed = Number.parseInt(draft.startsWith('-') ? `-${digits}` : digits, 10);
     if (!Number.isSafeInteger(parsed)) return safeFallback;
     return Math.max(lower, Math.min(upper, parsed));
 }

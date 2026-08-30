@@ -9,8 +9,8 @@
 
 Uygulama artık istenen modelde çalışıyor: **TusAnkiM ücretsiz bir Anki istemcisi**, BKA TUS kartları ise
 **deste listesinde ayrı duran bir hazır içerik paketi**. Kullanıcı uygulamayı açtığında eski sürümdeki gibi kendi
-boş/dolu koleksiyonunu görüyor; listenin altında kilitli “BKA TUS” destesi duruyor. Bu desteye dokunulduğunda
-12 dersin ve 106 alt destenin tamamı gerçek kart sayılarıyla, kilitli olarak listeleniyor ve aynı ekrandan
+boş/dolu koleksiyonunu görüyor; listenin altında henüz kurulmamış “BKA TUS” paketi duruyor. Bu satıra dokunulduğunda
+12 dersin ve 106 alt destenin tamamı gerçek kart sayılarıyla listeleniyor ve aynı ekrandan
 “Kartları ücretsiz aç” seçilebilir. Apple/RevenueCat kontrolü yapılmadan 9.583 kart kullanıcının kendi koleksiyonuna
 **eklenerek** kuruluyor; kullanıcının kendi desteleri, notları, not tipleri ve çalışma geçmişi bu işlemden
 etkilenmiyor.
@@ -30,19 +30,20 @@ tıbbi editör onayı gereklilikleri devam eder.
   karşılaştıran testler.
 - İçe aktarılan HTML’de script ve satır içi olay yakalayıcıların temizlenmesi.
 - Kaynak tag’lerini bozmadan, navigasyon bilgisini uygulama-özel metadata olarak taşıma yaklaşımı.
-- RevenueCat entitlement’ına bağlı, makbuz doğrulamalı erişim ve `restore` düğmesi.
+- Gelecekte ücretli erişim gerekirse kullanılabilecek RevenueCat entitlement ve restore altyapısı
+  (mevcut build’de çağrılmıyor).
 - App Store metin/gizlilik/koşul taslakları ve yayın öncesi kontrol listesi.
 
 ### Yanlış olanlar (düzeltildi)
 
 | Sorun | Neden yanlıştı | Yapılan |
 |---|---|---|
-| İlk açılışta kullanıcının **tüm koleksiyonu siliniyor**, yerine 1.200 kartlık deneme kuruluyordu | Ücretsiz bir Anki istemcisinin kullanıcının verisini silmesi kabul edilemez; ayrıca ürün hedefi “ücretsiz Anki + satılan paket” idi | Yıkıcı kurulum tamamen kaldırıldı. Katalog yalnızca satın alma sonrası ve **ekleyerek** kurulur (`lib/bkaCatalog.ts`) |
+| İlk açılışta kullanıcının **tüm koleksiyonu siliniyor**, yerine 1.200 kartlık deneme kuruluyordu | Ücretsiz bir Anki istemcisinin kullanıcının verisini silmesi kabul edilemez | Yıkıcı kurulum tamamen kaldırıldı. Katalog yalnız kullanıcının açık ücretsiz eyleminden sonra **ekleyerek** kurulur (`lib/bkaCatalog.ts`) |
 | Kart listesinden önce **zorunlu teklif ekranı** | Uygulamayı açan herkesi ödeme ekranıyla karşılamak hem istenen akış değildi hem de gereksiz bir App Review riski | Açılış kapısı kaldırıldı; uygulama doğrudan deste listesine açılıyor |
 | 1.200 kartlık “deneme” kavramı | Ürün kararı değişti: paket ya kilitli ya açık | Deneme katmanı, ilgili kodlar ve metinler kaldırıldı |
-| Sahte **Apple ödeme sayfası** taklidi (dev simülasyonu) | Apple markasını taklit eden bir ekran, geliştirme amaçlı bile olsa riskli ve kafa karıştırıcı | Kaldırıldı. Geliştirme ve dahili preview derlemelerinde satın alma açıkça “test simülasyonu” olarak etiketleniyor; production profilinde bu yol kapalıdır |
-| Deste listesinin üstünde reklam benzeri banner + başlık düğmesi | Paket, uygulamanın kendi navigasyonunu bozan bir reklam gibi duruyordu | Paket artık deste listesinde **bir deste satırı** olarak, kilit simgesi ve gerçek fiyatıyla duruyor |
-| Teklif ekranı tasarımı (koyu yeşil/altın “landing page”, `◫ ✚ ▧` gibi işaret karakterleri) | Uygulamanın geri kalanıyla aynı dili konuşmuyordu, temayla uyumsuzdu, ucuz duruyordu | Ekran sıfırdan tasarlandı: uygulamanın kendi tema renkleri, degrade hero, gerçek katalog ağacı, sabit alt satın alma çubuğu, açık/koyu tema uyumu |
+| Sahte **Apple ödeme sayfası** taklidi (dev simülasyonu) | Apple markasını taklit eden bir ekran, geliştirme amaçlı bile olsa riskli ve kafa karıştırıcı | Kaldırıldı. Preview ve production derlemelerinde ödeme yolu kapalıdır |
+| Deste listesinin üstünde reklam benzeri banner + başlık düğmesi | Paket, uygulamanın kendi navigasyonunu bozan bir reklam gibi duruyordu | Paket artık deste listesinde **bir deste satırı** olarak, kart sayıları ve ücretsiz erişim bilgisiyle duruyor |
+| Teklif ekranı tasarımı (koyu yeşil/altın “landing page”, `◫ ✚ ▧` gibi işaret karakterleri) | Uygulamanın geri kalanıyla aynı dili konuşmuyordu, temayla uyumsuzdu, ucuz duruyordu | Ekran sıfırdan tasarlandı: uygulamanın kendi tema renkleri, gerçek katalog ağacı, sabit alt ücretsiz açma çubuğu ve açık/koyu tema uyumu |
 | Kart WebView’i **sabit 300/360 pt** yükseklikteydi | Kısa kartta ekranın yarısı boş kalıyor, uzun kartta soru kesiliyordu | Kart kendi yüksekliğini ölçüp bildiriyor; çerçeve içeriğe göre büyüyüp küçülüyor, ekranın izin verdiği sınırı aşarsa kendi içinde kayıyor |
 | WebView’de viewport meta etiketi yoktu | WKWebView sayfayı 980 px genişlik varsayıp küçültüyordu: **kartlar iPhone’da yaklaşık %40 boyutunda** görünüyordu | `width=device-width` eklendi; kartlar artık şablonun tasarlandığı boyutta okunuyor |
 | `{{type:Field}}` karşılaştırması alanın **HTML’ini** gösteriyordu | Cevap yüzünde `bulbus--<div>a. vertebralis...</div>` gibi ham etiketler görünüyordu | Karşılaştırma Anki gibi düz metin üzerinden yapılıyor (`typeAnswerPlainText`), satır sonları korunuyor |
@@ -55,17 +56,17 @@ tıbbi editör onayı gereklilikleri devam eder.
 
 1. **Açılış:** uygulama deste listesine açılır. Yeni kurulumda tek bir boş “Varsayılan” destesi vardır;
    mevcut kullanıcıda kendi desteleri neyse odur.
-2. **Kilitli deste:** listenin sonunda kesik çizgili bir kart: 🔒 “BKA TUS · 9.583 kart · 12 ders ·
-   106 alt deste · ₺1.500”.
-3. **Mağaza ekranı:** desteye dokununca tam ekran açılır. Hero (paket, sayılar, fiyat), “Paket içeriği”
+2. **Hazır paket:** listenin sonunda ayrı bir kart: “BKA TUS · 9.583 kart · 12 ders ·
+   106 alt deste”.
+3. **Paket ekranı:** satıra dokununca tam ekran açılır. Hero (paket ve sayılar), “Paket içeriği”
    başlığı altında 12 dersin genişleyebilir listesi — her ders açıldığında konu desteleri ve kart sayıları
-   görünür, hepsi kilit simgeli. Altta sabit “₺1.500 · Satın al” ve “Satın almayı geri yükle”.
-4. **Satın alma:** RevenueCat üzerinden Apple satın alması; entitlement doğrulanınca ekranda
-   “Kartlar kuruluyor” göstergesi çıkar ve katalog koleksiyona eklenir (simülatörde ~20 sn).
+   görünür. Altta sabit “Kartları ücretsiz aç” eylemi bulunur.
+4. **Ücretsiz açma:** Kullanıcının açık eyleminden sonra Apple veya RevenueCat çağrılmadan ekranda
+   “Kartlar kuruluyor” göstergesi çıkar ve katalog koleksiyona eklenir.
 5. **Sonrası:** “BKA TUS” gerçek bir deste olarak listede görünür (12 alt ders, altlarında konu desteleri);
-   kilitli satır kaybolur. Kartlar normal Anki akışıyla çalışılır.
-6. **Hak kalkarsa:** mağaza “entitlement yok” cevabı verirse katalog satırları kaldırılır, kullanıcının
-   kendi içeriği kalır; katalog kartlarındaki çalışma ilerlemesi saklanır ve geri yüklemede aynen döner.
+   hazır paket satırı kaybolur. Kartlar normal Anki akışıyla çalışılır.
+6. **Kaldırma ve yeniden kurma:** Kullanıcı paketi kaldırırsa kendi içeriği kalır; katalog kartlarındaki
+   çalışma ilerlemesi saklanır ve ücretsiz yeniden kurulumda aynen döner.
 
 ## 4. Kaynak envanteri, aktarım doğruluğu ve konu yerleşimi
 
@@ -186,40 +187,34 @@ alt deste alt deste aynı sayıları verdiğini doğrular; ikisi ayrışırsa te
 - Tam `.apkg` uygulama paketine gömülüdür. Jailbreak/statik paket analizi yapan kararlı bir kullanıcı içeriği
   çıkarabilir; daha güçlü koruma gerekiyorsa sonraki sürümde yetki sonrası indirilen şifreli teslim gerekir.
 
-## 6. Satın alma modeli
+## 6. Mevcut ücretsiz erişim ve gelecekteki ödeme altyapısı
 
 | Alan | Değer |
 |---|---|
 | Uygulama fiyatı | Ücretsiz |
 | Ürün | BKA TUS kart paketi, 9.583 kart |
-| Ürün tipi | Non-consumable (tek seferlik, süresiz) |
-| Hedef fiyat | 1.500 TL |
-| Product ID | `com.tusankim.bka.complete.lifetime` |
-| RevenueCat entitlement | `bka_tus_complete` |
-| RevenueCat offering | `default` |
-| Çevre değişkeni | `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` |
+| Mevcut erişim | Ücretsiz, yerel kurulum |
+| Production bayrağı | `EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED=false` |
+| Apple/RevenueCat çağrısı | Yok |
+| Gelecek için dormant product ID | `com.tusankim.bka.complete.lifetime` |
+| Gelecek için dormant entitlement | `bka_tus_complete` |
 
-Mağazanın döndürdüğü yerelleştirilmiş fiyat arayüzde kullanılır; yanıt sekiz saniyede gelmezse uygulama
-kilitlenmez, mağaza alanında tekrar denenebilir hata gösterilir. Daha önce doğrulanmış bir satın alma varken
-geçici ağ/RevenueCat hatası erişimi kapatmaz (`lib/catalogReconciliation.ts`); mağaza açıkça “hak yok” derse
-ya da yayın anahtarı eksikse sistem kapalı tarafa düşer.
-
-Apple, uygulama içi dijital içeriğin In-App Purchase ile açılmasını ve geri yüklenebilir ürünlerde restore
-bulunmasını ister; tasarım buna uygundur:
+Ödeme kodu mevcut build’de çağrılmaz; paket ağ bağlantısı, Apple hesabı veya makbuz olmadan yerel olarak
+kurulur. Gelecekte ücretli erişim yeniden etkinleştirilirse dijital içeriğin In-App Purchase ile açılması,
+restore, gerçek fiyat, gizlilik beyanı ve sandbox senaryoları aynı sürümde yeniden ele alınmalıdır:
 [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/),
 [IAP türleri](https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/overview-for-configuring-in-app-purchases/),
 [IAP fiyatlandırma](https://developer.apple.com/help/app-store-connect/manage-in-app-purchases/set-a-price-for-an-in-app-purchase/).
 
-**Güncel ücretsiz erişim:** Preview ve production profilleri `EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED=false`
-ile derlenir. “Kartları ücretsiz aç” Apple veya RevenueCat’e bağlanmadan erişimi açar. Ücretli modele dönülecekse
-bayrak `true` yapılmalı; App Store metinleri, gizlilik beyanı ve sandbox testleri aynı sürümde yeniden doğrulanmalıdır.
+Preview ve production profilleri `EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED=false` ile derlenir. “Kartları
+ücretsiz aç” Apple veya RevenueCat’e bağlanmadan erişimi açar.
 
 ## 7. iPhone deneyimi
 
 390 × 844 ve 440 × 956 sınıfı viewport’larda gözden geçirildi:
 
-- Deste listesi tek elle taranabilir; kilitli paket satırı 72 pt yüksekliğinde ve tek dokunuşla mağazayı açar.
-- Mağaza ekranı: sabit alt çubuk sayesinde uzun içerik listesinde bile satın alma düğmesi hep erişilebilir.
+- Deste listesi tek elle taranabilir; hazır paket satırı 72 pt yüksekliğinde ve tek dokunuşla paket ekranını açar.
+- Paket ekranı: sabit alt çubuk sayesinde uzun içerik listesinde bile ücretsiz açma düğmesi hep erişilebilir.
 - Kart alanı artık içeriğe göre boyutlanıyor: kısa kart ekranın yarısını boş bırakmıyor, uzun kart kesilmiyor.
   İçerik ayrılan alanı aşarsa kart kendi çerçevesi içinde kayıyor, değerlendirme düğmeleri ekranda kalıyor.
 - Medya yüksekliği reviewer bütçesine göre sınırlanıyor; görsel yüklenince çerçeve yeniden ölçülüyor.
@@ -233,8 +228,8 @@ bayrak `true` yapılmalı; App Store metinleri, gizlilik beyanı ve sandbox test
 - Expo SDK 54.0.37 / React Native 0.81.5, iOS minimum 15.1, `newArchEnabled: true`.
 - Bundle ID `com.tusankim.app`, version `1.0.0`, build `1`, `usesNonExemptEncryption: false`.
 - App Store simgesi 1024 × 1024, alfa kanalsız.
-- Privacy Manifest: Purchase History, kimlikle bağlantısız, takip yok; App Functionality + Analytics.
-- RevenueCat 10.7.2 / iOS SDK 5.84.0 native olarak autolink ediliyor.
+- Privacy Manifest: toplanan veri türü yok, takip yok. Mevcut ücretsiz akış satın alma geçmişi işlemez.
+- RevenueCat bağımlılığı gelecekteki ödeme seçeneği için kodda dursa da mevcut build’de çağrılmaz.
 - Teslim dosyaları: `docs/app-store/metadata-tr.md`, `docs/app-store/iap-and-review.md`,
   `docs/privacy.html`, `docs/support.html`, `docs/terms.html`, `docs/app-store/screenshots/`.
 
@@ -242,7 +237,8 @@ Apple 28 Nisan 2026’dan beri gönderimlerin Xcode 26+ ve iOS 26 SDK ile yapıl
 [Upcoming Requirements](https://developer.apple.com/news/upcoming-requirements/). Expo SDK 54’ün EAS yapıları
 Xcode 26’yı destekler: [Expo SDK 54](https://expo.dev/changelog/sdk-54). Ekran görüntüsü ölçüleri için:
 [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
-İlk non-consumable ürün yeni uygulama sürümüyle aynı gönderime eklenmeli ve IAP inceleme görseli yüklenmelidir:
+Mevcut ücretsiz build ile dormant non-consumable ürün incelemeye eklenmemelidir. Ödeme gelecekte
+etkinleştirilirse ürün ilgili uygulama sürümüyle aynı gönderime eklenmeli ve IAP inceleme görseli yüklenmelidir:
 [Submit an IAP](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/).
 
 `https://bugraguclu.github.io/tus-flashcard-app/{privacy,support,terms}.html` adresleri hâlâ yayımlanmadı.
@@ -250,11 +246,9 @@ Gönderimden önce bu üç sayfa kalıcı bir HTTPS adresinde 200 dönmelidir.
 
 ## 9. Gizlilik ve yaş derecelendirmesi
 
-Kartlar ve çalışma geçmişi cihazda kalır. RevenueCat satın alma geçmişini entitlement doğrulama ve kendi
-analitiği için işler; App Store Connect’te Purchase History için App Functionality + Analytics, kimlikle
-bağlantısız, takip yok yanıtları verilmelidir
-([RevenueCat Apple App Privacy](https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy),
-[Manage App Privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/)).
+Kartlar ve çalışma geçmişi cihazda kalır. Mevcut ücretsiz akış Apple veya RevenueCat’i çağırmaz ve satın alma
+geçmişi toplamaz; App Store Connect gizlilik cevapları gönderilen build’in bu davranışıyla aynı olmalıdır
+([Manage App Privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/)).
 
 Kartlar sık tıbbi/tedavi bilgisi içerdiğinden yaş anketinde “Medical or Treatment Information: Frequent”
 beyanı önerilir; beklenen sonuç 16+. Uygulama tanı/tedavi/izlem yapmadığı için regulated medical device
@@ -262,18 +256,16 @@ değildir; kullanım beyanı eğitim ve sınav hazırlığı sınırını açık
 
 ## 10. İçerik hakkı ve tıbbi kalite — yayın engelleri
 
-Kaynak klasörde lisans/devir belgesi yok. Başka bir kişinin hazırladığı kartları 1.500 TL karşılığı satmak
-için çoğaltma, işleme, dijital dağıtım, ticari kullanım, süre, bölge, bedel ve üçüncü taraf öğeleri açıkça
-kapsayan imzalı sözleşme gerekir. 49 medya dosyası ve AnKing adı/logosu/şablonu ayrıca taranmalıdır
+Kaynak klasörde lisans/devir belgesi yok. Başka bir kişinin hazırladığı kartları ücretsiz de olsa uygulamayla
+dağıtmak için çoğaltma, işleme ve dijital dağıtım haklarını açıkça kapsayan yazılı izin gerekir. 49 medya
+dosyası ve AnKing adı/logosu/şablonu ayrıca taranmalıdır
 ([Telif Hakları Genel Sorular](https://telifhaklari.ktb.gov.tr/TR-332449/genel-sorular.html)).
 
 7.737 notun %94,1’i en son 2020–2021’de değiştirilmiş. Her disiplin güncel kaynaklara ve TUS kapsamına göre
 yetkin bir editörce incelenmeli; inceleyen kişi, tarih, kaynak ve düzeltme sürümü kaydedilmelidir. Uygulama
 içindeki “tıbbi tavsiye değildir” uyarısı bu kontrolün yerine geçmez.
 
-Tüketici tarafında yayıncı/satıcı kimliği, toplam fiyat, dijital ifanın başlaması ve cayma/iade koşulları
-hukuk uzmanıyla doğrulanmalıdır
-([Mesafeli Sözleşmeler Rehberi](https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme)).
+Yayıncı kimliği, gizlilik sorumlusu bilgileri ve içerik dağıtım izni hukuk uzmanıyla doğrulanmalıdır.
 Bu rapor hukuki görüş değildir.
 
 ## 11. Doğrulama matrisi
@@ -294,9 +286,9 @@ Bu rapor hukuki görüş değildir.
 | Cloze, hint, `type:` karşılaştırması, medya, script temizliği | Başarılı |
 | TypeScript | Başarılı |
 | Otomatik test paketi | 40 dosya / 346 test başarılı |
-| Simülatörde temiz kurulum → ücretsiz uygulama + kilitli deste | Başarılı |
-| Mağaza ekranı, ders/konu ağacı, satın alma ve kurulum akışı | Başarılı |
-| Satın alma sonrası çalışma; soru/cevap tam görünüyor | Başarılı |
+| Simülatörde temiz kurulum → ücretsiz uygulama + hazır paket satırı | Başarılı |
+| Paket ekranı, ders/konu ağacı, ücretsiz açma ve kurulum akışı | Başarılı |
+| Ücretsiz kurulum sonrası çalışma; soru/cevap tam görünüyor | Başarılı |
 | Uzun kart: çerçeve içinde kaydırma, düğmeler ekranda | Başarılı (%200 yakınlaştırmayla sınandı) |
 | Açık/koyu tema | Başarılı |
 | Xcode 26 Release derlemesi (iOS Simulator) | Başarılı |
@@ -304,7 +296,7 @@ Bu rapor hukuki görüş değildir.
 | Web production export | Başarılı |
 | App Store görselleri | Geliştirme derlemesinden yenilendi; mağaza ürünü bağlandıktan sonra Release’den tekrar çekilmeli |
 | Privacy/support/terms herkese açık HTTPS | Bekliyor — adresler yayımlanmadı |
-| Gerçek App Store sandbox satın alma | Dış kurulum bekliyor |
+| Ödeme/RevenueCat kullanılmadan ücretsiz açma | Otomasyon mevcut; son Release smoke bekliyor |
 | TestFlight / fiziksel iPhone regresyonu | Dış kurulum bekliyor |
 | Ticari hak belgesi | Kritik — yok |
 | Güncel tıbbi editör onayı | Kritik — yok |
@@ -316,14 +308,11 @@ Bu rapor hukuki görüş değildir.
 
 - [ ] İmzalı ticari lisans ve üçüncü taraf hak taraması (kartlar, 49 medya, AnKing marka/şablonu).
 - [ ] 12 ders için güncel tıbbi/TUS editör onayı.
-- [ ] Apple Developer üyeliği, Paid Apps Agreement, banka/vergi ve DSA trader bilgileri.
+- [ ] Apple Developer üyeliği ve gerekli App Store Connect/DSA yayıncı bilgileri.
 - [ ] App Store Connect kaydı; gerçek yayıncı, telif ve iletişim alanları.
-- [ ] `com.tusankim.bka.complete.lifetime` non-consumable ürünü ve Türkiye 1.500 TL fiyat noktası.
-- [ ] RevenueCat app/product/entitlement/offering ve production public iOS SDK anahtarı.
 - [ ] Gizlilik/destek/koşul sayfalarının HTTPS üzerinden yayımlanması.
-- [ ] Sandbox’ta satın alma, iptal, Ask to Buy/deferred, ağ hatası ve restore testleri.
-- [ ] Production derlemede geliştirme simülasyonunun görünmediğinin doğrulanması.
-- [ ] TestFlight’ta temiz kurulum → kilitli deste → satın alma → kapat/aç → restore turu.
+- [ ] Production derlemede ödeme/restore metni veya RevenueCat çağrısı olmadığının doğrulanması.
+- [ ] TestFlight’ta temiz kurulum → hazır paket → ücretsiz açma → kapat/aç → yeniden kurma turu.
 - [ ] Son bağımlılık, erişilebilirlik ve içerik regresyonu.
 
 Bu maddeler tamamlandığında 1.0.0 App Store incelemesine gönderilebilir.

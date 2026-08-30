@@ -29,6 +29,7 @@ import {
     getBrowserRowIdsMatchingText,
     getBrowserCards,
     getFilteredDeckExcludedCount,
+    getFilteredDeckGatherCount,
     getFilteredDeckMatchCount,
 } from './studyRepository';
 import { getAllTags, saveNote, saveAnkiCard, saveNoteType } from './noteManager';
@@ -602,5 +603,51 @@ describe('the browser search box speaks Anki', () => {
         db.runSync('UPDATE anki_cards SET created_at = ? WHERE id IN (2020, 2030)', Date.now() - 10 * 86_400_000);
         expect(browserSearch('added:1')).toEqual([2010]);
         expect(browserSearch('added:30')).toHaveLength(3);
+    });
+});
+
+describe('added: narrows a filtered deck to recently created cards', () => {
+    it('reads the same creation stamp the browser does', () => {
+        const now = Date.now();
+        saveNote(makeNote(41, [], ['bugün eklendi', 'cevap', '']));
+        saveNote(makeNote(42, [], ['geçen ay eklendi', 'cevap', '']));
+        saveAnkiCard(makeCard(1041, 41, 1, { type: 0, queue: 0, due: 1 }));
+        saveAnkiCard(makeCard(1042, 42, 1, { type: 0, queue: 0, due: 2 }));
+        db.runSync('UPDATE anki_cards SET created_at = ? WHERE id = 1041', now);
+        db.runSync('UPDATE anki_cards SET created_at = ? WHERE id = 1042', now - 45 * 86_400_000);
+
+        expect(search('added:1')).toBe(1);
+        expect(search('added:60')).toBe(2);
+        // Anki's "preview new cards" session is exactly this pair of terms.
+        expect(search('is:new added:1')).toBe(1);
+        expect(search('added:0')).toBe(2);
+    });
+
+    it('falls back to the card id when no creation stamp was recorded', () => {
+        const now = Date.now();
+        saveNote(makeNote(43, [], ['eski satır', 'cevap', '']));
+        saveAnkiCard(makeCard(now - 2 * 86_400_000, 43, 1, { type: 0, queue: 0, due: 3 }));
+        db.runSync('UPDATE anki_cards SET created_at = 0 WHERE id = ?', now - 2 * 86_400_000);
+
+        expect(search('added:7')).toBe(1);
+        expect(search('added:1')).toBe(0);
+    });
+});
+
+describe('custom study gather probe', () => {
+    it('counts what a session would actually hold, and reports nothing for an empty search', () => {
+        const now = Date.now();
+        saveNote(makeNote(51, [], ['bugün eklendi', 'cevap', '']));
+        saveNote(makeNote(52, [], ['askıya alınmış', 'cevap', '']));
+        saveAnkiCard(makeCard(1051, 51, 1, { type: 0, queue: 0, due: 1 }));
+        saveAnkiCard(makeCard(1052, 52, 1, { type: 0, queue: -1, due: 2 }));
+        db.runSync('UPDATE anki_cards SET created_at = ? WHERE id IN (1051, 1052)', now);
+
+        const probe = (search: string) => getFilteredDeckGatherCount(settings, { search, limit: 99_999, order: 5 });
+
+        // A suspended card matches the search but can never be gathered, so it must not make the
+        // session look non-empty.
+        expect(probe('deck:"Tıp" is:new added:1')).toBe(1);
+        expect(probe('deck:"Tıp" rated:7:1')).toBe(0);
     });
 });

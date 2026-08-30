@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test",
     "verify:ios": "node scripts/verify-ios-readiness.mjs",
+    "verify:app-store": "node scripts/verify-ios-readiness.mjs --app-store",
+    "verify:app-store:live": "npm run verify:app-store && node scripts/verify-app-store-pages.mjs",
     "quality": "npm run check && npm run verify:ios",
     "doctor": "npx --yes expo-doctor",
     "start": "expo start",

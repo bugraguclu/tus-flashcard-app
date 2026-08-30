@@ -27,6 +27,7 @@ Run only the row touched by the change, plus the release smoke below for a relea
 | General appearance | Open General and switch the three direct System/Light/Dark theme boxes; verify the black night palette and status bar, confirm there is no separate Appearance category or theme modal, then toggle the headerless “Show filenames” row and inspect one audio card in the browser |
 | Import/file handling | From Files, open one small `.apkg`; confirm the automatic pre-import backup and retained local media; confirm an oversized, corrupt-SQLite and active-media fixture is rejected before collection mutation; for `.colpkg`, confirm the replacement warning |
 | Media/editor | Add one photo and one audio recording; enable PNG clipboard paste, paste one image, then paste a harmless fixture containing `<script>`/`onerror`; confirm no code/navigation runs, force-quit/relaunch, and review both sides offline |
+| Reviewer text to speech | Install an Enhanced Turkish voice in iOS Settings; review one whole-card Turkish note and one template with `{{tts tr_TR voices=Apple_<installed_voice> speed=0.8:Field}}`; rapidly reveal/grade three cards and replay once; confirm each side is spoken once, hidden hints/CSS are skipped, the requested rate is used, and speech stops at the configured answer boundary |
 | URL automation | Add a note through `tusankim://`; confirm HTTPS and Shortcuts success callbacks work, while `http:`, `file:`, `data:`, credentials and a recursive `tusankim:` callback are ignored |
 | Notification | On a fresh install, confirm reminders default to “When reviews are waiting” and provisional delivery is requested without a launch prompt; test 0, 10 and 500 thresholds at the selected time; grant full alerts from the Notifications screen, tap a delivered reminder, confirm the deck screen opens, and confirm no app-icon badge is created; verify the UI explains that vibration and LED/flash are controlled by iOS |
 | Purchase/catalog | Test StoreKit sandbox purchase, restore, reinstall entitlement, and learner-deck preservation |
@@ -49,7 +50,7 @@ Run only the row touched by the change, plus the release smoke below for a relea
   review history when scheduling import is enabled.
 - A study answer survives force-quit/relaunch and the next queue is correct.
 - Live and stored-backup exports appear in the iOS share sheet and can be reopened.
-- Privacy/support links and in-app purchase restore are reachable.
+- Privacy/support links are reachable and the free catalog unlock does not start a purchase or require a network connection.
 
 Record device model, iOS version, build number, fixture name, and pass/fail in the release notes.
 Do not turn this into a full manual retest of every screen unless the native runtime or database
