@@ -20,12 +20,26 @@ vi.mock('./db', () => ({
     dbSearchCards: () => [],
 }));
 
-import { adjustIntervalForEasyDays, getFilteredDeckCardIds, getStudyQueue, getWaitingLearningCardIds } from './studyRepository';
+import {
+    adjustIntervalForEasyDays,
+    getFilteredDeckCardIds,
+    getFilteredDeckCountCards,
+    getStudyQueue,
+    getWaitingLearningCardIds,
+} from './studyRepository';
 import { saveNote, saveAnkiCard, saveNoteType } from './noteManager';
-import { getBuriedCountForDeck, saveDeck, saveDeckConfig } from './deckManager';
+import {
+    buildDeckTree,
+    getAllDecks,
+    getBuriedCountForDeck,
+    getCardCountsByDeck,
+    saveDeck,
+    saveDeckConfig,
+} from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
 import { localDayNumber } from './ankiState';
 import { getDeckOverviewSnapshot } from './screenSnapshots';
+import { getDeckListSnapshot } from './deckListSnapshot';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -408,6 +422,149 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(queue.cards.map((card) => card.cardId)).toEqual([1020]);
         expect(queue.stats.learningCount).toBe(1);
         expect(queue.nextLearningDue).toBe(dueMs);
+    });
+});
+
+describe('deck-list filtered count snapshot', () => {
+    type ComparableDeckNode = {
+        deckId: number;
+        name: string;
+        newCount: number;
+        learnCount: number;
+        reviewCount: number;
+        totalCards: number;
+        children: ComparableDeckNode[];
+    };
+    const comparableTree = (tree: ReturnType<typeof buildDeckTree>): ComparableDeckNode[] => tree.map((node) => ({
+        deckId: node.deck.id,
+        name: node.deck.name,
+        newCount: node.newCount,
+        learnCount: node.learnCount,
+        reviewCount: node.reviewCount,
+        totalCards: node.totalCards,
+        children: comparableTree(node.children),
+    }));
+
+    const legacyDeckListTree = () => {
+        const decks = getAllDecks();
+        const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour, settings.learnAheadMinutes);
+        const claimed = new Set<number>();
+        for (const deck of decks) {
+            if (!deck.isFiltered) continue;
+            const queue = getStudyQueue({ settings, selectedDeckName: deck.name });
+            const cards = (queue.allSessionCards ?? queue.cards).filter((card) => {
+                if (claimed.has(card.cardId)) return false;
+                claimed.add(card.cardId);
+                const home = counts.get(card.deckId);
+                if (home) {
+                    home.total = Math.max(0, home.total - 1);
+                    if (card.state.status === 'new') home.new = Math.max(0, home.new - 1);
+                    else if (card.state.status === 'learning') home.learn = Math.max(0, home.learn - 1);
+                    else home.review = Math.max(0, home.review - 1);
+                }
+                return true;
+            });
+            counts.set(deck.id, {
+                new: cards.filter((card) => card.state.status === 'new').length,
+                learn: cards.filter((card) => card.state.status === 'learning').length,
+                review: cards.filter((card) => card.state.status === 'review').length,
+                total: cards.length,
+            });
+        }
+        return buildDeckTree(decks, counts, settings.dayRolloverHour);
+    };
+
+    it('keeps normal and filtered deck counters equal to the previous screen algorithm', () => {
+        saveDeck({
+            id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
+        });
+        saveDeck({
+            id: 99, name: 'Oturum B', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random or tag:Modüller', searchLimit: 100,
+        });
+
+        expect(comparableTree(getDeckListSnapshot(settings, Date.now()).tree))
+            .toEqual(comparableTree(legacyDeckListTree()));
+    });
+
+    it('keeps subdeck totals and applies parent daily limits after filtered ownership', () => {
+        saveDeckConfig({ ...deckConfig, newPerDay: 1, maxReviewsPerDay: 1 });
+        const snapshot = getDeckListSnapshot(settings, Date.now());
+        const root = snapshot.tree.find((node) => node.deck.name === 'Python');
+
+        expect(root).toMatchObject({ newCount: 1, totalCards: 3 });
+        expect(root?.children.reduce((total, child) => total + child.totalCards, 0)).toBe(3);
+    });
+
+    it('matches the existing filtered queues and preserves first-deck ownership for overlaps', () => {
+        const first = {
+            id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
+        } as const;
+        const second = {
+            id: 99, name: 'Oturum B', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random or tag:Modüller', searchLimit: 100,
+        } as const;
+        saveDeck(first);
+        saveDeck(second);
+
+        const existingFirst = getStudyQueue({ settings, selectedDeckName: first.name });
+        const existingSecond = getStudyQueue({ settings, selectedDeckName: second.name });
+        const snapshot = getFilteredDeckCountCards([first, second], settings, Date.now());
+
+        expect(snapshot.get(first.id)?.map((card) => card.cardId))
+            .toEqual((existingFirst.allSessionCards ?? existingFirst.cards).map((card) => card.cardId));
+        const firstOwned = new Set(snapshot.get(first.id)?.map((card) => card.cardId));
+        expect(snapshot.get(second.id)?.map((card) => card.cardId))
+            .toEqual((existingSecond.allSessionCards ?? existingSecond.cards)
+                .map((card) => card.cardId)
+                .filter((cardId) => !firstOwned.has(cardId)));
+    });
+
+    it('loads every filtered-deck membership with one batch query', () => {
+        saveDeck({
+            id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2,
+        });
+        saveDeck({
+            id: 99, name: 'Oturum B', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random', searchLimit: 100,
+        });
+        const getAllSpy = vi.spyOn(db, 'getAllSync');
+
+        getDeckListSnapshot(settings, Date.now());
+
+        const membershipQueries = getAllSpy.mock.calls.filter(([sql]) => (
+            String(sql).includes('ROW_NUMBER() OVER') && String(sql).includes('filteredDeckId')
+        ));
+        expect(membershipQueries).toHaveLength(1);
+    });
+
+    it('keeps new, learning and review states used by deck-list counters', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveAnkiCard(makeCard(1010, 101, 7));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: Date.now() + 600_000, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 2, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500 }));
+        const filtered = {
+            id: 98, name: 'Durumlar', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 100,
+        } as const;
+        saveDeck(filtered);
+
+        expect(getFilteredDeckCountCards([filtered], settings, Date.now()).get(filtered.id))
+            .toEqual(expect.arrayContaining([
+                expect.objectContaining({ cardId: 1010, status: 'new', homeDeckId: 7 }),
+                expect.objectContaining({ cardId: 1020, status: 'learning', homeDeckId: 7 }),
+                expect.objectContaining({ cardId: 1030, status: 'review', homeDeckId: 2 }),
+            ]));
     });
 });
 

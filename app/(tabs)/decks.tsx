@@ -10,6 +10,7 @@ import {
     View,
     Text,
     ScrollView,
+    FlatList,
     TouchableOpacity,
     StyleSheet,
     TextInput,
@@ -23,6 +24,7 @@ import {
     KeyboardAvoidingView,
     Switch,
     ActivityIndicator,
+    InteractionManager,
     useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,9 +35,6 @@ import {
     getDeckByName,
     getAvailableDeckName,
     getAvailableDeckSubtreeName,
-    getCardCountsByDeck,
-    buildDeckTree,
-    flattenDeckTree,
     createDeck,
     createFilteredDeck,
     deleteDeck,
@@ -54,7 +53,7 @@ import {
 } from '../../lib/deckManager';
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
 import { alert, confirm } from '../../lib/confirm';
-import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount, getStudyQueue } from '../../lib/studyRepository';
+import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../../lib/studyRepository';
 import { createBackupNow } from '../../lib/backup';
 import {
     useAppSettings,
@@ -80,7 +79,12 @@ import { sanitizeUnsignedIntegerDraft } from '../../lib/boundedNumber';
 import { FILTERED_DECK_ORDER_UI } from '../../lib/filteredDeckOptions';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
-import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
+import { getDeckListSnapshot } from '../../lib/deckListSnapshot';
+import {
+    buildVisibleDeckRows,
+    toggleDeckBranchRows,
+    type DeckListRowModel,
+} from '../../lib/deckListRows';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -125,11 +129,6 @@ function encodeDeckDropTarget(name: string, placement: DeckDropPlacement): strin
 // passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
 const DECK_HOVER_EXPAND_DELAY_MS = 800;
 
-function getPersistedExpandedDeckNames(): Set<string> {
-    initializeDeckDisclosureDefaults();
-    return new Set(getAllDecks().filter((deck) => !deck.collapsed).map((deck) => deck.name));
-}
-
 /** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
 function remapExpandedDeckPaths(
     paths: Set<string>,
@@ -149,6 +148,30 @@ function remapExpandedDeckPaths(
     return next;
 }
 
+const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
+    row,
+    compact,
+    styles,
+    renderRow,
+}: {
+    row: DeckListRowModel;
+    compact: boolean;
+    styles: ReturnType<typeof createStyles>;
+    renderRow: (node: DeckTreeNode, isExpanded: boolean) => React.ReactElement;
+}) {
+    return (
+        <View
+            style={compact
+                ? row.isRoot
+                    ? styles.deckGroupCard
+                    : [styles.deckVirtualChildRow, row.isLastSibling && styles.deckVirtualChildRowLast]
+                : undefined}
+        >
+            {renderRow(row.node, row.isExpanded)}
+        </View>
+    );
+});
+
 export default function DecksScreen() {
     const { t, l, locale } = useI18n();
     const router = useRouter();
@@ -164,10 +187,18 @@ export default function DecksScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings } = useAppSettings();
-    const { collectionVersion, invalidateCollection, getSchedulingRevision } = useCollectionInvalidation();
+    const { collectionVersion, invalidateCollection } = useCollectionInvalidation();
     const { activeDeckName } = useStudyScope();
     const { catalogAccess, catalogInstalled, catalogInstalling } = useCatalogStatus();
-    const [expandedDecks, setExpandedDecks] = useState<Set<string>>(getPersistedExpandedDeckNames);
+    const expandedDecksRef = useRef<Set<string>>(new Set());
+    const expandedInitializedRef = useRef(false);
+    const deckTreeRef = useRef<DeckTreeNode[]>([]);
+    const [visibleRows, setVisibleRows] = useState<DeckListRowModel[]>([]);
+    const [snapshotLoading, setSnapshotLoading] = useState(true);
+    const snapshotGenerationRef = useRef(0);
+    const updateExpandedDecks = useCallback((update: (current: Set<string>) => Set<string>) => {
+        expandedDecksRef.current = update(expandedDecksRef.current);
+    }, []);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
@@ -177,8 +208,6 @@ export default function DecksScreen() {
     const [newDeckName, setNewDeckName] = useState('');
     const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
     const [filteredDeckScreenTitle, setFilteredDeckScreenTitle] = useState('');
-    const [refreshToken, setRefreshToken] = useState(0);
-    const [visibleSchedulingRevision, setVisibleSchedulingRevision] = useState(getSchedulingRevision);
     const [modal, setModal] = useState<ModalState>(null);
 
     // Modal form fields (filled when the corresponding modal opens).
@@ -210,15 +239,40 @@ export default function DecksScreen() {
         () => getBkaCatalogTier(),
         [catalogInstalled, collectionVersion],
     );
+    const countSettings = useMemo(() => ({
+        dayRolloverHour: settings.dayRolloverHour,
+        learnAheadMinutes: settings.learnAheadMinutes,
+    }), [settings.dayRolloverHour, settings.learnAheadMinutes]);
 
-    // Tabs remain mounted while studying. Pull the passive scheduler revision only when the
-    // deck list is visible again, then compute all deck/filtered-deck counts once.
+    // Tabs remain mounted while studying. Build the repository snapshot only while this tab is
+    // focused, after the native transition has yielded its first frame.
     useFocusEffect(useCallback(() => {
-        const next = getSchedulingRevision();
-        setVisibleSchedulingRevision((previous) => (
-            consumeSchedulingRevision(previous, next, () => { })
-        ));
-    }, [getSchedulingRevision]));
+        let active = true;
+        const generation = ++snapshotGenerationRef.current;
+        setSnapshotLoading(true);
+        const task = InteractionManager.runAfterInteractions(() => {
+            if (!active || generation !== snapshotGenerationRef.current) return;
+            try {
+                if (!expandedInitializedRef.current) initializeDeckDisclosureDefaults();
+                const snapshot = getDeckListSnapshot(countSettings);
+                const nextExpanded = expandedInitializedRef.current
+                    ? expandedDecksRef.current
+                    : new Set(snapshot.decks.filter((deck) => !deck.collapsed).map((deck) => deck.name));
+                expandedInitializedRef.current = true;
+                expandedDecksRef.current = nextExpanded;
+                deckTreeRef.current = snapshot.tree;
+                setVisibleRows(buildVisibleDeckRows(snapshot.tree, nextExpanded));
+            } catch (error) {
+                console.warn('[Decks] deck-list snapshot failed:', error);
+            } finally {
+                if (active && generation === snapshotGenerationRef.current) setSnapshotLoading(false);
+            }
+        });
+        return () => {
+            active = false;
+            task.cancel();
+        };
+    }, [collectionVersion, countSettings]));
 
     // Drag-and-drop state: rows report their content-space layout; the active drag
     // tracks the pointer against those rows to pick a drop target.
@@ -229,7 +283,7 @@ export default function DecksScreen() {
     const listHeightRef = useRef(0);
     const listContentHeightRef = useRef(0);
     const listWrapRef = useRef<View>(null);
-    const deckScrollRef = useRef<ScrollView>(null);
+    const deckScrollRef = useRef<FlatList<DeckListRowModel>>(null);
     const hoverExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [draggingDeck, setDraggingDeck] = useState<string | null>(null);
     const draggingRef = useRef<string | null>(null);
@@ -262,75 +316,22 @@ export default function DecksScreen() {
         };
     }, []);
 
-    const animateDeckTreeLayout = () => {
+    const animateDeckTreeLayout = useCallback(() => {
         LayoutAnimation.configureNext({
             duration: 190,
             update: { type: LayoutAnimation.Types.easeInEaseOut },
             create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
             delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
         });
-    };
-
-    const deckTree = useMemo(() => {
-        const decks = getAllDecks();
-        const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour, settings.learnAheadMinutes);
-        const claimedFilteredCardIds = new Set<number>();
-
-        // Filtered decks are gathered virtually in this client, so their rows need counts from
-        // the saved search instead of from card.deckId. Parents do not aggregate these counts
-        // (deckManager prevents double-counting the same home-deck cards).
-        for (const deck of decks) {
-            if (!deck.isFiltered) continue;
-            try {
-                const result = getStudyQueue({ settings, selectedDeckName: deck.name });
-                // A physical Anki filtered deck temporarily removes its cards from their home
-                // deck. Our virtual implementation mirrors the visible result here and prevents
-                // overlapping filtered decks from claiming/counting the same card twice.
-                const cards = (result.allSessionCards ?? result.cards).filter((card) => {
-                    if (claimedFilteredCardIds.has(card.cardId)) return false;
-                    claimedFilteredCardIds.add(card.cardId);
-                    const home = counts.get(card.deckId);
-                    if (home) {
-                        home.total = Math.max(0, home.total - 1);
-                        if (card.state.status === 'new') home.new = Math.max(0, home.new - 1);
-                        else if (card.state.status === 'learning') home.learn = Math.max(0, home.learn - 1);
-                        else home.review = Math.max(0, home.review - 1);
-                    }
-                    return true;
-                });
-                counts.set(deck.id, {
-                    new: cards.filter((card) => card.state.status === 'new').length,
-                    learn: cards.filter((card) => card.state.status === 'learning').length,
-                    review: cards.filter((card) => card.state.status === 'review').length,
-                    total: cards.length,
-                });
-            } catch (e) {
-                console.warn('[Decks] filtered deck count failed:', e);
-            }
-        }
-        const tree = buildDeckTree(decks, counts, settings.dayRolloverHour);
-        return tree;
-    }, [refreshToken, collectionVersion, visibleSchedulingRevision, settings, catalogTier]);
+    }, []);
 
     // The context learns the install state one effect after this screen first renders, which would
     // flash the locked row at a learner who already owns the pack; the collection itself is the
     // authority on the first frame.
     const fullCatalogPresent = catalogTier === 'full';
 
-    // Flat list of visible rows: keeps drag math simple and layout depth-independent.
-    const visibleRows = useMemo(() => {
-        const rows: DeckTreeNode[] = [];
-        const walk = (nodes: DeckTreeNode[]) => {
-            for (const node of nodes) {
-                rows.push(node);
-                if (expandedDecks.has(node.deck.name)) walk(node.children);
-            }
-        };
-        walk(deckTree);
-        return rows;
-    }, [deckTree, expandedDecks]);
-    const visibleRowsRef = useRef<DeckTreeNode[]>(visibleRows);
-    visibleRowsRef.current = visibleRows;
+    const visibleRowsRef = useRef<DeckTreeNode[]>([]);
+    visibleRowsRef.current = visibleRows.map((row) => row.node);
     const decodedDropTarget = decodeDeckDropTarget(dropTarget);
     const dragDropFeedback = useMemo(() => {
         if (!draggingDeck || !decodedDropTarget) return null;
@@ -362,30 +363,30 @@ export default function DecksScreen() {
     }, [decodedDropTarget, draggingDeck, l]);
 
     const refresh = useCallback(() => {
-        setRefreshToken((value) => value + 1);
         invalidateCollection();
     }, [invalidateCollection]);
 
-    const toggleExpand = (deck: Deck) => {
+    const toggleExpand = useCallback((deck: Deck) => {
         animateDeckTreeLayout();
-        setExpandedDecks((prev) => {
+        updateExpandedDecks((prev) => {
             const next = new Set(prev);
             const willCollapse = next.has(deck.name);
             if (willCollapse) next.delete(deck.name);
             else next.add(deck.name);
+            setVisibleRows((rows) => toggleDeckBranchRows(rows, deckTreeRef.current, deck.name, next));
             setDeckCollapsed(deck.id, willCollapse);
             return next;
         });
-    };
+    }, [animateDeckTreeLayout, updateExpandedDecks]);
 
     const handleStudy = (deckName: string) => {
         router.push({ pathname: '/', params: { deck: deckName } } as any);
     };
 
     // Anki: clicking a deck opens its overview (Study Now / Unbury / description) first.
-    const handleOpenOverview = (deckName: string) => {
+    const handleOpenOverview = useCallback((deckName: string) => {
         router.push(`/deck-overview?deck=${encodeURIComponent(deckName)}` as any);
-    };
+    }, [router]);
 
     const handleAddDeck = () => {
         const name = normalizeDeckLeafInput(newDeckName);
@@ -601,7 +602,7 @@ export default function DecksScreen() {
 
     // ---- Gear menu actions ----
 
-    const openMenu = (deck: Deck) => setModal({ kind: 'menu', deck });
+    const openMenu = useCallback((deck: Deck) => setModal({ kind: 'menu', deck }), []);
 
     const openRename = (deck: Deck) => {
         setRenameText(getDeckDisplayName(deck.name));
@@ -627,7 +628,7 @@ export default function DecksScreen() {
             const availableName = getAvailableDeckName(fullName);
             createDeck(availableName, modal.deck.configId);
             setDeckCollapsed(modal.deck.id, false);
-            setExpandedDecks((prev) => {
+            updateExpandedDecks((prev) => {
                 const next = new Set(prev);
                 next.add(modal.deck.name);
                 return next;
@@ -813,7 +814,7 @@ export default function DecksScreen() {
             setModal(null);
             refresh();
             if (session) {
-                setExpandedDecks((prev) => new Set(prev).add(deck.name));
+                updateExpandedDecks((prev) => new Set(prev).add(deck.name));
                 confirm(
                     l('Özel çalışma oturumu hazır', 'Custom Study session ready'),
                     l(`"${getDeckDisplayName(session.name)}" güncellendi. Şimdi çalışmak ister misiniz?`, `"${getDeckDisplayName(session.name)}" was updated. Study now?`),
@@ -836,7 +837,7 @@ export default function DecksScreen() {
         try {
             const availableName = getAvailableDeckSubtreeName(modal.deck.id, nextName);
             renameDeck(modal.deck.id, availableName);
-            setExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, availableName));
+            updateExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, availableName));
             setModal(null);
             refresh();
         } catch (e) {
@@ -869,7 +870,7 @@ export default function DecksScreen() {
             setModal(null);
             refresh();
             if (session) {
-                setExpandedDecks((prev) => new Set(prev).add(deck.name));
+                updateExpandedDecks((prev) => new Set(prev).add(deck.name));
                 confirm(
                     l('Özel çalışma oturumu hazır', 'Custom Study session ready'),
                     l(`"${getDeckDisplayName(session.name)}" oluşturuldu. Şimdi çalışmak ister misiniz?`, `"${getDeckDisplayName(session.name)}" was created. Study now?`),
@@ -1030,7 +1031,7 @@ export default function DecksScreen() {
         const decoded = decodeDeckDropTarget(target);
         if (!decoded || decoded.kind !== 'deck' || decoded.placement !== 'inside') return;
         const targetRow = visibleRowsRef.current.find((row) => row.deck.name === decoded.name);
-        if (!targetRow?.children.length || expandedDecks.has(decoded.name)) return;
+        if (!targetRow?.children.length || expandedDecksRef.current.has(decoded.name)) return;
 
         // Hovering over a collapsed parent opens it, so deeply nested destinations remain
         // reachable without cancelling the current drag.
@@ -1038,10 +1039,18 @@ export default function DecksScreen() {
             hoverExpandTimerRef.current = null;
             if (!draggingRef.current || dropTargetRef.current !== target) return;
             animateDeckTreeLayout();
-            setExpandedDecks((prev) => {
+            updateExpandedDecks((prev) => {
                 if (prev.has(decoded.name)) return prev;
                 setDeckCollapsed(targetRow.deck.id, false);
-                return new Set(prev).add(decoded.name);
+                const next = new Set(prev).add(decoded.name);
+                expandedDecksRef.current = next;
+                setVisibleRows((rows) => toggleDeckBranchRows(
+                    rows,
+                    deckTreeRef.current,
+                    decoded.name,
+                    next,
+                ));
+                return next;
             });
         }, DECK_HOVER_EXPAND_DELAY_MS);
     };
@@ -1080,7 +1089,7 @@ export default function DecksScreen() {
         if (nextOffset === scrollOffsetRef.current) return;
 
         scrollOffsetRef.current = nextOffset;
-        deckScrollRef.current?.scrollTo({ y: nextOffset, animated: false });
+        deckScrollRef.current?.scrollToOffset({ offset: nextOffset, animated: false });
         updateDropTarget(findDropTarget(pageY, dragged));
         dragAutoScrollFrameRef.current = requestAnimationFrame(runDragAutoScrollFrame);
     };
@@ -1176,7 +1185,7 @@ export default function DecksScreen() {
             try {
                 const nextName = reorderDeckRelative(deck.id, targetDeck.id, decoded.placement);
                 animateDeckTreeLayout();
-                setExpandedDecks((prev) => remapExpandedDeckPaths(
+                updateExpandedDecks((prev) => remapExpandedDeckPaths(
                     prev,
                     dragged,
                     nextName,
@@ -1212,7 +1221,7 @@ export default function DecksScreen() {
                 if (parent) setDeckCollapsed(parent.id, false);
             }
             animateDeckTreeLayout();
-            setExpandedDecks((prev) => remapExpandedDeckPaths(
+            updateExpandedDecks((prev) => remapExpandedDeckPaths(
                 prev,
                 dragged,
                 nextName,
@@ -1241,7 +1250,7 @@ export default function DecksScreen() {
         cancel: resetDeckDrag,
     };
 
-    const getDragResponder = (node: DeckTreeNode) => {
+    const getDragResponder = useCallback((node: DeckTreeNode) => {
         const cached = dragRespondersRef.current.get(node.deck.id);
         if (cached) return cached;
 
@@ -1274,13 +1283,12 @@ export default function DecksScreen() {
         });
         dragRespondersRef.current.set(deckId, responder);
         return responder;
-    };
+    }, []);
 
     // ---- Rendering ----
 
-    const renderDeckRow = (node: DeckTreeNode) => {
+    const renderDeckRow = useCallback((node: DeckTreeNode, isExpanded: boolean) => {
         const deck = node.deck;
-        const isExpanded = expandedDecks.has(deck.name);
         const hasChildren = node.children.length > 0;
         const displayName = getDeckDisplayName(deck.name);
         const isDragging = draggingDeck === deck.name;
@@ -1299,22 +1307,21 @@ export default function DecksScreen() {
         const maxIndentDepth = isCompact ? 4 : 10;
         const visualDepth = Math.min(node.depth, maxIndentDepth);
         const isChild = node.depth > 0;
-        // Compact layouts get their indentation from actual nested containers below. Desktop keeps
-        // Anki's table-like deck tree, but uses a restrained step so names and counts retain room.
+        // FlatList rows are siblings, so retain the former nested hierarchy with bounded padding.
         const contentIndent = 8 + visualDepth * 24;
 
         return (
             <View
-                key={deck.id}
                 ref={(view) => {
                     if (view) deckRowRefs.current.set(deck.name, view);
-                    else deckRowRefs.current.delete(deck.name);
+                    else {
+                        deckRowRefs.current.delete(deck.name);
+                        rowLayouts.current.delete(deck.name);
+                    }
                 }}
                 onLayout={(e) => {
                     const layoutHeight = e.nativeEvent.layout.height;
-                    // Compact rows are recursively nested, so onLayout.y is relative to the
-                    // immediate parent rather than the ScrollView content. Keep drag hit-testing
-                    // in one coordinate space by measuring the row against the list viewport.
+                    // Keep drag hit-testing in one content coordinate space across recycled rows.
                     const rowView = deckRowRefs.current.get(deck.name);
                     if (!rowView) return;
                     rowView.measureInWindow((_x, rowY, _width, rowHeight) => {
@@ -1328,7 +1335,7 @@ export default function DecksScreen() {
                     styles.deckRow,
                     isCompact && styles.deckRowCompact,
                     isCompact && isChild && styles.deckRowCompactChild,
-                    !isCompact && { paddingLeft: contentIndent },
+                    { paddingLeft: contentIndent },
                     isDragging && styles.deckRowDragging,
                     isInsideDropTarget && styles.deckRowDropTarget,
                 ]}
@@ -1457,54 +1464,28 @@ export default function DecksScreen() {
                 </TouchableOpacity>
             </View>
         );
-    };
-
-    // On phones, render the data tree as a real view tree. Children share their parent's card
-    // surface; indentation and a single guide line convey depth without nested boxes.
-    const renderCompactDeckBranch = (
-        node: DeckTreeNode,
-        isRoot: boolean,
-        isLastSibling: boolean,
-    ): React.ReactNode => {
-        const showChildren = node.children.length > 0 && expandedDecks.has(node.deck.name);
-        const deepNesting = node.depth >= 4;
-        const branchDropTarget = decodedDropTarget?.kind === 'deck' && decodedDropTarget.name === node.deck.name
-            ? decodedDropTarget.placement
-            : null;
-
-        return (
-            <View
-                key={node.deck.id}
-                style={[
-                    isRoot ? styles.deckGroupCard : styles.deckNestedBranch,
-                    !isRoot && isLastSibling && styles.deckNestedBranchLast,
-                ]}
-            >
-                {renderDeckRow(node)}
-                {showChildren && (
-                    <View
-                        style={[
-                            styles.deckChildrenWell,
-                            node.depth > 0 && styles.deckChildrenWellNested,
-                            deepNesting && styles.deckChildrenWellDeep,
-                        ]}
-                    >
-                        {node.children.map((child, childIndex) => renderCompactDeckBranch(
-                            child,
-                            false,
-                            childIndex === node.children.length - 1,
-                        ))}
-                    </View>
-                )}
-            </View>
-        );
-    };
+    }, [
+        catalogTier,
+        colors,
+        decodedDropTarget,
+        dragDropFeedback,
+        draggingDeck,
+        getDragResponder,
+        handleOpenOverview,
+        isCompact,
+        l,
+        openMenu,
+        styles,
+        supportsDeckDrag,
+        t,
+        toggleExpand,
+    ]);
 
     /**
      * The optional catalog appears in the deck list exactly where a deck would, with its real
      * size and a clear free-unlock action instead of an ad banner above the tree.
      */
-    const renderLockedCatalogCard = () => (
+    const renderLockedCatalogCard = useCallback(() => (
         <TouchableOpacity
             style={styles.lockedDeckCard}
             onPress={() => router.push('/catalog' as any)}
@@ -1536,7 +1517,7 @@ export default function DecksScreen() {
                 </View>
             )}
         </TouchableOpacity>
-    );
+    ), [catalogInstalling, colors.accent, l, router, styles]);
 
     const renderMenuModal = (deck: Deck) => {
         const MenuAction = ({ label, onPress, danger = false }: {
@@ -2303,6 +2284,32 @@ export default function DecksScreen() {
 
     const isFilteredDeckModal = modal?.kind === 'filter' || modal?.kind === 'create-filter';
     const isCenteredDeckDialog = modal?.kind === 'create-subdeck' || modal?.kind === 'rename';
+    const renderVirtualizedRow = useCallback(({ item }: { item: DeckListRowModel }) => (
+        <VirtualizedDeckRow
+            row={item}
+            compact={isCompact}
+            styles={styles}
+            renderRow={renderDeckRow}
+        />
+    ), [isCompact, renderDeckRow, styles]);
+    const deckRowKey = useCallback((item: DeckListRowModel) => item.key, []);
+    const deckListHeader = useMemo(
+        () => fullCatalogPresent ? null : renderLockedCatalogCard(),
+        [fullCatalogPresent, renderLockedCatalogCard],
+    );
+    const deckListEmpty = useMemo(() => (
+        <View style={styles.emptyState}>
+            {snapshotLoading ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+            ) : (
+                <>
+                    <Text style={styles.emptyStateIcon}>＋</Text>
+                    <Text style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
+                    <Text style={styles.emptyStateText}>{l('Kartlarınızı ders ve konuya göre düzenlemeye buradan başlayın.', 'Start organizing your cards by subject and topic.')}</Text>
+                </>
+            )}
+        </View>
+    ), [colors.accent, l, snapshotLoading, styles]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -2459,9 +2466,15 @@ export default function DecksScreen() {
                     });
                 }}
             >
-                <ScrollView
+                <FlatList
                     ref={deckScrollRef}
                     style={styles.deckList}
+                    data={visibleRows}
+                    renderItem={renderVirtualizedRow}
+                    keyExtractor={deckRowKey}
+                    ListHeaderComponent={deckListHeader}
+                    ListEmptyComponent={deckListEmpty}
+                    ListFooterComponent={<View style={{ height: 80 }} />}
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={!draggingDeck}
                     onScroll={(e) => {
@@ -2472,25 +2485,11 @@ export default function DecksScreen() {
                         listContentHeightRef.current = height;
                     }}
                     contentContainerStyle={isCompact ? styles.deckListContentCompact : undefined}
-                >
-                    {!fullCatalogPresent && renderLockedCatalogCard()}
-                    {visibleRows.length > 0 ? (
-                        isCompact
-                            ? deckTree.map((node, index) => renderCompactDeckBranch(
-                                node,
-                                true,
-                                index === deckTree.length - 1,
-                            ))
-                            : visibleRows.map((node) => renderDeckRow(node))
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyStateIcon}>＋</Text>
-                            <Text style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
-                            <Text style={styles.emptyStateText}>{l('Kartlarınızı ders ve konuya göre düzenlemeye buradan başlayın.', 'Start organizing your cards by subject and topic.')}</Text>
-                        </View>
-                    )}
-                    <View style={{ height: 80 }} />
-                </ScrollView>
+                    initialNumToRender={isCompact ? 12 : 20}
+                    maxToRenderPerBatch={isCompact ? 10 : 16}
+                    windowSize={7}
+                    removeClippedSubviews={!draggingDeck}
+                />
 
                 {draggingDeck && getParentDeckName(draggingDeck) && (
                     <View
@@ -2850,6 +2849,14 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.md,
         overflow: 'visible',
         ...Shadows.sm,
+    },
+    deckVirtualChildRow: {
+        position: 'relative',
+        marginLeft: 18,
+        backgroundColor: colors.bgCard,
+    },
+    deckVirtualChildRowLast: {
+        marginBottom: 4,
     },
     lockedDeckCard: {
         flexDirection: 'row',

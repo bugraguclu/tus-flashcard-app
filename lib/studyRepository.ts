@@ -1041,6 +1041,136 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
     };
 }
 
+export interface FilteredDeckCountCard {
+    cardId: number;
+    homeDeckId: number;
+    status: CardState['status'];
+}
+
+type FilteredDeckCountDefinition = Pick<Deck,
+    | 'id'
+    | 'searchQuery'
+    | 'searchLimit'
+    | 'searchOrder'
+    | 'searchQuery2'
+    | 'searchLimit2'
+    | 'searchOrder2'
+    | 'filteredDeckEmpty'
+    | 'filteredDoneCardIds'
+    | 'filteredBuildAt'
+>;
+
+/**
+ * Build every filtered-deck row counter with one repository query.
+ *
+ * This deliberately returns only membership + scheduler state. The deck list does not need a
+ * materialized StudyCard, resolved deck config, template payload or serving order, and building
+ * those objects once per filtered deck used to multiply synchronous work on screen focus.
+ * Filtered decks claim overlapping cards in the supplied deck order, matching the previous UI.
+ */
+export function getFilteredDeckCountCards(
+    decks: ReadonlyArray<FilteredDeckCountDefinition>,
+    _settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes'>,
+    nowMs: number = Date.now(),
+): Map<number, FilteredDeckCountCard[]> {
+    const result = new Map<number, FilteredDeckCountCard[]>();
+    const activeDecks = decks.filter((deck) => {
+        result.set(deck.id, []);
+        return !deck.filteredDeckEmpty;
+    });
+    if (activeDecks.length === 0) return result;
+
+    type BatchRow = {
+        filteredDeckId: number;
+        deckOrder: number;
+        groupIndex: number;
+        groupPosition: number;
+        cardId: number;
+        homeDeckId: number;
+        type: number;
+        queue: number;
+        noteData: string;
+        noteTypeData: string;
+    };
+
+    const branches: string[] = [];
+    const params: Array<string | number> = [];
+    activeDecks.forEach((deck, deckOrder) => {
+        const groups = [
+            { search: deck.searchQuery ?? '', order: deck.searchOrder, limit: deck.searchLimit },
+            ...(deck.searchQuery2?.trim()
+                ? [{ search: deck.searchQuery2, order: deck.searchOrder2, limit: deck.searchLimit2 }]
+                : []),
+        ];
+        groups.forEach((group, groupIndex) => {
+            const filtered = buildFilteredSearchClause(group.search);
+            const where = filtered.clauses.length > 0 ? filtered.clauses.join(' AND ') : '1=1';
+            const limit = Math.max(1, Math.min(9999, Math.floor(group.limit ?? 100)));
+            branches.push(
+                `SELECT * FROM (
+                    SELECT
+                        ? AS filteredDeckId,
+                        ? AS deckOrder,
+                        ? AS groupIndex,
+                        ROW_NUMBER() OVER (ORDER BY ${filteredOrderSql(group.order)}) AS groupPosition,
+                        c.id AS cardId,
+                        c.deckId AS homeDeckId,
+                        c.type AS type,
+                        c.queue AS queue,
+                        n.data AS noteData,
+                        nt.data AS noteTypeData
+                    FROM anki_cards c
+                    JOIN notes n ON n.id = c.noteId
+                    JOIN note_types nt ON nt.id = n.noteTypeId
+                    JOIN decks d ON d.id = c.deckId
+                    WHERE c.queue >= 0 AND ${where}
+                ) WHERE groupPosition <= ?`,
+            );
+            params.push(deck.id, deckOrder, groupIndex, ...filtered.params, limit);
+        });
+    });
+
+    const rows = getDB().getAllSync<BatchRow>(
+        `${branches.join(' UNION ALL ')} ORDER BY deckOrder, groupIndex, groupPosition`,
+        ...params,
+    );
+    const deckById = new Map(activeDecks.map((deck) => [deck.id, deck]));
+    const seenByFilteredDeck = new Map<number, Set<number>>();
+    const claimedCardIds = new Set<number>();
+    const catalogUnlocked = isPaidCatalogUnlocked();
+
+    for (const row of rows) {
+        const deck = deckById.get(row.filteredDeckId);
+        if (!deck) continue;
+        if ((deck.filteredDoneCardIds ?? []).includes(row.cardId)) continue;
+        if (row.cardId > (deck.filteredBuildAt ?? nowMs) + 999) continue;
+
+        const seen = seenByFilteredDeck.get(deck.id) ?? new Set<number>();
+        seenByFilteredDeck.set(deck.id, seen);
+        if (seen.has(row.cardId) || claimedCardIds.has(row.cardId)) continue;
+
+        try {
+            const note = JSON.parse(row.noteData) as Note;
+            JSON.parse(row.noteTypeData);
+            if (!catalogUnlocked && isCatalogNote(note)) continue;
+        } catch (error) {
+            console.warn('[StudyRepo] Skipping corrupt filtered count row:', row.cardId, error);
+            continue;
+        }
+
+        seen.add(row.cardId);
+        claimedCardIds.add(row.cardId);
+        const status: CardState['status'] = row.queue === 0
+            ? 'new'
+            : row.queue === 1 || row.queue === 3 || row.type === 1 || row.type === 3
+                ? 'learning'
+                : 'review';
+        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status });
+    }
+
+    return result;
+}
+
 /**
  * Card ids currently owned by a filtered-deck build. Filtered decks do not become the
  * physical `deckId` of their cards, so read-only deck scopes (Browser/Stats) must use this
