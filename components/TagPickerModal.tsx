@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+    FlatList,
     Keyboard,
     KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     View,
 } from 'react-native';
@@ -13,6 +13,14 @@ import { Text, TextInput } from './Typography';
 import { TouchableOpacity } from './Touchable';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { getAllTags } from '../lib/noteManager';
+import {
+    allRowsSelected,
+    buildTagPickerRows,
+    parseNewTags,
+    tagKey,
+    uniqueTags,
+    type TagPickerRow,
+} from '../lib/tagPickerRows';
 import { useI18n } from '../hooks/useI18n';
 
 interface TagPickerModalProps {
@@ -23,34 +31,6 @@ interface TagPickerModalProps {
     /** Browser filters select existing collection tags; the editor keeps creation enabled. */
     allowCreate?: boolean;
     title?: string;
-}
-
-function tagKey(tag: string): string {
-    return tag.normalize('NFC').toLowerCase();
-}
-
-function uniqueTags(tags: string[]): string[] {
-    const seen = new Set<string>();
-    const result: string[] = [];
-    for (const raw of tags) {
-        const normalized = raw.normalize('NFC').trim();
-        const tag = tagKey(normalized) === 'marked' ? 'marked' : normalized;
-        if (!tag) continue;
-        const key = tagKey(tag);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        result.push(tag);
-    }
-    return result;
-}
-
-/** Anki separates tags with whitespace and uses :: for hierarchical tag paths. */
-function parseNewTags(raw: string): string[] {
-    return uniqueTags(raw
-        .split(/\s+/)
-        .map((tag) => tag.replace(/[\u0000-\u001f\u007f]/g, ''))
-        .map((tag) => tag.split('::').filter(Boolean).join('::'))
-        .filter(Boolean));
 }
 
 export default function TagPickerModal({
@@ -85,14 +65,16 @@ export default function TagPickerModal({
         setAddVisible(false);
     }, [visible, selectedTags]);
 
-    const selectedKeys = useMemo(() => new Set(draftTags.map(tagKey)), [draftTags]);
-    const filteredTags = useMemo(() => {
-        const query = searchVisible ? tagKey(searchText.trim()) : '';
-        if (!query) return knownTags;
-        return knownTags.filter((tag) => tagKey(tag).includes(query));
-    }, [knownTags, searchText, searchVisible]);
-    const allVisibleSelected = filteredTags.length > 0
-        && filteredTags.every((tag) => selectedKeys.has(tagKey(tag)));
+    const rows = useMemo(
+        () => buildTagPickerRows({
+            known: knownTags,
+            selected: draftTags,
+            query: searchVisible ? searchText : '',
+        }),
+        [knownTags, draftTags, searchText, searchVisible],
+    );
+    const filteredTags = useMemo(() => rows.map((row) => row.tag), [rows]);
+    const allVisibleSelected = allRowsSelected(rows);
 
     const toggleTag = (tag: string) => {
         const key = tagKey(tag);
@@ -124,6 +106,36 @@ export default function TagPickerModal({
         Keyboard.dismiss();
         setAddVisible(false);
     };
+
+    const keyExtractor = useCallback((row: TagPickerRow) => row.key, []);
+
+    const renderRow = useCallback(({ item }: { item: TagPickerRow }) => (
+        <TouchableOpacity
+            style={[styles.tagRow, { paddingLeft: Spacing.md + Math.min(item.depth, 8) * 18 }]}
+            onPress={() => toggleTag(item.tag)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: item.selected }}
+            accessibilityLabel={item.label}
+        >
+            <Text style={[styles.tagText, item.selected && styles.tagTextSelected]} numberOfLines={2}>
+                {item.label}
+            </Text>
+            <View style={[styles.checkbox, item.selected && styles.checkboxSelected]}>
+                {item.selected && <Text style={styles.checkboxTick}>✓</Text>}
+            </View>
+        </TouchableOpacity>
+    ), [styles]);
+
+    const listEmpty = (
+        <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>{l('Etiket bulunamadı', 'No tags found')}</Text>
+            <Text style={styles.emptyText}>
+                {allowCreate
+                    ? l('＋ düğmesiyle yeni bir etiket ekleyebilirsiniz.', 'Use ＋ to add a new tag.')
+                    : l('Koleksiyonda bu aramayla eşleşen etiket yok.', 'No collection tag matches this search.')}
+            </Text>
+        </View>
+    );
 
     const toggleSearch = () => {
         if (searchVisible) Keyboard.dismiss();
@@ -244,38 +256,21 @@ export default function TagPickerModal({
                         </View>
                     )}
 
-                    <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
-                        {filteredTags.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <Text style={styles.emptyTitle}>{l('Etiket bulunamadı', 'No tags found')}</Text>
-                                <Text style={styles.emptyText}>
-                                    {allowCreate
-                                        ? l('＋ düğmesiyle yeni bir etiket ekleyebilirsiniz.', 'Use ＋ to add a new tag.')
-                                        : l('Koleksiyonda bu aramayla eşleşen etiket yok.', 'No collection tag matches this search.')}
-                                </Text>
-                            </View>
-                        ) : filteredTags.map((tag) => {
-                            const selected = selectedKeys.has(tagKey(tag));
-                            const depth = Math.max(0, tag.split('::').length - 1);
-                            return (
-                                <TouchableOpacity
-                                    key={tagKey(tag)}
-                                    style={[styles.tagRow, { paddingLeft: Spacing.md + Math.min(depth, 8) * 18 }]}
-                                    onPress={() => toggleTag(tag)}
-                                    accessibilityRole="checkbox"
-                                    accessibilityState={{ checked: selected }}
-                                    accessibilityLabel={tag.replaceAll('::', ' › ')}
-                                >
-                                    <Text style={[styles.tagText, selected && styles.tagTextSelected]} numberOfLines={2}>
-                                        {tag.replaceAll('::', ' › ')}
-                                    </Text>
-                                    <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-                                        {selected && <Text style={styles.checkboxTick}>✓</Text>}
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+                    <FlatList
+                        style={styles.list}
+                        data={rows}
+                        renderItem={renderRow}
+                        keyExtractor={keyExtractor}
+                        showsVerticalScrollIndicator
+                        // The search and "new tag" fields sit above the list: a tap on a tag must
+                        // toggle it rather than being consumed by dismissing the keyboard.
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
+                        ListEmptyComponent={listEmpty}
+                        initialNumToRender={18}
+                        windowSize={7}
+                        removeClippedSubviews={Platform.OS !== 'web'}
+                    />
 
                     <View style={styles.footer}>
                         <Text style={styles.selectionCount}>

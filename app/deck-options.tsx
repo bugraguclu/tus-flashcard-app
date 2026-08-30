@@ -5,6 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import {
     View,
+    FlatList,
     ScrollView,
     StyleSheet,
     SafeAreaView,
@@ -35,6 +36,7 @@ import {
     setDeckDescription,
 } from '../lib/deckManager';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
+import { buildDeckPresetRows } from '../lib/deckPresetRows';
 import { useI18n } from '../hooks/useI18n';
 import SheetModal from '../components/SheetModal';
 import LeechExplainer from '../components/LeechExplainer';
@@ -78,6 +80,18 @@ export default function DeckOptionsScreen() {
     // Form state, re-seeded whenever the preset changes.
     const [form, setForm] = useState(() => formFromConfig(initialConfig, deck?.description ?? ''));
     const [presetPickerOpen, setPresetPickerOpen] = useState(false);
+    // Rebuilt when the picker opens or the preset changes, not on every keystroke in the form
+    // above it; getAllDeckConfigs/getDecksUsingConfig both hit the database.
+    const presetRows = useMemo(
+        () => buildDeckPresetRows({
+            presets: getAllDeckConfigs(),
+            activeId: configId,
+            deckCountFor: (id) => getDecksUsingConfig(id).length,
+            fallbackName: (id) => l(`Grup ${id}`, `Preset ${id}`),
+        }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [presetPickerOpen, configId],
+    );
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameText, setRenameText] = useState('');
 
@@ -457,15 +471,20 @@ export default function DeckOptionsScreen() {
 
             <SheetModal visible={presetPickerOpen} onClose={() => setPresetPickerOpen(false)}>
                 <Text style={styles.modalTitle}>{l('Ayar Grubu Seç', 'Choose Preset')}</Text>
-                <ScrollView style={{ maxHeight: 320 }}>
-                    {getAllDeckConfigs().map((preset) => (
-                        <TouchableOpacity key={preset.id} style={styles.presetOption} onPress={() => switchPreset(preset.id)}>
-                            <Text style={[styles.presetOptionText, preset.id === configId && styles.presetOptionActive]}>
-                                {preset.name || l(`Grup ${preset.id}`, `Preset ${preset.id}`)} · {l(`${getDecksUsingConfig(preset.id).length} deste`, `${getDecksUsingConfig(preset.id).length} decks`)}
+                <FlatList
+                    style={{ maxHeight: 320 }}
+                    data={presetRows}
+                    keyExtractor={(row) => row.key}
+                    showsVerticalScrollIndicator
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item }) => (
+                        <TouchableOpacity style={styles.presetOption} onPress={() => switchPreset(item.id)}>
+                            <Text style={[styles.presetOptionText, item.active && styles.presetOptionActive]}>
+                                {item.label} · {l(`${item.deckCount} deste`, `${item.deckCount} decks`)}
                             </Text>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                    )}
+                />
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setPresetPickerOpen(false)}>
                     <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>

@@ -1,20 +1,24 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    FlatList,
     Keyboard,
     KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     View,
 } from 'react-native';
 import { Text, TextInput } from './Typography';
 import { TouchableOpacity } from './Touchable';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
-import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
+import { buildDeckTree } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
-import { matchesSearch } from '../lib/searchText';
+import {
+    buildDeckPickerRows,
+    expandableDeckNames,
+    type DeckPickerRow,
+} from '../lib/deckPickerRows';
 import DisclosureChevron from './DisclosureChevron';
 
 type Props = {
@@ -34,44 +38,6 @@ type Props = {
     onSelect: (name: string | null) => void;
     onCreateDeck: () => void;
 };
-
-type VisibleDeck = { node: DeckTreeNode; depth: number };
-
-function filterTree(nodes: DeckTreeNode[], query: string): DeckTreeNode[] {
-    if (!query) return nodes;
-    const filtered: DeckTreeNode[] = [];
-    for (const node of nodes) {
-        const children = filterTree(node.children, query);
-        if (matchesSearch(node.deck.name.replaceAll('::', ' '), query) || children.length > 0) {
-            filtered.push({ ...node, children });
-        }
-    }
-    return filtered;
-}
-
-function flattenVisible(nodes: DeckTreeNode[], expanded: Set<string>, searching: boolean): VisibleDeck[] {
-    const rows: VisibleDeck[] = [];
-    const walk = (items: DeckTreeNode[], depth: number) => {
-        for (const node of items) {
-            rows.push({ node, depth });
-            if (searching || expanded.has(node.deck.name)) walk(node.children, depth + 1);
-        }
-    };
-    walk(nodes, 0);
-    return rows;
-}
-
-function expandableDeckNames(nodes: DeckTreeNode[]): Set<string> {
-    const names = new Set<string>();
-    const walk = (items: DeckTreeNode[]) => {
-        for (const node of items) {
-            if (node.children.length > 0) names.add(node.deck.name);
-            walk(node.children);
-        }
-    };
-    walk(nodes);
-    return names;
-}
 
 export default function DeckPickerModal({
     visible,
@@ -107,10 +73,9 @@ export default function DeckPickerModal({
         setExpanded(expandableDeckNames(tree));
     }, [visible, tree]);
 
-    const filteredTree = useMemo(() => filterTree(tree, query.trim()), [tree, query]);
     const rows = useMemo(
-        () => flattenVisible(filteredTree, expanded, searching && query.trim().length > 0),
-        [filteredTree, expanded, searching, query],
+        () => buildDeckPickerRows(tree, { query, expanded, searching }),
+        [tree, query, expanded, searching],
     );
 
     const toggleExpanded = (name: string) => {
@@ -121,6 +86,61 @@ export default function DeckPickerModal({
             return next;
         });
     };
+
+    const keyExtractor = useCallback((row: DeckPickerRow) => row.key, []);
+
+    const renderRow = useCallback(({ item }: { item: DeckPickerRow }) => {
+        const active = selectedDeckName === item.node.deck.name;
+        return (
+            <View style={[styles.row, active && styles.rowActive, { paddingLeft: Spacing.md + Math.min(item.depth, 8) * 20 }]}>
+                {item.hasChildren ? (
+                    <TouchableOpacity
+                        style={styles.disclosureButton}
+                        onPress={() => toggleExpanded(item.node.deck.name)}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: item.expanded }}
+                    >
+                        <DisclosureChevron expanded={item.expanded} color={colors.textPrimary} />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={styles.disclosureSpacer} />
+                )}
+                <TouchableOpacity
+                    style={styles.rowMain}
+                    onPress={() => onSelect(item.node.deck.name)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={item.node.deck.name.replaceAll('::', ' › ')}
+                >
+                    <Text style={[styles.rowText, active && styles.rowTextActive]} numberOfLines={1}>
+                        {getDeckDisplayName(item.node.deck.name)}
+                    </Text>
+                    {active && <Text style={styles.check}>✓</Text>}
+                </TouchableOpacity>
+            </View>
+        );
+    }, [colors, onSelect, selectedDeckName, styles]);
+
+    // "All decks" is a pinned row, not part of the tree, so it rides in the list header and
+    // disappears while searching like it did before.
+    const listHeader = !query.trim() && allDecksLabel !== null ? (
+        <TouchableOpacity
+            style={[styles.row, selectedDeckName === null && styles.rowActive]}
+            onPress={() => onSelect(null)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedDeckName === null }}
+        >
+            <Text style={styles.allIcon}>▦</Text>
+            <Text style={[styles.rowText, selectedDeckName === null && styles.rowTextActive]}>{allDecksLabel}</Text>
+            {selectedDeckName === null && <Text style={styles.check}>✓</Text>}
+        </TouchableOpacity>
+    ) : null;
+
+    const listEmpty = query.trim() ? (
+        <View style={styles.emptyWrap}>
+            <Text style={styles.emptyText}>{emptySearchLabel}</Text>
+        </View>
+    ) : null;
 
     const handleBack = () => {
         if (searching) {
@@ -205,60 +225,22 @@ export default function DeckPickerModal({
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.scroll} showsVerticalScrollIndicator keyboardShouldPersistTaps="handled">
-                        {!query.trim() && allDecksLabel !== null && (
-                            <TouchableOpacity
-                                style={[styles.row, selectedDeckName === null && styles.rowActive]}
-                                onPress={() => onSelect(null)}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected: selectedDeckName === null }}
-                            >
-                                <Text style={styles.allIcon}>▦</Text>
-                                <Text style={[styles.rowText, selectedDeckName === null && styles.rowTextActive]}>{allDecksLabel}</Text>
-                                {selectedDeckName === null && <Text style={styles.check}>✓</Text>}
-                            </TouchableOpacity>
-                        )}
-
-                        {rows.map(({ node, depth }) => {
-                            const hasChildren = node.children.length > 0;
-                            const isExpanded = searching || expanded.has(node.deck.name);
-                            const active = selectedDeckName === node.deck.name;
-                            return (
-                                <View key={node.deck.id} style={[styles.row, active && styles.rowActive, { paddingLeft: Spacing.md + Math.min(depth, 8) * 20 }]}>
-                                    {hasChildren ? (
-                                        <TouchableOpacity
-                                            style={styles.disclosureButton}
-                                            onPress={() => toggleExpanded(node.deck.name)}
-                                            accessibilityRole="button"
-                                            accessibilityState={{ expanded: isExpanded }}
-                                        >
-                                            <DisclosureChevron expanded={isExpanded} color={colors.textPrimary} />
-                                        </TouchableOpacity>
-                                    ) : (
-                                        <View style={styles.disclosureSpacer} />
-                                    )}
-                                    <TouchableOpacity
-                                        style={styles.rowMain}
-                                        onPress={() => onSelect(node.deck.name)}
-                                        accessibilityRole="button"
-                                        accessibilityState={{ selected: active }}
-                                        accessibilityLabel={node.deck.name.replaceAll('::', ' › ')}
-                                    >
-                                        <Text style={[styles.rowText, active && styles.rowTextActive]} numberOfLines={1}>
-                                            {getDeckDisplayName(node.deck.name)}
-                                        </Text>
-                                        {active && <Text style={styles.check}>✓</Text>}
-                                    </TouchableOpacity>
-                                </View>
-                            );
-                        })}
-
-                        {query.trim() && rows.length === 0 && (
-                            <View style={styles.emptyWrap}>
-                                <Text style={styles.emptyText}>{emptySearchLabel}</Text>
-                            </View>
-                        )}
-                    </ScrollView>
+                    <FlatList
+                        style={styles.scroll}
+                        data={rows}
+                        renderItem={renderRow}
+                        keyExtractor={keyExtractor}
+                        showsVerticalScrollIndicator
+                        // The search field lives above this list: a tap on a deck must select it
+                        // straight away rather than being swallowed by the keyboard dismissal.
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
+                        ListHeaderComponent={listHeader}
+                        ListEmptyComponent={listEmpty}
+                        initialNumToRender={16}
+                        windowSize={7}
+                        removeClippedSubviews={Platform.OS !== 'web'}
+                    />
 
                     <TouchableOpacity style={styles.cancelButton} onPress={onClose} accessibilityRole="button">
                         <Text style={styles.cancelText}>{cancelLabel}</Text>
