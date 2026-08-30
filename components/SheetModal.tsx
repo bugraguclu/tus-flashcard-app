@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { MotionDuration, resolveDuration } from '../lib/motion';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 
 /**
@@ -52,7 +53,7 @@ export function SheetModal({ visible, onClose, children, cardStyle, showGrabber 
         }
         const animation = Animated.timing(translateY, {
             toValue: 0,
-            duration: reduceMotion ? 0 : 240,
+            duration: resolveDuration(MotionDuration.sheet, reduceMotion),
             easing: Easing.out(Easing.cubic),
             useNativeDriver: Platform.OS !== 'web',
         });

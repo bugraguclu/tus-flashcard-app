@@ -54,6 +54,7 @@ import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount, getStudyQueue 
 import { createBackupNow } from '../../lib/backup';
 import { useApp } from './_layout';
 import { useI18n } from '../../hooks/useI18n';
+import { MotionDuration, MotionSpring, resolveDuration, resolveSpring } from '../../lib/motion';
 import { isReduceMotionEnabled } from '../../hooks/useReduceMotion';
 import { hapticError, hapticMedium, hapticSelection, hapticSuccess } from '../../lib/haptics';
 import { filteredOrderLabel } from '../../lib/i18n';
@@ -192,9 +193,10 @@ export default function DecksScreen() {
     const animateDeckTreeLayout = () => {
         // "Hareketi Azalt" asks apps to drop non-essential motion: the rows still appear and
         // disappear, they just do it without the expand/collapse slide.
-        if (isReduceMotionEnabled()) return;
+        const duration = resolveDuration(MotionDuration.layout, isReduceMotionEnabled());
+        if (duration === 0) return;
         LayoutAnimation.configureNext({
-            duration: 190,
+            duration,
             update: { type: LayoutAnimation.Types.easeInEaseOut },
             create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
             delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
@@ -1028,12 +1030,16 @@ export default function DecksScreen() {
         updateDragPreviewPosition(pageY);
         dragPreviewLift.stopAnimation();
         dragPreviewLift.setValue(0);
-        Animated.spring(dragPreviewLift, {
-            toValue: 1,
-            speed: 28,
-            bounciness: 4,
-            useNativeDriver: Platform.OS !== 'web',
-        }).start();
+        const lift = resolveSpring(MotionSpring.lift, isReduceMotionEnabled());
+        if (lift) {
+            Animated.spring(dragPreviewLift, {
+                toValue: 1,
+                ...lift,
+                useNativeDriver: Platform.OS !== 'web',
+            }).start();
+        } else {
+            dragPreviewLift.setValue(1);
+        }
         setShowAddMenu(false);
 
         // Refresh screen-space geometry at gesture time. Safe-area changes, rotation and the

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Platform } from 'react-native';
+import { MotionDuration, resolveDuration } from '../lib/motion';
 import { useReduceMotion } from './useReduceMotion';
 
 /** Matches the ~0.22s iOS uses for drawer and sheet transitions. */
-export const DRAWER_DURATION_MS = 220;
+export const DRAWER_DURATION_MS = MotionDuration.drawer;
 
 /**
  * Single 0..1 progress value shared by the drawer and its dimming overlay, so both move on the
@@ -17,7 +18,7 @@ export function useDrawerProgress(open: boolean): Animated.Value {
     useEffect(() => {
         const animation = Animated.timing(progress, {
             toValue: open ? 1 : 0,
-            duration: reduceMotion ? 0 : DRAWER_DURATION_MS,
+            duration: resolveDuration(DRAWER_DURATION_MS, reduceMotion),
             // Decelerating on the way in, accelerating on the way out: the drawer settles into
             // place and then gets out of the way, which is how UIKit moves panels.
             easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),

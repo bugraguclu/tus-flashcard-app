@@ -19,6 +19,7 @@ import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } fro
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
+import { MotionSpring, resolveSpring } from '../lib/motion';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 
 type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
@@ -107,15 +108,10 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         setView(props.initialView ?? 'menu');
         translateX.setValue(panelWidth + 16);
         // "Hareketi Azalt": land the panel in place instead of sliding it in.
-        const animation = reduceMotion
-            ? Animated.timing(translateX, { toValue: 0, duration: 0, useNativeDriver: true })
-            : Animated.spring(translateX, {
-                toValue: 0,
-                damping: 24,
-                stiffness: 260,
-                mass: 0.8,
-                useNativeDriver: true,
-            });
+        const spring = resolveSpring(MotionSpring.panel, reduceMotion);
+        const animation = spring
+            ? Animated.spring(translateX, { toValue: 0, ...spring, useNativeDriver: true })
+            : Animated.timing(translateX, { toValue: 0, duration: 0, useNativeDriver: true });
         animation.start();
         return () => animation.stop();
     }, [props.visible, props.initialView, panelWidth, translateX, reduceMotion]);
