@@ -32,6 +32,28 @@ export function interleaveNewWithReviews(reviewCards: StudyCard[], newCards: Stu
     return result;
 }
 
+export interface DailyLimits {
+    newLimit: number;
+    reviewLimit: number;
+}
+
+/**
+ * Anki v3's remaining daily limits (rslib decks/limits.rs `new_for_normal_deck_v3`). Both limits
+ * are budgets for the whole day, and new cards spend the review budget as well, so no new cards
+ * are offered once the review limit is used up. Upstream's "new cards ignore review limit" preset
+ * option, which lifts that cap, is off by default.
+ */
+export function remainingDailyLimits(
+    newPerDay: number,
+    reviewsPerDay: number,
+    newStudiedToday: number,
+    reviewsStudiedToday: number,
+): DailyLimits {
+    const reviewLimit = Math.max(0, reviewsPerDay - reviewsStudiedToday - newStudiedToday);
+    const newLimit = Math.min(Math.max(0, newPerDay - newStudiedToday), reviewLimit);
+    return { newLimit, reviewLimit };
+}
+
 /**
  * The deck limits a card counts against: its own deck and every ancestor up to the deck being
  * studied. Anki stops at the selected deck by default — "the daily limits of a higher-level deck

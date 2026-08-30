@@ -5,6 +5,7 @@ import {
     applyHierarchicalLimit,
     buryBuildTimeSiblings,
     deckLimitKeys,
+    remainingDailyLimits,
     interleaveNewWithReviews,
     sortReviewsDueThenRandom,
     splitIntradayLearning,
@@ -246,5 +247,31 @@ describe('deckLimitKeys', () => {
 
     it('does not treat a name prefix as an ancestor', () => {
         expect(deckLimitKeys('TUS::Dahiliye', 'TUS::Dah')).toEqual([]);
+    });
+});
+
+
+// Anki: "By default, the review limit also applies to new cards, and no new cards will be shown
+// when the review limit has been reached." (docs.ankiweb.net/deck-options.html)
+describe('remainingDailyLimits', () => {
+    it('spends both budgets as cards are studied', () => {
+        expect(remainingDailyLimits(20, 200, 5, 30)).toEqual({ newLimit: 15, reviewLimit: 165 });
+    });
+
+    it('charges new cards against the review budget too', () => {
+        // 190 reviews plus 5 new leaves 5 of the review budget, which then caps the new cards.
+        expect(remainingDailyLimits(20, 200, 5, 190)).toEqual({ newLimit: 5, reviewLimit: 5 });
+    });
+
+    it('offers no new cards once the review limit is reached', () => {
+        expect(remainingDailyLimits(20, 200, 0, 200)).toEqual({ newLimit: 0, reviewLimit: 0 });
+    });
+
+    it('never goes negative when the limits are lowered mid-day', () => {
+        expect(remainingDailyLimits(10, 50, 40, 60)).toEqual({ newLimit: 0, reviewLimit: 0 });
+    });
+
+    it('leaves a fresh day at the full limits', () => {
+        expect(remainingDailyLimits(20, 200, 0, 0)).toEqual({ newLimit: 20, reviewLimit: 200 });
     });
 });

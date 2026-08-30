@@ -180,12 +180,6 @@ function computeRemainingToday(
     return Math.max(1, Math.min(remainingTotal, count));
 }
 
-/** Whole study days between two timestamps; 0 when there is no previous review. */
-export function elapsedStudyDays(lastReviewMs: number, nowMs: number, rolloverHour: number): number {
-    if (!lastReviewMs || lastReviewMs <= 0) return 0;
-    return Math.max(0, localDayNumber(nowMs, rolloverHour) - localDayNumber(lastReviewMs, rolloverHour));
-}
-
 /** Decode a persisted AnkiCard into the scheduler's working CardState. */
 export function ankiCardToCardState(
     card: AnkiCard,
@@ -237,6 +231,17 @@ export function ankiCardToCardState(
         ? (card.due || nowMs)
         : 0;
 
+    // Anki derives the elapsed days from the card's own due date rather than a stored review
+    // timestamp, and clamps a normal-deck card's due to today first — which is why only a
+    // filtered deck can ever serve an early review (rslib answering/current.rs `normal_study_state`).
+    const filtered = card.odid > 0;
+    const effectiveDue = filtered ? (card.odue || card.due) : Math.min(card.due, todayNumber);
+    const elapsedDays = card.type === 2
+        ? Math.max(0, (card.ivl || 0) - (effectiveDue - todayNumber))
+        : card.type === 3
+            ? Math.max(0, card.ivl || 0)
+            : 0;
+
     return {
         cardId: card.id,
         interval: card.ivl || 0,
@@ -250,7 +255,7 @@ export function ankiCardToCardState(
         learningStep,
         relearningStep,
         lastReviewedAtMs: card.lastReview || 0,
-        elapsedDays: elapsedStudyDays(card.lastReview || 0, nowMs, settings.dayRolloverHour),
+        elapsedDays,
         lapses: card.lapses || 0,
     };
 }

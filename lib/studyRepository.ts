@@ -30,12 +30,13 @@ import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
     applyHierarchicalLimit,
     deckLimitKeys,
+    remainingDailyLimits,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
     sortReviewsDueThenRandom,
     splitIntradayLearning,
 } from './queueBuild';
-import { deleteReviewById, logManualReschedule, logReview } from './reviewLogger';
+import { deleteReviewById, getTodayAnswerStats, logManualReschedule, logReview } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import {
     cardScheduledAsNew,
@@ -917,8 +918,22 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         }
     }
 
-    const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
-    const reviewLimit = Math.max(0, params.settings.dailyReviewLimit);
+    // Anki v3 daily limits (rslib decks/limits.rs `new_for_normal_deck_v3`): both limits are
+    // budgets for the whole day, and new cards spend the review budget too, so the queue dries up
+    // once the review limit is used. Upstream's "new cards ignore review limit" preset option,
+    // which lifts that cap, is off by default and has no equivalent here yet.
+    const todayCounts = getTodayAnswerStats(
+        params.settings.dayRolloverHour,
+        params.selectedDeckName ?? undefined,
+    );
+    const newStudiedToday = params.newCardsStudiedToday ?? todayCounts.newCardsIntroduced;
+    const reviewsStudiedToday = Math.max(0, todayCounts.reviewed - todayCounts.newCardsIntroduced);
+    const { newLimit: availableNewLimit, reviewLimit } = remainingDailyLimits(
+        params.settings.dailyNewLimit,
+        params.settings.dailyReviewLimit,
+        newStudiedToday,
+        reviewsStudiedToday,
+    );
 
     // Anki's "learn ahead limit" (rslib: learn_ahead_secs): intraday learning cards due within
     // this window are gathered too, but they are served strictly AFTER everything else — never
@@ -1292,18 +1307,9 @@ export function answerStudyCard(
     const scheduler = getScheduler(cardSettings.algorithm);
     const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
 
-    // Anki's "review ahead": a review answered before its due date grows from the time
-    // actually elapsed, not the full scheduled interval — reviewing early gives a
-    // proportionally smaller next interval. Only filtered decks can serve early reviews.
+    // "Review ahead" is handled inside the scheduler now: the card's elapsed days come from its
+    // due date, so an early review runs Anki's reduced early-interval path on its own.
     const todayNumber = localDayNumber(nowMs, cardSettings.dayRolloverHour);
-    if (!scheduleResult.isLearning && grade > 1
-        && currentAnkiCard.queue === 2 && currentAnkiCard.due > todayNumber
-        && currentAnkiCard.ivl > 0) {
-        const daysEarly = currentAnkiCard.due - todayNumber;
-        const elapsed = Math.max(0, currentAnkiCard.ivl - daysEarly);
-        const earlyRatio = Math.min(1, elapsed / currentAnkiCard.ivl);
-        scheduleResult.interval = Math.max(1, Math.round(scheduleResult.interval * earlyRatio));
-    }
 
     // Easy days: nudge the review interval so the due date lands on an allowed weekday.
     const scheduledInterval = scheduleResult.isLearning

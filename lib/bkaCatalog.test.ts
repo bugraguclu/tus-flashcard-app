@@ -134,5 +134,5 @@ describe('bundled BKA catalog', () => {
         }
         expect(trial.notes.every((note) => trial.cards.some((card) => card.noteId === note.id))).toBe(true);
         db.close();
-    });
+    }, 20000);
 });

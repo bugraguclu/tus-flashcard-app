@@ -7,7 +7,6 @@ import type {
     AlgorithmType,
     AppSettings,
 } from './types';
-import { elapsedStudyDays } from './ankiState';
 
 const HOUR_MS = 3600000;
 const MINUTES_PER_DAY = 1440;
@@ -210,10 +209,10 @@ function computeReviewIntervals(
     const max = settings.maxInterval;
     const daysLate = elapsedDays - cur;
 
-    // Early path (answered before due). Guard elapsedDays > 0 to avoid false early detection
-    // for cards with no review history.
-    if (daysLate < 0 && elapsedDays > 0) {
-        const elapsed = Math.max(1, elapsedDays);
+    // Early path (answered before due). `elapsedDays` comes from the card's due date the way
+    // Anki derives it, so a normal-deck card can never land here — only a filtered one.
+    if (daysLate < 0) {
+        const elapsed = elapsedDays;
         const scheduled = cur;
 
         const hard = constrainInterval(
@@ -264,7 +263,7 @@ const AnkiV3Engine: SchedulerEngine = {
             throw new Error(`Invalid grade: ${grade}. Expected 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy).`);
         }
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = elapsedStudyDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
+        const elapsedDays = Math.max(0, cs.elapsedDays || 0);
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
 
@@ -275,7 +274,7 @@ const AnkiV3Engine: SchedulerEngine = {
 
     previewIntervals: (cs: CardState, settings: AppSettings, nowMs?: number): IntervalPreview => {
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = elapsedStudyDays(cs.lastReviewedAtMs || 0, now, settings.dayRolloverHour);
+        const elapsedDays = Math.max(0, cs.elapsedDays || 0);
         const learningSteps = settings.learningSteps;
         const lapseSteps = settings.lapseSteps;
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;

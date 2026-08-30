@@ -250,23 +250,26 @@ describe('answerStudyCard', () => {
         expect(shared.txLog).toContain('ROLLBACK;');
     });
 
-    it('scales an early review (review ahead) by elapsed time, not the full interval', () => {
+    it('does not treat a normal-deck card as early, because Anki clamps its due to today', () => {
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
-        // 10-day interval, still 8 days from due => only 2 days elapsed.
-        shared.cards.set(30, {
-            ...baseCard(30, 1, 2, 2),
-            ivl: 10,
-            reps: 6,
-            due: today + 8,
-            lastReview: Date.now() - 2 * 86400000,
-        });
+        shared.cards.set(30, { ...baseCard(30, 1, 2, 2), ivl: 10, reps: 6, due: today + 8 });
 
         answerStudyCard(30, 3, settings, 900);
-        const updated = shared.cards.get(30)!;
 
-        // A due-today Good would give ~ivl * ease (≈25); reviewing 80% early shrinks it to ~1/5 of that.
-        expect(updated.ivl).toBeGreaterThanOrEqual(1);
-        expect(updated.ivl).toBeLessThanOrEqual(6);
+        // rslib answering/current.rs takes due.min(today) outside a filtered deck, so the card
+        // counts as fully elapsed and Good grows it as usual.
+        expect(shared.cards.get(30)!.ivl).toBeGreaterThan(10);
+    });
+
+    it('uses the reduced early intervals for a card served from a filtered deck', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        // Gathered into a filtered deck while still 8 days from due: only 2 of 10 days elapsed.
+        shared.cards.set(31, { ...baseCard(31, 1, 2, 2), ivl: 10, reps: 6, due: today, odid: 5, odue: today + 8 });
+
+        answerStudyCard(31, 3, settings, 900);
+
+        // Early Good is max(elapsed * ease, scheduled), so it cannot grow past the interval.
+        expect(shared.cards.get(31)!.ivl).toBeLessThanOrEqual(10);
     });
 
     it('logs a review answered before its due date as filtered, like Anki', () => {

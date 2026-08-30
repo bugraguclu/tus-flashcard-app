@@ -54,7 +54,7 @@ function makeNewCard(): CardState {
 }
 
 function makeReviewCard(overrides: Partial<CardState> = {}): CardState {
-    return {
+    const card: CardState = {
         cardId: 202,
         interval: 10,
         repetition: 4,
@@ -71,6 +71,9 @@ function makeReviewCard(overrides: Partial<CardState> = {}): CardState {
         lapses: 0,
         ...overrides,
     };
+    // Anki reads the elapsed days off the card's due date, so a card that is due today has been
+    // waiting exactly its interval. Tests that care about early or overdue reviews say so.
+    return { ...card, elapsedDays: overrides.elapsedDays ?? card.interval };
 }
 
 const engine = getScheduler('ANKI_V3');
@@ -210,20 +213,18 @@ describe('ANKI_V3 scheduler', () => {
     it('adds overdue bonus for Good and Easy (Anki overdue delay)', () => {
         // Card with interval=10, reviewed 15 days ago (5 days overdue)
         const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
-        const lastReview = now - 15 * 86400000;
         const card = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: lastReview,
+            elapsedDays: 15,
             cardId: 999,
         });
 
-        // On-time card (reviewed exactly at interval)
-        const onTimeLastReview = now - 10 * 86400000;
+        // On-time card (answered exactly at its interval)
         const onTimeCard = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: onTimeLastReview,
+            elapsedDays: 10,
             cardId: 999,
         });
 
@@ -237,19 +238,19 @@ describe('ANKI_V3 scheduler', () => {
     it('uses early review formulas for cards reviewed before due date (Anki early review)', () => {
         const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
 
-        // Card with interval=10, reviewed after 5 days (5 days early)
+        // Card with interval=10 answered after 5 days (5 days early), as a filtered deck serves it
         const earlyCard = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 5 * 86400000,
+            elapsedDays: 5,
             cardId: 500,
         });
 
-        // Same card reviewed on-time (10 days)
+        // Same card answered on time (10 days)
         const onTimeCard = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 10 * 86400000,
+            elapsedDays: 10,
             cardId: 500,
         });
 
@@ -283,7 +284,7 @@ describe('ANKI_V3 scheduler', () => {
         const card = makeReviewCard({
             interval: 20,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 8 * 86400000, // 12 days early
+            elapsedDays: 8, // 12 days early
             cardId: 700,
         });
 
@@ -339,8 +340,7 @@ describe('ANKI_V3 scheduler', () => {
 
     it('tracks elapsedDays from previous review at answer time', () => {
         const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
-        const lastReview = now - 3 * 86400000;
-        const card = makeReviewCard({ lastReviewedAtMs: lastReview, cardId: 333 });
+        const card = makeReviewCard({ elapsedDays: 3, cardId: 333 });
 
         const result = engine.schedule(card, 3 as Grade, defaultSettings, now);
         expect(result.stateUpdates.elapsedDays).toBe(3);
