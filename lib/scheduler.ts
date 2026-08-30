@@ -117,17 +117,21 @@ function maybeRoundInDays(minutes: number): number {
  * Step 0: avg(current, next) if a next step exists, else current × 1.5 capped at +1 day.
  * Later steps: the current step delay, unchanged.
  */
-function hardDelayMinutes(steps: number[], stepIndex: number): number {
-    const curMin = steps[stepIndex] ?? 1;
+function hardDelayMinutes(steps: number[], stepIndex: number): number | null {
+    // No steps left to sit on: Anki graduates the card instead of inventing a delay.
+    if (steps.length === 0) return null;
 
-    if (stepIndex === 0) {
+    // Anki derives the index from the remaining steps and clamps it to the last one, so a card
+    // keeps working after the preset's step list is shortened underneath it.
+    const index = Math.min(Math.max(0, stepIndex), steps.length - 1);
+    const curMin = steps[index];
+
+    if (index === 0) {
         const nextMin = steps[1];
         if (nextMin !== undefined) {
-            return maybeRoundInDays(Math.round((curMin + nextMin) / 2));
+            return maybeRoundInDays((curMin + nextMin) / 2);
         }
-        const hardMin = Math.ceil(curMin * 1.5);
-        const cappedMin = Math.min(hardMin, curMin + MINUTES_PER_DAY);
-        return maybeRoundInDays(Math.max(1, cappedMin));
+        return maybeRoundInDays(Math.min(curMin * 1.5, curMin + MINUTES_PER_DAY));
     }
 
     return curMin;
@@ -157,10 +161,15 @@ function lapsedReviewInterval(currentInterval: number, settings: AppSettings): n
  */
 function constrainInterval(
     interval: number,
-    minimum: number,
-    maximum: number,
+    requestedMinimum: number,
+    requestedMaximum: number,
     fuzz?: { cardId: number; nowMs: number; rolloverHour: number },
 ): number {
+    // Anki's min_and_max_review_intervals: an interval is never shorter than a day, and a chained
+    // minimum can never push one past the configured maximum.
+    const maximum = Math.max(1, Math.round(requestedMaximum));
+    const minimum = Math.min(Math.max(1, Math.round(requestedMinimum)), maximum);
+
     if (fuzz) {
         const clamped = Math.max(minimum, Math.min(maximum, interval));
         const range = fuzzRangeForInterval(clamped);
@@ -276,14 +285,17 @@ const AnkiV3Engine: SchedulerEngine = {
             const step = cs.learningStep || 0;
             const nextMin = learningSteps[step + 1] ?? null;
             const hardMin = hardDelayMinutes(learningSteps, step);
+            // Without steps every button graduates the card, so Again and Hard show days too.
+            const graduateMinutes = settings.graduatingInterval * MINUTES_PER_DAY;
+            const noSteps = learningSteps.length === 0;
 
             return {
-                again: formatMinutes(learningSteps[0] || 1),
-                hard: formatMinutes(hardMin),
+                again: noSteps ? formatDays(settings.graduatingInterval) : formatMinutes(learningSteps[0]),
+                hard: hardMin === null ? formatDays(settings.graduatingInterval) : formatMinutes(hardMin),
                 good: nextMin !== null ? formatMinutes(nextMin) : `${settings.graduatingInterval} gün`,
                 easy: `${settings.easyInterval} gün`,
-                againMinutes: learningSteps[0] || 1,
-                hardMinutes: hardMin,
+                againMinutes: noSteps ? graduateMinutes : learningSteps[0],
+                hardMinutes: hardMin ?? graduateMinutes,
             };
         }
 
@@ -294,13 +306,17 @@ const AnkiV3Engine: SchedulerEngine = {
             const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
             const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
 
+            // With the relearning steps removed, Anki sends the card straight back to review.
+            const reviewMinutes = relearnInterval * MINUTES_PER_DAY;
+            const noSteps = lapseSteps.length === 0;
+
             return {
-                again: formatMinutes(lapseSteps[0] || 1),
-                hard: formatMinutes(hardMin),
+                again: noSteps ? formatDays(relearnInterval) : formatMinutes(lapseSteps[0]),
+                hard: hardMin === null ? formatDays(relearnInterval) : formatMinutes(hardMin),
                 good: nextMin !== null ? formatMinutes(nextMin) : `${relearnInterval} gün`,
                 easy: `${relearnEasyInterval} gün`,
-                againMinutes: lapseSteps[0] || 1,
-                hardMinutes: hardMin,
+                againMinutes: noSteps ? reviewMinutes : lapseSteps[0],
+                hardMinutes: hardMin ?? reviewMinutes,
             };
         }
 
@@ -330,11 +346,35 @@ function ankiV3Learning(
     const step = cs.learningStep || 0;
     const nextMin = steps[step + 1] ?? null;
 
+    /** Anki graduates on any button once there are no steps left to sit on (states/learning.rs). */
+    const graduate = (days: number): ScheduleResult => {
+        const interval = constrainInterval(days, 1, settings.maxInterval, {
+            cardId: cs.cardId,
+            nowMs: now,
+            rolloverHour: settings.dayRolloverHour,
+        });
+        return {
+            interval,
+            isLearning: false,
+            stateUpdates: {
+                learningStep: -1,
+                relearningStep: -1,
+                status: 'review',
+                interval,
+                easeFactor: settings.startingEase,
+                repetition: (cs.repetition || 0) + 1,
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
+        };
+    };
+
     if (grade === 1) {
+        if (steps.length === 0) return graduate(settings.graduatingInterval);
         return {
             interval: 0,
             isLearning: true,
-            minutesUntilDue: steps[0] || 1,
+            minutesUntilDue: steps[0],
             stateUpdates: {
                 learningStep: 0,
                 relearningStep: -1,
@@ -347,6 +387,7 @@ function ankiV3Learning(
 
     if (grade === 2) {
         const delayMin = hardDelayMinutes(steps, step);
+        if (delayMin === null) return graduate(settings.graduatingInterval);
         return {
             interval: 0,
             isLearning: true,
@@ -434,11 +475,32 @@ function ankiV3Relearning(
     const step = cs.relearningStep;
     const nextMin = steps[step + 1] ?? null;
 
+    /**
+     * With no relearning steps left, Anki returns the card to review carrying the interval it
+     * already holds — the lapse multiplier was applied when the card first failed.
+     */
+    const backToReview = (): ScheduleResult => {
+        const interval = clampInterval(cs.interval || 1, settings);
+        return {
+            interval,
+            isLearning: false,
+            stateUpdates: {
+                relearningStep: -1,
+                learningStep: -1,
+                status: 'review',
+                interval,
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
+        };
+    };
+
     if (grade === 1) {
+        if (steps.length === 0) return backToReview();
         return {
             interval: 0,
             isLearning: true,
-            minutesUntilDue: steps[0] || 1,
+            minutesUntilDue: steps[0],
             stateUpdates: {
                 relearningStep: 0,
                 learningStep: -1,
@@ -451,6 +513,7 @@ function ankiV3Relearning(
 
     if (grade === 2) {
         const delayMin = hardDelayMinutes(steps, step);
+        if (delayMin === null) return backToReview();
         return {
             interval: 0,
             isLearning: true,

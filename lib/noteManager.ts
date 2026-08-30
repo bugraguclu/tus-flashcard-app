@@ -433,8 +433,9 @@ export function unburyAllCards(rolloverHour: number = 4): number {
 
 export function isLeech(card: AnkiCard, threshold: number = 8): boolean {
     if (!threshold || card.lapses < threshold) return false;
-    // Anki fires leech on threshold, then every threshold/2 lapses after that.
-    return (card.lapses - threshold) % Math.max(1, Math.floor(threshold / 2)) === 0;
+    // Anki fires leech on threshold, then every threshold/2 lapses after that, rounding the
+    // half up so an odd threshold does not fire on every single lapse (rslib review.rs).
+    return (card.lapses - threshold) % Math.max(1, Math.ceil(threshold / 2)) === 0;
 }
 
 export function handleLeech(card: AnkiCard, action: 'suspend' | 'tag' = 'suspend'): void {

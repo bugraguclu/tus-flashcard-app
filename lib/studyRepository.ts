@@ -29,6 +29,7 @@ import {
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
     applyHierarchicalLimit,
+    deckLimitKeys,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
     sortReviewsDueThenRandom,
@@ -1040,7 +1041,10 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     ({ learning: learningCards, reviews: reviewCards, news: newCards } =
         buryBuildTimeSiblings(learningCards, reviewCards, newCards, configForDeck, (cardId) => buryCard(cardId, true)));
 
-    // Hierarchical daily limits: a card counts against its deck and every ancestor deck.
+    // Hierarchical daily limits: a card counts against its deck and every ancestor deck up to the
+    // one being studied. Anki stops there by default -- "the daily limits of a higher-level deck do
+    // not apply if you select one of its subdecks" -- so a parent's limit only caps a subdeck
+    // session when the parent itself was selected.
     const deckNameCache = new Map<number, string | null>();
     const deckKeysForCard = (card: StudyCard): string[] => {
         let name = deckNameCache.get(card.deckId);
@@ -1048,7 +1052,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             name = getDeck(card.deckId)?.name ?? null;
             deckNameCache.set(card.deckId, name);
         }
-        return name ? getDeckAncestors(name) : [`#${card.deckId}`];
+        return name ? deckLimitKeys(name, params.selectedDeckName) : [`#${card.deckId}`];
     };
     const settingsForDeckKey = (key: string): AppSettings => {
         if (key.startsWith('#')) {
@@ -1336,7 +1340,11 @@ export function answerStudyCard(
 
     const updatedAnkiCard = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
 
-    const reviewType: 0 | 1 | 2 = currentAnkiCard.type === 2 ? 1 : currentAnkiCard.type === 3 ? 2 : 0;
+    // Anki takes the revlog kind from the state the card was in: a review answered before it was
+    // due is logged as Filtered, not Review (rslib states/review.rs `revlog_kind`).
+    const reviewType: 0 | 1 | 2 | 3 = currentAnkiCard.type === 2
+        ? (currentAnkiCard.due > todayNumber ? 3 : 1)
+        : currentAnkiCard.type === 3 ? 2 : 0;
     // Revlog interval (Anki: positive = days, negative = seconds). The three queues encode `due`
     // differently, so each needs its own conversion.
     let revlogInterval: number;

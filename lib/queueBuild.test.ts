@@ -4,6 +4,7 @@ import type { DeckConfig } from './models';
 import {
     applyHierarchicalLimit,
     buryBuildTimeSiblings,
+    deckLimitKeys,
     interleaveNewWithReviews,
     sortReviewsDueThenRandom,
     splitIntradayLearning,
@@ -218,5 +219,32 @@ describe('sortReviewsDueThenRandom', () => {
         expect(a).toEqual(b);                          // deterministic per seed
         expect(a).not.toEqual(ids);                    // actually shuffled (20! makes identity ~impossible)
         expect([...a].sort((x, y) => x - y)).toEqual(ids); // no cards lost
+    });
+});
+
+
+// Anki: "By default, the daily limits of a higher-level deck do not apply if you select one of its
+// subdecks." (docs.ankiweb.net/deck-options.html)
+describe('deckLimitKeys', () => {
+    const card = 'TUS::Dahiliye::Kardiyoloji';
+
+    it('counts a card against every ancestor when no deck is selected', () => {
+        expect(deckLimitKeys(card, null)).toEqual(['TUS', 'TUS::Dahiliye', 'TUS::Dahiliye::Kardiyoloji']);
+    });
+
+    it('ignores limits above the deck being studied', () => {
+        expect(deckLimitKeys(card, 'TUS::Dahiliye')).toEqual(['TUS::Dahiliye', 'TUS::Dahiliye::Kardiyoloji']);
+    });
+
+    it('applies a parent limit when the parent itself was selected', () => {
+        expect(deckLimitKeys(card, 'TUS')).toEqual(['TUS', 'TUS::Dahiliye', 'TUS::Dahiliye::Kardiyoloji']);
+    });
+
+    it('keeps only the deck itself when the leaf is selected', () => {
+        expect(deckLimitKeys(card, card)).toEqual([card]);
+    });
+
+    it('does not treat a name prefix as an ancestor', () => {
+        expect(deckLimitKeys('TUS::Dahiliye', 'TUS::Dah')).toEqual([]);
     });
 });

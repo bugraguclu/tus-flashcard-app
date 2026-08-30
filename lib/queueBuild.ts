@@ -1,6 +1,7 @@
 import type { StudyCard } from './types';
 import type { DeckConfig } from './models';
 import { ymdToLocalDayNumber } from './ankiState';
+import { getDeckAncestors } from './models';
 
 /**
  * Spread `newCards` evenly across `reviewCards`, matching Anki's "mix with reviews" default.
@@ -29,6 +30,19 @@ export function interleaveNewWithReviews(reviewCards: StudyCard[], newCards: Stu
     }
 
     return result;
+}
+
+/**
+ * The deck limits a card counts against: its own deck and every ancestor up to the deck being
+ * studied. Anki stops at the selected deck by default — "the daily limits of a higher-level deck
+ * do not apply if you select one of its subdecks" — so a parent only caps a subdeck session when
+ * the parent itself was selected. With nothing selected the whole chain applies.
+ */
+export function deckLimitKeys(deckName: string, selectedDeckName?: string | null): string[] {
+    const ancestors = getDeckAncestors(deckName);
+    if (!selectedDeckName) return ancestors;
+    const prefix = `${selectedDeckName}::`;
+    return ancestors.filter((key) => key === selectedDeckName || key.startsWith(prefix));
 }
 
 /**

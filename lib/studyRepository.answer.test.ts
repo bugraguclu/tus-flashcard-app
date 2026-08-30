@@ -9,6 +9,7 @@ const shared = vi.hoisted(() => ({
     reviewId: 1000,
     throwOnSave: false,
     lastRevlogInterval: 0,
+    lastRevlogType: 0,
     manualLogs: [] as Array<{ cardId: number; ivl: number; lastIvl: number }>,
     nextPosition: 9,
 }));
@@ -70,9 +71,18 @@ vi.mock('./deckManager', () => ({
 }));
 
 vi.mock('./reviewLogger', () => ({
-    logReview: (_card: AnkiCard, _grade: number, interval: number) => {
+    logReview: (
+        _card: AnkiCard,
+        _grade: number,
+        interval: number,
+        _lastIvl: number,
+        _factor: number,
+        _timeMs: number,
+        reviewType: number,
+    ) => {
         shared.reviewId += 1;
         shared.lastRevlogInterval = interval;
+        shared.lastRevlogType = reviewType;
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
@@ -257,6 +267,19 @@ describe('answerStudyCard', () => {
         // A due-today Good would give ~ivl * ease (≈25); reviewing 80% early shrinks it to ~1/5 of that.
         expect(updated.ivl).toBeGreaterThanOrEqual(1);
         expect(updated.ivl).toBeLessThanOrEqual(6);
+    });
+
+    it('logs a review answered before its due date as filtered, like Anki', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        shared.cards.set(31, { ...baseCard(31, 1, 2, 2), ivl: 10, due: today + 8, lastReview: Date.now() - 2 * 86400000 });
+
+        answerStudyCard(31, 3, settings, 900);
+        expect(shared.lastRevlogType).toBe(3);
+
+        // A card answered on or after its due date stays an ordinary review.
+        shared.cards.set(32, { ...baseCard(32, 1, 2, 2), ivl: 10, due: today, lastReview: Date.now() - 10 * 86400000 });
+        answerStudyCard(32, 3, settings, 900);
+        expect(shared.lastRevlogType).toBe(1);
     });
 
     it('preview mode leaves the card and the revlog untouched', () => {
