@@ -46,6 +46,7 @@ import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib
 import { getDeckOptionsScopes } from '../lib/deckOptionsScope';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
 import { normalizeNewCardGatherOrder } from '../lib/queueBuild';
+import { withoutPreservedReviewOrder } from '../lib/exportAnkiPackage';
 import { saveCollectionDeckOptions } from '../lib/storage';
 import {
     formatAnkiStepText,
@@ -815,6 +816,9 @@ export default function DeckOptionsScreen() {
                 newReviewOrder: form.newReviewOrder,
                 interdayLearningMix: form.interdayLearningMix,
                 reviewSortOrder: form.reviewSortOrder,
+                // Saving the form is an explicit choice, so it replaces any FSRS-only review
+                // order preserved from an imported package rather than being overridden by it.
+                ankiRaw: withoutPreservedReviewOrder(base.ankiRaw),
                 buryNewSiblings: form.buryNewSiblings,
                 buryReviewSiblings: form.buryReviewSiblings,
                 buryInterdayLearningSiblings: form.buryInterdayLearningSiblings,

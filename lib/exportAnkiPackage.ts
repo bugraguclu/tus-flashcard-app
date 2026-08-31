@@ -220,6 +220,39 @@ const REVIEW_ORDER_ORDINAL: Record<string, number> = {
     easeAsc: 5, easeDesc: 6, random: 8, added: 9, reverseAdded: 10, relativeOverdueness: 12,
 };
 
+/**
+ * Anki's two retrievability review orders (ordinals 7 and 11) are FSRS-only and have no local
+ * equivalent, so importing one falls back to `dueRandom` (lib/importApkg.ts). Writing that
+ * fallback straight back out would replace the author's choice with "day (random)" in the
+ * exported package, which is exactly the loss `ankiRaw` exists to prevent, so the source ordinal
+ * is re-emitted instead.
+ *
+ * A user who picks an order in Deck Options is choosing for themselves; that save drops the
+ * preserved ordinal (`withoutPreservedReviewOrder`) so their own choice is what gets exported.
+ */
+const UNMAPPED_REVIEW_ORDER_ORDINALS = new Set([7, 11]);
+
+export function exportedReviewOrder(config: DeckConfig): number {
+    const order = config.reviewSortOrder ?? 'dueRandom';
+    const mapped = REVIEW_ORDER_ORDINAL[order] ?? 0;
+    if (order !== 'dueRandom') return mapped;
+
+    const preserved = Number(config.ankiRaw?.reviewOrder);
+    return UNMAPPED_REVIEW_ORDER_ORDINALS.has(preserved) ? preserved : mapped;
+}
+
+/**
+ * Forget an imported package's FSRS-only review order so an explicit Deck Options save wins over
+ * it. Returns the same object when there is nothing to forget, leaving untouched presets pristine.
+ */
+export function withoutPreservedReviewOrder(
+    ankiRaw: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+    if (!ankiRaw || !UNMAPPED_REVIEW_ORDER_ORDINALS.has(Number(ankiRaw.reviewOrder))) return ankiRaw;
+    const { reviewOrder: _preserved, ...rest } = ankiRaw;
+    return rest;
+}
+
 function deckConfigMap(
     decks: Deck[],
     sourceConfigs: DeckConfig[],
@@ -251,7 +284,7 @@ function deckConfigMap(
             newMix: REVIEW_MIX_ORDINAL[config.newReviewOrder ?? 'mix'] ?? 0,
             newGatherPriority: GATHER_ORDER_ORDINAL[normalizeNewCardGatherOrder(config.newCardGatherOrder)] ?? 0,
             newSortOrder: NEW_SORT_ORDER_ORDINAL[config.newCardSortOrder ?? 'template'] ?? 0,
-            reviewOrder: REVIEW_ORDER_ORDINAL[config.reviewSortOrder ?? 'dueRandom'] ?? 0,
+            reviewOrder: exportedReviewOrder(config),
             easyDays: config.easyDays ?? [1, 1, 1, 1, 1, 1, 1],
             // FSRS, under Anki's schema11 names. The parameters are written to the FSRS-6 slot;
             // an importer that only understands older generations falls back to its own defaults.
