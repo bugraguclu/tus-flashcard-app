@@ -13,7 +13,7 @@ import {
     restoreQueueFromType,
 } from './ankiState';
 import { getDeckAncestors } from './models';
-import { addDaysLocalYMD, getScheduler, todayLocalYMD } from './scheduler';
+import { addDaysLocalYMD, getScheduler, learningDelayWithFuzz, todayLocalYMD } from './scheduler';
 import {
     buryCard,
     getAnkiCard,
@@ -1322,13 +1322,27 @@ export function answerStudyCard(
             cardSettings.dayRolloverHour,
         );
 
+    // Anki adds up to 25% (never more than five minutes) to an intraday step before it writes
+    // the due time, so a batch answered together does not come back together. A step that reaches
+    // past the rollover turns into an interday card instead and is left unfuzzed
+    // (rslib answering/learning.rs and states/interval_kind.rs `maybe_as_days`).
+    const learningDueTimeMs = (): number => {
+        const stepSeconds = Math.round((scheduleResult.minutesUntilDue || 1) * 60);
+        const secsUntilRollover = Math.max(
+            0,
+            Math.round((nextRolloverMs(nowMs, cardSettings.dayRolloverHour) - nowMs) / 1000),
+        );
+        const delay = stepSeconds >= secsUntilRollover
+            ? stepSeconds
+            : learningDelayWithFuzz(stepSeconds, currentAnkiCard.id, currentState.repetition);
+        return nowMs + delay * 1000;
+    };
+
     const baseDue = scheduleResult.isLearning
         ? {
             status: 'learning' as const,
             dueDate: todayLocalYMD(new Date(nowMs), cardSettings.dayRolloverHour),
-            dueTime: scheduleResult.minutesUntilDue
-                ? nowMs + scheduleResult.minutesUntilDue * 60000
-                : nowMs + 60000,
+            dueTime: learningDueTimeMs(),
         }
         : {
             status: 'review' as const,

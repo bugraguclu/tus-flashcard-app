@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { getScheduler, formatMinutes, formatDays } from './scheduler';
+import {
+    getScheduler,
+    formatMinutes,
+    formatDays,
+    constrainedFuzzBounds,
+    minAndMaxReviewIntervals,
+} from './scheduler';
 import type { AppSettings, CardState, Grade } from './types';
 
 const defaultSettings: AppSettings = {
@@ -33,6 +39,12 @@ const defaultSettings: AppSettings = {
     learnAheadMinutes: 0,
     algorithm: 'ANKI_V3',
 };
+
+/** The days Anki's fuzz may pick from for a freshly computed interval. */
+function fuzzRange(interval: number, minimum: number, settings: AppSettings): [number, number] {
+    const [min, max] = minAndMaxReviewIntervals(settings, minimum);
+    return constrainedFuzzBounds(interval, min, max);
+}
 
 function makeNewCard(): CardState {
     return {
@@ -124,7 +136,10 @@ describe('ANKI_V3 scheduler', () => {
         const settings70 = { ...defaultSettings, lapseIntervalMultiplier: 0.7 };
         const result = engine.schedule(card, 1 as Grade, settings70);
 
-        expect(result.stateUpdates.interval).toBe(14); // 20 * 0.7
+        // 20 * 0.7 = 14 days, out of which Anki's fuzz picks the day to schedule.
+        const [lower, upper] = fuzzRange(14, settings70.minLapseInterval, settings70);
+        expect(result.stateUpdates.interval).toBeGreaterThanOrEqual(lower);
+        expect(result.stateUpdates.interval).toBeLessThanOrEqual(upper);
     });
 
     it('review Again with no relearning steps returns to review, not relearning (Anki again_review)', () => {
@@ -137,7 +152,9 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.minutesUntilDue).toBeUndefined();
         expect(result.stateUpdates.status).toBe('review');
         expect(result.stateUpdates.relearningStep).toBe(-1);
-        expect(result.stateUpdates.interval).toBe(10); // 20 * 0.5
+        const [lower, upper] = fuzzRange(10, noRelearn.minLapseInterval, noRelearn);
+        expect(result.stateUpdates.interval).toBeGreaterThanOrEqual(lower);
+        expect(result.stateUpdates.interval).toBeLessThanOrEqual(upper);
         // Lapse is still counted and ease still drops by 0.20.
         expect(result.stateUpdates.lapses).toBe(2);
         expect(result.stateUpdates.easeFactor).toBeCloseTo(2.3, 5);
@@ -147,8 +164,10 @@ describe('ANKI_V3 scheduler', () => {
         const card = makeReviewCard({ interval: 20 });
         const noRelearn = { ...defaultSettings, lapseSteps: [], lapseIntervalMultiplier: 0.5 };
         const preview = engine.previewIntervals(card, noRelearn);
+        const scheduled = engine.schedule(card, 1 as Grade, noRelearn).interval;
 
-        expect(preview.again).toBe(formatDays(10)); // 20 * 0.5 days, not "1dk"
+        // The button names the day the answer will land on, in days rather than "1dk".
+        expect(preview.again).toBe(formatDays(scheduled));
     });
 
     it('uses lapseSteps (not learningSteps) during relearning', () => {
@@ -315,21 +334,28 @@ describe('ANKI_V3 scheduler', () => {
         expect(goodWithLowModifier).toBeLessThan(goodWithNeutralModifier);
     });
 
-    it('uses deterministic fuzz based on study day + card id', () => {
-        const baseCard = makeReviewCard({ interval: 30, easeFactor: 2.5, cardId: 42 });
+    it('seeds the fuzz from the card and its review count, the way Anki does', () => {
+        const baseCard = makeReviewCard({ interval: 30, easeFactor: 2.5, cardId: 42, repetition: 4 });
         const now = new Date(2026, 2, 12, 13, 0, 0, 0).getTime();
 
         const first = engine.schedule(baseCard, 3 as Grade, defaultSettings, now).interval;
-        const second = engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 60_000).interval;
-        expect(first).toBe(second);
 
-        const differentCards = [77, 78, 79].map((cardId) => (
+        // Anki seeds the fuzz from the card, never from the clock, so the same card answered
+        // later the same day — or on another day entirely — lands on the same interval.
+        expect(engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 60_000).interval).toBe(first);
+        expect(engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 24 * 3600 * 1000).interval)
+            .toBe(first);
+
+        // Other cards, and the same card at a later review count, draw their own fuzz.
+        const otherCards = [77, 78, 79].map((cardId) => (
             engine.schedule({ ...baseCard, cardId }, 3 as Grade, defaultSettings, now).interval
         ));
-        const nextDay = engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 24 * 3600 * 1000).interval;
+        const laterReps = [5, 6, 7].map((repetition) => (
+            engine.schedule({ ...baseCard, repetition }, 3 as Grade, defaultSettings, now).interval
+        ));
 
-        expect(differentCards.some((value) => value !== first)).toBe(true);
-        expect(nextDay).not.toBe(first);
+        expect(otherCards.some((value) => value !== first)).toBe(true);
+        expect(laterReps.some((value) => value !== first)).toBe(true);
     });
 
     it('never drops ease below 1.3', () => {
@@ -366,7 +392,8 @@ describe('ANKI_V3 scheduler', () => {
         expect(preview.hard).toBe('10dk');
         expect(preview.again).toBe('1dk');
         expect(preview.good).toBe('1 gün');
-        expect(preview.easy).toBe('4 gün');
+        // Anki fuzzes the easy graduating interval, and the label names the fuzzed day.
+        expect(preview.easy).toBe(formatDays(engine.schedule(card, 4 as Grade, defaultSettings).interval));
 
         // Also verify the actual scheduling gives 10min, not 15min
         const result = engine.schedule(card, 2 as Grade, defaultSettings);
@@ -380,7 +407,7 @@ describe('ANKI_V3 scheduler', () => {
         expect(preview.hard).toBe('6dk');
         expect(preview.again).toBe('1dk');
         expect(preview.good).toBe('10dk');
-        expect(preview.easy).toBe('4 gün');
+        expect(preview.easy).toBe(formatDays(engine.schedule(card, 4 as Grade, defaultSettings).interval));
     });
 
     it('Hard at first learning step uses 150% when no next step exists (Anki v3)', () => {
