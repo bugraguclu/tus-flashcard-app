@@ -47,8 +47,7 @@ import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { extractClozeNumbers } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
-import { editorDraftKey } from '../lib/editorDraft';
-import { hasSnapshotChanged } from '../lib/dirtyState';
+import { editorDraftKey, hasEditorDraftChanged } from '../lib/editorDraft';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
@@ -353,7 +352,18 @@ export default function EditorScreen() {
     ));
     const [preservedFields, setPreservedFields] = useState<string[]>(routeFieldValues);
     const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
-    const initialDraftKeyRef = useRef<string | null>(null);
+    const initialDraftKeyRef = useRef<string | null>(
+        routeCardId
+            ? null
+            : editorDraftKey({
+                question: (params.question as string) || stickyFieldDefaults.question?.value || '',
+                answer: (params.answer as string) || stickyFieldDefaults.answer?.value || '',
+                reverseAnswer: (routeNoteTypeId === 7 ? routeFieldValues[2] : '') || stickyFieldDefaults.reverseAnswer?.value || '',
+                cardTypeId: routeNoteTypeId ?? 1,
+                deckId: targetDeckId,
+                tags: typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : [],
+            }),
+    );
 
     const selectedNoteType = useMemo(
         () => getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId) ?? null,
@@ -491,7 +501,7 @@ export default function EditorScreen() {
         deckId: targetDeckId,
         tags: noteTags,
     }), [answer, cardTypeId, noteTags, question, reverseAnswer, targetDeckId]);
-    const isDirty = hasSnapshotChanged(initialDraftKeyRef.current, currentDraft);
+    const isDirty = hasEditorDraftChanged(initialDraftKeyRef.current, currentDraft);
     useUnsavedChangesGuard(isDirty, {
         title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
         message: isEditing

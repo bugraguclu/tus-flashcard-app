@@ -43,4 +43,25 @@ describe('editor draft changes', () => {
         const reverseDraft = { ...initialDraft, cardTypeId: 7, reverseAnswer: 'Ters cevap' };
         expect(hasEditorDraftChanged(editorDraftKey(reverseDraft), { ...reverseDraft, reverseAnswer: 'Değişti' })).toBe(true);
     });
+
+    it('does not report an untouched blank card as changed', () => {
+        const blankDraft: EditorDraftState = {
+            question: '',
+            answer: '',
+            reverseAnswer: '',
+            cardTypeId: 1,
+            deckId: 1,
+            tags: [],
+        };
+        const blankKey = editorDraftKey(blankDraft);
+        expect(hasEditorDraftChanged(blankKey, blankDraft)).toBe(false);
+        expect(hasEditorDraftChanged(blankKey, { ...blankDraft, question: '   ' })).toBe(false);
+        expect(hasEditorDraftChanged(blankKey, { ...blankDraft, question: 'Soru' })).toBe(true);
+        expect(hasEditorDraftChanged(blankKey, { ...blankDraft, answer: 'Cevap' })).toBe(true);
+        expect(hasEditorDraftChanged(blankKey, { ...blankDraft, deckId: 2 })).toBe(true);
+    });
+
+    it('returns false when initial draft key is null', () => {
+        expect(hasEditorDraftChanged(null, initialDraft)).toBe(false);
+    });
 });
