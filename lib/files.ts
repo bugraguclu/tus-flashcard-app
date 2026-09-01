@@ -22,6 +22,19 @@ export function assertKnownFileSize(size: number | null | undefined, maxBytes: n
     }
 }
 
+/**
+ * Give a bare filesystem path the `file://` scheme that native file APIs expect. Some native
+ * modules hand one back — `react-native-view-shot` resolves an iOS `tmpfile` capture to a plain
+ * `/private/var/…` path — and a schemeless path is a *relative URL*: `fetch` resolves it against
+ * the bundle origin and returns the dev server's HTML page instead of the captured image.
+ */
+export function toFileUri(uri: string): string {
+    if (typeof uri !== 'string') return '';
+    const value = uri.trim();
+    if (!value.startsWith('/')) return value;
+    return `file://${encodeURI(value).replace(/#/g, '%23')}`;
+}
+
 async function assertNativeUriSize(uri: string, maxBytes?: number): Promise<void> {
     if (!maxBytes) return;
     const info = await getLegacyFileSystem().getInfoAsync(uri);
@@ -37,8 +50,9 @@ export async function readUriText(uri: string, maxBytes?: number): Promise<strin
         assertKnownFileSize(blob.size, maxBytes ?? Number.POSITIVE_INFINITY);
         return blob.text();
     }
-    await assertNativeUriSize(uri, maxBytes);
-    const text = await getLegacyFileSystem().readAsStringAsync(uri);
+    const location = toFileUri(uri);
+    await assertNativeUriSize(location, maxBytes);
+    const text = await getLegacyFileSystem().readAsStringAsync(location);
     if (maxBytes) assertKnownFileSize(new TextEncoder().encode(text).byteLength, maxBytes);
     return text;
 }
@@ -77,9 +91,10 @@ export async function readUriBytes(uri: string, maxBytes?: number): Promise<Uint
         assertKnownFileSize(blob.size, maxBytes ?? Number.POSITIVE_INFINITY);
         return new Uint8Array(await blob.arrayBuffer());
     }
-    await assertNativeUriSize(uri, maxBytes);
+    const location = toFileUri(uri);
+    await assertNativeUriSize(location, maxBytes);
     const fs = getLegacyFileSystem();
-    const encoded = await fs.readAsStringAsync(uri, { encoding: fs.EncodingType.Base64 });
+    const encoded = await fs.readAsStringAsync(location, { encoding: fs.EncodingType.Base64 });
     const bytes = base64ToBytes(encoded);
     if (maxBytes) assertKnownFileSize(bytes.byteLength, maxBytes);
     return bytes;

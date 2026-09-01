@@ -15,7 +15,7 @@ import {
     Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
@@ -39,15 +39,16 @@ import CardWebView from '../components/CardWebView';
 import MediaAttachButton, { FIELD_MEDIA_RE, type MediaAttachButtonHandle } from '../components/MediaAttachButton';
 import RichTextEditor, {
     type RichTextEditorHandle,
+    type RichTextCommand,
 } from '../components/RichTextEditor';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
-import { extractClozeNumbers } from '../lib/templates';
+import { countCardsForNote, extractClozeNumbers, sanitizeUntrustedHtml } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
-import { editorDraftKey, hasEditorDraftChanged } from '../lib/editorDraft';
+import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
@@ -117,7 +118,6 @@ function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number })
     );
 }
 
-type EditorField = 'question' | 'answer' | 'reverseAnswer';
 
 function PinIcon({ color, size = 21 }: { color: string; size?: number }) {
     return (
@@ -134,16 +134,40 @@ function PinIcon({ color, size = 21 }: { color: string; size?: number }) {
     );
 }
 
-type AnkiToolbarIconName = 'bold' | 'italic' | 'underline' | 'rule' | 'heading' | 'fontSize' | 'math' | 'add';
+type AnkiToolbarIconName =
+    | 'bold'
+    | 'italic'
+    | 'underline'
+    | 'strikethrough'
+    | 'removeFormat'
+    | 'subscript'
+    | 'superscript'
+    | 'color'
+    | 'listBullet'
+    | 'listNumber'
+    | 'rule'
+    | 'heading'
+    | 'fontSize'
+    | 'math'
+    | 'html'
+    | 'add';
 
 function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName; color: string; size?: number }) {
     const paths: Record<Exclude<AnkiToolbarIconName, 'math'>, string> = {
         bold: 'M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42ZM10 6.5h3a1.5 1.5 0 0 1 0 3h-3v-3Zm3.5 9H10v-3h3.5a1.5 1.5 0 0 1 0 3Z',
         italic: 'M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4h-8Z',
         underline: 'M12 17a6 6 0 0 0 6-6V3h-2.5v8a3.5 3.5 0 1 1-7 0V3H6v8a6 6 0 0 0 6 6ZM5 19v2h14v-2H5Z',
+        strikethrough: 'M10 19h4v-3h-4v3zM5 4v3h5v3h4V7h5V4H5zM3 14h18v-2H3v2z',
+        removeFormat: 'M4 4h10v2H9v12H7V6H4V4zm11 7l3 3-3 3 1.4 1.4 3-3 3 3 1.4-1.4-3-3 3-3-1.4-1.4-3 3-3-3L15 11z',
+        subscript: 'M5 4l3.5 6L5 16h2.2l2.4-4.2 2.4 4.2h2.2l-3.5-6 3.5-6h-2.2L9.6 8.2 7.2 4H5zm14 13h4v1h-5v-1l3-3c.5-.5.7-.9.7-1.3 0-.6-.4-1-1-1s-1 .4-1 1h-1c0-1.1.9-2 2-2s2 .9 2 2c0 .6-.3 1.2-.8 1.7l-2.2 2.2V17h2.3z',
+        superscript: 'M5 7l3.5 6L5 19h2.2l2.4-4.2 2.4 4.2h2.2l-3.5-6 3.5-6h-2.2L9.6 11.2 7.2 7H5zm14 3h4v1h-5v-1l3-3c.5-.5.7-.9.7-1.3 0-.6-.4-1-1-1s-1 .4-1 1h-1c0-1.1.9-2 2-2s2 .9 2 2c0 .6-.3 1.2-.8 1.7l-2.2 2.2V10h2.3z',
+        color: 'M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.17 19.38 10.53 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z',
+        listBullet: 'M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z',
+        listNumber: 'M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z',
         rule: 'M2 11h20v2H2z',
         heading: 'M5 4v3h5.5v12h3V7H19V4H5Z',
         fontSize: 'M2.5 4v3h5v12h3V7h5V4h-13Zm19 5h-9v3h3v7h3v-7h3V9Z',
+        html: 'M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
         add: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2Z',
     };
 
@@ -169,67 +193,32 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
     );
 }
 
-interface CustomToolbarButton {
-    id: string;
-    buttonText: string;
-    prefix: string;
-    suffix: string;
-}
-
-const CUSTOM_TOOLBAR_BUTTONS_KEY = 'tus_editor_custom_toolbar_buttons_v1';
-
-function loadCustomToolbarButtons(): CustomToolbarButton[] {
-    try {
-        const raw = getDbSetting(CUSTOM_TOOLBAR_BUTTONS_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw) as unknown;
-        if (!Array.isArray(parsed)) return [];
-        return parsed.flatMap((item): CustomToolbarButton[] => {
-            if (!item || typeof item !== 'object') return [];
-            const candidate = item as Partial<CustomToolbarButton>;
-            if (typeof candidate.id !== 'string' || typeof candidate.buttonText !== 'string'
-                || typeof candidate.prefix !== 'string' || typeof candidate.suffix !== 'string') return [];
-            return [{
-                id: candidate.id,
-                buttonText: candidate.buttonText,
-                prefix: candidate.prefix,
-                suffix: candidate.suffix,
-            }];
-        });
-    } catch {
-        return [];
-    }
-}
-
-function persistCustomToolbarButtons(buttons: CustomToolbarButton[]): void {
-    setDbSetting(CUSTOM_TOOLBAR_BUTTONS_KEY, JSON.stringify(buttons));
-}
-
-type StickyEditorFields = Partial<Record<EditorField, { pinned: boolean; value: string }>>;
-const STICKY_EDITOR_FIELDS_KEY = 'tus_editor_sticky_fields_v1';
-
-function loadStickyEditorFields(): StickyEditorFields {
-    try {
-        const raw = getDbSetting(STICKY_EDITOR_FIELDS_KEY);
-        if (!raw) return {};
-        const parsed = JSON.parse(raw) as StickyEditorFields;
-        const clean: StickyEditorFields = {};
-        (['question', 'answer', 'reverseAnswer'] as EditorField[]).forEach((field) => {
-            const entry = parsed[field];
-            if (!entry || typeof entry.value !== 'string') return;
-            clean[field] = { pinned: Boolean(entry.pinned), value: entry.value };
-        });
-        return clean;
-    } catch {
-        return {};
-    }
-}
-
-function saveStickyEditorFields(fields: StickyEditorFields): void {
-    setDbSetting(STICKY_EDITOR_FIELDS_KEY, JSON.stringify(fields));
-}
+import {
+    CUSTOM_TOOLBAR_PRESETS,
+    loadCustomToolbarButtons,
+    persistCustomToolbarButtons,
+    sanitizeButtonText,
+    sanitizeCustomToolbarButton,
+    sanitizeToolbarSnippet,
+    type CustomToolbarButton,
+    type CustomToolbarPreset,
+    type LocalizedPresetText,
+} from '../lib/customToolbar';
+import {
+    loadStickyEditorFields,
+    saveStickyEditorFields,
+    type EditorField,
+    type StickyEditorFields,
+} from '../lib/editorStickyFields';
 
 const CARD_TYPE_CHOICES = ANKI_STOCK_NOTE_TYPE_IDS;
+
+// The preview dialog picks its card body height before the card renders, so the sheet never
+// resizes once the WebView reports its intrinsic height. Everything else in the dialog — header,
+// deck line, side toggle, close button and padding — is fixed, and adds up to this much.
+const PREVIEW_CHROME_HEIGHT = 180;
+const PREVIEW_BODY_MIN_HEIGHT = 180;
+const PREVIEW_BODY_MAX_HEIGHT = 380;
 
 export default function EditorScreen() {
     const { t, l, locale } = useI18n();
@@ -238,9 +227,13 @@ export default function EditorScreen() {
     const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const { activeDeckName } = useStudyScope();
     const colors = useThemeColors();
+    const { width: screenWidth, height: screenHeight } = useWindowDimensions();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { width: screenWidth } = useWindowDimensions();
     const insets = useSafeAreaInsets();
+    const previewBodyHeight = Math.max(
+        PREVIEW_BODY_MIN_HEIGHT,
+        Math.min(PREVIEW_BODY_MAX_HEIGHT, Math.round(screenHeight * 0.85) - PREVIEW_CHROME_HEIGHT),
+    );
 
     const routeCardId = useMemo(() => {
         const explicitCardId = parseCardId(params.cardId);
@@ -287,6 +280,7 @@ export default function EditorScreen() {
     const [showNewSubject, setShowNewSubject] = useState(false);
     const [newSubjectName, setNewSubjectName] = useState('');
     const [showPreview, setShowPreview] = useState(false);
+    const [previewSide, setPreviewSide] = useState<'question' | 'answer'>('question');
     const [showTagPicker, setShowTagPicker] = useState(false);
     const [showCardTypePicker, setShowCardTypePicker] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
@@ -294,6 +288,9 @@ export default function EditorScreen() {
     const [showHeadingPicker, setShowHeadingPicker] = useState(false);
     const [showInlineFontSizePicker, setShowInlineFontSizePicker] = useState(false);
     const [showMathPicker, setShowMathPicker] = useState(false);
+    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+    const [htmlEditorValue, setHtmlEditorValue] = useState('');
     const [showCustomToolbarEditor, setShowCustomToolbarEditor] = useState(false);
     const [showCustomToolbarHelp, setShowCustomToolbarHelp] = useState(false);
     const [editingToolbarButtonId, setEditingToolbarButtonId] = useState<string | null>(null);
@@ -307,6 +304,8 @@ export default function EditorScreen() {
         || showHeadingPicker
         || showInlineFontSizePicker
         || showMathPicker
+        || showColorPicker
+        || showHtmlEditor
         || showCustomToolbarHelp;
 
     // Formatting/preview surfaces are not keyboard editors themselves. Let them open against
@@ -325,6 +324,7 @@ export default function EditorScreen() {
         };
     });
     const [activeField, setActiveField] = useState<EditorField>('question');
+    const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
     const questionEditorRef = useRef<RichTextEditorHandle>(null);
     const answerEditorRef = useRef<RichTextEditorHandle>(null);
     const reverseEditorRef = useRef<RichTextEditorHandle>(null);
@@ -352,18 +352,28 @@ export default function EditorScreen() {
     ));
     const [preservedFields, setPreservedFields] = useState<string[]>(routeFieldValues);
     const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
-    const initialDraftKeyRef = useRef<string | null>(
+    // The screen is dirty only once the user changes something, so the baseline is the draft the
+    // editor opened with. It is kept as state and not just as its key, so the destination deck
+    // resolving on its own can be folded in later without also absorbing an edit made meanwhile.
+    const initialDraftRef = useRef<EditorDraftState | null>(
         routeCardId
             ? null
-            : editorDraftKey({
+            : {
                 question: (params.question as string) || stickyFieldDefaults.question?.value || '',
                 answer: (params.answer as string) || stickyFieldDefaults.answer?.value || '',
                 reverseAnswer: (routeNoteTypeId === 7 ? routeFieldValues[2] : '') || stickyFieldDefaults.reverseAnswer?.value || '',
                 cardTypeId: routeNoteTypeId ?? 1,
                 deckId: targetDeckId,
                 tags: typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : [],
-            }),
+            },
     );
+    const initialDraftKeyRef = useRef<string | null>(
+        initialDraftRef.current ? editorDraftKey(initialDraftRef.current) : null,
+    );
+    const resetDraftBaseline = (draft: EditorDraftState | null) => {
+        initialDraftRef.current = draft;
+        initialDraftKeyRef.current = draft ? editorDraftKey(draft) : null;
+    };
 
     const selectedNoteType = useMemo(
         () => getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId) ?? null,
@@ -442,7 +452,7 @@ export default function EditorScreen() {
     useEffect(() => {
         if (!routeCardId) return;
 
-        initialDraftKeyRef.current = null;
+        resetDraftBaseline(null);
 
         const card = getAnkiCard(routeCardId);
         if (!card) return;
@@ -461,7 +471,7 @@ export default function EditorScreen() {
         setCardTypeId(note.noteTypeId);
         setReverseAnswer(initialReverseAnswer);
         setIsEditing(true);
-        initialDraftKeyRef.current = editorDraftKey({
+        resetDraftBaseline({
             question: note.fields[0] || note.sfld || '',
             answer: note.fields[1] || '',
             reverseAnswer: initialReverseAnswer,
@@ -481,17 +491,17 @@ export default function EditorScreen() {
         setTargetDeckId(activeDeck && !activeDeck.isFiltered ? activeDeck.id : (getDeck(1)?.id ?? null));
     }, [routeCardId, targetDeckId, activeDeckName]);
 
+    // The destination deck resolves synchronously in almost every case, but an empty or
+    // still-initializing collection can leave it null for the first frames. Fold that resolution
+    // into the baseline — a deck the screen picked for itself is not an edit the user made —
+    // and keep the field values captured at mount so a keystroke in that window still counts.
+    const draftDeckSeededRef = useRef(Boolean(routeCardId) || targetDeckId !== null);
     useEffect(() => {
-        if (routeCardId || targetDeckId === null || initialDraftKeyRef.current !== null) return;
-        initialDraftKeyRef.current = editorDraftKey({
-            question,
-            answer,
-            reverseAnswer,
-            cardTypeId,
-            deckId: targetDeckId,
-            tags: noteTags,
-        });
-    }, [routeCardId, targetDeckId, question, answer, reverseAnswer, cardTypeId, noteTags]);
+        if (routeCardId || targetDeckId === null || draftDeckSeededRef.current) return;
+        draftDeckSeededRef.current = true;
+        const baseline = initialDraftRef.current;
+        if (baseline) resetDraftBaseline({ ...baseline, deckId: targetDeckId });
+    }, [routeCardId, targetDeckId]);
 
     const currentDraft = useMemo(() => ({
         question,
@@ -548,6 +558,10 @@ export default function EditorScreen() {
         activeEditorRef().current?.wrapSelection(prefix, suffix);
     };
 
+    const runEditorCommand = (command: RichTextCommand, value?: string) => {
+        activeEditorRef().current?.runCommand(command, value);
+    };
+
     const openCreateToolbarButton = () => {
         Keyboard.dismiss();
         setEditingToolbarButtonId(null);
@@ -563,23 +577,31 @@ export default function EditorScreen() {
     };
 
     const saveCustomToolbarButton = () => {
-        if (!toolbarButtonDraft.prefix && !toolbarButtonDraft.suffix) {
+        const cleanPrefix = sanitizeToolbarSnippet(toolbarButtonDraft.prefix);
+        const cleanSuffix = sanitizeToolbarSnippet(toolbarButtonDraft.suffix);
+
+        if (!cleanPrefix && !cleanSuffix) {
             alert(
                 t('common.error'),
-                l('Seçili metnin önüne veya arkasına eklenecek en az bir HTML değeri girin.', 'Enter at least one HTML value to insert before or after the selected text.'),
+                l(
+                    'Seçili metnin önüne veya arkasına eklenecek geçerli bir HTML değeri girin (ör. <span>, <mark>, <b>). Güvenlik nedeniyle komut dosyaları ve form etiketleri eklenemez.',
+                    'Enter at least one valid HTML value (e.g. <span>, <mark>, <b>). Script and form elements are blocked for security.',
+                ),
             );
             return;
         }
 
         setCustomToolbarButtons((current) => {
-            const fallbackText = String((editingToolbarButtonId
+            const fallbackIndex = (editingToolbarButtonId
                 ? current.findIndex((button) => button.id === editingToolbarButtonId)
-                : current.length) + 1);
+                : current.length) + 1;
+            const buttonText = sanitizeButtonText(toolbarButtonDraft.buttonText, String(fallbackIndex));
+
             const nextButton: CustomToolbarButton = {
-                id: editingToolbarButtonId ?? `toolbar-${Date.now()}`,
-                buttonText: toolbarButtonDraft.buttonText.trim() || fallbackText,
-                prefix: toolbarButtonDraft.prefix,
-                suffix: toolbarButtonDraft.suffix,
+                id: editingToolbarButtonId ?? `toolbar-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                buttonText,
+                prefix: cleanPrefix,
+                suffix: cleanSuffix,
             };
             const next = editingToolbarButtonId
                 ? current.map((button) => button.id === editingToolbarButtonId ? nextButton : button)
@@ -588,6 +610,18 @@ export default function EditorScreen() {
             return next;
         });
         setShowCustomToolbarEditor(false);
+    };
+
+    // Presets carry their own copy rather than a translation key, so the screen resolves them
+    // through the same locale helper as everything else it renders.
+    const presetText = (text: LocalizedPresetText) => l(text.tr, text.en);
+
+    const applyToolbarPreset = (preset: CustomToolbarPreset) => {
+        setToolbarButtonDraft({
+            buttonText: presetText(preset.buttonText),
+            prefix: preset.prefix,
+            suffix: preset.suffix,
+        });
     };
 
     const requestDeleteCustomToolbarButton = () => {
@@ -612,20 +646,24 @@ export default function EditorScreen() {
         setTimeout(() => setShowCustomToolbarHelp(true), Platform.OS === 'ios' ? 180 : 0);
     };
 
-    const useToolbarButtonTemplate = () => {
+    const useToolbarButtonTemplate = (preset?: CustomToolbarPreset) => {
         setShowCustomToolbarHelp(false);
+        const target = preset ?? CUSTOM_TOOLBAR_PRESETS[0];
         setEditingToolbarButtonId(null);
         setToolbarButtonDraft({
-            buttonText: l('Düğme', 'Button'),
-            prefix: '<button type="button">',
-            suffix: '</button>',
+            buttonText: presetText(target.buttonText),
+            prefix: target.prefix,
+            suffix: target.suffix,
         });
         setTimeout(() => setShowCustomToolbarEditor(true), Platform.OS === 'ios' ? 180 : 0);
     };
 
     const openPreview = () => {
         Keyboard.dismiss();
-        setShowPreview(true);
+        setPreviewSide('question');
+        requestAnimationFrame(() => {
+            setShowPreview(true);
+        });
     };
 
     const handleBack = () => {
@@ -680,16 +718,31 @@ export default function EditorScreen() {
 
     const handleSave = () => {
         setShowOverflowMenu(false);
-        if (!fieldHasContent(question)) {
-            alert(t('common.error'), isCloze
-                ? l('Metin alanı boş bırakılamaz.', 'The Text field cannot be empty.')
-                : l('Ön alanı boş bırakılamaz.', 'The Front field cannot be empty.'));
-            return;
-        }
-        if (isCloze && extractClozeNumbers(question).length === 0) {
+        const currentFields = [
+            question.trim(),
+            answer.trim(),
+            cardTypeId === 7 ? reverseAnswer.trim() : '',
+            ...preservedFields.slice(3),
+        ];
+        const mockNote: Note = {
+            id: 0,
+            guid: '',
+            noteTypeId: cardTypeId,
+            mod: 0,
+            usn: 0,
+            tags: noteTags,
+            fields: currentFields,
+            sfld: currentFields[0] || '',
+            csum: 0,
+            flags: 0,
+        };
+        const cardsCount = selectedNoteType ? countCardsForNote(selectedNoteType, mockNote) : 0;
+        if (cardsCount === 0) {
             alert(
                 t('common.error'),
-                l('En az bir boşluk ekleyin. Metni seçip araç çubuğundaki […] düğmesine dokunun.', 'Add at least one cloze deletion. Select text, then tap […] in the toolbar.'),
+                isCloze
+                    ? l('En az bir boşluk ekleyin. Metni seçip araç çubuğundaki […] düğmesine dokunun.', 'Add at least one cloze deletion. Select text, then tap […] in the toolbar.')
+                    : l('Girilen alanlar hiç kart oluşturmuyor. Lütfen kart oluşturacak en az bir alan doldurun.', 'The entered fields do not generate any cards. Please fill in at least one field that generates a card.'),
             );
             return;
         }
@@ -719,7 +772,7 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
                 }
 
-                initialDraftKeyRef.current = editorDraftKey(currentDraft);
+                resetDraftBaseline(currentDraft);
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
             } else {
@@ -740,7 +793,7 @@ export default function EditorScreen() {
                 }
 
                 persistStickyFieldValues();
-                initialDraftKeyRef.current = editorDraftKey(currentDraft);
+                resetDraftBaseline(currentDraft);
                 bumpDataVersion();
                 alert(
                     t('common.completed'),
@@ -782,21 +835,113 @@ export default function EditorScreen() {
         key: string;
         icon: AnkiToolbarIconName;
         label: string;
+        isActive?: boolean;
         onPress: () => void;
         onLongPress?: () => void;
     }> = [
-        { key: 'bold', icon: 'bold', label: l('Kalın', 'Bold'), onPress: () => wrapEditorSelection('<b>', '</b>') },
-        { key: 'italic', icon: 'italic', label: l('İtalik', 'Italic'), onPress: () => wrapEditorSelection('<i>', '</i>') },
-        { key: 'underline', icon: 'underline', label: l('Altı çizili', 'Underline'), onPress: () => wrapEditorSelection('<u>', '</u>') },
-        { key: 'rule', icon: 'rule', label: l('Yatay çizgi ekle', 'Insert horizontal line'), onPress: () => wrapEditorSelection('<hr>', '') },
-        { key: 'heading', icon: 'heading', label: l('Başlık ekle', 'Insert heading'), onPress: () => setShowHeadingPicker(true) },
-        { key: 'fontSize', icon: 'fontSize', label: l('Yazı boyutu', 'Font size'), onPress: () => setShowInlineFontSizePicker(true) },
+        {
+            key: 'bold',
+            icon: 'bold',
+            label: l('Kalın', 'Bold'),
+            isActive: activeFormats.has('bold'),
+            onPress: () => runEditorCommand('bold'),
+        },
+        {
+            key: 'italic',
+            icon: 'italic',
+            label: l('İtalik', 'Italic'),
+            isActive: activeFormats.has('italic'),
+            onPress: () => runEditorCommand('italic'),
+        },
+        {
+            key: 'underline',
+            icon: 'underline',
+            label: l('Altı çizili', 'Underline'),
+            isActive: activeFormats.has('underline'),
+            onPress: () => runEditorCommand('underline'),
+        },
+        {
+            key: 'strikethrough',
+            icon: 'strikethrough',
+            label: l('Üstü çizili', 'Strikethrough'),
+            isActive: activeFormats.has('strikeThrough'),
+            onPress: () => runEditorCommand('strikeThrough'),
+        },
+        {
+            key: 'subscript',
+            icon: 'subscript',
+            label: l('Alt simge', 'Subscript'),
+            isActive: activeFormats.has('subscript'),
+            onPress: () => runEditorCommand('subscript'),
+        },
+        {
+            key: 'superscript',
+            icon: 'superscript',
+            label: l('Üst simge', 'Superscript'),
+            isActive: activeFormats.has('superscript'),
+            onPress: () => runEditorCommand('superscript'),
+        },
+        {
+            key: 'removeFormat',
+            icon: 'removeFormat',
+            label: l('Biçimlendirmeyi temizle', 'Clear formatting'),
+            onPress: () => runEditorCommand('removeFormat'),
+        },
+        {
+            key: 'color',
+            icon: 'color',
+            label: l('Renk paleti', 'Color palette'),
+            onPress: () => setShowColorPicker(true),
+        },
+        {
+            key: 'listBullet',
+            icon: 'listBullet',
+            label: l('Madde imli liste', 'Bullet list'),
+            isActive: activeFormats.has('insertUnorderedList'),
+            onPress: () => runEditorCommand('insertUnorderedList'),
+        },
+        {
+            key: 'listNumber',
+            icon: 'listNumber',
+            label: l('Numaralı liste', 'Numbered list'),
+            isActive: activeFormats.has('insertOrderedList'),
+            onPress: () => runEditorCommand('insertOrderedList'),
+        },
+        {
+            key: 'rule',
+            icon: 'rule',
+            label: l('Yatay çizgi ekle', 'Insert horizontal line'),
+            onPress: () => runEditorCommand('insertHorizontalRule'),
+        },
+        {
+            key: 'heading',
+            icon: 'heading',
+            label: l('Başlık ekle', 'Insert heading'),
+            onPress: () => setShowHeadingPicker(true),
+        },
+        {
+            key: 'fontSize',
+            icon: 'fontSize',
+            label: l('Yazı boyutu', 'Font size'),
+            onPress: () => setShowInlineFontSizePicker(true),
+        },
         {
             key: 'math',
             icon: 'math',
             label: l('MathJax ekle', 'Insert MathJax'),
             onPress: () => wrapEditorSelection('\\(', '\\)'),
             onLongPress: () => setShowMathPicker(true),
+        },
+        {
+            key: 'html',
+            icon: 'html',
+            label: l('HTML kaynağı', 'HTML source'),
+            onPress: () => {
+                Keyboard.dismiss();
+                const currentVal = activeField === 'question' ? question : activeField === 'answer' ? answer : reverseAnswer;
+                setHtmlEditorValue(currentVal);
+                setShowHtmlEditor(true);
+            },
         },
     ];
 
@@ -817,18 +962,20 @@ export default function EditorScreen() {
                 </TouchableOpacity>
             )}
             {formattingTools.map((tool) => {
+                const isActive = tool.isActive;
                 return (
                     <TouchableOpacity
                         key={tool.key}
-                        style={styles.formatButton}
+                        style={[styles.formatButton, isActive && styles.formatButtonActive]}
                         onPress={tool.onPress}
                         onLongPress={tool.onLongPress}
                         delayLongPress={450}
                         accessibilityRole="button"
                         accessibilityLabel={tool.label}
+                        accessibilityState={{ selected: isActive }}
                         accessibilityHint={tool.key === 'math' ? l('Basılı tutarak diğer MathJax biçimlerini açın', 'Long press for other MathJax formats') : undefined}
                     >
-                        <AnkiToolbarIcon name={tool.icon} color={colors.textPrimary} />
+                        <AnkiToolbarIcon name={tool.icon} color={isActive ? colors.accent : colors.textPrimary} />
                     </TouchableOpacity>
                 );
             })}
@@ -861,7 +1008,6 @@ export default function EditorScreen() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ headerShown: false }} />
             <View style={{ height: insets.top, backgroundColor: colors.accent }} pointerEvents="none" />
             <View style={styles.editorHeader}>
                 <TouchableOpacity
@@ -958,7 +1104,6 @@ export default function EditorScreen() {
                         </TouchableOpacity>
                         <MediaAttachButton
                             ref={questionMediaRef}
-                            hasMedia={FIELD_MEDIA_RE.test(question)}
                             onInsert={(snippet) => questionEditorRef.current?.insertHtml(snippet)}
                         />
                     </View>
@@ -967,7 +1112,15 @@ export default function EditorScreen() {
                     ref={questionEditorRef}
                     value={question}
                     onChange={setQuestion}
-                    onFocus={() => setActiveField('question')}
+                    onFocus={() => {
+                        setActiveField('question');
+                        setActiveFormats(new Set());
+                    }}
+                    onFormatStateChange={(formats) => {
+                        if (activeField === 'question') {
+                            setActiveFormats(new Set(formats));
+                        }
+                    }}
                     placeholder={isCloze
                         ? l('Metni yazın, sonra gizlenecek bölümü seçip […] düğmesine dokunun…', 'Enter text, then select the part to hide and tap […]…')
                         : l('Soruyu yazın…', 'Enter the question…')}
@@ -997,7 +1150,6 @@ export default function EditorScreen() {
                         </TouchableOpacity>
                         <MediaAttachButton
                             ref={answerMediaRef}
-                            hasMedia={FIELD_MEDIA_RE.test(answer)}
                             onInsert={(snippet) => answerEditorRef.current?.insertHtml(snippet)}
                         />
                     </View>
@@ -1006,7 +1158,15 @@ export default function EditorScreen() {
                     ref={answerEditorRef}
                     value={answer}
                     onChange={setAnswer}
-                    onFocus={() => setActiveField('answer')}
+                    onFocus={() => {
+                        setActiveField('answer');
+                        setActiveFormats(new Set());
+                    }}
+                    onFormatStateChange={(formats) => {
+                        if (activeField === 'answer') {
+                            setActiveFormats(new Set(formats));
+                        }
+                    }}
                     placeholder={isCloze ? l('İsteğe bağlı ek arka metni…', 'Optional extra text for the back…') : l('Cevabı yazın…', 'Enter the answer…')}
                     colors={colors}
                     fontSize={editorPreferences.fontSize}
@@ -1034,7 +1194,6 @@ export default function EditorScreen() {
                                 </TouchableOpacity>
                                 <MediaAttachButton
                                     ref={reverseMediaRef}
-                                    hasMedia={FIELD_MEDIA_RE.test(reverseAnswer)}
                                     onInsert={(snippet) => reverseEditorRef.current?.insertHtml(snippet)}
                                 />
                             </View>
@@ -1043,7 +1202,15 @@ export default function EditorScreen() {
                             ref={reverseEditorRef}
                             value={reverseAnswer}
                             onChange={setReverseAnswer}
-                            onFocus={() => setActiveField('reverseAnswer')}
+                            onFocus={() => {
+                                setActiveField('reverseAnswer');
+                                setActiveFormats(new Set());
+                            }}
+                            onFormatStateChange={(formats) => {
+                                if (activeField === 'reverseAnswer') {
+                                    setActiveFormats(new Set(formats));
+                                }
+                            }}
                             placeholder={l('Ters kart oluşturmak için herhangi bir metin girin.', 'Enter any text to create a reverse card.')}
                             colors={colors}
                             fontSize={editorPreferences.fontSize}
@@ -1298,6 +1465,141 @@ export default function EditorScreen() {
             </Modal>
 
             <Modal
+                visible={showColorPicker}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => setShowColorPicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowColorPicker(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('Metin & Vurgu Rengi', 'Text & Highlight Color')}</Text>
+                        <Text style={[styles.fieldName, { marginTop: 4 }]}>{l('Yazı rengi', 'Text color')}</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
+                            {[
+                                { label: l('Kırmızı', 'Red'), color: '#ef4444' },
+                                { label: l('Turuncu', 'Orange'), color: '#f97316' },
+                                { label: l('Yeşil', 'Green'), color: '#16a34a' },
+                                { label: l('Mavi', 'Blue'), color: '#3b82f6' },
+                                { label: l('Mor', 'Purple'), color: '#a855f7' },
+                                { label: l('Varsayılan', 'Default'), color: colors.textPrimary },
+                            ].map((item) => (
+                                <TouchableOpacity
+                                    key={item.color}
+                                    style={{
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 8,
+                                        borderRadius: BorderRadius.md,
+                                        backgroundColor: colors.bgCard,
+                                        borderWidth: 1.5,
+                                        borderColor: item.color,
+                                    }}
+                                    onPress={() => {
+                                        runAfterFormattingDialogClose(
+                                            () => setShowColorPicker(false),
+                                            () => runEditorCommand('foreColor', item.color),
+                                        );
+                                    }}
+                                >
+                                    <Text style={{ color: item.color, fontWeight: '600' }}>{item.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <Text style={[styles.fieldName, { marginTop: 8 }]}>{l('Vurgu rengi', 'Highlight color')}</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
+                            {[
+                                { label: l('Sarı', 'Yellow'), bg: '#fef08a' },
+                                { label: l('Yeşil', 'Green'), bg: '#bbf7d0' },
+                                { label: l('Mavi', 'Blue'), bg: '#bfdbfe' },
+                                { label: l('Pembe', 'Pink'), bg: '#fbcfe8' },
+                                { label: l('Turuncu', 'Orange'), bg: '#fed7aa' },
+                            ].map((item) => (
+                                <TouchableOpacity
+                                    key={item.bg}
+                                    style={{
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 8,
+                                        borderRadius: BorderRadius.md,
+                                        backgroundColor: item.bg,
+                                    }}
+                                    onPress={() => {
+                                        runAfterFormattingDialogClose(
+                                            () => setShowColorPicker(false),
+                                            () => runEditorCommand('hiliteColor', item.bg),
+                                        );
+                                    }}
+                                >
+                                    <Text style={{ color: '#1f2937', fontWeight: '600' }}>{item.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.formatPickerOption, { marginTop: 8 }]}
+                            onPress={() => {
+                                runAfterFormattingDialogClose(
+                                    () => setShowColorPicker(false),
+                                    () => runEditorCommand('removeFormat'),
+                                );
+                            }}
+                        >
+                            <Text style={styles.formatPickerOptionText}>{l('Biçimlendirmeyi temizle', 'Clear formatting')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowColorPicker(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showHtmlEditor}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => setShowHtmlEditor(false)}
+            >
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowHtmlEditor(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('HTML Kaynağını Düzenle', 'Edit HTML Source')}</Text>
+                        <Text style={styles.customToolbarExplanation}>
+                            {l('Alanın ham HTML içeriğini doğrudan düzenleyin. Kaydedildiğinde güvenlik doğrulaması uygulanır.', 'Edit raw HTML content directly. Sanitization is applied upon saving.')}
+                        </Text>
+                        <TextInput
+                            style={[styles.modalInput, { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13 }]}
+                            value={htmlEditorValue}
+                            onChangeText={setHtmlEditorValue}
+                            multiline
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                        <View style={styles.customToolbarActions}>
+                            <TouchableOpacity style={styles.customToolbarTextAction} onPress={() => setShowHtmlEditor(false)}>
+                                <Text style={styles.customToolbarTextActionLabel}>{t('common.cancel')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.customToolbarTextAction}
+                                onPress={() => {
+                                    const sanitized = sanitizeUntrustedHtml(htmlEditorValue);
+                                    if (activeField === 'question') {
+                                        setQuestion(sanitized);
+                                    } else if (activeField === 'answer') {
+                                        setAnswer(sanitized);
+                                    } else {
+                                        setReverseAnswer(sanitized);
+                                    }
+                                    setShowHtmlEditor(false);
+                                }}
+                            >
+                                <Text style={styles.customToolbarTextActionLabel}>{t('common.save')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+
+            <Modal
                 visible={showCustomToolbarEditor}
                 transparent
                 animationType="fade"
@@ -1321,13 +1623,36 @@ export default function EditorScreen() {
                                 'Enter HTML to be inserted before and after the selected text. Long press a toolbar item to edit or remove it.',
                             )}
                         </Text>
+
+                        {/* Quick Presets Carousel */}
+                        <View style={styles.customToolbarPresetSection}>
+                            <Text style={styles.customToolbarSectionTitle}>{l('Hızlı Şablonlar', 'Quick Presets')}</Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.customToolbarPresetScroll}
+                            >
+                                {CUSTOM_TOOLBAR_PRESETS.map((preset) => (
+                                    <TouchableOpacity
+                                        key={preset.id}
+                                        style={styles.customToolbarPresetChip}
+                                        onPress={() => applyToolbarPreset(preset)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={presetText(preset.label)}
+                                    >
+                                        <Text style={styles.customToolbarPresetChipText}>{presetText(preset.label)}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+
                         <TextInput
                             style={styles.modalInput}
                             value={toolbarButtonDraft.buttonText}
                             onChangeText={(buttonText) => setToolbarButtonDraft((draft) => ({ ...draft, buttonText }))}
                             placeholder={l('Düğme metni', 'Button text')}
                             placeholderTextColor={colors.textMuted}
-                            maxLength={12}
+                            maxLength={16}
                         />
                         <TextInput
                             style={[styles.modalInput, styles.customToolbarInput]}
@@ -1347,6 +1672,27 @@ export default function EditorScreen() {
                             autoCapitalize="none"
                             autoCorrect={false}
                         />
+
+                        {/* Security notice & Live Preview Box */}
+                        <View style={styles.customToolbarPreviewCard}>
+                            <Text style={styles.customToolbarPreviewLabel}>{l('Önizleme:', 'Preview:')}</Text>
+                            <View style={styles.customToolbarPreviewRow}>
+                                <View style={styles.customToolbarButtonPreview}>
+                                    <Text style={styles.customToolbarButtonPreviewText} numberOfLines={1}>
+                                        {toolbarButtonDraft.buttonText.trim() || '1'}
+                                    </Text>
+                                </View>
+                                <View style={styles.customToolbarHtmlPreview}>
+                                    <Text style={styles.customToolbarHtmlPreviewCode} numberOfLines={2}>
+                                        {toolbarButtonDraft.prefix || ''}{l('Metin', 'Text')}{toolbarButtonDraft.suffix || ''}
+                                    </Text>
+                                </View>
+                            </View>
+                            <Text style={styles.customToolbarSecurityNote}>
+                                {l('🛡️ Güvenlik Korumalı: Komut dosyaları ve form etiketleri filtrelenir.', '🛡️ Security Protected: Scripts and forms are automatically filtered.')}
+                            </Text>
+                        </View>
+
                         <View style={styles.customToolbarActions}>
                             <TouchableOpacity style={styles.customToolbarTextAction} onPress={showToolbarHelp}>
                                 <Text style={styles.customToolbarTextActionLabel}>{l('Yardım', 'Help')}</Text>
@@ -1386,15 +1732,25 @@ export default function EditorScreen() {
                                 'When tapped, the selected text is wrapped with the HTML in the before and after fields. If no text is selected, the cursor is placed between them.',
                             )}
                         </Text>
-                        <View style={styles.customToolbarTemplate}>
-                            <Text style={styles.customToolbarTemplateTitle}>{l('Örnek HTML düğmesi', 'Example HTML button')}</Text>
-                            <Text style={styles.customToolbarCode}>{l('Düğme metni:', 'Button text:')} {l('Düğme', 'Button')}</Text>
-                            <Text style={styles.customToolbarCode}>{l('Önce:', 'Before:')} {'<button type="button">'}</Text>
-                            <Text style={styles.customToolbarCode}>{l('Sonra:', 'After:')} {'</button>'}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.modalPrimary} onPress={useToolbarButtonTemplate}>
-                            <Text style={styles.modalPrimaryText}>{l('Bu şablonu kullan', 'Use This Template')}</Text>
-                        </TouchableOpacity>
+                        <ScrollView style={styles.customToolbarHelpScroll} showsVerticalScrollIndicator={false}>
+                            {CUSTOM_TOOLBAR_PRESETS.map((preset) => (
+                                <View key={preset.id} style={styles.customToolbarTemplate}>
+                                    <View style={styles.customToolbarTemplateHeader}>
+                                        <Text style={styles.customToolbarTemplateTitle}>{presetText(preset.label)}</Text>
+                                        <TouchableOpacity
+                                            style={styles.customToolbarUseChip}
+                                            onPress={() => useToolbarButtonTemplate(preset)}
+                                        >
+                                            <Text style={styles.customToolbarUseChipText}>{l('Kullan', 'Use')}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <Text style={styles.customToolbarPresetDesc}>{presetText(preset.description)}</Text>
+                                    <Text style={styles.customToolbarCode}>{l('Düğme:', 'Button:')} {presetText(preset.buttonText)}</Text>
+                                    <Text style={styles.customToolbarCode}>{l('Önce:', 'Before:')} {preset.prefix}</Text>
+                                    <Text style={styles.customToolbarCode}>{l('Sonra:', 'After:')} {preset.suffix}</Text>
+                                </View>
+                            ))}
+                        </ScrollView>
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowCustomToolbarHelp(false)}>
                             <Text style={styles.modalCloseText}>{t('common.close')}</Text>
                         </TouchableOpacity>
@@ -1514,41 +1870,77 @@ export default function EditorScreen() {
                         onPress={() => setShowPreview(false)}
                         accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}
                     />
-                    <View style={[styles.modalCard, styles.previewCard]}>
-                        <View style={styles.previewTitleRow}>
-                            <EyeIcon color={colors.textPrimary} size={24} />
-                            <Text style={styles.previewTitleText}>{l('Önizleme', 'Preview')}</Text>
+                    <View style={styles.previewCard}>
+                        <View style={styles.previewHeader}>
+                            <View style={styles.previewTitleRow}>
+                                <EyeIcon color={colors.textPrimary} size={22} />
+                                <Text style={styles.previewTitleText}>{l('Önizleme', 'Preview')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.previewHeaderClose}
+                                onPress={() => setShowPreview(false)}
+                                accessibilityLabel={t('common.close')}
+                            >
+                                <Text style={styles.previewHeaderCloseText}>✕</Text>
+                            </TouchableOpacity>
                         </View>
-                        <ScrollView style={styles.previewScroll}>
-                            <Text style={styles.previewMeta} numberOfLines={1}>
-                                {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
-                            </Text>
-                            <Text style={styles.label}>{l('SORU', 'QUESTION')}</Text>
+                        <Text style={styles.previewMeta} numberOfLines={1}>
+                            {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                        </Text>
+                        <View style={styles.previewToggleRow}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.previewToggleButton,
+                                    previewSide === 'question' && styles.previewToggleButtonActive,
+                                ]}
+                                onPress={() => setPreviewSide('question')}
+                            >
+                                <Text
+                                    style={[
+                                        styles.previewToggleText,
+                                        previewSide === 'question' && styles.previewToggleTextActive,
+                                    ]}
+                                >
+                                    {l('Soru', 'Question')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.previewToggleButton,
+                                    previewSide === 'answer' && styles.previewToggleButtonActive,
+                                ]}
+                                onPress={() => setPreviewSide('answer')}
+                            >
+                                <Text
+                                    style={[
+                                        styles.previewToggleText,
+                                        previewSide === 'answer' && styles.previewToggleTextActive,
+                                    ]}
+                                >
+                                    {l('Cevap', 'Answer')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={[styles.previewBody, { height: previewBodyHeight }]}>
                             {previewPayload && (
                                 <CardWebView
                                     noteType={previewPayload.noteType}
                                     note={previewPayload.note}
                                     card={previewPayload.card}
                                     deck={targetDeck}
-                                    side="question"
-                                    scrollMode="intrinsic"
+                                    side={previewSide}
+                                    scrollMode="contained"
+                                    maxHeight={previewBodyHeight}
                                 />
                             )}
-                            <Text style={styles.label}>{l('CEVAP', 'ANSWER')}</Text>
-                            {previewPayload && (
-                                <CardWebView
-                                    noteType={previewPayload.noteType}
-                                    note={previewPayload.note}
-                                    card={previewPayload.card}
-                                    deck={targetDeck}
-                                    side="answer"
-                                    omitFrontSide
-                                    scrollMode="intrinsic"
-                                />
-                            )}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowPreview(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.close')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.previewCloseButton}
+                            onPress={() => setShowPreview(false)}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('common.close')}
+                        >
+                            <Text style={styles.previewCloseButtonText}>{t('common.close')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -1634,6 +2026,10 @@ function createStyles(colors: ColorScheme) {
         height: 44,
         alignItems: 'center',
         justifyContent: 'center',
+        borderRadius: BorderRadius.sm,
+    },
+    formatButtonActive: {
+        backgroundColor: colors.accentLight,
     },
     customFormatButtonText: {
         maxWidth: 38,
@@ -1736,7 +2132,115 @@ function createStyles(colors: ColorScheme) {
         lineHeight: 20,
         color: colors.textSecondary,
     },
+    customToolbarPresetSection: {
+        marginBottom: Spacing.sm,
+    },
+    customToolbarSectionTitle: {
+        fontSize: FontSize.xs,
+        fontWeight: '700',
+        color: colors.textSecondary,
+        marginBottom: Spacing.xs,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    customToolbarPresetScroll: {
+        flexDirection: 'row',
+        gap: Spacing.xs,
+        paddingVertical: 2,
+    },
+    customToolbarPresetChip: {
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 6,
+        backgroundColor: colors.bgSecondary,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.full,
+    },
+    customToolbarPresetChipText: {
+        fontSize: FontSize.xs,
+        fontWeight: '600',
+        color: colors.textPrimary,
+    },
+    customToolbarPreviewCard: {
+        marginTop: Spacing.sm,
+        padding: Spacing.sm,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.bgSecondary,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        gap: 6,
+    },
+    customToolbarPreviewLabel: {
+        fontSize: FontSize.xs,
+        fontWeight: '700',
+        color: colors.textSecondary,
+    },
+    customToolbarPreviewRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    customToolbarButtonPreview: {
+        width: 36,
+        height: 36,
+        borderRadius: BorderRadius.sm,
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    customToolbarButtonPreviewText: {
+        fontSize: FontSize.sm,
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
     customToolbarInput: { marginTop: Spacing.sm, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+    customToolbarHtmlPreview: {
+        flex: 1,
+        backgroundColor: colors.bgCard,
+        paddingHorizontal: Spacing.xs,
+        paddingVertical: 4,
+        borderRadius: BorderRadius.sm,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+    },
+    customToolbarHtmlPreviewCode: {
+        fontSize: 11,
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        color: colors.accent,
+    },
+    customToolbarSecurityNote: {
+        fontSize: 11,
+        color: colors.textMuted,
+        lineHeight: 15,
+    },
+    customToolbarHelpScroll: {
+        maxHeight: 340,
+        marginVertical: Spacing.sm,
+    },
+    customToolbarTemplateHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 2,
+    },
+    customToolbarUseChip: {
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 4,
+        backgroundColor: colors.accentLight,
+        borderRadius: BorderRadius.full,
+    },
+    customToolbarUseChipText: {
+        fontSize: FontSize.xs,
+        fontWeight: '700',
+        color: colors.accent,
+    },
+    customToolbarPresetDesc: {
+        fontSize: FontSize.xs,
+        color: colors.textSecondary,
+        marginBottom: 4,
+    },
     customToolbarActions: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1754,7 +2258,7 @@ function createStyles(colors: ColorScheme) {
     customToolbarTextActionLabel: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
     customToolbarHelpText: { fontSize: FontSize.md, lineHeight: 22, color: colors.textSecondary },
     customToolbarTemplate: {
-        marginTop: Spacing.md,
+        marginTop: Spacing.sm,
         padding: Spacing.md,
         borderRadius: BorderRadius.sm,
         backgroundColor: colors.bgSecondary,
@@ -1784,9 +2288,88 @@ function createStyles(colors: ColorScheme) {
         padding: Spacing.xl,
         ...Shadows.lg,
     },
-    previewCard: { maxHeight: '85%' },
-    previewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
+    previewCard: {
+        width: '100%',
+        maxWidth: 440,
+        maxHeight: '85%',
+        backgroundColor: colors.bgCard,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.lg,
+        ...Shadows.lg,
+    },
+    previewHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 2,
+    },
+    previewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
     previewTitleText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    previewHeaderClose: {
+        width: 32,
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: BorderRadius.full,
+    },
+    previewHeaderCloseText: {
+        fontSize: 16,
+        color: colors.textMuted,
+        fontWeight: '600',
+    },
+    previewMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginBottom: Spacing.sm },
+    previewToggleRow: {
+        flexDirection: 'row',
+        backgroundColor: colors.bgSecondary,
+        borderRadius: BorderRadius.sm,
+        padding: 3,
+        alignSelf: 'flex-start',
+        marginBottom: Spacing.sm,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        gap: 2,
+    },
+    previewToggleButton: {
+        paddingHorizontal: Spacing.md,
+        paddingVertical: 6,
+        borderRadius: BorderRadius.sm,
+    },
+    previewToggleButtonActive: {
+        backgroundColor: colors.accent,
+    },
+    previewToggleText: {
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+        color: colors.textSecondary,
+    },
+    previewToggleTextActive: {
+        color: colors.white,
+        fontWeight: '700',
+    },
+    previewBody: {
+        backgroundColor: colors.bgSecondary,
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    previewCloseButton: {
+        marginTop: Spacing.md,
+        height: 38,
+        paddingHorizontal: Spacing.xxl,
+        borderRadius: BorderRadius.md,
+        backgroundColor: colors.bgSecondary,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center',
+    },
+    previewCloseButtonText: {
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+        color: colors.textSecondary,
+    },
     modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.md },
     modalInput: {
         minHeight: 48,
@@ -1809,8 +2392,6 @@ function createStyles(colors: ColorScheme) {
     modalPrimaryText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
     modalClose: { minHeight: 48, marginTop: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
     modalCloseText: { color: colors.textMuted, fontWeight: '600' },
-    previewScroll: { flexGrow: 0 },
-    previewMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginBottom: Spacing.sm },
     label: {
         fontSize: 10,
         fontWeight: '700',
@@ -1819,6 +2400,7 @@ function createStyles(colors: ColorScheme) {
         textTransform: 'uppercase',
     },
     fieldLabelRow: { minHeight: 40, marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    fieldLabel: { fontSize: FontSize.xs, fontWeight: '700', color: colors.textMuted },
     fieldName: { flex: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     fieldActions: { flexDirection: 'row', alignItems: 'center' },
     fieldAction: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

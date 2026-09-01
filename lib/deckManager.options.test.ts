@@ -34,6 +34,7 @@ import {
     rememberCustomStudyTags,
     getDeckTodayLimits,
     addDeckTodayBoost,
+    extendDeckTodayLimits,
     moveDeckUnder,
     reorderDeckRelative,
     renameDeck,
@@ -540,6 +541,52 @@ describe('today-only limit boost', () => {
         const config = getDeckConfigForDeck(deck.id, rolloverHour);
         expect(config.newPerDay).toBe(6);
         expect(config.maxReviewsPerDay).toBe(0);
+    });
+
+    it('extends the parents too, so their limits stop capping the deck away again', () => {
+        // Anki's custom study grants the headroom on every parent whose limit still applies
+        // (rslib decks/stats.rs `extend_limits`); this app applies parent limits by default, so
+        // extending only the child would hand out cards the parent immediately withholds.
+        const parent = createDeck('Tıp');
+        const child = createDeck('Tıp::Anatomi');
+        setDeckLimits(parent.id, 20, 200);
+        setDeckLimits(child.id, 10, 100);
+
+        extendDeckTodayLimits(child.id, 7, 15, rolloverHour, { includeParents: true });
+
+        expect(getDeckTodayBoost(child.id, rolloverHour)).toEqual({ extraNew: 7, extraReview: 15 });
+        expect(getDeckTodayBoost(parent.id, rolloverHour)).toEqual({ extraNew: 7, extraReview: 15 });
+    });
+
+    it('leaves the parents alone when limits do not start from the top', () => {
+        const parent = createDeck('Tıp');
+        const child = createDeck('Tıp::Anatomi');
+        setDeckLimits(parent.id, 20, 200);
+        setDeckLimits(child.id, 10, 100);
+
+        extendDeckTodayLimits(child.id, 7, 15, rolloverHour);
+
+        expect(getDeckTodayBoost(child.id, rolloverHour)).toEqual({ extraNew: 7, extraReview: 15 });
+        expect(getDeckTodayBoost(parent.id, rolloverHour)).toEqual({ extraNew: 0, extraReview: 0 });
+    });
+
+    it('shows the extra cards in the deck list the custom study dialog was opened from', () => {
+        // The deck row is where a learner checks that "increase today's new card limit" worked,
+        // so the tree's own cap has to see the boost too.
+        const parent = createDeck('Tıp');
+        const child = createDeck('Tıp::Anatomi');
+        setDeckLimits(parent.id, 20, 200);
+        setDeckLimits(child.id, 20, 200);
+        const counts = new Map([[child.id, { new: 500, learn: 0, review: 0, total: 500 }]]);
+
+        const before = buildDeckTree([parent, child], counts, rolloverHour)[0];
+        expect(before.newCount).toBe(20);
+
+        extendDeckTodayLimits(child.id, 20, 0, rolloverHour, { includeParents: true });
+
+        const after = buildDeckTree([parent, child], counts, rolloverHour)[0];
+        expect(after.newCount).toBe(40);
+        expect(after.children[0].newCount).toBe(40);
     });
 
     it('expires when the stored day no longer matches', () => {

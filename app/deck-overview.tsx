@@ -305,7 +305,10 @@ export default function DeckOverviewScreen() {
                     bumpDataVersion();
                     setRefreshToken((value) => value + 1);
                 }}
-                onStudy={(nextDeckName) => router.push({ pathname: '/', params: { deck: nextDeckName } } as any)}
+                // Anki makes the new session the current deck and shows its overview.
+                onSessionCreated={(sessionDeckName) => router.replace(
+                    `/deck-overview?deck=${encodeURIComponent(sessionDeckName)}` as any,
+                )}
             />}
             {filterOptionsOpen && <FilteredDeckOptionsModal
                 visible={filterOptionsOpen}

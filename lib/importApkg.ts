@@ -21,6 +21,7 @@ import { ankiDueDayToLocal, applyAnkiProgress, readAnkiProgress } from './import
 import { readMediaBytes, saveMediaBytes } from './mediaStore';
 import { sanitizeMediaFilename } from './mediaFilename';
 import { getDB } from './db';
+import { DEFAULT_PREVIEW_DELAYS, parsePreviewDelays } from './filteredDeckOptions';
 import { preserveOriginalAnkiPackage, sourcePackageId } from './ankiPackageArchive';
 import { assertSafeAnkiArchive, assertZipEntrySize, decompressZstdBounded } from './archiveSecurity';
 import { deserializeFtsSafeDatabaseSync } from './sqliteOpenOptions';
@@ -294,6 +295,10 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 raw.desc = protoString(kind, 4);
             } else {
                 raw.resched = Boolean(protoNumber(kind, 1));
+                // Deck.Filtered fields 5-7: the Again/Hard/Good preview delays, in seconds.
+                raw.previewAgainSecs = protoNumber(kind, 5, 60);
+                raw.previewHardSecs = protoNumber(kind, 6, 600);
+                raw.previewGoodSecs = protoNumber(kind, 7, 0);
                 raw.terms = (kind.get(2) ?? []).flatMap((value) => {
                     if (!(value instanceof Uint8Array)) return [];
                     const term = protobufFields(value);
@@ -508,6 +513,13 @@ function importedDeck(raw: Record<string, any>, id: number, configId: number, pa
         searchLimit2: Array.isArray(terms[1]) ? numberValue(terms[1][1], 100) : undefined,
         searchOrder2: Array.isArray(terms[1]) ? numberValue(terms[1][2]) : undefined,
         reschedule: raw.resched === undefined ? undefined : boolValue(raw.resched),
+        previewDelays: numberValue(raw.dyn) === 1
+            ? parsePreviewDelays([
+                numberValue(raw.previewAgainSecs, DEFAULT_PREVIEW_DELAYS[0]),
+                numberValue(raw.previewHardSecs, DEFAULT_PREVIEW_DELAYS[1]),
+                numberValue(raw.previewGoodSecs, DEFAULT_PREVIEW_DELAYS[2]),
+            ])
+            : undefined,
         ankiRaw: raw,
         sourcePackageId: packageId,
     };

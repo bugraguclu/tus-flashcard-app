@@ -822,6 +822,30 @@ export function addDeckTodayBoost(deckId: number, extraNew: number, extraReview:
     );
 }
 
+/**
+ * Anki's custom study "increase today's limit" (`Collection::extend_limits`). Anki grants the
+ * headroom on the deck itself, and on every parent as well when a parent's limit can hold the
+ * deck back — the collection-wide "limits start from the top" preference. Without that second
+ * step the extra cards would be handed out by the deck and then taken away again by its parent.
+ */
+export function extendDeckTodayLimits(
+    deckId: number,
+    extraNew: number,
+    extraReview: number,
+    rolloverHour: number = 4,
+    options: { includeParents?: boolean } = {},
+): void {
+    addDeckTodayBoost(deckId, extraNew, extraReview, rolloverHour);
+    if (!options.includeParents) return;
+
+    let parentName = getParentDeckName(getDeck(deckId)?.name ?? '');
+    while (parentName) {
+        const parent = getDeckByName(parentName);
+        if (parent) addDeckTodayBoost(parent.id, extraNew, extraReview, rolloverHour);
+        parentName = getParentDeckName(parentName);
+    }
+}
+
 /** Absolute "Today only" limits from Anki's deck-options tabs. */
 export function getDeckTodayLimits(deckId: number, rolloverHour: number = 4): { newLimit?: number; reviewLimit?: number } {
     const row = getDB().getFirstSync<{ value: string }>(
@@ -1052,6 +1076,7 @@ export interface FilteredDeckOptions {
     searchLimit2?: number;
     searchOrder2?: number;
     reschedule: boolean;
+    previewDelays?: number[];
     allowEmpty?: boolean;
 }
 
@@ -1071,6 +1096,9 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
         ? (options.searchOrder2 ?? FILTERED_SEARCH_ORDER.due)
         : undefined;
     deck.reschedule = options.reschedule;
+    if (options.previewDelays) {
+        deck.previewDelays = options.previewDelays;
+    }
     deck.filteredAllowEmpty = options.allowEmpty ?? false;
     // Saving filtered-deck options is Anki's Build/Rebuild action.
     deck.filteredDeckEmpty = false;

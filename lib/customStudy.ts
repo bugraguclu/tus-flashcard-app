@@ -19,6 +19,12 @@ export const CUSTOM_STUDY_MAX_VALUE = 99_999;
 /** Anki caps "review forgotten cards" at a month; every other spinner runs to the maximum. */
 export const CUSTOM_STUDY_FORGOT_MAX_DAYS = 30;
 
+/**
+ * Anki's Selective Study refuses more than a hundred tags across both lists: past that the search
+ * is slower to run than it is to narrow, and a parent tag already stands in for its children.
+ */
+export const CUSTOM_STUDY_MAX_TAGS = 100;
+
 /** The conventional deck name Anki reuses for every custom study session. */
 export const CUSTOM_STUDY_DECK_NAME = 'Özel Çalışma Oturumu';
 
@@ -130,20 +136,22 @@ export function deckSearchTerm(deckName: string): string {
  * Anki's tag filter: the card must carry at least one included tag and none of the excluded ones.
  * An empty include list means "any tag", exactly as an empty `SearchBuilder::any` contributes
  * nothing to the query.
+ *
+ * Each list is written as one group so the two never mix — Anki's own writer produces
+ * `(tag:1 OR tag:2) (-tag:3 -tag:4)` — and a single tag needs no group at all.
  */
 export function tagSearchTerms(includeTags: string[], excludeTags: string[]): string {
-    const include = dedupeTags(includeTags);
-    const exclude = dedupeTags(excludeTags);
-    const terms: string[] = [];
+    const include = dedupeTags(includeTags).map((tag) => `tag:${quoteSearchValue(tag)}`);
+    const exclude = dedupeTags(excludeTags).map((tag) => `-tag:${quoteSearchValue(tag)}`);
 
-    if (include.length === 1) {
-        terms.push(`tag:${quoteSearchValue(include[0])}`);
-    } else if (include.length > 1) {
-        terms.push(`(${include.map((tag) => `tag:${quoteSearchValue(tag)}`).join(' or ')})`);
-    }
-    for (const tag of exclude) terms.push(`-tag:${quoteSearchValue(tag)}`);
+    return joinSearchTerms([groupSearchTerms(include, ' or '), groupSearchTerms(exclude, ' ')]);
+}
 
-    return terms.join(' ');
+/** One search group: nothing, the bare term, or the terms parenthesised so they bind together. */
+function groupSearchTerms(terms: string[], separator: string): string | null {
+    if (terms.length === 0) return null;
+    if (terms.length === 1) return terms[0];
+    return `(${terms.join(separator)})`;
 }
 
 function dedupeTags(tags: string[]): string[] {

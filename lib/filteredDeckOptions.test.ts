@@ -3,8 +3,13 @@ import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 import {
     ankiFilteredOrderFromLegacy,
+    DEFAULT_PREVIEW_DELAYS,
+    extractDeckNameFromSearch,
     FILTERED_DECK_ORDER_UI,
     FILTERED_SEARCH_ORDER,
+    formatPreviewDelays,
+    parsePreviewDelays,
+    replaceDeckNameInSearch,
 } from './filteredDeckOptions';
 import { filteredOrderLabel } from './i18n';
 import { runMigrations } from './db';
@@ -22,6 +27,7 @@ describe('filtered deck options', () => {
             'Latest added first',
             'Ascending retrievability',
             'Descending retrievability',
+            'Relative overdueness',
         ]);
     });
 
@@ -37,6 +43,7 @@ describe('filtered deck options', () => {
             'Son eklenen önce',
             'Hatırlanabilirlik (artan)',
             'Hatırlanabilirlik (azalan)',
+            'Göreceli gecikme',
         ]);
     });
 });
@@ -57,7 +64,7 @@ describe('filtered deck gather order ordinals', () => {
             retrievabilityDescending: 9,
             relativeOverdueness: 10,
         });
-        expect([...FILTERED_DECK_ORDER_UI]).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        expect([...FILTERED_DECK_ORDER_UI]).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     });
 
     it('maps each legacy ordinal onto the order it used to mean', () => {
@@ -77,6 +84,27 @@ describe('filtered deck gather order ordinals', () => {
         expect(ankiFilteredOrderFromLegacy(undefined)).toBe(FILTERED_SEARCH_ORDER.due);
         expect(ankiFilteredOrderFromLegacy('x')).toBe(FILTERED_SEARCH_ORDER.due);
         expect(ankiFilteredOrderFromLegacy(42)).toBe(FILTERED_SEARCH_ORDER.due);
+    });
+});
+
+describe('filtered deck preview delays', () => {
+    it('provides standard default preview delays [60, 600, 0]', () => {
+        expect(DEFAULT_PREVIEW_DELAYS).toEqual([60, 600, 0]);
+        expect(parsePreviewDelays(undefined)).toEqual([60, 600, 0]);
+        expect(parsePreviewDelays(null)).toEqual([60, 600, 0]);
+        expect(parsePreviewDelays('')).toEqual([60, 600, 0]);
+    });
+
+    it('parses space and comma separated delay string into numbers vector [60, 600, 0]', () => {
+        expect(parsePreviewDelays('10 60 600')).toEqual([10, 60, 600]);
+        expect(parsePreviewDelays('10, 60, 600')).toEqual([10, 60, 600]);
+        expect(parsePreviewDelays('15 120')).toEqual([15, 120, 0]);
+        expect(parsePreviewDelays([30, 90, 1200])).toEqual([30, 90, 1200]);
+    });
+
+    it('formats preview delays array to space separated string', () => {
+        expect(formatPreviewDelays([10, 60, 600])).toBe('10 60 600');
+        expect(formatPreviewDelays(undefined)).toBe('60 600 0');
     });
 });
 
@@ -139,5 +167,48 @@ describe('migration 10: stored filtered-deck order', () => {
         runMigrations(db as never);
 
         expect(readDeck(3).searchOrder).toBeUndefined();
+    });
+});
+
+describe('extractDeckNameFromSearch', () => {
+    it('extracts quoted deck name from search query', () => {
+        expect(extractDeckNameFromSearch('deck:"TUS Kartları::Anatomi" is:due')).toBe('TUS Kartları::Anatomi');
+        expect(extractDeckNameFromSearch('deck:"Dahiliye"')).toBe('Dahiliye');
+    });
+
+    it('extracts unquoted deck name from search query', () => {
+        expect(extractDeckNameFromSearch('deck:Anatomi is:due')).toBe('Anatomi');
+    });
+
+    it('ignores negated deck filters', () => {
+        expect(extractDeckNameFromSearch('-deck:"Excluded" deck:"Included"')).toBe('Included');
+        expect(extractDeckNameFromSearch('-deck:"Excluded" is:due')).toBeNull();
+    });
+
+    it('returns null when no deck term exists', () => {
+        expect(extractDeckNameFromSearch('is:due tag:zor')).toBeNull();
+        expect(extractDeckNameFromSearch('')).toBeNull();
+    });
+});
+
+describe('replaceDeckNameInSearch', () => {
+    it('replaces existing quoted deck name in query', () => {
+        expect(replaceDeckNameInSearch('deck:"TUS Kartları" is:due', 'Anatomi')).toBe('deck:Anatomi is:due');
+        expect(replaceDeckNameInSearch('deck:"Eski Deste" is:due', 'Yeni :: Alt Deste')).toBe('deck:"Yeni :: Alt Deste" is:due');
+    });
+
+    it('replaces existing unquoted deck name in query', () => {
+        expect(replaceDeckNameInSearch('deck:Python is:due', 'TUS Kartları::Deneme')).toBe('deck:"TUS Kartları::Deneme" is:due');
+    });
+
+    it('prepends deck term when no deck term is present in query', () => {
+        expect(replaceDeckNameInSearch('is:due tag:zor', 'Anatomi')).toBe('deck:Anatomi is:due tag:zor');
+        expect(replaceDeckNameInSearch('', 'Anatomi')).toBe('deck:Anatomi');
+    });
+
+    it('removes deck term when newDeckName is null (whole collection / all decks)', () => {
+        expect(replaceDeckNameInSearch('deck:"TUS Kartları" is:due', null)).toBe('is:due');
+        expect(replaceDeckNameInSearch('deck:Anatomi', null)).toBe('');
+        expect(replaceDeckNameInSearch('is:due tag:zor', null)).toBe('is:due tag:zor');
     });
 });

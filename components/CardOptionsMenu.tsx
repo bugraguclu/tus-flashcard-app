@@ -163,7 +163,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
             ? { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: true, action: props.onRedo }
             : props.canUndo
                 ? { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: true, action: props.onUndo }
-                : { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: false, action: props.onRedo };
+                : { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: false, action: props.onUndo };
 
     return (
         <Modal

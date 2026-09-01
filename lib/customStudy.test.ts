@@ -107,6 +107,33 @@ describe('custom study search terms', () => {
         expect(tagSearchTerms([], [])).toBe('');
     });
 
+    it('writes each tag list as its own group, the way Anki\u2019s search writer does', () => {
+        // Anki emits `(tag:1 OR tag:2) (-tag:3 -tag:4)`. The exclusions have to stay grouped:
+        // loose next to an `or` list they would be read as alternatives to it rather than as
+        // conditions every card must satisfy.
+        const search = tagSearchTerms(['Anatomi', 'Fizyoloji'], ['Zor', 'Eski']);
+        expect(search).toBe('(tag:"Anatomi" or tag:"Fizyoloji") (-tag:"Zor" -tag:"Eski")');
+        expect(parseSearchQuery(search)).toEqual({
+            kind: 'and',
+            children: [
+                {
+                    kind: 'or',
+                    children: [
+                        { kind: 'term', text: 'tag:"Anatomi"' },
+                        { kind: 'term', text: 'tag:"Fizyoloji"' },
+                    ],
+                },
+                {
+                    kind: 'and',
+                    children: [
+                        { kind: 'not', child: { kind: 'term', text: 'tag:"Zor"' } },
+                        { kind: 'not', child: { kind: 'term', text: 'tag:"Eski"' } },
+                    ],
+                },
+            ],
+        });
+    });
+
     it('keeps a quote out of a deck name rather than truncating the term', () => {
         // The tokenizer has no escape sequence inside a quoted phrase, so a stray quote would
         // otherwise end the term early and silently widen the search.

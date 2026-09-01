@@ -40,4 +40,16 @@ describe('card content security boundary', () => {
         expect(policy).not.toContain("'unsafe-eval'");
         expect(policy).not.toContain("script-src 'unsafe-inline'");
     });
+
+    // The editor loads a field from the media directory so Anki's bare filenames resolve there.
+    // That access is only safe while it stays passive: local media may be shown, nothing may be
+    // sent anywhere, and no plugin or nested frame may be embedded alongside it.
+    it('lets a field show local media without giving it a way to send anything out', () => {
+        const policy = editorContentSecurityPolicy('fixed-nonce');
+        expect(policy).toContain("img-src 'self' file: data: blob:");
+        expect(policy).toContain("media-src 'self' file: data: blob:");
+        expect(policy).toContain("connect-src 'none'");
+        expect(policy).toContain("object-src 'none'");
+        expect(policy).toContain("base-uri 'none'");
+    });
 });

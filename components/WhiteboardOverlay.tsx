@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
+import { readUriBytes } from '../lib/files';
 import { saveMediaBytes } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
 import { useI18n } from '../hooks/useI18n';
@@ -86,11 +87,6 @@ async function rasterizeStrokesToPng(strokes: WhiteboardStroke[], width: number,
         canvas.toBlob((result) => (result ? resolve(result) : reject(new Error('PNG encode failed'))), 'image/png');
     });
     return new Uint8Array(await blob.arrayBuffer());
-}
-
-async function readUriBytes(uri: string): Promise<Uint8Array> {
-    const response = await fetch(uri);
-    return new Uint8Array(await response.arrayBuffer());
 }
 
 function isStylusEvent(event: any): boolean {

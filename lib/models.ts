@@ -250,6 +250,12 @@ export interface Deck {
     searchOrder2?: number;
     /** Anki's "reschedule cards based on my answers". False = preview mode: answers never touch the cards. */
     reschedule?: boolean;
+    /**
+     * Anki's preview_again_secs / preview_hard_secs / preview_good_secs, in that order, used when
+     * reschedule is false. A zero retires the card from the preview session. Easy is not stored:
+     * Anki always retires on Easy. See lib/filteredDeckOptions.ts.
+     */
+    previewDelays?: number[];
     /** Whether Build/Rebuild may keep a filtered deck when its searches gather no cards. */
     filteredAllowEmpty?: boolean;
     /**
@@ -266,18 +272,19 @@ export interface Deck {
     catalogPack?: string;
 }
 
-/** Gather orders for filtered decks (index = the stored searchOrder value). */
+/** Gather orders for filtered decks (index = the stored searchOrder value, 0..10). */
 export const FILTERED_ORDERS = [
-    'Vade sırası',           // 0: order due
-    'Rastgele',              // 1: random
-    'Aralık (artan)',        // 2: shortest intervals first
-    'Aralık (azalan)',       // 3: longest intervals first
-    'Ekleniş sırası',        // 4: oldest added first
-    'Son eklenen önce',      // 5: latest added first
-    'En çok hata',           // 6: most lapses first
-    'En eski görülen önce',  // 7: oldest seen first
-    'Hatırlanabilirlik (artan)', // 8: lowest retrievability first
-    'Hatırlanabilirlik (azalan)', // 9: highest retrievability first
+    'En eski görülen önce',      // 0: oldest seen first
+    'Rastgele',                  // 1: random
+    'Aralıklar (artan)',         // 2: intervals ascending
+    'Aralıklar (azalan)',        // 3: intervals descending
+    'En çok unutulan',           // 4: most lapses
+    'Ekleniş sırası',            // 5: order added
+    'Vade sırası',               // 6: order due
+    'Son eklenen önce',          // 7: latest added first
+    'Hatırlanabilirlik (artan)', // 8: retrievability ascending
+    'Hatırlanabilirlik (azalan)',// 9: retrievability descending
+    'Göreceli gecikme',          // 10: relative overdueness
 ] as const;
 
 export interface DeckConfig {

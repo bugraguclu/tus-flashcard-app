@@ -10,14 +10,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS } from '../lib/models';
-import type { CardFlag } from '../lib/models';
 import { getAnkiCard, getNote, getNoteType } from '../lib/noteManager';
 import { getDeck } from '../lib/deckManager';
 import { getReviewsForCard } from '../lib/reviewLogger';
 import { useI18n } from '../hooks/useI18n';
 import { FSRS6_DEFAULT_DECAY, fsrsRetrievability } from '../lib/fsrs';
 import { memoryStateFromCardData, parseAnkiCardData } from '../lib/fsrsCardData';
-import { localizeNoteTypeName } from '../lib/i18n';
+import { cardFlagName, localizeNoteTypeName } from '../lib/i18n';
+import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
+import { useAppSettings } from '../contexts/AppContext';
 import LeechExplainer from '../components/LeechExplainer';
 
 function parseCardId(raw: string | string[] | undefined): number {
@@ -28,6 +29,7 @@ function parseCardId(raw: string | string[] | undefined): number {
 
 export default function CardInfoScreen() {
     const { t, l, locale, localeTag } = useI18n();
+    const { settings } = useAppSettings();
     const router = useRouter();
     const params = useLocalSearchParams();
     const colors = useThemeColors();
@@ -43,8 +45,8 @@ export default function CardInfoScreen() {
         const deck = getDeck(card.deckId);
         const reviews = getReviewsForCard(card.id);
 
-        const createdAt = note?.id ? new Date(note.id).toISOString().slice(0, 10) : '-';
-        const modifiedAt = card.mod ? new Date(card.mod * 1000).toISOString().slice(0, 10) : '-';
+        const createdAt = note?.id ? new Date(note.id) : null;
+        const modifiedAt = card.mod ? new Date(card.mod * 1000) : null;
 
         return {
             card,
@@ -101,6 +103,41 @@ export default function CardInfoScreen() {
                         ? t('anki.learn')
                         : t('anki.review');
 
+    const formatDate = (value: Date | null) => (value ? value.toLocaleDateString(localeTag) : '—');
+    const formatDateTime = (value: Date | null) => (
+        value ? `${value.toLocaleDateString(localeTag)} ${value.toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' })}` : '—'
+    );
+
+    const formatRelativeDays = (days: number) => {
+        if (days === 0) return l('bugün', 'today');
+        if (days === 1) return l('yarın', 'tomorrow');
+        if (days === -1) return l('dün', 'yesterday');
+        if (days < 0) return l(`${Math.abs(days)} gün gecikmiş`, `${Math.abs(days)} days overdue`);
+        return l(`${days} gün sonra`, `in ${days} days`);
+    };
+
+    /**
+     * `due` is overloaded in Anki's schema: a queue position for new cards, a timestamp for
+     * intraday learning and a day number for everything else. Printing it raw is meaningless,
+     * so each case is decoded into what the user actually wants to know.
+     */
+    const dueLabel = (() => {
+        if (card.queue === -1) return l('Askıya alındı', 'Suspended');
+        if (card.queue < 0) return l('Gömüldü (yarına kadar)', 'Buried (until tomorrow)');
+        if (card.queue === 0) return l(`Sırada · ${card.due}. kart`, `Queued · position ${card.due}`);
+        if (card.queue === 1) {
+            const remainingMs = (card.due || 0) - Date.now();
+            if (remainingMs <= 0) return l('Şimdi', 'Now');
+            if (remainingMs < 3_600_000) return l(`${Math.ceil(remainingMs / 60_000)} dk. sonra`, `in ${Math.ceil(remainingMs / 60_000)}m`);
+            return formatDateTime(new Date(card.due));
+        }
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        const dueDay = card.due || today;
+        const [year, month, day] = dayNumberToYmd(dueDay, settings.dayRolloverHour).split('-').map(Number);
+        const dueDate = new Date(year, (month || 1) - 1, day || 1);
+        return `${dueDate.toLocaleDateString(localeTag)} · ${formatRelativeDays(dueDay - today)}`;
+    })();
+
     const formatIvl = (ivl: number) => {
         // Negative intervals are (re)learning steps stored in seconds.
         if (ivl < 0) {
@@ -151,55 +188,41 @@ export default function CardInfoScreen() {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Genel bilgi', 'General Information')}</Text>
-                    <InfoRow label="Kart ID" value={`#${card.id}`} />
-                    <InfoRow label="Not ID" value={`#${card.noteId}`} />
-                    <InfoRow label={t('common.deck')} value={deck?.name || '-'} />
-                    <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '-'} />
-                    <InfoRow label={l('Oluşturulma', 'Created')} value={createdAt} />
-                    <InfoRow label={l('Değiştirilme', 'Modified')} value={modifiedAt} />
+                    <InfoRow label={t('common.deck')} value={deck?.name || '—'} />
+                    <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '—'} />
+                    <InfoRow label={l('Oluşturulma', 'Created')} value={formatDate(createdAt)} />
+                    <InfoRow label={l('Değiştirilme', 'Modified')} value={formatDate(modifiedAt)} />
+                    <InfoRow label={l('Kart ID', 'Card ID')} value={`#${card.id}`} />
+                    <InfoRow label={l('Not ID', 'Note ID')} value={`#${card.noteId}`} />
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Etiketler', 'Tags')}</Text>
-                    <View style={styles.tagsRow}>
-                        {(note?.tags || []).map((tag) => (
-                            <View key={tag} style={styles.tag}>
-                                <Text style={styles.tagText}>{tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Bayrak', 'Flag')}</Text>
-                    <View style={styles.flagsRow}>
-                        {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                            <View
-                                key={flag}
-                                style={[
-                                    styles.flagBtn,
-                                    card.flags === flag && styles.flagBtnActive,
-                                    { borderColor: flag === 0 ? colors.border : FLAG_COLORS[flag].color },
-                                ]}
-                            >
-                                <View
-                                    style={[
-                                        styles.flagDot,
-                                        { backgroundColor: flag === 0 ? 'transparent' : FLAG_COLORS[flag].color },
-                                    ]}
-                                />
-                            </View>
-                        ))}
-                    </View>
+                    <Text style={styles.sectionTitle}>{l('Etiketler ve bayrak', 'Tags & Flag')}</Text>
+                    {note?.tags.length ? (
+                        <View style={styles.tagsRow}>
+                            {note.tags.map((tag) => (
+                                <View key={tag} style={styles.tag}>
+                                    <Text style={styles.tagText}>{tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    ) : (
+                        <Text style={styles.emptyHint}>{l('Bu notta etiket yok.', 'This note has no tags.')}</Text>
+                    )}
+                    <InfoRow
+                        label={l('Bayrak', 'Flag')}
+                        value={card.flags ? cardFlagName(locale, card.flags) : l('Bayrak yok', 'No flag')}
+                        dotColor={card.flags ? FLAG_COLORS[card.flags]?.color : undefined}
+                    />
                 </View>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
                     <InfoRow label={l('Kart durumu', 'Card state')} value={typeLabel} />
                     <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
-                    <InfoRow label={l('Vade', 'Due')} value={String(card.due)} />
-                    <InfoRow label={l('Aralık', 'Interval')} value={formatIvl(card.ivl)} />
-                    <InfoRow label={l('Kolaylık', 'Ease')} value={`${(card.factor / 10).toFixed(0)}%`} />
+                    <InfoRow label={l('Sonraki gösterim', 'Due')} value={dueLabel} />
+                    <InfoRow label={l('Aralık', 'Interval')} value={card.ivl ? formatIvl(card.ivl) : '—'} />
+                    <InfoRow label={l('Kolaylık', 'Ease')} value={card.factor > 0 ? `${(card.factor / 10).toFixed(0)}%` : '—'} />
                     <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
                     <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
                 </View>
@@ -232,20 +255,28 @@ export default function CardInfoScreen() {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Teknik bilgi', 'Technical Information')}</Text>
-                    <InfoRow label={l('Son çalışma', 'Last review')} value={card.lastReview ? new Date(card.lastReview).toISOString() : '-'} />
+                    <InfoRow
+                        label={l('Son çalışma', 'Last review')}
+                        value={card.lastReview ? formatDateTime(new Date(card.lastReview)) : l('Hiç çalışılmadı', 'Never studied')}
+                    />
+                    <InfoRow label={l('Kart şablonu', 'Card template')} value={`#${card.ord + 1}`} />
                 </View>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Çalışma geçmişi', 'Review History')} ({reviews.length})</Text>
 
-                    <View style={styles.tableHeader}>
+                    {reviews.length === 0 && (
+                        <Text style={styles.emptyHint}>{l('Bu kart henüz hiç çalışılmadı.', 'This card has not been reviewed yet.')}</Text>
+                    )}
+
+                    {reviews.length > 0 && <View style={styles.tableHeader}>
                         <Text style={[styles.th, { flex: 2 }]}>{l('Tarih', 'Date')}</Text>
                         <Text style={[styles.th, { flex: 1 }]}>{l('Yanıt', 'Answer')}</Text>
                         <Text style={[styles.th, { flex: 1 }]}>{l('Aralık', 'Interval')}</Text>
                         <Text style={[styles.th, { flex: 1 }]}>{l('Kolaylık', 'Ease')}</Text>
                         <Text style={[styles.th, { flex: 1 }]}>{l('Süre', 'Time')}</Text>
                         <Text style={[styles.th, { flex: 1 }]}>{l('Tür', 'Type')}</Text>
-                    </View>
+                    </View>}
 
                     {reviews.map((rev, index) => {
                         const ease = easeLabel(rev.ease);
@@ -270,22 +301,32 @@ export default function CardInfoScreen() {
     );
 }
 
-function InfoRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function InfoRow({ label, value, highlight, dotColor }: {
+    label: string;
+    value: string;
+    highlight?: boolean;
+    dotColor?: string;
+}) {
     const colors = useThemeColors();
     const infoStyles = useMemo(() => createInfoStyles(colors), [colors]);
     return (
         <View style={infoStyles.row}>
             <Text style={infoStyles.label}>{label}</Text>
-            <Text style={[infoStyles.value, highlight && infoStyles.valueHighlight]}>{value}</Text>
+            <View style={infoStyles.valueGroup}>
+                {dotColor ? <View style={[infoStyles.valueDot, { backgroundColor: dotColor }]} /> : null}
+                <Text style={[infoStyles.value, highlight && infoStyles.valueHighlight]}>{value}</Text>
+            </View>
         </View>
     );
 }
 
 function createInfoStyles(colors: ColorScheme) {
     return StyleSheet.create({
-    row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-    label: { fontSize: FontSize.sm, color: colors.textMuted },
-    value: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.md, paddingVertical: 6 },
+    label: { fontSize: FontSize.sm, color: colors.textMuted, flexShrink: 0 },
+    valueGroup: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+    valueDot: { width: 10, height: 10, borderRadius: 5 },
+    value: { flexShrink: 1, textAlign: 'right', fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
     valueHighlight: { color: colors.btnAgain },
     });
 }
@@ -328,17 +369,7 @@ function createStyles(colors: ColorScheme) {
     },
     tagText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.accent },
 
-    flagsRow: { flexDirection: 'row', gap: 8 },
-    flagBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    flagBtnActive: { backgroundColor: colors.accentLight },
-    flagDot: { width: 16, height: 16, borderRadius: 8 },
+    emptyHint: { fontSize: FontSize.sm, color: colors.textMuted, paddingVertical: 6 },
 
     tableHeader: {
         flexDirection: 'row',

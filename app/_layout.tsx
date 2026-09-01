@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, router as globalRouter, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,12 +12,17 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
+    ScrollView,
 } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
+import Svg, { Circle, Path } from 'react-native-svg';
 import {
+    BorderRadius,
     Colors,
     DARK_MODE_UI_ENABLED,
     FontSize,
+    Shadows,
     Spacing,
     ThemeColorsProvider,
     useThemeColors,
@@ -54,21 +59,79 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.head.appendChild(style);
 }
 
+function ErrorAlertShieldIcon({ color, size = 40 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path
+                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                fill="none"
+                stroke={color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <Path d="M12 8v4" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
+            <Circle cx={12} cy={16} r={1.2} fill={color} />
+        </Svg>
+    );
+}
+
+function ErrorCopyIcon({ color, size = 15 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path
+                d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+                fill="none"
+                stroke={color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <Path
+                d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"
+                fill="none"
+                stroke={color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
+function ErrorCheckIcon({ color, size = 15 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path
+                d="m5 12 5 5L20 7"
+                fill="none"
+                stroke={color}
+                strokeWidth={2.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
 class AppErrorBoundary extends React.Component<
     { children: React.ReactNode },
-    { hasError: boolean; error: string }
+    { hasError: boolean; error: string; componentStack: string }
 > {
-    state = { hasError: false, error: '' };
+    state = { hasError: false, error: '', componentStack: '' };
 
     static getDerivedStateFromError(error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         return { hasError: true, error: msg };
     }
 
-    componentDidCatch(error: Error) {
-        console.error('[AppErrorBoundary]', error);
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error('[AppErrorBoundary]', error, errorInfo);
         // A crash during startup would otherwise sit behind the launch image forever.
         hideSplash();
+        if (errorInfo?.componentStack) {
+            this.setState({ componentStack: errorInfo.componentStack });
+        }
     }
 
     render() {
@@ -76,7 +139,8 @@ class AppErrorBoundary extends React.Component<
             return (
                 <LocalizedErrorFallback
                     message={this.state.error}
-                    onRetry={() => this.setState({ hasError: false, error: '' })}
+                    componentStack={this.state.componentStack}
+                    onRetry={() => this.setState({ hasError: false, error: '', componentStack: '' })}
                 />
             );
         }
@@ -84,17 +148,134 @@ class AppErrorBoundary extends React.Component<
     }
 }
 
-function LocalizedErrorFallback({ message, onRetry }: { message: string; onRetry: () => void }) {
-    const { t } = useSystemI18n();
-    const safeMessage = userFacingErrorMessage(message, t('root.startupErrorMessage'));
+function LocalizedErrorFallback({
+    message,
+    componentStack,
+    onRetry,
+}: {
+    message: string;
+    componentStack?: string;
+    onRetry: () => void;
+}) {
+    const { t, l } = useSystemI18n();
+    const insets = useSafeAreaInsets();
+    const [showDetails, setShowDetails] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const safeMessage = userFacingErrorMessage(message, t('root.errorDescription'));
+
+    const handleReturnHome = () => {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            try {
+                window.location.href = '/';
+                return;
+            } catch {
+                // A blocked navigation still leaves the in-app reset below to fall back on.
+            }
+        }
+        // The crash usually came from the screen that is still on the stack, so returning home
+        // has to unwind the navigation state first. Without this the button only clears the
+        // boundary and re-renders the same broken screen, which is what Retry already does.
+        // The imperative router is used instead of the hook so a navigator that failed during
+        // startup cannot take the fallback screen down with it.
+        try {
+            globalRouter.dismissAll();
+        } catch {
+            // Nothing was stacked above the tabs.
+        }
+        try {
+            globalRouter.replace('/decks' as never);
+        } catch {
+            // The navigator never mounted; clearing the boundary is all that is left.
+        }
+        onRetry();
+    };
+
+    const handleCopyDetails = async () => {
+        try {
+            const report = `[TusAnkiM Error Report]\nMessage: ${message}\nStack: ${componentStack || 'N/A'}`;
+            await Clipboard.setStringAsync(report);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+        } catch {
+            // Ignore clipboard errors
+        }
+    };
+
     return (
-        <View style={errorStyles.container}>
-            <Text style={errorStyles.icon}>⚠️</Text>
-            <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
-            <Text style={errorStyles.message}>{safeMessage}</Text>
-            <TouchableOpacity style={errorStyles.button} onPress={onRetry}>
-                <Text style={errorStyles.buttonText}>{t('common.retry')}</Text>
-            </TouchableOpacity>
+        <View style={[errorStyles.container, { paddingTop: Math.max(insets.top, 24), paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={errorStyles.card}>
+                <View style={errorStyles.iconBadge}>
+                    <ErrorAlertShieldIcon color={Colors.accent} size={38} />
+                </View>
+                <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
+                <Text style={errorStyles.message}>{safeMessage}</Text>
+
+                <View style={errorStyles.buttonGroup}>
+                    <TouchableOpacity
+                        style={errorStyles.primaryButton}
+                        onPress={onRetry}
+                        activeOpacity={0.82}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('common.retry')}
+                    >
+                        <Text style={errorStyles.primaryButtonText}>{t('common.retry')}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={errorStyles.secondaryButton}
+                        onPress={handleReturnHome}
+                        activeOpacity={0.75}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('root.returnHome')}
+                    >
+                        <Text style={errorStyles.secondaryButtonText}>{t('root.returnHome')}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                    style={errorStyles.detailsToggle}
+                    onPress={() => setShowDetails(!showDetails)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('root.technicalDetails')}
+                >
+                    <Text style={errorStyles.detailsToggleText}>
+                        {showDetails
+                            ? l('Teknik detayları gizle ▴', 'Hide technical details ▴')
+                            : l('Teknik detayları göster ▾', 'Show technical details ▾')}
+                    </Text>
+                </TouchableOpacity>
+
+                {showDetails && (
+                    <View style={errorStyles.detailsBox}>
+                        <ScrollView style={errorStyles.detailsScroll} nestedScrollEnabled>
+                            <Text style={errorStyles.detailsText} selectable>
+                                {message}
+                                {componentStack ? `\n\nComponent Stack:\n${componentStack}` : ''}
+                            </Text>
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={errorStyles.copyButton}
+                            onPress={handleCopyDetails}
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('root.copyError')}
+                        >
+                            {copied ? (
+                                <>
+                                    <ErrorCheckIcon color={Colors.accent} size={15} />
+                                    <Text style={errorStyles.copyButtonTextCopied}>{t('root.errorCopied')}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <ErrorCopyIcon color={Colors.textSecondary} size={15} />
+                                    <Text style={errorStyles.copyButtonText}>{t('root.copyError')}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
         </View>
     );
 }
@@ -105,18 +286,123 @@ const errorStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: Colors.bgPrimary,
-        padding: 32,
+        paddingHorizontal: Spacing.xl,
     },
-    icon: { fontSize: 48, marginBottom: 16 },
-    title: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-    message: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginBottom: 24 },
-    button: {
+    card: {
+        width: '100%',
+        maxWidth: 420,
+        backgroundColor: Colors.bgCard,
+        borderRadius: BorderRadius.xl,
+        padding: Spacing.xxl,
+        alignItems: 'center',
+        ...Shadows.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: Colors.border,
+    },
+    iconBadge: {
+        width: 72,
+        height: 72,
+        borderRadius: BorderRadius.full,
+        backgroundColor: Colors.badgeNewBg,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: Spacing.lg,
+    },
+    title: {
+        fontSize: FontSize.xl,
+        fontWeight: '700',
+        color: Colors.textPrimary,
+        textAlign: 'center',
+        marginBottom: Spacing.sm,
+        letterSpacing: -0.3,
+    },
+    message: {
+        fontSize: FontSize.md,
+        lineHeight: 22,
+        color: Colors.textMuted,
+        textAlign: 'center',
+        marginBottom: Spacing.xl,
+    },
+    buttonGroup: {
+        width: '100%',
+        gap: Spacing.sm,
+    },
+    primaryButton: {
         backgroundColor: Colors.accent,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 14,
+        paddingHorizontal: Spacing.xl,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...Shadows.sm,
     },
-    buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+    primaryButtonText: {
+        fontSize: FontSize.md,
+        fontWeight: '600',
+        color: '#ffffff',
+    },
+    secondaryButton: {
+        backgroundColor: Colors.bgSecondary,
+        paddingVertical: 13,
+        paddingHorizontal: Spacing.xl,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: Colors.border,
+    },
+    secondaryButtonText: {
+        fontSize: FontSize.md,
+        fontWeight: '600',
+        color: Colors.textPrimary,
+    },
+    detailsToggle: {
+        marginTop: Spacing.lg,
+        paddingVertical: Spacing.xs,
+    },
+    detailsToggleText: {
+        fontSize: FontSize.xs,
+        fontWeight: '500',
+        color: Colors.textMuted,
+    },
+    detailsBox: {
+        width: '100%',
+        marginTop: Spacing.md,
+        backgroundColor: Colors.bgSecondary,
+        borderRadius: BorderRadius.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: Colors.border,
+        padding: Spacing.md,
+    },
+    detailsScroll: {
+        maxHeight: 140,
+    },
+    detailsText: {
+        fontSize: FontSize.xs,
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        color: Colors.textSecondary,
+        lineHeight: 18,
+    },
+    copyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: Spacing.sm,
+        paddingTop: Spacing.xs,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: Colors.border,
+    },
+    copyButtonText: {
+        fontSize: FontSize.xs,
+        fontWeight: '500',
+        color: Colors.textSecondary,
+    },
+    copyButtonTextCopied: {
+        fontSize: FontSize.xs,
+        fontWeight: '600',
+        color: Colors.accent,
+    },
     secondaryBar: { backgroundColor: Colors.badgeNewBg, paddingVertical: 6, paddingHorizontal: 12 },
     secondaryBarText: { fontSize: 12, color: Colors.badgeNew, textAlign: 'center' },
 });
@@ -196,21 +482,25 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         const safeMessage = userFacingErrorMessage(error, t('common.genericError'));
         return (
             <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>⚠️</Text>
-                <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
-                <Text style={errorStyles.message}>{safeMessage}</Text>
-                <TouchableOpacity
-                    style={errorStyles.button}
-                    onPress={() => {
-                        setError(null);
-                        setReady(false);
-                        initWebDb()
-                            .then(() => setReady(true))
-                            .catch((e2) => setError(e2 instanceof Error ? e2.message : String(e2)));
-                    }}
-                >
-                    <Text style={errorStyles.buttonText}>{t('common.retry')}</Text>
-                </TouchableOpacity>
+                <View style={errorStyles.card}>
+                    <View style={errorStyles.iconBadge}>
+                        <Text style={{ fontSize: 32 }}>⚠️</Text>
+                    </View>
+                    <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
+                    <Text style={errorStyles.message}>{safeMessage}</Text>
+                    <TouchableOpacity
+                        style={errorStyles.primaryButton}
+                        onPress={() => {
+                            setError(null);
+                            setReady(false);
+                            initWebDb()
+                                .then(() => setReady(true))
+                                .catch((e2) => setError(e2 instanceof Error ? e2.message : String(e2)));
+                        }}
+                    >
+                        <Text style={errorStyles.primaryButtonText}>{t('common.retry')}</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     }
@@ -218,11 +508,11 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     if (!ready) {
         return (
             <View style={errorStyles.container}>
-                <Text style={errorStyles.icon}>🧠</Text>
+                <Text style={{ fontSize: 40 }}>🧠</Text>
                 {/* Locale discovery differs between static rendering and the user's browser.
                     Keep the hydration placeholder language-neutral so React can attach without
                     replacing the security-hardened server document. */}
-                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted }}>TusAnkiM</Text>
+                <Text style={{ fontSize: FontSize.lg, color: Colors.textMuted, marginTop: Spacing.sm }}>TusAnkiM</Text>
             </View>
         );
     }
@@ -489,8 +779,8 @@ function AppStack() {
 
 export default function RootLayout() {
     return (
-        <AppErrorBoundary>
-            <SafeAreaProvider>
+        <SafeAreaProvider>
+            <AppErrorBoundary>
                 <WebDbGate>
                     <AppProvider>
                         <ThemeGate>
@@ -500,7 +790,7 @@ export default function RootLayout() {
                         </ThemeGate>
                     </AppProvider>
                 </WebDbGate>
-            </SafeAreaProvider>
-        </AppErrorBoundary>
+            </AppErrorBoundary>
+        </SafeAreaProvider>
     );
 }

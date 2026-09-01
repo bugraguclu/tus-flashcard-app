@@ -41,6 +41,7 @@ import {
     getDeckConfigForDeck,
     restoreFilteredCard,
 } from '../../lib/deckManager';
+import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
@@ -82,7 +83,9 @@ import {
 } from '../../lib/reviewerTimers';
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
 import {
+    canUndoReview,
     normalizeReviewerToolbarPosition,
+    shouldShowReviewerToolbarActions,
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
@@ -391,8 +394,10 @@ export default function StudyScreen() {
     // Preview leaves the DB untouched, so a rebuilt queue would re-gather every card the
     // user already went through. Track them per session; a scope change starts fresh.
     const previewDoneIdsRef = useRef<Set<number>>(new Set());
+    const previewPendingDueMapRef = useRef<Map<number, number>>(new Map());
     useEffect(() => {
         previewDoneIdsRef.current.clear();
+        previewPendingDueMapRef.current.clear();
     }, [selectedSubject, selectedTopic, selectedDeckName]);
 
     // Entering a different study scope or changing the preference starts a new reviewer block.
@@ -428,9 +433,29 @@ export default function StudyScreen() {
 
         // A preview session re-gathers untouched cards on every rebuild; drop the ones
         // already answered this session so the queue actually progresses.
-        const sessionCards = previewMode
-            ? result.cards.filter((card) => !previewDoneIdsRef.current.has(card.cardId))
-            : result.cards;
+        const nowMs = Date.now();
+        let sessionCards = result.cards;
+        let previewNextDue: number | null = null;
+        if (previewMode) {
+            const pendingMap = previewPendingDueMapRef.current;
+            const doneIds = previewDoneIdsRef.current;
+            const futureDelays: number[] = [];
+            sessionCards = result.cards.filter((card) => {
+                if (doneIds.has(card.cardId)) return false;
+                const pendingDue = pendingMap.get(card.cardId);
+                if (pendingDue !== undefined) {
+                    if (pendingDue > nowMs) {
+                        futureDelays.push(pendingDue);
+                        return false;
+                    }
+                    pendingMap.delete(card.cardId);
+                }
+                return true;
+            });
+            if (futureDelays.length > 0) {
+                previewNextDue = Math.min(...futureDelays);
+            }
+        }
 
         // Background refreshes must not yank the card the user is looking at (or hide the
         // answer they are reading) — keep it in front and merge the fresh queue behind it.
@@ -446,7 +471,7 @@ export default function StudyScreen() {
             setShowingAnswer(false);
         }
 
-        setNextLearningDue(result.nextLearningDue);
+        setNextLearningDue(previewMode ? (previewNextDue ?? (sessionCards.length === 0 && result.nextLearningDue ? result.nextLearningDue : null)) : result.nextLearningDue);
         setQueueStats(result.stats);
         setDailyNewLimitReached(result.dailyNewLimitReached);
         setHeldBackNewCount(result.heldBackNewCount);
@@ -678,19 +703,34 @@ export default function StudyScreen() {
                 return;
             }
 
-            // A filtered deck is a build snapshot, not a live saved search. Once a card has
-            // finished its learning/relearning steps, retire it from this build so background
-            // queue refreshes and app restarts cannot deal the same completed card again.
             const activeFilteredDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
-            const completesFilteredCard = Boolean(activeFilteredDeck?.isFiltered && (
-                previewMode ? grade > 1 : result.updatedCard.state.status !== 'learning'
-            ));
-            if (completesFilteredCard && activeFilteredDeck) {
-                completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
-            }
+            // When the card is coming back later, the moment it is due again. The preview queue is
+            // held in these refs rather than in the card, because preview never writes scheduling.
+            let previewRequeueAt: number | null = null;
+            if (previewMode) {
+                const delaySec = previewDelaySecondsForGrade(activeFilteredDeck?.previewDelays, grade);
+                if (delaySec > 0) {
+                    previewRequeueAt = Date.now() + delaySec * 1000;
+                    previewPendingDueMapRef.current.set(currentCard.cardId, previewRequeueAt);
+                } else {
+                    previewPendingDueMapRef.current.delete(currentCard.cardId);
+                    previewDoneIdsRef.current.add(currentCard.cardId);
+                    if (activeFilteredDeck) {
+                        completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
+                    }
+                }
+            } else {
+                // A filtered deck is a build snapshot, not a live saved search. Once a card has
+                // finished its learning/relearning steps, retire it from this build so background
+                // queue refreshes and app restarts cannot deal the same completed card again.
+                const completesFilteredCard = Boolean(activeFilteredDeck?.isFiltered && (
+                    result.updatedCard.state.status !== 'learning'
+                ));
+                if (completesFilteredCard && activeFilteredDeck) {
+                    completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
+                }
 
-            // Preview answers change nothing, so there is nothing to undo (or count).
-            if (!previewMode) {
+                // Normal reviews commit to undo stack and revlog.
                 setRedoStack([]);
                 setUndoStack((prev) => [
                     ...prev.slice(-29),
@@ -703,9 +743,6 @@ export default function StudyScreen() {
                         answerTimeMs: elapsed,
                     },
                 ]);
-            } else if (grade > 1) {
-                // "İyi/Zor/Kolay" retires the card from this preview session; "Tekrar" re-queues it.
-                previewDoneIdsRef.current.add(currentCard.cardId);
             }
 
             // The review log row is already committed, so re-reading it gives exact numbers
@@ -760,9 +797,11 @@ export default function StudyScreen() {
 
             setQueue((prevQueue) => {
                 const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
-                // Preview (Anki): "Tekrar" shows the card again later, anything else leaves the session.
+                // Preview (Anki): a button with a delay brings the card back only once that delay
+                // has run, so the card waits in previewPendingDueMapRef instead of re-entering the
+                // queue now. A zero delay — always the case for Easy — retires it from the session.
                 const shouldReinsert = previewMode
-                    ? grade === 1
+                    ? false
                     : isCardDueNow(result.updatedCard, nowMs);
                 const nextQueue = shouldReinsert ? [...withoutCurrent, result.updatedCard] : withoutCurrent;
 
@@ -775,6 +814,12 @@ export default function StudyScreen() {
 
                 if (result.updatedCard.state.status === 'learning' && result.updatedCard.state.dueTime > nowMs) {
                     futureLearningDue.push(result.updatedCard.state.dueTime);
+                }
+
+                // Preview answers leave the card's schedule alone, so the waiting card would be
+                // invisible to the check above; its delay has to drive the rebuild timer directly.
+                if (previewRequeueAt !== null) {
+                    futureLearningDue.push(previewRequeueAt);
                 }
 
                 // Only update nextLearningDue if we found future learning cards in memory.
@@ -1105,6 +1150,18 @@ export default function StudyScreen() {
                 return;
             }
 
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                handleExitStudy();
+                return;
+            }
+
+            if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key.toLowerCase() === 'u' || event.key.toLowerCase() === 'z')) {
+                event.preventDefault();
+                void undoLast();
+                return;
+            }
+
             if (!currentCard) return;
 
             // Anki: Ctrl/Cmd+1..7 toggles the matching flag on the current card.
@@ -1165,12 +1222,28 @@ export default function StudyScreen() {
 
     const getPreview = useCallback(() => {
         if (!currentCard) return null;
+        if (previewMode) {
+            const activeDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
+            const delayFor = (grade: number) => previewDelaySecondsForGrade(activeDeck?.previewDelays, grade);
+            const formatDelay = (sec: number) => {
+                if (sec <= 0) return '—';
+                if (sec < 60) return `${sec}sn`;
+                if (sec < 3600) return `${Math.round(sec / 60)}dk`;
+                return `${Math.round(sec / 3600)}sa`;
+            };
+            return {
+                again: formatDelay(delayFor(1)),
+                hard: formatDelay(delayFor(2)),
+                good: formatDelay(delayFor(3)),
+                easy: formatDelay(delayFor(4)),
+            };
+        }
         // The labels have to be produced with the card's own preset: learning steps, maximum
         // interval and the FSRS parameters all live there, not on the collection defaults.
         const cardSettings = resolveSettingsForDeck(currentCard.deckId, settings);
         const scheduler = schedulerForSettings(cardSettings);
         return scheduler.previewIntervals(currentCard.state, cardSettings);
-    }, [currentCard, settings]);
+    }, [currentCard, settings, previewMode, selectedDeckName]);
 
     const renderPayload = useMemo(() => {
         if (!currentCard) return null;
@@ -1626,8 +1699,20 @@ export default function StudyScreen() {
     ]);
 
     const handleNativeShortcutKey = useCallback((rawKey: string) => {
-        if (!currentCard || toolsMenuVisible || flagMenuVisible || deckPickerVisible) return;
+        if (toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) return;
         const key = normalizeHardwareKey(rawKey);
+
+        if (key === 'Escape') {
+            handleExitStudy();
+            return;
+        }
+
+        if (key.toLowerCase() === 'z' || key.toLowerCase() === 'u') {
+            void undoLast();
+            return;
+        }
+
+        if (!currentCard) return;
         const bindings = settings.keyBindings;
 
         if (matchesKeyBinding(key, bindings.replayAudio)) {
@@ -1660,7 +1745,10 @@ export default function StudyScreen() {
         toolsMenuVisible,
         flagMenuVisible,
         deckPickerVisible,
+        catalogUnlockVisible,
         settings.keyBindings,
+        handleExitStudy,
+        undoLast,
         replayAudio,
         handleBury,
         handleSuspend,
@@ -1847,19 +1935,20 @@ export default function StudyScreen() {
                 ) : null}
             </View>
 
-            {(currentCard || undoStack.length > 0) ? (
+            {shouldShowReviewerToolbarActions(Boolean(currentCard), undoStack.length) ? (
                 <View style={styles.toolbarActions}>
                     <TouchableOpacity
-                        style={[styles.toolbarIconButton, undoStack.length === 0 && styles.toolbarIconButtonDisabled]}
+                        style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
                         onPress={() => { void undoLast(); }}
-                        disabled={undoStack.length === 0}
+                        disabled={!canUndoReview(undoStack.length)}
                         accessibilityRole="button"
-                        accessibilityLabel={undoStack.length > 0
+                        accessibilityLabel={canUndoReview(undoStack.length)
                             ? l('Son cevabı geri al', 'Undo last answer')
                             : l('Geri alınacak cevap yok', 'No answer to undo')}
-                        accessibilityState={{ disabled: undoStack.length === 0 }}
+                        accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
+                        {...webTitle(canUndoReview(undoStack.length) ? l('Son cevabı geri al (Ctrl+Z)', 'Undo last answer (Ctrl+Z)') : l('Geri alınacak cevap yok', 'No answer to undo'))}
                     >
-                        <UndoReviewIcon color={undoStack.length > 0 ? colors.textSecondary : colors.textMuted} />
+                        <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                     </TouchableOpacity>
                     {currentCard ? (
                         <>
@@ -1894,14 +1983,16 @@ export default function StudyScreen() {
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                {...webTitle(l('Geri', 'Back'))}
             >
-                <Text style={styles.classicBackIcon}>‹</Text>
+                <ReviewerBackIcon color={colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity
                 style={styles.classicTitleButton}
                 onPress={openDeckPicker}
                 accessibilityRole="button"
                 accessibilityLabel={l(`Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`, `Select deck. Current scope: ${reviewerDeckTitle}`)}
+                {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
             >
                 <Text style={styles.classicToolbarTitle} numberOfLines={1}>
                     {settings.showDeckTitle !== false ? reviewerDeckTitle : l('Bugünün Kartları', 'Cards for Today')}
@@ -1913,14 +2004,31 @@ export default function StudyScreen() {
                     </View>
                 ) : null}
             </TouchableOpacity>
-            {currentCard ? (
+            {shouldShowReviewerToolbarActions(Boolean(currentCard), undoStack.length) ? (
                 <View style={styles.toolbarActions}>
-                    <TouchableOpacity style={styles.toolbarIconButton} onPress={openFlagMenu} accessibilityRole="button" accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}>
-                        <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
+                    <TouchableOpacity
+                        style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
+                        onPress={() => { void undoLast(); }}
+                        disabled={!canUndoReview(undoStack.length)}
+                        accessibilityRole="button"
+                        accessibilityLabel={canUndoReview(undoStack.length)
+                            ? l('Son cevabı geri al', 'Undo last answer')
+                            : l('Geri alınacak cevap yok', 'No answer to undo')}
+                        accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
+                        {...webTitle(canUndoReview(undoStack.length) ? l('Son cevabı geri al (Ctrl+Z)', 'Undo last answer (Ctrl+Z)') : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                    >
+                        <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.toolbarIconButton} onPress={openMoreMenu} accessibilityRole="button" accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
-                        <Text style={styles.toolbarActionIcon}>⋮</Text>
-                    </TouchableOpacity>
+                    {currentCard ? (
+                        <>
+                            <TouchableOpacity style={styles.toolbarIconButton} onPress={openFlagMenu} accessibilityRole="button" accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}>
+                                <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.toolbarIconButton} onPress={openMoreMenu} accessibilityRole="button" accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
+                                <Text style={styles.toolbarActionIcon}>⋮</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : null}
                 </View>
             ) : null}
         </View>
@@ -2018,35 +2126,35 @@ export default function StudyScreen() {
                                     >⚑</Text>
                                 </View>
                             ) : null}
-                            {renderPayload && !showingAnswer ? (
+                            {renderPayload ? (
                                 <CardWebView
+                                    key={`card-webview-${currentCard.cardId}`}
                                     noteType={renderPayload.noteType}
                                     note={renderPayload.note}
                                     card={renderPayload.card}
                                     deck={renderPayload.deck}
-                                    side="question"
-                                    // On the answer side the signal falls back here only when the
-                                    // back has no sound of its own (Anki's replay covers the front),
-                                    // or when a replay chain is deliberately starting on the front.
-                                    playAudioSignal={replayTarget === 'question'
-                                        || (replayTarget === 'auto' && (!showingAnswer || !answerSideHasAudio))
-                                        ? audioSignal
-                                        : undefined}
+                                    side={showingAnswer ? 'answer' : 'question'}
+                                    typedAnswer={showingAnswer && typeAnswerField ? typedAnswer : undefined}
+                                    playAudioSignal={
+                                        showingAnswer
+                                            ? (replayTarget === 'answer' || (replayTarget === 'auto' && answerSideHasAudio) ? audioSignal : undefined)
+                                            : (replayTarget === 'question' || replayTarget === 'auto' ? audioSignal : undefined)
+                                    }
                                     pauseAudioSignal={pauseSignal}
-                                    onAudioActiveChange={handleQuestionAudioActive}
+                                    onAudioActiveChange={showingAnswer ? handleAnswerAudioActive : handleQuestionAudioActive}
                                     cardZoomPercent={settings.cardZoomPercent}
                                     imageZoomPercent={settings.imageZoomPercent}
                                     showAudioPlayButtons={settings.showAudioPlayButtons}
                                     centerContent={settings.centerCardContent}
                                     frameStyle={settings.studyFrameStyle}
                                     scrollMode="intrinsic"
-                                    typeAnswerInCard={typeAnswerInCard}
-                                    autoFocusTypeAnswer={typeAnswerInCard && settings.focusTypeAnswer !== false}
-                                    onTypedAnswerChange={typeAnswerInCard ? setTypedAnswer : undefined}
-                                    onTypeAnswerSubmit={typeAnswerInCard ? submitTypedAnswer : undefined}
+                                    typeAnswerInCard={!showingAnswer && typeAnswerInCard}
+                                    autoFocusTypeAnswer={!showingAnswer && typeAnswerInCard && settings.focusTypeAnswer !== false}
+                                    onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
+                                    onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
                                     onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
                                 />
-                            ) : !renderPayload ? (
+                            ) : !showingAnswer ? (
                                 settings.ninePointTouchEnabled ? (
                                     <Pressable
                                         onLayout={(event) => setFallbackTapSurface(event.nativeEvent.layout)}
@@ -2058,50 +2166,7 @@ export default function StudyScreen() {
                                         <Text style={styles.questionText}>{currentCard.question}</Text>
                                     </Pressable>
                                 ) : <Text style={styles.questionText}>{currentCard.question}</Text>
-                            ) : null}
-
-                            {typeAnswerField && !typeAnswerInCard && !showingAnswer && (
-                                <TextInput
-                                    ref={nativeTypeAnswerRef}
-                                    style={styles.typeAnswerInput}
-                                    value={typedAnswer}
-                                    onChangeText={setTypedAnswer}
-                                    placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
-                                    placeholderTextColor={colors.textMuted}
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    maxLength={MAX_TYPE_ANSWER_CHARS}
-                                    returnKeyType="done"
-                                    onSubmitEditing={() => submitTypedAnswer(typedAnswer)}
-                                />
-                            )}
-
-                            {showingAnswer && renderPayload ? (
-                                // Match Anki's reviewer: the back template replaces the front.
-                                // It may contain {{FrontSide}} itself, so stacking both sides
-                                // duplicates imported AnKing cards and wastes the iPhone viewport.
-                                <CardWebView
-                                    noteType={renderPayload.noteType}
-                                    note={renderPayload.note}
-                                    card={renderPayload.card}
-                                    deck={renderPayload.deck}
-                                    side="answer"
-                                    typedAnswer={typeAnswerField ? typedAnswer : undefined}
-                                    playAudioSignal={replayTarget === 'answer'
-                                        || (replayTarget === 'auto' && answerSideHasAudio)
-                                        ? audioSignal
-                                        : undefined}
-                                    pauseAudioSignal={pauseSignal}
-                                    onAudioActiveChange={handleAnswerAudioActive}
-                                    cardZoomPercent={settings.cardZoomPercent}
-                                    imageZoomPercent={settings.imageZoomPercent}
-                                    showAudioPlayButtons={settings.showAudioPlayButtons}
-                                    centerContent={settings.centerCardContent}
-                                    frameStyle={settings.studyFrameStyle}
-                                    scrollMode="intrinsic"
-                                    onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
-                                />
-                            ) : showingAnswer ? (
+                            ) : (
                                 settings.ninePointTouchEnabled ? (
                                     <Pressable
                                         style={styles.answerSection}
@@ -2120,7 +2185,23 @@ export default function StudyScreen() {
                                         <Text style={styles.answerText}>{currentCard.answer}</Text>
                                     </View>
                                 )
-                            ) : null}
+                            )}
+
+                            {typeAnswerField && !typeAnswerInCard && !showingAnswer && (
+                                <TextInput
+                                    ref={nativeTypeAnswerRef}
+                                    style={styles.typeAnswerInput}
+                                    value={typedAnswer}
+                                    onChangeText={setTypedAnswer}
+                                    placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
+                                    placeholderTextColor={colors.textMuted}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    maxLength={MAX_TYPE_ANSWER_CHARS}
+                                    returnKeyType="done"
+                                    onSubmitEditing={() => submitTypedAnswer(typedAnswer)}
+                                />
+                            )}
                             {!newStudyScreenEnabled && !showingAnswer ? (
                                 <TouchableOpacity
                                     style={[styles.showAnswerBtn, styles.classicInlineAnswerButton]}
@@ -2247,6 +2328,15 @@ export default function StudyScreen() {
                                 )}
                             </Text>
                         )}
+                        <TouchableOpacity
+                            style={styles.secondaryActionBtn}
+                            onPress={handleExitStudy}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                            {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
+                        >
+                            <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                        </TouchableOpacity>
                         <Text style={styles.emptySub}>
                             {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
                         </Text>
@@ -2446,7 +2536,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
-    classicBackIcon: { fontSize: 40, lineHeight: 42, fontWeight: '300', color: colors.accent },
     classicTitleButton: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
     classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
     toolbarIconButton: { width: 42, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

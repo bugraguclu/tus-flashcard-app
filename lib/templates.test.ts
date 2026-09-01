@@ -548,6 +548,24 @@ describe('Anki reversed note types', () => {
         expect(countCardsForNote(reversedNoteType, note)).toBe(2);
     });
 
+    it('generates only card 2 when Front is empty but Back has content', () => {
+        const note: Note = {
+            id: 1, guid: 'g', noteTypeId: 2, mod: 0, usn: -1, tags: [],
+            fields: ['', 'Cevap metni'], sfld: '', csum: 0, flags: 0,
+        };
+        expect(shouldGenerateCard(reversedNoteType, note, 0)).toBe(false);
+        expect(shouldGenerateCard(reversedNoteType, note, 1)).toBe(true);
+        expect(countCardsForNote(reversedNoteType, note)).toBe(1);
+    });
+
+    it('generates 0 cards when both fields are empty', () => {
+        const note: Note = {
+            id: 1, guid: 'g', noteTypeId: 2, mod: 0, usn: -1, tags: [],
+            fields: ['', ''], sfld: '', csum: 0, flags: 0,
+        };
+        expect(countCardsForNote(reversedNoteType, note)).toBe(0);
+    });
+
     it('card 2 answers with Front', () => {
         const note: Note = {
             id: 1, guid: 'g', noteTypeId: 2, mod: 0, usn: -1, tags: [],

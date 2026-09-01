@@ -109,16 +109,14 @@ export default function StatsScreen() {
         statsRange.endMs,
         statsRange.spanDays,
         localeTag,
-        showBacklog,
         settings,
-    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, showBacklog, settings]);
+    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, settings]);
     const loadStatsSnapshot = useCallback(() => getStatsScreenSnapshot({
         deckName: deckScope,
         range: statsRange,
         settings,
         localeTag,
-        includeBacklog: showBacklog,
-    }), [deckScope, statsRange, settings, localeTag, showBacklog]);
+    }), [deckScope, statsRange, settings, localeTag]);
     const {
         snapshot: statsSnapshot,
         loading,
@@ -259,22 +257,18 @@ export default function StatsScreen() {
                     </View>
                     <View style={styles.todayGrid}>
                         <View style={styles.todayStat}>
-                            <Text style={styles.todayIcon}>✓</Text>
                             <Text style={styles.todayNumber}>{countValue(todayStats.reviewed)}</Text>
                             <Text style={styles.todayLabel}>{l('Yanıtlanan', 'Reviews')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={styles.todayIcon}>◎</Text>
                             <Text style={[styles.todayNumber, { color: colors.btnGood }]}>{todayStats.reviewed > 0 ? `${accuracy}%` : '—'}</Text>
                             <Text style={styles.todayLabel}>{l('Doğruluk', 'Accuracy')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={styles.todayIcon}>◷</Text>
                             <Text style={styles.todayNumberCompact}>{formatStudyDuration(todayStats.studyTimeMs, locale)}</Text>
                             <Text style={styles.todayLabel}>{l('Çalışma süresi', 'Study time')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={styles.todayIcon}>＋</Text>
                             <Text style={[styles.todayNumber, { color: colors.badgeNew }]}>{countValue(todayStats.newCardsIntroduced)}</Text>
                             <Text style={styles.todayLabel}>{l('Yeni kart', 'New Cards')}</Text>
                         </View>
@@ -334,8 +328,8 @@ export default function StatsScreen() {
                         ))}
                     </View>
                     <StatsBarChart
-                        points={ankiStats.futureDue}
-                        todayIndex={ankiStats.futureDueTodayIndex}
+                        points={showBacklog ? ankiStats.futureDueWithBacklog : ankiStats.futureDue}
+                        todayIndex={showBacklog ? ankiStats.futureDueWithBacklogTodayIndex : 0}
                         series={[
                             { label: l('Genç', 'Young'), color: colors.badgeNew },
                             { label: l('Olgun', 'Mature'), color: colors.badgeReview },
@@ -352,18 +346,18 @@ export default function StatsScreen() {
                         todayLabel={l('Bugün', 'Today')}
                         formatValue={countValue}
                         accessibilityLabel={l(
-                            `Gelecek vadeler grafiği. Gösterilen toplam ${ankiStats.futureDueTotal} kart; yarın ${ankiStats.dueTomorrow} kart.`,
-                            `Future due chart. ${ankiStats.futureDueTotal} cards shown in total; ${ankiStats.dueTomorrow} due tomorrow.`,
+                            `Gelecek vadeler grafiği. Gösterilen toplam ${showBacklog ? ankiStats.futureDueWithBacklogTotal : ankiStats.futureDueTotal} kart; yarın ${ankiStats.dueTomorrow} kart.`,
+                            `Future due chart. ${showBacklog ? ankiStats.futureDueWithBacklogTotal : ankiStats.futureDueTotal} cards shown in total; ${ankiStats.dueTomorrow} due tomorrow.`,
                         )}
                         interactionHint={chartInteractionHint}
                     />
                     <View style={styles.metricRow}>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.futureDueTotal)}</Text><Text style={styles.metricLabel}>{l('Toplam', 'Total')}</Text></View>
+                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(showBacklog ? ankiStats.futureDueWithBacklogTotal : ankiStats.futureDueTotal)}</Text><Text style={styles.metricLabel}>{l('Toplam', 'Total')}</Text></View>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{ankiStats.dailyLoad.toFixed(1)}</Text><Text style={styles.metricLabel}>{l('Günlük yük', 'Daily load')}</Text></View>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.dueTomorrow)}</Text><Text style={styles.metricLabel}>{l('Yarın', 'Tomorrow')}</Text></View>
                         {showBacklog && (
                             <View style={styles.metricItem}>
-                                <Text style={[styles.metricValue, { color: colors.btnAgain }]}>{countValue(ankiStats.backlogTotal)}</Text>
+                                <Text style={[styles.metricValue, { color: colors.btnAgain }]}>{countValue(ankiStats.futureDueBacklogTotal)}</Text>
                                 <Text style={styles.metricLabel}>{l('Geciken', 'Backlog')}</Text>
                             </View>
                         )}
@@ -658,10 +652,7 @@ export default function StatsScreen() {
                 <Pressable style={styles.pickerOverlay} onPress={() => setRangePickerVisible(false)}>
                     <Pressable style={styles.pickerCard} onPress={() => {}} accessibilityViewIsModal>
                         <View style={styles.pickerHeader}>
-                            <View>
-                                <Text style={styles.pickerEyebrow}>{t('common.statistics')}</Text>
-                                <Text style={styles.pickerTitle}>{l('Zaman aralığı', 'Time Range')}</Text>
-                            </View>
+                            <Text style={styles.pickerTitle}>{l('Zaman aralığı', 'Time Range')}</Text>
                             <TouchableOpacity
                                 style={styles.pickerClose}
                                 onPress={() => setRangePickerVisible(false)}
@@ -832,7 +823,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: BorderRadius.md,
         backgroundColor: colors.bgSecondary,
     },
-    todayIcon: { position: 'absolute', top: 8, right: 10, color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '800' },
     todayNumber: { fontSize: FontSize.xxxl, fontWeight: '800', color: colors.accent },
     todayNumberCompact: { fontSize: FontSize.xl, lineHeight: 26, fontWeight: '800', color: colors.accent, textAlign: 'center' },
     todayLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500', marginTop: 2 },
@@ -979,8 +969,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
-    pickerEyebrow: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-    pickerTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800', marginTop: 2 },
+    pickerTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800' },
     pickerClose: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
     pickerCloseText: { color: colors.textMuted, fontSize: 30, lineHeight: 32, fontWeight: '300' },
     pickerScroll: { paddingVertical: Spacing.xs },

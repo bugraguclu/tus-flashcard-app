@@ -28,11 +28,31 @@ export function useDeferredScreenSnapshot<T>(
         snapshot: T | null;
         loading: boolean;
         error: unknown;
-    }>({ key, snapshot: null, loading: true, error: null });
+    }>(() => {
+        const cached = repository.get(key);
+        return {
+            key,
+            snapshot: cached ?? null,
+            loading: cached === undefined,
+            error: null,
+        };
+    });
 
     useEffect(() => {
         const token = generation.begin();
-        setState({ key, snapshot: null, loading: true, error: null });
+        const cached = repository.get(key);
+        if (cached !== undefined) {
+            setState({ key, snapshot: cached, loading: false, error: null });
+            return;
+        }
+
+        setState((prev) => ({
+            key,
+            snapshot: prev.snapshot,
+            loading: true,
+            error: null,
+        }));
+
         const task = InteractionManager.runAfterInteractions(() => {
             try {
                 const snapshot = repository.getOrCreate(key, load);
@@ -52,7 +72,12 @@ export function useDeferredScreenSnapshot<T>(
         };
     }, [generation, key, load, repository]);
 
-    // Effects run after paint. Never expose a previous key's value during that intervening render.
-    if (state.key !== key) return { snapshot: null, loading: true, error: null };
+    if (state.key !== key) {
+        const cached = repository.get(key);
+        if (cached !== undefined) {
+            return { snapshot: cached, loading: false, error: null };
+        }
+        return { snapshot: state.snapshot, loading: true, error: null };
+    }
     return state;
 }

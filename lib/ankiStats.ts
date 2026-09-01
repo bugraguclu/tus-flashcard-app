@@ -38,6 +38,11 @@ export interface AnkiStatsSnapshot {
     futureDueTotal: number;
     /** Index of the bucket holding today, so the chart can rule off the backlog. */
     futureDueTodayIndex: number;
+    /** Future due points including overdue cards ahead of today. */
+    futureDueWithBacklog: StatsSeriesPoint[];
+    futureDueWithBacklogTotal: number;
+    futureDueWithBacklogTodayIndex: number;
+    futureDueBacklogTotal: number;
     /** Cards already overdue. Only counted when the backlog is being shown. */
     backlogTotal: number;
     dueTomorrow: number;
@@ -182,6 +187,7 @@ function bucketLabel(date: Date, unit: TimeBucketUnit, localeTag: string): strin
 function bucketDailyRows<T extends { day: string }>(
     rows: T[],
     range: StatsDateRange,
+    rolloverHour: number,
     localeTag: string,
     valuesForRow: (row: T) => number[],
 ): StatsSeriesPoint[] {
@@ -191,7 +197,10 @@ function bucketDailyRows<T extends { day: string }>(
     const firstDate = range.spanDays === null
         ? firstDataDate
         : new Date(new Date(range.startMs).getFullYear(), new Date(range.startMs).getMonth(), new Date(range.startMs).getDate(), 12);
-    const endInstant = new Date(Math.max(range.startMs, range.endMs - 1));
+    // The rows are grouped by study day, so the axis has to end on the study day that contains
+    // the range end rather than on its calendar date. Between midnight and the rollover hour the
+    // two differ, and an unshifted end would append a bucket for a day that has not started yet.
+    const endInstant = new Date(Math.max(range.startMs, range.endMs - 1) - rolloverHour * 3600_000);
     const lastDate = range.spanDays === null
         ? new Date(endInstant.getFullYear(), endInstant.getMonth(), endInstant.getDate(), 12)
         : new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate() + range.spanDays - 1, 12);
@@ -352,6 +361,7 @@ function getReviews(deckName: string | null, range: StatsDateRange, rolloverHour
     const points = bucketDailyRows(
         rows,
         range,
+        rolloverHour,
         localeTag,
         (row) => [row.learning, row.young, row.mature, row.relearning, row.filtered],
     );
@@ -360,6 +370,7 @@ function getReviews(deckName: string | null, range: StatsDateRange, rolloverHour
     const minutePoints = bucketDailyRows(
         rows,
         range,
+        rolloverHour,
         localeTag,
         (row) => [row.learningMs, row.youngMs, row.matureMs, row.relearningMs, row.filteredMs]
             .map((ms) => ms / 60_000),
@@ -471,10 +482,10 @@ function getAdded(
          GROUP BY day ORDER BY day`,
         rolloverHour * 3600, range.startMs, range.endMs, ...deck.params,
     );
-    const points = bucketDailyRows(rows, range, localeTag, (row) => [row.count]);
+    const points = bucketDailyRows(rows, range, rolloverHour, localeTag, (row) => [row.count]);
     const firstDay = rows[0]?.day;
     const allHistorySpanDays = firstDay
-        ? Math.max(1, Math.floor((range.endMs - parseYmd(firstDay).getTime()) / DAY_MS) + 1)
+        ? Math.max(1, Math.floor((range.endMs - rolloverHour * 3600_000 - parseYmd(firstDay).getTime()) / DAY_MS) + 1)
         : 0;
     return {
         points,
@@ -491,9 +502,13 @@ export function getAnkiStatsSnapshot(
     scopedCardIds?: number[],
     options?: { includeBacklog?: boolean },
 ): AnkiStatsSnapshot {
-    const future = getFutureDue(
-        deckName, range, rolloverHour, localeTag, scopedCardIds, options?.includeBacklog,
+    const futureWithoutBacklog = getFutureDue(
+        deckName, range, rolloverHour, localeTag, scopedCardIds, false,
     );
+    const futureWithBacklog = getFutureDue(
+        deckName, range, rolloverHour, localeTag, scopedCardIds, true,
+    );
+    const future = options?.includeBacklog ? futureWithBacklog : futureWithoutBacklog;
     const reviews = getReviews(deckName, range, rolloverHour, localeTag, scopedCardIds);
     const intervals = getIntervals(deckName, range, localeTag, scopedCardIds);
     const added = getAdded(deckName, range, rolloverHour, localeTag, scopedCardIds);
@@ -501,9 +516,13 @@ export function getAnkiStatsSnapshot(
         futureDue: future.points,
         futureDueTotal: future.total,
         futureDueTodayIndex: future.todayIndex,
+        futureDueWithBacklog: futureWithBacklog.points,
+        futureDueWithBacklogTotal: futureWithBacklog.total,
+        futureDueWithBacklogTodayIndex: futureWithBacklog.todayIndex,
+        futureDueBacklogTotal: futureWithBacklog.backlogTotal,
         backlogTotal: future.backlogTotal,
-        dueTomorrow: future.dueTomorrow,
-        dailyLoad: future.dailyLoad,
+        dueTomorrow: futureWithBacklog.dueTomorrow,
+        dailyLoad: futureWithBacklog.dailyLoad,
         reviews: reviews.points,
         reviewMinutes: reviews.minutePoints,
         reviewTotal: reviews.total,

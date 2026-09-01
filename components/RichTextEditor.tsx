@@ -4,8 +4,10 @@ import { WebView } from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 import type { ColorScheme } from '../constants/theme';
 import { base64ToBytes } from '../lib/files';
-import { saveMediaBytes } from '../lib/mediaStore';
+import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
+import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
+import { sanitizeToolbarSnippet } from '../lib/customToolbar';
 import { sanitizeUntrustedHtml } from '../lib/templates';
 import {
     embeddedWebViewLayout,
@@ -331,6 +333,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     mountDelayMs = 0,
 }, ref) {
     const webViewRef = useRef<WebView>(null);
+    const fallbackInputRef = useRef<TextInput>(null);
     const lastEditorValueRef = useRef(value);
     const latestValueRef = useRef(value);
     const editorReadyRef = useRef(false);
@@ -355,8 +358,17 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         setContentHeight((current) => stableMeasuredHeight(current, boundedHeight, minHeight) ?? minHeight);
     };
     const [webViewMounted, setWebViewMounted] = useState(Platform.OS === 'web');
+    const [isReady, setIsReady] = useState(false);
     const fallbackFocusedRef = useRef(false);
     const mountPendingRef = useRef(false);
+    // The native input covers the first WebView hand-off only. Later document reloads (font size,
+    // capitalization, theme) rebuild `source` while a usable editor is already on screen, and
+    // bringing the fallback back would flash the field's raw HTML markup over it.
+    const handedOffRef = useRef(false);
+    const completeHandoff = () => {
+        handedOffRef.current = true;
+        setIsReady(true);
+    };
 
     // WKWebView startup is expensive. The add screen contains two (sometimes three) editors;
     // creating all WebContent processes during the navigation animation can stall iOS even
@@ -383,19 +395,30 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             clearTimeout(deadlineTimer);
         };
     }, [mountDelayMs, webViewMounted]);
+    // Fields store media the way Anki does — a bare filename — so the document is loaded from the
+    // media directory and the WebView resolves those names itself. The field HTML is never
+    // rewritten, which is what keeps an absolute path out of the saved note.
+    const mediaBaseUrl = getMediaBaseUrl();
     const source = useMemo(
-        () => ({ html: editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode) }),
+        () => localMediaWebViewSource(
+            editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode),
+            mediaBaseUrl,
+        ),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode],
+        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, mediaBaseUrl],
     );
 
     useEffect(() => {
         editorReadyRef.current = false;
+        if (!handedOffRef.current) setIsReady(false);
     }, [source]);
 
     const inject = (script: string) => webViewRef.current?.injectJavaScript(`${script}; true;`);
     const runWhenReady = (script: string) => {
+        if (!webViewMounted) {
+            setWebViewMounted(true);
+        }
         if (!editorReadyRef.current) {
             pendingScriptsRef.current.push(script);
             return;
@@ -404,15 +427,25 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     };
 
     useImperativeHandle(ref, () => ({
-        focus: () => runWhenReady('window.__tusEditorFocus && window.__tusEditorFocus()'),
+        focus: () => {
+            if (!editorReadyRef.current) {
+                fallbackInputRef.current?.focus();
+                return;
+            }
+            runWhenReady('window.__tusEditorFocus && window.__tusEditorFocus()');
+        },
         runCommand: (command, commandValue) => {
             const payload = safeJsValue(JSON.stringify({ command, value: commandValue }));
             runWhenReady(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
         },
         insertHtml: (html) => runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(sanitizeUntrustedHtml(html))})`),
-        wrapSelection: (prefix, suffix) => runWhenReady(
-            `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(prefix)}, ${safeJsValue(suffix)})`,
-        ),
+        wrapSelection: (prefix, suffix) => {
+            const safePrefix = sanitizeToolbarSnippet(prefix);
+            const safeSuffix = sanitizeToolbarSnippet(suffix);
+            runWhenReady(
+                `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(safePrefix)}, ${safeJsValue(safeSuffix)})`,
+            );
+        },
     }));
 
     useEffect(() => {
@@ -445,6 +478,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 const pending = pendingScriptsRef.current;
                 pendingScriptsRef.current = [];
                 pending.forEach(inject);
+                if (!fallbackFocusedRef.current) {
+                    completeHandoff();
+                }
             } else if (message.type === 'focus') {
                 onFocus?.();
             } else if (message.type === 'height' && typeof message.height === 'number') {
@@ -466,75 +502,93 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         }
     };
 
-    if (!webViewMounted) {
-        return (
-            <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
-                <TextInput
-                    value={value}
-                    onChangeText={onChange}
-                    onFocus={() => {
-                        fallbackFocusedRef.current = true;
-                        onFocus?.();
-                    }}
-                    onBlur={() => {
-                        fallbackFocusedRef.current = false;
-                        if (mountPendingRef.current) {
-                            mountPendingRef.current = false;
-                            setWebViewMounted(true);
-                        }
-                    }}
-                    placeholder={placeholder}
-                    placeholderTextColor={colors.textMuted}
-                    multiline
-                    scrollEnabled={scrollsInside}
-                    onContentSizeChange={(event) => {
-                        updateContentHeight(event.nativeEvent.contentSize.height);
-                    }}
-                    autoCapitalize={capitalizeSentences ? 'sentences' : 'none'}
-                    autoCorrect
-                    style={[
-                        styles.fallbackInput,
-                        { minHeight, height: frameHeight, color: colors.textPrimary, fontSize, backgroundColor: colors.bgCard },
-                    ]}
-                />
-            </View>
-        );
-    }
-
     return (
         <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
-            <WebView
-                ref={webViewRef}
-                source={source}
-                originWhitelist={['about:blank']}
-                onMessage={handleMessage}
-                onShouldStartLoadWithRequest={(request) => request.url === 'about:blank'}
-                style={{ backgroundColor: colors.bgCard }}
-                containerStyle={{ backgroundColor: colors.bgCard }}
-                scrollEnabled={scrollsInside}
-                nestedScrollEnabled={scrollsInside}
-                automaticallyAdjustContentInsets={false}
-                contentInsetAdjustmentBehavior="never"
-                keyboardDisplayRequiresUserAction={false}
-                hideKeyboardAccessoryView
-                setSupportMultipleWindows={false}
-                allowsLinkPreview={false}
-                javaScriptCanOpenWindowsAutomatically={false}
-                domStorageEnabled={false}
-                cacheEnabled={false}
-                incognito
-                sharedCookiesEnabled={false}
-                thirdPartyCookiesEnabled={false}
-                mixedContentMode="never"
-                allowUniversalAccessFromFileURLs={false}
-                allowFileAccessFromFileURLs={false}
-                allowFileAccess={false}
-                allowsPictureInPictureMediaPlayback={false}
-                allowsAirPlayForMediaPlayback={false}
-                useSharedProcessPool={false}
-                webviewDebuggingEnabled={__DEV__}
-                bounces={false}
-            />
+            {webViewMounted && (
+                <WebView
+                    ref={webViewRef}
+                    source={source}
+                    originWhitelist={['about:blank', 'file://*']}
+                    onMessage={handleMessage}
+                    onShouldStartLoadWithRequest={(request) => isLocalMediaDocumentUrl(request.url, mediaBaseUrl)}
+                    style={{ backgroundColor: colors.bgCard }}
+                    containerStyle={{ backgroundColor: colors.bgCard }}
+                    scrollEnabled={scrollsInside}
+                    nestedScrollEnabled={scrollsInside}
+                    automaticallyAdjustContentInsets={false}
+                    contentInsetAdjustmentBehavior="never"
+                    keyboardDisplayRequiresUserAction={false}
+                    hideKeyboardAccessoryView
+                    setSupportMultipleWindows={false}
+                    allowsLinkPreview={false}
+                    javaScriptCanOpenWindowsAutomatically={false}
+                    domStorageEnabled={false}
+                    cacheEnabled={false}
+                    incognito
+                    sharedCookiesEnabled={false}
+                    thirdPartyCookiesEnabled={false}
+                    mixedContentMode="never"
+                    allowUniversalAccessFromFileURLs={false}
+                    allowFileAccessFromFileURLs={false}
+                    // Android blocks file:// reads by default; field media lives in the app's own
+                    // documentDirectory (getMediaBaseUrl), so images need this to render. The CSP
+                    // keeps that access passive: field HTML gets no script nonce, no network, and
+                    // onShouldStartLoadWithRequest refuses every document but this one.
+                    allowFileAccess={Platform.OS === 'android'}
+                    allowsPictureInPictureMediaPlayback={false}
+                    allowsAirPlayForMediaPlayback={false}
+                    useSharedProcessPool={false}
+                    webviewDebuggingEnabled={__DEV__}
+                    bounces={false}
+                />
+            )}
+            {(!webViewMounted || !isReady) && (
+                <View
+                    style={webViewMounted ? [StyleSheet.absoluteFill, { backgroundColor: colors.bgCard }] : undefined}
+                    pointerEvents="auto"
+                >
+                    <TextInput
+                        ref={fallbackInputRef}
+                        value={value}
+                        onChangeText={onChange}
+                        onFocus={() => {
+                            fallbackFocusedRef.current = true;
+                            onFocus?.();
+                        }}
+                        onBlur={() => {
+                            fallbackFocusedRef.current = false;
+                            if (editorReadyRef.current) {
+                                inject(`window.__tusEditorSetHtml && window.__tusEditorSetHtml(${safeJsValue(sanitizeUntrustedHtml(latestValueRef.current).slice(0, MAX_EDITOR_HTML_CHARS))})`);
+                                completeHandoff();
+                            }
+                            if (mountPendingRef.current) {
+                                mountPendingRef.current = false;
+                                setWebViewMounted(true);
+                            }
+                        }}
+                        placeholder={placeholder}
+                        placeholderTextColor={colors.textMuted}
+                        multiline
+                        scrollEnabled={scrollsInside}
+                        onContentSizeChange={(event) => {
+                            updateContentHeight(event.nativeEvent.contentSize.height);
+                        }}
+                        autoCapitalize={capitalizeSentences ? 'sentences' : 'none'}
+                        autoCorrect
+                        style={[
+                            styles.fallbackInput,
+                            {
+                                minHeight,
+                                height: frameHeight,
+                                color: colors.textPrimary,
+                                fontSize,
+                                lineHeight: Math.round(fontSize * 1.45),
+                                backgroundColor: colors.bgCard,
+                            },
+                        ]}
+                    />
+                </View>
+            )}
         </View>
     );
 });
@@ -549,7 +603,6 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingHorizontal: 2,
         paddingVertical: 8,
-        lineHeight: 24,
         textAlignVertical: 'top',
     },
 });

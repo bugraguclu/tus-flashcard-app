@@ -1,7 +1,12 @@
 /**
- * Anki's Custom Study dialog: six mutually exclusive options driving one spinner, plus the
- * tag chooser its "study by card state or tag" option opens. What each option searches for,
- * how it orders the session and whether it reschedules lives in lib/customStudy.ts.
+ * Anki's Custom Study dialog (qt/aqt/customstudy.py): six mutually exclusive options driving one
+ * spinner, and the Selective Study tag chooser (qt/aqt/taglimit.py) its "study by card state or
+ * tag" option opens. What each option searches for, how it orders the session and whether it
+ * reschedules lives in lib/customStudy.ts.
+ *
+ * The dialog is laid out the way Anki lays it out: the radio list, then one group holding the
+ * availability line, the "<label> [spinner] <unit>" sentence and the card-state list, then the
+ * Cancel/OK button box whose OK becomes "Choose Tags" for the tag option.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -20,9 +25,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { commitBoundedInteger, sanitizeSignedIntegerDraft, stepBoundedIntegerDraft } from '../lib/boundedNumber';
-import { alert, confirm } from '../lib/confirm';
+import { alert } from '../lib/confirm';
 import {
     CUSTOM_STUDY_CRAM_KINDS,
+    CUSTOM_STUDY_MAX_TAGS,
     customStudySessionConfig,
     customStudyValueBounds,
     EMPTY_CUSTOM_STUDY_DEFAULTS,
@@ -32,8 +38,8 @@ import {
     type CustomStudyRequest,
 } from '../lib/customStudy';
 import {
-    addDeckTodayBoost,
     createOrReplaceCustomStudySession,
+    extendDeckTodayLimits,
     getAllDecks,
     getCardCountsByDeck,
     getCustomStudyDefaults,
@@ -52,7 +58,8 @@ interface CustomStudyModalProps {
     settings: AppSettings;
     onClose: () => void;
     onChanged: () => void;
-    onStudy: (deckName: string) => void;
+    /** Anki makes the new session the current deck and lands on its overview. */
+    onSessionCreated: (deckName: string) => void;
 }
 
 const OPTIONS: readonly CustomStudyOption[] = [
@@ -88,6 +95,10 @@ function deckSubtreeIds(deck: Deck): number[] {
         .map((entry) => entry.id);
 }
 
+/**
+ * Anki's `custom_study_defaults` counts: what the deck itself has available today, uncapped by
+ * any daily limit, and the same total for everything nested under it.
+ */
 function readAvailability(deck: Deck, settings: AppSettings): DeckAvailability {
     const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour, settings.learnAheadMinutes);
     const ids = deckSubtreeIds(deck);
@@ -112,13 +123,18 @@ function readAvailability(deck: Deck, settings: AppSettings): DeckAvailability {
     };
 }
 
+/** Anki's tag lists show `parent::child` as written but read `_` as a space. */
+function tagDisplayName(tag: string): string {
+    return tag.replace(/_/g, ' ');
+}
+
 export default function CustomStudyModal({
     visible,
     deck,
     settings,
     onClose,
     onChanged,
-    onStudy,
+    onSessionCreated,
 }: CustomStudyModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
@@ -133,6 +149,7 @@ export default function CustomStudyModal({
     const [deckTags, setDeckTags] = useState<string[]>([]);
     const [includeTags, setIncludeTags] = useState<string[]>([]);
     const [excludeTags, setExcludeTags] = useState<string[]>([]);
+    const [requireTags, setRequireTags] = useState(false);
     const [choosingTags, setChoosingTags] = useState(false);
 
     const bounds = useMemo(() => customStudyValueBounds(option, defaults), [option, defaults]);
@@ -145,6 +162,8 @@ export default function CustomStudyModal({
         setDeckTags(getAllTags({ deckIds: deckSubtreeIds(deck) }));
         setIncludeTags(deckDefaults.includeTags);
         setExcludeTags(deckDefaults.excludeTags);
+        // Anki ticks "require one or more of these tags" only when the last session used one.
+        setRequireTags(deckDefaults.includeTags.length > 0);
         setChoosingTags(false);
         setCramKind('new');
         setOption('newLimit');
@@ -162,8 +181,10 @@ export default function CustomStudyModal({
     if (!deck) return null;
 
     const value = commitBoundedInteger(valueDraft, bounds.initial, bounds.min, bounds.max);
-    const stepValue = (delta: number) => setValueDraft(String(
-        stepBoundedIntegerDraft(valueDraft, bounds.initial, delta, bounds.min, bounds.max),
+    // Stepping reads the draft it is updating, so a burst of taps accumulates instead of
+    // every tap re-stepping the same value.
+    const stepValue = (delta: number) => setValueDraft((draft) => String(
+        stepBoundedIntegerDraft(draft, bounds.initial, delta, bounds.min, bounds.max),
     ));
 
     const optionLabel = (candidate: CustomStudyOption): string => {
@@ -198,6 +219,8 @@ export default function CustomStudyModal({
         ? l(`${parent} (alt destelerde ${children})`, `${parent} (${children} in subdecks)`)
         : String(parent));
 
+    // Anki shows the availability line only for the two options that hand out more of today's
+    // allowance; every other option builds a deck from a search instead.
     const availabilityLabel = option === 'newLimit'
         ? l(
             `Kullanılabilir yeni kart: ${countWithChildren(availability.newHere, availability.newInChildren)}`,
@@ -227,11 +250,13 @@ export default function CustomStudyModal({
     const applyLimitDelta = (delta: number) => {
         const field = option === 'newLimit' ? 'extendNew' : 'extendReview';
         try {
-            addDeckTodayBoost(
+            extendDeckTodayLimits(
                 deck.id,
                 option === 'newLimit' ? delta : 0,
                 option === 'reviewLimit' ? delta : 0,
                 settings.dayRolloverHour,
+                // Anki extends the parents too whenever their limits still cap this deck.
+                { includeParents: settings.limitsStartFromTop !== false },
             );
             rememberCustomStudyExtend(deck.id, field, delta);
             onClose();
@@ -293,14 +318,8 @@ export default function CustomStudyModal({
             }
             onClose();
             onChanged();
-            setTimeout(() => confirm(
-                l('Özel çalışma oturumu hazır', 'Custom Study session ready'),
-                l(
-                    `“${getDeckDisplayName(session.name)}” oluşturuldu. Şimdi çalışmak ister misiniz?`,
-                    `“${getDeckDisplayName(session.name)}” was created. Study now?`,
-                ),
-                () => onStudy(session.name),
-            ), Platform.OS === 'ios' ? 250 : 0);
+            // Anki makes the session the current deck, so the learner lands on its overview.
+            onSessionCreated(session.name);
         } catch (error) {
             console.warn('[CustomStudyModal] session creation failed:', error);
             alert(t('common.error'), l('Özel çalışma oturumu oluşturulamadı.', 'Could not create the Custom Study session.'));
@@ -324,37 +343,112 @@ export default function CustomStudyModal({
                 return;
             case 'cram':
                 // Anki's OK button becomes "Choose Tags": the session is built after that step.
+                // A deck without a single tag has nothing to choose, so AnkiDroid skips the step
+                // rather than opening an empty chooser.
+                if (deckTags.length === 0) {
+                    buildSession({ option: 'cram', kind: cramKind, cardLimit: value, includeTags: [], excludeTags: [] });
+                    return;
+                }
                 setChoosingTags(true);
         }
     };
 
-    const toggleTag = (list: string[], setList: (next: string[]) => void, tag: string) => {
-        setList(list.includes(tag) ? list.filter((entry) => entry !== tag) : [...list, tag]);
+    /** Anki's Selective Study OK: an unticked "require" box drops the whole include list. */
+    const submitTags = () => {
+        const include = requireTags ? includeTags : [];
+        if (include.length + excludeTags.length > CUSTOM_STUDY_MAX_TAGS) {
+            alert(
+                t('anki.customStudy'),
+                l(
+                    `En fazla ${CUSTOM_STUDY_MAX_TAGS} etiket seçilebilir. İstemediklerinizi değil istediklerinizi listelemek genellikle daha kolaydır; üst etiketi seçtiyseniz alt etiketlerini seçmeniz gerekmez.`,
+                    `A maximum of ${CUSTOM_STUDY_MAX_TAGS} tags can be selected. Listing the tags you want instead of the ones you don’t want is usually simpler, and there is no need to select child tags if you have selected a parent tag.`,
+                ),
+            );
+            return;
+        }
+        buildSession({
+            option: 'cram',
+            kind: cramKind,
+            cardLimit: value,
+            includeTags: include,
+            excludeTags,
+        });
     };
 
-    const renderTagChips = (
+    /**
+     * One of Anki's two multi-select tag lists. The "require" list starts disabled and is enabled
+     * by its checkbox, exactly as taglimit.ui wires `activeCheck.toggled` to `activeList`.
+     */
+    const renderTagList = (
         selected: string[],
         setSelected: (next: string[]) => void,
         accessibilityPrefix: string,
+        disabled: boolean = false,
     ) => (
-        <View style={styles.tagRow}>
-            {deckTags.map((tag) => {
+        <ScrollView
+            style={[styles.panel, styles.tagScroll, disabled && styles.panelDisabled]}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+        >
+            {deckTags.map((tag, index) => {
                 const active = selected.includes(tag);
                 return (
                     <TouchableOpacity
                         key={`${accessibilityPrefix}-${tag}`}
-                        style={[styles.tagChip, active && styles.tagChipActive]}
-                        onPress={() => toggleTag(selected, setSelected, tag)}
+                        style={[
+                            styles.listRow,
+                            styles.tagRow,
+                            index === deckTags.length - 1 && styles.listRowLast,
+                            active && styles.listRowActive,
+                        ]}
+                        onPress={() => setSelected(active ? selected.filter((entry) => entry !== tag) : [...selected, tag])}
+                        disabled={disabled}
                         accessibilityRole="checkbox"
-                        accessibilityState={{ checked: active }}
-                        accessibilityLabel={`${accessibilityPrefix}: ${tag}`}
+                        accessibilityState={{ checked: active, disabled }}
+                        accessibilityLabel={`${accessibilityPrefix}: ${tagDisplayName(tag)}`}
                     >
-                        <Text style={[styles.tagChipText, active && styles.tagChipTextActive]} numberOfLines={1}>{tag}</Text>
+                        <View style={[styles.checkbox, active && styles.checkboxActive]}>
+                            {active && <Text style={styles.checkboxMark}>✓</Text>}
+                        </View>
+                        <Text style={[styles.listText, active && styles.listTextActive]} numberOfLines={2}>
+                            {tagDisplayName(tag)}
+                        </Text>
                     </TouchableOpacity>
                 );
             })}
-        </View>
+        </ScrollView>
     );
+
+    const renderTagSection = (
+        label: string,
+        selected: string[],
+        setSelected: (next: string[]) => void,
+        accessibilityPrefix: string,
+        options: { disabled?: boolean; leading?: React.ReactNode } = {},
+    ) => (
+        <>
+            <View style={styles.sectionHeader}>
+                {options.leading}
+                <Text style={[styles.fieldLabel, options.disabled && styles.fieldLabelDisabled]}>{label}</Text>
+                {selected.length > 0 && (
+                    <TouchableOpacity
+                        onPress={() => setSelected([])}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Seçimi temizle', 'Clear selection')}
+                    >
+                        <Text style={styles.clearText}>{l('Temizle', 'Clear')}</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+            {renderTagList(selected, setSelected, accessibilityPrefix, options.disabled)}
+        </>
+    );
+
+    // Anki's OK reads "Choose Tags" while the tag option is selected, because the session is
+    // only built after the Selective Study step.
+    const okLabel = !choosingTags && option === 'cram'
+        ? l('Etiketleri seç', 'Choose Tags')
+        : t('common.ok');
 
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -399,6 +493,7 @@ export default function CustomStudyModal({
                     </View>
 
                     <ScrollView
+                        style={styles.scroll}
                         contentContainerStyle={styles.content}
                         keyboardShouldPersistTaps="handled"
                         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -406,41 +501,45 @@ export default function CustomStudyModal({
                     >
                         {choosingTags ? (
                             <>
-                                <Text style={styles.fieldLabel}>
-                                    {l('Şu etiketlerden en az biri gerekli:', 'Require one or more of these tags:')}
-                                </Text>
-                                {deckTags.length > 0
-                                    ? renderTagChips(includeTags, setIncludeTags, l('Gerekli etiket', 'Required tag'))
-                                    : <Text style={styles.note}>{l('Bu destede etiket yok.', 'This deck has no tags.')}</Text>}
-
-                                <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>
-                                    {l('Hariç tutulacak etiketleri seçin:', 'Select tags to exclude:')}
-                                </Text>
-                                {deckTags.length > 0
-                                    ? renderTagChips(excludeTags, setExcludeTags, l('Hariç tutulan etiket', 'Excluded tag'))
-                                    : null}
-
-                                <TouchableOpacity
-                                    style={styles.primaryButton}
-                                    onPress={() => buildSession({
-                                        option: 'cram',
-                                        kind: cramKind,
-                                        cardLimit: value,
-                                        includeTags,
-                                        excludeTags,
-                                    })}
-                                    accessibilityRole="button"
-                                >
-                                    <Text style={styles.primaryButtonText}>{t('common.ok')}</Text>
-                                </TouchableOpacity>
+                                {renderTagSection(
+                                    l('Şu etiketlerden en az biri gerekli:', 'Require one or more of these tags:'),
+                                    includeTags,
+                                    setIncludeTags,
+                                    l('Gerekli etiket', 'Required tag'),
+                                    {
+                                        disabled: !requireTags,
+                                        leading: (
+                                            <TouchableOpacity
+                                                style={[styles.checkbox, requireTags && styles.checkboxActive]}
+                                                onPress={() => setRequireTags((previous) => !previous)}
+                                                accessibilityRole="checkbox"
+                                                accessibilityState={{ checked: requireTags }}
+                                                accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
+                                            >
+                                                {requireTags && <Text style={styles.checkboxMark}>✓</Text>}
+                                            </TouchableOpacity>
+                                        ),
+                                    },
+                                )}
+                                <View style={styles.sectionSpacer} />
+                                {renderTagSection(
+                                    l('Hariç tutulacak etiketleri seçin:', 'Select tags to exclude:'),
+                                    excludeTags,
+                                    setExcludeTags,
+                                    l('Hariç tutulan etiket', 'Excluded tag'),
+                                )}
                             </>
                         ) : (
                             <>
-                                <View style={styles.optionList}>
-                                    {OPTIONS.map((candidate) => (
+                                <View style={styles.panel}>
+                                    {OPTIONS.map((candidate, index) => (
                                         <TouchableOpacity
                                             key={candidate}
-                                            style={[styles.optionRow, option === candidate && styles.optionRowActive]}
+                                            style={[
+                                                styles.listRow,
+                                                index === OPTIONS.length - 1 && styles.listRowLast,
+                                                option === candidate && styles.listRowActive,
+                                            ]}
                                             onPress={() => chooseOption(candidate)}
                                             accessibilityRole="radio"
                                             accessibilityState={{ selected: option === candidate }}
@@ -448,75 +547,69 @@ export default function CustomStudyModal({
                                             <View style={[styles.radio, option === candidate && styles.radioActive]}>
                                                 {option === candidate && <View style={styles.radioDot} />}
                                             </View>
-                                            <Text style={[styles.optionText, option === candidate && styles.optionTextActive]}>
+                                            <Text style={[styles.listText, option === candidate && styles.listTextActive]}>
                                                 {optionLabel(candidate)}
                                             </Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
 
-                                {availabilityLabel && <Text style={styles.availability}>{availabilityLabel}</Text>}
+                                <View style={styles.group}>
+                                    {availabilityLabel && <Text style={styles.availability}>{availabilityLabel}</Text>}
 
-                                <Text style={styles.fieldLabel}>{preSpinLabel()}</Text>
-                                <View style={styles.spinnerRow}>
-                                    <TouchableOpacity
-                                        style={styles.stepButton}
-                                        onPress={() => stepValue(-1)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={l('Azalt', 'Decrease')}
-                                    >
-                                        <Text style={styles.stepText}>−</Text>
-                                    </TouchableOpacity>
-                                    <TextInput
-                                        style={styles.spinnerInput}
-                                        value={valueDraft}
-                                        onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
-                                        onBlur={() => setValueDraft(String(value))}
-                                        keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
-                                        maxLength={6}
-                                        accessibilityLabel={preSpinLabel()}
-                                    />
-                                    <TouchableOpacity
-                                        style={styles.stepButton}
-                                        onPress={() => stepValue(1)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={l('Artır', 'Increase')}
-                                    >
-                                        <Text style={styles.stepText}>+</Text>
-                                    </TouchableOpacity>
-                                    <Text style={styles.spinnerSuffix}>{postSpinLabel()}</Text>
-                                </View>
-
-                                {option === 'cram' && (
-                                    <View style={styles.cramList}>
-                                        {CUSTOM_STUDY_CRAM_KINDS.map((kind) => (
-                                            <TouchableOpacity
-                                                key={kind}
-                                                style={[styles.cramRow, cramKind === kind && styles.cramRowActive]}
-                                                onPress={() => setCramKind(kind)}
-                                                accessibilityRole="radio"
-                                                accessibilityState={{ selected: cramKind === kind }}
-                                            >
-                                                <Text style={[styles.cramText, cramKind === kind && styles.cramTextActive]}>
-                                                    {cramKindLabel(kind)}
-                                                </Text>
-                                                {cramKind === kind && <Text style={styles.check}>✓</Text>}
-                                            </TouchableOpacity>
-                                        ))}
+                                    <Text style={styles.fieldLabel}>{preSpinLabel()}</Text>
+                                    <View style={styles.spinnerRow}>
+                                        <TouchableOpacity
+                                            style={styles.stepButton}
+                                            onPress={() => stepValue(-1)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={l('Azalt', 'Decrease')}
+                                        >
+                                            <Text style={styles.stepText}>−</Text>
+                                        </TouchableOpacity>
+                                        <TextInput
+                                            style={styles.spinnerInput}
+                                            value={valueDraft}
+                                            onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
+                                            onBlur={() => setValueDraft(String(value))}
+                                            keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
+                                            maxLength={6}
+                                            accessibilityLabel={preSpinLabel()}
+                                        />
+                                        <TouchableOpacity
+                                            style={styles.stepButton}
+                                            onPress={() => stepValue(1)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={l('Artır', 'Increase')}
+                                        >
+                                            <Text style={styles.stepText}>+</Text>
+                                        </TouchableOpacity>
+                                        <Text style={styles.spinnerSuffix}>{postSpinLabel()}</Text>
                                     </View>
-                                )}
 
-                                <TouchableOpacity
-                                    style={[styles.primaryButton, submitDisabled && styles.primaryButtonDisabled]}
-                                    onPress={submit}
-                                    disabled={submitDisabled}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ disabled: submitDisabled }}
-                                >
-                                    <Text style={styles.primaryButtonText}>
-                                        {option === 'cram' ? l('Etiketleri seç', 'Choose Tags') : t('common.ok')}
-                                    </Text>
-                                </TouchableOpacity>
+                                    {option === 'cram' && (
+                                        <View style={[styles.panel, styles.cramList]}>
+                                            {CUSTOM_STUDY_CRAM_KINDS.map((kind, index) => (
+                                                <TouchableOpacity
+                                                    key={kind}
+                                                    style={[
+                                                        styles.listRow,
+                                                        index === CUSTOM_STUDY_CRAM_KINDS.length - 1 && styles.listRowLast,
+                                                        cramKind === kind && styles.listRowActive,
+                                                    ]}
+                                                    onPress={() => setCramKind(kind)}
+                                                    accessibilityRole="radio"
+                                                    accessibilityState={{ selected: cramKind === kind }}
+                                                >
+                                                    <Text style={[styles.listText, cramKind === kind && styles.listTextActive]}>
+                                                        {cramKindLabel(kind)}
+                                                    </Text>
+                                                    {cramKind === kind && <Text style={styles.check}>✓</Text>}
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    )}
+                                </View>
 
                                 <Text style={styles.note}>
                                     {l(
@@ -527,6 +620,27 @@ export default function CustomStudyModal({
                             </>
                         )}
                     </ScrollView>
+
+                    <View style={styles.buttonBox}>
+                        <TouchableOpacity
+                            style={styles.secondaryButton}
+                            onPress={choosingTags ? () => setChoosingTags(false) : onClose}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.secondaryButtonText}>
+                                {choosingTags ? l('Geri', 'Back') : t('common.cancel')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.primaryButton, !choosingTags && submitDisabled && styles.primaryButtonDisabled]}
+                            onPress={choosingTags ? submitTags : submit}
+                            disabled={!choosingTags && submitDisabled}
+                            accessibilityRole="button"
+                            accessibilityState={{ disabled: !choosingTags && submitDisabled }}
+                        >
+                            <Text style={styles.primaryButtonText}>{okLabel}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </SwipeDismissSheet>
             </KeyboardAvoidingView>
         </Modal>
@@ -572,15 +686,23 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgSecondary,
         },
         closeText: { fontSize: 28, lineHeight: 30, color: colors.textSecondary },
-        content: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-        optionList: {
+        // The sheet is sized by its content up to `maxHeight`; shrinking the scroller rather
+        // than letting it grow keeps the button box on screen once the options run long.
+        scroll: { flexShrink: 1 },
+        content: { padding: Spacing.lg, paddingBottom: Spacing.lg },
+        panel: {
             backgroundColor: colors.bgCard,
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: BorderRadius.md,
             overflow: 'hidden',
         },
-        optionRow: {
+        panelDisabled: { opacity: 0.45 },
+        // Anki gives each tag list its own bounded, scrollable box so both stay reachable
+        // however many tags the deck carries.
+        tagScroll: { maxHeight: 260 },
+        tagRow: { minHeight: 42, paddingVertical: 6 },
+        listRow: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: Spacing.md,
@@ -590,7 +712,10 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
-        optionRowActive: { backgroundColor: colors.accentLight },
+        listRowLast: { borderBottomWidth: 0 },
+        listRowActive: { backgroundColor: colors.accentLight },
+        listText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
+        listTextActive: { fontWeight: '700' },
         radio: {
             width: 22,
             height: 22,
@@ -602,19 +727,40 @@ function createStyles(colors: ColorScheme) {
         },
         radioActive: { borderColor: colors.accent },
         radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
-        optionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-        optionTextActive: { fontWeight: '700' },
-        availability: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: Spacing.md },
-        fieldLabel: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary, marginTop: Spacing.md, marginBottom: Spacing.sm },
-        fieldLabelSpaced: { marginTop: Spacing.lg },
-        spinnerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+        checkbox: {
+            width: 22,
+            height: 22,
+            borderRadius: BorderRadius.sm,
+            borderWidth: 2,
+            borderColor: colors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        checkboxActive: { borderColor: colors.accent, backgroundColor: colors.accent },
+        checkboxMark: { fontSize: 13, lineHeight: 15, fontWeight: '900', color: colors.white },
+        // Anki's group box: the availability line, the spinner sentence and the card-state list.
+        group: {
+            marginTop: Spacing.lg,
+            padding: Spacing.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.md,
+            backgroundColor: colors.bgSecondary,
+        },
+        availability: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
+        sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+        sectionSpacer: { height: Spacing.lg },
+        fieldLabel: { flex: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary },
+        fieldLabelDisabled: { color: colors.textMuted },
+        clearText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
+        spinnerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm },
         stepButton: {
             width: 46,
             height: 46,
             borderRadius: BorderRadius.sm,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: colors.bgSecondary,
+            backgroundColor: colors.bgCard,
             borderWidth: 1,
             borderColor: colors.border,
         },
@@ -632,48 +778,34 @@ function createStyles(colors: ColorScheme) {
             color: colors.textPrimary,
         },
         spinnerSuffix: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },
-        cramList: {
-            marginTop: Spacing.md,
-            backgroundColor: colors.bgCard,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.md,
-            overflow: 'hidden',
-        },
-        cramRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 46,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: Spacing.sm,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
-        },
-        cramRowActive: { backgroundColor: colors.accentLight },
-        cramText: { flex: 1, fontSize: FontSize.sm, color: colors.textPrimary },
-        cramTextActive: { fontWeight: '700', color: colors.accent },
+        cramList: { marginTop: Spacing.md },
         check: { fontSize: FontSize.md, color: colors.accent, fontWeight: '800' },
-        tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-        tagChip: {
-            minHeight: 40,
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.full,
+        buttonBox: {
+            flexDirection: 'row',
+            gap: Spacing.sm,
+            paddingHorizontal: Spacing.lg,
+            paddingTop: Spacing.md,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.border,
+        },
+        secondaryButton: {
+            flex: 1,
+            minHeight: 50,
+            borderRadius: BorderRadius.sm,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: colors.bgCard,
-            maxWidth: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
-        tagChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        tagChipText: { fontSize: FontSize.sm, color: colors.textPrimary },
-        tagChipTextActive: { color: colors.accent, fontWeight: '700' },
+        secondaryButtonText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
         primaryButton: {
+            flex: 1,
             minHeight: 50,
             borderRadius: BorderRadius.sm,
             backgroundColor: colors.accent,
             alignItems: 'center',
             justifyContent: 'center',
-            marginTop: Spacing.lg,
         },
         primaryButtonDisabled: { opacity: 0.45 },
         primaryButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },

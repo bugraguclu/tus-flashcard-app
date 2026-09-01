@@ -17,6 +17,12 @@ const TECHNICAL_ERROR_PATTERNS = [
     /\b(?:Cannot find module|Native module|Network request failed|Failed to fetch|ENOENT|EACCES)\b/i,
     /(?:^|\n)\s*at\s+(?:async\s+)?[^\n]+:\d+:\d+/,
     /\b(?:stack trace|unhandled promise rejection)\b/i,
+    /\b(?:Element type is invalid|Check the render method|mixed up default and named imports)\b/i,
+    /\b(?:Minified React error|Rendered (?:more|fewer) hooks|Objects are not valid as a React child)\b/i,
+    /\b(?:Maximum update depth exceeded|Cannot update a component while rendering)\b/i,
+    /\b(?:expected a string \(for built-in components\)|for composite components)\b/i,
+    /\b(?:undefined is not an object|null is not an object|is not a function|cannot read propert(?:y|ies))\b/i,
+    /\b(?:React\.createElement|createNavigatorFactory|ExpoRouter)\b/i,
 ];
 
 export function isTechnicalErrorMessage(message: string): boolean {

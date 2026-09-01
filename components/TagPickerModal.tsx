@@ -22,18 +22,13 @@ interface TagPickerModalProps {
     visible: boolean;
     selectedTags: string[];
     onCancel: () => void;
-    onConfirm: (tags: string[], cardState: TagCardStateFilter) => void;
+    onConfirm: (tags: string[]) => void;
     /** Browser filters select existing collection tags; the editor keeps creation enabled. */
     allowCreate?: boolean;
     title?: string;
     /** Browser filters load only tags reachable from the active deck/card scope. */
     loadTags?: () => string[];
-    /** Mirrors AnkiDroid's tag-filter card-state row; hidden in note editing. */
-    showCardStateFilter?: boolean;
-    selectedCardState?: TagCardStateFilter;
 }
-
-export type TagCardStateFilter = 'all' | 'new' | 'due';
 
 function tagKey(tag: string): string {
     return tag.normalize('NFC').toLowerCase();
@@ -71,8 +66,6 @@ export default function TagPickerModal({
     allowCreate = true,
     title,
     loadTags = getAllTags,
-    showCardStateFilter = false,
-    selectedCardState = 'all',
 }: TagPickerModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
@@ -84,7 +77,6 @@ export default function TagPickerModal({
     const [searchText, setSearchText] = useState('');
     const [newTagText, setNewTagText] = useState('');
     const [loadingTags, setLoadingTags] = useState(false);
-    const [draftCardState, setDraftCardState] = useState<TagCardStateFilter>(selectedCardState);
 
     useEffect(() => {
         if (!visible) return;
@@ -98,7 +90,6 @@ export default function TagPickerModal({
         setNewTagText('');
         setSearchVisible(false);
         setAddVisible(false);
-        setDraftCardState(selectedCardState);
         setLoadingTags(true);
         let cancelled = false;
         const task = InteractionManager.runAfterInteractions(() => {
@@ -114,7 +105,7 @@ export default function TagPickerModal({
             cancelled = true;
             task.cancel();
         };
-    }, [visible, selectedTags, selectedCardState, loadTags]);
+    }, [visible, selectedTags, loadTags]);
 
     const selectedKeys = useMemo(() => new Set(draftTags.map(tagKey)), [draftTags]);
     const filteredTags = useMemo(() => {
@@ -228,50 +219,62 @@ export default function TagPickerModal({
 
                     {searchVisible && (
                         <View style={styles.inputBar}>
-                            <Text style={styles.inputIcon}>⌕</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={searchText}
-                                onChangeText={setSearchText}
-                                placeholder={l('Etiket ara…', 'Search tags…')}
-                                placeholderTextColor={colors.textMuted}
-                                autoFocus
-                                autoCorrect={false}
-                                returnKeyType="search"
-                            />
-                            {searchText.length > 0 && (
-                                <TouchableOpacity
-                                    style={styles.inlineAction}
-                                    onPress={() => setSearchText('')}
-                                    accessibilityLabel={l('Aramayı temizle', 'Clear search')}
-                                >
-                                    <Text style={styles.inlineActionText}>×</Text>
-                                </TouchableOpacity>
-                            )}
+                            <View style={styles.searchPill}>
+                                <Text style={styles.inputIcon}>⌕</Text>
+                                <TextInput
+                                    style={styles.searchInput}
+                                    value={searchText}
+                                    onChangeText={setSearchText}
+                                    placeholder={l('Etiketlerde ara…', 'Search tags…')}
+                                    placeholderTextColor={colors.textMuted}
+                                    autoFocus
+                                    autoCorrect={false}
+                                    returnKeyType="search"
+                                    clearButtonMode="while-editing"
+                                    accessibilityLabel={l('Etiketlerde ara', 'Search tags')}
+                                />
+                                {searchText.length > 0 && Platform.OS !== 'ios' && (
+                                    <TouchableOpacity
+                                        style={styles.inlineAction}
+                                        onPress={() => setSearchText('')}
+                                        accessibilityLabel={l('Aramayı temizle', 'Clear search')}
+                                    >
+                                        <Text style={styles.inlineActionText}>×</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
                     )}
 
                     {allowCreate && addVisible && (
                         <View style={styles.addPanel}>
-                            <TextInput
-                                style={styles.addInput}
-                                value={newTagText}
-                                onChangeText={setNewTagText}
-                                placeholder={l('Yeni etiket · birden fazlası için boşluk kullanın', 'New tag · separate multiple tags with spaces')}
-                                placeholderTextColor={colors.textMuted}
-                                autoFocus
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                returnKeyType="done"
-                                onSubmitEditing={addTags}
-                            />
-                            <TouchableOpacity
-                                style={[styles.addButton, !newTagText.trim() && styles.buttonDisabled]}
-                                onPress={addTags}
-                                disabled={!newTagText.trim()}
-                            >
-                                <Text style={styles.addButtonText}>{t('common.add')}</Text>
-                            </TouchableOpacity>
+                            <View style={styles.addInputRow}>
+                                <TextInput
+                                    style={styles.addInput}
+                                    value={newTagText}
+                                    onChangeText={setNewTagText}
+                                    placeholder={l('Yeni etiket adı…', 'New tag name…')}
+                                    placeholderTextColor={colors.textMuted}
+                                    autoFocus
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    returnKeyType="done"
+                                    onSubmitEditing={addTags}
+                                    accessibilityLabel={l('Yeni etiket adı', 'New tag name')}
+                                />
+                                <TouchableOpacity
+                                    style={[styles.addButton, !newTagText.trim() && styles.buttonDisabled]}
+                                    onPress={addTags}
+                                    disabled={!newTagText.trim()}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={t('common.add')}
+                                >
+                                    <Text style={styles.addButtonText}>{t('common.add')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.addHelperText}>
+                                {l('Birden fazla etiket eklemek için boşluk kullanın.', 'Separate multiple tags with spaces.')}
+                            </Text>
                         </View>
                     )}
 
@@ -324,31 +327,6 @@ export default function TagPickerModal({
                     />
                     )}
 
-                    {showCardStateFilter && (
-                        <View style={styles.cardStateRow} accessibilityRole="radiogroup">
-                            {([
-                                { value: 'new', label: l('Yeni', 'New') },
-                                { value: 'due', label: l('Süresi gelen', 'Due') },
-                            ] as Array<{ value: TagCardStateFilter; label: string }>).map((option) => {
-                                const selected = draftCardState === option.value;
-                                return (
-                                    <TouchableOpacity
-                                        key={option.value}
-                                        style={styles.cardStateOption}
-                                        onPress={() => setDraftCardState(option.value)}
-                                        accessibilityRole="radio"
-                                        accessibilityState={{ selected }}
-                                    >
-                                        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
-                                            {selected && <View style={styles.radioInner} />}
-                                        </View>
-                                        <Text style={[styles.cardStateLabel, selected && styles.cardStateLabelSelected]}>{option.label}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    )}
-
                     <View style={styles.footer}>
                         <Text style={styles.selectionCount}>
                             {l(`${draftTags.length} seçili`, `${draftTags.length} selected`)}
@@ -356,8 +334,8 @@ export default function TagPickerModal({
                         <TouchableOpacity style={styles.footerButton} onPress={onCancel}>
                             <Text style={styles.footerButtonText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.footerButton} onPress={() => onConfirm(uniqueTags(draftTags), draftCardState)}>
-                            <Text style={styles.footerButtonText}>{l('Onayla', 'Confirm')}</Text>
+                        <TouchableOpacity style={[styles.footerButton, styles.footerConfirmButton]} onPress={() => onConfirm(uniqueTags(draftTags))}>
+                            <Text style={styles.footerConfirmText}>{l('Onayla', 'Confirm')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -386,119 +364,120 @@ function createStyles(colors: ColorScheme) {
             ...Shadows.lg,
         },
         header: {
-            minHeight: 58,
+            minHeight: 56,
             flexDirection: 'row',
             alignItems: 'center',
-            paddingLeft: Spacing.md,
-            paddingRight: 4,
+            paddingLeft: Spacing.lg,
+            paddingRight: Spacing.xs,
             backgroundColor: colors.accent,
         },
-        headerTitle: { flex: 1, color: colors.white, fontSize: FontSize.xl, fontWeight: '600' },
+        headerTitle: { flex: 1, color: colors.white, fontSize: FontSize.lg, fontWeight: '700' },
         headerAction: {
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: BorderRadius.full,
         },
-        headerActionActive: { backgroundColor: 'rgba(255,255,255,0.18)' },
-        headerActionText: { color: colors.white, fontSize: 29, lineHeight: 31, fontWeight: '300' },
-        searchIcon: { color: colors.white, fontSize: 30, lineHeight: 31, transform: [{ rotate: '-18deg' }] },
+        headerActionActive: { backgroundColor: 'rgba(255,255,255,0.22)' },
+        headerActionText: { color: colors.white, fontSize: 24, lineHeight: 26, fontWeight: '400' },
+        searchIcon: { color: colors.white, fontSize: 22, lineHeight: 24 },
         selectAllCheckbox: {
-            width: 24,
-            height: 24,
+            width: 22,
+            height: 22,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 2,
             borderColor: 'rgba(255, 255, 255, 0.9)',
-            borderRadius: 3,
+            borderRadius: BorderRadius.sm,
             backgroundColor: 'transparent',
         },
         selectAllCheckboxSelected: {
-            borderWidth: 3,
+            borderWidth: 2,
             borderColor: colors.white,
+            backgroundColor: 'rgba(255, 255, 255, 0.25)',
         },
         selectAllCheckboxTick: {
             color: colors.white,
-            fontSize: 17,
-            lineHeight: 18,
+            fontSize: 15,
+            lineHeight: 16,
             fontWeight: '900',
         },
         inputBar: {
-            minHeight: 54,
-            flexDirection: 'row',
-            alignItems: 'center',
             paddingHorizontal: Spacing.md,
-            gap: Spacing.sm,
+            paddingVertical: Spacing.sm,
             backgroundColor: colors.bgCard,
             borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
+            borderBottomColor: colors.borderLight,
         },
-        inputIcon: { width: 24, color: colors.textMuted, fontSize: 25 },
-        input: { flex: 1, minHeight: 48, color: colors.textPrimary, fontSize: FontSize.md },
-        inlineAction: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-        inlineActionText: { color: colors.textMuted, fontSize: 28, fontWeight: '300' },
+        searchPill: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.bgInput,
+            borderRadius: BorderRadius.md,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+            paddingHorizontal: Spacing.md,
+            minHeight: 44,
+        },
+        inputIcon: { color: colors.textMuted, fontSize: 18, marginRight: Spacing.xs },
+        searchInput: {
+            flex: 1,
+            minHeight: 40,
+            color: colors.textPrimary,
+            fontSize: FontSize.md,
+            paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+            paddingHorizontal: 0,
+        },
+        inlineAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+        inlineActionText: { color: colors.textMuted, fontSize: 22, fontWeight: '400' },
         addPanel: {
+            paddingHorizontal: Spacing.md,
+            paddingVertical: Spacing.sm,
+            backgroundColor: colors.bgCard,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.borderLight,
+        },
+        addInputRow: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: Spacing.sm,
-            padding: Spacing.sm,
-            backgroundColor: colors.bgCard,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
         },
         addInput: {
             flex: 1,
-            minHeight: 46,
+            minHeight: 44,
             paddingHorizontal: Spacing.md,
+            paddingVertical: Platform.OS === 'ios' ? 10 : 8,
             color: colors.textPrimary,
-            fontSize: FontSize.sm,
-            backgroundColor: colors.bgSecondary,
+            fontSize: FontSize.md,
+            backgroundColor: colors.bgInput,
             borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
+            borderColor: colors.borderLight,
+            borderRadius: BorderRadius.md,
         },
         addButton: {
-            minWidth: 72,
-            minHeight: 46,
+            minWidth: 70,
+            height: 44,
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: Spacing.md,
             backgroundColor: colors.accent,
-            borderRadius: BorderRadius.sm,
+            borderRadius: BorderRadius.md,
         },
         addButtonText: { color: colors.white, fontSize: FontSize.sm, fontWeight: '700' },
+        addHelperText: {
+            fontSize: FontSize.xs,
+            color: colors.textMuted,
+            marginTop: 6,
+            paddingHorizontal: 2,
+            lineHeight: 16,
+        },
         buttonDisabled: { opacity: 0.45 },
         list: { flex: 1 },
-        cardStateRow: {
-            minHeight: 54,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: Spacing.lg,
-            paddingHorizontal: Spacing.md,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        cardStateOption: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6 },
-        radioOuter: {
-            width: 18,
-            height: 18,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1.5,
-            borderColor: colors.textMuted,
-            borderRadius: 9,
-        },
-        radioOuterSelected: { borderColor: colors.accent },
-        radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
-        cardStateLabel: { color: colors.textSecondary, fontSize: FontSize.sm },
-        cardStateLabelSelected: { color: colors.accent, fontWeight: '700' },
         loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
         loadingText: { color: colors.textMuted, fontSize: FontSize.sm },
         tagRow: {
-            minHeight: 56,
+            minHeight: 50,
             flexDirection: 'row',
             alignItems: 'center',
             gap: Spacing.md,
@@ -510,32 +489,34 @@ function createStyles(colors: ColorScheme) {
         tagText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md },
         tagTextSelected: { color: colors.accent, fontWeight: '700' },
         checkbox: {
-            width: 23,
-            height: 23,
+            width: 22,
+            height: 22,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 2,
-            borderColor: colors.textMuted,
-            borderRadius: 3,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.sm,
             backgroundColor: colors.bgCard,
         },
         checkboxSelected: { borderColor: colors.accent, backgroundColor: colors.accent },
-        checkboxTick: { color: colors.white, fontSize: 16, lineHeight: 17, fontWeight: '900' },
+        checkboxTick: { color: colors.white, fontSize: 15, lineHeight: 16, fontWeight: '900' },
         emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 56 },
         emptyTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
         emptyText: { marginTop: Spacing.sm, color: colors.textMuted, fontSize: FontSize.sm, textAlign: 'center' },
         footer: {
-            minHeight: 62,
+            minHeight: 56,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            paddingHorizontal: Spacing.sm,
+            paddingHorizontal: Spacing.md,
             backgroundColor: colors.bgCard,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
+            borderTopColor: colors.borderLight,
         },
-        selectionCount: { flex: 1, paddingLeft: Spacing.sm, color: colors.textMuted, fontSize: FontSize.xs },
-        footerButton: { minWidth: 82, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-        footerButtonText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
+        selectionCount: { flex: 1, paddingLeft: Spacing.xs, color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '500' },
+        footerButton: { minWidth: 76, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md, borderRadius: BorderRadius.sm },
+        footerConfirmButton: { backgroundColor: colors.accentLight, marginLeft: Spacing.xs },
+        footerButtonText: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
+        footerConfirmText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
     });
 }

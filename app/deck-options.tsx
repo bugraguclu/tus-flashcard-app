@@ -27,6 +27,9 @@ import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContex
 import {
     getDeck,
     getAllDecks,
+    getDeckByName,
+    createDeck,
+    getAvailableDeckName,
     getDeckConfig,
     getAllDeckConfigs,
     getDecksUsingConfig,
@@ -42,6 +45,7 @@ import {
     setDeckTodayLimits,
     setDeckLimitOverrides,
 } from '../lib/deckManager';
+import DeckPickerModal from '../components/DeckPickerModal';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
 import { getDeckOptionsScopes } from '../lib/deckOptionsScope';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
@@ -597,6 +601,10 @@ export default function DeckOptionsScreen() {
     const deckScopes = useMemo(
         () => getDeckOptionsScopes(getAllDecks()),
         [deckRevision, presetRevision],
+    );
+    const regularDecks = useMemo(
+        () => getAllDecks().filter((d) => !d.isFiltered),
+        [deckRevision],
     );
 
     if (!deck) {
@@ -1739,46 +1747,39 @@ export default function DeckOptionsScreen() {
                 </View>
             </Modal> : null}
 
-            {deckPickerOpen ? <Modal visible transparent animationType="fade" onRequestClose={() => setDeckPickerOpen(false)}>
-                <View style={styles.modalOverlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setDeckPickerOpen(false)}
-                        accessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
-                    />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Deste seç', 'Choose Deck')}</Text>
-                        <Text style={styles.modalDescription}>
-                            {l(
-                                'Ayarlarını düzenlemek istediğiniz üst veya alt desteyi seçin.',
-                                'Choose the parent deck or subdeck whose options you want to edit.',
-                            )}
-                        </Text>
-                        <ScrollView style={{ maxHeight: 360 }}>
-                            {deckScopes.map((scope) => (
-                                <TouchableOpacity
-                                    key={scope.deck.id}
-                                    style={[styles.presetOption, { paddingLeft: Math.min(scope.depth, 8) * 18 }]}
-                                    onPress={() => switchDeck(scope.deck.id)}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: scope.deck.id === deck.id }}
-                                    accessibilityLabel={scope.pathLabel}
-                                >
-                                    <Text style={[
-                                        styles.presetOptionText,
-                                        scope.deck.id === deck.id && styles.presetOptionActive,
-                                    ]}>
-                                        {scope.depth > 0 ? '└ ' : ''}{scope.displayName}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeckPickerOpen(false)}>
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal> : null}
+            {deckPickerOpen ? (
+                <DeckPickerModal
+                    visible={deckPickerOpen}
+                    colors={colors}
+                    decks={regularDecks}
+                    selectedDeckName={deck.name}
+                    title={l('Deste seç', 'Choose Deck')}
+                    allDecksLabel={null}
+                    searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
+                    emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                    cancelLabel={t('common.cancel')}
+                    closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                    searchAccessibilityLabel={l('Deste ara', 'Search decks')}
+                    createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
+                    onClose={() => setDeckPickerOpen(false)}
+                    onSelect={(pickedName) => {
+                        if (!pickedName) return;
+                        const picked = getDeckByName(pickedName);
+                        if (!picked) return;
+                        switchDeck(picked.id);
+                        setDeckPickerOpen(false);
+                    }}
+                    onCreateDeck={(name) => {
+                        try {
+                            const created = createDeck(getAvailableDeckName(name));
+                            return created.name;
+                        } catch (e) {
+                            console.warn('[DeckOptions] create deck failed:', e);
+                            return null;
+                        }
+                    }}
+                />
+            ) : null}
 
             {presetPickerOpen ? <Modal visible transparent animationType="fade" onRequestClose={() => setPresetPickerOpen(false)}>
                 <View style={styles.modalOverlay}>

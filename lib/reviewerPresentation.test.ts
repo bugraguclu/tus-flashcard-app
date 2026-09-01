@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+    canUndoReview,
     normalizeReviewerToolbarPosition,
     reviewerFeedbackSide,
+    shouldShowReviewerToolbarActions,
     visibleReviewerGrades,
 } from './reviewerPresentation';
 
@@ -23,5 +25,16 @@ describe('reviewer presentation', () => {
         expect(normalizeReviewerToolbarPosition('top')).toBe('top');
         expect(normalizeReviewerToolbarPosition('left')).toBe('top');
         expect(normalizeReviewerToolbarPosition(undefined)).toBe('top');
+    });
+
+    it('evaluates undo availability and action toolbar visibility', () => {
+        expect(canUndoReview(0)).toBe(false);
+        expect(canUndoReview(1)).toBe(true);
+        expect(canUndoReview(5)).toBe(true);
+
+        expect(shouldShowReviewerToolbarActions(true, 0)).toBe(true);
+        expect(shouldShowReviewerToolbarActions(true, 3)).toBe(true);
+        expect(shouldShowReviewerToolbarActions(false, 3)).toBe(true);
+        expect(shouldShowReviewerToolbarActions(false, 0)).toBe(false);
     });
 });

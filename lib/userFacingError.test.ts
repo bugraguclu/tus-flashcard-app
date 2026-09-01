@@ -27,6 +27,13 @@ http://192.168.1.103:8081/node_modules/jszip/dist/jszip.min.bundle?platform=ios
             .toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
         expect(userFacingErrorMessage('Error\n    at saveCard (/app/editor.tsx:12:4)'))
             .toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
+        expect(userFacingErrorMessage(
+            'Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object. Check the render method of `EditorScreen`.',
+        )).toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
+        expect(userFacingErrorMessage('Objects are not valid as a React child (found: object with keys {id, name}).'))
+            .toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
+        expect(userFacingErrorMessage('Rendered fewer hooks than during the previous render.'))
+            .toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     });
 
     it('preserves short domain and validation messages', () => {

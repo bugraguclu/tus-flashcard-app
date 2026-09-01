@@ -33,6 +33,19 @@ export class ScreenSnapshotRepository<T> {
 
     constructor(private readonly capacity = 8) {}
 
+    has(key: string): boolean {
+        return this.snapshots.has(key);
+    }
+
+    get(key: string): T | undefined {
+        const cached = this.snapshots.get(key);
+        if (cached !== undefined) {
+            this.snapshots.delete(key);
+            this.snapshots.set(key, cached);
+        }
+        return cached;
+    }
+
     getOrCreate(key: string, create: () => T): T {
         const cached = this.snapshots.get(key);
         if (cached !== undefined) {

@@ -11,6 +11,7 @@ import { DEFAULT_DECK_CONFIG } from './models';
 import { getAllAnkiCards, getAllNotes, getAllNoteTypes } from './noteManager';
 import { getAllDecks, getAllDeckConfigs } from './deckManager';
 import { getDB } from './db';
+import { FILTERED_SEARCH_ORDER, parsePreviewDelays } from './filteredDeckOptions';
 import { buildExportTextFromData } from './exportNotes';
 import { renderCardHtml } from './templates';
 import { readMediaBytes, sanitizeMediaFilename } from './mediaStore';
@@ -190,19 +191,41 @@ function modelMap(noteTypes: NoteType[]): string {
 function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: boolean): string {
     const map: Record<string, unknown> = {};
     for (const deck of decks) {
+        // Anki turns exported filtered decks into normal decks when scheduling is stripped.
+        const exportsAsFiltered = includeScheduling && deck.isFiltered;
         map[String(deck.id)] = {
             ...(deck.ankiRaw ?? {}),
             id: deck.id, name: deck.name, mod: deck.mod, usn: deck.usn ?? -1, desc: deck.description || '',
-            // Anki turns exported filtered decks into normal decks when scheduling is stripped.
-            dyn: includeScheduling && deck.isFiltered ? 1 : 0,
+            dyn: exportsAsFiltered ? 1 : 0,
             collapsed: includeScheduling ? deck.collapsed : false,
             browserCollapsed: false,
             conf: includeDeckConfigs ? deck.configId || 1 : 1,
             extendNew: includeScheduling ? Number(deck.ankiRaw?.extendNew ?? 0) : 0,
             extendRev: includeScheduling ? Number(deck.ankiRaw?.extendRev ?? 0) : 0,
+            // The saved search and preview delays live on the deck, not in ankiRaw, so a deck built
+            // or edited here would otherwise export with whatever terms it was imported with.
+            ...(exportsAsFiltered ? filteredDeckFields(deck) : {}),
         };
     }
     return JSON.stringify(map);
+}
+
+/** Anki's legacy JSON shape for a filtered deck's search terms and preview delays. */
+function filteredDeckFields(deck: Deck): Record<string, unknown> {
+    const terms: [string, number, number][] = [
+        [deck.searchQuery ?? '', deck.searchLimit ?? 100, deck.searchOrder ?? FILTERED_SEARCH_ORDER.due],
+    ];
+    if (deck.searchQuery2?.trim()) {
+        terms.push([deck.searchQuery2, deck.searchLimit2 ?? 100, deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due]);
+    }
+    const [previewAgainSecs, previewHardSecs, previewGoodSecs] = parsePreviewDelays(deck.previewDelays);
+    return {
+        terms,
+        resched: deck.reschedule !== false,
+        previewAgainSecs,
+        previewHardSecs,
+        previewGoodSecs,
+    };
 }
 
 /** Inverse of the import tables: our string unions back to Anki's dconf ordinals. */

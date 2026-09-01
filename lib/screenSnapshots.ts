@@ -41,6 +41,10 @@ export const EMPTY_ANKI_STATS: AnkiStatsSnapshot = {
     futureDue: [],
     futureDueTotal: 0,
     futureDueTodayIndex: 0,
+    futureDueWithBacklog: [],
+    futureDueWithBacklogTotal: 0,
+    futureDueWithBacklogTodayIndex: 0,
+    futureDueBacklogTotal: 0,
     backlogTotal: 0,
     dueTomorrow: 0,
     dailyLoad: 0,
@@ -92,7 +96,7 @@ export interface StatsScreenSnapshotParams {
     range: StatsDateRange;
     settings: AppSettings;
     localeTag: string;
-    includeBacklog: boolean;
+    includeBacklog?: boolean;
 }
 
 /** One read model for every database-backed section on Statistics. */
@@ -125,7 +129,7 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
             params.settings.dayRolloverHour,
             params.localeTag,
             filteredScopeCardIds,
-            { includeBacklog: params.includeBacklog },
+            params.includeBacklog !== undefined ? { includeBacklog: params.includeBacklog } : undefined,
         );
     } catch (error) {
         console.warn('[Stats] Anki graphs failed:', error);

@@ -30,7 +30,6 @@ import {
     getBrowserCards,
     setCardSuspended,
     type BrowserCardQuery,
-    type BrowserCardStateFilter,
     type BrowserCardSortKey,
     type BrowserTableMode,
 } from '../lib/studyRepository';
@@ -199,11 +198,11 @@ export default function BrowserScreen() {
     const [cardsSnapshotKey, setCardsSnapshotKey] = useState('');
     const initialRouteSearch = typeof params.initialSearch === 'string' ? params.initialSearch : '';
     const [rawQuery, setRawQuery] = useState(initialRouteSearch);
+    const [showSearchHelp, setShowSearchHelp] = useState(false);
     const [searchQuery, setSearchQuery] = useState(initialRouteSearch);
     const [markedOnly, setMarkedOnly] = useState(false);
     const [suspendedOnly, setSuspendedOnly] = useState(false);
     const [tagFilters, setTagFilters] = useState<string[]>([]);
-    const [tagCardState, setTagCardState] = useState<BrowserCardStateFilter>('all');
     const [flagFilters, setFlagFilters] = useState<CardFlag[]>(() => [...ALL_CARD_FLAGS]);
     const [sortKey, setSortKey] = useState<BrowserCardSortKey>(readBrowserSortKey);
     const [tableMode, setTableMode] = useState<BrowserTableMode>(readBrowserTableMode);
@@ -289,7 +288,6 @@ export default function BrowserScreen() {
 
     const allFilterActive = !markedOnly
         && !suspendedOnly
-        && tagCardState === 'all'
         && tagFilters.length === 0
         && flagFilters.length === ALL_CARD_FLAGS.length;
     const browserQueryOptions = useMemo<Omit<BrowserCardQuery, 'deckIds' | 'cardIds' | 'limit' | 'offset'>>(() => ({
@@ -298,7 +296,6 @@ export default function BrowserScreen() {
         descending: sortDescending,
         markedOnly,
         suspendedOnly,
-        cardState: tagCardState,
         tags: tagFilters,
         flags: flagFilters.length === ALL_CARD_FLAGS.length ? undefined : flagFilters,
     }), [
@@ -307,7 +304,6 @@ export default function BrowserScreen() {
         sortDescending,
         markedOnly,
         suspendedOnly,
-        tagCardState,
         tagFilters,
         flagFilters,
     ]);
@@ -523,38 +519,75 @@ export default function BrowserScreen() {
     }, []);
 
     const showSearchSyntaxHelp = useCallback(() => {
-        alert(
-            l('Arama', 'Search'),
-            l(
-                'Kelime yazarak kart metninde, etiketlerde ve deste adında arama yapabilirsiniz.\n\n'
-                + 'Anki terimleri\n'
-                + 'deck:"Deste"  ·  tag:etiket  ·  tag:none\n'
-                + 'is:new  is:learn  is:review  is:relearn  is:due  is:suspended  is:buried\n'
-                + 'flag:0–7  ·  rated:7  ·  rated:7:1  ·  added:7  ·  edited:7\n'
-                + 'prop:ivl>=21  ·  prop:reps<10  ·  prop:lapses>=5  ·  prop:ease<2.0  ·  prop:due<=3\n'
-                + 'note:"Not türü"  ·  card:1  ·  nid:123  ·  cid:123  ·  re:desen\n'
-                + 'Alan adıyla: Cevap:"tam içerik"\n\n'
-                + 'Dışlamak için -, alternatif için or, gruplamak için parantez:\n'
-                + 'deck:TUS -is:suspended  ·  (tag:a or tag:b)',
-                'Type words to search the card text, its tags and its deck name.\n\n'
-                + 'Anki terms\n'
-                + 'deck:"Deck"  ·  tag:tag  ·  tag:none\n'
-                + 'is:new  is:learn  is:review  is:relearn  is:due  is:suspended  is:buried\n'
-                + 'flag:0–7  ·  rated:7  ·  rated:7:1  ·  added:7  ·  edited:7\n'
-                + 'prop:ivl>=21  ·  prop:reps<10  ·  prop:lapses>=5  ·  prop:ease<2.0  ·  prop:due<=3\n'
-                + 'note:"Note type"  ·  card:1  ·  nid:123  ·  cid:123  ·  re:pattern\n'
-                + 'By field name: Back:"exact content"\n\n'
-                + 'Use - to exclude, or for alternatives, parentheses to group:\n'
-                + 'deck:TUS -is:suspended  ·  (tag:a or tag:b)',
-            ),
-        );
-    }, [l]);
+        Keyboard.dismiss();
+        setShowSearchHelp(true);
+    }, []);
+
+    // Anki's search terms, grouped the way the help sheet lists them. Tapping a row appends the
+    // term to the search box, so the syntax can be learned by using it instead of memorising it.
+    const searchHelpGroups = useMemo(() => [
+        {
+            title: l('Kapsam', 'Scope'),
+            items: [
+                { term: 'deck:', hint: l('Belirli bir destede ara', 'Search inside one deck') },
+                { term: 'tag:', hint: l('Belirli bir etikette ara', 'Search cards with a tag') },
+                { term: 'tag:none', hint: l('Etiketi olmayan kartlar', 'Cards with no tags at all') },
+                { term: 'note:', hint: l('Not türüne göre', 'By note type') },
+            ],
+        },
+        {
+            title: l('Kart durumu', 'Card state'),
+            items: [
+                { term: 'is:due', hint: l('Bugün çalışılacaklar', 'Waiting for review today') },
+                { term: 'is:new', hint: l('Hiç çalışılmamış kartlar', 'Never studied yet') },
+                { term: 'is:learn', hint: l('Öğrenme aşamasındakiler', 'Currently in learning') },
+                { term: 'is:review', hint: l('Tekrar aşamasındakiler', 'In the review stage') },
+                { term: 'is:suspended', hint: l('Askıya alınmış kartlar', 'Suspended cards') },
+                { term: 'is:buried', hint: l('Gömülmüş kartlar', 'Buried cards') },
+                { term: 'flag:1', hint: l('Bayrağa göre (0–7)', 'By flag colour (0–7)') },
+            ],
+        },
+        {
+            title: l('Zamana göre', 'By time'),
+            items: [
+                { term: 'added:7', hint: l('Son 7 günde eklenenler', 'Added in the last 7 days') },
+                { term: 'edited:7', hint: l('Son 7 günde düzenlenenler', 'Edited in the last 7 days') },
+                { term: 'rated:7', hint: l('Son 7 günde çalışılanlar', 'Reviewed in the last 7 days') },
+                { term: 'rated:7:1', hint: l('Son 7 günde "Tekrar" denenler', 'Answered "Again" in 7 days') },
+            ],
+        },
+        {
+            title: l('Kart özellikleri', 'Card properties'),
+            items: [
+                { term: 'prop:ivl>=21', hint: l('Aralığı 21 günden uzun', 'Interval of 21 days or more') },
+                { term: 'prop:lapses>=5', hint: l('5 kez veya daha çok unutulan', 'Forgotten five times or more') },
+                { term: 'prop:reps<10', hint: l('10 kereden az çalışılan', 'Reviewed fewer than 10 times') },
+                { term: 'prop:due<=3', hint: l('3 gün içinde gelecekler', 'Due within three days') },
+            ],
+        },
+        {
+            title: l('Birleştirme', 'Combining terms'),
+            items: [
+                { term: '-is:suspended', hint: l('Başına - koyarak dışla', 'A leading - excludes') },
+                { term: '(tag:a or tag:b)', hint: l('or ile alternatif, parantezle grupla', 'or for alternatives, brackets to group') },
+                { term: 're:', hint: l('Düzenli ifadeyle ara', 'Search with a regular expression') },
+            ],
+        },
+    ], [l]);
+
 
     const handleSearch = useCallback((text: string) => {
         setRawQuery(text);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => setSearchQuery(text), 200);
     }, []);
+
+    /** Append a term tapped in the help sheet to whatever is already in the search box. */
+    const appendSearchTerm = useCallback((term: string) => {
+        setShowSearchHelp(false);
+        const current = rawQuery.trim();
+        handleSearch(current ? `${current} ${term}` : term);
+    }, [rawQuery, handleSearch]);
 
     const filteredCards = useMemo(() => {
         const query = searchQuery.trim();
@@ -821,7 +854,6 @@ export default function BrowserScreen() {
         }
         if (markedOnly) terms.push('tag:marked');
         if (suspendedOnly) terms.push('is:suspended');
-        if (tagCardState !== 'all') terms.push(`is:${tagCardState}`);
         if (tagFilters.length === 1) {
             terms.push(`tag:${quoteAnkiSearchValue(tagFilters[0])}`);
         } else if (tagFilters.length > 1) {
@@ -835,7 +867,7 @@ export default function BrowserScreen() {
         }
         if (searchQuery.trim()) terms.push(searchQuery.trim());
         return terms.join(' ');
-    }, [scopeDeck, markedOnly, suspendedOnly, tagCardState, tagFilters, flagFilters, searchQuery]);
+    }, [scopeDeck, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery]);
 
     const hasResultFilter = Boolean(searchQuery.trim()) || !allFilterActive;
     // Loaded-page progress is an implementation detail. Keep the toolbar stable and show only
@@ -845,7 +877,6 @@ export default function BrowserScreen() {
     const clearBrowserFilters = useCallback(() => {
         setMarkedOnly(false);
         setSuspendedOnly(false);
-        setTagCardState('all');
         setTagFilters([]);
         setFlagFilters([...ALL_CARD_FLAGS]);
     }, []);
@@ -1167,13 +1198,6 @@ export default function BrowserScreen() {
                         <Text style={[styles.filterChipText, styles.filterChipTextActive]}>⌗ {l(`${tagFilters.length} etiket`, `${tagFilters.length} tags`)} ×</Text>
                     </TouchableOpacity>
                 )}
-                {tagCardState !== 'all' && (
-                    <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setTagCardState('all')}>
-                        <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
-                            {tagCardState === 'new' ? l('Yeni', 'New') : l('Süresi gelen', 'Due')} ×
-                        </Text>
-                    </TouchableOpacity>
-                )}
                 {flagFilters.length < ALL_CARD_FLAGS.length && (
                     <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setFlagFilters([...ALL_CARD_FLAGS])}>
                         {flagFilters.length === 1 && (
@@ -1430,9 +1454,7 @@ export default function BrowserScreen() {
                         <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowTagFilter(true); }}>
                             <Text style={styles.overflowItemIcon}>⌗</Text>
                             <Text style={styles.overflowItemText}>{l('Etikete göre filtrele', 'Filter by tag')}</Text>
-                            {tagFilters.length > 0
-                                ? <Text style={styles.overflowBadge}>{tagFilters.length}</Text>
-                                : tagCardState !== 'all' && <Text style={styles.overflowCheck}>✓</Text>}
+                            {tagFilters.length > 0 && <Text style={styles.overflowBadge}>{tagFilters.length}</Text>}
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter}>
                             <Text style={styles.overflowItemIcon}>⚑</Text>
@@ -1570,13 +1592,10 @@ export default function BrowserScreen() {
                 selectedTags={tagFilters}
                 allowCreate={false}
                 loadTags={loadScopedTags}
-                showCardStateFilter
-                selectedCardState={tagCardState}
                 title={l('Etikete göre filtrele', 'Filter by Tag')}
                 onCancel={() => setShowTagFilter(false)}
-                onConfirm={(tags, cardState) => {
+                onConfirm={(tags) => {
                     setTagFilters(tags);
-                    setTagCardState(cardState);
                     setShowTagFilter(false);
                 }}
             />}
@@ -1765,6 +1784,43 @@ export default function BrowserScreen() {
                 </View>
             </Modal>
 
+            <Modal visible={showSearchHelp} transparent animationType="fade" onRequestClose={() => setShowSearchHelp(false)}>
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSearchHelp(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('Arama nasıl çalışır?', 'How search works')}</Text>
+                        <Text style={styles.modalCaption}>
+                            {l(
+                                'Kelime yazınca kart metni, etiketler ve deste adı taranır. Aşağıdaki terimlerden birine dokunarak aramanıza ekleyebilirsiniz.',
+                                'Plain words search the card text, its tags and its deck name. Tap any term below to add it to your search.',
+                            )}
+                        </Text>
+                        <ScrollView style={styles.searchHelpList} showsVerticalScrollIndicator={false}>
+                            {searchHelpGroups.map((group) => (
+                                <View key={group.title}>
+                                    <Text style={styles.searchHelpGroupTitle}>{group.title}</Text>
+                                    {group.items.map((item) => (
+                                        <TouchableOpacity
+                                            key={item.term}
+                                            style={styles.searchHelpRow}
+                                            onPress={() => appendSearchTerm(item.term)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={l(`${item.term} terimini aramaya ekle`, `Add the term ${item.term} to the search`)}
+                                        >
+                                            <Text style={styles.searchHelpTerm}>{item.term}</Text>
+                                            <Text style={styles.searchHelpHint} numberOfLines={2}>{item.hint}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            ))}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowSearchHelp(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.close')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <Modal visible={showOptions} transparent animationType="fade" onRequestClose={() => setShowOptions(false)}>
                 <View style={styles.modalOverlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOptions(false)} />
@@ -1899,38 +1955,39 @@ function createStyles(colors: ColorScheme) {
     searchContainer: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
     searchField: {
         height: 44,
-        justifyContent: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+        paddingLeft: Spacing.md,
+        paddingRight: Spacing.xs,
     },
     searchIcon: {
-        position: 'absolute',
-        left: Spacing.md,
-        top: 0,
-        bottom: 0,
-        zIndex: 1,
+        width: 18,
+        height: 18,
         alignItems: 'center',
         justifyContent: 'center',
+        marginRight: Spacing.sm,
     },
     searchHelpButton: {
-        position: 'absolute',
-        right: Spacing.xs,
-        top: 0,
-        bottom: 0,
         width: 36,
+        height: 36,
         alignItems: 'center',
         justifyContent: 'center',
     },
     searchHelpButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textMuted },
     searchInput: {
-        height: 44,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingLeft: 42,
-        paddingRight: 44,
+        flex: 1,
+        minWidth: 0,
+        height: '100%',
         paddingVertical: 0,
+        paddingHorizontal: 0,
         fontSize: FontSize.md,
         color: colors.textPrimary,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
 
     // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
@@ -2192,6 +2249,32 @@ function createStyles(colors: ColorScheme) {
     modalCaption: { color: colors.textMuted, fontSize: FontSize.sm, marginTop: -Spacing.sm, marginBottom: Spacing.sm },
     modalCloseButton: { minHeight: 46, marginTop: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
     modalCloseText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '700' },
+    searchHelpList: { maxHeight: 420 },
+    searchHelpGroupTitle: {
+        color: colors.textMuted,
+        fontSize: FontSize.xs,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 0.6,
+        marginTop: Spacing.md,
+        marginBottom: 4,
+    },
+    searchHelpRow: {
+        minHeight: 44,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingVertical: 6,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.borderLight,
+    },
+    searchHelpTerm: {
+        color: colors.accent,
+        fontSize: FontSize.sm,
+        fontWeight: '700',
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    },
+    searchHelpHint: { flex: 1, color: colors.textSecondary, fontSize: FontSize.xs, textAlign: 'right' },
     directionRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
     directionButton: {
         flex: 1,

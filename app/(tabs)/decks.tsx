@@ -62,6 +62,7 @@ import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel, formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
 import CustomStudyModal from '../../components/CustomStudyModal';
+import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
@@ -73,7 +74,12 @@ import {
     getBkaCatalogTier,
 } from '../../lib/bkaCatalog';
 import { requestDeckShortcut } from '../../modules/deck-shortcuts';
-import { FILTERED_DECK_ORDER_UI, FILTERED_SEARCH_ORDER } from '../../lib/filteredDeckOptions';
+import {
+    FILTERED_DECK_ORDER_UI,
+    FILTERED_SEARCH_ORDER,
+    extractDeckNameFromSearch,
+    replaceDeckNameInSearch,
+} from '../../lib/filteredDeckOptions';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
 import { getDeckListSnapshot } from '../../lib/deckListSnapshot';
@@ -226,6 +232,8 @@ export default function DecksScreen() {
     const [filterOrderAnchor, setFilterOrderAnchor] = useState<{ x: number; y: number; width: number } | null>(null);
     const firstFilterOrderRef = useRef<View>(null);
     const secondFilterOrderRef = useRef<View>(null);
+    const [showFilteredDeckPicker, setShowFilteredDeckPicker] = useState(false);
+    const [filteredDeckPickerTarget, setFilteredDeckPickerTarget] = useState<1 | 2>(1);
     const catalogTier = useMemo(
         () => getBkaCatalogTier(),
         [catalogInstalled, collectionVersion],
@@ -369,10 +377,6 @@ export default function DecksScreen() {
             return next;
         });
     }, [animateDeckTreeLayout, updateExpandedDecks]);
-
-    const handleStudy = (deckName: string) => {
-        router.push({ pathname: '/', params: { deck: deckName } } as any);
-    };
 
     // Anki: clicking a deck opens its overview (Study Now / Unbury / description) first.
     const handleOpenOverview = useCallback((deckName: string) => {
@@ -901,11 +905,11 @@ export default function DecksScreen() {
             if (contentY >= layout.y && contentY <= layout.y + layout.h) {
                 if (isInvalidTarget) return null;
                 const position = (contentY - layout.y) / Math.max(1, layout.h);
-                // The broad edge zones make ordinary list reordering effortless. The calmer
-                // centre zone retains Anki's drop-onto-parent behaviour for creating subdecks.
-                const placement: DeckDropPlacement = position < 0.36
+                // The edge zones make list reordering effortless. The generous
+                // centre zone provides reliable Anki drop-onto-parent nesting for creating subdecks.
+                const placement: DeckDropPlacement = position < 0.25
                     ? 'before'
-                    : position > 0.64
+                    : position > 0.75
                         ? 'after'
                         : 'inside';
                 if (placement === 'inside' && row.deck.isFiltered) return null;
@@ -1060,30 +1064,11 @@ export default function DecksScreen() {
         // Refresh screen-space geometry at gesture time. Safe-area changes, rotation and the
         // Simulator title bar can all make the value captured by the initial onLayout stale.
         listWrapRef.current?.measureInWindow((_x, y, _width, height) => {
-            listTopRef.current = y;
+            if (y > 0) listTopRef.current = y;
             if (height > 0) listHeightRef.current = height;
-            const measurableRows = visibleRowsRef.current
-                .map((row) => ({ name: row.deck.name, view: deckRowRefs.current.get(row.deck.name) }))
-                .filter((entry): entry is { name: string; view: View } => Boolean(entry.view));
-            if (!measurableRows.length) {
-                updateDeckDrag(pageY);
-                return;
-            }
-
-            let remaining = measurableRows.length;
-            for (const entry of measurableRows) {
-                entry.view.measureInWindow((_rowX, rowY, _rowWidth, rowHeight) => {
-                    if (rowHeight > 0) {
-                        rowLayouts.current.set(entry.name, {
-                            y: rowY - y + scrollOffsetRef.current,
-                            h: rowHeight,
-                        });
-                    }
-                    remaining -= 1;
-                    if (remaining === 0) updateDeckDrag(pageY);
-                });
-            }
+            updateDeckDrag(pageY);
         });
+        updateDeckDrag(pageY);
         if (Platform.OS !== 'web') {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
         }
@@ -1241,15 +1226,10 @@ export default function DecksScreen() {
                     }
                 }}
                 onLayout={(e) => {
-                    const layoutHeight = e.nativeEvent.layout.height;
-                    // Keep drag hit-testing in one content coordinate space across recycled rows.
-                    const rowView = deckRowRefs.current.get(deck.name);
-                    if (!rowView) return;
-                    rowView.measureInWindow((_x, rowY, _width, rowHeight) => {
-                        rowLayouts.current.set(deck.name, {
-                            y: rowY - listTopRef.current + scrollOffsetRef.current,
-                            h: rowHeight || layoutHeight,
-                        });
+                    const { y, height } = e.nativeEvent.layout;
+                    rowLayouts.current.set(deck.name, {
+                        y,
+                        h: height,
                     });
                 }}
                 style={[
@@ -1645,10 +1625,6 @@ export default function DecksScreen() {
         const openFilterOrderPicker = (filter: 1 | 2) => {
             Keyboard.dismiss();
             setFilterHelpVisible(false);
-            const target = filter === 1 ? firstFilterOrderRef.current : secondFilterOrderRef.current;
-            target?.measureInWindow((x, y, measuredWidth, measuredHeight) => {
-                setFilterOrderAnchor({ x, y: y + measuredHeight, width: measuredWidth });
-            });
             setFilterOrderPicker(filter);
         };
         const showSearchInfo = (search: string) => {
@@ -1668,21 +1644,21 @@ export default function DecksScreen() {
                     + 'flag:0–7  ·  rated:7  ·  rated:7:1\n'
                     + 'prop:ivl>=21 (aralık)  ·  prop:reps<10 (tekrar)\n'
                     + 'prop:lapses>=5 (unutma)  ·  prop:ease<2.0 (kolaylık)\n'
-                    + 'prop:pos<=50 (yeni kart sırası)  ·  prop:due<=3 (gün)\n\n'
-                    + 'Terimleri boşlukla ayırarak birleştirebilirsiniz.\n'
-                    + 'Dışlamak için terimin başına - koy: -is:suspended\n'
-                    + 'Alternatifler için or, gruplamak için parantez: (tag:a or tag:b)',
-                    `${matchCount} eligible cards matched this query.\n\n${search || '—'}\n\n`
-                    + 'Available terms\n'
-                    + 'deck:"Deck"  ·  tag:tag  ·  tag:none\n'
+                    + 'introduced:7 (yeni eklenen)  ·  rescheduled:7\n'
+                    + 'note:"Not Türü"  ·  added:7 (kart oluşturma)\n\n'
+                    + 'Örnek: is:due -is:buried tag:onemli\n'
+                    + 'Örnek: deck:"Farmakoloji" is:new',
+                    `Found ${matchCount} matching cards for this query.\n\n${search || '—'}\n\n`
+                    + 'Supported terms\n'
+                    + 'deck:"Deck Name"  ·  tag:tagname  ·  tag:none\n'
                     + 'is:due  is:new  is:learn  is:review  is:relearn  is:suspended  is:buried\n'
                     + 'flag:0–7  ·  rated:7  ·  rated:7:1\n'
-                    + 'prop:ivl>=21 (interval)  ·  prop:reps<10 (reps)\n'
-                    + 'prop:lapses>=5 (lapses)  ·  prop:ease<2.0 (ease)\n'
-                    + 'prop:pos<=50 (new card position)  ·  prop:due<=3 (days)\n\n'
-                    + 'Separate terms with a space to combine them.\n'
-                    + 'Prefix a term with - to exclude it: -is:suspended\n'
-                    + 'Use or for alternatives and parentheses to group: (tag:a or tag:b)',
+                    + 'prop:ivl>=21 (interval)  ·  prop:reps<10 (reviews)\n'
+                    + 'prop:lapses>=5 (lapses)  ·  prop:ease<2.0 (ease factor)\n'
+                    + 'introduced:7 (first studied)  ·  rescheduled:7\n'
+                    + 'note:"Note Type"  ·  added:7 (created)\n\n'
+                    + 'Example: is:due -is:buried tag:important\n'
+                    + 'Example: deck:"Pharmacology" is:new',
                 ),
             );
         };
@@ -1692,20 +1668,20 @@ export default function DecksScreen() {
             else setFilterOrder(order);
             setFilterOrderPicker(null);
         };
-        const showExcludedInfo = () => {
+        const showExcludedCardsInfo = () => {
             Keyboard.dismiss();
-            const excludedCount = getFilteredDeckExcludedCount([
-                filterSearch,
-                ...(filterSecondEnabled ? [filterSearch2] : []),
-            ]);
             alert(
-                l(`${excludedCount} kart dahil edilemiyor`, `${excludedCount} cards are excluded`),
+                l('Dahil edilmeyen kartlar', 'Excluded cards'),
                 l(
                     'Bu kartlar aramayla eşleşiyor ancak askıya alınmış veya gömülmüş oldukları için filtrelenmiş desteye alınamıyor.',
                     'These cards match the search, but cannot enter the filtered deck because they are suspended or buried.',
                 ),
             );
         };
+        const selectedDeckName1 = extractDeckNameFromSearch(filterSearch);
+        const selectedDeckName2 = extractDeckNameFromSearch(filterSearch2);
+        const currentPickerSelectedDeckName = filteredDeckPickerTarget === 2 ? selectedDeckName2 : selectedDeckName1;
+        const availableRegularDecks = getAllDecks().filter((d) => !d.isFiltered);
 
         return (
             <View style={styles.filteredDeckScreen} accessibilityViewIsModal>
@@ -1733,7 +1709,7 @@ export default function DecksScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.filteredToolbarIconButton}
-                        onPress={openFilterHelp}
+                        onPress={() => setFilterHelpVisible(true)}
                         accessibilityRole="button"
                         accessibilityLabel={l('Filtrelenmiş deste yardımı', 'Filtered deck help')}
                     >
@@ -1751,156 +1727,272 @@ export default function DecksScreen() {
                     automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={styles.filteredOutlinedField}>
-                        <Text style={styles.filteredOutlinedLabel}>{l('Deste adı', 'Name')}</Text>
-                        <TextInput
-                            style={styles.filteredTextInput}
-                            value={newFilteredDeckName}
-                            onChangeText={setNewFilteredDeckName}
-                            autoFocus={isCreating}
-                            returnKeyType="next"
-                            accessibilityLabel={l('Deste adı', 'Deck name')}
-                        />
+                    <Text style={[styles.filteredSectionHeader, styles.filteredSectionHeaderFirst]}>
+                        {l('Deste adı', 'Deck name')}
+                    </Text>
+                    <View style={styles.filteredCard}>
+                        <View style={styles.filteredCardField}>
+                            <TextInput
+                                style={styles.filteredInput}
+                                value={newFilteredDeckName}
+                                onChangeText={setNewFilteredDeckName}
+                                placeholder={l('Deste adı girin', 'Enter deck name')}
+                                placeholderTextColor={colors.textMuted}
+                                autoFocus={isCreating}
+                                returnKeyType="next"
+                                accessibilityLabel={l('Deste adı', 'Deck name')}
+                            />
+                        </View>
                     </View>
 
-                    <Text style={styles.filteredSectionTitle}>{l('Filtre', 'Filter')}</Text>
-                    <View style={styles.filteredOutlinedField}>
-                        <Text style={styles.filteredOutlinedLabel}>{t('common.search')}</Text>
-                        <TextInput
-                            style={[styles.filteredTextInput, styles.filteredSearchInput]}
-                            value={filterSearch}
-                            onChangeText={setFilterSearch}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            accessibilityLabel={l('Birinci filtre araması', 'First filter search')}
-                        />
+                    <Text style={styles.filteredSectionHeader}>
+                        {l('1. Filtre', 'Filter 1')}
+                    </Text>
+                    <View style={styles.filteredCard}>
                         <TouchableOpacity
-                            style={styles.filteredSearchButton}
-                            onPress={() => showSearchInfo(filterSearch)}
+                            style={styles.filteredPickerButton}
+                            onPress={() => {
+                                Keyboard.dismiss();
+                                setFilteredDeckPickerTarget(1);
+                                setShowFilteredDeckPicker(true);
+                            }}
                             accessibilityRole="button"
-                            accessibilityLabel={l('Arama sorgusunu kontrol et', 'Check search query')}
+                            accessibilityLabel={`${l('Deste', 'Deck')}: ${selectedDeckName1 ? selectedDeckName1.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}`}
                         >
-                            <Text style={styles.filteredSearchIcon}>⌕</Text>
+                            <View style={styles.filteredPickerLabelWrap}>
+                                <Text style={styles.filteredPickerLabel}>{l('Deste', 'Deck')}</Text>
+                                <Text style={styles.filteredPickerValue} numberOfLines={1}>
+                                    {selectedDeckName1 ? selectedDeckName1.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}
+                                </Text>
+                            </View>
+                            <Text style={styles.filteredPickerChevron}>⌄</Text>
                         </TouchableOpacity>
-                    </View>
-                    <View style={styles.filteredOutlinedField}>
-                        <Text style={styles.filteredOutlinedLabel}>{l('En fazla', 'Limit to')}</Text>
-                        <TextInput
-                            style={styles.filteredTextInput}
-                            value={filterLimit}
-                            onChangeText={setFilterLimit}
-                            keyboardType="number-pad"
-                            maxLength={5}
-                            accessibilityLabel={l('Birinci filtre kart limiti', 'First filter card limit')}
-                        />
-                    </View>
-                    <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                    <TouchableOpacity
-                        ref={firstFilterOrderRef}
-                        style={styles.filteredPickerRow}
-                        onPress={() => openFilterOrderPicker(1)}
-                        accessibilityRole="button"
-                        accessibilityLabel={filteredOrderLabel(locale, filterOrder)}
-                    >
-                        <Text style={styles.filteredPickerValue}>{filteredOrderLabel(locale, filterOrder)}</Text>
-                        <Text style={styles.filteredPickerChevron}>⌄</Text>
-                    </TouchableOpacity>
 
-                    <View style={styles.filteredSwitchRow}>
-                        <Text style={styles.filteredSwitchLabel}>{l('İkinci filtreyi etkinleştir', 'Enable second filter')}</Text>
-                        <Switch
-                            value={filterSecondEnabled}
-                            onValueChange={setFilterSecondEnabled}
-                            trackColor={{ false: colors.border, true: colors.accent }}
-                            thumbColor={colors.white}
-                        />
-                    </View>
+                        <View style={styles.filteredDivider} />
 
-                    {filterSecondEnabled && (
-                        <View style={styles.filteredSecondFilter}>
-                            <View style={styles.filteredOutlinedField}>
-                                <Text style={styles.filteredOutlinedLabel}>{t('common.search')}</Text>
+                        <View style={styles.filteredCardField}>
+                            <Text style={styles.filteredFieldLabel}>{t('common.search')}</Text>
+                            <View style={styles.filteredSearchInputWrap}>
                                 <TextInput
-                                    style={[styles.filteredTextInput, styles.filteredSearchInput]}
-                                    value={filterSearch2}
-                                    onChangeText={setFilterSearch2}
+                                    style={styles.filteredSearchInputField}
+                                    value={filterSearch}
+                                    onChangeText={setFilterSearch}
+                                    placeholder={l('Arama sorgusu', 'Search query')}
+                                    placeholderTextColor={colors.textMuted}
                                     autoCapitalize="none"
                                     autoCorrect={false}
-                                    accessibilityLabel={l('İkinci filtre araması', 'Second filter search')}
+                                    accessibilityLabel={l('Birinci filtre araması', 'First filter search')}
                                 />
                                 <TouchableOpacity
                                     style={styles.filteredSearchButton}
-                                    onPress={() => showSearchInfo(filterSearch2)}
+                                    onPress={() => showSearchInfo(filterSearch)}
                                     accessibilityRole="button"
-                                    accessibilityLabel={l('İkinci arama sorgusunu kontrol et', 'Check second search query')}
+                                    accessibilityLabel={l('Arama sorgusunu kontrol et', 'Check search query')}
                                 >
                                     <Text style={styles.filteredSearchIcon}>⌕</Text>
                                 </TouchableOpacity>
                             </View>
-                            <View style={styles.filteredOutlinedField}>
-                                <Text style={styles.filteredOutlinedLabel}>{l('En fazla', 'Limit to')}</Text>
-                                <TextInput
-                                    style={styles.filteredTextInput}
-                                    value={filterLimit2}
-                                    onChangeText={setFilterLimit2}
-                                    keyboardType="number-pad"
-                                    maxLength={5}
-                                    accessibilityLabel={l('İkinci filtre kart limiti', 'Second filter card limit')}
-                                />
-                            </View>
-                            <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                            <TouchableOpacity
-                                ref={secondFilterOrderRef}
-                                style={styles.filteredPickerRow}
-                                onPress={() => openFilterOrderPicker(2)}
-                                accessibilityRole="button"
-                                accessibilityLabel={filteredOrderLabel(locale, filterOrder2)}
-                            >
-                                <Text style={styles.filteredPickerValue}>{filteredOrderLabel(locale, filterOrder2)}</Text>
-                                <Text style={styles.filteredPickerChevron}>⌄</Text>
-                            </TouchableOpacity>
                         </View>
-                    )}
 
-                    <Text style={styles.filteredSectionTitle}>{l('Seçenekler', 'Options')}</Text>
-                    <View style={styles.filteredSwitchRow}>
-                        <Text style={styles.filteredSwitchLabel}>
-                            {l('Bu destedeki yanıtlara göre kartları yeniden zamanla', 'Reschedule cards based on my answers in this deck')}
-                        </Text>
-                        <Switch
-                            value={filterReschedule}
-                            onValueChange={setFilterReschedule}
-                            trackColor={{ false: colors.border, true: colors.accent }}
-                            thumbColor={colors.white}
-                        />
-                    </View>
-                    {!filterReschedule && (
-                        <Text style={styles.filteredPreviewHint}>
-                            {l('Önizleme modu: yanıtlar kartların mevcut zamanlamasını değiştirmez.', 'Preview mode: answers do not change the cards’ existing schedule.')}
-                        </Text>
-                    )}
-                    <View style={styles.filteredSwitchRow}>
-                        <Text style={styles.filteredSwitchLabel}>
-                            {l('Boş olsa bile bu desteyi oluştur/güncelle', 'Create/update this deck even if empty')}
-                        </Text>
-                        <Switch
-                            value={filterAllowEmpty}
-                            onValueChange={setFilterAllowEmpty}
-                            trackColor={{ false: colors.border, true: colors.accent }}
-                            thumbColor={colors.white}
-                        />
-                    </View>
-                </ScrollView>
+                        <View style={styles.filteredDivider} />
 
-                <TouchableOpacity
-                    style={[styles.filteredExcludedButton, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}
-                    onPress={showExcludedInfo}
-                    accessibilityRole="button"
-                >
-                    <Text style={styles.filteredExcludedText}>
-                        {l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}
+                        <View style={styles.filteredNumberRow}>
+                            <View style={styles.filteredNumberLabelWrap}>
+                                <Text style={styles.filteredNumberLabel}>{l('Kart limiti', 'Card limit')}</Text>
+                                <Text style={styles.filteredNumberSublabel}>
+                                    {l('Desteye alınacak en fazla kart sayısı', 'Maximum cards to gather into this deck')}
+                                </Text>
+                            </View>
+                            <TextInput
+                                style={styles.filteredNumberInput}
+                                value={filterLimit}
+                                onChangeText={setFilterLimit}
+                                keyboardType="number-pad"
+                                maxLength={5}
+                                accessibilityLabel={l('Birinci filtre kart limiti', 'First filter card limit')}
+                            />
+                        </View>
+
+                        <View style={styles.filteredDivider} />
+
+                        <TouchableOpacity
+                            style={styles.filteredPickerButton}
+                            onPress={() => openFilterOrderPicker(1)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, filterOrder)}`}
+                        >
+                            <View style={styles.filteredPickerLabelWrap}>
+                                <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
+                                <Text style={styles.filteredPickerValue}>{filteredOrderLabel(locale, filterOrder)}</Text>
+                            </View>
+                            <Text style={styles.filteredPickerChevron}>⌄</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.filteredSectionHeader}>
+                        {l('2. Filtre', 'Filter 2')}
                     </Text>
-                </TouchableOpacity>
+                    <View style={styles.filteredCard}>
+                        <View style={styles.filteredToggleRow}>
+                            <View style={styles.filteredToggleCopy}>
+                                <Text style={styles.filteredToggleTitle}>
+                                    {l('İkinci filtreyi etkinleştir', 'Enable second filter')}
+                                </Text>
+                                <Text style={styles.filteredToggleSubtitle}>
+                                    {l('Farklı arama ve sıralama ile ikinci bir grup ekleyin', 'Combine a second group with separate query and order')}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={filterSecondEnabled}
+                                onValueChange={setFilterSecondEnabled}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor={colors.white}
+                                accessibilityLabel={l('İkinci filtreyi etkinleştir', 'Enable second filter')}
+                            />
+                        </View>
+
+                        {filterSecondEnabled && (
+                            <>
+                                <View style={styles.filteredDivider} />
+
+                                <TouchableOpacity
+                                    style={styles.filteredPickerButton}
+                                    onPress={() => {
+                                        Keyboard.dismiss();
+                                        setFilteredDeckPickerTarget(2);
+                                        setShowFilteredDeckPicker(true);
+                                    }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${l('Deste', 'Deck')}: ${selectedDeckName2 ? selectedDeckName2.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}`}
+                                >
+                                    <View style={styles.filteredPickerLabelWrap}>
+                                        <Text style={styles.filteredPickerLabel}>{l('Deste', 'Deck')}</Text>
+                                        <Text style={styles.filteredPickerValue} numberOfLines={1}>
+                                            {selectedDeckName2 ? selectedDeckName2.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.filteredPickerChevron}>⌄</Text>
+                                </TouchableOpacity>
+
+                                <View style={styles.filteredDivider} />
+
+                                <View style={styles.filteredCardField}>
+                                    <Text style={styles.filteredFieldLabel}>{t('common.search')}</Text>
+                                    <View style={styles.filteredSearchInputWrap}>
+                                        <TextInput
+                                            style={styles.filteredSearchInputField}
+                                            value={filterSearch2}
+                                            onChangeText={setFilterSearch2}
+                                            placeholder={l('İkinci arama sorgusu', 'Second search query')}
+                                            placeholderTextColor={colors.textMuted}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            accessibilityLabel={l('İkinci filtre araması', 'Second filter search')}
+                                        />
+                                        <TouchableOpacity
+                                            style={styles.filteredSearchButton}
+                                            onPress={() => showSearchInfo(filterSearch2)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={l('İkinci arama sorgusunu kontrol et', 'Check second search query')}
+                                        >
+                                            <Text style={styles.filteredSearchIcon}>⌕</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <View style={styles.filteredDivider} />
+
+                                <View style={styles.filteredNumberRow}>
+                                    <View style={styles.filteredNumberLabelWrap}>
+                                        <Text style={styles.filteredNumberLabel}>{l('Kart limiti', 'Card limit')}</Text>
+                                        <Text style={styles.filteredNumberSublabel}>
+                                            {l('İkinci gruptan alınacak en fazla kart sayısı', 'Maximum cards from the second group')}
+                                        </Text>
+                                    </View>
+                                    <TextInput
+                                        style={styles.filteredNumberInput}
+                                        value={filterLimit2}
+                                        onChangeText={setFilterLimit2}
+                                        keyboardType="number-pad"
+                                        maxLength={5}
+                                        accessibilityLabel={l('İkinci filtre kart limiti', 'Second filter card limit')}
+                                    />
+                                </View>
+
+                                <View style={styles.filteredDivider} />
+
+                                <TouchableOpacity
+                                    style={styles.filteredPickerButton}
+                                    onPress={() => openFilterOrderPicker(2)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, filterOrder2)}`}
+                                >
+                                    <View style={styles.filteredPickerLabelWrap}>
+                                        <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
+                                        <Text style={styles.filteredPickerValue}>{filteredOrderLabel(locale, filterOrder2)}</Text>
+                                    </View>
+                                    <Text style={styles.filteredPickerChevron}>⌄</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+
+                    <Text style={styles.filteredSectionHeader}>
+                        {l('Çalışma davranışı', 'Study behavior')}
+                    </Text>
+                    <View style={styles.filteredCard}>
+                        <View style={styles.filteredToggleRow}>
+                            <View style={styles.filteredToggleCopy}>
+                                <Text style={styles.filteredToggleTitle}>
+                                    {l('Kartları yeniden zamanla', 'Reschedule cards')}
+                                </Text>
+                                <Text style={styles.filteredToggleSubtitle}>
+                                    {filterReschedule
+                                        ? l('Yanıtlar kartların normal programını günceller.', 'Answers update the cards’ normal schedule.')
+                                        : l('Önizleme modu; mevcut zamanlama değişmez.', 'Preview mode; existing scheduling is unchanged.')}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={filterReschedule}
+                                onValueChange={setFilterReschedule}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor={colors.white}
+                                accessibilityLabel={l('Kartları yeniden zamanla', 'Reschedule cards')}
+                            />
+                        </View>
+
+                        <View style={styles.filteredDivider} />
+
+                        <View style={styles.filteredToggleRow}>
+                            <View style={styles.filteredToggleCopy}>
+                                <Text style={styles.filteredToggleTitle}>
+                                    {l('Boş olsa bile oluştur/güncelle', 'Create/update even if empty')}
+                                </Text>
+                                <Text style={styles.filteredToggleSubtitle}>
+                                    {l('Hiçbir kart eşleşmese de deste ve kuralları korunur.', 'Keep the deck and its rules even when no cards match.')}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={filterAllowEmpty}
+                                onValueChange={setFilterAllowEmpty}
+                                trackColor={{ false: colors.border, true: colors.accent }}
+                                thumbColor={colors.white}
+                                accessibilityLabel={l('Boş olsa bile oluştur/güncelle', 'Create/update even if empty')}
+                            />
+                        </View>
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.filteredExcludedButton, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}
+                        onPress={showExcludedCardsInfo}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.filteredExcludedIcon}>ℹ</Text>
+                        <Text style={styles.filteredExcludedText}>
+                            {l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}
+                        </Text>
+                    </TouchableOpacity>
+                </ScrollView>
 
                 {filterHelpVisible && (
                     <View style={styles.filteredOverlayLayer}>
@@ -2006,7 +2098,7 @@ export default function DecksScreen() {
                 )}
 
                 {filterOrderPicker !== null && (
-                    <View style={styles.filteredOverlayLayer}>
+                    <View style={styles.filteredOverlayLayerBottom}>
                         <TouchableOpacity
                             style={styles.filteredOverlayBackdrop}
                             activeOpacity={1}
@@ -2014,18 +2106,11 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={t('common.close')}
                         />
-                        <View
-                            style={[
-                                styles.filteredOrderMenu,
-                                filterOrderAnchor && {
-                                    position: 'absolute',
-                                    left: Math.max(Spacing.lg, Math.min(filterOrderAnchor.x, width - filterOrderAnchor.width - Spacing.lg)),
-                                    top: filterOrderAnchor.y,
-                                    width: Math.min(filterOrderAnchor.width, width - (Spacing.lg * 2)),
-                                    maxHeight: Math.max(240, height - filterOrderAnchor.y - Math.max(insets.bottom, Spacing.lg)),
-                                },
-                            ]}
+                        <SwipeDismissSheet
+                            style={[styles.filteredPickerCard, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
+                            onDismiss={() => setFilterOrderPicker(null)}
                         >
+                            <Text style={styles.filteredPickerSheetTitle}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
                             <ScrollView showsVerticalScrollIndicator={false}>
                                 {FILTERED_DECK_ORDER_UI.map((order) => (
                                     <TouchableOpacity
@@ -2041,8 +2126,44 @@ export default function DecksScreen() {
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                        </View>
+                        </SwipeDismissSheet>
                     </View>
+                )}
+
+                {showFilteredDeckPicker && (
+                    <DeckPickerModal
+                        visible={showFilteredDeckPicker}
+                        colors={colors}
+                        decks={availableRegularDecks}
+                        selectedDeckName={currentPickerSelectedDeckName}
+                        title={l('Hedef deste', 'Target Deck')}
+                        allDecksLabel={l('Tüm desteler', 'All decks')}
+                        searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
+                        emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                        cancelLabel={t('common.cancel')}
+                        closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                        searchAccessibilityLabel={l('Deste ara', 'Search decks')}
+                        createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
+                        onClose={() => setShowFilteredDeckPicker(false)}
+                        onSelect={(name) => {
+                            if (filteredDeckPickerTarget === 2) {
+                                setFilterSearch2((current) => replaceDeckNameInSearch(current, name));
+                            } else {
+                                setFilterSearch((current) => replaceDeckNameInSearch(current, name));
+                            }
+                            setShowFilteredDeckPicker(false);
+                        }}
+                        onCreateDeck={(name) => {
+                            try {
+                                const created = createDeck(getAvailableDeckName(name));
+                                refresh();
+                                return created.name;
+                            } catch (error) {
+                                console.warn('[Decks] create deck from picker failed:', error);
+                                return null;
+                            }
+                        }}
+                    />
                 )}
             </View>
         );
@@ -2473,10 +2594,8 @@ export default function DecksScreen() {
                     settings={settings}
                     onClose={() => setModal(null)}
                     onChanged={refresh}
-                    onStudy={(deckName) => {
-                        updateExpandedDecks((previous) => new Set(previous).add(deckName));
-                        handleStudy(deckName);
-                    }}
+                    // Anki makes the new session the current deck and shows its overview.
+                    onSessionCreated={handleOpenOverview}
                 />
             )}
         </SafeAreaView>
@@ -2925,14 +3044,14 @@ function createStyles(colors: ColorScheme) {
         padding: 0,
         alignItems: 'stretch',
         justifyContent: 'flex-start',
-        backgroundColor: colors.bgCard,
+        backgroundColor: colors.bgPrimary,
     },
     filteredDeckScreen: {
         flex: 1,
-        backgroundColor: colors.bgCard,
+        backgroundColor: colors.bgPrimary,
     },
     filteredDeckToolbar: {
-        minHeight: 60,
+        minHeight: 56,
         flexDirection: 'row',
         alignItems: 'center',
         paddingBottom: 8,
@@ -3001,123 +3120,185 @@ function createStyles(colors: ColorScheme) {
         paddingTop: Spacing.lg,
         paddingBottom: 56,
     },
-    filteredOutlinedField: {
-        position: 'relative',
-        minHeight: 58,
-        justifyContent: 'center',
-        borderWidth: 1.5,
-        borderColor: colors.textMuted,
-        borderRadius: 5,
-        paddingHorizontal: Spacing.lg,
-        marginBottom: Spacing.md,
-        backgroundColor: colors.bgCard,
-    },
-    filteredOutlinedLabel: {
-        position: 'absolute',
-        top: -9,
-        left: 12,
-        paddingHorizontal: 5,
-        color: colors.textSecondary,
-        backgroundColor: colors.bgCard,
+    filteredSectionHeader: {
         fontSize: FontSize.xs,
-        lineHeight: 18,
-        fontWeight: '500',
+        fontWeight: '700',
+        letterSpacing: 0.6,
+        color: colors.textSecondary,
+        textTransform: 'uppercase',
+        marginBottom: Spacing.xs,
+        marginLeft: Spacing.xs,
+        marginTop: Spacing.lg,
     },
-    filteredTextInput: {
-        minHeight: 52,
-        paddingVertical: 8,
+    filteredSectionHeaderFirst: {
+        marginTop: 0,
+    },
+    filteredCard: {
+        backgroundColor: colors.bgCard,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        overflow: 'hidden',
+        ...Shadows.sm,
+    },
+    filteredCardField: {
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+    },
+    filteredFieldLabel: {
+        fontSize: FontSize.xs,
+        fontWeight: '600',
+        color: colors.textSecondary,
+        marginBottom: 4,
+    },
+    filteredInput: {
+        fontSize: FontSize.md,
         color: colors.textPrimary,
-        fontSize: FontSize.lg,
+        minHeight: 40,
+        paddingVertical: 4,
     },
-    filteredSearchInput: { paddingRight: 44 },
+    filteredSearchInputWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    filteredSearchInputField: {
+        flex: 1,
+        fontSize: FontSize.md,
+        color: colors.textPrimary,
+        minHeight: 40,
+        paddingVertical: 4,
+    },
     filteredSearchButton: {
-        position: 'absolute',
-        right: 3,
-        top: 6,
-        width: 44,
-        height: 44,
+        width: 38,
+        height: 38,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: BorderRadius.full,
+        backgroundColor: colors.accentLight,
     },
     filteredSearchIcon: {
-        color: colors.textSecondary,
-        fontSize: 31,
-        lineHeight: 33,
-        transform: [{ rotate: '-18deg' }],
+        color: colors.accent,
+        fontSize: 22,
+        fontWeight: '600',
+        lineHeight: 24,
     },
-    filteredSectionTitle: {
-        marginTop: 2,
-        marginBottom: Spacing.md,
+    filteredNumberRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        minHeight: 52,
+    },
+    filteredNumberLabelWrap: {
+        flex: 1,
+        marginRight: Spacing.md,
+    },
+    filteredNumberLabel: {
+        fontSize: FontSize.md,
+        fontWeight: '500',
         color: colors.textPrimary,
-        fontSize: FontSize.xl,
-        fontWeight: '700',
+    },
+    filteredNumberSublabel: {
+        fontSize: FontSize.xs,
+        color: colors.textMuted,
+        marginTop: 2,
+    },
+    filteredNumberInput: {
+        minWidth: 72,
+        height: 40,
+        backgroundColor: colors.bgInput,
+        borderRadius: BorderRadius.sm,
+        borderWidth: 1,
+        borderColor: colors.border,
+        paddingHorizontal: Spacing.md,
+        textAlign: 'center',
+        fontSize: FontSize.md,
+        fontWeight: '600',
+        color: colors.textPrimary,
+    },
+    filteredPickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        minHeight: 56,
+    },
+    filteredPickerLabelWrap: {
+        flex: 1,
+        marginRight: Spacing.md,
     },
     filteredPickerLabel: {
-        marginTop: -2,
-        color: colors.textPrimary,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    filteredPickerRow: {
-        minHeight: 52,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
-        marginBottom: Spacing.md,
+        fontSize: FontSize.xs,
+        fontWeight: '600',
+        color: colors.textSecondary,
+        marginBottom: 2,
     },
     filteredPickerValue: {
-        flex: 1,
+        fontSize: FontSize.md,
+        fontWeight: '600',
         color: colors.textPrimary,
-        fontSize: FontSize.lg,
     },
     filteredPickerChevron: {
-        color: colors.textSecondary,
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: '700',
+        color: colors.textSecondary,
     },
-    filteredSwitchRow: {
-        minHeight: 64,
+    filteredToggleRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        minHeight: 56,
         gap: Spacing.md,
     },
-    filteredSwitchLabel: {
+    filteredToggleCopy: {
         flex: 1,
-        color: colors.textPrimary,
+        justifyContent: 'center',
+    },
+    filteredToggleTitle: {
         fontSize: FontSize.md,
-        lineHeight: 20,
-        fontWeight: '500',
+        fontWeight: '600',
+        color: colors.textPrimary,
     },
-    filteredSecondFilter: {
-        paddingTop: Spacing.sm,
-        paddingLeft: Spacing.sm,
-        borderLeftWidth: 2,
-        borderLeftColor: colors.borderLight,
-    },
-    filteredPreviewHint: {
-        marginTop: -4,
-        marginBottom: Spacing.sm,
-        paddingHorizontal: Spacing.sm,
+    filteredToggleSubtitle: {
+        fontSize: FontSize.xs,
+        lineHeight: 16,
         color: colors.textMuted,
-        fontSize: FontSize.sm,
-        lineHeight: 18,
+        marginTop: 2,
+    },
+    filteredDivider: {
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: colors.borderLight,
+        marginLeft: Spacing.lg,
     },
     filteredExcludedButton: {
-        minHeight: 48,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: Spacing.sm,
+        minHeight: 48,
+        paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.lg,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.borderLight,
+        borderRadius: BorderRadius.lg,
         backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        marginTop: Spacing.lg,
+        marginBottom: Spacing.xl,
+        gap: Spacing.xs,
+        ...Shadows.sm,
+    },
+    filteredExcludedIcon: {
+        fontSize: FontSize.md,
+        color: colors.accent,
     },
     filteredExcludedText: {
         color: colors.accent,
         fontSize: FontSize.sm,
         fontWeight: '700',
-        textAlign: 'center',
     },
     filteredOverlayLayer: {
         ...StyleSheet.absoluteFillObject,
@@ -3266,22 +3447,32 @@ function createStyles(colors: ColorScheme) {
         fontSize: FontSize.md,
         fontWeight: '800',
     },
-    filteredOrderMenu: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '72%',
-        overflow: 'hidden',
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgCard,
+    filteredOverlayLayerBottom: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 20,
+        justifyContent: 'flex-end',
+    },
+    filteredPickerCard: {
+        maxHeight: '70%',
+        backgroundColor: colors.bgPrimary,
+        borderTopLeftRadius: BorderRadius.xl,
+        borderTopRightRadius: BorderRadius.xl,
+        padding: Spacing.lg,
+        paddingTop: 48,
         ...Shadows.lg,
     },
+    filteredPickerSheetTitle: {
+        fontSize: FontSize.lg,
+        fontWeight: '800',
+        color: colors.textPrimary,
+        marginBottom: Spacing.md,
+    },
     filteredOrderOption: {
-        minHeight: 56,
+        minHeight: 50,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.sm,
     },
     filteredOrderOptionSelected: { backgroundColor: colors.accentLight },
     filteredOrderOptionText: {
@@ -3291,12 +3482,12 @@ function createStyles(colors: ColorScheme) {
     },
     filteredOrderOptionTextSelected: {
         color: colors.accent,
-        fontWeight: '700',
+        fontWeight: '800',
     },
     filteredOrderCheck: {
         color: colors.accent,
-        fontSize: 18,
-        fontWeight: '900',
+        fontSize: FontSize.lg,
+        fontWeight: '800',
     },
     modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
     modalBackdropHit: { ...StyleSheet.absoluteFillObject },

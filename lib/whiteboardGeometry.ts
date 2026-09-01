@@ -115,35 +115,37 @@ export function strokeHitByEraser(
     eraserPoints: WhiteboardPoint[],
     radius: number,
 ): boolean {
-    if (stroke.points.length === 0 || eraserPoints.length === 0) return false;
+    const strokePoints = Array.isArray(stroke?.points) ? stroke.points : [];
+    const eraser = Array.isArray(eraserPoints) ? eraserPoints : [];
+    if (strokePoints.length === 0 || eraser.length === 0) return false;
     const threshold = radius * radius;
 
-    if (stroke.points.length === 1) {
-        if (eraserPoints.length === 1) {
-            const dx = stroke.points[0].x - eraserPoints[0].x;
-            const dy = stroke.points[0].y - eraserPoints[0].y;
+    if (strokePoints.length === 1) {
+        if (eraser.length === 1) {
+            const dx = strokePoints[0].x - eraser[0].x;
+            const dy = strokePoints[0].y - eraser[0].y;
             return dx * dx + dy * dy <= threshold;
         }
-        for (let index = 1; index < eraserPoints.length; index++) {
-            if (pointToSegmentDistanceSquared(stroke.points[0], eraserPoints[index - 1], eraserPoints[index]) <= threshold) return true;
+        for (let index = 1; index < eraser.length; index++) {
+            if (pointToSegmentDistanceSquared(strokePoints[0], eraser[index - 1], eraser[index]) <= threshold) return true;
         }
         return false;
     }
 
-    if (eraserPoints.length === 1) {
-        for (let index = 1; index < stroke.points.length; index++) {
-            if (pointToSegmentDistanceSquared(eraserPoints[0], stroke.points[index - 1], stroke.points[index]) <= threshold) return true;
+    if (eraser.length === 1) {
+        for (let index = 1; index < strokePoints.length; index++) {
+            if (pointToSegmentDistanceSquared(eraser[0], strokePoints[index - 1], strokePoints[index]) <= threshold) return true;
         }
         return false;
     }
 
-    for (let strokeIndex = 1; strokeIndex < stroke.points.length; strokeIndex++) {
-        for (let eraserIndex = 1; eraserIndex < eraserPoints.length; eraserIndex++) {
+    for (let strokeIndex = 1; strokeIndex < strokePoints.length; strokeIndex++) {
+        for (let eraserIndex = 1; eraserIndex < eraser.length; eraserIndex++) {
             if (segmentDistanceSquared(
-                stroke.points[strokeIndex - 1],
-                stroke.points[strokeIndex],
-                eraserPoints[eraserIndex - 1],
-                eraserPoints[eraserIndex],
+                strokePoints[strokeIndex - 1],
+                strokePoints[strokeIndex],
+                eraser[eraserIndex - 1],
+                eraser[eraserIndex],
             ) <= threshold) return true;
         }
     }
@@ -151,19 +153,25 @@ export function strokeHitByEraser(
 }
 
 /** Smooth a raw pointer trail with midpoint quadratic curves. */
-export function toSmoothWhiteboardPath(points: WhiteboardPoint[]): string {
-    if (points.length === 0) return '';
+export function toSmoothWhiteboardPath(points: WhiteboardPoint[] | null | undefined): string {
+    if (!Array.isArray(points) || points.length === 0) return '';
     const first = points[0];
+    if (!first) return '';
     if (points.length === 1) {
         return `M${first.x.toFixed(1)},${first.y.toFixed(1)} L${(first.x + 0.01).toFixed(1)},${first.y.toFixed(1)}`;
     }
     let path = `M${first.x.toFixed(1)},${first.y.toFixed(1)}`;
     for (let index = 1; index < points.length - 1; index++) {
-        const midpointX = (points[index].x + points[index + 1].x) / 2;
-        const midpointY = (points[index].y + points[index + 1].y) / 2;
-        path += ` Q${points[index].x.toFixed(1)},${points[index].y.toFixed(1)} ${midpointX.toFixed(1)},${midpointY.toFixed(1)}`;
+        const pCurrent = points[index];
+        const pNext = points[index + 1];
+        if (!pCurrent || !pNext) continue;
+        const midpointX = (pCurrent.x + pNext.x) / 2;
+        const midpointY = (pCurrent.y + pNext.y) / 2;
+        path += ` Q${pCurrent.x.toFixed(1)},${pCurrent.y.toFixed(1)} ${midpointX.toFixed(1)},${midpointY.toFixed(1)}`;
     }
     const last = points[points.length - 1];
-    path += ` L${last.x.toFixed(1)},${last.y.toFixed(1)}`;
+    if (last) {
+        path += ` L${last.x.toFixed(1)},${last.y.toFixed(1)}`;
+    }
     return path;
 }

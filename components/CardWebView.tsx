@@ -7,6 +7,7 @@ import { reviewerSurfaceCss } from '../lib/cardAppearance';
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
 import { CARD_CONTENT_CSP_META, safeExternalCardUrl } from '../lib/cardContentSecurity';
+import { isLocalMediaDocumentUrl } from '../lib/localMediaDocument';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import {
@@ -19,9 +20,6 @@ import {
     stableMeasuredHeight,
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
-
-/** Intrinsic frame height used until the document reports its real height. */
-const DEFAULT_HEIGHT = 260;
 
 /**
  * Anki's document classes. AnkiDroid ships `<html class="mobile android linux js">` and the
@@ -168,7 +166,7 @@ export default function CardWebView({
         scrollMode,
         minHeight,
         measuredHeight: contentHeight,
-        initialHeight: DEFAULT_HEIGHT,
+        initialHeight: minHeight,
         containedHeight: maxHeight,
     });
     const { frameHeight, scrollEnabled: scrollsInside } = layout;
@@ -272,7 +270,7 @@ export default function CardWebView({
     }, [l]);
 
     // A new card starts unmeasured so the previous card's height is never reused.
-    useLayoutEffect(() => { setContentHeight(null); }, [html]);
+    useLayoutEffect(() => { setContentHeight(null); }, [card.id, card.ord]);
 
     // Web media lives in IndexedDB, so bare filename refs must be swapped for object
     // URLs asynchronously; until that resolves the raw html renders (text is intact,
@@ -441,8 +439,7 @@ export default function CardWebView({
     // onShouldStartLoadWithRequest below refuses every navigation the card tries to start.
     const shouldStartNavigation = useCallback((request: { url: string; isTopFrame?: boolean }) => {
         const url = request.url;
-        const initialMediaUrl = mediaBaseUrl.replace(/\/+$/, '');
-        if (url === 'about:blank' || url.replace(/\/+$/, '') === initialMediaUrl) return true;
+        if (isLocalMediaDocumentUrl(url, mediaBaseUrl)) return true;
 
         // Card links never replace the review WebView. HTTPS requires explicit confirmation;
         // HTTP, file, data, custom schemes and local media navigation remain blocked.

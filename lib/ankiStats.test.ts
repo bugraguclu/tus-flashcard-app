@@ -155,6 +155,26 @@ describe('Anki statistics snapshot', () => {
         expect(stats.addedSpanDays).toBeGreaterThanOrEqual(1);
     });
 
+    it('ends an all-history axis on the current study day before the rollover hour', () => {
+        // 01:30 on the 1st with a 04:00 rollover still belongs to the previous month's study day.
+        // An axis built from the raw calendar date would open a September bucket for a study day
+        // that has not begun, so the all-history graph would show a trailing empty column.
+        const beforeRollover = new Date(2026, 8, 1, 1, 30).getTime();
+        const addedAt = new Date(2026, 7, 31, 22, 0).getTime();
+        addDeck(10, 'Gece');
+        addCard(addedAt, 1, 10, 0, 1, 0, addedAt);
+        addReview(addedAt, addedAt, 3, 10);
+
+        const range = resolveStatsDateRange('all', new Date(), new Date(), 4, beforeRollover);
+        const stats = getAnkiStatsSnapshot('Gece', range, 4, 'tr-TR');
+
+        expect(stats.addedTotal).toBe(1);
+        expect(stats.added).toHaveLength(1);
+        expect(stats.addedSpanDays).toBe(1);
+        expect(stats.reviews).toHaveLength(1);
+        expect(stats.reviewMinutes).toHaveLength(1);
+    });
+
     it('fills the selected date range with live zero-value buckets', () => {
         const now = new Date(2026, 7, 22, 12).getTime();
         const today = localDayNumber(now, 4);
@@ -193,6 +213,10 @@ describe('Anki statistics snapshot', () => {
         expect(withoutBacklog.futureDueTodayIndex).toBe(0);
         expect(withoutBacklog.backlogTotal).toBe(0);
         expect(withoutBacklog.futureDueTotal).toBe(2);
+        // Precomputed with-backlog data is always available on the snapshot for instant toggling
+        expect(withoutBacklog.futureDueWithBacklogTotal).toBe(3);
+        expect(withoutBacklog.futureDueBacklogTotal).toBe(1);
+        expect(withoutBacklog.futureDueWithBacklogTodayIndex).toBeGreaterThan(0);
 
         const withBacklog = getAnkiStatsSnapshot(null, range, 4, 'tr-TR', undefined, {
             includeBacklog: true,

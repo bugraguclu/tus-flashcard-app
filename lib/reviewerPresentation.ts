@@ -23,3 +23,17 @@ export function reviewerFeedbackSide(grade: Grade): ReviewerFeedbackSide {
 export function visibleReviewerGrades(hideHardAndEasy: boolean): Grade[] {
     return hideHardAndEasy ? [1, 3] : [1, 2, 3, 4];
 }
+
+/** Undo is available whenever at least one answer is on the undo stack. */
+export function canUndoReview(undoStackLength: number): boolean {
+    return undoStackLength > 0;
+}
+
+/**
+ * Reviewer action buttons (Undo, Flag, More) stay visible while reviewing a card or when an
+ * answer on the stack can still be undone (including session completion).
+ */
+export function shouldShowReviewerToolbarActions(hasCurrentCard: boolean, undoStackLength: number): boolean {
+    return hasCurrentCard || undoStackLength > 0;
+}
+

@@ -50,9 +50,14 @@ const tr = {
     'anki.customStudy': 'Özel çalışma',
     'anki.filteredDeck': 'Filtrelenmiş deste',
 
-    'root.errorTitle': 'Bir hata oluştu',
+    'root.errorTitle': 'Beklenmeyen Bir Hata Oluştu',
+    'root.errorDescription': 'Uygulama çalışırken beklenmeyen bir durumla karşılaşıldı. Verileriniz güvende ve korunuyor.',
     'root.databaseError': 'Veritabanı başlatılamadı',
     'root.startupErrorMessage': 'Uygulama başlatılamadı. Uygulamayı kapatıp yeniden açın; sorun sürerse destek ekibiyle iletişime geçin.',
+    'root.returnHome': 'Ana Ekrana Dön',
+    'root.technicalDetails': 'Teknik Detaylar',
+    'root.copyError': 'Hata Bilgisini Kopyala',
+    'root.errorCopied': 'Hata bilgisi panoya kopyalandı',
     'root.secondaryTab': '⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.',
     'root.editCard': 'Kartı düzenle',
     'root.cardInfo': 'Kart bilgisi',
@@ -209,8 +214,13 @@ const en: Record<TranslationKey, string> = {
     'anki.filteredDeck': 'Filtered Deck',
 
     'root.errorTitle': 'Something went wrong',
+    'root.errorDescription': 'An unexpected issue occurred while running the app. Your data is safe and intact.',
     'root.databaseError': 'Could not initialize the database',
     'root.startupErrorMessage': 'The app could not start. Close and reopen it; if the issue continues, contact support.',
+    'root.returnHome': 'Return to Home',
+    'root.technicalDetails': 'Technical Details',
+    'root.copyError': 'Copy Error Info',
+    'root.errorCopied': 'Error info copied to clipboard',
     'root.secondaryTab': '⚠️ The app is open in another tab — changes in this tab will not be saved.',
     'root.editCard': 'Edit Card',
     'root.cardInfo': 'Card Info',
@@ -385,6 +395,7 @@ export function filteredOrderLabel(locale: SupportedLocale, order: number): stri
             'Son eklenen önce',
             'Hatırlanabilirlik (artan)',
             'Hatırlanabilirlik (azalan)',
+            'Göreceli gecikme',
         ]
         : [
             'Oldest seen first',
@@ -397,6 +408,7 @@ export function filteredOrderLabel(locale: SupportedLocale, order: number): stri
             'Latest added first',
             'Ascending retrievability',
             'Descending retrievability',
+            'Relative overdueness',
         ];
     return labels[order] ?? labels[FILTERED_SEARCH_ORDER.due];
 }

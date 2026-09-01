@@ -13,12 +13,18 @@ import {
     View,
 } from 'react-native';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
-import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
+import { buildDeckTree } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
-import { matchesSearch } from '../lib/searchText';
 import { useI18n } from '../hooks/useI18n';
 import DisclosureChevron from './DisclosureChevron';
 import { userFacingErrorMessage } from '../lib/userFacingError';
+
+import {
+    filterDeckTree,
+    flattenVisibleDeckPicker,
+    initialExpandedDeckNames,
+    type VisibleDeckPickerRow,
+} from '../lib/deckPickerExpansion';
 
 type Props = {
     visible: boolean;
@@ -38,44 +44,6 @@ type Props = {
     /** Create a deck without leaving the picker and return its final (possibly de-duplicated) name. */
     onCreateDeck: (name: string) => string | null;
 };
-
-type VisibleDeck = { node: DeckTreeNode; depth: number };
-
-function filterTree(nodes: DeckTreeNode[], query: string): DeckTreeNode[] {
-    if (!query) return nodes;
-    const filtered: DeckTreeNode[] = [];
-    for (const node of nodes) {
-        const children = filterTree(node.children, query);
-        if (matchesSearch(node.deck.name.replaceAll('::', ' '), query) || children.length > 0) {
-            filtered.push({ ...node, children });
-        }
-    }
-    return filtered;
-}
-
-function flattenVisible(nodes: DeckTreeNode[], expanded: Set<string>, searching: boolean): VisibleDeck[] {
-    const rows: VisibleDeck[] = [];
-    const walk = (items: DeckTreeNode[], depth: number) => {
-        for (const node of items) {
-            rows.push({ node, depth });
-            if (searching || expanded.has(node.deck.name)) walk(node.children, depth + 1);
-        }
-    };
-    walk(nodes, 0);
-    return rows;
-}
-
-function expandableDeckNames(nodes: DeckTreeNode[]): Set<string> {
-    const names = new Set<string>();
-    const walk = (items: DeckTreeNode[]) => {
-        for (const node of items) {
-            if (node.children.length > 0) names.add(node.deck.name);
-            walk(node.children);
-        }
-    };
-    walk(nodes);
-    return names;
-}
 
 export default function DeckPickerModal({
     visible,
@@ -102,6 +70,8 @@ export default function DeckPickerModal({
     const [newDeckName, setNewDeckName] = useState('');
     const [createError, setCreateError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+    // The deck list is the single source of truth for sibling order, so the picker lists decks
+    // in exactly the order the user arranged them on the deck screen.
     const tree = useMemo(() => buildDeckTree(decks), [decks]);
 
     useEffect(() => {
@@ -114,12 +84,12 @@ export default function DeckPickerModal({
         setQuery('');
         setNewDeckName('');
         setCreateError(null);
-        setExpanded(expandableDeckNames(tree));
-    }, [visible, tree]);
+        setExpanded(initialExpandedDeckNames(tree, selectedDeckName));
+    }, [visible, tree, selectedDeckName]);
 
-    const filteredTree = useMemo(() => filterTree(tree, query.trim()), [tree, query]);
+    const filteredTree = useMemo(() => filterDeckTree(tree, query.trim()), [tree, query]);
     const rows = useMemo(
-        () => flattenVisible(filteredTree, expanded, searching && query.trim().length > 0),
+        () => flattenVisibleDeckPicker(filteredTree, expanded, searching && query.trim().length > 0),
         [filteredTree, expanded, searching, query],
     );
 
