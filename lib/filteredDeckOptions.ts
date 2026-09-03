@@ -1,4 +1,4 @@
-import { tokenizeSearch, unquoteSearchValue } from './searchQuery';
+import { escapeSearchValue, tokenizeSearch, unquoteSearchValue } from './searchQuery';
 
 /**
  * Filtered-deck gather order.
@@ -111,49 +111,134 @@ export function ankiFilteredOrderFromLegacy(order: unknown): number {
 }
 
 /**
- * Extracts the deck name from an Anki search query term `deck:"..."` or `deck:...`.
- * Returns the unquoted deck name, or null if no positive deck term is found.
+ * The deck filter of a filtered deck's search, read and written through one tokenizer.
+ *
+ * Both functions below work on the same token, found the same way, so they can never disagree
+ * about which deck a saved search is scoped to. The search key is Anki's own `deck:` term; its
+ * value is escaped and unescaped by lib/searchQuery.ts, which carries the source for the rules.
  */
-export function extractDeckNameFromSearch(searchQuery: string): string | null {
-    const tokens = tokenizeSearch(searchQuery);
-    for (const token of tokens) {
-        if (token.toLowerCase().startsWith('deck:')) {
-            const rawValue = token.slice(5);
-            return unquoteSearchValue(rawValue);
-        }
-    }
-    return null;
+const DECK_TERM_PREFIX = 'deck:';
+
+/** Where a token sits in the query, so an edit can put every untouched character back as it was. */
+interface SearchTermSpan {
+    text: string;
+    start: number;
+    end: number;
 }
 
 /**
- * Replaces or sets the deck filter in an Anki search query.
- * If newDeckName is a non-empty string, replaces any existing positive `deck:...` term or prepends it.
- * If newDeckName is null or empty, removes the positive `deck:...` term.
+ * The query's tokens with their offsets. The tokenizer is the one the rest of the app searches
+ * with, so a `deck:` that is only text inside a quoted phrase, or one that belongs to a negated
+ * `-deck:`, is never mistaken for the filter's scope. Each token is located from the end of the
+ * previous one, which is where the tokenizer matched it.
+ */
+function searchTermSpans(searchQuery: string): SearchTermSpan[] {
+    const spans: SearchTermSpan[] = [];
+    let cursor = 0;
+    for (const text of tokenizeSearch(searchQuery)) {
+        const start = searchQuery.indexOf(text, cursor);
+        if (start < 0) continue;
+        spans.push({ text, start, end: start + text.length });
+        cursor = start + text.length;
+    }
+    return spans;
+}
+
+/** A positive `deck:` term. `-deck:X` excludes a deck rather than scoping the search to one. */
+function isPositiveDeckTerm(text: string): boolean {
+    return text.toLowerCase().startsWith(DECK_TERM_PREFIX);
+}
+
+function deckNameFromTerm(text: string): string {
+    return unquoteSearchValue(text.slice(DECK_TERM_PREFIX.length));
+}
+
+/**
+ * The single term both functions act on: the first positive `deck:` term that names a deck.
+ *
+ * A `deck:` with no value filters nothing — our own SQL and Anki alike ignore it — so it is not
+ * read as a scope, and the UI is right to call such a query "all decks". It is still the term an
+ * edit lands on, so setting a deck repairs the malformed term instead of leaving a second one
+ * behind, and clearing removes it.
+ */
+function findDeckTerm(spans: SearchTermSpan[]): SearchTermSpan | null {
+    let valueless: SearchTermSpan | null = null;
+    for (const span of spans) {
+        if (!isPositiveDeckTerm(span.text)) continue;
+        if (deckNameFromTerm(span.text)) return span;
+        if (!valueless) valueless = span;
+    }
+    return valueless;
+}
+
+/** The keywords that join terms. A quoted `"or"` is text, exactly as the parser reads it. */
+function isBooleanKeyword(text: string): boolean {
+    const keyword = text.toLowerCase();
+    return keyword === 'and' || keyword === 'or';
+}
+
+/**
+ * The slice to cut when the deck term is dropped: the term, one adjacent separator, a boolean
+ * keyword the term would otherwise strand, and the parentheses of a group the term was alone in.
+ * What survives is still a query Anki can parse, and its spacing is the author's own.
+ */
+function removalRange(searchQuery: string, spans: SearchTermSpan[], index: number): [number, number] {
+    const term = spans[index];
+    const previous = spans[index - 1];
+    const next = spans[index + 1];
+    let start = term.start;
+    let end = term.end;
+
+    if (previous && (previous.text === '(' || previous.text === '-(') && next?.text === ')') {
+        start = previous.start;
+        end = next.end;
+    } else if (next && isBooleanKeyword(next.text)) {
+        end = next.end;
+    } else if (previous && isBooleanKeyword(previous.text)) {
+        start = previous.start;
+    }
+
+    // One separator leaves with the term, so the terms that remain stay separated exactly once.
+    const before = /\s+$/.exec(searchQuery.slice(0, start));
+    if (before) return [start - before[0].length, end];
+    const after = /^\s+/.exec(searchQuery.slice(end));
+    return [start, after ? end + after[0].length : end];
+}
+
+/**
+ * Extracts the deck name from an Anki search query term `deck:"..."` or `deck:...`.
+ * Returns the deck name with its quoting and escaping undone, or null when the query scopes no
+ * single deck — no positive `deck:` term, or one with no value.
+ */
+export function extractDeckNameFromSearch(searchQuery: string): string | null {
+    const term = findDeckTerm(searchTermSpans(searchQuery));
+    return term ? deckNameFromTerm(term.text) || null : null;
+}
+
+/**
+ * Sets, replaces or removes the deck filter in an Anki search query.
+ *
+ * A non-empty name replaces the deck term in place, or is prepended when the query has none; null
+ * (or an empty name) removes it. The edit is a splice around one token, so the rest of the query —
+ * the author's spacing, tabs and newlines included — comes back character for character, and
+ * setting a name then reading it back returns exactly that name.
  */
 export function replaceDeckNameInSearch(searchQuery: string, newDeckName: string | null): string {
-    const trimmed = searchQuery.trim();
-    const formattedDeckTerm = newDeckName?.trim()
-        ? (newDeckName.includes(' ') || newDeckName.includes('"') || newDeckName.includes(':')
-            ? `deck:"${newDeckName.replace(/"/g, '')}"`
-            : `deck:${newDeckName}`)
+    const deckTerm = newDeckName && newDeckName.trim()
+        ? `${DECK_TERM_PREFIX}${escapeSearchValue(newDeckName)}`
         : null;
+    const spans = searchTermSpans(searchQuery);
+    const existing = findDeckTerm(spans);
 
-    // Pattern for matching positive deck term: deck:"..." or deck:...
-    const deckRegex = /(?:^|\s)deck:(?:"[^"]*"|[^\s()]+)/i;
-
-    if (formattedDeckTerm) {
-        if (deckRegex.test(trimmed)) {
-            return trimmed.replace(deckRegex, (match) => {
-                const leadingSpace = match.startsWith(' ') ? ' ' : '';
-                return `${leadingSpace}${formattedDeckTerm}`;
-            }).trim();
+    if (existing) {
+        if (deckTerm) {
+            return `${searchQuery.slice(0, existing.start)}${deckTerm}${searchQuery.slice(existing.end)}`;
         }
-        return trimmed ? `${formattedDeckTerm} ${trimmed}` : formattedDeckTerm;
+        const [start, end] = removalRange(searchQuery, spans, spans.indexOf(existing));
+        return `${searchQuery.slice(0, start)}${searchQuery.slice(end)}`;
     }
 
-    // Clearing deck filter (newDeckName === null)
-    if (deckRegex.test(trimmed)) {
-        return trimmed.replace(deckRegex, '').replace(/\s+/g, ' ').trim();
-    }
-    return trimmed;
+    if (!deckTerm) return searchQuery;
+    const first = spans[0];
+    return first ? `${deckTerm} ${searchQuery.slice(first.start)}` : deckTerm;
 }

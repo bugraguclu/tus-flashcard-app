@@ -13,17 +13,62 @@ export type SearchNode =
 
 /**
  * Split a search into tokens: a bare word, a quoted phrase (`deck:"A B"` stays one token), a
- * parenthesis, and the `-` that negates whichever of those follows it.
+ * parenthesis, and the `-` that negates whichever of those follows it. A phrase may carry an
+ * escaped quote — `deck:"My \"Best\" Deck"` — so the phrase ends at the first unescaped quote.
  */
 export function tokenizeSearch(query: string): string[] {
-    return query.trim().match(/-?\(|\)|-?(?:[^\s()"]+|"[^"]*")+/g) ?? [];
+    return query.trim().match(/-?\(|\)|-?(?:[^\s()"]+|"(?:\\[\s\S]|[^"\\])*")+/g) ?? [];
 }
 
-/** Strip the surrounding double quotes Anki uses to keep a phrase in one term. */
+/**
+ * Anki's escaping, which the two functions below are the two halves of.
+ *
+ * Inside a search value `*` and `_` are wildcards — any run of characters, and any single
+ * character — `"` ends a quoted phrase, and `\` takes the special meaning off all three, so a
+ * literal backslash is written `\\`. Anki also accepts `\:`, `\(`, `\)` and `\-` for text that
+ * would otherwise read as a key separator, a group or a negation; we quote rather than escape
+ * those, but still read them back so a search typed by hand means what the manual says it means.
+ *
+ * Rules: https://docs.ankiweb.net/searching.html#matching-special-characters. Upstream escapes the
+ * same three characters in `escape_anki_wildcards` (rslib/src/text.rs) and accepts the set
+ * `\\[\\":*_()-]` in its parser (rslib/src/search/parser.rs). Independently implemented here and
+ * pinned by lib/searchQuery.test.ts.
+ */
+const ESCAPED_SEARCH_CHARACTER = /\\([\\"*_:()-])/g;
+
+/**
+ * Write one value — a deck name, a tag — into a search term so that it matches that value and
+ * nothing else: `escapeSearchValue('a_b')` is `a\_b`, because a bare `a_b` is the pattern that
+ * also finds `a-b`.
+ *
+ * The value is quoted when a bare term would end at the wrong character (whitespace, a
+ * parenthesis, a quote) or be read as something other than text (a leading `-` negates, `and` and
+ * `or` join, an empty term is dropped). Subdeck separators stay as they are: everything after a
+ * term's first colon is its value, so `deck:"A::B"` needs no escape and `::` keeps the meaning
+ * every deck matcher relies on.
+ */
+export function escapeSearchValue(value: string): string {
+    const escaped = value.replace(/[\\"*_]/g, '\\$&');
+    return needsQuoting(value) ? `"${escaped}"` : escaped;
+}
+
+/** Values a bare term could not carry, or would carry as something other than plain text. */
+function needsQuoting(value: string): boolean {
+    return value === ''
+        || /[\s"():]/.test(value)
+        || value.startsWith('-')
+        || /^(?:and|or)$/i.test(value);
+}
+
+/**
+ * Read a term's value back: drop the quotes that kept a phrase in one term, then undo the
+ * escaping. This is the exact inverse of `escapeSearchValue`, so a name survives a round trip
+ * through a search box. A backslash before anything else is left as typed, because Anki has no
+ * escape for it and dropping it would quietly rewrite the search.
+ */
 export function unquoteSearchValue(value: string): string {
-    return value.startsWith('"') && value.endsWith('"') && value.length >= 2
-        ? value.slice(1, -1)
-        : value;
+    const unquoted = isQuotedTerm(value) ? value.slice(1, -1) : value;
+    return unquoted.replace(ESCAPED_SEARCH_CHARACTER, '$1');
 }
 
 /** True when the term arrived wrapped in quotes, which is what makes it a phrase rather than words. */

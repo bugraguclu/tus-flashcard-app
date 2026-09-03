@@ -9,6 +9,7 @@ import {
     FILTERED_SEARCH_ORDER,
     formatPreviewDelays,
     parsePreviewDelays,
+    previewDelaySecondsForGrade,
     replaceDeckNameInSearch,
 } from './filteredDeckOptions';
 import { filteredOrderLabel } from './i18n';
@@ -88,23 +89,52 @@ describe('filtered deck gather order ordinals', () => {
 });
 
 describe('filtered deck preview delays', () => {
-    it('provides standard default preview delays [60, 600, 0]', () => {
+    it('defaults to Anki\u2019s preview_again/hard/good_secs of 60, 600 and 0', () => {
         expect(DEFAULT_PREVIEW_DELAYS).toEqual([60, 600, 0]);
         expect(parsePreviewDelays(undefined)).toEqual([60, 600, 0]);
         expect(parsePreviewDelays(null)).toEqual([60, 600, 0]);
         expect(parsePreviewDelays('')).toEqual([60, 600, 0]);
     });
 
-    it('parses space and comma separated delay string into numbers vector [60, 600, 0]', () => {
-        expect(parsePreviewDelays('10 60 600')).toEqual([10, 60, 600]);
-        expect(parsePreviewDelays('10, 60, 600')).toEqual([10, 60, 600]);
-        expect(parsePreviewDelays('15 120')).toEqual([15, 120, 0]);
+    it('parses space and comma separated input', () => {
+        expect(parsePreviewDelays('60 600 0')).toEqual([60, 600, 0]);
+        expect(parsePreviewDelays('60, 600, 0')).toEqual([60, 600, 0]);
         expect(parsePreviewDelays([30, 90, 1200])).toEqual([30, 90, 1200]);
     });
 
-    it('formats preview delays array to space separated string', () => {
-        expect(formatPreviewDelays([10, 60, 600])).toBe('10 60 600');
+    it('falls back per position when a value is missing or unusable', () => {
+        expect(parsePreviewDelays('15 120')).toEqual([15, 120, 0]);
+        expect(parsePreviewDelays('abc 120 5')).toEqual([60, 120, 5]);
+        expect(parsePreviewDelays([-5, 120, 5])).toEqual([60, 120, 5]);
+    });
+
+    it('drops a fourth value left by decks written before Easy became non-configurable', () => {
+        expect(parsePreviewDelays([10, 60, 600, 0])).toEqual([10, 60, 600]);
+        expect(parsePreviewDelays('10 60 600 0')).toEqual([10, 60, 600]);
+    });
+
+    it('formats delays back into the string the options form edits', () => {
+        expect(formatPreviewDelays([60, 600, 0])).toBe('60 600 0');
         expect(formatPreviewDelays(undefined)).toBe('60 600 0');
+    });
+
+    it('maps the reviewer\u2019s grades onto the stored delays', () => {
+        const delays = [60, 600, 30];
+        expect(previewDelaySecondsForGrade(delays, 1)).toBe(60);
+        expect(previewDelaySecondsForGrade(delays, 2)).toBe(600);
+        expect(previewDelaySecondsForGrade(delays, 3)).toBe(30);
+    });
+
+    it('always retires the card on Easy, whatever the deck stores', () => {
+        // preview_filter.rs answers Easy with a hard-coded zero, and zero means "leave the session".
+        expect(previewDelaySecondsForGrade([60, 600, 30], 4)).toBe(0);
+        expect(previewDelaySecondsForGrade([60, 600, 30, 999], 4)).toBe(0);
+        expect(previewDelaySecondsForGrade(undefined, 4)).toBe(0);
+    });
+
+    it('treats a zero delay on Again, Hard or Good as retiring the card too', () => {
+        expect(previewDelaySecondsForGrade([0, 0, 0], 1)).toBe(0);
+        expect(previewDelaySecondsForGrade(undefined, 3)).toBe(0);
     });
 });
 
