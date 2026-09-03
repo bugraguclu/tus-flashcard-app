@@ -13,13 +13,18 @@ import {
     findPhotoAnnotationAtPoint,
     findPhotoAnnotationsInSweep,
     isPointInPhotoText,
+    isPointInPhotoTrashZone,
     normalizedRect,
     photoTextColors,
+    photoTrashPillRect,
+    photoTrashZoneRect,
     resolvePhotoTextAlign,
+    resolvePhotoTextDragRelease,
     rotatePhotoAnnotationClockwise,
     rotatePhotoPointClockwise,
     toPhotoTextLocalPixels,
     type PhotoAnnotation,
+    type PhotoPoint,
     type PhotoStroke,
     type PhotoText,
 } from './photoEditor';
@@ -472,5 +477,106 @@ describe('photo editor label colours', () => {
         expect(resolvePhotoTextAlign(label({ point: { x: 0.5, y: 0.5 } }))).toBe('center');
         // An explicit choice is never second-guessed by the anchor position.
         expect(resolvePhotoTextAlign(label({ point: { x: 0.9, y: 0.5 }, textAlign: 'left' }))).toBe('left');
+    });
+});
+
+describe('photo editor drag-to-delete', () => {
+    const CANVAS_W = 360;
+    const CANVAS_H = 480;
+
+    const release = (point: PhotoPoint | null, hasMoved: boolean, width = CANVAS_W, height = CANVAS_H) =>
+        resolvePhotoTextDragRelease({
+            point,
+            zone: photoTrashZoneRect(width, height),
+            canvasWidth: width,
+            canvasHeight: height,
+            hasMoved,
+        });
+
+    /** Centre of the bin, in the normalized coordinates the gesture handlers work in. */
+    const binCentre = (width = CANVAS_W, height = CANVAS_H): PhotoPoint => {
+        const pill = photoTrashPillRect(width, height);
+        return { x: (pill.x + pill.width / 2) / width, y: (pill.y + pill.height / 2) / height };
+    };
+
+    it('pins drag-to-delete: releasing a dragged label over the trash zone deletes it', () => {
+        // The regression this guards: the release used to consult a piece of React state that the
+        // PanResponder had closed over on the first render, so it read `false` forever and every
+        // drop was treated as a reposition. The decision is a pure function of the drag now.
+        expect(release(binCentre(), true)).toBe('delete');
+    });
+
+    it('repositions a label released anywhere outside the bin', () => {
+        expect(release({ x: 0.5, y: 0.5 }, true)).toBe('reposition');
+        // Just above the bin's slop, still on the picture.
+        const pill = photoTrashPillRect(CANVAS_W, CANVAS_H);
+        expect(release({ x: 0.5, y: (pill.y - 24) / CANVAS_H }, true)).toBe('reposition');
+    });
+
+    it('treats a release that never moved as a tap, even over the bin', () => {
+        // The bin is only drawn once the drag has started, so a target the user cannot see must
+        // not swallow a plain tap on a label that happens to sit near the bottom of the picture.
+        expect(release(binCentre(), false)).toBe('tap');
+        expect(release(null, false)).toBe('tap');
+    });
+
+    it('keeps the drop zone wrapped around the bin the editor actually draws', () => {
+        [[360, 480], [320, 220], [400, 900], [180, 300]].forEach(([width, height]) => {
+            const pill = photoTrashPillRect(width, height);
+            const zone = photoTrashZoneRect(width, height);
+            // Every corner of the drawn pill has to fall inside the region that deletes.
+            expect(zone.x).toBeLessThanOrEqual(pill.x);
+            expect(zone.y).toBeLessThanOrEqual(pill.y);
+            expect(zone.x + zone.width).toBeGreaterThanOrEqual(pill.x + pill.width);
+            expect(zone.y + zone.height).toBeGreaterThanOrEqual(pill.y + pill.height);
+            // And the zone never escapes the canvas it is measured against.
+            expect(zone.x).toBeGreaterThanOrEqual(0);
+            expect(zone.x + zone.width).toBeLessThanOrEqual(width);
+            expect(zone.y + zone.height).toBeCloseTo(height, 5);
+        });
+    });
+
+    it('tracks the bin down the canvas instead of using a fixed fraction of its height', () => {
+        // A hard-coded `y > 0.82` band sat far above the bin on a tall canvas and cut the top off
+        // it on a short one. Anchoring to the bottom edge keeps both ends honest.
+        const tall = photoTrashZoneRect(360, 900);
+        expect(isPointInPhotoTrashZone({ x: 0.5, y: 0.85 }, tall, 360, 900)).toBe(false);
+        expect(release({ x: 0.5, y: 0.85 }, true, 360, 900)).toBe('reposition');
+        expect(release(binCentre(360, 900), true, 360, 900)).toBe('delete');
+
+        const short = photoTrashZoneRect(360, 220);
+        const shortPill = photoTrashPillRect(360, 220);
+        // The very top edge of the drawn pill on a short canvas — outside the old 0.82 band.
+        expect(shortPill.y / 220).toBeLessThan(0.82);
+        expect(isPointInPhotoTrashZone({ x: 0.5, y: shortPill.y / 220 }, short, 360, 220)).toBe(true);
+    });
+
+    it('accepts a drop on either end of the bin, not just its middle', () => {
+        // The old band only covered the middle 44% of the canvas, so the ends of a pill wide
+        // enough to read were visibly highlighted yet refused the drop.
+        const pill = photoTrashPillRect(CANVAS_W, CANVAS_H);
+        const y = (pill.y + pill.height / 2) / CANVAS_H;
+        expect(release({ x: (pill.x + 2) / CANVAS_W, y }, true)).toBe('delete');
+        expect(release({ x: (pill.x + pill.width - 2) / CANVAS_W, y }, true)).toBe('delete');
+        expect(pill.width / CANVAS_W).toBeGreaterThan(0.44);
+    });
+
+    it('lets go of the label below the bin as well, since nothing else lives down there', () => {
+        expect(release({ x: 0.5, y: 1 }, true)).toBe('delete');
+    });
+
+    it('keeps the bin on a canvas too narrow to fit it at full width', () => {
+        const pill = photoTrashPillRect(120, 300);
+        expect(pill.x).toBe(0);
+        expect(pill.width).toBe(120);
+        expect(photoTrashZoneRect(120, 300).width).toBe(120);
+    });
+
+    it('ignores a missing or degenerate zone rather than deleting by accident', () => {
+        const zone = photoTrashZoneRect(CANVAS_W, CANVAS_H);
+        expect(isPointInPhotoTrashZone(null, zone, CANVAS_W, CANVAS_H)).toBe(false);
+        expect(isPointInPhotoTrashZone(
+            { x: 0.5, y: 0.95 }, { x: 0, y: 0, width: 0, height: 0 }, CANVAS_W, CANVAS_H,
+        )).toBe(false);
     });
 });

@@ -353,6 +353,109 @@ export function isPointInPhotoText(
         && py <= bounds.y + bounds.height + tolerance;
 }
 
+export type PhotoRect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Layout of the bin that appears at the bottom of the canvas while a label is being dragged.
+ *
+ * The editor both paints the pill from these numbers and hit-tests against the rect they
+ * produce, so the highlight the user sees under the finger and the region that actually
+ * deletes cannot describe different places.
+ */
+export const PHOTO_TRASH_ZONE = {
+    /** Gap between the pill and the bottom edge of the canvas. */
+    bottomInset: 14,
+    /** Pill height. */
+    height: 44,
+    /** Pill width wherever the canvas has room; the longest label still fits inside it. */
+    maxWidth: 260,
+    /** The pill never narrows past this, so the target stays reachable on a small canvas. */
+    minWidth: 168,
+    /** Margin kept clear on either side when the canvas is too narrow for `maxWidth`. */
+    sideInset: 12,
+    /** Fingertip allowance around the pill, so a drop that only grazes its edge still counts. */
+    touchSlop: 18,
+};
+
+/** The pill's own rect in canvas pixels: exactly the box the editor draws the bin in. */
+export function photoTrashPillRect(canvasWidth: number, canvasHeight: number): PhotoRect {
+    const width = Math.max(
+        Math.min(PHOTO_TRASH_ZONE.minWidth, canvasWidth),
+        Math.min(PHOTO_TRASH_ZONE.maxWidth, canvasWidth - PHOTO_TRASH_ZONE.sideInset * 2),
+    );
+    const height = Math.min(PHOTO_TRASH_ZONE.height, canvasHeight);
+    return {
+        x: Math.max(0, (canvasWidth - width) / 2),
+        y: Math.max(0, canvasHeight - PHOTO_TRASH_ZONE.bottomInset - height),
+        width: Math.max(0, width),
+        height,
+    };
+}
+
+/**
+ * The region a dragged label has to be released over to be deleted: the pill widened by a
+ * fingertip and run down to the bottom edge, because nothing else lives in the gutter beneath
+ * it. The slop also covers the pill's `scale` bump while it is highlighted, which grows the
+ * drawn pill without moving the box it was laid out in.
+ */
+export function photoTrashZoneRect(canvasWidth: number, canvasHeight: number): PhotoRect {
+    const pill = photoTrashPillRect(canvasWidth, canvasHeight);
+    const slop = PHOTO_TRASH_ZONE.touchSlop;
+    const left = Math.max(0, pill.x - slop);
+    const right = Math.min(canvasWidth, pill.x + pill.width + slop);
+    const top = Math.max(0, pill.y - slop);
+    return {
+        x: left,
+        y: top,
+        width: Math.max(0, right - left),
+        height: Math.max(0, canvasHeight - top),
+    };
+}
+
+/** Whether a normalized pointer sits inside a canvas-pixel rect. */
+export function isPointInPhotoTrashZone(
+    point: PhotoPoint | null | undefined,
+    zone: PhotoRect,
+    canvasWidth: number,
+    canvasHeight: number,
+): boolean {
+    if (!point || !zone || zone.width <= 0 || zone.height <= 0) return false;
+    const px = point.x * canvasWidth;
+    const py = point.y * canvasHeight;
+    return px >= zone.x && px <= zone.x + zone.width
+        && py >= zone.y && py <= zone.y + zone.height;
+}
+
+export type PhotoTextDragOutcome = 'delete' | 'reposition' | 'tap';
+
+export type PhotoTextDragRelease = {
+    /** Last pointer sample of the drag, normalized; null when the finger never moved at all. */
+    point: PhotoPoint | null;
+    zone: PhotoRect;
+    canvasWidth: number;
+    canvasHeight: number;
+    /** Whether the drag cleared the movement threshold that reveals the bin. */
+    hasMoved: boolean;
+};
+
+/**
+ * Decide what lifting the finger off a dragged label means.
+ *
+ * A release only deletes when the drag actually started: the bin is not on screen until the
+ * label has moved, and a target the user cannot see must not be able to swallow a plain tap on
+ * a label that happens to be sitting near the bottom of the picture.
+ */
+export function resolvePhotoTextDragRelease(release: PhotoTextDragRelease): PhotoTextDragOutcome {
+    if (!release.hasMoved) return 'tap';
+    const overTrash = isPointInPhotoTrashZone(
+        release.point,
+        release.zone,
+        release.canvasWidth,
+        release.canvasHeight,
+    );
+    return overTrash ? 'delete' : 'reposition';
+}
+
 export function isAnnotationHitBySweep(
     annotation: PhotoAnnotation,
     startPoint: PhotoPoint,

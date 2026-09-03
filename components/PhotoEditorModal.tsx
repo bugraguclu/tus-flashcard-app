@@ -42,12 +42,16 @@ import {
     clampPhotoPoint,
     cropPhotoAnnotation,
     isPointInPhotoText,
+    isPointInPhotoTrashZone,
     normalizePhotoRotation,
     normalizedRect,
     photoArrowHead,
     photoTextAnchorPixels,
     photoTextColors,
+    photoTrashPillRect,
+    photoTrashZoneRect,
     resolvePhotoTextAlign,
+    resolvePhotoTextDragRelease,
     rotatePhotoAnnotationClockwise,
     type PhotoAnnotation,
     type PhotoCropRect,
@@ -577,6 +581,19 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const eraserModeRef = useRef(eraserMode);
     eraserModeRef.current = eraserMode;
 
+    // The gesture handlers below live in a PanResponder that is built once, so they keep the
+    // first render's copy of every variable they close over forever. `trashHovered` therefore
+    // needs the same ref mirror the values above have, or a handler reading it would see the
+    // initial `false` for the whole life of the editor. This one is written by the setter rather
+    // than on render, so a handler that raises the highlight can read it back inside the same
+    // gesture instead of waiting for React to re-render.
+    const trashHoveredRef = useRef(false);
+    const updateTrashHovered = (next: boolean) => {
+        if (trashHoveredRef.current === next) return;
+        trashHoveredRef.current = next;
+        setTrashHovered(next);
+    };
+
     // Touch coordinates must be resolved against the canvas itself. `locationX` is relative to
     // whichever view the finger happens to be over (a selection frame, a handle), so overlays
     // would silently break dragging; the canvas origin in window space never lies.
@@ -600,6 +617,11 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         startPoint: PhotoPoint;
         initialTextPoint: PhotoPoint;
         hasMoved: boolean;
+        /**
+         * Where the finger was last seen, so the release can re-run the bin's hit test on state
+         * the responder owns instead of on a rendered value it cannot see.
+         */
+        lastPoint: PhotoPoint | null;
     } | null>(null);
     const pinchRef = useRef<{
         id: string;
@@ -668,6 +690,14 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     }, [maxCanvasWidth, maxCanvasHeight, ratio]);
     const canvasSizeRef = useRef(canvasSize);
     canvasSizeRef.current = canvasSize;
+
+    // The bin is laid out from the geometry the gesture handlers hit-test against, so the pill
+    // the user aims at and the region that deletes are one rect rather than two guesses that
+    // drift apart as the canvas changes shape.
+    const trashPill = useMemo(
+        () => photoTrashPillRect(canvasSize.width, canvasSize.height),
+        [canvasSize.width, canvasSize.height],
+    );
 
     const commitAnnotations = (next: PhotoAnnotation[]) => {
         const snapshot: EditorHistoryState = {
@@ -847,6 +877,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     startPoint: point,
                     initialTextPoint: { ...selectedAnn.point },
                     hasMoved: false,
+                    lastPoint: null,
                 };
                 return;
             }
@@ -867,6 +898,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                             startPoint: point,
                             initialTextPoint: { ...ann.point },
                             hasMoved: false,
+                            lastPoint: null,
                         };
                         return;
                     }
@@ -930,7 +962,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     // A second finger ends any drag in progress so the label does not jump.
                     textDragRef.current = null;
                     setIsDraggingText(false);
-                    setTrashHovered(false);
+                    updateTrashHovered(false);
                     return;
                 }
 
@@ -1031,6 +1063,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 const drag = textDragRef.current;
                 const dx = point.x - drag.startPoint.x;
                 const dy = point.y - drag.startPoint.y;
+                drag.lastPoint = point;
                 if (Math.hypot(dx, dy) > 0.003) {
                     drag.hasMoved = true;
                     setIsDraggingText(true);
@@ -1041,9 +1074,16 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     y: Math.max(0.04, Math.min(0.96, drag.initialTextPoint.y + dy)),
                 });
 
-                // Detect hovering over trash zone at bottom center
-                const isOverTrash = point.y > 0.82 && point.x >= 0.28 && point.x <= 0.72;
-                setTrashHovered(isOverTrash);
+                // Highlight the bin from the same rect the release hit-tests against, so what the
+                // finger lights up is always what letting go will do. The bin is only on screen
+                // once the drag has started, so it cannot claim a release that never moved.
+                const { width: dragCanvasW, height: dragCanvasH } = canvasSizeRef.current;
+                updateTrashHovered(drag.hasMoved && isPointInPhotoTrashZone(
+                    point,
+                    photoTrashZoneRect(dragCanvasW, dragCanvasH),
+                    dragCanvasW,
+                    dragCanvasH,
+                ));
 
                 const next = annotationsRef.current.map((ann) => (
                     ann.id === drag.id && ann.type === 'text'
@@ -1109,15 +1149,25 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             }
             if (textDragRef.current) {
                 const drag = textDragRef.current;
-                const wasOverTrash = trashHovered;
+                const { width: releaseCanvasW, height: releaseCanvasH } = canvasSizeRef.current;
+                // Decided from the drag record, which the responder owns, rather than from the
+                // `trashHovered` state: this handler was created on the first render and would
+                // read that variable's initial `false` no matter what the user just dragged over.
+                const outcome = resolvePhotoTextDragRelease({
+                    point: drag.lastPoint,
+                    zone: photoTrashZoneRect(releaseCanvasW, releaseCanvasH),
+                    canvasWidth: releaseCanvasW,
+                    canvasHeight: releaseCanvasH,
+                    hasMoved: drag.hasMoved,
+                });
                 setIsDraggingText(false);
-                setTrashHovered(false);
+                updateTrashHovered(false);
 
-                if (wasOverTrash) {
+                if (outcome === 'delete') {
                     const next = annotationsRef.current.filter((ann) => ann.id !== drag.id);
                     commitAnnotations(next);
                     setSelectedTextId(null);
-                } else if (drag.hasMoved) {
+                } else if (outcome === 'reposition') {
                     const initialPt = drag.initialTextPoint;
                     const dragId = drag.id;
                     const previousAnnotations = annotationsRef.current.map((ann) => (
@@ -1178,7 +1228,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 erasedInCurrentGestureRef.current = false;
             }
             setIsDraggingText(false);
-            setTrashHovered(false);
+            updateTrashHovered(false);
             cropDragRef.current = null;
             textDragRef.current = null;
             gestureRef.current = null;
@@ -1703,11 +1753,23 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 pointerEvents="none"
                                 style={[
                                     styles.textTrashZone,
+                                    {
+                                        left: trashPill.x,
+                                        top: trashPill.y,
+                                        width: trashPill.width,
+                                        height: trashPill.height,
+                                    },
                                     trashHovered && styles.textTrashZoneHovered,
                                 ]}
                             >
                                 <Text style={[styles.textTrashIcon, trashHovered && styles.textTrashIconHovered]}>🗑</Text>
-                                <Text style={[styles.textTrashLabel, trashHovered && styles.textTrashLabelHovered]}>
+                                {/* Both captions have to occupy the same box: a pill that resized
+                                    itself as the highlight came and went would change the target
+                                    the finger is already hovering over. */}
+                                <Text
+                                    numberOfLines={1}
+                                    style={[styles.textTrashLabel, trashHovered && styles.textTrashLabelHovered]}
+                                >
                                     {trashHovered ? l('Silmek için bırakın', 'Release to delete') : l('Silmek için buraya sürükleyin', 'Drag here to delete')}
                                 </Text>
                             </View>
@@ -2429,10 +2491,10 @@ function createStyles(colors: ColorScheme) {
             fontSize: 16,
         },
         textTrashZone: {
+            // Position and size come from `photoTrashPillRect`, the same geometry the drop hit
+            // test uses; only the paint lives here.
             position: 'absolute',
-            bottom: 14,
-            alignSelf: 'center',
-            height: 44,
+            justifyContent: 'center',
             paddingHorizontal: 18,
             borderRadius: 22,
             backgroundColor: 'rgba(31, 41, 55, 0.92)',
@@ -2462,6 +2524,9 @@ function createStyles(colors: ColorScheme) {
             color: '#ffffff',
             fontSize: FontSize.xs,
             fontWeight: '700',
+            // The pill has a fixed width now, so a long translation shortens itself instead of
+            // spilling past the edge of the drop target.
+            flexShrink: 1,
         },
         textTrashLabelHovered: {
             color: '#ffffff',
