@@ -1171,7 +1171,7 @@ export default function StudyScreen() {
 
             if (event.key === 'Escape') {
                 event.preventDefault();
-                handleExitStudy();
+                handleReturnToDecks();
                 return;
             }
 
@@ -1370,15 +1370,20 @@ export default function StudyScreen() {
 
     // Anki's reviewer top bar: a back arrow leaves study, and flag/more open the options sheet
     // (the flag button jumps straight to the color list).
-    // Leaving the reviewer unwinds the stack the learner came in on, so study opened from the
-    // browser or from statistics returns there. It is the same destination the iOS back gesture
-    // reaches, which is why the button says "exit study" rather than naming a screen.
-    const handleExitStudy = useCallback(() => {
-        if (router.canGoBack()) router.back();
-        else router.push('/decks');
-    }, [router]);
-    /** The congratulations screen offers the deck list by name, so it goes there and nowhere else. */
-    const handleReturnToDecks = useCallback(() => router.push('/decks'), [router]);
+    /**
+     * Leaving the reviewer goes to the deck list, whichever screen study was started from.
+     *
+     * This is AnkiMobile's contract for the reviewer's top-left button, and its manual states the
+     * destination twice: "If you wish to change to a different deck, you can do so by tapping the
+     * top left button", and for the congratulations screen "you can tap the top left button to
+     * return to the decks list and select a different one". Anki Desktop's Escape leaves the
+     * reviewer for the deck browser in the same way.
+     *
+     * `router.back()` would instead unwind to the deck overview, or to whichever screen study was
+     * opened from, which is a different destination each time and would make the label a lie.
+     * https://docs.ankimobile.net/study-screen.html
+     */
+    const handleReturnToDecks = useCallback(() => router.navigate('/decks'), [router]);
     const openDeckPicker = useCallback(() => setDeckPickerVisible(true), []);
     const handlePickDeck = useCallback((name: string | null) => {
         setDeckPickerVisible(false);
@@ -1727,7 +1732,7 @@ export default function StudyScreen() {
         const key = normalizeHardwareKey(rawKey);
 
         if (key === 'Escape') {
-            handleExitStudy();
+            handleReturnToDecks();
             return;
         }
 
@@ -1772,7 +1777,7 @@ export default function StudyScreen() {
         catalogUnlockVisible,
         settings.keyBindings,
         undoKeys,
-        handleExitStudy,
+        handleReturnToDecks,
         undoLast,
         replayAudio,
         handleBury,
@@ -1894,10 +1899,10 @@ export default function StudyScreen() {
         >
             <TouchableOpacity
                 style={styles.toolbarIconButton}
-                onPress={handleExitStudy}
+                onPress={handleReturnToDecks}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel={l('Çalışmadan çık', 'Exit study')}
+                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                 {...webTitle(l('Geri', 'Back'))}
             >
                 <ReviewerBackIcon color={colors.textSecondary} />
@@ -2006,10 +2011,10 @@ export default function StudyScreen() {
         <View style={[styles.classicToolbar, { paddingTop: insets.top }]} accessibilityRole="toolbar">
             <TouchableOpacity
                 style={styles.toolbarIconButton}
-                onPress={handleExitStudy}
+                onPress={handleReturnToDecks}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel={l('Çalışmadan çık', 'Exit study')}
+                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                 {...webTitle(l('Geri', 'Back'))}
             >
                 <ReviewerBackIcon color={colors.textSecondary} />

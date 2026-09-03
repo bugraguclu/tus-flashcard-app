@@ -227,7 +227,9 @@ Gerçekleştirilen tüm geliştirmeler otomatikleştirilmiş test paketleri ve k
 - `z` ve `u` artık kullanıcının kendi tuş atamalarından **sonra** geliyor: bury'yi `z`'ye taşıyan bir kullanıcı artık sessizce undo almıyor. (Doğrulama notu: bu iki tuş **Anki bindingi değildir** — hem Anki Desktop hem AnkiDroid undo'yu Ctrl+Z ile yapar, AnkiDroid'de `ViewerCommand.UNDO = keyCode(KEYCODE_Z, ctrl())`. iOS'ta modifier chord yakalanamadığı için yerel bir kolaylık olarak duruyorlar ve kod içinde böyle belgelendi.)
 - Ctrl/Cmd+Z yalnızca web'de yakalanabiliyor (native yakalama `TextInput.onKeyPress`'tir ve modifier bildirmez), bu yüzden ipucu metni platforma göre üretiliyor; iPhone'da çalışmayan bir kısayol artık reklam edilmiyor.
 - Klavye yakalama alanı tebrikler ekranında da duruyor; Escape ile çıkış artık son karttan sonra da çalışıyor.
-- Geri butonunun etiketi davranışıyla eşitlendi ("Çalışmadan çık"), tebrikler ekranındaki "Destelere Dön" butonu ise gerçekten deste listesine gidiyor.
+- Geri butonu artık gerçekten **deste listesine** gidiyor ve etiketi ("Deste listesine dön") bunu doğru söylüyor. Tebrikler ekranındaki "Destelere Dön" butonu ve Escape de aynı yere gidiyor.
+
+  *Düzeltme notu:* İlk denemede etiketi davranışa uydurup "Çalışmadan çık" yapmıştım — yanlış yöndü. AnkiMobile kılavuzu hedefi iki kez adıyla söylüyor: "If you wish to change to a different deck, you can do so by tapping the top left button" ve tebrikler ekranı için "you can tap the top left button to **return to the decks list** and select a different one". Yani düzeltilmesi gereken etiket değil davranıştı; `router.back()` çalışmanın nereden başlatıldığına göre her seferinde başka bir ekrana dönüyordu. Anki Desktop'ta Escape de aynı şekilde deste tarayıcısına döner. Kaynak: <https://docs.ankimobile.net/study-screen.html>
 
 ### 3.6. Filtrelenmiş deste toplama sırası
 
