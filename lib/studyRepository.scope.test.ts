@@ -379,6 +379,42 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(gatherWithOrder(7)).toEqual([1030, 1020]);
     });
 
+    it('keeps a note\u2019s cards together in template order for added / reverse-added', () => {
+        // rslib/src/storage/card/filtered.rs orders these by note id and card ordinal, not by
+        // card id: a note's siblings stay adjacent instead of scattering by creation time.
+        saveAnkiCard(makeCard(1040, 101, 7, { ord: 1 }));
+        const gatherWithOrder = (searchOrder: number) => {
+            saveDeck({
+                id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+                description: '', collapsed: false, isFiltered: true,
+                searchQuery: 'deck:"Python"', searchLimit: 10, searchOrder,
+            });
+            return getStudyQueue({ settings, selectedDeckName: 'Oturum' }).cards.map((card) => card.cardId);
+        };
+
+        // Card 1040 is the newest card but belongs to the oldest note, so it follows card 1010.
+        expect(gatherWithOrder(5)).toEqual([1010, 1040, 1020, 1030]);
+        expect(gatherWithOrder(7)).toEqual([1030, 1020, 1010, 1040]);
+    });
+
+    it('puts due-order learning and review cards on one timeline', () => {
+        // `due` is a day number for a review card and a clock time for a learning card, so
+        // comparing the raw column would sort every review card ahead of every learning card.
+        // Anki projects the day numbers onto the clock before comparing, and so does this.
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 2, queue: 2, due: today + 1, ivl: 10, factor: 2500 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: Date.now() - 60_000, left: 1 }));
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python::Modüller & Hata Ayıklama"', searchLimit: 10, searchOrder: 6,
+        });
+
+        // The learning card is already overdue; the review card is not due until tomorrow.
+        expect(getStudyQueue({ settings, selectedDeckName: 'Oturum' }).cards.map((card) => card.cardId))
+            .toEqual([1020, 1010]);
+    });
+
     it('merges a second filter without duplicating cards', () => {
         saveDeck({
             id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,

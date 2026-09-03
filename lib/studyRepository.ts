@@ -29,6 +29,7 @@ import {
     isLeech,
     MARKED_TAG,
     saveAnkiCard,
+    saveNote,
 } from './noteManager';
 import { getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
@@ -93,11 +94,31 @@ export interface StudyQueueParams {
     extraLearningCardIds?: number[];
 }
 
+/** A sibling the bury policy pulled out of today's queue, with the queue it came from. */
+export interface BuriedSiblingSnapshot {
+    cardId: number;
+    queue: AnkiCard['queue'];
+}
+
+/**
+ * Everything an answer changed outside the answered card and its review-log row.
+ *
+ * Anki treats answering as a single undoable operation ("Undo Answer Card") that also takes back
+ * the sibling burying and the leech action, so these captures travel with the card snapshot and
+ * are reverted in the same transaction. Empty for a preview answer, which writes nothing.
+ */
+export interface AnswerSideEffects {
+    buriedSiblings: BuriedSiblingSnapshot[];
+    /** Set only when this answer appended the tag; a note tagged by an earlier lapse keeps it. */
+    leechTaggedNoteId?: number;
+}
+
 export interface ReviewResult {
     updatedCard: StudyCard;
     previousAnkiCard: AnkiCard;
     wasNewCard: boolean;
     reviewLogId: number;
+    sideEffects: AnswerSideEffects;
 }
 
 interface QueueCardRow {
@@ -969,8 +990,15 @@ export function adjustIntervalForEasyDays(
     return intervalDays; // every weekday reduced — nothing sensible to prefer
 }
 
-function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): void {
+/** Bury the answered card's siblings per deck config, reporting the queue each one came from. */
+function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): BuriedSiblingSnapshot[] {
     const siblings = getCardsForNote(answeredCard.noteId);
+    const buried: BuriedSiblingSnapshot[] = [];
+
+    const bury = (sibling: AnkiCard) => {
+        buryCard(sibling.id, true);
+        buried.push({ cardId: sibling.id, queue: sibling.queue });
+    };
 
     for (const sibling of siblings) {
         if (sibling.id === answeredCard.id || sibling.queue < 0) {
@@ -978,43 +1006,74 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): voi
         }
 
         if (sibling.queue === 0 && config.buryNewSiblings) {
-            buryCard(sibling.id, true);
+            bury(sibling);
             continue;
         }
 
         if (sibling.queue === 2 && config.buryReviewSiblings) {
-            buryCard(sibling.id, true);
+            bury(sibling);
             continue;
         }
 
         // Anki bury-interday-learning applies to day-learning queue (3), not intraday queue (1).
         if (sibling.queue === 3 && config.buryInterdayLearningSiblings) {
-            buryCard(sibling.id, true);
+            bury(sibling);
         }
+    }
+
+    return buried;
+}
+
+/**
+ * Gather order for one filtered-deck term, keyed by Anki's `SearchTerm.Order` ordinal.
+ *
+ * Mirrors `order_and_limit_for_search` in rslib/src/storage/card/filtered.rs, which is the only
+ * place upstream defines what each ordinal means:
+ * https://github.com/ankitects/anki/blob/main/rslib/src/storage/card/filtered.rs
+ *
+ * Two of its expressions are deliberately not copied. Anki resolves both retrievability orders
+ * through an FSRS memory state and, when FSRS is off, returns an empty clause so the term falls
+ * back to its id tiebreak; and it answers relative overdueness with a registered Rust function
+ * over that same state. Neither can be written as portable SQLite here, so both are approximated
+ * by overdue time relative to the last interval and recorded as a known difference in
+ * docs/ANKI_COMPATIBILITY.md rather than presented as parity.
+ *
+ * `today` is the local day number `due` is expressed in for review cards, and `nowMs` the clock
+ * the learning queue is timed against; the Due order needs both to put the two on one timeline.
+ */
+function filteredOrderSql(order: number | undefined, today: number, nowMs: number): string {
+    // Anki tiebreaks with a hash of the card id; card id ascending is the stable local equivalent.
+    const tiebreak = 'c.id ASC';
+    switch (order) {
+        // A card never reviewed has no revlog row: SQLite sorts that NULL first, which is what
+        // "oldest reviewed first" means for a card with no reviews at all.
+        case 0: return `(SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id) ASC, ${tiebreak}`;
+        case 1: return 'RANDOM()';
+        case 2: return `c.ivl ASC, ${tiebreak}`;
+        case 3: return `c.ivl DESC, ${tiebreak}`;
+        case 4: return `c.lapses DESC, ${tiebreak}`;
+        // Added order is the note's age, then the template position, so a note's cards stay
+        // together and in template order instead of interleaving with other notes.
+        case 5: return 'n.id ASC, c.ord ASC';
+        case 7: return 'n.id DESC, c.ord ASC';
+        case 8:
+        case 10: return `${RELATIVE_OVERDUE_SQL} ASC, ${tiebreak}`;
+        case 9: return `${RELATIVE_OVERDUE_SQL} DESC, ${tiebreak}`;
+        // Due order has to compare a review card's day number against a learning card's clock
+        // time. Anki converts the day numbers onto the clock, and so does this: a `due` past the
+        // epoch threshold is already a timestamp, anything below it is a day number to project.
+        default: return `(CASE WHEN c.due > ${DUE_IS_TIMESTAMP_ABOVE} THEN c.due`
+            + ` ELSE (c.due - ${today}) * ${MS_PER_DAY} + ${nowMs} END) ASC, c.ord ASC`;
     }
 }
 
-/** SQL ORDER BY for a filtered deck's gather order (see FILTERED_ORDERS in models). */
-/** Gather order for one filtered-deck term, keyed by Anki's `SearchTerm.Order` ordinal. */
-function filteredOrderSql(order: number | undefined): string {
-    switch (order) {
-        case 0: return 'COALESCE((SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id), 0) ASC, c.id ASC';
-        case 1: return 'RANDOM()';
-        case 2: return 'c.ivl ASC, c.id ASC';
-        case 3: return 'c.ivl DESC, c.id ASC';
-        case 4: return 'c.lapses DESC, c.id ASC';
-        case 5: return 'c.id ASC';
-        case 7: return 'c.id DESC';
-        // The local scheduler does not persist FSRS stability per card. Relative overdue time
-        // is the closest deterministic retrievability proxy and matches Anki's SM-2 intent:
-        // cards further beyond their interval are less retrievable. Anki's separate "relative
-        // overdueness" ordinal asks the same question, so it resolves to the same expression.
-        case 8:
-        case 10: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) ASC, c.id ASC';
-        case 9: return '(CAST(c.due AS REAL) - MAX(c.ivl, 1)) DESC, c.id ASC';
-        default: return 'c.due ASC, c.id ASC';
-    }
-}
+/** Overdue time relative to the last interval; see the note in `filteredOrderSql`. */
+const RELATIVE_OVERDUE_SQL = '(CAST(c.due AS REAL) - MAX(c.ivl, 1))';
+
+/** `due` holds epoch milliseconds above this, and a day number or new-card position below it. */
+const DUE_IS_TIMESTAMP_ABOVE = 1000000000;
+
+const MS_PER_DAY = 86400000;
 
 /**
  * Anki-style filtered deck session: gather EVERY card matching the deck's search(es) —
@@ -1057,7 +1116,7 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
             null,
             null,
             null,
-            filteredOrderSql(order),
+            filteredOrderSql(order, localDayNumber(nowMs, settings.dayRolloverHour), nowMs),
             true,
             Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(limit ?? 100))),
         ).filter((row) => !completedIds.has(row.cardId) && row.cardId <= buildAt + 999);
@@ -1132,7 +1191,7 @@ type FilteredDeckCountDefinition = Pick<Deck,
  */
 export function getFilteredDeckCountCards(
     decks: ReadonlyArray<FilteredDeckCountDefinition>,
-    _settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes'>,
+    settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes'>,
     nowMs: number = Date.now(),
 ): Map<number, FilteredDeckCountCard[]> {
     const result = new Map<number, FilteredDeckCountCard[]>();
@@ -1141,6 +1200,7 @@ export function getFilteredDeckCountCards(
         return !deck.filteredDeckEmpty;
     });
     if (activeDecks.length === 0) return result;
+    const today = localDayNumber(nowMs, settings.dayRolloverHour);
 
     type BatchRow = {
         filteredDeckId: number;
@@ -1174,7 +1234,7 @@ export function getFilteredDeckCountCards(
                         ? AS filteredDeckId,
                         ? AS deckOrder,
                         ? AS groupIndex,
-                        ROW_NUMBER() OVER (ORDER BY ${filteredOrderSql(group.order)}) AS groupPosition,
+                        ROW_NUMBER() OVER (ORDER BY ${filteredOrderSql(group.order, today, nowMs)}) AS groupPosition,
                         c.id AS cardId,
                         c.deckId AS homeDeckId,
                         c.type AS type,
@@ -1710,13 +1770,62 @@ export function getStudyCardById(cardId: number, settings: AppSettings): StudyCa
     return toStudyCards([row], settings, Date.now(), { includeRawCard: true })[0] ?? null;
 }
 
-export function undoAnswer(snapshot: AnkiCard, reviewLogId: number): void {
+/** Tag `handleLeech` appends to a note. Mirrors the literal in noteManager's leech handler. */
+const LEECH_TAG = 'leech';
+
+/**
+ * Take back the burying `applySiblingBuryPolicy` performed.
+ *
+ * A sibling is only restored while it still carries the scheduler bury (-2) this answer gave it;
+ * anything that moved it on since (a manual bury, a suspend, the rollover unbury) is newer than
+ * the answer being undone and must survive. The `mod`/`usn` stamp follows every other write in
+ * this file: reverting is still a local change, so the row stays marked for the next sync.
+ */
+function restoreBuriedSiblings(buriedSiblings: BuriedSiblingSnapshot[]): void {
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    for (const buried of buriedSiblings) {
+        const sibling = getAnkiCard(buried.cardId);
+        if (!sibling || sibling.queue !== -2) continue;
+        saveAnkiCard({ ...sibling, queue: buried.queue, mod: nowSec, usn: -1 });
+    }
+}
+
+/**
+ * Remove the `leech` tag this answer added. The caller records the note id only when the tag was
+ * absent beforehand, so a note tagged by an earlier lapse keeps it. Other tag edits made since
+ * (a mark, a manual tag) are preserved because the note is re-read rather than overwritten.
+ */
+function removeAddedLeechTag(noteId: number): void {
+    const note = getNote(noteId);
+    if (!note || !note.tags.includes(LEECH_TAG)) return;
+
+    saveNote({
+        ...note,
+        tags: note.tags.filter((tag) => tag !== LEECH_TAG),
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+    });
+}
+
+/**
+ * Reverse one answer completely: the card row, its review-log entry, and every row the answer
+ * touched on the side (buried siblings, an added leech tag). Anki's "Undo Answer Card" is a
+ * single operation, so all of it commits or none of it does.
+ */
+export function undoAnswer(snapshot: AnkiCard, reviewLogId: number, sideEffects?: AnswerSideEffects): void {
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
 
     try {
+        // Restoring the snapshot already un-suspends a card the leech action suspended, because
+        // the snapshot carries the queue the card had before this answer.
         saveAnkiCard(snapshot);
         deleteReviewById(reviewLogId);
+        restoreBuriedSiblings(sideEffects?.buriedSiblings ?? []);
+        if (sideEffects?.leechTaggedNoteId !== undefined) {
+            removeAddedLeechTag(sideEffects.leechTaggedNoteId);
+        }
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -1756,6 +1865,7 @@ export function answerStudyCard(
             previousAnkiCard: { ...currentAnkiCard },
             wasNewCard: false,
             reviewLogId: 0,
+            sideEffects: { buriedSiblings: [] },
         };
     }
 
@@ -1814,6 +1924,9 @@ export function answerStudyCard(
 
     const db = getDB();
     let reviewLogId = 0;
+    // Rows this answer changes besides the card and its revlog entry. Filled inside the
+    // transaction so an undo can put every one of them back exactly.
+    const sideEffects: AnswerSideEffects = { buriedSiblings: [] };
 
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -1831,13 +1944,19 @@ export function answerStudyCard(
         );
         reviewLogId = reviewLog.id;
 
-        applySiblingBuryPolicy(currentAnkiCard, deckConfig);
+        sideEffects.buriedSiblings = applySiblingBuryPolicy(currentAnkiCard, deckConfig);
 
         // Anki evaluates leech only when the answer itself caused a lapse (rslib review.rs
         // `answer_again` sets `leeched`); checking on every answer would keep re-suspending an
         // unsuspended leech that still sits on a threshold multiple.
         if (updatedAnkiCard.lapses > currentAnkiCard.lapses && isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
+            // `note` was read before any write in this transaction, so its tags are the
+            // pre-answer set: record the note only when this answer is what adds the tag.
+            const addsLeechTag = !note.tags.includes(LEECH_TAG);
             handleLeech(updatedAnkiCard, deckConfig.leechAction);
+            if (addsLeechTag) {
+                sideEffects.leechTaggedNoteId = note.id;
+            }
         }
 
         db.execSync('COMMIT;');
@@ -1861,6 +1980,7 @@ export function answerStudyCard(
         previousAnkiCard: currentAnkiCard,
         wasNewCard: currentState.status === 'new',
         reviewLogId,
+        sideEffects,
     };
 }
 

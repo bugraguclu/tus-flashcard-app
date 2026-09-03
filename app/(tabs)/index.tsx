@@ -58,6 +58,7 @@ import {
     setCardDueInDays,
     setCardSuspended,
     undoAnswer,
+    type AnswerSideEffects,
 } from '../../lib/studyRepository';
 import { useI18n } from '../../hooks/useI18n';
 import { cardFlagName } from '../../lib/i18n';
@@ -84,7 +85,10 @@ import {
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
 import {
     canUndoReview,
+    isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
+    reviewerUndoKeys,
+    reviewerUndoShortcutHint,
     shouldShowReviewerToolbarActions,
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
@@ -179,6 +183,8 @@ type UndoEntry = {
     cardId: number;
     reviewLogId: number;
     previousSnapshot: AnkiCard;
+    /** Rows the answer changed beyond this card: buried siblings, an added leech tag. */
+    sideEffects: AnswerSideEffects;
     filteredDeckId?: number;
     grade: Grade;
     answerTimeMs: number;
@@ -297,6 +303,13 @@ export default function StudyScreen() {
     // Auto Advance measures each SIDE, not the whole card, so it needs its own clock.
     const autoAdvanceTimerRef = useRef(new ActiveElapsedTimer(Date.now(), appIsActiveRef.current));
     const nativeShortcutCaptureRef = useRef<TextInput>(null);
+    // Undo has no entry in the key-binding settings, so it takes only the default keys the
+    // learner has not claimed for bury, suspend, mark or replay.
+    const undoKeys = useMemo(() => reviewerUndoKeys(settings.keyBindings), [settings.keyBindings]);
+    const undoShortcutHint = useMemo(
+        () => reviewerUndoShortcutHint(undoKeys, Platform.OS === 'web'),
+        [undoKeys],
+    );
     const nativeTypeAnswerRef = useRef<TextInput>(null);
     const reviewerScrollRef = useRef<ScrollView>(null);
     const [fallbackTapSurface, setFallbackTapSurface] = useState({ width: 1, height: 1 });
@@ -738,6 +751,7 @@ export default function StudyScreen() {
                         cardId: currentCard.cardId,
                         reviewLogId: result.reviewLogId,
                         previousSnapshot: result.previousAnkiCard,
+                        sideEffects: result.sideEffects,
                         filteredDeckId: completesFilteredCard ? activeFilteredDeck?.id : undefined,
                         grade,
                         answerTimeMs: elapsed,
@@ -918,7 +932,9 @@ export default function StudyScreen() {
             setUndoStack((prev) => prev.slice(0, -1));
             setRedoStack((prev) => [...prev.slice(-29), undo]);
 
-            undoAnswer(undo.previousSnapshot, undo.reviewLogId);
+            // One transaction takes back the card, its review-log row, the siblings this answer
+            // buried and any leech tag it added — Anki's single "Undo Answer Card" operation.
+            undoAnswer(undo.previousSnapshot, undo.reviewLogId, undo.sideEffects);
             if (undo.filteredDeckId) {
                 restoreFilteredCard(undo.filteredDeckId, undo.cardId);
             }
@@ -957,6 +973,9 @@ export default function StudyScreen() {
                     cardId: redo.cardId,
                     reviewLogId: result.reviewLogId,
                     previousSnapshot: result.previousAnkiCard,
+                    // The replayed answer buries and tags on its own terms; never reuse the
+                    // captures from the answer this redo replaces.
+                    sideEffects: result.sideEffects,
                     filteredDeckId: redo.filteredDeckId,
                     grade: redo.grade,
                     answerTimeMs: redo.answerTimeMs,
@@ -1156,7 +1175,7 @@ export default function StudyScreen() {
                 return;
             }
 
-            if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key.toLowerCase() === 'u' || event.key.toLowerCase() === 'z')) {
+            if (!event.ctrlKey && !event.metaKey && !event.altKey && isReviewerUndoKey(event.key, undoKeys)) {
                 event.preventDefault();
                 void undoLast();
                 return;
@@ -1218,7 +1237,7 @@ export default function StudyScreen() {
 
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [answerCard, currentCard, showingAnswer, undoLast, settings.keyBindings, handleFlag, handleBury, handleSuspend, handleToggleMarkNote]);
+    }, [answerCard, currentCard, showingAnswer, undoLast, settings.keyBindings, undoKeys, handleFlag, handleBury, handleSuspend, handleToggleMarkNote]);
 
     const getPreview = useCallback(() => {
         if (!currentCard) return null;
@@ -1351,10 +1370,15 @@ export default function StudyScreen() {
 
     // Anki's reviewer top bar: a back arrow leaves study, and flag/more open the options sheet
     // (the flag button jumps straight to the color list).
+    // Leaving the reviewer unwinds the stack the learner came in on, so study opened from the
+    // browser or from statistics returns there. It is the same destination the iOS back gesture
+    // reaches, which is why the button says "exit study" rather than naming a screen.
     const handleExitStudy = useCallback(() => {
         if (router.canGoBack()) router.back();
         else router.push('/decks');
     }, [router]);
+    /** The congratulations screen offers the deck list by name, so it goes there and nowhere else. */
+    const handleReturnToDecks = useCallback(() => router.push('/decks'), [router]);
     const openDeckPicker = useCallback(() => setDeckPickerVisible(true), []);
     const handlePickDeck = useCallback((name: string | null) => {
         setDeckPickerVisible(false);
@@ -1707,7 +1731,7 @@ export default function StudyScreen() {
             return;
         }
 
-        if (key.toLowerCase() === 'z' || key.toLowerCase() === 'u') {
+        if (isReviewerUndoKey(key, undoKeys)) {
             void undoLast();
             return;
         }
@@ -1747,6 +1771,7 @@ export default function StudyScreen() {
         deckPickerVisible,
         catalogUnlockVisible,
         settings.keyBindings,
+        undoKeys,
         handleExitStudy,
         undoLast,
         replayAudio,
@@ -1761,7 +1786,7 @@ export default function StudyScreen() {
     // physical-keyboard events. Real type-answer inputs take focus normally; after the answer is
     // revealed this capture regains focus so Anki's 1-4 grading shortcuts work again.
     useEffect(() => {
-        if (Platform.OS === 'web' || pathname !== '/' || !currentCard || toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) {
+        if (Platform.OS === 'web' || pathname !== '/' || toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) {
             nativeShortcutCaptureRef.current?.blur();
             return;
         }
@@ -1872,7 +1897,7 @@ export default function StudyScreen() {
                 onPress={handleExitStudy}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                accessibilityLabel={l('Çalışmadan çık', 'Exit study')}
                 {...webTitle(l('Geri', 'Back'))}
             >
                 <ReviewerBackIcon color={colors.textSecondary} />
@@ -1946,7 +1971,9 @@ export default function StudyScreen() {
                             ? l('Son cevabı geri al', 'Undo last answer')
                             : l('Geri alınacak cevap yok', 'No answer to undo')}
                         accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                        {...webTitle(canUndoReview(undoStack.length) ? l('Son cevabı geri al (Ctrl+Z)', 'Undo last answer (Ctrl+Z)') : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                        {...webTitle(canUndoReview(undoStack.length)
+                            ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
+                            : l('Geri alınacak cevap yok', 'No answer to undo'))}
                     >
                         <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                     </TouchableOpacity>
@@ -1982,7 +2009,7 @@ export default function StudyScreen() {
                 onPress={handleExitStudy}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                accessibilityLabel={l('Çalışmadan çık', 'Exit study')}
                 {...webTitle(l('Geri', 'Back'))}
             >
                 <ReviewerBackIcon color={colors.textSecondary} />
@@ -2015,7 +2042,9 @@ export default function StudyScreen() {
                             ? l('Son cevabı geri al', 'Undo last answer')
                             : l('Geri alınacak cevap yok', 'No answer to undo')}
                         accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                        {...webTitle(canUndoReview(undoStack.length) ? l('Son cevabı geri al (Ctrl+Z)', 'Undo last answer (Ctrl+Z)') : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                        {...webTitle(canUndoReview(undoStack.length)
+                            ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
+                            : l('Geri alınacak cevap yok', 'No answer to undo'))}
                     >
                         <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                     </TouchableOpacity>
@@ -2330,7 +2359,7 @@ export default function StudyScreen() {
                         )}
                         <TouchableOpacity
                             style={styles.secondaryActionBtn}
-                            onPress={handleExitStudy}
+                            onPress={handleReturnToDecks}
                             accessibilityRole="button"
                             accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                             {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
@@ -2370,7 +2399,7 @@ export default function StudyScreen() {
                 </View>
             ) : null}
 
-            {Platform.OS !== 'web' && pathname === '/' && currentCard && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible && (
+            {Platform.OS !== 'web' && pathname === '/' && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible && (
                 <TextInput
                     ref={nativeShortcutCaptureRef}
                     value=""

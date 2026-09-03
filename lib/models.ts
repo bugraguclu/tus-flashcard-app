@@ -242,7 +242,7 @@ export interface Deck {
     sourcePackageId?: string;
     searchQuery?: string;
     searchLimit?: number;
-    /** Gather order for a filtered deck's search: see FILTERED_ORDERS. */
+    /** Gather order for a filtered deck's search: an `FILTERED_SEARCH_ORDER` ordinal (0..10). */
     searchOrder?: number;
     /** Anki's "enable second filter": an extra search gathered after the first. */
     searchQuery2?: string;
@@ -271,21 +271,6 @@ export interface Deck {
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
 }
-
-/** Gather orders for filtered decks (index = the stored searchOrder value, 0..10). */
-export const FILTERED_ORDERS = [
-    'En eski görülen önce',      // 0: oldest seen first
-    'Rastgele',                  // 1: random
-    'Aralıklar (artan)',         // 2: intervals ascending
-    'Aralıklar (azalan)',        // 3: intervals descending
-    'En çok unutulan',           // 4: most lapses
-    'Ekleniş sırası',            // 5: order added
-    'Vade sırası',               // 6: order due
-    'Son eklenen önce',          // 7: latest added first
-    'Hatırlanabilirlik (artan)', // 8: retrievability ascending
-    'Hatırlanabilirlik (azalan)',// 9: retrievability descending
-    'Göreceli gecikme',          // 10: relative overdueness
-] as const;
 
 export interface DeckConfig {
     id: number;
