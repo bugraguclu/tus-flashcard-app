@@ -362,6 +362,35 @@ function ankiDue(card: AnkiCard, collectionDay: number): number {
     return card.due;
 }
 
+/**
+ * Sends any card still sitting in a filtered deck back to the deck it came from.
+ *
+ * `scopedData` never exports filtered decks, so a card whose `deckId` is one of them would be
+ * written with a `did` no row in the package defines. Anki's own package exporter has always
+ * undone the filtered placement for exactly this reason: the card returns to `odid`, and the due
+ * date it had before it was gathered (`odue`) becomes its due date again.
+ *
+ * The home deck is normally present, because only the filtered deck itself is dropped. A card
+ * whose `odid` is missing or also unexported has nothing to return to, so it falls back to the
+ * default deck rather than leaving the package internally inconsistent. This is the same move
+ * `returnFilteredCardsHome` makes in lib/deckManager.ts when a filtered deck is emptied locally.
+ */
+function returnCardsToHomeDeck(cards: AnkiCard[], decks: Deck[]): AnkiCard[] {
+    const exportedDeckIds = new Set(decks.map((deck) => deck.id));
+    if (cards.every((card) => exportedDeckIds.has(card.deckId))) return cards;
+    return cards.map((card) => {
+        if (exportedDeckIds.has(card.deckId)) return card;
+        const homeDeckId = card.odid && exportedDeckIds.has(card.odid) ? card.odid : DEFAULT_DECK_CONFIG.id;
+        return {
+            ...card,
+            deckId: homeDeckId,
+            due: card.odue && card.odue > 0 ? card.odue : card.due,
+            odue: 0,
+            odid: 0,
+        };
+    });
+}
+
 function ankiOriginalDue(card: AnkiCard, collectionDay: number): number {
     if (!card.odue) return 0;
     return card.type === 2 || card.type === 3 ? Math.max(0, card.odue - collectionDay) : card.odue;
@@ -408,6 +437,7 @@ async function buildPackage(
             lastReview: 0,
         }));
     const decks = scoped.decks;
+    const exportedCards = returnCardsToHomeDeck(cards, decks);
     if (allowPristineOriginal && format === 'apkg' && includeScheduling && includeDeckConfigs) {
         const pristine = await pristineOriginalForExport(notes, cards, includeMedia);
         if (pristine) {
@@ -452,14 +482,14 @@ async function buildPackage(
             db.runSync('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 note.id, note.guid, note.noteTypeId, note.mod, note.usn ?? -1, tags, note.fields.join(FIELD_SEPARATOR), note.sfld, note.csum, note.flags, note.ankiData ?? '');
         }
-        for (const card of cards) {
+        for (const card of exportedCards) {
             db.runSync('INSERT INTO cards VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 card.id, card.noteId, card.deckId, card.ord, card.mod, card.usn ?? -1, card.type, card.queue,
                 ankiDue(card, collectionDay), card.ivl, card.factor, card.reps, card.lapses, card.left,
                 ankiOriginalDue(card, collectionDay), card.odid, card.flags, card.ankiData ?? '');
         }
         if (includeScheduling) {
-            const cardIds = new Set(cards.map((card) => card.id));
+            const cardIds = new Set(exportedCards.map((card) => card.id));
             for (const row of source.revlog) {
                 if (!cardIds.has(row.cardId)) continue;
                 db.runSync('INSERT INTO revlog VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',

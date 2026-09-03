@@ -225,6 +225,17 @@ function protoNumber(fields: ProtoFields, field: number, fallback = 0): number {
     return typeof value === 'number' ? value : fallback;
 }
 
+/**
+ * A varint field's value, or undefined when the blob does not carry the tag at all.
+ *
+ * proto3 omits zero-valued scalars, so "tag missing" and "author chose 0" look identical once a
+ * fallback has been substituted. Callers that must tell them apart need the absence itself.
+ */
+function protoOptionalNumber(fields: ProtoFields, field: number): number | undefined {
+    const value = fields.get(field)?.[0];
+    return typeof value === 'number' ? value : undefined;
+}
+
 function protoBytes(fields: ProtoFields, field: number): Uint8Array | undefined {
     const value = fields.get(field)?.[0];
     return value instanceof Uint8Array ? value : undefined;
@@ -252,6 +263,16 @@ function protoFloats(fields: ProtoFields, field: number): number[] {
     }
     return result;
 }
+
+/**
+ * `Deck.Filtered` tags for the preview delays.
+ *
+ * The numbering is deliberately out of order: Anki added the per-button delays one at a time
+ * around the single retired `preview_delay`, so Hard took the next free tag and Again ended up
+ * last. Reading them in Again/Hard/Good sequence silently swaps two of a user's three values.
+ * https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto
+ */
+const FILTERED_PREVIEW_FIELD = { legacyDelayMinutes: 4, hardSecs: 5, goodSecs: 6, againSecs: 7 } as const;
 
 /** Convert Anki's normalized schema-15+ protobuf metadata to the legacy interchange shape. */
 function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyCollectionMeta | null {
@@ -295,10 +316,12 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 raw.desc = protoString(kind, 4);
             } else {
                 raw.resched = Boolean(protoNumber(kind, 1));
-                // Deck.Filtered fields 5-7: the Again/Hard/Good preview delays, in seconds.
-                raw.previewAgainSecs = protoNumber(kind, 5, 60);
-                raw.previewHardSecs = protoNumber(kind, 6, 600);
-                raw.previewGoodSecs = protoNumber(kind, 7, 0);
+                // Copied across without a fallback so importedPreviewDelays still sees which tags
+                // the package actually carried, which is what distinguishes a pre-2.1.55 deck.
+                raw.previewAgainSecs = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.againSecs);
+                raw.previewHardSecs = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.hardSecs);
+                raw.previewGoodSecs = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.goodSecs);
+                raw.previewDelay = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.legacyDelayMinutes);
                 raw.terms = (kind.get(2) ?? []).flatMap((value) => {
                     if (!(value instanceof Uint8Array)) return [];
                     const term = protobufFields(value);
@@ -495,6 +518,37 @@ const REVIEW_ORDER_BY_ORDINAL: (ReviewSortOrder | undefined)[] = [
     'added', 'reverseAdded', undefined /* retrievability desc (FSRS) */, 'relativeOverdueness',
 ];
 
+/**
+ * Again/Hard/Good preview delays in seconds for an imported filtered deck.
+ *
+ * Anki has stored one delay per button since 2.1.55. Before that a filtered deck carried a single
+ * `previewDelay` in MINUTES, which the schedulers fanned out to 1x for Again, 1.5x for Hard and 2x
+ * for Good; the v2 scheduler read the same field and defaulted it to 10 minutes. Nothing upstream
+ * rewrites such a deck on load, so unfolding that ratio here is the only way an old package
+ * previews at the spacing its author chose instead of silently taking our defaults. The legacy
+ * value is only consulted when the package carries none of the three modern fields, because a
+ * deck saved by a current Anki keeps `previewDelay` around untouched.
+ *
+ * Sources: pylib/anki/schedv2.py `_previewDelay` (`previewDelay * 60`, default 10) and
+ * rslib/src/scheduler/states/preview_filter.rs at tag 2.1.54 (`preview_step * 60 / 90 / 120`).
+ */
+function importedPreviewDelays(raw: Record<string, any>): [number, number, number] {
+    const stored = (value: unknown, fallback: number): number =>
+        value === undefined || value === null ? fallback : numberValue(value, fallback);
+    const modern = [raw.previewAgainSecs, raw.previewHardSecs, raw.previewGoodSecs];
+    if (modern.every((value) => value === undefined || value === null)) {
+        const legacyMinutes = numberValue(raw.previewDelay);
+        if (legacyMinutes > 0) {
+            return parsePreviewDelays([legacyMinutes * 60, legacyMinutes * 90, legacyMinutes * 120]);
+        }
+    }
+    return parsePreviewDelays([
+        stored(modern[0], DEFAULT_PREVIEW_DELAYS[0]),
+        stored(modern[1], DEFAULT_PREVIEW_DELAYS[1]),
+        stored(modern[2], DEFAULT_PREVIEW_DELAYS[2]),
+    ]);
+}
+
 function importedDeck(raw: Record<string, any>, id: number, configId: number, packageId: string): Deck {
     const terms = Array.isArray(raw.terms) ? raw.terms : [];
     return {
@@ -513,13 +567,7 @@ function importedDeck(raw: Record<string, any>, id: number, configId: number, pa
         searchLimit2: Array.isArray(terms[1]) ? numberValue(terms[1][1], 100) : undefined,
         searchOrder2: Array.isArray(terms[1]) ? numberValue(terms[1][2]) : undefined,
         reschedule: raw.resched === undefined ? undefined : boolValue(raw.resched),
-        previewDelays: numberValue(raw.dyn) === 1
-            ? parsePreviewDelays([
-                numberValue(raw.previewAgainSecs, DEFAULT_PREVIEW_DELAYS[0]),
-                numberValue(raw.previewHardSecs, DEFAULT_PREVIEW_DELAYS[1]),
-                numberValue(raw.previewGoodSecs, DEFAULT_PREVIEW_DELAYS[2]),
-            ])
-            : undefined,
+        previewDelays: numberValue(raw.dyn) === 1 ? importedPreviewDelays(raw) : undefined,
         ankiRaw: raw,
         sourcePackageId: packageId,
     };

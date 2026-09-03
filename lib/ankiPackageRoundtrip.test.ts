@@ -33,9 +33,14 @@ beforeAll(async () => {
     SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' });
 });
 
-beforeEach(() => {
+/** Swap in an empty collection, so a case can import several fixtures without them merging by name. */
+function resetCollection() {
     db = createAppDb(SQL);
     holder.db = db;
+}
+
+beforeEach(() => {
+    resetCollection();
     holder.media.clear();
     Platform.OS = 'web';
 });
@@ -145,6 +150,96 @@ function pb(...parts: Uint8Array[]): Uint8Array {
     return output;
 }
 
+/**
+ * `Deck.Filtered` preview-delay tags, transcribed from upstream rather than assumed.
+ *
+ * They are deliberately not in Again/Hard/Good order: Anki left the retired single delay on tag 4
+ * and appended a tag per answer button as each was added, so Hard took 5 and Again ended up on 7.
+ * A fixture written in tag order would encode the exact swap these cases exist to catch.
+ * https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto
+ */
+const PREVIEW_TAG = { legacyDelayMinutes: 4, hardSecs: 5, goodSecs: 6, againSecs: 7 } as const;
+
+/** The saved search shared by the filtered-deck fixtures: `Deck.Filtered.SearchTerm` tags 1-3. */
+const FILTERED_SEARCH_TERM = pb(pbBytes(1, 'deck:Cardiology is:due'), pbVarint(2, 50), pbVarint(3, 6));
+
+/**
+ * Imports a schema-18 collection holding one filtered deck and returns it.
+ *
+ * `previewFields` is appended verbatim to the `Deck.Filtered` body so a case can leave tags out;
+ * proto3 omits zero-valued scalars, which is exactly how a real package signals "unset".
+ */
+function importModernFilteredDeck(previewFields: Uint8Array[]) {
+    resetCollection();
+    const modern = new SQL.Database();
+    modern.run(`CREATE TABLE col (id integer primary key, crt integer, mod integer, scm integer, ver integer,
+        dty integer, usn integer, ls integer, conf text, models text, decks text, dconf text, tags text)`);
+    modern.run('CREATE TABLE notetypes (id integer primary key, name text, mtime_secs integer, usn integer, config blob)');
+    modern.run('CREATE TABLE fields (ntid integer, ord integer, name text, config blob)');
+    modern.run('CREATE TABLE templates (ntid integer, ord integer, name text, mtime_secs integer, usn integer, config blob)');
+    modern.run('CREATE TABLE decks (id integer primary key, name text, mtime_secs integer, usn integer, common blob, kind blob)');
+    modern.run('CREATE TABLE deck_config (id integer primary key, name text, mtime_secs integer, usn integer, config blob)');
+    modern.run(`CREATE TABLE notes (id integer primary key, guid text, mid integer, mod integer, usn integer,
+        tags text, flds text, sfld integer, csum integer, flags integer, data text)`);
+    modern.run(`CREATE TABLE cards (id integer primary key, nid integer, did integer, ord integer, mod integer,
+        usn integer, type integer, queue integer, due integer, ivl integer, factor integer, reps integer,
+        lapses integer, left integer, odue integer, odid integer, flags integer, data text)`);
+    modern.run('CREATE TABLE revlog (id integer, cid integer, usn integer, ease integer, ivl integer, lastIvl integer, factor integer, time integer, type integer)');
+    modern.run('INSERT INTO col VALUES (1, 1700000000, 0, 0, 18, 0, 0, 0, ?, ?, ?, ?, ?)', ['{}', '{}', '{}', '{}', '{}']);
+    modern.run('INSERT INTO notetypes VALUES (100, ?, 20, -1, ?)', ['Filtered Type', pb(pbVarint(1, 0), pbVarint(2, 0), pbBytes(3, '.card{}'))]);
+    modern.run('INSERT INTO fields VALUES (100, 0, ?, ?)', ['Prompt', pb(pbBytes(3, 'Arial'), pbVarint(4, 20))]);
+    modern.run('INSERT INTO fields VALUES (100, 1, ?, ?)', ['Response', pb(pbBytes(3, 'Arial'), pbVarint(4, 20))]);
+    modern.run('INSERT INTO templates VALUES (100, 0, ?, 20, -1, ?)', ['Card 1', pb(pbBytes(1, '{{Prompt}}'), pbBytes(2, '{{Response}}'))]);
+    modern.run('INSERT INTO deck_config VALUES (1, ?, 20, -1, ?)', ['Preset', pb(pbVarint(9, 20))]);
+    // Deck.Filtered: 1=reschedule, 2=search_terms; the preview tags come from PREVIEW_TAG.
+    const filtered = pb(pbVarint(1, 0), pbBytes(2, FILTERED_SEARCH_TERM), ...previewFields);
+    modern.run('INSERT INTO decks VALUES (210, ?, 20, -1, ?, ?)', ['Preview Deck', pb(pbVarint(1, 0)), pbBytes(2, filtered)]);
+    // A gathered card keeps its home deck in odid, which is how every real filtered deck arrives.
+    modern.run('INSERT INTO decks VALUES (220, ?, 20, -1, ?, ?)', ['Cardiology', pb(pbVarint(1, 0)), pbBytes(1, pb(pbVarint(1, 1)))]);
+    modern.run('INSERT INTO notes VALUES (300, ?, 100, 30, -1, ?, ?, ?, 1, 0, ?)', ['filtered-guid', '', 'Question\x1fAnswer', 'Question', '']);
+    modern.run('INSERT INTO cards VALUES (400, 300, 210, 0, 30, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 220, 0, ?)', ['']);
+
+    const reader = openReader(modern.export());
+    importAnkiReaderLossless(reader, { subject: 'ignored', withScheduling: true }, 'filtered-package');
+    reader.close();
+    modern.close();
+    return getAllDecks().find((deck) => deck.name === 'Preview Deck');
+}
+
+/** The same filtered deck expressed as a schema-11 `col.decks` JSON blob, for the older read path. */
+function importLegacyFilteredDeck(previewKeys: Record<string, number>) {
+    resetCollection();
+    const legacy = new SQL.Database();
+    legacy.run(`CREATE TABLE col (id integer primary key, crt integer, mod integer, scm integer, ver integer,
+        dty integer, usn integer, ls integer, conf text, models text, decks text, dconf text, tags text)`);
+    legacy.run(`CREATE TABLE notes (id integer primary key, guid text, mid integer, mod integer, usn integer,
+        tags text, flds text, sfld integer, csum integer, flags integer, data text)`);
+    legacy.run(`CREATE TABLE cards (id integer primary key, nid integer, did integer, ord integer, mod integer,
+        usn integer, type integer, queue integer, due integer, ivl integer, factor integer, reps integer,
+        lapses integer, left integer, odue integer, odid integer, flags integer, data text)`);
+    legacy.run('CREATE TABLE revlog (id integer primary key, cid integer, usn integer, ease integer, ivl integer, lastIvl integer, factor integer, time integer, type integer)');
+    const model = {
+        id: 1000, name: 'Legacy Type', type: 0, mod: 1, usn: -1, sortf: 0, css: '',
+        flds: [{ name: 'Prompt', ord: 0 }, { name: 'Response', ord: 1 }],
+        tmpls: [{ name: 'Card 1', ord: 0, qfmt: '{{Prompt}}', afmt: '{{Response}}' }],
+    };
+    const deck = {
+        id: 2100, name: 'Preview Deck', mod: 1, usn: -1, desc: '', dyn: 1, resched: false,
+        terms: [['deck:Cardiology is:due', 50, 6]], ...previewKeys,
+    };
+    legacy.run('INSERT INTO col VALUES (1, 1700000000, 0, 0, 11, 0, 0, 0, ?, ?, ?, ?, ?)', [
+        '{}', JSON.stringify({ 1000: model }), JSON.stringify({ 2100: deck }), '{}', '{}',
+    ]);
+    legacy.run('INSERT INTO notes VALUES (300, ?, 1000, 30, -1, ?, ?, ?, 1, 0, ?)', ['legacy-guid', '', 'Question\x1fAnswer', 'Question', '']);
+    legacy.run('INSERT INTO cards VALUES (400, 300, 2100, 0, 30, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, ?)', ['']);
+
+    const reader = openReader(legacy.export());
+    importAnkiReaderLossless(reader, { subject: 'ignored', withScheduling: true }, 'legacy-filtered-package');
+    reader.close();
+    legacy.close();
+    return getAllDecks().find((deck) => deck.name === 'Preview Deck');
+}
+
 describe('lossless Anki package roundtrip', () => {
     it('rejects even a one-note fragment copied from the paid catalog before writing anything', async () => {
         const { BKA_MANIFEST } = await import('./bkaManifest');
@@ -191,6 +286,87 @@ describe('lossless Anki package roundtrip', () => {
         expect(getAllDecks().map((deck) => deck.name)).toEqual(expect.arrayContaining(['Modern', 'Modern::Child']));
         reader.close();
         modern.close();
+    });
+
+    it('imports a filtered deck\u2019s saved search and Again/Hard/Good preview delays', () => {
+        const imported = importModernFilteredDeck([
+            pbVarint(PREVIEW_TAG.againSecs, 45),
+            pbVarint(PREVIEW_TAG.hardSecs, 900),
+            pbVarint(PREVIEW_TAG.goodSecs, 120),
+        ]);
+        expect(imported).toMatchObject({
+            isFiltered: true,
+            reschedule: false,
+            searchQuery: 'deck:Cardiology is:due',
+            searchLimit: 50,
+            previewDelays: [45, 900, 120],
+        });
+    });
+
+    it('fills the preview delays a package leaves out with Anki\u2019s own per-button defaults', () => {
+        // What `Deck.new_filtered` produces: Again 60 and Hard 600 are written, Good stays 0 and so
+        // is omitted by proto3. This is the shape almost every real filtered deck arrives in.
+        expect(importModernFilteredDeck([
+            pbVarint(PREVIEW_TAG.againSecs, 60),
+            pbVarint(PREVIEW_TAG.hardSecs, 600),
+        ])?.previewDelays).toEqual([60, 600, 0]);
+
+        // Good alone: Hard must fall back to 600 rather than borrow the Good value.
+        expect(importModernFilteredDeck([
+            pbVarint(PREVIEW_TAG.againSecs, 30),
+            pbVarint(PREVIEW_TAG.goodSecs, 15),
+        ])?.previewDelays).toEqual([30, 600, 15]);
+    });
+
+    it('expands a v2-era filtered deck\u2019s single preview delay across the three buttons', () => {
+        // Ten minutes was the legacy default, and the old schedulers spread it 1x/1.5x/2x.
+        expect(importModernFilteredDeck([
+            pbVarint(PREVIEW_TAG.legacyDelayMinutes, 10),
+        ])?.previewDelays).toEqual([600, 900, 1200]);
+
+        // A package that carries both keeps the per-button values the newer Anki wrote.
+        expect(importModernFilteredDeck([
+            pbVarint(PREVIEW_TAG.legacyDelayMinutes, 10),
+            pbVarint(PREVIEW_TAG.againSecs, 60),
+            pbVarint(PREVIEW_TAG.hardSecs, 600),
+        ])?.previewDelays).toEqual([60, 600, 0]);
+    });
+
+    it('reads the same preview delays from a schema-11 JSON collection', () => {
+        expect(importLegacyFilteredDeck({ previewDelay: 10 })?.previewDelays).toEqual([600, 900, 1200]);
+        expect(importLegacyFilteredDeck({
+            previewDelay: 10, previewAgainSecs: 45, previewHardSecs: 900, previewGoodSecs: 120,
+        })?.previewDelays).toEqual([45, 900, 120]);
+        // Zero means "this button ends the preview", so it must survive rather than be defaulted.
+        expect(importLegacyFilteredDeck({
+            previewAgainSecs: 0, previewHardSecs: 0, previewGoodSecs: 0,
+        })?.previewDelays).toEqual([0, 0, 0]);
+        expect(importLegacyFilteredDeck({})?.previewDelays).toEqual([60, 600, 0]);
+    });
+
+    it('returns a gathered card to its home deck instead of exporting a dangling filtered deck', async () => {
+        importModernFilteredDeck([
+            pbVarint(PREVIEW_TAG.againSecs, 45),
+            pbVarint(PREVIEW_TAG.hardSecs, 900),
+            pbVarint(PREVIEW_TAG.goodSecs, 120),
+        ]);
+        const homeDeckId = getAllDecks().find((deck) => deck.name === 'Cardiology')!.id;
+
+        const exported = await buildAnkiExport('apkg', undefined, false);
+        const zip = await JSZip.loadAsync(exported.bytes!);
+        const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+        const decks: Record<string, any> = JSON.parse(reader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks);
+
+        // Anki's package exporter has never written filtered decks: the deck is a local grouping of
+        // cards that already belong somewhere else, so the package carries the home deck instead.
+        expect(Object.values(decks).map((deck) => deck.name)).not.toContain('Preview Deck');
+        expect(Object.values(decks).map((deck) => deck.name)).toContain('Cardiology');
+        // The card must therefore point at a deck the package defines, with the filtered
+        // placement undone, or Anki would import it into a deck that does not exist.
+        expect(reader.getAllSync('SELECT id, did, odid FROM cards')).toEqual([
+            { id: 400, did: homeDeckId, odid: 0 },
+        ]);
+        reader.close();
     });
 
     it('preserves original bytes while pristine and reconstructs all source structure after an edit', async () => {
