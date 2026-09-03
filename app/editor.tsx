@@ -21,6 +21,17 @@ import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorSch
 import { resolveSubjectDeckId } from '../lib/subjects';
 import { createCourse } from '../lib/courses';
 import { confirm, alert } from '../lib/confirm';
+import {
+    blockFormatValue,
+    calloutHtml,
+    EDITOR_ALIGNMENTS,
+    EDITOR_BLOCK_STYLES,
+    EDITOR_CALLOUTS,
+    EDITOR_TOOLBAR_TABS,
+    linkHtml,
+    tableHtml,
+    type EditorToolbarTabId,
+} from '../lib/editorToolbar';
 import { useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import {
     createTusCard,
@@ -150,7 +161,19 @@ type AnkiToolbarIconName =
     | 'fontSize'
     | 'math'
     | 'html'
-    | 'add';
+    | 'add'
+    | 'alignLeft'
+    | 'alignCenter'
+    | 'alignRight'
+    | 'alignJustify'
+    | 'indent'
+    | 'outdent'
+    | 'table'
+    | 'link'
+    | 'quote'
+    | 'code'
+    | 'callout'
+    | 'paragraph';
 
 function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName; color: string; size?: number }) {
     const paths: Record<Exclude<AnkiToolbarIconName, 'math'>, string> = {
@@ -169,6 +192,18 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
         fontSize: 'M2.5 4v3h5v12h3V7h5V4h-13Zm19 5h-9v3h3v7h3v-7h3V9Z',
         html: 'M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
         add: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2Z',
+        alignLeft: 'M3 3h18v2H3V3Zm0 4h12v2H3V7Zm0 4h18v2H3v-2Zm0 4h12v2H3v-2Zm0 4h18v2H3v-2Z',
+        alignCenter: 'M3 3h18v2H3V3Zm3 4h12v2H6V7Zm-3 4h18v2H3v-2Zm3 4h12v2H6v-2Zm-3 4h18v2H3v-2Z',
+        alignRight: 'M3 3h18v2H3V3Zm6 4h12v2H9V7Zm-6 4h18v2H3v-2Zm6 4h12v2H9v-2Zm-6 4h18v2H3v-2Z',
+        alignJustify: 'M3 3h18v2H3V3Zm0 4h18v2H3V7Zm0 4h18v2H3v-2Zm0 4h18v2H3v-2Zm0 4h18v2H3v-2Z',
+        indent: 'M3 3h18v2H3V3Zm8 4h10v2H11V7Zm0 4h10v2H11v-2Zm0 4h10v2H11v-2ZM3 19h18v2H3v-2ZM3 8l4 3.5L3 15V8Z',
+        outdent: 'M3 3h18v2H3V3Zm8 4h10v2H11V7Zm0 4h10v2H11v-2Zm0 4h10v2H11v-2ZM3 19h18v2H3v-2Zm4-11v7l-4-3.5L7 8Z',
+        table: 'M3 3h18a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm1 6v4h6V9H4Zm8 0v4h8V9h-8Zm-8 6v4h6v-4H4Zm8 0v4h8v-4h-8ZM4 5v2h16V5H4Z',
+        link: 'M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7A3.1 3.1 0 0 1 3.9 12ZM8 13h8v-2H8v2Zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10Z',
+        quote: 'M6 17h3l2-4V6H4v7h3l-1 4Zm9 0h3l2-4V6h-7v7h3l-1 4Z',
+        code: 'M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4Zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4Z',
+        callout: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-9 4h2v6h-2V6Zm0 8h2v2h-2v-2Z',
+        paragraph: 'M13 4H8a4 4 0 0 0 0 8h2v8h2V6h2v14h2V6h1V4h-4Z',
     };
 
     if (name === 'math') {
@@ -285,9 +320,13 @@ export default function EditorScreen() {
     const [showCardTypePicker, setShowCardTypePicker] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const [showFontSizePicker, setShowFontSizePicker] = useState(false);
-    const [showHeadingPicker, setShowHeadingPicker] = useState(false);
     const [showInlineFontSizePicker, setShowInlineFontSizePicker] = useState(false);
     const [showMathPicker, setShowMathPicker] = useState(false);
+    const [toolbarTab, setToolbarTab] = useState<EditorToolbarTabId>('home');
+    const [showTablePicker, setShowTablePicker] = useState(false);
+    const [showCalloutPicker, setShowCalloutPicker] = useState(false);
+    const [showLinkEditor, setShowLinkEditor] = useState(false);
+    const [linkDraft, setLinkDraft] = useState({ url: '', label: '' });
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [showHtmlEditor, setShowHtmlEditor] = useState(false);
     const [htmlEditorValue, setHtmlEditorValue] = useState('');
@@ -301,9 +340,11 @@ export default function EditorScreen() {
         || showCardTypePicker
         || showOverflowMenu
         || showFontSizePicker
-        || showHeadingPicker
         || showInlineFontSizePicker
         || showMathPicker
+        || showTablePicker
+        || showCalloutPicker
+        || showLinkEditor
         || showColorPicker
         || showHtmlEditor
         || showCustomToolbarHelp;
@@ -560,6 +601,28 @@ export default function EditorScreen() {
 
     const runEditorCommand = (command: RichTextCommand, value?: string) => {
         activeEditorRef().current?.runCommand(command, value);
+    };
+
+    const insertEditorHtml = (html: string) => {
+        activeEditorRef().current?.insertHtml(html);
+    };
+
+    const openLinkEditor = () => {
+        Keyboard.dismiss();
+        setLinkDraft({ url: '', label: '' });
+        setShowLinkEditor(true);
+    };
+
+    const confirmLink = () => {
+        const html = linkHtml(linkDraft.url, linkDraft.label);
+        if (!html) {
+            alert(
+                l('Bağlantı eklenemedi', 'Link not added'),
+                l('Yalnızca http, https ve mailto adresleri eklenebilir.', 'Only http, https and mailto addresses can be added.'),
+            );
+            return;
+        }
+        runAfterFormattingDialogClose(() => setShowLinkEditor(false), () => insertEditorHtml(html));
     };
 
     const openCreateToolbarButton = () => {
@@ -831,14 +894,21 @@ export default function EditorScreen() {
         }, { destructive: true });
     };
 
-    const formattingTools: Array<{
+    type FormattingTool = {
         key: string;
         icon: AnkiToolbarIconName;
+        /** Rendered instead of the icon. Five heading icons would be indistinguishable. */
+        text?: string;
         label: string;
         isActive?: boolean;
         onPress: () => void;
         onLongPress?: () => void;
-    }> = [
+    };
+
+    // Anki's own editor toolbar is the Home tab. Styles and Insert are local additions: a single
+    // scrolling row put most of these behind a swipe, and grouping them is the only way the less
+    // common tools are reachable without hiding the ones used on every note.
+    const homeTools: FormattingTool[] = [
         {
             key: 'bold',
             icon: 'bold',
@@ -894,6 +964,45 @@ export default function EditorScreen() {
             onPress: () => setShowColorPicker(true),
         },
         {
+            key: 'fontSize',
+            icon: 'fontSize',
+            label: l('Yazı boyutu', 'Font size'),
+            onPress: () => setShowInlineFontSizePicker(true),
+        },
+        ...EDITOR_ALIGNMENTS.map((alignment): FormattingTool => ({
+            key: alignment.key,
+            icon: alignment.key === 'justifyLeft' ? 'alignLeft'
+                : alignment.key === 'justifyCenter' ? 'alignCenter'
+                    : alignment.key === 'justifyRight' ? 'alignRight' : 'alignJustify',
+            label: l(alignment.tr, alignment.en),
+            isActive: activeFormats.has(alignment.key),
+            onPress: () => runEditorCommand(alignment.key),
+        })),
+        {
+            key: 'indent',
+            icon: 'indent',
+            label: l('Girintiyi artır', 'Increase indent'),
+            onPress: () => runEditorCommand('indent'),
+        },
+        {
+            key: 'outdent',
+            icon: 'outdent',
+            label: l('Girintiyi azalt', 'Decrease indent'),
+            onPress: () => runEditorCommand('outdent'),
+        },
+    ];
+
+    const styleTools: FormattingTool[] = [
+        ...EDITOR_BLOCK_STYLES.map((style): FormattingTool => ({
+            key: style.key,
+            icon: style.key === 'blockquote' ? 'quote' : style.key === 'pre' ? 'code' : 'paragraph',
+            text: style.key === 'blockquote' || style.key === 'pre'
+                ? undefined
+                : style.key.toLocaleUpperCase('en-US'),
+            label: l(style.tr, style.en),
+            onPress: () => runEditorCommand('formatBlock', blockFormatValue(style.key)),
+        })),
+        {
             key: 'listBullet',
             icon: 'listBullet',
             label: l('Madde imli liste', 'Bullet list'),
@@ -907,23 +1016,32 @@ export default function EditorScreen() {
             isActive: activeFormats.has('insertOrderedList'),
             onPress: () => runEditorCommand('insertOrderedList'),
         },
+    ];
+
+    const insertTools: FormattingTool[] = [
+        {
+            key: 'table',
+            icon: 'table',
+            label: l('Tablo ekle', 'Insert table'),
+            onPress: () => { Keyboard.dismiss(); setShowTablePicker(true); },
+        },
+        {
+            key: 'link',
+            icon: 'link',
+            label: l('Bağlantı ekle', 'Insert link'),
+            onPress: openLinkEditor,
+        },
+        {
+            key: 'callout',
+            icon: 'callout',
+            label: l('Bilgi kutusu ekle', 'Insert callout'),
+            onPress: () => { Keyboard.dismiss(); setShowCalloutPicker(true); },
+        },
         {
             key: 'rule',
             icon: 'rule',
             label: l('Yatay çizgi ekle', 'Insert horizontal line'),
             onPress: () => runEditorCommand('insertHorizontalRule'),
-        },
-        {
-            key: 'heading',
-            icon: 'heading',
-            label: l('Başlık ekle', 'Insert heading'),
-            onPress: () => setShowHeadingPicker(true),
-        },
-        {
-            key: 'fontSize',
-            icon: 'fontSize',
-            label: l('Yazı boyutu', 'Font size'),
-            onPress: () => setShowInlineFontSizePicker(true),
         },
         {
             key: 'math',
@@ -945,12 +1063,18 @@ export default function EditorScreen() {
         },
     ];
 
-    const toolbarItemCount = formattingTools.length + customToolbarButtons.length + 1 + (isCloze ? 1 : 0);
+    const formattingTools: FormattingTool[] = toolbarTab === 'styles' ? styleTools
+        : toolbarTab === 'insert' ? insertTools : homeTools;
+    // Cloze and the user's own buttons belong to the Insert tab; they insert, they do not format.
+    const showsInsertExtras = toolbarTab === 'insert';
+
+    const toolbarItemCount = formattingTools.length
+        + (showsInsertExtras ? customToolbarButtons.length + 1 + (isCloze ? 1 : 0) : 0);
     const centerToolbar = toolbarItemCount * 44 <= screenWidth;
 
     const renderFormattingToolbarItems = () => (
         <>
-            {isCloze && (
+            {isCloze && showsInsertExtras && (
                 <TouchableOpacity
                     style={styles.formatButton}
                     onPress={() => questionEditorRef.current?.runCommand('cloze')}
@@ -975,11 +1099,17 @@ export default function EditorScreen() {
                         accessibilityState={{ selected: isActive }}
                         accessibilityHint={tool.key === 'math' ? l('Basılı tutarak diğer MathJax biçimlerini açın', 'Long press for other MathJax formats') : undefined}
                     >
-                        <AnkiToolbarIcon name={tool.icon} color={isActive ? colors.accent : colors.textPrimary} />
+                        {tool.text
+                            ? (
+                                <Text style={[styles.blockStyleButtonText, isActive && styles.blockStyleButtonTextActive]}>
+                                    {tool.text}
+                                </Text>
+                            )
+                            : <AnkiToolbarIcon name={tool.icon} color={isActive ? colors.accent : colors.textPrimary} />}
                     </TouchableOpacity>
                 );
             })}
-            {customToolbarButtons.map((button, index) => (
+            {showsInsertExtras && customToolbarButtons.map((button, index) => (
                 <TouchableOpacity
                     key={button.id}
                     style={styles.formatButton}
@@ -995,14 +1125,16 @@ export default function EditorScreen() {
                     </Text>
                 </TouchableOpacity>
             ))}
-            <TouchableOpacity
-                style={styles.formatButton}
-                onPress={openCreateToolbarButton}
-                accessibilityRole="button"
-                accessibilityLabel={l('Araç çubuğu öğesi oluştur', 'Create toolbar item')}
-            >
-                <AnkiToolbarIcon name="add" color={colors.textPrimary} />
-            </TouchableOpacity>
+            {showsInsertExtras && (
+                <TouchableOpacity
+                    style={styles.formatButton}
+                    onPress={openCreateToolbarButton}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Araç çubuğu öğesi oluştur', 'Create toolbar item')}
+                >
+                    <AnkiToolbarIcon name="add" color={colors.textPrimary} />
+                </TouchableOpacity>
+            )}
         </>
     );
 
@@ -1256,6 +1388,25 @@ export default function EditorScreen() {
 
             {editorPreferences.toolbarVisible && (
             <View style={styles.formatToolbar}>
+                <View style={styles.toolbarTabs} accessibilityRole="tablist">
+                    {EDITOR_TOOLBAR_TABS.map((tab) => {
+                        const selected = toolbarTab === tab.id;
+                        return (
+                            <TouchableOpacity
+                                key={tab.id}
+                                style={[styles.toolbarTab, selected && styles.toolbarTabActive]}
+                                onPress={() => setToolbarTab(tab.id)}
+                                accessibilityRole="tab"
+                                accessibilityState={{ selected }}
+                                accessibilityLabel={l(tab.tr, tab.en)}
+                            >
+                                <Text style={[styles.toolbarTabText, selected && styles.toolbarTabTextActive]}>
+                                    {l(tab.tr, tab.en)}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
                 {editorPreferences.toolbarScrollable ? (
                     <ScrollView
                         horizontal
@@ -1361,31 +1512,110 @@ export default function EditorScreen() {
             </Modal>
 
             <Modal
-                visible={showHeadingPicker}
+                visible={showTablePicker}
                 transparent
                 animationType="fade"
                 presentationStyle="overFullScreen"
-                onRequestClose={() => setShowHeadingPicker(false)}
+                onRequestClose={() => setShowTablePicker(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowHeadingPicker(false)} />
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTablePicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
-                        <Text style={styles.modalTitle}>{l('Başlık ekle', 'Insert Heading')}</Text>
-                        {['h1', 'h2', 'h3', 'h4', 'h5'].map((heading) => (
+                        <Text style={styles.modalTitle}>{l('Tablo ekle', 'Insert Table')}</Text>
+                        {[[2, 2], [3, 3], [3, 2], [4, 4]].map(([rows, columns]) => (
                             <TouchableOpacity
-                                key={heading}
+                                key={`${rows}x${columns}`}
                                 style={styles.formatPickerOption}
-                                onPress={() => {
-                                    runAfterFormattingDialogClose(
-                                        () => setShowHeadingPicker(false),
-                                        () => wrapEditorSelection(`<${heading}>`, `</${heading}>`),
-                                    );
-                                }}
+                                onPress={() => runAfterFormattingDialogClose(
+                                    () => setShowTablePicker(false),
+                                    () => insertEditorHtml(tableHtml(rows, columns)),
+                                )}
+                                accessibilityRole="button"
+                                accessibilityLabel={l(
+                                    `${rows} satır ${columns} sütun tablo`,
+                                    `${rows} by ${columns} table`,
+                                )}
                             >
-                                <Text style={styles.formatPickerOptionText}>{heading}</Text>
+                                <Text style={styles.formatPickerOptionText}>{`${rows} × ${columns}`}</Text>
                             </TouchableOpacity>
                         ))}
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowHeadingPicker(false)}>
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowTablePicker(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showCalloutPicker}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => setShowCalloutPicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCalloutPicker(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('Bilgi kutusu ekle', 'Insert Callout')}</Text>
+                        {EDITOR_CALLOUTS.map((tone) => (
+                            <TouchableOpacity
+                                key={tone.key}
+                                style={[styles.formatPickerOption, styles.calloutOption, { borderLeftColor: tone.border }]}
+                                onPress={() => runAfterFormattingDialogClose(
+                                    () => setShowCalloutPicker(false),
+                                    () => insertEditorHtml(calloutHtml(tone.key)),
+                                )}
+                                accessibilityRole="button"
+                                accessibilityLabel={l(tone.tr, tone.en)}
+                            >
+                                <Text style={styles.formatPickerOptionText}>{l(tone.tr, tone.en)}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowCalloutPicker(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showLinkEditor}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => setShowLinkEditor(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowLinkEditor(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('Bağlantı ekle', 'Insert Link')}</Text>
+                        <TextInput
+                            style={styles.linkInput}
+                            value={linkDraft.url}
+                            onChangeText={(url) => setLinkDraft((draft) => ({ ...draft, url }))}
+                            placeholder="https://docs.ankiweb.net"
+                            placeholderTextColor={colors.textMuted}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            keyboardType="url"
+                            accessibilityLabel={l('Bağlantı adresi', 'Link address')}
+                        />
+                        <TextInput
+                            style={styles.linkInput}
+                            value={linkDraft.label}
+                            onChangeText={(label) => setLinkDraft((draft) => ({ ...draft, label }))}
+                            placeholder={l('Görünecek metin (isteğe bağlı)', 'Display text (optional)')}
+                            placeholderTextColor={colors.textMuted}
+                            accessibilityLabel={l('Bağlantı metni', 'Link text')}
+                        />
+                        <TouchableOpacity
+                            style={styles.formatPickerOption}
+                            onPress={confirmLink}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.formatPickerOptionText}>{l('Ekle', 'Insert')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowLinkEditor(false)}>
                             <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -2006,6 +2236,37 @@ function createStyles(colors: ColorScheme) {
         borderTopColor: colors.border,
         minHeight: 44,
     },
+    blockStyleButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+    blockStyleButtonTextActive: { color: colors.accent },
+    calloutOption: { borderLeftWidth: 4, borderRadius: BorderRadius.sm },
+    linkInput: {
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: Spacing.md,
+        minHeight: 44,
+        fontSize: FontSize.md,
+        color: colors.textPrimary,
+        marginBottom: Spacing.sm,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+    },
+    toolbarTabs: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.xs,
+        paddingHorizontal: Spacing.sm,
+        paddingTop: 4,
+    },
+    toolbarTab: {
+        paddingHorizontal: Spacing.md,
+        paddingVertical: 5,
+        borderRadius: BorderRadius.full,
+    },
+    toolbarTabActive: { backgroundColor: colors.accentLight },
+    toolbarTabText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted },
+    toolbarTabTextActive: { color: colors.accent },
     formatToolbarScroll: { width: '100%' },
     formatToolbarContent: {
         flexGrow: 1,

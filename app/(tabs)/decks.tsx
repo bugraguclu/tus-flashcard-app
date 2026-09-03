@@ -154,11 +154,13 @@ function remapExpandedDeckPaths(
 const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
     row,
     compact,
+    isGroupEnd,
     styles,
     renderRow,
 }: {
     row: DeckListRowModel;
     compact: boolean;
+    isGroupEnd: boolean;
     styles: ReturnType<typeof createStyles>;
     renderRow: (node: DeckTreeNode, isExpanded: boolean) => React.ReactElement;
 }) {
@@ -166,8 +168,8 @@ const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
         <View
             style={compact
                 ? row.isRoot
-                    ? styles.deckGroupCard
-                    : [styles.deckVirtualChildRow, row.isLastSibling && styles.deckVirtualChildRowLast]
+                    ? isGroupEnd ? styles.deckGroupCard : styles.deckGroupCardHead
+                    : isGroupEnd ? styles.deckGroupCardFoot : styles.deckGroupCardBody
                 : undefined}
         >
             {renderRow(row.node, row.isExpanded)}
@@ -2171,14 +2173,15 @@ export default function DecksScreen() {
 
     const isFilteredDeckModal = modal?.kind === 'filter' || modal?.kind === 'create-filter';
     const isCenteredDeckDialog = modal?.kind === 'create-subdeck' || modal?.kind === 'rename';
-    const renderVirtualizedRow = useCallback(({ item }: { item: DeckListRowModel }) => (
+    const renderVirtualizedRow = useCallback(({ item, index }: { item: DeckListRowModel; index: number }) => (
         <VirtualizedDeckRow
             row={item}
             compact={isCompact}
+            isGroupEnd={index === visibleRows.length - 1 || visibleRows[index + 1].isRoot}
             styles={styles}
             renderRow={renderDeckRow}
         />
-    ), [isCompact, renderDeckRow, styles]);
+    ), [isCompact, renderDeckRow, styles, visibleRows]);
     const deckRowKey = useCallback((item: DeckListRowModel) => item.key, []);
     const deckListHeader = useMemo(
         () => fullCatalogPresent ? null : renderLockedCatalogCard(),
@@ -2737,8 +2740,9 @@ function createStyles(colors: ColorScheme) {
     deckRowCompactChild: {
         minHeight: 70,
     },
-    // A top-level deck is one surface. Its recursively rendered child wells below are physically
-    // inside this card instead of being painted behind unrelated flat rows.
+    // FlatList rows are siblings, so a top-level deck and the descendants expanded under it are
+    // drawn as one card in three pieces: the root row opens it, child rows continue the same
+    // surface, and the last row of the group closes it. A collapsed root is the whole card.
     deckGroupCard: {
         position: 'relative',
         marginTop: Spacing.sm,
@@ -2749,13 +2753,41 @@ function createStyles(colors: ColorScheme) {
         overflow: 'visible',
         ...Shadows.sm,
     },
-    deckVirtualChildRow: {
+    deckGroupCardHead: {
         position: 'relative',
-        marginLeft: 18,
+        marginTop: Spacing.sm,
         backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        borderColor: colors.border,
+        borderTopLeftRadius: BorderRadius.md,
+        borderTopRightRadius: BorderRadius.md,
+        overflow: 'visible',
+        // The rows below are opaque and paint after this one, so the card's own shadow only
+        // escapes at its sides and top instead of banding across the seam.
+        ...Shadows.sm,
     },
-    deckVirtualChildRowLast: {
-        marginBottom: 4,
+    // Child rows carry the card's side walls only; their top hairline is the row separator.
+    deckGroupCardBody: {
+        position: 'relative',
+        backgroundColor: colors.bgCard,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        borderTopColor: colors.borderLight,
+    },
+    deckGroupCardFoot: {
+        position: 'relative',
+        backgroundColor: colors.bgCard,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        borderTopColor: colors.borderLight,
+        borderBottomLeftRadius: BorderRadius.md,
+        borderBottomRightRadius: BorderRadius.md,
     },
     lockedDeckCard: {
         flexDirection: 'row',
@@ -3168,6 +3200,10 @@ function createStyles(colors: ColorScheme) {
         color: colors.textPrimary,
         minHeight: 40,
         paddingVertical: 4,
+        // Same vertical centring contract as the browser's search field: without these the
+        // glyphs sit below the caret once the row is taller than the text's natural line box.
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     filteredSearchButton: {
         width: 38,
