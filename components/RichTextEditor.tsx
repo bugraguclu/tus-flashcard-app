@@ -8,6 +8,7 @@ import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
 import { sanitizeToolbarSnippet } from '../lib/customToolbar';
+import { richTextBridgeScript, stripPendingStyleMarkers } from '../lib/richTextCommands';
 import { sanitizeUntrustedHtml } from '../lib/templates';
 import {
     embeddedWebViewLayout,
@@ -30,6 +31,13 @@ export type RichTextCommand =
     | 'redo'
     | 'foreColor'
     | 'hiliteColor'
+    | 'justifyLeft'
+    | 'justifyCenter'
+    | 'justifyRight'
+    | 'justifyFull'
+    | 'indent'
+    | 'outdent'
+    | 'formatBlock'
     | 'cloze';
 
 export interface RichTextEditorHandle {
@@ -68,6 +76,8 @@ const KNOWN_FORMATS = new Set<RichTextCommand>([
     'bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList',
     'insertOrderedList', 'superscript', 'subscript', 'insertHorizontalRule',
     'removeFormat', 'undo', 'redo', 'foreColor', 'hiliteColor', 'cloze',
+    'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull',
+    'indent', 'outdent', 'formatBlock',
 ]);
 
 function createEditorNonce(): string {
@@ -117,10 +127,13 @@ function editorDocument(
 <body>
   <div id="editor" contenteditable="true" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
   <script nonce="${nonce}">
+    ${richTextBridgeScript()}
     (function () {
       const editor = document.getElementById('editor');
-      const trackedCommands = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList', 'superscript', 'subscript'];
-      let savedRange = null;
+      // Selection and pending-format handling lives in lib/richTextCommands.ts so it can be
+      // unit-tested against a fake DOM; see the WebKit notes there for why it is not inline.
+      const bridge = createTusFormattingBridge(editor, document);
+      const trackedCommands = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList', 'superscript', 'subscript', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'];
       let lastHeight = 0;
       let lastFormats = '';
       editor.innerHTML = ${safeJsValue(safeValue)};
@@ -129,24 +142,9 @@ function editorDocument(
         window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(payload));
       }
 
-      function saveSelection() {
-        const selection = window.getSelection();
-        if (!selection || !selection.rangeCount) return;
-        const range = selection.getRangeAt(0);
-        if (editor.contains(range.commonAncestorContainer)) savedRange = range.cloneRange();
-      }
+      function saveSelection() { bridge.saveSelection(); }
 
-      function restoreSelection() {
-        editor.focus();
-        const selection = window.getSelection();
-        if (!savedRange) {
-          savedRange = document.createRange();
-          savedRange.selectNodeContents(editor);
-          savedRange.collapse(false);
-        }
-        selection.removeAllRanges();
-        selection.addRange(savedRange);
-      }
+      function restoreSelection() { bridge.restoreSelection(); }
 
       function reportFormats() {
         const active = trackedCommands.filter((command) => {
@@ -186,13 +184,12 @@ function editorDocument(
       }
 
       window.__tusEditorCommand = function (payload) {
-        restoreSelection();
         if (payload.command === 'cloze') {
           insertCloze();
         } else {
-          const applied = document.execCommand(payload.command, false, payload.value || null);
-          if (payload.command === 'hiliteColor' && !applied) {
-            document.execCommand('backColor', false, payload.value || null);
+          const result = bridge.runCommand(payload.command, payload.value || null);
+          if (payload.command === 'hiliteColor' && !result.applied) {
+            bridge.runCommand('backColor', payload.value || null);
           }
         }
         emitChange();
@@ -258,7 +255,7 @@ function editorDocument(
       window.__tusEditorSetHtml = function (html) {
         if (editor.innerHTML === html) return;
         editor.innerHTML = html;
-        savedRange = null;
+        bridge.clearSavedRange();
         reportHeight();
       };
 
@@ -467,7 +464,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             };
             if (message.type === 'change' && typeof message.html === 'string') {
                 if (message.html.length > MAX_EDITOR_HTML_CHARS) return;
-                const safeHtml = sanitizeUntrustedHtml(message.html);
+                const safeHtml = sanitizeUntrustedHtml(stripPendingStyleMarkers(message.html));
                 lastEditorValueRef.current = safeHtml;
                 onChange(safeHtml);
             } else if (message.type === 'ready') {
