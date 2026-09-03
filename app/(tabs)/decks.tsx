@@ -75,6 +75,7 @@ import {
 } from '../../lib/bkaCatalog';
 import { requestDeckShortcut } from '../../modules/deck-shortcuts';
 import {
+    DEFAULT_SECOND_SEARCH_LIMIT,
     FILTERED_DECK_ORDER_UI,
     FILTERED_SEARCH_ORDER,
     extractDeckNameFromSearch,
@@ -224,7 +225,7 @@ export default function DecksScreen() {
     const [filterLimit, setFilterLimit] = useState('100');
     const [filterOrder, setFilterOrder] = useState(0);
     const [filterSearch2, setFilterSearch2] = useState('');
-    const [filterLimit2, setFilterLimit2] = useState('100');
+    const [filterLimit2, setFilterLimit2] = useState(String(DEFAULT_SECOND_SEARCH_LIMIT));
     const [filterOrder2, setFilterOrder2] = useState(0);
     const [filterSecondEnabled, setFilterSecondEnabled] = useState(false);
     const [filterReschedule, setFilterReschedule] = useState(true);
@@ -533,7 +534,7 @@ export default function DecksScreen() {
         searchLimit: parseCount(filterLimit, 100) || 100,
         searchOrder: filterOrder,
         searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
-        searchLimit2: parseCount(filterLimit2, 100) || 100,
+        searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
         searchOrder2: filterOrder2,
     });
 
@@ -571,7 +572,7 @@ export default function DecksScreen() {
                 searchLimit: parseCount(filterLimit, 100) || 100,
                 searchOrder: filterOrder,
                 searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
-                searchLimit2: parseCount(filterLimit2, 100) || 100,
+                searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
                 searchOrder2: filterOrder2,
                 reschedule: filterReschedule,
                 allowEmpty: filterAllowEmpty,
@@ -735,7 +736,7 @@ export default function DecksScreen() {
         setFilterLimit(String(deck.searchLimit ?? 100));
         setFilterOrder(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due);
         setFilterSearch2(deck.searchQuery2 ?? '');
-        setFilterLimit2(String(deck.searchLimit2 ?? 100));
+        setFilterLimit2(String(deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT));
         setFilterOrder2(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due);
         setFilterSecondEnabled(Boolean(deck.searchQuery2?.trim()));
         setFilterReschedule(deck.reschedule ?? true);
@@ -764,7 +765,7 @@ export default function DecksScreen() {
                 searchLimit: parseCount(filterLimit, 100) || 100,
                 searchOrder: filterOrder,
                 searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
-                searchLimit2: parseCount(filterLimit2, 100) || 100,
+                searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
                 searchOrder2: filterOrder2,
                 reschedule: filterReschedule,
                 allowEmpty: filterAllowEmpty,

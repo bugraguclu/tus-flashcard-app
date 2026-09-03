@@ -17,6 +17,7 @@ import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
 import { createDeck, getAllDecks, getAvailableDeckName, renameDeck, updateFilteredDeck } from '../lib/deckManager';
 import {
+    DEFAULT_SECOND_SEARCH_LIMIT,
     FILTERED_DECK_ORDER_UI,
     FILTERED_SEARCH_ORDER,
     extractDeckNameFromSearch,
@@ -62,7 +63,7 @@ export default function FilteredDeckOptionsModal({
     const [order, setOrder] = useState(0);
     const [secondEnabled, setSecondEnabled] = useState(false);
     const [search2, setSearch2] = useState('');
-    const [limit2, setLimit2] = useState('100');
+    const [limit2, setLimit2] = useState(String(DEFAULT_SECOND_SEARCH_LIMIT));
     const [order2, setOrder2] = useState(0);
     const [reschedule, setReschedule] = useState(true);
     const [previewDelays, setPreviewDelays] = useState(formatPreviewDelays(undefined));
@@ -84,7 +85,7 @@ export default function FilteredDeckOptionsModal({
         setLimit(String(deck.searchLimit ?? 100));
         setOrder(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due);
         setSearch2(deck.searchQuery2 ?? '');
-        setLimit2(String(deck.searchLimit2 ?? 100));
+        setLimit2(String(deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT));
         setOrder2(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due);
         setSecondEnabled(Boolean(deck.searchQuery2?.trim()));
         setReschedule(deck.reschedule ?? true);

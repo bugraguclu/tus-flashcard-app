@@ -4,6 +4,8 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 import {
     ankiFilteredOrderFromLegacy,
     DEFAULT_PREVIEW_DELAYS,
+    DEFAULT_SEARCH_LIMIT,
+    DEFAULT_SECOND_SEARCH_LIMIT,
     extractDeckNameFromSearch,
     FILTERED_DECK_ORDER_UI,
     FILTERED_SEARCH_ORDER,
@@ -85,6 +87,15 @@ describe('filtered deck gather order ordinals', () => {
         expect(ankiFilteredOrderFromLegacy(undefined)).toBe(FILTERED_SEARCH_ORDER.due);
         expect(ankiFilteredOrderFromLegacy('x')).toBe(FILTERED_SEARCH_ORDER.due);
         expect(ankiFilteredOrderFromLegacy(42)).toBe(FILTERED_SEARCH_ORDER.due);
+    });
+});
+
+describe('filtered deck creation defaults', () => {
+    it('starts the two search terms at the limits Deck::new_filtered uses', () => {
+        // Upstream seeds 100 cards in Random order for the first term and only 20 in Due order for
+        // the second; the second filter is meant as a small top-up, so the asymmetry is kept.
+        expect(DEFAULT_SEARCH_LIMIT).toBe(100);
+        expect(DEFAULT_SECOND_SEARCH_LIMIT).toBe(20);
     });
 });
 

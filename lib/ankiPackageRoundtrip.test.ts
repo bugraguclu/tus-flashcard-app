@@ -303,28 +303,34 @@ describe('lossless Anki package roundtrip', () => {
         });
     });
 
-    it('fills the preview delays a package leaves out with Anki\u2019s own per-button defaults', () => {
-        // What `Deck.new_filtered` produces: Again 60 and Hard 600 are written, Good stays 0 and so
-        // is omitted by proto3. This is the shape almost every real filtered deck arrives in.
+    it('treats a preview delay the package omits as zero, the way both of Anki\u2019s readers do', () => {
+        // What `Deck::new_filtered` produces: Again 60 and Hard 600 are written, Good stays 0 and
+        // so is omitted by proto3. This is the shape almost every real filtered deck arrives in.
         expect(importModernFilteredDeck([
             pbVarint(PREVIEW_TAG.againSecs, 60),
             pbVarint(PREVIEW_TAG.hardSecs, 600),
         ])?.previewDelays).toEqual([60, 600, 0]);
 
-        // Good alone: Hard must fall back to 600 rather than borrow the Good value.
+        // An omitted Hard is a zero, not a licence to substitute a default: proto3 cannot tell a
+        // stored zero from an absent field, and preview_filter.rs ends the preview on either.
         expect(importModernFilteredDeck([
             pbVarint(PREVIEW_TAG.againSecs, 30),
             pbVarint(PREVIEW_TAG.goodSecs, 15),
-        ])?.previewDelays).toEqual([30, 600, 15]);
+        ])?.previewDelays).toEqual([30, 0, 15]);
+
+        // A deck that stores nothing at all previews each card once.
+        expect(importModernFilteredDeck([])?.previewDelays).toEqual([0, 0, 0]);
     });
 
-    it('expands a v2-era filtered deck\u2019s single preview delay across the three buttons', () => {
-        // Ten minutes was the legacy default, and the old schedulers spread it 1x/1.5x/2x.
+    it('leaves a v2-era single preview delay out of the three buttons', () => {
+        // Anki stopped consuming `preview_delay` after 2.1.54 and never converts it: the schema-11
+        // conversion copies it across untouched and the scheduler reads only the per-button
+        // fields. Deriving delays from it here would make the deck behave differently than in Anki.
         expect(importModernFilteredDeck([
             pbVarint(PREVIEW_TAG.legacyDelayMinutes, 10),
-        ])?.previewDelays).toEqual([600, 900, 1200]);
+        ])?.previewDelays).toEqual([0, 0, 0]);
 
-        // A package that carries both keeps the per-button values the newer Anki wrote.
+        // It must also never override values the package does carry.
         expect(importModernFilteredDeck([
             pbVarint(PREVIEW_TAG.legacyDelayMinutes, 10),
             pbVarint(PREVIEW_TAG.againSecs, 60),
@@ -333,7 +339,7 @@ describe('lossless Anki package roundtrip', () => {
     });
 
     it('reads the same preview delays from a schema-11 JSON collection', () => {
-        expect(importLegacyFilteredDeck({ previewDelay: 10 })?.previewDelays).toEqual([600, 900, 1200]);
+        expect(importLegacyFilteredDeck({ previewDelay: 10 })?.previewDelays).toEqual([0, 0, 0]);
         expect(importLegacyFilteredDeck({
             previewDelay: 10, previewAgainSecs: 45, previewHardSecs: 900, previewGoodSecs: 120,
         })?.previewDelays).toEqual([45, 900, 120]);
@@ -341,7 +347,8 @@ describe('lossless Anki package roundtrip', () => {
         expect(importLegacyFilteredDeck({
             previewAgainSecs: 0, previewHardSecs: 0, previewGoodSecs: 0,
         })?.previewDelays).toEqual([0, 0, 0]);
-        expect(importLegacyFilteredDeck({})?.previewDelays).toEqual([60, 600, 0]);
+        // The schema-11 struct marks all three #[serde(default)], so an absent key is a zero too.
+        expect(importLegacyFilteredDeck({})?.previewDelays).toEqual([0, 0, 0]);
     });
 
     it('returns a gathered card to its home deck instead of exporting a dangling filtered deck', async () => {
@@ -357,8 +364,9 @@ describe('lossless Anki package roundtrip', () => {
         const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
         const decks: Record<string, any> = JSON.parse(reader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks);
 
-        // Anki's package exporter has never written filtered decks: the deck is a local grouping of
-        // cards that already belong somewhere else, so the package carries the home deck instead.
+        // Filtered decks are virtual here, so they are not exported. Upstream instead converts one
+        // into a regular deck when it cannot export it as filtered; the shared requirement, and
+        // what this pins, is that no exported card points at a deck the package never defines.
         expect(Object.values(decks).map((deck) => deck.name)).not.toContain('Preview Deck');
         expect(Object.values(decks).map((deck) => deck.name)).toContain('Cardiology');
         // The card must therefore point at a deck the package defines, with the filtered

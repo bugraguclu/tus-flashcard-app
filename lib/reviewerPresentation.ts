@@ -39,8 +39,16 @@ export function shouldShowReviewerToolbarActions(hasCurrentCard: boolean, undoSt
 }
 
 /**
- * Single-key undo defaults. `z` is AnkiDroid's undo key and `u` collides with no Anki reviewer
- * shortcut, so both are offered — but neither is reserved.
+ * Single-key undo defaults.
+ *
+ * These are a local convenience, not an Anki binding: Anki Desktop and AnkiDroid both undo with
+ * Ctrl+Z (AnkiDroid's `ViewerCommand.UNDO` is `keyCode(KEYCODE_Z, ctrl())`, redo is Ctrl+Shift+Z).
+ * A modifier chord cannot reach the reviewer on iOS, where the key capture is a hidden TextInput
+ * whose onKeyPress reports a key name with no modifier flags, so undo would otherwise have no
+ * shortcut on the target platform at all. `z` echoes the upstream chord without its modifier and
+ * `u` is the obvious mnemonic; neither is reserved, and `reviewerUndoKeys` drops whichever one the
+ * learner has bound to something else.
+ * https://github.com/ankidroid/Anki-Android/blob/main/AnkiDroid/src/main/java/com/ichi2/anki/cardviewer/ViewerCommand.kt
  */
 export const DEFAULT_UNDO_KEYS = ['z', 'u'];
 

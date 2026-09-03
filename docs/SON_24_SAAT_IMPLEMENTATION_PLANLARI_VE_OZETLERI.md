@@ -206,7 +206,9 @@ Gerçekleştirilen tüm geliştirmeler otomatikleştirilmiş test paketleri ve k
 
 ### 3.1. `.apkg` içe aktarımında önizleme gecikmesi alanları (P0)
 
-`decks.proto` içindeki `Deck.Filtered` alan numaraları bilerek sıralı değildir: `preview_hard_secs = 5`, `preview_good_secs = 6`, `preview_again_secs = 7`. `lib/importApkg.ts` bunları 5=Again, 6=Hard, 7=Good olarak okuyordu; varsayılan ayarlı gerçek bir Anki destesi **again=600, hard=600, good=60** olarak içe aktarılıyordu. Alan eşlemesi ve alan başına varsayılanlar düzeltildi. Ayrıca v2 döneminden kalan tek değerli `preview_delay` (alan 4, dakika) okunup üç butona yayılıyor, hem modern protobuf hem schema-11 JSON yolları aynı sonucu veriyor. Aynı yanlış varsayımı kodlayan round-trip fixture'ı gerçek alan numaralarıyla yeniden yazıldı.
+`decks.proto` içindeki `Deck.Filtered` alan numaraları bilerek sıralı değildir: `preview_hard_secs = 5`, `preview_good_secs = 6`, `preview_again_secs = 7`. `lib/importApkg.ts` bunları 5=Again, 6=Hard, 7=Good olarak okuyordu; varsayılan ayarlı gerçek bir Anki destesi **again=600, hard=600, good=60** olarak içe aktarılıyordu. Alan eşlemesi ve alan başına varsayılanlar düzeltildi. Aynı yanlış varsayımı kodlayan round-trip fixture'ı gerçek alan numaralarıyla yeniden yazıldı.
+
+İlk düzeltmede v2 döneminden kalan tek değerli `preview_delay` (alan 4, dakika) üç butona 1x/1.5x/2x oranıyla yayılıyordu. **Bu kaldırıldı:** upstream hiçbir yerde böyle bir dönüşüm yapmıyor — `From<FilteredDeckSchema11> for FilteredDeck` alanı olduğu gibi kopyalıyor, schema15 yükseltmesi ona dokunmuyor, modern zamanlayıcı yalnızca üç per-buton alanını okuyor. Artık paketin taşımadığı bir alan **sıfır** sayılıyor; sıfır da `preview_filter.rs`'e göre kartı önizlemeden çıkarıyor. Hiçbir şey saklamayan bir deste her kartı bir kez gösteriyor — Anki'de olduğu gibi. `[60, 600, 0]` yalnızca **yeni deste oluştururken** kullanılıyor; bunlar `Deck::new_filtered`'ın kendi değerleridir ve aynı kaynaktan ikinci filtrenin varsayılan limiti de 100'den **20**'ye çekildi.
 
 ### 3.2. Fotoğraf editöründe çöpe sürükleyip silme (P0)
 
@@ -222,7 +224,7 @@ Gerçekleştirilen tüm geliştirmeler otomatikleştirilmiş test paketleri ve k
 
 ### 3.5. Çalışma ekranı kısayolları ve çıkış
 
-- `z` ve `u` artık kullanıcının kendi tuş atamalarından **sonra** geliyor: bury'yi `z`'ye taşıyan bir kullanıcı artık sessizce undo almıyor.
+- `z` ve `u` artık kullanıcının kendi tuş atamalarından **sonra** geliyor: bury'yi `z`'ye taşıyan bir kullanıcı artık sessizce undo almıyor. (Doğrulama notu: bu iki tuş **Anki bindingi değildir** — hem Anki Desktop hem AnkiDroid undo'yu Ctrl+Z ile yapar, AnkiDroid'de `ViewerCommand.UNDO = keyCode(KEYCODE_Z, ctrl())`. iOS'ta modifier chord yakalanamadığı için yerel bir kolaylık olarak duruyorlar ve kod içinde böyle belgelendi.)
 - Ctrl/Cmd+Z yalnızca web'de yakalanabiliyor (native yakalama `TextInput.onKeyPress`'tir ve modifier bildirmez), bu yüzden ipucu metni platforma göre üretiliyor; iPhone'da çalışmayan bir kısayol artık reklam edilmiyor.
 - Klavye yakalama alanı tebrikler ekranında da duruyor; Escape ile çıkış artık son karttan sonra da çalışıyor.
 - Geri butonunun etiketi davranışıyla eşitlendi ("Çalışmadan çık"), tebrikler ekranındaki "Destelere Dön" butonu ise gerçekten deste listesine gidiyor.
@@ -239,7 +241,9 @@ Gerçekleştirilen tüm geliştirmeler otomatikleştirilmiş test paketleri ve k
 
 ### 3.8. Dışa aktarımda sarkan deste referansı
 
-`scopedData` filtrelenmiş desteleri hiç dışa aktarmıyor, fakat kartın `did`'i olduğu gibi yazılıyordu: filtrelenmiş bir destede duran kart, paket içinde tanımlı olmayan bir desteyi işaret ediyordu. Anki'nin kendi paket dışa aktarıcısı gibi kart artık `odid`'deki asıl destesine döndürülüyor, `odue` vadesi geri veriliyor.
+`scopedData` filtrelenmiş desteleri hiç dışa aktarmıyor, fakat kartın `did`'i olduğu gibi yazılıyordu: filtrelenmiş bir destede duran kart, paket içinde tanımlı olmayan bir desteyi işaret ediyordu. Kart artık `odid`'deki asıl destesine döndürülüyor, `odue` vadesi geri veriliyor.
+
+**Bu Anki'nin yaptığı şey değildir; sonradan doğrulandı.** `rslib/src/import_export/gather.rs`, toplanan her kartın asıl destesi de dışa aktarımda varsa filtrelenmiş desteyi **filtrelenmiş olarak** yazar; olmadığında desteyi **normal desteye dönüştürüp kartları içinde bırakır** (`restore_cards_from_filtered_decks`). Desteyi hiç düşürmez. Düşürmek, bu uygulamada filtrelenmiş destelerin sanal olmasından gelen yerel bir sadeleştirmedir ve yalnızca gerçek bir Anki koleksiyonundan filtrelenmiş destede içe aktarılmış kartları etkiler. Sarkan referansı gidermek hatayı her hâlükârda düzeltiyor; tam upstream davranışına hizalamak ayrı bir iş olarak duruyor.
 
 ### 3.9. Kalite kapısı
 
@@ -253,6 +257,6 @@ Tek satırlık kaydırmalı araç çubuğu, iPhone'da araçların çoğunu bir k
 - **Stiller:** Normal, H1, H2, H3 (metin etiketiyle, beş aynı ikon ayırt edilemeyeceği için), alıntı, kod bloğu, madde ve numaralı liste. Hepsi `formatBlock` ile çalışıyor; eskiden `<h1>…</h1>` sarmalayan ayrı başlık seçici kaldırıldı.
 - **Ekle:** Tablo (2×2, 3×3, 3×2, 4×4), bağlantı, bilgi kutusu (4 ton), yatay çizgi, MathJax, HTML kaynağı; cloze ve kullanıcının kendi araç çubuğu düğmeleri de bu sekmede.
 
-Bunlar AnkiMobile araç çubuğunda bulunmayan, bilinçli ürün eklemeleridir; ürettikleri şey her yerde açılan düz HTML'dir (`table`, `blockquote`, `pre`, `a`), Anki'ye özgü bir uzantı değildir.
+**Hangisi Anki, hangisi bizim eklememiz:** Hizalama (4 yön) ile girinti artır/azalt **Anki'nin kendi editöründe var** (`ts/routes/editor/editor-toolbar/BlockButtons.svelte`; Anki'de girinti yalnızca liste içinde çalışır, kısayolları Ctrl+Shift+. / Ctrl+Shift+,). Yani bunlar parity kazancı, ürün icadı değil. Anki'nin editöründe **bulunmayan** bilinçli eklemeler şunlardır: tablo, köprü bağlantısı, bilgi kutusu, blok stilleri (H1–H3, alıntı, kod) ve yazı boyutu. Ürettikleri şey her yerde açılan düz HTML'dir (`table`, `blockquote`, `pre`, `a`), Anki'ye özgü bir uzantı değildir.
 
 **Güvenlik:** Alan sanitizasyonu bir denylist olduğu için bu etiketlerin hiçbiri sanitizer'ı gevşetmeyi gerektirmedi — `sanitizeUntrustedHtml` script/style/iframe/form gibi kapları ve `on*`, `srcdoc`, tehlikeli `style`, güvensiz URL niteliklerini zaten atıyor. Bağlantı adresleri ayrıca `lib/editorToolbar.ts` içinde doğrulanıyor: yalnızca `http`, `https` ve `mailto` kabul ediliyor; `javascript:`, `data:`, `file:` ve boşluk/tırnak içeren adresler reddediliyor, etiket metni kaçırılıyor. `lib/editorToolbar.test.ts` her eklenen parçayı sanitizer'dan geçirip **değişmeden döndüğünü** doğruluyor — yani kullanıcı yazdığı biçimi sessizce kaybetmiyor, saldırgan da sanitizer'ın arkasından dolaşamıyor.

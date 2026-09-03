@@ -365,15 +365,21 @@ function ankiDue(card: AnkiCard, collectionDay: number): number {
 /**
  * Sends any card still sitting in a filtered deck back to the deck it came from.
  *
- * `scopedData` never exports filtered decks, so a card whose `deckId` is one of them would be
- * written with a `did` no row in the package defines. Anki's own package exporter has always
- * undone the filtered placement for exactly this reason: the card returns to `odid`, and the due
- * date it had before it was gathered (`odue`) becomes its due date again.
+ * `scopedData` never exports filtered decks, so a card whose `deckId` is one of them would
+ * otherwise be written with a `did` that no row in the package defines, and Anki would import it
+ * into a deck that does not exist.
  *
- * The home deck is normally present, because only the filtered deck itself is dropped. A card
- * whose `odid` is missing or also unexported has nothing to return to, so it falls back to the
- * default deck rather than leaving the package internally inconsistent. This is the same move
- * `returnFilteredCardsHome` makes in lib/deckManager.ts when a filtered deck is emptied locally.
+ * This is NOT what upstream does, and the difference is worth stating. Anki's `gather_data`
+ * exports filtered decks as filtered whenever every gathered card's original deck is also in the
+ * export; when it is not, it converts the filtered deck into a regular one and leaves the cards
+ * inside it (`restore_cards_from_filtered_decks` sets `original_deck_id = deck_id`). It never
+ * drops the deck. Dropping it is a local simplification that follows from filtered decks being
+ * virtual here — they gather on demand instead of holding cards — so the only cards this can
+ * affect are ones imported from a real Anki collection while they sat in a filtered deck.
+ * Returning them to `odid`, with the pre-gather due date `odue` restored, is the same move
+ * `returnFilteredCardsHome` in lib/deckManager.ts makes when a filtered deck is emptied locally.
+ *
+ * https://github.com/ankitects/anki/blob/main/rslib/src/import_export/gather.rs
  */
 function returnCardsToHomeDeck(cards: AnkiCard[], decks: Deck[]): AnkiCard[] {
     const exportedDeckIds = new Set(decks.map((deck) => deck.id));

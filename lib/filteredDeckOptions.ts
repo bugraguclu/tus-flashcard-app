@@ -25,6 +25,17 @@ export const FILTERED_SEARCH_ORDER = {
 export const FILTERED_DECK_ORDER_UI = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 /**
+ * Card limits a new filtered deck starts with.
+ *
+ * `Deck::new_filtered` seeds two search terms: the first gathers 100 cards in Random order, the
+ * second only 20 in Due order. The asymmetry is deliberate upstream — the second filter is meant
+ * as a small top-up — so both numbers are matched rather than rounded to one value.
+ * https://github.com/ankitects/anki/blob/main/rslib/src/decks/filtered.rs
+ */
+export const DEFAULT_SEARCH_LIMIT = 100;
+export const DEFAULT_SECOND_SEARCH_LIMIT = 20;
+
+/**
  * Preview delays in seconds for a filtered deck whose rescheduling is turned off.
  *
  * Anki stores exactly three of them — `preview_again_secs`, `preview_hard_secs` and

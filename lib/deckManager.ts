@@ -9,7 +9,7 @@ import {
 } from './customStudy';
 import type { Deck, DeckConfig, AnkiCard } from './models';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getParentDeckName, uniqueId } from './models';
-import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import { DEFAULT_SECOND_SEARCH_LIMIT, FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { getDB } from './db';
 import { dayNumberToYmd, localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
@@ -1090,7 +1090,7 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
     deck.searchOrder = options.searchOrder;
     deck.searchQuery2 = options.searchQuery2?.trim() ? options.searchQuery2 : undefined;
     deck.searchLimit2 = options.searchQuery2?.trim()
-        ? Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(options.searchLimit2 ?? 100) || 100))
+        ? Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(options.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT))
         : undefined;
     deck.searchOrder2 = options.searchQuery2?.trim()
         ? (options.searchOrder2 ?? FILTERED_SEARCH_ORDER.due)

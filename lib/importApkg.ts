@@ -316,8 +316,9 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 raw.desc = protoString(kind, 4);
             } else {
                 raw.resched = Boolean(protoNumber(kind, 1));
-                // Copied across without a fallback so importedPreviewDelays still sees which tags
-                // the package actually carried, which is what distinguishes a pre-2.1.55 deck.
+                // Kept optional rather than defaulted so the raw record still says which tags the
+                // package carried; the legacy minutes field is preserved only for lossless
+                // re-export, exactly as Anki preserves it, and never feeds the three delays.
                 raw.previewAgainSecs = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.againSecs);
                 raw.previewHardSecs = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.hardSecs);
                 raw.previewGoodSecs = protoOptionalNumber(kind, FILTERED_PREVIEW_FIELD.goodSecs);
@@ -521,31 +522,28 @@ const REVIEW_ORDER_BY_ORDINAL: (ReviewSortOrder | undefined)[] = [
 /**
  * Again/Hard/Good preview delays in seconds for an imported filtered deck.
  *
- * Anki has stored one delay per button since 2.1.55. Before that a filtered deck carried a single
- * `previewDelay` in MINUTES, which the schedulers fanned out to 1x for Again, 1.5x for Hard and 2x
- * for Good; the v2 scheduler read the same field and defaulted it to 10 minutes. Nothing upstream
- * rewrites such a deck on load, so unfolding that ratio here is the only way an old package
- * previews at the spacing its author chose instead of silently taking our defaults. The legacy
- * value is only consulted when the package carries none of the three modern fields, because a
- * deck saved by a current Anki keeps `previewDelay` around untouched.
+ * A field the package leaves out means zero, and zero means the button ends the preview. That is
+ * not a guess: both of Anki's readers default these to zero — proto3 omits a zero scalar, and the
+ * schema-11 struct marks all three `#[serde(default)]` — and `preview_filter.rs` turns a zero into
+ * a finished state. So a deck that stores nothing previews each card once, and this reads it the
+ * same way rather than substituting the values used when creating a deck.
  *
- * Sources: pylib/anki/schedv2.py `_previewDelay` (`previewDelay * 60`, default 10) and
- * rslib/src/scheduler/states/preview_filter.rs at tag 2.1.54 (`preview_step * 60 / 90 / 120`).
+ * The legacy `previewDelay` in MINUTES is deliberately NOT unfolded across the three buttons.
+ * Anki stopped consuming it after 2.1.54, and nothing upstream converts it: `From<FilteredDeckSchema11>`
+ * copies it across untouched and the scheduler reads only the three per-button fields. Deriving
+ * values from it here would make an old deck behave differently in this app than in Anki.
+ *
+ * Sources: rslib/src/decks/schema11.rs (`From<FilteredDeckSchema11> for FilteredDeck`),
+ * rslib/src/scheduler/answering/mod.rs (reads only preview_*_secs) and
+ * rslib/src/scheduler/states/preview_filter.rs (`delay_or_return`, zero finishes the card).
  */
 function importedPreviewDelays(raw: Record<string, any>): [number, number, number] {
-    const stored = (value: unknown, fallback: number): number =>
-        value === undefined || value === null ? fallback : numberValue(value, fallback);
-    const modern = [raw.previewAgainSecs, raw.previewHardSecs, raw.previewGoodSecs];
-    if (modern.every((value) => value === undefined || value === null)) {
-        const legacyMinutes = numberValue(raw.previewDelay);
-        if (legacyMinutes > 0) {
-            return parsePreviewDelays([legacyMinutes * 60, legacyMinutes * 90, legacyMinutes * 120]);
-        }
-    }
+    const stored = (value: unknown): number =>
+        value === undefined || value === null ? 0 : numberValue(value, 0);
     return parsePreviewDelays([
-        stored(modern[0], DEFAULT_PREVIEW_DELAYS[0]),
-        stored(modern[1], DEFAULT_PREVIEW_DELAYS[1]),
-        stored(modern[2], DEFAULT_PREVIEW_DELAYS[2]),
+        stored(raw.previewAgainSecs),
+        stored(raw.previewHardSecs),
+        stored(raw.previewGoodSecs),
     ]);
 }
 
