@@ -578,7 +578,7 @@ function createStyles(colors: ColorScheme) {
         },
 
         installOverlay: {
-            ...StyleSheet.absoluteFillObject,
+            ...StyleSheet.absoluteFill,
             backgroundColor: Platform.OS === 'ios' ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.55)',
             alignItems: 'center', justifyContent: 'center', padding: Spacing.xl,
         },

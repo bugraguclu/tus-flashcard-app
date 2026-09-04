@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, type ColorSchemeName } from 'react-native';
 
 export type ColorScheme = typeof LightColors;
 export type ThemeMode = 'system' | 'light' | 'dark';
@@ -97,7 +97,7 @@ const ThemeIsDarkContext = createContext<boolean>(false);
 
 export function resolveThemeColors(
     mode: ThemeMode,
-    systemScheme: 'light' | 'dark' | null | undefined,
+    systemScheme: ColorSchemeName,
 ): { colors: ColorScheme; isDark: boolean } {
     const effective = mode === 'system' ? systemScheme : mode;
     const isDark = effective === 'dark';

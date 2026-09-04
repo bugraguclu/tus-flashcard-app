@@ -90,6 +90,10 @@ describe('collection preferences match Anki', () => {
         expect(DEFAULT_SETTINGS.reviewerToolbarPosition).toBe('top');
     });
 
+    it('defaults to light theme', () => {
+        expect(DEFAULT_SETTINGS.themeMode).toBe('light');
+    });
+
     it('keeps the redesigned study screen opt-in for existing users', () => {
         expect(DEFAULT_SETTINGS.newStudyScreenEnabled).toBe(false);
     });

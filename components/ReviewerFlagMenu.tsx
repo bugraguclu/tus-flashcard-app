@@ -81,7 +81,7 @@ export default function ReviewerFlagMenu({
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         overlay: { flex: 1, alignItems: 'flex-end' },
-        scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.22)' },
+        scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.22)' },
         panel: {
             maxHeight: '100%',
             backgroundColor: colors.bgCard,

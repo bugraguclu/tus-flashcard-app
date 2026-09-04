@@ -650,7 +650,7 @@ export default function CustomStudyModal({
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         overlay: { flex: 1, justifyContent: 'flex-end' },
-        backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.42)' },
+        backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' },
         sheet: {
             width: '100%',
             maxWidth: 680,

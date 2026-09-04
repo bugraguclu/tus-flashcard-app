@@ -834,8 +834,8 @@ function createStyles(colors: ColorScheme) {
         },
         saveText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
         disabled: { opacity: 0.45 },
-        overlayLayer: { ...StyleSheet.absoluteFillObject, zIndex: 20, justifyContent: 'flex-end' },
-        overlayBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.42)' },
+        overlayLayer: { ...StyleSheet.absoluteFill, zIndex: 20, justifyContent: 'flex-end' },
+        overlayBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' },
         pickerCard: {
             maxHeight: '70%',
             backgroundColor: colors.bgPrimary,

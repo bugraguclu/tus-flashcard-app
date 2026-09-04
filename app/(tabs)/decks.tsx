@@ -2658,7 +2658,7 @@ function createStyles(colors: ColorScheme) {
         paddingRight: Spacing.lg,
     },
     overflowBackdrop: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     overflowSheet: {
         minWidth: 200,
@@ -2970,7 +2970,7 @@ function createStyles(colors: ColorScheme) {
     mobileDragPreviewHintOrder: { color: colors.textSecondary },
 
     fabDismissLayer: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         zIndex: 20,
     },
     fabWrap: {
@@ -3338,14 +3338,14 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '700',
     },
     filteredOverlayLayer: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         zIndex: 20,
         alignItems: 'center',
         justifyContent: 'center',
         padding: Spacing.xl,
     },
     filteredOverlayBackdrop: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0, 0, 0, 0.42)',
     },
     filteredHelpCard: {
@@ -3485,7 +3485,7 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '800',
     },
     filteredOverlayLayerBottom: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         zIndex: 20,
         justifyContent: 'flex-end',
     },
@@ -3527,7 +3527,7 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '800',
     },
     modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
-    modalBackdropHit: { ...StyleSheet.absoluteFillObject },
+    modalBackdropHit: { ...StyleSheet.absoluteFill },
     deckMenuCard: {
         width: '100%',
         maxWidth: 520,

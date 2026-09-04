@@ -379,7 +379,7 @@ export default function SettingsScreen() {
     const { refreshSettings: refreshData } = useAppSettings();
     const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
-    const { l, deviceLanguage } = useI18n();
+    const { l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -763,20 +763,26 @@ export default function SettingsScreen() {
     const renderGeneral = useCallback(() => (
         <>
             <Group title={l('Dil', 'Language')} styles={styles}>
-                <ChoiceRow
-                    label={l('Uygulama dili', 'App language')}
-                    summary={settings.language === 'system'
-                        ? l(`Cihaz dili: ${deviceLanguage === 'tr' ? 'Türkçe' : 'English'}`, `Device language: ${deviceLanguage === 'tr' ? 'Türkçe' : 'English'}`)
-                        : l('Uygulamanın arayüz dilini seçin.', 'Choose the app interface language.')}
-                    value={settings.language}
-                    options={[
+                <View style={styles.themeChoiceRow}>
+                    {([
                         { value: 'system' as AppLanguage, label: l('Sistem', 'System') },
                         { value: 'tr' as AppLanguage, label: 'Türkçe' },
                         { value: 'en' as AppLanguage, label: 'English' },
-                    ]}
-                    onChange={(value) => updateSetting('language', value)}
-                    styles={styles}
-                />
+                    ]).map((option) => {
+                        const selected = settings.language === option.value;
+                        return (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={[styles.themeChoiceButton, selected && styles.themeChoiceButtonActive]}
+                                onPress={() => updateSetting('language', option.value)}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: selected }}
+                            >
+                                <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
             </Group>
             <Group title={l('Tema', 'Theme')} styles={styles}>
                 <View style={styles.themeChoiceRow}>
@@ -865,7 +871,7 @@ export default function SettingsScreen() {
                 <Text style={styles.outlineButtonText}>↺ {l('Varsayılan ayarlara dön', 'Restore default settings')}</Text>
             </TouchableOpacity>
         </>
-    ), [deviceLanguage, handleResetSettings, l, settings, styles, updateSetting]);
+    ), [handleResetSettings, l, settings, styles, updateSetting]);
 
     const renderNewStudy = () => (
         <>

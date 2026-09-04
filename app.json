@@ -2,13 +2,14 @@
   "expo": {
     "name": "TusAnkiM",
     "slug": "tusankim",
-    "owner": "smbg",
     "version": "1.0.0",
-    "platforms": ["ios", "web"],
+    "platforms": [
+      "ios",
+      "web"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon-appstore.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "buildNumber": "1",
@@ -51,17 +52,25 @@
           {
             "UTTypeIdentifier": "com.tusankim.apkg",
             "UTTypeDescription": "Anki Deck Package",
-            "UTTypeConformsTo": ["public.data"],
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
             "UTTypeTagSpecification": {
-              "public.filename-extension": ["apkg"]
+              "public.filename-extension": [
+                "apkg"
+              ]
             }
           },
           {
             "UTTypeIdentifier": "com.tusankim.colpkg",
             "UTTypeDescription": "Anki Collection Package",
-            "UTTypeConformsTo": ["public.data"],
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
             "UTTypeTagSpecification": {
-              "public.filename-extension": ["colpkg"]
+              "public.filename-extension": [
+                "colpkg"
+              ]
             }
           }
         ]
@@ -120,7 +129,10 @@
         }
       ],
       "expo-notifications",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-asset",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "locales": {
       "tr": "./locales/tr.json",

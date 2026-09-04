@@ -78,7 +78,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
     language: 'system',
-    themeMode: 'system',
+    themeMode: 'light',
     keyBindings: DEFAULT_KEY_BINDINGS,
     autoAdvance: false,
     interruptAudioOnAnswer: true,
@@ -436,7 +436,7 @@ function normalizeQueueOrder(value: unknown): AppSettings['queueOrder'] {
 }
 
 function normalizeThemeMode(value: unknown): ThemeMode {
-    return value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
+    return value === 'light' || value === 'dark' || value === 'system' ? value : 'light';
 }
 
 function normalizeLanguage(value: unknown): AppSettings['language'] {
