@@ -542,7 +542,8 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
     // reviewed with a white keyboard over it. 'system' clears the override.
     useEffect(() => {
         if (Platform.OS === 'web') return;
-        Appearance.setColorScheme(activeMode === 'system' ? null : activeMode);
+        // React Native 0.86 replaced `null` with 'unspecified' as the value that clears the override.
+        Appearance.setColorScheme(activeMode === 'system' ? 'unspecified' : activeMode);
     }, [activeMode]);
 
     return <ThemeColorsProvider mode={activeMode}>{children}</ThemeColorsProvider>;
@@ -679,6 +680,14 @@ function AppStack() {
                 />
                 <Stack.Screen
                     name="stats"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="study-calendar"
                     options={{
                         presentation: 'card',
                         gestureEnabled: true,

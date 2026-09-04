@@ -90,7 +90,7 @@ const stylesForIcon = StyleSheet.create({
 });
 
 export function Sidebar(props: SidebarProps) {
-    const { t } = useI18n();
+    const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {
@@ -290,6 +290,14 @@ export function Sidebar(props: SidebarProps) {
                         <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                    style={styles.settingsBtn}
+                    onPress={() => navigate('/study-calendar')}
+                    {...webTitle(l('Çalışma Takvimi', 'Study Calendar'))}
+                >
+                    <Text style={styles.settingsBtnText}>🗓️ {l('Çalışma Takvimi', 'Study Calendar')}</Text>
+                </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
                     <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
