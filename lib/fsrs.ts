@@ -65,7 +65,18 @@ export const FSRS_DESIRED_RETENTION_MAX = 0.99;
 export const FSRS_DEFAULT_DESIRED_RETENTION = 0.9;
 export const FSRS_DEFAULT_HISTORICAL_RETENTION = 0.9;
 
-/** Per-parameter bounds; training and hand-editing both clamp through this table. */
+/**
+ * Per-parameter bounds. Two of the entries are not constants upstream:
+ *
+ *  - w17 and w18 share a ceiling that shrinks as the preset gains relearning steps, because
+ *    `postLapseStability * e^(steps * w17 * w18)` must stay at or below the pre-lapse stability;
+ *  - w19 has a floor of 0.01 while short-term scheduling is on, so a same-day repeat cannot be
+ *    trained into a no-op.
+ *
+ * Both only bind while training. Scheduling clamps with the defaults below, which is exactly the
+ * table upstream applies when it builds a scheduler from stored parameters
+ * (`fsrs-rs/src/parameter_clipper.rs`, `FSRS::new`).
+ */
 const PARAMETER_BOUNDS: ReadonlyArray<readonly [number, number]> = [
     [FSRS_STABILITY_MIN, FSRS_INITIAL_STABILITY_MAX],
     [FSRS_STABILITY_MIN, FSRS_INITIAL_STABILITY_MAX],
@@ -118,10 +129,47 @@ export function normalizeFsrsParameters(params: readonly number[] | undefined | 
     return [...DEFAULT_FSRS_PARAMETERS];
 }
 
-/** Clamp every parameter into the range training is allowed to explore. */
-export function clampFsrsParameters(params: readonly number[]): number[] {
+export interface FsrsClampOptions {
+    /** How many relearning steps the preset has. Only >1 tightens the w17/w18 ceiling. */
+    numRelearningSteps?: number;
+    /** True while the preset schedules same-day repeats, which puts a floor under w19. */
+    enableShortTerm?: boolean;
+}
+
+const W17_W18_MAX = 2.0;
+
+/**
+ * The shared ceiling for w17/w18. Derived from upstream's own inequality: with the worst case
+ * D = 1, R = 0.7, S = 1, a lapse followed by `steps` relearning repeats must not end up more
+ * stable than the card was before the lapse, i.e.
+ *   steps * w17 * w18 <= -[ln(w11) + ln(2^w13 - 1) + 0.3 * w14]
+ * and since w17 and w18 share one bound, the bound is the square root of that budget.
+ */
+function w17w18Ceiling(params: readonly number[], numRelearningSteps: number): number {
+    if (numRelearningSteps <= 1) return W17_W18_MAX;
+    const budget = -(Math.log(params[11]) + Math.log(Math.pow(2, params[13]) - 1) + params[14] * 0.3)
+        / numRelearningSteps;
+    return Math.min(W17_W18_MAX, Math.sqrt(Math.max(0.01, budget)));
+}
+
+/**
+ * Clamp every parameter into its legal range.
+ *
+ * With no options this is the clamp upstream applies when it builds a scheduler, which is what
+ * every scheduling path here wants. The optimizer passes the preset's relearning-step count and
+ * short-term flag so training explores the same box Anki's trainer explores.
+ */
+export function clampFsrsParameters(
+    params: readonly number[],
+    options: FsrsClampOptions = {},
+): number[] {
     const normalized = normalizeFsrsParameters(params);
+    const ceiling = w17w18Ceiling(normalized, options.numRelearningSteps ?? 1);
+    const w19Floor = options.enableShortTerm ? 0.01 : 0.0;
+
     return normalized.map((value, index) => {
+        if (index === 17 || index === 18) return clamp(value, PARAMETER_BOUNDS[index][0], ceiling);
+        if (index === 19) return clamp(value, w19Floor, PARAMETER_BOUNDS[index][1]);
         const [min, max] = PARAMETER_BOUNDS[index];
         return clamp(value, min, max);
     });
@@ -360,7 +408,13 @@ export function fsrsCurrentRetrievability(
     params: readonly number[],
 ): number | null {
     if (!memory || !Number.isFinite(memory.stability) || memory.stability <= 0) return null;
-    return fsrsRetrievability(memory.stability, daysElapsed, decayFromParameters(params));
+    // Clamp first: the scheduler always works from clamped parameters, so a decay outside
+    // [0.1, 0.8] must not produce a retrievability the scheduler would never agree with.
+    return fsrsRetrievability(
+        memory.stability,
+        daysElapsed,
+        decayFromParameters(clampFsrsParameters(params)),
+    );
 }
 
 /** Render parameters for the deck-options text field, the way Anki shows them. */

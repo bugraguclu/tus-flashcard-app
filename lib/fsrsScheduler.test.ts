@@ -7,6 +7,11 @@ import {
 } from './fsrs';
 import { FsrsEngine, fsrsAllowsShortTerm } from './fsrsScheduler';
 import { formatDays, schedulerForSettings } from './scheduler';
+import {
+    constrainInterval,
+    constrainedFuzzBounds,
+    minimumReviewFuzzInterval,
+} from './schedulingIntervals';
 import type { AppSettings, CardState, Grade } from './types';
 
 const NOW = Date.UTC(2026, 2, 11, 12, 0, 0);
@@ -264,5 +269,63 @@ describe('FSRS and the SM-2 ease factor', () => {
     it('graduates a learning card on the preset’s starting ease', () => {
         const graduated = schedule(newCard({ learningStep: 1 }), 3);
         expect(graduated.stateUpdates.easeFactor).toBe(fsrsSettings.startingEase);
+    });
+});
+
+describe('review interval fuzz', () => {
+    /**
+     * Anki's own fuzz table, transcribed from the assertions in
+     * https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/fuzz.rs
+     * (`with_review_fuzz`). Upstream picks a point in the window with a random factor in [0, 1);
+     * here the window itself is pinned, and the picked value is checked to stay inside it.
+     */
+    const CASES: Array<[interval: number, minimum: number, maximum: number, lower: number, upper: number]> = [
+        // No fuzz at all below 2.5 days.
+        [1.0, 1, 1000, 1, 1],
+        [2.49, 1, 1000, 2, 2],
+        // 1 day of fuzz from 2.5, plus 0.15/day over 2.5-7, 0.1/day over 7-20, 0.05/day above.
+        [2.5, 1, 1000, 2, 4],
+        [7.0, 1, 1000, 5, 9],
+        [17.0, 1, 1000, 14, 20],
+        [37.0, 1, 1000, 33, 41],
+        // The window transitions smoothly across the range boundaries.
+        [6.9, 3, 1000, 5, 9],
+        [7.1, 3, 1000, 5, 9],
+        [19.9, 3, 1000, 17, 23],
+        [20.1, 3, 1000, 17, 23],
+        // A minimum or maximum clips the window rather than shifting it.
+        [2.0, 3, 1000, 3, 4],
+        [2.0, 3, 3, 3, 3],
+        [100.0, 101, 1000, 101, 108],
+        [100.0, 1, 99, 92, 99],
+        [100.0, 97, 103, 97, 103],
+    ];
+
+    it('matches Anki’s fuzz windows exactly', () => {
+        for (const [interval, minimum, maximum, lower, upper] of CASES) {
+            expect({ interval, ...constrainedFuzzBounds(interval, minimum, maximum) })
+                .toEqual({ interval, lower, upper });
+        }
+    });
+
+    it('picks a value inside the window, deterministically per card and study day', () => {
+        const seed = { cardId: 4242, nowMs: NOW, rolloverHour: 4 };
+        for (const [interval, minimum, maximum, lower, upper] of CASES) {
+            const picked = constrainInterval(interval, minimum, maximum, seed);
+            expect(picked).toBeGreaterThanOrEqual(lower);
+            expect(picked).toBeLessThanOrEqual(upper);
+            expect(constrainInterval(interval, minimum, maximum, seed)).toBe(picked);
+        }
+        // A different card, or the next study day, gets its own draw.
+        const other = constrainInterval(37, 1, 1000, { ...seed, cardId: 9 });
+        expect(other).toBeGreaterThanOrEqual(33);
+        expect(other).toBeLessThanOrEqual(41);
+    });
+
+    // Anki's `minimum_review_fuzz_interval`; the assertions are upstream's own.
+    it('keeps fuzz from clawing back a grown interval, but not a genuinely shrunken one', () => {
+        expect(minimumReviewFuzzInterval(2.7269483, 4, 36500)).toBe(4);
+        expect(minimumReviewFuzzInterval(2.7269483, 5, 36500)).toBe(0);
+        expect(minimumReviewFuzzInterval(4.591988, 4, 36500)).toBe(5);
     });
 });

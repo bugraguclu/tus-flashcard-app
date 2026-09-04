@@ -15,6 +15,7 @@ import {
     formatFsrsCutoffDate,
     formatFsrsParameterText,
     fsrsRetrievability,
+    fsrsStep,
     normalizeFsrsParameters,
     parseFsrsCutoffDate,
     parseFsrsParameterText,
@@ -242,5 +243,106 @@ describe('ignore-before cutoff date', () => {
         expect(parseFsrsCutoffDate(undefined)).toBeUndefined();
         expect(formatFsrsCutoffDate(undefined)).toBe('');
         expect(formatFsrsCutoffDate(0)).toBe('');
+    });
+});
+
+describe('FSRS-6 golden vectors', () => {
+    // Upstream publishes this exact vector as the doc-test for `FSRS::next_states` with the
+    // default FSRS-6 parameters, a brand new card, desired retention 0.9 and 0 days elapsed:
+    // https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/inference.rs
+    // It pins the initial stability per rating, the initial-difficulty formula and the fact that
+    // the interval equals the stability exactly at 90% retention, all at once.
+    it('reproduces upstream’s published first-review next-states', () => {
+        const states = fsrsNextStates([...DEFAULT_FSRS_PARAMETERS], null, 0.9, 0);
+
+        expect(states.again.memory.stability).toBeCloseTo(0.212, 6);
+        expect(states.again.memory.difficulty).toBeCloseTo(6.4133, 4);
+        expect(states.again.interval).toBeCloseTo(0.212, 5);
+
+        expect(states.hard.memory.stability).toBeCloseTo(1.2931, 6);
+        expect(states.hard.memory.difficulty).toBeCloseTo(5.1121707, 4);
+        expect(states.hard.interval).toBeCloseTo(1.2931, 5);
+
+        expect(states.good.memory.stability).toBeCloseTo(2.3065, 6);
+        expect(states.good.memory.difficulty).toBeCloseTo(2.118104, 4);
+        expect(states.good.interval).toBeCloseTo(2.3065, 5);
+
+        expect(states.easy.memory.stability).toBeCloseTo(8.2956, 6);
+        // Easy would put difficulty below 1, and the range clamp catches it.
+        expect(states.easy.memory.difficulty).toBe(FSRS_DIFFICULTY_MIN);
+        expect(states.easy.interval).toBeCloseTo(8.2956, 5);
+    });
+
+    // FSRS-6's post-lapse stability is capped so a lapse can never leave the card more stable
+    // than one same-day repeat would: min(PLS, S / e^(w17 * w18)).
+    // https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/model.rs (stability_after_failure)
+    it('never lets a lapse raise stability above the short-term ceiling', () => {
+        const w = clampFsrsParameters([...DEFAULT_FSRS_PARAMETERS]);
+        const ceiling = 1 / Math.exp(w[17] * w[18]);
+        // A one-day-old card with stability 1 has near-full retrievability, which is where the
+        // uncapped post-lapse formula would otherwise return more than the card started with.
+        const lapsed = fsrsStep(w, { stability: 1, difficulty: 5 }, 1, 1, false);
+
+        expect(lapsed.stability).toBeLessThanOrEqual(ceiling + 1e-9);
+        expect(lapsed.stability).toBeLessThan(1);
+    });
+
+    // A same-day repeat uses S' = S * e^(w17 * (G - 3 + w18)) * S^-w19, and upstream floors the
+    // multiplier at 1 for every grade above Again — so Hard, Good and Easy can only hold or raise
+    // stability, while Again may lower it.
+    // https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/model.rs (stability_short_term)
+    it('floors the same-day multiplier at 1 for Hard, Good and Easy but not Again', () => {
+        const before = { stability: 20, difficulty: 5 };
+        for (const rating of [2, 3, 4] as const) {
+            expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, rating, false).stability)
+                .toBeGreaterThanOrEqual(before.stability);
+        }
+        expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, 1, false).stability)
+            .toBeLessThan(before.stability);
+    });
+
+    it('reads retrievability through the clamped decay, as the scheduler does', () => {
+        // 0.05 is below the legal decay floor of 0.1; clamping must give the same number the
+        // scheduler would use, not the out-of-range one.
+        const illegal = [...DEFAULT_FSRS_PARAMETERS.slice(0, 20), 0.05];
+        const expected = fsrsRetrievability(10, 10, 0.1);
+
+        expect(fsrsCurrentRetrievability({ stability: 10, difficulty: 5 }, 10, illegal))
+            .toBeCloseTo(expected, 9);
+    });
+});
+
+describe('training-time parameter bounds', () => {
+    // Upstream clips w17/w18 against a ceiling that depends on the number of relearning steps and
+    // puts a 0.01 floor under w19 while short-term scheduling is on; with one relearning step and
+    // short-term off — the shape a plain scheduler is built with — it falls back to (0, 2] and
+    // (0, 0.8]. https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/parameter_clipper.rs
+    it('keeps the scheduling bounds when no preset shape is given', () => {
+        const wild = clampFsrsParameters(new Array(21).fill(9));
+        expect(wild[17]).toBe(2);
+        expect(wild[18]).toBe(2);
+        expect(clampFsrsParameters(new Array(21).fill(-9))[19]).toBe(0);
+    });
+
+    it('lowers the w17/w18 ceiling as the preset gains relearning steps', () => {
+        const params = [...DEFAULT_FSRS_PARAMETERS];
+        params[17] = 2;
+        params[18] = 2;
+        const steps = 3;
+        // The ceiling upstream derives: sqrt(max(0.01, budget / steps)), capped at 2.
+        const budget = -(Math.log(params[11]) + Math.log(Math.pow(2, params[13]) - 1) + params[14] * 0.3);
+        const expected = Math.min(2, Math.sqrt(Math.max(0.01, budget / steps)));
+
+        const clamped = clampFsrsParameters(params, { numRelearningSteps: steps });
+        expect(clamped[17]).toBeCloseTo(expected, 9);
+        expect(clamped[18]).toBeCloseTo(expected, 9);
+        expect(expected).toBeLessThan(2);
+    });
+
+    it('puts a floor under w19 only while short-term scheduling is on', () => {
+        const params = [...DEFAULT_FSRS_PARAMETERS];
+        params[19] = 0;
+        expect(clampFsrsParameters(params, { enableShortTerm: true })[19]).toBe(0.01);
+        expect(clampFsrsParameters(params, { enableShortTerm: false })[19]).toBe(0);
     });
 });

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-08-30",
+  "lastVerified": "2026-09-04",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -299,6 +299,70 @@
       "platform": "software supply chain",
       "url": "https://docs.github.com/en/actions/reference/security/secure-use",
       "useFor": ["immutable action SHA pins", "least-privilege workflow permissions", "CI hardening"]
+    }
+,
+    {
+      "id": "fsrs-algorithm-wiki",
+      "priority": 1,
+      "platform": "cross-platform FSRS algorithm specification",
+      "url": "https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm",
+      "useFor": ["FSRS-6 formulas", "power forgetting curve and decay/FACTOR relation", "difficulty linear damping and mean reversion", "short-term stability", "default parameter vector"]
+    },
+    {
+      "id": "fsrs-rs-model",
+      "priority": 2,
+      "platform": "cross-platform FSRS reference implementation",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/model.rs",
+      "useFor": ["initial stability and difficulty", "stability after success and failure", "short-term stability clamp", "parameter conversion between FSRS generations"]
+    },
+    {
+      "id": "fsrs-rs-parameter-clipper",
+      "priority": 2,
+      "platform": "cross-platform FSRS parameter bounds",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/parameter_clipper.rs",
+      "useFor": ["per-parameter clamp table", "w17/w18 ceiling from relearning step count", "w19 floor when short-term scheduling is enabled"]
+    },
+    {
+      "id": "fsrs-rs-inference",
+      "priority": 2,
+      "platform": "cross-platform FSRS scheduling entry points",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/inference.rs",
+      "useFor": ["next_states golden vector", "next_interval from desired retention", "memory state from SM-2"]
+    },
+    {
+      "id": "anki-source-scheduler-fuzz",
+      "priority": 3,
+      "platform": "cross-platform review interval fuzz",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/fuzz.rs",
+      "useFor": ["fuzz ranges and deltas", "constrained fuzz bounds", "minimum review fuzz interval", "per-card fuzz determinism"]
+    },
+    {
+      "id": "anki-source-scheduler-review-state",
+      "priority": 3,
+      "platform": "cross-platform review answering",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/review.rs",
+      "useFor": ["FSRS passing interval chaining", "deck options skipped under FSRS", "failing review interval", "leech threshold"]
+    },
+    {
+      "id": "anki-source-fsrs-memory-state",
+      "priority": 3,
+      "platform": "cross-platform FSRS memory state and rescheduling",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/fsrs/memory_state.rs",
+      "useFor": ["memory state from review log", "SM-2 fallback", "reschedule cards on change", "previous interval for the fuzz floor"]
+    },
+    {
+      "id": "anki-source-fsrs-params",
+      "priority": 3,
+      "platform": "cross-platform FSRS training data selection",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/fsrs/params.rs",
+      "useFor": ["which revlog entries feed FSRS", "cramming and manual entry filtering", "ignore-revlogs-before cutoff", "delta between reviews"]
+    },
+    {
+      "id": "anki-source-set-due-date",
+      "priority": 3,
+      "platform": "cross-platform manual rescheduling",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/reviews.rs",
+      "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards"]
     }
   ],
   "requiredDocs": [

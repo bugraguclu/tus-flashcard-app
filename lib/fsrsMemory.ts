@@ -43,6 +43,8 @@ export interface FsrsRevlogEntry {
     /** Ease factor in permille; 0 on entries Anki writes without one. */
     factor: number;
     type: number;
+    /** Interval *before* the answer, in the same units as `ivl`. Absent on rows that omit it. */
+    lastIvl?: number;
 }
 
 export interface FsrsReviewHistory {
@@ -76,6 +78,41 @@ function affectsScheduling(entry: FsrsRevlogEntry): boolean {
 /** Whole study days between an entry and the next rollover. */
 function daysElapsed(entry: FsrsRevlogEntry, nextDayAtMs: number): number {
     return Math.max(0, Math.floor((nextDayAtMs - entry.id) / DAY_MS));
+}
+
+export interface FsrsLastReviewInfo {
+    /** Epoch ms of the last answer that counted, or null when the card has none left. */
+    lastReviewedAtMs: number | null;
+    /**
+     * The interval the card had *before* that answer. Rescheduling uses it as the floor fuzz may
+     * not push below; a lapse (Again) leaves no floor at all, so it reads as 0.
+     */
+    previousInterval: number;
+}
+
+/**
+ * The last-review facts rescheduling needs, mirroring Anki's `get_last_revlog_info`
+ * (`rslib/src/scheduler/fsrs/memory_state.rs`): walk the log forwards, remember the most recent
+ * answer that affects scheduling, and forget everything again when the card is reset.
+ */
+export function fsrsLastReviewInfo(entries: readonly FsrsRevlogEntry[]): FsrsLastReviewInfo {
+    let lastReviewedAtMs: number | null = null;
+    let previousInterval = 0;
+
+    for (const entry of [...entries].sort((a, b) => a.id - b.id)) {
+        if (affectsScheduling(entry)) {
+            lastReviewedAtMs = entry.id;
+            const lastIvl = entry.lastIvl ?? 0;
+            // Only a passing answer carries a meaningful previous interval; Anki discards it for
+            // Again, and for the negative (intraday, in seconds) form.
+            previousInterval = lastIvl >= 0 && entry.ease > 1 ? lastIvl : 0;
+        } else if (isReset(entry)) {
+            lastReviewedAtMs = null;
+            previousInterval = 0;
+        }
+    }
+
+    return { lastReviewedAtMs, previousInterval };
 }
 
 /**

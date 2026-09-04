@@ -19,8 +19,10 @@ import {
 } from './fsrs';
 import { withFsrsMemoryState } from './fsrsCardData';
 import {
+    fsrsLastReviewInfo,
     fsrsMemoryStateForCard,
     fsrsReviewHistory,
+    type FsrsLastReviewInfo,
     type FsrsRevlogEntry,
     type FsrsReviewHistory,
 } from './fsrsMemory';
@@ -82,8 +84,8 @@ function revlogByCard(cardIds: number[]): Map<number, FsrsRevlogEntry[]> {
     const result = new Map<number, FsrsRevlogEntry[]>();
     if (cardIds.length === 0) return result;
 
-    const rows = getDB().getAllSync<{ id: number; cardId: number; ease: number; ivl: number; factor: number; type: number }>(
-        `SELECT id, cardId, ease, ivl, factor, type
+    const rows = getDB().getAllSync<{ id: number; cardId: number; ease: number; ivl: number; lastIvl: number; factor: number; type: number }>(
+        `SELECT id, cardId, ease, ivl, lastIvl, factor, type
          FROM revlog
          WHERE cardId IN (${cardIds.map(() => '?').join(', ')})
          ORDER BY cardId, id`,
@@ -92,7 +94,14 @@ function revlogByCard(cardIds: number[]): Map<number, FsrsRevlogEntry[]> {
 
     for (const row of rows) {
         const entries = result.get(row.cardId) ?? [];
-        entries.push({ id: row.id, ease: row.ease, ivl: row.ivl, factor: row.factor, type: row.type });
+        entries.push({
+            id: row.id,
+            ease: row.ease,
+            ivl: row.ivl,
+            lastIvl: row.lastIvl,
+            factor: row.factor,
+            type: row.type,
+        });
         result.set(row.cardId, entries);
     }
     return result;
@@ -137,7 +146,8 @@ export function rebuildFsrsMemoryStates(
             const params = fsrsParametersFor(deckSettings);
             const desiredRetention = desiredRetentionFor(deckSettings);
             const ignoreBefore = deckSettings.ignoreRevlogsBeforeMs ?? 0;
-            const history = fsrsReviewHistory(revlogs.get(card.id) ?? [], nextDayAtMs, ignoreBefore);
+            const entries = revlogs.get(card.id) ?? [];
+            const history = fsrsReviewHistory(entries, nextDayAtMs, ignoreBefore);
 
             const memory = fsrsMemoryStateForCard(params, history, {
                 interval: card.ivl || 0,
@@ -152,7 +162,16 @@ export function rebuildFsrsMemoryStates(
                 decayFromParameters(params),
             );
             const rescheduled = options.reschedule && memory && card.type === 2 && card.queue >= 0
-                ? rescheduledFields(card, memory, desiredRetention, params, deckSettings, todayNumber, nowMs)
+                ? rescheduledFields(
+                    card,
+                    memory,
+                    fsrsLastReviewInfo(entries),
+                    desiredRetention,
+                    params,
+                    deckSettings,
+                    todayNumber,
+                    nowMs,
+                )
                 : null;
 
             if (nextAnkiData !== card.ankiData || rescheduled) {
@@ -184,10 +203,16 @@ export function rebuildFsrsMemoryStates(
  * The interval and due day a review card should get from its memory state. The new due date keeps
  * the card's own last-review day as its anchor, so rescheduling never bunches the whole collection
  * onto today. Returns null when nothing would change.
+ *
+ * The fuzz floor comes from the interval the card had *before* its last answer, not from the
+ * interval it has now — that is what Anki compares against (`get_last_revlog_info` feeds
+ * `previous_interval` into `minimum_review_fuzz_interval` in `memory_state.rs`). Using the current
+ * interval instead would let a card whose interval already grew keep a floor it has outgrown.
  */
 function rescheduledFields(
     card: AnkiCard,
     memory: FsrsMemoryState,
+    lastReview: FsrsLastReviewInfo,
     desiredRetention: number,
     params: readonly number[],
     settings: AppSettings,
@@ -195,7 +220,7 @@ function rescheduledFields(
     nowMs: number,
 ): Pick<AnkiCard, 'ivl' | 'due'> | null {
     const rawInterval = fsrsNextInterval(memory.stability, desiredRetention, decayFromParameters(params));
-    const previousInterval = Math.max(0, card.ivl || 0);
+    const previousInterval = Math.max(0, lastReview.previousInterval);
     const minimum = Math.max(1, minimumReviewFuzzInterval(rawInterval, previousInterval, settings.maxInterval));
     const interval = constrainInterval(rawInterval, minimum, settings.maxInterval, {
         cardId: card.id,
@@ -203,8 +228,11 @@ function rescheduledFields(
         rolloverHour: settings.dayRolloverHour,
     });
 
-    const daysSinceLastReview = card.lastReview > 0
-        ? Math.max(0, todayNumber - localDayNumber(card.lastReview, settings.dayRolloverHour))
+    // Anki anchors the new due date on the revlog's own last-review time; `card.lastReview` is
+    // only a fallback for a collection imported without its history.
+    const lastReviewedAtMs = lastReview.lastReviewedAtMs ?? (card.lastReview > 0 ? card.lastReview : 0);
+    const daysSinceLastReview = lastReviewedAtMs > 0
+        ? Math.max(0, todayNumber - localDayNumber(lastReviewedAtMs, settings.dayRolloverHour))
         : 0;
     const due = todayNumber - daysSinceLastReview + interval;
 

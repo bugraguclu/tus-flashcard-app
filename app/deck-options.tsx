@@ -745,9 +745,17 @@ export default function DeckOptionsScreen() {
             }
 
             const items = buildFsrsTrainingItems(histories, INTERACTIVE_TRAINING_ITEM_CAP);
+            // Train inside the box Anki's trainer uses, which depends on the preset being edited:
+            // extra relearning steps lower the shared w17/w18 ceiling, and same-day repeats put a
+            // floor under w19. An unparseable steps field falls back to the single-step ceiling.
+            const relearningSteps = parseAnkiStepText(form.relearningSteps, true);
             const result = optimizeFsrsParameters(items, {
                 initialParameters: parseFsrsParameterText(form.fsrsParams) ?? undefined,
                 iterations: INTERACTIVE_TRAINING_ITERATIONS,
+                clamp: {
+                    numRelearningSteps: relearningSteps?.length ?? 1,
+                    enableShortTerm: form.fsrsShortTermWithSteps,
+                },
             });
 
             if (!result.improved) {

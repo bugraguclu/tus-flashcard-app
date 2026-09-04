@@ -18,6 +18,7 @@
 
 import {
     clampFsrsParameters,
+    type FsrsClampOptions,
     decayFromParameters,
     fsrsRetrievability,
     fsrsStep,
@@ -50,6 +51,12 @@ export interface FsrsOptimizeOptions {
     onProgress?: (progress: number) => boolean | void;
     /** Deterministic shuffling for tests. */
     randomSeed?: number;
+    /**
+     * The preset's shape, so training explores the same parameter box Anki's trainer explores:
+     * more than one relearning step lowers the w17/w18 ceiling, and short-term scheduling puts a
+     * floor under w19. Omitted, the scheduling-time bounds are used.
+     */
+    clamp?: FsrsClampOptions;
 }
 
 export interface FsrsOptimizeResult {
@@ -112,10 +119,11 @@ function observed(item: FsrsTrainingItem): number {
 export function evaluateFsrsParameters(
     params: readonly number[],
     items: readonly FsrsTrainingItem[],
+    clampOptions: FsrsClampOptions = {},
 ): FsrsFitMetrics {
     if (items.length === 0) return { logLoss: 0, rmse: 0, reviewCount: 0 };
 
-    const clamped = clampFsrsParameters(params);
+    const clamped = clampFsrsParameters(params, clampOptions);
     let logLoss = 0;
     let squaredError = 0;
 
@@ -174,8 +182,9 @@ export function optimizeFsrsParameters(
     items: readonly FsrsTrainingItem[],
     options: FsrsOptimizeOptions = {},
 ): FsrsOptimizeResult {
-    const start = clampFsrsParameters(options.initialParameters ?? []);
-    const before = evaluateFsrsParameters(start, items);
+    const clampOptions = options.clamp ?? {};
+    const start = clampFsrsParameters(options.initialParameters ?? [], clampOptions);
+    const before = evaluateFsrsParameters(start, items, clampOptions);
 
     if (items.length < FSRS_MIN_TRAINING_REVIEWS) {
         return { parameters: start, before, after: before, improved: false, iterationsRun: 0 };
@@ -214,7 +223,7 @@ export function optimizeFsrsParameters(
                 const delta = differenceStep(params[index]);
                 const probe = [...params];
                 probe[index] += delta;
-                const gradient = (batchLoss(clampFsrsParameters(probe), batch) - baseLoss) / delta;
+                const gradient = (batchLoss(clampFsrsParameters(probe, clampOptions), batch) - baseLoss) / delta;
 
                 firstMoment[index] = beta1 * firstMoment[index] + (1 - beta1) * gradient;
                 secondMoment[index] = beta2 * secondMoment[index] + (1 - beta2) * gradient * gradient;
@@ -222,10 +231,10 @@ export function optimizeFsrsParameters(
                 const correctedSecond = secondMoment[index] / (1 - Math.pow(beta2, step));
                 params[index] -= learningRate * correctedFirst / (Math.sqrt(correctedSecond) + stepEpsilon);
             }
-            params = clampFsrsParameters(params);
+            params = clampFsrsParameters(params, clampOptions);
         }
 
-        const iterationMetrics = evaluateFsrsParameters(params, items);
+        const iterationMetrics = evaluateFsrsParameters(params, items, clampOptions);
         if (iterationMetrics.logLoss < bestLoss) {
             bestLoss = iterationMetrics.logLoss;
             bestParams = [...params];
@@ -237,7 +246,7 @@ export function optimizeFsrsParameters(
         }
     }
 
-    const after = evaluateFsrsParameters(bestParams, items);
+    const after = evaluateFsrsParameters(bestParams, items, clampOptions);
     // Never hand back parameters that predict this collection worse than the ones in use.
     const improved = after.logLoss < before.logLoss;
 

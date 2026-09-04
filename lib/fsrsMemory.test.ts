@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FSRS_PARAMETERS, fsrsMemoryStateFromReviews, fsrsMemoryStateFromSm2 } from './fsrs';
-import { REVLOG_KIND, fsrsMemoryStateForCard, fsrsReviewHistory, type FsrsRevlogEntry } from './fsrsMemory';
+import {
+    REVLOG_KIND,
+    fsrsLastReviewInfo,
+    fsrsMemoryStateForCard,
+    fsrsReviewHistory,
+    type FsrsRevlogEntry,
+} from './fsrsMemory';
 
 const DAY_MS = 86_400_000;
 // Next rollover after the last review in each fixture.
@@ -141,5 +147,43 @@ describe('memory state for a card', () => {
     it('leaves a new card without a memory state', () => {
         expect(fsrsMemoryStateForCard(DEFAULT_FSRS_PARAMETERS, null, { interval: 0, easeFactor: 2.5, isNew: true }))
             .toBeNull();
+    });
+});
+
+describe('last-review info for rescheduling', () => {
+    // Mirrors Anki's `get_last_revlog_info` (rslib/src/scheduler/fsrs/memory_state.rs): the fuzz
+    // floor is the interval the card had *before* its most recent passing answer.
+    it('takes the previous interval from the last passing answer', () => {
+        const info = fsrsLastReviewInfo([
+            entry(30, { type: REVLOG_KIND.learning, ease: 3, ivl: 1, lastIvl: 0 }),
+            entry(20, { ease: 3, ivl: 9, lastIvl: 1 }),
+            entry(5, { ease: 2, ivl: 12, lastIvl: 9 }),
+        ]);
+
+        expect(info.previousInterval).toBe(9);
+        expect(info.lastReviewedAtMs).toBe(entry(5).id);
+    });
+
+    it('leaves no floor after a lapse, because Again may legitimately shrink the interval', () => {
+        const info = fsrsLastReviewInfo([
+            entry(20, { ease: 3, ivl: 30, lastIvl: 10 }),
+            entry(5, { ease: 1, ivl: -600, lastIvl: 30 }),
+        ]);
+
+        expect(info.previousInterval).toBe(0);
+        expect(info.lastReviewedAtMs).toBe(entry(5).id);
+    });
+
+    it('forgets everything before a reset, and ignores cramming entries', () => {
+        const reset = entry(10, { type: REVLOG_KIND.manual, ease: 0, ivl: 0, factor: 0 });
+        expect(fsrsLastReviewInfo([
+            entry(20, { ease: 3, ivl: 30, lastIvl: 10 }),
+            reset,
+        ])).toEqual({ lastReviewedAtMs: null, previousInterval: 0 });
+
+        expect(fsrsLastReviewInfo([
+            entry(20, { ease: 3, ivl: 30, lastIvl: 10 }),
+            entry(2, { type: REVLOG_KIND.filtered, ease: 3, ivl: 30, factor: 0, lastIvl: 30 }),
+        ]).previousInterval).toBe(10);
     });
 });
