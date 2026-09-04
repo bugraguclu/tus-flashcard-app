@@ -24,14 +24,22 @@ import { confirm, alert } from '../lib/confirm';
 import {
     blockFormatValue,
     calloutHtml,
-    EDITOR_ALIGNMENTS,
     EDITOR_BLOCK_STYLES,
     EDITOR_CALLOUTS,
     EDITOR_TOOLBAR_TABS,
+    editorToolKeysForTab,
     linkHtml,
     tableHtml,
+    type EditorBlockStyleKey,
     type EditorToolbarTabId,
+    type EditorToolKey,
 } from '../lib/editorToolbar';
+import {
+    EMPTY_EDITOR_FORMAT_STATE,
+    isEditorToolActive,
+    isEditorToolDisabled,
+    type EditorFormatState,
+} from '../lib/editorFormatState';
 import { useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import {
     createTusCard,
@@ -173,6 +181,8 @@ type AnkiToolbarIconName =
     | 'quote'
     | 'code'
     | 'callout'
+    | 'undo'
+    | 'redo'
     | 'paragraph';
 
 function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName; color: string; size?: number }) {
@@ -204,6 +214,8 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
         code: 'M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4Zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4Z',
         callout: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-9 4h2v6h-2V6Zm0 8h2v2h-2v-2Z',
         paragraph: 'M13 4H8a4 4 0 0 0 0 8h2v8h2V6h2v14h2V6h1V4h-4Z',
+        undo: 'M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62A7.98 7.98 0 0 1 12.5 11c2.98 0 5.5 1.94 6.4 4.62l2.37-.78A9.99 9.99 0 0 0 12.5 8Z',
+        redo: 'M18.4 10.6A9.94 9.94 0 0 0 11.5 8a9.99 9.99 0 0 0-8.77 6.84l2.37.78A7.98 7.98 0 0 1 11.5 11c2.05 0 3.92.77 5.35 2.02L13 16h9V7l-3.6 3.6Z',
     };
 
     if (name === 'math') {
@@ -365,7 +377,7 @@ export default function EditorScreen() {
         };
     });
     const [activeField, setActiveField] = useState<EditorField>('question');
-    const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+    const [formatState, setFormatState] = useState<EditorFormatState>(EMPTY_EDITOR_FORMAT_STATE);
     const questionEditorRef = useRef<RichTextEditorHandle>(null);
     const answerEditorRef = useRef<RichTextEditorHandle>(null);
     const reverseEditorRef = useRef<RichTextEditorHandle>(null);
@@ -895,163 +907,169 @@ export default function EditorScreen() {
     };
 
     type FormattingTool = {
-        key: string;
         icon: AnkiToolbarIconName;
-        /** Rendered instead of the icon. Five heading icons would be indistinguishable. */
+        /** Rendered instead of the icon. Six block-style icons would be indistinguishable. */
         text?: string;
         label: string;
-        isActive?: boolean;
+        hint?: string;
         onPress: () => void;
         onLongPress?: () => void;
     };
 
-    // Anki's own editor toolbar is the Home tab. Styles and Insert are local additions: a single
-    // scrolling row put most of these behind a swipe, and grouping them is the only way the less
-    // common tools are reachable without hiding the ones used on every note.
-    const homeTools: FormattingTool[] = [
-        {
-            key: 'bold',
+    const blockStyleTool = (key: EditorBlockStyleKey, icon: AnkiToolbarIconName, text?: string): FormattingTool => {
+        const style = EDITOR_BLOCK_STYLES.find((entry) => entry.key === key);
+        return {
+            icon,
+            text,
+            label: style ? l(style.tr, style.en) : key,
+            onPress: () => runEditorCommand('formatBlock', blockFormatValue(key)),
+        };
+    };
+
+    // A heading icon repeated three times says nothing, so the levels carry their own caption and
+    // only the two blocks with a recognisable shape keep an icon.
+    const blockStyleTools = {
+        p: blockStyleTool('p', 'paragraph', 'P'),
+        h1: blockStyleTool('h1', 'heading', 'H1'),
+        h2: blockStyleTool('h2', 'heading', 'H2'),
+        h3: blockStyleTool('h3', 'heading', 'H3'),
+        blockquote: blockStyleTool('blockquote', 'quote'),
+        pre: blockStyleTool('pre', 'code'),
+    };
+
+    // One entry per key in `EDITOR_TOOLBAR_LAYOUT`. The record is exhaustive by type, so a tool
+    // can never be defined and then left off every tab, and the tabs themselves stay data: the
+    // Home/Styles/Insert grouping is decided in lib/editorToolbar.ts and only rendered here.
+    //
+    // Lit and disabled states are not decided here either. `isEditorToolActive` and
+    // `isEditorToolDisabled` read the caret state the document reports, so Bold lights up when
+    // the caret moves into bold text and Outdent greys out where it has nowhere to go, instead of
+    // only reacting to presses that came from this screen.
+    const toolsByKey: Record<EditorToolKey, FormattingTool> = {
+        undo: {
+            icon: 'undo',
+            label: l('Geri al', 'Undo'),
+            onPress: () => runEditorCommand('undo'),
+        },
+        redo: {
+            icon: 'redo',
+            label: l('Yinele', 'Redo'),
+            onPress: () => runEditorCommand('redo'),
+        },
+        bold: {
             icon: 'bold',
             label: l('Kalın', 'Bold'),
-            isActive: activeFormats.has('bold'),
             onPress: () => runEditorCommand('bold'),
         },
-        {
-            key: 'italic',
+        italic: {
             icon: 'italic',
             label: l('İtalik', 'Italic'),
-            isActive: activeFormats.has('italic'),
             onPress: () => runEditorCommand('italic'),
         },
-        {
-            key: 'underline',
+        underline: {
             icon: 'underline',
             label: l('Altı çizili', 'Underline'),
-            isActive: activeFormats.has('underline'),
             onPress: () => runEditorCommand('underline'),
         },
-        {
-            key: 'strikethrough',
+        strikethrough: {
             icon: 'strikethrough',
             label: l('Üstü çizili', 'Strikethrough'),
-            isActive: activeFormats.has('strikeThrough'),
             onPress: () => runEditorCommand('strikeThrough'),
         },
-        {
-            key: 'subscript',
+        subscript: {
             icon: 'subscript',
             label: l('Alt simge', 'Subscript'),
-            isActive: activeFormats.has('subscript'),
             onPress: () => runEditorCommand('subscript'),
         },
-        {
-            key: 'superscript',
+        superscript: {
             icon: 'superscript',
             label: l('Üst simge', 'Superscript'),
-            isActive: activeFormats.has('superscript'),
             onPress: () => runEditorCommand('superscript'),
         },
-        {
-            key: 'removeFormat',
-            icon: 'removeFormat',
-            label: l('Biçimlendirmeyi temizle', 'Clear formatting'),
-            onPress: () => runEditorCommand('removeFormat'),
-        },
-        {
-            key: 'color',
+        color: {
             icon: 'color',
             label: l('Renk paleti', 'Color palette'),
             onPress: () => setShowColorPicker(true),
         },
-        {
-            key: 'fontSize',
+        fontSize: {
             icon: 'fontSize',
             label: l('Yazı boyutu', 'Font size'),
             onPress: () => setShowInlineFontSizePicker(true),
         },
-        ...EDITOR_ALIGNMENTS.map((alignment): FormattingTool => ({
-            key: alignment.key,
-            icon: alignment.key === 'justifyLeft' ? 'alignLeft'
-                : alignment.key === 'justifyCenter' ? 'alignCenter'
-                    : alignment.key === 'justifyRight' ? 'alignRight' : 'alignJustify',
-            label: l(alignment.tr, alignment.en),
-            isActive: activeFormats.has(alignment.key),
-            onPress: () => runEditorCommand(alignment.key),
-        })),
-        {
-            key: 'indent',
+        removeFormat: {
+            icon: 'removeFormat',
+            label: l('Biçimlendirmeyi temizle', 'Clear formatting'),
+            onPress: () => runEditorCommand('removeFormat'),
+        },
+        justifyLeft: {
+            icon: 'alignLeft',
+            label: l('Sola hizala', 'Align left'),
+            onPress: () => runEditorCommand('justifyLeft'),
+        },
+        justifyCenter: {
+            icon: 'alignCenter',
+            label: l('Ortala', 'Center'),
+            onPress: () => runEditorCommand('justifyCenter'),
+        },
+        justifyRight: {
+            icon: 'alignRight',
+            label: l('Sağa hizala', 'Align right'),
+            onPress: () => runEditorCommand('justifyRight'),
+        },
+        justifyFull: {
+            icon: 'alignJustify',
+            label: l('İki yana yasla', 'Justify'),
+            onPress: () => runEditorCommand('justifyFull'),
+        },
+        ...blockStyleTools,
+        listBullet: {
+            icon: 'listBullet',
+            label: l('Madde imli liste', 'Bullet list'),
+            onPress: () => runEditorCommand('insertUnorderedList'),
+        },
+        listNumber: {
+            icon: 'listNumber',
+            label: l('Numaralı liste', 'Numbered list'),
+            onPress: () => runEditorCommand('insertOrderedList'),
+        },
+        indent: {
             icon: 'indent',
             label: l('Girintiyi artır', 'Increase indent'),
             onPress: () => runEditorCommand('indent'),
         },
-        {
-            key: 'outdent',
+        outdent: {
             icon: 'outdent',
             label: l('Girintiyi azalt', 'Decrease indent'),
             onPress: () => runEditorCommand('outdent'),
         },
-    ];
-
-    const styleTools: FormattingTool[] = [
-        ...EDITOR_BLOCK_STYLES.map((style): FormattingTool => ({
-            key: style.key,
-            icon: style.key === 'blockquote' ? 'quote' : style.key === 'pre' ? 'code' : 'paragraph',
-            text: style.key === 'blockquote' || style.key === 'pre'
-                ? undefined
-                : style.key.toLocaleUpperCase('en-US'),
-            label: l(style.tr, style.en),
-            onPress: () => runEditorCommand('formatBlock', blockFormatValue(style.key)),
-        })),
-        {
-            key: 'listBullet',
-            icon: 'listBullet',
-            label: l('Madde imli liste', 'Bullet list'),
-            isActive: activeFormats.has('insertUnorderedList'),
-            onPress: () => runEditorCommand('insertUnorderedList'),
-        },
-        {
-            key: 'listNumber',
-            icon: 'listNumber',
-            label: l('Numaralı liste', 'Numbered list'),
-            isActive: activeFormats.has('insertOrderedList'),
-            onPress: () => runEditorCommand('insertOrderedList'),
-        },
-    ];
-
-    const insertTools: FormattingTool[] = [
-        {
-            key: 'table',
+        table: {
             icon: 'table',
             label: l('Tablo ekle', 'Insert table'),
             onPress: () => { Keyboard.dismiss(); setShowTablePicker(true); },
         },
-        {
-            key: 'link',
+        link: {
             icon: 'link',
             label: l('Bağlantı ekle', 'Insert link'),
             onPress: openLinkEditor,
         },
-        {
-            key: 'callout',
+        callout: {
             icon: 'callout',
             label: l('Bilgi kutusu ekle', 'Insert callout'),
             onPress: () => { Keyboard.dismiss(); setShowCalloutPicker(true); },
         },
-        {
-            key: 'rule',
+        rule: {
             icon: 'rule',
             label: l('Yatay çizgi ekle', 'Insert horizontal line'),
             onPress: () => runEditorCommand('insertHorizontalRule'),
         },
-        {
-            key: 'math',
+        math: {
             icon: 'math',
             label: l('MathJax ekle', 'Insert MathJax'),
+            hint: l('Basılı tutarak diğer MathJax biçimlerini açın', 'Long press for other MathJax formats'),
             onPress: () => wrapEditorSelection('\\(', '\\)'),
             onLongPress: () => setShowMathPicker(true),
         },
-        {
-            key: 'html',
+        html: {
             icon: 'html',
             label: l('HTML kaynağı', 'HTML source'),
             onPress: () => {
@@ -1061,14 +1079,13 @@ export default function EditorScreen() {
                 setShowHtmlEditor(true);
             },
         },
-    ];
+    };
 
-    const formattingTools: FormattingTool[] = toolbarTab === 'styles' ? styleTools
-        : toolbarTab === 'insert' ? insertTools : homeTools;
+    const toolbarToolKeys = editorToolKeysForTab(toolbarTab);
     // Cloze and the user's own buttons belong to the Insert tab; they insert, they do not format.
     const showsInsertExtras = toolbarTab === 'insert';
 
-    const toolbarItemCount = formattingTools.length
+    const toolbarItemCount = toolbarToolKeys.length
         + (showsInsertExtras ? customToolbarButtons.length + 1 + (isCloze ? 1 : 0) : 0);
     const centerToolbar = toolbarItemCount * 44 <= screenWidth;
 
@@ -1085,27 +1102,39 @@ export default function EditorScreen() {
                     <Text style={styles.customFormatButtonText}>[…]</Text>
                 </TouchableOpacity>
             )}
-            {formattingTools.map((tool) => {
-                const isActive = tool.isActive;
+            {toolbarToolKeys.map((key) => {
+                const tool = toolsByKey[key];
+                const isActive = isEditorToolActive(key, formatState);
+                const isDisabled = isEditorToolDisabled(key, formatState);
+                const tint = isDisabled ? colors.textMuted : isActive ? colors.accent : colors.textPrimary;
                 return (
                     <TouchableOpacity
-                        key={tool.key}
-                        style={[styles.formatButton, isActive && styles.formatButtonActive]}
+                        key={key}
+                        style={[
+                            styles.formatButton,
+                            isActive && !isDisabled && styles.formatButtonActive,
+                            isDisabled && styles.formatButtonDisabled,
+                        ]}
                         onPress={tool.onPress}
                         onLongPress={tool.onLongPress}
                         delayLongPress={450}
+                        disabled={isDisabled}
                         accessibilityRole="button"
                         accessibilityLabel={tool.label}
-                        accessibilityState={{ selected: isActive }}
-                        accessibilityHint={tool.key === 'math' ? l('Basılı tutarak diğer MathJax biçimlerini açın', 'Long press for other MathJax formats') : undefined}
+                        accessibilityState={{ selected: isActive, disabled: isDisabled }}
+                        accessibilityHint={tool.hint}
                     >
                         {tool.text
                             ? (
-                                <Text style={[styles.blockStyleButtonText, isActive && styles.blockStyleButtonTextActive]}>
+                                <Text style={[
+                                    styles.blockStyleButtonText,
+                                    isActive && !isDisabled && styles.blockStyleButtonTextActive,
+                                    isDisabled && styles.blockStyleButtonTextDisabled,
+                                ]}>
                                     {tool.text}
                                 </Text>
                             )
-                            : <AnkiToolbarIcon name={tool.icon} color={isActive ? colors.accent : colors.textPrimary} />}
+                            : <AnkiToolbarIcon name={tool.icon} color={tint} />}
                     </TouchableOpacity>
                 );
             })}
@@ -1246,12 +1275,13 @@ export default function EditorScreen() {
                     onChange={setQuestion}
                     onFocus={() => {
                         setActiveField('question');
-                        setActiveFormats(new Set());
+                        // The toolbar now belongs to this field, so it is blanked until this field's
+                        // own document answers instead of showing the previous field's state.
+                        setFormatState(EMPTY_EDITOR_FORMAT_STATE);
+                        questionEditorRef.current?.requestFormatState();
                     }}
-                    onFormatStateChange={(formats) => {
-                        if (activeField === 'question') {
-                            setActiveFormats(new Set(formats));
-                        }
+                    onFormatStateChange={(state) => {
+                        if (activeField === 'question') setFormatState(state);
                     }}
                     placeholder={isCloze
                         ? l('Metni yazın, sonra gizlenecek bölümü seçip […] düğmesine dokunun…', 'Enter text, then select the part to hide and tap […]…')
@@ -1292,12 +1322,13 @@ export default function EditorScreen() {
                     onChange={setAnswer}
                     onFocus={() => {
                         setActiveField('answer');
-                        setActiveFormats(new Set());
+                        // The toolbar now belongs to this field, so it is blanked until this field's
+                        // own document answers instead of showing the previous field's state.
+                        setFormatState(EMPTY_EDITOR_FORMAT_STATE);
+                        answerEditorRef.current?.requestFormatState();
                     }}
-                    onFormatStateChange={(formats) => {
-                        if (activeField === 'answer') {
-                            setActiveFormats(new Set(formats));
-                        }
+                    onFormatStateChange={(state) => {
+                        if (activeField === 'answer') setFormatState(state);
                     }}
                     placeholder={isCloze ? l('İsteğe bağlı ek arka metni…', 'Optional extra text for the back…') : l('Cevabı yazın…', 'Enter the answer…')}
                     colors={colors}
@@ -1336,12 +1367,13 @@ export default function EditorScreen() {
                             onChange={setReverseAnswer}
                             onFocus={() => {
                                 setActiveField('reverseAnswer');
-                                setActiveFormats(new Set());
+                                // The toolbar now belongs to this field, so it is blanked until this field's
+                                // own document answers instead of showing the previous field's state.
+                                setFormatState(EMPTY_EDITOR_FORMAT_STATE);
+                                reverseEditorRef.current?.requestFormatState();
                             }}
-                            onFormatStateChange={(formats) => {
-                                if (activeField === 'reverseAnswer') {
-                                    setActiveFormats(new Set(formats));
-                                }
+                            onFormatStateChange={(state) => {
+                                if (activeField === 'reverseAnswer') setFormatState(state);
                             }}
                             placeholder={l('Ters kart oluşturmak için herhangi bir metin girin.', 'Enter any text to create a reverse card.')}
                             colors={colors}
@@ -1396,6 +1428,9 @@ export default function EditorScreen() {
                                 key={tab.id}
                                 style={[styles.toolbarTab, selected && styles.toolbarTabActive]}
                                 onPress={() => setToolbarTab(tab.id)}
+                                // The pill is short so the toolbar stays compact; the slop is what
+                                // gives it the 44pt target a thumb needs.
+                                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                                 accessibilityRole="tab"
                                 accessibilityState={{ selected }}
                                 accessibilityLabel={l(tab.tr, tab.en)}
@@ -2261,7 +2296,9 @@ function createStyles(colors: ColorScheme) {
     },
     toolbarTab: {
         paddingHorizontal: Spacing.md,
-        paddingVertical: 5,
+        minHeight: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
         borderRadius: BorderRadius.full,
     },
     toolbarTabActive: { backgroundColor: colors.accentLight },
@@ -2292,6 +2329,9 @@ function createStyles(colors: ColorScheme) {
     formatButtonActive: {
         backgroundColor: colors.accentLight,
     },
+    // A tool that cannot apply is greyed rather than silently swallowing the press.
+    formatButtonDisabled: { opacity: 0.4 },
+    blockStyleButtonTextDisabled: { color: colors.textMuted },
     customFormatButtonText: {
         maxWidth: 38,
         fontSize: 24,
@@ -2315,7 +2355,7 @@ function createStyles(colors: ColorScheme) {
     summaryValue: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },
     summaryChevron: { color: colors.textMuted, fontSize: 22, fontWeight: '600' },
     overflowOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         alignItems: 'flex-end',
         backgroundColor: 'rgba(0,0,0,0.18)',
         paddingTop: 58,

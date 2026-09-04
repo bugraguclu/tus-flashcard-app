@@ -3,9 +3,13 @@
  *
  * `richTextBridgeScript()` is source text rather than an imported function because it has to run
  * inside the WebView. Keeping it here instead of inline in `components/RichTextEditor.tsx` lets
- * `richTextCommands.test.ts` evaluate it against a fake DOM, so the selection and pending-format
- * decisions are unit-tested even though the WebKit behaviour they compensate for can only be
- * confirmed on a device.
+ * `richTextCommands.test.ts` evaluate it against a fake DOM, so the selection, pending-format,
+ * history and state-reporting decisions are unit-tested even though the WebKit behaviour they
+ * compensate for can only be confirmed on a device.
+ *
+ * Everything the bridge does not need a live DOM for — the keyboard shortcut table, the marker
+ * cleanup — is an ordinary export above, and the bridge script is generated from those exports so
+ * there is one definition of each rather than a copy inside the script string.
  */
 
 /** Zero-width space that anchors a pending typing style. Stripped before the field is stored. */
@@ -15,6 +19,96 @@ export const PENDING_STYLE_MARKER = String.fromCharCode(0x200b);
 export const TYPING_STYLE_COMMANDS = [
     'bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript',
 ] as const;
+
+/** Inline toggles the toolbar reports state for. */
+export const INLINE_STATE_COMMANDS = [
+    'bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript',
+] as const;
+
+/** List and alignment commands the toolbar reports state for. */
+export const BLOCK_STATE_COMMANDS = [
+    'insertUnorderedList', 'insertOrderedList',
+    'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull',
+] as const;
+
+/**
+ * A run of typing shorter than this is one undo step, the way a word processor coalesces typing.
+ * Every toolbar command is its own step regardless.
+ */
+export const TYPING_RUN_COALESCE_MS = 900;
+
+/** Block containers the caret can sit in that the Styles tab knows how to name. */
+export const BLOCK_CONTAINER_TAGS = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'li'] as const;
+
+export interface EditorShortcut {
+    /** `KeyboardEvent.key`, compared case-insensitively. */
+    key: string;
+    shift?: boolean;
+    alt?: boolean;
+    command: string;
+    value?: string;
+}
+
+/**
+ * Hardware-keyboard shortcuts, matched with Cmd (iPad/iPhone keyboards) or Ctrl.
+ *
+ * The inline toggles, the alignments, undo/redo and the heading levels follow Microsoft Word.
+ * Where Word's binding cannot be observed in a WebView — Ctrl+Spacebar for clear formatting, and
+ * Word's list shortcuts, which collide with WebKit's own — the widely used editor equivalent is
+ * bound instead, and both Word's Ctrl+M/Ctrl+Shift+M and the bracket keys move the indent.
+ */
+export const EDITOR_SHORTCUTS: EditorShortcut[] = [
+    { key: 'b', command: 'bold' },
+    { key: 'i', command: 'italic' },
+    { key: 'u', command: 'underline' },
+    { key: 'x', shift: true, command: 'strikeThrough' },
+    { key: '=', command: 'subscript' },
+    { key: '=', shift: true, command: 'superscript' },
+    { key: '+', shift: true, command: 'superscript' },
+    { key: 'z', command: 'undo' },
+    { key: 'z', shift: true, command: 'redo' },
+    { key: 'y', command: 'redo' },
+    { key: '7', shift: true, command: 'insertOrderedList' },
+    { key: '8', shift: true, command: 'insertUnorderedList' },
+    { key: 'l', command: 'justifyLeft' },
+    { key: 'e', command: 'justifyCenter' },
+    { key: 'r', command: 'justifyRight' },
+    { key: 'j', command: 'justifyFull' },
+    { key: 'm', command: 'indent' },
+    { key: ']', command: 'indent' },
+    { key: 'm', shift: true, command: 'outdent' },
+    { key: '[', command: 'outdent' },
+    { key: '\\', command: 'removeFormat' },
+    { key: '0', alt: true, command: 'formatBlock', value: '<p>' },
+    { key: '1', alt: true, command: 'formatBlock', value: '<h1>' },
+    { key: '2', alt: true, command: 'formatBlock', value: '<h2>' },
+    { key: '3', alt: true, command: 'formatBlock', value: '<h3>' },
+];
+
+export interface ShortcutKeyEvent {
+    key: string;
+    metaKey?: boolean;
+    ctrlKey?: boolean;
+    shiftKey?: boolean;
+    altKey?: boolean;
+}
+
+/**
+ * The command a key press asks for, or null when the editor should let the key through.
+ *
+ * Only a Cmd/Ctrl press is considered, so ordinary typing — including an Alt-composed character
+ * on a hardware keyboard — never loses a keystroke to the toolbar.
+ */
+export function resolveEditorShortcut(event: ShortcutKeyEvent): { command: string; value?: string } | null {
+    if (!event.metaKey && !event.ctrlKey) return null;
+    const key = String(event.key ?? '').toLowerCase();
+    if (!key) return null;
+    const match = EDITOR_SHORTCUTS.find((shortcut) => shortcut.key.toLowerCase() === key
+        && Boolean(shortcut.shift) === Boolean(event.shiftKey)
+        && Boolean(shortcut.alt) === Boolean(event.altKey));
+    if (!match) return null;
+    return match.value === undefined ? { command: match.command } : { command: match.command, value: match.value };
+}
 
 /**
  * Inline elements that exist only to carry formatting. One left empty by marker removal carried
@@ -44,9 +138,9 @@ export function stripPendingStyleMarkers(html: string): string {
 }
 
 /**
- * The editor document's selection and command bridge.
+ * The editor document's selection, command, history and state bridge.
  *
- * Two behaviours are worth stating up front, because both are invisible in the source:
+ * Four behaviours are worth stating up front, because all four are invisible in the source:
  *
  * 1. WebKit discards the pending typing style whenever the selection is reassigned.
  *    `defaultSetSelectionOptions()` always carries `SetSelectionOption::ClearTypingStyle`, and
@@ -61,6 +155,14 @@ export function stripPendingStyleMarkers(html: string): string {
  *    turned a format on changed nothing, it parks the caret inside an empty inline wrapper. The
  *    toolbar then reports the state the document actually holds.
  *    https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand
+ * 3. `queryCommandState` answers for the start of the selection, so a selection that is half bold
+ *    reports bold and the toolbar lights up. Word leaves the button unlit for a mixed selection
+ *    and the next press applies the format to all of it, so `readSignals()` walks the selected
+ *    text nodes and reports a partly covered format as inactive.
+ * 4. `queryCommandEnabled('undo')` cannot be trusted inside a WebView, so the bridge counts its
+ *    own edits. Toolbar commands are one step each and a typing run inside
+ *    `TYPING_RUN_COALESCE_MS` is one step, which is what decides whether Undo is offered as
+ *    enabled — WebKit still owns the actual undo stack.
  */
 export function richTextBridgeScript(): string {
     return `
@@ -73,9 +175,29 @@ function createTusFormattingBridge(editor, doc) {
     superscript: 'sup',
     subscript: 'sub'
   };
+  var COVERAGE_SELECTORS = {
+    bold: 'b,strong',
+    italic: 'i,em',
+    underline: 'u,ins',
+    strikeThrough: 's,strike,del',
+    superscript: 'sup',
+    subscript: 'sub'
+  };
+  var INLINE_STATE_COMMANDS = ${JSON.stringify(INLINE_STATE_COMMANDS)};
+  var BLOCK_STATE_COMMANDS = ${JSON.stringify(BLOCK_STATE_COMMANDS)};
+  var BLOCK_CONTAINER_TAGS = ${JSON.stringify(BLOCK_CONTAINER_TAGS)};
+  var SHORTCUTS = ${JSON.stringify(EDITOR_SHORTCUTS)};
+  var TYPING_RUN_COALESCE_MS = ${TYPING_RUN_COALESCE_MS};
   var PENDING_STYLE_MARKER = String.fromCharCode(0x200b);
   var savedRange = null;
   var anchorSequence = 0;
+  var historyDepth = 0;
+  var redoDepth = 0;
+  var lastEditKind = '';
+  var lastEditStamp = 0;
+  // execCommand fires an 'input' event synchronously, so the document's own edit listener would count a
+  // toolbar press or an undo a second time. It is muted while the bridge drives the document.
+  var suppressAutoEdits = false;
 
   function activeSelection() {
     return typeof doc.getSelection === 'function' ? doc.getSelection() : null;
@@ -155,6 +277,15 @@ function createTusFormattingBridge(editor, doc) {
     }
   }
 
+  function commandValue(command) {
+    try {
+      if (typeof doc.queryCommandValue !== 'function') return '';
+      return String(doc.queryCommandValue(command) || '');
+    } catch (error) {
+      return '';
+    }
+  }
+
   function execute(command, value) {
     try {
       return !!doc.execCommand(command, false, value === undefined ? null : value);
@@ -163,6 +294,177 @@ function createTusFormattingBridge(editor, doc) {
     }
   }
 
+  // ---- history -------------------------------------------------------------------------------
+  // WebKit owns the undo stack; these counters only decide whether Undo and Redo are offered as
+  // enabled, and they coalesce a typing run into one step the way a word processor does.
+  function noteEdit(kind) {
+    if (kind === 'typing' && suppressAutoEdits) return;
+    var stamp = Date.now();
+    var coalesced = kind === 'typing' && lastEditKind === 'typing'
+      && (stamp - lastEditStamp) < TYPING_RUN_COALESCE_MS;
+    if (!coalesced) historyDepth += 1;
+    lastEditKind = kind;
+    lastEditStamp = stamp;
+    redoDepth = 0;
+  }
+
+  function runHistory(command) {
+    var wantsUndo = command === 'undo';
+    if (wantsUndo ? historyDepth <= 0 : redoDepth <= 0) return false;
+    restoreSelection();
+    suppressAutoEdits = true;
+    var applied = execute(command);
+    suppressAutoEdits = false;
+    if (!applied) return false;
+    if (wantsUndo) { historyDepth -= 1; redoDepth += 1; } else { redoDepth -= 1; historyDepth += 1; }
+    // A history step ends the typing run, so the next keystroke starts a new undo step.
+    lastEditKind = 'history';
+    lastEditStamp = Date.now();
+    return true;
+  }
+
+  // Wrapper for the document edits that do not go through runCommand — inserted HTML, a wrapped
+  // selection, a cloze. They are one undo step each, and the 'input' they raise must not be
+  // counted a second time as typing.
+  function editDocument(action) {
+    suppressAutoEdits = true;
+    var result;
+    try {
+      result = action();
+    } finally {
+      suppressAutoEdits = false;
+    }
+    noteEdit('command');
+    return result;
+  }
+
+  function historyState() {
+    return { canUndo: historyDepth > 0, canRedo: redoDepth > 0, depth: historyDepth };
+  }
+
+  // ---- state reporting -----------------------------------------------------------------------
+  function elementFor(node) {
+    if (!node) return null;
+    return node.nodeType === 1 ? node : (node.parentElement || node.parentNode || null);
+  }
+
+  function ancestorTags(node) {
+    var tags = [];
+    var walk = elementFor(node);
+    var guard = 0;
+    while (walk && walk !== editor && walk.nodeType === 1 && guard < 64) {
+      tags.push(String(walk.tagName || '').toLowerCase());
+      walk = walk.parentElement || walk.parentNode;
+      guard += 1;
+    }
+    return tags;
+  }
+
+  function countTags(tags, wanted) {
+    var total = 0;
+    for (var index = 0; index < tags.length; index += 1) {
+      if (wanted.indexOf(tags[index]) !== -1) total += 1;
+    }
+    return total;
+  }
+
+  function blockTagFor(range) {
+    var tags = ancestorTags(range ? range.startContainer : null);
+    for (var index = 0; index < tags.length; index += 1) {
+      if (BLOCK_CONTAINER_TAGS.indexOf(tags[index]) !== -1) return tags[index];
+    }
+    return commandValue('formatBlock').toLowerCase();
+  }
+
+  // Word leaves an inline button unlit when the selection is only partly formatted, and the next
+  // press then applies the format to all of it. queryCommandState answers for the selection start
+  // only, so the selected text nodes are walked to tell "all of it" from "some of it".
+  function partialInlineCommands(range) {
+    if (!range || range.collapsed) return [];
+    if (typeof doc.createTreeWalker !== 'function' || typeof doc.createRange !== 'function') return [];
+    var container = elementFor(range.commonAncestorContainer);
+    if (!container || typeof container.querySelector !== 'function') return [];
+    var walker;
+    try {
+      walker = doc.createTreeWalker(container, 4 /* NodeFilter.SHOW_TEXT */, null);
+    } catch (error) {
+      return [];
+    }
+    var covered = {};
+    var seen = 0;
+    for (var command in COVERAGE_SELECTORS) { covered[command] = 0; }
+    var node = walker.nextNode ? walker.nextNode() : null;
+    var guard = 0;
+    while (node && guard < 4096) {
+      guard += 1;
+      var text = String(node.nodeValue || '').split(PENDING_STYLE_MARKER).join('');
+      if (text.trim() && rangeHoldsNode(range, node)) {
+        seen += 1;
+        var parent = elementFor(node);
+        for (var key in COVERAGE_SELECTORS) {
+          if (parent && typeof parent.closest === 'function' && parent.closest(COVERAGE_SELECTORS[key])) {
+            covered[key] += 1;
+          }
+        }
+      }
+      node = walker.nextNode ? walker.nextNode() : null;
+    }
+    if (seen < 2) return [];
+    var partial = [];
+    for (var name in covered) {
+      if (covered[name] > 0 && covered[name] < seen) partial.push(name);
+    }
+    return partial;
+  }
+
+  function rangeHoldsNode(range, node) {
+    try {
+      var probe = doc.createRange();
+      probe.selectNodeContents(node);
+      // Strict on both sides: a node that merely touches the selection boundary is outside it,
+      // and counting it would report a uniformly formatted selection as partly formatted.
+      return range.compareBoundaryPoints(3 /* END_TO_START */, probe) < 0
+        && range.compareBoundaryPoints(1 /* START_TO_END */, probe) > 0;
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function readSignals() {
+    var range = editorRange();
+    if (!range) {
+      var idle = historyState();
+      return {
+        inEditor: false, collapsed: true, active: [], partial: [], block: null,
+        listDepth: 0, quoteDepth: 0, canUndo: idle.canUndo, canRedo: idle.canRedo
+      };
+    }
+    var partial = partialInlineCommands(range);
+    var active = [];
+    var index;
+    for (index = 0; index < INLINE_STATE_COMMANDS.length; index += 1) {
+      var inline = INLINE_STATE_COMMANDS[index];
+      if (commandState(inline) && partial.indexOf(inline) === -1) active.push(inline);
+    }
+    for (index = 0; index < BLOCK_STATE_COMMANDS.length; index += 1) {
+      if (commandState(BLOCK_STATE_COMMANDS[index])) active.push(BLOCK_STATE_COMMANDS[index]);
+    }
+    var tags = ancestorTags(range.startContainer);
+    var history = historyState();
+    return {
+      inEditor: true,
+      collapsed: !!range.collapsed,
+      active: active,
+      partial: partial,
+      block: blockTagFor(range) || null,
+      listDepth: countTags(tags, ['ul', 'ol']),
+      quoteDepth: countTags(tags, ['blockquote']),
+      canUndo: history.canUndo,
+      canRedo: history.canRedo
+    };
+  }
+
+  // ---- commands ------------------------------------------------------------------------------
   // Repair path for a collapsed caret: park it inside an empty inline wrapper so the next
   // characters inherit the format even when execCommand armed nothing. The zero-width space is
   // what lets the caret live inside the wrapper; it is stripped again before the field is stored.
@@ -189,12 +491,21 @@ function createTusFormattingBridge(editor, doc) {
   }
 
   function runCommand(command, value) {
+    if (command === 'undo' || command === 'redo') {
+      var moved = runHistory(command);
+      return { restored: 'keep-live', applied: moved, repair: 'none', state: false, history: true };
+    }
     var restored = restoreSelection();
     var range = editorRange();
     var pendingStyle = !!range && !!range.collapsed && !!TYPING_STYLE_TAGS[command];
     var before = pendingStyle ? commandState(command) : false;
+    suppressAutoEdits = true;
     var applied = execute(command, value);
     if (!pendingStyle) {
+      suppressAutoEdits = false;
+      // Every toolbar press that changed the document is its own undo step, exactly as a word
+      // processor treats a ribbon click; a press that changed nothing must not shadow the last one.
+      if (applied) noteEdit('command');
       return { restored: restored, applied: applied, repair: 'none', state: commandState(command) };
     }
     var after = commandState(command);
@@ -203,7 +514,47 @@ function createTusFormattingBridge(editor, doc) {
     // reported instead of pretending the press took effect.
     var repairable = !before && after === before;
     var repair = repairable ? (anchorPendingStyle(command) ? 'anchor' : 'failed') : 'none';
+    suppressAutoEdits = false;
+    if (applied || repair === 'anchor') noteEdit('command');
     return { restored: restored, applied: applied, repair: repair, state: commandState(command) };
+  }
+
+  function resolveShortcut(event) {
+    if (!event || (!event.metaKey && !event.ctrlKey)) return null;
+    var key = String(event.key || '').toLowerCase();
+    if (!key) return null;
+    for (var index = 0; index < SHORTCUTS.length; index += 1) {
+      var shortcut = SHORTCUTS[index];
+      if (shortcut.key.toLowerCase() !== key) continue;
+      if (!!shortcut.shift !== !!event.shiftKey) continue;
+      if (!!shortcut.alt !== !!event.altKey) continue;
+      return { command: shortcut.command, value: shortcut.value };
+    }
+    return null;
+  }
+
+  // Word starts a normal paragraph after a heading and leaves a quote or a code block once the
+  // line is empty. WebKit keeps the caret in the same block instead. The default insertion is
+  // allowed to happen first, so a failure here still leaves the user with their new line.
+  function normalizeBlockAfterEnter() {
+    var range = editorRange();
+    if (!range || !range.collapsed) return false;
+    var element = elementFor(range.startContainer);
+    var guard = 0;
+    while (element && element !== editor && element.nodeType === 1 && guard < 32) {
+      var tag = String(element.tagName || '').toLowerCase();
+      if (tag === 'li') return false;
+      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'].indexOf(tag) !== -1) {
+        var text = String(element.textContent || '').split(PENDING_STYLE_MARKER).join('');
+        if (text.trim()) return false;
+        execute('formatBlock', '<p>');
+        if (tag === 'blockquote') execute('outdent');
+        return true;
+      }
+      element = element.parentElement || element.parentNode;
+      guard += 1;
+    }
+    return false;
   }
 
   return {
@@ -211,7 +562,13 @@ function createTusFormattingBridge(editor, doc) {
     clearSavedRange: clearSavedRange,
     restoreSelection: restoreSelection,
     runCommand: runCommand,
-    isSameRange: isSameRange
+    isSameRange: isSameRange,
+    noteEdit: noteEdit,
+    editDocument: editDocument,
+    historyState: historyState,
+    readSignals: readSignals,
+    resolveShortcut: resolveShortcut,
+    normalizeBlockAfterEnter: normalizeBlockAfterEnter
   };
 }
 `;

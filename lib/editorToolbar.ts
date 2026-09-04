@@ -29,6 +29,42 @@ export const EDITOR_TOOLBAR_TABS: EditorToolbarTab[] = [
     { id: 'insert', tr: 'Ekle', en: 'Insert' },
 ];
 
+/**
+ * Which tool sits on which tab, in the order it is drawn.
+ *
+ * The layout is data so the toolbar's shape is testable and so no tool can be defined and then
+ * silently left off every tab: `app/editor.tsx` builds a `Record<EditorToolKey, …>`, which the
+ * compiler only accepts when every key here has a handler and every handler has a key.
+ *
+ * Home is the everyday set — history, the inline formats, colour, size and alignment. The
+ * paragraph tools live together on Styles the way Word groups them, so indent and outdent sit
+ * beside the lists they nest rather than competing for room on Home.
+ */
+export const EDITOR_TOOLBAR_LAYOUT = {
+    home: [
+        'undo', 'redo',
+        'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript',
+        'color', 'fontSize', 'removeFormat',
+        'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull',
+    ],
+    styles: [
+        'p', 'h1', 'h2', 'h3', 'blockquote', 'pre',
+        'listBullet', 'listNumber', 'indent', 'outdent',
+    ],
+    insert: ['table', 'link', 'callout', 'rule', 'math', 'html'],
+} as const satisfies Record<EditorToolbarTabId, readonly string[]>;
+
+export type EditorToolKey = (typeof EDITOR_TOOLBAR_LAYOUT)[EditorToolbarTabId][number];
+
+/** Every tool key, deduplicated, in tab order. */
+export const EDITOR_TOOL_KEYS: EditorToolKey[] = Array.from(new Set(
+    EDITOR_TOOLBAR_TABS.flatMap((tab) => EDITOR_TOOLBAR_LAYOUT[tab.id] as readonly EditorToolKey[]),
+));
+
+export function editorToolKeysForTab(tab: EditorToolbarTabId): readonly EditorToolKey[] {
+    return EDITOR_TOOLBAR_LAYOUT[tab];
+}
+
 /** Block formats the Styles tab applies through `formatBlock`. */
 export const EDITOR_BLOCK_STYLES = [
     { key: 'p', tag: 'p', tr: 'Normal metin', en: 'Normal text' },

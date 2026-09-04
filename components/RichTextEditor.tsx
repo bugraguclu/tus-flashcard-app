@@ -9,6 +9,7 @@ import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
 import { sanitizeToolbarSnippet } from '../lib/customToolbar';
 import { richTextBridgeScript, stripPendingStyleMarkers } from '../lib/richTextCommands';
+import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { sanitizeUntrustedHtml } from '../lib/templates';
 import {
     embeddedWebViewLayout,
@@ -45,13 +46,15 @@ export interface RichTextEditorHandle {
     runCommand: (command: RichTextCommand, value?: string) => void;
     insertHtml: (html: string) => void;
     wrapSelection: (prefix: string, suffix: string) => void;
+    /** Ask the document to resend its caret state, e.g. after the toolbar changes fields. */
+    requestFormatState: () => void;
 }
 
 interface RichTextEditorProps {
     value: string;
     onChange: (html: string) => void;
     onFocus?: () => void;
-    onFormatStateChange?: (formats: string[]) => void;
+    onFormatStateChange?: (state: EditorFormatState) => void;
     placeholder: string;
     colors: ColorScheme;
     minHeight?: number;
@@ -72,13 +75,6 @@ function safeJsValue(value: string): string {
 
 const MAX_EDITOR_HTML_CHARS = 2 * 1024 * 1024;
 const MAX_EDITOR_MESSAGE_CHARS = 36 * 1024 * 1024;
-const KNOWN_FORMATS = new Set<RichTextCommand>([
-    'bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList',
-    'insertOrderedList', 'superscript', 'subscript', 'insertHorizontalRule',
-    'removeFormat', 'undo', 'redo', 'foreColor', 'hiliteColor', 'cloze',
-    'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull',
-    'indent', 'outdent', 'formatBlock',
-]);
 
 function createEditorNonce(): string {
     const bytes = new Uint8Array(16);
@@ -133,9 +129,8 @@ function editorDocument(
       // Selection and pending-format handling lives in lib/richTextCommands.ts so it can be
       // unit-tested against a fake DOM; see the WebKit notes there for why it is not inline.
       const bridge = createTusFormattingBridge(editor, document);
-      const trackedCommands = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList', 'superscript', 'subscript', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'];
       let lastHeight = 0;
-      let lastFormats = '';
+      let lastState = '';
       editor.innerHTML = ${safeJsValue(safeValue)};
 
       function post(payload) {
@@ -146,15 +141,17 @@ function editorDocument(
 
       function restoreSelection() { bridge.restoreSelection(); }
 
-      function reportFormats() {
-        const active = trackedCommands.filter((command) => {
-          try { return document.queryCommandState(command); } catch (_) { return false; }
-        });
-        const serialized = active.join('|');
-        if (serialized !== lastFormats) {
-          lastFormats = serialized;
-          post({ type: 'formats', formats: active });
-        }
+      // Toolbar state follows the caret, not just the last command. A press on a native toolbar
+      // button takes first-responder status away from the WebView, so a reading taken while the
+      // caret is not in the document would blank every lit button between two presses — the last
+      // reading from inside the editor is kept instead, exactly as a ribbon stays lit.
+      function reportState(force) {
+        const signals = bridge.readSignals();
+        if (!signals.inEditor && !force) return;
+        const serialized = JSON.stringify(signals);
+        if (!force && serialized === lastState) return;
+        lastState = serialized;
+        post({ type: 'state', state: signals });
       }
 
       function reportHeight() {
@@ -170,7 +167,7 @@ function editorDocument(
       function emitChange() {
         saveSelection();
         post({ type: 'change', html: editor.innerHTML });
-        reportFormats();
+        reportState(true);
         reportHeight();
       }
 
@@ -180,7 +177,9 @@ function editorDocument(
         const selectedText = selection && selection.rangeCount ? selection.toString() : '';
         const used = Array.from(editor.innerHTML.matchAll(/\\{\\{c(\\d+)::/gi)).map(function (match) { return Number(match[1]) || 0; });
         const next = used.length ? Math.max.apply(null, used) + 1 : 1;
-        document.execCommand('insertText', false, '{{c' + next + '::' + selectedText + '}}');
+        bridge.editDocument(function () {
+          return document.execCommand('insertText', false, '{{c' + next + '::' + selectedText + '}}');
+        });
       }
 
       window.__tusEditorCommand = function (payload) {
@@ -195,9 +194,11 @@ function editorDocument(
         emitChange();
       };
 
+      window.__tusEditorRequestState = function () { reportState(true); };
+
       window.__tusEditorInsertHtml = function (html) {
         restoreSelection();
-        document.execCommand('insertHTML', false, html);
+        bridge.editDocument(function () { return document.execCommand('insertHTML', false, html); });
         emitChange();
       };
 
@@ -216,11 +217,13 @@ function editorDocument(
 
         if (range.collapsed) {
           const cursorMarkerId = markerBase + '_cursor';
-          document.execCommand(
-            'insertHTML',
-            false,
-            prefix + '<span id="' + cursorMarkerId + '">&#8203;</span>' + suffix,
-          );
+          bridge.editDocument(function () {
+            return document.execCommand(
+              'insertHTML',
+              false,
+              prefix + '<span id="' + cursorMarkerId + '">&#8203;</span>' + suffix,
+            );
+          });
           const cursorMarker = document.getElementById(cursorMarkerId);
           if (cursorMarker) {
             const caret = document.createRange();
@@ -231,11 +234,13 @@ function editorDocument(
             selection.addRange(caret);
           }
         } else {
-          document.execCommand(
-            'insertHTML',
-            false,
-            '<span id="' + startMarkerId + '"></span>' + prefix + selectedHtml + suffix + '<span id="' + endMarkerId + '"></span>',
-          );
+          bridge.editDocument(function () {
+            return document.execCommand(
+              'insertHTML',
+              false,
+              '<span id="' + startMarkerId + '"></span>' + prefix + selectedHtml + suffix + '<span id="' + endMarkerId + '"></span>',
+            );
+          });
           const startMarker = document.getElementById(startMarkerId);
           const endMarker = document.getElementById(endMarkerId);
           if (startMarker && endMarker) {
@@ -260,7 +265,27 @@ function editorDocument(
       };
 
       window.__tusEditorFocus = function () { editor.focus(); };
-      editor.addEventListener('input', emitChange);
+      editor.addEventListener('input', function () { bridge.noteEdit('typing'); emitChange(); });
+      // A hardware keyboard is the second way this editor is driven, so the shortcut table is the
+      // same one the toolbar buttons use and every press lands on the same command path — the
+      // toolbar therefore lights up for Cmd+B exactly as it does for a tap.
+      editor.addEventListener('keydown', function (event) {
+        const shortcut = bridge.resolveShortcut(event);
+        if (shortcut) {
+          event.preventDefault();
+          window.__tusEditorCommand({ command: shortcut.command, value: shortcut.value || null });
+          return;
+        }
+        if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+          // Word starts a normal paragraph after a heading and leaves a quote once the line is
+          // empty. The default insertion runs first, so a failed normalization still leaves the
+          // user with the new line they asked for.
+          setTimeout(function () {
+            if (bridge.normalizeBlockAfterEnter()) emitChange();
+            else reportState(false);
+          }, 0);
+        }
+      });
       editor.addEventListener('paste', function (event) {
         if (!${pasteClipboardImagesAsPng ? 'true' : 'false'}) return;
         const items = Array.from((event.clipboardData && event.clipboardData.items) || [])
@@ -292,17 +317,19 @@ function editorDocument(
           reader.readAsDataURL(file);
         });
       });
-      editor.addEventListener('focus', function () { post({ type: 'focus' }); reportFormats(); });
+      // The focused field owns the toolbar, so its state is always resent: the previous field's
+      // reading is still what the toolbar shows, and a deduplicated report would leave it there.
+      editor.addEventListener('focus', function () { post({ type: 'focus' }); reportState(true); });
       editor.addEventListener('blur', saveSelection);
       window.addEventListener('pagehide', saveSelection);
-      editor.addEventListener('keyup', function () { saveSelection(); reportFormats(); });
-      editor.addEventListener('mouseup', function () { saveSelection(); reportFormats(); });
-      editor.addEventListener('touchend', function () { saveSelection(); reportFormats(); });
+      editor.addEventListener('keyup', function () { saveSelection(); reportState(false); });
+      editor.addEventListener('mouseup', function () { saveSelection(); reportState(false); });
+      editor.addEventListener('touchend', function () { saveSelection(); reportState(false); });
       document.addEventListener('selectionchange', function () {
         const selection = window.getSelection();
         if (selection && selection.rangeCount && editor.contains(selection.anchorNode)) {
           saveSelection();
-          reportFormats();
+          reportState(false);
         }
       });
       if (window.ResizeObserver) new ResizeObserver(reportHeight).observe(editor);
@@ -443,6 +470,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(safePrefix)}, ${safeJsValue(safeSuffix)})`,
             );
         },
+        requestFormatState: () => runWhenReady('window.__tusEditorRequestState && window.__tusEditorRequestState()'),
     }));
 
     useEffect(() => {
@@ -459,7 +487,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 type?: string;
                 html?: string;
                 height?: number;
-                formats?: string[];
+                state?: unknown;
                 dataUrl?: string;
             };
             if (message.type === 'change' && typeof message.html === 'string') {
@@ -482,8 +510,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 onFocus?.();
             } else if (message.type === 'height' && typeof message.height === 'number') {
                 updateContentHeight(message.height);
-            } else if (message.type === 'formats' && Array.isArray(message.formats)) {
-                onFormatStateChange?.(message.formats.filter((format): format is RichTextCommand => KNOWN_FORMATS.has(format as RichTextCommand)));
+            } else if (message.type === 'state') {
+                onFormatStateChange?.(readEditorFormatState(message.state));
             } else if (message.type === 'pasteImage' && pasteClipboardImagesAsPng && typeof message.dataUrl === 'string') {
                 const match = message.dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/);
                 if (!match) return;

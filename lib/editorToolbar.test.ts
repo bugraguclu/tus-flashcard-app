@@ -9,7 +9,9 @@ import {
     calloutHtml,
     EDITOR_BLOCK_STYLES,
     EDITOR_CALLOUTS,
+    EDITOR_TOOL_KEYS,
     EDITOR_TOOLBAR_TABS,
+    editorToolKeysForTab,
     escapeInsertedHtml,
     linkHtml,
     normalizeLinkUrl,
@@ -129,5 +131,44 @@ describe('link insertion', () => {
 
     it('escapes every character that could end an attribute or a tag', () => {
         expect(escapeInsertedHtml(`<>&"'`)).toBe('&lt;&gt;&amp;&quot;&#039;');
+    });
+});
+
+describe('toolbar layout', () => {
+    it('puts every tool on exactly one tab', () => {
+        const placed = EDITOR_TOOLBAR_TABS.flatMap((tab) => [...editorToolKeysForTab(tab.id)]);
+
+        expect(new Set(placed).size).toBe(placed.length);
+        expect([...placed].sort()).toEqual([...EDITOR_TOOL_KEYS].sort());
+    });
+
+    it('gives every tab a tool and every tab a name in both languages', () => {
+        EDITOR_TOOLBAR_TABS.forEach((tab) => {
+            expect(editorToolKeysForTab(tab.id).length).toBeGreaterThan(0);
+            expect(tab.tr.trim()).not.toBe('');
+            expect(tab.en.trim()).not.toBe('');
+        });
+    });
+
+    it('offers the whole word-processor set the editor promises', () => {
+        // Losing one of these to a refactor is exactly the kind of silent regression the toolbar
+        // cannot afford, so the promise is asserted rather than left to review.
+        const required = [
+            'undo', 'redo', 'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript',
+            'color', 'removeFormat', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull',
+            'p', 'h1', 'h2', 'h3', 'blockquote', 'pre', 'listBullet', 'listNumber', 'indent', 'outdent',
+            'rule', 'table', 'link',
+        ];
+        required.forEach((key) => expect(EDITOR_TOOL_KEYS).toContain(key));
+    });
+
+    it('names a Styles-tab key for every block format the tab applies', () => {
+        EDITOR_BLOCK_STYLES.forEach((style) => {
+            expect(editorToolKeysForTab('styles')).toContain(style.key);
+        });
+    });
+
+    it('leads Home with history, the way a ribbon does', () => {
+        expect(editorToolKeysForTab('home').slice(0, 2)).toEqual(['undo', 'redo']);
     });
 });
