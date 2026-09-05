@@ -11,6 +11,7 @@ import {
     renderTypeAnswerDiff,
     typeAnswerPlainText,
     shouldGenerateCard,
+    sanitizeUntrustedHtml,
 } from './templates';
 
 describe('clozeFieldIndex', () => {
@@ -620,4 +621,10 @@ describe('typeAnswerPlainText', () => {
         expect(html).not.toContain('&lt;div&gt;');
         expect(html).toContain('a. vertebralis');
     });
+
+    it('converts [sound:...] to audio tag with AirPlay and download suppressed', () => {
+        const sanitized = sanitizeUntrustedHtml('Ses kaydı: [sound:kayit_123.m4a]');
+        expect(sanitized).toContain('<audio controls src="kayit_123.m4a" disableRemotePlayback controlsList="nodownload"></audio>');
+    });
 });
+

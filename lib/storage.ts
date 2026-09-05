@@ -402,6 +402,9 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
     config.easyBonus = settings.easyBonus;
     config.ivlModifier = settings.intervalModifier;
     config.maxIvl = settings.maxInterval;
+    if (typeof settings.audioPlaybackRate === 'number') {
+        config.audioPlaybackRate = settings.audioPlaybackRate;
+    }
     config.mod = Math.floor(Date.now() / 1000);
     config.usn = -1;
     saveDeckConfig(config);
@@ -545,6 +548,7 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
+            audioPlaybackRate: typeof parsed.audioPlaybackRate === 'number' ? parsed.audioPlaybackRate : 1.0,
             // Collection-wide FSRS switches. Parameters and retention live on the preset and are
             // resolved per deck, so they are deliberately not stored here.
             fsrsEnabled: parsed.fsrsEnabled === true,
@@ -620,6 +624,7 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
         algorithm: settings.algorithm,
+        audioPlaybackRate: settings.audioPlaybackRate ?? 1.0,
         fsrsEnabled: settings.fsrsEnabled === true,
         fsrsRescheduleOnChange: settings.fsrsRescheduleOnChange === true,
         fsrsShortTermWithSteps: settings.fsrsShortTermWithSteps === true,

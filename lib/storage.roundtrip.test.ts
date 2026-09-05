@@ -372,6 +372,11 @@ describe('storage import/export canonical round-trip', () => {
         expect(loadSettings().swipeSensitivity).toBe(1);
     });
 
+    it('persists audio playback rate preference', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, audioPlaybackRate: 1.5 });
+        expect(loadSettings().audioPlaybackRate).toBe(1.5);
+    });
+
     it('persists separate question and answer actions for all nine tap zones', () => {
         saveSettings({
             ...DEFAULT_SETTINGS,

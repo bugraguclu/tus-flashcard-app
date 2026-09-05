@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checksumField } from './models';
 
 // Rows the fake DB will return for the csum-filtered candidate query.
-interface FakeNoteRow { cardId: number; noteId?: number; noteTypeId?: number; noteData: string; csum: number; }
+interface FakeNoteRow { cardId: number; noteId?: number; noteTypeId?: number; deckName?: string; noteData: string; csum: number; }
 const rows: FakeNoteRow[] = [];
 
 vi.mock('./db', () => ({
@@ -13,7 +13,7 @@ vi.mock('./db', () => ({
             const excludeId = params[2];
             return rows
                 .filter((r) => r.csum === csum && (!mid || r.noteTypeId === undefined || r.noteTypeId === mid) && (!excludeId || r.noteId !== excludeId))
-                .map((r) => ({ cardId: r.cardId, noteId: r.noteId ?? r.cardId, noteData: r.noteData }));
+                .map((r) => ({ cardId: r.cardId, noteId: r.noteId ?? r.cardId, deckName: r.deckName ?? null, noteData: r.noteData }));
         },
     }),
     buildFtsPrefixQuery: (q: string) => q,
@@ -21,11 +21,12 @@ vi.mock('./db', () => ({
 
 import { findDuplicateNote, findTusCardIdByFirstField } from './noteManager';
 
-function seed(cardId: number, firstField: string, noteTypeId = 1, noteId = cardId): void {
+function seed(cardId: number, firstField: string, noteTypeId = 1, noteId = cardId, deckName?: string): void {
     rows.push({
         cardId,
         noteId,
         noteTypeId,
+        deckName,
         csum: checksumField(firstField),
         noteData: JSON.stringify({ fields: [firstField, 'answer', 'topic'] }),
     });
@@ -58,12 +59,13 @@ describe('findTusCardIdByFirstField (Anki-style first-field dedupe)', () => {
 });
 
 describe('findDuplicateNote (Anki-style note-type-scoped duplicate check)', () => {
-    it('finds duplicate in the same note type', () => {
-        seed(101, 'Miyokard enfarktüsü', 1, 501);
+    it('finds duplicate in the same note type with deck name', () => {
+        seed(101, 'Miyokard enfarktüsü', 1, 501, 'Kardiyoloji');
         const dup = findDuplicateNote(1, 'Miyokard enfarktüsü');
         expect(dup).not.toBeNull();
         expect(dup?.noteId).toBe(501);
         expect(dup?.cardId).toBe(101);
+        expect(dup?.deckName).toBe('Kardiyoloji');
     });
 
     it('does not flag duplicate if note type differs', () => {
