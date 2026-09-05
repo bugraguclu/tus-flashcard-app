@@ -1811,6 +1811,7 @@ export default function DecksScreen() {
                                 value={filterLimit}
                                 onChangeText={setFilterLimit}
                                 keyboardType="number-pad"
+                                inputMode="numeric"
                                 maxLength={5}
                                 accessibilityLabel={l('Birinci filtre kart limiti', 'First filter card limit')}
                             />
@@ -1917,6 +1918,7 @@ export default function DecksScreen() {
                                         value={filterLimit2}
                                         onChangeText={setFilterLimit2}
                                         keyboardType="number-pad"
+                                        inputMode="numeric"
                                         maxLength={5}
                                         accessibilityLabel={l('İkinci filtre kart limiti', 'Second filter card limit')}
                                     />
@@ -2139,6 +2141,7 @@ export default function DecksScreen() {
                         colors={colors}
                         decks={availableRegularDecks}
                         selectedDeckName={currentPickerSelectedDeckName}
+                        activeDeckName={currentPickerSelectedDeckName}
                         title={l('Hedef deste', 'Target Deck')}
                         allDecksLabel={l('Tüm desteler', 'All decks')}
                         searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -2160,6 +2163,7 @@ export default function DecksScreen() {
                             try {
                                 const created = createDeck(getAvailableDeckName(name));
                                 refresh();
+                                invalidateCollection();
                                 return created.name;
                             } catch (error) {
                                 console.warn('[Decks] create deck from picker failed:', error);

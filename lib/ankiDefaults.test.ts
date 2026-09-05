@@ -94,6 +94,10 @@ describe('collection preferences match Anki', () => {
         expect(DEFAULT_SETTINGS.themeMode).toBe('light');
     });
 
+    it('defaults to Turkish language', () => {
+        expect(DEFAULT_SETTINGS.language).toBe('tr');
+    });
+
     it('keeps the redesigned study screen opt-in for existing users', () => {
         expect(DEFAULT_SETTINGS.newStudyScreenEnabled).toBe(false);
     });

@@ -35,6 +35,9 @@ const tr = {
     'common.turkish': 'Türkçe',
     'common.english': 'English',
 
+    'permissions.title': 'İzin Gerekli',
+    'permissions.openSettings': 'Ayarları Aç',
+
     'anki.again': 'Tekrar',
     'anki.hard': 'Zor',
     'anki.good': 'İyi',
@@ -61,7 +64,7 @@ const tr = {
     'root.secondaryTab': '⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.',
     'root.editCard': 'Kartı düzenle',
     'root.cardInfo': 'Kart bilgisi',
-    'root.import': 'İçe aktar',
+    'root.import': 'Deste içe aktar',
     'root.backups': 'Yedekler',
     'root.noteTypes': 'Not türleri',
     'root.editNoteType': 'Not türünü düzenle',
@@ -198,6 +201,9 @@ const en: Record<TranslationKey, string> = {
     'common.turkish': 'Türkçe',
     'common.english': 'English',
 
+    'permissions.title': 'Permission Required',
+    'permissions.openSettings': 'Open Settings',
+
     'anki.again': 'Again',
     'anki.hard': 'Hard',
     'anki.good': 'Good',
@@ -224,7 +230,7 @@ const en: Record<TranslationKey, string> = {
     'root.secondaryTab': '⚠️ The app is open in another tab — changes in this tab will not be saved.',
     'root.editCard': 'Edit Card',
     'root.cardInfo': 'Card Info',
-    'root.import': 'Import',
+    'root.import': 'Import deck',
     'root.backups': 'Backups',
     'root.noteTypes': 'Note Types',
     'root.editNoteType': 'Edit Note Type',
@@ -357,7 +363,7 @@ export function translate(locale: SupportedLocale, key: TranslationKey, params?:
     });
 }
 
-let activeLocale: SupportedLocale = 'en';
+let activeLocale: SupportedLocale = 'tr';
 
 export function setActiveLocale(locale: SupportedLocale): void {
     activeLocale = locale;
@@ -375,6 +381,17 @@ export function localizeNoteTypeName(locale: SupportedLocale, name: string): str
     if (name === 'Basic (optional reversed card)') return 'Temel (seçimli ters kart)';
     if (name === 'Basic (type in the answer)') return 'Temel (yanıtı yazarak)';
     if (name === 'Cloze') return 'Boşluklu';
+    return name;
+}
+
+/** Localized display names for standard Anki field names; custom names pass through unchanged. */
+export function localizeFieldName(locale: SupportedLocale, name: string): string {
+    if (locale === 'en') return name;
+    if (name === 'Front') return 'Ön';
+    if (name === 'Back') return 'Arka';
+    if (name === 'Text') return 'Metin';
+    if (name === 'Back Extra') return 'Arka Ek';
+    if (name === 'Add Reverse') return 'Tersini Ekle';
     return name;
 }
 

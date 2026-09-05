@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fixture = vi.hoisted(() => ({ files: new Set<string>(), deleted: [] as string[] }));
 
-vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
+vi.mock('react-native', async (importOriginal) => ({
+    ...(await importOriginal<any>()),
+    Platform: { OS: 'ios' },
+}));
 vi.mock('./files', () => ({
     getLegacyFileSystem: () => ({
         documentDirectory: '/documents/',

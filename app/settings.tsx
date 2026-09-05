@@ -35,6 +35,7 @@ import {
 } from '../lib/storage';
 import { checkDatabase, optimizeDatabase } from '../lib/maintenance';
 import { alert, confirm } from '../lib/confirm';
+import { promptPermissionSettings } from '../lib/permissions';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import type {
@@ -58,8 +59,8 @@ import {
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
 import { createBackupNow } from '../lib/backup';
 import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
-import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
-import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { stableSnapshot } from '../lib/dirtyState';
+
 import {
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
@@ -379,7 +380,7 @@ export default function SettingsScreen() {
     const { refreshSettings: refreshData } = useAppSettings();
     const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
-    const { l } = useI18n();
+    const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -394,7 +395,6 @@ export default function SettingsScreen() {
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
     const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
     const lastSaveFailedRef = useRef(false);
     const sectionScrollRef = useRef<ScrollView>(null);
 
@@ -451,7 +451,6 @@ export default function SettingsScreen() {
     useEffect(() => {
         const loaded = loadSettings();
         setSettings(loaded);
-        setSavedSnapshot(stableSnapshot(loaded));
         setLoading(false);
         return () => {
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -478,7 +477,6 @@ export default function SettingsScreen() {
             return false;
         }
         setSettings(persisted);
-        setSavedSnapshot(stableSnapshot(persisted));
         refreshData();
         lastSaveFailedRef.current = false;
         showSavedState();
@@ -516,15 +514,6 @@ export default function SettingsScreen() {
         if (!lastSaveFailedRef.current) showSavedState();
     };
 
-    const isDirty = hasSnapshotChanged(savedSnapshot, settings);
-    useUnsavedChangesGuard(isDirty, {
-        title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
-        message: l(
-            'Ayarlarınız kaydedilmedi. Çıkarsanız değişiklikler kaybolacak.',
-            'Your settings have not been saved. They will be lost if you leave.',
-        ),
-    });
-
     const handleStudyNotificationsToggle = async (
         enabled: boolean,
         threshold: StudyNotificationThreshold = normalizeStudyNotificationThreshold(settings.studyNotificationThreshold),
@@ -547,10 +536,15 @@ export default function SettingsScreen() {
                     studyNotificationsEnabled: false,
                     studyNotificationThreshold: threshold,
                 });
-                alert(
-                    l('Bildirim izni gerekli', 'Notification permission required'),
-                    l('Günlük çalışma hatırlatmasını açmak için iOS Ayarları’nda bildirimlere izin verin.', 'Allow notifications in iOS Settings to enable the daily study reminder.'),
-                );
+                await promptPermissionSettings({
+                    title: l('Bildirim izni gerekli', 'Notification permission required'),
+                    message: l(
+                        'Günlük çalışma hatırlatmasını açmak için iOS Ayarları’nda bildirimlere izin verin.',
+                        'Allow notifications in iOS Settings to enable the daily study reminder.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
                 return;
             }
             updateSettings({
@@ -559,7 +553,15 @@ export default function SettingsScreen() {
             });
         } catch (error) {
             console.warn('[Settings] notification permission failed:', error);
-            alert(l('Bildirim açılamadı', 'Could not enable notifications'), l('Bildirim izni alınamadı. Lütfen iOS Ayarları’nı kontrol edin.', 'Notification permission could not be obtained. Check iOS Settings.'));
+            await promptPermissionSettings({
+                title: l('Bildirim açılamadı', 'Could not enable notifications'),
+                message: l(
+                    'Bildirim izni alınamadı. Lütfen iOS Ayarları’nı kontrol edin.',
+                    'Notification permission could not be obtained. Check iOS Settings.',
+                ),
+                settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                cancelLabel: t('common.cancel'),
+            });
         }
     };
 
@@ -722,7 +724,6 @@ export default function SettingsScreen() {
             }
             const persisted = loadSettings();
             setSettings(persisted);
-            setSavedSnapshot(stableSnapshot(persisted));
             refreshData();
             markSchedulingStale();
         });
@@ -951,6 +952,20 @@ export default function SettingsScreen() {
             <Group title={l('Gelişmiş', 'Advanced')} styles={styles}>
                 <ToggleRow label={l('Ekranı açık tut', 'Keep screen on')} summary={l('Çalışma sırasında ekran zaman aşımını devre dışı bırakır.', 'Disables screen timeout while reviewing.')} value={Boolean(settings.keepScreenOn)} onChange={(value) => updateSetting('keepScreenOn', value)} styles={styles} />
                 <ToggleRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={settings.autoPlayAudio} onChange={(value) => updateSetting('autoPlayAudio', value)} styles={styles} />
+                <ChoiceRow
+                    label={l('Ses oynatma hızı', 'Audio playback speed')}
+                    summary={l('Kartlardaki seslerin varsayılan çalma hızı.', 'Default playback speed for audio in cards.')}
+                    value={String(settings.audioPlaybackRate ?? 1.0)}
+                    options={[
+                        { label: '0.75x', value: '0.75' },
+                        { label: '1.0x', value: '1' },
+                        { label: '1.25x', value: '1.25' },
+                        { label: '1.5x', value: '1.5' },
+                        { label: '2.0x', value: '2' },
+                    ]}
+                    onChange={(value) => updateSetting('audioPlaybackRate', parseFloat(value))}
+                    styles={styles}
+                />
                 <ToggleRow label={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} value={settings.interruptAudioOnAnswer} onChange={(value) => updateSetting('interruptAudioOnAnswer', value)} styles={styles} />
             </Group>
         </>
@@ -1244,7 +1259,7 @@ export default function SettingsScreen() {
 
             <Group title={l('İçe ve dışa aktar', 'Import and export')} styles={styles}>
                 <DataActionRow icon="↑" label={l('Verileri dışa aktar', 'Export data')} onPress={handleExport} divider={false} styles={styles} />
-                <DataActionRow icon="↓" label={l('Verileri içe aktar', 'Import data')} onPress={handleImport} styles={styles} />
+                <DataActionRow icon="↓" label={l('Deste ve verileri içe aktar', 'Import decks and data')} onPress={handleImport} styles={styles} />
             </Group>
 
             <Group title={l('Bakım', 'Maintenance')} styles={styles}>

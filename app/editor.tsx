@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -19,7 +19,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
-import { createCourse } from '../lib/courses';
 import { confirm, alert } from '../lib/confirm';
 import {
     blockFormatValue,
@@ -45,15 +44,18 @@ import {
     createTusCard,
     updateTusCardByCardId,
     deleteTusCardByCardId,
+    findDuplicateNote,
     getAnkiCard,
+    getAllNoteTypes,
     getCardsForNote,
     getNote,
     getNoteType,
     searchIndexCardFromNote,
+    type DuplicateNoteResult,
 } from '../lib/noteManager';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
 import { safeExternalCallbackUrl } from '../lib/externalLinking';
-import { ANKI_STOCK_NOTE_TYPE_IDS, BUILTIN_NOTE_TYPES, type AnkiCard, type Note } from '../lib/models';
+import { ANKI_STOCK_NOTE_TYPE_IDS, BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import MediaAttachButton, { FIELD_MEDIA_RE, type MediaAttachButtonHandle } from '../components/MediaAttachButton';
 import RichTextEditor, {
@@ -64,12 +66,11 @@ import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
-import { localizeNoteTypeName } from '../lib/i18n';
-import { countCardsForNote, extractClozeNumbers, sanitizeUntrustedHtml } from '../lib/templates';
+import { localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
+import { clozeFieldIndex, countCardsForNote, extractClozeNumbers, sanitizeUntrustedHtml } from '../lib/templates';
 import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
-import { userFacingErrorMessage } from '../lib/userFacingError';
 
 function parseCardId(raw: string | string[] | undefined): number | null {
     if (!raw) return null;
@@ -133,6 +134,19 @@ function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number })
     return (
         <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
             <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
+}
+
+function KeyboardDismissIcon({ color, size = 18 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path
+                d="M20 4H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"
+                fill={color}
+            />
+            <Path d="M6 8h2v2H6zm3 0h2v2H9zm3 0h2v2h-2zm3 0h2v2h-2zM6 11h2v2H6zm3 0h6v2H9zm7 0h2v2h-2z" fill={color} />
+            <Path d="m7 21 5 3 5-3z" fill={color} />
         </Svg>
     );
 }
@@ -252,13 +266,12 @@ import {
     type LocalizedPresetText,
 } from '../lib/customToolbar';
 import {
+    loadNoteTypeStickyFields,
+    saveNoteTypeStickyFields,
     loadStickyEditorFields,
     saveStickyEditorFields,
-    type EditorField,
-    type StickyEditorFields,
+    type StickyFieldEntry,
 } from '../lib/editorStickyFields';
-
-const CARD_TYPE_CHOICES = ANKI_STOCK_NOTE_TYPE_IDS;
 
 // The preview dialog picks its card body height before the card renders, so the sheet never
 // resizes once the WebView reports its intrinsic height. Everything else in the dialog — header,
@@ -324,8 +337,6 @@ export default function EditorScreen() {
         return getDeck(1)?.id ?? getAllDecks().find((deck) => !deck.isFiltered)?.id ?? null;
     });
     const [showDeckPicker, setShowDeckPicker] = useState(false);
-    const [showNewSubject, setShowNewSubject] = useState(false);
-    const [newSubjectName, setNewSubjectName] = useState('');
     const [showPreview, setShowPreview] = useState(false);
     const [previewSide, setPreviewSide] = useState<'question' | 'answer'>('question');
     const [showTagPicker, setShowTagPicker] = useState(false);
@@ -376,64 +387,103 @@ export default function EditorScreen() {
             pasteClipboardImagesAsPng: Boolean(settings.pasteClipboardImagesAsPng),
         };
     });
-    const [activeField, setActiveField] = useState<EditorField>('question');
     const [formatState, setFormatState] = useState<EditorFormatState>(EMPTY_EDITOR_FORMAT_STATE);
-    const questionEditorRef = useRef<RichTextEditorHandle>(null);
-    const answerEditorRef = useRef<RichTextEditorHandle>(null);
-    const reverseEditorRef = useRef<RichTextEditorHandle>(null);
-    const questionMediaRef = useRef<MediaAttachButtonHandle>(null);
-    const answerMediaRef = useRef<MediaAttachButtonHandle>(null);
-    const reverseMediaRef = useRef<MediaAttachButtonHandle>(null);
-
-    const stickyFieldDefaults = useMemo(
-        () => routeCardId ? {} : loadStickyEditorFields(),
-        [routeCardId],
-    );
-
-    const [question, setQuestion] = useState((params.question as string) || stickyFieldDefaults.question?.value || '');
-    const [answer, setAnswer] = useState((params.answer as string) || stickyFieldDefaults.answer?.value || '');
     const [cardTypeId, setCardTypeId] = useState(() => routeNoteTypeId ?? 1);
-    const [reverseAnswer, setReverseAnswer] = useState(
-        (routeNoteTypeId === 7 ? routeFieldValues[2] : '') || stickyFieldDefaults.reverseAnswer?.value || '',
-    );
-    const [pinnedFields, setPinnedFields] = useState<Set<EditorField>>(() => new Set(
-        (['question', 'answer', 'reverseAnswer'] as EditorField[])
-            .filter((field) => stickyFieldDefaults[field]?.pinned),
-    ));
-    const [noteTags, setNoteTags] = useState<string[]>(() => (
-        typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : []
-    ));
-    const [preservedFields, setPreservedFields] = useState<string[]>(routeFieldValues);
-    const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
-    // The screen is dirty only once the user changes something, so the baseline is the draft the
-    // editor opened with. It is kept as state and not just as its key, so the destination deck
-    // resolving on its own can be folded in later without also absorbing an edit made meanwhile.
-    const initialDraftRef = useRef<EditorDraftState | null>(
-        routeCardId
-            ? null
-            : {
-                question: (params.question as string) || stickyFieldDefaults.question?.value || '',
-                answer: (params.answer as string) || stickyFieldDefaults.answer?.value || '',
-                reverseAnswer: (routeNoteTypeId === 7 ? routeFieldValues[2] : '') || stickyFieldDefaults.reverseAnswer?.value || '',
-                cardTypeId: routeNoteTypeId ?? 1,
-                deckId: targetDeckId,
-                tags: typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : [],
-            },
-    );
-    const initialDraftKeyRef = useRef<string | null>(
-        initialDraftRef.current ? editorDraftKey(initialDraftRef.current) : null,
-    );
-    const resetDraftBaseline = (draft: EditorDraftState | null) => {
-        initialDraftRef.current = draft;
-        initialDraftKeyRef.current = draft ? editorDraftKey(draft) : null;
-    };
 
     const selectedNoteType = useMemo(
         () => getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId) ?? null,
         [cardTypeId, dataVersion],
     );
     const isCloze = selectedNoteType?.kind === 'cloze';
-    const isOptionalReverse = cardTypeId === 7;
+
+    const availableNoteTypes = useMemo(() => {
+        const list = getAllNoteTypes().filter((nt) => !isLegacyTusNoteType(nt));
+        if (selectedNoteType && !list.some((nt) => nt.id === selectedNoteType.id)) {
+            list.unshift(selectedNoteType);
+        }
+        return list;
+    }, [dataVersion, selectedNoteType]);
+
+    const fieldsToRender = useMemo(() => {
+        if (selectedNoteType && selectedNoteType.fields.length > 0) {
+            return selectedNoteType.fields;
+        }
+        return [
+            { ord: 0, name: 'Front', sticky: false, rtl: false, font: '', fontSize: 0 },
+            { ord: 1, name: 'Back', sticky: false, rtl: false, font: '', fontSize: 0 },
+        ];
+    }, [selectedNoteType]);
+
+    const stickyFieldDefaults = useMemo(
+        () => (routeCardId ? {} : loadNoteTypeStickyFields(cardTypeId)),
+        [routeCardId, cardTypeId],
+    );
+
+    const [fieldValues, setFieldValues] = useState<string[]>(() => {
+        if (routeFieldValues.length > 0) return routeFieldValues;
+        const noteType = getNoteType(routeNoteTypeId ?? 1) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === (routeNoteTypeId ?? 1));
+        const count = noteType?.fields.length ?? 2;
+        const initial = new Array(count).fill('');
+        if (params.question && typeof params.question === 'string') {
+            initial[0] = params.question;
+        } else if (!routeCardId && stickyFieldDefaults[0]?.value) {
+            initial[0] = stickyFieldDefaults[0].value;
+        }
+        if (params.answer && typeof params.answer === 'string') {
+            initial[1] = params.answer;
+        } else if (!routeCardId && stickyFieldDefaults[1]?.value) {
+            initial[1] = stickyFieldDefaults[1].value;
+        }
+        for (let i = 2; i < count; i++) {
+            if (!routeCardId && stickyFieldDefaults[i]?.value) {
+                initial[i] = stickyFieldDefaults[i].value;
+            }
+        }
+        return initial;
+    });
+
+    const [pinnedFields, setPinnedFields] = useState<Set<number>>(() => {
+        return new Set(
+            Object.entries(stickyFieldDefaults)
+                .filter(([_, entry]) => entry.pinned)
+                .map(([ord]) => Number(ord)),
+        );
+    });
+
+    const [activeFieldIndex, setActiveFieldIndex] = useState<number>(0);
+    const fieldEditorRefs = useRef<(RichTextEditorHandle | null)[]>([]);
+    const fieldMediaRefs = useRef<(MediaAttachButtonHandle | null)[]>([]);
+
+    const [noteTags, setNoteTags] = useState<string[]>(() => (
+        typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : []
+    ));
+    const [isEditing, setIsEditing] = useState(Boolean(routeCardId));
+
+    const initialDraftRef = useRef<EditorDraftState | null>(
+        routeCardId
+            ? null
+            : {
+                fields: fieldValues,
+                question: fieldValues[0] || '',
+                answer: fieldValues[1] || '',
+                reverseAnswer: cardTypeId === 7 ? (fieldValues[2] || '') : '',
+                cardTypeId: routeNoteTypeId ?? 1,
+                deckId: targetDeckId,
+                tags: typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : [],
+            },
+    );
+    const [initialDraftKey, setInitialDraftKey] = useState<string | null>(() => (
+        initialDraftRef.current ? editorDraftKey(initialDraftRef.current, isEditing) : null
+    ));
+    const initialDraftKeyRef = useRef<string | null>(
+        initialDraftRef.current ? editorDraftKey(initialDraftRef.current, isEditing) : null
+    );
+    const resetDraftBaseline = (draft: EditorDraftState | null) => {
+        initialDraftRef.current = draft;
+        const nextKey = draft ? editorDraftKey(draft, isEditing) : null;
+        initialDraftKeyRef.current = nextKey;
+        setInitialDraftKey(nextKey);
+    };
 
     const targetDeck = useMemo(() => {
         if (targetDeckId) return getDeck(targetDeckId);
@@ -441,8 +491,6 @@ export default function EditorScreen() {
         return getDeck(1);
     }, [targetDeckId, activeDeckName, dataVersion]);
 
-    // The hidden picker needs no data. Loading/building its complete hierarchy during the editor
-    // transition only competes with the rich editor WebViews for the first frame.
     const deckPickerDecks = useMemo(
         () => showDeckPicker
             ? getAllDecks().filter((deck) => !deck.isFiltered)
@@ -450,38 +498,17 @@ export default function EditorScreen() {
         [dataVersion, showDeckPicker],
     );
 
-    const openNewSubject = () => {
-        setNewSubjectName('');
-        setShowDeckPicker(false);
-        setShowNewSubject(true);
-    };
-
-    const handleCreateSubject = () => {
-        const result = createCourse(newSubjectName);
-        if (!result.created) {
-            alert(t('common.error'), userFacingErrorMessage(
-                result.error,
-                l('Ders oluşturulamadı. Lütfen tekrar deneyin.', 'Could not create the course. Please try again.'),
-            ));
-            return;
-        }
-        setTargetDeckId(resolveSubjectDeckId(result.subject.id));
-        setShowNewSubject(false);
-        setNewSubjectName('');
-        bumpDataVersion();
-    };
-
     const previewPayload = useMemo(() => {
         if (!showPreview) return null;
         const noteType = selectedNoteType;
         if (!noteType) return null;
-        const fields = preservedFields.length > 0
-            ? [...preservedFields]
-            : noteType.fields.map(() => '');
-        while (fields.length < noteType.fields.length) fields.push('');
-        fields[0] = question || l('(boş soru)', '(empty question)');
-        fields[1] = answer || l('(boş cevap)', '(empty answer)');
-        if (cardTypeId === 7) fields[2] = reverseAnswer.trim();
+        const fields = noteType.fields.map((_, i) => fieldValues[i] || '');
+        if (fields.length > 0 && !fields[0]) {
+            fields[0] = l('(boş soru)', '(empty question)');
+        }
+        if (fields.length > 1 && !fields[1]) {
+            fields[1] = l('(boş cevap)', '(empty answer)');
+        }
         const note: Note = {
             id: -1,
             guid: 'preview',
@@ -490,7 +517,7 @@ export default function EditorScreen() {
             usn: -1,
             tags: noteTags,
             fields,
-            sfld: question,
+            sfld: fields[noteType.sortFieldIdx] || fields[0] || '',
             csum: 0,
             flags: 0,
         };
@@ -500,7 +527,7 @@ export default function EditorScreen() {
             left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
         };
         return { noteType, note, card };
-    }, [showPreview, question, answer, targetDeck?.id, cardTypeId, reverseAnswer, noteTags, preservedFields, selectedNoteType, l]);
+    }, [showPreview, fieldValues, targetDeck?.id, cardTypeId, noteTags, selectedNoteType, l]);
 
     useEffect(() => {
         if (!routeCardId) return;
@@ -512,22 +539,20 @@ export default function EditorScreen() {
         const note = getNote(card.noteId);
         if (!note) return;
 
-        const initialReverseAnswer = note.noteTypeId === 7 ? (note.fields[2] || '') : '';
+        const noteType = getNoteType(note.noteTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === note.noteTypeId);
+        const count = Math.max(noteType?.fields.length ?? 0, note.fields.length, 2);
+        const loadedFields = new Array(count).fill('').map((_, i) => note.fields[i] || '');
 
-        // Editing follows the card's actual deck. Extra legacy/imported fields and tags remain
-        // intact even though the compact add screen only exposes Anki's Type and Deck selectors.
         setTargetDeckId(card.deckId);
-        setQuestion(note.fields[0] || note.sfld || '');
-        setAnswer(note.fields[1] || '');
+        setFieldValues(loadedFields);
         setNoteTags(note.tags);
-        setPreservedFields(note.fields);
         setCardTypeId(note.noteTypeId);
-        setReverseAnswer(initialReverseAnswer);
         setIsEditing(true);
         resetDraftBaseline({
-            question: note.fields[0] || note.sfld || '',
-            answer: note.fields[1] || '',
-            reverseAnswer: initialReverseAnswer,
+            fields: loadedFields,
+            question: loadedFields[0] || '',
+            answer: loadedFields[1] || '',
+            reverseAnswer: note.noteTypeId === 7 ? loadedFields[2] || '' : '',
             cardTypeId: note.noteTypeId,
             deckId: card.deckId,
             tags: note.tags,
@@ -544,10 +569,6 @@ export default function EditorScreen() {
         setTargetDeckId(activeDeck && !activeDeck.isFiltered ? activeDeck.id : (getDeck(1)?.id ?? null));
     }, [routeCardId, targetDeckId, activeDeckName]);
 
-    // The destination deck resolves synchronously in almost every case, but an empty or
-    // still-initializing collection can leave it null for the first frames. Fold that resolution
-    // into the baseline — a deck the screen picked for itself is not an edit the user made —
-    // and keep the field values captured at mount so a keystroke in that window still counts.
     const draftDeckSeededRef = useRef(Boolean(routeCardId) || targetDeckId !== null);
     useEffect(() => {
         if (routeCardId || targetDeckId === null || draftDeckSeededRef.current) return;
@@ -556,15 +577,16 @@ export default function EditorScreen() {
         if (baseline) resetDraftBaseline({ ...baseline, deckId: targetDeckId });
     }, [routeCardId, targetDeckId]);
 
-    const currentDraft = useMemo(() => ({
-        question,
-        answer,
-        reverseAnswer,
+    const currentDraft: EditorDraftState = useMemo(() => ({
+        fields: fieldValues,
+        question: fieldValues[0] || '',
+        answer: fieldValues[1] || '',
+        reverseAnswer: cardTypeId === 7 ? (fieldValues[2] || '') : '',
         cardTypeId,
         deckId: targetDeckId,
         tags: noteTags,
-    }), [answer, cardTypeId, noteTags, question, reverseAnswer, targetDeckId]);
-    const isDirty = hasEditorDraftChanged(initialDraftKeyRef.current, currentDraft);
+    }), [fieldValues, cardTypeId, targetDeckId, noteTags]);
+    const isDirty = hasEditorDraftChanged(initialDraftKey, currentDraft, isEditing);
     useUnsavedChangesGuard(isDirty, {
         title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
         message: isEditing
@@ -576,47 +598,115 @@ export default function EditorScreen() {
         ? localizeNoteTypeName(locale, selectedNoteType.name)
         : l('Bilinmeyen', 'Unknown');
 
-    const activeEditorRef = () => {
-        if (activeField === 'answer') return answerEditorRef;
-        if (activeField === 'reverseAnswer') return reverseEditorRef;
-        return questionEditorRef;
-    };
-
-    const fieldValue = (field: EditorField): string => {
-        if (field === 'answer') return answer;
-        if (field === 'reverseAnswer') return reverseAnswer;
-        return question;
-    };
-
-    const persistStickyFieldValues = (fields: Set<EditorField> = pinnedFields) => {
-        const persisted: StickyEditorFields = {};
-        (['question', 'answer', 'reverseAnswer'] as EditorField[]).forEach((field) => {
-            if (fields.has(field)) persisted[field] = { pinned: true, value: fieldValue(field) };
+    const handleFieldChange = (index: number, value: string) => {
+        setFieldValues((prev) => {
+            const next = [...prev];
+            next[index] = value;
+            return next;
         });
-        saveStickyEditorFields(persisted);
     };
 
-    const togglePinnedField = (field: EditorField) => {
+    const duplicateNote = useMemo(() => {
+        const firstField = fieldValues[0];
+        if (!firstField || !firstField.trim()) return null;
+        const currentCard = routeCardId ? getAnkiCard(routeCardId) : null;
+        return findDuplicateNote(cardTypeId, firstField, currentCard?.noteId);
+    }, [fieldValues[0], cardTypeId, routeCardId, dataVersion]);
+
+    const duplicateDeckName = useMemo(() => {
+        if (!duplicateNote?.cardId) return null;
+        const card = getAnkiCard(duplicateNote.cardId);
+        if (!card) return null;
+        return getDeck(card.deckId)?.name ?? null;
+    }, [duplicateNote]);
+
+    const handleSelectNoteType = (newId: number) => {
+        if (newId === cardTypeId) {
+            setShowCardTypePicker(false);
+            return;
+        }
+        const newType = getNoteType(newId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === newId);
+        if (!newType) return;
+
+        const count = newType.fields.length;
+        const nextFields = new Array(count).fill('').map((_, i) => fieldValues[i] || '');
+
+        const stickyDefaults = routeCardId ? {} : loadNoteTypeStickyFields(newId);
+        for (let i = 0; i < count; i++) {
+            if (!nextFields[i] && stickyDefaults[i]?.value) {
+                nextFields[i] = stickyDefaults[i].value;
+            }
+        }
+
+        setCardTypeId(newId);
+        setFieldValues(nextFields);
+        setPinnedFields(new Set(
+            Object.entries(stickyDefaults)
+                .filter(([_, entry]) => entry.pinned)
+                .map(([ord]) => Number(ord)),
+        ));
+        setShowCardTypePicker(false);
+    };
+
+    const getActiveEditor = () => {
+        return fieldEditorRefs.current[activeFieldIndex] ?? fieldEditorRefs.current[0] ?? null;
+    };
+
+    const persistStickyFieldValues = (pinned: Set<number> = pinnedFields) => {
+        const persisted: Record<number, { pinned: boolean; value: string }> = {};
+        if (selectedNoteType) {
+            selectedNoteType.fields.forEach((field, index) => {
+                if (pinned.has(field.ord)) {
+                    persisted[field.ord] = { pinned: true, value: fieldValues[index] || '' };
+                }
+            });
+        }
+        saveNoteTypeStickyFields(cardTypeId, persisted);
+    };
+
+    const togglePinnedField = (fieldOrd: number) => {
         if (isEditing) return;
         setPinnedFields((current) => {
             const next = new Set(current);
-            if (next.has(field)) next.delete(field);
-            else next.add(field);
+            if (next.has(fieldOrd)) next.delete(fieldOrd);
+            else next.add(fieldOrd);
             persistStickyFieldValues(next);
             return next;
         });
     };
 
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+    useEffect(() => {
+        const showSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => setKeyboardVisible(true),
+        );
+        const hideSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setKeyboardVisible(false),
+        );
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
+
+    const dismissEditorKeyboard = useCallback(() => {
+        Keyboard.dismiss();
+        fieldEditorRefs.current.forEach((ref) => ref?.blur());
+    }, []);
+
     const wrapEditorSelection = (prefix: string, suffix: string) => {
-        activeEditorRef().current?.wrapSelection(prefix, suffix);
+        getActiveEditor()?.wrapSelection(prefix, suffix);
     };
 
     const runEditorCommand = (command: RichTextCommand, value?: string) => {
-        activeEditorRef().current?.runCommand(command, value);
+        getActiveEditor()?.runCommand(command, value);
     };
 
     const insertEditorHtml = (html: string) => {
-        activeEditorRef().current?.insertHtml(html);
+        getActiveEditor()?.insertHtml(html);
     };
 
     const openLinkEditor = () => {
@@ -744,17 +834,18 @@ export default function EditorScreen() {
     const handleBack = () => {
         router.back();
     };
-
     const requestClearFields = () => {
         setShowOverflowMenu(false);
         confirm(
             l('Alanları temizle', 'Clear Fields'),
-            l('Soru ve cevap alanlarındaki içerik temizlensin mi?', 'Clear the contents of the question and answer fields?'),
+            l('Tüm alanlardaki içerik temizlensin mi?', 'Clear the contents of all fields?'),
             () => {
-                setQuestion('');
-                setAnswer('');
-                setReverseAnswer('');
-                questionEditorRef.current?.focus();
+                if (selectedNoteType) {
+                    setFieldValues(selectedNoteType.fields.map(() => ''));
+                } else {
+                    setFieldValues([]);
+                }
+                fieldEditorRefs.current[0]?.focus();
             },
             { destructive: true },
         );
@@ -780,8 +871,9 @@ export default function EditorScreen() {
     const updateEditorPreferences = (patch: Partial<typeof editorPreferences>) => {
         setEditorPreferences((current) => {
             const next = { ...current, ...patch };
+            const currentSettings = loadSettings();
             saveSettings({
-                ...loadSettings(),
+                ...currentSettings,
                 editorFontSize: next.fontSize,
                 editorCapitalizeSentences: next.capitalizeSentences,
                 editorToolbarVisible: next.toolbarVisible,
@@ -792,13 +884,12 @@ export default function EditorScreen() {
     };
 
     const handleSave = () => {
+        dismissEditorKeyboard();
         setShowOverflowMenu(false);
-        const currentFields = [
-            question.trim(),
-            answer.trim(),
-            cardTypeId === 7 ? reverseAnswer.trim() : '',
-            ...preservedFields.slice(3),
-        ];
+        const currentFields = selectedNoteType
+            ? selectedNoteType.fields.map((_, i) => (fieldValues[i] || '').trim())
+            : fieldValues.map((f) => f.trim());
+
         const mockNote: Note = {
             id: 0,
             guid: '',
@@ -807,7 +898,7 @@ export default function EditorScreen() {
             usn: 0,
             tags: noteTags,
             fields: currentFields,
-            sfld: currentFields[0] || '',
+            sfld: currentFields[selectedNoteType?.sortFieldIdx ?? 0] || currentFields[0] || '',
             csum: 0,
             flags: 0,
         };
@@ -829,11 +920,12 @@ export default function EditorScreen() {
         try {
             if (isEditing && routeCardId) {
                 const updated = updateTusCardByCardId(routeCardId, {
-                    question: question.trim(),
-                    answer: answer.trim(),
+                    question: currentFields[0] || '',
+                    answer: currentFields[1] || '',
                     tags: noteTags,
-                    reverseAnswer: cardTypeId === 7 ? reverseAnswer : undefined,
+                    reverseAnswer: cardTypeId === 7 ? currentFields[2] : undefined,
                     deckId: targetDeck.id,
+                    fieldValues: currentFields,
                 });
 
                 if (!updated) {
@@ -841,8 +933,7 @@ export default function EditorScreen() {
                     return;
                 }
 
-                // A reversed note has two sibling cards sharing this content — keep both in the
-                // search index, not just the one being edited.
+                // Sibling cards indexing
                 for (const sibling of getCardsForNote(updated.note.id)) {
                     dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
                 }
@@ -852,15 +943,13 @@ export default function EditorScreen() {
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
             } else {
                 const created = createTusCard({
-                    question: question.trim(),
-                    answer: answer.trim(),
+                    question: currentFields[0] || '',
+                    answer: currentFields[1] || '',
                     tags: noteTags,
                     deckId: targetDeck.id,
                     noteTypeId: cardTypeId,
-                    reverseAnswer: cardTypeId === 7 ? reverseAnswer : undefined,
-                    fieldValues: preservedFields.length > 0
-                        ? preservedFields.map((value, index) => index === 0 ? question.trim() : index === 1 ? answer.trim() : value)
-                        : undefined,
+                    reverseAnswer: cardTypeId === 7 ? currentFields[2] : undefined,
+                    fieldValues: currentFields,
                 });
 
                 for (const generatedCard of created.cards) {
@@ -1074,7 +1163,7 @@ export default function EditorScreen() {
             label: l('HTML kaynağı', 'HTML source'),
             onPress: () => {
                 Keyboard.dismiss();
-                const currentVal = activeField === 'question' ? question : activeField === 'answer' ? answer : reverseAnswer;
+                const currentVal = fieldValues[activeFieldIndex] ?? '';
                 setHtmlEditorValue(currentVal);
                 setShowHtmlEditor(true);
             },
@@ -1094,7 +1183,11 @@ export default function EditorScreen() {
             {isCloze && showsInsertExtras && (
                 <TouchableOpacity
                     style={styles.formatButton}
-                    onPress={() => questionEditorRef.current?.runCommand('cloze')}
+                    onPress={() => {
+                        const targetIndex = isCloze ? clozeFieldIndex(selectedNoteType) : activeFieldIndex;
+                        const targetEditor = fieldEditorRefs.current[targetIndex] ?? getActiveEditor();
+                        targetEditor?.runCommand('cloze');
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel={l('Boşluk ekle', 'Add cloze deletion')}
                     accessibilityHint={l('Metin alanındaki seçimi bir sonraki boşluk numarasıyla kapatır', 'Wraps the Text field selection in the next cloze number')}
@@ -1217,6 +1310,7 @@ export default function EditorScreen() {
                 style={styles.editorScroll}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             >
                 <View style={styles.selectorGroup}>
                     <TouchableOpacity
@@ -1248,144 +1342,104 @@ export default function EditorScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldName}>{isCloze ? l('Metin', 'Text') : l('Ön', 'Front')}</Text>
-                    <View style={styles.fieldActions}>
-                        <TouchableOpacity
-                            style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
-                            onPress={() => togglePinnedField('question')}
-                            disabled={isEditing}
-                            accessibilityRole="button"
-                            accessibilityLabel={pinnedFields.has('question')
-                                ? (isCloze ? l('Metin alanının sabitlemesini kaldır', 'Unpin Text field') : l('Ön alanının sabitlemesini kaldır', 'Unpin Front field'))
-                                : (isCloze ? l('Metin alanını sabitle', 'Pin Text field') : l('Ön alanını sabitle', 'Pin Front field'))}
-                            accessibilityState={{ selected: pinnedFields.has('question'), disabled: isEditing }}
-                        >
-                            <PinIcon color={pinnedFields.has('question') ? colors.accent : colors.textMuted} />
-                        </TouchableOpacity>
-                        <MediaAttachButton
-                            ref={questionMediaRef}
-                            onInsert={(snippet) => questionEditorRef.current?.insertHtml(snippet)}
-                        />
-                    </View>
-                </View>
-                <RichTextEditor
-                    ref={questionEditorRef}
-                    value={question}
-                    onChange={setQuestion}
-                    onFocus={() => {
-                        setActiveField('question');
-                        // The toolbar now belongs to this field, so it is blanked until this field's
-                        // own document answers instead of showing the previous field's state.
-                        setFormatState(EMPTY_EDITOR_FORMAT_STATE);
-                        questionEditorRef.current?.requestFormatState();
-                    }}
-                    onFormatStateChange={(state) => {
-                        if (activeField === 'question') setFormatState(state);
-                    }}
-                    placeholder={isCloze
+                {fieldsToRender.map((field, index) => {
+                    const localizedName = localizeFieldName(locale, field.name);
+                    const isPinned = pinnedFields.has(field.ord);
+                    const placeholder = isCloze && index === 0
                         ? l('Metni yazın, sonra gizlenecek bölümü seçip […] düğmesine dokunun…', 'Enter text, then select the part to hide and tap […]…')
-                        : l('Soruyu yazın…', 'Enter the question…')}
-                    colors={colors}
-                    fontSize={editorPreferences.fontSize}
-                    capitalizeSentences={editorPreferences.capitalizeSentences}
-                    pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
-                    scrollMode="contained"
-                    maxHeight={320}
-                    mountDelayMs={0}
-                />
+                        : isCloze && index === 1
+                        ? l('İsteğe bağlı ek arka metni…', 'Optional extra text for the back…')
+                        : l(`${localizedName} yazın…`, `Enter ${localizedName}…`);
 
-                <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldName}>{isCloze ? l('Arka Ek', 'Back Extra') : l('Arka', 'Back')}</Text>
-                    <View style={styles.fieldActions}>
-                        <TouchableOpacity
-                            style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
-                            onPress={() => togglePinnedField('answer')}
-                            disabled={isEditing}
-                            accessibilityRole="button"
-                            accessibilityLabel={pinnedFields.has('answer')
-                                ? (isCloze ? l('Arka Ek alanının sabitlemesini kaldır', 'Unpin Back Extra field') : l('Arka alanının sabitlemesini kaldır', 'Unpin Back field'))
-                                : (isCloze ? l('Arka Ek alanını sabitle', 'Pin Back Extra field') : l('Arka alanını sabitle', 'Pin Back field'))}
-                            accessibilityState={{ selected: pinnedFields.has('answer'), disabled: isEditing }}
-                        >
-                            <PinIcon color={pinnedFields.has('answer') ? colors.accent : colors.textMuted} />
-                        </TouchableOpacity>
-                        <MediaAttachButton
-                            ref={answerMediaRef}
-                            onInsert={(snippet) => answerEditorRef.current?.insertHtml(snippet)}
-                        />
-                    </View>
-                </View>
-                <RichTextEditor
-                    ref={answerEditorRef}
-                    value={answer}
-                    onChange={setAnswer}
-                    onFocus={() => {
-                        setActiveField('answer');
-                        // The toolbar now belongs to this field, so it is blanked until this field's
-                        // own document answers instead of showing the previous field's state.
-                        setFormatState(EMPTY_EDITOR_FORMAT_STATE);
-                        answerEditorRef.current?.requestFormatState();
-                    }}
-                    onFormatStateChange={(state) => {
-                        if (activeField === 'answer') setFormatState(state);
-                    }}
-                    placeholder={isCloze ? l('İsteğe bağlı ek arka metni…', 'Optional extra text for the back…') : l('Cevabı yazın…', 'Enter the answer…')}
-                    colors={colors}
-                    fontSize={editorPreferences.fontSize}
-                    capitalizeSentences={editorPreferences.capitalizeSentences}
-                    pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
-                    scrollMode="contained"
-                    maxHeight={320}
-                    mountDelayMs={140}
-                />
-
-                {isOptionalReverse && (
-                    <>
-                        <View style={styles.fieldLabelRow}>
-                            <Text style={styles.fieldName}>{l('Tersini Ekle', 'Add Reverse')}</Text>
-                            <View style={styles.fieldActions}>
-                                <TouchableOpacity
-                                    style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
-                                    onPress={() => togglePinnedField('reverseAnswer')}
-                                    disabled={isEditing}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={pinnedFields.has('reverseAnswer') ? l('Tersini Ekle alanının sabitlemesini kaldır', 'Unpin Add Reverse field') : l('Tersini Ekle alanını sabitle', 'Pin Add Reverse field')}
-                                    accessibilityState={{ selected: pinnedFields.has('reverseAnswer'), disabled: isEditing }}
-                                >
-                                    <PinIcon color={pinnedFields.has('reverseAnswer') ? colors.accent : colors.textMuted} />
-                                </TouchableOpacity>
-                                <MediaAttachButton
-                                    ref={reverseMediaRef}
-                                    onInsert={(snippet) => reverseEditorRef.current?.insertHtml(snippet)}
-                                />
+                    return (
+                        <React.Fragment key={`${selectedNoteType?.id ?? cardTypeId}-field-${field.ord}-${index}`}>
+                            <View style={styles.fieldLabelRow}>
+                                <Text style={styles.fieldName}>{localizedName}</Text>
+                                <View style={styles.fieldActions}>
+                                    <TouchableOpacity
+                                        style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
+                                        onPress={() => togglePinnedField(field.ord)}
+                                        disabled={isEditing}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={isPinned
+                                            ? l(`${localizedName} alanının sabitlemesini kaldır`, `Unpin ${localizedName} field`)
+                                            : l(`${localizedName} alanını sabitle`, `Pin ${localizedName} field`)}
+                                        accessibilityState={{ selected: isPinned, disabled: isEditing }}
+                                    >
+                                        <PinIcon color={isPinned ? colors.accent : colors.textMuted} />
+                                    </TouchableOpacity>
+                                    <MediaAttachButton
+                                        ref={(el) => {
+                                            fieldMediaRefs.current[index] = el;
+                                        }}
+                                        onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet)}
+                                    />
+                                </View>
                             </View>
-                        </View>
-                        <RichTextEditor
-                            ref={reverseEditorRef}
-                            value={reverseAnswer}
-                            onChange={setReverseAnswer}
-                            onFocus={() => {
-                                setActiveField('reverseAnswer');
-                                // The toolbar now belongs to this field, so it is blanked until this field's
-                                // own document answers instead of showing the previous field's state.
-                                setFormatState(EMPTY_EDITOR_FORMAT_STATE);
-                                reverseEditorRef.current?.requestFormatState();
-                            }}
-                            onFormatStateChange={(state) => {
-                                if (activeField === 'reverseAnswer') setFormatState(state);
-                            }}
-                            placeholder={l('Ters kart oluşturmak için herhangi bir metin girin.', 'Enter any text to create a reverse card.')}
-                            colors={colors}
-                            fontSize={editorPreferences.fontSize}
-                            capitalizeSentences={editorPreferences.capitalizeSentences}
-                            pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
-                            scrollMode="contained"
-                            maxHeight={320}
-                            mountDelayMs={280}
-                        />
-                    </>
-                )}
+                            <RichTextEditor
+                                ref={(el) => {
+                                    fieldEditorRefs.current[index] = el;
+                                }}
+                                value={fieldValues[index] || ''}
+                                onChange={(val) => handleFieldChange(index, val)}
+                                onFocus={() => {
+                                    setActiveFieldIndex(index);
+                                    // The toolbar now belongs to this field, so it is blanked until this field's
+                                    // own document answers instead of showing the previous field's state.
+                                    setFormatState(EMPTY_EDITOR_FORMAT_STATE);
+                                    fieldEditorRefs.current[index]?.requestFormatState();
+                                }}
+                                onFormatStateChange={(state) => {
+                                    if (activeFieldIndex === index) setFormatState(state);
+                                }}
+                                placeholder={placeholder}
+                                colors={colors}
+                                fontSize={'fontSize' in field && typeof (field as any).fontSize === 'number' ? (field as any).fontSize : editorPreferences.fontSize}
+                                capitalizeSentences={editorPreferences.capitalizeSentences}
+                                pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
+                                scrollMode="contained"
+                                maxHeight={320}
+                                mountDelayMs={index === 0 ? 0 : Math.min(index * 120, 360)}
+                            />
+                            {index === 0 && duplicateNote && (
+                                <View
+                                    style={styles.duplicateWarningBadge}
+                                    accessibilityRole="alert"
+                                    accessibilityLabel={l(
+                                        `Yinelenen not uyarısı: ${duplicateNote.firstField}`,
+                                        `Duplicate note warning: ${duplicateNote.firstField}`,
+                                    )}
+                                >
+                                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                                        <Path
+                                            d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                                            stroke={colors.btnHard}
+                                            strokeWidth={2}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </Svg>
+                                    <View style={styles.duplicateWarningTextContainer}>
+                                        <Text style={styles.duplicateWarningTitle}>
+                                            {l('Yinelenen ilk alan bulundu', 'Duplicate first field found')}
+                                        </Text>
+                                        <Text style={styles.duplicateWarningDetail} numberOfLines={2}>
+                                            {duplicateDeckName
+                                                ? l(
+                                                    `"${duplicateDeckName}" destesinde aynı ilk alana sahip bir not var. Kaydedebilirsiniz ancak kartlar yinelenmiş olabilir.`,
+                                                    `A note with the same first field exists in "${duplicateDeckName}". You can still save, but cards may be duplicated.`,
+                                                )
+                                                : l(
+                                                    'Koleksiyonda aynı ilk alana sahip bir not var. Kaydedebilirsiniz ancak kartlar yinelenmiş olabilir.',
+                                                    'A note with the same first field exists in the collection. You can still save, but cards may be duplicated.',
+                                                )}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
 
                 <TouchableOpacity
                     style={styles.summaryRow}
@@ -1416,31 +1470,50 @@ export default function EditorScreen() {
                     </Text>
                     <Text style={styles.summaryChevron}>›</Text>
                 </TouchableOpacity>
+                <Pressable
+                    style={styles.scrollBottomDismissArea}
+                    onPress={dismissEditorKeyboard}
+                    accessible={false}
+                />
             </ScrollView>
 
             {editorPreferences.toolbarVisible && (
             <View style={styles.formatToolbar}>
-                <View style={styles.toolbarTabs} accessibilityRole="tablist">
-                    {EDITOR_TOOLBAR_TABS.map((tab) => {
-                        const selected = toolbarTab === tab.id;
-                        return (
-                            <TouchableOpacity
-                                key={tab.id}
-                                style={[styles.toolbarTab, selected && styles.toolbarTabActive]}
-                                onPress={() => setToolbarTab(tab.id)}
-                                // The pill is short so the toolbar stays compact; the slop is what
-                                // gives it the 44pt target a thumb needs.
-                                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-                                accessibilityRole="tab"
-                                accessibilityState={{ selected }}
-                                accessibilityLabel={l(tab.tr, tab.en)}
-                            >
-                                <Text style={[styles.toolbarTabText, selected && styles.toolbarTabTextActive]}>
-                                    {l(tab.tr, tab.en)}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
+                <View style={styles.toolbarTabsRow}>
+                    <View style={styles.toolbarTabs} accessibilityRole="tablist">
+                        {EDITOR_TOOLBAR_TABS.map((tab) => {
+                            const selected = toolbarTab === tab.id;
+                            return (
+                                <TouchableOpacity
+                                    key={tab.id}
+                                    style={[styles.toolbarTab, selected && styles.toolbarTabActive]}
+                                    onPress={() => setToolbarTab(tab.id)}
+                                    // The pill is short so the toolbar stays compact; the slop is what
+                                    // gives it the 44pt target a thumb needs.
+                                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                                    accessibilityRole="tab"
+                                    accessibilityState={{ selected }}
+                                    accessibilityLabel={l(tab.tr, tab.en)}
+                                >
+                                    <Text style={[styles.toolbarTabText, selected && styles.toolbarTabTextActive]}>
+                                        {l(tab.tr, tab.en)}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                    {keyboardVisible && (
+                        <TouchableOpacity
+                            style={styles.keyboardDismissButton}
+                            onPress={dismissEditorKeyboard}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Klavyeyi kapat', 'Dismiss keyboard')}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <KeyboardDismissIcon color={colors.accent} size={17} />
+                            <Text style={styles.keyboardDismissText}>{l('Kapat', 'Done')}</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
                 {editorPreferences.toolbarScrollable ? (
                     <ScrollView
@@ -1461,6 +1534,21 @@ export default function EditorScreen() {
                     </View>
                 )}
             </View>
+            )}
+
+            {!editorPreferences.toolbarVisible && keyboardVisible && (
+                <View style={styles.standaloneKeyboardDismissBar}>
+                    <TouchableOpacity
+                        style={styles.keyboardDismissButton}
+                        onPress={dismissEditorKeyboard}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Klavyeyi kapat', 'Dismiss keyboard')}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <KeyboardDismissIcon color={colors.accent} size={17} />
+                        <Text style={styles.keyboardDismissText}>{l('Klavyeyi Kapat', 'Done')}</Text>
+                    </TouchableOpacity>
+                </View>
             )}
             </KeyboardAvoidingView>
             <View style={{ height: insets.bottom, backgroundColor: colors.bgCard }} pointerEvents="none" />
@@ -1847,13 +1935,7 @@ export default function EditorScreen() {
                                 style={styles.customToolbarTextAction}
                                 onPress={() => {
                                     const sanitized = sanitizeUntrustedHtml(htmlEditorValue);
-                                    if (activeField === 'question') {
-                                        setQuestion(sanitized);
-                                    } else if (activeField === 'answer') {
-                                        setAnswer(sanitized);
-                                    } else {
-                                        setReverseAnswer(sanitized);
-                                    }
+                                    handleFieldChange(activeFieldIndex, sanitized);
                                     setShowHtmlEditor(false);
                                 }}
                             >
@@ -2033,27 +2115,52 @@ export default function EditorScreen() {
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCardTypePicker(false)} />
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>{l('Not türü', 'Note Type')}</Text>
-                        {CARD_TYPE_CHOICES.map((choice) => {
-                            const noteType = getNoteType(choice) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === choice);
-                            if (!noteType) return null;
-                            const label = localizeNoteTypeName(locale, noteType.name);
-                            const selected = cardTypeId === choice;
-                            return (
-                                <TouchableOpacity
-                                    key={choice}
-                                    style={[styles.pickerOption, selected && styles.pickerOptionActive]}
-                                    onPress={() => {
-                                        setCardTypeId(choice);
-                                        if (choice !== 7) setReverseAnswer('');
-                                        setShowCardTypePicker(false);
-                                    }}
-                                    accessibilityState={{ selected }}
-                                >
-                                    <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>{label}</Text>
-                                    {selected && <Text style={styles.pickerCheck}>✓</Text>}
-                                </TouchableOpacity>
-                            );
-                        })}
+                        <ScrollView style={styles.noteTypeListScroll} keyboardShouldPersistTaps="handled">
+                            {availableNoteTypes.map((noteType) => {
+                                const label = localizeNoteTypeName(locale, noteType.name);
+                                const selected = cardTypeId === noteType.id;
+                                const fieldCount = noteType.fields.length;
+                                const templateCount = noteType.templates.length;
+                                const subtitle = l(
+                                    `${fieldCount} alan, ${templateCount} kart`,
+                                    `${fieldCount} fields, ${templateCount} cards`,
+                                );
+
+                                return (
+                                    <TouchableOpacity
+                                        key={noteType.id}
+                                        style={[styles.pickerOption, selected && styles.pickerOptionActive]}
+                                        onPress={() => handleSelectNoteType(noteType.id)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${label}, ${subtitle}`}
+                                        accessibilityState={{ selected }}
+                                    >
+                                        <View style={styles.noteTypeItemContent}>
+                                            <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>
+                                                {label}
+                                            </Text>
+                                            <Text style={styles.noteTypeSubtitle}>
+                                                {subtitle}
+                                            </Text>
+                                        </View>
+                                        {selected && <Text style={styles.pickerCheck}>✓</Text>}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={styles.manageNoteTypesButton}
+                            onPress={() => {
+                                setShowCardTypePicker(false);
+                                router.push('/note-types');
+                            }}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Not türlerini yönet', 'Manage note types')}
+                        >
+                            <Text style={styles.manageNoteTypesText}>
+                                {l('Not türlerini yönet…', 'Manage note types…')}
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowCardTypePicker(false)}>
                             <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
@@ -2066,6 +2173,7 @@ export default function EditorScreen() {
                 colors={colors}
                 decks={deckPickerDecks}
                 selectedDeckName={targetDeck?.name ?? null}
+                activeDeckName={targetDeck?.name ?? null}
                 title={l('Hedef deste', 'Target Deck')}
                 allDecksLabel={null}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -2088,35 +2196,6 @@ export default function EditorScreen() {
                     return created.name;
                 }}
             />
-
-            <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
-                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setShowNewSubject(false)}
-                        accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
-                    />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Yeni ders', 'New Course')}</Text>
-                        <TextInput
-                            style={styles.modalInput}
-                            value={newSubjectName}
-                            onChangeText={setNewSubjectName}
-                            placeholder={l('Ders adı', 'Course name')}
-                            placeholderTextColor={colors.textMuted}
-                            autoFocus
-                            returnKeyType="done"
-                            onSubmitEditing={handleCreateSubject}
-                        />
-                        <TouchableOpacity style={styles.modalPrimary} onPress={handleCreateSubject}>
-                            <Text style={styles.modalPrimaryText}>{t('common.create')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowNewSubject(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
 
             <TagPickerModal
                 visible={showTagPicker}
@@ -2196,6 +2275,7 @@ export default function EditorScreen() {
                                     side={previewSide}
                                     scrollMode="contained"
                                     maxHeight={previewBodyHeight}
+                                    audioPlaybackRate={loadSettings().audioPlaybackRate ?? 1.0}
                                 />
                             )}
                         </View>
@@ -2286,13 +2366,45 @@ function createStyles(colors: ColorScheme) {
         includeFontPadding: false,
         textAlignVertical: 'center',
     },
+    toolbarTabsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: Spacing.sm,
+        paddingTop: 4,
+    },
     toolbarTabs: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
         gap: Spacing.xs,
-        paddingHorizontal: Spacing.sm,
-        paddingTop: 4,
+    },
+    keyboardDismissButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.accentLight,
+    },
+    keyboardDismissText: {
+        fontSize: FontSize.xs,
+        fontWeight: '700',
+        color: colors.accent,
+    },
+    standaloneKeyboardDismissBar: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.xs,
+        backgroundColor: colors.bgCard,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
+    },
+    scrollBottomDismissArea: {
+        height: 100,
+        width: '100%',
     },
     toolbarTab: {
         paddingHorizontal: Spacing.md,
@@ -2706,5 +2818,54 @@ function createStyles(colors: ColorScheme) {
     fieldActions: { flexDirection: 'row', alignItems: 'center' },
     fieldAction: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
     fieldActionDisabled: { opacity: 0.38 },
+    duplicateWarningBadge: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        backgroundColor: colors.btnHardBg,
+        borderWidth: 1,
+        borderColor: colors.btnHard,
+        borderRadius: BorderRadius.sm,
+        padding: Spacing.sm,
+        marginTop: Spacing.xs,
+        gap: Spacing.sm,
+    },
+    duplicateWarningTextContainer: {
+        flex: 1,
+        gap: 2,
+    },
+    duplicateWarningTitle: {
+        fontSize: FontSize.xs,
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
+    duplicateWarningDetail: {
+        fontSize: FontSize.xs,
+        color: colors.textSecondary,
+        lineHeight: 16,
+    },
+    noteTypeListScroll: {
+        maxHeight: 320,
+    },
+    noteTypeItemContent: {
+        flex: 1,
+        gap: 2,
+    },
+    noteTypeSubtitle: {
+        fontSize: FontSize.xs,
+        color: colors.textMuted,
+    },
+    manageNoteTypesButton: {
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: Spacing.xs,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.borderLight,
+    },
+    manageNoteTypesText: {
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+        color: colors.accent,
+    },
     });
 }

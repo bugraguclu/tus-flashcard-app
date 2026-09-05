@@ -15,13 +15,15 @@
     "quality": "npm run check && npm run verify:ios",
     "doctor": "npx --yes expo-doctor",
     "start": "expo start",
-    "share": "EXPO_TUNNEL_SUBDOMAIN=tusankim-bg-test expo start --go --tunnel --no-dev --minify",
-    "share:dev": "EXPO_TUNNEL_SUBDOMAIN=tusankim-bg-test expo start --go --tunnel",
+    "share": "node scripts/share-expo-go.mjs",
+    "share:dev": "node scripts/share-expo-go.mjs --dev",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:web": "expo export --platform web",
     "build:catalog-manifest": "sucrase-node scripts/build-catalog-manifest.ts",
-    "audit:catalog": "sucrase-node scripts/audit-catalog.ts"
+    "audit:catalog": "sucrase-node scripts/audit-catalog.ts",
+    "share:lan": "node scripts/share-expo-go.mjs --lan",
+    "share:ngrok": "node scripts/share-expo-go.mjs --ngrok"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -63,6 +65,7 @@
   "devDependencies": {
     "@types/react": "~19.2.4",
     "@types/react-test-renderer": "^19.1.0",
+    "qrcode": "^1.5.4",
     "react-test-renderer": "^19.1.0",
     "typescript": "~6.0.3",
     "vitest": "^4.0.18"

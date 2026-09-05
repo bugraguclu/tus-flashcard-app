@@ -876,7 +876,7 @@ function normalizeFieldHtml(text: string): string {
     result = result.replace(HTML_TAG, (rawTag) => scrubTagAttributes(rawTag));
 
     result = result.replace(/\[sound:([^\]]+)\]/gi, (_match, filename) => {
-        return `<audio controls src="${escapeHtml(filename)}"></audio>`;
+        return `<audio controls src="${escapeHtml(filename)}" disableRemotePlayback controlsList="nodownload"></audio>`;
     });
 
     return result;

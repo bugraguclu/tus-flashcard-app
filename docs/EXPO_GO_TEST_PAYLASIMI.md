@@ -15,71 +15,160 @@ Bunun iki sonucu var:
 - **Test kullanıcısı bu makineye bağımlı.** EAS Update ile yayınlanan sürümler Expo Go'da
   açılmıyor, dolayısıyla her testte burada `npm run share` çalışıyor olmalı.
 
-## Her testte yapılacaklar
+## Gerçek iPhone imzalı manifest istiyor
+
+Bu, günlerce hata kovalattıran kural: **fiziksel bir iPhone, halka açık bir adresten gelen imzasız
+manifesti açmaz.** Ekranda çıkan hata:
+
+> You need to be signed in to Expo Go and Expo CLI to open your project.
+
+iOS simülatörü bu kuraldan muaf. Bu yüzden anonim kurulum simülatörde kusursuz çalışırken her
+gerçek telefon denemesi başarısız oldu; iki farklı tünel (`exp.direct` ve Cloudflare) denendi,
+ikisinde de aynı sonuç alındı — yani tünelle ilgisi yok.
+
+Manifestin imzalanması için üç şart birlikte sağlanmalı:
+
+1. `app.json` içinde `extra.eas.projectId` bulunmalı (imzalanacak projeyi bu tanımlar).
+2. Bu makinede Expo CLI o projeye yetkili bir hesapla giriş yapmış olmalı.
+3. Test kullanıcısının Expo Go'su **aynı hesapla** giriş yapmış olmalı.
+
+Üçüncü madde hesabın paylaşılmasını gerektiriyor. Bunu kabul etmek istemezsen alternatif, test
+kullanıcısına kendi ücretsiz Expo hesabını açtırıp onu projenin bağlı olduğu Expo organizasyonuna
+üye olarak davet etmektir; o zaman kendi hesabıyla girer.
+
+## Bir kerelik kurulum
+
+**Bu makinede** — Expo hesabına giriş (hesap: `smbg`, parola tarayıcıda kayıtlı):
 
 ```bash
-cd ~/tus-flashcard-app && npm run share
+npx expo login --browser
 ```
 
-1. `Tunnel ready` satırını bekle; terminalde QR kod belirir.
-2. **Bundle'ı önden ısıt:** terminalde `i` tuşuna bas. Simülatörde açılır ve Metro paketi derleyip
-   önbelleğe alır (~5 sn). Bu adım atlanırsa karşı taraf ilk açılışta zaman aşımı görebilir.
-3. QR'ın ekran görüntüsünü ve şu adresi gönder: `exp://tusankim-bg-test.ngrok.io`
-4. Karşı taraf QR'ı **iPhone Kamera** uygulamasıyla okutup çıkan bildirime dokunur; Expo Go açılır.
-   Adresi doğrudan da açabilir. Uygulama Expo Go içinde çalışır.
-5. Test bitince terminalde `Ctrl+C`. Sunucu kapandığı anda karşı taraf uygulamayı açamaz.
+`npm run share` giriş yapılmamışsa hiç başlamaz ve bunu söyler; çünkü imzasız sunucu gerçek
+telefonda kesin başarısız olur. Yalnızca simülatörde deneyecekseniz `npm run share -- --anon`.
 
-Adres `EXPO_TUNNEL_SUBDOMAIN=tusankim-bg-test` sayesinde her açılışta aynıdır; karşı taraf linki
-bir kez kaydederse sonraki seferlerde QR'a gerek kalmaz. Expo Go son projeyi hatırladığı için
-uygulamayı ikinci kez açtığında doğrudan uygulamaya girer.
+**Test kullanıcısında** — App Store'dan Expo Go kurulur ve **aynı hesapla** giriş yapılır
+(Expo Go → Home sekmesi → sağ üstteki profil ikonu → Log in).
 
-**Mac'in uykuya geçmesi tüneli düşürür.** Uzun testlerde:
+Expo Go **silinmemeli** — uygulamanın koleksiyonu ve çalışma geçmişi Expo Go'nun içinde durur,
+uygulama silinirse veri de gider.
+
+## Veri kalıcılığı
+
+Expo Go uygulama verisini kapsam anahtarına göre ayırır. Anahtar değişirse Expo Go uygulamayı
+sıfırdan kurulmuş sayar: koleksiyon ve ilerleme görünmez olur.
+
+- İmzasız (anonim) sunumda anahtar `@anonymous/<slug>-<uuid>` olur; uuid `~/.expo/state.json`
+  içindedir.
+- İmzalı sunumda anahtar projenin kendi anahtarıdır ve makineye değil projeye bağlıdır — uzun
+  vadede daha sağlamdır.
+
+Anonim moddan imzalı moda geçiş anahtarı bir kez değiştirir, yani o ana kadar telefonlarda biriken
+veri bir defalığına görünmez olur. Ücretsiz katalog birkaç saniyede yeniden kurulduğu için bu geçiş
+test kullanıcısı başlamadan önce bilerek yapıldı. Sonrasında anahtar sabittir.
+
+`npm run share` her çalıştırmada kapsam anahtarını `.expo/share-scope-key.txt` dosyasına yazar ve
+değişirse uyarır. `app.json` içindeki `slug` ve `extra.eas.projectId` alanları test sürerken
+değiştirilmemeli.
+
+## Her testte — bu makinede
 
 ```bash
-caffeinate -i npm run share
+cd ~/tus-flashcard-app && caffeinate -i npm run share
 ```
+
+1. Şu kutuyu bekle (~30-60 sn):
+
+   ```
+   Expo hesabı     : smbg  (Expo Go da aynı hesapla girmeli)
+   ────────────────────────────────────────────────
+     Adres  : exp://<rastgele>-smbg-8081.exp.direct
+     QR     : docs/expo-go-qr.png
+     Paket  : hazır — 9.1 MB, 0.7 sn
+     İmza   : var — @smbg/tusankim
+   ────────────────────────────────────────────────
+     Test kullanıcısı şimdi bağlanabilir. Çıkmak için Ctrl+C.
+   ```
+
+   `İmza : YOK` yazıyorsa gönderme; gerçek telefon açmaz.
+2. `docs/expo-go-qr.png` görselini gönder. Bu dosya her çalıştırmada güncel adresle yeniden üretilir.
+3. Bağlantı kurulduğunda `iOS Bundled` ve uygulamanın log satırları bu terminalde akar.
+4. Test bitince `Ctrl+C`.
+
+`caffeinate -i` Mac'in uykuya geçip tüneli düşürmesini engeller.
+
+Komutu ikinci kez çalıştırmak zararsız: imzalı bir sunucu zaten çalışıyorsa ona dokunmaz, adresi
+yazıp çıkar. Portta imzasız ya da tünelsiz bir sunucu varsa onu kapatır, ngrok oturumunun serbest
+kalmasını bekler ve yeniden başlatır; tünel ilk denemede açılmazsa 45 saniye sonra kendi kendine
+tekrar dener.
+
+`npm run share`, `scripts/share-expo-go.mjs` üzerinden çalışır ve gerçek iPhone'da yaşanan sessiz
+hataları kapatır:
+
+- **Giriş sorusu manifest isteğini bloke ediyordu.** Terminal etkileşimliyken CLI, telefon manifest
+  isterken "Log in / Proceed anonymously" diye soruyor ve telefonun isteği cevap verilene kadar
+  bekliyordu; telefon `The network connection was lost` ile düşüyordu. Script `CI=1` ile başlattığı
+  için soru sorulmaz.
+- **Tünel hazır olmadan manifest LAN adresi veriyordu.** Metro, tünel bağlanmadan gelen isteğe
+  `Tunnel URL not found ... falling back to LAN URL` deyip paketi `192.168.x.x` üzerinden vaat
+  ediyordu. Script, manifest gerçekten tüneli gösterene kadar "bağlanabilir" demez.
+- **İlk paket derlemesi zaman aşımına uğruyordu.** Script paketi kendisi indirip Metro'nun
+  önbelleğini doldurur.
+
+## Her testte — test kullanıcısında
+
+1. QR'ı **iPhone Kamera** uygulamasıyla okutur; Expo Go'yu önceden açması gerekmez.
+2. Çıkan bildirime dokunur, Expo Go açılır ve paketi indirir (~9 MB).
+3. Sonraki seferlerde QR gerekmez: Expo Go son projeyi hatırlar. Tek koşul bu makinede sunucunun
+   çalışıyor olması.
+4. Koleksiyon, ilerleme ve ayarlar telefonda kalır.
+
+### Gönderilecek mesaj şablonu
+
+> Uygulamayı test etmek için:
+> 1. App Store'dan **Expo Go** uygulamasını kur.
+> 2. Expo Go'yu aç, sağ üstteki profil ikonundan sana ilettiğim hesapla giriş yap.
+> 3. Attığım QR kodu **iPhone Kamera** ile okut, çıkan bildirime dokun.
+> 4. Biraz yüklenir, sonra uygulama açılır.
+>
+> Sonraki seferlerde QR gerekmiyor, sadece Expo Go'yu aç — ama önce haber ver, benim bilgisayarımın
+> açık olması gerekiyor.
+>
+> Şunlar bu test ortamında çalışmaz, hata sanma: Apple Kısayolları, satın alma ekranı, Dosyalar'dan
+> .apkg açma. Uygulama ikonu ve açılış ekranı da Expo Go'nunki görünür.
 
 ## Komutlar
 
 | Komut | Ne yapar | Ne zaman |
 | --- | --- | --- |
-| `npm run share` | Tünel + Expo Go, üretim modunda paket (9,0 MB) | Karşı tarafın testi için varsayılan |
-| `npm run share:dev` | Tünel + Expo Go, geliştirme modunda paket (11,1 MB), Fast Refresh açık | Kodu değiştirip anında görmek istediğinde |
+| `npm run share` | Tünel + Expo Go, üretim modunda paket (9,0 MB), imzalı manifest | Varsayılan |
+| `npm run share:dev` | Aynısı, geliştirme modunda (11,1 MB), Fast Refresh açık | Kodu değiştirip anında görmek istediğinde |
+| `npm run share:lan` | Tünel yok, yalnız yerel ağ | Telefon aynı Wi-Fi'dayken; tünel sorunlarını ayıklamak için |
+| `npm run share -- --anon` | Giriş şartını atlar, imzasız sunar | Yalnızca simülatör testi |
 | `npm run share -- --clear` | Metro önbelleğini temizler | Açıklanamayan paket hatalarında |
-| `npm start` | Yalnız yerel ağ, tünel yok | Kendi simülatör/telefon testin |
-
-`share` üretim modunda çalıştığı için Fast Refresh yoktur: kod değiştiğinde sunucuyu yeniden
-başlatıp karşı taraftan uygulamayı yeniden açmasını istemek gerekir.
 
 ## Hata → sebep → çözüm
 
 | Karşı tarafın gördüğü | Sebep | Çözüm |
 | --- | --- | --- |
-| `ERR_NGROK_3200` — "endpoint is offline" | Bu makinede sunucu kapalı, Mac uykuda veya `Ctrl+C` yapılmış | `npm run share` çalışıyor mu bak; uzun testte `caffeinate -i` ile başlat |
-| "The request timed out" | Paket henüz derlenmemiş ya da bağlantı yavaş | Terminalde `i` ile paketi ısıt, sonra tekrar denesin; mobil veri yerine Wi-Fi |
-| "Project is incompatible with this version of Expo Go" | Expo Go'nun SDK'sı projeninkinden farklı | Expo Go yeni bir SDK'ya geçtiyse proje de o SDK'ya yükseltilmeli (aşağıya bak) |
-| Beyaz ekran veya "Something went wrong" | Paket indi ama JS hatası var | Buradaki terminal çıktısındaki kırmızı hataya bak |
-| `Tunnel subdomain is taken` benzeri hata | `tusankim-bg-test` alt alanını başkası tutmuş | `package.json` içindeki `EXPO_TUNNEL_SUBDOMAIN` değerini değiştir |
-
-Sabit alt alan adı tahmin edilebilir olduğu için tünel açıkken adresi bilen herkes paketi
-indirebilir. Sunucuyu yalnızca test süresince açık tut; daha kapalı bir kurulum istenirse
-`package.json` içindeki `EXPO_TUNNEL_SUBDOMAIN=... ` öneki silinir, Expo her açılışta rastgele bir
-adres üretir (o zaman her seferinde yeni QR gerekir).
+| "You need to be signed in to Expo Go and Expo CLI to open your project" | Manifest imzasız ya da iki taraf farklı hesapta | Bu makinede `npx expo login --browser`, telefonda Expo Go aynı hesapla girişli olmalı. Kutuda `İmza : var` yazmalı |
+| "You're signed in to Expo CLI as X, but not signed in to Expo Go" | Telefon girişsiz | Expo Go → profil ikonu → aynı hesapla giriş |
+| `ERR_NGROK_3200` — "endpoint is offline" | Sunucu kapalı ya da Mac uykuda | `npm run share` çalışıyor mu bak; `caffeinate -i` ile başlat |
+| "The request timed out" | Paket derlenmemiş ya da bağlantı yavaş | Script paketi zaten ısıtıyor; kutuyu görmeden QR gönderme |
+| `Opening project…` sonrası "The network connection was lost" | Tünel hazır olmadan LAN adresi verilmiş | `npm run share` bunu engeller; `npx expo start --tunnel` doğrudan çalıştırıldıysa hata geri gelir |
+| `failed to start tunnel` / `Port 8081 is running this app…` | Önceki oturum/sunucu kapanmamış | `npm run share` ikisini de kendi halleder |
+| Uygulama açılıyor ama koleksiyon boş | Kapsam anahtarı değişmiş | `.expo/share-scope-key.txt` içindeki değere bak; anahtar eski haline dönerse veri geri gelir |
 
 ## Expo Go'da test EDİLEMEYEN özellikler
 
-Expo Go kendi imzasıyla çalışan hazır bir kabuk olduğu için projenin native tarafı devrede değil.
-Test isteğinde bunları kapsam dışı bırak:
+Expo Go hazır bir kabuk olduğu için projenin native tarafı devrede değil:
 
-- **Apple Kısayolları / deste kısayolu** — `modules/deck-shortcuts` native modülü yok, sessizce
-  `unavailable` döner.
+- **Apple Kısayolları / deste kısayolu** — `modules/deck-shortcuts` native modülü yok.
 - **Satın alma ve katalog ödemesi** — `react-native-purchases` Expo Go'da bulunmuyor. Ücretsiz
-  katalog açma çalışır (9.575 kart kuruluyor), gerçek App Store satın alması denenemez.
-- **Dosyalar'dan `.apkg` / `.colpkg` "birlikte aç"** — dosya tipi ilişkilendirmesi uygulamanın
-  kendi bundle kimliğine bağlı. Uygulama içinden dosya seçerek içe aktarma çalışır.
+  katalog açma çalışır (9.575 kart kurulur).
+- **Dosyalar'dan `.apkg` / `.colpkg` "birlikte aç"** — dosya tipi ilişkilendirmesi yok.
 - **`tusankim://` derin bağlantıları ve URL otomasyonu** — Expo Go `exp://` şemasıyla açılır.
-- **Uygulama ikonu, açılış ekranı, dosya koruma yetkisi (`NSFileProtectionComplete`)** — bunlar
-  yalnızca gerçek derlemede görünür.
+- **Uygulama ikonu, açılış ekranı, dosya koruma yetkisi** — yalnızca gerçek derlemede.
 
 Çalışanlar: tüm çalışma akışı ve zamanlayıcı, SQLite koleksiyonu, kart tarayıcı, istatistik
 grafikleri, düzenleyici, fotoğraf/ses ekleme, yedekleme ve dışa aktarma, yerel hatırlatıcılar.
@@ -90,6 +179,6 @@ grafikleri, düzenleyici, fotoğraf/ses ekleme, yedekleme ve dışa aktarma, yer
   yükseltilmeli: `npx expo install expo@latest --fix`, ardından `npm run check` ve `npx expo-doctor`.
 - `ios/` klasörü hâlâ SDK 54 prebuild çıktısı. Native derleme veya App Store işi öncesi
   `npx expo prebuild --clean -p ios` ile yeniden üretilmeli.
-- Ücretli Apple Developer üyeliği alındığı gün bu akış bırakılabilir: `eas build --profile preview`
-  ile kurulabilir bir derleme üretilir, `eas update` ile güncellemeler itilir ve karşı tarafın bu
-  makineye bağımlılığı ortadan kalkar.
+- Ücretli Apple Developer üyeliği alındığı gün bu akış tamamen bırakılabilir:
+  `eas build --profile preview` ile kurulabilir bir derleme üretilir, `eas update` ile güncellemeler
+  itilir ve karşı tarafın bu makineye bağımlılığı ortadan kalkar.

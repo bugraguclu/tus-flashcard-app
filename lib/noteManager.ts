@@ -820,6 +820,58 @@ export function findTusCardIdByFirstField(question: string): number | null {
     return null;
 }
 
+export interface DuplicateNoteResult {
+    noteId: number;
+    cardId: number | null;
+    firstField: string;
+    deckName?: string;
+}
+
+/**
+ * Checks whether an existing note with the same noteTypeId shares the exact same first field
+ * (ignoring outer whitespace). Matches Anki's duplicate-check behavior on add/edit.
+ */
+export function findDuplicateNote(
+    noteTypeId: number,
+    firstFieldValue: string,
+    excludeNoteId?: number,
+): DuplicateNoteResult | null {
+    const target = firstFieldValue.trim();
+    if (!target) return null;
+
+    const db = getDB();
+    const csum = checksumField(target);
+
+    const rows = db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
+        `SELECT n.id AS noteId, c.id AS cardId, d.name AS deckName, n.data AS noteData
+         FROM notes n
+         LEFT JOIN anki_cards c ON c.noteId = n.id AND c.ord = 0
+         LEFT JOIN decks d ON d.id = c.deckId
+         WHERE n.csum = ? AND n.noteTypeId = ? ${excludeNoteId ? 'AND n.id != ?' : ''}
+         LIMIT 10`,
+        ...(excludeNoteId ? [csum, noteTypeId, excludeNoteId] : [csum, noteTypeId]),
+    );
+
+    for (const row of rows) {
+        try {
+            const parsed = JSON.parse(row.noteData) as { fields?: string[] };
+            const field0 = parsed.fields?.[0];
+            if (typeof field0 === 'string' && field0.trim() === target) {
+                return {
+                    noteId: row.noteId,
+                    cardId: row.cardId,
+                    firstField: field0,
+                    deckName: row.deckName || undefined,
+                };
+            }
+        } catch {
+            // Skip unparseable row
+        }
+    }
+
+    return null;
+}
+
 export function createTusCard(input: {
     /** Legacy grouping metadata. New Anki-style editor cards use deckId instead. */
     subject?: string;
@@ -833,7 +885,7 @@ export function createTusCard(input: {
     noteTypeId?: number;
     /** Value for Anki's Add Reverse field (type 7); legacy type 6 keeps its old override. */
     reverseAnswer?: string;
-    /** Complete field list supplied by an external add-note integration. */
+    /** Complete field list supplied by an external add-note integration or dynamic editor. */
     fieldValues?: string[];
 }): { note: Note; card: AnkiCard; cards: AnkiCard[] } {
     const noteTypeId = input.noteTypeId ?? 1;
@@ -847,11 +899,17 @@ export function createTusCard(input: {
     ].filter((tag): tag is string => Boolean(tag));
 
     const fields = noteType.fields.map((_, index) => input.fieldValues?.[index] ?? '');
-    fields[0] = input.question;
-    if (fields.length > 1) fields[1] = input.answer;
-    if (noteTypeId === 7 && fields.length > 2) fields[2] = (input.reverseAnswer ?? '').trim();
-    if ([4, 5, 6].includes(noteTypeId) && fields.length > 2) fields[2] = topic;
-    if (noteTypeId === 6 && fields.length > 3) fields[3] = (input.reverseAnswer ?? '').trim();
+    if (Array.isArray(input.fieldValues) && input.fieldValues.length > 0) {
+        input.fieldValues.forEach((val, index) => {
+            if (index < fields.length) fields[index] = val;
+        });
+    } else {
+        fields[0] = input.question;
+        if (fields.length > 1) fields[1] = input.answer;
+        if (noteTypeId === 7 && fields.length > 2) fields[2] = (input.reverseAnswer ?? '').trim();
+        if ([4, 5, 6].includes(noteTypeId) && fields.length > 2) fields[2] = topic;
+        if (noteTypeId === 6 && fields.length > 3) fields[3] = (input.reverseAnswer ?? '').trim();
+    }
 
     const { note, cards } = createNote(noteType, fields, deckId, tags);
 
@@ -868,6 +926,7 @@ export function updateTusCardByCardId(
         answer: string;
         reverseAnswer?: string;
         deckId?: number;
+        fieldValues?: string[];
     },
 ): { note: Note; card: AnkiCard } | null {
     const card = getAnkiCard(cardId);
@@ -876,20 +935,30 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
-    // The compact editor owns the first two (and optional Add Reverse) fields. Notes of
-    // richer types may carry legacy/imported fields, so keep every slot the editor does not show.
     const noteType = getNoteType(note.noteTypeId);
-    const fieldCount = Math.max(noteType?.fields.length ?? 2, note.fields.length, 2);
+    const fieldCount = Math.max(
+        noteType?.fields.length ?? 2,
+        note.fields.length,
+        input.fieldValues?.length ?? 0,
+        2,
+    );
     const fields = [...note.fields];
     fields.length = fieldCount;
     for (let i = 0; i < fieldCount; i++) fields[i] = fields[i] ?? '';
-    fields[0] = input.question;
-    fields[1] = input.answer;
-    if (input.topic !== undefined && (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6)) {
-        fields[2] = input.topic;
+
+    if (Array.isArray(input.fieldValues) && input.fieldValues.length > 0) {
+        input.fieldValues.forEach((val, i) => {
+            fields[i] = val;
+        });
+    } else {
+        fields[0] = input.question;
+        fields[1] = input.answer;
+        if (input.topic !== undefined && (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6)) {
+            fields[2] = input.topic;
+        }
+        if (note.noteTypeId === 6 && input.reverseAnswer !== undefined) fields[3] = input.reverseAnswer.trim();
+        if (note.noteTypeId === 7 && input.reverseAnswer !== undefined) fields[2] = input.reverseAnswer.trim();
     }
-    if (note.noteTypeId === 6 && input.reverseAnswer !== undefined) fields[3] = input.reverseAnswer.trim();
-    if (note.noteTypeId === 7 && input.reverseAnswer !== undefined) fields[2] = input.reverseAnswer.trim();
 
     note.fields = fields;
     note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];

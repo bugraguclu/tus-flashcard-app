@@ -48,6 +48,7 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         reviewSortOrder: config.reviewSortOrder ?? base.reviewSortOrder,
         newCardSortOrder: config.newCardSortOrder ?? base.newCardSortOrder,
         autoPlayAudio: config.autoPlayAudio ?? base.autoPlayAudio,
+        audioPlaybackRate: config.audioPlaybackRate ?? base.audioPlaybackRate ?? 1.0,
         skipQuestionWhenReplayingAnswer: config.skipQuestionWhenReplayingAnswer
             ?? base.skipQuestionWhenReplayingAnswer,
         // Timers and Auto Advance live on the preset in Anki, so the reviewer has to read them

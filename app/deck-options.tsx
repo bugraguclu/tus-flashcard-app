@@ -2,7 +2,7 @@
 // display-order, burying, audio and easy-days setting the queue engine honors.
 // Edits the deck's RAW config (boost-free) — "today only" extras live in custom study.
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -105,6 +105,14 @@ type OptionHelp = {
     noteLabel: string;
     dismissLabel: string;
 };
+
+interface DeckOptionsContextValue {
+    styles: ScreenStyles;
+    colors: ColorScheme;
+    errors: Partial<Record<string, string>>;
+}
+
+const DeckOptionsContext = React.createContext<DeckOptionsContextValue | null>(null);
 
 function OptionCard({ title, children, styles, wide = false, help }: {
     title: string;
@@ -239,7 +247,7 @@ function TextBlockSetting({ label, value, onChange, styles, colors, hint, error,
     );
 }
 
-function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'integer', error }: {
+function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'integer', error, inputRef, placeholder }: {
     label: string;
     value: string;
     onChange: (value: string) => void;
@@ -248,32 +256,68 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
     hint?: string;
     kind?: 'integer' | 'decimal' | 'steps' | 'text';
     error?: string;
+    autoFocus?: boolean;
+    inputRef?: React.Ref<TextInput>;
+    placeholder?: string;
 }) {
+    const [draft, setDraft] = useState(value);
+    const [isFocused, setIsFocused] = useState(false);
+
+    useEffect(() => {
+        if (!isFocused) {
+            setDraft(value);
+        }
+    }, [isFocused, value]);
+
     const keyboardType = kind === 'integer'
         ? 'number-pad' as const
         : kind === 'decimal'
             ? 'decimal-pad' as const
             : 'default' as const;
+    const inputMode = kind === 'integer'
+        ? 'numeric' as const
+        : kind === 'decimal'
+            ? 'decimal' as const
+            : 'text' as const;
     const freeText = kind === 'steps' || kind === 'text';
     const maxLength = kind === 'steps' ? 128 : kind === 'text' ? 32 : kind === 'decimal' ? 10 : 5;
+
+    const handleChangeText = (text: string) => {
+        const cleaned = freeText
+            ? text.slice(0, maxLength)
+            : sanitizeNumericDraft(text, kind === 'decimal').slice(0, maxLength);
+        setDraft(cleaned);
+        onChange(cleaned);
+    };
+
     return (
-        <View style={styles.settingBlock}>
+        <View style={styles.settingBlock} collapsable={false}>
             <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>{label}</Text>
                 <View style={styles.numberControl}>
                     <TextInput
+                        ref={inputRef}
                         style={[styles.numberInput, error && styles.numberInputInvalid]}
-                        value={value}
-                        onChangeText={(text) => onChange(
-                            freeText
-                                ? text.slice(0, maxLength)
-                                : sanitizeNumericDraft(text, kind === 'decimal').slice(0, maxLength),
-                        )}
+                        value={isFocused ? draft : value}
+                        placeholder={placeholder}
+                        placeholderTextColor={styles.inputSuffix.color}
+                        onFocus={() => {
+                            setIsFocused(true);
+                            setDraft(value);
+                        }}
+                        onBlur={() => {
+                            setIsFocused(false);
+                            if (draft !== value) {
+                                onChange(draft);
+                            }
+                        }}
+                        onChangeText={handleChangeText}
                         keyboardType={keyboardType}
-                        selectTextOnFocus
+                        inputMode={inputMode}
                         maxLength={maxLength}
                         autoCorrect={false}
                         autoCapitalize="none"
+                        spellCheck={false}
                         accessibilityLabel={label}
                         accessibilityHint={error}
                     />
@@ -387,6 +431,57 @@ function LimitTabs({ value, onChange, styles, labels }: {
     );
 }
 
+function Field({ field, label, value, onChange, hint, suffix, kind = 'integer', autoFocus, inputRef, placeholder }: {
+    field: string;
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    hint?: string;
+    suffix?: string;
+    kind?: 'integer' | 'decimal' | 'steps' | 'text';
+    autoFocus?: boolean;
+    inputRef?: React.Ref<TextInput>;
+    placeholder?: string;
+}) {
+    const ctx = React.useContext(DeckOptionsContext);
+    if (!ctx) return null;
+    return (
+        <NumberSetting
+            label={label}
+            value={value}
+            onChange={onChange}
+            hint={hint}
+            suffix={suffix}
+            kind={kind}
+            error={ctx.errors[field]}
+            styles={ctx.styles}
+            autoFocus={autoFocus}
+            inputRef={inputRef}
+            placeholder={placeholder}
+        />
+    );
+}
+
+function SwitchRow({ label, value, onChange, hint }: {
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    hint?: string;
+}) {
+    const ctx = React.useContext(DeckOptionsContext);
+    if (!ctx) return null;
+    return (
+        <ToggleSetting
+            label={label}
+            value={value}
+            onChange={onChange}
+            hint={hint}
+            styles={ctx.styles}
+            colors={ctx.colors}
+        />
+    );
+}
+
 export default function DeckOptionsScreen() {
     const { t, l } = useI18n();
     const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
@@ -398,19 +493,37 @@ export default function DeckOptionsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { settings, refreshSettings: refreshData } = useAppSettings();
-    const { markSchedulingStale } = useCollectionInvalidation();
+    const { markSchedulingStale, invalidateCollection } = useCollectionInvalidation();
 
     const routeDeckId = Number(Array.isArray(params.deckId) ? params.deckId[0] : params.deckId);
     const [activeDeckId, setActiveDeckId] = useState(routeDeckId);
     const [deckRevision, setDeckRevision] = useState(0);
     const deck = useMemo(
-        () => (Number.isFinite(activeDeckId) ? getDeck(activeDeckId) : null),
+        () => (Number.isFinite(activeDeckId) ? getDeck(activeDeckId) : null) ?? getAllDecks().find((d) => !d.isFiltered) ?? null,
         [activeDeckId, deckRevision],
     );
     const todayLimits = useMemo(
         () => deck ? getDeckTodayLimits(deck.id, settings.dayRolloverHour) : {},
         [deck?.id, settings.dayRolloverHour],
     );
+
+    const focusField = typeof params.focus === 'string' ? params.focus : null;
+    const newLimitInputRef = useRef<TextInput>(null);
+    const reviewLimitInputRef = useRef<TextInput>(null);
+
+    useEffect(() => {
+        if (focusField === 'newLimit') {
+            const timer = setTimeout(() => {
+                newLimitInputRef.current?.focus();
+            }, 150);
+            return () => clearTimeout(timer);
+        } else if (focusField === 'reviewLimit') {
+            const timer = setTimeout(() => {
+                reviewLimitInputRef.current?.focus();
+            }, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [focusField]);
 
     const [configId, setConfigId] = useState<number>(deck?.configId || DEFAULT_DECK_CONFIG.id);
     const [presetRevision, setPresetRevision] = useState(0);
@@ -430,8 +543,16 @@ export default function DeckOptionsScreen() {
     const [presetActionsOpen, setPresetActionsOpen] = useState(false);
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameText, setRenameText] = useState('');
-    const [newLimitScope, setNewLimitScope] = useState<'preset' | 'deck' | 'today'>('preset');
-    const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>('preset');
+    const initialScope = (params.scope === 'deck' || params.scope === 'today') ? params.scope : 'preset';
+    const [newLimitScope, setNewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
+    const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
+
+    useEffect(() => {
+        if (params.scope === 'deck' || params.scope === 'today') {
+            setNewLimitScope(params.scope);
+            setReviewLimitScope(params.scope);
+        }
+    }, [params.scope]);
 
     function formFromConfig(
         config: DeckConfig,
@@ -463,6 +584,7 @@ export default function DeckOptionsScreen() {
             buryReviewSiblings: config.buryReviewSiblings,
             buryInterdayLearningSiblings: config.buryInterdayLearningSiblings,
             autoPlayAudio: config.autoPlayAudio ?? true,
+            audioPlaybackRate: String(config.audioPlaybackRate ?? 1.0),
             skipQuestionWhenReplayingAnswer: config.skipQuestionWhenReplayingAnswer ?? false,
             showTimer: config.showTimer,
             maxAnswerSecs: String(config.maxAnswerSecs),
@@ -839,6 +961,7 @@ export default function DeckOptionsScreen() {
                 buryReviewSiblings: form.buryReviewSiblings,
                 buryInterdayLearningSiblings: form.buryInterdayLearningSiblings,
                 autoPlayAudio: form.autoPlayAudio,
+                audioPlaybackRate: parseFloat(form.audioPlaybackRate) || 1.0,
                 skipQuestionWhenReplayingAnswer: form.skipQuestionWhenReplayingAnswer,
                 showTimer: form.showTimer,
                 maxAnswerSecs: integer('maxAnswerSecs'),
@@ -1204,49 +1327,31 @@ export default function DeckOptionsScreen() {
             ...helpChrome,
         },
     } satisfies Record<string, OptionHelp>;
-    // Always show the effective numeric limit. An empty override still means "inherit" in saved
-    // data, but exposing that internal representation as a blank field made the setting look
-    // unfinished and required explanatory copy below it.
-    const effectiveDeckNewValue = form.deckNewLimit.trim() || form.newPerDay;
-    const effectiveDeckReviewValue = form.deckReviewLimit.trim() || form.maxReviewsPerDay;
-    const effectiveTodayNewValue = form.todayNewLimit.trim() || effectiveDeckNewValue;
-    const effectiveTodayReviewValue = form.todayReviewLimit.trim() || effectiveDeckReviewValue;
     const scopedNewValue = newLimitScope === 'preset'
         ? form.newPerDay
         : newLimitScope === 'deck'
-            ? effectiveDeckNewValue
-            : effectiveTodayNewValue;
+            ? form.deckNewLimit
+            : form.todayNewLimit;
+    const scopedNewPlaceholder = newLimitScope === 'preset'
+        ? '20'
+        : newLimitScope === 'deck'
+            ? (form.newPerDay.trim() || '20')
+            : (form.deckNewLimit.trim() || form.newPerDay.trim() || '20');
+
     const scopedReviewValue = reviewLimitScope === 'preset'
         ? form.maxReviewsPerDay
         : reviewLimitScope === 'deck'
-            ? effectiveDeckReviewValue
-            : effectiveTodayReviewValue;
+            ? form.deckReviewLimit
+            : form.todayReviewLimit;
+    const scopedReviewPlaceholder = reviewLimitScope === 'preset'
+        ? '200'
+        : reviewLimitScope === 'deck'
+            ? (form.maxReviewsPerDay.trim() || '200')
+            : (form.deckReviewLimit.trim() || form.maxReviewsPerDay.trim() || '200');
+
     const setScopedNewValue = (value: string) => set(newLimitScope === 'preset' ? 'newPerDay' : newLimitScope === 'deck' ? 'deckNewLimit' : 'todayNewLimit', value);
     const setScopedReviewValue = (value: string) => set(reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit', value);
-    const reviewsWarning = parseCount(form.maxReviewsPerDay, 0) < Math.min(9999, parseCount(form.newPerDay, 0) * 10);
-    const Field = ({ field, label, value, onChange, hint, suffix, kind = 'integer' }: {
-        field: keyof typeof form;
-        label: string;
-        value: string;
-        onChange: (value: string) => void;
-        hint?: string;
-        suffix?: string;
-        kind?: 'integer' | 'decimal' | 'steps' | 'text';
-    }) => (
-        <NumberSetting
-            label={label}
-            value={value}
-            onChange={onChange}
-            hint={hint}
-            suffix={suffix}
-            kind={kind}
-            error={validation.errors[field]}
-            styles={styles}
-        />
-    );
-    const SwitchRow = ({ label, value, onChange, hint }: { label: string; value: boolean; onChange: (value: boolean) => void; hint?: string }) => (
-        <ToggleSetting label={label} value={value} onChange={onChange} hint={hint} styles={styles} colors={colors} />
-    );
+    const reviewsWarning = parseCount(scopedReviewValue || scopedReviewPlaceholder, 0) < Math.min(9999, parseCount(scopedNewValue || scopedNewPlaceholder, 0) * 10);
     const saveDisabled = saveState === 'saving' || !isDirty;
     const saveLabel = saveState === 'saving'
         ? l('Kaydediliyor…', 'Saving…')
@@ -1259,9 +1364,15 @@ export default function DeckOptionsScreen() {
             `${Object.keys(validation.errors).length} fields need attention.`,
         )
         : saveMessage || (isDirty ? l('Kaydedilmemiş değişiklikler var.', 'There are unsaved changes.') : '');
+    const deckOptionsContextValue = useMemo(() => ({
+        styles,
+        colors,
+        errors: validation.errors,
+    }), [styles, colors, validation.errors]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <DeckOptionsContext.Provider value={deckOptionsContextValue}>
+            <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.headerButton}
@@ -1317,26 +1428,29 @@ export default function DeckOptionsScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {currentStatusMessage ? (
-                    <View style={[
+                <View
+                    style={[
                         styles.saveStatus,
+                        !currentStatusMessage && styles.saveStatusHidden,
                         (hasValidationErrors && isDirty) || saveState === 'error'
                             ? styles.saveStatusError
                             : saveState === 'saved'
                                 ? styles.saveStatusSuccess
                                 : styles.saveStatusPending,
-                    ]} accessibilityLiveRegion="polite">
-                        <View style={[
-                            styles.saveStatusDot,
-                            (hasValidationErrors && isDirty) || saveState === 'error'
-                                ? { backgroundColor: colors.btnAgain }
-                                : saveState === 'saved'
-                                    ? { backgroundColor: colors.btnGood }
-                                    : { backgroundColor: colors.btnHard },
-                        ]} />
-                        <Text style={styles.saveStatusText}>{currentStatusMessage}</Text>
-                    </View>
-                ) : null}
+                    ]}
+                    accessibilityLiveRegion="polite"
+                    pointerEvents={currentStatusMessage ? 'auto' : 'none'}
+                >
+                    <View style={[
+                        styles.saveStatusDot,
+                        (hasValidationErrors && isDirty) || saveState === 'error'
+                            ? { backgroundColor: colors.btnAgain }
+                            : saveState === 'saved'
+                                ? { backgroundColor: colors.btnGood }
+                                : { backgroundColor: colors.btnHard },
+                    ]} />
+                    <Text style={styles.saveStatusText}>{currentStatusMessage || ' '}</Text>
+                </View>
 
                 <OptionCard wide={useTwoColumns} title={l('Günlük limitler', 'Daily Limits')} styles={styles} help={optionHelp.dailyLimits}>
                     <LimitTabs value={newLimitScope} onChange={setNewLimitScope} styles={styles} labels={limitLabels} />
@@ -1344,14 +1458,18 @@ export default function DeckOptionsScreen() {
                         field={newLimitScope === 'preset' ? 'newPerDay' : newLimitScope === 'deck' ? 'deckNewLimit' : 'todayNewLimit'}
                         label={l('Günlük yeni kart', 'New cards/day')}
                         value={scopedNewValue}
+                        placeholder={scopedNewPlaceholder}
                         onChange={setScopedNewValue}
+                        inputRef={newLimitInputRef}
                     />
                     <LimitTabs value={reviewLimitScope} onChange={setReviewLimitScope} styles={styles} labels={limitLabels} />
                     <Field
                         field={reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit'}
                         label={l('Günlük en fazla tekrar', 'Maximum reviews/day')}
                         value={scopedReviewValue}
+                        placeholder={scopedReviewPlaceholder}
                         onChange={setScopedReviewValue}
+                        inputRef={reviewLimitInputRef}
                     />
                     {reviewsWarning ? (
                         <View style={styles.warningBox}>
@@ -1614,6 +1732,21 @@ export default function DeckOptionsScreen() {
 
                 <OptionCard wide={useTwoColumns} title={l('Ses', 'Audio')} styles={styles} help={optionHelp.audio}>
                 <SwitchRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={form.autoPlayAudio} onChange={(v) => set('autoPlayAudio', v)} />
+                <SelectSetting
+                    label={l('Ses oynatma hızı', 'Audio playback speed')}
+                    value={form.audioPlaybackRate}
+                    options={[
+                        { key: '0.75', label: '0.75x' },
+                        { key: '1', label: '1.0x' },
+                        { key: '1.25', label: '1.25x' },
+                        { key: '1.5', label: '1.5x' },
+                        { key: '2', label: '2.0x' },
+                    ]}
+                    onChange={(v) => set('audioPlaybackRate', v)}
+                    styles={styles}
+                    colors={colors}
+                    cancelLabel={cancelLabel}
+                />
                 <SwitchRow
                     label={l('Cevabı yeniden oynatırken soruyu atla', 'Skip question when replaying answer')}
                     value={form.skipQuestionWhenReplayingAnswer}
@@ -1761,6 +1894,7 @@ export default function DeckOptionsScreen() {
                     colors={colors}
                     decks={regularDecks}
                     selectedDeckName={deck.name}
+                    activeDeckName={deck.name}
                     title={l('Deste seç', 'Choose Deck')}
                     allDecksLabel={null}
                     searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -1780,6 +1914,8 @@ export default function DeckOptionsScreen() {
                     onCreateDeck={(name) => {
                         try {
                             const created = createDeck(getAvailableDeckName(name));
+                            setDeckRevision((v) => v + 1);
+                            invalidateCollection();
                             return created.name;
                         } catch (e) {
                             console.warn('[DeckOptions] create deck failed:', e);
@@ -1862,6 +1998,7 @@ export default function DeckOptionsScreen() {
                 </KeyboardAvoidingView>
             </Modal> : null}
         </SafeAreaView>
+        </DeckOptionsContext.Provider>
     );
 }
 
@@ -1966,6 +2103,7 @@ function createStyles(colors: ColorScheme) {
         saveStatusError: { backgroundColor: colors.btnAgainBg, borderColor: colors.btnAgain },
         saveStatusDot: { width: 8, height: 8, borderRadius: 4, marginRight: Spacing.sm },
         saveStatusText: { flex: 1, color: colors.textSecondary, fontSize: FontSize.xs, lineHeight: 18, fontWeight: '600' },
+        saveStatusHidden: { opacity: 0, borderWidth: 0, backgroundColor: 'transparent' },
 
         optionCard: {
             width: '100%',

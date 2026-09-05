@@ -71,6 +71,8 @@ export interface StudyQueueResult {
     heldBackNewCount: number;
     /** Due reviews in scope that the daily review limit kept out of today's queue. */
     heldBackReviewCount: number;
+    /** How many cards will become available when the waiting timer or next rollover expires. */
+    upcomingCardsCount: number;
 }
 
 export interface StudyQueueParams {
@@ -1102,6 +1104,7 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
             dailyNewLimitReached: false,
             heldBackNewCount: 0,
             heldBackReviewCount: 0,
+            upcomingCardsCount: 0,
         };
     }
 
@@ -1159,6 +1162,7 @@ function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: App
         // A filtered deck's saved search is the session: daily limits never apply to it.
         heldBackNewCount: 0,
         heldBackReviewCount: 0,
+        upcomingCardsCount: futureLearningTimes.length,
     };
 }
 
@@ -1688,6 +1692,38 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // limit in Anki, so that count stays raw.
     const servableNewCount = newCardsForQueue.length;
     const servableReviewCount = reviewCardsForQueue.length;
+    const heldBackNewCount = Math.max(0, newCount - servableNewCount);
+    const heldBackReviewCount = Math.max(0, reviewCount - servableReviewCount);
+
+    let upcomingCardsCount = 0;
+    if (nextLearningDue !== null) {
+        upcomingCardsCount = Math.max(1, intradayLearningCount + interdayLearningCount);
+    } else {
+        const reviewsDueTomorrow = countRowsByQueue(
+            'c.queue IN (2, 3) AND c.due = ?',
+            [today + 1],
+            params.selectedSubject,
+            params.selectedTopic,
+            params.selectedDeckName,
+        );
+
+        let tomorrowNewLimit = params.settings.dailyNewLimit ?? 20;
+        let tomorrowReviewLimit = params.settings.dailyReviewLimit ?? 200;
+        if (params.selectedDeckName) {
+            const deck = getDeckByName(params.selectedDeckName);
+            if (deck) {
+                const config = getDeckConfigForDeck(deck.id, params.settings.dayRolloverHour);
+                const resolved = resolveSettingsFromConfig(config, params.settings);
+                tomorrowNewLimit = resolved.dailyNewLimit;
+                tomorrowReviewLimit = resolved.dailyReviewLimit;
+            }
+        }
+
+        const tomorrowServableNew = tomorrowNewLimit > 0 ? Math.min(heldBackNewCount, tomorrowNewLimit) : heldBackNewCount;
+        const tomorrowTotalReviews = heldBackReviewCount + reviewsDueTomorrow;
+        const tomorrowServableReviews = tomorrowReviewLimit > 0 ? Math.min(tomorrowTotalReviews, tomorrowReviewLimit) : tomorrowTotalReviews;
+        upcomingCardsCount = tomorrowServableNew + tomorrowServableReviews;
+    }
 
     return {
         cards,
@@ -1699,8 +1735,9 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         nextLearningDue,
         // Reached when new cards exist in scope but none survived the global/per-deck limits.
         dailyNewLimitReached: newCount > 0 && servableNewCount === 0,
-        heldBackNewCount: Math.max(0, newCount - servableNewCount),
-        heldBackReviewCount: Math.max(0, reviewCount - servableReviewCount),
+        heldBackNewCount,
+        heldBackReviewCount,
+        upcomingCardsCount,
     };
 }
 

@@ -22,7 +22,10 @@ const fixture = vi.hoisted(() => ({
     },
 }));
 
-vi.mock('react-native', () => ({ Platform: fixture.platform }));
+vi.mock('react-native', async (importOriginal) => ({
+    ...(await importOriginal<any>()),
+    Platform: fixture.platform,
+}));
 vi.mock('./db', () => ({ getDB: () => fixture.db }));
 vi.mock('react-native-purchases', () => ({
     default: fixture.purchases,

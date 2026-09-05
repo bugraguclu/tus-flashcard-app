@@ -39,9 +39,7 @@ import type { SupportedLocale } from '../lib/i18n';
 import { cardFlagName } from '../lib/i18n';
 import { localizeNoteTypeName } from '../lib/i18n';
 import {
-    buildDeckTree,
     createDeck,
-    flattenDeckTree,
     getAvailableDeckName,
     getDeck,
     getDeckByName,
@@ -384,9 +382,9 @@ export default function BrowserScreen() {
 
     const trimmedSearchQuery = searchQuery.trim();
 
-    const deckPickerRows = useMemo(
+    const batchMoveDeckItems = useMemo(
         () => showDeckPicker
-            ? flattenDeckTree(buildDeckTree(allDecks), true).filter((node) => !node.deck.isFiltered)
+            ? allDecks.filter((deck) => !deck.isFiltered)
             : [],
         [allDecks, showDeckPicker],
     );
@@ -1318,6 +1316,7 @@ export default function BrowserScreen() {
                 colors={colors}
                 decks={deckScopePickerItems}
                 selectedDeckName={deckName}
+                activeDeckName={deckName}
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -1651,9 +1650,9 @@ export default function BrowserScreen() {
                         <Text style={styles.modalTitle}>{l('Yeniden Konumlandır', 'Reposition')}</Text>
                         <Text style={styles.modalCaption}>{l('Yalnızca seçili yeni kartlar etkilenir.', 'Only selected new cards are affected.')}</Text>
                         <Text style={styles.fieldLabel}>{l('Başlangıç konumu', 'Start position')}</Text>
-                        <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" />
+                        <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
                         <Text style={styles.fieldLabel}>{l('Adım', 'Step')}</Text>
-                        <TextInput style={styles.dialogInput} value={repositionStep} onChangeText={(value) => setRepositionStep(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" />
+                        <TextInput style={styles.dialogInput} value={repositionStep} onChangeText={(value) => setRepositionStep(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
                         <TouchableOpacity style={styles.checkboxRow} onPress={() => setRepositionShiftExisting((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: repositionShiftExisting }}>
                             <View style={[styles.checkbox, repositionShiftExisting && styles.checkboxChecked]}>{repositionShiftExisting ? <Text style={styles.checkboxTick}>✓</Text> : null}</View>
                             <Text style={styles.checkboxLabel}>{l('Mevcut kartların konumunu kaydır', 'Shift position of existing cards')}</Text>
@@ -1877,8 +1876,9 @@ export default function BrowserScreen() {
             {showDeckPicker && <DeckPickerModal
                 visible={showDeckPicker}
                 colors={colors}
-                decks={deckPickerRows.map((node) => node.deck)}
+                decks={batchMoveDeckItems}
                 selectedDeckName={null}
+                activeDeckName={deckName}
                 title={l('Seçili Kartların Destesi', 'Deck for Selected Cards')}
                 allDecksLabel={null}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}

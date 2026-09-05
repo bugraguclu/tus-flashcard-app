@@ -14,6 +14,8 @@ export interface NoteTypeField {
     ord: number;
     sticky: boolean;     // keep the value when adding the next card
     rtl: boolean;        // right-to-left text
+    font?: string;       // optional field font family
+    fontSize?: number;   // optional field font size in pt
 }
 
 export interface NoteTypeTemplate {
@@ -340,6 +342,7 @@ export interface DeckConfig {
 
     // Audio
     autoPlayAudio?: boolean;
+    audioPlaybackRate?: number;
     /** Anki `replayq` inverted: replaying on the answer side skips the question's audio. */
     skipQuestionWhenReplayingAnswer?: boolean;
 

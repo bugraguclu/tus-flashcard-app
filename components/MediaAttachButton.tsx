@@ -1,12 +1,13 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert } from '../lib/confirm';
+import { alert, choose } from '../lib/confirm';
+import { promptPermissionSettings } from '../lib/permissions';
 import { readUriBytes } from '../lib/files';
-import { saveMediaBytes } from '../lib/mediaStore';
+import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
@@ -60,7 +61,37 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const [pageShape, setPageShape] = useState<BlankCanvasShape>(BLANK_CANVAS_SHAPES[0].id);
     const [pageToDraw, setPageToDraw] = useState<BlankCanvasPage | null>(null);
 
-    const closeMenu = () => setMenuVisible(false);
+    const pendingActionRef = useRef<(() => void) | null>(null);
+    const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleMenuDismiss = () => {
+        if (dismissTimerRef.current) {
+            clearTimeout(dismissTimerRef.current);
+            dismissTimerRef.current = null;
+        }
+        const action = pendingActionRef.current;
+        pendingActionRef.current = null;
+        action?.();
+    };
+
+    const closeMenu = () => {
+        pendingActionRef.current = null;
+        setMenuVisible(false);
+    };
+
+    const runAfterMenuClose = (action: () => void) => {
+        if (Platform.OS === 'ios') {
+            pendingActionRef.current = action;
+            setMenuVisible(false);
+            dismissTimerRef.current = setTimeout(() => {
+                handleMenuDismiss();
+            }, 450);
+            return;
+        }
+        setMenuVisible(false);
+        action();
+    };
+
     const openMenu = () => {
         Keyboard.dismiss();
         setMenuVisible(true);
@@ -71,12 +102,11 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const saveAndInsert = async (uri: string, name: string, kind: MediaKind) => {
         setBusy(true);
         try {
-            const bytes = await readUriBytes(uri);
             const filename = sanitizeMediaFilename(`${Date.now()}_${name}`);
-            await saveMediaBytes(filename, bytes);
+            await saveMediaFromUri(filename, uri);
             if (kind === 'image') onInsert(`<img src="${filename}">`);
             else if (kind === 'audio') onInsert(`[sound:${filename}]`);
-            else if (kind === 'video') onInsert(`<video controls src="${filename}"></video>`);
+            else if (kind === 'video') onInsert(`<video controls src="${filename}" disableRemotePlayback></video>`);
             else onInsert(`<a href="${filename}">${escapeHtml(name)}</a>`);
         } catch (e) {
             console.warn('[MediaAttach] save failed:', e);
@@ -87,11 +117,18 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     const pickFromGallery = async () => {
-        closeMenu();
         try {
             const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin gerekli', 'Permission Required'), l('Galeriye erişmek için izin vermeniz gerekiyor.', 'Allow photo library access to choose a photo.'));
+                await promptPermissionSettings({
+                    title: l('İzin gerekli', 'Permission Required'),
+                    message: l(
+                        'Galeriye erişmek için izin vermeniz gerekiyor. Ayarlardan erişim iznini açabilirsiniz.',
+                        'Allow photo library access to choose a photo. You can enable access in Settings.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
                 return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -115,11 +152,18 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     const captureFromCamera = async () => {
-        closeMenu();
         try {
             const perm = await ImagePicker.requestCameraPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin gerekli', 'Permission Required'), l('Kamerayı kullanmak için izin vermeniz gerekiyor.', 'Allow camera access to take a photo.'));
+                await promptPermissionSettings({
+                    title: l('İzin gerekli', 'Permission Required'),
+                    message: l(
+                        'Kamerayı kullanmak için izin vermeniz gerekiyor. Ayarlardan kamera iznini açabilirsiniz.',
+                        'Allow camera access to take a photo. You can enable camera access in Settings.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
                 return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -157,38 +201,109 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     const pickAudioClip = async () => {
-        closeMenu();
         try {
-            const picked = await DocumentPicker.getDocumentAsync({ type: 'audio/*', copyToCacheDirectory: true });
+            const picked = await DocumentPicker.getDocumentAsync({
+                type: [
+                    'audio/*',
+                    'audio/mpeg',
+                    'audio/mp4',
+                    'audio/x-m4a',
+                    'audio/wav',
+                    'audio/aac',
+                    'audio/ogg',
+                    'audio/webm',
+                ],
+                copyToCacheDirectory: true,
+            });
             if (picked.canceled || !picked.assets?.length) return;
             const asset = picked.assets[0];
-            await saveAndInsert(asset.uri, asset.name, 'audio');
+            let name = asset.name || 'ses.m4a';
+            if (!name.includes('.')) name = `${name}.m4a`;
+            await saveAndInsert(asset.uri, name, 'audio');
         } catch (e) {
             console.warn('[MediaAttach] audio clip pick failed:', e);
             alert(t('common.error'), l('Ses klibi eklenemedi.', 'Could not attach the audio clip.'));
         }
     };
 
-    const pickVideoClip = async () => {
-        closeMenu();
+    const pickVideoFromGallery = async () => {
         try {
-            const picked = await DocumentPicker.getDocumentAsync({ type: 'video/*', copyToCacheDirectory: true });
-            if (picked.canceled || !picked.assets?.length) return;
-            const asset = picked.assets[0];
-            await saveAndInsert(asset.uri, asset.name, 'video');
+            const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!perm.granted) {
+                await promptPermissionSettings({
+                    title: l('İzin gerekli', 'Permission Required'),
+                    message: l(
+                        'Galeriye erişmek için izin vermeniz gerekiyor. Ayarlardan erişim iznini açabilirsiniz.',
+                        'Allow photo library access to choose a video. You can enable access in Settings.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
+                return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['videos'],
+                allowsEditing: false,
+                quality: 1,
+            });
+            if (result.canceled || !result.assets?.length) return;
+            const asset = result.assets[0];
+            let name = asset.fileName || 'video.mp4';
+            if (!name.includes('.')) name = `${name}.mp4`;
+            await saveAndInsert(asset.uri, name, 'video');
         } catch (e) {
-            console.warn('[MediaAttach] video clip pick failed:', e);
+            console.warn('[MediaAttach] gallery video pick failed:', e);
             alert(t('common.error'), l('Video klibi eklenemedi.', 'Could not attach the video clip.'));
         }
     };
 
+    const pickVideoFromFiles = async () => {
+        try {
+            const picked = await DocumentPicker.getDocumentAsync({
+                type: [
+                    'video/*',
+                    'video/mp4',
+                    'video/quicktime',
+                    'video/x-m4v',
+                    'video/webm',
+                ],
+                copyToCacheDirectory: true,
+            });
+            if (picked.canceled || !picked.assets?.length) return;
+            const asset = picked.assets[0];
+            let name = asset.name || 'video.mp4';
+            if (!name.includes('.')) name = `${name}.mp4`;
+            await saveAndInsert(asset.uri, name, 'video');
+        } catch (e) {
+            console.warn('[MediaAttach] file video pick failed:', e);
+            alert(t('common.error'), l('Video klibi eklenemedi.', 'Could not attach the video clip.'));
+        }
+    };
+
+    const pickVideoClip = async () => {
+        if (Platform.OS === 'web') {
+            await pickVideoFromFiles();
+            return;
+        }
+        const pickFromGaleri = await choose(
+            l('Video klibi ekle', 'Attach Video Clip'),
+            l('Videoyu nereden seçmek istersiniz?', 'Where would you like to choose the video from?'),
+            l('Galeri', 'Gallery'),
+            l('Dosyalar', 'Files'),
+        );
+        if (pickFromGaleri) {
+            await pickVideoFromGallery();
+        } else {
+            await pickVideoFromFiles();
+        }
+    };
+
     const pickFile = async () => {
-        closeMenu();
         try {
             const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
             if (picked.canceled || !picked.assets?.length) return;
             const asset = picked.assets[0];
-            await saveAndInsert(asset.uri, asset.name, 'file');
+            await saveAndInsert(asset.uri, asset.name || 'dosya', 'file');
         } catch (e) {
             console.warn('[MediaAttach] file pick failed:', e);
             alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
@@ -220,13 +335,13 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     }, [pageShape]);
 
     const options: { icon: string; label: string; onPress: () => void }[] = [
-        { icon: '🖼️', label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: pickFromGallery },
-        { icon: '📷', label: l('Fotoğraf çek', 'Take Photo'), onPress: captureFromCamera },
-        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => { closeMenu(); setPageSetup(true); } },
-        { icon: '🎙️', label: l('Ses kaydet', 'Record Audio'), onPress: () => { closeMenu(); setShowRecorder(true); } },
-        { icon: '🎵', label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: pickAudioClip },
-        { icon: '🎬', label: l('Video klibi ekle', 'Attach Video Clip'), onPress: pickVideoClip },
-        { icon: '📄', label: l('Dosya ekle', 'Attach File'), onPress: pickFile },
+        { icon: '🖼️', label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
+        { icon: '📷', label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
+        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setPageSetup(true)) },
+        { icon: '🎙️', label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
+        { icon: '🎵', label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
+        { icon: '🎬', label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
+        { icon: '📄', label: l('Dosya ekle', 'Attach File'), onPress: () => runAfterMenuClose(pickFile) },
     ];
 
     return (
@@ -254,7 +369,13 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 )}
             </TouchableOpacity>
 
-            <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeMenu}>
+            <Modal
+                visible={menuVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={closeMenu}
+                onDismiss={handleMenuDismiss}
+            >
                 <View style={styles.overlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
                     <SwipeDismissSheet active={menuVisible} style={styles.sheet} onDismiss={closeMenu}>

@@ -25,6 +25,8 @@ export interface ImportOptions {
     defaultFields?: string[];
     /** Tags added to every imported note, on top of any `#tags:` directive or tags column. */
     tags?: string[];
+    /** 1-based index of the source column whose values should be treated as space-separated tags. */
+    tagsColumn?: number;
     /** Anki defaults to updating a same-first-field note in place. */
     duplicateResolution?: DuplicateResolution;
     matchScope?: MatchScope;
@@ -244,7 +246,8 @@ interface PreparedDelimitedImport {
 
 function prepareDelimitedImport(text: string, options: ImportOptions): PreparedDelimitedImport {
     const parsed = parseDelimited(text, options.delimiter ? { delimiter: options.delimiter } : {});
-    const { guidColumn, tagsColumn, deckColumn, notetypeColumn } = parsed.metadata;
+    const { guidColumn, deckColumn, notetypeColumn } = parsed.metadata;
+    const tagsColumn = options.tagsColumn ?? parsed.metadata.tagsColumn;
     const incomingGuids = guidColumn ? parsed.rows.map((row) => row[guidColumn - 1] ?? '') : undefined;
     // Check before resolving/creating destination decks, so a rejected paid-text export is a
     // complete no-op instead of leaving empty attacker-chosen deck rows behind.

@@ -39,7 +39,8 @@ type ReviewerMenuIcon =
     | 'reschedule'
     | 'replay'
     | 'voice'
-    | 'deck';
+    | 'deck'
+    | 'info';
 
 export interface CardOptionsMenuProps {
     visible: boolean;
@@ -55,6 +56,7 @@ export interface CardOptionsMenuProps {
     onForgetCard: () => void;
     onSetDueDate: (days: number) => void;
     onDeckOptions: () => void;
+    onCardInfo?: () => void;
     onToggleMarkNote: () => void;
     onBuryNote: () => void;
     onSuspendNote: () => void;
@@ -313,6 +315,9 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     onPress={() => runAndClose(props.onToggleVoicePlayback)}
                                 />
                                 <MenuRow styles={styles} colors={colors} icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
+                                {props.onCardInfo ? (
+                                    <MenuRow styles={styles} colors={colors} icon="info" label={l('Kart bilgisi', 'Card info')} onPress={() => runAndClose(props.onCardInfo!)} />
+                                ) : null}
                             </>
                         )}
 
@@ -378,6 +383,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 <TextInput
                                     style={styles.textInput}
                                     keyboardType="number-pad"
+                                    inputMode="numeric"
                                     value={dueDateInput}
                                     onChangeText={(value) => setDueDateInput(sanitizeUnsignedIntegerDraft(value, 5))}
                                     maxLength={5}
@@ -474,6 +480,12 @@ function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
             )}
             {name === 'voice' && <Path d="M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V5Zm-3 6a6 6 0 0 0 12 0M12 17v4m-3 0h6" {...common} />}
             {name === 'deck' && <Path d="M4 6h6m4 0h6M4 12h10m4 0h2M4 18h3m4 0h9M10 4v4m4 2v4m-7 2v4" {...common} />}
+            {name === 'info' && (
+                <>
+                    <Circle cx={12} cy={12} r={9} {...common} />
+                    <Path d="M12 16v-4m0-4h.01" {...common} />
+                </>
+            )}
         </Svg>
     );
 }

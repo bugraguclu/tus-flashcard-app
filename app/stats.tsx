@@ -626,6 +626,7 @@ export default function StatsScreen() {
                 colors={colors}
                 decks={deckPickerItems}
                 selectedDeckName={deckScope}
+                activeDeckName={deckScope}
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}

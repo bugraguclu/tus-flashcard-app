@@ -323,6 +323,11 @@ describe('storage import/export canonical round-trip', () => {
         expect(loadSettings().language).toBe('tr');
     });
 
+    it('defaults to Turkish when settings have not been configured', () => {
+        expect(DEFAULT_SETTINGS.language).toBe('tr');
+        expect(loadSettings().language).toBe('tr');
+    });
+
     it('rolls settings metadata back and reports failure when deck-config persistence fails', () => {
         expect(saveSettings({ ...DEFAULT_SETTINGS, language: 'en' }).ok).toBe(true);
         const before = new Map(dbState.settings);

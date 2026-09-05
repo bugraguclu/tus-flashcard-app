@@ -125,6 +125,8 @@ interface CardWebViewProps {
     maxHeight?: number;
     /** Reports a non-interactive tap as normalized x/y coordinates within the visible card. */
     onCardTap?: (xRatio: number, yRatio: number) => void;
+    /** Playback rate for audio in cards (0.75, 1.0, 1.25, 1.5, 2.0). */
+    audioPlaybackRate?: number;
 }
 
 export default function CardWebView({
@@ -151,6 +153,7 @@ export default function CardWebView({
     minHeight = 140,
     maxHeight,
     onCardTap,
+    audioPlaybackRate = 1.0,
 }: CardWebViewProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
@@ -222,6 +225,10 @@ export default function CardWebView({
         .card img{zoom:${Math.max(50, Math.min(200, imageZoomPercent)) / 100};}
         .card img,.card video{max-height:${mediaCap}px;}
         ${showAudioPlayButtons ? '' : '.card audio{display:none!important;}'}
+        .tus-audio-wrap{display:inline-flex;align-items:center;gap:8px;max-width:100%;margin:4px 0;vertical-align:middle;}
+        .tus-audio-wrap audio{max-width:calc(100% - 68px);}
+        .tus-audio-speed-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;font-size:12px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${colors.accent};background:${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};border:1px solid ${colors.border};border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap;line-height:1.3;}
+        .tus-audio-speed-btn:active{opacity:0.7;}
         ${centerContent ? 'body{display:flex!important;align-items:center;justify-content:center;}' : ''}
         /* Catalog cards use the app's reviewer surface. The repeated .card selector is
            intentional: it also wins over Anki templates such as .nightMode.card. */
@@ -254,6 +261,46 @@ export default function CardWebView({
         ? typeAnswerBridgeScript(typeAnswerToken, autoFocusTypeAnswer)
         : '';
     const sizingScript = scrollMode === 'intrinsic' ? HEIGHT_REPORTER : `${HINT_BINDER}true;`;
+    const audioSpeedScript = `(function(){
+        var speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+        var defRate = ${JSON.stringify(audioPlaybackRate || 1.0)};
+        function initSpeed() {
+            var audios = document.querySelectorAll('audio');
+            for (var i = 0; i < audios.length; i++) {
+                (function(audio) {
+                    if (audio.dataset.tusSpeedInit) return;
+                    audio.dataset.tusSpeedInit = 'true';
+                    audio.playbackRate = defRate;
+                    audio.defaultPlaybackRate = defRate;
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'tus-audio-speed-btn';
+                    btn.textContent = defRate + 'x';
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var cur = audio.playbackRate || defRate;
+                        var idx = speeds.indexOf(cur);
+                        if (idx === -1) idx = 1;
+                        var next = speeds[(idx + 1) % speeds.length];
+                        audio.playbackRate = next;
+                        audio.defaultPlaybackRate = next;
+                        btn.textContent = next + 'x';
+                    });
+                    if (audio.parentNode && !audio.parentNode.classList.contains('tus-audio-wrap')) {
+                        var wrap = document.createElement('span');
+                        wrap.className = 'tus-audio-wrap';
+                        audio.parentNode.insertBefore(wrap, audio);
+                        wrap.appendChild(audio);
+                        wrap.appendChild(btn);
+                    }
+                })(audios[i]);
+            }
+        }
+        initSpeed();
+        window.addEventListener('load', initSpeed);
+        setTimeout(initSpeed, 200);
+    })();`;
 
     const openExternalLink = useCallback((rawUrl: string) => {
         const url = safeExternalCardUrl(rawUrl);
@@ -311,6 +358,9 @@ export default function CardWebView({
                 }
                 const element = media[index];
                 element.currentTime = 0;
+                if (element.tagName.toLowerCase() === 'audio' && !element.playbackRate) {
+                    element.playbackRate = audioPlaybackRate || 1.0;
+                }
                 element.onended = () => playAt(index + 1);
                 element.play().catch(() => { /* blocked by autoplay policy */ });
             };
@@ -328,11 +378,12 @@ export default function CardWebView({
             'for(var i=0;i<l.length;i++){a.push(l[i]);l[i].pause();l[i].onended=null;}' +
             'function s(v){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage("AUDIO:"+v);}' +
             'function p(i){if(i>=a.length){s(0);return;}var m=a[i];m.currentTime=0;' +
+            'if(m.tagName.toLowerCase()==="audio"&&!m.playbackRate){m.playbackRate=' + JSON.stringify(audioPlaybackRate || 1.0) + ';}' +
             'm.onended=function(){p(i+1);};m.onerror=function(){p(i+1);};' +
             'var pr=m.play();if(pr&&pr.catch)pr.catch(function(){p(i+1);});}' +
             's(a.length>0?1:0);p(0);})();true;',
         );
-    }, [playAudioSignal]);
+    }, [playAudioSignal, audioPlaybackRate]);
 
     useEffect(() => {
         if (!pauseAudioSignal) return;
@@ -418,6 +469,37 @@ export default function CardWebView({
                             onCardTap(pointer.clientX / width, pointer.clientY / height);
                         }, true);
                     }
+                    const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+                    const defRate = audioPlaybackRate || 1.0;
+                    doc.querySelectorAll('audio').forEach((audio) => {
+                        if (audio.dataset.tusSpeedInit) return;
+                        audio.dataset.tusSpeedInit = 'true';
+                        audio.playbackRate = defRate;
+                        audio.defaultPlaybackRate = defRate;
+                        const btn = doc.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'tus-audio-speed-btn';
+                        btn.textContent = `${defRate}x`;
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const cur = audio.playbackRate || defRate;
+                            let idx = speeds.indexOf(cur);
+                            if (idx === -1) idx = 1;
+                            const next = speeds[(idx + 1) % speeds.length];
+                            audio.playbackRate = next;
+                            audio.defaultPlaybackRate = next;
+                            btn.textContent = `${next}x`;
+                        });
+                        const parent = audio.parentElement as HTMLElement | null;
+                        if (parent && !parent.classList.contains('tus-audio-wrap')) {
+                            const wrap = doc.createElement('span');
+                            wrap.className = 'tus-audio-wrap';
+                            parent.insertBefore(wrap, audio);
+                            wrap.appendChild(audio);
+                            wrap.appendChild(btn);
+                        }
+                    });
                     if (scrollMode === 'intrinsic') {
                         setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));
                     }
@@ -453,7 +535,7 @@ export default function CardWebView({
             originWhitelist={['about:blank', 'file://*']}
             source={nativeSource}
             style={[styles.webView, { height: frameHeight }, plainFrame && styles.webViewPlain]}
-            injectedJavaScript={`${sizingScript}${tapReporter}${typedAnswerBinder}true;`}
+            injectedJavaScript={`${sizingScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}true;`}
             onMessage={(event) => {
                 const data = String(event.nativeEvent.data);
                 if (data.startsWith('AUDIO:')) {
@@ -498,7 +580,8 @@ export default function CardWebView({
             saveFormDataDisabled
             webviewDebuggingEnabled={__DEV__}
             allowUniversalAccessFromFileURLs={false}
-            allowFileAccessFromFileURLs={false}
+            allowFileAccessFromFileURLs={Platform.OS === 'ios' || Platform.OS === 'android'}
+            allowingReadAccessToURL={mediaBaseUrl || undefined}
             onShouldStartLoadWithRequest={shouldStartNavigation}
             automaticallyAdjustContentInsets={false}
             contentInsetAdjustmentBehavior="never"

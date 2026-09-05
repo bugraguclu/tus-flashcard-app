@@ -23,6 +23,7 @@ import {
     filterDeckTree,
     flattenVisibleDeckPicker,
     initialExpandedDeckNames,
+    prioritizeDeckTree,
     type VisibleDeckPickerRow,
 } from '../lib/deckPickerExpansion';
 
@@ -31,6 +32,8 @@ type Props = {
     colors: ColorScheme;
     decks: Deck[];
     selectedDeckName: string | null;
+    /** The active deck currently being studied or edited, prioritized to the top and expanded. */
+    activeDeckName?: string | null;
     title: string;
     allDecksLabel: string | null;
     searchPlaceholder: string;
@@ -50,6 +53,7 @@ export default function DeckPickerModal({
     colors,
     decks,
     selectedDeckName,
+    activeDeckName,
     title,
     allDecksLabel,
     searchPlaceholder,
@@ -70,9 +74,15 @@ export default function DeckPickerModal({
     const [newDeckName, setNewDeckName] = useState('');
     const [createError, setCreateError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+    const targetDeckName = activeDeckName || selectedDeckName || null;
+
     // The deck list is the single source of truth for sibling order, so the picker lists decks
-    // in exactly the order the user arranged them on the deck screen.
+    // in exactly the order the user arranged them on the deck screen, prioritizing the active deck.
     const tree = useMemo(() => buildDeckTree(decks), [decks]);
+    const prioritizedTree = useMemo(
+        () => prioritizeDeckTree(tree, targetDeckName),
+        [tree, targetDeckName],
+    );
 
     useEffect(() => {
         if (!visible) return;
@@ -84,10 +94,13 @@ export default function DeckPickerModal({
         setQuery('');
         setNewDeckName('');
         setCreateError(null);
-        setExpanded(initialExpandedDeckNames(tree, selectedDeckName));
-    }, [visible, tree, selectedDeckName]);
+        setExpanded(initialExpandedDeckNames(prioritizedTree, targetDeckName));
+    }, [visible, prioritizedTree, targetDeckName]);
 
-    const filteredTree = useMemo(() => filterDeckTree(tree, query.trim()), [tree, query]);
+    const filteredTree = useMemo(
+        () => filterDeckTree(prioritizedTree, query.trim()),
+        [prioritizedTree, query],
+    );
     const rows = useMemo(
         () => flattenVisibleDeckPicker(filteredTree, expanded, searching && query.trim().length > 0),
         [filteredTree, expanded, searching, query],
@@ -140,6 +153,9 @@ export default function DeckPickerModal({
                 return;
             }
             Keyboard.dismiss();
+            setCreating(false);
+            setNewDeckName('');
+            setCreateError(null);
             onSelect(createdName);
         } catch (error) {
             console.warn('[DeckPicker] create deck failed:', error);

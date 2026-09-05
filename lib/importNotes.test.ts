@@ -159,6 +159,18 @@ describe('importDelimitedNotes', () => {
         );
     });
 
+    it('applies tags from options.tagsColumn', () => {
+        const res = importDelimitedNotes('Front,Back,customTag anotherTag', {
+            noteType: NT,
+            deckId: 1,
+            tagsColumn: 3,
+        });
+        expect(res.added).toBe(1);
+        expect([...(createNoteMock.mock.calls[0][3] as string[])].sort()).toEqual(
+            ['anotherTag', 'customTag'].sort(),
+        );
+    });
+
     it('rolls back the transaction when a row fails', () => {
         createNoteMock.mockImplementationOnce(() => {
             throw new Error('boom');

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable, Linking } from 'react-native';
 import {
     useAudioRecorder,
     useAudioRecorderState,
@@ -8,8 +8,9 @@ import {
     setAudioModeAsync,
 } from 'expo-audio';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert } from '../lib/confirm';
-import { saveMediaBytes } from '../lib/mediaStore';
+import { alert, choose } from '../lib/confirm';
+import { promptPermissionSettings } from '../lib/permissions';
+import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
 import { useI18n } from '../hooks/useI18n';
 
@@ -39,7 +40,15 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
         try {
             const perm = await requestRecordingPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin gerekli', 'Permission Required'), l('Ses kaydetmek için mikrofon izni vermeniz gerekiyor.', 'Allow microphone access to record audio.'));
+                await promptPermissionSettings({
+                    title: l('İzin gerekli', 'Permission Required'),
+                    message: l(
+                        'Ses kaydetmek için mikrofon izni vermeniz gerekiyor. Ayarlardan mikrofon iznini açabilirsiniz.',
+                        'Allow microphone access to record audio. You can enable microphone access in Settings.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
                 return;
             }
             await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -60,14 +69,11 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                 return;
             }
             setSaving(true);
-            const response = await fetch(uri);
 
-            // The browser records into whatever container it supports (typically webm/opus),
-            // not m4a — name the file after the real container and keep its MIME type, or
-            // the <audio> player will refuse the mislabeled bytes.
             let extension = 'm4a';
-            let mimeType: string | undefined;
+            let mimeType: string | undefined = 'audio/mp4';
             if (Platform.OS === 'web') {
+                const response = await fetch(uri);
                 const blobType = (await response.clone().blob()).type;
                 if (blobType) {
                     mimeType = blobType;
@@ -76,13 +82,17 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                     else if (blobType.includes('wav')) extension = 'wav';
                     else if (blobType.includes('mp4') || blobType.includes('aac')) extension = 'm4a';
                 }
+                const bytes = new Uint8Array(await response.arrayBuffer());
+                const filename = sanitizeMediaFilename(`${Date.now()}_kayit.${extension}`);
+                await saveMediaBytes(filename, bytes, mimeType);
+                onSaved(filename);
+                onClose();
+            } else {
+                const filename = sanitizeMediaFilename(`${Date.now()}_kayit.${extension}`);
+                await saveMediaFromUri(filename, uri, mimeType);
+                onSaved(filename);
+                onClose();
             }
-
-            const bytes = new Uint8Array(await response.arrayBuffer());
-            const filename = sanitizeMediaFilename(`${Date.now()}_kayit.${extension}`);
-            await saveMediaBytes(filename, bytes, mimeType);
-            onSaved(filename);
-            onClose();
         } catch (e) {
             console.warn('[AudioRecordModal] save failed:', e);
             alert(t('common.error'), l('Ses kaydı kaydedilemedi.', 'Could not save the audio recording.'));

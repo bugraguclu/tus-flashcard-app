@@ -2,23 +2,20 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
-    TextInput,
     TouchableOpacity,
     ScrollView,
     StyleSheet,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Modal,
-    Platform,
     Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import Svg, { Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
-import { getAllSubjects, resolveSubjectDeckId } from '../lib/subjects';
-import { createCourse } from '../lib/courses';
-import { createDeck, getAllDecks, getAvailableDeckName, getDeck } from '../lib/deckManager';
+import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
+import { resolveInitialTargetDeckId } from '../lib/importTargetDeck';
 import { alert, confirmAsync } from '../lib/confirm';
 import { assertKnownFileSize, readUriBytes, readUriText } from '../lib/files';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
@@ -30,12 +27,14 @@ import {
     type MatchScope,
 } from '../lib/importNotes';
 import { importApkg, MAX_APKG_BYTES } from '../lib/importApkg';
-import { getNoteType, type SearchIndexCard } from '../lib/noteManager';
-import { BUILTIN_NOTE_TYPES } from '../lib/models';
+import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteManager';
+import { BUILTIN_NOTE_TYPES, type NoteType } from '../lib/models';
+import { localizeNoteTypeName } from '../lib/i18n';
 import { parseDelimited } from '../lib/importDelimited';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import DeckPickerModal from '../components/DeckPickerModal';
+import NoteTypePickerModal from '../components/NoteTypePickerModal';
 import { createBackupNow } from '../lib/backup';
 import {
     getImportFileExtension,
@@ -47,7 +46,13 @@ import {
 import ScreenHeader from '../components/ScreenHeader';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
-const ANKI_BASIC_NOTETYPE_ID = 1;
+function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+    );
+}
 
 type ImportSummary = {
     added: number;
@@ -78,9 +83,15 @@ function delimitedParseOptions(fileType: ImportFileType): { delimiter?: string }
 }
 
 export default function ImportScreen() {
-    const { t, l } = useI18n();
+    const { t, l, locale } = useI18n();
     const router = useRouter();
-    const { incomingUri } = useLocalSearchParams<{ incomingUri?: string | string[] }>();
+    const params = useLocalSearchParams<{
+        incomingUri?: string | string[];
+        deckId?: string;
+        deckName?: string;
+        deck?: string;
+    }>();
+    const incomingUri = params.incomingUri;
     const { settings } = useAppSettings();
     const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
@@ -88,22 +99,25 @@ export default function ImportScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const availableFormats = IMPORT_FORMATS;
 
-    const subjects = React.useMemo(() => getAllSubjects(), [dataVersion]);
-    const [subject, setSubject] = useState(subjects[0]?.id ?? '');
-    const [topic, setTopic] = useState('');
-    // Anki's "import into deck": null follows the selected course's deck.
-    const [targetDeckId, setTargetDeckId] = useState<number | null>(null);
+    const [targetDeckId, setTargetDeckId] = useState<number>(() => resolveInitialTargetDeckId(params));
     const [showDeckPicker, setShowDeckPicker] = useState(false);
-    const [showNewSubject, setShowNewSubject] = useState(false);
-    const [newSubjectName, setNewSubjectName] = useState('');
     const targetDeck = useMemo(
-        () => getDeck(targetDeckId ?? resolveSubjectDeckId(subject)),
-        [targetDeckId, subject, dataVersion],
+        () => getDeck(targetDeckId) ?? getDeckByName('Varsayılan') ?? getDeck(1),
+        [targetDeckId, dataVersion],
     );
     const deckPickerDecks = useMemo(
         () => getAllDecks().filter((deck) => !deck.isFiltered),
         [dataVersion, showDeckPicker],
     );
+    const [noteTypeId, setNoteTypeId] = useState<number>(1);
+    const [showNoteTypePicker, setShowNoteTypePicker] = useState(false);
+    const selectedNoteType = useMemo(
+        () => getNoteType(noteTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId) ?? BUILTIN_NOTE_TYPES[0]!,
+        [noteTypeId, dataVersion],
+    );
+    const [columnMappings, setColumnMappings] = useState<Record<number, string>>({});
+    const [mappingModalColumn, setMappingModalColumn] = useState<number | null>(null);
+
     const [fileType, setFileType] = useState<ImportFileType>('csv');
     const [fileName, setFileName] = useState<string | null>(null);
     const [fileText, setFileText] = useState<string | null>(null);
@@ -121,7 +135,6 @@ export default function ImportScreen() {
     const handledIncomingUri = useRef<string | null>(null);
 
     const selectedFormat = availableFormats.find((format) => format.id === fileType) ?? availableFormats[0] ?? IMPORT_FORMATS[0]!;
-    const selectedSubject = subjects.find((entry) => entry.id === subject);
     const hasFile = fileText !== null || fileBytes !== null;
     const packageImport = fileType === 'apkg' || fileType === 'colpkg';
 
@@ -136,6 +149,8 @@ export default function ImportScreen() {
         setFileBytes(null);
         setRowCount(0);
         setResult(null);
+        setColumnMappings({});
+        setMappingModalColumn(null);
     };
 
     const selectFileType = (next: ImportFileType) => {
@@ -193,8 +208,8 @@ export default function ImportScreen() {
         switch (type) {
             case 'csv':
                 return l(
-                    'CSV için ilk üç sütun Soru, Cevap, Kaynak olmalı; Kaynak boşsa aşağıdaki Konu kullanılır.',
-                    'For CSV, the first three columns should be Question, Answer, Source; if Source is empty, the Topic below is used.',
+                    'CSV için alanlar hedef kart türünün alanlarına sırasıyla eşlenir.',
+                    'For CSV, fields are mapped sequentially to the fields of the target note type.',
                 );
             case 'txt':
                 return l(
@@ -228,28 +243,6 @@ export default function ImportScreen() {
         }
     };
 
-    const openNewSubject = () => {
-        setNewSubjectName('');
-        setShowNewSubject(true);
-    };
-
-    const handleCreateSubject = () => {
-        const result = createCourse(newSubjectName);
-        if (!result.created) {
-            alert(t('common.error'), userFacingErrorMessage(
-                result.error,
-                l('Ders oluşturulamadı. Lütfen tekrar deneyin.', 'Could not create the course. Please try again.'),
-            ));
-            return;
-        }
-        setSubject(result.subject.id);
-        setTargetDeckId(null);
-        setTopic('');
-        setShowNewSubject(false);
-        setNewSubjectName('');
-        bumpDataVersion();
-    };
-
     const loadFile = async (uri: string, name: string, nextType: ImportFileType, knownSize?: number) => {
         setFileType(nextType);
         setFileName(name);
@@ -274,6 +267,17 @@ export default function ImportScreen() {
         const parsed = parseDelimited(text, delimitedParseOptions(nextType));
         setRowCount(parsed.rows.length);
         setTextHtml(parsed.metadata.html ?? false);
+        setColumnMappings({});
+        if (parsed.metadata.notetype) {
+            const allTypes = getAllNoteTypes();
+            const targetName = parsed.metadata.notetype.trim().toLocaleLowerCase();
+            const found = allTypes.find((nt) => nt.name.trim().toLocaleLowerCase() === targetName);
+            if (found) setNoteTypeId(found.id);
+        }
+        if (parsed.metadata.deck) {
+            const foundDeck = getDeckByName(parsed.metadata.deck.trim());
+            if (foundDeck) setTargetDeckId(foundDeck.id);
+        }
     };
 
     useEffect(() => {
@@ -330,15 +334,54 @@ export default function ImportScreen() {
         }
     };
 
+    const parsedPreview = useMemo(() => {
+        if (!fileText || packageImport) return null;
+        return parseDelimited(fileText, delimitedParseOptions(fileType));
+    }, [fileText, packageImport, fileType]);
+
+    const previewColumnCount = parsedPreview?.rows[0]?.length ?? 0;
+    const sampleRow = parsedPreview?.rows[0];
+
+    const getEffectiveMapping = (colIdx: number): string => {
+        if (columnMappings[colIdx] !== undefined) return columnMappings[colIdx];
+        if (colIdx < selectedNoteType.fields.length) return `field:${colIdx}`;
+        if (colIdx === selectedNoteType.fields.length && previewColumnCount > selectedNoteType.fields.length) return 'tags';
+        return 'none';
+    };
+
+    const getMappingLabel = (mapping: string): string => {
+        if (mapping.startsWith('field:')) {
+            const fIdx = parseInt(mapping.slice(6), 10);
+            const field = selectedNoteType.fields[fIdx];
+            return field ? `${l('Alan', 'Field')}: ${field.name}` : l('Geçersiz alan', 'Invalid field');
+        }
+        if (mapping === 'tags') return l('Etiketler', 'Tags');
+        return l('Hiçbiri (Atla)', 'Nothing (Ignore)');
+    };
+
     const buildTextImportOptions = (): ImportOptions => {
-        const noteType =
-            getNoteType(ANKI_BASIC_NOTETYPE_ID) ??
-            BUILTIN_NOTE_TYPES.find((nt) => nt.id === ANKI_BASIC_NOTETYPE_ID)!;
+        const fieldColumns: number[] = new Array(selectedNoteType.fields.length).fill(-1);
+        let tagsColumn: number | undefined = undefined;
+
+        for (let c = 0; c < previewColumnCount; c++) {
+            const mapping = getEffectiveMapping(c);
+            if (mapping.startsWith('field:')) {
+                const fIdx = parseInt(mapping.slice(6), 10);
+                if (fIdx >= 0 && fIdx < selectedNoteType.fields.length) {
+                    fieldColumns[fIdx] = c;
+                }
+            } else if (mapping === 'tags') {
+                tagsColumn = c + 1;
+            }
+        }
+
         return {
-            noteType,
-            deckId: targetDeckId ?? resolveSubjectDeckId(subject),
+            noteType: selectedNoteType,
+            deckId: targetDeckId ?? targetDeck?.id ?? 1,
             ...delimitedParseOptions(fileType),
-            defaultFields: ['', ''],
+            fieldColumns,
+            tagsColumn,
+            defaultFields: new Array(selectedNoteType.fields.length).fill(''),
             duplicateResolution,
             matchScope,
             isHtml: textHtml,
@@ -351,7 +394,6 @@ export default function ImportScreen() {
         await new Promise((resolve) => setTimeout(resolve, 0));
 
         try {
-            const topicValue = topic.trim() || 'Genel';
             let imported: (ImportSummary & { indexed: SearchIndexCard[] }) | null = null;
 
             if ((fileType === 'apkg' || fileType === 'colpkg') && fileBytes) {
@@ -359,8 +401,8 @@ export default function ImportScreen() {
                 // package import so an unexpected device/storage failure is recoverable.
                 await createBackupNow();
                 imported = await importApkg(fileBytes, {
-                    subject,
-                    topic: topicValue,
+                    subject: targetDeck?.name ?? 'genel',
+                    topic: 'Genel',
                     rolloverHour: settings.dayRolloverHour,
                     fileName: fileName ?? undefined,
                     withScheduling: fileType === 'colpkg' ? true : withScheduling,
@@ -453,51 +495,40 @@ export default function ImportScreen() {
             />
             <ScrollView contentContainerStyle={styles.content}>
                 {!packageImport ? (
-                    <>
-                        <Text style={styles.label}>{l('HEDEF DESTE', 'TARGET DECK')}</Text>
+                    <View style={styles.selectorGroup}>
                         <TouchableOpacity
-                            style={styles.deckSelector}
+                            style={styles.ankiSelectorRow}
+                            onPress={() => setShowNoteTypePicker(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l(
+                                `Not türü: ${localizeNoteTypeName(locale, selectedNoteType.name)}`,
+                                `Note type: ${localizeNoteTypeName(locale, selectedNoteType.name)}`,
+                            )}
+                        >
+                            <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
+                            <Text style={styles.ankiSelectorValue} numberOfLines={1}>
+                                {localizeNoteTypeName(locale, selectedNoteType.name)}
+                            </Text>
+                            <View style={styles.ankiSelectorChevron}>
+                                <ChevronDownIcon color={colors.textMuted} size={19} />
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.ankiSelectorRow, styles.ankiSelectorRowLast]}
                             onPress={() => setShowDeckPicker(true)}
                             accessibilityRole="button"
                             accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
                         >
-                            <Text style={styles.deckSelectorText} numberOfLines={1}>
-                                🗃️ {targetDeck?.name ?? '—'} ▾
+                            <Text style={styles.ankiSelectorLabel}>{l('Deste:', 'Deck:')}</Text>
+                            <Text style={styles.ankiSelectorValue} numberOfLines={1}>
+                                {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                             </Text>
+                            <View style={styles.ankiSelectorChevron}>
+                                <ChevronDownIcon color={colors.textMuted} size={19} />
+                            </View>
                         </TouchableOpacity>
-
-                        <Text style={styles.label}>{l('DERS', 'SUBJECT')}</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
-                            <TouchableOpacity
-                                style={[styles.subjectChip, styles.subjectChipNew]}
-                                onPress={openNewSubject}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Yeni ders oluştur', 'Create new course')}
-                            >
-                                <Text style={[styles.subjectChipText, styles.subjectChipNewText]}>{l('+ Yeni', '+ New')}</Text>
-                            </TouchableOpacity>
-                            {subjects.map((entry) => (
-                                <TouchableOpacity
-                                    key={entry.id}
-                                    style={[styles.subjectChip, subject === entry.id && styles.subjectChipActive]}
-                                    onPress={() => setSubject(entry.id)}
-                                >
-                                    <Text style={[styles.subjectChipText, subject === entry.id && styles.subjectChipTextActive]}>
-                                        {entry.icon} {entry.name}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-
-                        <Text style={styles.label}>{l('KONU (Kaynak sütunu yoksa)', 'TOPIC (when there is no Source column)')}</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={topic}
-                            onChangeText={setTopic}
-                            placeholder={selectedSubject?.topics[0] || l('Genel', 'General')}
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </>
+                    </View>
                 ) : null}
 
                 <Text style={styles.label}>{l('DOSYA TİPİ', 'FILE TYPE')}</Text>
@@ -619,6 +650,103 @@ export default function ImportScreen() {
                     </Text>
                 )}
 
+                {fileText !== null && !packageImport && previewColumnCount > 0 ? (
+                    <>
+                        <View style={styles.mappingCard}>
+                            <Text style={styles.label}>{l('ALAN EŞLEMESİ', 'FIELD MAPPING')}</Text>
+                            <Text style={styles.mappingHint}>
+                                {l(
+                                    'Dosyadaki sütunların hangi nota ve alanlara aktarılacağını belirleyin.',
+                                    'Choose how columns from your file map to note fields.',
+                                )}
+                            </Text>
+                            <View style={styles.mappingList}>
+                                {Array.from({ length: previewColumnCount }).map((_, colIdx) => {
+                                    const mapping = getEffectiveMapping(colIdx);
+                                    const sampleVal = sampleRow?.[colIdx] ?? '';
+                                    return (
+                                        <TouchableOpacity
+                                            key={colIdx}
+                                            style={styles.mappingRow}
+                                            onPress={() => setMappingModalColumn(colIdx)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={l(
+                                                `Sütun ${colIdx + 1}: ${getMappingLabel(mapping)}`,
+                                                `Column ${colIdx + 1}: ${getMappingLabel(mapping)}`,
+                                            )}
+                                        >
+                                            <View style={styles.mappingColInfo}>
+                                                <Text style={styles.mappingColIndex}>
+                                                    {l(`Sütun ${colIdx + 1}`, `Column ${colIdx + 1}`)}
+                                                </Text>
+                                                {sampleVal ? (
+                                                    <Text style={styles.mappingSampleText} numberOfLines={1}>
+                                                        “{sampleVal}”
+                                                    </Text>
+                                                ) : null}
+                                            </View>
+                                            <View style={styles.mappingTargetBadge}>
+                                                <Text style={styles.mappingTargetText} numberOfLines={1}>
+                                                    {getMappingLabel(mapping)}
+                                                </Text>
+                                                <ChevronDownIcon color={colors.accent} size={16} />
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+
+                        {sampleRow ? (
+                            <View style={styles.previewCard}>
+                                <Text style={styles.label}>{l('ÖNİZLEME (1. SATIR)', 'PREVIEW (ROW 1)')}</Text>
+                                <View style={styles.previewContent}>
+                                    {selectedNoteType.fields.map((field, fIdx) => {
+                                        let mappedCol: number | undefined;
+                                        for (let c = 0; c < previewColumnCount; c++) {
+                                            if (getEffectiveMapping(c) === `field:${fIdx}`) {
+                                                mappedCol = c;
+                                                break;
+                                            }
+                                        }
+                                        const val = (mappedCol !== undefined && mappedCol < sampleRow.length)
+                                            ? sampleRow[mappedCol]
+                                            : '';
+                                        return (
+                                            <View key={field.name} style={styles.previewRow}>
+                                                <Text style={styles.previewFieldLabel}>{field.name}:</Text>
+                                                <Text style={styles.previewFieldValue} numberOfLines={2}>
+                                                    {val || l('(Boş)', '(Empty)')}
+                                                </Text>
+                                            </View>
+                                        );
+                                    })}
+                                    {(() => {
+                                        let tagsCol: number | undefined;
+                                        for (let c = 0; c < previewColumnCount; c++) {
+                                            if (getEffectiveMapping(c) === 'tags') {
+                                                tagsCol = c;
+                                                break;
+                                            }
+                                        }
+                                        if (tagsCol !== undefined && tagsCol < sampleRow.length) {
+                                            return (
+                                                <View style={styles.previewRow}>
+                                                    <Text style={styles.previewFieldLabel}>{l('Etiketler', 'Tags')}:</Text>
+                                                    <Text style={styles.previewFieldValue} numberOfLines={2}>
+                                                        {sampleRow[tagsCol] || l('(Boş)', '(Empty)')}
+                                                    </Text>
+                                                </View>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+                                </View>
+                            </View>
+                        ) : null}
+                    </>
+                ) : null}
+
                 {result ? (
                     <View style={styles.resultCard}>
                         <Text style={styles.resultTitle}>{l('İçe aktarma tamamlandı', 'Import Complete')}</Text>
@@ -704,66 +832,124 @@ export default function ImportScreen() {
 
             </ScrollView>
 
-            <DeckPickerModal
-                visible={showDeckPicker}
-                colors={colors}
-                decks={deckPickerDecks}
-                selectedDeckName={targetDeckId === null ? null : targetDeck?.name ?? null}
-                title={l('Hedef deste', 'Target Deck')}
-                allDecksLabel={l('Otomatik — seçilen dersin destesi', 'Automatic — deck for the selected subject')}
-                searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
-                cancelLabel={t('common.cancel')}
-                closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
-                searchAccessibilityLabel={l('Deste ara', 'Search decks')}
-                createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
-                onClose={() => setShowDeckPicker(false)}
-                onSelect={(name) => {
-                    if (!name) {
-                        setTargetDeckId(null);
+            {showDeckPicker && (
+                <DeckPickerModal
+                    visible={showDeckPicker}
+                    colors={colors}
+                    decks={deckPickerDecks}
+                    selectedDeckName={targetDeck?.name ?? null}
+                    activeDeckName={targetDeck?.name ?? null}
+                    title={l('Hedef deste', 'Target Deck')}
+                    allDecksLabel={null}
+                    searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
+                    emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                    cancelLabel={t('common.cancel')}
+                    closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
+                    searchAccessibilityLabel={l('Deste ara', 'Search decks')}
+                    createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
+                    onClose={() => setShowDeckPicker(false)}
+                    onSelect={(name) => {
+                        if (!name) return;
+                        const deck = getDeckByName(name);
+                        if (!deck) return;
+                        setTargetDeckId(deck.id);
                         setShowDeckPicker(false);
-                        return;
-                    }
-                    const deck = deckPickerDecks.find((candidate) => candidate.name === name);
-                    if (!deck) return;
-                    setTargetDeckId(deck.id);
-                    setShowDeckPicker(false);
-                }}
-                onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
-                    bumpDataVersion();
-                    return created.name;
-                }}
-            />
+                    }}
+                    onCreateDeck={(name) => {
+                        const created = createDeck(getAvailableDeckName(name));
+                        bumpDataVersion();
+                        return created.name;
+                    }}
+                />
+            )}
 
-            <Modal visible={showNewSubject} transparent animationType="fade" onRequestClose={() => setShowNewSubject(false)}>
-                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setShowNewSubject(false)}
-                        accessibilityLabel={l('Yeni ders penceresini kapat', 'Close new course dialog')}
-                    />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Yeni ders', 'New Course')}</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={newSubjectName}
-                            onChangeText={setNewSubjectName}
-                            placeholder={l('Ders adı', 'Course name')}
-                            placeholderTextColor={colors.textMuted}
-                            autoFocus
-                            returnKeyType="done"
-                            onSubmitEditing={handleCreateSubject}
-                        />
-                        <TouchableOpacity style={styles.doneBtn} onPress={handleCreateSubject}>
-                            <Text style={styles.doneBtnText}>{t('common.create')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowNewSubject(false)}>
-                            <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
+            {showNoteTypePicker && (
+                <NoteTypePickerModal
+                    visible={showNoteTypePicker}
+                    colors={colors}
+                    selectedId={noteTypeId}
+                    onSelect={(id) => {
+                        setNoteTypeId(id);
+                        setColumnMappings({});
+                    }}
+                    onClose={() => setShowNoteTypePicker(false)}
+                />
+            )}
+
+            {mappingModalColumn !== null && (
+                <Modal
+                    visible={mappingModalColumn !== null}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setMappingModalColumn(null)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <Pressable style={StyleSheet.absoluteFill} onPress={() => setMappingModalColumn(null)} accessibilityLabel={l('Kapat', 'Close')} />
+                        <View style={styles.modalCard}>
+                            <Text style={styles.modalTitle}>
+                                {l(
+                                    `Sütun ${mappingModalColumn + 1} Eşlemesi`,
+                                    `Map Column ${mappingModalColumn + 1}`,
+                                )}
+                            </Text>
+                            <ScrollView style={styles.mappingModalList} contentContainerStyle={styles.mappingModalContent}>
+                                {selectedNoteType.fields.map((field, fIdx) => {
+                                    const value = `field:${fIdx}`;
+                                    const selected = getEffectiveMapping(mappingModalColumn!) === value;
+                                    return (
+                                        <TouchableOpacity
+                                            key={field.name}
+                                            style={[styles.pickerOption, selected && styles.pickerOptionActive]}
+                                            onPress={() => {
+                                                setColumnMappings((prev) => ({ ...prev, [mappingModalColumn!]: value }));
+                                                setMappingModalColumn(null);
+                                            }}
+                                            accessibilityRole="button"
+                                            accessibilityState={{ selected }}
+                                        >
+                                            <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>
+                                                {l('Alan', 'Field')}: {field.name}
+                                            </Text>
+                                            {selected && <Text style={styles.pickerCheck}>✓</Text>}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                                <TouchableOpacity
+                                    style={[styles.pickerOption, getEffectiveMapping(mappingModalColumn!) === 'tags' && styles.pickerOptionActive]}
+                                    onPress={() => {
+                                        setColumnMappings((prev) => ({ ...prev, [mappingModalColumn!]: 'tags' }));
+                                        setMappingModalColumn(null);
+                                    }}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: getEffectiveMapping(mappingModalColumn!) === 'tags' }}
+                                >
+                                    <Text style={[styles.pickerOptionText, getEffectiveMapping(mappingModalColumn!) === 'tags' && styles.pickerOptionTextActive]}>
+                                        {l('Etiketler (Tags)', 'Tags')}
+                                    </Text>
+                                    {getEffectiveMapping(mappingModalColumn!) === 'tags' && <Text style={styles.pickerCheck}>✓</Text>}
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.pickerOption, getEffectiveMapping(mappingModalColumn!) === 'none' && styles.pickerOptionActive]}
+                                    onPress={() => {
+                                        setColumnMappings((prev) => ({ ...prev, [mappingModalColumn!]: 'none' }));
+                                        setMappingModalColumn(null);
+                                    }}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: getEffectiveMapping(mappingModalColumn!) === 'none' }}
+                                >
+                                    <Text style={[styles.pickerOptionText, getEffectiveMapping(mappingModalColumn!) === 'none' && styles.pickerOptionTextActive]}>
+                                        {l('Hiçbiri (Atla)', 'Nothing (Ignore)')}
+                                    </Text>
+                                    {getEffectiveMapping(mappingModalColumn!) === 'none' && <Text style={styles.pickerCheck}>✓</Text>}
+                                </TouchableOpacity>
+                            </ScrollView>
+                            <TouchableOpacity style={styles.modalClose} onPress={() => setMappingModalColumn(null)} accessibilityRole="button">
+                                <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </KeyboardAvoidingView>
-            </Modal>
+                </Modal>
+            )}
         </SafeAreaView>
     );
 }
@@ -779,21 +965,22 @@ function createStyles(colors: ColorScheme) {
         color: colors.textMuted,
         textTransform: 'uppercase',
     },
-    subjectScroll: { marginBottom: 4 },
-    subjectChip: {
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 6,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.full,
-        borderWidth: 1,
-        borderColor: colors.border,
-        marginRight: 6,
+    selectorGroup: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
     },
-    subjectChipActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
-    subjectChipNew: { borderColor: colors.accent },
-    subjectChipText: { fontSize: FontSize.sm, color: colors.textSecondary },
-    subjectChipTextActive: { color: colors.accent, fontWeight: '600' },
-    subjectChipNewText: { color: colors.accent, fontWeight: '700' },
+    ankiSelectorRow: {
+        minHeight: 50,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+        paddingHorizontal: Spacing.sm,
+    },
+    ankiSelectorRowLast: { borderBottomWidth: StyleSheet.hairlineWidth },
+    ankiSelectorLabel: { width: 72, fontSize: FontSize.md, fontWeight: '800', color: colors.textPrimary },
+    ankiSelectorValue: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
+    ankiSelectorChevron: { width: 28, height: 40, alignItems: 'center', justifyContent: 'center' },
     formatGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -852,15 +1039,6 @@ function createStyles(colors: ColorScheme) {
         color: colors.textMuted,
         lineHeight: 19,
     },
-    input: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-    },
     fileBtn: {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
@@ -905,30 +1083,159 @@ function createStyles(colors: ColorScheme) {
     doneBtnText: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
     cancelBtn: { paddingVertical: Spacing.md, alignItems: 'center' },
     cancelBtnText: { fontSize: FontSize.md, color: colors.textMuted },
-    deckSelector: {
+    mappingCard: {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 10,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
+        gap: Spacing.sm,
     },
-    deckSelectorText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    mappingHint: {
+        fontSize: FontSize.xs,
+        color: colors.textMuted,
+        lineHeight: 18,
+    },
+    mappingList: {
+        gap: 6,
+    },
+    mappingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 10,
+        paddingHorizontal: Spacing.md,
+        backgroundColor: colors.bgPrimary,
+        borderRadius: BorderRadius.sm,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+    },
+    mappingColInfo: {
+        flex: 1,
+        marginRight: Spacing.sm,
+    },
+    mappingColIndex: {
+        fontSize: FontSize.sm,
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
+    mappingSampleText: {
+        fontSize: FontSize.xs,
+        color: colors.textMuted,
+        marginTop: 2,
+    },
+    mappingTargetBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: colors.bgCard,
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 6,
+        borderRadius: BorderRadius.sm,
+        borderWidth: 1,
+        borderColor: colors.accent,
+    },
+    mappingTargetText: {
+        fontSize: FontSize.sm,
+        fontWeight: '600',
+        color: colors.accent,
+        maxWidth: 160,
+    },
+    previewCard: {
+        backgroundColor: colors.bgCard,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
+        gap: Spacing.sm,
+    },
+    previewContent: {
+        gap: Spacing.xs,
+        backgroundColor: colors.bgPrimary,
+        borderRadius: BorderRadius.sm,
+        padding: Spacing.sm,
+    },
+    previewRow: {
+        flexDirection: 'row',
+        gap: Spacing.sm,
+        paddingVertical: 3,
+    },
+    previewFieldLabel: {
+        fontSize: FontSize.sm,
+        fontWeight: '700',
+        color: colors.textSecondary,
+        minWidth: 70,
+    },
+    previewFieldValue: {
+        fontSize: FontSize.sm,
+        color: colors.textPrimary,
+        flex: 1,
+    },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.35)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         alignItems: 'center',
         justifyContent: 'center',
         padding: Spacing.xl,
     },
     modalCard: {
         width: '100%',
-        maxWidth: 420,
+        maxWidth: 380,
+        maxHeight: '80%',
         backgroundColor: colors.bgCard,
         borderRadius: BorderRadius.lg,
-        padding: Spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: Spacing.lg,
         gap: Spacing.sm,
     },
-    modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    modalTitle: {
+        fontSize: FontSize.lg,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: Spacing.xs,
+    },
+    mappingModalList: {
+        maxHeight: 340,
+    },
+    mappingModalContent: {
+        gap: Spacing.xs,
+    },
+    pickerOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.md,
+        backgroundColor: colors.bgPrimary,
+    },
+    pickerOptionActive: {
+        backgroundColor: colors.accentLight,
+    },
+    pickerOptionText: {
+        fontSize: FontSize.md,
+        color: colors.textPrimary,
+        flex: 1,
+    },
+    pickerOptionTextActive: {
+        color: colors.accent,
+        fontWeight: '600',
+    },
+    pickerCheck: {
+        fontSize: FontSize.md,
+        color: colors.accent,
+        fontWeight: '700',
+        marginLeft: Spacing.sm,
+    },
+    modalClose: {
+        alignItems: 'center',
+        paddingVertical: Spacing.sm,
+        marginTop: Spacing.xs,
+    },
+    modalCloseText: {
+        fontSize: FontSize.md,
+        color: colors.textMuted,
+    },
     });
 }

@@ -209,6 +209,8 @@ export interface AppSettings {
     autoAdvance: boolean;
     /** Anki Preferences: stop the playing audio when the answer is shown or graded. */
     interruptAudioOnAnswer: boolean;
+    /** Default audio playback speed (e.g. 0.75, 1.0, 1.25, 1.5, 2.0). */
+    audioPlaybackRate?: number;
     /** Anki Preferences: show the remaining new/learning/review counts while studying. */
     showRemainingCount: boolean;
     /** Anki Preferences: show the next review time above each answer button. */

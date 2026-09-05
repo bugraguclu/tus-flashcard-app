@@ -9,6 +9,7 @@ import {
     type TranslationKey,
     type TranslationParams,
 } from '../lib/i18n';
+import { DEFAULT_SETTINGS } from '../lib/storage';
 
 function useDeviceLanguageCodes() {
     const deviceLocales = useLocales();
@@ -18,7 +19,7 @@ function useDeviceLanguageCodes() {
 /** Used by startup/error surfaces that render before persisted settings are available. */
 export function useSystemI18n() {
     const deviceLanguageCodes = useDeviceLanguageCodes();
-    const locale = resolveAppLocale('system', deviceLanguageCodes);
+    const locale = resolveAppLocale(DEFAULT_SETTINGS.language, deviceLanguageCodes);
     const t = useCallback(
         (key: TranslationKey, params?: TranslationParams) => translate(locale, key, params),
         [locale],

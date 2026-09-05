@@ -816,4 +816,27 @@ describe('queue counters and daily limits', () => {
         expect(servedReviewIds(spent)).toHaveLength(0);
         expect(spent.heldBackReviewCount).toBe(1);
     });
+
+    it('computes upcomingCardsCount for rollover when daily limit is reached', () => {
+        saveDeckConfig({ ...deckConfig, newPerDay: 2 });
+        const limited: AppSettings = { ...settings, dailyNewLimit: 2 };
+
+        // 3 new cards in deck. Today 2 are studied, 1 is held back.
+        const exhausted = getStudyQueue({ settings: limited, newCardsStudiedToday: 2 });
+        expect(exhausted.stats.newCount).toBe(0);
+        expect(exhausted.heldBackNewCount).toBe(3);
+        expect(exhausted.dailyNewLimitReached).toBe(true);
+        // Tomorrow at rollover, up to newPerDay (2) will be served from the 3 held back.
+        expect(exhausted.upcomingCardsCount).toBe(2);
+    });
+
+    it('computes upcomingCardsCount when reviews are scheduled for tomorrow', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveDeckConfig({ ...deckConfig, newPerDay: 0, maxReviewsPerDay: 10 });
+        saveAnkiCard(makeCard(2020, 101, 7, { type: 2, queue: 2, due: today + 1, ivl: 1, factor: 2500, reps: 1 }));
+
+        const result = getStudyQueue({ settings });
+        expect(result.cards.filter((c) => c.cardId === 2020)).toHaveLength(0);
+        expect(result.upcomingCardsCount).toBeGreaterThanOrEqual(1);
+    });
 });

@@ -77,11 +77,12 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
-    language: 'system',
+    language: 'tr',
     themeMode: 'light',
     keyBindings: DEFAULT_KEY_BINDINGS,
     autoAdvance: false,
     interruptAudioOnAnswer: true,
+    audioPlaybackRate: 1.0,
     showRemainingCount: true,
     showNextReviewTimes: true,
     newCardDeckMode: 'current',
@@ -440,7 +441,7 @@ function normalizeThemeMode(value: unknown): ThemeMode {
 }
 
 function normalizeLanguage(value: unknown): AppSettings['language'] {
-    return value === 'tr' || value === 'en' || value === 'system' ? value : 'system';
+    return value === 'tr' || value === 'en' || value === 'system' ? value : 'tr';
 }
 
 /** A key binding is a single printable char, or a named key like "Space"/"Enter". */

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
+import { useCollectionInvalidation } from '../contexts/AppContext';
 import { createDeck, getAllDecks, getAvailableDeckName, renameDeck, updateFilteredDeck } from '../lib/deckManager';
 import {
     DEFAULT_SECOND_SEARCH_LIMIT,
@@ -54,6 +55,7 @@ export default function FilteredDeckOptionsModal({
     onSaved,
 }: FilteredDeckOptionsModalProps) {
     const { t, l, locale } = useI18n();
+    const { collectionVersion, invalidateCollection } = useCollectionInvalidation();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const insets = useSafeAreaInsets();
@@ -73,7 +75,7 @@ export default function FilteredDeckOptionsModal({
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [deckPickerTarget, setDeckPickerTarget] = useState<1 | 2>(1);
 
-    const regularDecks = useMemo(() => getAllDecks().filter((d) => !d.isFiltered), [visible]);
+    const regularDecks = useMemo(() => getAllDecks().filter((d) => !d.isFiltered), [visible, collectionVersion]);
     const selectedDeckName1 = useMemo(() => extractDeckNameFromSearch(search), [search]);
     const selectedDeckName2 = useMemo(() => extractDeckNameFromSearch(search2), [search2]);
     const currentPickerSelectedDeckName = deckPickerTarget === 2 ? selectedDeckName2 : selectedDeckName1;
@@ -295,6 +297,7 @@ export default function FilteredDeckOptionsModal({
                                 value={limit}
                                 onChangeText={(value) => setLimit(value.replace(/\D/g, '').slice(0, 5))}
                                 keyboardType="number-pad"
+                                inputMode="numeric"
                                 maxLength={5}
                                 accessibilityLabel={l('Birinci filtre kart limiti', 'First filter card limit')}
                             />
@@ -397,6 +400,7 @@ export default function FilteredDeckOptionsModal({
                                         value={limit2}
                                         onChangeText={(value) => setLimit2(value.replace(/\D/g, '').slice(0, 5))}
                                         keyboardType="number-pad"
+                                        inputMode="numeric"
                                         maxLength={5}
                                         accessibilityLabel={l('İkinci filtre kart limiti', 'Second filter card limit')}
                                     />
@@ -552,6 +556,7 @@ export default function FilteredDeckOptionsModal({
                         colors={colors}
                         decks={regularDecks}
                         selectedDeckName={currentPickerSelectedDeckName}
+                        activeDeckName={currentPickerSelectedDeckName}
                         title={l('Hedef deste', 'Target Deck')}
                         allDecksLabel={l('Tüm desteler', 'All decks')}
                         searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -572,6 +577,7 @@ export default function FilteredDeckOptionsModal({
                         onCreateDeck={(newDeckName) => {
                             try {
                                 const created = createDeck(getAvailableDeckName(newDeckName));
+                                invalidateCollection();
                                 return created.name;
                             } catch (error) {
                                 console.warn('[FilteredDeckOptionsModal] create deck from picker failed:', error);

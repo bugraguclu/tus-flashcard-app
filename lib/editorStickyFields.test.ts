@@ -10,7 +10,9 @@ vi.mock('./storage', () => ({
 }));
 
 import {
+    loadNoteTypeStickyFields,
     loadStickyEditorFields,
+    saveNoteTypeStickyFields,
     saveStickyEditorFields,
     stripMediaFromStickyText,
     type StickyEditorFields,
@@ -63,5 +65,22 @@ describe('editorStickyFields', () => {
         const loaded = loadStickyEditorFields();
         expect(loaded.question?.value).toBe('Ön Metin');
         expect(loaded.question?.value).not.toContain('<img');
+    });
+
+    it('persists and loads note-type-aware sticky fields', () => {
+        saveNoteTypeStickyFields(100, {
+            0: { pinned: true, value: 'Kelime <img src="word.png">' },
+            1: { pinned: false, value: 'Anlam' },
+            2: { pinned: true, value: 'Örnek Cümle [sound:ex.mp3]' },
+        });
+
+        const loaded = loadNoteTypeStickyFields(100);
+        expect(loaded[0]?.pinned).toBe(true);
+        expect(loaded[0]?.value).toBe('Kelime');
+        expect(loaded[0]?.value).not.toContain('<img');
+        expect(loaded[1]).toBeUndefined();
+        expect(loaded[2]?.pinned).toBe(true);
+        expect(loaded[2]?.value).toBe('Örnek Cümle');
+        expect(loaded[2]?.value).not.toContain('[sound:');
     });
 });

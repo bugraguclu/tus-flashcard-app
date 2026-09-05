@@ -573,6 +573,7 @@ export default function CustomStudyModal({
                                             onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
                                             onBlur={() => setValueDraft(String(value))}
                                             keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
+                                            inputMode={bounds.min < 0 ? 'text' : 'numeric'}
                                             maxLength={6}
                                             accessibilityLabel={preSpinLabel()}
                                         />

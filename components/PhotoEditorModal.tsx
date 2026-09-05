@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image as NativeImage,
@@ -15,8 +15,9 @@ import {
     View,
     Pressable,
     useWindowDimensions,
+    type LayoutChangeEvent,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
     Ellipse,
     G,
@@ -30,9 +31,8 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { captureRef } from 'react-native-view-shot';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert } from '../lib/confirm';
-import { readUriBytes } from '../lib/files';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
-import { saveMediaBytes } from '../lib/mediaStore';
+import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import {
     applyAspectRatioToCropRect,
     applyPhotoEraserSweep,
@@ -678,16 +678,43 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         }
     }, [visible, photo?.uri, blankPage]);
 
-    const compact = screenHeight < 760;
-    const maxCanvasWidth = Math.min(screenWidth - 16, 940);
-    const maxCanvasHeight = Math.max(220, screenHeight - (compact ? 244 : 286));
+    const insets = useSafeAreaInsets();
+    const [stageLayout, setStageLayout] = useState<{ width: number; height: number } | null>(null);
+
+    const onStageLayout = useCallback((event: LayoutChangeEvent) => {
+        const { width, height } = event.nativeEvent.layout;
+        if (width > 0 && height > 0) {
+            setStageLayout((prev) => {
+                if (prev && Math.abs(prev.width - width) < 2 && Math.abs(prev.height - height) < 2) {
+                    return prev;
+                }
+                return { width, height };
+            });
+        }
+    }, []);
+
+    const estimatedControlsHeight = tool === 'crop' ? 168 : 124;
+    const fallbackAvailableHeight = Math.max(
+        180,
+        screenHeight - insets.top - insets.bottom - 56 - estimatedControlsHeight - 24,
+    );
+
+    const availableWidth = stageLayout ? Math.max(120, stageLayout.width - 16) : Math.min(screenWidth - 16, 940);
+    const availableHeight = stageLayout ? Math.max(120, stageLayout.height - 16) : fallbackAvailableHeight;
+
     const ratio = sourceSize.width / sourceSize.height;
     const canvasSize = useMemo(() => {
-        if (maxCanvasWidth / maxCanvasHeight > ratio) {
-            return { width: maxCanvasHeight * ratio, height: maxCanvasHeight };
+        if (availableWidth / availableHeight > ratio) {
+            return {
+                width: Math.max(1, Math.round(availableHeight * ratio)),
+                height: Math.max(1, Math.round(availableHeight)),
+            };
         }
-        return { width: maxCanvasWidth, height: maxCanvasWidth / ratio };
-    }, [maxCanvasWidth, maxCanvasHeight, ratio]);
+        return {
+            width: Math.max(1, Math.round(availableWidth)),
+            height: Math.max(1, Math.round(availableWidth / ratio)),
+        };
+    }, [availableWidth, availableHeight, ratio]);
     const canvasSizeRef = useRef(canvasSize);
     canvasSizeRef.current = canvasSize;
 
@@ -1397,22 +1424,14 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         }
     };
 
-    /** Native export: capture the live canvas, scaled up to the source's own resolution. */
-    const captureCanvasBytes = async (): Promise<Uint8Array> => {
-        // captureRef takes its size in points but writes out at the screen's pixel density, so the
-        // request has to be divided by that density to land on the resolution we actually want —
-        // otherwise a 3x iPhone turns a 1600px target into a 4800px, multi-megabyte attachment.
-        const canvasLongEdge = Math.max(1, canvasSize.width, canvasSize.height) * PixelRatio.get();
-        const targetLongEdge = Math.min(3000, Math.max(sourceSize.width, sourceSize.height, canvasLongEdge));
-        const scale = Math.min(4, Math.max(1, targetLongEdge / canvasLongEdge));
-        const uri = await captureRef(canvasRef, {
+    /** Native export: capture the live canvas directly to a temporary file using renderInContext */
+    const captureCanvasFile = async (): Promise<string> => {
+        return captureRef(canvasRef, {
             format: 'png',
             quality: 1,
             result: 'tmpfile',
-            width: Math.round(canvasSize.width * scale),
-            height: Math.round(canvasSize.height * scale),
+            useRenderInContext: true,
         });
-        return readUriBytes(uri);
     };
 
     const save = async () => {
@@ -1443,28 +1462,28 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         setSaving(true);
         try {
             const filename = sanitizeMediaFilename(`${Date.now()}_${page ? 'cizim' : 'duzenlenmis'}.png`);
-            let bytes: Uint8Array;
             if (page && Platform.OS === 'web') {
-                bytes = await rasterizeBlankCanvasWeb(
+                const bytes = await rasterizeBlankCanvasWeb(
                     { ...page, width: sourceSize.width, height: sourceSize.height },
                     annotationsRef.current,
                     sourceSize.width,
                     sourceSize.height,
                 );
+                await saveMediaBytes(filename, bytes, 'image/png');
             } else if (page) {
-                bytes = await captureCanvasBytes();
+                const captureUri = await captureCanvasFile();
+                await saveMediaFromUri(filename, captureUri, 'image/png');
             } else if (annotationsRef.current.length === 0) {
-                bytes = await readUriBytes(sourceUri);
+                await saveMediaFromUri(filename, sourceUri, 'image/jpeg');
             } else if (Platform.OS === 'web') {
-                bytes = await rasterizePhotoWeb(
+                const bytes = await rasterizePhotoWeb(
                     sourceUri, annotationsRef.current, sourceSize.width, sourceSize.height,
                 );
+                await saveMediaBytes(filename, bytes, 'image/png');
             } else {
-                // Export at the photo's own resolution, not the on-screen preview size, so an
-                // annotated picture stays as sharp as the original the user picked.
-                bytes = await captureCanvasBytes();
+                const captureUri = await captureCanvasFile();
+                await saveMediaFromUri(filename, captureUri, 'image/png');
             }
-            await saveMediaBytes(filename, bytes, 'image/png');
             onSaved(filename);
             onClose();
         } catch (error) {
@@ -1591,7 +1610,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.stage}>
+                <View style={styles.stage} onLayout={onStageLayout}>
                     <View
                         ref={canvasRef}
                         collapsable={false}
@@ -2323,7 +2342,7 @@ function createStyles(colors: ColorScheme) {
         },
         saveButtonText: { color: '#fff', fontWeight: '800', fontSize: FontSize.md },
         saveButtonDisabled: { opacity: 0.5 },
-        stage: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
+        stage: { flex: 1, minHeight: 0, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 8 },
         canvas: { backgroundColor: '#000', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
         controls: {
             backgroundColor: '#1f2937',

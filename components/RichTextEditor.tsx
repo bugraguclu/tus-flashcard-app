@@ -43,6 +43,7 @@ export type RichTextCommand =
 
 export interface RichTextEditorHandle {
     focus: () => void;
+    blur: () => void;
     runCommand: (command: RichTextCommand, value?: string) => void;
     insertHtml: (html: string) => void;
     wrapSelection: (prefix: string, suffix: string) => void;
@@ -116,6 +117,11 @@ function editorDocument(
   }
   #editor:empty::before { content: attr(data-placeholder); color: ${colors.textMuted}; pointer-events: none; }
   #editor img, #editor video { max-width: 100%; height: auto; }
+  #editor audio { max-width: 100%; vertical-align: middle; }
+  .tus-audio-wrap { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; margin: 4px 0; vertical-align: middle; }
+  .tus-audio-wrap audio { max-width: calc(100% - 68px); }
+  .tus-audio-speed-btn { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; font-size: 12px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: ${colors.accent}; background: rgba(0, 0, 0, 0.06); border: 1px solid ${colors.border}; border-radius: 12px; cursor: pointer; user-select: none; -webkit-user-select: none; white-space: nowrap; line-height: 1.3; }
+  .tus-audio-speed-btn:active { opacity: 0.7; }
   #editor hr { border: 0; border-top: 1px solid ${colors.border}; margin: 10px 0; }
   #editor ul, #editor ol { padding-left: 24px; }
 </style>
@@ -132,6 +138,66 @@ function editorDocument(
       let lastHeight = 0;
       let lastState = '';
       editor.innerHTML = ${safeJsValue(safeValue)};
+
+      function cleanForExport(html) {
+        if (!html) return '';
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const wraps = temp.querySelectorAll('.tus-audio-wrap');
+        for (let i = 0; i < wraps.length; i++) {
+          const wrap = wraps[i];
+          const aud = wrap.querySelector('audio');
+          if (aud && wrap.parentNode) {
+            delete aud.dataset.tusSpeedInit;
+            wrap.parentNode.insertBefore(aud, wrap);
+            wrap.remove();
+          }
+        }
+        const btns = temp.querySelectorAll('.tus-audio-speed-btn');
+        for (let j = 0; j < btns.length; j++) {
+          btns[j].remove();
+        }
+        return temp.innerHTML;
+      }
+
+      function initAudioControls() {
+        const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+        const audios = editor.querySelectorAll('audio');
+        for (let i = 0; i < audios.length; i++) {
+          (function (audio) {
+            if (audio.dataset.tusSpeedInit) return;
+            audio.dataset.tusSpeedInit = 'true';
+            let curRate = 1.0;
+            audio.playbackRate = curRate;
+            audio.defaultPlaybackRate = curRate;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tus-audio-speed-btn';
+            btn.setAttribute('contenteditable', 'false');
+            btn.textContent = curRate + 'x';
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              let idx = speeds.indexOf(audio.playbackRate || 1.0);
+              if (idx === -1) idx = 1;
+              const next = speeds[(idx + 1) % speeds.length];
+              audio.playbackRate = next;
+              audio.defaultPlaybackRate = next;
+              btn.textContent = next + 'x';
+            });
+            if (audio.parentNode && !audio.parentNode.classList.contains('tus-audio-wrap')) {
+              const wrap = document.createElement('span');
+              wrap.className = 'tus-audio-wrap';
+              wrap.setAttribute('contenteditable', 'false');
+              audio.parentNode.insertBefore(wrap, audio);
+              wrap.appendChild(audio);
+              wrap.appendChild(btn);
+            }
+          })(audios[i]);
+        }
+      }
+
+      initAudioControls();
 
       function post(payload) {
         window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(payload));
@@ -166,7 +232,7 @@ function editorDocument(
 
       function emitChange() {
         saveSelection();
-        post({ type: 'change', html: editor.innerHTML });
+        post({ type: 'change', html: cleanForExport(editor.innerHTML) });
         reportState(true);
         reportHeight();
       }
@@ -198,7 +264,14 @@ function editorDocument(
 
       window.__tusEditorInsertHtml = function (html) {
         restoreSelection();
-        bridge.editDocument(function () { return document.execCommand('insertHTML', false, html); });
+        let processedHtml = html;
+        if (typeof html === 'string') {
+          processedHtml = html.replace(/\[sound:([^\]]+)\]/gi, function (_, fn) {
+            return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
+          });
+        }
+        bridge.editDocument(function () { return document.execCommand('insertHTML', false, processedHtml); });
+        initAudioControls();
         emitChange();
       };
 
@@ -258,13 +331,20 @@ function editorDocument(
       };
 
       window.__tusEditorSetHtml = function (html) {
-        if (editor.innerHTML === html) return;
+        if (cleanForExport(editor.innerHTML) === html) return;
         editor.innerHTML = html;
+        initAudioControls();
         bridge.clearSavedRange();
         reportHeight();
       };
 
       window.__tusEditorFocus = function () { editor.focus(); };
+      window.__tusEditorBlur = function () {
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+        editor.blur();
+      };
       editor.addEventListener('input', function () { bridge.noteEdit('typing'); emitChange(); });
       // A hardware keyboard is the second way this editor is driven, so the shortcut table is the
       // same one the toolbar buttons use and every press lands on the same command path — the
@@ -458,6 +538,12 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             }
             runWhenReady('window.__tusEditorFocus && window.__tusEditorFocus()');
         },
+        blur: () => {
+            fallbackInputRef.current?.blur();
+            if (editorReadyRef.current) {
+                inject('window.__tusEditorBlur && window.__tusEditorBlur()');
+            }
+        },
         runCommand: (command, commandValue) => {
             const payload = safeJsValue(JSON.stringify({ command, value: commandValue }));
             runWhenReady(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
@@ -554,7 +640,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     thirdPartyCookiesEnabled={false}
                     mixedContentMode="never"
                     allowUniversalAccessFromFileURLs={false}
-                    allowFileAccessFromFileURLs={false}
+                    allowFileAccessFromFileURLs={Platform.OS === 'ios' || Platform.OS === 'android'}
+                    allowingReadAccessToURL={mediaBaseUrl || undefined}
+                    allowsInlineMediaPlayback={true}
+                    mediaPlaybackRequiresUserAction={false}
                     // Android blocks file:// reads by default; field media lives in the app's own
                     // documentDirectory (getMediaBaseUrl), so images need this to render. The CSP
                     // keeps that access passive: field HTML gets no script nonce, no network, and

@@ -6,7 +6,7 @@ import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'ex
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, FontSize, Shadows, BorderRadius, useThemeColors, type ColorScheme } from '../../constants/theme';
-import { findSubject } from '../../lib/subjects';
+import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { schedulerForSettings, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
@@ -89,7 +89,6 @@ import {
     normalizeReviewerToolbarPosition,
     reviewerUndoKeys,
     reviewerUndoShortcutHint,
-    shouldShowReviewerToolbarActions,
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
@@ -153,6 +152,48 @@ function UndoReviewIcon({ color }: { color: string }) {
         <Svg width={22} height={22} viewBox="0 0 24 24">
             <Path
                 d="M9 7H4V2M4.5 7A8 8 0 1 1 6 18"
+                fill="none"
+                stroke={color}
+                strokeWidth={1.9}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
+function ReviewerInfoIcon({ color }: { color: string }) {
+    return (
+        <Svg width={21} height={21} viewBox="0 0 24 24">
+            <Path
+                d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"
+                fill="none"
+                stroke={color}
+                strokeWidth={1.9}
+            />
+            <Path
+                d="M12 16v-4m0-4h.01"
+                fill="none"
+                stroke={color}
+                strokeWidth={2.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
+function ReviewerSettingsIcon({ color }: { color: string }) {
+    return (
+        <Svg width={21} height={21} viewBox="0 0 24 24">
+            <Path
+                d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                fill="none"
+                stroke={color}
+                strokeWidth={1.9}
+            />
+            <Path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"
                 fill="none"
                 stroke={color}
                 strokeWidth={1.9}
@@ -269,6 +310,36 @@ export default function StudyScreen() {
     const [dailyNewLimitReached, setDailyNewLimitReached] = useState(false);
     const [heldBackNewCount, setHeldBackNewCount] = useState(0);
     const [heldBackReviewCount, setHeldBackReviewCount] = useState(0);
+    const [upcomingCardsCount, setUpcomingCardsCount] = useState(0);
+    const lastDeckIdRef = useRef<number | null>(null);
+    const lastStudiedDeckNameRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (currentCard?.deckId) {
+            lastDeckIdRef.current = currentCard.deckId;
+            const cardDeck = getDeck(currentCard.deckId);
+            if (cardDeck?.name) {
+                lastStudiedDeckNameRef.current = cardDeck.name;
+            }
+        }
+    }, [currentCard?.deckId]);
+
+    useEffect(() => {
+        if (selectedDeckName && selectedDeckName.includes('::')) {
+            lastStudiedDeckNameRef.current = selectedDeckName;
+        }
+    }, [selectedDeckName]);
+
+    const targetDeckId = useMemo(() => {
+        if (selectedDeckName) {
+            const deck = getDeckByName(selectedDeckName);
+            if (deck) return deck.id;
+        }
+        if (lastDeckIdRef.current) {
+            return lastDeckIdRef.current;
+        }
+        const regularDecks = getAllDecks().filter((d) => !d.isFiltered);
+        return regularDecks[0]?.id ?? 1;
+    }, [selectedDeckName]);
     // Anki's on-screen answer timer (a deck option) and the pace its ETA sibling is built on.
     const [answerSeconds, setAnswerSeconds] = useState(0);
     // Auto Advance's "show reminder" action: a nudge in the status bar, never a grade.
@@ -489,6 +560,7 @@ export default function StudyScreen() {
         setDailyNewLimitReached(result.dailyNewLimitReached);
         setHeldBackNewCount(result.heldBackNewCount);
         setHeldBackReviewCount(result.heldBackReviewCount);
+        setUpcomingCardsCount(result.upcomingCardsCount);
 
         if (resetCounter) {
             answersSinceRefreshRef.current = 0;
@@ -588,9 +660,10 @@ export default function StudyScreen() {
             waitForAudio: config.waitForAudio !== false,
             answerAction: config.answerAction ?? 'bury',
             skipQuestionWhenReplayingAnswer: config.skipQuestionWhenReplayingAnswer === true,
+            audioPlaybackRate: config.audioPlaybackRate ?? settings.audioPlaybackRate ?? 1.0,
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentCard?.deckId, settings.dayRolloverHour, collectionVersion]);
+    }, [currentCard?.deckId, settings.dayRolloverHour, settings.audioPlaybackRate, collectionVersion]);
 
     // The on-screen timer counts the same foreground-only time the review log records, and stops
     // at the deck's maximum answer seconds, exactly as the manual describes. "Stop timer on
@@ -628,38 +701,56 @@ export default function StudyScreen() {
         requestAnimationFrame(() => reviewerScrollRef.current?.scrollTo({ y: 0, animated: false }));
     }, [showingAnswer]);
 
-    // Rebuild queue when the next learning card becomes due. The newly due card joins the
+    const waitingTargetMs = useMemo(() => {
+        if (currentCard) return null;
+        if (nextLearningDue) return nextLearningDue;
+        if (upcomingCardsCount > 0) {
+            return nextRolloverMs(Date.now(), settings.dayRolloverHour);
+        }
+        return null;
+    }, [currentCard, nextLearningDue, upcomingCardsCount, settings.dayRolloverHour]);
+
+    // Rebuild queue when the next learning card becomes due or day rolls over. The newly due card joins the
     // queue behind the card currently being studied, never replacing it mid-answer.
     useEffect(() => {
-        if (!nextLearningDue) return;
-        const delay = Math.max(500, nextLearningDue - Date.now() + 300);
-        const timer = setTimeout(() => buildQueue(undefined, true, true), delay);
-        return () => clearTimeout(timer);
-    }, [nextLearningDue, buildQueue]);
+        if (!waitingTargetMs) return;
+        const delay = Math.max(500, waitingTargetMs - Date.now() + 300);
+        if (delay <= 86_400_000) {
+            const timer = setTimeout(() => buildQueue(undefined, true, true), delay);
+            return () => clearTimeout(timer);
+        }
+    }, [waitingTargetMs, buildQueue]);
 
     // Update countdown for waiting state.
     useEffect(() => {
-        if (!nextLearningDue || currentCard) {
+        if (!waitingTargetMs || currentCard) {
             setCountdown('');
             return;
         }
 
         const update = () => {
-            const remaining = Math.max(0, nextLearningDue - Date.now());
+            const remaining = Math.max(0, waitingTargetMs - Date.now());
             if (remaining <= 0) {
                 buildQueue();
                 return;
             }
             const totalSec = Math.ceil(remaining / 1000);
-            const min = Math.floor(totalSec / 60);
+            const hours = Math.floor(totalSec / 3600);
+            const min = Math.floor((totalSec % 3600) / 60);
             const sec = totalSec % 60;
-            setCountdown(min > 0 ? `${min}:${String(sec).padStart(2, '0')}` : `${sec}sn`);
+            if (hours > 0) {
+                setCountdown(`${hours}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`);
+            } else if (min > 0) {
+                setCountdown(`${min}:${String(sec).padStart(2, '0')}`);
+            } else {
+                setCountdown(`${sec}sn`);
+            }
         };
 
         update();
         const timer = setInterval(update, 1000);
         return () => clearInterval(timer);
-    }, [nextLearningDue, currentCard, buildQueue]);
+    }, [waitingTargetMs, currentCard, buildQueue]);
 
     const statusToQueueBucket = (status: StudyCard['state']['status']): keyof QueueStats => {
         if (status === 'new') return 'newCount';
@@ -1044,10 +1135,15 @@ export default function StudyScreen() {
     }, [currentCard, invalidateCollection, buildQueue]);
 
     const handleDeckOptions = useCallback(() => {
+        const deckId = currentCard ? (getAnkiCard(currentCard.cardId)?.deckId ?? targetDeckId) : targetDeckId;
+        if (deckId) {
+            router.push(`/deck-options?deckId=${deckId}&scope=deck` as any);
+        }
+    }, [currentCard, targetDeckId, router]);
+
+    const handleCardInfo = useCallback(() => {
         if (!currentCard) return;
-        const card = getAnkiCard(currentCard.cardId);
-        if (!card) return;
-        router.push(`/deck-options?deckId=${card.deckId}` as any);
+        router.push(`/card-info?cardId=${currentCard.cardId}` as any);
     }, [currentCard, router]);
 
     const handleToggleMarkNote = useCallback(() => {
@@ -1399,6 +1495,28 @@ export default function StudyScreen() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [collectionVersion, locale]);
+    const activeStudyDeckName = useMemo(() => {
+        if (currentCard) {
+            const cardDeck = getDeck(currentCard.deckId);
+            if (cardDeck?.name) return cardDeck.name;
+        }
+        if (selectedDeckName && selectedDeckName.includes('::')) {
+            return selectedDeckName;
+        }
+        if (lastStudiedDeckNameRef.current) {
+            return lastStudiedDeckNameRef.current;
+        }
+        if (selectedSubject) {
+            try {
+                const subjectDeckId = resolveSubjectDeckId(selectedSubject);
+                const subjectDeck = getDeck(subjectDeckId);
+                if (subjectDeck?.name) return subjectDeck.name;
+            } catch {
+                // Ignore subject resolution failures
+            }
+        }
+        return selectedDeckName ?? null;
+    }, [selectedDeckName, currentCard, selectedSubject]);
     const openMoreMenu = useCallback(() => {
         setReviewerSurface(openReviewerSurface('tools'));
     }, []);
@@ -1431,11 +1549,14 @@ export default function StudyScreen() {
     useFocusEffect(useCallback(() => {
         setReviewerFocused(true);
         ttsLifecycleRef.current?.setFocused(true);
+        if (!currentCardRef.current) {
+            buildQueue();
+        }
         return () => {
             setReviewerFocused(false);
             ttsLifecycleRef.current?.setFocused(false);
         };
-    }, []));
+    }, [buildQueue]));
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextState) => {
@@ -1965,8 +2086,8 @@ export default function StudyScreen() {
                 ) : null}
             </View>
 
-            {shouldShowReviewerToolbarActions(Boolean(currentCard), undoStack.length) ? (
-                <View style={styles.toolbarActions}>
+            <View style={styles.toolbarActions}>
+                {canUndoReview(undoStack.length) || currentCard ? (
                     <TouchableOpacity
                         style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
                         onPress={() => { void undoLast(); }}
@@ -1982,28 +2103,48 @@ export default function StudyScreen() {
                     >
                         <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                     </TouchableOpacity>
-                    {currentCard ? (
-                        <>
-                            <TouchableOpacity
-                                style={styles.toolbarIconButton}
-                                onPress={openFlagMenu}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}
-                            >
-                                <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.toolbarIconButton}
-                                onPress={openMoreMenu}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
-                            >
-                                <Text style={styles.toolbarActionIcon}>⋮</Text>
-                            </TouchableOpacity>
-                        </>
-                    ) : null}
-                </View>
-            ) : null}
+                ) : null}
+                {currentCard ? (
+                    <>
+                        <TouchableOpacity
+                            style={styles.toolbarIconButton}
+                            onPress={handleCardInfo}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Kart bilgisi', 'Card info')}
+                            {...webTitle(l('Kart bilgisi', 'Card info'))}
+                        >
+                            <ReviewerInfoIcon color={colors.textSecondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.toolbarIconButton}
+                            onPress={openFlagMenu}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}
+                        >
+                            <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
+                        </TouchableOpacity>
+                    </>
+                ) : null}
+                <TouchableOpacity
+                    style={styles.toolbarIconButton}
+                    onPress={handleDeckOptions}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Deste ayarları', 'Deck settings')}
+                    {...webTitle(l('Deste ayarları', 'Deck settings'))}
+                >
+                    <ReviewerSettingsIcon color={colors.textSecondary} />
+                </TouchableOpacity>
+                {currentCard ? (
+                    <TouchableOpacity
+                        style={styles.toolbarIconButton}
+                        onPress={openMoreMenu}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
+                    >
+                        <Text style={styles.toolbarActionIcon}>⋮</Text>
+                    </TouchableOpacity>
+                ) : null}
+            </View>
         </View>
     ) : null;
 
@@ -2036,8 +2177,8 @@ export default function StudyScreen() {
                     </View>
                 ) : null}
             </TouchableOpacity>
-            {shouldShowReviewerToolbarActions(Boolean(currentCard), undoStack.length) ? (
-                <View style={styles.toolbarActions}>
+            <View style={styles.toolbarActions}>
+                {canUndoReview(undoStack.length) || currentCard ? (
                     <TouchableOpacity
                         style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
                         onPress={() => { void undoLast(); }}
@@ -2053,18 +2194,38 @@ export default function StudyScreen() {
                     >
                         <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                     </TouchableOpacity>
-                    {currentCard ? (
-                        <>
-                            <TouchableOpacity style={styles.toolbarIconButton} onPress={openFlagMenu} accessibilityRole="button" accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}>
-                                <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.toolbarIconButton} onPress={openMoreMenu} accessibilityRole="button" accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
-                                <Text style={styles.toolbarActionIcon}>⋮</Text>
-                            </TouchableOpacity>
-                        </>
-                    ) : null}
-                </View>
-            ) : null}
+                ) : null}
+                {currentCard ? (
+                    <>
+                        <TouchableOpacity
+                            style={styles.toolbarIconButton}
+                            onPress={handleCardInfo}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Kart bilgisi', 'Card info')}
+                            {...webTitle(l('Kart bilgisi', 'Card info'))}
+                        >
+                            <ReviewerInfoIcon color={colors.textSecondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.toolbarIconButton} onPress={openFlagMenu} accessibilityRole="button" accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}>
+                            <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
+                        </TouchableOpacity>
+                    </>
+                ) : null}
+                <TouchableOpacity
+                    style={styles.toolbarIconButton}
+                    onPress={handleDeckOptions}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Deste ayarları', 'Deck settings')}
+                    {...webTitle(l('Deste ayarları', 'Deck settings'))}
+                >
+                    <ReviewerSettingsIcon color={colors.textSecondary} />
+                </TouchableOpacity>
+                {currentCard ? (
+                    <TouchableOpacity style={styles.toolbarIconButton} onPress={openMoreMenu} accessibilityRole="button" accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
+                        <Text style={styles.toolbarActionIcon}>⋮</Text>
+                    </TouchableOpacity>
+                ) : null}
+            </View>
         </View>
     ) : null;
 
@@ -2187,6 +2348,7 @@ export default function StudyScreen() {
                                     onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
                                     onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
                                     onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
+                                    audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
                                 />
                             ) : !showingAnswer ? (
                                 settings.ninePointTouchEnabled ? (
@@ -2274,17 +2436,18 @@ export default function StudyScreen() {
                         <Text style={styles.countdownText}>{countdown}</Text>
                         <Text style={styles.emptyDesc}>
                             {l('Şu anda hazır olan tüm kartları tamamladınız. ', 'You’ve completed every card currently available. ')}
-                            {queueStats.learningCount > 0
-                                ? l(
-                                    `${queueStats.learningCount} öğrenme kartı zamanlayıcıda bekliyor`,
-                                    `${queueStats.learningCount} learning ${queueStats.learningCount === 1 ? 'card is' : 'cards are'} waiting for the timer`,
-                                )
-                                : l('Bazı öğrenme kartları zamanlayıcıda bekliyor', 'Some learning cards are waiting for their timer')}
-                            {l(' — süre dolduğunda otomatik olarak gösterilecek. İsterseniz beklemeden devam edebilirsiniz.', ' — they will appear automatically when due. You can also continue without waiting.')}
+                            {l(
+                                `${upcomingCardsCount > 0 ? upcomingCardsCount : (queueStats.learningCount > 0 ? queueStats.learningCount : 1)} kart süre dolunca gösterilecek.`,
+                                `${upcomingCardsCount > 0 ? upcomingCardsCount : (queueStats.learningCount > 0 ? queueStats.learningCount : 1)} ${(upcomingCardsCount || queueStats.learningCount) === 1 ? 'card' : 'cards'} will appear when time is up.`,
+                            )}
+                            {l(' İsterseniz beklemeden devam edebilirsiniz.', ' You can also continue without waiting.')}
                         </Text>
                         {dailyNewLimitReached && heldBackNewCount > 0 && (
                             <Text style={styles.emptyInfo}>
-                                {l(`📋 Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve yarın gösterilecek.`, `📋 The daily new card limit was reached — ${heldBackNewCount} new cards are queued for tomorrow.`)}
+                                {l(
+                                    `📋 Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve süre dolunca gösterilecek.`,
+                                    `📋 The daily new card limit was reached — ${heldBackNewCount} new cards are queued and will appear when time is up.`,
+                                )}
                             </Text>
                         )}
                         <TouchableOpacity
@@ -2296,14 +2459,25 @@ export default function StudyScreen() {
                         >
                             <Text style={styles.primaryActionText}>⚡ {l('Beklemeden çalış', 'Study Now')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.secondaryActionBtn}
-                            onPress={() => router.push('/settings')}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Ayarları aç', 'Open settings')}
-                        >
-                            <Text style={styles.secondaryActionText}>⚙️ {l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
-                        </TouchableOpacity>
+                        {dailyNewLimitReached ? (
+                            <TouchableOpacity
+                                style={styles.secondaryActionBtn}
+                                onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
+                            >
+                                <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.secondaryActionBtn}
+                                onPress={() => router.push('/settings')}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Ayarları aç', 'Open settings')}
+                            >
+                                <Text style={styles.secondaryActionText}>⚙️ {l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
+                            </TouchableOpacity>
+                        )}
                         {trialPurchaseAction}
                         <Text style={styles.emptySub}>
                             {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
@@ -2311,26 +2485,36 @@ export default function StudyScreen() {
                     </View>
                 ) : dailyNewLimitReached ? (
                     <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>📋</Text>
+                        <Text style={styles.emptyIcon}>⏳</Text>
                         <Text style={styles.emptyTitle}>{l('Günlük yeni kart limiti doldu', 'Daily New Card Limit Reached')}</Text>
+                        {countdown ? <Text style={styles.countdownText}>{countdown}</Text> : null}
                         <Text style={styles.emptyDesc}>
                             {l(
                                 `Bugün ${sessionStats.newCardsToday || 0} yeni kart öğrendiniz.`,
                                 `You learned ${sessionStats.newCardsToday || 0} new ${(sessionStats.newCardsToday || 0) === 1 ? 'card' : 'cards'} today.`,
                             )}
-                            {heldBackNewCount > 0 ? l(
-                                ` ${heldBackNewCount} yeni kart sırada — yarın otomatik olarak gösterilecek.`,
-                                ` ${heldBackNewCount} new ${heldBackNewCount === 1 ? 'card is' : 'cards are'} queued and will appear automatically tomorrow.`,
+                            {upcomingCardsCount > 0 ? l(
+                                ` ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
+                                ` ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
                             ) : ''}
-                            {l(' Devam etmek isterseniz limiti Ayarlar’dan artırabilirsiniz.', ' To continue, increase the limit in Settings.')}
+                            {l(' Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.', ' To continue, increase the limit in Deck Options.')}
                         </Text>
                         <TouchableOpacity
                             style={styles.secondaryActionBtn}
-                            onPress={() => router.push('/settings')}
+                            onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
                             accessibilityRole="button"
-                            accessibilityLabel={l('Ayarlardan limiti artır', 'Increase the limit in settings')}
+                            accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
                         >
                             <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.secondaryActionBtn}
+                            onPress={handleReturnToDecks}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                            {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
+                        >
+                            <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
                         </TouchableOpacity>
                         {trialPurchaseAction}
                         <Text style={styles.emptySub}>
@@ -2341,6 +2525,9 @@ export default function StudyScreen() {
                     <View style={styles.emptyState}>
                         <Text style={styles.emptyIcon}>🎉</Text>
                         <Text style={styles.emptyTitle}>{l('Tebrikler!', 'Congratulations!')}</Text>
+                        {countdown && upcomingCardsCount > 0 ? (
+                            <Text style={styles.countdownText}>{countdown}</Text>
+                        ) : null}
                         <Text style={styles.emptyDesc}>
                             {selectedTopic
                                 ? l(
@@ -2354,13 +2541,30 @@ export default function StudyScreen() {
                                     )
                                     : l('Tüm dersler için bugünlük tüm kartlar tamamlandı.', 'All cards across all subjects are complete for today.')}
                         </Text>
-                        {heldBackReviewCount > 0 && (
+                        {heldBackReviewCount > 0 ? (
                             <Text style={styles.emptyInfo}>
                                 {l(
-                                    `📋 Günlük tekrar limiti doldu — ${heldBackReviewCount} tekrar kartı yarına kaldı.`,
-                                    `📋 Today's review limit was reached — ${heldBackReviewCount} review cards are waiting for tomorrow.`,
+                                    `📋 Günlük tekrar limiti doldu — ${heldBackReviewCount} tekrar kartı süre dolunca gösterilecek. Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.`,
+                                    `📋 Today's review limit was reached — ${heldBackReviewCount} review cards will appear when time is up. To continue, increase the limit in Deck Options.`,
                                 )}
                             </Text>
+                        ) : upcomingCardsCount > 0 ? (
+                            <Text style={styles.emptyInfo}>
+                                {l(
+                                    `⏳ ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
+                                    `⏳ ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
+                                )}
+                            </Text>
+                        ) : null}
+                        {heldBackReviewCount > 0 && (
+                            <TouchableOpacity
+                                style={styles.secondaryActionBtn}
+                                onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=reviewLimit&scope=deck` as any)}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Deste seçeneklerinden tekrar limitini artır', 'Increase review limit in deck options')}
+                            >
+                                <Text style={styles.secondaryActionText}>⚙️ {l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
+                            </TouchableOpacity>
                         )}
                         <TouchableOpacity
                             style={styles.secondaryActionBtn}
@@ -2463,6 +2667,7 @@ export default function StudyScreen() {
                     onForgetCard={handleForgetCard}
                     onSetDueDate={handleSetDueDate}
                     onDeckOptions={handleDeckOptions}
+                    onCardInfo={handleCardInfo}
                     onToggleMarkNote={handleToggleMarkNote}
                     onBuryNote={handleBuryNote}
                     onSuspendNote={handleSuspendNote}
@@ -2503,6 +2708,7 @@ export default function StudyScreen() {
                 colors={colors}
                 decks={deckPickerItems}
                 selectedDeckName={selectedDeckName}
+                activeDeckName={activeStudyDeckName}
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm desteler', 'All Decks')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
