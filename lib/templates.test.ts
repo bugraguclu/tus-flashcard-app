@@ -226,6 +226,136 @@ describe('typed-answer (type:Field)', () => {
         expect(wrong).toContain('class="typed"');
         expect(wrong).toContain('class="correct"');
     });
+
+    it('getTypeAnswerField strips cloze and filter prefixes', () => {
+        expect(getTypeAnswerField({ qfmt: '{{type:cloze:Text}}' })).toBe('Text');
+        expect(getTypeAnswerField({ qfmt: '{{type:nc:Back}}' })).toBe('Back');
+        expect(getTypeAnswerField({ qfmt: '{{type:Front}}' })).toBe('Front');
+    });
+
+    it('renders cloze question with [...] when typing is disabled (neverTypeAnswer / no input)', () => {
+        const clozeNoteType: NoteType = {
+            id: 800,
+            name: 'Cloze Type',
+            kind: 'cloze',
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }],
+            templates: [{
+                name: 'Cloze',
+                ord: 0,
+                qfmt: '{{type:cloze:Text}}',
+                afmt: '{{cloze:Text}}<br>{{type:cloze:Text}}',
+            }],
+            css: '',
+            sortFieldIdx: 0,
+            mod: 0,
+        };
+        const note: Note = {
+            id: 801, guid: 'g', noteTypeId: 800, mod: 0, usn: -1, tags: [],
+            fields: ['Türkiye\'nin başkenti {{c1::Ankara::şehir}} ilidir.'],
+            sfld: 'Türkiye\'nin başkenti', csum: 0, flags: 0,
+        };
+
+        // Question side without typeAnswerInput (neverTypeAnswer = true)
+        const qHtml = renderCardHtml(clozeNoteType, note, 0, 'question');
+        expect(qHtml).toContain('Türkiye\'nin başkenti');
+        expect(qHtml).toContain('[şehir]');
+        expect(qHtml).not.toContain('<input');
+        expect(qHtml).not.toContain('>Ankara<');
+
+        // Answer side when untyped
+        const aHtml = renderCardHtml(clozeNoteType, note, 0, 'answer');
+        expect(aHtml).toContain('Türkiye\'nin başkenti');
+        expect(aHtml).toContain('Ankara');
+        expect(aHtml).toContain('<code id="typeans" class="typeanswer">Ankara</code>');
+    });
+
+    it('replaces cloze [...] deletion with in-card input when typeAnswerInput is provided', () => {
+        const clozeNoteType: NoteType = {
+            id: 800,
+            name: 'Cloze Type',
+            kind: 'cloze',
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }],
+            templates: [{
+                name: 'Cloze',
+                ord: 0,
+                qfmt: '{{type:cloze:Text}}',
+                afmt: '{{cloze:Text}}<br>{{type:cloze:Text}}',
+            }],
+            css: '',
+            sortFieldIdx: 0,
+            mod: 0,
+        };
+        const note: Note = {
+            id: 801, guid: 'g', noteTypeId: 800, mod: 0, usn: -1, tags: [],
+            fields: ['Türkiye\'nin başkenti {{c1::Ankara}} ilidir.'],
+            sfld: 'Türkiye\'nin başkenti', csum: 0, flags: 0,
+        };
+
+        const html = renderCardHtml(clozeNoteType, note, 0, 'question', {
+            typeAnswerInput: { token: 'tok-1', placeholder: 'Yazınız' },
+        });
+        expect(html).toContain('Türkiye\'nin başkenti');
+        expect(html).toContain('id="typeans"');
+        expect(html).toContain('data-tus-type-answer-token="tok-1"');
+        expect(html).toContain('placeholder="Yazınız"');
+        expect(html).not.toContain('[...]');
+        expect(html).not.toContain('Ankara');
+    });
+
+    it('diffs a typed answer against cloze deletion on the answer side', () => {
+        const clozeNoteType: NoteType = {
+            id: 800,
+            name: 'Cloze Type',
+            kind: 'cloze',
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }],
+            templates: [{
+                name: 'Cloze',
+                ord: 0,
+                qfmt: '{{type:cloze:Text}}',
+                afmt: '{{cloze:Text}}<br>{{type:cloze:Text}}',
+            }],
+            css: '',
+            sortFieldIdx: 0,
+            mod: 0,
+        };
+        const note: Note = {
+            id: 801, guid: 'g', noteTypeId: 800, mod: 0, usn: -1, tags: [],
+            fields: ['Başkent {{c1::Ankara}} ilidir.'],
+            sfld: 'Başkent', csum: 0, flags: 0,
+        };
+
+        const exact = renderCardHtml(clozeNoteType, note, 0, 'answer', { typedAnswer: 'Ankara' });
+        expect(exact).toContain('class="typeGood"');
+        expect(exact).not.toContain('class="typeBad"');
+
+        const wrong = renderCardHtml(clozeNoteType, note, 0, 'answer', { typedAnswer: 'Izmir' });
+        expect(wrong).toContain('class="typeanswer"');
+        expect(wrong).toContain('class="typed"');
+        expect(wrong).toContain('class="correct"');
+    });
+
+    it('generates card for template with only {{type:Field}} when field has content', () => {
+        const typeOnlyNoteType: NoteType = {
+            id: 810,
+            name: 'Type Only',
+            kind: 'standard',
+            fields: [{ name: 'Word', ord: 0, sticky: false, rtl: false }],
+            templates: [{ name: 'Card 1', ord: 0, qfmt: '{{type:Word}}', afmt: '{{type:Word}}' }],
+            css: '',
+            sortFieldIdx: 0,
+            mod: 0,
+        };
+        const noteWithContent: Note = {
+            id: 811, guid: 'g', noteTypeId: 810, mod: 0, usn: -1, tags: [],
+            fields: ['Osmosis'], sfld: 'Osmosis', csum: 0, flags: 0,
+        };
+        const emptyNote: Note = {
+            id: 812, guid: 'g2', noteTypeId: 810, mod: 0, usn: -1, tags: [],
+            fields: [''], sfld: '', csum: 0, flags: 0,
+        };
+        expect(shouldGenerateCard(typeOnlyNoteType, noteWithContent, 0)).toBe(true);
+        expect(shouldGenerateCard(typeOnlyNoteType, emptyNote, 0)).toBe(false);
+    });
 });
 
 describe('omitFrontSide (stacked question+answer layouts)', () => {

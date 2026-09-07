@@ -244,6 +244,10 @@ export interface RenderContext {
     deckName?: string;
     cardName?: string;               // template name
     clozeOrd?: number;               // for cloze note types
+    /** Card side currently being rendered ('question' | 'answer'). */
+    side?: 'question' | 'answer';
+    /** Used during card generation check to treat type-in prompts as non-empty. */
+    generating?: boolean;
     /** Anki's {{CardFlag}}: renders as "flag0".."flag7". */
     cardFlag?: number;
     /** What the user typed for a {{type:Field}} prompt, once the answer side is shown.
@@ -415,7 +419,7 @@ function applyTemplateFilter(
             if (ctx.clozeOrd === undefined) return value;
             // The question side is rendered before any front side exists; its presence is what
             // tells this pass it is now building the answer.
-            const side = ctx.frontSide ? 'answer' : 'question';
+            const side = ctx.side ?? (ctx.frontSide ? 'answer' : 'question');
             return name === 'cloze'
                 ? renderClozeChildren(parseClozeNodes(value), ctx.clozeOrd, side)
                 : renderClozeOnly(value, ctx.clozeOrd, side);
@@ -437,21 +441,47 @@ function applyTemplateFilter(
             // the text box. The reviewer may insert its own inert input at this exact location;
             // only the trusted WebView bridge can read it, while card-authored scripts stay
             // stripped and blocked by CSP.
-            const answer = name === 'type-cloze' && ctx.clozeOrd !== undefined
-                ? renderClozeOnly(value, ctx.clozeOrd, 'answer')
+            const rawFieldText = ctx.fields[field] ?? value;
+            const isCloze = ctx.clozeOrd !== undefined
+                || name === 'type-cloze'
+                || /<span\b[^>]*\bclass=["']cloze["'][^>]*>/i.test(value)
+                || /\{\{c\d+::/i.test(rawFieldText);
+            const targetClozeOrd = ctx.clozeOrd ?? 1;
+            const targetAnswer = isCloze
+                ? renderClozeOnly(rawFieldText, targetClozeOrd, 'answer')
                 : value;
-            const plain = typeAnswerPlainText(answer);
-            if (!ctx.frontSide) {
-                if (!ctx.typeAnswerInput || ctx.typeAnswerInputRendered) return '';
-                ctx.typeAnswerInputRendered = true;
-                const token = escapeHtml(ctx.typeAnswerInput.token);
-                const placeholder = escapeHtml(ctx.typeAnswerInput.placeholder);
-                return `<input id="typeans" class="tus-type-answer-input" type="text"`
-                    + ` data-tus-type-answer-token="${token}" maxlength="${MAX_TYPE_ANSWER_CHARS}"`
-                    + ` placeholder="${placeholder}" aria-label="${placeholder}"`
-                    + ' autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">';
+            const plain = typeAnswerPlainText(targetAnswer);
+            const isQuestionSide = ctx.side ? ctx.side === 'question' : !ctx.frontSide;
+
+            if (ctx.generating) {
+                return plain ? `[type:${escapeHtml(plain)}]` : '';
             }
-            if (ctx.typedAnswer === undefined) return `<div class="typeanswer">${escapeHtml(plain)}</div>`;
+
+            if (isQuestionSide) {
+                if (ctx.typeAnswerInput && !ctx.typeAnswerInputRendered) {
+                    ctx.typeAnswerInputRendered = true;
+                    const token = escapeHtml(ctx.typeAnswerInput.token);
+                    const placeholder = escapeHtml(ctx.typeAnswerInput.placeholder);
+                    const inputHtml = `<input id="typeans" class="tus-type-answer-input" type="text"`
+                        + ` data-tus-type-answer-token="${token}" maxlength="${MAX_TYPE_ANSWER_CHARS}"`
+                        + ` placeholder="${placeholder}" aria-label="${placeholder}"`
+                        + ' autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">';
+                    if (isCloze && /<span\b[^>]*\bclass=["']cloze["'][^>]*>/i.test(value)) {
+                        return value.replace(/<span\b[^>]*\bclass=["']cloze["'][^>]*>[\s\S]*?<\/span>/i, inputHtml);
+                    }
+                    return inputHtml;
+                }
+                if (isCloze) {
+                    return /<span\b[^>]*\bclass=["']cloze["'][^>]*>/i.test(value)
+                        ? value
+                        : renderClozeChildren(parseClozeNodes(rawFieldText), targetClozeOrd, 'question');
+                }
+                return '';
+            }
+
+            if (ctx.typedAnswer === undefined) {
+                return `<code id="typeans" class="typeanswer">${escapeHtml(plain)}</code>`;
+            }
             const fold = (text: string) => (name === 'type-nc'
                 ? text.normalize('NFKD').replace(COMBINING_MARKS, '')
                 : text);
@@ -562,6 +592,7 @@ export function renderCardHtml(
         deckName: options?.deckName,
         cardName: template.name,
         clozeOrd,
+        side: 'question',
         cardFlag: options?.cardFlag,
         typeAnswerInput: options?.typeAnswerInput,
     };
@@ -592,6 +623,7 @@ export function renderCardHtml(
     // Render answer
     const answerCtx: RenderContext = {
         ...questionCtx,
+        side: 'answer',
         frontSide: questionHtml,
         typedAnswer: options?.typedAnswer,
         omitFrontSide: options?.omitFrontSide,
@@ -619,7 +651,7 @@ export function shouldGenerateCard(
     if (!template) return false;
     const fields: Record<string, string> = {};
     noteType.fields.forEach((field, index) => { fields[field.name] = note.fields[index] || ''; });
-    const rendered = renderTemplate(template.qfmt, { fields });
+    const rendered = renderTemplate(template.qfmt, { fields, side: 'question', generating: true });
     if (/<(?:img|audio|video|object|svg)\b/i.test(rendered)) return true;
     return rendered
         .replace(/<!--[\s\S]*?-->/g, '')
@@ -643,7 +675,9 @@ export function countCardsForNote(noteType: NoteType, note: Note): number {
 /** Field name of the first {{type:Field}} prompt in a template's qfmt, if any. */
 export function getTypeAnswerField(template: { qfmt: string } | undefined): string | null {
     const match = template?.qfmt.match(/\{\{type:([^{}]+?)\}\}/);
-    return match ? match[1].trim() : null;
+    if (!match) return null;
+    const parts = match[1].split(':').map((part) => part.trim()).filter(Boolean);
+    return parts[parts.length - 1] || null;
 }
 
 /** Longest common subsequence of two strings, as a list of [typedIdx, correctIdx] matched pairs. */

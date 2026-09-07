@@ -1988,8 +1988,12 @@ export default function StudyScreen() {
     // Present only for note types whose template embeds {{type:Field}} (built-in or custom).
     // Depending on the preference, the trusted input is either inserted at the template marker
     // or rendered as a native field alongside the card. Both paths feed the same answer diff.
-    const typeAnswerField = !settings.neverTypeAnswer && renderPayload
-        ? getTypeAnswerField(renderPayload.noteType.templates[renderPayload.card.ord])
+    const activeTemplate = renderPayload
+        ? (renderPayload.noteType.templates[renderPayload.card.ord]
+            || (renderPayload.noteType.kind === 'cloze' ? renderPayload.noteType.templates[0] : undefined))
+        : undefined;
+    const typeAnswerField = !settings.neverTypeAnswer && activeTemplate
+        ? getTypeAnswerField(activeTemplate)
         : null;
     const typeAnswerInCard = Boolean(typeAnswerField && settings.typeAnswerInCard);
     const submitTypedAnswer = useCallback((value: string) => {
