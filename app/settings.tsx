@@ -680,6 +680,10 @@ export default function SettingsScreen() {
         `${l('Destesi kayıp kart', 'Cards with a missing deck')}: ${result.strandedCards}`,
         `${l('Filtre artığı kalan kart', 'Cards left with filtered-deck state')}: ${result.filteredLeftoverCards}`,
         `${l('Geçersiz aralıklı kart', 'Cards with an invalid interval')}: ${result.invalidIntervalCards}`,
+        `${l('Sırası taşmış yeni kart', 'New cards with an out-of-range position')}: ${result.highPositionNewCards}`,
+        `${l('Geçersiz tarihli kart', 'Cards with an invalid due date')}: ${result.invalidDueCards}`,
+        `${l('Geçersiz şablon sıralı kart', 'Cards with an invalid template ordinal')}: ${result.invalidOrdinalCards}`,
+        `${l('Artık ön-filtre tarihi taşıyan kart', 'Cards keeping a stale pre-filter due')}: ${result.orphanedOriginalDueCards}`,
         `${l('Okunamayan not', 'Unreadable notes')}: ${result.unreadableNotes}`,
     ], [l]);
 
@@ -759,6 +763,30 @@ export default function SettingsScreen() {
             lines.push(l(
                 `${repair.intervalsClamped} kartın geçersiz aralığı düzeltildi.`,
                 `Fixed the invalid interval on ${repair.intervalsClamped} cards.`,
+            ));
+        }
+        if (repair.newCardPositionsWrapped > 0) {
+            lines.push(l(
+                `${repair.newCardPositionsWrapped} yeni kartın sırası geçerli aralığa alındı.`,
+                `Brought the position of ${repair.newCardPositionsWrapped} new cards back into range.`,
+            ));
+        }
+        if (repair.duesRepaired > 0) {
+            lines.push(l(
+                `${repair.duesRepaired} kartın geçersiz tarihi düzeltildi.`,
+                `Fixed the invalid due date on ${repair.duesRepaired} cards.`,
+            ));
+        }
+        if (repair.ordinalsClamped > 0) {
+            lines.push(l(
+                `${repair.ordinalsClamped} kartın şablon sırası geçerli aralığa alındı.`,
+                `Brought the template ordinal of ${repair.ordinalsClamped} cards back into range.`,
+            ));
+        }
+        if (repair.originalDuesCleared > 0) {
+            lines.push(l(
+                `${repair.originalDuesCleared} kartın artık ön-filtre tarihi temizlendi.`,
+                `Cleared a stale pre-filter due from ${repair.originalDuesCleared} cards.`,
             ));
         }
         if (repair.protectedRowsKept > 0) {

@@ -13,7 +13,7 @@
  */
 
 import { Platform } from 'react-native';
-import { restoreQueueFromType } from './ankiState';
+import { localDayNumber, restoreQueueFromType } from './ankiState';
 import { isCatalogNote } from './catalogProtection';
 import { dbIndexAllCards, getDB } from './db';
 import type { AnkiCard, Deck } from './models';
@@ -83,6 +83,113 @@ const FILTERED_LEFTOVER_CARDS_WHERE = `c.tombstone = 0
 const INVALID_INTERVAL_CARDS_WHERE = `c.tombstone = 0
       AND c.ivl <> min(max(round(c.ivl), 0), 2147483647)`;
 
+const INT32_MIN = -2147483648;
+const INT32_MAX = 2147483647;
+
+/**
+ * `round()` in SQLite rounds a half away from zero; `Math.round` rounds it towards +infinity.
+ * The repair has to agree with the query that selected the row, or a card would be rewritten to a
+ * value the next audit reports all over again.
+ */
+function sqliteRound(value: number): number {
+    return value < 0 ? -Math.round(-value) : Math.round(value);
+}
+
+/**
+ * A new card whose queue position ran past the million Anki reserves for positions. Anki folds it
+ * back into the reserved block rather than deleting the card, so the learner keeps it and only
+ * loses its place in the pile. The preview queue is exempt: a card being previewed inside a
+ * filtered deck carries a different meaning in `due`.
+ *
+ * A position is a plain counter in both collections, so this rule ports unchanged.
+ *
+ * Source: `rslib/src/storage/card/fix_due_new.sql`.
+ */
+const HIGH_POSITION_NEW_CARDS_WHERE = `c.tombstone = 0
+      AND c.type = 0
+      AND c.queue <> 4
+      AND c.due >= 1000000
+      AND c.due <> 1000000 + c.due % 1000000`;
+
+/** The value `HIGH_POSITION_NEW_CARDS_WHERE` measures each row against. */
+function wrappedNewCardPosition(due: number): number {
+    return 1000000 + (Math.trunc(due) % 1000000);
+}
+
+/**
+ * A `due` the scheduler cannot act on. Anki's rule is: a review card scheduled past day 100000 is
+ * pulled back to today, and anything else is rounded and clamped into a 32-bit integer.
+ *
+ * Two notes on moving that rule to this collection, because one constant only survives by
+ * accident and the other cannot come along at all:
+ *
+ * - Our day numbers count from the Unix epoch rather than from the collection's creation day, so
+ *   a review due today is around 20,700 rather than the few thousand upstream sees. Day 100000 is
+ *   still centuries away (it lands in 2243), so the threshold keeps meaning "no calendar reaches
+ *   here" and is left where upstream put it.
+ * - A learning step is stored here in milliseconds and upstream in seconds. Upstream's 32-bit
+ *   clamp fits a timestamp in seconds until 2038; ours would move every card mid-step to January
+ *   1970. So a card whose type is learning or relearning keeps a `due` that is large enough to be
+ *   a timestamp, whatever queue it is parked in — suspending a card mid-step does not turn its
+ *   timestamp into a day number.
+ *
+ * Rows `HIGH_POSITION_NEW_CARDS_WHERE` owns are excluded: upstream runs that statement first and
+ * then measures the already-wrapped value, and a wrapped position is inside the 32-bit range, so
+ * excluding them reproduces the same outcome without depending on the order two loops happen to run in.
+ *
+ * Source: `rslib/src/storage/card/fix_due_other.sql`.
+ */
+function invalidDueCardsWhere(today: number): string {
+    return `c.tombstone = 0
+      AND NOT (c.type = 0 AND c.queue <> 4 AND c.due >= 1000000)
+      AND c.due <> CASE
+            WHEN c.queue = 2 AND c.due > 100000 THEN ${today}
+            WHEN c.type IN (1, 3) AND c.due >= 1000000 THEN c.due
+            ELSE min(max(round(c.due), ${INT32_MIN}), ${INT32_MAX})
+          END`;
+}
+
+/** The value `invalidDueCardsWhere` measures each row against. */
+function repairedDue(card: { type: number; queue: number; due: number }, today: number): number {
+    if (card.queue === 2 && card.due > 100000) return today;
+    if ((card.type === 1 || card.type === 3) && card.due >= 1000000) return card.due;
+    return Math.min(Math.max(sqliteRound(card.due), INT32_MIN), INT32_MAX);
+}
+
+/**
+ * A template ordinal outside the range a note type can address. Anki clamps rather than deletes:
+ * whether a template exists at the clamped ordinal is a separate defect with a separate repair, and
+ * this one only stops the value itself from being nonsense.
+ *
+ * Source: `rslib/src/storage/card/fix_ordinal.sql`.
+ */
+const INVALID_ORDINAL_CARDS_WHERE = `c.tombstone = 0
+      AND c.ord <> max(0, min(30000, c.ord))`;
+
+/** The value `INVALID_ORDINAL_CARDS_WHERE` measures each row against. */
+function clampedOrdinal(ord: number): number {
+    return Math.max(0, Math.min(30000, ord));
+}
+
+/**
+ * A card holding the due it had before a filtered deck took it, while nothing says it was ever in
+ * one. `FILTERED_LEFTOVER_CARDS_WHERE` covers the opposite half — a home deck recorded on a card
+ * sitting in a deck that is not filtered — so between them a card cannot keep filtered-deck
+ * bookkeeping it has no use for. A new card is left alone: upstream's condition names the learning
+ * and review states only.
+ *
+ * Only the zeroing branch is ported. Upstream also clamps a surviving `odue` to 32 bits, which
+ * would truncate the millisecond timestamp a card pulled into a filtered deck mid-step carries
+ * here, for the reason `invalidDueCardsWhere` explains.
+ *
+ * Source: `rslib/src/storage/card/fix_odue.sql`.
+ */
+const ORPHANED_ORIGINAL_DUE_CARDS_WHERE = `c.tombstone = 0
+      AND json_valid(c.data) = 1
+      AND COALESCE(json_extract(c.data, '$.odue'), 0) > 0
+      AND COALESCE(json_extract(c.data, '$.odid'), 0) = 0
+      AND (c.type = 1 OR c.queue = 2)`;
+
 /**
  * A note whose blob no longer parses, or that lost its `fields` array. The mirrored columns hold
  * no field text, so nothing can rebuild it: this defect is reported and never repaired.
@@ -117,6 +224,14 @@ export interface DatabaseCheckResult {
     filteredLeftoverCards: number;
     /** Live cards whose interval is negative, fractional, or past the 32-bit ceiling. */
     invalidIntervalCards: number;
+    /** Live new cards whose queue position ran past the million reserved for positions. */
+    highPositionNewCards: number;
+    /** Live cards whose due date the scheduler cannot act on. */
+    invalidDueCards: number;
+    /** Live cards whose template ordinal is outside the range a note type can address. */
+    invalidOrdinalCards: number;
+    /** Live cards holding a pre-filter due while nothing says they were ever in a filtered deck. */
+    orphanedOriginalDueCards: number;
     /** Live notes whose stored JSON no longer parses. Reported only. */
     unreadableNotes: number;
 }
@@ -124,7 +239,9 @@ export interface DatabaseCheckResult {
 /** Rows `repairDatabase` can actually fix. `unreadableNotes` is reported but never rewritten. */
 export function repairableDefectCount(result: DatabaseCheckResult): number {
     return result.orphanCards + result.orphanNotes + result.strandedCards
-        + result.filteredLeftoverCards + result.invalidIntervalCards;
+        + result.filteredLeftoverCards + result.invalidIntervalCards
+        + result.highPositionNewCards + result.invalidDueCards
+        + result.invalidOrdinalCards + result.orphanedOriginalDueCards;
 }
 
 /** Every defect the audit found, whether or not the repair can fix it. */
@@ -159,6 +276,10 @@ export function checkDatabase(): DatabaseCheckResult {
         strandedCards: countRows(db, 'anki_cards c', STRANDED_CARDS_WHERE),
         filteredLeftoverCards: countRows(db, 'anki_cards c', FILTERED_LEFTOVER_CARDS_WHERE),
         invalidIntervalCards: countRows(db, 'anki_cards c', INVALID_INTERVAL_CARDS_WHERE),
+        highPositionNewCards: countRows(db, 'anki_cards c', HIGH_POSITION_NEW_CARDS_WHERE),
+        invalidDueCards: countRows(db, 'anki_cards c', invalidDueCardsWhere(localDayNumber(Date.now(), loadSettings().dayRolloverHour))),
+        invalidOrdinalCards: countRows(db, 'anki_cards c', INVALID_ORDINAL_CARDS_WHERE),
+        orphanedOriginalDueCards: countRows(db, 'anki_cards c', ORPHANED_ORIGINAL_DUE_CARDS_WHERE),
         unreadableNotes: countRows(db, 'notes n', UNREADABLE_NOTES_WHERE),
     };
 }
@@ -177,6 +298,14 @@ export interface DatabaseRepairResult {
     filteredLeftoversCleared: number;
     /** Cards whose interval was rounded and clamped back into range. */
     intervalsClamped: number;
+    /** New cards whose queue position was folded back into the reserved block. */
+    newCardPositionsWrapped: number;
+    /** Cards whose due was pulled back to today or rounded into range. */
+    duesRepaired: number;
+    /** Cards whose template ordinal was clamped into range. */
+    ordinalsClamped: number;
+    /** Cards whose leftover pre-filter due was cleared. */
+    originalDuesCleared: number;
     /** Rows left untouched on purpose because the paid catalog owns them. */
     protectedRowsKept: number;
     /** Notes whose JSON cannot be parsed; counted so the UI can say they need manual attention. */
@@ -192,6 +321,10 @@ export function emptyRepairResult(): DatabaseRepairResult {
         strandedCardsRehomed: 0,
         filteredLeftoversCleared: 0,
         intervalsClamped: 0,
+        newCardPositionsWrapped: 0,
+        duesRepaired: 0,
+        ordinalsClamped: 0,
+        originalDuesCleared: 0,
         protectedRowsKept: 0,
         unreadableNotes: 0,
         recoveryDeckName: null,
@@ -351,12 +484,22 @@ export function repairDatabase(): DatabaseRepairResult {
         `SELECT c.id AS id, c.ivl AS ivl FROM anki_cards c WHERE ${INVALID_INTERVAL_CARDS_WHERE}`,
     );
 
+    // The card-property defects are read inside the transaction instead, after the deletes and the
+    // rehoming have run: a card can be stranded *and* carry a bad due, and reading its property
+    // afterwards means the repair measures the row it is about to write rather than the row as it
+    // stood before another repair moved it.
+    const rolloverHour = loadSettings().dayRolloverHour;
+    const today = localDayNumber(Date.now(), rolloverHour);
+    const propertyDefects = countRows(db, 'anki_cards c', HIGH_POSITION_NEW_CARDS_WHERE)
+        + countRows(db, 'anki_cards c', invalidDueCardsWhere(today))
+        + countRows(db, 'anki_cards c', INVALID_ORDINAL_CARDS_WHERE)
+        + countRows(db, 'anki_cards c', ORPHANED_ORIGINAL_DUE_CARDS_WHERE);
+
     if (orphanCards.length === 0 && orphanNotes.length === 0 && strandedCards.length === 0
-        && filteredLeftovers.length === 0 && invalidIntervals.length === 0) {
+        && filteredLeftovers.length === 0 && invalidIntervals.length === 0 && propertyDefects === 0) {
         return result;
     }
 
-    const rolloverHour = loadSettings().dayRolloverHour;
     let recoveryDeck: { id: number; name: string } | null = null;
     const resolveRecoveryDeck = () => {
         if (recoveryDeck === null) {
@@ -430,6 +573,39 @@ export function repairDatabase(): DatabaseRepairResult {
             result.intervalsClamped += 1;
         }
 
+        for (const card of db.getAllSync<{ id: number; due: number }>(
+            `SELECT c.id AS id, c.due AS due FROM anki_cards c WHERE ${HIGH_POSITION_NEW_CARDS_WHERE}`,
+        )) {
+            writeCardNumber(db, card.id, 'due', wrappedNewCardPosition(card.due));
+            result.newCardPositionsWrapped += 1;
+        }
+
+        for (const card of db.getAllSync<{ id: number; type: number; queue: number; due: number }>(
+            `SELECT c.id AS id, c.type AS type, c.queue AS queue, c.due AS due
+             FROM anki_cards c WHERE ${invalidDueCardsWhere(today)}`,
+        )) {
+            writeCardNumber(db, card.id, 'due', repairedDue(card, today));
+            result.duesRepaired += 1;
+        }
+
+        for (const card of db.getAllSync<{ id: number; ord: number }>(
+            `SELECT c.id AS id, c.ord AS ord FROM anki_cards c WHERE ${INVALID_ORDINAL_CARDS_WHERE}`,
+        )) {
+            writeCardNumber(db, card.id, 'ord', clampedOrdinal(card.ord));
+            result.ordinalsClamped += 1;
+        }
+
+        // `odue` lives only in the blob; there is no mirrored column for it.
+        for (const card of db.getAllSync<{ id: number }>(
+            `SELECT c.id AS id FROM anki_cards c WHERE ${ORPHANED_ORIGINAL_DUE_CARDS_WHERE}`,
+        )) {
+            db.runSync(
+                `UPDATE anki_cards SET data = json_set(data, '$.odue', 0) WHERE id = ?`,
+                card.id,
+            );
+            result.originalDuesCleared += 1;
+        }
+
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -437,6 +613,19 @@ export function repairDatabase(): DatabaseRepairResult {
     }
 
     return result;
+}
+
+/**
+ * Write one mirrored numeric card field. The column is what the scheduler reads, but the JSON blob
+ * carries a copy, so leaving it behind would let the next read put the bad value straight back.
+ */
+function writeCardNumber(db: Db, cardId: number, field: 'due' | 'ord', value: number): void {
+    db.runSync(`UPDATE anki_cards SET "${field}" = ? WHERE id = ?`, value, cardId);
+    db.runSync(
+        `UPDATE anki_cards SET data = json_set(data, '$.${field}', ?) WHERE id = ? AND json_valid(data) = 1`,
+        value,
+        cardId,
+    );
 }
 
 /** The steps "Onar ve optimize et" runs, in order. */
