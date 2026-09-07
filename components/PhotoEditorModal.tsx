@@ -41,6 +41,7 @@ import {
     clampCropRect,
     clampPhotoPoint,
     cropPhotoAnnotation,
+    isPhotoShapeDragCommittable,
     isPointInPhotoText,
     isPointInPhotoTrashZone,
     normalizePhotoRotation,
@@ -1202,6 +1203,12 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     ? { ...current, points: strokePoints }
                     : current);
             } else {
+                // The release commits from the gesture record, not from the live preview it
+                // cannot read, so the shape tools must leave their moving end there too. Keeping
+                // only the latest sample is enough — a shape is defined by its two corners — and
+                // without it letting go would commit `start` twice: an arrow collapsed into its
+                // own head, a rectangle and an ellipse with no size at all.
+                gesture.points[1] = point;
                 setLiveAnnotation((current) => current && current.type !== 'stroke' && current.type !== 'text'
                     ? { ...current, end: point }
                     : current);
@@ -1291,10 +1298,15 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     ]);
                 } else if (currentTool !== 'text') {
                     const lastPoint = gesture.points[gesture.points.length - 1] ?? gesture.start;
-                    commitAnnotations([
-                        ...annotationsRef.current,
-                        { ...base, type: currentTool, start: gesture.start, end: lastPoint } as PhotoShape,
-                    ]);
+                    const { width: shapeCanvasW, height: shapeCanvasH } = canvasSizeRef.current;
+                    // A tap with a shape tool selected is not a drawing; committing it would
+                    // leave a stray mark the user then has to hunt down and erase.
+                    if (isPhotoShapeDragCommittable(gesture.start, lastPoint, shapeCanvasW, shapeCanvasH)) {
+                        commitAnnotations([
+                            ...annotationsRef.current,
+                            { ...base, type: currentTool, start: gesture.start, end: lastPoint } as PhotoShape,
+                        ]);
+                    }
                 }
             }
             gestureRef.current = null;

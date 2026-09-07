@@ -456,6 +456,29 @@ export function resolvePhotoTextDragRelease(release: PhotoTextDragRelease): Phot
     return overTrash ? 'delete' : 'reposition';
 }
 
+/** How far the finger must travel before a shape tool has drawn anything worth keeping. */
+export const PHOTO_SHAPE_MIN_DRAG_PX = 6;
+
+/**
+ * Whether a shape drag ended far enough from where it started to be committed.
+ *
+ * A shape tool has no shape until the finger has actually travelled: `start` and `end` on the
+ * same spot draw an arrowhead sitting on its own round line cap — a triangle with a dot beside
+ * it — and a rectangle or ellipse of zero size. Releases that short are dropped instead.
+ */
+export function isPhotoShapeDragCommittable(
+    start: PhotoPoint,
+    end: PhotoPoint,
+    canvasWidth: number,
+    canvasHeight: number,
+    minDragPx = PHOTO_SHAPE_MIN_DRAG_PX,
+): boolean {
+    const dx = (end.x - start.x) * canvasWidth;
+    const dy = (end.y - start.y) * canvasHeight;
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return false;
+    return Math.hypot(dx, dy) >= minDragPx;
+}
+
 export function isAnnotationHitBySweep(
     annotation: PhotoAnnotation,
     startPoint: PhotoPoint,

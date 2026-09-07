@@ -12,6 +12,7 @@ import {
     cropPhotoPoint,
     findPhotoAnnotationAtPoint,
     findPhotoAnnotationsInSweep,
+    isPhotoShapeDragCommittable,
     isPointInPhotoText,
     isPointInPhotoTrashZone,
     normalizedRect,
@@ -27,6 +28,7 @@ import {
     type PhotoPoint,
     type PhotoStroke,
     type PhotoText,
+    photoArrowHead,
     photoExportSurface,
     scalePhotoAnnotation,
 } from './photoEditor';
@@ -685,5 +687,50 @@ describe('annotations measured for a larger surface', () => {
         expect(scalePhotoAnnotation(stroke, 1)).toBe(stroke);
         expect(scalePhotoAnnotation(stroke, 0)).toBe(stroke);
         expect(scalePhotoAnnotation(stroke, Number.NaN)).toBe(stroke);
+    });
+});
+
+describe('photo editor shape drags', () => {
+    const CANVAS_W = 360;
+    const CANVAS_H = 480;
+
+    it('pins the arrow drag: a release must carry the point the finger travelled to', () => {
+        // The regression this guards: the shape tools updated only the live preview while the
+        // finger moved and never wrote the moving end into the gesture record the release commits
+        // from, so letting go stored `start` as both ends. The drag has to survive as an actual
+        // segment, which is what this length check stands for.
+        const start: PhotoPoint = { x: 0.2, y: 0.3 };
+        const end: PhotoPoint = { x: 0.7, y: 0.6 };
+        expect(isPhotoShapeDragCommittable(start, end, CANVAS_W, CANVAS_H)).toBe(true);
+        expect(isPhotoShapeDragCommittable(start, start, CANVAS_W, CANVAS_H)).toBe(false);
+    });
+
+    it('draws a collapsed arrow as a head sitting on its own start, so it must never be committed', () => {
+        // Why the check above exists, in geometry: with both ends on one spot the shaft has no
+        // length — a round line cap, drawn as a dot — and the head points at a default angle
+        // right beside it. That triangle-and-dot mark is what the user saw on every release.
+        const spot: PhotoPoint = { x: 0.5, y: 0.5 };
+        const head = photoArrowHead(spot, spot, CANVAS_W, CANVAS_H, 20);
+        expect(head[0]).toEqual({ x: 0.5 * CANVAS_W, y: 0.5 * CANVAS_H });
+        // Both wings fold back along one axis: the head has an orientation the drag never gave it.
+        expect(head[1].y).toBeCloseTo(CANVAS_H * 0.5 + 10, 6);
+        expect(head[2].y).toBeCloseTo(CANVAS_H * 0.5 - 10, 6);
+        expect(head[1].x).toBeCloseTo(head[2].x, 6);
+    });
+
+    it('keeps the tap threshold measured in pixels, not in normalized units', () => {
+        // The same normalized nudge is a longer stroke on a taller canvas, so the threshold has
+        // to be read through the canvas or a small drag would commit on one page shape and be
+        // discarded on another.
+        const start: PhotoPoint = { x: 0.5, y: 0.5 };
+        const nudged: PhotoPoint = { x: 0.5, y: 0.53 };
+        expect(isPhotoShapeDragCommittable(start, nudged, 100, 100, 6)).toBe(false);
+        expect(isPhotoShapeDragCommittable(start, nudged, 100, 1000, 6)).toBe(true);
+    });
+
+    it('refuses a release whose coordinates are not finite', () => {
+        const start: PhotoPoint = { x: 0.5, y: 0.5 };
+        expect(isPhotoShapeDragCommittable(start, { x: Number.NaN, y: 0.5 }, CANVAS_W, CANVAS_H)).toBe(false);
+        expect(isPhotoShapeDragCommittable(start, { x: 0.5, y: Number.POSITIVE_INFINITY }, CANVAS_W, CANVAS_H)).toBe(false);
     });
 });
