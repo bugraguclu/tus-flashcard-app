@@ -55,7 +55,6 @@ import type {
     ReviewTapZone,
     StudyNotificationThreshold,
 } from '../lib/types';
-import { checkMedia } from '../lib/mediaMaintenance';
 import BoundedIntegerInput, { type BoundedIntegerInputHandle } from '../components/BoundedIntegerInput';
 import {
     disableStudyNotifications,
@@ -865,28 +864,6 @@ export default function SettingsScreen() {
         })();
     }, [describeFindings, describeOptimizeResult, invalidateCollection, l, maintenanceAction]);
 
-    const handleCheckMedia = useCallback(async () => {
-        try {
-            const result = await checkMedia();
-            const preview = (items: string[]) => items.slice(0, 5).join('\n');
-            alert(
-                l('Medyayı kontrol et', 'Check Media'),
-                [
-                    `${l('Başvurulan dosya', 'Referenced files')}: ${result.referenced}`,
-                    `${l('Saklanan dosya', 'Stored files')}: ${result.stored}`,
-                    `${l('Eksik', 'Missing')}: ${result.missing.length}`,
-                    result.missing.length ? preview(result.missing) : '',
-                    `${l('Kullanılmayan', 'Unused')}: ${result.unused.length}`,
-                    result.unused.length ? preview(result.unused) : '',
-                    result.missing.length > 5 || result.unused.length > 5 ? l('İlk 5 dosya gösteriliyor.', 'Showing the first 5 files.') : '',
-                ].filter(Boolean).join('\n'),
-            );
-        } catch (error) {
-            console.warn('[Settings] media check failed:', error);
-            alert(l('Hata', 'Error'), l('Medya kontrolü tamamlanamadı.', 'Media check could not be completed.'));
-        }
-    }, [l]);
-
     const handleResetSettings = useCallback(() => {
         confirm(l('Varsayılan ayarlar', 'Default Settings'), l('Tüm uygulama ayarları varsayılana döndürülsün mü?', 'Restore all app settings to defaults?'), () => {
             const result = resetSettingsToDefaults();
@@ -1511,7 +1488,6 @@ export default function SettingsScreen() {
                     disabled={maintenanceAction !== null}
                     styles={styles}
                 />
-                <DataActionRow icon="▧" label={l('Medyayı kontrol et', 'Check media')} onPress={() => void handleCheckMedia()} disabled={maintenanceAction !== null} styles={styles} />
                 <DataActionRow
                     icon="↺"
                     label={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('İlerlemeyi sıfırla', 'Reset progress')}
@@ -1522,7 +1498,7 @@ export default function SettingsScreen() {
                 />
             </Group>
         </>
-    ), [handleCheckDatabase, handleCheckMedia, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
+    ), [handleCheckDatabase, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
 
     const renderAbout = () => (
         <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paket desteğine sahip yerel öncelikli kart uygulaması`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • Local-first flashcard app with Anki package support`)} styles={styles}>
