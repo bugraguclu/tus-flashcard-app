@@ -37,6 +37,15 @@ export const BLOCK_STATE_COMMANDS = [
  */
 export const TYPING_RUN_COALESCE_MS = 900;
 
+/**
+ * Cap on the selected text posted with each caret reading.
+ *
+ * Only Change Case reads it, and no realistic run of prose a user means to recase is longer than
+ * this. The cap is what keeps a select-all on a large field from shipping the whole document
+ * across the bridge on every caret move.
+ */
+export const MAX_SELECTION_TEXT = 20000;
+
 /** Block containers the caret can sit in that the Styles tab knows how to name. */
 export const BLOCK_CONTAINER_TAGS = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'li'] as const;
 
@@ -83,7 +92,22 @@ export const EDITOR_SHORTCUTS: EditorShortcut[] = [
     { key: '1', alt: true, command: 'formatBlock', value: '<h1>' },
     { key: '2', alt: true, command: 'formatBlock', value: '<h2>' },
     { key: '3', alt: true, command: 'formatBlock', value: '<h3>' },
+    // Word's grow/shrink pair. WebKit reports the key of Ctrl+Shift+. as '>' on some layouts and
+    // '.' on others, so both spellings are bound rather than losing the shortcut on one keyboard.
+    { key: '>', shift: true, command: 'growFont' },
+    { key: '.', shift: true, command: 'growFont' },
+    { key: '<', shift: true, command: 'shrinkFont' },
+    { key: ',', shift: true, command: 'shrinkFont' },
 ];
+
+/**
+ * Word's Change Case cycle is Shift+F3 with no Ctrl or Cmd, the one binding that does not fit
+ * `EDITOR_SHORTCUTS`' modifier contract, so it is matched separately.
+ */
+export function isChangeCaseShortcut(event: ShortcutKeyEvent): boolean {
+    if (event.metaKey || event.ctrlKey || event.altKey) return false;
+    return !!event.shiftKey && String(event.key ?? '').toLowerCase() === 'f3';
+}
 
 export interface ShortcutKeyEvent {
     key: string;
@@ -189,6 +213,7 @@ function createTusFormattingBridge(editor, doc) {
   var SHORTCUTS = ${JSON.stringify(EDITOR_SHORTCUTS)};
   var TYPING_RUN_COALESCE_MS = ${TYPING_RUN_COALESCE_MS};
   var PENDING_STYLE_MARKER = String.fromCharCode(0x200b);
+  var MAX_SELECTION_TEXT = ${MAX_SELECTION_TEXT};
   var savedRange = null;
   var anchorSequence = 0;
   var historyDepth = 0;
@@ -368,6 +393,121 @@ function createTusFormattingBridge(editor, doc) {
     return total;
   }
 
+  // Word reports the font of the caret, not of the field, so the ribbon shows what the next
+  // character will look like. Inline style is read rather than getComputedStyle on purpose: only a
+  // declaration this editor wrote counts as "the user chose this", and an inherited value from
+  // the deck's own stylesheet must leave the control showing its default.
+  function inlineStyleAt(node, property) {
+    var walk = elementFor(node);
+    var guard = 0;
+    while (walk && walk !== editor && walk.nodeType === 1 && guard < 64) {
+      var declared = walk.style ? String(walk.style[property] || '') : '';
+      if (declared) return declared;
+      walk = walk.parentElement || walk.parentNode;
+      guard += 1;
+    }
+    return '';
+  }
+
+  // The blocks a selection touches, for the paragraph-level controls. A collapsed caret yields
+  // the one block it sits in; a selection spanning three paragraphs yields all three, which is
+  // what makes line spacing behave the way Word's paragraph menu does rather than only changing
+  // the paragraph the selection happens to start in.
+  function blockElementsInRange(range) {
+    var blocks = [];
+    if (!range) return blocks;
+
+    function blockFor(node) {
+      var walk = elementFor(node);
+      var guard = 0;
+      while (walk && walk !== editor && walk.nodeType === 1 && guard < 64) {
+        if (BLOCK_CONTAINER_TAGS.indexOf(String(walk.tagName || '').toLowerCase()) !== -1) return walk;
+        walk = walk.parentElement || walk.parentNode;
+        guard += 1;
+      }
+      return null;
+    }
+
+    function push(element) {
+      if (element && blocks.indexOf(element) === -1) blocks.push(element);
+    }
+
+    push(blockFor(range.startContainer));
+    if (range.collapsed) return blocks;
+    push(blockFor(range.endContainer));
+
+    var container = elementFor(range.commonAncestorContainer);
+    if (!container || typeof doc.createTreeWalker !== 'function') return blocks;
+    var walker;
+    try {
+      walker = doc.createTreeWalker(container, 4 /* NodeFilter.SHOW_TEXT */, null);
+    } catch (error) {
+      return blocks;
+    }
+    var node = walker.nextNode ? walker.nextNode() : null;
+    var guard = 0;
+    while (node && guard < 4096) {
+      if (String(node.nodeValue || '').trim() && rangeHoldsNode(range, node)) push(blockFor(node));
+      node = walker.nextNode ? walker.nextNode() : null;
+      guard += 1;
+    }
+    return blocks;
+  }
+
+  // Paragraph-level formatting execCommand has no verb for. An empty value removes the
+  // declaration instead of writing an empty one, so "reset to default" leaves clean HTML.
+  function applyBlockStyle(property, value) {
+    var restored = restoreSelection();
+    var blocks = blockElementsInRange(editorRange());
+    if (!blocks.length) return { restored: restored, applied: false };
+    suppressAutoEdits = true;
+    for (var index = 0; index < blocks.length; index += 1) {
+      var style = blocks[index].style;
+      if (!style) continue;
+      if (value) style[property] = value;
+      else if (typeof style.removeProperty === 'function') style.removeProperty(hyphenate(property));
+      else style[property] = '';
+    }
+    suppressAutoEdits = false;
+    noteEdit('command');
+    return { restored: restored, applied: true };
+  }
+
+  // Change Case replaces a run of text and leaves it selected, the way Word does, so the next
+  // Shift+F3 keeps rotating the same run instead of finding a collapsed caret and doing nothing.
+  // A text node is written directly rather than through insertHTML because the replacement is
+  // plain text by definition and must not re-parse whatever the user had selected.
+  function replaceSelectionText(text) {
+    var restored = restoreSelection();
+    var range = editorRange();
+    if (!range || range.collapsed) return { restored: restored, applied: false };
+    suppressAutoEdits = true;
+    var applied = false;
+    try {
+      var node = doc.createTextNode(String(text));
+      range.deleteContents();
+      range.insertNode(node);
+      var selected = doc.createRange();
+      selected.selectNodeContents(node);
+      var selection = activeSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(selected);
+        savedRange = selected.cloneRange();
+      }
+      applied = true;
+    } catch (error) {
+      applied = false;
+    }
+    suppressAutoEdits = false;
+    if (applied) noteEdit('command');
+    return { restored: restored, applied: applied };
+  }
+
+  function hyphenate(property) {
+    return String(property).replace(/[A-Z]/g, function (letter) { return '-' + letter.toLowerCase(); });
+  }
+
   function blockTagFor(range) {
     var tags = ancestorTags(range ? range.startContainer : null);
     for (var index = 0; index < tags.length; index += 1) {
@@ -436,7 +576,8 @@ function createTusFormattingBridge(editor, doc) {
       var idle = historyState();
       return {
         inEditor: false, collapsed: true, active: [], partial: [], block: null,
-        listDepth: 0, quoteDepth: 0, canUndo: idle.canUndo, canRedo: idle.canRedo
+        listDepth: 0, quoteDepth: 0, canUndo: idle.canUndo, canRedo: idle.canRedo,
+        fontSize: '', fontFamily: '', lineHeight: '', selectionText: '', selectionLength: 0
       };
     }
     var partial = partialInlineCommands(range);
@@ -451,6 +592,9 @@ function createTusFormattingBridge(editor, doc) {
     }
     var tags = ancestorTags(range.startContainer);
     var history = historyState();
+    var selectionText = range.collapsed
+      ? ''
+      : String(range.toString() || '').split(PENDING_STYLE_MARKER).join('');
     return {
       inEditor: true,
       collapsed: !!range.collapsed,
@@ -459,6 +603,15 @@ function createTusFormattingBridge(editor, doc) {
       block: blockTagFor(range) || null,
       listDepth: countTags(tags, ['ul', 'ol']),
       quoteDepth: countTags(tags, ['blockquote']),
+      fontSize: inlineStyleAt(range.startContainer, 'fontSize'),
+      fontFamily: inlineStyleAt(range.startContainer, 'fontFamily'),
+      lineHeight: inlineStyleAt(range.startContainer, 'lineHeight'),
+      // Change Case needs the text itself, and it is the only control that does. The cap keeps a
+      // select-all on a long field from posting the whole document on every caret move. The full
+      // length travels with it: a truncated reading must grey the button out rather than let it
+      // write the shortened text back over the whole selection.
+      selectionText: selectionText.slice(0, MAX_SELECTION_TEXT),
+      selectionLength: selectionText.length,
       canUndo: history.canUndo,
       canRedo: history.canRedo
     };
@@ -567,6 +720,8 @@ function createTusFormattingBridge(editor, doc) {
     editDocument: editDocument,
     historyState: historyState,
     readSignals: readSignals,
+    applyBlockStyle: applyBlockStyle,
+    replaceSelectionText: replaceSelectionText,
     resolveShortcut: resolveShortcut,
     normalizeBlockAfterEnter: normalizeBlockAfterEnter
   };

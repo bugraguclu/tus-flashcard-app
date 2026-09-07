@@ -27,6 +27,11 @@ function signals(patch: Partial<EditorFormatSignals> = {}): EditorFormatSignals 
         quoteDepth: 0,
         canUndo: false,
         canRedo: false,
+        fontSize: '',
+        fontFamily: '',
+        lineHeight: '',
+        selectionText: '',
+        selectionLength: 0,
         ...patch,
     };
 }
@@ -135,10 +140,81 @@ describe('greyed out toolbar buttons', () => {
 
     it('never greys out a formatting tool, which always has something to apply', () => {
         const state = deriveEditorFormatState(signals());
-        const alwaysEnabled = EDITOR_TOOL_KEYS.filter((key) => !['undo', 'redo', 'indent', 'outdent'].includes(key));
+        const conditional = ['undo', 'redo', 'indent', 'outdent', 'growFont', 'shrinkFont', 'changeCase'];
+        const alwaysEnabled = EDITOR_TOOL_KEYS.filter((key) => !conditional.includes(key));
 
         alwaysEnabled.forEach((key) => {
             expect(isEditorToolDisabled(key, state)).toBe(false);
         });
+    });
+
+    it('stops offering grow and shrink at the ends of the size ladder', () => {
+        const middle = deriveEditorFormatState(signals({ fontSize: 'medium' }));
+        expect(isEditorToolDisabled('growFont', middle)).toBe(false);
+        expect(isEditorToolDisabled('shrinkFont', middle)).toBe(false);
+
+        const largest = deriveEditorFormatState(signals({ fontSize: 'xx-large' }));
+        expect(isEditorToolDisabled('growFont', largest)).toBe(true);
+        expect(isEditorToolDisabled('shrinkFont', largest)).toBe(false);
+
+        const smallest = deriveEditorFormatState(signals({ fontSize: 'xx-small' }));
+        expect(isEditorToolDisabled('growFont', smallest)).toBe(false);
+        expect(isEditorToolDisabled('shrinkFont', smallest)).toBe(true);
+    });
+
+    it('greys out change case at a caret, which has no run of text to recase', () => {
+        expect(isEditorToolDisabled('changeCase', deriveEditorFormatState(signals()))).toBe(true);
+        expect(isEditorToolDisabled(
+            'changeCase',
+            deriveEditorFormatState(signals({ collapsed: false, selectionText: 'istanbul', selectionLength: 8 })),
+        )).toBe(false);
+    });
+
+    it('greys out change case when the reading was capped, rather than losing the rest', () => {
+        // The bridge caps the text it posts. Recasing the capped run and writing it back would
+        // replace the whole selection with the shortened text, so the control must go dark.
+        const capped = deriveEditorFormatState(signals({
+            collapsed: false,
+            selectionText: 'a'.repeat(20000),
+            selectionLength: 44000,
+        }));
+        expect(capped.selectionText).toBe('');
+        expect(isEditorToolDisabled('changeCase', capped)).toBe(true);
+
+        // A long-but-whole reading is still offered; the length is not itself a limit.
+        const whole = deriveEditorFormatState(signals({
+            collapsed: false,
+            selectionText: 'a'.repeat(5000),
+            selectionLength: 5000,
+        }));
+        expect(isEditorToolDisabled('changeCase', whole)).toBe(false);
+    });
+});
+
+describe('font, family and spacing readings', () => {
+    it('reads a size the ladder offers and falls back to medium for anything else', () => {
+        expect(deriveEditorFormatState(signals({ fontSize: 'x-large' })).fontSize).toBe('x-large');
+        expect(deriveEditorFormatState(signals({ fontSize: '  LARGE ' })).fontSize).toBe('large');
+        expect(deriveEditorFormatState(signals({ fontSize: '14pt' })).fontSize).toBe('medium');
+        expect(deriveEditorFormatState(signals({ fontSize: '' })).fontSize).toBe('medium');
+    });
+
+    it('matches a family on the head of its stack, as the DOM hands it back re-quoted', () => {
+        expect(deriveEditorFormatState(signals({ fontFamily: 'Georgia, "Times New Roman", serif' })).fontFamily)
+            .toBe('serif');
+        // WebKit re-spaces and re-quotes a declaration on the way out; the head still matches.
+        expect(deriveEditorFormatState(signals({ fontFamily: '"Georgia", Times New Roman, serif' })).fontFamily)
+            .toBe('serif');
+        expect(deriveEditorFormatState(signals({ fontFamily: 'Menlo, monospace' })).fontFamily).toBe('mono');
+        expect(deriveEditorFormatState(signals({ fontFamily: 'Papyrus' })).fontFamily).toBe('default');
+        expect(deriveEditorFormatState(signals({ fontFamily: '' })).fontFamily).toBe('default');
+    });
+
+    it('reads a spacing the menu offers and falls back to single spacing', () => {
+        expect(deriveEditorFormatState(signals({ lineHeight: '1.5' })).lineSpacing).toBe(1.5);
+        expect(deriveEditorFormatState(signals({ lineHeight: '1.15' })).lineSpacing).toBe(1.15);
+        expect(deriveEditorFormatState(signals({ lineHeight: '2' })).lineSpacing).toBe(2);
+        expect(deriveEditorFormatState(signals({ lineHeight: '1.7' })).lineSpacing).toBe(1);
+        expect(deriveEditorFormatState(signals({ lineHeight: '' })).lineSpacing).toBe(1);
     });
 });

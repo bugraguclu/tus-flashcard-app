@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     blockFormatValue,
+    calculateToolbarButtonWidth,
     calloutHtml,
     EDITOR_BLOCK_STYLES,
     EDITOR_CALLOUTS,
@@ -16,6 +17,13 @@ import {
     linkHtml,
     normalizeLinkUrl,
     tableHtml,
+    EDITOR_FONT_SIZES,
+    changeTextCase,
+    fontFamilyStyleValue,
+    isFontSizeAtLimit,
+    lineHeightStyleValue,
+    nextCaseMode,
+    stepFontSize,
 } from './editorToolbar';
 import { sanitizeUntrustedHtml } from './templates';
 
@@ -170,5 +178,148 @@ describe('toolbar layout', () => {
 
     it('leads Home with history, the way a ribbon does', () => {
         expect(editorToolKeysForTab('home').slice(0, 2)).toEqual(['undo', 'redo']);
+    });
+});
+
+describe('toolbar button width calculation and peeking affordance', () => {
+    it('shows 50% peek of the 9th item across standard iPhone screen sizes', () => {
+        // iPhone SE (375pt), iPhone 12/13/14 (390pt), iPhone 14 Pro / 15 / 16 (393pt),
+        // iPhone 16 Pro (402pt), iPhone Plus/Pro Max (430pt)
+        const phoneWidths = [375, 390, 393, 402, 430];
+        const homeItemCount = 15;
+
+        for (const width of phoneWidths) {
+            const { buttonWidth, isPeeking } = calculateToolbarButtonWidth({
+                screenWidth: width,
+                toolbarItemCount: homeItemCount,
+                isScrollable: true,
+            });
+
+            expect(isPeeking).toBe(true);
+            expect(buttonWidth).toBeGreaterThanOrEqual(44);
+
+            // 8 full buttons fit before the 9th button
+            const widthBefore9th = 8 * buttonWidth;
+            expect(widthBefore9th).toBeLessThan(width);
+
+            // Visible portion of 9th button at the screen edge
+            const visibleOf9th = width - widthBefore9th;
+            const peekPercentage = visibleOf9th / buttonWidth;
+
+            // Must peek out between 47% and 53% (close to 50% cut-off)
+            expect(peekPercentage).toBeGreaterThanOrEqual(0.47);
+            expect(peekPercentage).toBeLessThanOrEqual(0.53);
+        }
+    });
+
+    it('returns standard 44pt width when toolbar fits without scrolling', () => {
+        const result = calculateToolbarButtonWidth({
+            screenWidth: 390,
+            toolbarItemCount: 6, // 6 * 44 = 264 <= 390
+            isScrollable: true,
+        });
+
+        expect(result.isPeeking).toBe(false);
+        expect(result.buttonWidth).toBe(44);
+    });
+
+    it('returns standard 44pt width when toolbar wrapping is enabled', () => {
+        const result = calculateToolbarButtonWidth({
+            screenWidth: 390,
+            toolbarItemCount: 15,
+            isScrollable: false,
+        });
+
+        expect(result.isPeeking).toBe(false);
+        expect(result.buttonWidth).toBe(44);
+    });
+
+    it('returns standard 44pt width on tablets / wide screens (>= 600)', () => {
+        const result = calculateToolbarButtonWidth({
+            screenWidth: 768,
+            toolbarItemCount: 15,
+            isScrollable: true,
+        });
+
+        expect(result.isPeeking).toBe(false);
+        expect(result.buttonWidth).toBe(44);
+    });
+});
+
+describe('font size ladder', () => {
+    it('steps up and down the ladder', () => {
+        expect(stepFontSize('medium', 1)).toBe('large');
+        expect(stepFontSize('medium', -1)).toBe('small');
+    });
+
+    it('stops at the ends instead of wrapping', () => {
+        const largest = EDITOR_FONT_SIZES[EDITOR_FONT_SIZES.length - 1]!;
+        const smallest = EDITOR_FONT_SIZES[0]!;
+        expect(stepFontSize(largest, 1)).toBe(largest);
+        expect(stepFontSize(smallest, -1)).toBe(smallest);
+        expect(isFontSizeAtLimit(largest, 1)).toBe(true);
+        expect(isFontSizeAtLimit(largest, -1)).toBe(false);
+    });
+
+    it('treats an unknown or missing size as medium', () => {
+        expect(stepFontSize(null, 1)).toBe('large');
+        expect(stepFontSize('14pt', -1)).toBe('small');
+    });
+});
+
+describe('font family and line spacing values', () => {
+    it('writes no font-family for the default entry', () => {
+        expect(fontFamilyStyleValue('default')).toBeNull();
+    });
+
+    it('ends every named stack in a generic family', () => {
+        for (const key of ['sans', 'serif', 'mono', 'rounded'] as const) {
+            const css = fontFamilyStyleValue(key);
+            expect(css).toBeTruthy();
+            expect(css).toMatch(/(sans-serif|serif|monospace)$/);
+        }
+    });
+
+    it('keeps line-height unitless and falls back to single spacing', () => {
+        expect(lineHeightStyleValue(1.15)).toBe('1.15');
+        expect(lineHeightStyleValue(2)).toBe('2');
+        expect(lineHeightStyleValue(3.7)).toBe('1');
+    });
+});
+
+describe('changeTextCase', () => {
+    it('maps both Turkish i letters the way Turkish requires', () => {
+        // The whole point of passing a locale: English casing corrupts these words.
+        expect(changeTextCase('istanbul', 'upper')).toBe('\u0130STANBUL');
+        expect(changeTextCase('\u0131s\u0131', 'upper')).toBe('ISI');
+        expect(changeTextCase('\u0130STANBUL', 'lower')).toBe('istanbul');
+        expect(changeTextCase('ISI', 'lower')).toBe('\u0131s\u0131');
+    });
+
+    it('differs from the English mapping, proving the locale is honoured', () => {
+        expect(changeTextCase('istanbul', 'upper')).not.toBe('istanbul'.toUpperCase());
+        expect(changeTextCase('istanbul', 'upper', 'en')).toBe('ISTANBUL');
+    });
+
+    it('capitalises each word for title case', () => {
+        expect(changeTextCase('genel cerrahi notlar\u0131', 'title')).toBe('Genel Cerrahi Notlar\u0131');
+        expect(changeTextCase('\u0131s\u0131 dengesi', 'title')).toBe('Is\u0131 Dengesi');
+    });
+
+    it('capitalises only sentence openings for sentence case', () => {
+        expect(changeTextCase('BU B\u0130R TEST. \u0130K\u0130NC\u0130 C\u00dcMLE!', 'sentence'))
+            .toBe('Bu bir test. \u0130kinci c\u00fcmle!');
+    });
+
+    it('is its own inverse for toggle case', () => {
+        const source = 'Mikrobiyoloji \u0130SI';
+        expect(changeTextCase(changeTextCase(source, 'toggle'), 'toggle')).toBe(source);
+    });
+
+    it('cycles the way Word Shift+F3 does', () => {
+        expect(nextCaseMode(null)).toBe('sentence');
+        expect(nextCaseMode('sentence')).toBe('lower');
+        expect(nextCaseMode('lower')).toBe('upper');
+        expect(nextCaseMode('upper')).toBe('sentence');
     });
 });

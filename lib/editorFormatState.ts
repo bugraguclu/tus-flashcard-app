@@ -9,7 +9,17 @@
  * a DOM, and `app/editor.tsx` renders nothing the toolbar has not been told.
  */
 
-import type { EditorBlockStyleKey, EditorToolKey } from './editorToolbar';
+import {
+    EDITOR_FONT_FAMILIES,
+    EDITOR_FONT_SIZES,
+    EDITOR_LINE_SPACINGS,
+    isFontSizeAtLimit,
+    type EditorBlockStyleKey,
+    type EditorFontFamilyKey,
+    type EditorFontSize,
+    type EditorLineSpacing,
+    type EditorToolKey,
+} from './editorToolbar';
 
 /** Raw reading posted by the bridge. Every field is untrusted until `parseEditorFormatSignals`. */
 export interface EditorFormatSignals {
@@ -26,6 +36,16 @@ export interface EditorFormatSignals {
     quoteDepth: number;
     canUndo: boolean;
     canRedo: boolean;
+    /** Inline `font-size` declared on the caret's nearest styled ancestor, or '' for none. */
+    fontSize: string;
+    /** Inline `font-family` declared on the caret's nearest styled ancestor, or '' for none. */
+    fontFamily: string;
+    /** Inline `line-height` declared on the caret's nearest styled ancestor, or '' for none. */
+    lineHeight: string;
+    /** The selected text, for Change Case. Empty at a collapsed caret, and capped in length. */
+    selectionText: string;
+    /** The selection's true length, which exceeds `selectionText` when the reading was capped. */
+    selectionLength: number;
 }
 
 export interface EditorFormatState {
@@ -41,6 +61,13 @@ export interface EditorFormatState {
     canRedo: boolean;
     canIndent: boolean;
     canOutdent: boolean;
+    /** The size keyword the grow/shrink buttons step from. */
+    fontSize: EditorFontSize;
+    /** The family entry the font control shows as chosen. */
+    fontFamily: EditorFontFamilyKey;
+    /** The spacing the line-spacing control shows as chosen. */
+    lineSpacing: EditorLineSpacing;
+    selectionText: string;
 }
 
 /**
@@ -61,6 +88,10 @@ export const EMPTY_EDITOR_FORMAT_STATE: EditorFormatState = {
     canRedo: false,
     canIndent: true,
     canOutdent: false,
+    fontSize: 'medium',
+    fontFamily: 'default',
+    lineSpacing: 1,
+    selectionText: '',
 };
 
 /** Toolbar keys whose lit state is a `queryCommandState` command under a different name. */
@@ -110,6 +141,12 @@ function stringList(value: unknown): string[] {
     return value.filter((entry): entry is string => typeof entry === 'string');
 }
 
+/** A non-negative count with no upper clamp, unlike `depth`, which bounds nesting. */
+function count(value: unknown): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+    return Math.max(0, Math.floor(value));
+}
+
 function depth(value: unknown): number {
     if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
     return Math.min(64, Math.max(0, Math.floor(value)));
@@ -128,7 +165,39 @@ export function parseEditorFormatSignals(raw: unknown): EditorFormatSignals {
         quoteDepth: depth(message.quoteDepth),
         canUndo: message.canUndo === true,
         canRedo: message.canRedo === true,
+        fontSize: typeof message.fontSize === 'string' ? message.fontSize : '',
+        fontFamily: typeof message.fontFamily === 'string' ? message.fontFamily : '',
+        lineHeight: typeof message.lineHeight === 'string' ? message.lineHeight : '',
+        selectionText: typeof message.selectionText === 'string' ? message.selectionText : '',
+        selectionLength: count(message.selectionLength),
     };
+}
+
+/** The size keyword a declaration names, or `medium` for anything the ladder does not offer. */
+function readFontSize(declared: string): EditorFontSize {
+    const clean = declared.trim().toLowerCase();
+    return (EDITOR_FONT_SIZES as readonly string[]).includes(clean) ? (clean as EditorFontSize) : 'medium';
+}
+
+/**
+ * The family entry a declaration names.
+ *
+ * The stacks are compared on their first face rather than character by character, because the
+ * document round-trips a declaration through the DOM, which re-spaces and re-quotes it. Matching
+ * the head of the stack is what keeps the control lit after a save and reload.
+ */
+function readFontFamily(declared: string): EditorFontFamilyKey {
+    const head = (value: string) => value.split(',')[0]!.trim().toLowerCase().replace(/^["']|["']$/g, '');
+    const first = head(declared);
+    if (!first) return 'default';
+    const match = EDITOR_FONT_FAMILIES.find((entry) => entry.css !== null && head(entry.css) === first);
+    return match?.key ?? 'default';
+}
+
+/** The spacing a declaration names, or 1 for anything the menu does not offer. */
+function readLineSpacing(declared: string): EditorLineSpacing {
+    const parsed = Number.parseFloat(declared);
+    return EDITOR_LINE_SPACINGS.find((entry) => Math.abs(entry - parsed) < 0.001) ?? 1;
 }
 
 export function deriveEditorFormatState(signals: EditorFormatSignals): EditorFormatState {
@@ -146,6 +215,12 @@ export function deriveEditorFormatState(signals: EditorFormatSignals): EditorFor
         // Outdent only has somewhere to go from inside a list or a quote; anywhere else the press
         // would be swallowed, which is exactly the silent no-op the button must not offer.
         canOutdent: signals.listDepth > 0 || signals.quoteDepth > 0,
+        fontSize: readFontSize(signals.fontSize),
+        fontFamily: readFontFamily(signals.fontFamily),
+        lineSpacing: readLineSpacing(signals.lineHeight),
+        // A capped reading is reported as no selection at all: Change Case would otherwise write
+        // the truncated text back over the whole run and destroy the rest of it.
+        selectionText: signals.selectionLength > signals.selectionText.length ? '' : signals.selectionText,
     };
 }
 
@@ -169,5 +244,10 @@ export function isEditorToolDisabled(key: EditorToolKey, state: EditorFormatStat
     if (key === 'redo') return !state.canRedo;
     if (key === 'indent') return !state.canIndent;
     if (key === 'outdent') return !state.canOutdent;
+    // Word greys out grow/shrink at the ends of its size ladder rather than swallowing the press.
+    if (key === 'growFont') return isFontSizeAtLimit(state.fontSize, 1);
+    if (key === 'shrinkFont') return isFontSizeAtLimit(state.fontSize, -1);
+    // Change Case acts on a run of text; at a collapsed caret there is nothing to recase.
+    if (key === 'changeCase') return !state.selectionText;
     return false;
 }

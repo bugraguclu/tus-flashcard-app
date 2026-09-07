@@ -22,14 +22,27 @@ import { resolveSubjectDeckId } from '../lib/subjects';
 import { confirm, alert } from '../lib/confirm';
 import {
     blockFormatValue,
+    calculateToolbarButtonWidth,
     calloutHtml,
+    changeTextCase,
     EDITOR_BLOCK_STYLES,
     EDITOR_CALLOUTS,
+    EDITOR_FONT_FAMILIES,
+    EDITOR_FONT_SIZES,
+    EDITOR_LINE_SPACINGS,
     EDITOR_TOOLBAR_TABS,
     editorToolKeysForTab,
+    fontFamilyStyleValue,
+    lineHeightStyleValue,
     linkHtml,
+    nextCaseMode,
+    stepFontSize,
     tableHtml,
     type EditorBlockStyleKey,
+    type EditorCaseMode,
+    type EditorFontFamilyKey,
+    type EditorFontSize,
+    type EditorLineSpacing,
     type EditorToolbarTabId,
     type EditorToolKey,
 } from '../lib/editorToolbar';
@@ -62,6 +75,9 @@ import RichTextEditor, {
     type RichTextEditorHandle,
     type RichTextCommand,
 } from '../components/RichTextEditor';
+import { isCatalogCard, isCatalogDeck } from '../lib/catalogProtection';
+import { useScreenGuard } from '../hooks/useScreenGuard';
+import ProtectedContentShield from '../components/ProtectedContentShield';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { dbUpsertFtsCard } from '../lib/db';
@@ -197,7 +213,12 @@ type AnkiToolbarIconName =
     | 'callout'
     | 'undo'
     | 'redo'
-    | 'paragraph';
+    | 'paragraph'
+    | 'fontFamily'
+    | 'growFont'
+    | 'shrinkFont'
+    | 'changeCase'
+    | 'lineSpacing';
 
 function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName; color: string; size?: number }) {
     const paths: Record<Exclude<AnkiToolbarIconName, 'math'>, string> = {
@@ -214,6 +235,15 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
         rule: 'M2 11h20v2H2z',
         heading: 'M5 4v3h5.5v12h3V7H19V4H5Z',
         fontSize: 'M2.5 4v3h5v12h3V7h5V4h-13Zm19 5h-9v3h3v7h3v-7h3V9Z',
+        // A serif "A" reads as "typeface" the way Word's font box does.
+        fontFamily: 'M6.6 19H4l5.2-14h2.8L17.2 19h-2.7l-1.2-3.5H7.8L6.6 19Zm1.9-5.6h4.4l-2.2-6.3-2.2 6.3ZM3 20.5h18V22H3v-1.5Z',
+        // Word draws grow and shrink as a large and a small A beside an arrow.
+        growFont: 'M1.5 18 6 6h2.2l4.5 12h-2.2l-1-2.9H4.7l-1 2.9H1.5Zm3.8-4.7h3.4L7 8.6l-1.7 4.7ZM17 6.5l4.5 5h-3v7h-3v-7h-3l4.5-5Z',
+        shrinkFont: 'M1.5 18 6 6h2.2l4.5 12h-2.2l-1-2.9H4.7l-1 2.9H1.5Zm3.8-4.7h3.4L7 8.6l-1.7 4.7ZM17 18.5l-4.5-5h3v-7h3v7h3l-4.5 5Z',
+        // Word's Change Case button is a capital and a lower-case A side by side.
+        changeCase: 'M2 18 6.3 6h2.3L12.9 18h-2.2l-.95-2.8H5.15L4.2 18H2Zm3.75-4.6h3.3L7.4 8.5l-1.65 4.9Zm12.4 4.8c-1.9 0-3.15-1.05-3.15-2.6 0-1.6 1.2-2.5 3.4-2.65l1.9-.15v-.35c0-.85-.5-1.3-1.5-1.3-.9 0-1.45.4-1.6 1.05h-1.9c.2-1.6 1.5-2.6 3.55-2.6 2.2 0 3.4 1.05 3.4 2.95V18h-1.85l-.05-1.1c-.5.8-1.35 1.3-2.2 1.3Zm.6-1.5c1.05 0 1.85-.7 1.85-1.7v-.4l-1.6.15c-1 .1-1.5.45-1.5 1.05 0 .55.45.9 1.25.9Z',
+        // Stacked lines with a double-headed arrow, as in Word's line-spacing menu.
+        lineSpacing: 'M10 5h11v2H10V5Zm0 6h11v2H10v-2Zm0 6h11v2H10v-2ZM6 3 2.5 7h2.25v10H2.5L6 21l3.5-4H7.25V7H9.5L6 3Z',
         html: 'M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
         add: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2Z',
         alignLeft: 'M3 3h18v2H3V3Zm0 4h12v2H3V7Zm0 4h18v2H3v-2Zm0 4h12v2H3v-2Zm0 4h18v2H3v-2Z',
@@ -305,6 +335,14 @@ export default function EditorScreen() {
         return legacyId;
     }, [params.cardId, params.id]);
 
+    const isCatalog = useMemo(() => {
+        if (!routeCardId) return false;
+        return isCatalogCard(routeCardId);
+    }, [routeCardId, dataVersion]);
+    // A catalog note opens read-only but still renders its full field HTML, so the editor is
+    // shielded from capture exactly like the reviewer is.
+    const screenGuardState = useScreenGuard(isCatalog, 'editor');
+
     const routeDeckId = useMemo(() => parseCardId(params.deckId), [params.deckId]);
     const routeNoteTypeId = useMemo(() => parseCardId(params.noteTypeId), [params.noteTypeId]);
     const routeFieldValues = useMemo(() => {
@@ -325,16 +363,17 @@ export default function EditorScreen() {
     const [targetDeckId, setTargetDeckId] = useState<number | null>(() => {
         if (routeCardId) return null;
         const requestedDeck = routeDeckId ? getDeck(routeDeckId) : null;
-        if (requestedDeck && !requestedDeck.isFiltered) return requestedDeck.id;
+        if (requestedDeck && !requestedDeck.isFiltered && !isCatalogDeck(requestedDeck)) return requestedDeck.id;
         const legacySubject = typeof params.subject === 'string' ? params.subject : null;
         const legacySubjectDeck = legacySubject ? getDeck(resolveSubjectDeckId(legacySubject)) : null;
-        if (legacySubjectDeck && !legacySubjectDeck.isFiltered) return legacySubjectDeck.id;
+        if (legacySubjectDeck && !legacySubjectDeck.isFiltered && !isCatalogDeck(legacySubjectDeck)) return legacySubjectDeck.id;
         if (loadSettings().newCardDeckMode === 'default') {
-            return getDeckByName('Varsayılan')?.id ?? getDeck(1)?.id ?? null;
+            const defDeck = getDeckByName('Varsayılan') ?? getDeck(1);
+            if (defDeck && !isCatalogDeck(defDeck)) return defDeck.id;
         }
         const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
-        if (activeDeck && !activeDeck.isFiltered) return activeDeck.id;
-        return getDeck(1)?.id ?? getAllDecks().find((deck) => !deck.isFiltered)?.id ?? null;
+        if (activeDeck && !activeDeck.isFiltered && !isCatalogDeck(activeDeck)) return activeDeck.id;
+        return getDeck(1)?.id ?? getAllDecks().find((deck) => !deck.isFiltered && !isCatalogDeck(deck))?.id ?? null;
     });
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
@@ -344,6 +383,14 @@ export default function EditorScreen() {
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const [showFontSizePicker, setShowFontSizePicker] = useState(false);
     const [showInlineFontSizePicker, setShowInlineFontSizePicker] = useState(false);
+    const [showFontFamilyPicker, setShowFontFamilyPicker] = useState(false);
+    const [showLineSpacingPicker, setShowLineSpacingPicker] = useState(false);
+    // Word's Shift+F3 walks Sentence → lower → UPPER, and the ribbon's Aa button walks the same
+    // cycle. The mode is remembered per run of presses so the third press returns to the start
+    // rather than sticking on UPPERCASE.
+    const caseModeRef = useRef<EditorCaseMode | null>(null);
+    /** The text the last Change Case press wrote, so its own echo does not restart the cycle. */
+    const caseTextRef = useRef<string>('');
     const [showMathPicker, setShowMathPicker] = useState(false);
     const [toolbarTab, setToolbarTab] = useState<EditorToolbarTabId>('home');
     const [showTablePicker, setShowTablePicker] = useState(false);
@@ -364,6 +411,8 @@ export default function EditorScreen() {
         || showOverflowMenu
         || showFontSizePicker
         || showInlineFontSizePicker
+        || showFontFamilyPicker
+        || showLineSpacingPicker
         || showMathPicker
         || showTablePicker
         || showCalloutPicker
@@ -453,6 +502,11 @@ export default function EditorScreen() {
     const [activeFieldIndex, setActiveFieldIndex] = useState<number>(0);
     const fieldEditorRefs = useRef<(RichTextEditorHandle | null)[]>([]);
     const fieldMediaRefs = useRef<(MediaAttachButtonHandle | null)[]>([]);
+    const toolbarScrollRef = useRef<ScrollView>(null);
+
+    useEffect(() => {
+        toolbarScrollRef.current?.scrollTo({ x: 0, animated: false });
+    }, [toolbarTab]);
 
     const [noteTags, setNoteTags] = useState<string[]>(() => (
         typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : []
@@ -493,7 +547,7 @@ export default function EditorScreen() {
 
     const deckPickerDecks = useMemo(
         () => showDeckPicker
-            ? getAllDecks().filter((deck) => !deck.isFiltered)
+            ? getAllDecks().filter((deck) => !deck.isFiltered && !isCatalogDeck(deck))
             : [],
         [dataVersion, showDeckPicker],
     );
@@ -562,12 +616,26 @@ export default function EditorScreen() {
     useEffect(() => {
         if (routeCardId || targetDeckId !== null) return;
         if (loadSettings().newCardDeckMode === 'default') {
-            setTargetDeckId(getDeckByName('Varsayılan')?.id ?? getDeck(1)?.id ?? null);
+            const defDeck = getDeckByName('Varsayılan') ?? getDeck(1);
+            setTargetDeckId(defDeck && !isCatalogDeck(defDeck) ? defDeck.id : (getDeck(1)?.id ?? null));
             return;
         }
         const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
-        setTargetDeckId(activeDeck && !activeDeck.isFiltered ? activeDeck.id : (getDeck(1)?.id ?? null));
+        setTargetDeckId(activeDeck && !activeDeck.isFiltered && !isCatalogDeck(activeDeck) ? activeDeck.id : (getDeck(1)?.id ?? null));
     }, [routeCardId, targetDeckId, activeDeckName]);
+
+    useEffect(() => {
+        if (routeCardId) return;
+        if (!routeDeckId) return;
+        const requestedDeck = getDeck(routeDeckId);
+        if (requestedDeck && !requestedDeck.isFiltered && !isCatalogDeck(requestedDeck)) {
+            setTargetDeckId(requestedDeck.id);
+            const baseline = initialDraftRef.current;
+            if (baseline && baseline.deckId !== requestedDeck.id) {
+                resetDraftBaseline({ ...baseline, deckId: requestedDeck.id });
+            }
+        }
+    }, [routeCardId, routeDeckId]);
 
     const draftDeckSeededRef = useRef(Boolean(routeCardId) || targetDeckId !== null);
     useEffect(() => {
@@ -707,6 +775,43 @@ export default function EditorScreen() {
 
     const insertEditorHtml = (html: string) => {
         getActiveEditor()?.insertHtml(html);
+    };
+
+    const applyFontSize = (size: EditorFontSize) => {
+        wrapEditorSelection(`<span style="font-size:${size}">`, '</span>');
+    };
+
+    /** Word's grow/shrink: one step along the size ladder from whatever the caret already sits in. */
+    const stepEditorFontSize = (direction: 1 | -1) => {
+        applyFontSize(stepFontSize(formatState.fontSize, direction));
+    };
+
+    const applyFontFamily = (key: EditorFontFamilyKey) => {
+        const css = fontFamilyStyleValue(key);
+        // The default entry writes `inherit` rather than nothing, so choosing it actually clears a
+        // family the user set earlier instead of leaving the old span in place.
+        wrapEditorSelection(`<span style="font-family:${css ?? 'inherit'}">`, '</span>');
+    };
+
+    const applyLineSpacing = (spacing: EditorLineSpacing) => {
+        getActiveEditor()?.applyBlockStyle('lineHeight', lineHeightStyleValue(spacing));
+    };
+
+    /**
+     * Word's Change Case. The selected text is recased here rather than in the document, so the
+     * Turkish dotted/dotless i rules in `changeTextCase` apply — WebKit has no locale-aware
+     * transform of its own, and an English mapping turns `İSTANBUL` into a broken `i̇stanbul`.
+     */
+    const cycleTextCase = () => {
+        const selected = formatState.selectionText;
+        if (!selected) return;
+        const mode = nextCaseMode(caseModeRef.current);
+        caseModeRef.current = mode;
+        const recased = changeTextCase(selected, mode, locale);
+        // The replacement stays selected, so the reading that comes back is this text rather than
+        // a collapsed caret. Remembering it is what stops that reading from resetting the cycle.
+        caseTextRef.current = recased;
+        getActiveEditor()?.replaceSelectionText(recased);
     };
 
     const openLinkEditor = () => {
@@ -868,22 +973,23 @@ export default function EditorScreen() {
         router.push(`/note-type?id=${cardTypeId}`);
     };
 
-    const updateEditorPreferences = (patch: Partial<typeof editorPreferences>) => {
-        setEditorPreferences((current) => {
-            const next = { ...current, ...patch };
-            const currentSettings = loadSettings();
-            saveSettings({
-                ...currentSettings,
-                editorFontSize: next.fontSize,
-                editorCapitalizeSentences: next.capitalizeSentences,
-                editorToolbarVisible: next.toolbarVisible,
-                editorToolbarScrollable: next.toolbarScrollable,
-            });
-            return next;
+    const persistEditorPreferences = () => {
+        const currentSettings = loadSettings();
+        saveSettings({
+            ...currentSettings,
+            editorFontSize: editorPreferences.fontSize,
+            editorCapitalizeSentences: editorPreferences.capitalizeSentences,
+            editorToolbarVisible: editorPreferences.toolbarVisible,
+            editorToolbarScrollable: editorPreferences.toolbarScrollable,
         });
     };
 
+    const updateEditorPreferences = (patch: Partial<typeof editorPreferences>) => {
+        setEditorPreferences((current) => ({ ...current, ...patch }));
+    };
+
     const handleSave = () => {
+        if (isCatalog) return;
         dismissEditorKeyboard();
         setShowOverflowMenu(false);
         const currentFields = selectedNoteType
@@ -938,6 +1044,7 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
                 }
 
+                persistEditorPreferences();
                 resetDraftBaseline(currentDraft);
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
@@ -956,6 +1063,7 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(created.note, generatedCard.id));
                 }
 
+                persistEditorPreferences();
                 persistStickyFieldValues();
                 resetDraftBaseline(currentDraft);
                 bumpDataVersion();
@@ -982,6 +1090,10 @@ export default function EditorScreen() {
 
     const handleDelete = () => {
         if (!routeCardId) return;
+        if (isCatalog) {
+            alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları silinemez.', 'Built-in TUS cards cannot be deleted.'));
+            return;
+        }
 
         confirm(l('Kartı sil', 'Delete Card'), l('Bu kartı silmek istediğinizden emin misiniz?', 'Are you sure you want to delete this card?'), () => {
             try {
@@ -1080,10 +1192,31 @@ export default function EditorScreen() {
             label: l('Renk paleti', 'Color palette'),
             onPress: () => setShowColorPicker(true),
         },
+        fontFamily: {
+            icon: 'fontFamily',
+            label: l('Yazı tipi', 'Font'),
+            onPress: () => { Keyboard.dismiss(); setShowFontFamilyPicker(true); },
+        },
         fontSize: {
             icon: 'fontSize',
             label: l('Yazı boyutu', 'Font size'),
             onPress: () => setShowInlineFontSizePicker(true),
+        },
+        growFont: {
+            icon: 'growFont',
+            label: l('Yazı tipini büyüt', 'Grow font'),
+            onPress: () => stepEditorFontSize(1),
+        },
+        shrinkFont: {
+            icon: 'shrinkFont',
+            label: l('Yazı tipini küçült', 'Shrink font'),
+            onPress: () => stepEditorFontSize(-1),
+        },
+        changeCase: {
+            icon: 'changeCase',
+            label: l('Büyük/küçük harf', 'Change case'),
+            hint: l('Seçimi Cümle → küçük → BÜYÜK sırasıyla değiştirir', 'Cycles the selection through Sentence, lower and UPPER case'),
+            onPress: cycleTextCase,
         },
         removeFormat: {
             icon: 'removeFormat',
@@ -1130,6 +1263,11 @@ export default function EditorScreen() {
             icon: 'outdent',
             label: l('Girintiyi azalt', 'Decrease indent'),
             onPress: () => runEditorCommand('outdent'),
+        },
+        lineSpacing: {
+            icon: 'lineSpacing',
+            label: l('Satır aralığı', 'Line spacing'),
+            onPress: () => { Keyboard.dismiss(); setShowLineSpacingPicker(true); },
         },
         table: {
             icon: 'table',
@@ -1178,11 +1316,18 @@ export default function EditorScreen() {
         + (showsInsertExtras ? customToolbarButtons.length + 1 + (isCloze ? 1 : 0) : 0);
     const centerToolbar = toolbarItemCount * 44 <= screenWidth;
 
+    const { buttonWidth: dynamicButtonWidth, isPeeking: shouldPeekScrollable } = calculateToolbarButtonWidth({
+        screenWidth,
+        toolbarItemCount,
+        isScrollable: editorPreferences.toolbarScrollable,
+    });
+    const buttonWidthStyle = shouldPeekScrollable ? { width: dynamicButtonWidth } : null;
+
     const renderFormattingToolbarItems = () => (
         <>
             {isCloze && showsInsertExtras && (
                 <TouchableOpacity
-                    style={styles.formatButton}
+                    style={[styles.formatButton, buttonWidthStyle]}
                     onPress={() => {
                         const targetIndex = isCloze ? clozeFieldIndex(selectedNoteType) : activeFieldIndex;
                         const targetEditor = fieldEditorRefs.current[targetIndex] ?? getActiveEditor();
@@ -1205,6 +1350,7 @@ export default function EditorScreen() {
                         key={key}
                         style={[
                             styles.formatButton,
+                            buttonWidthStyle,
                             isActive && !isDisabled && styles.formatButtonActive,
                             isDisabled && styles.formatButtonDisabled,
                         ]}
@@ -1234,7 +1380,7 @@ export default function EditorScreen() {
             {showsInsertExtras && customToolbarButtons.map((button, index) => (
                 <TouchableOpacity
                     key={button.id}
-                    style={styles.formatButton}
+                    style={[styles.formatButton, buttonWidthStyle]}
                     onPress={() => wrapEditorSelection(button.prefix, button.suffix)}
                     onLongPress={() => openEditToolbarButton(button)}
                     delayLongPress={450}
@@ -1249,7 +1395,7 @@ export default function EditorScreen() {
             ))}
             {showsInsertExtras && (
                 <TouchableOpacity
-                    style={styles.formatButton}
+                    style={[styles.formatButton, buttonWidthStyle]}
                     onPress={openCreateToolbarButton}
                     accessibilityRole="button"
                     accessibilityLabel={l('Araç çubuğu öğesi oluştur', 'Create toolbar item')}
@@ -1276,14 +1422,16 @@ export default function EditorScreen() {
                     {isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
                 </Text>
                 <View style={styles.headerSpacer} />
-                <TouchableOpacity
-                    style={styles.headerAction}
-                    onPress={handleSave}
-                    accessibilityRole="button"
-                    accessibilityLabel={isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
-                >
-                    <CheckIcon color={colors.white} />
-                </TouchableOpacity>
+                {!isCatalog && (
+                    <TouchableOpacity
+                        style={styles.headerAction}
+                        onPress={handleSave}
+                        accessibilityRole="button"
+                        accessibilityLabel={isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
+                    >
+                        <CheckIcon color={colors.white} />
+                    </TouchableOpacity>
+                )}
                 <TouchableOpacity
                     style={styles.headerAction}
                     onPress={openPreview}
@@ -1315,7 +1463,13 @@ export default function EditorScreen() {
                 <View style={styles.selectorGroup}>
                     <TouchableOpacity
                         style={styles.ankiSelectorRow}
-                        onPress={() => !isEditing && setShowCardTypePicker(true)}
+                        onPress={() => {
+                            if (isCatalog) {
+                                alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartlarının not türü değiştirilemez.', 'Note type of built-in TUS cards cannot be changed.'));
+                                return;
+                            }
+                            if (!isEditing) setShowCardTypePicker(true);
+                        }}
                         disabled={isEditing}
                         accessibilityRole="button"
                         accessibilityLabel={l(`Kart türü: ${cardTypeLabel}`, `Note type: ${cardTypeLabel}`)}
@@ -1323,12 +1477,18 @@ export default function EditorScreen() {
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
                         <View style={styles.ankiSelectorChevron}>
-                            {!isEditing && <ChevronDownIcon color={colors.textMuted} size={19} />}
+                            {!isEditing && !isCatalog && <ChevronDownIcon color={colors.textMuted} size={19} />}
                         </View>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.ankiSelectorRow, styles.ankiSelectorRowLast]}
-                        onPress={() => setShowDeckPicker(true)}
+                        onPress={() => {
+                            if (isCatalog) {
+                                alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları başka bir desteye taşınamaz.', 'Built-in TUS cards cannot be moved to another deck.'));
+                                return;
+                            }
+                            setShowDeckPicker(true);
+                        }}
                         accessibilityRole="button"
                         accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
                     >
@@ -1337,10 +1497,24 @@ export default function EditorScreen() {
                             {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                         </Text>
                         <View style={styles.ankiSelectorChevron}>
-                            <ChevronDownIcon color={colors.textMuted} size={19} />
+                            {!isCatalog && <ChevronDownIcon color={colors.textMuted} size={19} />}
                         </View>
                     </TouchableOpacity>
                 </View>
+
+                {isCatalog && (
+                    <View style={styles.catalogProtectedBanner} accessibilityRole="summary">
+                        <Text style={styles.catalogProtectedBadge}>
+                            {l('🔒 Dahili TUS Kartı (İçerik Korumalıdır)', '🔒 Built-in TUS Card (Content Protected)')}
+                        </Text>
+                        <Text style={styles.catalogProtectedDescription}>
+                            {l(
+                                'TUS ders notları telif hakkı ile korunmaktadır. Kart içeriği değiştirilemez; ancak kendi etiketlerinizi ve bayraklarınızı ekleyebilirsiniz.',
+                                'TUS study notes are copyrighted. Card content cannot be modified; however, you can still add your personal tags and flags.',
+                            )}
+                        </Text>
+                    </View>
+                )}
 
                 {fieldsToRender.map((field, index) => {
                     const localizedName = localizeFieldName(locale, field.name);
@@ -1355,34 +1529,38 @@ export default function EditorScreen() {
                         <React.Fragment key={`${selectedNoteType?.id ?? cardTypeId}-field-${field.ord}-${index}`}>
                             <View style={styles.fieldLabelRow}>
                                 <Text style={styles.fieldName}>{localizedName}</Text>
-                                <View style={styles.fieldActions}>
-                                    <TouchableOpacity
-                                        style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
-                                        onPress={() => togglePinnedField(field.ord)}
-                                        disabled={isEditing}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={isPinned
-                                            ? l(`${localizedName} alanının sabitlemesini kaldır`, `Unpin ${localizedName} field`)
-                                            : l(`${localizedName} alanını sabitle`, `Pin ${localizedName} field`)}
-                                        accessibilityState={{ selected: isPinned, disabled: isEditing }}
-                                    >
-                                        <PinIcon color={isPinned ? colors.accent : colors.textMuted} />
-                                    </TouchableOpacity>
-                                    <MediaAttachButton
-                                        ref={(el) => {
-                                            fieldMediaRefs.current[index] = el;
-                                        }}
-                                        onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet)}
-                                    />
-                                </View>
+                                {!isCatalog && (
+                                    <View style={styles.fieldActions}>
+                                        <TouchableOpacity
+                                            style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
+                                            onPress={() => togglePinnedField(field.ord)}
+                                            disabled={isEditing}
+                                            accessibilityRole="button"
+                                            accessibilityLabel={isPinned
+                                                ? l(`${localizedName} alanının sabitlemesini kaldır`, `Unpin ${localizedName} field`)
+                                                : l(`${localizedName} alanını sabitle`, `Pin ${localizedName} field`)}
+                                            accessibilityState={{ selected: isPinned, disabled: isEditing }}
+                                        >
+                                            <PinIcon color={isPinned ? colors.accent : colors.textMuted} />
+                                        </TouchableOpacity>
+                                        <MediaAttachButton
+                                            ref={(el) => {
+                                                fieldMediaRefs.current[index] = el;
+                                            }}
+                                            onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet)}
+                                        />
+                                    </View>
+                                )}
                             </View>
                             <RichTextEditor
                                 ref={(el) => {
                                     fieldEditorRefs.current[index] = el;
                                 }}
                                 value={fieldValues[index] || ''}
+                                editable={!isCatalog}
                                 onChange={(val) => handleFieldChange(index, val)}
                                 onFocus={() => {
+                                    if (isCatalog) return;
                                     setActiveFieldIndex(index);
                                     // The toolbar now belongs to this field, so it is blanked until this field's
                                     // own document answers instead of showing the previous field's state.
@@ -1390,7 +1568,17 @@ export default function EditorScreen() {
                                     fieldEditorRefs.current[index]?.requestFormatState();
                                 }}
                                 onFormatStateChange={(state) => {
-                                    if (activeFieldIndex === index) setFormatState(state);
+                                    if (activeFieldIndex !== index) return;
+                                    // A new selection starts Word's case cycle over at Sentence case;
+                                    // the echo of the run this cycle just wrote does not.
+                                    if (state.selectionText !== caseTextRef.current) caseModeRef.current = null;
+                                    setFormatState(state);
+                                }}
+                                onShortcut={(shortcut) => {
+                                    if (activeFieldIndex !== index) return;
+                                    if (shortcut === 'growFont') stepEditorFontSize(1);
+                                    else if (shortcut === 'shrinkFont') stepEditorFontSize(-1);
+                                    else if (shortcut === 'changeCase') cycleTextCase();
                                 }}
                                 placeholder={placeholder}
                                 colors={colors}
@@ -1477,7 +1665,7 @@ export default function EditorScreen() {
                 />
             </ScrollView>
 
-            {editorPreferences.toolbarVisible && (
+            {!isCatalog && editorPreferences.toolbarVisible && (
             <View style={styles.formatToolbar}>
                 <View style={styles.toolbarTabsRow}>
                     <View style={styles.toolbarTabs} accessibilityRole="tablist">
@@ -1517,6 +1705,7 @@ export default function EditorScreen() {
                 </View>
                 {editorPreferences.toolbarScrollable ? (
                     <ScrollView
+                        ref={toolbarScrollRef}
                         horizontal
                         style={styles.formatToolbarScroll}
                         showsHorizontalScrollIndicator={false}
@@ -1524,6 +1713,7 @@ export default function EditorScreen() {
                         contentContainerStyle={[
                             styles.formatToolbarContent,
                             centerToolbar && styles.formatToolbarContentCentered,
+                            !centerToolbar && { paddingRight: Spacing.sm },
                         ]}
                     >
                         {renderFormattingToolbarItems()}
@@ -1536,7 +1726,7 @@ export default function EditorScreen() {
             </View>
             )}
 
-            {!editorPreferences.toolbarVisible && keyboardVisible && (
+            {!isCatalog && !editorPreferences.toolbarVisible && keyboardVisible && (
                 <View style={styles.standaloneKeyboardDismissBar}>
                     <TouchableOpacity
                         style={styles.keyboardDismissButton}
@@ -1756,14 +1946,16 @@ export default function EditorScreen() {
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowInlineFontSizePicker(false)} />
                     <View style={styles.modalCard} accessibilityViewIsModal>
                         <Text style={styles.modalTitle}>{l('Yazı boyutu', 'Font Size')}</Text>
-                        {['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'].map((size) => (
+                        {EDITOR_FONT_SIZES.map((size) => (
                             <TouchableOpacity
                                 key={size}
                                 style={styles.formatPickerOption}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: formatState.fontSize === size }}
                                 onPress={() => {
                                     runAfterFormattingDialogClose(
                                         () => setShowInlineFontSizePicker(false),
-                                        () => wrapEditorSelection(`<span style="font-size:${size}">`, '</span>'),
+                                        () => applyFontSize(size),
                                     );
                                 }}
                             >
@@ -1771,6 +1963,82 @@ export default function EditorScreen() {
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity style={styles.modalClose} onPress={() => setShowInlineFontSizePicker(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showFontFamilyPicker}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => setShowFontFamilyPicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowFontFamilyPicker(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('Yazı tipi', 'Font')}</Text>
+                        {EDITOR_FONT_FAMILIES.map((entry) => (
+                            <TouchableOpacity
+                                key={entry.key}
+                                style={styles.formatPickerOption}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: formatState.fontFamily === entry.key }}
+                                onPress={() => {
+                                    runAfterFormattingDialogClose(
+                                        () => setShowFontFamilyPicker(false),
+                                        () => applyFontFamily(entry.key),
+                                    );
+                                }}
+                            >
+                                {/* Each row is drawn in its own face, the way Word's font list previews itself. */}
+                                <Text
+                                    style={[
+                                        styles.formatPickerOptionText,
+                                        entry.css ? { fontFamily: entry.css.split(',')[0]!.trim().replace(/^["']|["']$/g, '') } : null,
+                                    ]}
+                                >
+                                    {l(entry.tr, entry.en)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowFontFamilyPicker(false)}>
+                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showLineSpacingPicker}
+                transparent
+                animationType="fade"
+                presentationStyle="overFullScreen"
+                onRequestClose={() => setShowLineSpacingPicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowLineSpacingPicker(false)} />
+                    <View style={styles.modalCard} accessibilityViewIsModal>
+                        <Text style={styles.modalTitle}>{l('Satır aralığı', 'Line spacing')}</Text>
+                        {EDITOR_LINE_SPACINGS.map((spacing) => (
+                            <TouchableOpacity
+                                key={spacing}
+                                style={styles.formatPickerOption}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: formatState.lineSpacing === spacing }}
+                                onPress={() => {
+                                    runAfterFormattingDialogClose(
+                                        () => setShowLineSpacingPicker(false),
+                                        () => applyLineSpacing(spacing),
+                                    );
+                                }}
+                            >
+                                <Text style={styles.formatPickerOptionText}>{spacing.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowLineSpacingPicker(false)}>
                             <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -2290,6 +2558,7 @@ export default function EditorScreen() {
                     </View>
                 </View>
             </Modal>
+            <ProtectedContentShield state={screenGuardState} />
         </View>
     );
 }
@@ -2866,6 +3135,26 @@ function createStyles(colors: ColorScheme) {
         fontSize: FontSize.sm,
         fontWeight: '600',
         color: colors.accent,
+    },
+    catalogProtectedBanner: {
+        backgroundColor: colors.accentLight ?? 'rgba(10, 132, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: colors.accent,
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
+        marginTop: Spacing.sm,
+        marginBottom: Spacing.sm,
+        gap: 6,
+    },
+    catalogProtectedBadge: {
+        fontSize: FontSize.sm,
+        fontWeight: '700',
+        color: colors.accent,
+    },
+    catalogProtectedDescription: {
+        fontSize: FontSize.xs,
+        color: colors.textSecondary,
+        lineHeight: 18,
     },
     });
 }

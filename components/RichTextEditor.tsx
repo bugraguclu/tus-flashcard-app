@@ -5,10 +5,12 @@ import type { WebViewMessageEvent } from 'react-native-webview';
 import type { ColorScheme } from '../constants/theme';
 import { base64ToBytes } from '../lib/files';
 import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
+import { mediaReferenceSnippet } from '../lib/mediaAttachment';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
 import { sanitizeToolbarSnippet } from '../lib/customToolbar';
 import { richTextBridgeScript, stripPendingStyleMarkers } from '../lib/richTextCommands';
+import { PROTECTED_CONTENT_CSS, PROTECTED_CONTENT_SCRIPT } from '../lib/protectedContentCss';
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { sanitizeUntrustedHtml } from '../lib/templates';
 import {
@@ -47,6 +49,10 @@ export interface RichTextEditorHandle {
     runCommand: (command: RichTextCommand, value?: string) => void;
     insertHtml: (html: string) => void;
     wrapSelection: (prefix: string, suffix: string) => void;
+    /** Set a CSS property on every block the selection touches; an empty value removes it. */
+    applyBlockStyle: (property: 'lineHeight', value: string) => void;
+    /** Replace the selected text with `text` and leave the replacement selected. */
+    replaceSelectionText: (text: string) => void;
     /** Ask the document to resend its caret state, e.g. after the toolbar changes fields. */
     requestFormatState: () => void;
 }
@@ -56,6 +62,8 @@ interface RichTextEditorProps {
     onChange: (html: string) => void;
     onFocus?: () => void;
     onFormatStateChange?: (state: EditorFormatState) => void;
+    /** A hardware-keyboard shortcut the toolbar owns rather than the document: grow/shrink/case. */
+    onShortcut?: (shortcut: string) => void;
     placeholder: string;
     colors: ColorScheme;
     minHeight?: number;
@@ -68,6 +76,8 @@ interface RichTextEditorProps {
     maxHeight?: number;
     /** Stagger native WebView startup when a screen contains multiple editor fields. */
     mountDelayMs?: number;
+    /** When false, field content is strictly read-only. */
+    editable?: boolean;
 }
 
 function safeJsValue(value: string): string {
@@ -94,6 +104,7 @@ function editorDocument(
     pasteClipboardImagesAsPng: boolean,
     nonce: string,
     scrollMode: EmbeddedWebViewScrollMode,
+    editable: boolean = true,
 ): string {
     const policy = editorContentSecurityPolicy(nonce);
     const safeValue = sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS);
@@ -113,7 +124,9 @@ function editorDocument(
     font-size: ${fontSize}px;
     line-height: 1.45;
     overflow-wrap: anywhere;
-    -webkit-user-select: text;
+    -webkit-user-select: ${editable ? 'text' : 'none'};
+    user-select: ${editable ? 'text' : 'none'};
+    -webkit-touch-callout: ${editable ? 'default' : 'none'};
   }
   #editor:empty::before { content: attr(data-placeholder); color: ${colors.textMuted}; pointer-events: none; }
   #editor img, #editor video { max-width: 100%; height: auto; }
@@ -124,14 +137,16 @@ function editorDocument(
   .tus-audio-speed-btn:active { opacity: 0.7; }
   #editor hr { border: 0; border-top: 1px solid ${colors.border}; margin: 10px 0; }
   #editor ul, #editor ol { padding-left: 24px; }
+  ${editable ? '' : PROTECTED_CONTENT_CSS}
 </style>
 </head>
 <body>
-  <div id="editor" contenteditable="true" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
+  <div id="editor" contenteditable="${editable ? 'true' : 'false'}" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
   <script nonce="${nonce}">
     ${richTextBridgeScript()}
     (function () {
       const editor = document.getElementById('editor');
+      ${editable ? '' : PROTECTED_CONTENT_SCRIPT}
       // Selection and pending-format handling lives in lib/richTextCommands.ts so it can be
       // unit-tested against a fake DOM; see the WebKit notes there for why it is not inline.
       const bridge = createTusFormattingBridge(editor, document);
@@ -199,6 +214,11 @@ function editorDocument(
 
       initAudioControls();
 
+      function isChangeCaseShortcut(event) {
+        if (event.metaKey || event.ctrlKey || event.altKey) return false;
+        return !!event.shiftKey && String(event.key || '').toLowerCase() === 'f3';
+      }
+
       function post(payload) {
         window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(payload));
       }
@@ -261,6 +281,18 @@ function editorDocument(
       };
 
       window.__tusEditorRequestState = function () { reportState(true); };
+
+      window.__tusEditorReplaceSelectionText = function (text) {
+        bridge.replaceSelectionText(text);
+        emitChange();
+      };
+
+      // Paragraph-level formatting (line spacing). Kept apart from __tusEditorCommand because it
+      // is not an execCommand verb and must not go through the pending-typing-style repair path.
+      window.__tusEditorBlockStyle = function (property, value) {
+        bridge.applyBlockStyle(property, value);
+        emitChange();
+      };
 
       window.__tusEditorInsertHtml = function (html) {
         restoreSelection();
@@ -350,9 +382,27 @@ function editorDocument(
       // same one the toolbar buttons use and every press lands on the same command path — the
       // toolbar therefore lights up for Cmd+B exactly as it does for a tap.
       editor.addEventListener('keydown', function (event) {
+        if (!${editable ? 'true' : 'false'}) {
+          if ((event.metaKey || event.ctrlKey) && (event.key === 'c' || event.key === 'a')) return;
+          event.preventDefault();
+          return;
+        }
+        // Change Case is Shift+F3 in Word, the one binding with no Cmd or Ctrl, so it is matched
+        // before the modifier-gated table rather than inside it.
+        if (isChangeCaseShortcut(event)) {
+          event.preventDefault();
+          post({ type: 'shortcut', shortcut: 'changeCase' });
+          return;
+        }
         const shortcut = bridge.resolveShortcut(event);
         if (shortcut) {
           event.preventDefault();
+          // Grow and shrink are not execCommand verbs: the size ladder lives in the toolbar, which
+          // is the only side that knows which step comes next. They go back to React as-is.
+          if (shortcut.command === 'growFont' || shortcut.command === 'shrinkFont') {
+            post({ type: 'shortcut', shortcut: shortcut.command });
+            return;
+          }
           window.__tusEditorCommand({ command: shortcut.command, value: shortcut.value || null });
           return;
         }
@@ -367,6 +417,10 @@ function editorDocument(
         }
       });
       editor.addEventListener('paste', function (event) {
+        if (!${editable ? 'true' : 'false'}) {
+          event.preventDefault();
+          return;
+        }
         if (!${pasteClipboardImagesAsPng ? 'true' : 'false'}) return;
         const items = Array.from((event.clipboardData && event.clipboardData.items) || [])
           .filter(function (item) { return item.kind === 'file' && /^image\//i.test(item.type || ''); });
@@ -426,6 +480,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     onChange,
     onFocus,
     onFormatStateChange,
+    onShortcut,
     placeholder,
     colors,
     minHeight = 58,
@@ -435,6 +490,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     scrollMode,
     maxHeight,
     mountDelayMs = 0,
+    editable = true,
 }, ref) {
     const webViewRef = useRef<WebView>(null);
     const fallbackInputRef = useRef<TextInput>(null);
@@ -505,12 +561,12 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const mediaBaseUrl = getMediaBaseUrl();
     const source = useMemo(
         () => localMediaWebViewSource(
-            editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode),
+            editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode, editable),
             mediaBaseUrl,
         ),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, mediaBaseUrl],
+        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, mediaBaseUrl, editable],
     );
 
     useEffect(() => {
@@ -532,6 +588,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
 
     useImperativeHandle(ref, () => ({
         focus: () => {
+            if (!editable) return;
             if (!editorReadyRef.current) {
                 fallbackInputRef.current?.focus();
                 return;
@@ -545,15 +602,32 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             }
         },
         runCommand: (command, commandValue) => {
+            if (!editable) return;
             const payload = safeJsValue(JSON.stringify({ command, value: commandValue }));
             runWhenReady(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
         },
-        insertHtml: (html) => runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(sanitizeUntrustedHtml(html))})`),
+        insertHtml: (html) => {
+            if (!editable) return;
+            runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(sanitizeUntrustedHtml(html))})`);
+        },
         wrapSelection: (prefix, suffix) => {
+            if (!editable) return;
             const safePrefix = sanitizeToolbarSnippet(prefix);
             const safeSuffix = sanitizeToolbarSnippet(suffix);
             runWhenReady(
                 `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(safePrefix)}, ${safeJsValue(safeSuffix)})`,
+            );
+        },
+        applyBlockStyle: (property, blockValue) => {
+            if (!editable) return;
+            runWhenReady(
+                `window.__tusEditorBlockStyle && window.__tusEditorBlockStyle(${safeJsValue(property)}, ${safeJsValue(blockValue)})`,
+            );
+        },
+        replaceSelectionText: (text) => {
+            if (!editable) return;
+            runWhenReady(
+                `window.__tusEditorReplaceSelectionText && window.__tusEditorReplaceSelectionText(${safeJsValue(text)})`,
             );
         },
         requestFormatState: () => runWhenReady('window.__tusEditorRequestState && window.__tusEditorRequestState()'),
@@ -575,8 +649,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 height?: number;
                 state?: unknown;
                 dataUrl?: string;
+                shortcut?: string;
             };
             if (message.type === 'change' && typeof message.html === 'string') {
+                if (!editable) return;
                 if (message.html.length > MAX_EDITOR_HTML_CHARS) return;
                 const safeHtml = sanitizeUntrustedHtml(stripPendingStyleMarkers(message.html));
                 lastEditorValueRef.current = safeHtml;
@@ -596,9 +672,11 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 onFocus?.();
             } else if (message.type === 'height' && typeof message.height === 'number') {
                 updateContentHeight(message.height);
+            } else if (message.type === 'shortcut' && editable && typeof message.shortcut === 'string') {
+                onShortcut?.(message.shortcut);
             } else if (message.type === 'state') {
                 onFormatStateChange?.(readEditorFormatState(message.state));
-            } else if (message.type === 'pasteImage' && pasteClipboardImagesAsPng && typeof message.dataUrl === 'string') {
+            } else if (message.type === 'pasteImage' && editable && pasteClipboardImagesAsPng && typeof message.dataUrl === 'string') {
                 const match = message.dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/);
                 if (!match) return;
                 const bytes = base64ToBytes(match[1]);
@@ -606,7 +684,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 const sequence = pastedImageSequenceRef.current++;
                 const filename = `pasted_${Date.now()}_${sequence}.png`;
                 await saveMediaBytes(filename, bytes, 'image/png');
-                runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(`<img src="${filename}">`)})`);
+                const snippet = mediaReferenceSnippet('image', filename);
+                runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(snippet)})`);
             }
         } catch {
             // Ignore non-editor WebView messages.
@@ -664,6 +743,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     <TextInput
                         ref={fallbackInputRef}
                         value={value}
+                        editable={editable}
+                        contextMenuHidden={!editable}
+                        selectTextOnFocus={editable}
                         onChangeText={onChange}
                         onFocus={() => {
                             fallbackFocusedRef.current = true;

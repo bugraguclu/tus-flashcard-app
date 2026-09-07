@@ -44,12 +44,13 @@ export const EDITOR_TOOLBAR_LAYOUT = {
     home: [
         'undo', 'redo',
         'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript',
-        'color', 'fontSize', 'removeFormat',
+        'fontFamily', 'fontSize', 'growFont', 'shrinkFont',
+        'color', 'changeCase', 'removeFormat',
         'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull',
     ],
     styles: [
         'p', 'h1', 'h2', 'h3', 'blockquote', 'pre',
-        'listBullet', 'listNumber', 'indent', 'outdent',
+        'listBullet', 'listNumber', 'indent', 'outdent', 'lineSpacing',
     ],
     insert: ['table', 'link', 'callout', 'rule', 'math', 'html'],
 } as const satisfies Record<EditorToolbarTabId, readonly string[]>;
@@ -176,4 +177,162 @@ export function linkHtml(url: string, label: string): string | null {
     if (!safeUrl) return null;
     const text = label.trim() || safeUrl;
     return `<a href="${escapeInsertedHtml(safeUrl)}" rel="noopener noreferrer">${escapeInsertedHtml(text)}</a>`;
+}
+
+/**
+ * Computes dynamic button width for the formatting toolbar on compact phone screens.
+ * When the toolbar cannot fit all items in a single view, sizing buttons so that 8.5
+ * items fit across the screen guarantees that the 9th item (the color palette / text & highlight
+ * color in "Giriş", or indent in "Stiller") is cut off at ~50% width at the right edge.
+ * This provides a clear, unmistakable visual affordance that the toolbar scrolls horizontally.
+ */
+export function calculateToolbarButtonWidth({
+    screenWidth,
+    toolbarItemCount,
+    isScrollable = true,
+    minButtonWidth = 44,
+}: {
+    screenWidth: number;
+    toolbarItemCount: number;
+    isScrollable?: boolean;
+    minButtonWidth?: number;
+}): { buttonWidth: number; isPeeking: boolean } {
+    const isCompactScreen = screenWidth < 600;
+    const canFitAll = toolbarItemCount * minButtonWidth <= screenWidth;
+    const isPeeking = !canFitAll && isCompactScreen && isScrollable;
+
+    if (!isPeeking) {
+        return { buttonWidth: minButtonWidth, isPeeking: false };
+    }
+
+    const buttonWidth = Math.max(minButtonWidth, Math.round((screenWidth / 8.5) * 10) / 10);
+    return { buttonWidth, isPeeking: true };
+}
+
+
+// --- Word-parity tools ---
+
+/**
+ * The size ladder shared by the size picker and by grow/shrink.
+ *
+ * These are CSS absolute-size keywords rather than point values because a note is rendered by
+ * whatever stylesheet the deck ships with — on a phone, on the desktop, in AnkiWeb. A keyword
+ * scales against the reader's own base size, so a card stays readable everywhere; a hard `14pt`
+ * would not.
+ */
+export const EDITOR_FONT_SIZES = [
+    'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large',
+] as const;
+
+export type EditorFontSize = (typeof EDITOR_FONT_SIZES)[number];
+
+/**
+ * The next size up or down, for Word's grow/shrink buttons (Ctrl+Shift+> and Ctrl+Shift+<).
+ *
+ * Word stops at the ends of its own ladder rather than wrapping, and so does this: pressing grow
+ * on the largest size is a no-op, which is what lets the toolbar draw the button as disabled
+ * instead of silently doing nothing. An unrecognised current size is treated as `medium`, the
+ * size an unstyled field already renders at.
+ */
+export function stepFontSize(current: string | null | undefined, direction: 1 | -1): EditorFontSize {
+    const index = EDITOR_FONT_SIZES.indexOf((current ?? '') as EditorFontSize);
+    const from = index < 0 ? EDITOR_FONT_SIZES.indexOf('medium') : index;
+    const next = Math.min(EDITOR_FONT_SIZES.length - 1, Math.max(0, from + direction));
+    return EDITOR_FONT_SIZES[next]!;
+}
+
+/** True when grow/shrink has nowhere left to go, so the button can be drawn as disabled. */
+export function isFontSizeAtLimit(current: string | null | undefined, direction: 1 | -1): boolean {
+    return stepFontSize(current, direction) === (current ?? 'medium');
+}
+
+/**
+ * Font families offered by the toolbar.
+ *
+ * Each entry is a full stack ending in a generic family, so a note keeps its intended character
+ * even on a device that has none of the named faces — an Anki collection is shared between
+ * phones and desktops far more often than it stays on one machine. `null` on the default entry
+ * means "write no font-family at all", which is how the user clears the choice.
+ */
+export const EDITOR_FONT_FAMILIES = [
+    { key: 'default', tr: 'Varsayılan', en: 'Default', css: null },
+    { key: 'sans', tr: 'Sans serif', en: 'Sans serif', css: '-apple-system, "Helvetica Neue", Arial, sans-serif' },
+    { key: 'serif', tr: 'Serif', en: 'Serif', css: 'Georgia, "Times New Roman", serif' },
+    { key: 'mono', tr: 'Eş aralıklı', en: 'Monospace', css: 'Menlo, Consolas, "Courier New", monospace' },
+    { key: 'rounded', tr: 'Yuvarlak', en: 'Rounded', css: '"SF Pro Rounded", "Trebuchet MS", Verdana, sans-serif' },
+] as const;
+
+export type EditorFontFamilyKey = (typeof EDITOR_FONT_FAMILIES)[number]['key'];
+
+/** The `font-family` value for a key, or null for the default (which writes no declaration). */
+export function fontFamilyStyleValue(key: EditorFontFamilyKey): string | null {
+    return EDITOR_FONT_FAMILIES.find((entry) => entry.key === key)?.css ?? null;
+}
+
+/**
+ * Line spacings, matching the multiples Word's paragraph menu offers.
+ *
+ * A unitless `line-height` is deliberate: it multiplies whatever font size the block ends up
+ * with, so a heading and a paragraph given "1.5" both stay proportional instead of the heading
+ * collapsing onto a spacing computed for body text.
+ */
+export const EDITOR_LINE_SPACINGS = [1, 1.15, 1.5, 2] as const;
+
+export type EditorLineSpacing = (typeof EDITOR_LINE_SPACINGS)[number];
+
+/** The `line-height` declaration value for a spacing, e.g. `1.15`. */
+export function lineHeightStyleValue(spacing: number): string {
+    const known = EDITOR_LINE_SPACINGS.find((entry) => entry === spacing) ?? 1;
+    return String(known);
+}
+
+/** The transforms behind Word's "Change Case" (Aa) menu. */
+export type EditorCaseMode = 'sentence' | 'lower' | 'upper' | 'title' | 'toggle';
+
+/**
+ * Word's Shift+F3 cycle, in Word's own order.
+ *
+ * Word rotates Sentence case → lowercase → UPPERCASE and back, leaving the other two to the menu.
+ */
+export function nextCaseMode(current: EditorCaseMode | null): EditorCaseMode {
+    if (current === 'sentence') return 'lower';
+    if (current === 'lower') return 'upper';
+    return 'sentence';
+}
+
+/**
+ * Change the case of a run of text, respecting the locale's own casing rules.
+ *
+ * The locale matters far more here than it does in English. Turkish has two `i`s, and mapping
+ * them the English way corrupts real words: `İSTANBUL` has to lowercase to `istanbul` rather
+ * than `i̇stanbul`, and `ısı` has to uppercase to `ISI` rather than `ISI` via a dotted `İ`. Every
+ * transform below therefore goes through `toLocaleUpperCase`/`toLocaleLowerCase` with an explicit
+ * locale instead of the locale-blind `toUpperCase`/`toLowerCase`.
+ */
+export function changeTextCase(text: string, mode: EditorCaseMode, locale: string = 'tr'): string {
+    const upper = (value: string) => value.toLocaleUpperCase(locale);
+    const lower = (value: string) => value.toLocaleLowerCase(locale);
+
+    if (mode === 'upper') return upper(text);
+    if (mode === 'lower') return lower(text);
+
+    if (mode === 'toggle') {
+        // Per character: an upper-case letter becomes lower and anything else becomes upper, which
+        // is what makes the transform its own inverse the way Word's tOGGLE cASE is.
+        return Array.from(text)
+            .map((char) => (char === upper(char) && char !== lower(char) ? lower(char) : upper(char)))
+            .join('');
+    }
+
+    if (mode === 'title') {
+        // A "word" starts after any whitespace; punctuation stays attached so "kadın-doğum"
+        // capitalises only its first letter, as Word does.
+        return lower(text).replace(/(^|\s)(\S)/g, (_match, gap: string, first: string) => gap + upper(first));
+    }
+
+    // Sentence case: the first letter of the text, and of anything following . ! ? or a newline.
+    return lower(text).replace(
+        /(^|[.!?]\s+|\n\s*)(\S)/g,
+        (_match, gap: string, first: string) => gap + upper(first),
+    );
 }

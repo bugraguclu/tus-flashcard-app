@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     EDITOR_SHORTCUTS,
+    isChangeCaseShortcut,
     PENDING_STYLE_MARKER,
     resolveEditorShortcut,
     richTextBridgeScript,
@@ -292,6 +293,17 @@ describe('pending style markers', () => {
     });
 });
 
+describe('the generated bridge script', () => {
+    // The script is built by interpolating into a template literal, so a stray backtick or a
+    // mistyped ${} in one of its comments does not fail the type check — it silently truncates or
+    // corrupts the script, and the editor loses its formatting entirely at runtime.
+    it('parses as JavaScript with every interpolation resolved', () => {
+        const src = richTextBridgeScript();
+        expect(() => new Function(src)).not.toThrow();
+        expect(src).not.toMatch(/\$\{/);
+    });
+});
+
 describe('keyboard shortcuts', () => {
     it('only answers to a Cmd or Ctrl press', () => {
         expect(resolveEditorShortcut({ key: 'b' })).toBeNull();
@@ -312,6 +324,27 @@ describe('keyboard shortcuts', () => {
     it('binds no key twice with the same modifiers', () => {
         const seen = EDITOR_SHORTCUTS.map((shortcut) => `${shortcut.key.toLowerCase()}|${!!shortcut.shift}|${!!shortcut.alt}`);
         expect(new Set(seen).size).toBe(seen.length);
+    });
+
+    it("binds Word's grow and shrink on both spellings of the bracket keys", () => {
+        expect(resolveEditorShortcut({ key: '>', metaKey: true, shiftKey: true })).toEqual({ command: 'growFont' });
+        expect(resolveEditorShortcut({ key: '.', metaKey: true, shiftKey: true })).toEqual({ command: 'growFont' });
+        expect(resolveEditorShortcut({ key: '<', metaKey: true, shiftKey: true })).toEqual({ command: 'shrinkFont' });
+        expect(resolveEditorShortcut({ key: ',', metaKey: true, shiftKey: true })).toEqual({ command: 'shrinkFont' });
+        // Unshifted, the same keys are ordinary punctuation and must reach the document.
+        expect(resolveEditorShortcut({ key: '.', metaKey: true })).toBeNull();
+        expect(resolveEditorShortcut({ key: ',', metaKey: true })).toBeNull();
+    });
+
+    it("matches Word's Shift+F3 for Change Case, and nothing else", () => {
+        expect(isChangeCaseShortcut({ key: 'F3', shiftKey: true })).toBe(true);
+        expect(isChangeCaseShortcut({ key: 'f3', shiftKey: true })).toBe(true);
+        // F3 alone is not it, and neither is any modified spelling of it.
+        expect(isChangeCaseShortcut({ key: 'F3' })).toBe(false);
+        expect(isChangeCaseShortcut({ key: 'F3', shiftKey: true, metaKey: true })).toBe(false);
+        expect(isChangeCaseShortcut({ key: 'F3', shiftKey: true, ctrlKey: true })).toBe(false);
+        expect(isChangeCaseShortcut({ key: 'F3', shiftKey: true, altKey: true })).toBe(false);
+        expect(isChangeCaseShortcut({ key: 'b', shiftKey: true })).toBe(false);
     });
 
     it('resolves inside the bridge exactly as it does outside it', () => {
