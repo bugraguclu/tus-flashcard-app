@@ -1009,9 +1009,9 @@ Aşağıdaki sayılar tahmin değil, `npm run quality` çıktısının kendisidi
      render'da düşüren bir `ReferenceError` idi. Ayrıntı için bkz. Bölüm 6.
 
 2. **Birim ve Entegrasyon Testleri (`vitest run`):**
-   - Test Dosyası Sayısı: **131 test dosyası**
-   - Toplam Test Adedi: **1383 test**
-   - Başarı Oranı: **%100 (1383 passed)**
+   - Test Dosyası Sayısı: **132 test dosyası**
+   - Toplam Test Adedi: **1401 test**
+   - Başarı Oranı: **%100 (1401 passed)**
    - Kapsanan kritik alanlar: FSRS-6 altın vektörleri, çalışma takvimi DST ve oturum bölücüleri
      (34 test), zengin metin imleç format durumları (14 test), deste seçici önceliklendirme ve
      genişletme (19 test), dinamik çoklu alan not şablonları (4 test), taslak kirlilik tespiti
@@ -1027,7 +1027,7 @@ Aşağıdaki sayılar tahmin değil, `npm run quality` çıktısının kendisidi
      *"iOS configuration and Anki compatibility registry verified."*
 
 4. **Genel Kalite Kapısı (`npm run quality`):**
-   - Çıkış kodu **0**; typecheck + 1383 test + iOS denetimi zincirinin tamamı başarıyla geçti.
+   - Çıkış kodu **0**; typecheck + 1401 test + iOS denetimi zincirinin tamamı başarıyla geçti.
 
 ---
 
