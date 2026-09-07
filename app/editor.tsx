@@ -64,6 +64,7 @@ import {
     getNote,
     getNoteType,
     searchIndexCardFromNote,
+    setNoteTagsByCardId,
     type DuplicateNoteResult,
 } from '../lib/noteManager';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
@@ -988,8 +989,31 @@ export default function EditorScreen() {
         setEditorPreferences((current) => ({ ...current, ...patch }));
     };
 
+    /**
+     * A catalog note's fields, note type and deck are all locked, so the only thing that can be
+     * dirty on this screen is the tag list. It is written through `setNoteTagsByCardId`, which
+     * touches tags and nothing else, instead of the full save path that refuses a protected note.
+     */
+    const handleSaveCatalogTags = () => {
+        if (!routeCardId) return;
+        dismissEditorKeyboard();
+        setShowOverflowMenu(false);
+        try {
+            setNoteTagsByCardId(routeCardId, noteTags);
+            resetDraftBaseline(currentDraft);
+            bumpDataVersion();
+            alert(t('common.completed'), l('Etiketler kaydedildi.', 'Tags saved.'), () => router.back());
+        } catch (e) {
+            console.warn('[Editor] catalog tag save failed:', e);
+            alert(t('common.error'), l('Etiketler kaydedilemedi.', 'Could not save the tags.'));
+        }
+    };
+
     const handleSave = () => {
-        if (isCatalog) return;
+        if (isCatalog) {
+            handleSaveCatalogTags();
+            return;
+        }
         dismissEditorKeyboard();
         setShowOverflowMenu(false);
         const currentFields = selectedNoteType
@@ -1422,12 +1446,15 @@ export default function EditorScreen() {
                     {isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
                 </Text>
                 <View style={styles.headerSpacer} />
-                {!isCatalog && (
+                {/* On a catalog note only the tags can be dirty, so the button appears once they are. */}
+                {(!isCatalog || isDirty) && (
                     <TouchableOpacity
                         style={styles.headerAction}
                         onPress={handleSave}
                         accessibilityRole="button"
-                        accessibilityLabel={isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
+                        accessibilityLabel={isCatalog
+                            ? l('Etiketleri kaydet', 'Save tags')
+                            : isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
                     >
                         <CheckIcon color={colors.white} />
                     </TouchableOpacity>

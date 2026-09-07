@@ -653,6 +653,64 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
     return changed;
 }
 
+/** Compare two tag lists the way tags are matched everywhere else: NFC, case-insensitive. */
+function sameTagList(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((tag, index) => tag.normalize('NFC').toLocaleLowerCase()
+        === b[index].normalize('NFC').toLocaleLowerCase());
+}
+
+/**
+ * Replace a note's tags and nothing else.
+ *
+ * Tags are the learner's own metadata rather than the note's content, which is why the protection
+ * contract leaves them out of `assertCatalogNoteContentMutable` and why flags carry no assertion
+ * at all. This path is open on a catalog note for the same reason, on the trial tier as well as
+ * the full one: it re-reads the stored row and swaps only the tag list, so protected fields, the
+ * note type and the guid cannot travel through it even if the caller passes a doctored note.
+ * Everything else still goes through `saveNote`, which refuses a locked catalog note outright.
+ *
+ * Returns false when the note is gone or the tags already match.
+ */
+export function setNoteTags(noteId: number, tags: string[]): boolean {
+    const stored = getNote(noteId);
+    if (!stored) return false;
+
+    const seen = new Set<string>();
+    const nextTags: string[] = [];
+    for (const raw of tags) {
+        const tag = raw.normalize('NFC').trim();
+        if (!tag) continue;
+        const key = tag.toLocaleLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        nextTags.push(tag);
+    }
+    if (sameTagList(stored.tags, nextTags)) return false;
+
+    const next: Note = { ...stored, tags: nextTags, mod: Math.floor(Date.now() / 1000), usn: -1 };
+    markSourcePackageDirty(stored.sourcePackageId);
+    getDB().runSync(
+        'UPDATE notes SET tags = ?, data = ?, updated_at = ?, usn = ? WHERE id = ?',
+        serializeTags(next.tags),
+        JSON.stringify(next),
+        Date.now(),
+        next.usn ?? -1,
+        next.id,
+    );
+    for (const card of getCardsForNote(next.id)) {
+        dbUpsertFtsCard(searchIndexCardFromNote(next, card.id));
+    }
+    return true;
+}
+
+/** Replace the tags of the note a card belongs to. Returns false when the card or note is gone. */
+export function setNoteTagsByCardId(cardId: number, tags: string[]): boolean {
+    const card = getAnkiCard(cardId);
+    if (!card) return false;
+    return setNoteTags(card.noteId, tags);
+}
+
 /** Apply the same add/remove tag delta to multiple notes without erasing unrelated tags. */
 export function updateNotesTags(noteIds: number[], addTags: string[], removeTags: string[]): number {
     const db = getDB();
@@ -672,16 +730,10 @@ export function updateNotesTags(noteIds: number[], addTags: string[], removeTags
                 const key = tag.toLocaleLowerCase();
                 if (!existingKeys.has(key)) nextTags.push(tag);
             }
-            if (JSON.stringify(nextTags) === JSON.stringify(note.tags)) continue;
-
-            note.tags = nextTags;
-            note.mod = Math.floor(Date.now() / 1000);
-            note.usn = -1;
-            saveNote(note);
-            for (const card of getCardsForNote(note.id)) {
-                dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
-            }
-            changed += 1;
+            // Through `setNoteTags` rather than `saveNote`: a selection that happens to include a
+            // catalog note used to throw here and roll the whole batch back, so tagging fifty cards
+            // failed because one of them was protected.
+            if (setNoteTags(noteId, nextTags)) changed += 1;
         }
         db.execSync('COMMIT;');
     } catch (error) {
