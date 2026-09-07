@@ -62,7 +62,6 @@ import {
     saveCardWhiteboard,
     loadCardWhiteboard,
     clearCardWhiteboard,
-    clearDeckWhiteboards,
     type WhiteboardDeckState,
 } from '../../lib/whiteboardSession';
 import DeckPickerModal from '../../components/DeckPickerModal';
@@ -102,6 +101,7 @@ import {
     answerTimerSeconds,
     estimateStudyMinutes,
     formatStopwatch,
+    shouldClearWhiteboardForCard,
     shouldRunAutoAdvance,
 } from '../../lib/reviewerTimers';
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
@@ -1884,15 +1884,17 @@ export default function StudyScreen() {
 
         inkedCardIdRef.current = nextCardId;
 
-        if (nextCardId !== null) {
-            const savedSnapshot = loadCardWhiteboard(targetDeckId, nextCardId);
-            if (savedSnapshot && savedSnapshot.strokes.length > 0) {
-                whiteboardRef.current?.restoreSnapshot(savedSnapshot);
-                setWhiteboardHasContent(true);
-            } else {
-                whiteboardRef.current?.clear();
-                setWhiteboardHasContent(false);
-            }
+        // `shouldClearWhiteboardForCard` owns this decision, and it says an empty queue is not a
+        // card change: the learn-ahead countdown, a timebox checkpoint and the "all done" screen
+        // all pass through null before the same card comes back, and wiping the board there was
+        // destroying a drawing the learner was still using.
+        if (!shouldClearWhiteboardForCard(prevCardId, nextCardId)) return;
+
+        // The contract only returns true for a real next card, so this cannot be null here.
+        const savedSnapshot = nextCardId === null ? null : loadCardWhiteboard(targetDeckId, nextCardId);
+        if (savedSnapshot && savedSnapshot.strokes.length > 0) {
+            whiteboardRef.current?.restoreSnapshot(savedSnapshot);
+            setWhiteboardHasContent(true);
         } else {
             whiteboardRef.current?.clear();
             setWhiteboardHasContent(false);

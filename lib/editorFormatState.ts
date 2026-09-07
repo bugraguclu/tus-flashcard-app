@@ -52,6 +52,14 @@ export interface EditorFormatState {
     inEditor: boolean;
     collapsed: boolean;
     active: ReadonlySet<string>;
+    /**
+     * Tools the selection only partly carries — half of it bold, say.
+     *
+     * Carried through the bridge but deliberately not rendered as a third button state: a partly
+     * formatted selection stays unlit, the way a word processor leaves it, so pressing the button
+     * applies the format to the whole selection rather than toggling it off. Pinned by
+     * `lib/editorFormatState.test.ts` → "leaves a partly formatted selection unlit".
+     */
     partial: ReadonlySet<string>;
     /** The Styles-tab entry the caret sits in, or null when no button should light up. */
     block: EditorBlockStyleKey | null;
