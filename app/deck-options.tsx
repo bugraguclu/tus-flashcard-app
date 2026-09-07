@@ -311,6 +311,11 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
                                 onChange(draft);
                             }
                         }}
+                        onSubmitEditing={() => {
+                            if (draft !== value) {
+                                onChange(draft);
+                            }
+                        }}
                         onChangeText={handleChangeText}
                         keyboardType={keyboardType}
                         inputMode={inputMode}
@@ -2241,7 +2246,7 @@ function createStyles(colors: ColorScheme) {
             borderRadius: BorderRadius.sm,
             overflow: 'hidden',
         },
-        numberInput: { flex: 1, minWidth: 70, paddingVertical: 7, paddingHorizontal: 10, textAlign: 'right', color: colors.textPrimary, fontSize: FontSize.sm },
+        numberInput: { flex: 1, minWidth: 70, paddingVertical: 7, paddingHorizontal: 10, textAlign: 'right', color: colors.textPrimary, fontSize: FontSize.sm, fontVariant: ['tabular-nums'] as any },
         numberInputInvalid: { color: colors.btnAgain, backgroundColor: colors.btnAgainBg },
         inputSuffix: { paddingRight: 9, color: colors.textMuted, fontSize: FontSize.xs },
         fieldError: { color: colors.btnAgain, fontSize: 11, lineHeight: 16, marginTop: 3, fontWeight: '600' },

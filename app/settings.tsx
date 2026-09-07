@@ -33,8 +33,17 @@ import {
     resetSettingsToDefaults,
     saveSettings,
 } from '../lib/storage';
-import { checkDatabase, optimizeDatabase } from '../lib/maintenance';
-import { alert, confirm } from '../lib/confirm';
+import {
+    checkDatabase,
+    repairChangedRows,
+    repairableDefectCount,
+    totalDefectCount,
+    type DatabaseCheckResult,
+    type DatabaseOptimizeResult,
+    type MaintenanceStep,
+} from '../lib/maintenance';
+import { MaintenanceWorkflowError, optimizeDatabaseWithBackup } from '../lib/maintenanceWorkflow';
+import { alert, confirm, confirmAsync } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
@@ -57,9 +66,10 @@ import {
     STUDY_NOTIFICATION_THRESHOLDS,
 } from '../lib/studyNotificationPolicy';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
-import { createBackupNow } from '../lib/backup';
 import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
-import { stableSnapshot } from '../lib/dirtyState';
+import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { useRepeatPress } from '../hooks/useRepeatPress';
 
 import {
     DEFAULT_ANSWER_TAP_ACTIONS,
@@ -272,7 +282,7 @@ function ChoiceRow<T extends string>({ label, summary, value, options, onChange,
     );
 }
 
-function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, max, onChange, styles }: {
+function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, max, wrap = false, onChange, styles }: {
     label: string;
     summary?: string;
     value: number;
@@ -281,17 +291,27 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
     step: number;
     min: number;
     max: number;
+    wrap?: boolean;
     onChange: (value: number) => void;
     styles: ReturnType<typeof createStyles>;
 }) {
+    const { l } = useI18n();
     const inputRef = useRef<BoundedIntegerInputHandle>(null);
+
+    const decrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(-step));
+    const incrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(step));
 
     return (
         <View style={styles.preferenceBlock}>
             <Text style={styles.preferenceLabel}>{label}</Text>
             {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
             <View style={styles.stepperRow}>
-                <TouchableOpacity style={styles.stepButton} onPress={() => inputRef.current?.stepBy(-step)}>
+                <TouchableOpacity
+                    style={styles.stepButton}
+                    {...decrementRepeat}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} ${l('azalt', 'decrease')}`}
+                >
                     <Text style={styles.stepButtonText}>−</Text>
                 </TouchableOpacity>
                 <BoundedIntegerInput
@@ -299,13 +319,19 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
                     value={value}
                     min={min}
                     max={max}
+                    wrap={wrap}
                     suffix={suffix}
                     minimumDigits={minimumDigits}
                     onChange={onChange}
                     accessibilityLabel={label}
                     style={styles.stepValueInput}
                 />
-                <TouchableOpacity style={styles.stepButton} onPress={() => inputRef.current?.stepBy(step)}>
+                <TouchableOpacity
+                    style={styles.stepButton}
+                    {...incrementRepeat}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} ${l('artır', 'increase')}`}
+                >
                     <Text style={styles.stepButtonText}>+</Text>
                 </TouchableOpacity>
             </View>
@@ -384,6 +410,7 @@ export default function SettingsScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
     const [activeSection, setActiveSection] = useState<SectionId | null>(null);
@@ -397,6 +424,17 @@ export default function SettingsScreen() {
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaveFailedRef = useRef(false);
     const sectionScrollRef = useRef<ScrollView>(null);
+    const settingsRef = useRef(settings);
+    settingsRef.current = settings;
+
+    const isDirty = hasSnapshotChanged(savedSnapshot, settings);
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
+        message: l(
+            'Ayarlarınız kaydedilmedi. Çıkarsanız değişiklikler kaybolacak.',
+            'Your settings have not been saved. They will be lost if you leave.',
+        ),
+    });
 
     const gestureActionOptions = useMemo<Array<{ value: ReviewGestureAction; label: string }>>(() => [
         { value: 'off', label: l('Eylem yok', 'No action') },
@@ -451,6 +489,7 @@ export default function SettingsScreen() {
     useEffect(() => {
         const loaded = loadSettings();
         setSettings(loaded);
+        setSavedSnapshot(stableSnapshot(loaded));
         setLoading(false);
         return () => {
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -463,38 +502,13 @@ export default function SettingsScreen() {
         savedTimerRef.current = setTimeout(() => setSaved(false), 1400);
     }, []);
 
-    const persistAndRefreshSettings = useCallback((next: AppSettings): boolean => {
-        const result = saveSettings(next);
-        const persisted = loadSettings();
-        if (!result.ok || !settingsMatch(persisted, result.settings)) {
-            lastSaveFailedRef.current = true;
-            setSettings(next);
-            setSaved(false);
-            alert(
-                l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
-                l('Değişiklik cihaz depolamasına yazılamadı. Önceki ayarlar korunuyor.', 'The change could not be written to device storage. Your previous settings are preserved.'),
-            );
-            return false;
-        }
-        setSettings(persisted);
-        refreshData();
-        lastSaveFailedRef.current = false;
-        showSavedState();
-        return true;
-    }, [l, refreshData, showSavedState]);
-
-    const updateSettings = useCallback((patch: Partial<AppSettings>): boolean => {
-        const updated = { ...settings, ...patch };
-        return persistAndRefreshSettings(updated);
-    }, [persistAndRefreshSettings, settings]);
+    const updateSettings = useCallback((patch: Partial<AppSettings>) => {
+        setSettings((prev) => ({ ...prev, ...patch }));
+    }, []);
 
     const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-        const didSave = updateSettings({ [key]: value } as Pick<AppSettings, K>);
-        if (didSave && (key === 'dayRolloverHour' || key === 'learnAheadMinutes')) {
-            markSchedulingStale();
-        }
-        return didSave;
-    }, [markSchedulingStale, updateSettings]);
+        setSettings((prev) => ({ ...prev, [key]: value }));
+    }, []);
 
     const openSection = useCallback((section: SectionId) => {
         Keyboard.dismiss();
@@ -506,13 +520,38 @@ export default function SettingsScreen() {
         sectionScrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [activeSection]);
 
-    const handleSaveSettings = () => {
-        // Every preference is persisted by updateSetting. Dismissing the keyboard commits an
-        // active numeric draft via onBlur; re-saving this render's older settings object here
-        // could otherwise overwrite that freshly committed number.
+    const handleSaveSettings = useCallback(() => {
         Keyboard.dismiss();
-        if (!lastSaveFailedRef.current) showSavedState();
-    };
+        const current = settingsRef.current;
+        const result = saveSettings(current);
+        const persisted = loadSettings();
+        if (!result.ok || !settingsMatch(persisted, result.settings)) {
+            lastSaveFailedRef.current = true;
+            setSaved(false);
+            alert(
+                l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
+                l('Değişiklik cihaz depolamasına yazılamadı. Önceki ayarlar korunuyor.', 'The change could not be written to device storage. Your previous settings are preserved.'),
+            );
+            return;
+        }
+        setSettings(persisted);
+        setSavedSnapshot(stableSnapshot(persisted));
+        refreshData();
+        lastSaveFailedRef.current = false;
+
+        try {
+            const initialParsed = savedSnapshot ? JSON.parse(savedSnapshot) : null;
+            if (
+                initialParsed &&
+                (initialParsed.dayRolloverHour !== persisted.dayRolloverHour ||
+                 initialParsed.learnAheadMinutes !== persisted.learnAheadMinutes)
+            ) {
+                markSchedulingStale();
+            }
+        } catch { /* ignore parse error */ }
+
+        showSavedState();
+    }, [l, markSchedulingStale, refreshData, savedSnapshot, showSavedState]);
 
     const handleStudyNotificationsToggle = async (
         enabled: boolean,
@@ -635,6 +674,14 @@ export default function SettingsScreen() {
     const handleExport = useCallback(() => router.push(DATA_EXPORT_ROUTE), [router]);
     const handleImport = useCallback(() => router.push(DATA_IMPORT_ROUTE), [router]);
 
+    /** One line per defect, shared by the audit report and the repair preview so they agree. */
+    const describeFindings = useCallback((result: DatabaseCheckResult) => [
+        `${l('Sahipsiz kart', 'Orphaned cards')}: ${result.orphanCards}`,
+        `${l('Kartsız not', 'Notes without cards')}: ${result.orphanNotes}`,
+        `${l('Destesi kayıp kart', 'Cards with a missing deck')}: ${result.strandedCards}`,
+        `${l('Okunamayan not', 'Unreadable notes')}: ${result.unreadableNotes}`,
+    ], [l]);
+
     const handleCheckDatabase = useCallback(() => {
         try {
             const result = checkDatabase();
@@ -643,55 +690,180 @@ export default function SettingsScreen() {
                 : result.integrity === 'check_failed'
                     ? l('Bütünlük kontrolü tamamlanamadı', 'Integrity check could not be completed')
                     : l('Bütünlük sorunu algılandı', 'An integrity issue was detected');
+
+            const hints: string[] = [];
+            if (repairableDefectCount(result) > 0) {
+                hints.push(l(
+                    '“Onar ve optimize et” bu satırları düzeltebilir.',
+                    '“Repair and optimize” can fix these rows.',
+                ));
+            }
+            if (result.unreadableNotes > 0) {
+                hints.push(l(
+                    'Okunamayan notlar otomatik onarılamaz: metinleri yalnızca bir yedekten geri gelebilir.',
+                    'Unreadable notes cannot be repaired automatically: their text can only come back from a backup.',
+                ));
+            }
+            if (totalDefectCount(result) === 0) {
+                hints.push(l('Onarılacak bir şey yok.', 'Nothing needs repair.'));
+            }
+
             alert(
                 l('Veritabanını kontrol et', 'Check Database'),
-                [
-                    integrityMessage,
-                    `${l('Sahipsiz kartlar', 'Orphan cards')}: ${result.orphanCards}`,
-                    `${l('Sahipsiz notlar', 'Orphan notes')}: ${result.orphanNotes}`,
-                ].filter(Boolean).join('\n'),
+                [integrityMessage, ...describeFindings(result), '', ...hints].join('\n'),
             );
         } catch (error) {
             console.warn('[Settings] database check failed:', error);
             alert(l('Hata', 'Error'), l('Veritabanı kontrol edilemedi.', 'Database check failed.'));
         }
-    }, [l]);
+    }, [describeFindings, l]);
 
+    const stepLabel = useCallback((step: MaintenanceStep) => ({
+        repair: l('onarım', 'repair'),
+        reindex: l('indeks yenileme', 'reindex'),
+        analyze: l('istatistik güncelleme', 'analyze'),
+        search: l('arama dizini', 'search index'),
+        compact: l('sıkıştırma', 'compaction'),
+    }[step]), [l]);
+
+    /** What the run actually did, line by line — never a fixed sentence that outlives the facts. */
+    const describeOptimizeResult = useCallback((
+        result: DatabaseOptimizeResult,
+        backupFileName: string,
+    ) => {
+        const { repair } = result;
+        const lines: string[] = [];
+
+        if (repair.orphanCardsDeleted > 0) {
+            lines.push(l(`${repair.orphanCardsDeleted} sahipsiz kart silindi.`, `Deleted ${repair.orphanCardsDeleted} orphaned cards.`));
+        }
+        if (repair.orphanNotesDeleted > 0) {
+            lines.push(l(`${repair.orphanNotesDeleted} kartsız not silindi.`, `Deleted ${repair.orphanNotesDeleted} notes that had no cards.`));
+        }
+        if (repair.strandedCardsRehomed > 0) {
+            lines.push(repair.recoveryDeckName
+                ? l(
+                    `${repair.strandedCardsRehomed} kartın destesi onarıldı; kurtarılanlar “${repair.recoveryDeckName}” destesinde.`,
+                    `Repaired the deck of ${repair.strandedCardsRehomed} cards; the rescued ones are in “${repair.recoveryDeckName}”.`,
+                )
+                : l(`${repair.strandedCardsRehomed} kart kendi destesine geri döndü.`, `Returned ${repair.strandedCardsRehomed} cards to their own deck.`));
+        }
+        if (repair.protectedRowsKept > 0) {
+            lines.push(l(
+                `${repair.protectedRowsKept} katalog satırına dokunulmadı; ücretli içerik yeniden kurularak onarılır.`,
+                `${repair.protectedRowsKept} catalog rows were left alone; paid content is repaired by reinstalling it.`,
+            ));
+        }
+        if (repair.unreadableNotes > 0) {
+            lines.push(l(
+                `${repair.unreadableNotes} not okunamıyor ve otomatik onarılamaz.`,
+                `${repair.unreadableNotes} notes are unreadable and cannot be repaired automatically.`,
+            ));
+        }
+        if (lines.length === 0) {
+            lines.push(l('Onarılacak bozuk satır yoktu.', 'There were no broken rows to repair.'));
+        }
+
+        lines.push(result.ftsReindexed > 0
+            ? l(`${result.ftsReindexed} kartın arama dizini yenilendi.`, `Search was rebuilt for ${result.ftsReindexed} cards.`)
+            : l('Veritabanı indeksleri yenilendi.', 'Database indexes were refreshed.'));
+
+        if (result.freedBytes > 0) {
+            const freed = result.freedBytes >= 1024 * 1024
+                ? `${Math.round(result.freedBytes / (1024 * 1024))} MB`
+                : `${Math.max(1, Math.round(result.freedBytes / 1024))} KB`;
+            lines.push(l(`${freed} yer geri kazanıldı.`, `${freed} of space was reclaimed.`));
+        }
+
+        if (result.failedSteps.length > 0) {
+            const names = result.failedSteps.map(stepLabel).join(', ');
+            lines.push('', l(`Tamamlanamayan adımlar: ${names}.`, `Steps that did not finish: ${names}.`));
+        }
+
+        lines.push('', l(`Güvenlik yedeği: ${backupFileName}`, `Safety backup: ${backupFileName}`));
+        return lines.join('\n');
+    }, [l, stepLabel]);
+
+    /**
+     * Audit first, then show what the repair would change, then repair. The learner approves the
+     * actual findings rather than a generic warning, and a run that deletes rows says so before
+     * it starts.
+     */
     const handleOptimizeDatabase = useCallback(() => {
         if (maintenanceAction) return;
-        confirm(
-            l('Veritabanını onar ve optimize et', 'Repair and Optimize Database'),
-            l(
-                'Bu işlem veritabanını sıkıştırır, indeksleri yeniler ve arama dizinini yeniden oluşturur. Başlamadan önce güvenlik yedeği alınacaktır.',
-                'This compacts the database, refreshes indexes, and rebuilds search. A safety backup will be created first.',
-            ),
-            () => {
-                void (async () => {
-                    setMaintenanceAction('optimize');
-                    try {
-                        await createBackupNow();
-                        // Allow the busy state to paint before synchronous SQLite maintenance.
-                        await new Promise((resolve) => setTimeout(resolve, 0));
-                        const result = optimizeDatabase();
-                        alert(
-                            l('Optimizasyon tamamlandı', 'Optimization Complete'),
-                            result.ftsReindexed > 0
-                                ? l(`${result.ftsReindexed} kartın arama dizini yenilendi.`, `Search was rebuilt for ${result.ftsReindexed} cards.`)
-                                : l('Veritabanı indeksleri yenilendi.', 'Database indexes were refreshed.'),
-                        );
-                    } catch (error) {
-                        console.warn('[Settings] database optimization failed:', error);
-                        alert(
-                            l('Optimizasyon tamamlanamadı', 'Optimization Failed'),
-                            l('Hiçbir onarım güvenlik yedeği alınmadan başlatılmaz. Yedekler ekranını kontrol edip tekrar deneyin.', 'No repair starts without a safety backup. Check Backups and try again.'),
-                        );
-                    } finally {
-                        setMaintenanceAction(null);
-                    }
-                })();
-            },
-        );
-    }, [l, maintenanceAction]);
+        void (async () => {
+            let findings: DatabaseCheckResult;
+            try {
+                findings = checkDatabase();
+            } catch (error) {
+                console.warn('[Settings] pre-repair audit failed:', error);
+                alert(
+                    l('Hata', 'Error'),
+                    l('Veritabanı okunamadı, onarım başlatılmadı.', 'The database could not be read, so no repair was started.'),
+                );
+                return;
+            }
+
+            const repairable = repairableDefectCount(findings);
+            const preview = repairable > 0
+                ? [
+                    l('Bulunanlar:', 'Found:'),
+                    ...describeFindings(findings),
+                    '',
+                    l(
+                        'Sahipsiz kartlar ve kartsız notlar silinecek, destesi kayıp kartlar kurtarılacak.',
+                        'Orphaned cards and notes without cards will be deleted, and cards whose deck is gone will be rescued.',
+                    ),
+                ].join('\n')
+                : l('Onarılacak bozuk satır bulunamadı.', 'No broken rows were found to repair.');
+
+            const accepted = await confirmAsync(
+                l('Veritabanını onar ve optimize et', 'Repair and Optimize Database'),
+                [
+                    preview,
+                    '',
+                    l(
+                        'Ardından veritabanı sıkıştırılır, indeksler ve arama dizini yenilenir. Başlamadan önce güvenlik yedeği alınacaktır.',
+                        'The database is then compacted and its indexes and search index refreshed. A safety backup will be created first.',
+                    ),
+                ].join('\n'),
+                { destructive: repairable > 0 },
+            );
+            if (!accepted) return;
+
+            setMaintenanceAction('optimize');
+            try {
+                // Allow the busy state to paint before synchronous SQLite maintenance.
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                const { backupFileName, result } = await optimizeDatabaseWithBackup();
+                // Deleted, moved and reindexed rows all invalidate what the open screens are showing.
+                if (repairChangedRows(result.repair) || result.ftsReindexed > 0) invalidateCollection();
+                alert(
+                    result.failedSteps.length > 0
+                        ? l('Kısmen tamamlandı', 'Partly Completed')
+                        : l('Optimizasyon tamamlandı', 'Optimization Complete'),
+                    describeOptimizeResult(result, backupFileName),
+                );
+            } catch (error) {
+                console.warn('[Settings] database optimization failed:', error);
+                const retained = error instanceof MaintenanceWorkflowError ? error.backupFileName : undefined;
+                alert(
+                    l('Optimizasyon tamamlanamadı', 'Optimization Failed'),
+                    retained
+                        ? l(
+                            `Onarım başlatıldı ama tamamlanamadı. ${retained} güvenlik yedeği korundu; Yedekler ekranından geri yükleyebilirsiniz.`,
+                            `The repair started but did not finish. Safety backup ${retained} was retained; you can restore it from Backups.`,
+                        )
+                        : l(
+                            'Güvenlik yedeği alınamadığı için hiçbir satır değiştirilmedi. Yedekler ekranını kontrol edip tekrar deneyin.',
+                            'No row was changed because the safety backup could not be created. Check Backups and try again.',
+                        ),
+                );
+            } finally {
+                setMaintenanceAction(null);
+            }
+        })();
+    }, [describeFindings, describeOptimizeResult, invalidateCollection, l, maintenanceAction]);
 
     const handleCheckMedia = useCallback(async () => {
         try {
@@ -724,6 +896,7 @@ export default function SettingsScreen() {
             }
             const persisted = loadSettings();
             setSettings(persisted);
+            setSavedSnapshot(stableSnapshot(persisted));
             refreshData();
             markSchedulingStale();
         });
@@ -736,7 +909,9 @@ export default function SettingsScreen() {
                 setMaintenanceAction('reset');
                 try {
                     const { backupFileName } = await resetAllDataWithBackup();
-                    setSettings(loadSettings());
+                    const persisted = loadSettings();
+                    setSettings(persisted);
+                    setSavedSnapshot(stableSnapshot(persisted));
                     refreshData();
                     invalidateCollection();
                     // Reset removes both the installed catalog rows and its local access marker.
@@ -945,7 +1120,7 @@ export default function SettingsScreen() {
     const renderReviewing = useCallback(() => (
         <>
             <Group title={l('Zamanlama', 'Scheduling')} styles={styles}>
-                <StepperRow label={l('Sonraki günün başlangıcı', 'Start of next day')} summary={l('Günlük istatistikler ve limitler bu saatte yenilenir.', 'Daily statistics and limits reset at this hour.')} value={settings.dayRolloverHour} suffix=":00" minimumDigits={2} step={1} min={0} max={23} onChange={(value) => updateSetting('dayRolloverHour', value)} styles={styles} />
+                <StepperRow label={l('Sonraki günün başlangıcı', 'Start of next day')} summary={l('Günlük istatistikler ve limitler bu saatte yenilenir.', 'Daily statistics and limits reset at this hour.')} value={settings.dayRolloverHour} suffix=":00" minimumDigits={2} step={1} min={0} max={23} wrap onChange={(value) => updateSetting('dayRolloverHour', value)} styles={styles} />
                 <StepperRow label={l('Önceden öğrenme sınırı', 'Learn ahead limit')} summary={l('Sırada başka kart kalmadığında öğrenme kartlarını erken gösterir.', 'Shows learning cards early when nothing else is queued.')} value={settings.learnAheadMinutes} suffix={l('dk.', 'mins')} step={5} min={0} max={120} onChange={(value) => updateSetting('learnAheadMinutes', value)} styles={styles} />
                 <StepperRow label={l('Zaman kutusu sınırı', 'Timebox time limit')} summary={l('Her zaman kutusu sona erdiğinde çalıştığınız kart sayısını gösterir; 0 özelliği kapatır.', 'Shows how many cards you studied when each timebox ends; 0 disables it.')} value={settings.timeboxMinutes ?? 0} suffix={l('dk.', 'mins')} step={1} min={0} max={9999} onChange={(value) => updateSetting('timeboxMinutes', value)} styles={styles} />
             </Group>
@@ -1003,6 +1178,7 @@ export default function SettingsScreen() {
                             value={settings.studyNotificationHour ?? 9}
                             min={0}
                             max={23}
+                            wrap
                             minimumDigits={2}
                             onChange={(value) => updateSetting('studyNotificationHour', value)}
                             accessibilityLabel={l('Hatırlatma saati, saat', 'Reminder hour')}
@@ -1012,21 +1188,12 @@ export default function SettingsScreen() {
                             value={settings.studyNotificationMinute ?? 0}
                             min={0}
                             max={59}
+                            wrap
                             minimumDigits={2}
                             onChange={(value) => updateSetting('studyNotificationMinute', value)}
                             accessibilityLabel={l('Hatırlatma saati, dakika', 'Reminder minute')}
                         />
                     </View>
-                </View>
-            ) : null}
-            {Platform.OS === 'ios' ? (
-                <View style={styles.notificationPlatformNote}>
-                    <Text style={styles.preferenceSummary}>
-                        {l(
-                            'Titreşim ve LED/flaş uyarıları iOS Ayarları tarafından yönetilir; uygulamalar bunları ayrı ayrı zorlayamaz.',
-                            'Vibration and LED/flash alerts are controlled by iOS Settings and cannot be forced separately by an app.',
-                        )}
-                    </Text>
                 </View>
             ) : null}
         </Group>
@@ -1166,20 +1333,97 @@ export default function SettingsScreen() {
             {Platform.OS !== 'web' ? (
                 <Group title={l('Ekran kontrolü', 'On-screen control')} styles={styles}>
                     <ToggleRow
-                    label={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
+                        label={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
                         summary={l('Araç menüsüne tek elle erişmek için çalışma ekranında sabit bir düğme gösterir.', 'Shows a fixed reviewer button for one-handed access to the Tools menu.')}
                         value={Boolean(settings.showToolsOverlayButton)}
                         onChange={(value) => updateSetting('showToolsOverlayButton', value)}
+                        divider={false}
                         styles={styles}
                     />
                     {settings.showToolsOverlayButton ? (
-                        <ChoiceRow
-                            label={l('Araçlar düğmesi konumu', 'Tools button position')}
-                            value={settings.toolsOverlayPosition ?? 'right'}
-                            options={[{ value: 'left', label: l('Sol', 'Left') }, { value: 'right', label: l('Sağ', 'Right') }]}
-                            onChange={(value) => updateSetting('toolsOverlayPosition', value)}
-                            styles={styles}
-                        />
+                        <View style={styles.overlayControlContainer}>
+                            <View style={styles.overlayControlHeader}>
+                                <Text style={styles.preferenceLabel}>{l('Düğme konumu', 'Button position')}</Text>
+                                <Text style={styles.preferenceSummary}>
+                                    {l('Tek elle çalışma sırasında başparmağınızla en rahat ulaşabileceğiniz tarafı belirleyin.', 'Select the side easiest to reach with your thumb during one-handed review.')}
+                                </Text>
+                            </View>
+
+                            <View style={styles.overlayPositionSegment}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.overlayPositionButton,
+                                        settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonActive,
+                                    ]}
+                                    onPress={() => updateSetting('toolsOverlayPosition', 'left')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: settings.toolsOverlayPosition === 'left' }}
+                                >
+                                    <Text style={[
+                                        styles.overlayPositionButtonText,
+                                        settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonTextActive,
+                                    ]}>
+                                        {l('◧ Sol taraf', '◧ Left side')}
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.overlayPositionButton,
+                                        (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonActive,
+                                    ]}
+                                    onPress={() => updateSetting('toolsOverlayPosition', 'right')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: (settings.toolsOverlayPosition ?? 'right') === 'right' }}
+                                >
+                                    <Text style={[
+                                        styles.overlayPositionButtonText,
+                                        (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonTextActive,
+                                    ]}>
+                                        {l('◨ Sağ taraf', '◨ Right side')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.overlayPreviewWrap}>
+                                <Pressable
+                                    style={styles.overlayPreviewMock}
+                                    onPress={() => updateSetting('toolsOverlayPosition', settings.toolsOverlayPosition === 'left' ? 'right' : 'left')}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Düğme konumunu değiştir', 'Toggle button position')}
+                                >
+                                    <View style={styles.overlayPreviewTopBar}>
+                                        <View style={styles.overlayPreviewDot} />
+                                        <View style={styles.overlayPreviewHeaderLine} />
+                                        <View style={styles.overlayPreviewDot} />
+                                    </View>
+                                    <View style={styles.overlayPreviewCard}>
+                                        <View style={[styles.overlayPreviewTextLine, { width: '70%' }]} />
+                                        <View style={[styles.overlayPreviewTextLine, { width: '85%' }]} />
+                                        <View style={[styles.overlayPreviewTextLine, { width: '50%' }]} />
+                                    </View>
+                                    <View style={styles.overlayPreviewBottomBar}>
+                                        <View style={styles.overlayPreviewMiniBtn} />
+                                        <View style={styles.overlayPreviewMiniBtn} />
+                                        <View style={styles.overlayPreviewMiniBtn} />
+                                    </View>
+                                    <View
+                                        style={[
+                                            styles.overlayPreviewFloatingBtn,
+                                            settings.toolsOverlayPosition === 'left'
+                                                ? styles.overlayPreviewFloatingBtnLeft
+                                                : styles.overlayPreviewFloatingBtnRight,
+                                        ]}
+                                    >
+                                        <Text style={styles.overlayPreviewFloatingIcon}>⚙</Text>
+                                    </View>
+                                </Pressable>
+                                <Text style={styles.overlayPreviewCaption}>
+                                    {settings.toolsOverlayPosition === 'left'
+                                        ? l('Düğme ekranın sol alt tarafında görünecektir.', 'Button will appear on the bottom-left of the screen.')
+                                        : l('Düğme ekranın sağ alt tarafında görünecektir.', 'Button will appear on the bottom-right of the screen.')}
+                                </Text>
+                            </View>
+                        </View>
                     ) : null}
                 </Group>
             ) : null}
@@ -1226,15 +1470,6 @@ export default function SettingsScreen() {
 
     const renderData = useCallback(() => (
         <>
-            <View style={styles.dataStatusCard}>
-                <View style={styles.dataStatusIcon}><Text style={styles.dataStatusIconText}>✓</Text></View>
-                <View style={styles.dataStatusCopy}>
-                    <Text style={styles.dataStatusTitle}>{l('Bu iPhone’da saklanıyor', 'Stored on this iPhone')}</Text>
-                    <Text style={styles.dataStatusText}>{l('Değişiklikleriniz anında kaydedilir.', 'Your changes are saved immediately.')}</Text>
-                </View>
-                <View style={styles.dataStatusBadge}><Text style={styles.dataStatusBadgeText}>{l('YEREL', 'LOCAL')}</Text></View>
-            </View>
-
             <Group title={l('Yedekleme', 'Backup')} styles={styles}>
                 <ToggleRow
                     label={l('Otomatik yedekleme', 'Automatic backup')}
@@ -1244,10 +1479,6 @@ export default function SettingsScreen() {
                     divider={false}
                     styles={styles}
                 />
-                <View style={styles.dataRetentionRow}>
-                    <Text style={styles.dataRetentionLabel}>{l('Saklama', 'Retention')}</Text>
-                    <Text style={styles.dataRetentionValue}>{l('7 yedek + 3 güvenlik kopyası', '7 backups + 3 safety copies')}</Text>
-                </View>
                 <DataActionRow
                     icon="↻"
                     label={l('Yedekleri yönet', 'Manage backups')}
@@ -1275,7 +1506,7 @@ export default function SettingsScreen() {
                 <DataActionRow
                     icon="⌁"
                     label={maintenanceAction === 'optimize' ? l('Optimize ediliyor…', 'Optimizing…') : l('Onar ve optimize et', 'Repair and optimize')}
-                    detail={l('Yedek alır; veritabanı ve arama indekslerini yeniler', 'Backs up, then refreshes database and search indexes')}
+                    detail={l('Önce denetler ve onaylatır; yedek alıp bozuk satırları onarır ve indeksleri yeniler', 'Audits and confirms first, then backs up, repairs broken rows and refreshes indexes')}
                     onPress={handleOptimizeDatabase}
                     disabled={maintenanceAction !== null}
                     styles={styles}
@@ -1333,10 +1564,15 @@ export default function SettingsScreen() {
                 <Text style={styles.screenTitle} numberOfLines={1}>
                     {activeCategory?.title ?? l('Ayarlar', 'Settings')}
                 </Text>
-                {activeSection ? (
+                {activeSection || isDirty ? (
                     <TouchableOpacity
-                        style={[styles.headerSaveButton, saved && styles.headerSaveButtonSaved]}
+                        style={[
+                            styles.headerSaveButton,
+                            saved && styles.headerSaveButtonSaved,
+                            !isDirty && !saved && styles.headerSaveButtonDisabled,
+                        ]}
                         onPress={handleSaveSettings}
+                        disabled={!isDirty && !saved}
                         accessibilityRole="button"
                         accessibilityLabel={saved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
                     >
@@ -1656,6 +1892,7 @@ function createStyles(colors: ColorScheme) {
         headerSpacer: { width: 72 },
         headerSaveButton: { minWidth: 78, minHeight: 40, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent },
         headerSaveButtonSaved: { backgroundColor: colors.btnGoodBg, borderWidth: 1, borderColor: colors.btnGood },
+        headerSaveButtonDisabled: { opacity: 0.45 },
         headerSaveText: { fontSize: FontSize.sm, fontWeight: '800', color: colors.white },
         headerSaveTextSaved: { color: colors.btnGood },
         scrollContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
@@ -1714,17 +1951,6 @@ function createStyles(colors: ColorScheme) {
         controlsHelpFooter: { padding: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.bgCard },
         controlsHelpDone: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.md, backgroundColor: colors.accent },
         controlsHelpDoneText: { fontSize: FontSize.md, fontWeight: '800', color: colors.white },
-        dataStatusCard: { minHeight: 82, flexDirection: 'row', alignItems: 'center', padding: Spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.lg, backgroundColor: colors.bgCard, ...Shadows.sm },
-        dataStatusIcon: { width: 42, height: 42, marginRight: Spacing.md, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
-        dataStatusIconText: { fontSize: FontSize.lg, fontWeight: '900', color: colors.accent },
-        dataStatusCopy: { flex: 1, minWidth: 0 },
-        dataStatusTitle: { fontSize: FontSize.md, lineHeight: 20, fontWeight: '800', color: colors.textPrimary },
-        dataStatusText: { marginTop: 3, fontSize: FontSize.sm, lineHeight: 18, color: colors.textMuted },
-        dataStatusBadge: { minHeight: 26, marginLeft: Spacing.sm, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
-        dataStatusBadgeText: { fontSize: 10, letterSpacing: 0.7, fontWeight: '900', color: colors.accent },
-        dataRetentionRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
-        dataRetentionLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-        dataRetentionValue: { flex: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.textMuted, textAlign: 'right' },
         dataActionRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         dataActionRowNoDivider: { borderTopWidth: 0 },
         dataActionIcon: { width: 36, height: 36, marginRight: Spacing.md, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
@@ -1747,11 +1973,145 @@ function createStyles(colors: ColorScheme) {
         themeChoiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
         themeChoiceText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textSecondary },
         themeChoiceTextActive: { color: colors.accent, fontWeight: '800' },
-        choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.md },
-        choiceButton: { minHeight: 42, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary },
+        overlayControlContainer: {
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.borderLight,
+            paddingTop: Spacing.md,
+            marginTop: Spacing.xs,
+        },
+        overlayControlHeader: {
+            marginBottom: Spacing.md,
+        },
+        overlayPositionSegment: {
+            flexDirection: 'row',
+            gap: Spacing.sm,
+            marginBottom: Spacing.md,
+        },
+        overlayPositionButton: {
+            flex: 1,
+            minHeight: 46,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: BorderRadius.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.bgSecondary,
+        },
+        overlayPositionButtonActive: {
+            borderColor: colors.accent,
+            backgroundColor: colors.accentLight,
+        },
+        overlayPositionButtonText: {
+            fontSize: FontSize.md,
+            fontWeight: '600',
+            color: colors.textSecondary,
+        },
+        overlayPositionButtonTextActive: {
+            color: colors.accent,
+            fontWeight: '800',
+        },
+        overlayPreviewWrap: {
+            alignItems: 'center',
+            paddingVertical: Spacing.sm,
+            borderRadius: BorderRadius.md,
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+            padding: Spacing.md,
+        },
+        overlayPreviewMock: {
+            width: 170,
+            height: 125,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: colors.border,
+            backgroundColor: colors.bgCard,
+            overflow: 'hidden',
+            position: 'relative',
+            padding: 8,
+            justifyContent: 'space-between',
+            ...Shadows.sm,
+        },
+        overlayPreviewTopBar: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 2,
+            opacity: 0.5,
+        },
+        overlayPreviewDot: {
+            width: 5,
+            height: 5,
+            borderRadius: 2.5,
+            backgroundColor: colors.textMuted,
+        },
+        overlayPreviewHeaderLine: {
+            width: 44,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: colors.textMuted,
+        },
+        overlayPreviewCard: {
+            backgroundColor: colors.bgSecondary,
+            borderRadius: 8,
+            padding: 8,
+            gap: 5,
+            marginVertical: 4,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.borderLight,
+        },
+        overlayPreviewTextLine: {
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: colors.border,
+        },
+        overlayPreviewBottomBar: {
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: 4,
+            opacity: 0.45,
+        },
+        overlayPreviewMiniBtn: {
+            width: 28,
+            height: 8,
+            borderRadius: 3,
+            backgroundColor: colors.textMuted,
+        },
+        overlayPreviewFloatingBtn: {
+            position: 'absolute',
+            bottom: 12,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            backgroundColor: colors.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...Shadows.sm,
+            borderWidth: 2,
+            borderColor: colors.bgCard,
+        },
+        overlayPreviewFloatingBtnLeft: {
+            left: 10,
+        },
+        overlayPreviewFloatingBtnRight: {
+            right: 10,
+        },
+        overlayPreviewFloatingIcon: {
+            fontSize: 12,
+            color: colors.white,
+            lineHeight: 14,
+        },
+        overlayPreviewCaption: {
+            marginTop: Spacing.sm,
+            fontSize: FontSize.xs,
+            color: colors.textMuted,
+            textAlign: 'center',
+        },
+        choiceRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
+        choiceButton: { flex: 1, minWidth: 54, minHeight: 42, paddingHorizontal: Spacing.xs, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary },
         choiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        choiceText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-        choiceTextActive: { color: colors.accent, fontWeight: '800' },
+        choiceText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
+        choiceTextActive: { color: colors.accent, fontWeight: '800', textAlign: 'center' },
         gesturePresetBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
         tapMappingBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingBottom: Spacing.md },
         tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
@@ -1768,13 +2128,12 @@ function createStyles(colors: ColorScheme) {
         stepValueInput: { flex: 1, maxWidth: 148 },
         swipeSensitivityBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
         swipeSensitivityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
-        swipeSensitivityValue: { fontSize: FontSize.sm, fontWeight: '800', color: colors.accent },
+        swipeSensitivityValue: { fontSize: FontSize.sm, fontWeight: '800', fontVariant: ['tabular-nums'] as any, color: colors.accent },
         swipeSliderTouchTarget: { height: 46, justifyContent: 'center', marginTop: Spacing.sm, paddingHorizontal: 10 },
         swipeSliderTrack: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.border, overflow: 'visible' },
         swipeSliderFill: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.accent },
         swipeSliderThumb: { position: 'absolute', top: -7, width: 20, height: 20, marginLeft: -10, borderRadius: 10, borderWidth: 2, borderColor: colors.bgCard, backgroundColor: colors.accent, ...Shadows.sm },
         notificationTimeRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginTop: Spacing.sm, gap: Spacing.xs },
-        notificationPlatformNote: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
         timeSeparator: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
         outlineButton: { minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         outlineButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },

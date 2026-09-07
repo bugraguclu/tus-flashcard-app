@@ -1,8 +1,9 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../constants/theme';
 import {
     commitBoundedInteger,
+    sanitizeSignedIntegerDraft,
     sanitizeUnsignedIntegerDraft,
     stepBoundedIntegerDraft,
 } from '../lib/boundedNumber';
@@ -15,6 +16,7 @@ type Props = {
     value: number;
     min: number;
     max: number;
+    wrap?: boolean;
     onChange: (value: number) => void;
     accessibilityLabel: string;
     suffix?: string;
@@ -27,6 +29,7 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
     value,
     min,
     max,
+    wrap = false,
     onChange,
     accessibilityLabel,
     suffix,
@@ -35,53 +38,108 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
 }: Props, ref) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const format = (next: number) => String(next).padStart(Math.max(1, minimumDigits), '0');
-    const [draft, setDraft] = useState(format(value));
+    const isSigned = min < 0 || max < 0;
+    const maxChars = Math.max(1, String(min).length, String(max).length);
+    const sanitize = isSigned ? sanitizeSignedIntegerDraft : sanitizeUnsignedIntegerDraft;
+
+    const format = useCallback(
+        (next: number) => {
+            if (!Number.isFinite(next)) return '0';
+            if (next < 0) {
+                return `-${String(Math.abs(next)).padStart(Math.max(1, minimumDigits), '0')}`;
+            }
+            return String(next).padStart(Math.max(1, minimumDigits), '0');
+        },
+        [minimumDigits],
+    );
+
+    const [draft, setDraft] = useState(() => format(value));
     const [focused, setFocused] = useState(false);
-    const maxDigits = Math.max(1, String(Math.max(Math.abs(min), Math.abs(max))).length);
+
+    const draftRef = useRef(draft);
+    draftRef.current = draft;
+    const valueRef = useRef(value);
+    valueRef.current = value;
+    const steppedTargetRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (!focused) setDraft(format(value));
-    }, [focused, minimumDigits, value]);
+        if (steppedTargetRef.current !== null) {
+            if (value === steppedTargetRef.current) {
+                steppedTargetRef.current = null;
+            } else {
+                return;
+            }
+        }
+        if (!focused) {
+            const formatted = format(value);
+            setDraft(formatted);
+            draftRef.current = formatted;
+            valueRef.current = value;
+        }
+    }, [focused, format, value]);
 
-    const commit = () => {
-        const next = commitBoundedInteger(draft, value, min, max);
+    const commit = useCallback(() => {
+        const next = commitBoundedInteger(draftRef.current, valueRef.current, min, max);
+        steppedTargetRef.current = next;
         setFocused(false);
-        setDraft(format(next));
+        const formatted = format(next);
+        draftRef.current = formatted;
+        valueRef.current = next;
+        setDraft(formatted);
         if (next !== value) onChange(next);
-    };
+    }, [format, max, min, onChange, value]);
 
     useImperativeHandle(ref, () => ({
         stepBy: (delta: number) => {
-            const next = stepBoundedIntegerDraft(draft, value, delta, min, max);
-            setDraft(format(next));
+            const next = stepBoundedIntegerDraft(draftRef.current, valueRef.current, delta, min, max, wrap);
+            steppedTargetRef.current = next;
+            const formatted = format(next);
+            draftRef.current = formatted;
+            valueRef.current = next;
+            setDraft(formatted);
             if (next !== value) onChange(next);
         },
-    }), [draft, max, min, minimumDigits, onChange, value]);
+    }), [format, max, min, onChange, value, wrap]);
+
+    const charCount = Math.max(draft.length, maxChars, minimumDigits, 2);
+    const inputWidth = Math.max(38, charCount * 16 + 10);
+    const textInputRef = useRef<TextInput>(null);
 
     return (
-        <View style={[styles.container, style]}>
+        <Pressable onPress={() => textInputRef.current?.focus()} style={[styles.container, style]}>
             <TextInput
-                style={styles.input}
+                ref={textInputRef}
+                style={[
+                    styles.input,
+                    {
+                        width: inputWidth,
+                        textAlign: suffix ? 'right' : 'center',
+                    },
+                ]}
                 value={draft}
                 onFocus={() => {
                     setFocused(true);
-                    setDraft(String(value));
+                    setDraft(format(valueRef.current));
                 }}
-                onChangeText={(text) => setDraft(sanitizeUnsignedIntegerDraft(text, maxDigits))}
+                onChangeText={(text) => {
+                    const sanitized = sanitize(text, maxChars);
+                    draftRef.current = sanitized;
+                    setDraft(sanitized);
+                }}
                 onBlur={commit}
-                keyboardType="number-pad"
-                inputMode="numeric"
+                onSubmitEditing={commit}
+                keyboardType={isSigned ? 'numbers-and-punctuation' : 'number-pad'}
+                inputMode={isSigned ? 'text' : 'numeric'}
                 showSoftInputOnFocus
                 autoCapitalize="none"
                 autoCorrect={false}
                 spellCheck={false}
                 selectTextOnFocus
-                maxLength={maxDigits}
+                maxLength={maxChars}
                 accessibilityLabel={accessibilityLabel}
             />
             {suffix ? <Text style={styles.suffix} pointerEvents="none">{suffix}</Text> : null}
-        </View>
+        </Pressable>
     );
 });
 
@@ -102,19 +160,20 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             paddingHorizontal: Spacing.sm,
         },
         input: {
-            minWidth: 28,
             paddingHorizontal: 0,
             paddingVertical: 0,
-            textAlign: 'right',
             fontSize: FontSize.xl,
             fontWeight: '800',
+            fontVariant: ['tabular-nums'] as any,
             color: colors.accent,
+            flexShrink: 0,
         },
         suffix: {
             marginLeft: 3,
             fontSize: FontSize.md,
             fontWeight: '700',
             color: colors.accent,
+            flexShrink: 0,
         },
     });
 }

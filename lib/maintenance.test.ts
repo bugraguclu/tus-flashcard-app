@@ -1,23 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import initSqlJs from 'sql.js';
 import { Platform } from 'react-native';
+import { createAppDb, type SyncDb } from '../test/sqljsHarness';
+import { CATALOG_PACK_ID } from './catalogRows';
 
-const h = vi.hoisted(() => ({ exec: [] as string[], indexed: vi.fn() }));
+const h = vi.hoisted(() => ({
+    db: null as any,
+    exec: [] as string[],
+    indexed: vi.fn(),
+    searchCards: vi.fn(() => [] as any[]),
+}));
 
 vi.mock('./db', () => ({
-    getDB: () => ({
-        execSync: (sql: string) => h.exec.push(sql),
-        getFirstSync: (sql: string) => {
-            if (sql.includes('quick_check')) return { quick_check: 'ok' };
-            if (sql.includes('SELECT COUNT(*) as cnt FROM notes n')) return { cnt: 3 };
-            if (sql.includes('SELECT COUNT(*) as cnt FROM anki_cards c')) return { cnt: 2 };
-            return null;
-        },
-    }),
+    getDB: () => h.db,
     dbIndexAllCards: h.indexed,
 }));
 
 vi.mock('./noteManager', () => ({
-    getSearchIndexCards: () => [{ id: 1 }, { id: 2 }],
+    getSearchIndexCards: h.searchCards,
     unburyAllCards: vi.fn(),
 }));
 
@@ -27,24 +27,285 @@ vi.mock('./storage', () => ({
     setDbSetting: vi.fn(),
 }));
 
-import { checkDatabase, optimizeDatabase } from './maintenance';
+import {
+    RECOVERY_DECK_NAME,
+    checkDatabase,
+    emptyRepairResult,
+    optimizeDatabase,
+    repairDatabase,
+    repairableDefectCount,
+    totalDefectCount,
+} from './maintenance';
 
-beforeEach(() => {
-    h.exec.length = 0;
-    h.indexed.mockReset();
-    Platform.OS = 'ios';
-});
+describe('collection maintenance (real SQLite)', () => {
+    let SQL: Awaited<ReturnType<typeof initSqlJs>>;
+    let db: SyncDb;
 
-describe('database maintenance boundaries', () => {
-    it('keeps Check Database read-only', () => {
-        expect(checkDatabase()).toEqual({ integrity: 'ok', orphanCards: 2, orphanNotes: 3 });
-        expect(h.exec).toEqual([]);
-        expect(h.indexed).not.toHaveBeenCalled();
+    beforeAll(async () => {
+        SQL = await initSqlJs();
     });
 
-    it('runs optimization and FTS rebuilding only through the explicit mutating operation', () => {
-        expect(optimizeDatabase()).toEqual({ ftsReindexed: 2 });
-        expect(h.exec).toEqual(['VACUUM; REINDEX; ANALYZE;']);
-        expect(h.indexed).toHaveBeenCalledWith([{ id: 1 }, { id: 2 }]);
+    beforeEach(() => {
+        Platform.OS = 'ios';
+        db = createAppDb(SQL);
+        h.exec = [];
+        h.indexed.mockReset();
+        h.searchCards.mockReset();
+        h.searchCards.mockReturnValue([]);
+        // Same handle, with the raw SQL recorded so the step order can be asserted.
+        h.db = { ...db, execSync: (sql: string) => { h.exec.push(sql); db.execSync(sql); } };
+    });
+
+    afterEach(() => {
+        db.close();
+        h.db = null;
+    });
+
+    function addDeck(id: number, name: string, data: Record<string, unknown> = {}) {
+        db.runSync(
+            'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)',
+            id, name, JSON.stringify({ id, name, isFiltered: false, ...data }),
+        );
+    }
+
+    function addNote(id: number, data: Record<string, unknown> = {}) {
+        addRawNote(id, JSON.stringify({ id, fields: ['soru', 'cevap'], tags: [], ...data }));
+    }
+
+    function addRawNote(id: number, blob: string) {
+        db.runSync(
+            `INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
+             VALUES (?, 1, ?, 0, '', ?, 0, -1, 0)`,
+            id, `note ${id}`, blob,
+        );
+    }
+
+    function addCard(id: number, noteId: number, deckId: number, data: Record<string, unknown> = {}) {
+        db.runSync(
+            `INSERT INTO anki_cards
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags,
+              data, updated_at, created_at, usn, tombstone)
+             VALUES (?, ?, ?, 0, ?, ?, ?, 0, 0, 0, 0, 0, 0, ?, 0, 0, -1, 0)`,
+            id, noteId, deckId,
+            data.type ?? 0, data.queue ?? 0, data.due ?? 0,
+            JSON.stringify({ id, noteId, deckId, odid: 0, odue: 0, type: 0, queue: 0, due: 0, ...data }),
+        );
+    }
+
+    function addReview(id: number, cardId: number) {
+        db.runSync(
+            `INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
+             VALUES (?, ?, -1, 3, 1, 0, 2500, 30000, 1)`,
+            id, cardId,
+        );
+    }
+
+    const ids = (table: string) => db.getAllSync<{ id: number }>(`SELECT id FROM ${table} ORDER BY id`).map((r) => r.id);
+    const graves = () => db.getAllSync<{ oid: number; type: number }>('SELECT oid, type FROM graves ORDER BY oid');
+    const card = (id: number) => db.getFirstSync<{ deckId: number; queue: number; due: number; data: string }>(
+        'SELECT deckId, queue, due, data FROM anki_cards WHERE id = ?', id,
+    )!;
+
+    describe('checkDatabase', () => {
+        it('reports every defect class it knows about', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+            addCard(11, 999, 1); // note 999 does not exist
+            addNote(101); // no card points at it
+            addCard(12, 100, 777); // deck 777 does not exist
+            addRawNote(102, 'not json at all');
+            addCard(13, 102, 1);
+
+            const result = checkDatabase();
+            expect(result).toEqual({
+                integrity: 'ok',
+                orphanCards: 1,
+                orphanNotes: 1,
+                strandedCards: 1,
+                unreadableNotes: 1,
+            });
+            expect(repairableDefectCount(result)).toBe(3);
+            expect(totalDefectCount(result)).toBe(4);
+        });
+
+        it('stays read-only, so "Check" can never rewrite the collection', () => {
+            addNote(100);
+            addCard(11, 999, 1);
+
+            checkDatabase();
+
+            expect(ids('notes')).toEqual([100]);
+            expect(ids('anki_cards')).toEqual([11]);
+            expect(graves()).toEqual([]);
+            expect(h.exec).toEqual([]);
+            expect(h.indexed).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('repairDatabase', () => {
+        it('deletes a card no note owns, graves it, and keeps its review history', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+            addCard(11, 999, 1);
+            db.runSync('INSERT INTO cards_fts (card_id) VALUES (?)', '11');
+            addReview(500, 11);
+
+            expect(repairDatabase()).toMatchObject({ orphanCardsDeleted: 1, protectedRowsKept: 0 });
+            expect(ids('anki_cards')).toEqual([10]);
+            expect(graves()).toEqual([{ oid: 11, type: 0 }]);
+            expect(db.getAllSync('SELECT card_id FROM cards_fts')).toEqual([]);
+            // Lifetime statistics are the learner's history: a repair they did not ask for by name
+            // must not shrink it.
+            expect(db.getAllSync('SELECT id FROM revlog')).toHaveLength(1);
+        });
+
+        it('deletes a note that has no cards left', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+            addNote(101);
+
+            expect(repairDatabase()).toMatchObject({ orphanNotesDeleted: 1 });
+            expect(ids('notes')).toEqual([100]);
+            expect(graves()).toEqual([{ oid: 101, type: 1 }]);
+        });
+
+        it('rescues a card whose deck is gone into the recovery deck', () => {
+            addNote(100);
+            addCard(10, 100, 777);
+
+            const result = repairDatabase();
+            expect(result).toMatchObject({ strandedCardsRehomed: 1, recoveryDeckName: RECOVERY_DECK_NAME });
+
+            const recovery = db.getFirstSync<{ id: number }>('SELECT id FROM decks WHERE name = ?', RECOVERY_DECK_NAME)!;
+            const moved = card(10);
+            expect(moved.deckId).toBe(recovery.id);
+            // The mirrored column and the card JSON are both the truth on read; they must agree.
+            expect(JSON.parse(moved.data).deckId).toBe(recovery.id);
+        });
+
+        it('sends a filtered-deck refugee home with its pre-filter schedule', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            // The filtered deck (500) is gone, but the card still knows its home deck and due date.
+            addCard(10, 100, 500, { odid: 1, odue: 42, due: 0, type: 2, queue: 2 });
+
+            const result = repairDatabase();
+            expect(result).toMatchObject({ strandedCardsRehomed: 1, recoveryDeckName: null });
+
+            const home = card(10);
+            expect(home.deckId).toBe(1);
+            expect(JSON.parse(home.data)).toMatchObject({ deckId: 1, due: 42, odid: 0, odue: 0, queue: 2 });
+            expect(ids('decks')).toEqual([1]); // no recovery deck was needed
+        });
+
+        it('still rescues a stranded card whose own JSON is unreadable', () => {
+            // The blob cannot be rewritten, but the mirrored column can, so the card stops being
+            // invisible. Reading `odid` out of that blob must not fail the whole repair either.
+            addNote(100);
+            db.runSync(
+                `INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, data, usn, tombstone)
+                 VALUES (10, 100, 777, 0, 0, 0, 0, ?, -1, 0)`,
+                '{"id":10,"deckId":',
+            );
+
+            expect(repairDatabase()).toMatchObject({ strandedCardsRehomed: 1 });
+            const recovery = db.getFirstSync<{ id: number }>('SELECT id FROM decks WHERE name = ?', RECOVERY_DECK_NAME)!;
+            expect(card(10).deckId).toBe(recovery.id);
+        });
+
+        it('never deletes or moves a row the paid catalog owns', () => {
+            addNote(100, { catalogPack: CATALOG_PACK_ID }); // cardless, so it would be deleted
+            addNote(101, { catalogPack: CATALOG_PACK_ID });
+            addCard(11, 101, 777); // deck 777 is gone, so it would be rescued
+
+            expect(repairDatabase()).toMatchObject({
+                orphanNotesDeleted: 0,
+                strandedCardsRehomed: 0,
+                protectedRowsKept: 2,
+            });
+            expect(ids('notes')).toEqual([100, 101]);
+            expect(card(11).deckId).toBe(777);
+        });
+
+        it('reports an unreadable note instead of destroying its text', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addRawNote(102, '{"id":102,');
+            addCard(13, 102, 1);
+
+            expect(repairDatabase()).toMatchObject({ unreadableNotes: 1, orphanNotesDeleted: 0 });
+            expect(ids('notes')).toEqual([102]);
+        });
+
+        it('leaves a healthy collection completely untouched', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+
+            expect(repairDatabase()).toEqual(emptyRepairResult());
+            expect(ids('decks')).toEqual([1]); // no recovery deck is created speculatively
+            expect(graves()).toEqual([]);
+        });
+
+        it('rolls back completely when one repair fails', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+            addCard(11, 999, 1);
+            addNote(101);
+            db.execSync('DROP TABLE graves;'); // graving the first deletion now fails
+
+            expect(() => repairDatabase()).toThrow();
+            expect(ids('anki_cards')).toEqual([10, 11]);
+            expect(ids('notes')).toEqual([100, 101]);
+        });
+    });
+
+    describe('optimizeDatabase', () => {
+        it('repairs, reindexes and rebuilds search, compacting only once the rest is done', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+            addCard(11, 999, 1);
+            h.searchCards.mockReturnValue([{ id: 10 }]);
+
+            const result = optimizeDatabase();
+
+            expect(result.failedSteps).toEqual([]);
+            expect(result.repair.orphanCardsDeleted).toBe(1);
+            expect(result.ftsReindexed).toBe(1);
+            expect(h.indexed).toHaveBeenCalledWith([{ id: 10 }]);
+            expect(result.freedBytes).toBeGreaterThanOrEqual(0);
+            // VACUUM runs last so it can hand back the pages every earlier step freed.
+            expect(h.exec.filter((sql) => /REINDEX|ANALYZE|VACUUM/.test(sql)))
+                .toEqual(['REINDEX;', 'ANALYZE;', 'VACUUM;']);
+        });
+
+        it('names the step that failed and still runs the others', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addCard(10, 100, 1);
+            addCard(11, 999, 1);
+            h.indexed.mockImplementation(() => { throw new Error('fts unavailable'); });
+
+            const result = optimizeDatabase();
+
+            expect(result.failedSteps).toEqual(['search']);
+            expect(result.repair.orphanCardsDeleted).toBe(1);
+            expect(h.exec).toContain('VACUUM;');
+        });
+
+        it('skips the search rebuild on web, which has no FTS index', () => {
+            Platform.OS = 'web';
+
+            const result = optimizeDatabase();
+
+            expect(result.ftsReindexed).toBe(0);
+            expect(h.searchCards).not.toHaveBeenCalled();
+            expect(h.indexed).not.toHaveBeenCalled();
+            expect(result.failedSteps).toEqual([]);
+        });
     });
 });

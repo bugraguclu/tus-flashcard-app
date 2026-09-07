@@ -51,10 +51,16 @@ export function stepBoundedIntegerDraft(
     delta: number,
     min: number,
     max: number,
+    wrap = false,
 ): number {
     const lower = Math.ceil(Math.min(min, max));
     const upper = Math.floor(Math.max(min, max));
     const current = commitBoundedInteger(input, fallback, lower, upper);
     const safeDelta = Number.isFinite(delta) ? Math.round(delta) : 0;
+    if (wrap && lower < upper) {
+        const range = upper - lower + 1;
+        const normalized = ((current - lower + safeDelta) % range + range) % range;
+        return lower + normalized;
+    }
     return Math.max(lower, Math.min(upper, current + safeDelta));
 }

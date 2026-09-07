@@ -172,10 +172,6 @@ export default function BackupsScreen() {
                 backAccessibilityLabel={l('Destelere dön', 'Back to decks')}
             />
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>
-                    {l('Yedekler cihazda yerel tutulur. Adı kaydetmeden önce değiştirebilirsiniz.', 'Backups stay on this device. You can change the name before saving.')}
-                </Text>
-
                 <Text style={styles.label}>{l('YEDEK ADI', 'BACKUP NAME')}</Text>
                 <TextInput
                     style={styles.nameInput}
@@ -263,7 +259,6 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { padding: Spacing.lg, gap: Spacing.sm },
-    help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm, lineHeight: 20 },
     label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.7, color: colors.textMuted, marginTop: Spacing.xs },
     nameInput: {
         borderWidth: 1,
