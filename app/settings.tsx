@@ -71,10 +71,15 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { useRepeatPress } from '../hooks/useRepeatPress';
 
 import {
+    canGradeRevealedCard,
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
+    matchingSwipePreset,
     normalizeSwipeSensitivity,
     REVIEW_TAP_ZONES,
+    resolveSwipeActions,
+    SWIPE_PRESETS,
+    type SwipePresetId,
 } from '../lib/reviewerTouchControls';
 
 type SectionId =
@@ -93,6 +98,11 @@ type Category = {
     title: string;
     summary: string;
 };
+
+/** Horizontal padding around the sensitivity track; the touch maths and the style share it. */
+const SWIPE_SLIDER_INSET = 10;
+const SWIPE_SENSITIVITY_MIN = 1;
+const SWIPE_SENSITIVITY_MAX = 200;
 
 const PRIVACY_URL = 'https://bugraguclu.github.io/tus-flashcard-app/privacy.html';
 const SUPPORT_URL = 'https://bugraguclu.github.io/tus-flashcard-app/support.html';
@@ -171,10 +181,12 @@ function Group({ title, description, onHelpPress, helpLabel, children, styles }:
     );
 }
 
-function GestureActionRow({ icon, label, value, onPress, styles }: {
+function GestureActionRow({ icon, label, value, muted = false, onPress, styles }: {
     icon: string;
     label: string;
     value: string;
+    /** An unassigned direction is drawn in the muted palette so "No action" never reads as active. */
+    muted?: boolean;
     onPress: () => void;
     styles: ReturnType<typeof createStyles>;
 }) {
@@ -185,12 +197,12 @@ function GestureActionRow({ icon, label, value, onPress, styles }: {
             accessibilityRole="button"
             accessibilityLabel={`${label}: ${value}`}
         >
-            <View style={styles.gestureDirectionIcon}>
-                <Text style={styles.gestureDirectionText}>{icon}</Text>
+            <View style={[styles.gestureDirectionIcon, muted && styles.gestureDirectionIconMuted]}>
+                <Text style={[styles.gestureDirectionText, muted && styles.gestureDirectionTextMuted]}>{icon}</Text>
             </View>
             <View style={styles.preferenceCopy}>
                 <Text style={styles.preferenceLabel}>{label}</Text>
-                <Text style={styles.gestureActionValue}>{value}</Text>
+                <Text style={[styles.gestureActionValue, muted && styles.gestureActionValueMuted]}>{value}</Text>
             </View>
             <Text style={styles.appearanceValueArrow}>›</Text>
         </TouchableOpacity>
@@ -352,13 +364,15 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
     useEffect(() => setDraft(normalized), [normalized]);
 
     const valueAt = (locationX: number) => normalizeSwipeSensitivity(
-        1 + (Math.max(0, Math.min(trackWidth, locationX - 10)) / trackWidth) * 199,
+        SWIPE_SENSITIVITY_MIN
+        + (Math.max(0, Math.min(trackWidth, locationX - SWIPE_SLIDER_INSET)) / trackWidth)
+        * (SWIPE_SENSITIVITY_MAX - SWIPE_SENSITIVITY_MIN),
     );
     const commit = (next: number) => {
         setDraft(next);
         onChange(next);
     };
-    const ratio = (draft - 1) / 199;
+    const ratio = (draft - SWIPE_SENSITIVITY_MIN) / (SWIPE_SENSITIVITY_MAX - SWIPE_SENSITIVITY_MIN);
 
     return (
         <View style={styles.swipeSensitivityBlock}>
@@ -378,7 +392,7 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
                 accessible
                 accessibilityRole="adjustable"
                 accessibilityLabel={label}
-                accessibilityValue={{ min: 1, max: 200, now: draft, text: `${draft}%` }}
+                accessibilityValue={{ min: SWIPE_SENSITIVITY_MIN, max: SWIPE_SENSITIVITY_MAX, now: draft, text: `${draft}%` }}
                 accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
                 onAccessibilityAction={(event) => {
                     if (event.nativeEvent.actionName === 'increment') commit(normalizeSwipeSensitivity(draft + 10));
@@ -646,14 +660,20 @@ export default function SettingsScreen() {
             id: 'controls',
             icon: '☝️',
             title: l('Kontroller', 'Controls'),
-            summary: isDesktopWeb
-                ? l('Hareketler • Klavye', 'Gestures • Keyboard')
-                : l('Kaydırma • Dokunma', 'Swipe • Touch'),
+            summary: [
+                settings.ninePointTouchEnabled !== false
+                    ? l('Dokunma açık', 'Taps on')
+                    : l('Dokunma kapalı', 'Taps off'),
+                settings.gesturesEnabled
+                    ? l('Kaydırma açık', 'Swipes on')
+                    : l('Kaydırma kapalı', 'Swipes off'),
+                ...(isDesktopWeb ? [l('Klavye', 'Keyboard')] : []),
+            ].join(' · '),
         },
         { id: 'accessibility', icon: '♿️', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
         { id: 'data', icon: '🗄️', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • Aktarım • Bakım', 'Backups • Transfer • Maintenance') },
         { id: 'about', icon: 'ℹ️', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
-    ], [isDesktopWeb, l, notificationThresholdOptions, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationThreshold, settings.studyNotificationsEnabled]);
+    ], [isDesktopWeb, l, notificationThresholdOptions, settings.gesturesEnabled, settings.ninePointTouchEnabled, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationThreshold, settings.studyNotificationsEnabled]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
     const filteredCategories = categories.filter((item) => `${item.title} ${item.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
@@ -1223,6 +1243,35 @@ export default function SettingsScreen() {
         </Group>
     );
 
+    const tapZoneLabels = useMemo<Record<ReviewTapZone, string>>(() => ({
+        topLeft: l('Sol üst', 'Top left'),
+        topCenter: l('Üst', 'Top center'),
+        topRight: l('Sağ üst', 'Top right'),
+        middleLeft: l('Sol', 'Middle left'),
+        middleCenter: l('Orta', 'Center'),
+        middleRight: l('Sağ', 'Middle right'),
+        bottomLeft: l('Sol alt', 'Bottom left'),
+        bottomCenter: l('Alt', 'Bottom center'),
+        bottomRight: l('Sağ alt', 'Bottom right'),
+    }), [l]);
+
+    const tapSideField = tapSide === 'question' ? 'questionTapActions' : 'answerTapActions';
+    const tapSideDefaults = tapSide === 'question' ? DEFAULT_QUESTION_TAP_ACTIONS : DEFAULT_ANSWER_TAP_ACTIONS;
+    const activeTapActions = settings[tapSideField] ?? tapSideDefaults;
+    const tapActionsAreCustom = REVIEW_TAP_ZONES.some((zone) => activeTapActions[zone] !== tapSideDefaults[zone]);
+    const resetTapActionsForSide = useCallback(() => {
+        updateSetting(
+            tapSide === 'question' ? 'questionTapActions' : 'answerTapActions',
+            tapSide === 'question' ? DEFAULT_QUESTION_TAP_ACTIONS : DEFAULT_ANSWER_TAP_ACTIONS,
+        );
+    }, [tapSide, updateSetting]);
+
+    const swipeActions = resolveSwipeActions(settings);
+    const activeSwipePreset = matchingSwipePreset(settings);
+    const swipeSensitivity = normalizeSwipeSensitivity(settings.swipeSensitivity);
+    // Hiding the answer buttons is only safe while some enabled control can still grade a card.
+    const gradingIsStranded = !canGradeRevealedCard(settings);
+
     const renderControls = useCallback(() => (
         <>
             <Group
@@ -1259,34 +1308,41 @@ export default function SettingsScreen() {
                         />
                         <View style={styles.tapGrid}>
                             {REVIEW_TAP_ZONES.map((zone) => {
-                                const labels: Record<ReviewTapZone, string> = {
-                                    topLeft: l('Sol üst', 'Top left'),
-                                    topCenter: l('Üst', 'Top center'),
-                                    topRight: l('Sağ üst', 'Top right'),
-                                    middleLeft: l('Sol', 'Middle left'),
-                                    middleCenter: l('Orta', 'Center'),
-                                    middleRight: l('Sağ', 'Middle right'),
-                                    bottomLeft: l('Sol alt', 'Bottom left'),
-                                    bottomCenter: l('Alt', 'Bottom center'),
-                                    bottomRight: l('Sağ alt', 'Bottom right'),
-                                };
-                                const actions = tapSide === 'question'
-                                    ? settings.questionTapActions ?? DEFAULT_QUESTION_TAP_ACTIONS
-                                    : settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS;
+                                const action = activeTapActions[zone];
+                                const isOff = action === 'off';
                                 return (
                                     <TouchableOpacity
                                         key={`${tapSide}-${zone}`}
                                         style={styles.tapGridCell}
                                         onPress={() => setGesturePickerTarget({ kind: 'tap', side: tapSide, zone })}
                                         accessibilityRole="button"
-                                        accessibilityLabel={`${labels[zone]}: ${gestureActionLabel(actions[zone])}`}
+                                        accessibilityLabel={`${tapZoneLabels[zone]}: ${gestureActionLabel(action)}`}
+                                        accessibilityHint={l('Bu bölgenin eylemini değiştirin', 'Change the action for this zone')}
                                     >
-                                        <Text style={styles.tapGridZone}>{labels[zone]}</Text>
-                                        <Text style={styles.tapGridAction} numberOfLines={2}>{gestureActionLabel(actions[zone])}</Text>
+                                        <Text style={styles.tapGridZone}>{tapZoneLabels[zone]}</Text>
+                                        <Text
+                                            style={[styles.tapGridAction, isOff && styles.tapGridActionMuted]}
+                                            numberOfLines={2}
+                                        >
+                                            {gestureActionLabel(action)}
+                                        </Text>
                                     </TouchableOpacity>
                                 );
                             })}
                         </View>
+                        {tapActionsAreCustom ? (
+                            <TouchableOpacity
+                                style={styles.inlineResetButton}
+                                onPress={resetTapActionsForSide}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.inlineResetText}>
+                                    {tapSide === 'question'
+                                        ? l('Soru tarafını varsayılana döndür', 'Reset the question side')
+                                        : l('Yanıt tarafını varsayılana döndür', 'Reset the answer side')}
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 ) : null}
                 <ToggleRow
@@ -1295,7 +1351,12 @@ export default function SettingsScreen() {
                     value={Boolean(settings.gesturesEnabled)}
                     onChange={(value) => updateSettings({
                         gesturesEnabled: value,
-                        ...(value || settings.showAnswerButtons !== false ? {} : { showAnswerButtons: true }),
+                        // Only restore the answer buttons when nothing else is left to answer with.
+                        ...(value
+                            || settings.ninePointTouchEnabled !== false
+                            || settings.showAnswerButtons !== false
+                            ? {}
+                            : { showAnswerButtons: true }),
                     })}
                     styles={styles}
                 />
@@ -1304,42 +1365,44 @@ export default function SettingsScreen() {
                         <View style={styles.gesturePresetBlock}>
                             <Text style={styles.preferenceLabel}>{l('Hazır düzenler', 'Presets')}</Text>
                             <Text style={styles.preferenceSummary}>{l('Bir düzen seçin, ardından yönleri tek tek değiştirebilirsiniz.', 'Choose a preset, then fine-tune each direction.')}</Text>
-                            <View style={styles.choiceRow}>
-                                <TouchableOpacity
-                                    style={styles.choiceButton}
-                                    onPress={() => updateSettings({
-                                        swipeLeftAction: 'tools',
-                                        swipeRightAction: 'decks',
-                                        swipeUpAction: 'off',
-                                        swipeDownAction: 'off',
-                                    })}
-                                >
-                                    <Text style={styles.choiceText}>{l('iPhone için dengeli', 'Balanced for iPhone')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.choiceButton}
-                                    onPress={() => updateSettings({
-                                        swipeLeftAction: 'again',
-                                        swipeRightAction: 'good',
-                                        swipeUpAction: 'easy',
-                                        swipeDownAction: 'hard',
-                                    })}
-                                >
-                                    <Text style={styles.choiceText}>{l('Hızlı yanıt', 'Fast answers')}</Text>
-                                </TouchableOpacity>
+                            <View style={styles.choiceRow} accessibilityRole="radiogroup">
+                                {([
+                                    ['balanced', l('iPhone için dengeli', 'Balanced for iPhone')],
+                                    ['fastAnswers', l('Hızlı yanıt', 'Fast answers')],
+                                ] as Array<[SwipePresetId, string]>).map(([presetId, presetLabel]) => {
+                                    const selected = activeSwipePreset === presetId;
+                                    return (
+                                        <TouchableOpacity
+                                            key={presetId}
+                                            style={[styles.choiceButton, selected && styles.choiceButtonActive]}
+                                            onPress={() => updateSettings(SWIPE_PRESETS[presetId])}
+                                            accessibilityRole="radio"
+                                            accessibilityState={{ checked: selected }}
+                                            accessibilityLabel={presetLabel}
+                                        >
+                                            <Text style={[styles.choiceText, selected && styles.choiceTextActive]}>{presetLabel}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
+                            {activeSwipePreset === null ? (
+                                <Text style={styles.gesturePresetHint}>
+                                    {l('Şu anda kendi düzeniniz etkin.', 'A custom layout is currently active.')}
+                                </Text>
+                            ) : null}
                         </View>
                         {([
-                            ['swipeLeftAction', '←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
-                            ['swipeRightAction', '→', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
-                            ['swipeUpAction', '↑', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
-                            ['swipeDownAction', '↓', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
+                            ['swipeLeftAction', '←', l('Sola kaydırma', 'Swipe left'), swipeActions.swipeLeftAction],
+                            ['swipeRightAction', '→', l('Sağa kaydırma', 'Swipe right'), swipeActions.swipeRightAction],
+                            ['swipeUpAction', '↑', l('Yukarı kaydırma', 'Swipe up'), swipeActions.swipeUpAction],
+                            ['swipeDownAction', '↓', l('Aşağı kaydırma', 'Swipe down'), swipeActions.swipeDownAction],
                         ] as Array<[GestureSettingKey, string, string, ReviewGestureAction]>).map(([field, icon, label, action]) => (
                             <GestureActionRow
                                 key={field}
                                 icon={icon}
                                 label={label}
                                 value={gestureActionLabel(action)}
+                                muted={action === 'off'}
                                 onPress={() => setGesturePickerTarget({ kind: 'swipe', field })}
                                 styles={styles}
                             />
@@ -1347,11 +1410,33 @@ export default function SettingsScreen() {
                         <SwipeSensitivitySlider
                             label={l('Kaydırma hassasiyeti', 'Swipe sensitivity')}
                             summary={l('Yüksek değer daha kısa hareketleri, düşük değer daha uzun ve belirgin hareketleri algılar.', 'A higher value detects shorter movements; a lower value requires a longer, deliberate swipe.')}
-                            value={settings.swipeSensitivity ?? 100}
+                            value={swipeSensitivity}
                             onChange={(value) => updateSetting('swipeSensitivity', value)}
                             styles={styles}
                         />
                     </>
+                ) : null}
+                {gradingIsStranded ? (
+                    <View style={styles.controlsWarning} accessibilityRole="alert">
+                        <Text style={styles.controlsWarningTitle}>
+                            {l('Kartları yanıtlamanın bir yolu kalmadı', 'No way left to answer cards')}
+                        </Text>
+                        <Text style={styles.controlsWarningText}>
+                            {l(
+                                'Yanıt düğmeleri gizli ve etkin hiçbir dokunma bölgesi veya kaydırma yönü Tekrar, Zor, İyi ya da Kolay uygulamıyor. Bir bölgeye veya yöne bir yanıt eylemi atayın ya da yanıt düğmelerini geri açın.',
+                                'The answer buttons are hidden and no enabled tap zone or swipe direction answers Again, Hard, Good, or Easy. Assign an answer action to a zone or direction, or bring the answer buttons back.',
+                            )}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.controlsWarningButton}
+                            onPress={() => updateSetting('showAnswerButtons', true)}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.controlsWarningButtonText}>
+                                {l('Yanıt düğmelerini geri aç', 'Show the answer buttons again')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : null}
             </Group>
             {Platform.OS !== 'web' ? (
@@ -1472,7 +1557,25 @@ export default function SettingsScreen() {
                 </Group>
             ) : null}
         </>
-    ), [gestureActionLabel, isDesktopWeb, l, recordingField, settings, styles, tapSide, updateSetting, updateSettings]);
+    ), [
+        activeSwipePreset,
+        activeTapActions,
+        gestureActionLabel,
+        gradingIsStranded,
+        isDesktopWeb,
+        l,
+        recordingField,
+        resetTapActionsForSide,
+        settings,
+        styles,
+        swipeActions,
+        swipeSensitivity,
+        tapActionsAreCustom,
+        tapSide,
+        tapZoneLabels,
+        updateSetting,
+        updateSettings,
+    ]);
 
     const renderAccessibility = () => (
         <>
@@ -1709,10 +1812,10 @@ export default function SettingsScreen() {
                             <Text style={styles.controlsHelpSectionTitle}>{l('Şu anki yönleriniz', 'Your current directions')}</Text>
                             <View style={styles.controlsHelpDirectionList}>
                                 {([
-                                    ['←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
-                                    ['→', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
-                                    ['↑', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
-                                    ['↓', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
+                                    ['←', l('Sola kaydırma', 'Swipe left'), swipeActions.swipeLeftAction],
+                                    ['→', l('Sağa kaydırma', 'Swipe right'), swipeActions.swipeRightAction],
+                                    ['↑', l('Yukarı kaydırma', 'Swipe up'), swipeActions.swipeUpAction],
+                                    ['↓', l('Aşağı kaydırma', 'Swipe down'), swipeActions.swipeDownAction],
                                 ] as Array<[string, string, ReviewGestureAction]>).map(([icon, label, action]) => (
                                     <View key={label} style={styles.controlsHelpDirectionRow}>
                                         <View style={styles.controlsHelpDirectionIcon}>
@@ -1740,8 +1843,8 @@ export default function SettingsScreen() {
                                 <Text style={styles.controlsHelpPanelTitle}>{l('Hassasiyet ayarı', 'Sensitivity')}</Text>
                                 <Text style={styles.controlsHelpPanelText}>
                                     {l(
-                                        `Geçerli değeriniz %${settings.swipeSensitivity ?? 100}. Yüksek değer kısa hareketleri daha kolay algılar; düşük değer daha uzun ve belirgin bir kaydırma ister. Başlangıç için %100 dengeli bir seçimdir.`,
-                                        `Your current value is ${settings.swipeSensitivity ?? 100}%. A higher value recognizes shorter movements; a lower value requires a longer, more deliberate swipe. 100% is a balanced starting point.`,
+                                        `Geçerli değeriniz %${swipeSensitivity}. Yüksek değer kısa hareketleri daha kolay algılar; düşük değer daha uzun ve belirgin bir kaydırma ister. Başlangıç için %100 dengeli bir seçimdir.`,
+                                        `Your current value is ${swipeSensitivity}%. A higher value recognizes shorter movements; a lower value requires a longer, more deliberate swipe. 100% is a balanced starting point.`,
                                     )}
                                 </Text>
                             </View>
@@ -2136,15 +2239,27 @@ function createStyles(colors: ColorScheme) {
         choiceText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
         choiceTextActive: { color: colors.accent, fontWeight: '800', textAlign: 'center' },
         gesturePresetBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
+        gesturePresetHint: { marginTop: Spacing.sm, fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted, textAlign: 'center' },
+        inlineResetButton: { marginTop: Spacing.md, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary, paddingHorizontal: Spacing.md },
+        inlineResetText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary, textAlign: 'center' },
+        controlsWarning: { marginTop: Spacing.md, padding: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.btnHard, backgroundColor: colors.btnHardBg },
+        controlsWarningTitle: { fontSize: FontSize.sm, fontWeight: '800', color: colors.btnHard },
+        controlsWarningText: { marginTop: Spacing.xs, fontSize: FontSize.xs, lineHeight: 18, color: colors.textSecondary },
+        controlsWarningButton: { marginTop: Spacing.md, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, backgroundColor: colors.btnHard, paddingHorizontal: Spacing.md },
+        controlsWarningButtonText: { fontSize: FontSize.sm, fontWeight: '800', color: colors.white },
         tapMappingBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingBottom: Spacing.md },
         tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
         tapGridCell: { width: '33.3333%', minHeight: 78, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: Spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight },
         tapGridZone: { fontSize: 11, lineHeight: 15, fontWeight: '800', color: colors.textSecondary, textAlign: 'center' },
         tapGridAction: { marginTop: 4, fontSize: 11, lineHeight: 15, fontWeight: '700', color: colors.accent, textAlign: 'center' },
+        tapGridActionMuted: { color: colors.textMuted, fontWeight: '600' },
         gestureActionRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.sm },
         gestureDirectionIcon: { width: 38, height: 38, marginRight: Spacing.md, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
+        gestureDirectionIconMuted: { backgroundColor: colors.bgSecondary, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight },
         gestureDirectionText: { fontSize: FontSize.xl, color: colors.accent, fontWeight: '800' },
+        gestureDirectionTextMuted: { color: colors.textMuted },
         gestureActionValue: { marginTop: 2, fontSize: FontSize.sm, lineHeight: 18, color: colors.accent, fontWeight: '700' },
+        gestureActionValueMuted: { color: colors.textMuted, fontWeight: '600' },
         stepperRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.md },
         stepButton: { width: 48, height: 44, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         stepButtonText: { fontSize: FontSize.xl, color: colors.textPrimary, fontWeight: '700' },
@@ -2152,7 +2267,7 @@ function createStyles(colors: ColorScheme) {
         swipeSensitivityBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
         swipeSensitivityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
         swipeSensitivityValue: { fontSize: FontSize.sm, fontWeight: '800', fontVariant: ['tabular-nums'] as any, color: colors.accent },
-        swipeSliderTouchTarget: { height: 46, justifyContent: 'center', marginTop: Spacing.sm, paddingHorizontal: 10 },
+        swipeSliderTouchTarget: { height: 46, justifyContent: 'center', marginTop: Spacing.sm, paddingHorizontal: SWIPE_SLIDER_INSET },
         swipeSliderTrack: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.border, overflow: 'visible' },
         swipeSliderFill: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.accent },
         swipeSliderThumb: { position: 'absolute', top: -7, width: 20, height: 20, marginLeft: -10, borderRadius: 10, borderWidth: 2, borderColor: colors.bgCard, backgroundColor: colors.accent, ...Shadows.sm },
