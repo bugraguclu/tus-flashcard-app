@@ -73,6 +73,8 @@ export default function ExportScreen() {
     const [includeGuid, setIncludeGuid] = useState(true);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [busy, setBusy] = useState(false);
+    // Anki confirms what an export actually contained instead of closing silently.
+    const [summary, setSummary] = useState<string[] | null>(null);
     const allDecksSelected = exportableDecks.length > 0
         && exportableDecks.every((deck) => selectedDeckIds.has(deck.id));
     const availableFormats = selectionExport || !allDecksSelected
@@ -130,6 +132,19 @@ export default function ExportScreen() {
         if (!sourceLoading && exportableDecks.length > 0 && format === 'colpkg' && !allDecksSelected) setFormat('apkg');
     }, [allDecksSelected, exportableDecks.length, format, sourceLoading]);
 
+    useEffect(() => {
+        if (!deckName) return;
+        const all = getAllDecks();
+        const isRequestedCatalog = all.some((d) => (d.name === deckName || d.name.startsWith(`${deckName}::`)) && isCatalogDeck(d));
+        if (isRequestedCatalog) {
+            alert(
+                l('Katalog Korumalı', 'Catalog Protected'),
+                l('Dahili TUS desteleri dışa aktarılamaz.', 'Built-in TUS decks cannot be exported.'),
+                () => handleBack(),
+            );
+        }
+    }, [deckName, l]);
+
     const handleExport = async () => {
         if (backupExport && !backupSource) {
             alert(t('common.error'), sourceError ?? l('Yedek henüz hazırlanmadı.', 'The backup is not ready yet.'));
@@ -147,6 +162,7 @@ export default function ExportScreen() {
             && selectedDeckIds.size === initialDeckScopeIds.size
             && [...selectedDeckIds].every((id) => initialDeckScopeIds.has(id));
         setBusy(true);
+        setSummary(null);
         try {
             const artifact = await buildAnkiExport(format, unchangedDeckScope ? deckName : undefined, includeMedia, selectedCardIds, {
                 selectedDeckIds: selectionExport || format === 'colpkg' ? undefined : [...selectedDeckIds],
@@ -158,6 +174,17 @@ export default function ExportScreen() {
                 includeNotetype,
                 includeGuid,
             }, backupSource);
+            const lines: string[] = [];
+            if (artifact.noteCount !== undefined) {
+                lines.push(l(`${artifact.noteCount} not dışa aktarıldı.`, `${artifact.noteCount} notes exported.`));
+            }
+            if (artifact.cardCount !== undefined) {
+                lines.push(l(`${artifact.cardCount} kart dışa aktarıldı.`, `${artifact.cardCount} cards exported.`));
+            }
+            if (artifact.mediaCount) {
+                lines.push(l(`${artifact.mediaCount} medya dosyası dışa aktarıldı.`, `Exported ${artifact.mediaCount} media files.`));
+            }
+            setSummary(lines.length ? lines : null);
             if (Platform.OS === 'web') {
                 if (artifact.text !== undefined) downloadTextFileWeb(artifact.fileName, artifact.text, artifact.mimeType);
                 else if (artifact.bytes) downloadBytesFileWeb(artifact.fileName, artifact.bytes, artifact.mimeType);
@@ -269,15 +296,15 @@ export default function ExportScreen() {
                         <Text style={styles.label}>{l('Dahil et:', 'Include:')}</Text>
                         <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeHtml((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeHtml }}>
                             <View style={[styles.checkbox, includeHtml && styles.checkboxChecked]}>{includeHtml ? <Text style={styles.checkmark}>✓</Text> : null}</View>
-                            <Text style={styles.checkboxText}>{l('HTML biçimlendirmesi', 'HTML formatting')}</Text>
+                            <Text style={styles.checkboxText}>{l('HTML ve medya referanslarını dahil et', 'Include HTML and media references')}</Text>
                         </TouchableOpacity>
                         {format === 'notesTxt' ? (
                             <>
                                 {([
-                                    [includeTags, setIncludeTags, l('Etiketler', 'Tags')],
-                                    [includeDeck, setIncludeDeck, l('Deste', 'Deck')],
-                                    [includeNotetype, setIncludeNotetype, l('Not türü', 'Note type')],
-                                    [includeGuid, setIncludeGuid, 'GUID'],
+                                    [includeTags, setIncludeTags, l('Etiketleri dahil et', 'Include tags')],
+                                    [includeDeck, setIncludeDeck, l('Deste adını dahil et', 'Include deck name')],
+                                    [includeNotetype, setIncludeNotetype, l('Not türü adını dahil et', 'Include note type name')],
+                                    [includeGuid, setIncludeGuid, l('Benzersiz kimliği dahil et', 'Include unique identifier')],
                                 ] as const).map(([checked, setter, label]) => (
                                     <TouchableOpacity key={label} style={styles.checkboxRow} onPress={() => setter(!checked)} accessibilityRole="checkbox" accessibilityState={{ checked }}>
                                         <View style={[styles.checkbox, checked && styles.checkboxChecked]}>{checked ? <Text style={styles.checkmark}>✓</Text> : null}</View>
@@ -297,6 +324,13 @@ export default function ExportScreen() {
                     >
                         {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.actionText}>{l('Dışa aktar', 'Export')}</Text>}
                     </TouchableOpacity>
+                    {summary ? (
+                        <View style={styles.summaryBlock}>
+                            {summary.map((line) => (
+                                <Text key={line} style={styles.summaryLine}>{line}</Text>
+                            ))}
+                        </View>
+                    ) : null}
                 </View>
                 </> : null}
                 </View>
@@ -345,6 +379,8 @@ function createStyles(colors: ColorScheme) {
         optionCopy: { flex: 1, gap: 2 },
         optionHint: { flex: 1, fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted },
         actions: { marginTop: Spacing.lg },
+        summaryBlock: { marginTop: Spacing.md, gap: 2 },
+        summaryLine: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textSecondary, textAlign: 'center' },
         actionButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md, borderRadius: BorderRadius.sm, backgroundColor: colors.accent },
         actionButtonDisabled: { opacity: 0.4 },
         actionText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },

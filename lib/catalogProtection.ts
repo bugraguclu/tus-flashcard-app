@@ -63,7 +63,13 @@ export function isCatalogNote(noteOrId: Note | number): boolean {
         : isCatalogOwned(noteOrId) || isProtectedCatalogGuid(noteOrId.guid);
 }
 
-export function isCatalogCard(cardOrId: AnkiCard | number): boolean {
+export function isCatalogCard(cardOrId: (AnkiCard & { note?: Note }) | number): boolean {
+    if (typeof cardOrId !== 'number' && isCatalogOwned(cardOrId)) {
+        return true;
+    }
+    if (typeof cardOrId !== 'number' && (cardOrId as any).note) {
+        return isCatalogNote((cardOrId as any).note);
+    }
     const card = typeof cardOrId === 'number'
         ? getDB().getFirstSync<{ noteId: number }>('SELECT noteId FROM anki_cards WHERE id = ?', cardOrId)
         : cardOrId;
@@ -105,6 +111,60 @@ export function assertCatalogCardMutable(value: AnkiCard | number): void { asser
 export function assertCatalogDeckMutable(value: Deck | number): void { assertMutable(isCatalogDeck(value)); }
 export function assertCatalogDeckConfigMutable(value: DeckConfig | number): void { assertMutable(isCatalogDeckConfig(value)); }
 export function assertCatalogNoteTypeMutable(value: NoteType | number): void { assertMutable(isCatalogNoteType(value)); }
+
+export function assertCatalogDeckNotDeletable(value: Deck | number): void {
+    if (isCatalogDeck(value)) {
+        throw new PaidCatalogProtectionError('Katalog desteleri silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
+    }
+}
+
+export function assertCatalogDeckNotRenamable(value: Deck | number): void {
+    if (isCatalogDeck(value)) {
+        throw new PaidCatalogProtectionError('Katalog desteleri yeniden adlandırılamaz.');
+    }
+}
+
+export function assertCatalogNoteNotDeletable(value: Note | number): void {
+    if (isCatalogNote(value)) {
+        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
+    }
+}
+
+export function assertCatalogNoteNotDuplicable(value: Note | number): void {
+    if (isCatalogNote(value)) {
+        throw new PaidCatalogProtectionError('Katalog notları çoğaltılamaz.');
+    }
+}
+
+export function assertCatalogNoteTypeNotChangeable(value: Note | number): void {
+    if (isCatalogNote(value)) {
+        throw new PaidCatalogProtectionError('Katalog notlarının türü değiştirilemez.');
+    }
+}
+
+export function assertCatalogCardsMovable(cardsOrIds: (AnkiCard | number)[], targetDeckOrId: Deck | number): void {
+    if (isCatalogDeck(targetDeckOrId)) {
+        throw new PaidCatalogProtectionError('Katalog destelerine dışarıdan kart taşınamaz.');
+    }
+    if (cardsOrIds.some((card) => isCatalogCard(card))) {
+        throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+    }
+}
+
+export function assertCatalogNoteContentMutable(newNote: Note, existingNote: Note): void {
+    if (!isCatalogNote(existingNote)) return;
+    if (newNote.noteTypeId !== existingNote.noteTypeId) {
+        throw new PaidCatalogProtectionError('Katalog notlarının türü değiştirilemez.');
+    }
+    if (newNote.guid !== existingNote.guid) {
+        throw new PaidCatalogProtectionError('Katalog notlarının kimliği değiştirilemez.');
+    }
+    const fieldsA = Array.isArray(newNote.fields) ? newNote.fields : [];
+    const fieldsB = Array.isArray(existingNote.fields) ? existingNote.fields : [];
+    if (fieldsA.length !== fieldsB.length || fieldsA.some((val, idx) => val !== fieldsB[idx])) {
+        throw new PaidCatalogProtectionError('Katalog notlarının içeriği değiştirilemez.');
+    }
+}
 
 export function canonicalBackupContainsCatalog(data: any): boolean {
     const tables = data?.tables;

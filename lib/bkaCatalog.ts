@@ -36,6 +36,8 @@ import {
     type CatalogProgress,
 } from './catalogRows';
 import { requireBkaCatalogAsset } from './bkaCatalogAsset';
+import { unpackCatalogBytes } from './catalogPack';
+import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { humanizeCardText } from './displayText';
 
@@ -653,7 +655,10 @@ async function loadBundledPackage(): Promise<{ zip: JSZipType; cachedUri: string
     await asset.downloadAsync();
     const uri = asset.localUri ?? asset.uri;
     if (!uri) throw new Error('BKA katalog varlığı indirilemedi.');
-    return { zip: await loadAnkiZip(await readUriBytes(uri)), cachedUri: uri };
+    // The shipped asset is a container, not a package: it becomes an .apkg only here, in memory,
+    // and only for as long as the install runs. See lib/catalogPack.ts.
+    const packageBytes = unpackCatalogBytes(catalogPackKey(), await readUriBytes(uri));
+    return { zip: await loadAnkiZip(packageBytes), cachedUri: uri };
 }
 
 /**
