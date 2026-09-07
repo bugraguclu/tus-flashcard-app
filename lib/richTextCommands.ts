@@ -46,6 +46,16 @@ export const TYPING_RUN_COALESCE_MS = 900;
  */
 export const MAX_SELECTION_TEXT = 20000;
 
+/**
+ * How many edits back Undo reaches.
+ *
+ * The bridge's history is no longer only a counter: a paragraph-style step holds the elements it
+ * changed and the declarations to put back, so an unbounded stack would keep detached nodes alive
+ * for as long as the field is open. WebKit's own stack is bounded too, so the oldest steps are
+ * dropped once the stack is this deep — far past any run of edits a user undoes by hand.
+ */
+export const MAX_HISTORY_STEPS = 200;
+
 /** Block containers the caret can sit in that the Styles tab knows how to name. */
 export const BLOCK_CONTAINER_TAGS = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'li'] as const;
 
@@ -183,10 +193,13 @@ export function stripPendingStyleMarkers(html: string): string {
  *    reports bold and the toolbar lights up. Word leaves the button unlit for a mixed selection
  *    and the next press applies the format to all of it, so `readSignals()` walks the selected
  *    text nodes and reports a partly covered format as inactive.
- * 4. `queryCommandEnabled('undo')` cannot be trusted inside a WebView, so the bridge counts its
- *    own edits. Toolbar commands are one step each and a typing run inside
- *    `TYPING_RUN_COALESCE_MS` is one step, which is what decides whether Undo is offered as
- *    enabled — WebKit still owns the actual undo stack.
+ * 4. `queryCommandEnabled('undo')` cannot be trusted inside a WebView, so the bridge keeps its own
+ *    ordered stack of edits. Toolbar commands are one step each and a typing run inside
+ *    `TYPING_RUN_COALESCE_MS` is one step. Most steps are only a marker saying the next Undo is
+ *    WebKit's, since WebKit owns the inverse of its own editing commands. Paragraph styles have no
+ *    `execCommand` verb, so WebKit never sees them; those steps carry the declarations to put back
+ *    and the bridge undoes them itself, in the same stack, so a mixed run of edits comes back in
+ *    the order it was made.
  */
 export function richTextBridgeScript(): string {
     return `
@@ -214,10 +227,11 @@ function createTusFormattingBridge(editor, doc) {
   var TYPING_RUN_COALESCE_MS = ${TYPING_RUN_COALESCE_MS};
   var PENDING_STYLE_MARKER = String.fromCharCode(0x200b);
   var MAX_SELECTION_TEXT = ${MAX_SELECTION_TEXT};
+  var MAX_HISTORY_STEPS = ${MAX_HISTORY_STEPS};
   var savedRange = null;
   var anchorSequence = 0;
-  var historyDepth = 0;
-  var redoDepth = 0;
+  var historySteps = [];
+  var redoSteps = [];
   var lastEditKind = '';
   var lastEditStamp = 0;
   // execCommand fires an 'input' event synchronously, so the document's own edit listener would count a
@@ -320,32 +334,81 @@ function createTusFormattingBridge(editor, doc) {
   }
 
   // ---- history -------------------------------------------------------------------------------
-  // WebKit owns the undo stack; these counters only decide whether Undo and Redo are offered as
-  // enabled, and they coalesce a typing run into one step the way a word processor does.
+  // One ordered stack of steps rather than a pair of counters, because the two kinds of edit this
+  // editor makes are undone by different owners and Undo has to walk back through a mixed run in
+  // the order the edits happened.
+  //
+  //   'native'     — an execCommand edit. WebKit recorded it, so undoing the step means asking
+  //                  WebKit to undo, and the step carries nothing but its place in the order.
+  //   'blockStyle' — a paragraph declaration written straight onto the element, which WebKit does
+  //                  not record because there is no execCommand verb for it. The step carries the
+  //                  elements and the values on either side, so the bridge undoes it itself.
+  //
+  // Keeping the order is the whole point: with two counters, Undo after a spacing change asked
+  // WebKit to undo and WebKit stepped over the spacing to the edit before it, which both lost the
+  // spacing change and left the counters describing a document that no longer matched them.
+  function recordStep(step) {
+    historySteps.push(step);
+    if (historySteps.length > MAX_HISTORY_STEPS) historySteps.shift();
+    redoSteps.length = 0;
+  }
+
   function noteEdit(kind) {
     if (kind === 'typing' && suppressAutoEdits) return;
     var stamp = Date.now();
     var coalesced = kind === 'typing' && lastEditKind === 'typing'
       && (stamp - lastEditStamp) < TYPING_RUN_COALESCE_MS;
-    if (!coalesced) historyDepth += 1;
+    // A coalesced keystroke joins the run already on top of the stack; it is still a new edit, so
+    // the redo branch it grew from is gone either way.
+    if (coalesced) redoSteps.length = 0;
+    else recordStep({ kind: 'native' });
     lastEditKind = kind;
     lastEditStamp = stamp;
-    redoDepth = 0;
+  }
+
+  // Put a paragraph-style step back, in whichever direction it is being replayed. Blocks the
+  // document no longer holds are skipped: a later native undo can replace the element this step
+  // recorded, and writing to a detached node would silently do nothing at all.
+  function replayStyleStep(step, backwards) {
+    var touched = false;
+    for (var index = 0; index < step.blocks.length; index += 1) {
+      var entry = step.blocks[index];
+      if (!insideEditor(entry.element)) continue;
+      if (writeBlockStyle(entry.element, step.property, backwards ? entry.before : entry.after)) touched = true;
+    }
+    if (touched) revealBlock(step.blocks);
+    return touched;
   }
 
   function runHistory(command) {
     var wantsUndo = command === 'undo';
-    if (wantsUndo ? historyDepth <= 0 : redoDepth <= 0) return false;
-    restoreSelection();
-    suppressAutoEdits = true;
-    var applied = execute(command);
-    suppressAutoEdits = false;
-    if (!applied) return false;
-    if (wantsUndo) { historyDepth -= 1; redoDepth += 1; } else { redoDepth -= 1; historyDepth += 1; }
-    // A history step ends the typing run, so the next keystroke starts a new undo step.
-    lastEditKind = 'history';
-    lastEditStamp = Date.now();
-    return true;
+    var from = wantsUndo ? historySteps : redoSteps;
+    var into = wantsUndo ? redoSteps : historySteps;
+    var guard = 0;
+    while (from.length && guard < MAX_HISTORY_STEPS) {
+      guard += 1;
+      var step = from.pop();
+      restoreSelection();
+      var moved;
+      if (step.kind === 'blockStyle') {
+        moved = replayStyleStep(step, wantsUndo);
+        // Every block this step touched has since been replaced by another undo, so there is
+        // nothing left to put back. Drop the step and offer the next one rather than reporting a
+        // press that moved nothing.
+        if (!moved) continue;
+      } else {
+        suppressAutoEdits = true;
+        moved = execute(command);
+        suppressAutoEdits = false;
+        if (!moved) { from.push(step); return false; }
+      }
+      into.push(step);
+      // A history step ends the typing run, so the next keystroke starts a new undo step.
+      lastEditKind = 'history';
+      lastEditStamp = Date.now();
+      return true;
+    }
+    return false;
   }
 
   // Wrapper for the document edits that do not go through runCommand — inserted HTML, a wrapped
@@ -364,7 +427,7 @@ function createTusFormattingBridge(editor, doc) {
   }
 
   function historyState() {
-    return { canUndo: historyDepth > 0, canRedo: redoDepth > 0, depth: historyDepth };
+    return { canUndo: historySteps.length > 0, canRedo: redoSteps.length > 0, depth: historySteps.length };
   }
 
   // ---- state reporting -----------------------------------------------------------------------
@@ -454,28 +517,83 @@ function createTusFormattingBridge(editor, doc) {
     return blocks;
   }
 
-  // Paragraph-level formatting execCommand has no verb for. An empty value removes the
-  // declaration instead of writing an empty one, so "reset to default" leaves clean HTML.
+  // Write one paragraph declaration. An empty value removes it instead of writing an empty one,
+  // so "reset to default" leaves clean HTML rather than an empty declaration behind.
+  function writeBlockStyle(element, property, value) {
+    var style = element && element.style;
+    if (!style) return false;
+    if (value) style[property] = value;
+    else if (typeof style.removeProperty === 'function') style.removeProperty(hyphenate(property));
+    else style[property] = '';
+    return true;
+  }
+
+  // Word's Undo shows you what it undid. When the caret has since moved out of every paragraph a
+  // step touched, it is collapsed back into the first of them so the restored spacing is on
+  // screen. A caret already inside one of them is left exactly where the user put it. Best effort
+  // only: a document that cannot build the range keeps the caret it has.
+  function revealBlock(entries) {
+    var target = null;
+    for (var index = 0; index < entries.length && !target; index += 1) {
+      if (insideEditor(entries[index].element)) target = entries[index].element;
+    }
+    if (!target) return false;
+    var live = liveCaretRange();
+    var walk = live ? elementFor(live.startContainer) : null;
+    var guard = 0;
+    while (walk && walk !== editor && guard < 64) {
+      if (walk === target) return false;
+      walk = walk.parentElement || walk.parentNode;
+      guard += 1;
+    }
+    try {
+      var caret = doc.createRange();
+      caret.selectNodeContents(target);
+      caret.collapse(true);
+      var selection = activeSelection();
+      if (!selection) return false;
+      selection.removeAllRanges();
+      selection.addRange(caret);
+      savedRange = caret.cloneRange();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Paragraph-level formatting execCommand has no verb for.
   //
-  // Known limitation: WebKit's undo stack only records its own editing commands, and there is no
-  // command for this one. Undo therefore steps over a spacing change to the edit before it. The
-  // alternative — rebuilding each block through insertHTML so WebKit records it — would throw
-  // away the caret and every inline style in the block, which is a worse trade than an undo that
-  // skips one step.
+  // WebKit's undo stack only records its own editing commands, so a declaration written straight
+  // onto the element is invisible to it. Rather than leave the change outside Undo, the step is
+  // recorded here with the value each block held before it, and runHistory puts those values
+  // back when the step comes up. That keeps the caret and every inline style in the block, which
+  // rebuilding the blocks through insertHTML to make WebKit record the edit would not.
+  //
+  // A press that would write the value a block already has is not an edit: choosing 1.5 twice
+  // leaves one thing to undo, the way a word processor's paragraph menu does.
   function applyBlockStyle(property, value) {
     var restored = restoreSelection();
     var blocks = blockElementsInRange(editorRange());
     if (!blocks.length) return { restored: restored, applied: false };
-    editDocument(function () {
+    var after = value ? String(value) : '';
+    var step = { kind: 'blockStyle', property: property, blocks: [] };
+    suppressAutoEdits = true;
+    try {
       for (var index = 0; index < blocks.length; index += 1) {
-        var style = blocks[index].style;
-        if (!style) continue;
-        if (value) style[property] = value;
-        else if (typeof style.removeProperty === 'function') style.removeProperty(hyphenate(property));
-        else style[property] = '';
+        var element = blocks[index];
+        if (!element.style) continue;
+        var before = String(element.style[property] || '');
+        if (before === after) continue;
+        if (!writeBlockStyle(element, property, after)) continue;
+        step.blocks.push({ element: element, before: before, after: after });
       }
-      return true;
-    });
+    } finally {
+      suppressAutoEdits = false;
+    }
+    if (!step.blocks.length) return { restored: restored, applied: false };
+    recordStep(step);
+    lastEditKind = 'command';
+    lastEditStamp = Date.now();
     return { restored: restored, applied: true };
   }
 

@@ -41,13 +41,45 @@ kullanıcıya ulaşan tek bir düğme yoktu. Testlerin geçmesi özelliğin var 
    geri alma yığınına yalnızca kendi düzenleme komutlarını kaydeder. Artık `insertText` üzerinden
    gidiyor ve seçim sonradan geri genişletiliyor.
 
-## Bilinen sınır
+## Kapatılan üçüncü hata: satır aralığı geri alınamıyordu
 
-**Satır aralığı geri alınamıyor.** `line-height` için bir `execCommand` fiili yok; blok stili
-doğrudan yazılıyor ve WebKit bunu yığınına almıyor, dolayısıyla Geri Al bir önceki düzenlemeye
-atlıyor. Blokları `insertHTML` ile yeniden kurmak WebKit'e kaydettirirdi ama karetı ve bloktaki
-bütün satır içi biçimleri düşürürdü; bir adım atlayan geri alma bundan iyi bir takas.
-Gerekçe kodda da yazılı (`applyBlockStyle`).
+Bu, geçen turda "bilinen sınır" diye bırakılan maddeydi; artık bir sınır değil.
+
+`line-height` için bir `execCommand` fiili yok, dolayısıyla WebKit'in geri alma yığını bu
+düzenlemeyi hiç görmüyordu. Sonuç yalnızca "satır aralığı geri alınmıyor" değildi: Geri Al
+düğmesi WebKit'e gidiyor, WebKit aralığın üstünden atlayıp bir önceki düzenlemeyi geri alıyor,
+köprünün sayaçları ise artık belgeyle örtüşmeyen bir geçmişi anlatıyordu. Bir basış iki şeyi
+birden bozuyordu.
+
+**Yapılan.** Köprünün geçmişi iki sayaçtan tek bir sıralı yığına çevrildi
+(`historySteps` / `redoSteps`). Yığındaki her adım iki türden biri:
+
+| Tür | Tersini kim biliyor | Adımın taşıdığı |
+| --- | --- | --- |
+| `native` | WebKit — kendi düzenleme komutu | yalnızca sıradaki yeri |
+| `blockStyle` | Köprünün kendisi | değişen bloklar ve iki yandaki değerler |
+
+Geri Al yığının tepesini alır: adım `native` ise WebKit'e sorar, `blockStyle` ise bildirimleri
+kendisi geri yazar. Sırayı korumak işin bütünü — karışık bir düzenleme dizisi artık yapıldığı
+sırayla geri geliyor. Karet ve bloktaki bütün satır içi biçimler yerinde kalıyor; blokları
+`insertHTML` ile yeniden kurma seçeneği ikisini de düşürürdü, o yüzden seçilmedi.
+
+Aynı geçişte Word'ün davranışına üç incelik daha eklendi:
+
+- **Zaten yazılı olan değeri seçmek düzenleme sayılmıyor.** 1,5'i iki kez seçmek geri alınacak
+  tek şey bırakır.
+- **Geri Al, geri aldığı şeyi gösteriyor.** Karet o paragrafın dışına çıkmışsa içine
+  toplanıyor; zaten içindeyse dokunulmuyor — seçimi yeniden atamak WebKit'in bekleyen yazım
+  biçimini siler.
+- **Silinmiş paragraf adımı tıkamıyor.** Sonraki bir geri alma, adımın kaydettiği elemanı
+  değiştirmiş olabilir; böyle bir adım tüketilip bir alttaki düzenlemeye geçiliyor, "hiçbir şey
+  yapmayan Geri Al" yerine.
+
+Yığın `MAX_HISTORY_STEPS` (200) ile sınırlı: bir `blockStyle` adımı eleman tuttuğu için sınırsız
+bir yığın, alan açık kaldığı sürece kopmuş düğümleri canlı tutardı.
+
+Testler: `lib/richTextCommands.test.ts` → "paragraph styles and undo" (dokuz test). Dokuzu da
+mutasyonla doğrulandı — ilgili koruma tek tek bozulduğunda her biri kırmızıya düşüyor.
 
 ## Eklenen koruma
 
@@ -60,7 +92,7 @@ resolved" artık üretilen betiği `new Function` ile ayrıştırıyor ve çöz�
 
 ```
 npx tsc --noEmit    → temiz
-npx vitest run      → 130 dosya, 1359 test, tamamı geçti
+npx vitest run      → 131 dosya, 1396 test, tamamı geçti
 npm run verify:ios  → geçti
 ```
 
@@ -68,3 +100,10 @@ npm run verify:ios  → geçti
 
 Gerçek cihazda uçtan uca tur. Bütün doğrulama deterministik birim testleriyle yapıldı; WebKit'in
 `insertText` ve seçim davranışı ancak iPhone'da onaylanabilir.
+
+Geçmiş yığını için bunun somut karşılığı şu: köprü, bir yazım dizisini `TYPING_RUN_COALESCE_MS`
+(900 ms) ile tek adıma topluyor, WebKit ise kendi kuralıyla topluyor. İkisi ayrışırsa bir Geri Al
+basışı belgeyi köprünün saydığından farklı kadar geri alır. Bu, bu turda getirilen bir şey değil —
+sayaçlı sürümde de vardı — ama `blockStyle` adımları artık aynı yığında sıralandığı için cihazda
+bakılacak yer burası: uzun bir yazım dizisinin ardından verilen satır aralığı, tek basışta ve
+yalnız başına geri gelmeli.
