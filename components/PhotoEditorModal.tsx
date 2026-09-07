@@ -17,7 +17,7 @@ import {
     useWindowDimensions,
     type LayoutChangeEvent,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
     Ellipse,
     G,
@@ -1751,7 +1751,15 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={closeEditor}>
-            <SafeAreaView style={styles.container}>
+            {/*
+              * The inset is applied here rather than by a SafeAreaView. A modal is a separate
+              * native view hierarchy, and the safe-area view measures against a window it is not
+              * parented in there, so it reported no inset at all and the header was drawn under
+              * the clock and the battery. `useSafeAreaInsets` reads through React context, which
+              * does cross the modal boundary — the same way every other sheet in the app gets its
+              * insets.
+              */}
+            <View style={[styles.container, { paddingTop: insets.top }]}>
                 <View style={styles.header}>
                     <TouchableOpacity
                         style={styles.headerButton}
@@ -2010,7 +2018,9 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     </View>
                 </View>
 
-                <View style={styles.controls}>
+                {/* The tray carries the home-indicator inset itself, so the last row of tools is
+                    never sitting under it. */}
+                <View style={[styles.controls, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 8 : 12) }]}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolList}>
                         {toolItems.map((item) => (
                             <TouchableOpacity
@@ -2022,7 +2032,12 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 accessibilityLabel={item.label}
                             >
                                 <Text style={[styles.toolIcon, item.id === 'text' && styles.textToolIcon]}>{item.icon}</Text>
-                                <Text style={[styles.toolLabel, tool === item.id && styles.toolLabelActive]}>{item.label}</Text>
+                                <Text
+                                    numberOfLines={1}
+                                    style={[styles.toolLabel, tool === item.id && styles.toolLabelActive]}
+                                >
+                                    {item.label}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity
@@ -2033,7 +2048,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                             accessibilityLabel={l('Saat yönünde döndür', 'Rotate clockwise')}
                         >
                             {rotating ? <ActivityIndicator size="small" color={colors.accent} /> : <Text style={styles.toolIcon}>↻</Text>}
-                            <Text style={styles.toolLabel}>{l('Döndür', 'Rotate')}</Text>
+                            <Text numberOfLines={1} style={styles.toolLabel}>{l('Döndür', 'Rotate')}</Text>
                         </TouchableOpacity>
                         {page && (
                             <TouchableOpacity
@@ -2043,7 +2058,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 accessibilityLabel={l('Kağıt ve zemin rengini değiştir', 'Change paper and page colour')}
                             >
                                 <Text style={styles.toolIcon}>▤</Text>
-                                <Text style={styles.toolLabel}>{l('Kağıt', 'Paper')}</Text>
+                                <Text numberOfLines={1} style={styles.toolLabel}>{l('Kağıt', 'Paper')}</Text>
                             </TouchableOpacity>
                         )}
                     </ScrollView>
@@ -2336,8 +2351,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                             accessibilityLabel={l('Metin düzenleyiciyi kapat', 'Close text composer')}
                         />
 
-                        {/* Top Action Bar */}
-                        <SafeAreaView edges={['top']} style={styles.instagramTextHeader}>
+                        {/* Top Action Bar — same modal inset problem as the editor's own header. */}
+                        <View style={[styles.instagramTextHeader, { paddingTop: insets.top + Spacing.sm }]}>
                             <TouchableOpacity
                                 style={styles.instagramHeaderBtn}
                                 onPress={() => setTextModal(false)}
@@ -2391,7 +2406,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                             >
                                 <Text style={styles.instagramDoneBtnText}>{t('common.completed')}</Text>
                             </TouchableOpacity>
-                        </SafeAreaView>
+                        </View>
 
                         {/* Center Area with Vertical Size Slider & Multiline Input */}
                         <View style={styles.instagramCenterWrapper}>
@@ -2535,27 +2550,33 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         </Svg>
                     </View>
                 )}
-            </SafeAreaView>
+            </View>
         </Modal>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        container: { flex: 1, backgroundColor: '#111827' },
+        // The chrome — the header, the tool tray and the paper sheet — follows the app's theme so
+        // the editor reads as part of it rather than as a borrowed tool. What sits *over* the
+        // photo (selection handles, the text composer, the drag-to-delete bin) stays dark and
+        // white on purpose: those have to be legible against whatever the learner photographed,
+        // not against the app's background.
+        container: { flex: 1, backgroundColor: colors.bgPrimary },
         header: {
             minHeight: 62,
             flexDirection: 'row',
             alignItems: 'center',
             paddingHorizontal: Spacing.md,
+            backgroundColor: colors.bgCard,
             borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: '#374151',
+            borderBottomColor: colors.border,
         },
         headerButton: { minWidth: 64, minHeight: 44, justifyContent: 'center' },
-        headerButtonText: { color: '#d1d5db', fontSize: FontSize.md, fontWeight: '600' },
+        headerButtonText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '600' },
         headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: Spacing.sm },
-        title: { color: '#ffffff', fontSize: FontSize.lg, fontWeight: '800' },
-        subtitle: { color: '#9ca3af', fontSize: FontSize.sm, marginTop: 2 },
+        title: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
+        subtitle: { color: colors.textMuted, fontSize: FontSize.sm, marginTop: 2 },
         saveButton: {
             minWidth: 64,
             minHeight: 44,
@@ -2577,24 +2598,27 @@ function createStyles(colors: ColorScheme) {
     },
     canvas: { backgroundColor: '#000', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
         controls: {
-            backgroundColor: '#1f2937',
+            backgroundColor: colors.bgCard,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: '#374151',
-            paddingBottom: Platform.OS === 'ios' ? 8 : 12,
+            borderTopColor: colors.border,
         },
         toolList: { paddingHorizontal: Spacing.sm, paddingVertical: 7, gap: 5 },
         toolButton: {
-            width: 54,
+            // A fixed width broke the longest Turkish label in half — "Dikdörtgen" wrapped to
+            // "Dikdörtge" over a lone "n". The row already scrolls, so a button is free to be as
+            // wide as its own label needs and no narrower than a comfortable tap target.
+            minWidth: 54,
+            paddingHorizontal: 6,
             minHeight: 52,
             borderRadius: BorderRadius.md,
             alignItems: 'center',
             justifyContent: 'center',
             gap: 2,
         },
-        toolButtonActive: { backgroundColor: '#374151' },
+        toolButtonActive: { backgroundColor: colors.accentLight },
         pageSheetOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
         pageSheet: {
-            backgroundColor: '#1f2937',
+            backgroundColor: colors.bgCard,
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
             paddingHorizontal: Spacing.lg,
@@ -2602,8 +2626,8 @@ function createStyles(colors: ColorScheme) {
             paddingBottom: 28,
             gap: Spacing.xs,
         },
-        pageSheetTitle: { color: '#ffffff', fontSize: FontSize.lg, fontWeight: '800' },
-        pageSheetLabel: { color: '#9ca3af', fontSize: FontSize.sm, fontWeight: '600', marginTop: Spacing.sm },
+        pageSheetTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
+        pageSheetLabel: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '600', marginTop: Spacing.sm },
         pageChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
         pageChip: {
             minWidth: 76,
@@ -2613,19 +2637,19 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: Spacing.sm,
             borderRadius: BorderRadius.md,
             borderWidth: 2,
-            borderColor: '#374151',
-            backgroundColor: '#111827',
+            borderColor: colors.border,
+            backgroundColor: colors.bgInput,
         },
-        pageChipActive: { borderColor: colors.accent, backgroundColor: '#0b1220' },
-        pageChipSwatch: { borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: '#4b5563' },
-        pageChipText: { color: '#9ca3af', fontSize: FontSize.sm, fontWeight: '600' },
-        pageChipTextActive: { color: '#ffffff' },
+        pageChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
+        pageChipSwatch: { borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+        pageChipText: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '600' },
+        pageChipTextActive: { color: colors.textPrimary },
         pageColorDot: {
             width: 44,
             height: 34,
             borderRadius: 4,
             borderWidth: StyleSheet.hairlineWidth,
-            borderColor: '#4b5563',
+            borderColor: colors.border,
         },
         pageSheetDone: {
             marginTop: Spacing.lg,
@@ -2636,10 +2660,10 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
         },
         pageSheetDoneText: { color: '#ffffff', fontWeight: '800', fontSize: FontSize.md },
-        toolIcon: { color: '#f9fafb', fontSize: 20, lineHeight: 23 },
+        toolIcon: { color: colors.textPrimary, fontSize: 20, lineHeight: 23 },
         textToolIcon: { fontWeight: '900' },
-        toolLabel: { color: '#9ca3af', fontSize: 10, fontWeight: '600' },
-        toolLabelActive: { color: '#ffffff' },
+        toolLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '600' },
+        toolLabelActive: { color: colors.accent, fontWeight: '800' },
         optionsRow: {
             minHeight: 50,
             flexDirection: 'row',
@@ -2656,15 +2680,17 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
             borderRadius: BorderRadius.sm,
         },
-        colorButtonActive: { backgroundColor: '#4b5563' },
-        colorDot: { width: 23, height: 23, borderRadius: 12, borderWidth: 1, borderColor: '#6b7280' },
+        colorButtonActive: { backgroundColor: colors.accentLight },
+        // The swatch ring has to stay visible against both a white and a near-black swatch, so it
+        // takes the theme's border rather than a fixed grey.
+        colorDot: { width: 23, height: 23, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
         sizeGroup: { flexDirection: 'row', alignItems: 'center' },
         sizeButton: { width: 34, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm },
-        sizeButtonActive: { backgroundColor: '#4b5563' },
+        sizeButtonActive: { backgroundColor: colors.accentLight },
         sizeDot: { borderRadius: 999 },
         historyButton: { width: 42, height: 44, alignItems: 'center', justifyContent: 'center' },
-        historyIcon: { color: '#f9fafb', fontSize: 23 },
-        disabledText: { color: '#4b5563' },
+        historyIcon: { color: colors.textPrimary, fontSize: 23 },
+        disabledText: { color: colors.textMuted, opacity: 0.5 },
 
         // Interactive Text Selection Styles
         textSelectionBox: {
@@ -2876,7 +2902,7 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: 12,
             height: 32,
             borderRadius: BorderRadius.full,
-            backgroundColor: '#374151',
+            backgroundColor: colors.bgInput,
             alignItems: 'center',
             justifyContent: 'center',
         },
@@ -2884,7 +2910,7 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.accent,
         },
         cropAspectLabel: {
-            color: '#9ca3af',
+            color: colors.textMuted,
             fontSize: FontSize.xs,
             fontWeight: '600',
         },
@@ -2905,10 +2931,10 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: BorderRadius.md,
-            backgroundColor: '#374151',
+            backgroundColor: colors.bgInput,
         },
         cropCancelText: {
-            color: '#d1d5db',
+            color: colors.textSecondary,
             fontSize: FontSize.sm,
             fontWeight: '600',
         },
@@ -2918,10 +2944,10 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: BorderRadius.md,
-            backgroundColor: '#374151',
+            backgroundColor: colors.bgInput,
         },
         cropResetText: {
-            color: '#d1d5db',
+            color: colors.textSecondary,
             fontSize: FontSize.sm,
             fontWeight: '600',
         },
@@ -2958,7 +2984,7 @@ function createStyles(colors: ColorScheme) {
             marginHorizontal: Spacing.sm,
             padding: 3,
             borderRadius: BorderRadius.full,
-            backgroundColor: '#1f2937',
+            backgroundColor: colors.bgInput,
         },
         eraserModeButton: {
             flex: 1,
@@ -2968,13 +2994,13 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: 10,
             borderRadius: BorderRadius.full,
         },
-        eraserModeButtonActive: { backgroundColor: '#374151' },
+        eraserModeButtonActive: { backgroundColor: colors.bgCard },
         eraserModeText: {
-            color: '#9ca3af',
+            color: colors.textMuted,
             fontSize: FontSize.xs,
             fontWeight: '600',
         },
-        eraserModeTextActive: { color: '#f9fafb', fontWeight: '800' },
+        eraserModeTextActive: { color: colors.accent, fontWeight: '800' },
 
         // Instagram Fullscreen Text Composer Styles
         instagramTextOverlay: {

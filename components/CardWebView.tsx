@@ -7,8 +7,9 @@ import { reviewerSurfaceCss } from '../lib/cardAppearance';
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
 import { CARD_CONTENT_CSP_META, safeExternalCardUrl } from '../lib/cardContentSecurity';
-import { isLocalMediaDocumentUrl } from '../lib/localMediaDocument';
-import { confirm } from '../lib/confirm';
+import { isLocalMediaDocumentUrl, localMediaFileFromUrl } from '../lib/localMediaDocument';
+import { localMediaFilename } from '../lib/mediaAttachment';
+import { alert, confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import {
     MAX_TYPE_ANSWER_CHARS,
@@ -321,6 +322,44 @@ export default function CardWebView({
         );
     }, [l]);
 
+    /**
+     * Open an attachment the card links to, by handing it to iOS.
+     *
+     * The card itself must never navigate — the reviewer's WebView is the card, and letting it
+     * load a PDF would replace the card with one. The share sheet is the platform's own answer:
+     * it previews the file in Quick Look and offers everything else the learner might want to do
+     * with it, and it leaves the reviewer exactly where it was.
+     */
+    const openStoredAttachment = useCallback(async (filename: string) => {
+        try {
+            const Sharing = require('expo-sharing') as typeof import('expo-sharing');
+            if (!(await Sharing.isAvailableAsync())) throw new Error('SHARING_UNAVAILABLE');
+            await Sharing.shareAsync(`${getMediaBaseUrl()}${filename}`);
+        } catch (e) {
+            console.warn('[CardWebView] attachment hand-off failed:', e);
+            alert(
+                l('Dosya açılamadı', 'Could not open the file'),
+                l('Bu ek şu anda açılamıyor.', 'This attachment cannot be opened right now.'),
+            );
+        }
+    }, [l]);
+
+    /**
+     * What a tapped link on a card does.
+     *
+     * A bare filename is a stored attachment — what "Dosya ekle" writes — and belongs to the
+     * collection, so it is handed to iOS. Everything else is a link out of the app and keeps the
+     * confirmation it always had.
+     */
+    const openCardLink = useCallback((rawHref: string) => {
+        const filename = localMediaFilename(rawHref);
+        if (filename) {
+            void openStoredAttachment(filename);
+            return;
+        }
+        openExternalLink(rawHref);
+    }, [openExternalLink, openStoredAttachment]);
+
     // A new card starts unmeasured so the previous card's height is never reused.
     useLayoutEffect(() => { setContentHeight(null); }, [card.id, card.ord]);
 
@@ -441,7 +480,7 @@ export default function CardWebView({
                         link.addEventListener('click', (event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            openExternalLink(link.getAttribute('href') ?? '');
+                            openCardLink(link.getAttribute('href') ?? '');
                         });
                     });
                     if (typeAnswerInCard && side === 'question') {
@@ -534,11 +573,20 @@ export default function CardWebView({
         const url = request.url;
         if (isLocalMediaDocumentUrl(url, mediaBaseUrl)) return true;
 
+        // A link to an attachment still must not navigate — it is answered by handing the file to
+        // iOS. This is the same policy the click listener applies, kept here for the taps that
+        // never reach it: a link added to the document after the listeners were bound.
+        const attachment = localMediaFileFromUrl(url, mediaBaseUrl);
+        if (attachment) {
+            if (request.isTopFrame !== false) void openStoredAttachment(attachment);
+            return false;
+        }
+
         // Card links never replace the review WebView. HTTPS requires explicit confirmation;
         // HTTP, file, data, custom schemes and local media navigation remain blocked.
         if (request.isTopFrame !== false) openExternalLink(url);
         return false;
-    }, [mediaBaseUrl, openExternalLink]);
+    }, [mediaBaseUrl, openExternalLink, openStoredAttachment]);
 
     return (
         <WebView

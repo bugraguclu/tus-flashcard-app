@@ -31,3 +31,30 @@ export function isLocalMediaDocumentUrl(url: unknown, mediaBaseUrl: unknown): bo
     if (!base) return false;
     return url.replace(/\/+$/, '') === base;
 }
+
+/**
+ * The stored attachment a navigation is asking for, or null when it is asking for anything else.
+ *
+ * A link to a file the learner attached resolves, against the media base, to a URL inside that
+ * directory. The navigation is still refused — the reviewer's WebView *is* the card and must not
+ * become a PDF viewer — but recognising it is what lets the tap be answered by handing the file
+ * to the platform instead of doing nothing at all.
+ *
+ * Only a direct child of the media directory counts. A URL that climbs into a subdirectory, or
+ * carries a query or a fragment, is not a name the collection ever stored.
+ */
+export function localMediaFileFromUrl(url: unknown, mediaBaseUrl: unknown): string | null {
+    if (typeof url !== 'string' || !url) return null;
+    if (typeof mediaBaseUrl !== 'string') return null;
+    const base = mediaBaseUrl.trim();
+    if (!base) return null;
+    const prefix = base.endsWith('/') ? base : `${base}/`;
+    if (!url.startsWith(prefix)) return null;
+
+    const tail = url.slice(prefix.length);
+    if (!tail || /[?#/\\]/.test(tail)) return null;
+    let decoded = tail;
+    try { decoded = decodeURIComponent(tail); } catch { return null; }
+    if (!decoded || /[/\\]/.test(decoded) || decoded.startsWith('.')) return null;
+    return decoded;
+}

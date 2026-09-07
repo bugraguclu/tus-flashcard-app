@@ -295,14 +295,16 @@ function editorDocument(
       };
 
       window.__tusEditorInsertHtml = function (html) {
-        restoreSelection();
         let processedHtml = html;
         if (typeof html === 'string') {
           processedHtml = html.replace(/\[sound:([^\]]+)\]/gi, function (_, fn) {
             return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
           });
         }
-        bridge.editDocument(function () { return document.execCommand('insertHTML', false, processedHtml); });
+        // The bridge restores the caret, and falls back to appending when WebKit refuses the
+        // command — which is what happens when an attachment is inserted while the sheet it was
+        // chosen from still holds first responder.
+        bridge.insertHtml(processedHtml);
         initAudioControls();
         emitChange();
       };

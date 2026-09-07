@@ -756,10 +756,53 @@ function createTusFormattingBridge(editor, doc) {
     return false;
   }
 
+  // Put a fragment into the field, and make sure it lands.
+  //
+  // An attachment arrives from a native sheet that is still on screen: the paperclip menu closes,
+  // the file is copied, and the snippet is injected while the sheet's view controller may still
+  // hold first responder. WebKit refuses an insertHTML with no editable selection to replace, and
+  // it refuses by returning false rather than by throwing — so the picture the learner just chose
+  // was quietly dropped and the field looked untouched.
+  //
+  // The caret is still the right place for the fragment whenever there is one, so the command is
+  // tried first and nothing about ordinary typing changes. Only when it refuses does the fragment
+  // go to the end of the field, which needs neither a selection nor focus. Appended is where an
+  // attachment would have gone anyway when the learner never put a caret anywhere.
+  function insertHtml(html) {
+    restoreSelection();
+    var applied = editDocument(function () { return execute('insertHTML', html); });
+    if (applied) return 'command';
+    if (typeof editor.insertAdjacentHTML !== 'function') return 'failed';
+    try {
+      editor.insertAdjacentHTML('beforeend', html);
+    } catch (error) {
+      return 'failed';
+    }
+    // The append is an edit like any other: it ends the typing run and gives Undo a step to
+    // take back, which is what the learner expects of something they just added.
+    noteEdit('command');
+    // A caret left pointing into the old content would make the next keystroke land above the
+    // fragment, so it is moved past it — best effort, since this path already means the
+    // selection was not usable.
+    try {
+      var selection = activeSelection();
+      if (selection) {
+        var range = contentEndRange();
+        savedRange = range.cloneRange();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    } catch (error) {
+      // A document that will not take a selection still has the fragment, which is the point.
+    }
+    return 'appended';
+  }
+
   return {
     saveSelection: saveSelection,
     clearSavedRange: clearSavedRange,
     restoreSelection: restoreSelection,
+    insertHtml: insertHtml,
     runCommand: runCommand,
     isSameRange: isSameRange,
     noteEdit: noteEdit,

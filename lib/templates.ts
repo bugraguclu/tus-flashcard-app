@@ -816,20 +816,42 @@ function normalizedSecurityUrl(value: string): string {
     return decodeSecurityEntities(value).trim().replace(/[\u0000-\u001F\u007F]/g, '');
 }
 
-function isSafeLocalMediaUrl(value: string): boolean {
+/**
+ * A plain name in the collection's media folder, and nothing that could reach outside it.
+ *
+ * Anki package media is a flat filename namespace. Rejecting schemes, absolute paths, traversal,
+ * query strings and encoded separators here is what makes such a name safe to hand a WebView: a
+ * value with a colon in it can be a `javascript:` or a `data:text/html`, and one with a slash can
+ * climb out of the folder, so neither ever reaches this predicate's `true`.
+ */
+function isBareMediaFilename(value: string): boolean {
     const normalized = normalizedSecurityUrl(value);
     if (!normalized || normalized.length > 512 || normalized.startsWith('.') || normalized.startsWith('#')) return false;
-    if (isSafeDataMediaUrl(normalized)) return true;
-    // Anki package media is a flat filename namespace. Reject schemes, absolute paths,
-    // traversal, query strings and encoded separators before the WebView sees them.
     let decoded = normalized;
     try { decoded = decodeURIComponent(normalized); } catch { return false; }
     return !/[\\/:?#]/.test(decoded) && decoded !== '.' && decoded !== '..';
 }
 
+function isSafeLocalMediaUrl(value: string): boolean {
+    const normalized = normalizedSecurityUrl(value);
+    if (isSafeDataMediaUrl(normalized)) return true;
+    return isBareMediaFilename(value);
+}
+
+/**
+ * Where a link is allowed to point.
+ *
+ * A page anchor and an `https:` address are the two an imported deck may carry. The third is a
+ * stored attachment: "Dosya ekle" writes `<a href="1757265000_notes.pdf">notes.pdf</a>` for a
+ * file it has just copied into the media folder, which is the same flat namespace `src` already
+ * resolves against. Without this, that href was rewritten to `#` — the file stayed on disk with
+ * nothing referring to it, so it read as a dead link to the learner and as unused media to the
+ * exporter. Inline `data:` payloads stay out: a link is a place to go, not a place to embed one.
+ */
 function isSafeLinkUrl(value: string): boolean {
     const normalized = normalizedSecurityUrl(value);
     if (normalized.startsWith('#')) return true;
+    if (isBareMediaFilename(value)) return true;
     try {
         const parsed = new URL(normalized);
         return parsed.protocol === 'https:' && !parsed.username && !parsed.password;

@@ -585,6 +585,30 @@ describe('field sanitizer (attribute-aware rewrite)', () => {
         expect(html).toContain('title="kaynak"');
     });
 
+    // "Dosya ekle" copies the picked file into the media folder and writes a link to it by the
+    // bare name it was stored under. Flattening that href to "#" left the file on disk with
+    // nothing pointing at it: a dead link on the card, and unused media to the exporter.
+    it('keeps a link to a stored attachment', () => {
+        const html = render('<a href="1757265000_notes.pdf">notes.pdf</a>');
+        expect(html).toContain('href="1757265000_notes.pdf"');
+        expect(html).not.toContain('href="#"');
+    });
+
+    it('keeps a link to an attachment whose name needed escaping', () => {
+        const html = render('<a href="ders%20notu.pdf">ders notu</a>');
+        expect(html).toContain('href="ders%20notu.pdf"');
+    });
+
+    it.each([
+        ['a path out of the media folder', '../../../etc/passwd'],
+        ['an absolute path', '/etc/passwd'],
+        ['a remote page', 'http://example.com/x'],
+        ['an inline html payload', 'data:text/html;base64,AAAA'],
+        ['an inline image payload, which is not a place to go', 'data:image/png;base64,AAAA'],
+    ])('still refuses a link to %s', (_label, target) => {
+        expect(render(`<a href="${target}">x</a>`)).toContain('href="#"');
+    });
+
     it('survives a template that renders an attribute-looking string outside any tag', () => {
         const nt = basic();
         nt.templates[0].qfmt = 'style="color:red" href="javascript:alert(1)" {{Front}}';

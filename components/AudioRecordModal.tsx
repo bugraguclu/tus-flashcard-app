@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable, Linking } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
 import {
     useAudioRecorder,
     useAudioRecorderState,
@@ -8,7 +8,7 @@ import {
     setAudioModeAsync,
 } from 'expo-audio';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert, choose } from '../lib/confirm';
+import { alert, confirmAsync } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
@@ -35,6 +35,26 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
     const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
     const state = useAudioRecorderState(recorder, 200);
     const [saving, setSaving] = useState(false);
+    // The recorder outlives the dialog, and so does the duration of the last take. Without this
+    // the dialog reopens still showing "0:37" from the recording before it.
+    const [started, setStarted] = useState(false);
+    useEffect(() => { if (visible) setStarted(false); }, [visible]);
+
+    /**
+     * Hand the audio session back.
+     *
+     * Recording puts iOS into `playAndRecord`, which routes playback to the receiver rather than
+     * the speaker. This was set when a recording started and never unset, so one recording left
+     * every card sound and every text-to-speech reading for the rest of the session playing
+     * quietly out of the earpiece.
+     */
+    const releaseRecordingSession = async () => {
+        try {
+            await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+        } catch (e) {
+            console.warn('[AudioRecordModal] could not release the audio session:', e);
+        }
+    };
 
     const startRecording = async () => {
         try {
@@ -54,6 +74,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
             await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
             await recorder.prepareToRecordAsync();
             recorder.record();
+            setStarted(true);
         } catch (e) {
             console.warn('[AudioRecordModal] start failed:', e);
             alert(t('common.error'), l('Kayıt başlatılamadı.', 'Could not start recording.'));
@@ -63,6 +84,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
     const stopAndSave = async () => {
         try {
             await recorder.stop();
+            await releaseRecordingSession();
             const uri = recorder.uri;
             if (!uri) {
                 onClose();
@@ -101,12 +123,27 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
         }
     };
 
+    /**
+     * Leave without keeping the recording.
+     *
+     * A recording in progress is unsaved work and the overlay behind the dialog is a large,
+     * easy target, so throwing one away is confirmed the way any other destructive action is.
+     */
     const discardAndClose = async () => {
+        if (state.isRecording) {
+            const discard = await confirmAsync(
+                l('Kayıt silinsin mi?', 'Discard recording?'),
+                l('Süren kayıt kaydedilmeden silinecek.', 'The recording in progress will be discarded.'),
+                { destructive: true },
+            );
+            if (!discard) return;
+        }
         try {
             if (state.isRecording) await recorder.stop();
         } catch (e) {
             console.warn('[AudioRecordModal] discard failed:', e);
         }
+        await releaseRecordingSession();
         onClose();
     };
 
@@ -120,7 +157,7 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                 />
                 <View style={styles.card}>
                     <Text style={styles.title}>🎙️ {l('Ses kaydet', 'Record Audio')}</Text>
-                    <Text style={styles.duration}>{formatDuration(state.durationMillis)}</Text>
+                    <Text style={styles.duration}>{formatDuration(started ? state.durationMillis : 0)}</Text>
                     <Text style={styles.status}>
                         {state.isRecording ? l('Kayıt sürüyor…', 'Recording…') : saving ? l('Dosya kaydediliyor…', 'Saving recording…') : l('Başlamak için mikrofona dokunun', 'Tap the microphone to start')}
                     </Text>

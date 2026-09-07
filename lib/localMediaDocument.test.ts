@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLocalMediaDocumentUrl, localMediaWebViewSource } from './localMediaDocument';
+import { isLocalMediaDocumentUrl, localMediaFileFromUrl, localMediaWebViewSource } from './localMediaDocument';
 
 const MEDIA_BASE = 'file:///var/mobile/Containers/Data/Application/ABC/Documents/tus-media/';
 
@@ -49,5 +49,43 @@ describe('local media document navigation', () => {
         expect(isLocalMediaDocumentUrl('/', '')).toBe(false);
         expect(isLocalMediaDocumentUrl('file:///', '')).toBe(false);
         expect(isLocalMediaDocumentUrl('https://example.com', undefined)).toBe(false);
+    });
+});
+
+/**
+ * A tapped attachment is refused as a navigation and answered as a hand-off, so the reviewer has
+ * to be able to tell "this is a file the learner attached" from "this is somewhere else entirely".
+ */
+describe('recognising an attachment a card links to', () => {
+    it('names the stored file a link inside the media directory is asking for', () => {
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}1757265000_notlar.pdf`, MEDIA_BASE))
+            .toBe('1757265000_notlar.pdf');
+        // A base written without its trailing slash still addresses the same directory.
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}notlar.pdf`, MEDIA_BASE.replace(/\/$/, '')))
+            .toBe('notlar.pdf');
+        // The name comes back as it was stored, not as the URL had to spell it.
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}ders%20notu.pdf`, MEDIA_BASE)).toBe('ders notu.pdf');
+    });
+
+    it('recognises nothing outside the directory itself', () => {
+        for (const url of [
+            `${MEDIA_BASE}alt/klasor/notlar.pdf`,
+            `${MEDIA_BASE}..%2F..%2Fetc%2Fpasswd`,
+            `${MEDIA_BASE}notlar.pdf?x=1`,
+            `${MEDIA_BASE}notlar.pdf#page=2`,
+            `${MEDIA_BASE}.gizli`,
+            MEDIA_BASE,
+            'file:///etc/passwd',
+            'https://example.com/notlar.pdf',
+            'javascript:alert(1)',
+            '',
+        ]) {
+            expect(localMediaFileFromUrl(url, MEDIA_BASE)).toBeNull();
+        }
+    });
+
+    it('recognises nothing at all when there is no media directory, as on web', () => {
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}notlar.pdf`, '')).toBeNull();
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}notlar.pdf`, undefined)).toBeNull();
     });
 });

@@ -1,15 +1,23 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert, choose } from '../lib/confirm';
+import { alert } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { readUriBytes } from '../lib/files';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
 import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
+import {
+    compressPhotoForAttachment,
+    formatByteSize,
+    planPhotoCompressionForUri,
+    readUriByteLength,
+    withPhotoExtension,
+    type PhotoCompressionPlan,
+} from '../lib/photoCompression';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
 import PaperSwatch, { pageColorLabel, paperLabel } from './PaperSwatch';
@@ -42,6 +50,24 @@ export { FIELD_MEDIA_RE } from '../lib/mediaAttachment';
 
 type MediaKind = 'image' | 'audio' | 'video' | 'file';
 
+/**
+ * A picked photo, together with what is known about storing it.
+ *
+ * The size and the plan are read once, between the picker closing and the sheet opening, so the
+ * sheet can put real numbers in front of the learner instead of offering to shrink a file that
+ * has nothing to gain.
+ */
+type PickedPhoto = EditablePhoto & {
+    byteLength: number | null;
+    plan: PhotoCompressionPlan;
+};
+
+/** " (12,4 MB)" for a size that is known, and nothing at all for one that is not. */
+function photoSizeSuffix(byteLength: number | null, locale = 'tr'): string {
+    const size = formatByteSize(byteLength, locale);
+    return size ? ` (${size})` : '';
+}
+
 function escapeHtml(value: string): string {
     return value
         .replace(/&/g, '&amp;')
@@ -51,7 +77,7 @@ function escapeHtml(value: string): string {
 }
 
 const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert }, ref) {
-    const { t, l } = useI18n();
+    const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [menuVisible, setMenuVisible] = useState(false);
@@ -59,7 +85,10 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const [showRecorder, setShowRecorder] = useState(false);
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
     // A picked photo waits here until the user says whether to insert it untouched or edit it.
-    const [pickedPhoto, setPickedPhoto] = useState<EditablePhoto | null>(null);
+    const [pickedPhoto, setPickedPhoto] = useState<PickedPhoto | null>(null);
+    // The video sheet: where the clip is coming from, asked in the app's own sheet rather than a
+    // two-button alert that offered no way back out.
+    const [videoSource, setVideoSource] = useState(false);
     // The new-page sheet: the paper is chosen here, then the editor opens on it.
     const [pageSetup, setPageSetup] = useState(false);
     const [pagePaper, setPagePaper] = useState(DEFAULT_BLANK_CANVAS_SETUP.paper);
@@ -70,7 +99,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const pendingActionRef = useRef<(() => void) | null>(null);
     const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleMenuDismiss = () => {
+    const handleSheetDismiss = () => {
         if (dismissTimerRef.current) {
             clearTimeout(dismissTimerRef.current);
             dismissTimerRef.current = null;
@@ -80,23 +109,47 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         action?.();
     };
 
+    // A pending action that outlives the screen would run against a component that is gone: it
+    // would call `onInsert` on an unmounted editor, or leave a picker with nowhere to return to.
+    useEffect(() => () => {
+        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = null;
+        pendingActionRef.current = null;
+    }, []);
+
     const closeMenu = () => {
         pendingActionRef.current = null;
         setMenuVisible(false);
     };
 
-    const runAfterMenuClose = (action: () => void) => {
+    /**
+     * Close a sheet, then do the thing it was opened to do.
+     *
+     * On iOS a sheet is a presented view controller. Doing the next thing while it is still on its
+     * way out is what broke "Olduğu gibi ekle": the file was copied and the snippet was handed to
+     * the field's WebView while the sheet still held first responder, so WebKit refused the insert
+     * and the photo was silently dropped. Waiting for the dismissal is also what lets the next
+     * sheet — the photo editor, a picker — present at all rather than being swallowed.
+     *
+     * `onDismiss` is the real signal and the timer is only a floor under it, in case a dismissal
+     * the runtime never reports would otherwise strand the action forever.
+     */
+    const runAfterSheetClose = (close: () => void, action: () => void) => {
         if (Platform.OS === 'ios') {
             pendingActionRef.current = action;
-            setMenuVisible(false);
+            close();
+            if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
             dismissTimerRef.current = setTimeout(() => {
-                handleMenuDismiss();
+                handleSheetDismiss();
             }, 450);
             return;
         }
-        setMenuVisible(false);
+        close();
         action();
     };
+
+    const runAfterMenuClose = (action: () => void) => runAfterSheetClose(() => setMenuVisible(false), action);
+    const runAfterPhotoSheetClose = (action: () => void) => runAfterSheetClose(() => setPickedPhoto(null), action);
 
     const openMenu = () => {
         Keyboard.dismiss();
@@ -144,16 +197,38 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            setPickedPhoto({
-                uri: asset.uri,
-                name: mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'gorsel', fallbackExtension: 'jpg' }),
-                width: asset.width,
-                height: asset.height,
-            });
+            await offerPickedPhoto(asset, 'gorsel');
         } catch (e) {
             console.warn('[MediaAttach] gallery pick failed:', e);
             alert(t('common.error'), l('Görsel seçilemedi.', 'Could not select the image.'));
         }
+    };
+
+    /**
+     * Show the "how should this be added?" sheet for a photo that has just been picked or taken.
+     *
+     * The size and the compression plan are read here, before the sheet appears, so it can offer
+     * a smaller copy only when there is one to be had and can say what it would actually cost.
+     * Both reads are cheap — a stat and the first sixty-four bytes — so a three-hundred-megabyte
+     * file is never loaded to decide what to do with it.
+     */
+    const offerPickedPhoto = async (
+        asset: { uri: string; fileName?: string | null; width?: number; height?: number },
+        fallbackName: string,
+    ) => {
+        const photo: EditablePhoto = {
+            uri: asset.uri,
+            name: mediaFilenameForPickedAsset({
+                uri: asset.uri,
+                name: asset.fileName || fallbackName,
+                fallbackExtension: 'jpg',
+            }),
+            width: asset.width,
+            height: asset.height,
+        };
+        const byteLength = await readUriByteLength(photo.uri);
+        const plan = await planPhotoCompressionForUri(photo, byteLength);
+        setPickedPhoto({ ...photo, byteLength, plan });
     };
 
     const captureFromCamera = async () => {
@@ -178,12 +253,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            setPickedPhoto({
-                uri: asset.uri,
-                name: mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'kamera', fallbackExtension: 'jpg' }),
-                width: asset.width,
-                height: asset.height,
-            });
+            await offerPickedPhoto(asset, 'kamera');
         } catch (e) {
             console.warn('[MediaAttach] camera capture failed:', e);
             alert(t('common.error'), l('Fotoğraf çekilemedi.', 'Could not take the photo.'));
@@ -191,18 +261,39 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     /** Insert the picked photo byte-for-byte, at its full original resolution. */
-    const insertPickedPhotoUnchanged = async () => {
-        const photo = pickedPhoto;
-        if (!photo) return;
-        setPickedPhoto(null);
-        await saveAndInsert(photo.uri, photo.name, 'image');
+    const insertPickedPhotoUnchanged = (photo: PickedPhoto) => {
+        runAfterPhotoSheetClose(() => { void saveAndInsert(photo.uri, photo.name, 'image'); });
     };
 
-    const editPickedPhoto = () => {
-        const photo = pickedPhoto;
-        if (!photo) return;
-        setPickedPhoto(null);
-        setPhotoToEdit(photo);
+    /**
+     * Insert a smaller copy of the picked photo.
+     *
+     * The re-encode is its own step so the spinner is up while it runs, and it can only ever help:
+     * `compressPhotoForAttachment` hands back the original URI unchanged when the result came out
+     * no smaller, when the file may carry transparency, or when anything at all went wrong.
+     */
+    const insertPickedPhotoOptimised = (photo: PickedPhoto) => {
+        runAfterPhotoSheetClose(() => {
+            void (async () => {
+                setBusy(true);
+                let source = photo.uri;
+                let name = photo.name;
+                try {
+                    const result = await compressPhotoForAttachment(photo);
+                    source = result.uri;
+                    if (result.extension) name = withPhotoExtension(photo.name, result.extension);
+                } catch (e) {
+                    console.warn('[MediaAttach] optimise failed, storing the original:', e);
+                } finally {
+                    setBusy(false);
+                }
+                await saveAndInsert(source, name, 'image');
+            })();
+        });
+    };
+
+    const editPickedPhoto = (photo: PickedPhoto) => {
+        runAfterPhotoSheetClose(() => setPhotoToEdit(photo));
     };
 
     const pickAudioClip = async () => {
@@ -249,6 +340,10 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 mediaTypes: ['videos'],
                 allowsEditing: false,
                 quality: 1,
+                // A field takes one clip at a time, and the photo picker already says so; without
+                // this the picker invites a multiple selection and every clip but the first is
+                // dropped without a word.
+                selectionLimit: 1,
             });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
@@ -282,22 +377,20 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         }
     };
 
-    const pickVideoClip = async () => {
+    /**
+     * Ask where the clip is coming from.
+     *
+     * This was a two-button alert, which on iOS has no third answer: once the learner had tapped
+     * "Video klibi ekle" there was no way back — dismissing it resolved to `false` and opened the
+     * Files browser they had not asked for. The app's own sheet has a Cancel row like every other
+     * one here, and matches them.
+     */
+    const pickVideoClip = () => {
         if (Platform.OS === 'web') {
-            await pickVideoFromFiles();
+            void pickVideoFromFiles();
             return;
         }
-        const pickFromGaleri = await choose(
-            l('Video klibi ekle', 'Attach Video Clip'),
-            l('Videoyu nereden seçmek istersiniz?', 'Where would you like to choose the video from?'),
-            l('Galeri', 'Gallery'),
-            l('Dosyalar', 'Files'),
-        );
-        if (pickFromGaleri) {
-            await pickVideoFromGallery();
-        } else {
-            await pickVideoFromFiles();
-        }
+        setVideoSource(true);
     };
 
     const pickFile = async () => {
@@ -385,7 +478,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 transparent
                 animationType="fade"
                 onRequestClose={closeMenu}
-                onDismiss={handleMenuDismiss}
+                onDismiss={handleSheetDismiss}
             >
                 <View style={styles.overlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
@@ -415,6 +508,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 transparent
                 animationType="fade"
                 onRequestClose={() => setPickedPhoto(null)}
+                onDismiss={handleSheetDismiss}
             >
                 <View style={styles.overlay}>
                     <Pressable
@@ -424,35 +518,112 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                     />
                     <SwipeDismissSheet active={pickedPhoto !== null} style={styles.sheet} onDismiss={() => setPickedPhoto(null)}>
                         <Text style={styles.sheetTitle}>{l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}</Text>
-                        <TouchableOpacity
-                            style={styles.optionRow}
-                            onPress={insertPickedPhotoUnchanged}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Fotoğrafı olduğu gibi ekle', 'Insert the photo unchanged')}
-                        >
-                            <Text style={styles.optionIcon}>🖼️</Text>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionLabel}>{l('Olduğu gibi ekle', 'Insert as is')}</Text>
-                                <Text style={styles.optionCaption}>
-                                    {l('Kırpılmadan, tam çözünürlükte eklenir.', 'Added uncropped, at full resolution.')}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.optionRow}
-                            onPress={editPickedPhoto}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Fotoğrafı kırp ve düzenle', 'Crop and edit the photo')}
-                        >
-                            <Text style={styles.optionIcon}>✂️</Text>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionLabel}>{l('Kırp ve düzenle', 'Crop & edit')}</Text>
-                                <Text style={styles.optionCaption}>
-                                    {l('Kırpma, çizim, ok, metin ve örtme araçları.', 'Crop, draw, arrows, text and cover-ups.')}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
+                        {pickedPhoto && (
+                            <>
+                                <TouchableOpacity
+                                    style={styles.optionRow}
+                                    onPress={() => insertPickedPhotoUnchanged(pickedPhoto)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Fotoğrafı olduğu gibi ekle', 'Insert the photo unchanged')}
+                                >
+                                    <Text style={styles.optionIcon}>🖼️</Text>
+                                    <View style={styles.optionCopy}>
+                                        <Text style={styles.optionLabel}>{l('Olduğu gibi ekle', 'Insert as is')}</Text>
+                                        <Text style={styles.optionCaption}>
+                                            {l('Kırpılmadan, tam çözünürlükte eklenir.', 'Added uncropped, at full resolution.')}
+                                            {photoSizeSuffix(pickedPhoto.byteLength, locale)}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                                {/*
+                                  * Only offered when there is something to gain. A photo already
+                                  * stored efficiently, or one that may carry transparency, plans
+                                  * to `keep` and this row never appears — so the choice is never
+                                  * between "smaller" and "the same thing again".
+                                  */}
+                                {pickedPhoto.plan.action === 'recompress' && (
+                                    <TouchableOpacity
+                                        style={styles.optionRow}
+                                        onPress={() => insertPickedPhotoOptimised(pickedPhoto)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l('Fotoğrafı küçülterek ekle', 'Add a smaller copy of the photo')}
+                                    >
+                                        <Text style={styles.optionIcon}>🪶</Text>
+                                        <View style={styles.optionCopy}>
+                                            <Text style={styles.optionLabel}>{l('Küçültüp ekle', 'Add optimised')}</Text>
+                                            <Text style={styles.optionCaption}>
+                                                {formatByteSize(pickedPhoto.byteLength, locale)}
+                                                {' → ~'}
+                                                {formatByteSize(pickedPhoto.plan.estimatedBytes, locale)}
+                                                {' · '}
+                                                {pickedPhoto.plan.width}×{pickedPhoto.plan.height}
+                                            </Text>
+                                            <Text style={styles.optionCaption}>
+                                                {l(
+                                                    'Ekranda görülebilir bir kalite kaybı olmadan. Sonuç küçülmezse orijinali eklenir.',
+                                                    'No difference you can see on screen. The original is kept if it does not get smaller.',
+                                                )}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                )}
+                                <TouchableOpacity
+                                    style={styles.optionRow}
+                                    onPress={() => editPickedPhoto(pickedPhoto)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Fotoğrafı kırp ve düzenle', 'Crop and edit the photo')}
+                                >
+                                    <Text style={styles.optionIcon}>✂️</Text>
+                                    <View style={styles.optionCopy}>
+                                        <Text style={styles.optionLabel}>{l('Kırp ve düzenle', 'Crop & edit')}</Text>
+                                        <Text style={styles.optionCaption}>
+                                            {l('Kırpma, çizim, ok, metin ve örtme araçları.', 'Crop, draw, arrows, text and cover-ups.')}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        )}
                         <TouchableOpacity style={styles.cancelRow} onPress={() => setPickedPhoto(null)}>
+                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </SwipeDismissSheet>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={videoSource}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setVideoSource(false)}
+                onDismiss={handleSheetDismiss}
+            >
+                <View style={styles.overlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setVideoSource(false)}
+                        accessibilityLabel={l('Video seçimini kapat', 'Close video options')}
+                    />
+                    <SwipeDismissSheet active={videoSource} style={styles.sheet} onDismiss={() => setVideoSource(false)}>
+                        <Text style={styles.sheetTitle}>{l('Videoyu nereden seçelim?', 'Where is the video from?')}</Text>
+                        <TouchableOpacity
+                            style={styles.optionRow}
+                            onPress={() => runAfterSheetClose(() => setVideoSource(false), () => { void pickVideoFromGallery(); })}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Galeriden video seç', 'Choose a video from the gallery')}
+                        >
+                            <Text style={styles.optionIcon}>🎬</Text>
+                            <Text style={styles.optionLabel}>{l('Galeri', 'Gallery')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.optionRow}
+                            onPress={() => runAfterSheetClose(() => setVideoSource(false), () => { void pickVideoFromFiles(); })}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Dosyalardan video seç', 'Choose a video from Files')}
+                        >
+                            <Text style={styles.optionIcon}>📁</Text>
+                            <Text style={styles.optionLabel}>{l('Dosyalar', 'Files')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.cancelRow} onPress={() => setVideoSource(false)}>
                             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </SwipeDismissSheet>

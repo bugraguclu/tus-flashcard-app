@@ -93,16 +93,31 @@ describe('media references against the field sanitizer', () => {
         });
     });
 
-    it('records that a file link is stripped of its target by the link policy', () => {
-        // `href` is allowed only for a fragment or an absolute https URL, so a bare media
-        // filename is replaced with `#`: the file is stored, referenced and exported, but the
-        // link the reviewer renders does not open it. Pinned so the gap is visible rather than
-        // discovered on a card; widening the policy is a change to the untrusted-content
-        // boundary and needs the reviewer's navigation rules changed with it.
+    it('keeps a file link pointing at the file it was stored as', () => {
+        // `href` used to be allowed only for a fragment or an absolute https URL, so a bare media
+        // filename was replaced with `#` and "Dosya ekle" produced a link that opened nothing —
+        // and, because the note then referred to no file, one the exporter counted as unused
+        // media. The policy now also admits a bare filename, which is the same flat namespace
+        // `src` resolves against and cannot name anything outside the media folder.
+        //
+        // The other half of that policy lives in the reviewer: `CardWebView` still refuses to
+        // *navigate* to the file — the WebView is the card — and answers the tap by handing the
+        // file to iOS instead. Widening this without that would put a card one tap away from
+        // being replaced by a PDF.
         expect(sanitizeUntrustedHtml(mediaReferenceSnippet('file', '1_notlar.pdf', 'notlar.pdf')))
-            .toBe('<a href="#">notlar.pdf</a>');
+            .toBe('<a href="1_notlar.pdf">notlar.pdf</a>');
         // The reference still reads as media, so a media check cannot mistake the file for junk.
         expect(FIELD_MEDIA_RE.test(mediaReferenceSnippet('file', '1_notlar.pdf'))).toBe(true);
+        // And the exporter can now find it, which is what a `#` had taken away.
+        expect(extractMediaFilenames([
+            sanitizeUntrustedHtml(mediaReferenceSnippet('file', '1_notlar.pdf', 'notlar.pdf')),
+        ])).toEqual(new Set(['1_notlar.pdf']));
+    });
+
+    it('still refuses a link that points anywhere but at a stored file', () => {
+        for (const target of ['javascript:alert(1)', '../../../etc/passwd', 'http://example.com']) {
+            expect(sanitizeUntrustedHtml(`<a href="${target}">x</a>`)).toContain('href="#"');
+        }
     });
 
     it('leaves the sound marker as the player the reviewer builds from it', () => {

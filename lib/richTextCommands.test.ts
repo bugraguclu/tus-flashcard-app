@@ -36,9 +36,15 @@ interface FakeRange {
  * `execCommand` is allowed to change it — that pairing is what lets a test stage "WebKit accepted
  * the toggle" against "WebKit silently dropped it at a collapsed caret".
  */
-function createFakeDom(options: { execCommandApplies?: boolean } = {}) {
+function createFakeDom(options: { execCommandApplies?: boolean; insertHtmlApplies?: boolean } = {}) {
     const applies = options.execCommandApplies !== false;
-    const editor: FakeNode & { focus(): void; contains(node: FakeNode | null): boolean } = {
+    const insertApplies = options.insertHtmlApplies !== false;
+    const appended: string[] = [];
+    const editor: FakeNode & {
+        focus(): void;
+        contains(node: FakeNode | null): boolean;
+        insertAdjacentHTML(position: string, html: string): void;
+    } = {
         focus: () => { dom.activeElement = editor; },
         contains: (node) => {
             for (let walk = node; walk; walk = walk.parent as FakeNode) {
@@ -46,6 +52,7 @@ function createFakeDom(options: { execCommandApplies?: boolean } = {}) {
             }
             return false;
         },
+        insertAdjacentHTML: (position, html) => { appended.push(`${position}:${html}`); },
     };
     const textNode: FakeNode = { parent: editor, length: 5 };
     const calls: string[] = [];
@@ -101,6 +108,7 @@ function createFakeDom(options: { execCommandApplies?: boolean } = {}) {
             calls.push(`exec:${command}`);
             calls.push(`exec:${command}:${value === null || value === undefined ? 'null' : value}`);
             if (command === 'insertHTML' && typeof value === 'string') {
+                if (!insertApplies) return false;
                 const id = /id="([^"]+)"/.exec(value)?.[1];
                 if (id) {
                     const marker: FakeNode = { parent: editor, length: 1 };
@@ -121,6 +129,7 @@ function createFakeDom(options: { execCommandApplies?: boolean } = {}) {
         bridge,
         calls,
         commandStates,
+        appended,
         editor,
         textNode,
         selectCaretAt: (offset: number) => { currentRange = makeRange(textNode, offset); },
@@ -469,5 +478,52 @@ describe('Enter inside a heading or a quote', () => {
         const dom = createBlockDom('LI', '');
 
         expect(dom.bridge.normalizeBlockAfterEnter()).toBe(false);
+    });
+});
+
+/**
+ * Attachments are inserted from a native sheet that may still hold first responder, and WebKit
+ * refuses `insertHTML` with no editable selection by returning false rather than throwing. These
+ * cover the two outcomes the learner sees: the picture lands at the caret, or it lands at all.
+ */
+describe('inserting an attachment', () => {
+    const SNIPPET = '<img src="1757265000_IMG_0042.jpg">';
+
+    it('puts the fragment at the caret when WebKit accepts the command', () => {
+        const dom = createFakeDom();
+
+        expect(dom.bridge.insertHtml(SNIPPET)).toBe('command');
+        expect(dom.calls).toContain(`exec:insertHTML:${SNIPPET}`);
+        // Nothing was appended, so an insert into the middle of a field still lands mid-field.
+        expect(dom.appended).toEqual([]);
+    });
+
+    it('appends the fragment rather than losing it when the command is refused', () => {
+        const dom = createFakeDom({ insertHtmlApplies: false });
+
+        expect(dom.bridge.insertHtml(SNIPPET)).toBe('appended');
+        expect(dom.appended).toEqual([`beforeend:${SNIPPET}`]);
+    });
+
+    it('counts the appended fragment as an undoable step', () => {
+        const dom = createFakeDom({ insertHtmlApplies: false });
+
+        expect(dom.bridge.historyState().canUndo).toBe(false);
+        dom.bridge.insertHtml(SNIPPET);
+        expect(dom.bridge.historyState().canUndo).toBe(true);
+    });
+
+    it('moves the caret past the appended fragment so typing continues after the picture', () => {
+        const dom = createFakeDom({ insertHtmlApplies: false });
+        dom.bridge.insertHtml(SNIPPET);
+
+        expect(dom.calls).toContain('addRange');
+    });
+
+    it('reports failure instead of throwing when the document will not take the fragment either', () => {
+        const dom = createFakeDom({ insertHtmlApplies: false });
+        (dom.editor as { insertAdjacentHTML?: unknown }).insertAdjacentHTML = undefined;
+
+        expect(dom.bridge.insertHtml(SNIPPET)).toBe('failed');
     });
 });

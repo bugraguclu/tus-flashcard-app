@@ -182,6 +182,17 @@ export async function saveMediaFile(filename: string, base64Data: string): Promi
     await fs.writeAsStringAsync(`${dir}${safe}`, base64Data, { encoding: fs.EncodingType.Base64 });
 }
 
+/**
+ * The largest file the byte-copy fallback will attempt.
+ *
+ * That fallback goes through base64 twice — read the whole file into a base64 string, decode it
+ * to bytes, encode it back to write it — and a JS string is UTF-16, so the peak is around six
+ * times the file. A one-gigabyte video would ask for six gigabytes and take the app down with it.
+ * The native copy has no such cost and no such limit; this ceiling only decides whether the
+ * fallback is attempted or the attachment fails with a message.
+ */
+const MAX_FALLBACK_COPY_BYTES = 64 * 1024 * 1024;
+
 /** Store a media file from a local URI (fast native copy when available, byte fallback). Returns the sanitized filename. */
 export async function saveMediaFromUri(filename: string, uri: string, mimeType?: string): Promise<string> {
     const safe = sanitizeMediaFilename(filename);
@@ -199,7 +210,7 @@ export async function saveMediaFromUri(filename: string, uri: string, mimeType?:
         await fs.copyAsync({ from: sourceLocation, to: `${dir}${safe}` });
     } catch (e) {
         console.warn('[mediaStore] copyAsync failed, falling back to byte copy:', e);
-        const bytes = await readUriBytes(uri);
+        const bytes = await readUriBytes(uri, MAX_FALLBACK_COPY_BYTES);
         await saveMediaBytes(safe, bytes, mimeType);
     }
     return safe;
