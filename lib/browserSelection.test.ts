@@ -14,6 +14,10 @@ vi.mock('./noteManager', () => ({
     saveAnkiCard: (card: AnkiCard) => harness.cards.set(card.id, { ...card }),
 }));
 
+vi.mock('./reviewLogger', () => ({
+    logManualEntry: vi.fn(),
+}));
+
 vi.mock('./studyRepository', () => ({
     setCardSuspended: (cardId: number, suspended: boolean) => {
         const card = harness.cards.get(cardId)!;
@@ -41,6 +45,7 @@ import {
     setSelectedDueDate,
     toggleSelectedBury,
     toggleSelectedSuspend,
+    setDueDateInterval,
 } from './browserSelection';
 
 const settings = { dayRolloverHour: 4 } as AppSettings;
@@ -142,5 +147,58 @@ describe('browser selection scheduling operations', () => {
 
         expect(gradeSelectedNow([1, 2], 3, settings)).toBe(2);
         expect(harness.grades).toEqual([{ cardId: 1, grade: 3 }, { cardId: 2, grade: 3 }]);
+    });
+});
+
+describe('setDueDateInterval', () => {
+    const base = {
+        fsrsEnabled: false,
+        wasNew: false,
+        currentInterval: 30,
+        daysSinceLastReview: null as number | null,
+        requestedDays: 5,
+        forceInterval: false,
+    };
+
+    it('keeps the earned interval under SM-2 unless the user forces it', () => {
+        expect(setDueDateInterval(base)).toBe(30);
+        expect(setDueDateInterval({ ...base, forceInterval: true })).toBe(5);
+    });
+
+    it('gives a new SM-2 card the interval it was asked to sit at', () => {
+        expect(setDueDateInterval({ ...base, wasNew: true, currentInterval: 0 })).toBe(5);
+    });
+
+    it('leaves a new or zero-interval card at zero under FSRS', () => {
+        // Writing a day count here would invent a review history the card has never had.
+        expect(setDueDateInterval({ ...base, fsrsEnabled: true, wasNew: true, currentInterval: 0 })).toBe(0);
+        expect(setDueDateInterval({ ...base, fsrsEnabled: true, currentInterval: 0 })).toBe(0);
+    });
+
+    it('extends the interval across the whole unseen gap under FSRS', () => {
+        // Answered 12 days ago and pushed 5 days out: the card will have gone 17 days unseen.
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: 12, requestedDays: 5,
+        })).toBe(17);
+    });
+
+    it('falls back to the requested days when FSRS finds no usable last review', () => {
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: null, requestedDays: 5,
+        })).toBe(5);
+    });
+
+    it('lets the forcing "!" win over the FSRS rule', () => {
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: 12, requestedDays: 5, forceInterval: true,
+        })).toBe(5);
+    });
+
+    it('never writes an interval below one day for a card that has one', () => {
+        // A negative day count means "overdue by N"; the stored interval still has to stay real.
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: 0, requestedDays: -3,
+        })).toBe(1);
+        expect(setDueDateInterval({ ...base, wasNew: true, requestedDays: -3 })).toBe(3);
     });
 });

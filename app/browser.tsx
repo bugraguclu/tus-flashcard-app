@@ -23,7 +23,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { compileCardMatcher } from '../lib/cardSearchMatch';
 import { localDayNumber, nextRolloverMs, ymdToLocalDayNumber } from '../lib/ankiState';
-import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
+import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import type { CardState, StudyCard } from '../lib/types';
 import { FLAG_COLORS, isLegacyTusNoteType, type CardFlag, type Note } from '../lib/models';
 import {
@@ -61,6 +61,9 @@ import CardWebView from '../components/CardWebView';
 import DeckPickerModal from '../components/DeckPickerModal';
 import SwipeDismissSheet from '../components/SwipeDismissSheet';
 import { alert, confirm } from '../lib/confirm';
+import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
+import { useScreenGuard } from '../hooks/useScreenGuard';
+import ProtectedContentShield from '../components/ProtectedContentShield';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import {
     expandSelectedCardsToNotes,
@@ -130,6 +133,60 @@ function SearchIcon({ color }: { color: string }) {
     );
 }
 
+function SelectionDeckIcon({ color }: { color: string }) {
+    return (
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <Path
+                d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"
+                stroke={color}
+                strokeWidth={1.8}
+            />
+            <Path
+                d="M8 9h8M8 13h8M8 17h5"
+                stroke={color}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+            />
+        </Svg>
+    );
+}
+
+function SelectionSuspendIcon({ color }: { color: string }) {
+    return (
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <Path
+                d="M7 5a1.5 1.5 0 0 1 1.5-1.5h1A1.5 1.5 0 0 1 11 5v14a1.5 1.5 0 0 1-1.5 1.5h-1A1.5 1.5 0 0 1 7 19V5zm6 0a1.5 1.5 0 0 1 1.5-1.5h1a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5V5z"
+                fill={color}
+            />
+        </Svg>
+    );
+}
+
+function SelectionFlagIcon({ color }: { color: string }) {
+    return (
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <Path
+                d="M5 21V4m0 1h12.5a1 1 0 0 1 .8 1.6L16.2 9.5l2.1 2.9a1 1 0 0 1-.8 1.6H5"
+                stroke={color}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill={color}
+            />
+        </Svg>
+    );
+}
+
+function SelectionMoreIcon({ color }: { color: string }) {
+    return (
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <Circle cx={12} cy={5} r={2} fill={color} />
+            <Circle cx={12} cy={12} r={2} fill={color} />
+            <Circle cx={12} cy={19} r={2} fill={color} />
+        </Svg>
+    );
+}
+
 function quoteAnkiSearchValue(value: string): string {
     return `"${value.replace(/"/g, '\\"')}"`;
 }
@@ -187,6 +244,7 @@ export default function BrowserScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const browserFontScale = (settings.browserFontScalePercent ?? 100) / 100;
+    const { activeDeckName } = useStudyScope();
     const routeDeckName = typeof params.deck === 'string' && params.deck ? params.deck : null;
     // The route supplies the initial/deep-linked scope. From that point on, changing scope is a
     // local filter operation: it must not remount the browser or discard search/filter context.
@@ -247,6 +305,7 @@ export default function BrowserScreen() {
     const pageGenerationRef = useRef(new LatestSnapshotGeneration());
     const pageTaskRef = useRef<{ cancel: () => void } | null>(null);
     const scopeRepositoryRef = useRef(new ScreenSnapshotRepository<BrowserScopeSnapshot>());
+    const searchInputRef = useRef<TextInput>(null);
 
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
@@ -288,6 +347,11 @@ export default function BrowserScreen() {
         && !suspendedOnly
         && tagFilters.length === 0
         && flagFilters.length === ALL_CARD_FLAGS.length;
+    const hasNoFlagFilter = flagFilters.includes(0);
+    const coloredFlagFilters = useMemo(
+        () => flagFilters.filter((flag): flag is Exclude<CardFlag, 0> => flag !== 0),
+        [flagFilters],
+    );
     const browserQueryOptions = useMemo<Omit<BrowserCardQuery, 'deckIds' | 'cardIds' | 'limit' | 'offset'>>(() => ({
         tableMode,
         sortKey,
@@ -359,7 +423,7 @@ export default function BrowserScreen() {
     const activeSearchRowIds = browserSnapshot?.searchRowIds ?? null;
     const scopeCardCount = browserSnapshot?.scopeCardCount ?? 0;
     const scopeHasCards = browserSnapshot?.scopeHasCards ?? false;
-    const visibleAllCards = cardsSnapshotKey === browserSnapshotKey ? allCards : [];
+    const visibleAllCards = allCards;
     const deckById = useMemo(() => new Map(allDecks.map((deck) => [deck.id, deck])), [allDecks]);
     // Anki's search language, compiled once per query (lib/cardSearchMatch.ts).
     const pageMatcher = useMemo(() => {
@@ -384,7 +448,7 @@ export default function BrowserScreen() {
 
     const batchMoveDeckItems = useMemo(
         () => showDeckPicker
-            ? allDecks.filter((deck) => !deck.isFiltered)
+            ? allDecks.filter((deck) => !deck.isFiltered && !isCatalogDeck(deck))
             : [],
         [allDecks, showDeckPicker],
     );
@@ -656,13 +720,16 @@ export default function BrowserScreen() {
     }, [visibleAllCards, tableMode, filteredScopeCardIds, scopedDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery, pageMatcher, noteTagsById, deckById]);
 
     useEffect(() => {
+        if (loading || cardsSnapshotKey !== browserSnapshotKey) return;
+        if (filteredCards.length === 0 && allCards.length > 0) return;
         const visibleIds = new Set(filteredCards.map((card) => card.cardId));
         setSelectedCardIds((current) => {
+            if (current.size === 0) return current;
             const next = new Set([...current].filter((cardId) => visibleIds.has(cardId)));
             if (next.size === current.size && [...next].every((cardId) => current.has(cardId))) return current;
             return next;
         });
-    }, [filteredCards]);
+    }, [filteredCards, loading, cardsSnapshotKey, browserSnapshotKey, allCards.length]);
 
     const toggleSuspend = useCallback((cardId: number, isSuspended: boolean) => {
         setCardSuspended(cardId, !isSuspended, settings.dayRolloverHour);
@@ -713,6 +780,11 @@ export default function BrowserScreen() {
         () => filteredCards.filter((card) => selectedCardIds.has(card.cardId)),
         [filteredCards, selectedCardIds],
     );
+    const selectedCardsDeckName = useMemo(() => {
+        if (selectedCards.length === 0) return null;
+        const firstCard = selectedCards[0];
+        return firstCard?.deckId ? getDeck(firstCard.deckId)?.name ?? null : null;
+    }, [selectedCards]);
     const selectedActionCardIds = useMemo(() => {
         const ids = selectedCards.map((card) => card.cardId);
         const orderedIds = currentSelectedCardId === null || !selectedCardIds.has(currentSelectedCardId)
@@ -728,6 +800,22 @@ export default function BrowserScreen() {
         () => selectedNoteIds.map((noteId) => noteById.get(noteId)).filter((note): note is Note => note !== undefined),
         [selectedNoteIds, noteById],
     );
+    const hasCatalogCardsSelected = useMemo(
+        () => selectedCards.some((card) => isCatalogCard(card.cardId)),
+        [selectedCards],
+    );
+    const hasCatalogNotesSelected = useMemo(
+        () => selectedNoteIds.some((noteId) => isCatalogNote(noteId)),
+        [selectedNoteIds],
+    );
+    // Rows paint note text directly, so capture protection follows what is loaded on screen
+    // rather than what happens to be selected. The note objects are already in memory here, and
+    // checking them costs no database read.
+    const showsCatalogContent = useMemo(
+        () => [...noteById.values()].some((note) => isCatalogNote(note)),
+        [noteById],
+    );
+    const screenGuardState = useScreenGuard(showsCatalogContent, 'browser');
     const previewCard = previewIndex === null ? null : selectedCards[previewIndex] ?? null;
     const previewNote = previewCard ? noteById.get(previewCard.noteId) ?? null : null;
     const previewNoteType = previewNote ? noteTypes.find((type) => type.id === previewNote.noteTypeId) ?? null : null;
@@ -817,16 +905,50 @@ export default function BrowserScreen() {
         ));
     }, []);
 
+    const clearNoFlagFilter = useCallback(() => {
+        setFlagFilters((current) => {
+            const colored = current.filter((candidate) => candidate !== 0);
+            return colored.length === 0 ? [...ALL_CARD_FLAGS] : colored;
+        });
+    }, []);
+
+    const clearColoredFlagFilters = useCallback(() => {
+        setFlagFilters((current) => {
+            const hasNoFlag = current.includes(0);
+            return hasNoFlag ? [0] : [...ALL_CARD_FLAGS];
+        });
+    }, []);
+
     const moveSelectionToDeck = useCallback((targetDeckId: number) => {
         const targetDeck = getDeck(targetDeckId);
         if (!targetDeck || targetDeck.isFiltered) return;
-        const move = moveCardsToDeck(selectedActionCardIds, targetDeckId);
-        if (move.length > 0) setLastDeckMove(move);
+        if (hasCatalogCardsSelected) {
+            alert(
+                l('Katalog Korumalı', 'Catalog Protected'),
+                l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
+            );
+            setShowDeckPicker(false);
+            return;
+        }
+        if (isCatalogDeck(targetDeckId)) {
+            alert(
+                l('Katalog Korumalı', 'Catalog Protected'),
+                l('Katalog destelerine dışarıdan kart taşınamaz.', 'Cards cannot be moved into catalog decks.')
+            );
+            setShowDeckPicker(false);
+            return;
+        }
+        try {
+            const move = moveCardsToDeck(selectedActionCardIds, targetDeckId);
+            if (move.length > 0) setLastDeckMove(move);
+        } catch (e) {
+            alert(t('common.error'), userFacingErrorMessage(e, l('Kartlar taşınamadı.', 'Cards could not be moved.')));
+        }
         setShowDeckPicker(false);
         closeSelection();
         bumpDataVersion();
         reload();
-    }, [selectedActionCardIds, closeSelection, bumpDataVersion, reload]);
+    }, [selectedActionCardIds, hasCatalogCardsSelected, closeSelection, bumpDataVersion, reload, l, t]);
 
     const undoDeckMove = useCallback(() => {
         setShowOverflowMenu(false);
@@ -940,19 +1062,29 @@ export default function BrowserScreen() {
                 accessibilityRole={selectionMode ? 'checkbox' : 'button'}
                 accessibilityState={selectionMode ? { checked: isSelected } : undefined}
             >
-                <View style={[styles.cardItemHeader, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
+                <View style={[styles.cardItemHeader, compactRows && styles.cardItemHeaderCompact, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
                     {selectionMode && (
-                        <View style={[styles.selectionCheckbox, isSelected && styles.selectionCheckboxActive]}>
-                            {isSelected && <Text style={styles.selectionCheckboxTick}>✓</Text>}
+                        <View style={[styles.selectionCheckbox, compactRows && styles.selectionCheckboxCompact, isSelected && styles.selectionCheckboxActive]}>
+                            {isSelected && <Text style={[styles.selectionCheckboxTick, compactRows && styles.selectionCheckboxTickCompact]}>✓</Text>}
                         </View>
                     )}
-                    <Text style={styles.cardIcon}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
+                    <Text style={[styles.cardIcon, compactRows && styles.cardIconCompact]}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
                     <View style={styles.cardBody}>
-                        <Text style={[styles.cardQuestion, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]} numberOfLines={isExpanded ? undefined : 2}>
+                        <Text
+                            style={[
+                                styles.cardQuestion,
+                                compactRows && styles.cardQuestionCompact,
+                                {
+                                    fontSize: (compactRows ? 13 : FontSize.md) * browserFontScale,
+                                    lineHeight: (compactRows ? 18 : 22) * browserFontScale,
+                                },
+                            ]}
+                            numberOfLines={isExpanded ? undefined : (compactRows ? 1 : 2)}
+                        >
                             {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames }) || l('🃏 (boş)', '🃏 (empty)')}
                         </Text>
-                        <View style={styles.cardMeta}>
-                            <Text style={styles.cardTopic} numberOfLines={1}>
+                        <View style={[styles.cardMeta, compactRows && styles.cardMetaCompact]}>
+                            <Text style={[styles.cardTopic, compactRows && styles.cardTopicCompact]} numberOfLines={1}>
                                 {isNotesMode
                                     ? `${rowNoteType ? localizeNoteTypeName(locale, rowNoteType.name) : l('Not', 'Note')} · ${noteDeckText}`
                                     : `${(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}${item.topic ? ` · ${item.topic}` : ''}`}
@@ -966,41 +1098,55 @@ export default function BrowserScreen() {
                             ) : null}
                         </View>
                         {showAnswerSnippet && !isExpanded && (
-                            <Text style={[styles.answerSnippet, { fontSize: FontSize.sm * browserFontScale, lineHeight: 18 * browserFontScale }]} numberOfLines={compactRows ? 1 : 2}>
+                            <Text
+                                style={[
+                                    styles.answerSnippet,
+                                    compactRows && styles.answerSnippetCompact,
+                                    { fontSize: (compactRows ? 11 : FontSize.sm) * browserFontScale, lineHeight: (compactRows ? 15 : 18) * browserFontScale },
+                                ]}
+                                numberOfLines={compactRows ? 1 : 2}
+                            >
                                 {humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}
                             </Text>
                         )}
                         {showScheduleDetails && (
-                            <Text style={styles.scheduleMeta} numberOfLines={compactRows ? 1 : 2}>
+                            <Text
+                                style={[
+                                    styles.scheduleMeta,
+                                    compactRows && styles.scheduleMetaCompact,
+                                    compactRows && { fontSize: 10 * browserFontScale, lineHeight: 13 * browserFontScale },
+                                ]}
+                                numberOfLines={compactRows ? 1 : 2}
+                            >
                                 {isNotesMode
                                     ? `▤ ${noteScheduleText}`
                                     : `⏱ ${l('Son:', 'Last:')} ${formatLastReview(item.state.lastReviewedAtMs, locale)} · ${l('Sonraki:', 'Next:')} ${formatNextDue(item.state, settings.dayRolloverHour, locale)}`}
                             </Text>
                         )}
                     </View>
-                    <View style={styles.cardActions}>
+                    <View style={[styles.cardActions, compactRows && styles.cardActionsCompact]}>
                         {!selectionMode && (
                             <TouchableOpacity
-                                style={styles.editBtn}
+                                style={[styles.editBtn, compactRows && styles.editBtnCompact]}
                                 onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
                                 accessibilityRole="button"
                                 accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                             >
-                                <Text style={styles.editBtnText}>✏️</Text>
+                                <Text style={[styles.editBtnText, compactRows && styles.editBtnTextCompact]}>✏️</Text>
                             </TouchableOpacity>
                         )}
                         {item.noteMarked && (
-                            <Text style={styles.flagIcon} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
+                            <Text style={[styles.flagIcon, compactRows && styles.flagIconCompact]} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
                         )}
                         {!isNotesMode && flag > 0 && (
                             <Text
-                                style={[styles.flagIcon, { color: FLAG_COLORS[flag].color }]}
+                                style={[styles.flagIcon, compactRows && styles.flagIconCompact, { color: FLAG_COLORS[flag].color }]}
                                 accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
                             >
                                 ⚑
                             </Text>
                         )}
-                        {!isNotesMode && item.state.suspended && <Text style={styles.suspendedIcon}>⏸️</Text>}
+                        {!isNotesMode && item.state.suspended && <Text style={[styles.suspendedIcon, compactRows && styles.suspendedIconCompact]}>⏸️</Text>}
                     </View>
                 </View>
 
@@ -1143,19 +1289,26 @@ export default function BrowserScreen() {
             </View>
 
             <View style={styles.searchContainer}>
-                <View style={styles.searchField}>
+                <Pressable
+                    style={styles.searchField}
+                    onPress={() => searchInputRef.current?.focus()}
+                    accessible={false}
+                >
                     <View style={styles.searchIcon} pointerEvents="none">
                         <SearchIcon color={colors.textMuted} />
                     </View>
                     <TextInput
+                        ref={searchInputRef}
                         style={styles.searchInput}
                         placeholder={tableMode === 'notes'
-                            ? l('Not ara veya deck: tag: is:due', 'Search notes, or deck: tag: is:due')
-                            : l('Kart ara veya deck: tag: is:due', 'Search cards, or deck: tag: is:due')}
+                            ? l('Not ara veya deck:tag:is:…', 'Search notes or deck:tag:is:…')
+                            : l('Ara veya deck:tag:is:…', 'Search or deck:tag:is:…')}
                         placeholderTextColor={colors.textMuted}
                         value={rawQuery}
                         onChangeText={handleSearch}
-                        accessibilityLabel={tableMode === 'notes' ? l('Not ara', 'Search notes') : l('Kart ara', 'Search cards')}
+                        accessibilityLabel={tableMode === 'notes'
+                            ? l('Not ara veya deck:tag:is:…', 'Search notes or deck:tag:is:…')
+                            : l('Kart ara veya deck:tag:is:…', 'Search cards or deck:tag:is:…')}
                         returnKeyType="search"
                     />
                     <TouchableOpacity
@@ -1167,7 +1320,7 @@ export default function BrowserScreen() {
                     >
                         <Text style={styles.searchHelpButtonText}>?</Text>
                     </TouchableOpacity>
-                </View>
+                </Pressable>
             </View>
 
             {scopeHasCards && (
@@ -1197,18 +1350,54 @@ export default function BrowserScreen() {
                     </TouchableOpacity>
                 )}
                 {flagFilters.length < ALL_CARD_FLAGS.length && (
-                    <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setFlagFilters([...ALL_CARD_FLAGS])}>
-                        {flagFilters.length === 1 && (
-                            <View style={[styles.filterFlagDot, { backgroundColor: flagFilters[0] === 0 ? colors.border : FLAG_COLORS[flagFilters[0]].color }]} />
+                    <>
+                        {flagFilters.length === 0 && (
+                            <TouchableOpacity
+                                style={[styles.filterChip, styles.filterChipActive]}
+                                onPress={() => setFlagFilters([...ALL_CARD_FLAGS])}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Bayrak filtresini kaldır', 'Remove flag filter')}
+                            >
+                                <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
+                                    {l('Bayrak seçilmedi', 'No flags selected')} ×
+                                </Text>
+                            </TouchableOpacity>
                         )}
-                        <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
-                            {flagFilters.length === 0
-                                ? l('Bayrak seçilmedi', 'No flags selected')
-                                : flagFilters.length === 1
-                                    ? (flagFilters[0] === 0 ? l('Bayraksız', 'No flag') : cardFlagName(locale, flagFilters[0]))
-                                    : l(`${flagFilters.length} bayrak`, `${flagFilters.length} flags`)} ×
-                        </Text>
-                    </TouchableOpacity>
+                        {hasNoFlagFilter && (
+                            <TouchableOpacity
+                                style={[styles.filterChip, styles.filterChipActive]}
+                                onPress={clearNoFlagFilter}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Bayrak yok filtresini kaldır', 'Remove no flag filter')}
+                            >
+                                <View style={[styles.filterFlagDot, styles.filterFlagDotEmpty]} />
+                                <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
+                                    {l('Bayrak yok', 'No flag')} ×
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                        {coloredFlagFilters.length > 0 && (
+                            <TouchableOpacity
+                                style={[styles.filterChip, styles.filterChipActive]}
+                                onPress={clearColoredFlagFilters}
+                                accessibilityRole="button"
+                                accessibilityLabel={
+                                    coloredFlagFilters.length === 1
+                                        ? l(`${cardFlagName(locale, coloredFlagFilters[0])} bayrak filtresini kaldır`, `Remove ${cardFlagName(locale, coloredFlagFilters[0])} flag filter`)
+                                        : l('Bayrak filtresini kaldır', 'Remove flag filter')
+                                }
+                            >
+                                {coloredFlagFilters.length === 1 && (
+                                    <View style={[styles.filterFlagDot, { backgroundColor: FLAG_COLORS[coloredFlagFilters[0]].color }]} />
+                                )}
+                                <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
+                                    {coloredFlagFilters.length === 1
+                                        ? cardFlagName(locale, coloredFlagFilters[0])
+                                        : l(`${coloredFlagFilters.length} bayrak`, `${coloredFlagFilters.length} flags`)} ×
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </>
                 )}
             </ScrollView>
             )}
@@ -1218,7 +1407,7 @@ export default function BrowserScreen() {
                 renderItem={renderCard}
                 keyExtractor={(item) => String(item.cardId)}
                 style={styles.list}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, compactRows && styles.listContentCompact]}
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
                 onRefresh={reload}
@@ -1268,46 +1457,75 @@ export default function BrowserScreen() {
                         onPress={closeSelection}
                         accessibilityLabel={l('Seçimi kapat', 'Close selection')}
                     >
-                        <Text style={styles.selectionBarClose}>×</Text>
-                        <Text style={styles.selectionBarCountText}>
+                        <View style={styles.selectionBarCloseBox}>
+                            <Text style={styles.selectionBarClose}>×</Text>
+                        </View>
+                        <Text style={styles.selectionBarCountText} numberOfLines={1}>
                             {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
                         </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.selectionAction}
-                        disabled={selectedCardIds.size === 0}
-                        onPress={() => setShowDeckPicker(true)}
-                    >
-                        <Text style={styles.selectionActionIcon}>▤</Text>
-                        <Text style={styles.selectionActionText}>{l('Deste', 'Deck')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.selectionAction}
-                        disabled={selectedCardIds.size === 0}
-                        onPress={toggleSelectionSuspended}
-                    >
-                        <Text style={styles.selectionActionIcon}>⏸</Text>
-                        <Text style={styles.selectionActionText}>{l('Askı', 'Suspend')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.selectionAction}
-                        disabled={selectedCardIds.size === 0}
-                        onPress={() => setFlagPickerMode('selection')}
-                    >
-                        <Text style={styles.selectionActionIcon}>⚑</Text>
-                        <Text style={styles.selectionActionText}>{l('Bayrak', 'Flag')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.selectionAction}
-                        disabled={selectedCardIds.size === 0}
-                        onPress={() => setShowSelectionMenu(true)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Diğer kart işlemleri', 'More card actions')}
-                        accessibilityState={{ expanded: showSelectionMenu }}
-                    >
-                        <Text style={styles.selectionActionIcon}>⋮</Text>
-                        <Text style={styles.selectionActionText}>{l('Diğer', 'More')}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.selectionActionsGroup}>
+                        <TouchableOpacity
+                            style={styles.selectionAction}
+                            disabled={selectedCardIds.size === 0}
+                            onPress={() => {
+                                if (hasCatalogCardsSelected) {
+                                    alert(
+                                        l('Katalog Korumalı', 'Catalog Protected'),
+                                        l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
+                                    );
+                                    return;
+                                }
+                                setShowDeckPicker(true);
+                            }}
+                        >
+                            <View style={styles.selectionActionIconBox}>
+                                <SelectionDeckIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
+                            </View>
+                            <Text style={[styles.selectionActionText, selectedCardIds.size === 0 && styles.selectionActionTextDisabled]}>
+                                {l('Deste', 'Deck')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.selectionAction}
+                            disabled={selectedCardIds.size === 0}
+                            onPress={toggleSelectionSuspended}
+                        >
+                            <View style={styles.selectionActionIconBox}>
+                                <SelectionSuspendIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
+                            </View>
+                            <Text style={[styles.selectionActionText, selectedCardIds.size === 0 && styles.selectionActionTextDisabled]}>
+                                {l('Askı', 'Suspend')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.selectionAction}
+                            disabled={selectedCardIds.size === 0}
+                            onPress={() => setFlagPickerMode('selection')}
+                        >
+                            <View style={styles.selectionActionIconBox}>
+                                <SelectionFlagIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
+                            </View>
+                            <Text style={[styles.selectionActionText, selectedCardIds.size === 0 && styles.selectionActionTextDisabled]}>
+                                {l('Bayrak', 'Flag')}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.selectionAction}
+                            disabled={selectedCardIds.size === 0}
+                            onPress={() => setShowSelectionMenu(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Diğer kart işlemleri', 'More card actions')}
+                            accessibilityState={{ expanded: showSelectionMenu }}
+                        >
+                            <View style={styles.selectionActionIconBox}>
+                                <SelectionMoreIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
+                            </View>
+                            <Text style={[styles.selectionActionText, selectedCardIds.size === 0 && styles.selectionActionTextDisabled]}>
+                                {l('Diğer', 'More')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             )}
 
@@ -1316,7 +1534,7 @@ export default function BrowserScreen() {
                 colors={colors}
                 decks={deckScopePickerItems}
                 selectedDeckName={deckName}
-                activeDeckName={deckName}
+                activeDeckName={deckName || activeDeckName || null}
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -1358,10 +1576,36 @@ export default function BrowserScreen() {
                             <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}>
                                 <Text style={styles.selectionMenuIcon}>💤</Text><Text style={styles.selectionMenuText}>{l('Göm / gömmeden çıkar', 'Toggle bury')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowNoteTypePicker(true); }}>
+                            <TouchableOpacity
+                                style={styles.selectionMenuItem}
+                                onPress={() => {
+                                    if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
+                                        alert(
+                                            l('Katalog Korumalı', 'Catalog Protected'),
+                                            l('Dahili TUS kartlarının not türü değiştirilemez.', 'Built-in TUS cards cannot have their note type changed.')
+                                        );
+                                        return;
+                                    }
+                                    setShowSelectionMenu(false);
+                                    setShowNoteTypePicker(true);
+                                }}
+                            >
                                 <Text style={styles.selectionMenuIcon}>🗂</Text><Text style={styles.selectionMenuText}>{l('Not türünü değiştir', 'Change note type')}</Text><Text style={styles.overflowChevron}>›</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowDeckPicker(true); }}>
+                            <TouchableOpacity
+                                style={styles.selectionMenuItem}
+                                onPress={() => {
+                                    if (hasCatalogCardsSelected) {
+                                        alert(
+                                            l('Katalog Korumalı', 'Catalog Protected'),
+                                            l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
+                                        );
+                                        return;
+                                    }
+                                    setShowSelectionMenu(false);
+                                    setShowDeckPicker(true);
+                                }}
+                            >
                                 <Text style={styles.selectionMenuIcon}>▤</Text><Text style={styles.selectionMenuText}>{l('Desteyi değiştir', 'Change deck')}</Text><Text style={styles.overflowChevron}>›</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('1'); setRepositionStep('1'); setRepositionShiftExisting(true); setShowRepositionDialog(true); }}>
@@ -1396,6 +1640,13 @@ export default function BrowserScreen() {
                             <TouchableOpacity
                                 style={styles.selectionMenuItem}
                                 onPress={() => {
+                                    if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
+                                        alert(
+                                            l('Katalog Korumalı', 'Catalog Protected'),
+                                            l('Dahili TUS kartları telif korumalıdır ve dışa aktarılamaz.', 'Built-in TUS cards are protected and cannot be exported.')
+                                        );
+                                        return;
+                                    }
                                     setDbSetting('browser_export_card_ids', JSON.stringify(selectedActionCardIds));
                                     setShowSelectionMenu(false);
                                     router.push('/export?selection=browser' as any);
@@ -1406,6 +1657,13 @@ export default function BrowserScreen() {
                             <TouchableOpacity
                                 style={styles.selectionMenuItem}
                                 onPress={() => {
+                                    if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
+                                        alert(
+                                            l('Katalog Korumalı', 'Catalog Protected'),
+                                            l('Dahili TUS kartları silinemez. Kataloğu kaldırmak için Ayarlar ekranını kullanabilirsiniz.', 'Built-in TUS cards cannot be deleted. Use Settings to remove the catalog.')
+                                        );
+                                        return;
+                                    }
                                     setShowSelectionMenu(false);
                                     confirm(
                                         l('Notları sil', 'Delete Notes'),
@@ -1459,7 +1717,11 @@ export default function BrowserScreen() {
                             <Text style={styles.overflowItemIcon}>⚑</Text>
                             <Text style={styles.overflowItemText}>{l('Bayrağa göre filtrele', 'Filter by flag')}</Text>
                             {flagFilters.length === 1 && (
-                                <View style={[styles.menuFlagDot, { backgroundColor: flagFilters[0] === 0 ? colors.border : FLAG_COLORS[flagFilters[0]].color }]} />
+                                flagFilters[0] === 0 ? (
+                                    <View style={[styles.menuFlagDot, styles.menuFlagDotEmpty]} />
+                                ) : (
+                                    <View style={[styles.menuFlagDot, { backgroundColor: FLAG_COLORS[flagFilters[0]].color }]} />
+                                )
                             )}
                             {flagFilters.length !== ALL_CARD_FLAGS.length && flagFilters.length !== 1 && (
                                 <Text style={styles.overflowBadge}>{flagFilters.length}</Text>
@@ -1474,6 +1736,10 @@ export default function BrowserScreen() {
                                     accessibilityRole="checkbox"
                                     accessibilityState={{ checked: flagFilters.length === ALL_CARD_FLAGS.length }}
                                 >
+                                    <View style={styles.flagDotPlaceholder} />
+                                    <Text style={[styles.overflowFlagText, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagTextActive]}>
+                                        {l('Tümünü seç', 'Select all')}
+                                    </Text>
                                     <View style={[
                                         styles.checkbox,
                                         flagFilters.length > 0 && styles.checkboxChecked,
@@ -1485,9 +1751,6 @@ export default function BrowserScreen() {
                                             </Text>
                                         )}
                                     </View>
-                                    <Text style={[styles.overflowFlagText, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagTextActive]}>
-                                        {l('Tümünü seç', 'Select all')}
-                                    </Text>
                                 </TouchableOpacity>
                                 {ALL_CARD_FLAGS.map((flag) => {
                                     const selected = flagFilters.includes(flag);
@@ -1877,8 +2140,8 @@ export default function BrowserScreen() {
                 visible={showDeckPicker}
                 colors={colors}
                 decks={batchMoveDeckItems}
-                selectedDeckName={null}
-                activeDeckName={deckName}
+                selectedDeckName={selectedCardsDeckName || deckName || null}
+                activeDeckName={selectedCardsDeckName || deckName || activeDeckName || null}
                 title={l('Seçili Kartların Destesi', 'Deck for Selected Cards')}
                 allDecksLabel={null}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -1900,6 +2163,7 @@ export default function BrowserScreen() {
                 }}
             />}
 
+            <ProtectedContentShield state={screenGuardState} />
         </SafeAreaView>
     );
 }
@@ -1982,7 +2246,8 @@ function createStyles(colors: ColorScheme) {
         flex: 1,
         minWidth: 0,
         height: '100%',
-        paddingVertical: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
         paddingHorizontal: 0,
         fontSize: FontSize.md,
         color: colors.textPrimary,
@@ -2009,9 +2274,15 @@ function createStyles(colors: ColorScheme) {
     filterChipText: { fontSize: FontSize.sm, color: colors.textSecondary },
     filterChipTextActive: { color: colors.accent, fontWeight: '600' },
     filterFlagDot: { width: 10, height: 10, borderRadius: 5 },
+    filterFlagDotEmpty: {
+        borderWidth: 1.5,
+        borderColor: colors.accent,
+        backgroundColor: 'transparent',
+    },
 
     list: { flex: 1 },
     listContent: { flexGrow: 1, padding: Spacing.lg, gap: 8 },
+    listContentCompact: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
     emptyState: { flex: 1, justifyContent: 'center', paddingVertical: 48, paddingHorizontal: Spacing.xl, alignItems: 'center', gap: Spacing.sm },
     emptyTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700', textAlign: 'center' },
     emptyText: { color: colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center' },
@@ -2026,19 +2297,26 @@ function createStyles(colors: ColorScheme) {
         padding: Spacing.md,
         ...Shadows.sm,
     },
-    cardItemCompact: { paddingVertical: Spacing.sm },
+    cardItemCompact: { paddingVertical: 4, paddingHorizontal: Spacing.md - 2, borderRadius: BorderRadius.sm + 1 },
     cardItemSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-    cardSuspended: { opacity: 0.5 },
+    cardSuspended: { opacity: 1 },
     cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+    cardItemHeaderCompact: { gap: 8 },
     cardIcon: { fontSize: 22, marginTop: 2 },
+    cardIconCompact: { fontSize: 17, marginTop: 1 },
     cardBody: { flex: 1, minWidth: 0 },
     cardQuestion: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary, lineHeight: 22 },
+    cardQuestionCompact: { fontWeight: '600' },
     cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    cardMetaCompact: { marginTop: 2, gap: 6 },
     cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.xs, color: colors.textMuted },
+    cardTopicCompact: { fontSize: 11, lineHeight: 14 },
     statusDot: { flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
     statusDotText: { fontSize: 9, fontWeight: '600' },
     scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 3 },
+    scheduleMetaCompact: { marginTop: 1 },
     answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
+    answerSnippetCompact: { marginTop: 2 },
     selectionCheckbox: {
         width: 22,
         height: 22,
@@ -2050,14 +2328,17 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         justifyContent: 'center',
     },
+    selectionCheckboxCompact: { width: 17, height: 17, marginTop: 1, borderRadius: 3 },
     selectionCheckboxActive: { backgroundColor: colors.accent, borderColor: colors.accent },
     selectionCheckboxTick: { color: colors.white, fontSize: 15, lineHeight: 17, fontWeight: '900' },
+    selectionCheckboxTickCompact: { fontSize: 11, lineHeight: 13 },
     cardActions: {
         width: 32,
         flexShrink: 0,
         alignItems: 'center',
         gap: 5,
     },
+    cardActionsCompact: { width: 24, gap: 2 },
     editBtn: {
         width: 32,
         height: 32,
@@ -2066,9 +2347,13 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         justifyContent: 'center',
     },
+    editBtnCompact: { width: 24, height: 24, borderRadius: 4 },
     editBtnText: { fontSize: 14 },
+    editBtnTextCompact: { fontSize: 12 },
     suspendedIcon: { fontSize: 18 },
+    suspendedIconCompact: { fontSize: 14 },
     flagIcon: { fontSize: 18 },
+    flagIconCompact: { fontSize: 14 },
 
     expandedContent: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: colors.borderLight },
     answerBox: {
@@ -2111,12 +2396,61 @@ function createStyles(colors: ColorScheme) {
         borderTopColor: colors.border,
         ...Shadows.lg,
     },
-    selectionBarCount: { flex: 1, minWidth: 90, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.sm },
-    selectionBarClose: { color: colors.textSecondary, fontSize: 28, lineHeight: 30, fontWeight: '300' },
-    selectionBarCountText: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
-    selectionAction: { width: 62, minHeight: 54, alignItems: 'center', justifyContent: 'center' },
-    selectionActionIcon: { color: colors.accent, fontSize: 20, lineHeight: 23, fontWeight: '700' },
-    selectionActionText: { color: colors.textSecondary, fontSize: 10, fontWeight: '700' },
+    selectionBarCount: {
+        flex: 1,
+        minWidth: 80,
+        height: 52,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: Spacing.xs,
+    },
+    selectionBarCloseBox: {
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    selectionBarClose: {
+        color: colors.textSecondary,
+        fontSize: 24,
+        lineHeight: 26,
+        fontWeight: '300',
+    },
+    selectionBarCountText: {
+        flex: 1,
+        color: colors.textPrimary,
+        fontSize: FontSize.sm,
+        fontWeight: '700',
+    },
+    selectionActionsGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    selectionAction: {
+        width: 60,
+        height: 52,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: BorderRadius.sm,
+    },
+    selectionActionIconBox: {
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    selectionActionText: {
+        color: colors.textSecondary,
+        fontSize: 11,
+        fontWeight: '600',
+        marginTop: 3,
+        textAlign: 'center',
+    },
+    selectionActionTextDisabled: {
+        color: colors.textMuted,
+    },
 
     selectionMenuOverlay: {
         flex: 1,
@@ -2204,6 +2538,12 @@ function createStyles(colors: ColorScheme) {
     overflowChevron: { color: colors.textMuted, fontSize: 24, fontWeight: '400' },
     overflowSeparator: { height: StyleSheet.hairlineWidth, marginVertical: 3, backgroundColor: colors.borderLight },
     menuFlagDot: { width: 13, height: 13, borderRadius: 7 },
+    menuFlagDotEmpty: {
+        borderWidth: 1.5,
+        borderColor: colors.textSecondary,
+        backgroundColor: 'transparent',
+    },
+    flagDotPlaceholder: { width: 18, height: 18 },
     overflowFlagPanel: {
         marginHorizontal: Spacing.sm,
         marginBottom: Spacing.xs,

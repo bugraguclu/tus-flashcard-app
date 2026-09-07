@@ -1,6 +1,10 @@
 import type { AppSettings, Grade } from './types';
 import type { AnkiCard } from './models';
 import { localDayNumber } from './ankiState';
+import { fsrsLastReviewInfo } from './fsrsMemory';
+import { setDueDateInterval } from './schedulingIntervals';
+import { logManualEntry } from './reviewLogger';
+import { revlogByCard } from './fsrsMaintenance';
 import {
     getAllAnkiCards,
     getAnkiCard,
@@ -118,23 +122,43 @@ export function repositionSelectedNewCards(
 /** Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`. */
 export function setSelectedDueDate(cardIds: number[], range: DueRange, settings: AppSettings): number {
     const cards = selectedCards(cardIds);
-    const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+    const nowMs = Date.now();
+    const today = localDayNumber(nowMs, settings.dayRolloverHour);
     const span = range.maxDays - range.minDays + 1;
+    const fsrsEnabled = settings.fsrsEnabled === true;
+    // Only FSRS needs the review log, and only to measure the gap since the last real answer.
+    const revlog = fsrsEnabled ? revlogByCard(cards.map((card) => card.id)) : null;
 
     cards.forEach((card, index) => {
         // Stable spread makes a range useful and repeatable without clumping every card on one day.
         const days = range.minDays + (span <= 1 ? 0 : index % span);
-        const wasNew = card.type === 0;
+        const lastReviewedAtMs = revlog
+            ? fsrsLastReviewInfo(revlog.get(card.id) ?? []).lastReviewedAtMs
+            : null;
+        const daysSinceLastReview = lastReviewedAtMs === null
+            ? null
+            : today - localDayNumber(lastReviewedAtMs, settings.dayRolloverHour);
+
+        const ivl = setDueDateInterval({
+            fsrsEnabled,
+            wasNew: card.type === 0,
+            currentInterval: card.ivl,
+            daysSinceLastReview,
+            requestedDays: days,
+            forceInterval: range.forceInterval,
+        });
+
         saveAnkiCard({
             ...card,
             type: 2,
             queue: 2,
             due: today + days,
-            ivl: wasNew || range.forceInterval ? Math.max(1, Math.abs(days)) : card.ivl,
+            ivl,
             left: 0,
-            mod: Math.floor(Date.now() / 1000),
+            mod: Math.floor(nowMs / 1000),
             usn: -1,
         });
+        logManualEntry(card, 'rescheduled', ivl, card.ivl);
     });
     return cards.length;
 }
@@ -166,3 +190,5 @@ export function gradeSelectedNow(cardIds: number[], grade: Grade, settings: AppS
     }
     return graded;
 }
+
+export { setDueDateInterval } from './schedulingIntervals';
