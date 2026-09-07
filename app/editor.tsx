@@ -81,6 +81,7 @@ import { useScreenGuard } from '../hooks/useScreenGuard';
 import ProtectedContentShield from '../components/ProtectedContentShield';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
+import NoteTypePickerModal from '../components/NoteTypePickerModal';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import { localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
@@ -2400,68 +2401,20 @@ export default function EditorScreen() {
                 </View>
             </Modal>
 
-            <Modal
+            <NoteTypePickerModal
                 visible={showCardTypePicker}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowCardTypePicker(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCardTypePicker(false)} />
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{l('Not türü', 'Note Type')}</Text>
-                        <ScrollView style={styles.noteTypeListScroll} keyboardShouldPersistTaps="handled">
-                            {availableNoteTypes.map((noteType) => {
-                                const label = localizeNoteTypeName(locale, noteType.name);
-                                const selected = cardTypeId === noteType.id;
-                                const fieldCount = noteType.fields.length;
-                                const templateCount = noteType.templates.length;
-                                const subtitle = l(
-                                    `${fieldCount} alan, ${templateCount} kart`,
-                                    `${fieldCount} fields, ${templateCount} cards`,
-                                );
-
-                                return (
-                                    <TouchableOpacity
-                                        key={noteType.id}
-                                        style={[styles.pickerOption, selected && styles.pickerOptionActive]}
-                                        onPress={() => handleSelectNoteType(noteType.id)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={`${label}, ${subtitle}`}
-                                        accessibilityState={{ selected }}
-                                    >
-                                        <View style={styles.noteTypeItemContent}>
-                                            <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextActive]}>
-                                                {label}
-                                            </Text>
-                                            <Text style={styles.noteTypeSubtitle}>
-                                                {subtitle}
-                                            </Text>
-                                        </View>
-                                        {selected && <Text style={styles.pickerCheck}>✓</Text>}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                        <TouchableOpacity
-                            style={styles.manageNoteTypesButton}
-                            onPress={() => {
-                                setShowCardTypePicker(false);
-                                router.push('/note-types');
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Not türlerini yönet', 'Manage note types')}
-                        >
-                            <Text style={styles.manageNoteTypesText}>
-                                {l('Not türlerini yönet…', 'Manage note types…')}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowCardTypePicker(false)}>
-                            <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                colors={colors}
+                selectedId={cardTypeId}
+                noteTypes={availableNoteTypes}
+                title={l('Not türü', 'Note Type')}
+                onSelect={handleSelectNoteType}
+                onClose={() => setShowCardTypePicker(false)}
+                onManage={() => {
+                    setShowCardTypePicker(false);
+                    router.push('/note-types');
+                }}
+                manageLabel={l('Not türlerini yönet…', 'Manage note types…')}
+            />
 
             <DeckPickerModal
                 visible={showDeckPicker}
@@ -2814,18 +2767,7 @@ function createStyles(colors: ColorScheme) {
     },
     fontSizeSample: { color: colors.textPrimary },
     dangerText: { color: colors.btnAgain },
-    pickerOption: {
-        minHeight: 54,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.md,
-        paddingHorizontal: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
     pickerOptionActive: { backgroundColor: colors.accentLight },
-    pickerOptionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-    pickerOptionTextActive: { color: colors.accent, fontWeight: '700' },
     pickerCheck: { fontSize: 20, fontWeight: '800', color: colors.accent },
     formatPickerOption: {
         minHeight: 48,
@@ -3138,30 +3080,6 @@ function createStyles(colors: ColorScheme) {
         fontSize: FontSize.xs,
         color: colors.textSecondary,
         lineHeight: 16,
-    },
-    noteTypeListScroll: {
-        maxHeight: 320,
-    },
-    noteTypeItemContent: {
-        flex: 1,
-        gap: 2,
-    },
-    noteTypeSubtitle: {
-        fontSize: FontSize.xs,
-        color: colors.textMuted,
-    },
-    manageNoteTypesButton: {
-        minHeight: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: Spacing.xs,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.borderLight,
-    },
-    manageNoteTypesText: {
-        fontSize: FontSize.sm,
-        fontWeight: '600',
-        color: colors.accent,
     },
     catalogProtectedBanner: {
         backgroundColor: colors.accentLight ?? 'rgba(10, 132, 255, 0.08)',
