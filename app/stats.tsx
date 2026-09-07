@@ -14,7 +14,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { createDeck, getAvailableDeckName } from '../lib/deckManager';
-import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
+import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import WeekStreakStrip from '../components/WeekStreakStrip';
 import StatsBarChart from '../components/StatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
@@ -46,6 +46,7 @@ export default function StatsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { settings } = useAppSettings();
+    const { activeDeckName } = useStudyScope();
     const {
         collectionVersion: dataVersion,
         invalidateCollection: bumpDataVersion,
@@ -626,7 +627,7 @@ export default function StatsScreen() {
                 colors={colors}
                 decks={deckPickerItems}
                 selectedDeckName={deckScope}
-                activeDeckName={deckScope}
+                activeDeckName={deckScope || activeDeckName || null}
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}

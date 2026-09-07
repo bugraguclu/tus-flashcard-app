@@ -8,7 +8,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Rect } from 'react-native-svg';
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
 import {
@@ -31,10 +32,22 @@ import {
     formatDayTotalHhMm,
     formatSessionDuration,
     getStudyCalendarSnapshot,
+    studySubjectGlyph,
     type CalendarCell,
     type StudyCalendarAggregate,
     type StudySession,
 } from '../lib/studyCalendar';
+
+/** Three ascending bars: the analytics button's glyph. */
+function StudyAnalyticsIcon({ color, size = 22 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Rect x="4" y="13" width="4.4" height="8" rx="1.4" fill={color} />
+            <Rect x="9.8" y="8" width="4.4" height="13" rx="1.4" fill={color} />
+            <Rect x="15.6" y="3.5" width="4.4" height="17.5" rx="1.4" fill={color} />
+        </Svg>
+    );
+}
 
 type ViewMode = 'month' | 'week';
 
@@ -75,6 +88,7 @@ export default function StudyCalendarScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { settings } = useAppSettings();
     const rolloverHour = settings.dayRolloverHour;
     const { collectionVersion, getSchedulingRevision } = useCollectionInvalidation();
@@ -126,7 +140,6 @@ export default function StudyCalendarScreen() {
             .filter((day) => visibleDayNumbers.has(day.dayNumber))
             .map((day) => ({
                 dayNumber: day.dayNumber,
-                studyMs: day.studyMs,
                 title: new Date(`${day.ymd}T12:00:00`).toLocaleDateString(localeTag, {
                     day: 'numeric',
                     month: 'short',
@@ -200,6 +213,10 @@ export default function StudyCalendarScreen() {
         router.push(`/deck-overview?deck=${encodeURIComponent(session.deckName)}` as any);
     }, [router]);
 
+    const handleOpenAnalytics = useCallback(() => {
+        router.push('/stats' as any);
+    }, [router]);
+
     const handleShowDetails = useCallback((session: StudySession) => {
         setMenuSession(null);
         const dayLabel = new Date(`${dayNumberToYmd(session.dayNumber)}T12:00:00`)
@@ -254,7 +271,7 @@ export default function StudyCalendarScreen() {
                 <View style={styles.sessionCard}>
                     <View style={styles.subjectTile}>
                         <Text style={styles.subjectTileText}>
-                            {(item.subject.charAt(0) || '?').toLocaleUpperCase(localeTag)}
+                            {studySubjectGlyph(item.subject)}
                         </Text>
                     </View>
                     <View style={styles.sessionBody}>
@@ -287,14 +304,13 @@ export default function StudyCalendarScreen() {
                 </Text>
             </View>
         </View>
-    ), [styles, l, locale, localeTag]);
+    ), [styles, l, locale]);
 
     const renderSectionHeader = useCallback(({ section }: { section: StudyDaySection }) => (
         <View style={styles.sectionHeader}>
             <View style={styles.dayChip}>
                 <Text style={styles.dayChipText}>{section.title}</Text>
             </View>
-            <Text style={styles.sectionTotal}>{formatDayTotalHhMm(section.studyMs)}</Text>
         </View>
     ), [styles]);
 
@@ -407,7 +423,10 @@ export default function StudyCalendarScreen() {
             <SectionList
                 ref={listRef}
                 style={styles.timeline}
-                contentContainerStyle={styles.timelineContent}
+                contentContainerStyle={[
+                    styles.timelineContent,
+                    { paddingBottom: insets.bottom + ANALYTICS_BUTTON_CLEARANCE },
+                ]}
                 sections={sections}
                 keyExtractor={(item) => item.key}
                 renderItem={renderSession}
@@ -432,6 +451,16 @@ export default function StudyCalendarScreen() {
                     </View>
                 )}
             />
+
+            <TouchableOpacity
+                style={[styles.analyticsButton, { bottom: insets.bottom + Spacing.lg }]}
+                onPress={handleOpenAnalytics}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={l('Çalışma analizleri', 'Study analytics')}
+            >
+                <StudyAnalyticsIcon color={colors.white} />
+            </TouchableOpacity>
 
             <Modal
                 visible={menuSession !== null}
@@ -490,11 +519,13 @@ export default function StudyCalendarScreen() {
 interface StudyDaySection {
     dayNumber: number;
     title: string;
-    studyMs: number;
     data: StudySession[];
 }
 
 const GUTTER_WIDTH = 76;
+const ANALYTICS_BUTTON_SIZE = 56;
+/** Tail padding that keeps the last session card out from under the floating analytics button. */
+const ANALYTICS_BUTTON_CLEARANCE = ANALYTICS_BUTTON_SIZE + 2 * Spacing.lg;
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
@@ -556,7 +587,7 @@ function createStyles(colors: ColorScheme) {
         dayTotal: { marginTop: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.accent, minHeight: 15 },
 
         timeline: { flex: 1, marginTop: Spacing.sm, backgroundColor: colors.bgPrimary },
-        timelineContent: { paddingBottom: Spacing.xxxl },
+        timelineContent: {},
 
         sectionHeader: {
             flexDirection: 'row',
@@ -573,7 +604,6 @@ function createStyles(colors: ColorScheme) {
             ...Shadows.sm,
         },
         dayChipText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        sectionTotal: { marginLeft: 'auto', fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
 
         timelineRow: { flexDirection: 'row', alignItems: 'stretch' },
         gutter: { width: GUTTER_WIDTH, alignItems: 'center', justifyContent: 'center' },
@@ -648,6 +678,18 @@ function createStyles(colors: ColorScheme) {
             textAlign: 'right',
             fontSize: FontSize.sm,
             color: colors.textMuted,
+        },
+
+        analyticsButton: {
+            position: 'absolute',
+            right: Spacing.lg,
+            width: ANALYTICS_BUTTON_SIZE,
+            height: ANALYTICS_BUTTON_SIZE,
+            borderRadius: ANALYTICS_BUTTON_SIZE / 2,
+            backgroundColor: colors.streak,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...Shadows.md,
         },
 
         emptyState: { alignItems: 'center', paddingTop: Spacing.xxxl, paddingHorizontal: Spacing.xl, gap: Spacing.sm },

@@ -356,7 +356,7 @@ export function fetchStudyReviewRows(startMs: number, endMs: number): StudyRevie
          JOIN anki_cards c ON c.id = r.cardId
          LEFT JOIN decks home ON home.id = NULLIF(json_extract(c.data, '$.odid'), 0)
          LEFT JOIN decks held ON held.id = c.deckId
-         WHERE r.id >= ? AND r.id <= ?
+         WHERE r.id >= ? AND r.id <= ? AND r.ease != 0
          ORDER BY r.id ASC`,
         startMs,
         endMs,
@@ -382,4 +382,95 @@ export function getStudyCalendarSnapshot(
         rolloverHour,
         dayNumbers: new Set(cells.map((cell) => cell.dayNumber)),
     });
+}
+
+// --- Subject glyphs ---
+
+/**
+ * Keyword table behind `studySubjectGlyph`, most specific entry first.
+ *
+ * Matching is by substring rather than equality because a subject is whatever the learner named
+ * their top-level deck: `Mikrobiyoloji`, `Tıbbi Mikrobiyoloji` and `Mikrobiyoloji (tekrar)` are
+ * all the same branch and all deserve the same icon. The list is ordered so a longer, more
+ * specific branch is tested before a shorter one it contains — `Çocuk Cerrahisi` before
+ * `Cerrahi`, `Tıbbi Genetik` before `Genetik` — because the first hit wins.
+ *
+ * Both the Turkish and the English name of each branch are listed, so a collection imported from
+ * a shared English deck is recognised too.
+ */
+const SUBJECT_GLYPHS: readonly (readonly [readonly string[], string])[] = [
+    [['cocuk cerrahi', 'pediatric surgery'], '🧸'],
+    [['kalp damar cerrahi', 'cardiovascular surgery'], '🫀'],
+    [['beyin cerrahi', 'norosirurji', 'neurosurgery'], '🧠'],
+    [['plastik cerrahi', 'plastic surgery'], '💉'],
+    [['genel cerrahi', 'general surgery', 'cerrahi', 'surgery'], '🔪'],
+    [['kadin dogum', 'kadin hastaliklari', 'jinekoloji', 'obstetric', 'gynecolog'], '🤰'],
+    [['pediatri', 'cocuk sagligi', 'pediatric'], '👶'],
+    [['dahiliye', 'ic hastaliklari', 'internal medicine'], '🩺'],
+    [['kardiyoloji', 'cardiolog'], '🫀'],
+    [['gogus hastaliklari', 'pulmoner', 'pulmonolog', 'respiratory'], '🫁'],
+    [['gastroenteroloji', 'gastroenterolog'], '🍽️'],
+    [['nefroloji', 'nephrolog'], '🫘'],
+    [['hematoloji', 'hematolog'], '🩸'],
+    [['endokrinoloji', 'endocrinolog'], '🧫'],
+    [['romatoloji', 'rheumatolog'], '🦴'],
+    [['noroloji', 'neurolog'], '🧠'],
+    [['psikiyatri', 'ruh sagligi', 'psychiatr'], '🧠'],
+    [['dermatoloji', 'deri hastaliklari', 'dermatolog'], '🧴'],
+    [['oftalmoloji', 'goz hastaliklari', 'ophthalmolog'], '👁️'],
+    [['kulak burun bogaz', 'kbb', 'otolaryngolog'], '👂'],
+    [['uroloji', 'urolog'], '🚻'],
+    [['ortopedi', 'orthoped'], '🦿'],
+    [['anesteziyoloji', 'anestezi', 'anesthesi'], '💤'],
+    [['radyoloji', 'radiolog'], '🩻'],
+    [['nukleer tip', 'nuclear medicine'], '☢️'],
+    [['adli tip', 'forensic'], '⚖️'],
+    [['halk sagligi', 'biyoistatistik', 'epidemiyoloji', 'public health', 'biostatistic'], '📊'],
+    [['tibbi genetik', 'genetik', 'genetic'], '🧬'],
+    [['mikrobiyoloji', 'enfeksiyon', 'microbiolog', 'infectious'], '🔬'],
+    [['patoloji', 'patholog'], '🔬'],
+    [['histoloji', 'embriyoloji', 'histolog', 'embryolog'], '🔬'],
+    [['farmakoloji', 'pharmacolog'], '💊'],
+    [['biyokimya', 'biochemistr'], '🧪'],
+    [['fizyoloji', 'physiolog'], '⚡'],
+    [['anatomi', 'anatomy'], '🦴'],
+    [['immunoloji', 'immunolog'], '🛡️'],
+    [['onkoloji', 'oncolog'], '🎗️'],
+];
+
+/**
+ * Turkish-aware fold used to look a subject up in `SUBJECT_GLYPHS`.
+ *
+ * Lowercasing has to go through the `tr` locale or `I` becomes `i` instead of `\u0131`, and a deck
+ * named `M\u0130KROB\u0130YOLOJ\u0130` would then miss its own entry. Canonical decomposition
+ * afterwards splits every accented Turkish letter into a base letter plus a combining mark, so
+ * dropping the marks turns `g\u0306`, `u\u0308`, `s\u0327`, `o\u0308`, `c\u0327` and `i\u0302`
+ * into plain ASCII and the table below can be written without a single diacritic. Dotless `\u0131`
+ * is the one letter with no decomposition, so it is mapped by hand.
+ */
+function foldSubject(subject: string): string {
+    return (subject ?? '')
+        .toLocaleLowerCase('tr')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\u0131/g, 'i');
+}
+
+/**
+ * The icon drawn on a session card's tile: a branch emoji when the subject is a TUS branch this
+ * table knows, and otherwise the subject's own first letter.
+ *
+ * The letter fallback is deliberate. A learner who files their decks under `Deneme 3` or a
+ * language name should see that name's initial rather than a medical icon that means nothing for
+ * their deck, and every subject therefore always has a tile with something legible on it.
+ */
+export function studySubjectGlyph(subject: string): string {
+    const folded = foldSubject(subject);
+    if (folded.length > 0) {
+        for (const [keywords, glyph] of SUBJECT_GLYPHS) {
+            if (keywords.some((keyword) => folded.includes(keyword))) return glyph;
+        }
+    }
+    const first = (subject ?? '').trim().charAt(0);
+    return first ? first.toLocaleUpperCase('tr') : '?';
 }

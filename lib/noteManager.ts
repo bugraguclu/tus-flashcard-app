@@ -11,8 +11,16 @@ import { humanizeCardText } from './displayText';
 import { markSourcePackageDirty } from './ankiPackageArchive';
 import {
     assertCatalogCardMutable,
+    assertCatalogCardsMovable,
+    assertCatalogNoteContentMutable,
     assertCatalogNoteMutable,
+    assertCatalogNoteNotDeletable,
+    assertCatalogNoteNotDuplicable,
+    assertCatalogNoteTypeNotChangeable,
     assertCatalogNoteTypeMutable,
+    isCatalogCard,
+    isCatalogNote,
+    PaidCatalogProtectionError,
 } from './catalogProtection';
 
 /** Anki stores tags space-separated with a leading and trailing space (" a b "), so that a
@@ -41,8 +49,13 @@ export function saveNote(note: Note): void {
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id);
     if (existing?.data) {
         try {
-            markSourcePackageDirty((JSON.parse(existing.data) as Note).sourcePackageId);
-        } catch { /* malformed legacy blobs are replaced below */ }
+            const parsed = JSON.parse(existing.data) as Note;
+            assertCatalogNoteContentMutable(note, parsed);
+            markSourcePackageDirty(parsed.sourcePackageId);
+        } catch (e) {
+            if (e instanceof PaidCatalogProtectionError) throw e;
+            /* malformed legacy blobs are replaced below */
+        }
     }
     db.runSync(
         `INSERT OR REPLACE INTO notes
@@ -61,6 +74,7 @@ export function saveNote(note: Note): void {
 }
 
 export function deleteNote(id: number): void {
+    assertCatalogNoteNotDeletable(id);
     assertCatalogNoteMutable(id);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
@@ -245,8 +259,41 @@ export function saveAnkiCard(card: AnkiCard): void {
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = ?', card.id);
     if (existing?.data) {
         try {
-            markSourcePackageDirty((JSON.parse(existing.data) as AnkiCard).sourcePackageId);
-        } catch { /* malformed legacy blobs are replaced below */ }
+            const existingCard = JSON.parse(existing.data) as AnkiCard;
+            if (isCatalogCard(existingCard)) {
+                if (card.noteId !== existingCard.noteId) {
+                    throw new PaidCatalogProtectionError('Katalog kartlarının not bağlantısı değiştirilemez.');
+                }
+                if (card.deckId !== existingCard.deckId) {
+                    let isTargetFiltered = false;
+                    try {
+                        const targetDeckRow = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', card.deckId);
+                        isTargetFiltered = Boolean(targetDeckRow?.data && (JSON.parse(targetDeckRow.data) as { isFiltered?: boolean }).isFiltered);
+                    } catch {
+                        isTargetFiltered = false;
+                    }
+
+                    const isMovingToFiltered = Boolean(
+                        card.odid
+                        && card.odid === existingCard.deckId
+                        && isTargetFiltered
+                    );
+                    const isReturningFromFiltered = Boolean(
+                        existingCard.odid
+                        && existingCard.odid > 0
+                        && card.deckId === existingCard.odid
+                        && (!card.odid || card.odid === 0)
+                    );
+                    if (!isMovingToFiltered && !isReturningFromFiltered) {
+                        throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+                    }
+                }
+            }
+            markSourcePackageDirty(existingCard.sourcePackageId);
+        } catch (e) {
+            if (e instanceof PaidCatalogProtectionError) throw e;
+            /* malformed legacy blobs are replaced below */
+        }
     }
 
     // Preserve any forward-compat keys the stored blob may carry that aren't on AnkiCard.
@@ -359,6 +406,7 @@ export interface CardDeckMoveSnapshot {
  * mod and usn change, matching Anki's browser "Change Deck" action.
  */
 export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDeckMoveSnapshot[] {
+    assertCatalogCardsMovable(cardIds, targetDeckId);
     const uniqueCardIds = [...new Set(cardIds)];
     const moves = uniqueCardIds
         .map((cardId) => getAnkiCard(cardId))
@@ -531,8 +579,12 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
     const targetType = getNoteType(targetNoteTypeId);
     if (!targetType) return 0;
 
-    const db = getDB();
     const uniqueNoteIds = [...new Set(noteIds)];
+    for (const noteId of uniqueNoteIds) {
+        assertCatalogNoteTypeNotChangeable(noteId);
+    }
+
+    const db = getDB();
     let changed = 0;
 
     db.execSync('BEGIN TRANSACTION;');
@@ -745,7 +797,15 @@ export function getSearchIndexCards(): SearchIndexCard[] {
          JOIN notes n ON n.id = c.noteId`
     );
 
-    return rows.map((row) => searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId));
+    // A single unreadable note blob must not cost the whole collection its search index: skip it
+    // here, and let the Settings database check report it as a note needing attention.
+    return rows.flatMap((row) => {
+        try {
+            return [searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId)];
+        } catch {
+            return [];
+        }
+    });
 }
 
 export interface NavigationCardCount {
@@ -935,6 +995,15 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
+    if (isCatalogCard(card) || isCatalogNote(note)) {
+        if (input.deckId !== undefined && input.deckId !== card.deckId) {
+            throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+        }
+        if (input.subject !== undefined && resolveSubjectDeckId(input.subject) !== card.deckId) {
+            throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+        }
+    }
+
     const noteType = getNoteType(note.noteTypeId);
     const fieldCount = Math.max(
         noteType?.fields.length ?? 2,
@@ -1091,6 +1160,9 @@ export function deleteAnkiCardOnly(cardId: number): void {
 /** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
 export function deleteAnkiCardsOnly(cardIds: number[]): void {
     if (cardIds.length === 0) return;
+    if (cardIds.some(isCatalogCard)) {
+        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez.');
+    }
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -1205,6 +1277,7 @@ export function toggleNoteMark(noteId: number): boolean {
 
 /** Duplicates a note (fields + tags) into a fresh note, generating cards in the same deck. */
 export function duplicateNote(noteId: number): { note: Note; cards: AnkiCard[] } | null {
+    assertCatalogNoteNotDuplicable(noteId);
     const note = getNote(noteId);
     if (!note) return null;
 

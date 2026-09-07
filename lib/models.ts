@@ -424,12 +424,13 @@ export interface ReviewLog {
     id: number;          // epoch ms
     cardId: number;
     usn: number;
-    ease: 1 | 2 | 3 | 4;
+    /** 0 marks a rating-less bookkeeping row (a reset or a reschedule), as in Anki. */
+    ease: 0 | 1 | 2 | 3 | 4;
     ivl: number;         // new interval (negative = seconds)
     lastIvl: number;     // previous interval
     factor: number;      // new ease (permille)
     time: number;        // review duration ms (capped at 60000)
-    type: 0 | 1 | 2 | 3 | 4; // 0=learn, 1=review, 2=relearn, 3=filtered, 4=manual
+    type: 0 | 1 | 2 | 3 | 4 | 5; // 0=learn, 1=review, 2=relearn, 3=filtered, 4=manual, 5=rescheduled
 }
 
 export interface Tag {

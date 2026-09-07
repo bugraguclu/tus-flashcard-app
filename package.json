@@ -21,6 +21,7 @@
     "web": "expo start --web",
     "build:web": "expo export --platform web",
     "build:catalog-manifest": "sucrase-node scripts/build-catalog-manifest.ts",
+    "pack:catalog": "node scripts/pack-catalog-asset.ts",
     "audit:catalog": "sucrase-node scripts/audit-catalog.ts",
     "share:lan": "node scripts/share-expo-go.mjs --lan",
     "share:ngrok": "node scripts/share-expo-go.mjs --ngrok"

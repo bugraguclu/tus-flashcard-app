@@ -148,6 +148,42 @@ if (unresolvedLegalPlaceholders.length > 0) {
     else warnings.push(`${message}; run npm run verify:app-store before submission`);
 }
 
+/**
+ * The paid catalog must reach the store as the encrypted container, never as a readable .apkg.
+ * A build that ships the plain package hands the whole product to anyone who unzips the IPA.
+ */
+function verifyCatalogAtRest() {
+    const packedPath = path.join(projectRoot, 'assets/catalog/bka-tus-complete.tuspack');
+    const masterPath = path.join(projectRoot, 'assets/catalog/bka-tus-complete.apkg');
+
+    if (!fs.existsSync(packedPath)) {
+        failures.push('Missing assets/catalog/bka-tus-complete.tuspack; run npm run pack:catalog');
+        return;
+    }
+
+    const header = Buffer.alloc(8);
+    const handle = fs.openSync(packedPath, 'r');
+    try {
+        fs.readSync(handle, header, 0, 8, 0);
+    } finally {
+        fs.closeSync(handle);
+    }
+    requireValue(header.toString('latin1') === 'TUSPACK1', 'Packed catalog is not a TUSPACK container; run npm run pack:catalog');
+
+    // Only the container may be bundled: a second require would make Metro ship the plain
+    // package alongside it, which is exactly what the container exists to prevent.
+    const assetModule = readProjectFile('lib/bkaCatalogAsset.ts');
+    requireValue(
+        !/require\([^)]*\.apkg['"]\)/.test(assetModule),
+        'lib/bkaCatalogAsset.ts must not require the plain .apkg; that bundles the readable catalog',
+    );
+
+    if (fs.existsSync(masterPath) && fs.statSync(masterPath).mtimeMs > fs.statSync(packedPath).mtimeMs) {
+        failures.push('Catalog master .apkg is newer than the packed container; run npm run pack:catalog');
+    }
+}
+
+verifyCatalogAtRest();
 verifyGeneratedNativeIos();
 
 if (failures.length) {

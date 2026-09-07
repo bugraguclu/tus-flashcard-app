@@ -31,7 +31,7 @@ import {
 } from './legacyMigration';
 import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
-import { canonicalBackupContainsCatalog } from './catalogProtection';
+import { canonicalBackupContainsCatalog, isProtectedCatalogGuid } from './catalogProtection';
 import { validateCanonicalBackupData } from './backupValidation';
 import { normalizeReviewerToolbarPosition } from './reviewerPresentation';
 import { normalizeStudyNotificationThreshold } from './studyNotificationPolicy';
@@ -880,9 +880,18 @@ export async function exportAllData(): Promise<string> {
         schemaVersion = dbGetSchemaVersion();
         const catalogNoteIds = new Set<number>();
         const notes = db.getAllSync<any>('SELECT * FROM notes ORDER BY id').filter((row) => {
-            if (!isCatalogPackRow(row.data)) return true;
-            catalogNoteIds.add(Number(row.id));
-            return false;
+            if (isCatalogPackRow(row.data)) {
+                catalogNoteIds.add(Number(row.id));
+                return false;
+            }
+            try {
+                const note = JSON.parse(row.data);
+                if (isProtectedCatalogGuid(note?.guid)) {
+                    catalogNoteIds.add(Number(row.id));
+                    return false;
+                }
+            } catch { /* malformed rows handled elsewhere */ }
+            return true;
         });
         const cards = db.getAllSync<any>('SELECT * FROM anki_cards ORDER BY id').filter((row) => {
             if (!catalogNoteIds.has(Number(row.noteId))) return true;

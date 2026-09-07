@@ -66,6 +66,7 @@ import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
+import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
     BKA_CATALOG_DEFAULT_ROOT_DECK,
@@ -593,11 +594,19 @@ export default function DecksScreen() {
     const openMenu = useCallback((deck: Deck) => setModal({ kind: 'menu', deck }), []);
 
     const openRename = (deck: Deck) => {
+        if (isCatalogDeck(deck)) {
+            alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS desteleri yeniden adlandırılamaz.', 'Built-in TUS decks cannot be renamed.'));
+            return;
+        }
         setRenameText(getDeckDisplayName(deck.name));
         setModal({ kind: 'rename', deck });
     };
 
     const openCreateSubdeck = (deck: Deck) => {
+        if (isCatalogDeck(deck)) {
+            alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS destelerine alt deste eklenemez.', 'Cannot add subdecks to built-in TUS decks.'));
+            return;
+        }
         setNewSubdeckName('');
         setModal({ kind: 'create-subdeck', deck });
     };
@@ -636,6 +645,10 @@ export default function DecksScreen() {
     };
 
     const openDescription = (deck: Deck) => {
+        if (isCatalogDeck(deck)) {
+            alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS destelerinin açıklaması düzenlenemez.', 'Description of built-in TUS decks cannot be edited.'));
+            return;
+        }
         setDescriptionText(deck.description ?? '');
         setModal({ kind: 'description', deck });
     };
@@ -832,6 +845,10 @@ export default function DecksScreen() {
     };
 
     const requestDelete = (deck: Deck) => {
+        if (isCatalogDeck(deck)) {
+            alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS desteleri silinemez.', 'Built-in TUS decks cannot be deleted.'));
+            return;
+        }
         setModal(null);
         setTimeout(() => handleDelete(deck), Platform.OS === 'ios' ? 250 : 0);
     };
@@ -898,7 +915,8 @@ export default function DecksScreen() {
                 && row.deck.catalogPack === BKA_CATALOG_PACK;
             const isInvalidTarget = name === dragged
                 || isDescendantOf(name, dragged)
-                || isLockedCatalogTarget;
+                || isLockedCatalogTarget
+                || isCatalogDeck(row.deck);
             if (!isInvalidTarget) {
                 if (!firstValidRow || layout.y < firstValidRow.y) firstValidRow = { name, y: layout.y };
                 if (!lastValidRow || layout.y + layout.h > lastValidRow.bottom) {
@@ -1047,7 +1065,7 @@ export default function DecksScreen() {
     };
 
     const beginDeckDrag = (node: DeckTreeNode, pageY: number) => {
-        if (node.deck.isFiltered) return;
+        if (node.deck.isFiltered || isCatalogDeck(node.deck)) return;
         draggingRef.current = node.deck.name;
         dragPageYRef.current = pageY;
         dropTargetRef.current = null;
@@ -1210,7 +1228,7 @@ export default function DecksScreen() {
         const rowDropFeedback = rowDropTarget ? dragDropFeedback : null;
         const isTrialCatalogDeck = catalogTier === 'trial' && deck.catalogPack === BKA_CATALOG_PACK;
         const isTrialCatalogRoot = isTrialCatalogDeck && deck.id === BKA_CATALOG_ROOT_DECK_ID;
-        const dragResponder = supportsDeckDrag && !deck.isFiltered
+        const dragResponder = supportsDeckDrag && !deck.isFiltered && !isCatalogDeck(deck)
             ? getDragResponder(node)
             : null;
         const maxIndentDepth = isCompact ? 4 : 10;
@@ -1424,6 +1442,7 @@ export default function DecksScreen() {
     ), [catalogInstalling, colors.accent, l, router, styles]);
 
     const renderMenuModal = (deck: Deck) => {
+        const isCatalog = isCatalogDeck(deck);
         const MenuAction = ({ label, onPress, danger = false }: {
             label: string;
             onPress: () => void;
@@ -1450,27 +1469,33 @@ export default function DecksScreen() {
                     {!deck.isFiltered && (
                         <MenuAction
                             label={l('Ekle', 'Add')}
-                            onPress={() => openDeckMenuRoute(`/editor?deckId=${deck.id}`)}
+                            onPress={() => openDeckMenuRoute(isCatalog ? '/editor' : `/editor?deckId=${deck.id}`)}
                         />
                     )}
                     <MenuAction
                         label={l('Kartlara göz at', 'Browse cards')}
                         onPress={() => openDeckMenuRoute(`/browser?deck=${encodeURIComponent(deck.name)}`)}
                     />
-                    <MenuAction label={l('Desteyi yeniden adlandır', 'Rename deck')} onPress={() => openRename(deck)} />
+                    {!isCatalog && (
+                        <MenuAction label={l('Desteyi yeniden adlandır', 'Rename deck')} onPress={() => openRename(deck)} />
+                    )}
 
                     {!deck.isFiltered ? (
                         <>
-                            <MenuAction label={l('Alt deste oluştur', 'Create subdeck')} onPress={() => openCreateSubdeck(deck)} />
+                            {!isCatalog && (
+                                <MenuAction label={l('Alt deste oluştur', 'Create subdeck')} onPress={() => openCreateSubdeck(deck)} />
+                            )}
                             <MenuAction
                                 label={l('Deste seçenekleri', 'Deck options')}
                                 onPress={() => openDeckMenuRoute(`/deck-options?deckId=${deck.id}`)}
                             />
                             <MenuAction label={l('Özel çalışma', 'Custom study')} onPress={() => openCustomStudy(deck)} />
-                            <MenuAction
-                                label={l('Desteyi dışa aktar', 'Export deck')}
-                                onPress={() => openDeckMenuRoute(`/export?deck=${encodeURIComponent(deck.name)}`)}
-                            />
+                            {!isCatalog && (
+                                <MenuAction
+                                    label={l('Desteyi dışa aktar', 'Export deck')}
+                                    onPress={() => openDeckMenuRoute(`/export?deck=${encodeURIComponent(deck.name)}`)}
+                                />
+                            )}
                         </>
                     ) : (
                         <>
@@ -1484,8 +1509,12 @@ export default function DecksScreen() {
                         label={l('Kısayol oluştur', 'Create shortcut')}
                         onPress={() => { void handleCreateShortcut(deck); }}
                     />
-                    <MenuAction label={l('Açıklamayı düzenle', 'Edit description')} onPress={() => openDescription(deck)} />
-                    <MenuAction label={l('Desteyi sil', 'Delete deck')} onPress={() => requestDelete(deck)} />
+                    {!isCatalog && (
+                        <>
+                            <MenuAction label={l('Açıklamayı düzenle', 'Edit description')} onPress={() => openDescription(deck)} />
+                            <MenuAction label={l('Desteyi sil', 'Delete deck')} onPress={() => requestDelete(deck)} />
+                        </>
+                    )}
                 </ScrollView>
             </View>
         );
@@ -1809,7 +1838,7 @@ export default function DecksScreen() {
                             <TextInput
                                 style={styles.filteredNumberInput}
                                 value={filterLimit}
-                                onChangeText={setFilterLimit}
+                                onChangeText={(value) => setFilterLimit(value.replace(/\D/g, '').slice(0, 5))}
                                 keyboardType="number-pad"
                                 inputMode="numeric"
                                 maxLength={5}
@@ -1916,7 +1945,7 @@ export default function DecksScreen() {
                                     <TextInput
                                         style={styles.filteredNumberInput}
                                         value={filterLimit2}
-                                        onChangeText={setFilterLimit2}
+                                        onChangeText={(value) => setFilterLimit2(value.replace(/\D/g, '').slice(0, 5))}
                                         keyboardType="number-pad"
                                         inputMode="numeric"
                                         maxLength={5}
@@ -2141,7 +2170,7 @@ export default function DecksScreen() {
                         colors={colors}
                         decks={availableRegularDecks}
                         selectedDeckName={currentPickerSelectedDeckName}
-                        activeDeckName={currentPickerSelectedDeckName}
+                        activeDeckName={currentPickerSelectedDeckName || activeDeckName || null}
                         title={l('Hedef deste', 'Target Deck')}
                         allDecksLabel={l('Tüm desteler', 'All decks')}
                         searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -3247,16 +3276,17 @@ function createStyles(colors: ColorScheme) {
         marginTop: 2,
     },
     filteredNumberInput: {
-        minWidth: 72,
+        minWidth: 84,
         height: 40,
         backgroundColor: colors.bgInput,
         borderRadius: BorderRadius.sm,
         borderWidth: 1,
         borderColor: colors.border,
-        paddingHorizontal: Spacing.md,
+        paddingHorizontal: Spacing.sm,
         textAlign: 'center',
         fontSize: FontSize.md,
         fontWeight: '600',
+        fontVariant: ['tabular-nums'] as any,
         color: colors.textPrimary,
     },
     filteredPickerButton: {

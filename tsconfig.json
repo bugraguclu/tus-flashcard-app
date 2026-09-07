@@ -1,6 +1,9 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    // scripts/pack-catalog-asset.ts runs under Node's own type stripping, which resolves ESM
+    // specifiers and therefore needs the extension. The project never emits, so this is safe.
+    "allowImportingTsExtensions": true
   }
 }

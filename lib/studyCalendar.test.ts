@@ -17,6 +17,7 @@ import {
     formatClockHhMm,
     formatDayTotalHhMm,
     formatSessionDuration,
+    studySubjectGlyph,
     subjectOfDeck,
     type StudyReviewRow,
 } from './studyCalendar';
@@ -375,6 +376,17 @@ describe('deck attribution (real SQLite)', () => {
         );
     }
 
+    /** A rating-less bookkeeping row: what Forget and Set Due Date leave behind. */
+    function addManualEntry(id: number, cardId: number, type: 4 | 5) {
+        db.runSync(
+            `INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
+             VALUES (?, ?, -1, 0, 0, 0, 0, 0, ?)`,
+            id,
+            cardId,
+            type,
+        );
+    }
+
     const WINDOW = { startMs: 1_000, endMs: 9_000_000 };
 
     it('attributes a filtered-deck review to the card\'s home deck, not the filtered deck', () => {
@@ -395,6 +407,29 @@ describe('deck attribution (real SQLite)', () => {
         addReview(5_000, 10);
 
         expect(fetchStudyReviewRows(WINDOW.startMs, WINDOW.endMs)[0]!.deckName).toBe('Anatomi::Kemik');
+    });
+
+    it('ignores the rating-less rows a reschedule leaves behind', () => {
+        addDeck(1, 'Mikrobiyoloji');
+        addCard(10, 1, 0);
+        // Forgetting a card and pushing its due date are not study; counting them would invent a
+        // session the learner never sat through, and give it a zero duration.
+        addManualEntry(4_000, 10, 4);
+        addManualEntry(6_000, 10, 5);
+
+        expect(fetchStudyReviewRows(WINDOW.startMs, WINDOW.endMs)).toHaveLength(0);
+    });
+
+    it('keeps a real answer that sits between two bookkeeping rows', () => {
+        addDeck(1, 'Mikrobiyoloji');
+        addCard(10, 1, 0);
+        addManualEntry(4_000, 10, 4);
+        addReview(5_000, 10);
+        addManualEntry(6_000, 10, 5);
+
+        const rows = fetchStudyReviewRows(WINDOW.startMs, WINDOW.endMs);
+        expect(rows).toHaveLength(1);
+        expect(rows[0]!.atMs).toBe(5_000);
     });
 
     it('falls back to the current deck when the home deck has been deleted', () => {
@@ -439,5 +474,40 @@ describe('deck attribution (real SQLite)', () => {
         });
         expect(days[0]!.sessions[0]!.subject).toBe('Mikrobiyoloji');
         expect(days[0]!.sessions[0]!.deckName).toBe('Mikrobiyoloji::Viroloji');
+    });
+});
+
+describe('studySubjectGlyph', () => {
+    it('recognises a branch however the learner cased or accented its name', () => {
+        // All four spellings are the same deck to a learner, so all four must reach the same tile.
+        for (const name of ['Mikrobiyoloji', 'MIKROBIYOLOJI', 'M\u0130KROB\u0130YOLOJ\u0130', 't\u0131bbi mikrobiyoloji']) {
+            expect(studySubjectGlyph(name)).toBe('\u{1F52C}');
+        }
+    });
+
+    it('folds the Turkish letters the table is written without', () => {
+        expect(studySubjectGlyph('Kad\u0131n Do\u011fum')).toBe(studySubjectGlyph('kadin dogum'));
+        expect(studySubjectGlyph('N\u00f6roloji')).toBe(studySubjectGlyph('noroloji'));
+        expect(studySubjectGlyph('G\u00f6\u011f\u00fcs Hastal\u0131klar\u0131')).toBe(studySubjectGlyph('gogus hastaliklari'));
+        expect(studySubjectGlyph('Halk Sa\u011fl\u0131\u011f\u0131')).toBe(studySubjectGlyph('halk sagligi'));
+    });
+
+    it('prefers the more specific branch when one name contains another', () => {
+        // The table is ordered longest-first, so these must not all collapse onto "Cerrahi".
+        expect(studySubjectGlyph('\u00c7ocuk Cerrahisi')).not.toBe(studySubjectGlyph('Genel Cerrahi'));
+        expect(studySubjectGlyph('Beyin Cerrahisi')).not.toBe(studySubjectGlyph('Genel Cerrahi'));
+        expect(studySubjectGlyph('T\u0131bbi Genetik')).toBe('\u{1F9EC}');
+    });
+
+    it('falls back to the subject initial for a deck that is not a TUS branch', () => {
+        expect(studySubjectGlyph('Deneme 3')).toBe('D');
+        // The initial is upper-cased in Turkish, so a leading dotless i does not become "I".
+        expect(studySubjectGlyph('\u0131spanyolca')).toBe('I');
+        expect(studySubjectGlyph('ingilizce')).toBe('\u0130');
+    });
+
+    it('always has something to draw, even for an empty or blank subject', () => {
+        expect(studySubjectGlyph('')).toBe('?');
+        expect(studySubjectGlyph('   ')).toBe('?');
     });
 });
