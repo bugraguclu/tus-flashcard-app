@@ -456,52 +456,98 @@ function createTusFormattingBridge(editor, doc) {
 
   // Paragraph-level formatting execCommand has no verb for. An empty value removes the
   // declaration instead of writing an empty one, so "reset to default" leaves clean HTML.
+  //
+  // Known limitation: WebKit's undo stack only records its own editing commands, and there is no
+  // command for this one. Undo therefore steps over a spacing change to the edit before it. The
+  // alternative — rebuilding each block through insertHTML so WebKit records it — would throw
+  // away the caret and every inline style in the block, which is a worse trade than an undo that
+  // skips one step.
   function applyBlockStyle(property, value) {
     var restored = restoreSelection();
     var blocks = blockElementsInRange(editorRange());
     if (!blocks.length) return { restored: restored, applied: false };
-    suppressAutoEdits = true;
-    for (var index = 0; index < blocks.length; index += 1) {
-      var style = blocks[index].style;
-      if (!style) continue;
-      if (value) style[property] = value;
-      else if (typeof style.removeProperty === 'function') style.removeProperty(hyphenate(property));
-      else style[property] = '';
-    }
-    suppressAutoEdits = false;
-    noteEdit('command');
+    editDocument(function () {
+      for (var index = 0; index < blocks.length; index += 1) {
+        var style = blocks[index].style;
+        if (!style) continue;
+        if (value) style[property] = value;
+        else if (typeof style.removeProperty === 'function') style.removeProperty(hyphenate(property));
+        else style[property] = '';
+      }
+      return true;
+    });
     return { restored: restored, applied: true };
   }
 
   // Change Case replaces a run of text and leaves it selected, the way Word does, so the next
   // Shift+F3 keeps rotating the same run instead of finding a collapsed caret and doing nothing.
-  // A text node is written directly rather than through insertHTML because the replacement is
-  // plain text by definition and must not re-parse whatever the user had selected.
+  //
+  // insertText is used rather than writing a text node directly because WebKit only records its
+  // own editing commands on the undo stack: a hand-built node would leave Change Case invisible
+  // to Undo. insertText collapses the caret to the end of what it wrote, so the selection is
+  // extended back over it afterwards to restore Word's behaviour.
   function replaceSelectionText(text) {
     var restored = restoreSelection();
     var range = editorRange();
     if (!range || range.collapsed) return { restored: restored, applied: false };
-    suppressAutoEdits = true;
-    var applied = false;
-    try {
-      var node = doc.createTextNode(String(text));
-      range.deleteContents();
-      range.insertNode(node);
-      var selected = doc.createRange();
-      selected.selectNodeContents(node);
-      var selection = activeSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(selected);
-        savedRange = selected.cloneRange();
+    var value = String(text);
+    var applied = editDocument(function () { return execute('insertText', value); });
+    if (!applied) return { restored: restored, applied: false };
+    reselectPrecedingText(value.length);
+    return { restored: restored, applied: true };
+  }
+
+  // Walk back the given number of characters from the caret and select what was just written.
+  // The walk is per text node: insertText may split the run across the document's existing nodes.
+  function reselectPrecedingText(length) {
+    var selection = activeSelection();
+    if (!selection || !selection.rangeCount || length <= 0) return false;
+    var end = selection.getRangeAt(0);
+    var node = end.endContainer;
+    var offset = end.endOffset;
+    var remaining = length;
+    var guard = 0;
+    while (remaining > 0 && node && guard < 256) {
+      if (node.nodeType === 3) {
+        if (offset >= remaining) { offset -= remaining; remaining = 0; break; }
+        remaining -= offset;
+        offset = 0;
       }
-      applied = true;
-    } catch (error) {
-      applied = false;
+      if (remaining <= 0) break;
+      var previous = previousTextNode(node);
+      if (!previous) return false;
+      node = previous;
+      offset = typeof node.length === 'number' ? node.length : 0;
+      guard += 1;
     }
-    suppressAutoEdits = false;
-    if (applied) noteEdit('command');
-    return { restored: restored, applied: applied };
+    if (remaining > 0) return false;
+    try {
+      var selected = doc.createRange();
+      selected.setStart(node, offset);
+      selected.setEnd(end.endContainer, end.endOffset);
+      selection.removeAllRanges();
+      selection.addRange(selected);
+      savedRange = selected.cloneRange();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function previousTextNode(from) {
+    var node = from;
+    var guard = 0;
+    while (node && node !== editor && guard < 512) {
+      if (node.previousSibling) {
+        node = node.previousSibling;
+        while (node.lastChild) node = node.lastChild;
+        if (node.nodeType === 3) return node;
+      } else {
+        node = node.parentNode;
+      }
+      guard += 1;
+    }
+    return null;
   }
 
   function hyphenate(property) {
