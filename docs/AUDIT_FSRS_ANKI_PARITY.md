@@ -192,3 +192,105 @@ npx tsc --noEmit                        → bu denetimin dosyalarında hata yok
 `npm run quality` bilinçli olarak çalıştırılmadı: denetim sırasında çalışma ağacında eşzamanlı
 başka değişiklikler vardı. `npx tsc --noEmit` yalnızca `lib/richTextCommands.ts` içinde, bu
 denetimin dokunmadığı ve eşzamanlı olarak düzenlenen bir dosyada hata bildirdi.
+
+---
+
+# İkinci geçiş — 6 Eylül 2026
+
+Birinci geçişte "düzeltilmedi" ya da "not implemented" olarak bırakılan maddeler yeniden ele
+alındı. Aşağıdakiler bu geçişte kapatıldı.
+
+## Kapatılan maddeler
+
+### Madde 44 — `Son tarihi ayarla` FSRS altında → **düzeltildi**
+
+Kural artık tek bir saf fonksiyonda: `setDueDateInterval` (`lib/schedulingIntervals.ts`).
+
+- SM-2'de aralık yalnızca kullanıcı sondaki `!` ile istediğinde değişir; tekrar kartı kazandığı
+  aralığı korur.
+- FSRS'te yeni kart veya `ivl = 0` olan kart **`0`'da kalır**. Gün sayısı yazmak, kartın hiç
+  yaşamadığı bir tekrar geçmişi uydurmak olurdu.
+- FSRS'te diğer her kart `sonTekrardanBeriGeçenGün + istenenGün` alır, böylece saklanan aralık
+  kartın gerçekten görülmeden geçireceği aralığın tamamını anlatır.
+- `!` her iki motorda da kuralın önüne geçer.
+
+Sapmanın **iki** çağrı yeri olduğu görüldü; birinci geçiş yalnızca birini saymıştı:
+`setSelectedDueDate` (tarayıcı, aralık ve `!` destekli) ve `setCardDueInDays` (okuyucu, tek kart).
+İkisi de artık aynı fonksiyondan geçiyor — aynı komut, hangi ekrandan çağrıldığına göre farklı
+anlama gelmiyor. `!` biçimi zaten `parseDueRange` içinde vardı; birinci geçişin "`!` biçimi yok"
+tespiti güncelliğini yitirmişti.
+
+> **Davranış değişikliği:** `setCardDueInDays` eskiden her tekrar kartının aralığını
+> `max(1, gün)` yapıyordu — 6 günlük bir kartı "bugün" diye işaretlemek aralığını 1'e düşürüyordu.
+> Artık aralığa dokunmuyor. `lib/studyRepository.answer.test.ts` içindeki ilgili test eski
+> davranışı sabitlediği için yeni kurala göre güncellendi.
+
+Test: `lib/browserSelection.test.ts` → "setDueDateInterval" (7 test).
+
+### Madde 45 — Manuel yeniden zamanlamanın revlog'a yazılması → **uygulandı**
+
+`logManualEntry` (`lib/reviewLogger.ts`) Anki'nin derecesiz satırlarını yazıyor. İki tür
+**birbirinin yerine geçmez**:
+
+- `reset` → `type = 4`, `factor = 0`. `fsrsMemory`'deki `isReset()` tam olarak bu çifti arıyor.
+  `forgetCard` artık bu satırı bırakıyor; böylece "reset" tespiti **ilk kez** yerel olarak
+  üretilen koleksiyonlarda da çalışıyor. Bu, birinci geçişin açıkta bıraktığı gerçek eksikti.
+- `rescheduled` → `type = 5`. `Son tarihi ayarla` bunu bırakıyor. FSRS için etkisiz (derecesiz),
+  ama değişiklik kart bilgisinde görünüyor ve dışa aktarımda korunuyor. Reset olarak
+  okunmadığı için bir kartı ileri atmak hafıza durumunu **silmiyor**.
+
+`lib/models.ts` içindeki `ReviewLog` buna göre genişletildi: `ease: 0 | 1 | 2 | 3 | 4`,
+`type: 0 | … | 5`. `ease = 0`, Anki'de olduğu gibi "bu satır bir cevap değil" işaretidir.
+
+**Tüketicilerin denetimi (bu maddenin asıl işi).** Revlog'a yeni satır türü eklemek, o satırları
+saymayan her sorguyu bozar. Deposundaki bütün revlog sorguları tarandı ve sayım yapan
+**18 sorguya** `ease != 0` koşulu eklendi: `lib/reviewLogger.ts` (15), `lib/ankiStats.ts` (2,
+eski `type != 4` koşulu `ease != 0` ile değiştirildi — bu, type 5'i de eliyor) ve
+`lib/studyCalendar.ts` (1). Koşullar satırlar yazılmaya başlamadan **önce** eklendi, böylece ağaç
+hiçbir anda korumasız satır barındırmadı.
+
+`getReviewsForCard` bilinçli olarak korumasız bırakıldı: kart bilgisi ekranı manuel satırları
+göstermeli, Anki de gösteriyor.
+
+Testler:
+- `lib/studyRepository.answer.test.ts` → "leaves the reset marker FSRS looks for when a card is
+  forgotten", "records a reschedule rather than a reset when the due date is set"
+- `lib/studyCalendar.test.ts` → "ignores the rating-less rows a reschedule leaves behind",
+  "keeps a real answer that sits between two bookkeeping rows"
+
+### Madde 46 — "Kolay günler" fuzz penceresinin dışına taşıyor → **düzeltildi ve teste bağlandı**
+
+Kaydırma artık `constrainedFuzzBounds` penceresiyle sınırlı. Pencerede uygun gün yoksa aralık
+olduğu yerde bırakılıyor; 2.5 günün altındaki aralıkların penceresi kendi üzerine çöktüğü için
+hiç oynatılmıyor.
+
+Bu düzeltme kod olarak birinci geçişten sonra girmişti ama **testi yoktu**. Eklenen iki test,
+sınırsız eski davranışta başarısız olacak biçimde kuruldu: 10 günlük bir aralığın penceresi
+`[8, 12]`; pencerenin bütün günleri bloklandığında eski kod 13. güne uzanıp yeni kod aralığı
+10'da bırakıyor.
+
+Test: `lib/studyRepository.scope.test.ts` → "never moves a card outside its own fuzz window",
+"does not move an interval too short to have a fuzz window".
+
+### Birinci geçişin açık ucu — optimizer kırpma bağlaması → **bağlandı**
+
+`app/deck-options.tsx` artık `optimizeFsrsParameters`'a `clamp: { numRelearningSteps,
+enableShortTerm }` geçiyor, yani eğitim zamanı parametre kutusu gerçekten uygulanıyor.
+
+## Bu geçişte de kapatılmayanlar
+
+- **Madde 43 — önizleme/cramming revlog satırı.** Bilinçli olarak ertelendi. Cramming satırının
+  `ease` değeri gerçektir (basılan düğme), yalnızca `factor = 0`'dır; dolayısıyla yukarıdaki
+  `ease != 0` koruması onu **elemez**. Satırları yazmaya başlamak, önizleme cevaplarını çalışma
+  istatistiklerine ve az önce eklenen Çalışma Takvimi'ne çalışma süresi olarak sokardı. Bu,
+  ayrı bir tasarım kararıdır (önizleme çalışma sayılır mı?) ve FSRS'i hiçbir şekilde
+  etkilemediği için bu geçişin kapsamına alınmadı.
+- **Madde 15 (fuzz tohumu), 28, 33, 41 (optimizer).** Birinci geçişteki gerekçeler aynen geçerli.
+- **Yük dengeleyici (load balancer).** Hâlâ yok.
+
+## Çalıştırılan doğrulama
+
+```
+npx tsc --noEmit   → temiz
+npx vitest run     → 126 dosya, 1327 test, tamamı geçti
+```

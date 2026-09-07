@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-09-04",
+  "lastVerified": "2026-09-06",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -18,11 +18,18 @@
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
+      "id": "anki-manual-check-database",
+      "priority": 1,
+      "platform": "cross-platform collection maintenance behavior",
+      "url": "https://docs.ankiweb.net/files.html#checking-your-collection",
+      "useFor": ["database integrity check", "rebuilding internal structures", "collection optimization", "what a repair pass is expected to fix"]
+    },
+    {
       "id": "anki-manual-text-import",
       "priority": 1,
       "platform": "cross-platform text import behavior",
       "url": "https://docs.ankiweb.net/importing/text-files.html",
-      "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives", "deck columns", "GUID columns"]
+      "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives", "deck columns", "GUID columns", "field separator override", "allow HTML in fields", "field mapping", "tag all notes", "tag updated notes"]
     },
     {
       "id": "anki-manual-editing",
@@ -299,8 +306,7 @@
       "platform": "software supply chain",
       "url": "https://docs.github.com/en/actions/reference/security/secure-use",
       "useFor": ["immutable action SHA pins", "least-privilege workflow permissions", "CI hardening"]
-    }
-,
+    },
     {
       "id": "fsrs-algorithm-wiki",
       "priority": 1,
@@ -363,6 +369,27 @@
       "platform": "cross-platform manual rescheduling",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/reviews.rs",
       "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards"]
+    },
+    {
+      "id": "anki-source-csv-import",
+      "priority": 3,
+      "platform": "cross-platform text import field handling",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/import.rs",
+      "useFor": ["field escaping when HTML is off", "newline to <br> conversion", "column to field/tags mapping", "meta columns excluded from fields"]
+    },
+    {
+      "id": "anki-source-text-import-log",
+      "priority": 3,
+      "platform": "cross-platform import outcome reporting",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/import.rs",
+      "useFor": ["import log buckets", "identical match reported as already present", "preserve vs duplicate vs update outcomes", "missing note type and deck rows", "empty first field rows", "tags applied to added and updated notes"]
+    },
+    {
+      "id": "anki-source-csv-export",
+      "priority": 3,
+      "platform": "cross-platform plain-text export",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/export.rs",
+      "useFor": ["include HTML and media references", "style block and typing placeholder removal", "#separator and column header lines"]
     }
   ],
   "requiredDocs": [
