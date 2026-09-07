@@ -12,6 +12,7 @@ import {
     cropPhotoPoint,
     findPhotoAnnotationAtPoint,
     findPhotoAnnotationsInSweep,
+    isPhotoShapeDragCommittable,
     isPointInPhotoText,
     isPointInPhotoTrashZone,
     normalizedRect,
@@ -27,6 +28,7 @@ import {
     type PhotoPoint,
     type PhotoStroke,
     type PhotoText,
+    photoArrowHead,
     photoExportSurface,
     scalePhotoAnnotation,
 } from './photoEditor';
