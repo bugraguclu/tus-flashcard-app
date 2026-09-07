@@ -43,6 +43,12 @@ const LightColors = {
     streak: '#ef8a1d',
     streakBg: '#fdeedd',
 
+    // Browser row states. Anki tints the row rather than fading it, so the text of a suspended
+    // card stays as readable as any other — the row says "this one is not coming up", not
+    // "this one is less important".
+    rowSuspendedBg: '#fcf1cf',
+    rowBuriedBg: '#e6ebe9',
+
     white: '#ffffff',
     transparent: 'transparent',
 };
@@ -82,6 +88,9 @@ const DarkColors: ColorScheme = {
 
     streak: '#f2994a',
     streakBg: '#3d2f1f',
+
+    rowSuspendedBg: '#3b3218',
+    rowBuriedBg: '#232826',
 
     white: '#ffffff',
     transparent: 'transparent',

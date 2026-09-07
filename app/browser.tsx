@@ -1049,6 +1049,12 @@ export default function BrowserScreen() {
                 style={[
                     styles.cardItem,
                     compactRows && styles.cardItemCompact,
+                    // The whole row carries the state, so the tint is unbroken rather than painted
+                    // onto the header, the answer box and the detail block separately. Selection
+                    // comes last: while picking cards, what is selected matters more than why a
+                    // row is out of the queue.
+                    !isNotesMode && item.state.suspended && styles.cardSuspended,
+                    !isNotesMode && !item.state.suspended && item.state.buried && styles.cardBuried,
                     isSelected && styles.cardItemSelected,
                 ]}
                 onPress={() => selectionMode
@@ -1062,7 +1068,7 @@ export default function BrowserScreen() {
                 accessibilityRole={selectionMode ? 'checkbox' : 'button'}
                 accessibilityState={selectionMode ? { checked: isSelected } : undefined}
             >
-                <View style={[styles.cardItemHeader, compactRows && styles.cardItemHeaderCompact, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
+                <View style={[styles.cardItemHeader, compactRows && styles.cardItemHeaderCompact]}>
                     {selectionMode && (
                         <View style={[styles.selectionCheckbox, compactRows && styles.selectionCheckboxCompact, isSelected && styles.selectionCheckboxActive]}>
                             {isSelected && <Text style={[styles.selectionCheckboxTick, compactRows && styles.selectionCheckboxTickCompact]}>✓</Text>}
@@ -1152,12 +1158,12 @@ export default function BrowserScreen() {
 
                 {isExpanded && !selectionMode && (
                     <View style={styles.expandedContent}>
-                        <View style={[styles.answerBox, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
+                        <View style={styles.answerBox}>
                             <Text style={styles.answerLabel}>{isNotesMode ? l('İLK KARTIN CEVABI', 'FIRST CARD ANSWER') : l('CEVAP', 'ANSWER')}</Text>
                             <Text style={[styles.answerContent, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]}>{humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}</Text>
                         </View>
 
-                        <View style={[styles.cardDetails, !isNotesMode && item.state.suspended && styles.cardSuspended]}>
+                        <View style={styles.cardDetails}>
                             {isNotesMode ? (
                                 <>
                                     <View style={styles.detailRow}>
@@ -2299,7 +2305,10 @@ function createStyles(colors: ColorScheme) {
     },
     cardItemCompact: { paddingVertical: 4, paddingHorizontal: Spacing.md - 2, borderRadius: BorderRadius.sm + 1 },
     cardItemSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-    cardSuspended: { opacity: 1 },
+    // Anki tints the row instead of fading it: a suspended card is out of the queue, not less
+    // worth reading. Fading it was the old treatment and made the text look washed out.
+    cardSuspended: { backgroundColor: colors.rowSuspendedBg, borderColor: colors.streak },
+    cardBuried: { backgroundColor: colors.rowBuriedBg },
     cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
     cardItemHeaderCompact: { gap: 8 },
     cardIcon: { fontSize: 22, marginTop: 2 },
