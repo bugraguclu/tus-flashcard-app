@@ -1729,15 +1729,19 @@ export default function BrowserScreen() {
                         <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter}>
                             <Text style={styles.overflowItemIcon}>⚑</Text>
                             <Text style={styles.overflowItemText}>{l('Bayrağa göre filtrele', 'Filter by flag')}</Text>
-                            {flagFilters.length === 1 && (
-                                flagFilters[0] === 0 ? (
-                                    <View style={[styles.menuFlagDot, styles.menuFlagDotEmpty]} />
-                                ) : (
-                                    <View style={[styles.menuFlagDot, { backgroundColor: FLAG_COLORS[flagFilters[0]].color }]} />
-                                )
-                            )}
-                            {flagFilters.length !== ALL_CARD_FLAGS.length && flagFilters.length !== 1 && (
-                                <Text style={styles.overflowBadge}>{flagFilters.length}</Text>
+                            {/* Mirrors the chips under the search field: "no flag" is a filter of its
+                                own, so it shows its own ring instead of being counted as a colour.
+                                Counting it made "no flag + red" read as two flags. */}
+                            {flagFilters.length !== ALL_CARD_FLAGS.length && (
+                                <>
+                                    {hasNoFlagFilter && <View style={[styles.menuFlagDot, styles.menuFlagDotEmpty]} />}
+                                    {coloredFlagFilters.length === 1 && (
+                                        <View style={[styles.menuFlagDot, { backgroundColor: FLAG_COLORS[coloredFlagFilters[0]].color }]} />
+                                    )}
+                                    {coloredFlagFilters.length > 1 && (
+                                        <Text style={styles.overflowBadge}>{coloredFlagFilters.length}</Text>
+                                    )}
+                                </>
                             )}
                             <Text style={styles.overflowChevron}>{showFlagFilterMenu ? '⌄' : '›'}</Text>
                         </TouchableOpacity>
