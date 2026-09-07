@@ -85,4 +85,20 @@ describe('Anki notes-in-plain-text export', () => {
         const parsed = parseDelimited(buildExportText(undefined, undefined, { withTags: false }));
         expect(parsed.rows[0].slice(3)).toEqual(['<b>Keep</b>', '<i>Answer</i>']);
     });
+
+    it('rejects exporting a catalog deck or catalog notes', () => {
+        const catalogDeck = { id: 8001, name: 'TUS Kartları', configId: 1, mod: 1, isFiltered: false, collapsed: false, catalogPack: 'bka-tus' };
+        const catalogNote = {
+            id: 8002, guid: 'protected-bka-guid', noteTypeId: 77, mod: 1, usn: -1,
+            tags: ['tus'], fields: ['TUS Question', 'TUS Answer'],
+            sfld: 'TUS Question', csum: 1, flags: 0, catalogPack: 'bka-tus',
+        };
+        const catalogCard = { id: 8003, noteId: 8002, deckId: 8001, ord: 0, mod: 1, usn: -1, type: 0, queue: 0, due: 1, ivl: 0, factor: 0, reps: 0, lapses: 0, left: 0, flags: 0, catalogPack: 'bka-tus' };
+        db.runSync('INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)', 8001, catalogDeck.name, JSON.stringify(catalogDeck));
+        db.runSync('INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?, 0, -1, 0)', 8002, 77, catalogNote.sfld, 1, ' tus ', JSON.stringify(catalogNote));
+        db.runSync('INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone) VALUES (?, ?, ?, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ?, 0, 0, -1, 0)', 8003, 8002, 8001, JSON.stringify(catalogCard));
+
+        expect(() => buildExportText('TUS Kartları')).toThrow();
+        expect(() => buildExportText(undefined, new Set([8002]))).toThrow();
+    });
 });

@@ -919,7 +919,7 @@ export default function BrowserScreen() {
     const moveSelectionToDeck = useCallback((targetDeckId: number) => {
         const targetDeck = getDeck(targetDeckId);
         if (!targetDeck || targetDeck.isFiltered) return;
-        if (hasCatalogCardsSelected) {
+        if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
             alert(
                 l('Katalog Korumalı', 'Catalog Protected'),
                 l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
@@ -945,7 +945,7 @@ export default function BrowserScreen() {
         closeSelection();
         bumpDataVersion();
         reload();
-    }, [selectedActionCardIds, hasCatalogCardsSelected, closeSelection, bumpDataVersion, reload, l, t]);
+    }, [selectedActionCardIds, hasCatalogCardsSelected, hasCatalogNotesSelected, closeSelection, bumpDataVersion, reload, l, t]);
 
     const undoDeckMove = useCallback(() => {
         setShowOverflowMenu(false);
@@ -1482,7 +1482,7 @@ export default function BrowserScreen() {
                             style={styles.selectionAction}
                             disabled={selectedCardIds.size === 0}
                             onPress={() => {
-                                if (hasCatalogCardsSelected) {
+                                if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
                                     alert(
                                         l('Katalog Korumalı', 'Catalog Protected'),
                                         l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
@@ -1608,7 +1608,7 @@ export default function BrowserScreen() {
                             <TouchableOpacity
                                 style={styles.selectionMenuItem}
                                 onPress={() => {
-                                    if (hasCatalogCardsSelected) {
+                                    if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
                                         alert(
                                             l('Katalog Korumalı', 'Catalog Protected'),
                                             l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
