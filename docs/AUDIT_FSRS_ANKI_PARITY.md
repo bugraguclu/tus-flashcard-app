@@ -83,9 +83,10 @@ eğiticisi değildir ve `Son tarihi ayarla` FSRS altında yanlış aralık yazar
    yani mevcut zamanlama hiç değişmedi.
    Test: `lib/fsrs.test.ts` → "training-time parameter bounds".
 
-   > **Açık uç:** çağrı yeri olan `app/deck-options.tsx` bu denetimin dosya kapsamı dışındaydı, bu
-   > yüzden seçenekler henüz optimize butonundan geçirilmiyor. Tek satırlık bağlama gerekiyor:
-   > `optimizeFsrsParameters(items, { …, clamp: { numRelearningSteps: form.lapseSteps.length, enableShortTerm: fsrsShortTermWithSteps } })`.
+   > **Kapandı (7 Eylül 2026):** çağrı yeri artık seçenekleri geçiriyor —
+   > `app/deck-options.tsx` içinde `optimizeFsrsParameters(items, { …, clamp: { numRelearningSteps,
+   > enableShortTerm: form.fsrsShortTermWithSteps } })`. Yeniden öğrenme adımı sayısı düzenlenen
+   > preset'in kendi alanından okunuyor; ayrıştırılamayan bir adım metni tek adımlı tavana düşüyor.
 
 2. **Yeniden zamanlamada fuzz tabanı ve son tekrar zamanı** (`lib/fsrsMemory.ts`,
    `lib/fsrsMaintenance.ts`)

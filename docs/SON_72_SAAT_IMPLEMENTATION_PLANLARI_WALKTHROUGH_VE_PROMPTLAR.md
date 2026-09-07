@@ -50,6 +50,7 @@
 5. [BÖLÜM 4: GİT COMMİT GEÇMİŞİ VE DOSYA DEĞİŞİKLİK DÖKÜMÜ](#bölüm-4-gi̇t-commi̇t-geçmi̇şi̇-ve-dosya-deği̇şi̇kli̇k-dökümü)
 6. [BÖLÜM 5: TEST, TİP KONTROLÜ VE KALİTE KAPISI DOĞRULAMALARI](#bölüm-5-test-ti̇p-kontrolü-ve-kali̇te-kapisi-doğrulamalari)
 7. [BÖLÜM 6: BAĞIMSIZ DOĞRULAMA BULGULARI (5-6 EYLÜL 2026)](#bölüm-6-bağimsiz-doğrulama-bulgulari-5-6-eylül-2026)
+8. [BÖLÜM 7: BAĞIMSIZ DENETİM VE KAPATILAN BOŞLUKLAR (7 EYLÜL 2026)](#bölüm-7-bağimsiz-denetim-ve-kapatilan-boşluklar-7-eylül-2026)
    - [6.1. Upstream'den birebir teyit edilen iddialar](#61-upstreamden-birebir-teyit-edilen-iddialar)
    - [6.2. Bulunan ve giderilen sapmalar](#62-bulunan-ve-giderilen-sapmalar)
    - [6.3. Belgede düzeltilen kayıt hataları](#63-belgede-düzeltilen-kayıt-hataları)
@@ -429,7 +430,7 @@ Bu bölümde, yukarıda listelenen kullanıcı promptları sonucunda tasarlanan 
   - Çalışma ekranına canlı saniye geri sayım sayacı (`SS:DD:SS` formatında) eklemek; süre dolunca otomatik `buildQueue()` çalıştırmak.
   - "Limiti artır" butonunu `/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` rotasına bağlamak.
   - Deste Seçenekleri sayfasında `scope === 'deck'` ile doğrudan "Bu deste" sekmesini açmak ve sayısal klavyeyi (`number-pad`) ilgili girdi kutusunda otomatik odaklamak (`autoFocus`).
-  - Çalışma ekranının sağ üst köşesine kalıcı **⚙️ Deste Ayarları** butonu ve aktif kart varken **ⓘ Kart Bilgisi** butonu eklemek.
+  - Çalışma ekranının sağ üst köşesine kalıcı **⚙️ Deste Ayarları** butonu eklemek. (Aynı planda geçen **ⓘ Kart Bilgisi** butonu sonradan §2.25 ile geri alındı: kart bilgisi alttaki 3-nokta menüsünde kalıyor.)
 
 ---
 
@@ -700,11 +701,11 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
 ### 3.4. Çalışma Takvimi (Study Calendar) Modülü
 - **Dosyalar:** `lib/studyCalendar.ts`, `lib/studyCalendar.test.ts`, `app/study-calendar.tsx`, `components/Sidebar.tsx`, `app/_layout.tsx`.
 - **Uygulanan Değişiklikler:**
-  - 385 satırlık bağımsız çalışma takvimi motoru geliştirildi.
+  - 476 satırlık bağımsız çalışma takvimi motoru geliştirildi.
   - 30 dakikadan uzun molalarda yeni oturum başlatan akıllı oturum bölücü yazıldı.
   - Filtreli deste çalışmalarını kartın asıl ait olduğu derse (`odid`) yansıtan mimari kuruldu.
   - Yan menüye (Sidebar) şık takvim ikonuyla "Çalışma Takvimi" bağlantısı eklendi.
-  - 34 birim test ile farklı saat dilimleri, gün devri saatleri ve yaz/kış saati geçişleri (DST) doğrulandı.
+  - 41 birim test ile farklı saat dilimleri, gün devri saatleri ve yaz/kış saati geçişleri (DST) doğrulandı.
 
 ---
 
@@ -742,7 +743,7 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
   - Gün devrinde veya sayaç bitiminde sunulacak kart adedi hesaplanarak ekrana `"${upcomingCardsCount} kart süre dolunca gösterilecek."` metni konuldu.
   - Canlı geri sayım sayacı yerleştirildi; sayaç sıfırlandığında kuyruk otomatik yenilendi.
   - "Limiti artır" butonu `/deck-options?deckId=...&focus=newLimit&scope=deck` rotasına bağlandı; ilgili girdi alanına otomatik odaklanma ve sayısal klavye açılışı sağlandı.
-  - Çalışma ekranının sağ üstüne **⚙️ Deste Ayarları** ve **ⓘ Kart Bilgisi** butonları entegre edildi.
+  - Çalışma ekranının sağ üstüne **⚙️ Deste Ayarları** butonu entegre edildi. (Bu adımda eklenen **ⓘ Kart Bilgisi** butonu §3.24'te tekrar kaldırıldı; kodda kalan hâli odur.)
 
 ---
 
@@ -803,7 +804,7 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
 - **Dosyalar:** `lib/types.ts`, `lib/storage.ts`, `lib/ankiDefaults.test.ts`, `lib/mediaStore.replacement.test.ts`, `app/settings.tsx`, `app/deck-options.tsx`, `components/CardWebView.tsx`.
 - **Uygulanan Değişiklikler:**
   - `AppSettings` ve `DeckConfig` altına `audioPlaybackRate` (0.75x - 2.0x) eklendi ve ayarlar döngüsünde diske kaydedilmesi sağlandı.
-  - HTML ses etiketlerinde `disableRemotePlayback` ve `controlsList="nodownload noplaybackrate"` kullanılarak AirPlay ikonu ve indirme menüsü engellendi.
+  - HTML ses etiketlerinde `disableRemotePlayback` ve `controlsList="nodownload"` kullanıldı. AirPlay ikonunu asıl engelleyen ise WebView seviyesindeki `allowsAirPlayForMediaPlayback={false}` (`components/CardWebView.tsx`, `components/RichTextEditor.tsx`): HTML özniteliği değil, bu prop işi görüyor.
 
 ---
 
@@ -822,7 +823,7 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
 - **Uygulanan Değişiklikler:**
   - `lib/whiteboardSession.ts` modülü oluşturuldu; `MetaDB.whiteboardState` paritesi ile deste başına `enabled`, `stylusOnly`, `lightPenColor`, `darkPenColor` alanları `settings` tablosunda saklandı.
   - `WhiteboardOverlay.tsx` çalışma oturumu boyunca sürekli mount edilmiş tutuldu; kart geçişi haricindeki ara durumlarda (learn-ahead countdown, timebox veya tamamlama ekranı) çizimin silinmesi engellendi.
-  - `lib/reviewerTimers.ts` içinde `shouldClearWhiteboardForCard(inkedCardId, nextCardId)` fonksiyonu ile yalnızca gerçek bir sonraki karta geçildiğinde çizimin sıfırlanması sağlandı.
+  - Çizim kart başına saklanıp geri yükleniyor (`saveCardWhiteboard` / `loadCardWhiteboard`): önce bellek haritasına, sonra kalıcılık için SQLite'a. **Düzeltme (7 Eylül 2026):** `lib/reviewerTimers.ts` içindeki `shouldClearWhiteboardForCard` yazılmış ve testlenmişti ama hiçbir yerden çağrılmıyordu; çalışma ekranı aynı kararı elle veriyor ve boş kuyrukta tahtayı siliyordu. Sözleşme artık gerçekten uygulanıyor (F-09).
   - Çizim yapılırken `shouldRunAutoAdvance` ile otomatik ilerleme askıya alındı, çizim kapandığında sayaç sıfırlanmadan kaldığı yerden devam ettirildi.
   - Tuval `cardStage` ile sınırlandırılarak araç çubuğu ve alttaki sabit cevap butonlarının çizim açıkken de tıklanabilir kalması sağlandı.
 
@@ -892,7 +893,7 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
 - **Uygulanan Değişiklikler:**
   - Alt seçim çubuğundaki eylem butonları (`Deste`, `Askıya Al`, `Bayrak`, `Daha Fazla`) `width: 60, height: 52` sabit boyutlu kutulara oturtularak simetrik hale getirildi.
   - Bayrak atandıktan sonra seçili kart kümesinin sıfırlanması engellendi; kartlar seçili kalmaya devam ederek ardışık işlem yapılabilmesi sağlandı.
-  - `cardSuspended` stili `opacity: 1` olarak ayarlandı; kartların metinlerinin silik/yıkanmış görünmesi engellendi.
+  - `cardSuspended` stili `opacity: 1` olarak ayarlandı; kartların metinlerinin silik/yıkanmış görünmesi engellendi. **Düzeltme (7 Eylül 2026):** yerine hiçbir ipucu konmadığı için askıya alınmış kart ayırt edilemez hâle gelmişti; Anki gibi satır zemini renklendirildi ve gömülü kartlara da nötr zemin verildi (F-02).
 
 ---
 
@@ -926,7 +927,7 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
 - **Dosyalar:** `lib/blankCanvasSetup.ts`, `lib/blankCanvasSetup.test.ts`, `components/PaperSwatch.tsx`, `lib/blankCanvas.ts`.
 - **Uygulanan Değişiklikler:**
   - Boş tuval çizim moduna 4 farklı kağıt dokusu (düz, çizgili, kareli, noktalı) eklendi.
-  - SVG desenleri retina ekranlar için ölçeklenerek profesyonel tıbbi not defteri hissi sağlandı.
+  - Desenler `Pattern`/`Defs` ile değil, geometriden hesaplanan tek tek `Line`/`Circle` öğeleriyle çiziliyor (`components/PaperSwatch.tsx`); ölçekleme React Native SVG'nin kendi piksel oranı üzerinden geliyor.
   - `lib/blankCanvasSetup.test.ts` ile kağıt geometri oranları doğrulandı.
 
 ---
@@ -936,14 +937,14 @@ Bu bölümde, yukarıdaki planların kod tabanına nasıl işlendiği, dosya dos
 - **Uygulanan Değişiklikler:**
   - `styles.searchInput` içindeki `paddingTop: 0, paddingBottom: 0` yapılarak iOS klavye girişinde metnin dikey olarak kutunun tam merkezine oturması sağlandı.
   - Arama placeholder'ı kullanıcının talebine uygun olarak `Ara veya deck:tag:is:…` ve not modunda `Not ara veya deck:tag:is:…` olarak güncellendi.
-  - Arama temizleme butonu (`✕`) arama metni varken anında belirecek ve tek dokunuşla sorguyu sıfırlayacak şekilde optimize edildi.
+  - Arama temizleme butonu (`✕`) arama metni varken belirir ve tek dokunuşla sorguyu sıfırlar. **Not:** bu madde yazıldığında kodda böyle bir buton yoktu; gerçekten 7 Eylül 2026'da eklendi (F-05).
 
 ---
 
 ### 3.31. Kart Tarayıcısı Kompakt Liste Geometrisi, Gap ve Padding Azaltımı
 - **Dosyalar:** `app/browser.tsx`.
 - **Uygulanan Değişiklikler:**
-  - `cardItemCompact` stili `paddingVertical: 4, paddingHorizontal: 14` olarak güncellendi.
+  - Kompakt satır geometrisi `paddingVertical: 4, paddingHorizontal: Spacing.md - 2` (10px) olarak uygulandı. 7 Eylül'de kompakt tek geometri hâline geldi ve anahtar kaldırıldı (F-04).
   - `listContentCompact` içindeki satır aralığı `gap: 3` seviyesine indirildi.
   - Kart soru metni, meta etiketleri, zamanlama bilgisi ve cevap özeti satırları için kompakt mod varyantları (`cardQuestionCompact`, `cardMetaCompact`, `cardTopicCompact`, `scheduleMetaCompact`, `answerSnippetCompact`) devreye alındı.
   - Seçim onay kutusu (`selectionCheckboxCompact`) 17x17px, düzenleme butonu (`editBtnCompact`) 24x24px boyutlarına ölçeklendi.
@@ -1008,9 +1009,10 @@ Aşağıdaki sayılar tahmin değil, `npm run quality` çıktısının kendisidi
      render'da düşüren bir `ReferenceError` idi. Ayrıntı için bkz. Bölüm 6.
 
 2. **Birim ve Entegrasyon Testleri (`vitest run`):**
-   - Test Dosyası Sayısı: **123 test dosyası**
-   - Toplam Test Adedi: **1267 test**
-   - Başarı Oranı: **%100 (1267 passed)**
+   - Test Dosyası Sayısı: **130 test dosyası**
+   - Toplam Test Adedi: **1350 test**
+   - Başarı Oranı: **%100 (1350 passed)**
+   - *(7 Eylül 2026 denetimi sonrası: 130 dosya / 1368 test.)*
    - Kapsanan kritik alanlar: FSRS-6 altın vektörleri, çalışma takvimi DST ve oturum bölücüleri
      (34 test), zengin metin imleç format durumları (14 test), deste seçici önceliklendirme ve
      genişletme (19 test), dinamik çoklu alan not şablonları (4 test), taslak kirlilik tespiti
@@ -1026,7 +1028,7 @@ Aşağıdaki sayılar tahmin değil, `npm run quality` çıktısının kendisidi
      *"iOS configuration and Anki compatibility registry verified."*
 
 4. **Genel Kalite Kapısı (`npm run quality`):**
-   - Çıkış kodu **0**; typecheck + 1267 test + iOS denetimi zincirinin tamamı başarıyla geçti.
+   - Çıkış kodu **0**; typecheck + 1350 test + iOS denetimi zincirinin tamamı başarıyla geçti.
 
 ---
 
@@ -1086,7 +1088,8 @@ sıralamasına uygun olarak upstream kaynağından teyit edilmiştir.
 - §3.16 `flappy-bird.html` / `flappy-plane.html` diyordu; oyun `flappy-plane/index.html` altında.
 - §3.16'daki "Bize 200 Coin At modalı", kodda tek seferlik kalıcı açılış hediyesi olarak duruyor.
 - §5'teki "119 dosya / 1154 test" ve "quality sıfır hatayla geçti" ifadeleri, yazıldığı anda
-  doğru değildi: ağaç derlenmiyordu. Bölüm 5 gerçek çıktıyla 121 dosya ve 1173 test olarak güncellendi.
+  doğru değildi: ağaç derlenmiyordu. Bölüm 5 o gün gerçek çıktıyla güncellendi; 7 Eylül denetiminde
+  ölçülen gerçek değer 130 dosya / 1350 test oldu.
 
 ### 6.4. Yazı Tahtası, Etiket Seçici, Editör ve Deste İzolasyonu Denetimi (6 Eylül 2026)
 
@@ -1116,7 +1119,7 @@ sıralamasına uygun olarak upstream kaynağından teyit edilmiştir.
 
 6. **Kart Tarayıcısı Seçim Barı Simetrisi ve "Bayrak Yok" Filtresi:**
    Toplu işlem barındaki butonlar 60x52px sabit kutularla eşitlendi. Kartlara bayrak atandığında seçimin
-   sıfırlanması önlenerek ardışık işlemlere izin verildi. Askıya alınan kartların silik görünümü (`opacity: 1`)
+   sıfırlanması önlenerek ardışık işlemlere izin verildi. Askıya alınan kartların silik görünümü (7 Eylül'de satır zeminiyle değiştirildi)
    düzeltildi ve "Bayrak yok" filtresi şeffaf halka ikonu ile renkli bayraklardan ayrıştırıldı.
 
 ### 6.5. Katalog Koruması, İçe Aktarma Günlüğü ve Çizim Tuvali Doğrulamaları (6 Eylül 2026)
@@ -1128,7 +1131,7 @@ sıralamasına uygun olarak upstream kaynağından teyit edilmiştir.
 
 2. **Anki Uyumlu İçe Aktarma Günlüğü (`components/ImportLogView.tsx`, `lib/importLog.ts`):**
    - Anki masaüstü ve AnkiMobile standartlarında, paket açıldıktan sonra içe aktarılan her bir notun nihai durumunu (`added`, `updated`, `duplicate`, `firstFieldMatch`, `conflicting`, `missingNotetype`, `missingDeck`, `emptyFirstField`) detaylandıran günlük görünümü teyit edildi.
-   - Bounded sampling (`MAX_LOGGED_ROWS_PER_STATUS = 50`) yapısıyla bellek şişmesi engellendi; her grup için renk tonları (`statusTone: good/neutral/bad`), yerelleştirilmiş başlıklar ve tam erişilebilirlik (`accessibilityRole="button"`, `accessibilityState={{ expanded }}`) sağlandı.
+   - Bounded sampling (`MAX_LOGGED_ROWS_PER_STATUS = 200`) yapısıyla bellek şişmesi engellendi; her grup için renk tonları (`statusTone: good/neutral/bad`), yerelleştirilmiş başlıklar ve tam erişilebilirlik (`accessibilityRole="button"`, `accessibilityState={{ expanded }}`) sağlandı.
 
 3. **Boş Tuval Çizim Şablonu Kalıcılığı (`lib/blankCanvasSetup.ts`):**
    - Tıpkı AnkiDroid'in `whiteboardState` felsefesinde olduğu gibi, kullanıcının en son seçtiği kağıt türü (düz, çizgili, kareli, noktalı), arka plan rengi ve sayfa formatı yerel cihaz ayarlarında (`blankCanvasSetup`) saklanır.
@@ -1147,5 +1150,58 @@ sıralamasına uygun olarak upstream kaynağından teyit edilmiştir.
    - Kullanıcıların kişisel etiket ekleme ve bayrak atama özgürlükleri tamamen korundu.
 
 ---
+## BÖLÜM 7: BAĞIMSIZ DENETİM VE KAPATILAN BOŞLUKLAR (7 EYLÜL 2026)
+
+Bölüm 3'teki 33 iddia ve not defterindeki işaretlenmemiş maddeler kod tabanına karşı tek tek
+denetlendi. Sonuç: **26 iddia tam, 7 kısmi, uydurma iddia yok.** Kısmi çıkanlar ve not
+defterinde karşılığı olmayanlar aşağıda kapatıldı.
+
+### 7.1. Kapatılan boşluklar
+
+| # | Bulgu | Yapılan |
+|---|---|---|
+| F-01 | Katalog kartında Etiketler satırı açıktı ama Kaydet gizliydi ve `handleSave` erken dönüyordu; seçilen etiketler hiçbir yere yazılmıyordu. §3.28/§3.33'ün "kişisel etiket ekleme korundu" iddiası pratikte yanlıştı | `setNoteTags` eklendi: satırı yeniden okuyup yalnızca etiket listesini değiştiriyor, alanlar/tür/guid bu yoldan geçemiyor. Trial katmanında da çalışıyor. `updateNotesTags` aynı yola bağlandı, böylece karışık seçimde tek korumalı not tüm partiyi geri almıyor |
+| F-02 | `cardSuspended: { opacity: 1 }` ölü stildi; askıya alınmış kart ayırt edilemiyordu, gömülü kartın hiç işareti yoktu | Anki gibi satır zemini renklendirildi (askı sıcak ton, gömü nötr), tema jetonlarıyla açık/koyu. Zemin satırın tamamına uygulanıyor; seçim stili en sona alındı |
+| F-03 | "Medyayı kontrol et" kaldırılmamıştı | Satır ve handler silindi; çağrısız kalan `lib/mediaMaintenance.ts` de kaldırıldı. Paylaşılan tarayıcı `lib/mediaAttachment.ts`'te duruyor, dışa/içe aktarma etkilenmedi |
+| F-04 | "Kompakt satırlar" anahtarı duruyordu ve varsayılanı kapalıydı | Anahtar kaldırıldı, kompakt tek geometri oldu; 16 `*Compact` stil varyantı ve tüm `compactRows &&` dalları temel stillere katlandı |
+| F-05 | §3.30'un "✕ temizleme butonu" iddiasının kodda karşılığı yoktu | Buton eklendi; `handleSearch('')` üzerinden temizliyor, böylece aynı debounce çalışıp liste gerçekten tüm kartlara dönüyor |
+| F-06 | "Araç çubuğu konumu" seçicisi yeni çalışma ekranı kapalıyken de görünüyordu ama konum zorla `top`'a sabitleniyordu — atıl kontrol | Seçici yalnızca yeni ekran açıkken gösteriliyor; "Yeni çalışma ekranı" özeti, üst çubuk kapalıyken araç çubuğunun gelmeyeceğini söylüyor |
+| F-07 | Taşma menüsündeki bayrak rozeti ham `flagFilters.length` kullanıyordu; "bayrak yok" renkli bayrak gibi sayılıyordu | Rozet çiplerle aynı dili konuşuyor: "bayrak yok" için halka, tek renk için o renk, birden çok renk için sayı |
+| F-08 | Onarım, kartın kendi kolonlarındaki bozuklukları hiç görmüyordu | Anki'nin iki kuralı uygulandı: filtrelenmiş olmayan destede kalan `odid`/`odue` temizleniyor (`due`'ya dokunulmadan, `check_filtered_cards` gibi) ve `ivl` `[0, 2147483647]` aralığına yuvarlanıyor (`fix_ivl.sql` gibi). İkisi de katalog kartlarında da çalışıyor: zamanlama durumu kullanıcının, kataloğun içeriği değil |
+| F-09 | `shouldClearWhiteboardForCard` yazılmış ve 5 iddiayla testlenmişti ama hiç çağrılmıyordu; ekran aynı kararı elle veriyor ve boş kuyrukta tahtayı siliyordu | Sözleşme gerçekten uygulanıyor. Ayrıca kullanılmayan `clearDeckWhiteboards` importu kaldırıldı, `EditorFormatState.partial`'ın neden taşınıp çizilmediği yazıldı |
+
+### 7.2. Doğrulanıp doğru bulunanlar (değiştirilmedi)
+
+FSRS-6 paritesi ve dört sapmanın kapanışı; katalog koruma sözleşmesinin veri katmanında
+uygulanması; alan içeriğinin render öncesi temizlenmesi + CSP + navigasyon engelinden oluşan üç
+katmanlı XSS savunması (**"alanlarda HTML izin ver" güvenlik açığı oluşturmuyor**); dinamik çoklu
+alan not türleri (`CARD_TYPE_CHOICES` hardcode'u gerçekten kalkmış); iç içe kaydırmanın 320px
+devir noktasıyla yapısal çözümü; izin reddinde "Ayarları Aç"ın istisnasız her çağrı noktasında
+olması; "?" görselinin asıl kökünün `lib/files.ts` içindeki çıplak yol hatası olduğunun bulunmuş
+olması; çalışma ekranında "limiti artır" rotasının gerçekten tüketilmesi; bayrak butonunun bazı
+destelerde kaybolma kökünün `currentCard ?` kapısı olduğunun bulunması; stepper `+/-` hatasının
+kökünün bayat closure olduğunun bulunup ref'lerle çözülmesi; ayarların zaten manuel kaydediyor
+olması; "yazarak cevap"ın zaten Anki gibi davranması (kartı gizlemiyor, yalnızca yazma kutusunu
+atlıyor).
+
+### 7.3. Bilinçli olarak kapatılmayanlar
+
+- **Not modunda askı/gömü zemini yok.** Not satırı kartlarını topluyor ve taşıdığı durum yalnızca
+  ilkini anlatıyor; zemin, satırın bilmediği bir şeyi iddia etmiş olurdu. Uyumluluk matrisinde
+  bunun için `browserNoteSummary`'ye kart başına askı/gömü sayacı gerektiği yazılı.
+- **Anki'nin kalan kart-özelliği onarımları** (`fix_due_new`, `fix_due_other`, `fix_low_ease`,
+  `fix_ordinal`), şablonların üretmesi gereken kartların yeniden üretilmesi ve not türü kaybolmuş
+  notların silinmesi. Matriste adlarıyla kayıtlı.
+- **Image Occlusion**, **"Merge note types"**, **Apple Pencil-only modu** — matriste "Not
+  implemented" olarak duruyor.
+
+### 7.4. Kalan kalıntı
+
+`subject`/`topic` taksonomisi arayüzden doğru şekilde kaldırıldı, ama veri katmanında yaşıyor:
+`.apkg` içe aktarımı hâlâ `subject: <deste adı>, topic: 'Genel'` damgalıyor ve `catalogSubject`/
+`catalogTopic` hiçbir ekranda okunmuyor. Zararsız; dahili TUS kataloğunun gezinme taksonomisiydi.
+
+---
+
 *Doküman Referansı: `docs/SON_72_SAAT_IMPLEMENTATION_PLANLARI_WALKTHROUGH_VE_PROMPTLAR.md`*
 

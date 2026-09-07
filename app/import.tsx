@@ -367,6 +367,10 @@ export default function ImportScreen() {
                 // package import so an unexpected device/storage failure is recoverable.
                 await createBackupNow();
                 const result = await importApkg(file.bytes, {
+                    // `subject`/`topic` are the built-in TUS catalog's own navigation taxonomy; the
+                    // screen dropped the chips that once set them because they mean nothing for a
+                    // learner's own file. The deck name is passed so an imported note still files
+                    // itself under the deck it landed in rather than under an empty bucket.
                     subject: targetDeck?.name ?? 'genel',
                     topic: 'Genel',
                     rolloverHour: settings.dayRolloverHour,
