@@ -1310,6 +1310,20 @@ export default function BrowserScreen() {
                             : l('Kart ara veya deck:tag:is:…', 'Search cards or deck:tag:is:…')}
                         returnKeyType="search"
                     />
+                    {rawQuery.length > 0 && (
+                        <TouchableOpacity
+                            style={styles.searchClearButton}
+                            // Through `handleSearch` rather than `setRawQuery`, so clearing goes
+                            // through the same debounce the typed query does and the list actually
+                            // returns to every card.
+                            onPress={() => handleSearch('')}
+                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Aramayı temizle', 'Clear search')}
+                        >
+                            <Text style={styles.searchClearButtonText}>✕</Text>
+                        </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                         style={styles.searchHelpButton}
                         onPress={showSearchSyntaxHelp}
@@ -2234,6 +2248,15 @@ function createStyles(colors: ColorScheme) {
         justifyContent: 'center',
     },
     searchHelpButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textMuted },
+    searchClearButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.bgInput,
+    },
+    searchClearButtonText: { fontSize: 13, fontWeight: '700', color: colors.textMuted, lineHeight: 15 },
     searchInput: {
         flex: 1,
         minWidth: 0,
