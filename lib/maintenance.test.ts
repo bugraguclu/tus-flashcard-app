@@ -259,7 +259,7 @@ describe('collection maintenance (real SQLite)', () => {
             expect(card(11).due).toBe(20_500);
         });
 
-        it('leaves an intraday learning card its timestamp instead of clamping it to 2038', () => {
+        it('leaves an intraday learning card its timestamp instead of clamping it back to 1970', () => {
             addDeck(1, 'Mikrobiyoloji');
             addNote(100);
             addNote(101);
@@ -271,8 +271,9 @@ describe('collection maintenance (real SQLite)', () => {
 
             expect(repairDatabase()).toMatchObject({ duesRepaired: 1 });
 
-            // A learning step is stored in milliseconds here and in seconds upstream, so upstream's
-            // 32-bit clamp would move this card to January 2038.
+            // A learning step is stored in milliseconds here and in seconds upstream. Upstream's
+            // 32-bit ceiling is a 2038 timestamp in seconds; read as milliseconds it is 25 days
+            // after the epoch, so the clamp would drag this card back to January 1970.
             expect(card(10).due).toBe(inTenMinutes);
             expect(card(11).due).toBe(inTenMinutes);
             // SQLite rounds a half away from zero; the repair has to agree with the query that
