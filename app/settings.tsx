@@ -1031,7 +1031,12 @@ export default function SettingsScreen() {
             <Group title={l('Yeni çalışma ekranı', 'New study screen')} styles={styles}>
                 <ToggleRow
                     label={l('Yeni çalışma ekranını kullan', 'Use new study screen')}
-                    summary={l('Yeni araç çubuğu, sabit yanıt alanı ve yönlü yanıt geri bildirimini etkinleştirir.', 'Enables the new toolbar, fixed answer area and directional answer feedback.')}
+                    summary={settings.showStudyTopBar === false
+                        ? l(
+                            'Sabit yanıt alanını ve yönlü yanıt geri bildirimini etkinleştirir. Yeni araç çubuğu, aşağıdaki "Araç çubuğunu göster" kapalı olduğu sürece gizli kalır.',
+                            'Enables the fixed answer area and directional answer feedback. The new toolbar stays hidden while "Show toolbar" below is off.',
+                        )
+                        : l('Yeni araç çubuğu, sabit yanıt alanı ve yönlü yanıt geri bildirimini etkinleştirir.', 'Enables the new toolbar, fixed answer area and directional answer feedback.')}
                     value={Boolean(settings.newStudyScreenEnabled)}
                     onChange={(value) => updateSetting('newStudyScreenEnabled', value)}
                     styles={styles}
@@ -1054,7 +1059,7 @@ export default function SettingsScreen() {
             </Group>
             <Group title={l('Araç çubuğu', 'Toolbar')} styles={styles}>
                 <ToggleRow label={l('Araç çubuğunu göster', 'Show toolbar')} summary={l('Geri, deste kapsamı, sayaçlar ve kart işlemlerini gösterir.', 'Shows back, deck scope, counts and card actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
-                {settings.showStudyTopBar !== false ? (
+                {settings.showStudyTopBar !== false && Boolean(settings.newStudyScreenEnabled) ? (
                     <ChoiceRow
                         label={l('Araç çubuğu konumu', 'Toolbar position')}
                         value={settings.reviewerToolbarPosition ?? 'top'}
