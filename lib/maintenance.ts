@@ -55,6 +55,35 @@ const STRANDED_CARDS_WHERE = `c.tombstone = 0
       AND NOT EXISTS (SELECT 1 FROM decks d WHERE d.id = c.deckId)`;
 
 /**
+ * A card still carrying filtered-deck bookkeeping while the deck it sits in is not filtered.
+ * Anki's `check_filtered_cards` clears `original_deck_id` and `original_due` for exactly this row
+ * and deliberately leaves `due` alone, so a card left behind by a half-finished filtered-deck
+ * teardown stops pointing at a home deck it is never going back to.
+ *
+ * A card whose deck row is gone entirely is a stranded card instead, and is rehomed rather than
+ * cleared, so the two sets cannot overlap.
+ *
+ * Source: `rslib/src/dbcheck.rs` → `check_filtered_cards`.
+ */
+const FILTERED_LEFTOVER_CARDS_WHERE = `c.tombstone = 0
+      AND json_valid(c.data) = 1
+      AND COALESCE(json_extract(c.data, '$.odid'), 0) <> 0
+      AND EXISTS (
+        SELECT 1 FROM decks d
+        WHERE d.id = c.deckId
+          AND COALESCE(CASE WHEN json_valid(d.data) = 1 THEN json_extract(d.data, '$.isFiltered') END, 0) <> 1
+      )`;
+
+/**
+ * An interval SQLite will store but the scheduler cannot use: negative, fractional, or past the
+ * 32-bit ceiling. Anki rounds and clamps it into `[0, 2147483647]`.
+ *
+ * Source: `rslib/src/storage/card/fix_ivl.sql`.
+ */
+const INVALID_INTERVAL_CARDS_WHERE = `c.tombstone = 0
+      AND c.ivl <> min(max(round(c.ivl), 0), 2147483647)`;
+
+/**
  * A note whose blob no longer parses, or that lost its `fields` array. The mirrored columns hold
  * no field text, so nothing can rebuild it: this defect is reported and never repaired.
  *
@@ -84,13 +113,18 @@ export interface DatabaseCheckResult {
     orphanNotes: number;
     /** Live cards sitting in a deck that no longer exists. */
     strandedCards: number;
+    /** Live cards carrying filtered-deck bookkeeping while their deck is not filtered. */
+    filteredLeftoverCards: number;
+    /** Live cards whose interval is negative, fractional, or past the 32-bit ceiling. */
+    invalidIntervalCards: number;
     /** Live notes whose stored JSON no longer parses. Reported only. */
     unreadableNotes: number;
 }
 
 /** Rows `repairDatabase` can actually fix. `unreadableNotes` is reported but never rewritten. */
 export function repairableDefectCount(result: DatabaseCheckResult): number {
-    return result.orphanCards + result.orphanNotes + result.strandedCards;
+    return result.orphanCards + result.orphanNotes + result.strandedCards
+        + result.filteredLeftoverCards + result.invalidIntervalCards;
 }
 
 /** Every defect the audit found, whether or not the repair can fix it. */
@@ -123,6 +157,8 @@ export function checkDatabase(): DatabaseCheckResult {
         orphanCards: countRows(db, 'anki_cards c', ORPHAN_CARDS_WHERE),
         orphanNotes: countRows(db, 'notes n', ORPHAN_NOTES_WHERE),
         strandedCards: countRows(db, 'anki_cards c', STRANDED_CARDS_WHERE),
+        filteredLeftoverCards: countRows(db, 'anki_cards c', FILTERED_LEFTOVER_CARDS_WHERE),
+        invalidIntervalCards: countRows(db, 'anki_cards c', INVALID_INTERVAL_CARDS_WHERE),
         unreadableNotes: countRows(db, 'notes n', UNREADABLE_NOTES_WHERE),
     };
 }
@@ -137,6 +173,10 @@ export interface DatabaseRepairResult {
     orphanNotesDeleted: number;
     /** Cards moved into a real deck after the deck they pointed at disappeared. */
     strandedCardsRehomed: number;
+    /** Cards whose leftover filtered-deck bookkeeping was cleared. */
+    filteredLeftoversCleared: number;
+    /** Cards whose interval was rounded and clamped back into range. */
+    intervalsClamped: number;
     /** Rows left untouched on purpose because the paid catalog owns them. */
     protectedRowsKept: number;
     /** Notes whose JSON cannot be parsed; counted so the UI can say they need manual attention. */
@@ -150,6 +190,8 @@ export function emptyRepairResult(): DatabaseRepairResult {
         orphanCardsDeleted: 0,
         orphanNotesDeleted: 0,
         strandedCardsRehomed: 0,
+        filteredLeftoversCleared: 0,
+        intervalsClamped: 0,
         protectedRowsKept: 0,
         unreadableNotes: 0,
         recoveryDeckName: null,
@@ -160,7 +202,9 @@ export function emptyRepairResult(): DatabaseRepairResult {
 export function repairChangedRows(result: DatabaseRepairResult): boolean {
     return result.orphanCardsDeleted > 0
         || result.orphanNotesDeleted > 0
-        || result.strandedCardsRehomed > 0;
+        || result.strandedCardsRehomed > 0
+        || result.filteredLeftoversCleared > 0
+        || result.intervalsClamped > 0;
 }
 
 function deckNameTaken(db: Db, name: string): boolean {
@@ -284,8 +328,8 @@ export function repairDatabase(): DatabaseRepairResult {
     const result = emptyRepairResult();
     result.unreadableNotes = countRows(db, 'notes n', UNREADABLE_NOTES_WHERE);
 
-    // Read the work list before opening the transaction: the three defects are independent, so
-    // none of these sets can grow because of another's repair.
+    // Read the work list before opening the transaction: the defects are independent, so none of
+    // these sets can grow because of another's repair.
     const orphanCards = db.getAllSync<{ id: number; noteId: number }>(
         `SELECT c.id AS id, c.noteId AS noteId FROM anki_cards c WHERE ${ORPHAN_CARDS_WHERE}`,
     );
@@ -300,7 +344,15 @@ export function repairDatabase(): DatabaseRepairResult {
          FROM anki_cards c WHERE ${STRANDED_CARDS_WHERE}`,
     );
 
-    if (orphanCards.length === 0 && orphanNotes.length === 0 && strandedCards.length === 0) {
+    const filteredLeftovers = db.getAllSync<{ id: number; data: string }>(
+        `SELECT c.id AS id, c.data AS data FROM anki_cards c WHERE ${FILTERED_LEFTOVER_CARDS_WHERE}`,
+    );
+    const invalidIntervals = db.getAllSync<{ id: number; ivl: number }>(
+        `SELECT c.id AS id, c.ivl AS ivl FROM anki_cards c WHERE ${INVALID_INTERVAL_CARDS_WHERE}`,
+    );
+
+    if (orphanCards.length === 0 && orphanNotes.length === 0 && strandedCards.length === 0
+        && filteredLeftovers.length === 0 && invalidIntervals.length === 0) {
         return result;
     }
 
@@ -346,6 +398,36 @@ export function repairDatabase(): DatabaseRepairResult {
             }
             rehomeStrandedCard(db, card, rolloverHour, resolveRecoveryDeck);
             result.strandedCardsRehomed += 1;
+        }
+
+        // Scheduling state is the learner's, not the catalog's — the same reason flags and tags
+        // are open on a protected note. A catalog card stranded in a filtered deck that no longer
+        // exists would otherwise stay unstudyable forever, so these two run over every row.
+        for (const card of filteredLeftovers) {
+            let parsed: Partial<AnkiCard>;
+            try {
+                parsed = JSON.parse(card.data) as Partial<AnkiCard>;
+            } catch {
+                continue; // Counted as unreadable rather than repaired here.
+            }
+            // Anki clears both markers and leaves `due` alone: the card stays where its current
+            // schedule puts it instead of being sent back to a due it may have outgrown.
+            const next = { ...parsed, odid: 0, odue: 0 };
+            db.runSync('UPDATE anki_cards SET data = ? WHERE id = ?', JSON.stringify(next), card.id);
+            result.filteredLeftoversCleared += 1;
+        }
+
+        for (const card of invalidIntervals) {
+            const clamped = Math.min(Math.max(Math.round(card.ivl), 0), 2147483647);
+            db.runSync('UPDATE anki_cards SET ivl = ? WHERE id = ?', clamped, card.id);
+            // The mirrored column is the scheduler's source of truth, but the JSON blob carries a
+            // copy, so leaving it behind would let the next read put the bad value back.
+            db.runSync(
+                `UPDATE anki_cards SET data = json_set(data, '$.ivl', ?) WHERE id = ? AND json_valid(data) = 1`,
+                clamped,
+                card.id,
+            );
+            result.intervalsClamped += 1;
         }
 
         db.execSync('COMMIT;');

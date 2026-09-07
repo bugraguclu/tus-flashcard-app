@@ -678,6 +678,8 @@ export default function SettingsScreen() {
         `${l('Sahipsiz kart', 'Orphaned cards')}: ${result.orphanCards}`,
         `${l('Kartsız not', 'Notes without cards')}: ${result.orphanNotes}`,
         `${l('Destesi kayıp kart', 'Cards with a missing deck')}: ${result.strandedCards}`,
+        `${l('Filtre artığı kalan kart', 'Cards left with filtered-deck state')}: ${result.filteredLeftoverCards}`,
+        `${l('Geçersiz aralıklı kart', 'Cards with an invalid interval')}: ${result.invalidIntervalCards}`,
         `${l('Okunamayan not', 'Unreadable notes')}: ${result.unreadableNotes}`,
     ], [l]);
 
@@ -746,6 +748,18 @@ export default function SettingsScreen() {
                     `Repaired the deck of ${repair.strandedCardsRehomed} cards; the rescued ones are in “${repair.recoveryDeckName}”.`,
                 )
                 : l(`${repair.strandedCardsRehomed} kart kendi destesine geri döndü.`, `Returned ${repair.strandedCardsRehomed} cards to their own deck.`));
+        }
+        if (repair.filteredLeftoversCleared > 0) {
+            lines.push(l(
+                `${repair.filteredLeftoversCleared} kartın filtrelenmiş deste artığı temizlendi.`,
+                `Cleared leftover filtered-deck state from ${repair.filteredLeftoversCleared} cards.`,
+            ));
+        }
+        if (repair.intervalsClamped > 0) {
+            lines.push(l(
+                `${repair.intervalsClamped} kartın geçersiz aralığı düzeltildi.`,
+                `Fixed the invalid interval on ${repair.intervalsClamped} cards.`,
+            ));
         }
         if (repair.protectedRowsKept > 0) {
             lines.push(l(

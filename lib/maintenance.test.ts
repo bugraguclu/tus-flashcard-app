@@ -85,10 +85,10 @@ describe('collection maintenance (real SQLite)', () => {
             `INSERT INTO anki_cards
              (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags,
               data, updated_at, created_at, usn, tombstone)
-             VALUES (?, ?, ?, 0, ?, ?, ?, 0, 0, 0, 0, 0, 0, ?, 0, 0, -1, 0)`,
+             VALUES (?, ?, ?, 0, ?, ?, ?, ?, 0, 0, 0, 0, 0, ?, 0, 0, -1, 0)`,
             id, noteId, deckId,
-            data.type ?? 0, data.queue ?? 0, data.due ?? 0,
-            JSON.stringify({ id, noteId, deckId, odid: 0, odue: 0, type: 0, queue: 0, due: 0, ...data }),
+            data.type ?? 0, data.queue ?? 0, data.due ?? 0, data.ivl ?? 0,
+            JSON.stringify({ id, noteId, deckId, odid: 0, odue: 0, type: 0, queue: 0, due: 0, ivl: 0, ...data }),
         );
     }
 
@@ -116,6 +116,8 @@ describe('collection maintenance (real SQLite)', () => {
             addCard(12, 100, 777); // deck 777 does not exist
             addRawNote(102, 'not json at all');
             addCard(13, 102, 1);
+            addCard(14, 100, 1, { odid: 5 }); // says it is in a filtered deck; deck 1 is not one
+            addCard(15, 100, 1, { ivl: -3 }); // an interval the scheduler cannot use
 
             const result = checkDatabase();
             expect(result).toEqual({
@@ -123,10 +125,12 @@ describe('collection maintenance (real SQLite)', () => {
                 orphanCards: 1,
                 orphanNotes: 1,
                 strandedCards: 1,
+                filteredLeftoverCards: 1,
+                invalidIntervalCards: 1,
                 unreadableNotes: 1,
             });
-            expect(repairableDefectCount(result)).toBe(3);
-            expect(totalDefectCount(result)).toBe(4);
+            expect(repairableDefectCount(result)).toBe(5);
+            expect(totalDefectCount(result)).toBe(6);
         });
 
         it('stays read-only, so "Check" can never rewrite the collection', () => {
@@ -159,6 +163,71 @@ describe('collection maintenance (real SQLite)', () => {
             // Lifetime statistics are the learner's history: a repair they did not ask for by name
             // must not shrink it.
             expect(db.getAllSync('SELECT id FROM revlog')).toHaveLength(1);
+        });
+
+        it('clears filtered-deck leftovers without moving the card off its own schedule', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            // The card still says it belongs to a filtered deck, but deck 1 is a normal one: this is
+            // what a half-finished filtered-deck teardown leaves behind.
+            addCard(10, 100, 1, { odid: 5, odue: 12, due: 40 });
+
+            expect(repairDatabase()).toMatchObject({ filteredLeftoversCleared: 1 });
+
+            const repaired = JSON.parse(card(10).data);
+            expect(repaired.odid).toBe(0);
+            expect(repaired.odue).toBe(0);
+            // Anki leaves `due` alone here rather than restoring it from `odue`, so the card keeps
+            // the schedule it actually has instead of being thrown back to an older one.
+            expect(repaired.due).toBe(40);
+            expect(card(10).due).toBe(40);
+        });
+
+        it('leaves a card that really is in a filtered deck alone', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addDeck(2, 'Bugün', { isFiltered: true });
+            addNote(100);
+            addCard(10, 100, 2, { odid: 1, odue: 12 });
+
+            expect(repairDatabase()).toMatchObject({ filteredLeftoversCleared: 0 });
+            expect(JSON.parse(card(10).data).odid).toBe(1);
+            expect(JSON.parse(card(10).data).odue).toBe(12);
+        });
+
+        it('rounds and clamps an interval the scheduler cannot use', () => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addNote(101);
+            addNote(102);
+            addCard(10, 100, 1, { ivl: -3 });
+            addCard(11, 101, 1, { ivl: 2.6 });
+            addCard(12, 102, 1, { ivl: 3 });
+
+            expect(repairDatabase()).toMatchObject({ intervalsClamped: 2 });
+
+            const ivl = (id: number) => db.getFirstSync<{ ivl: number }>(
+                'SELECT ivl FROM anki_cards WHERE id = ?', id,
+            )!.ivl;
+            expect(ivl(10)).toBe(0);
+            expect(ivl(11)).toBe(3);
+            expect(ivl(12)).toBe(3);
+            // The blob carries a copy of the column, so leaving it behind would let the next read
+            // put the bad value straight back.
+            expect(JSON.parse(card(10).data).ivl).toBe(0);
+            expect(JSON.parse(card(11).data).ivl).toBe(3);
+        });
+
+        it('repairs the scheduling state of a catalog card, which is the learner\'s, not the catalog\'s', () => {
+            addDeck(1, 'TUS', { catalogPack: CATALOG_PACK_ID });
+            addNote(100, { catalogPack: CATALOG_PACK_ID });
+            addCard(10, 100, 1, { odid: 5, ivl: -1 });
+
+            // Content, ownership and placement stay protected; a schedule the card cannot be studied
+            // on is not content, and leaving it broken would only cost the learner the card.
+            expect(repairDatabase()).toMatchObject({ filteredLeftoversCleared: 1, intervalsClamped: 1 });
+            expect(JSON.parse(card(10).data).odid).toBe(0);
+            expect(ids('anki_cards')).toEqual([10]);
+            expect(ids('notes')).toEqual([100]);
         });
 
         it('deletes a note that has no cards left', () => {
