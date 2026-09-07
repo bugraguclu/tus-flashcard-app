@@ -14,6 +14,7 @@ import { getDB } from './db';
 import { dayNumberToYmd, localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 import { markSourcePackageDirty } from './ankiPackageArchive';
+import { clearDeckWhiteboards } from './whiteboardSession';
 import {
     assertCatalogDeckConfigMutable,
     assertCatalogDeckMutable,
@@ -184,6 +185,7 @@ export function deleteDeck(id: number): void {
             db.runSync('DELETE FROM decks WHERE id = ?', id);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
             db.execSync('COMMIT;');
+            forgetWhiteboards([id]);
             return;
         }
 
@@ -230,9 +232,25 @@ export function deleteDeck(id: number): void {
         }
 
         db.execSync('COMMIT;');
+        forgetWhiteboards(deckIds);
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
+    }
+}
+
+/**
+ * Drop the board rows of decks that no longer exist. Runs after the commit, so a delete that rolls
+ * back leaves the drawings alone, and never throws: losing a deck must not fail because a pen
+ * colour could not be forgotten.
+ */
+function forgetWhiteboards(deckIds: number[]): void {
+    for (const deckId of deckIds) {
+        try {
+            clearDeckWhiteboards(deckId);
+        } catch (e) {
+            console.warn('[Deck] Failed to clear whiteboards for deleted deck:', e);
+        }
     }
 }
 

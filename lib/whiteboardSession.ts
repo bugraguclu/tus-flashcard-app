@@ -245,6 +245,12 @@ export function clearCardWhiteboard(deckId: number, cardId: number): void {
     }
 }
 
+/**
+ * Forget everything a deck kept on the board: the ink of every card in it, and the board's own
+ * per-deck row (on/off, stylus-only, the two pen colours). Called when a deck is deleted, which is
+ * the only time this is right — switching decks must leave the ink where it is, because a drawing
+ * the learner comes back to is the whole point of storing it per card.
+ */
 export function clearDeckWhiteboards(deckId: number): void {
     for (const key of Array.from(cardWhiteboardsMemory.keys())) {
         if (key.startsWith(`${deckId}:`)) {
@@ -253,6 +259,9 @@ export function clearDeckWhiteboards(deckId: number): void {
     }
     try {
         setDbSetting(cardWhiteboardStorageKey(deckId), '');
+        // Without this the pen colour and stylus choice of a deleted deck sit in the settings table
+        // forever, and a new deck that happens to reuse the id would inherit them.
+        setDbSetting(whiteboardDeckStateKey(deckId), '');
     } catch (e) {
         console.warn('[Whiteboard] Failed to clear deck whiteboards:', e);
     }
