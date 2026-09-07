@@ -12,7 +12,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "1",
+      "buildNumber": "2",
       "bundleIdentifier": "com.tusankim.app",
       "entitlements": {
         "com.apple.developer.default-data-protection": "NSFileProtectionComplete"

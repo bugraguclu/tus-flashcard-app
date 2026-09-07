@@ -182,14 +182,14 @@ export async function saveMediaFile(filename: string, base64Data: string): Promi
     await fs.writeAsStringAsync(`${dir}${safe}`, base64Data, { encoding: fs.EncodingType.Base64 });
 }
 
-/** Store a media file from a local URI (fast native copy when available, byte fallback). */
-export async function saveMediaFromUri(filename: string, uri: string, mimeType?: string): Promise<void> {
+/** Store a media file from a local URI (fast native copy when available, byte fallback). Returns the sanitized filename. */
+export async function saveMediaFromUri(filename: string, uri: string, mimeType?: string): Promise<string> {
     const safe = sanitizeMediaFilename(filename);
 
     if (Platform.OS === 'web') {
         const bytes = await readUriBytes(uri);
         await saveMediaBytes(safe, bytes, mimeType);
-        return;
+        return safe;
     }
 
     const dir = await ensureMediaDir();
@@ -202,6 +202,7 @@ export async function saveMediaFromUri(filename: string, uri: string, mimeType?:
         const bytes = await readUriBytes(uri);
         await saveMediaBytes(safe, bytes, mimeType);
     }
+    return safe;
 }
 
 /**

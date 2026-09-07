@@ -12,7 +12,30 @@ export type BlankCanvasPage = {
     /** Export resolution in pixels; the preview only borrows its aspect ratio. */
     width: number;
     height: number;
+    /**
+     * Where the ruling sits on this sheet. A fresh page leaves it out and takes the default;
+     * a page that has been cropped or turned carries the ruling it had before the edit.
+     */
+    ruling?: BlankCanvasRuling;
 };
+
+/**
+ * The ruling as a printed sheet has it: one spacing, and a phase saying where the first line
+ * falls. Both are in the page's own export pixels, so a crop can move the phase without the
+ * squares changing size, which is what keeps writing sitting on the lines it was written on.
+ */
+export type BlankCanvasRuling = {
+    /** Distance between two lines, in page pixels. */
+    spacing: number;
+    /** Position of the first vertical line, in [0, spacing). */
+    offsetX: number;
+    /** Position of the first horizontal line, in [0, spacing). */
+    offsetY: number;
+    /** Lined paper only: which way the rules run. Turning the page flips it. */
+    orientation: BlankCanvasRulingOrientation;
+};
+
+export type BlankCanvasRulingOrientation = 'horizontal' | 'vertical';
 
 export const BLANK_CANVAS_SHAPES: { id: BlankCanvasShape; width: number; height: number }[] = [
     { id: 'landscape', width: 1600, height: 1200 },
@@ -54,43 +77,145 @@ export function blankCanvasPaperSpacing(width: number, height: number): number {
     return Math.max(MIN_PAPER_SPACING, shortEdge / PAPER_DIVISIONS);
 }
 
+/** Fold a phase back into [0, spacing) so a shifted ruling stays on the same grid. */
+function wrapPhase(value: number, spacing: number): number {
+    if (!Number.isFinite(value) || !Number.isFinite(spacing) || spacing <= 0) return 0;
+    return ((value % spacing) + spacing) % spacing;
+}
+
+/** The ruling a freshly created page of this size starts with. */
+export function defaultBlankCanvasRuling(width: number, height: number): BlankCanvasRuling {
+    return {
+        spacing: blankCanvasPaperSpacing(width, height),
+        offsetX: 0,
+        offsetY: 0,
+        orientation: 'horizontal',
+    };
+}
+
+/** Accept a stored/partial ruling, or fall back to the size's default. */
+export function resolveBlankCanvasRuling(
+    ruling: BlankCanvasRuling | null | undefined,
+    width: number,
+    height: number,
+): BlankCanvasRuling {
+    if (!ruling || !Number.isFinite(ruling.spacing) || ruling.spacing <= 0) {
+        return defaultBlankCanvasRuling(width, height);
+    }
+    return {
+        spacing: ruling.spacing,
+        offsetX: wrapPhase(ruling.offsetX, ruling.spacing),
+        offsetY: wrapPhase(ruling.offsetY, ruling.spacing),
+        orientation: ruling.orientation === 'vertical' ? 'vertical' : 'horizontal',
+    };
+}
+
+/**
+ * The same ruling measured in a different surface's units — page pixels to canvas points, say.
+ * The preview scales rather than re-deriving, so what is on screen is what the PNG will hold.
+ */
+export function scaleBlankCanvasRuling(ruling: BlankCanvasRuling, factor: number): BlankCanvasRuling {
+    if (!Number.isFinite(factor) || factor <= 0) return ruling;
+    return {
+        spacing: ruling.spacing * factor,
+        offsetX: ruling.offsetX * factor,
+        offsetY: ruling.offsetY * factor,
+        orientation: ruling.orientation,
+    };
+}
+
+/**
+ * Ruling after the page is trimmed. Only the phase moves: cutting a sheet down does not resize
+ * its squares, so the strokes drawn over a line stay over that same line.
+ */
+export function cropBlankCanvasRuling(
+    ruling: BlankCanvasRuling,
+    page: { width: number; height: number },
+    crop: { x: number; y: number },
+): BlankCanvasRuling {
+    const left = page.width * Math.min(1, Math.max(0, crop.x));
+    const top = page.height * Math.min(1, Math.max(0, crop.y));
+    return {
+        spacing: ruling.spacing,
+        offsetX: wrapPhase(ruling.offsetX - left, ruling.spacing),
+        offsetY: wrapPhase(ruling.offsetY - top, ruling.spacing),
+        orientation: ruling.orientation,
+    };
+}
+
+/**
+ * Ruling after the page is turned a quarter turn clockwise, which sends `(x, y)` to
+ * `(pageHeight - y, x)`. The ink is turned with it, so the paper has to follow or the writing
+ * comes down off its lines: horizontal rules become vertical, and each phase picks up the other
+ * axis's.
+ */
+export function rotateBlankCanvasRulingClockwise(
+    ruling: BlankCanvasRuling,
+    pageHeight: number,
+): BlankCanvasRuling {
+    return {
+        spacing: ruling.spacing,
+        offsetX: wrapPhase(pageHeight - ruling.offsetY, ruling.spacing),
+        offsetY: wrapPhase(ruling.offsetX, ruling.spacing),
+        orientation: ruling.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+    };
+}
+
+/** A page this finely ruled is a tint, not a grid; the cap stops a bad ruling from hanging. */
+const MAX_RULING_LINES = 512;
+
+/** Ruling coordinates strictly inside `(0, extent)`, stepping the grid from its phase. */
+function ruledPositions(offset: number, spacing: number, extent: number): number[] {
+    const positions: number[] = [];
+    if (!(spacing > 0) || !(extent > 0)) return positions;
+    // A phase of 0 puts a line on the page edge, where it would only thicken the border.
+    const first = offset > 0 ? offset : spacing;
+    const count = Math.min(MAX_RULING_LINES, Math.ceil((extent - first) / spacing));
+    // Indexed rather than accumulated: stepping by `+= spacing` drifts, and a drifting last
+    // line lands a hair inside the edge and draws a rule the page should not have.
+    for (let index = 0; index < count; index += 1) {
+        const value = first + index * spacing;
+        if (value >= extent) break;
+        positions.push(value);
+    }
+    return positions;
+}
+
 /**
  * Ruling for one page at the given surface size. Coordinates are in that surface's own units,
- * so the preview passes canvas points and the exporter passes export pixels.
+ * so the preview passes canvas points and the exporter passes export pixels. Pass `ruling` in
+ * those same units to draw a page that has been cropped or turned; omit it for a fresh sheet.
  */
 export function blankCanvasPaperGeometry(
     paper: BlankCanvasPaper,
     width: number,
     height: number,
+    ruling?: BlankCanvasRuling | null,
 ): BlankCanvasPaperGeometry {
-    const spacing = blankCanvasPaperSpacing(width, height);
+    const resolved = resolveBlankCanvasRuling(ruling, width, height);
+    const spacing = resolved.spacing;
     const empty: BlankCanvasPaperGeometry = { lines: [], dots: [], spacing };
     if (spacing <= 0 || paper === 'plain') return empty;
     if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return empty;
 
-    const rows = Math.max(0, Math.ceil(height / spacing) - 1);
-    const columns = Math.max(0, Math.ceil(width / spacing) - 1);
+    const columns = ruledPositions(resolved.offsetX, spacing, width);
+    const rows = ruledPositions(resolved.offsetY, spacing, height);
     const lines: BlankCanvasLine[] = [];
     const dots: BlankCanvasDot[] = [];
 
     if (paper === 'dotted') {
-        for (let row = 1; row <= rows; row += 1) {
-            for (let column = 1; column <= columns; column += 1) {
-                dots.push({ x: column * spacing, y: row * spacing });
-            }
-        }
+        rows.forEach((y) => {
+            columns.forEach((x) => dots.push({ x, y }));
+        });
         return { lines, dots, spacing };
     }
 
-    for (let row = 1; row <= rows; row += 1) {
-        const y = row * spacing;
-        lines.push({ x1: 0, y1: y, x2: width, y2: y });
+    // Lined paper rules one way only, and that way turns with the page.
+    if (paper !== 'lined' || resolved.orientation === 'horizontal') {
+        rows.forEach((y) => lines.push({ x1: 0, y1: y, x2: width, y2: y }));
     }
-    if (paper === 'grid') {
-        for (let column = 1; column <= columns; column += 1) {
-            const x = column * spacing;
-            lines.push({ x1: x, y1: 0, x2: x, y2: height });
-        }
+    if (paper === 'grid' || (paper === 'lined' && resolved.orientation === 'vertical')) {
+        columns.forEach((x) => lines.push({ x1: x, y1: 0, x2: x, y2: height }));
     }
     return { lines, dots, spacing };
 }
@@ -135,7 +260,7 @@ export function blankCanvasDefaultInk(background: string): string {
     return isDarkBlankCanvasPage(background) ? '#ffffff' : '#111827';
 }
 
-/** Page size after a crop, in export pixels; the ruling re-flows to the trimmed page. */
+/** Page size after a crop, in export pixels; `cropBlankCanvasRuling` moves the ruling with it. */
 export function cropBlankCanvasSize(
     page: { width: number; height: number },
     crop: { x: number; y: number; width: number; height: number },

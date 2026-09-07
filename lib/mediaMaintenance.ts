@@ -1,28 +1,10 @@
-import { getAllNotes } from './noteManager';
+import { getAllNotes, getAllNoteTypes } from './noteManager';
 import { listStoredMediaFilenames } from './mediaStore';
 import { sanitizeMediaFilename } from './mediaFilename';
-
-const MEDIA_REFERENCE_RE = /\[sound:([^\]]+)]|<(?:img|audio|video|source)\b[^>]*\bsrc\s*=\s*["']([^"']+)["']|<a\b[^>]*\bhref\s*=\s*["']([^"']+)["']/gi;
-
-function localMediaFilename(raw: string): string | null {
-    const value = raw.trim().replace(/&amp;/gi, '&');
-    if (!value || /^(?:data|https?|file|content|blob|javascript):/i.test(value)) return null;
-    if (value.startsWith('/') || value.startsWith('\\') || value.includes('../') || value.includes('..\\')) return null;
-    const safe = sanitizeMediaFilename(value);
-    return safe || null;
-}
+import { extractMediaFilenames } from './mediaAttachment';
 
 export function extractNoteMediaReferences(fields: string[]): Set<string> {
-    const references = new Set<string>();
-    for (const field of fields) {
-        MEDIA_REFERENCE_RE.lastIndex = 0;
-        let match: RegExpExecArray | null;
-        while ((match = MEDIA_REFERENCE_RE.exec(field)) !== null) {
-            const filename = localMediaFilename(match[1] ?? match[2] ?? match[3] ?? '');
-            if (filename) references.add(filename);
-        }
-    }
-    return references;
+    return extractMediaFilenames(fields);
 }
 
 export interface MediaAuditResult {
@@ -46,7 +28,14 @@ export function auditMediaFilenames(referenced: Set<string>, storedNames: string
 export async function checkMedia(): Promise<MediaAuditResult> {
     const referenced = new Set<string>();
     for (const note of getAllNotes()) {
-        for (const filename of extractNoteMediaReferences(note.fields)) referenced.add(filename);
+        for (const filename of extractMediaFilenames(note.fields)) referenced.add(filename);
+    }
+    // A note type's stylesheet and templates carry references too — a background image or a logo
+    // belongs to every card built from them. Reading only the notes reported those files as
+    // unused, which is the one answer this audit must never give about a file that is in use.
+    for (const type of getAllNoteTypes()) {
+        const sources = [type.css, ...type.templates.flatMap((template) => [template.qfmt, template.afmt])];
+        for (const filename of extractMediaFilenames(sources)) referenced.add(filename);
     }
     return auditMediaFilenames(referenced, await listStoredMediaFilenames());
 }

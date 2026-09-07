@@ -8,6 +8,7 @@ import {
     blankCanvasPaperGeometry,
     blankCanvasPaperInk,
     type BlankCanvasPaper,
+    type BlankCanvasRuling,
 } from '../lib/blankCanvas';
 
 interface PaperSwatchProps {
@@ -15,11 +16,19 @@ interface PaperSwatchProps {
     background: string;
     width: number;
     height: number;
+    /**
+     * Ruling in this swatch's own units, for a page that has been cropped or turned. A chip or a
+     * fresh page leaves it out and gets the default ruling for its size.
+     */
+    ruling?: BlankCanvasRuling | null;
     style?: StyleProp<ViewStyle>;
 }
 
-function PaperSwatch({ paper, background, width, height, style }: PaperSwatchProps) {
-    const ruling = useMemo(() => blankCanvasPaperGeometry(paper, width, height), [paper, width, height]);
+function PaperSwatch({ paper, background, width, height, ruling: pageRuling, style }: PaperSwatchProps) {
+    const ruling = useMemo(
+        () => blankCanvasPaperGeometry(paper, width, height, pageRuling),
+        [paper, width, height, pageRuling],
+    );
     const ink = blankCanvasPaperInk(background);
     const dotRadius = Math.max(1, ruling.spacing / 22);
 

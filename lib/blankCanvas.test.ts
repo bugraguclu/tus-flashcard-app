@@ -6,8 +6,13 @@ import {
     blankCanvasPaperGeometry,
     blankCanvasPaperInk,
     blankCanvasPaperSpacing,
+    cropBlankCanvasRuling,
     cropBlankCanvasSize,
+    defaultBlankCanvasRuling,
     isDarkBlankCanvasPage,
+    resolveBlankCanvasRuling,
+    rotateBlankCanvasRulingClockwise,
+    scaleBlankCanvasRuling,
 } from './blankCanvas';
 
 describe('blank canvas ruling', () => {
@@ -97,5 +102,122 @@ describe('blank canvas cropping', () => {
             .toEqual({ width: 1, height: 1 });
         expect(cropBlankCanvasSize({ width: 1600, height: 1200 }, { x: 0, y: 0, width: 4, height: 4 }))
             .toEqual({ width: 1600, height: 1200 });
+    });
+});
+
+describe('ruling that survives an edit', () => {
+    const page = { width: 1600, height: 1200 };
+    const spacing = blankCanvasPaperSpacing(page.width, page.height);
+
+    it('rules a fresh page exactly as it did before the ruling was tracked', () => {
+        const fresh = defaultBlankCanvasRuling(page.width, page.height);
+        expect(fresh).toEqual({ spacing, offsetX: 0, offsetY: 0, orientation: 'horizontal' });
+
+        const withRuling = blankCanvasPaperGeometry('grid', page.width, page.height, fresh);
+        const withoutRuling = blankCanvasPaperGeometry('grid', page.width, page.height);
+        expect(withRuling).toEqual(withoutRuling);
+        // A phase of zero keeps the ruling off the page edges rather than thickening the border.
+        const horizontals = withRuling.lines.filter((line) => line.y1 === line.y2);
+        const verticals = withRuling.lines.filter((line) => line.x1 === line.x2);
+        expect(horizontals.every((line) => line.y1 > 0 && line.y1 < page.height)).toBe(true);
+        expect(verticals.every((line) => line.x1 > 0 && line.x1 < page.width)).toBe(true);
+    });
+
+    it('keeps the squares the same size when the page is cropped', () => {
+        const fresh = defaultBlankCanvasRuling(page.width, page.height);
+        const crop = { x: 0.25, y: 0.25, width: 0.5, height: 0.5 };
+        const trimmed = cropBlankCanvasSize(page, crop);
+        const trimmedRuling = cropBlankCanvasRuling(fresh, page, crop);
+
+        expect(trimmedRuling.spacing).toBe(spacing);
+        // Re-deriving instead would have shrunk the squares with the sheet.
+        expect(blankCanvasPaperSpacing(trimmed.width, trimmed.height)).not.toBeCloseTo(spacing, 6);
+
+        const geometry = blankCanvasPaperGeometry('grid', trimmed.width, trimmed.height, trimmedRuling);
+        const horizontals = geometry.lines.filter((line) => line.y1 === line.y2).map((line) => line.y1);
+        // Every line the crop kept is still where it was, measured from the new top-left corner.
+        horizontals.forEach((y) => {
+            expect((y + page.height * crop.y) % spacing).toBeCloseTo(0, 6);
+        });
+    });
+
+    it('leaves a stroke sitting on the line it was drawn on after a crop', () => {
+        const fresh = defaultBlankCanvasRuling(page.width, page.height);
+        // A stroke written along the sixth rule of the page, which the crop below keeps.
+        const inkY = 6 * spacing;
+        const crop = { x: 0, y: 0.3, width: 1, height: 0.5 };
+
+        const trimmed = cropBlankCanvasSize(page, crop);
+        const trimmedRuling = cropBlankCanvasRuling(fresh, page, crop);
+        const geometry = blankCanvasPaperGeometry('lined', trimmed.width, trimmed.height, trimmedRuling);
+
+        // `cropPhotoAnnotation` moves normalised ink the same way; in page pixels that is a shift.
+        const inkAfterCrop = inkY - page.height * crop.y;
+        expect(geometry.lines.some((line) => Math.abs(line.y1 - inkAfterCrop) < 1e-6)).toBe(true);
+    });
+
+    it('turns the ruling with the page so writing stays on its lines', () => {
+        const cropped = cropBlankCanvasRuling(
+            defaultBlankCanvasRuling(page.width, page.height),
+            page,
+            { x: 0, y: 0.1 },
+        );
+        const turned = rotateBlankCanvasRulingClockwise(cropped, page.height);
+
+        expect(turned.spacing).toBe(cropped.spacing);
+        // A quarter turn clockwise sends (x, y) to (pageHeight - y, x), so the phases swap axes.
+        expect(turned.offsetX).toBeCloseTo(((page.height - cropped.offsetY) % spacing + spacing) % spacing, 6);
+        expect(turned.offsetY).toBeCloseTo(cropped.offsetX, 6);
+        // Lined paper ruled across is ruled down once the sheet is on its side.
+        expect(turned.orientation).toBe('vertical');
+
+        const lines = blankCanvasPaperGeometry('lined', page.height, page.width, turned).lines;
+        expect(lines.length).toBeGreaterThan(0);
+        expect(lines.every((line) => line.x1 === line.x2)).toBe(true);
+
+        // Four turns come back to the page the learner started on.
+        const full = [1, 2, 3].reduce(
+            (state, index) => rotateBlankCanvasRulingClockwise(
+                state,
+                index % 2 === 1 ? page.width : page.height,
+            ),
+            turned,
+        );
+        expect(full.orientation).toBe(cropped.orientation);
+        expect(full.offsetX).toBeCloseTo(cropped.offsetX, 6);
+        expect(full.offsetY).toBeCloseTo(cropped.offsetY, 6);
+    });
+
+    it('measures the same ruling in the preview\'s units', () => {
+        const fresh = cropBlankCanvasRuling(
+            defaultBlankCanvasRuling(page.width, page.height),
+            page,
+            { x: 0.13, y: 0.37 },
+        );
+        const factor = 320 / page.width;
+        const scaled = scaleBlankCanvasRuling(fresh, factor);
+        const preview = blankCanvasPaperGeometry('grid', 320, 240, scaled);
+        const exported = blankCanvasPaperGeometry('grid', page.width, page.height, fresh);
+
+        expect(preview.lines.length).toBe(exported.lines.length);
+        const previewFirst = preview.lines[0];
+        const exportedFirst = exported.lines[0];
+        expect(previewFirst.y1 / 240).toBeCloseTo(exportedFirst.y1 / page.height, 6);
+    });
+
+    it('ignores a ruling that could not be drawn', () => {
+        const fallback = defaultBlankCanvasRuling(page.width, page.height);
+        expect(resolveBlankCanvasRuling(null, page.width, page.height)).toEqual(fallback);
+        expect(resolveBlankCanvasRuling(
+            { spacing: 0, offsetX: 4, offsetY: 4, orientation: 'vertical' },
+            page.width,
+            page.height,
+        )).toEqual(fallback);
+        // A phase outside one step is folded back onto the same grid.
+        expect(resolveBlankCanvasRuling(
+            { spacing: 40, offsetX: 95, offsetY: -10, orientation: 'vertical' },
+            page.width,
+            page.height,
+        )).toEqual({ spacing: 40, offsetX: 15, offsetY: 30, orientation: 'vertical' });
     });
 });

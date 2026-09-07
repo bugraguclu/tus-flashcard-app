@@ -27,6 +27,8 @@ import {
     type PhotoPoint,
     type PhotoStroke,
     type PhotoText,
+    photoExportSurface,
+    scalePhotoAnnotation,
 } from './photoEditor';
 
 describe('photo editor geometry', () => {
@@ -578,5 +580,110 @@ describe('photo editor drag-to-delete', () => {
         expect(isPointInPhotoTrashZone(
             { x: 0.5, y: 0.95 }, { x: 0, y: 0, width: 0, height: 0 }, CANVAS_W, CANVAS_H,
         )).toBe(false);
+    });
+});
+
+describe('export surface', () => {
+    // A phone-sized canvas: what the drawing was actually made on.
+    const canvas = { width: 350, height: 262 };
+
+    it('renders a drawn page at the resolution the page claims, not the screen\'s', () => {
+        const surface = photoExportSurface({
+            source: { width: 1600, height: 1200 },
+            canvas,
+            pixelRatio: 3,
+        });
+        // 533 points at a 3x pixel ratio is the 1600px page the sheet was created as, give or
+        // take the point the size is rounded to.
+        expect(Math.abs(surface.width * 3 - 1600)).toBeLessThanOrEqual(3);
+        expect(surface.width / surface.height).toBeCloseTo(1600 / 1200, 2);
+        // Photographing the canvas instead would have given barely two thirds of that.
+        expect(surface.width).toBeGreaterThan(canvas.width);
+        expect(surface.scale).toBeCloseTo(surface.width / canvas.width, 6);
+    });
+
+    it('keeps a large photo\'s detail up to the export cap', () => {
+        const surface = photoExportSurface({
+            source: { width: 4032, height: 3024 },
+            canvas,
+            pixelRatio: 3,
+            maxDimension: 2000,
+        });
+        expect(Math.abs(surface.width * 3 - 2000)).toBeLessThanOrEqual(3);
+        expect(surface.width / surface.height).toBeCloseTo(4032 / 3024, 2);
+    });
+
+    it('never renders smaller than photographing the canvas would have', () => {
+        const surface = photoExportSurface({
+            source: { width: 320, height: 240 },
+            canvas,
+            pixelRatio: 3,
+        });
+        expect(surface.width).toBe(canvas.width);
+        expect(surface.scale).toBe(1);
+    });
+
+    it('measures the web surface in pixels, since a canvas element has no points', () => {
+        const surface = photoExportSurface({
+            source: { width: 4032, height: 3024 },
+            canvas,
+            pixelRatio: 1,
+            maxDimension: 2000,
+        });
+        expect(surface.width).toBe(2000);
+    });
+
+    it('falls back to the canvas shape when the source size is unusable', () => {
+        const surface = photoExportSurface({
+            source: { width: 0, height: 0 },
+            canvas,
+            pixelRatio: 3,
+        });
+        expect(surface.width).toBe(canvas.width);
+        expect(surface.width / surface.height).toBeCloseTo(canvas.width / canvas.height, 2);
+    });
+});
+
+describe('annotations measured for a larger surface', () => {
+    const stroke: PhotoStroke = {
+        id: 'a',
+        type: 'stroke',
+        color: '#ef4444',
+        width: 6,
+        opacity: 1,
+        points: [{ x: 0.1, y: 0.1 }, { x: 0.9, y: 0.9 }],
+    };
+
+    it('keeps a stroke the same thickness relative to the drawing', () => {
+        const canvasWidth = 350;
+        const surface = photoExportSurface({
+            source: { width: 1600, height: 1200 },
+            canvas: { width: canvasWidth, height: 262 },
+            pixelRatio: 3,
+        });
+        const exported = scalePhotoAnnotation(stroke, surface.scale);
+        expect(exported.width / surface.width).toBeCloseTo(stroke.width / canvasWidth, 6);
+        // Position is normalised, so it is already right at any size.
+        expect(exported.points).toEqual(stroke.points);
+    });
+
+    it('takes a label\'s font size up with the surface', () => {
+        const text: PhotoText = {
+            id: 'b',
+            type: 'text',
+            color: '#ffffff',
+            width: 0,
+            opacity: 1,
+            text: 'aort',
+            fontSize: 24,
+            point: { x: 0.5, y: 0.5 },
+        };
+        expect(scalePhotoAnnotation(text, 2).fontSize).toBe(48);
+    });
+
+    it('leaves the annotation alone when there is nothing to scale', () => {
+        expect(scalePhotoAnnotation(stroke, 1)).toBe(stroke);
+        expect(scalePhotoAnnotation(stroke, 0)).toBe(stroke);
+        expect(scalePhotoAnnotation(stroke, Number.NaN)).toBe(stroke);
     });
 });

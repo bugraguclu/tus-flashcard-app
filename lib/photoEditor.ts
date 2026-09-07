@@ -861,3 +861,66 @@ export function applyAspectRatioToCropRect(
 
     return clampCropRect({ x: nextX, y: nextY, width: nextWidth, height: nextHeight });
 }
+
+/**
+ * The surface an export is rendered on, and how much bigger it is than the surface the drawing
+ * was made on.
+ *
+ * The native exporter photographs a real view rather than replaying the drawing into a bitmap, so
+ * whatever it photographs is the resolution the card gets. Photographing the on-screen canvas ties
+ * the exported PNG to the phone: a page created at 1600×1200 comes out at whatever the stage
+ * happened to measure, and a 12-megapixel photo is thrown away down to a screen's worth of pixels
+ * the moment a single arrow is drawn on it. So the export is rendered on its own off-screen
+ * surface, sized in points such that the device's pixel ratio turns it back into the resolution
+ * the drawing actually claims.
+ *
+ * `scale` is the factor between that surface and the on-screen canvas. Stroke widths and font
+ * sizes are stored in the units of the canvas they were drawn on, so they have to be multiplied
+ * by it — otherwise a four-times-larger export would draw every line four times thinner.
+ */
+export function photoExportSurface(input: {
+    /** The drawing's own resolution: the photo's pixels, or the page's declared size. */
+    source: { width: number; height: number };
+    /** The on-screen canvas the annotations were drawn on, in points. */
+    canvas: { width: number; height: number };
+    /** Device pixels per point. */
+    pixelRatio: number;
+    /** Longest edge the export may reach, in pixels. */
+    maxDimension?: number;
+}): { width: number; height: number; scale: number } {
+    const { source, canvas, pixelRatio, maxDimension = 2000 } = input;
+    const canvasWidth = Math.max(1, canvas.width);
+    const ratio = source.width > 0 && source.height > 0
+        ? source.width / source.height
+        : canvasWidth / Math.max(1, canvas.height);
+
+    const longestSourceEdge = Math.max(source.width, source.height);
+    const cap = longestSourceEdge > 0 && maxDimension > 0
+        ? Math.min(1, maxDimension / longestSourceEdge)
+        : 1;
+    const targetPixelWidth = source.width * cap;
+    const usablePixelRatio = pixelRatio > 0 ? pixelRatio : 1;
+
+    // Never smaller than what photographing the visible canvas would already have given.
+    const width = Math.max(canvasWidth, targetPixelWidth / usablePixelRatio);
+    return {
+        width: Math.round(width),
+        height: Math.max(1, Math.round(width / (ratio > 0 ? ratio : 1))),
+        scale: Math.round(width) / canvasWidth,
+    };
+}
+
+/**
+ * The same annotation measured for a surface `factor` times the size of the one it was drawn on.
+ *
+ * Positions are stored normalised and need no help, but a stroke's width and a label's font size
+ * are in the drawing surface's own units. Rendering those unchanged on a larger surface is what
+ * makes an exported drawing look thinner and smaller-lettered than the one on screen.
+ */
+export function scalePhotoAnnotation<T extends PhotoAnnotation>(annotation: T, factor: number): T {
+    if (!Number.isFinite(factor) || factor <= 0 || factor === 1) return annotation;
+    const scaled: PhotoAnnotation = { ...annotation };
+    if (typeof scaled.width === 'number') scaled.width *= factor;
+    if (scaled.type === 'text' && typeof scaled.fontSize === 'number') scaled.fontSize *= factor;
+    return scaled as T;
+}

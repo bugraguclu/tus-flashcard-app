@@ -8,7 +8,8 @@ import { alert, choose } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { readUriBytes } from '../lib/files';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
-import { sanitizeMediaFilename } from '../lib/mediaFilename';
+import { mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
+import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
 import PaperSwatch, { pageColorLabel, paperLabel } from './PaperSwatch';
@@ -16,10 +17,15 @@ import {
     BLANK_CANVAS_BACKGROUNDS,
     BLANK_CANVAS_PAPERS,
     BLANK_CANVAS_SHAPES,
-    DEFAULT_BLANK_CANVAS_PAGE,
     type BlankCanvasPage,
     type BlankCanvasShape,
 } from '../lib/blankCanvas';
+import {
+    DEFAULT_BLANK_CANVAS_SETUP,
+    blankCanvasPageFromSetup,
+    loadBlankCanvasSetup,
+    saveBlankCanvasSetup,
+} from '../lib/blankCanvasSetup';
 import { useI18n } from '../hooks/useI18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
 
@@ -56,9 +62,9 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const [pickedPhoto, setPickedPhoto] = useState<EditablePhoto | null>(null);
     // The new-page sheet: the paper is chosen here, then the editor opens on it.
     const [pageSetup, setPageSetup] = useState(false);
-    const [pagePaper, setPagePaper] = useState(DEFAULT_BLANK_CANVAS_PAGE.paper);
-    const [pageBackground, setPageBackground] = useState(DEFAULT_BLANK_CANVAS_PAGE.background);
-    const [pageShape, setPageShape] = useState<BlankCanvasShape>(BLANK_CANVAS_SHAPES[0].id);
+    const [pagePaper, setPagePaper] = useState(DEFAULT_BLANK_CANVAS_SETUP.paper);
+    const [pageBackground, setPageBackground] = useState(DEFAULT_BLANK_CANVAS_SETUP.background);
+    const [pageShape, setPageShape] = useState<BlankCanvasShape>(DEFAULT_BLANK_CANVAS_SETUP.shape);
     const [pageToDraw, setPageToDraw] = useState<BlankCanvasPage | null>(null);
 
     const pendingActionRef = useRef<(() => void) | null>(null);
@@ -99,15 +105,14 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
 
     useImperativeHandle(ref, () => ({ open: openMenu }));
 
-    const saveAndInsert = async (uri: string, name: string, kind: MediaKind) => {
+    const saveAndInsert = async (uri: string, name: string, kind: MediaReferenceKind) => {
         setBusy(true);
         try {
-            const filename = sanitizeMediaFilename(`${Date.now()}_${name}`);
+            // Brackets come out before the file is stored, not just before it is referenced, so a
+            // `[sound:…]` marker and the file on disk cannot end up disagreeing.
+            const filename = soundSafeMediaFilename(sanitizeMediaFilename(`${Date.now()}_${name}`));
             await saveMediaFromUri(filename, uri);
-            if (kind === 'image') onInsert(`<img src="${filename}">`);
-            else if (kind === 'audio') onInsert(`[sound:${filename}]`);
-            else if (kind === 'video') onInsert(`<video controls src="${filename}" disableRemotePlayback></video>`);
-            else onInsert(`<a href="${filename}">${escapeHtml(name)}</a>`);
+            onInsert(mediaReferenceSnippet(kind, filename, name));
         } catch (e) {
             console.warn('[MediaAttach] save failed:', e);
             alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
@@ -141,7 +146,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             const asset = result.assets[0];
             setPickedPhoto({
                 uri: asset.uri,
-                name: asset.fileName || 'gorsel.jpg',
+                name: mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'gorsel', fallbackExtension: 'jpg' }),
                 width: asset.width,
                 height: asset.height,
             });
@@ -175,7 +180,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             const asset = result.assets[0];
             setPickedPhoto({
                 uri: asset.uri,
-                name: asset.fileName || 'kamera.jpg',
+                name: mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'kamera', fallbackExtension: 'jpg' }),
                 width: asset.width,
                 height: asset.height,
             });
@@ -217,8 +222,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (picked.canceled || !picked.assets?.length) return;
             const asset = picked.assets[0];
-            let name = asset.name || 'ses.m4a';
-            if (!name.includes('.')) name = `${name}.m4a`;
+            const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'ses', fallbackExtension: 'm4a' });
             await saveAndInsert(asset.uri, name, 'audio');
         } catch (e) {
             console.warn('[MediaAttach] audio clip pick failed:', e);
@@ -248,8 +252,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            let name = asset.fileName || 'video.mp4';
-            if (!name.includes('.')) name = `${name}.mp4`;
+            const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'video', fallbackExtension: 'mp4' });
             await saveAndInsert(asset.uri, name, 'video');
         } catch (e) {
             console.warn('[MediaAttach] gallery video pick failed:', e);
@@ -271,8 +274,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (picked.canceled || !picked.assets?.length) return;
             const asset = picked.assets[0];
-            let name = asset.name || 'video.mp4';
-            if (!name.includes('.')) name = `${name}.mp4`;
+            const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'video', fallbackExtension: 'mp4' });
             await saveAndInsert(asset.uri, name, 'video');
         } catch (e) {
             console.warn('[MediaAttach] file video pick failed:', e);
@@ -303,22 +305,31 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
             if (picked.canceled || !picked.assets?.length) return;
             const asset = picked.assets[0];
-            await saveAndInsert(asset.uri, asset.name || 'dosya', 'file');
+            await saveAndInsert(asset.uri, mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'dosya' }), 'file');
         } catch (e) {
             console.warn('[MediaAttach] file pick failed:', e);
             alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
         }
     };
 
+    /**
+     * Open the sheet on the page the last drawing was made on. Read here rather than in the
+     * initial state so the collection is certainly open: a read taken while it is still opening
+     * would find no row and quietly pin the sheet to the defaults for the rest of the session.
+     */
+    const openPageSetup = () => {
+        const stored = loadBlankCanvasSetup();
+        setPagePaper(stored.paper);
+        setPageBackground(stored.background);
+        setPageShape(stored.shape);
+        setPageSetup(true);
+    };
+
     const startDrawing = () => {
-        const shape = BLANK_CANVAS_SHAPES.find((option) => option.id === pageShape) ?? BLANK_CANVAS_SHAPES[0];
+        const setup = { paper: pagePaper, background: pageBackground, shape: pageShape };
+        saveBlankCanvasSetup(setup);
         setPageSetup(false);
-        setPageToDraw({
-            background: pageBackground,
-            paper: pagePaper,
-            width: shape.width,
-            height: shape.height,
-        });
+        setPageToDraw(blankCanvasPageFromSetup(setup));
     };
 
     const shapeLabel = (shape: BlankCanvasShape) => (
@@ -337,7 +348,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const options: { icon: string; label: string; onPress: () => void }[] = [
         { icon: '🖼️', label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
         { icon: '📷', label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
-        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setPageSetup(true)) },
+        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(openPageSetup) },
         { icon: '🎙️', label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
         { icon: '🎵', label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
         { icon: '🎬', label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
@@ -451,7 +462,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             <AudioRecordModal
                 visible={showRecorder}
                 onClose={() => setShowRecorder(false)}
-                onSaved={(filename) => onInsert(`[sound:${filename}]`)}
+                onSaved={(filename) => onInsert(mediaReferenceSnippet('audio', filename))}
             />
             <Modal visible={pageSetup} transparent animationType="fade" onRequestClose={() => setPageSetup(false)}>
                 <View style={styles.overlay}>
@@ -572,14 +583,14 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 visible={photoToEdit !== null}
                 photo={photoToEdit}
                 onClose={() => setPhotoToEdit(null)}
-                onSaved={(filename) => onInsert(`<img src="${filename}">`)}
+                onSaved={(filename) => onInsert(mediaReferenceSnippet('image', filename))}
             />
             <PhotoEditorModal
                 visible={pageToDraw !== null}
                 photo={null}
                 blankPage={pageToDraw}
                 onClose={() => setPageToDraw(null)}
-                onSaved={(filename) => onInsert(`<img src="${filename}">`)}
+                onSaved={(filename) => onInsert(mediaReferenceSnippet('image', filename))}
             />
         </>
     );

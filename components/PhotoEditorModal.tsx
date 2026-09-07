@@ -30,9 +30,9 @@ import Svg, {
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { captureRef } from 'react-native-view-shot';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert } from '../lib/confirm';
-import { sanitizeMediaFilename } from '../lib/mediaFilename';
-import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
+import { alert, confirm } from '../lib/confirm';
+import { mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
+import { guessMimeFromFilename, saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import {
     applyAspectRatioToCropRect,
     applyPhotoEraserSweep,
@@ -49,6 +49,8 @@ import {
     photoTextAnchorPixels,
     photoTextColors,
     photoTrashPillRect,
+    photoExportSurface,
+    scalePhotoAnnotation,
     photoTrashZoneRect,
     resolvePhotoTextAlign,
     resolvePhotoTextDragRelease,
@@ -68,9 +70,14 @@ import {
     blankCanvasDefaultInk,
     blankCanvasPaperGeometry,
     blankCanvasPaperInk,
+    cropBlankCanvasRuling,
     cropBlankCanvasSize,
+    defaultBlankCanvasRuling,
+    rotateBlankCanvasRulingClockwise,
+    scaleBlankCanvasRuling,
     type BlankCanvasPage,
     type BlankCanvasPaper,
+    type BlankCanvasRuling,
 } from '../lib/blankCanvas';
 import PaperSwatch, { pageColorLabel, paperLabel } from './PaperSwatch';
 import SwipeDismissSheet from './SwipeDismissSheet';
@@ -118,12 +125,25 @@ const MIN_TEXT_SIZE = 12;
 const MAX_TEXT_SIZE = 96;
 /** Two fingers must travel this far apart before a pinch counts as a resize. */
 const PINCH_ACTIVATION_PX = 12;
+/** Longest edge an exported PNG may reach. A card image past this is weight, not detail. */
+const EXPORT_MAX_DIMENSION = 2000;
+
+/** The off-screen surface an export is rendered on: its size, and its ratio to the live canvas. */
+type ExportSurface = { width: number; height: number; scale: number };
 const ERASER_MODES: { id: PhotoEraserMode }[] = [{ id: 'partial' }, { id: 'object' }];
+
+/** A drawn page's paper, in the page's own export pixels. */
+type EditorPage = { background: string; paper: BlankCanvasPaper; ruling: BlankCanvasRuling };
 
 interface EditorHistoryState {
     sourceUri: string;
     sourceSize: { width: number; height: number };
     annotations: PhotoAnnotation[];
+    /**
+     * The sheet as it was, so undoing a crop or a turn puts the ruling back under the ink it was
+     * drawn against instead of leaving the paper one edit ahead of the strokes.
+     */
+    page: EditorPage | null;
 }
 
 function makeId(): string {
@@ -149,8 +169,20 @@ function smoothPath(points: PhotoPoint[], width: number, height: number): string
     return `${path} L${last.x},${last.y}`;
 }
 
-function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width: number, height: number) {
-    if (!annotation) return null;
+/**
+ * One annotation on a surface `width` x `height`. `scale` says how much larger that surface is
+ * than the canvas the annotation was drawn on: positions are normalised and follow on their own,
+ * but widths, font sizes and the fixed sizes below are in canvas units and have to be taken up
+ * with it, or an export renders the same drawing in hairlines.
+ */
+function renderAnnotation(
+    source: PhotoAnnotation | null | undefined,
+    width: number,
+    height: number,
+    scale = 1,
+) {
+    if (!source) return null;
+    const annotation = scalePhotoAnnotation(source, scale);
     if (annotation.type === 'stroke') {
         const points = Array.isArray(annotation.points) ? annotation.points : [];
         if (!points.length) return null;
@@ -159,7 +191,7 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
                 key={annotation.id}
                 d={smoothPath(points, width, height)}
                 stroke={annotation.color || '#000000'}
-                strokeWidth={annotation.width || 2}
+                strokeWidth={annotation.width || 2 * scale}
                 strokeOpacity={annotation.opacity ?? 1}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -197,12 +229,12 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
                         y={bounds.y}
                         width={bounds.width}
                         height={bounds.height}
-                        rx={Math.max(6, (annotation.fontSize || 20) * 0.3)}
-                        ry={Math.max(6, (annotation.fontSize || 20) * 0.3)}
+                        rx={Math.max(6 * scale, (annotation.fontSize || 20 * scale) * 0.3)}
+                        ry={Math.max(6 * scale, (annotation.fontSize || 20 * scale) * 0.3)}
                         fill={bgStyle === 'outline' ? 'none' : badgeBgColor}
                         fillOpacity={bgStyle === 'frosted' ? 0.75 : 1}
                         stroke={bgStyle === 'outline' ? textColor : 'none'}
-                        strokeWidth={bgStyle === 'outline' ? 2.5 : 0}
+                        strokeWidth={bgStyle === 'outline' ? 2.5 * scale : 0}
                     />
                 )}
                 {bounds.lines.map((line, lineIndex) => {
@@ -215,10 +247,10 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
                                     y={lineY}
                                     fill={textColor === '#ffffff' ? '#111827' : '#ffffff'}
                                     stroke={textColor === '#ffffff' ? '#111827' : '#ffffff'}
-                                    strokeWidth={Math.max(3, (annotation.fontSize || 20) * 0.18)}
+                                    strokeWidth={Math.max(3 * scale, (annotation.fontSize || 20 * scale) * 0.18)}
                                     strokeLinejoin="round"
                                     strokeLinecap="round"
-                                    fontSize={annotation.fontSize || 20}
+                                    fontSize={annotation.fontSize || 20 * scale}
                                     fontWeight="800"
                                     textAnchor={textAnchor}
                                 >
@@ -229,7 +261,7 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
                                 x={textX}
                                 y={lineY}
                                 fill={finalTextColor}
-                                fontSize={annotation.fontSize || 20}
+                                fontSize={annotation.fontSize || 20 * scale}
                                 fontWeight="800"
                                 textAnchor={textAnchor}
                             >
@@ -246,12 +278,12 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
     const start = { x: (annotation.start.x ?? 0) * width, y: (annotation.start.y ?? 0) * height };
     const end = { x: (annotation.end.x ?? 0) * width, y: (annotation.end.y ?? 0) * height };
     if (annotation.type === 'arrow') {
-        const head = photoArrowHead(annotation.start, annotation.end, width, height, 12 + (annotation.width || 3) * 1.5);
+        const head = photoArrowHead(annotation.start, annotation.end, width, height, 12 * scale + (annotation.width || 3 * scale) * 1.5);
         return (
             <React.Fragment key={annotation.id}>
                 <Line
                     x1={start.x} y1={start.y} x2={end.x} y2={end.y}
-                    stroke={annotation.color} strokeWidth={annotation.width || 3}
+                    stroke={annotation.color} strokeWidth={annotation.width || 3 * scale}
                     strokeOpacity={annotation.opacity ?? 1} strokeLinecap="round"
                 />
                 <Polygon
@@ -273,7 +305,7 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
                 rx={rect.width * width / 2}
                 ry={rect.height * height / 2}
                 stroke={annotation.color}
-                strokeWidth={annotation.width || 3}
+                strokeWidth={annotation.width || 3 * scale}
                 strokeOpacity={annotation.opacity ?? 1}
                 fill="none"
             />
@@ -287,7 +319,7 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
             width={rect.width * width}
             height={rect.height * height}
             stroke={annotation.color}
-            strokeWidth={annotation.width || 3}
+            strokeWidth={annotation.width || 3 * scale}
             strokeOpacity={annotation.opacity ?? 1}
             fill={annotation.type === 'cover' ? annotation.color : 'none'}
             fillOpacity={annotation.type === 'cover' ? 0.96 : 0}
@@ -295,18 +327,21 @@ function renderAnnotation(annotation: PhotoAnnotation | null | undefined, width:
     );
 }
 
+/** The web export's counterpart to `renderAnnotation`, scaled the same way and by the same rule. */
 function drawAnnotationOnCanvas(
     ctx: CanvasRenderingContext2D,
-    annotation: PhotoAnnotation | null | undefined,
+    source: PhotoAnnotation | null | undefined,
     width: number,
     height: number,
+    scale = 1,
 ) {
-    if (!annotation) return;
+    if (!source) return;
+    const annotation = scalePhotoAnnotation(source, scale);
     ctx.save();
     ctx.globalAlpha = annotation.opacity ?? 1;
     ctx.strokeStyle = annotation.color || '#000000';
     ctx.fillStyle = annotation.color || '#000000';
-    ctx.lineWidth = (annotation.width || 3) * (width / 500);
+    ctx.lineWidth = annotation.width || 3 * scale;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -334,13 +369,13 @@ function drawAnnotationOnCanvas(
         const bounds = calculatePhotoTextBounds(annotation, width, height);
         const bgStyle = annotation.bgStyle || 'classic';
         const textColor = annotation.color || '#ffffff';
-        const fontSize = (annotation.fontSize || 20) * (width / 500);
+        const fontSize = annotation.fontSize || 20 * scale;
         const lineHeight = fontSize * 1.25;
         const textAlign = resolvePhotoTextAlign(annotation);
         const { background: badgeBgColor, text: finalTextColor } = photoTextColors(annotation);
 
         if (bgStyle !== 'classic') {
-            const radius = Math.max(6, fontSize * 0.3);
+            const radius = Math.max(6 * scale, fontSize * 0.3);
             ctx.beginPath();
             if (typeof ctx.roundRect === 'function') {
                 ctx.roundRect(bounds.x, bounds.y, bounds.width, bounds.height, radius);
@@ -349,7 +384,7 @@ function drawAnnotationOnCanvas(
             }
             if (bgStyle === 'outline') {
                 ctx.strokeStyle = textColor;
-                ctx.lineWidth = 2.5 * (width / 500);
+                ctx.lineWidth = 2.5 * scale;
                 ctx.stroke();
             } else {
                 ctx.fillStyle = badgeBgColor;
@@ -371,7 +406,7 @@ function drawAnnotationOnCanvas(
             const lineY = bounds.y + bounds.paddingY + (index + 0.82) * lineHeight;
             if (bgStyle === 'classic') {
                 ctx.strokeStyle = textColor === '#ffffff' ? '#111827' : '#ffffff';
-                ctx.lineWidth = Math.max(3, fontSize * 0.18);
+                ctx.lineWidth = Math.max(3 * scale, fontSize * 0.18);
                 ctx.lineJoin = 'round';
                 ctx.strokeText(line, textX, lineY);
             }
@@ -390,7 +425,7 @@ function drawAnnotationOnCanvas(
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
-        const head = photoArrowHead(annotation.start, annotation.end, width, height, 18 + ctx.lineWidth * 1.5);
+        const head = photoArrowHead(annotation.start, annotation.end, width, height, 12 * scale + ctx.lineWidth * 1.5);
         ctx.beginPath();
         ctx.moveTo(head[0].x, head[0].y);
         ctx.lineTo(head[1].x, head[1].y);
@@ -423,13 +458,10 @@ function drawAnnotationOnCanvas(
 async function rasterizePhotoWeb(
     uri: string,
     annotations: PhotoAnnotation[],
-    sourceWidth: number,
-    sourceHeight: number,
+    surface: { width: number; height: number; scale: number },
 ): Promise<Uint8Array> {
-    const maxDimension = 2000;
-    const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
-    const width = Math.max(1, Math.round(sourceWidth * scale));
-    const height = Math.max(1, Math.round(sourceHeight * scale));
+    const width = Math.max(1, Math.round(surface.width));
+    const height = Math.max(1, Math.round(surface.height));
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
         const element = new window.Image();
         element.onload = () => resolve(element);
@@ -442,7 +474,7 @@ async function rasterizePhotoWeb(
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
     ctx.drawImage(image, 0, 0, width, height);
-    annotations.forEach((annotation) => drawAnnotationOnCanvas(ctx, annotation, width, height));
+    annotations.forEach((annotation) => drawAnnotationOnCanvas(ctx, annotation, width, height, surface.scale));
     const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG encode failed')), 'image/png');
     });
@@ -453,19 +485,21 @@ async function rasterizePhotoWeb(
 async function rasterizeBlankCanvasWeb(
     page: BlankCanvasPage,
     annotations: PhotoAnnotation[],
-    width: number,
-    height: number,
+    surface: { width: number; height: number; scale: number },
 ): Promise<Uint8Array> {
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(width));
-    canvas.height = Math.max(1, Math.round(height));
+    canvas.width = Math.max(1, Math.round(surface.width));
+    canvas.height = Math.max(1, Math.round(surface.height));
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
 
     ctx.fillStyle = page.background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const ruling = blankCanvasPaperGeometry(page.paper, canvas.width, canvas.height);
+    const pageRuling = page.ruling
+        ? scaleBlankCanvasRuling(page.ruling, canvas.width / Math.max(1, page.width))
+        : null;
+    const ruling = blankCanvasPaperGeometry(page.paper, canvas.width, canvas.height, pageRuling);
     if (ruling.lines.length || ruling.dots.length) {
         const ink = blankCanvasPaperInk(page.background);
         ctx.save();
@@ -487,7 +521,9 @@ async function rasterizeBlankCanvasWeb(
         ctx.restore();
     }
 
-    annotations.forEach((annotation) => drawAnnotationOnCanvas(ctx, annotation, canvas.width, canvas.height));
+    annotations.forEach((annotation) => (
+        drawAnnotationOnCanvas(ctx, annotation, canvas.width, canvas.height, surface.scale)
+    ));
     const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG encode failed')), 'image/png');
     });
@@ -524,7 +560,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const [sourceUri, setSourceUri] = useState('');
     const [sourceSize, setSourceSize] = useState({ width: 4, height: 3 });
     // Set only in blank-page mode: the paper the user draws on, in place of a source bitmap.
-    const [page, setPage] = useState<{ background: string; paper: BlankCanvasPaper } | null>(null);
+    const [page, setPage] = useState<EditorPage | null>(null);
     const [pageSheet, setPageSheet] = useState(false);
     const [annotations, setAnnotations] = useState<PhotoAnnotation[]>([]);
     const [undoStack, setUndoStack] = useState<EditorHistoryState[]>([]);
@@ -549,6 +585,11 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const [isDraggingText, setIsDraggingText] = useState(false);
     const [trashHovered, setTrashHovered] = useState(false);
 
+    // Set only for the length of one save: the off-screen surface the export is photographed on.
+    const [exportSurface, setExportSurface] = useState<ExportSurface | null>(null);
+    const exportSurfaceRef = useRef<View>(null);
+    const exportLaidOutRef = useRef(false);
+    const exportPhotoLoadedRef = useRef(false);
     const [cropBox, setCropBox] = useState<PhotoCropRect>({ x: 0, y: 0, width: 1, height: 1 });
     const [cropAspect, setCropAspect] = useState<string>('free');
 
@@ -558,6 +599,12 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     sourceUriRef.current = sourceUri;
     const sourceSizeRef = useRef(sourceSize);
     sourceSizeRef.current = sourceSize;
+    const pageRef = useRef(page);
+    pageRef.current = page;
+    const undoStackRef = useRef(undoStack);
+    undoStackRef.current = undoStack;
+    const redoStackRef = useRef(redoStack);
+    redoStackRef.current = redoStack;
     const toolRef = useRef(tool);
     toolRef.current = tool;
     const colorRef = useRef(color);
@@ -639,7 +686,9 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         const drawnPage = photo ? null : blankPage;
         if (!photo && !drawnPage) return;
         setAnnotations([]);
+        undoStackRef.current = [];
         setUndoStack([]);
+        redoStackRef.current = [];
         setRedoStack([]);
         setLiveAnnotation(null);
         setSelectedTextId(null);
@@ -653,7 +702,11 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         setPageSheet(false);
 
         if (drawnPage) {
-            setPage({ background: drawnPage.background, paper: drawnPage.paper });
+            setPage({
+                background: drawnPage.background,
+                paper: drawnPage.paper,
+                ruling: drawnPage.ruling ?? defaultBlankCanvasRuling(drawnPage.width, drawnPage.height),
+            });
             setSourceUri('');
             // Nothing has to load: the page is drawn, so the editor is usable immediately.
             setImageReady(true);
@@ -718,6 +771,13 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const canvasSizeRef = useRef(canvasSize);
     canvasSizeRef.current = canvasSize;
 
+    // The canvas is the export sheet scaled down by one factor, so the ruling is scaled by that
+    // same factor rather than re-derived: what the drawer sees is what the PNG holds.
+    const canvasRuling = useMemo(() => {
+        if (!page) return null;
+        return scaleBlankCanvasRuling(page.ruling, canvasSize.width / Math.max(1, sourceSize.width));
+    }, [page, canvasSize.width, sourceSize.width]);
+
     // The bin is laid out from the geometry the gesture handlers hit-test against, so the pill
     // the user aims at and the region that deletes are one rect rather than two guesses that
     // drift apart as the canvas changes shape.
@@ -726,14 +786,25 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         [canvasSize.width, canvasSize.height],
     );
 
+    /** Remember a state and drop the redo branch, the way any edit does. */
+    const pushHistory = (snapshot: EditorHistoryState) => {
+        undoStackRef.current = [...undoStackRef.current.slice(-29), snapshot];
+        setUndoStack(undoStackRef.current);
+        redoStackRef.current = [];
+        setRedoStack(redoStackRef.current);
+    };
+
+    /** The current sheet and ink, as a point history can return to. */
+    const snapshotEditor = (): EditorHistoryState => ({
+        sourceUri: sourceUriRef.current,
+        sourceSize: sourceSizeRef.current,
+        annotations: annotationsRef.current,
+        page: pageRef.current,
+    });
+
     const commitAnnotations = (next: PhotoAnnotation[]) => {
-        const snapshot: EditorHistoryState = {
-            sourceUri: sourceUriRef.current,
-            sourceSize: sourceSizeRef.current,
-            annotations: annotationsRef.current,
-        };
-        setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-        setRedoStack([]);
+        const snapshot = snapshotEditor();
+        pushHistory(snapshot);
         annotationsRef.current = next;
         setAnnotations(next);
     };
@@ -1141,12 +1212,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             if (pinch) {
                 pinchRef.current = null;
                 if (pinch.applied) {
-                    setUndoStack((stack) => [...stack.slice(-29), {
-                        sourceUri: sourceUriRef.current,
-                        sourceSize: sourceSizeRef.current,
-                        annotations: pinch.beforeAnnotations,
-                    }]);
-                    setRedoStack([]);
+                    pushHistory({ ...snapshotEditor(), annotations: pinch.beforeAnnotations });
                 }
                 gestureRef.current = null;
                 textDragRef.current = null;
@@ -1162,12 +1228,10 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 setEraserCursor(null);
                 if (erasedInCurrentGestureRef.current && gestureStartAnnotationsRef.current) {
                     const snapshot: EditorHistoryState = {
-                        sourceUri: sourceUriRef.current,
-                        sourceSize: sourceSizeRef.current,
+                        ...snapshotEditor(),
                         annotations: gestureStartAnnotationsRef.current,
                     };
-                    setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-                    setRedoStack([]);
+                    pushHistory(snapshot);
                 }
                 gestureRef.current = null;
                 gestureStartAnnotationsRef.current = null;
@@ -1203,12 +1267,10 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                             : ann
                     ));
                     const snapshot: EditorHistoryState = {
-                        sourceUri: sourceUriRef.current,
-                        sourceSize: sourceSizeRef.current,
+                        ...snapshotEditor(),
                         annotations: previousAnnotations,
                     };
-                    setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-                    setRedoStack([]);
+                    pushHistory(snapshot);
                 }
                 textDragRef.current = null;
                 return;
@@ -1244,12 +1306,10 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 setEraserCursor(null);
                 if (erasedInCurrentGestureRef.current && gestureStartAnnotationsRef.current) {
                     const snapshot: EditorHistoryState = {
-                        sourceUri: sourceUriRef.current,
-                        sourceSize: sourceSizeRef.current,
+                        ...snapshotEditor(),
                         annotations: gestureStartAnnotationsRef.current,
                     };
-                    setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-                    setRedoStack([]);
+                    pushHistory(snapshot);
                 }
                 gestureStartAnnotationsRef.current = null;
                 erasedInCurrentGestureRef.current = false;
@@ -1263,70 +1323,95 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         },
     })).current;
 
+    /**
+     * Move the editor onto a remembered state. Both directions do the same restore, so they share
+     * it; the caller decides which stack the state left behind belongs on.
+     */
+    const restoreEditorState = (target: EditorHistoryState) => {
+        if (target.sourceUri !== sourceUriRef.current) {
+            setImageReady(false);
+            sourceUriRef.current = target.sourceUri;
+            setSourceUri(target.sourceUri);
+        }
+        // A drawn page rotates and crops without ever swapping its (empty) source, so the size
+        // and the ruling have to be restored on their own or the ink would land on the wrong sheet.
+        if (!sameSourceSize(target.sourceSize, sourceSizeRef.current)) {
+            sourceSizeRef.current = target.sourceSize;
+            setSourceSize(target.sourceSize);
+        }
+        if (target.page !== pageRef.current) {
+            pageRef.current = target.page;
+            setPage(target.page);
+        }
+        annotationsRef.current = target.annotations;
+        setAnnotations(target.annotations);
+    };
+
+    // History is read and written outside the state updaters: an updater that also queued the
+    // other stack's push would run that push twice under StrictMode's double invocation.
     const undo = () => {
-        setUndoStack((stack) => {
-            if (!stack.length) return stack;
-            const previous = stack[stack.length - 1];
-            const currentSnapshot: EditorHistoryState = {
-                sourceUri: sourceUriRef.current,
-                sourceSize: sourceSizeRef.current,
-                annotations: annotationsRef.current,
-            };
-            setRedoStack((redo) => [...redo.slice(-29), currentSnapshot]);
-            if (previous.sourceUri !== sourceUriRef.current) {
-                setImageReady(false);
-                setSourceUri(previous.sourceUri);
-            }
-            // A drawn page rotates and crops without ever swapping its (empty) source, so the
-            // size has to be restored on its own or the ink would land on the wrong sheet.
-            if (!sameSourceSize(previous.sourceSize, sourceSizeRef.current)) {
-                setSourceSize(previous.sourceSize);
-            }
-            annotationsRef.current = previous.annotations;
-            setAnnotations(previous.annotations);
-            return stack.slice(0, -1);
-        });
+        const stack = undoStackRef.current;
+        if (!stack.length) return;
+        const previous = stack[stack.length - 1];
+        const undone = snapshotEditor();
+        undoStackRef.current = stack.slice(0, -1);
+        setUndoStack(undoStackRef.current);
+        redoStackRef.current = [...redoStackRef.current.slice(-29), undone];
+        setRedoStack(redoStackRef.current);
+        restoreEditorState(previous);
     };
 
     const redo = () => {
-        setRedoStack((stack) => {
-            if (!stack.length) return stack;
-            const next = stack[stack.length - 1];
-            const currentSnapshot: EditorHistoryState = {
-                sourceUri: sourceUriRef.current,
-                sourceSize: sourceSizeRef.current,
-                annotations: annotationsRef.current,
-            };
-            setUndoStack((undoItems) => [...undoItems.slice(-29), currentSnapshot]);
-            if (next.sourceUri !== sourceUriRef.current) {
-                setImageReady(false);
-                setSourceUri(next.sourceUri);
-            }
-            if (!sameSourceSize(next.sourceSize, sourceSizeRef.current)) {
-                setSourceSize(next.sourceSize);
-            }
-            annotationsRef.current = next.annotations;
-            setAnnotations(next.annotations);
-            return stack.slice(0, -1);
-        });
+        const stack = redoStackRef.current;
+        if (!stack.length) return;
+        const next = stack[stack.length - 1];
+        const redone = snapshotEditor();
+        redoStackRef.current = stack.slice(0, -1);
+        setRedoStack(redoStackRef.current);
+        undoStackRef.current = [...undoStackRef.current.slice(-29), redone];
+        setUndoStack(undoStackRef.current);
+        restoreEditorState(next);
     };
 
     const closeEditor = () => {
         if (saving || rotating || cropping) return;
-        onClose();
+        // Leaving throws the work away — there is nowhere it is kept — so anything the user has
+        // drawn, cropped or turned is worth one question first. An untouched sheet just closes.
+        const hasUnsavedWork = annotationsRef.current.length > 0 || undoStackRef.current.length > 0;
+        if (!hasUnsavedWork) {
+            onClose();
+            return;
+        }
+        confirm(
+            page
+                ? l('Çizimi bırak?', 'Discard drawing?')
+                : l('Düzenlemeyi bırak?', 'Discard edits?'),
+            page
+                ? l('Bu sayfadaki çizim kaydedilmeden silinecek.', 'This drawing will be lost without being added to the card.')
+                : l('Bu fotoğrafta yaptığınız değişiklikler kaydedilmeden silinecek.', 'Your changes to this photo will be lost without being added to the card.'),
+            onClose,
+            { destructive: true },
+        );
     };
 
     const rotate = async () => {
         if (rotating || cropping) return;
         if (page) {
             // A drawn page has no bitmap to turn: swap the page dimensions and take the ink with it.
-            const snapshot: EditorHistoryState = { sourceUri, sourceSize, annotations: annotationsRef.current };
-            setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-            setRedoStack([]);
+            const snapshot = snapshotEditor();
+            pushHistory(snapshot);
             const rotated = annotationsRef.current.map(rotatePhotoAnnotationClockwise);
             annotationsRef.current = rotated;
             setAnnotations(rotated);
             setSourceSize({ width: sourceSize.height, height: sourceSize.width });
+            // The ruling is turned too. Leaving it put would slide the lines out from under the
+            // writing that was made on them, and would keep a lined page ruled the old way.
+            const turnedPage = {
+                ...page,
+                ruling: rotateBlankCanvasRulingClockwise(page.ruling, sourceSize.height),
+            };
+            pageRef.current = turnedPage;
+            setPage(turnedPage);
             setSelectedTextId(null);
             return;
         }
@@ -1337,13 +1422,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 compress: 1,
                 format: SaveFormat.PNG,
             });
-            const snapshot: EditorHistoryState = {
-                sourceUri,
-                sourceSize,
-                annotations: annotationsRef.current,
-            };
-            setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-            setRedoStack([]);
+            const snapshot = snapshotEditor();
+            pushHistory(snapshot);
 
             const rotated = annotationsRef.current.map(rotatePhotoAnnotationClockwise);
             annotationsRef.current = rotated;
@@ -1370,14 +1450,21 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         if (pixels.width <= 0 || pixels.height <= 0) return;
 
         if (page) {
-            // Trimming a drawn page is pure geometry: keep the ink, shrink the sheet, re-rule it.
-            const snapshot: EditorHistoryState = { sourceUri, sourceSize, annotations: annotationsRef.current };
-            setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-            setRedoStack([]);
+            // Trimming a drawn page is pure geometry: keep the ink and the ruling, shrink the sheet.
+            const snapshot = snapshotEditor();
+            pushHistory(snapshot);
             const trimmed = annotationsRef.current.map((ann) => cropPhotoAnnotation(ann, cropBox));
             annotationsRef.current = trimmed;
             setAnnotations(trimmed);
             setSourceSize(cropBlankCanvasSize(sourceSize, cropBox));
+            // Only the ruling's phase moves: trimming a sheet does not resize its squares, so a
+            // stroke drawn along a line is still along that line on the smaller page.
+            const trimmedPage = {
+                ...page,
+                ruling: cropBlankCanvasRuling(page.ruling, sourceSize, cropBox),
+            };
+            pageRef.current = trimmedPage;
+            setPage(trimmedPage);
             setCropBox({ x: 0, y: 0, width: 1, height: 1 });
             setCropAspect('free');
             setSelectedTextId(null);
@@ -1391,13 +1478,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 compress: 1,
                 format: SaveFormat.PNG,
             });
-            const snapshot: EditorHistoryState = {
-                sourceUri,
-                sourceSize,
-                annotations: annotationsRef.current,
-            };
-            setUndoStack((stack) => [...stack.slice(-29), snapshot]);
-            setRedoStack([]);
+            const snapshot = snapshotEditor();
+            pushHistory(snapshot);
 
             const transformedAnnotations = annotationsRef.current.map((ann) => cropPhotoAnnotation(ann, cropBox));
             annotationsRef.current = transformedAnnotations;
@@ -1424,7 +1506,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         }
     };
 
-    /** Native export: capture the live canvas directly to a temporary file using renderInContext */
+    /** Native fallback: photograph the live canvas, at whatever the screen happens to measure. */
     const captureCanvasFile = async (): Promise<string> => {
         return captureRef(canvasRef, {
             format: 'png',
@@ -1432,6 +1514,59 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             result: 'tmpfile',
             useRenderInContext: true,
         });
+    };
+
+    /** One frame, with a timer behind it so a backgrounded app can never leave a save hanging. */
+    const nextFrame = () => new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 32);
+        requestAnimationFrame(() => {
+            clearTimeout(timer);
+            resolve();
+        });
+    });
+
+    /** Hold until the off-screen surface has been laid out and its photo, if any, has loaded. */
+    const waitForExportSurface = async (needsPhoto: boolean) => {
+        const deadline = Date.now() + 4000;
+        while (Date.now() < deadline) {
+            if (exportLaidOutRef.current && (!needsPhoto || exportPhotoLoadedRef.current)) break;
+            await nextFrame();
+        }
+        // One more frame, so the finished tree is on the layer before the shutter.
+        await nextFrame();
+    };
+
+    /**
+     * Native export: render the drawing once more on a surface sized for the export, off screen,
+     * and photograph that instead of the canvas the user was drawing on. `renderInContext` draws
+     * a layer at its own size, so asking `captureRef` for a larger image would only pad the
+     * canvas — the surface itself has to be the bigger one.
+     */
+    const captureExportSurface = async (surface: ExportSurface): Promise<string> => {
+        exportLaidOutRef.current = false;
+        exportPhotoLoadedRef.current = false;
+        setExportSurface(surface);
+        try {
+            await waitForExportSurface(!pageRef.current);
+            return await captureRef(exportSurfaceRef, {
+                format: 'png',
+                quality: 1,
+                result: 'tmpfile',
+                useRenderInContext: true,
+            });
+        } finally {
+            setExportSurface(null);
+        }
+    };
+
+    /** The export surface, falling back to the on-screen canvas if the off-screen one fails. */
+    const captureForExport = async (surface: ExportSurface): Promise<string> => {
+        try {
+            return await captureExportSurface(surface);
+        } catch (error) {
+            console.warn('[PhotoEditor] export surface capture failed, using the canvas:', error);
+            return captureCanvasFile();
+        }
     };
 
     const save = async () => {
@@ -1461,27 +1596,42 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         }
         setSaving(true);
         try {
-            const filename = sanitizeMediaFilename(`${Date.now()}_${page ? 'cizim' : 'duzenlenmis'}.png`);
+            let filename = sanitizeMediaFilename(`${Date.now()}_${page ? 'cizim' : 'duzenlenmis'}.png`);
+            // Web paints into a canvas of its own, so it is measured in pixels directly; native
+            // renders a view, so it is measured in points the device's scale turns back into
+            // those pixels.
+            const surface = photoExportSurface({
+                source: sourceSizeRef.current,
+                canvas: canvasSizeRef.current,
+                pixelRatio: Platform.OS === 'web' ? 1 : PixelRatio.get(),
+                maxDimension: EXPORT_MAX_DIMENSION,
+            });
             if (page && Platform.OS === 'web') {
                 const bytes = await rasterizeBlankCanvasWeb(
                     { ...page, width: sourceSize.width, height: sourceSize.height },
                     annotationsRef.current,
-                    sourceSize.width,
-                    sourceSize.height,
+                    surface,
                 );
                 await saveMediaBytes(filename, bytes, 'image/png');
             } else if (page) {
-                const captureUri = await captureCanvasFile();
+                const captureUri = await captureForExport(surface);
                 await saveMediaFromUri(filename, captureUri, 'image/png');
             } else if (annotationsRef.current.length === 0) {
-                await saveMediaFromUri(filename, sourceUri, 'image/jpeg');
+                // Nothing was drawn, so the source is copied rather than re-encoded — and it has
+                // to be named after what it actually is. A crop or a turn leaves a PNG behind,
+                // while an untouched pick is still the JPEG that came out of the picker; the
+                // `.png` name above would have described neither.
+                filename = sanitizeMediaFilename(mediaFilenameForPickedAsset({
+                    uri: sourceUri,
+                    name: `${Date.now()}_duzenlenmis`,
+                    fallbackExtension: 'png',
+                }));
+                await saveMediaFromUri(filename, sourceUri, guessMimeFromFilename(filename) || undefined);
             } else if (Platform.OS === 'web') {
-                const bytes = await rasterizePhotoWeb(
-                    sourceUri, annotationsRef.current, sourceSize.width, sourceSize.height,
-                );
+                const bytes = await rasterizePhotoWeb(sourceUri, annotationsRef.current, surface);
                 await saveMediaBytes(filename, bytes, 'image/png');
             } else {
-                const captureUri = await captureCanvasFile();
+                const captureUri = await captureForExport(surface);
                 await saveMediaFromUri(filename, captureUri, 'image/png');
             }
             onSaved(filename);
@@ -1549,17 +1699,26 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         setTextModal(false);
     };
 
-    const changePaper = (paper: BlankCanvasPaper) => {
+    /**
+     * Swap the sheet under the ink. History carries the page, so a paper change has to be recorded
+     * like any other edit; without it the next undo would quietly put the old paper back.
+     */
+    const changePage = (change: Partial<EditorPage>) => {
         if (!page) return;
-        setPage({ ...page, paper });
+        pushHistory(snapshotEditor());
+        const next = { ...page, ...change };
+        pageRef.current = next;
+        setPage(next);
     };
+
+    const changePaper = (paper: BlankCanvasPaper) => changePage({ paper });
 
     const changePageColor = (background: string) => {
         if (!page) return;
         // A pen still holding the old page's default ink follows the page, so switching to a dark
         // sheet never leaves the user drawing invisible black strokes.
         const penFollowsPage = color === blankCanvasDefaultInk(page.background);
-        setPage({ ...page, background });
+        changePage({ background });
         if (penFollowsPage) setColor(blankCanvasDefaultInk(background));
     };
 
@@ -1624,6 +1783,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 background={page.background}
                                 width={canvasSize.width}
                                 height={canvasSize.height}
+                                ruling={canvasRuling}
                                 style={StyleSheet.absoluteFill}
                             />
                         ) : sourceUri ? (
@@ -2310,6 +2470,59 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         </View>
                     </KeyboardAvoidingView>
                 </Modal>
+
+                {/* The surface the native export is photographed on. Mounted only while a save is
+                    running, and parked off screen: it is the same drawing at export size, without
+                    the selection frame, eraser ring or crop overlay, none of which belong in the
+                    card. It has to be a real, laid-out view — `renderInContext` photographs a
+                    layer, and a layer only exists once the view is in the tree. */}
+                {exportSurface && (
+                    <View
+                        ref={exportSurfaceRef}
+                        collapsable={false}
+                        pointerEvents="none"
+                        onLayout={() => { exportLaidOutRef.current = true; }}
+                        style={[
+                            styles.exportSurface,
+                            { width: exportSurface.width, height: exportSurface.height },
+                        ]}
+                    >
+                        {page ? (
+                            <PaperSwatch
+                                paper={page.paper}
+                                background={page.background}
+                                width={exportSurface.width}
+                                height={exportSurface.height}
+                                ruling={scaleBlankCanvasRuling(
+                                    page.ruling,
+                                    exportSurface.width / Math.max(1, sourceSize.width),
+                                )}
+                                style={StyleSheet.absoluteFill}
+                            />
+                        ) : sourceUri ? (
+                            <NativeImage
+                                source={{ uri: sourceUri }}
+                                style={StyleSheet.absoluteFill}
+                                resizeMode="stretch"
+                                fadeDuration={0}
+                                onLoad={() => { exportPhotoLoadedRef.current = true; }}
+                                onError={() => { exportPhotoLoadedRef.current = true; }}
+                            />
+                        ) : null}
+                        <Svg
+                            width={exportSurface.width}
+                            height={exportSurface.height}
+                            style={StyleSheet.absoluteFill}
+                        >
+                            {annotations.map((annotation) => renderAnnotation(
+                                annotation,
+                                exportSurface.width,
+                                exportSurface.height,
+                                exportSurface.scale,
+                            ))}
+                        </Svg>
+                    </View>
+                )}
             </SafeAreaView>
         </Modal>
     );
@@ -2343,7 +2556,14 @@ function createStyles(colors: ColorScheme) {
         saveButtonText: { color: '#fff', fontWeight: '800', fontSize: FontSize.md },
         saveButtonDisabled: { opacity: 0.5 },
         stage: { flex: 1, minHeight: 0, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 8 },
-        canvas: { backgroundColor: '#000', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+        exportSurface: {
+        position: 'absolute',
+        // Far enough off screen that it can never be seen, close enough to stay laid out.
+        left: -30000,
+        top: 0,
+        overflow: 'hidden',
+    },
+    canvas: { backgroundColor: '#000', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
         controls: {
             backgroundColor: '#1f2937',
             borderTopWidth: StyleSheet.hairlineWidth,
