@@ -60,4 +60,17 @@ describe('whiteboard history', () => {
         expect(whiteboardHistoryReducer(cleared, { type: 'undo' }).strokes).toEqual([ink]);
         expect(whiteboardHistoryReducer(cleared, { type: 'reset' })).toEqual(EMPTY_WHITEBOARD_HISTORY);
     });
+
+    it('restores a saved snapshot directly without losing strokes', () => {
+        const ink = stroke([[5, 5], [15, 15]]);
+        const snapshot = {
+            strokes: [ink],
+            past: [[]],
+            future: [],
+        };
+        const restored = whiteboardHistoryReducer(EMPTY_WHITEBOARD_HISTORY, { type: 'restore', snapshot });
+        expect(restored.strokes).toEqual([ink]);
+        expect(restored.past).toEqual([[]]);
+    });
 });
+

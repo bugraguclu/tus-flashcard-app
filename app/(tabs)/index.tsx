@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platform, Modal, Pressable, PanResponder, useWindowDimensions, AppState, type ViewProps } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { Spacing, FontSize, Shadows, BorderRadius, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { schedulerForSettings, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
@@ -45,12 +45,32 @@ import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filte
 import CardWebView from '../../components/CardWebView';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
-import { WhiteboardOverlay, type WhiteboardHandle } from '../../components/WhiteboardOverlay';
+import ProtectedContentShield from '../../components/ProtectedContentShield';
+import {
+    DEFAULT_WHITEBOARD_PEN_COLOR,
+    WhiteboardProvider,
+    WhiteboardCanvas,
+    WhiteboardToolbar,
+    type WhiteboardHandle,
+} from '../../components/WhiteboardOverlay';
+import {
+    DEFAULT_WHITEBOARD_DECK_STATE,
+    loadWhiteboardDeckState,
+    penColorForTheme,
+    saveWhiteboardDeckState,
+    withPenColorForTheme,
+    saveCardWhiteboard,
+    loadCardWhiteboard,
+    clearCardWhiteboard,
+    clearDeckWhiteboards,
+    type WhiteboardDeckState,
+} from '../../lib/whiteboardSession';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import CatalogUnlockSheet from '../../components/CatalogUnlockSheet';
 import {
     answerStudyCard,
     forgetCard,
+    getDeckTotalCardCount,
     getStudyQueue,
     getWaitingLearningCardIds,
     resolveSettingsForDeck,
@@ -65,6 +85,8 @@ import { cardFlagName } from '../../lib/i18n';
 import { alert, choose } from '../../lib/confirm';
 import { gradeForHardwareKey, matchesKeyBinding, matchesShowAnswerKey, normalizeHardwareKey } from '../../lib/hardwareKeyboard';
 import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
+import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
+import { useScreenGuard } from '../../hooks/useScreenGuard';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
 import { TimeboxTracker } from '../../lib/timebox';
@@ -83,6 +105,7 @@ import {
     shouldRunAutoAdvance,
 } from '../../lib/reviewerTimers';
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
+import { hasExplicitStudyScope } from '../../lib/deckNavigation';
 import {
     canUndoReview,
     isReviewerUndoKey,
@@ -162,27 +185,6 @@ function UndoReviewIcon({ color }: { color: string }) {
     );
 }
 
-function ReviewerInfoIcon({ color }: { color: string }) {
-    return (
-        <Svg width={21} height={21} viewBox="0 0 24 24">
-            <Path
-                d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.9}
-            />
-            <Path
-                d="M12 16v-4m0-4h.01"
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
-
 function ReviewerSettingsIcon({ color }: { color: string }) {
     return (
         <Svg width={21} height={21} viewBox="0 0 24 24">
@@ -203,10 +205,6 @@ function ReviewerSettingsIcon({ color }: { color: string }) {
         </Svg>
     );
 }
-
-// Anki opens on the deck list. Redirect exactly once per app launch, so in-app
-// navigation back to "/" (sidebar, deck study links) still reaches the study screen.
-let launchRedirectDone = false;
 
 // Study-ahead passes survive the study screen unmounting (hopping to another deck via the
 // deck list and back). A pass is consumed by answering its card — never by navigation.
@@ -256,7 +254,7 @@ export default function StudyScreen() {
         invalidateCollection,
         markSchedulingStale,
     } = useCollectionInvalidation();
-    const { selectedSubject, selectedTopic, setActiveDeckName } = useStudyScope();
+    const { selectedSubject, setSelectedSubject, selectedTopic, setSelectedTopic, setActiveDeckName } = useStudyScope();
     const setStudyPosition = useSetStudyPosition();
     const params = useLocalSearchParams();
     const pathname = usePathname();
@@ -268,7 +266,28 @@ export default function StudyScreen() {
     // The URL/deep link chooses the initial study scope. Switching decks from the reviewer is a
     // queue-scope change on this screen, not a new navigation entry.
     const [selectedDeckName, setSelectedDeckName] = useRouteDeckScope(routeSelectedDeckName);
+    const routeSubject = typeof params.subject === 'string' ? params.subject : null;
+    const routeTopic = typeof params.topic === 'string' ? params.topic : null;
+    const isAllStudyScope = params.all === '1' || params.scope === 'all';
+    const hasStudyScope = hasExplicitStudyScope(
+        params,
+        selectedSubject,
+        selectedTopic,
+        selectedDeckName,
+    );
+
+    useEffect(() => {
+        if (routeSubject) {
+            setSelectedSubject(routeSubject);
+            setSelectedTopic(routeTopic);
+        } else if (routeSelectedDeckName || isAllStudyScope) {
+            setSelectedSubject(null);
+            setSelectedTopic(null);
+        }
+    }, [routeSubject, routeTopic, routeSelectedDeckName, isAllStudyScope, setSelectedSubject, setSelectedTopic]);
     const colors = useThemeColors();
+    // The board keeps one pen per theme, so a pen picked on a white card is not lost on a dark one.
+    const isDarkTheme = useIsDarkTheme();
     const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
     const [reviewerSurface, setReviewerSurface] = useState<ReviewerSurface>('none');
     const toolsMenuVisible = reviewerSurface === 'tools';
@@ -280,6 +299,16 @@ export default function StudyScreen() {
     const [whiteboardHasContent, setWhiteboardHasContent] = useState(false);
     const [whiteboardToolbarHeight, setWhiteboardToolbarHeight] = useState(0);
     const whiteboardRef = useRef<WhiteboardHandle>(null);
+    const [whiteboardDeckState, setWhiteboardDeckState] = useState<WhiteboardDeckState>(
+        DEFAULT_WHITEBOARD_DECK_STATE,
+    );
+    const whiteboardDeckStateRef = useRef(whiteboardDeckState);
+    /** Card the ink on the board was drawn over, so a queue gap is not mistaken for a new card. */
+    const inkedCardIdRef = useRef<number | null>(null);
+    const whiteboardActiveRef = useRef(whiteboardActive);
+    whiteboardActiveRef.current = whiteboardActive;
+    const whiteboardStylusOnlyRef = useRef(whiteboardStylusOnly);
+    whiteboardStylusOnlyRef.current = whiteboardStylusOnly;
     // AnkiDroid-compatible whole-card TTS. Explicit Anki TTS regions take precedence; otherwise
     // only visible learner text is read (never stylesheet or script contents).
     const [voicePlaybackEnabled, setVoicePlaybackEnabled] = useState(loadReviewerTtsEnabled);
@@ -311,6 +340,13 @@ export default function StudyScreen() {
     const [heldBackNewCount, setHeldBackNewCount] = useState(0);
     const [heldBackReviewCount, setHeldBackReviewCount] = useState(0);
     const [upcomingCardsCount, setUpcomingCardsCount] = useState(0);
+    const totalDeckCards = useMemo(() => {
+        try {
+            return getDeckTotalCardCount(selectedDeckName);
+        } catch {
+            return 0;
+        }
+    }, [selectedDeckName, collectionVersion]);
     const lastDeckIdRef = useRef<number | null>(null);
     const lastStudiedDeckNameRef = useRef<string | null>(null);
     useEffect(() => {
@@ -324,7 +360,7 @@ export default function StudyScreen() {
     }, [currentCard?.deckId]);
 
     useEffect(() => {
-        if (selectedDeckName && selectedDeckName.includes('::')) {
+        if (selectedDeckName) {
             lastStudiedDeckNameRef.current = selectedDeckName;
         }
     }, [selectedDeckName]);
@@ -339,7 +375,7 @@ export default function StudyScreen() {
         }
         const regularDecks = getAllDecks().filter((d) => !d.isFiltered);
         return regularDecks[0]?.id ?? 1;
-    }, [selectedDeckName]);
+    }, [selectedDeckName, collectionVersion]);
     // Anki's on-screen answer timer (a deck option) and the pace its ETA sibling is built on.
     const [answerSeconds, setAnswerSeconds] = useState(0);
     // Auto Advance's "show reminder" action: a nudge in the status bar, never a grade.
@@ -404,9 +440,30 @@ export default function StudyScreen() {
         setTypedAnswer('');
         setUndoStack([]);
         setRedoStack([]);
-        setWhiteboardActive(false);
         setWhiteboardHasContent(false);
+        // The overlay now outlives an empty queue, so the ink has to be dropped explicitly here.
+        // A deck switch is the one place it should go: the drawing belongs to the card it was made
+        // over, and that card is no longer in the queue.
+        whiteboardRef.current?.clear();
+        inkedCardIdRef.current = null;
     }, [selectedDeckName]);
+
+    // AnkiDroid stores the board's on/off state, stylus-only choice and pen colour per deck (MetaDB
+    // `whiteboardState`), so a deck the learner left the board switched on for has it switched on
+    // again on return. Keyed on the deck rather than on the scope change, so the first deck opened
+    // in a session is restored too. Only the ink is not restored: it belonged to a card that is no
+    // longer in front of them. Held until the collection is open, or the read would find no row and
+    // settle on the defaults for good.
+    const restoredWhiteboardDeckIdRef = useRef<number | null>(null);
+    useEffect(() => {
+        if (loading || restoredWhiteboardDeckIdRef.current === targetDeckId) return;
+        restoredWhiteboardDeckIdRef.current = targetDeckId;
+        const restored = loadWhiteboardDeckState(targetDeckId);
+        whiteboardDeckStateRef.current = restored;
+        setWhiteboardDeckState(restored);
+        setWhiteboardActive(restored.enabled);
+        setWhiteboardStylusOnly(restored.stylusOnly);
+    }, [loading, targetDeckId]);
 
     // Per-card review time and Auto Advance pause when the app is inactive. Timebox intentionally
     // uses wall-clock time, matching Anki's reviewer-scoped blocks.
@@ -417,7 +474,7 @@ export default function StudyScreen() {
             appIsActiveRef.current = active;
             setAppForegrounded(active);
             answerTimerRef.current.setActive(active, now);
-            autoAdvanceTimerRef.current.setActive(active, now);
+            autoAdvanceTimerRef.current.setActive(active && !whiteboardActiveRef.current, now);
         });
         return () => subscription.remove();
     }, []);
@@ -432,29 +489,23 @@ export default function StudyScreen() {
 
     useEffect(() => () => setStudyPosition(null), [setStudyPosition]);
 
-    // Anki tracks a "current deck"; deck-aware screens (stats, the sidebar's course list)
-    // default to it. Sticky: studying a course/topic inside the deck must not clear it —
-    // only opening another deck replaces it.
+    // Anki tracks a "current deck"; deck-aware screens (stats, the sidebar's course list) and
+    // the "add to current deck" mode default to it. It follows the deck the learner *chose*,
+    // never the subdeck the queue happens to be serving: in Anki only selecting a deck makes it
+    // current, so studying a parent must not start filing new cards into one of its children.
+    // The reviewer's own deck picker gets the queue's deck through `activeStudyDeckName` instead.
     useEffect(() => {
         if (selectedDeckName) setActiveDeckName(selectedDeckName);
     }, [selectedDeckName, setActiveDeckName]);
-
-    // Land on the deck list at app start, like Anki. A deck link ("/?deck=X") skips the
-    // redirect so studying straight from a cold deep link keeps working.
-    useEffect(() => {
-        if (launchRedirectDone) return;
-        launchRedirectDone = true;
-        if (!selectedDeckName) {
-            router.replace('/decks' as any);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     // The weekly collection snapshot reads every table in one synchronous pass. Hold it while
     // this screen is the one in front of the learner; it runs as soon as focus moves away, or
     // when the app leaves the foreground. Focus rather than mount: the reviewer stays mounted
     // underneath Settings and the editor, and a backup must not be blocked by a hidden screen.
-    useFocusEffect(useCallback(() => beginStudyActivity(), []));
+    useFocusEffect(useCallback(() => {
+        if (!hasStudyScope) return;
+        return beginStudyActivity();
+    }, [hasStudyScope]));
 
     // Anki resolves limits per deck: studying a deck uses that deck's daily limits (plus any
     // "today only" boost), and a filtered / custom-study deck is exempt from daily limits.
@@ -547,8 +598,15 @@ export default function StudyScreen() {
         const activeStillQueued = active != null
             && sessionCards.some((card) => card.cardId === active.cardId);
 
-        if (activeStillQueued) {
-            setQueue([active, ...sessionCards.filter((card) => card.cardId !== active.cardId)]);
+        // Ink on the whiteboard is unsaved work belonging to the card it was drawn over, so the
+        // 45-second background refresh must not swap that card out either — the fresh queue is
+        // merged behind it and the swap waits for the learner's next answer. Without this, a card
+        // that merely left the fresh queue (a learning step moving past the learn-ahead window,
+        // say) took the drawing with it.
+        const holdForDrawing = active != null && whiteboardActiveRef.current;
+
+        if (activeStillQueued || holdForDrawing) {
+            setQueue([active!, ...sessionCards.filter((card) => card.cardId !== active!.cardId)]);
         } else {
             setQueue(sessionCards);
             setCurrentCard(sessionCards.length > 0 ? sessionCards[0] : null);
@@ -593,15 +651,15 @@ export default function StudyScreen() {
     }, [settings.dayRolloverHour]);
 
     useEffect(() => {
+        if (!hasStudyScope) return;
         refreshSessionStats();
         setLoading(false);
-    }, [refreshSessionStats]);
+    }, [hasStudyScope, refreshSessionStats]);
 
     useEffect(() => {
-        if (!loading) {
-            buildQueue();
-        }
-    }, [loading, buildQueue]);
+        if (!hasStudyScope || loading) return;
+        buildQueue();
+    }, [hasStudyScope, loading, buildQueue]);
 
     // Rebuild when data changes elsewhere (card created/edited, import, restore) so a
     // just-created card appears immediately instead of waiting for the fallback timer.
@@ -609,10 +667,10 @@ export default function StudyScreen() {
     // bump dataVersion too, which makes this a cheap merge behind the current card.
     const lastCollectionVersionRef = useRef(collectionVersion);
     useEffect(() => {
-        if (loading || collectionVersion === lastCollectionVersionRef.current) return;
+        if (!hasStudyScope || loading || collectionVersion === lastCollectionVersionRef.current) return;
         lastCollectionVersionRef.current = collectionVersion;
         buildQueue(undefined, false, true);
-    }, [collectionVersion, loading, buildQueue]);
+    }, [hasStudyScope, collectionVersion, loading, buildQueue]);
 
     useEffect(() => () => {
         if (scheduledRefreshRef.current) {
@@ -624,7 +682,7 @@ export default function StudyScreen() {
     // Periodic fallback refresh to keep queue/stat drift bounded. Also re-reads the
     // day's numbers so waking from sleep or crossing the rollover self-corrects.
     useEffect(() => {
-        if (loading) return;
+        if (!hasStudyScope || loading) return;
 
         const timer = setInterval(() => {
             if (isMutatingRef.current) return;
@@ -633,7 +691,7 @@ export default function StudyScreen() {
         }, 45000);
 
         return () => clearInterval(timer);
-    }, [loading, buildQueue, refreshSessionStats]);
+    }, [hasStudyScope, loading, buildQueue, refreshSessionStats]);
 
     useEffect(() => {
         if (!currentCard) return;
@@ -1172,10 +1230,14 @@ export default function StudyScreen() {
 
     const handleDeleteNote = useCallback(() => {
         if (!currentCard) return;
+        if (isCatalogCard(currentCard.cardId) || isCatalogNote(currentCard.noteId)) {
+            alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları silinemez.', 'Built-in TUS cards cannot be deleted.'));
+            return;
+        }
         deleteNote(currentCard.noteId);
         invalidateCollection();
         buildQueue();
-    }, [currentCard, invalidateCollection, buildQueue]);
+    }, [currentCard, invalidateCollection, buildQueue, l]);
 
     // Anki Auto Advance. The preset owns the dwell times and the follow-up action; the
     // reviewer's own switch decides whether any of it runs. Zero seconds disables that half, so a
@@ -1198,18 +1260,29 @@ export default function StudyScreen() {
         setAutoAdvanceReminder(false);
     }, [currentCard?.cardId, showingAnswer]);
 
+    // Auto Advance yields to the learner. Upstream cancels it the moment the reviewer loses focus;
+    // the whiteboard is the local equivalent of that, because ink is unsaved work: letting a dwell
+    // timer answer the card mid-stroke threw the drawing away with no undo. The timer is paused
+    // rather than reset, so the dwell resumes where it stopped once drawing mode is closed. The
+    // per-card review stopwatch keeps running — Anki measures answering by wall clock.
+    useEffect(() => {
+        autoAdvanceTimerRef.current.setActive(appIsActiveRef.current && !whiteboardActive, Date.now());
+    }, [whiteboardActive]);
+
     useEffect(() => {
         if (!settings.autoAdvance || !currentCard || autoAdvanceSeconds <= 0) return;
-        autoAdvanceTimerRef.current.reset(Date.now(), appIsActiveRef.current);
+        autoAdvanceTimerRef.current.reset(Date.now(), appIsActiveRef.current && !whiteboardActiveRef.current);
         const targetMs = autoAdvanceSeconds * 1000;
         const timer = setInterval(() => {
             // The dwell timer and audio run in parallel. If audio outlasts the configured dwell,
             // act as soon as it ends; do not make the learner wait for a second full countdown.
+            // Drawing blocks the action even if the dwell had elapsed before the board was opened.
             if (!shouldRunAutoAdvance(
                 autoAdvanceTimerRef.current.elapsed(Date.now()),
                 targetMs,
                 cardDeckOptions.waitForAudio,
                 anyAudioActive(),
+                whiteboardActiveRef.current,
             )) return;
             if (!showingAnswer) {
                 if (cardDeckOptions.questionAction === 'showReminder') {
@@ -1373,6 +1446,13 @@ export default function StudyScreen() {
     }, [currentCard?.cardId, collectionVersion]);
 
     const currentNoteMarked = renderPayload ? isNoteMarked(renderPayload.note) : false;
+    const isCurrentCardCatalog = useMemo(
+        () => (renderPayload ? isCatalogCard(renderPayload.card) || isCatalogNote(renderPayload.note) : false),
+        [renderPayload],
+    );
+    // Paid catalog cards are shielded from screenshots, screen recording and the app switcher
+    // for exactly as long as one is on screen; the learner's own cards stay capturable.
+    const screenGuardState = useScreenGuard(isCurrentCardCatalog, 'reviewer');
     const hasSiblingCards = useMemo(
         () => (renderPayload ? getCardsForNote(renderPayload.note.id).length > 1 : false),
         [renderPayload],
@@ -1484,7 +1564,10 @@ export default function StudyScreen() {
     const handlePickDeck = useCallback((name: string | null) => {
         setDeckPickerVisible(false);
         setSelectedDeckName(name);
-    }, []);
+        setSelectedSubject(null);
+        setSelectedTopic(null);
+        setActiveDeckName(name);
+    }, [setSelectedDeckName, setSelectedSubject, setSelectedTopic, setActiveDeckName]);
     const deckPickerItems = useMemo(() => {
         try {
             return getAllDecks()
@@ -1497,10 +1580,14 @@ export default function StudyScreen() {
     }, [collectionVersion, locale]);
     const activeStudyDeckName = useMemo(() => {
         if (currentCard) {
-            const cardDeck = getDeck(currentCard.deckId);
+            // Inside a filtered deck the card is parked in the filtered deck itself. The course
+            // the user is actually studying is its home deck (odid), and that is the only one of
+            // the two the picker's tree can point at.
+            const homeDeckId = renderPayload?.card.odid || currentCard.deckId;
+            const cardDeck = getDeck(homeDeckId);
             if (cardDeck?.name) return cardDeck.name;
         }
-        if (selectedDeckName && selectedDeckName.includes('::')) {
+        if (selectedDeckName) {
             return selectedDeckName;
         }
         if (lastStudiedDeckNameRef.current) {
@@ -1516,7 +1603,7 @@ export default function StudyScreen() {
             }
         }
         return selectedDeckName ?? null;
-    }, [selectedDeckName, currentCard, selectedSubject]);
+    }, [selectedDeckName, currentCard, selectedSubject, renderPayload]);
     const openMoreMenu = useCallback(() => {
         setReviewerSurface(openReviewerSurface('tools'));
     }, []);
@@ -1530,14 +1617,47 @@ export default function StudyScreen() {
         setReviewerSurface((current) => closeReviewerSurface(current, 'flag'));
     }, []);
 
-    // --- Whiteboard (Anki) ---
-    const toggleWhiteboard = useCallback(() => setWhiteboardActive((on) => !on), []);
+    // --- Whiteboard (AnkiDroid) ---
+    // The board's preferences belong to the deck, not to the session, so every learner-made change
+    // is written straight through to that deck's row. Writing here rather than mirroring the state
+    // in an effect keeps the restore on a deck switch from being overwritten by its own render.
+    const persistWhiteboardDeckState = useCallback((change: Partial<WhiteboardDeckState>) => {
+        const next = { ...whiteboardDeckStateRef.current, ...change };
+        whiteboardDeckStateRef.current = next;
+        setWhiteboardDeckState(next);
+        saveWhiteboardDeckState(targetDeckId, next);
+    }, [targetDeckId]);
+    const toggleWhiteboard = useCallback(() => {
+        const enabled = !whiteboardActiveRef.current;
+        setWhiteboardActive(enabled);
+        persistWhiteboardDeckState({ enabled });
+    }, [persistWhiteboardDeckState]);
+    const toggleWhiteboardStylus = useCallback(() => {
+        const stylusOnly = !whiteboardStylusOnlyRef.current;
+        setWhiteboardStylusOnly(stylusOnly);
+        persistWhiteboardDeckState({ stylusOnly });
+    }, [persistWhiteboardDeckState]);
+    const handleWhiteboardPenColor = useCallback((color: string) => {
+        persistWhiteboardDeckState(withPenColorForTheme(whiteboardDeckStateRef.current, isDarkTheme, color));
+    }, [persistWhiteboardDeckState, isDarkTheme]);
+    // The board's own ✓ closes it the same way the overflow menu's toggle does, so it has to write
+    // `enabled: false` through as well: otherwise the deck row still says "on" and the board comes
+    // back by itself on the next visit. The ink is left alone here — unlike "disable whiteboard",
+    // finishing a drawing is not throwing it away, and reopening the board brings it back.
+    const handleFinishWhiteboard = useCallback(() => {
+        setWhiteboardActive(false);
+        persistWhiteboardDeckState({ enabled: false });
+    }, [persistWhiteboardDeckState]);
     const handleClearWhiteboard = useCallback(() => whiteboardRef.current?.requestClear(), []);
     const handleSaveWhiteboard = useCallback(() => { void whiteboardRef.current?.save(); }, []);
     const handleDisableWhiteboard = useCallback(() => {
         whiteboardRef.current?.clear();
+        if (currentCard?.cardId) {
+            clearCardWhiteboard(targetDeckId, currentCard.cardId);
+        }
         setWhiteboardActive(false);
-    }, []);
+        persistWhiteboardDeckState({ enabled: false });
+    }, [persistWhiteboardDeckState, targetDeckId, currentCard?.cardId]);
 
     // --- Text to speech (Anki / AnkiDroid) ---
     const stopSpeech = useCallback(() => {
@@ -1547,6 +1667,7 @@ export default function StudyScreen() {
     // `StudyScreen` remains mounted under the tab layout, so unmount cleanup alone is not enough:
     // a route blur or background transition must revoke the native speech owner immediately.
     useFocusEffect(useCallback(() => {
+        if (!hasStudyScope) return;
         setReviewerFocused(true);
         ttsLifecycleRef.current?.setFocused(true);
         if (!currentCardRef.current) {
@@ -1556,7 +1677,7 @@ export default function StudyScreen() {
             setReviewerFocused(false);
             ttsLifecycleRef.current?.setFocused(false);
         };
-    }, [buildQueue]));
+    }, [hasStudyScope, buildQueue]));
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextState) => {
@@ -1620,9 +1741,9 @@ export default function StudyScreen() {
             ? (renderPayload.card.odid || renderPayload.card.deckId)
             : null;
         const homeDeck = homeDeckId ? getDeck(homeDeckId) : null;
-        const targetDeckId = reviewerAddNoteDeckId({ selectedDeck, homeDeck });
-        router.push((targetDeckId ? `/editor?deckId=${targetDeckId}` : '/editor') as any);
-    }, [renderPayload, router, selectedDeckName]);
+        const noteDeckId = reviewerAddNoteDeckId({ selectedDeck, homeDeck }) ?? targetDeckId;
+        router.push((noteDeckId ? `/editor?deckId=${noteDeckId}` : '/editor') as any);
+    }, [renderPayload, router, selectedDeckName, targetDeckId]);
 
     const handleEditNote = useCallback(() => {
         if (!currentCard) return;
@@ -1747,8 +1868,51 @@ export default function StudyScreen() {
         runReviewGestureAction,
     ]);
 
-    // The whiteboard resets on each new card, mirroring AnkiDroid (ink clears as the card advances).
-    useEffect(() => { whiteboardRef.current?.clear(); }, [currentCard?.cardId]);
+    // The whiteboard persists ink per card during the session: advancing to another card
+    // saves any drawing made on the outgoing card, and returning to a card (after a learn-ahead
+    // countdown / study timer expiry, or via review undo) restores its ink.
+    useEffect(() => {
+        const nextCardId = currentCard?.cardId ?? null;
+        const prevCardId = inkedCardIdRef.current;
+        if (prevCardId === nextCardId) return;
+
+        // Save previous card's drawing if we were on a card
+        if (prevCardId !== null && whiteboardRef.current) {
+            const currentSnapshot = whiteboardRef.current.getSnapshot();
+            saveCardWhiteboard(targetDeckId, prevCardId, currentSnapshot);
+        }
+
+        inkedCardIdRef.current = nextCardId;
+
+        if (nextCardId !== null) {
+            const savedSnapshot = loadCardWhiteboard(targetDeckId, nextCardId);
+            if (savedSnapshot && savedSnapshot.strokes.length > 0) {
+                whiteboardRef.current?.restoreSnapshot(savedSnapshot);
+                setWhiteboardHasContent(true);
+            } else {
+                whiteboardRef.current?.clear();
+                setWhiteboardHasContent(false);
+            }
+        } else {
+            whiteboardRef.current?.clear();
+            setWhiteboardHasContent(false);
+        }
+    }, [currentCard?.cardId, targetDeckId]);
+
+    // Save ink on the current card before the app backgrounds or this screen unmounts.
+    useEffect(() => {
+        if (!appForegrounded && currentCard?.cardId && whiteboardRef.current) {
+            saveCardWhiteboard(targetDeckId, currentCard.cardId, whiteboardRef.current.getSnapshot());
+        }
+    }, [appForegrounded, currentCard?.cardId, targetDeckId]);
+
+    useEffect(() => {
+        return () => {
+            if (inkedCardIdRef.current !== null && whiteboardRef.current) {
+                saveCardWhiteboard(targetDeckId, inkedCardIdRef.current, whiteboardRef.current.getSnapshot());
+            }
+        };
+    }, [targetDeckId]);
 
     // One automatic TTS owner covers both whole-card reading and explicit Anki template tags.
     // The short debounce lets React discard superseded side/card effects before native speech is
@@ -1934,6 +2098,10 @@ export default function StudyScreen() {
         settings.focusTypeAnswer,
     ]);
 
+    if (!hasStudyScope) {
+        return <Redirect href="/decks" />;
+    }
+
     if (loading) {
         return (
             <View style={styles.container}>
@@ -1993,10 +2161,32 @@ export default function StudyScreen() {
     } : null;
     const answerButtons = showingAnswer && gradePresentation && settings.showAnswerButtons !== false ? (
         <View style={[styles.answerButtons, settings.twoRowAnswerButtons && styles.answerButtonsTwoRows]}>
+            {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? (
+                <TouchableOpacity
+                    style={[styles.answerBtn, styles.reviewerToolsGradeBtn, settings.twoRowAnswerButtons && styles.answerBtnTwoRow]}
+                    onPress={openMoreMenu}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Araçlar', 'Tools')}
+                >
+                    <Text style={styles.reviewerToolsGradeIcon}>⚙</Text>
+                    <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
+                </TouchableOpacity>
+            ) : null}
             {visibleReviewerGrades(Boolean(settings.hideHardAndEasy)).map((grade) => {
                 const presentation = gradePresentation[grade];
                 return gradeButton(grade, presentation.label, presentation.time, presentation.color);
             })}
+            {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? (
+                <TouchableOpacity
+                    style={[styles.answerBtn, styles.reviewerToolsGradeBtn, settings.twoRowAnswerButtons && styles.answerBtnTwoRow]}
+                    onPress={openMoreMenu}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Araçlar', 'Tools')}
+                >
+                    <Text style={styles.reviewerToolsGradeIcon}>⚙</Text>
+                    <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
+                </TouchableOpacity>
+            ) : null}
         </View>
     ) : null;
 
@@ -2039,7 +2229,7 @@ export default function StudyScreen() {
                 )}
                 {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
             >
-                {settings.showDeckTitle !== false && !isCompact ? (
+                {settings.showDeckTitle !== false && (!isCompact || !currentCard) ? (
                     <Text style={styles.toolbarDeckTitle} numberOfLines={1}>{reviewerDeckTitle}</Text>
                 ) : null}
                 {currentCard && settings.showRemainingCount ? (
@@ -2054,7 +2244,7 @@ export default function StudyScreen() {
                         <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
                         <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
                     </View>
-                ) : settings.showDeckTitle === false || isCompact ? (
+                ) : settings.showDeckTitle === false ? (
                     <Text style={styles.toolbarDeckFallback}>▦</Text>
                 ) : null}
                 <DownChevron color={colors.textMuted} />
@@ -2087,44 +2277,35 @@ export default function StudyScreen() {
             </View>
 
             <View style={styles.toolbarActions}>
-                {canUndoReview(undoStack.length) || currentCard ? (
-                    <TouchableOpacity
-                        style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
-                        onPress={() => { void undoLast(); }}
-                        disabled={!canUndoReview(undoStack.length)}
-                        accessibilityRole="button"
-                        accessibilityLabel={canUndoReview(undoStack.length)
-                            ? l('Son cevabı geri al', 'Undo last answer')
-                            : l('Geri alınacak cevap yok', 'No answer to undo')}
-                        accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                        {...webTitle(canUndoReview(undoStack.length)
-                            ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
-                            : l('Geri alınacak cevap yok', 'No answer to undo'))}
-                    >
-                        <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
-                    </TouchableOpacity>
-                ) : null}
-                {currentCard ? (
-                    <>
-                        <TouchableOpacity
-                            style={styles.toolbarIconButton}
-                            onPress={handleCardInfo}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kart bilgisi', 'Card info')}
-                            {...webTitle(l('Kart bilgisi', 'Card info'))}
-                        >
-                            <ReviewerInfoIcon color={colors.textSecondary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.toolbarIconButton}
-                            onPress={openFlagMenu}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}
-                        >
-                            <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
-                        </TouchableOpacity>
-                    </>
-                ) : null}
+                <TouchableOpacity
+                    style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
+                    onPress={() => { void undoLast(); }}
+                    disabled={!canUndoReview(undoStack.length)}
+                    accessibilityRole="button"
+                    accessibilityLabel={canUndoReview(undoStack.length)
+                        ? l('Son cevabı geri al', 'Undo last answer')
+                        : l('Geri alınacak cevap yok', 'No answer to undo')}
+                    accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
+                    {...webTitle(canUndoReview(undoStack.length)
+                        ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
+                        : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                >
+                    <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.toolbarIconButton, !currentCard && styles.toolbarIconButtonDisabled]}
+                    onPress={openFlagMenu}
+                    disabled={!currentCard}
+                    accessibilityRole="button"
+                    accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
+                    accessibilityState={{ disabled: !currentCard }}
+                >
+                    <Text style={[
+                        styles.toolbarActionIcon,
+                        currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
+                        !currentCard && { color: colors.textMuted },
+                    ]}>⚑</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.toolbarIconButton}
                     onPress={handleDeckOptions}
@@ -2134,16 +2315,14 @@ export default function StudyScreen() {
                 >
                     <ReviewerSettingsIcon color={colors.textSecondary} />
                 </TouchableOpacity>
-                {currentCard ? (
-                    <TouchableOpacity
-                        style={styles.toolbarIconButton}
-                        onPress={openMoreMenu}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
-                    >
-                        <Text style={styles.toolbarActionIcon}>⋮</Text>
-                    </TouchableOpacity>
-                ) : null}
+                <TouchableOpacity
+                    style={styles.toolbarIconButton}
+                    onPress={openMoreMenu}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
+                >
+                    <Text style={styles.toolbarActionIcon}>⋮</Text>
+                </TouchableOpacity>
             </View>
         </View>
     ) : null;
@@ -2178,39 +2357,35 @@ export default function StudyScreen() {
                 ) : null}
             </TouchableOpacity>
             <View style={styles.toolbarActions}>
-                {canUndoReview(undoStack.length) || currentCard ? (
-                    <TouchableOpacity
-                        style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
-                        onPress={() => { void undoLast(); }}
-                        disabled={!canUndoReview(undoStack.length)}
-                        accessibilityRole="button"
-                        accessibilityLabel={canUndoReview(undoStack.length)
-                            ? l('Son cevabı geri al', 'Undo last answer')
-                            : l('Geri alınacak cevap yok', 'No answer to undo')}
-                        accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                        {...webTitle(canUndoReview(undoStack.length)
-                            ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
-                            : l('Geri alınacak cevap yok', 'No answer to undo'))}
-                    >
-                        <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
-                    </TouchableOpacity>
-                ) : null}
-                {currentCard ? (
-                    <>
-                        <TouchableOpacity
-                            style={styles.toolbarIconButton}
-                            onPress={handleCardInfo}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kart bilgisi', 'Card info')}
-                            {...webTitle(l('Kart bilgisi', 'Card info'))}
-                        >
-                            <ReviewerInfoIcon color={colors.textSecondary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.toolbarIconButton} onPress={openFlagMenu} accessibilityRole="button" accessibilityLabel={l('Bayrakla işaretle', 'Flag card')}>
-                            <Text style={[styles.toolbarActionIcon, currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color }]}>⚑</Text>
-                        </TouchableOpacity>
-                    </>
-                ) : null}
+                <TouchableOpacity
+                    style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
+                    onPress={() => { void undoLast(); }}
+                    disabled={!canUndoReview(undoStack.length)}
+                    accessibilityRole="button"
+                    accessibilityLabel={canUndoReview(undoStack.length)
+                        ? l('Son cevabı geri al', 'Undo last answer')
+                        : l('Geri alınacak cevap yok', 'No answer to undo')}
+                    accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
+                    {...webTitle(canUndoReview(undoStack.length)
+                        ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
+                        : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                >
+                    <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.toolbarIconButton, !currentCard && styles.toolbarIconButtonDisabled]}
+                    onPress={openFlagMenu}
+                    disabled={!currentCard}
+                    accessibilityRole="button"
+                    accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
+                    accessibilityState={{ disabled: !currentCard }}
+                >
+                    <Text style={[
+                        styles.toolbarActionIcon,
+                        currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
+                        !currentCard && { color: colors.textMuted },
+                    ]}>⚑</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.toolbarIconButton}
                     onPress={handleDeckOptions}
@@ -2220,11 +2395,14 @@ export default function StudyScreen() {
                 >
                     <ReviewerSettingsIcon color={colors.textSecondary} />
                 </TouchableOpacity>
-                {currentCard ? (
-                    <TouchableOpacity style={styles.toolbarIconButton} onPress={openMoreMenu} accessibilityRole="button" accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
-                        <Text style={styles.toolbarActionIcon}>⋮</Text>
-                    </TouchableOpacity>
-                ) : null}
+                <TouchableOpacity
+                    style={styles.toolbarIconButton}
+                    onPress={openMoreMenu}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
+                >
+                    <Text style={styles.toolbarActionIcon}>⋮</Text>
+                </TouchableOpacity>
             </View>
         </View>
     ) : null;
@@ -2259,207 +2437,272 @@ export default function StudyScreen() {
                 <Text style={styles.deckDescription} numberOfLines={2}>📝 {deckDescription}</Text>
             )}
 
-            {whiteboardTopInset > 0 ? (
-                // This participates in layout, so the scroll viewport itself begins below the
-                // floating toolbar. The question therefore stays unobscured even while scrolling.
-                <View style={{ height: whiteboardTopInset }} pointerEvents="none" />
-            ) : null}
-
-            <ScrollView
-                ref={reviewerScrollRef}
-                style={styles.cardScroll}
-                contentContainerStyle={styles.cardArea}
+            {/* The stage is the reviewer content region. Wrapping it in WhiteboardProvider keeps
+                the drawing state and toolbar accessible across card transitions without losing ink. */}
+            <WhiteboardProvider
+                ref={whiteboardRef}
+                active={whiteboardActive}
+                canDraw={currentCard !== null}
+                penColor={penColorForTheme(whiteboardDeckState, isDarkTheme, {
+                    light: DEFAULT_WHITEBOARD_PEN_COLOR,
+                    dark: DEFAULT_WHITEBOARD_PEN_COLOR,
+                })}
+                onPenColorChange={handleWhiteboardPenColor}
+                stylusOnly={whiteboardStylusOnly}
+                onContentChange={setWhiteboardHasContent}
+                onToolbarHeightChange={setWhiteboardToolbarHeight}
+                onDone={handleFinishWhiteboard}
             >
-                {currentCard ? (
-                    <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
-                        <View style={styles.cardMetaRow}>
-                            <View style={styles.cardContext}>
-                                <Text style={styles.cardSubject} numberOfLines={1}>
-                                    {subject ? `${subject.icon} ${subject.name}` : '📝'}
-                                </Text>
-                                {currentCard.topic ? <Text style={styles.contextSeparator}>›</Text> : null}
-                                {currentCard.topic ? (
-                                    <Text style={styles.cardTopic} numberOfLines={1}>{currentCard.topic}</Text>
-                                ) : null}
-                                {previewMode ? (
-                                    <View style={styles.previewBadge}>
-                                        <Text style={styles.previewBadgeText}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
-                                    </View>
-                                ) : null}
-                            </View>
-                            {streak.current > 0 ? (
-                                <View
-                                    style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
-                                    accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
-                                >
-                                    <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
-                                </View>
-                            ) : null}
-                        </View>
-                        <View style={[
-                            styles.cardBody,
-                            settings.studyFrameStyle === 'plain' && styles.cardBodyPlain,
-                            settings.centerCardContent && styles.cardBodyCentered,
-                        ]}>
-                            {currentNoteMarked || currentFlag > 0 ? (
-                                <View
-                                    style={styles.cardIndicators}
-                                    pointerEvents="none"
-                                    accessible
-                                    accessibilityLabel={[
-                                        currentNoteMarked ? l('Not işaretli', 'Note marked') : '',
-                                        currentFlag > 0 ? cardFlagName(locale, currentFlag) : '',
-                                    ].filter(Boolean).join(', ')}
-                                >
-                                    <Text style={[styles.cardIndicator, styles.cardMarkIndicator, !currentNoteMarked && styles.cardIndicatorHidden]}>★</Text>
-                                    <Text
-                                        style={[
-                                            styles.cardIndicator,
-                                            currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
-                                            currentFlag === 0 && styles.cardIndicatorHidden,
-                                        ]}
-                                    >⚑</Text>
-                                </View>
-                            ) : null}
-                            {renderPayload ? (
-                                <CardWebView
-                                    key={`card-webview-${currentCard.cardId}`}
-                                    noteType={renderPayload.noteType}
-                                    note={renderPayload.note}
-                                    card={renderPayload.card}
-                                    deck={renderPayload.deck}
-                                    side={showingAnswer ? 'answer' : 'question'}
-                                    typedAnswer={showingAnswer && typeAnswerField ? typedAnswer : undefined}
-                                    playAudioSignal={
-                                        showingAnswer
-                                            ? (replayTarget === 'answer' || (replayTarget === 'auto' && answerSideHasAudio) ? audioSignal : undefined)
-                                            : (replayTarget === 'question' || replayTarget === 'auto' ? audioSignal : undefined)
-                                    }
-                                    pauseAudioSignal={pauseSignal}
-                                    onAudioActiveChange={showingAnswer ? handleAnswerAudioActive : handleQuestionAudioActive}
-                                    cardZoomPercent={settings.cardZoomPercent}
-                                    imageZoomPercent={settings.imageZoomPercent}
-                                    showAudioPlayButtons={settings.showAudioPlayButtons}
-                                    centerContent={settings.centerCardContent}
-                                    frameStyle={settings.studyFrameStyle}
-                                    scrollMode="intrinsic"
-                                    typeAnswerInCard={!showingAnswer && typeAnswerInCard}
-                                    autoFocusTypeAnswer={!showingAnswer && typeAnswerInCard && settings.focusTypeAnswer !== false}
-                                    onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
-                                    onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
-                                    onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
-                                    audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
-                                />
-                            ) : !showingAnswer ? (
-                                settings.ninePointTouchEnabled ? (
-                                    <Pressable
-                                        onLayout={(event) => setFallbackTapSurface(event.nativeEvent.layout)}
-                                        onPress={(event) => handleCardTap(
-                                            event.nativeEvent.locationX / fallbackTapSurface.width,
-                                            event.nativeEvent.locationY / fallbackTapSurface.height,
-                                        )}
-                                    >
-                                        <Text style={styles.questionText}>{currentCard.question}</Text>
-                                    </Pressable>
-                                ) : <Text style={styles.questionText}>{currentCard.question}</Text>
-                            ) : (
-                                settings.ninePointTouchEnabled ? (
-                                    <Pressable
-                                        style={styles.answerSection}
-                                        onLayout={(event) => setFallbackTapSurface(event.nativeEvent.layout)}
-                                        onPress={(event) => handleCardTap(
-                                            event.nativeEvent.locationX / fallbackTapSurface.width,
-                                            event.nativeEvent.locationY / fallbackTapSurface.height,
-                                        )}
-                                    >
-                                        <View style={styles.answerDivider} />
-                                        <Text style={styles.answerText}>{currentCard.answer}</Text>
-                                    </Pressable>
-                                ) : (
-                                    <View style={styles.answerSection}>
-                                        <View style={styles.answerDivider} />
-                                        <Text style={styles.answerText}>{currentCard.answer}</Text>
-                                    </View>
-                                )
-                            )}
+                <View style={styles.cardStage}>
+                {whiteboardTopInset > 0 ? (
+                    // This participates in layout, so the scroll viewport itself begins below the
+                    // floating toolbar. The question therefore stays unobscured even while scrolling.
+                    <View style={{ height: whiteboardTopInset }} pointerEvents="none" />
+                ) : null}
 
-                            {typeAnswerField && !typeAnswerInCard && !showingAnswer && (
-                                <TextInput
-                                    ref={nativeTypeAnswerRef}
-                                    style={styles.typeAnswerInput}
-                                    value={typedAnswer}
-                                    onChangeText={setTypedAnswer}
-                                    placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
-                                    placeholderTextColor={colors.textMuted}
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    maxLength={MAX_TYPE_ANSWER_CHARS}
-                                    returnKeyType="done"
-                                    onSubmitEditing={() => submitTypedAnswer(typedAnswer)}
-                                />
-                            )}
-                            {!newStudyScreenEnabled && !showingAnswer ? (
-                                <TouchableOpacity
-                                    style={[styles.showAnswerBtn, styles.classicInlineAnswerButton]}
-                                    onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
-                                    onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
-                                    delayLongPress={settings.showAnswerLongPressMs ?? 0}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={t('anki.showAnswer')}
-                                >
-                                    <Text style={styles.showAnswerText}>👁️ {t('anki.showAnswer')}</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                        </View>
-                        {!newStudyScreenEnabled && answerButtons ? (
-                            <View style={styles.classicAnswerButtons}>{answerButtons}</View>
-                        ) : null}
-                        {!newStudyScreenEnabled ? (
-                            <View style={styles.classicQueueInfo}>
-                                {settings.showRemainingCount ? (
-                                    <View style={styles.queueCounts}>
-                                        <Text style={[styles.queueCount, { color: colors.badgeNew }]}>{queueStats.newCount}</Text>
-                                        <Text style={styles.classicQueueSeparator}>+</Text>
-                                        <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
-                                        <Text style={styles.classicQueueSeparator}>+</Text>
-                                        <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
+                <ScrollView
+                    ref={reviewerScrollRef}
+                    style={styles.cardScroll}
+                    contentContainerStyle={styles.cardArea}
+                >
+                    {currentCard ? (
+                        <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
+                            <View style={styles.cardMetaRow}>
+                                <View style={styles.cardContext}>
+                                    <Text style={styles.cardSubject} numberOfLines={1}>
+                                        {subject ? `${subject.icon} ${subject.name}` : '📝'}
+                                    </Text>
+                                    {currentCard.topic ? <Text style={styles.contextSeparator}>›</Text> : null}
+                                    {currentCard.topic ? (
+                                        <Text style={styles.cardTopic} numberOfLines={1}>{currentCard.topic}</Text>
+                                    ) : null}
+                                    {previewMode ? (
+                                        <View style={styles.previewBadge}>
+                                            <Text style={styles.previewBadgeText}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
+                                        </View>
+                                    ) : null}
+                                </View>
+                                {streak.current > 0 ? (
+                                    <View
+                                        style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
+                                        accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
+                                    >
+                                        <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
                                     </View>
                                 ) : null}
-                                <Text style={styles.classicQueueText}>{l('Bugün', 'Today')}: {sessionStats.reviewed} {l('tekrar', 'reviews')}</Text>
                             </View>
-                        ) : null}
-                    </View>
-                ) : nextLearningDue ? (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>⏳</Text>
-                        <Text style={styles.emptyTitle}>{l('Şimdilik hepsi bu kadar!', 'That’s All for Now!')}</Text>
-                        <Text style={styles.countdownText}>{countdown}</Text>
-                        <Text style={styles.emptyDesc}>
-                            {l('Şu anda hazır olan tüm kartları tamamladınız. ', 'You’ve completed every card currently available. ')}
-                            {l(
-                                `${upcomingCardsCount > 0 ? upcomingCardsCount : (queueStats.learningCount > 0 ? queueStats.learningCount : 1)} kart süre dolunca gösterilecek.`,
-                                `${upcomingCardsCount > 0 ? upcomingCardsCount : (queueStats.learningCount > 0 ? queueStats.learningCount : 1)} ${(upcomingCardsCount || queueStats.learningCount) === 1 ? 'card' : 'cards'} will appear when time is up.`,
-                            )}
-                            {l(' İsterseniz beklemeden devam edebilirsiniz.', ' You can also continue without waiting.')}
-                        </Text>
-                        {dailyNewLimitReached && heldBackNewCount > 0 && (
-                            <Text style={styles.emptyInfo}>
-                                {l(
-                                    `📋 Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve süre dolunca gösterilecek.`,
-                                    `📋 The daily new card limit was reached — ${heldBackNewCount} new cards are queued and will appear when time is up.`,
+                            <View style={[
+                                styles.cardBody,
+                                settings.studyFrameStyle === 'plain' && styles.cardBodyPlain,
+                                settings.centerCardContent && styles.cardBodyCentered,
+                            ]}>
+                                {currentNoteMarked || currentFlag > 0 ? (
+                                    <View
+                                        style={styles.cardIndicators}
+                                        pointerEvents="none"
+                                        accessible
+                                        accessibilityLabel={[
+                                            currentNoteMarked ? l('Not işaretli', 'Note marked') : '',
+                                            currentFlag > 0 ? cardFlagName(locale, currentFlag) : '',
+                                        ].filter(Boolean).join(', ')}
+                                    >
+                                        <Text style={[styles.cardIndicator, styles.cardMarkIndicator, !currentNoteMarked && styles.cardIndicatorHidden]}>★</Text>
+                                        <Text
+                                            style={[
+                                                styles.cardIndicator,
+                                                currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
+                                                currentFlag === 0 && styles.cardIndicatorHidden,
+                                            ]}
+                                        >⚑</Text>
+                                    </View>
+                                ) : null}
+                                {renderPayload ? (
+                                    <CardWebView
+                                        key={`card-webview-${currentCard.cardId}`}
+                                        noteType={renderPayload.noteType}
+                                        note={renderPayload.note}
+                                        card={renderPayload.card}
+                                        deck={renderPayload.deck}
+                                        side={showingAnswer ? 'answer' : 'question'}
+                                        typedAnswer={showingAnswer && typeAnswerField ? typedAnswer : undefined}
+                                        playAudioSignal={
+                                            showingAnswer
+                                                ? (replayTarget === 'answer' || (replayTarget === 'auto' && answerSideHasAudio) ? audioSignal : undefined)
+                                                : (replayTarget === 'question' || replayTarget === 'auto' ? audioSignal : undefined)
+                                        }
+                                        pauseAudioSignal={pauseSignal}
+                                        onAudioActiveChange={showingAnswer ? handleAnswerAudioActive : handleQuestionAudioActive}
+                                        cardZoomPercent={settings.cardZoomPercent}
+                                        imageZoomPercent={settings.imageZoomPercent}
+                                        showAudioPlayButtons={settings.showAudioPlayButtons}
+                                        centerContent={settings.centerCardContent}
+                                        frameStyle={settings.studyFrameStyle}
+                                        scrollMode="intrinsic"
+                                        typeAnswerInCard={!showingAnswer && typeAnswerInCard}
+                                        autoFocusTypeAnswer={!showingAnswer && typeAnswerInCard && settings.focusTypeAnswer !== false}
+                                        onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
+                                        onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
+                                        onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
+                                        audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
+                                    />
+                                ) : !showingAnswer ? (
+                                    settings.ninePointTouchEnabled ? (
+                                        <Pressable
+                                            onLayout={(event) => setFallbackTapSurface(event.nativeEvent.layout)}
+                                            onPress={(event) => handleCardTap(
+                                                event.nativeEvent.locationX / fallbackTapSurface.width,
+                                                event.nativeEvent.locationY / fallbackTapSurface.height,
+                                            )}
+                                        >
+                                            <Text style={styles.questionText}>{currentCard.question}</Text>
+                                        </Pressable>
+                                    ) : <Text style={styles.questionText}>{currentCard.question}</Text>
+                                ) : (
+                                    settings.ninePointTouchEnabled ? (
+                                        <Pressable
+                                            style={styles.answerSection}
+                                            onLayout={(event) => setFallbackTapSurface(event.nativeEvent.layout)}
+                                            onPress={(event) => handleCardTap(
+                                                event.nativeEvent.locationX / fallbackTapSurface.width,
+                                                event.nativeEvent.locationY / fallbackTapSurface.height,
+                                            )}
+                                        >
+                                            <View style={styles.answerDivider} />
+                                            <Text style={styles.answerText}>{currentCard.answer}</Text>
+                                        </Pressable>
+                                    ) : (
+                                        <View style={styles.answerSection}>
+                                            <View style={styles.answerDivider} />
+                                            <Text style={styles.answerText}>{currentCard.answer}</Text>
+                                        </View>
+                                    )
                                 )}
+
+                                {typeAnswerField && !typeAnswerInCard && !showingAnswer && (
+                                    <TextInput
+                                        ref={nativeTypeAnswerRef}
+                                        style={styles.typeAnswerInput}
+                                        value={typedAnswer}
+                                        onChangeText={setTypedAnswer}
+                                        placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
+                                        placeholderTextColor={colors.textMuted}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        maxLength={MAX_TYPE_ANSWER_CHARS}
+                                        returnKeyType="done"
+                                        onSubmitEditing={() => submitTypedAnswer(typedAnswer)}
+                                    />
+                                )}
+                                {!newStudyScreenEnabled && !showingAnswer ? (
+                                    <TouchableOpacity
+                                        style={[styles.showAnswerBtn, styles.classicInlineAnswerButton]}
+                                        onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
+                                        onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
+                                        delayLongPress={settings.showAnswerLongPressMs ?? 0}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={t('anki.showAnswer')}
+                                    >
+                                        <Text style={styles.showAnswerText}>👁️ {t('anki.showAnswer')}</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                                <WhiteboardCanvas
+                                    style={[
+                                        StyleSheet.absoluteFill,
+                                        {
+                                            borderRadius: settings.studyFrameStyle === 'plain' ? 0 : BorderRadius.md,
+                                            overflow: 'hidden',
+                                        },
+                                    ]}
+                                />
+                            </View>
+                            {!newStudyScreenEnabled && answerButtons ? (
+                                <View style={styles.classicAnswerButtons}>{answerButtons}</View>
+                            ) : null}
+                            {!newStudyScreenEnabled ? (
+                                <View style={styles.classicQueueInfo}>
+                                    {settings.showRemainingCount ? (
+                                        <View style={styles.queueCounts}>
+                                            <Text style={[styles.queueCount, { color: colors.badgeNew }]}>{queueStats.newCount}</Text>
+                                            <Text style={styles.classicQueueSeparator}>+</Text>
+                                            <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
+                                            <Text style={styles.classicQueueSeparator}>+</Text>
+                                            <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
+                                        </View>
+                                    ) : null}
+                                    <Text style={styles.classicQueueText}>{l('Bugün', 'Today')}: {sessionStats.reviewed} {l('tekrar', 'reviews')}</Text>
+                                </View>
+                            ) : null}
+                        </View>
+                    ) : nextLearningDue ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyIcon}>⏳</Text>
+                            <Text style={styles.emptyTitle}>{l('Şimdilik hepsi bu kadar!', 'That’s All for Now!')}</Text>
+                            <Text style={styles.countdownText}>{countdown}</Text>
+                            <Text style={styles.emptyDesc}>
+                                {l('Şu anda hazır olan tüm kartları tamamladınız. ', 'You’ve completed every card currently available. ')}
+                                {l(
+                                    `${upcomingCardsCount > 0 ? upcomingCardsCount : (queueStats.learningCount > 0 ? queueStats.learningCount : 1)} kart süre dolunca gösterilecek.`,
+                                    `${upcomingCardsCount > 0 ? upcomingCardsCount : (queueStats.learningCount > 0 ? queueStats.learningCount : 1)} ${(upcomingCardsCount || queueStats.learningCount) === 1 ? 'card' : 'cards'} will appear when time is up.`,
+                                )}
+                                {l(' İsterseniz beklemeden devam edebilirsiniz.', ' You can also continue without waiting.')}
                             </Text>
-                        )}
-                        <TouchableOpacity
-                            style={styles.primaryActionBtn}
-                            onPress={handleStudyAhead}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Bekleme süresini atla ve hemen çalış', 'Skip the wait and study now')}
-                            {...webTitle(l('Zamanlayıcıyı beklemeden öğrenme kartlarını şimdi çalış', 'Study queued learning cards now without waiting for the timer'))}
-                        >
-                            <Text style={styles.primaryActionText}>⚡ {l('Beklemeden çalış', 'Study Now')}</Text>
-                        </TouchableOpacity>
-                        {dailyNewLimitReached ? (
+                            {dailyNewLimitReached && heldBackNewCount > 0 && (
+                                <Text style={styles.emptyInfo}>
+                                    {l(
+                                        `📋 Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve süre dolunca gösterilecek.`,
+                                        `📋 The daily new card limit was reached — ${heldBackNewCount} new cards are queued and will appear when time is up.`,
+                                    )}
+                                </Text>
+                            )}
+                            <TouchableOpacity
+                                style={styles.primaryActionBtn}
+                                onPress={handleStudyAhead}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Bekleme süresini atla ve hemen çalış', 'Skip the wait and study now')}
+                                {...webTitle(l('Zamanlayıcıyı beklemeden öğrenme kartlarını şimdi çalış', 'Study queued learning cards now without waiting for the timer'))}
+                            >
+                                <Text style={styles.primaryActionText}>⚡ {l('Beklemeden çalış', 'Study Now')}</Text>
+                            </TouchableOpacity>
+                            {dailyNewLimitReached ? (
+                                <TouchableOpacity
+                                    style={styles.secondaryActionBtn}
+                                    onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
+                                >
+                                    <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.secondaryActionBtn}
+                                    onPress={() => router.push('/settings')}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Ayarları aç', 'Open settings')}
+                                >
+                                    <Text style={styles.secondaryActionText}>⚙️ {l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
+                                </TouchableOpacity>
+                            )}
+                            {trialPurchaseAction}
+                            <Text style={styles.emptySub}>
+                                {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
+                            </Text>
+                        </View>
+                    ) : dailyNewLimitReached ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyIcon}>⏳</Text>
+                            <Text style={styles.emptyTitle}>{l('Günlük yeni kart limiti doldu', 'Daily New Card Limit Reached')}</Text>
+                            {countdown ? <Text style={styles.countdownText}>{countdown}</Text> : null}
+                            <Text style={styles.emptyDesc}>
+                                {l(
+                                    `Bugün ${sessionStats.newCardsToday || 0} yeni kart öğrendiniz.`,
+                                    `You learned ${sessionStats.newCardsToday || 0} new ${(sessionStats.newCardsToday || 0) === 1 ? 'card' : 'cards'} today.`,
+                                )}
+                                {upcomingCardsCount > 0 ? l(
+                                    ` ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
+                                    ` ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
+                                ) : ''}
+                                {l(' Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.', ' To continue, increase the limit in Deck Options.')}
+                            </Text>
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
@@ -2468,120 +2711,120 @@ export default function StudyScreen() {
                             >
                                 <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
                             </TouchableOpacity>
-                        ) : (
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
-                                onPress={() => router.push('/settings')}
+                                onPress={handleReturnToDecks}
                                 accessibilityRole="button"
-                                accessibilityLabel={l('Ayarları aç', 'Open settings')}
+                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <Text style={styles.secondaryActionText}>⚙️ {l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
+                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
-                        )}
-                        {trialPurchaseAction}
-                        <Text style={styles.emptySub}>
-                            {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
-                        </Text>
-                    </View>
-                ) : dailyNewLimitReached ? (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>⏳</Text>
-                        <Text style={styles.emptyTitle}>{l('Günlük yeni kart limiti doldu', 'Daily New Card Limit Reached')}</Text>
-                        {countdown ? <Text style={styles.countdownText}>{countdown}</Text> : null}
-                        <Text style={styles.emptyDesc}>
-                            {l(
-                                `Bugün ${sessionStats.newCardsToday || 0} yeni kart öğrendiniz.`,
-                                `You learned ${sessionStats.newCardsToday || 0} new ${(sessionStats.newCardsToday || 0) === 1 ? 'card' : 'cards'} today.`,
-                            )}
-                            {upcomingCardsCount > 0 ? l(
-                                ` ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
-                                ` ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
-                            ) : ''}
-                            {l(' Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.', ' To continue, increase the limit in Deck Options.')}
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.secondaryActionBtn}
-                            onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
-                        >
-                            <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.secondaryActionBtn}
-                            onPress={handleReturnToDecks}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                            {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
-                        >
-                            <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
-                        </TouchableOpacity>
-                        {trialPurchaseAction}
-                        <Text style={styles.emptySub}>
-                            {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
-                        </Text>
-                    </View>
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>🎉</Text>
-                        <Text style={styles.emptyTitle}>{l('Tebrikler!', 'Congratulations!')}</Text>
-                        {countdown && upcomingCardsCount > 0 ? (
-                            <Text style={styles.countdownText}>{countdown}</Text>
-                        ) : null}
-                        <Text style={styles.emptyDesc}>
-                            {selectedTopic
-                                ? l(
-                                    `“${selectedTopic}” konusu için bugünlük tüm kartlar tamamlandı.`,
-                                    `All cards in the “${selectedTopic}” topic are complete for today.`,
-                                )
-                                : selectedSubject
+                            {trialPurchaseAction}
+                            <Text style={styles.emptySub}>
+                                {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
+                            </Text>
+                        </View>
+                    ) : totalDeckCards === 0 ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>{l('Bu Deste Henüz Boş', 'This Deck is Empty')}</Text>
+                            <Text style={styles.emptyDesc}>
+                                {selectedDeckName
                                     ? l(
-                                        `“${findSubject(selectedSubject)?.name ?? selectedSubject}” dersi için bugünlük tüm kartlar tamamlandı.`,
-                                        `All cards in the “${findSubject(selectedSubject)?.name ?? selectedSubject}” subject are complete for today.`,
+                                        `“${reviewerDeckTitle}” destesinde henüz kart bulunmuyor. Yeni kart ekleyerek çalışmaya başlayabilirsiniz.`,
+                                        `There are no cards in “${reviewerDeckTitle}” yet. Add cards to start studying.`,
                                     )
-                                    : l('Tüm dersler için bugünlük tüm kartlar tamamlandı.', 'All cards across all subjects are complete for today.')}
-                        </Text>
-                        {heldBackReviewCount > 0 ? (
-                            <Text style={styles.emptyInfo}>
-                                {l(
-                                    `📋 Günlük tekrar limiti doldu — ${heldBackReviewCount} tekrar kartı süre dolunca gösterilecek. Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.`,
-                                    `📋 Today's review limit was reached — ${heldBackReviewCount} review cards will appear when time is up. To continue, increase the limit in Deck Options.`,
-                                )}
+                                    : l('Bu kapsamda henüz kart bulunmuyor.', 'There are no cards in this scope yet.')}
                             </Text>
-                        ) : upcomingCardsCount > 0 ? (
-                            <Text style={styles.emptyInfo}>
-                                {l(
-                                    `⏳ ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
-                                    `⏳ ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
-                                )}
-                            </Text>
-                        ) : null}
-                        {heldBackReviewCount > 0 && (
+                            <TouchableOpacity
+                                style={styles.primaryActionBtn}
+                                onPress={handleAddNote}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Yeni kart ekle', 'Add new card')}
+                            >
+                                <Text style={styles.primaryActionText}>{l('Kart Ekle', 'Add Card')}</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
-                                onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=reviewLimit&scope=deck` as any)}
+                                onPress={handleReturnToDecks}
                                 accessibilityRole="button"
-                                accessibilityLabel={l('Deste seçeneklerinden tekrar limitini artır', 'Increase review limit in deck options')}
+                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <Text style={styles.secondaryActionText}>⚙️ {l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
+                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
-                        )}
-                        <TouchableOpacity
-                            style={styles.secondaryActionBtn}
-                            onPress={handleReturnToDecks}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                            {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
-                        >
-                            <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.emptySub}>
-                            {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
-                        </Text>
-                        {trialPurchaseAction}
-                    </View>
-                )}
-            </ScrollView>
+                            {trialPurchaseAction}
+                        </View>
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyIcon}>🎉</Text>
+                            <Text style={styles.emptyTitle}>{l('Tebrikler!', 'Congratulations!')}</Text>
+                            {countdown && upcomingCardsCount > 0 ? (
+                                <Text style={styles.countdownText}>{countdown}</Text>
+                            ) : null}
+                            <Text style={styles.emptyDesc}>
+                                {selectedDeckName
+                                    ? l(
+                                        `“${reviewerDeckTitle}” destesi için bugünlük tüm kartlar tamamlandı.`,
+                                        `All cards in “${reviewerDeckTitle}” are complete for today.`,
+                                    )
+                                    : selectedTopic
+                                        ? l(
+                                            `“${selectedTopic}” konusu için bugünlük tüm kartlar tamamlandı.`,
+                                            `All cards in the “${selectedTopic}” topic are complete for today.`,
+                                        )
+                                        : selectedSubject
+                                            ? l(
+                                                `“${findSubject(selectedSubject)?.name ?? selectedSubject}” dersi için bugünlük tüm kartlar tamamlandı.`,
+                                                `All cards in the “${findSubject(selectedSubject)?.name ?? selectedSubject}” subject are complete for today.`,
+                                            )
+                                            : l('Tüm dersler için bugünlük tüm kartlar tamamlandı.', 'All cards across all subjects are complete for today.')}
+                            </Text>
+                            {heldBackReviewCount > 0 ? (
+                                <Text style={styles.emptyInfo}>
+                                    {l(
+                                        `📋 Günlük tekrar limiti doldu — ${heldBackReviewCount} tekrar kartı süre dolunca gösterilecek. Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.`,
+                                        `📋 Today's review limit was reached — ${heldBackReviewCount} review cards will appear when time is up. To continue, increase the limit in Deck Options.`,
+                                    )}
+                                </Text>
+                            ) : upcomingCardsCount > 0 ? (
+                                <Text style={styles.emptyInfo}>
+                                    {l(
+                                        `⏳ ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
+                                        `⏳ ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
+                                    )}
+                                </Text>
+                            ) : null}
+                            {heldBackReviewCount > 0 && (
+                                <TouchableOpacity
+                                    style={styles.secondaryActionBtn}
+                                    onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=reviewLimit&scope=deck` as any)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Deste seçeneklerinden tekrar limitini artır', 'Increase review limit in deck options')}
+                                >
+                                    <Text style={styles.secondaryActionText}>⚙️ {l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                                style={styles.secondaryActionBtn}
+                                onPress={handleReturnToDecks}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
+                            >
+                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.emptySub}>
+                                {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
+                            </Text>
+                            {trialPurchaseAction}
+                        </View>
+                    )}
+                </ScrollView>
+
+                    <WhiteboardToolbar toolbarTopOffset={0} />
+                </View>
+            </WhiteboardProvider>
 
             {newStudyScreenEnabled && toolbarPosition === 'bottom' ? reviewerToolbar : null}
 
@@ -2593,17 +2836,42 @@ export default function StudyScreen() {
                     ]}
                 >
                     {!showingAnswer ? (
-                        <TouchableOpacity
-                            style={styles.showAnswerBtn}
-                            onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
-                            onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
-                            delayLongPress={settings.showAnswerLongPressMs ?? 0}
-                            activeOpacity={0.82}
-                            accessibilityRole="button"
-                            accessibilityLabel={t('anki.showAnswer')}
-                        >
-                            <Text style={styles.showAnswerText}>{t('anki.showAnswer')}</Text>
-                        </TouchableOpacity>
+                        <View style={styles.reviewerAnswerRow}>
+                            {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? (
+                                <TouchableOpacity
+                                    style={styles.reviewerToolsInlineBtn}
+                                    onPress={openMoreMenu}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Araçlar', 'Tools')}
+                                >
+                                    <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
+                                </TouchableOpacity>
+                            ) : null}
+                            <TouchableOpacity
+                                style={[
+                                    styles.showAnswerBtn,
+                                    settings.showToolsOverlayButton && styles.showAnswerBtnWithTools,
+                                ]}
+                                onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
+                                onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
+                                delayLongPress={settings.showAnswerLongPressMs ?? 0}
+                                activeOpacity={0.82}
+                                accessibilityRole="button"
+                                accessibilityLabel={t('anki.showAnswer')}
+                            >
+                                <Text style={styles.showAnswerText}>{t('anki.showAnswer')}</Text>
+                            </TouchableOpacity>
+                            {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? (
+                                <TouchableOpacity
+                                    style={styles.reviewerToolsInlineBtn}
+                                    onPress={openMoreMenu}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Araçlar', 'Tools')}
+                                >
+                                    <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
+                                </TouchableOpacity>
+                            ) : null}
+                        </View>
                     ) : answerButtons}
                 </View>
             ) : null}
@@ -2625,12 +2893,12 @@ export default function StudyScreen() {
                 />
             )}
 
-            {currentCard && settings.showToolsOverlayButton && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible ? (
+            {currentCard && settings.showToolsOverlayButton && !hasFixedReviewControls && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible ? (
                 <TouchableOpacity
                     style={[
                         styles.toolsOverlayButton,
                         settings.toolsOverlayPosition === 'left' ? styles.toolsOverlayLeft : styles.toolsOverlayRight,
-                        { bottom: Math.max(insets.bottom, 12) + (hasFixedReviewControls ? 92 : 12) + (toolbarPosition === 'bottom' ? 54 : 0) },
+                        { bottom: Math.max(insets.bottom, 12) + 12 },
                     ]}
                     onPress={openMoreMenu}
                     accessibilityRole="button"
@@ -2640,59 +2908,48 @@ export default function StudyScreen() {
                 </TouchableOpacity>
             ) : null}
 
-            {currentCard && (
-                <WhiteboardOverlay
-                    ref={whiteboardRef}
-                    active={whiteboardActive}
-                    stylusOnly={whiteboardStylusOnly}
-                    onContentChange={setWhiteboardHasContent}
-                    onToolbarHeightChange={setWhiteboardToolbarHeight}
-                    toolbarTopOffset={0}
-                    onDone={() => setWhiteboardActive(false)}
-                />
-            )}
             </View>
 
-            {currentCard && (
-                <CardOptionsMenu
-                    visible={toolsMenuVisible}
-                    onClose={closeOptionsMenu}
-                    cardSuspended={currentCard.state.suspended}
-                    noteMarked={currentNoteMarked}
-                    hasSiblingCards={hasSiblingCards}
-                    cardHasAudio={cardHasAudio}
-                    onReplayAudio={replayAudio}
-                    onBuryCard={handleBury}
-                    onSuspendCard={handleToggleSuspendCard}
-                    onForgetCard={handleForgetCard}
-                    onSetDueDate={handleSetDueDate}
-                    onDeckOptions={handleDeckOptions}
-                    onCardInfo={handleCardInfo}
-                    onToggleMarkNote={handleToggleMarkNote}
-                    onBuryNote={handleBuryNote}
-                    onSuspendNote={handleSuspendNote}
-                    onDeleteNote={handleDeleteNote}
-                    canUndo={undoStack.length > 0}
-                    onUndo={undoLast}
-                    canRedo={redoStack.length > 0}
-                    onRedo={redoLast}
-                    onAddNote={handleAddNote}
-                    onEditNote={handleEditNote}
-                    noteTags={renderPayload?.note.tags.join(' ') ?? ''}
-                    onSaveTags={handleSaveTags}
-                    whiteboardActive={whiteboardActive}
-                    whiteboardHasContent={whiteboardHasContent}
-                    onToggleWhiteboard={toggleWhiteboard}
-                    onUndoWhiteboard={() => whiteboardRef.current?.undo()}
-                    stylusOnly={whiteboardStylusOnly}
-                    onToggleStylus={() => setWhiteboardStylusOnly((on) => !on)}
-                    onClearWhiteboard={handleClearWhiteboard}
-                    onSaveWhiteboard={handleSaveWhiteboard}
-                    onDisableWhiteboard={handleDisableWhiteboard}
-                    voicePlaybackEnabled={voicePlaybackEnabled}
-                    onToggleVoicePlayback={handleToggleVoicePlayback}
-                />
-            )}
+            <CardOptionsMenu
+                visible={toolsMenuVisible}
+                onClose={closeOptionsMenu}
+                hasCurrentCard={Boolean(currentCard)}
+                cardSuspended={currentCard ? currentCard.state.suspended : false}
+                noteMarked={currentNoteMarked}
+                hasSiblingCards={hasSiblingCards}
+                cardHasAudio={cardHasAudio}
+                onReplayAudio={replayAudio}
+                onBuryCard={handleBury}
+                onSuspendCard={handleToggleSuspendCard}
+                onForgetCard={handleForgetCard}
+                onSetDueDate={handleSetDueDate}
+                onDeckOptions={handleDeckOptions}
+                onCardInfo={currentCard ? handleCardInfo : undefined}
+                onToggleMarkNote={handleToggleMarkNote}
+                onBuryNote={handleBuryNote}
+                onSuspendNote={handleSuspendNote}
+                canDeleteNote={!isCurrentCardCatalog}
+                onDeleteNote={handleDeleteNote}
+                canUndo={undoStack.length > 0}
+                onUndo={undoLast}
+                canRedo={redoStack.length > 0}
+                onRedo={redoLast}
+                onAddNote={handleAddNote}
+                onEditNote={handleEditNote}
+                noteTags={renderPayload?.note.tags.join(' ') ?? ''}
+                onSaveTags={handleSaveTags}
+                whiteboardActive={whiteboardActive}
+                whiteboardHasContent={whiteboardHasContent}
+                onToggleWhiteboard={toggleWhiteboard}
+                onUndoWhiteboard={() => whiteboardRef.current?.undo()}
+                stylusOnly={whiteboardStylusOnly}
+                onToggleStylus={toggleWhiteboardStylus}
+                onClearWhiteboard={handleClearWhiteboard}
+                onSaveWhiteboard={handleSaveWhiteboard}
+                onDisableWhiteboard={handleDisableWhiteboard}
+                voicePlaybackEnabled={voicePlaybackEnabled}
+                onToggleVoicePlayback={handleToggleVoicePlayback}
+            />
 
             {currentCard && (
                 <ReviewerFlagMenu
@@ -2733,6 +2990,7 @@ export default function StudyScreen() {
                     setSelectedDeckName(rootDeckName);
                 }}
             />
+            <ProtectedContentShield state={screenGuardState} />
         </View>
     );
 }
@@ -2810,6 +3068,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     contentArea: { flex: 1, position: 'relative', overflow: 'hidden' },
     cardContext: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
     contextSeparator: { color: colors.textMuted, fontSize: FontSize.md },
+    cardStage: { flex: 1, minHeight: 0 },
     cardScroll: { flex: 1, minHeight: 0 },
     cardArea: {
         flexGrow: 1,
@@ -2958,6 +3217,47 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.bgCard,
         borderTopWidth: 1,
         borderTopColor: colors.borderLight,
+    },
+    reviewerAnswerRow: {
+        width: '100%',
+        maxWidth: 760,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    showAnswerBtnWithTools: {
+        flex: 1,
+    },
+    reviewerToolsInlineBtn: {
+        width: 54,
+        height: 54,
+        borderRadius: BorderRadius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.bgSecondary,
+        borderWidth: 1,
+        borderColor: colors.border,
+        ...Shadows.sm,
+    },
+    reviewerToolsInlineIcon: {
+        fontSize: 22,
+        color: colors.textSecondary,
+    },
+    reviewerToolsGradeBtn: {
+        flex: 0,
+        flexGrow: 0,
+        width: isCompact ? 48 : 56,
+        backgroundColor: colors.bgSecondary,
+        borderColor: colors.border,
+    },
+    reviewerToolsGradeIcon: {
+        fontSize: isCompact ? 18 : 20,
+        color: colors.textSecondary,
+    },
+    reviewerToolsGradeLabel: {
+        fontSize: FontSize.xs,
+        fontWeight: '700',
+        color: colors.textMuted,
     },
     answerButtons: { width: '100%', maxWidth: 760, flexDirection: 'row', gap: isCompact ? 6 : 10 },
     answerButtonsTwoRows: { flexWrap: 'wrap' },

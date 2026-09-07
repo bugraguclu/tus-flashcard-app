@@ -27,3 +27,35 @@ export function normalizeDeckLeafInput(value: string): string {
 export function getScopedBrowserPath(deckName: string | null | undefined): string {
     return deckName ? `/browser?deck=${encodeURIComponent(deckName)}` : '/browser';
 }
+
+export interface StudyScopeParams {
+    deck?: string | null;
+    subject?: string | null;
+    topic?: string | null;
+    all?: string | null;
+    scope?: string | null;
+}
+
+/**
+ * Determines whether the reviewer was opened with an explicit study scope
+ * (a specific deck, subject, topic, or all cards) versus a bare cold launch
+ * at the root URL "/" where the learner should land on the deck list.
+ */
+export function hasExplicitStudyScope(
+    params: StudyScopeParams,
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+): boolean {
+    const isAll = params.all === '1' || params.scope === 'all';
+    return Boolean(
+        selectedDeckName ||
+        selectedSubject ||
+        selectedTopic ||
+        params.deck ||
+        params.subject ||
+        params.topic ||
+        isAll
+    );
+}
+

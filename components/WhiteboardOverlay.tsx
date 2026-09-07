@@ -1,7 +1,29 @@
 // Transparent reviewer whiteboard with a compact mobile toolbar and undoable ink history.
 
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState } from 'react';
-import { ActivityIndicator, View, Text, TouchableOpacity, StyleSheet, PanResponder, Platform } from 'react-native';
+import React, {
+    createContext,
+    forwardRef,
+    useCallback,
+    useContext,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useReducer,
+    useRef,
+    useState,
+} from 'react';
+import {
+    ActivityIndicator,
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    PanResponder,
+    Platform,
+    type PanResponderInstance,
+    type StyleProp,
+    type ViewStyle,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -15,9 +37,11 @@ import {
     strokeHitByEraser,
     toSmoothWhiteboardPath,
     whiteboardHistoryReducer,
+    type WhiteboardHistory,
     type WhiteboardPoint,
     type WhiteboardStroke,
 } from '../lib/whiteboardGeometry';
+import type { WhiteboardCardSnapshot } from '../lib/whiteboardSession';
 
 export interface WhiteboardHandle {
     /** Reset ink and history immediately (used when advancing to another card). */
@@ -28,22 +52,52 @@ export interface WhiteboardHandle {
     redo: () => void;
     save: () => Promise<void>;
     hasContent: () => boolean;
+    getSnapshot: () => WhiteboardCardSnapshot;
+    restoreSnapshot: (snapshot: WhiteboardCardSnapshot) => void;
 }
 
-interface WhiteboardOverlayProps {
+export interface WhiteboardProviderProps {
+    children?: React.ReactNode;
     /** When false, ink remains visible while all touches pass through to the reviewer. */
     active: boolean;
+    /**
+     * Whether new strokes may be drawn. Ink and the toolbar stay put when this is false, so the
+     * learner can still undo, clear or save, but the surface underneath stays tappable — the
+     * reviewer uses it for the "all done" screen, whose buttons sit inside the drawable area.
+     */
+    canDraw?: boolean;
+    /**
+     * Pen colour to start from, restored per deck and per theme. Undefined keeps the first palette
+     * entry, which is what a deck with no stored preference gets.
+     */
+    penColor?: string;
+    /** Fires when the learner picks a colour, so the caller can store it against the deck. */
+    onPenColorChange?: (color: string) => void;
     /** Best-effort stylus-only input. Native PanResponder does not expose pointer type reliably. */
     stylusOnly: boolean;
     onContentChange?: (hasContent: boolean) => void;
     onToolbarHeightChange?: (height: number) => void;
-    /** Height of reviewer chrome that sits above the drawable card area. */
-    toolbarTopOffset?: number;
     /** Close drawing mode without discarding the ink. */
     onDone?: () => void;
 }
 
+export interface WhiteboardOverlayProps extends WhiteboardProviderProps {
+    /** Height of reviewer chrome that sits above the drawable card area. */
+    toolbarTopOffset?: number;
+}
+
+export interface WhiteboardCanvasProps {
+    style?: StyleProp<ViewStyle>;
+}
+
+export interface WhiteboardToolbarProps {
+    toolbarTopOffset?: number;
+    style?: StyleProp<ViewStyle>;
+}
+
 const STROKE_COLORS = ['#e0393e', '#2f7fd6', '#2ea043', '#e8a33d', '#8e44ad', '#111111'];
+/** The pen a deck with no stored preference draws with, in either theme. */
+export const DEFAULT_WHITEBOARD_PEN_COLOR = STROKE_COLORS[0];
 const STROKE_WIDTHS = [2.5, 5, 9];
 const MIN_POINT_DISTANCE_SQUARED = 2.25;
 const MAX_POINTS_PER_STROKE = 6000;
@@ -95,16 +149,64 @@ function isStylusEvent(event: any): boolean {
     return true;
 }
 
-export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayProps>(
-    function WhiteboardOverlay({ active, stylusOnly, onContentChange, onToolbarHeightChange, toolbarTopOffset = 0, onDone }, ref) {
+interface WhiteboardContextValue {
+    board: WhiteboardHistory;
+    livePath: string;
+    tool: DrawingTool;
+    setTool: (tool: DrawingTool) => void;
+    color: string;
+    pickColor: (color: string) => void;
+    strokeWidth: number;
+    cycleStrokeWidth: () => void;
+    paletteOpen: boolean;
+    setPaletteOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    saving: boolean;
+    active: boolean;
+    canDraw: boolean;
+    size: { width: number; height: number };
+    setSize: React.Dispatch<React.SetStateAction<{ width: number; height: number }>>;
+    canvasRef: React.RefObject<View | null>;
+    panResponder: PanResponderInstance;
+    undo: () => void;
+    redo: () => void;
+    requestClear: () => void;
+    reset: () => void;
+    save: () => Promise<void>;
+    onDone?: () => void;
+    onToolbarHeightChange?: (height: number) => void;
+}
+
+const WhiteboardContext = createContext<WhiteboardContextValue | null>(null);
+
+export function useWhiteboard(): WhiteboardContextValue {
+    const context = useContext(WhiteboardContext);
+    if (!context) {
+        throw new Error('useWhiteboard must be used within a WhiteboardProvider');
+    }
+    return context;
+}
+
+export const WhiteboardProvider = forwardRef<WhiteboardHandle, WhiteboardProviderProps>(
+    function WhiteboardProvider(
+        {
+            children,
+            active,
+            canDraw = true,
+            penColor,
+            onPenColorChange,
+            stylusOnly,
+            onContentChange,
+            onToolbarHeightChange,
+            onDone,
+        },
+        ref,
+    ) {
         const { t, l } = useI18n();
-        const colors = useThemeColors();
-        const styles = useMemo(() => createStyles(colors), [colors]);
         const canvasRef = useRef<View>(null);
         const [board, dispatch] = useReducer(whiteboardHistoryReducer, EMPTY_WHITEBOARD_HISTORY);
         const [livePath, setLivePath] = useState('');
         const [tool, setTool] = useState<DrawingTool>('pen');
-        const [color, setColor] = useState(STROKE_COLORS[0]);
+        const [color, setColor] = useState(penColor ?? STROKE_COLORS[0]);
         const [strokeWidth, setStrokeWidth] = useState(STROKE_WIDTHS[1]);
         const [paletteOpen, setPaletteOpen] = useState(false);
         const [saving, setSaving] = useState(false);
@@ -122,10 +224,25 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
         stylusOnlyRef.current = stylusOnly;
         const activeRef = useRef(active);
         activeRef.current = active;
+        const canDrawRef = useRef(canDraw);
+        canDrawRef.current = canDraw;
+
+        useEffect(() => {
+            if (penColor) setColor(penColor);
+        }, [penColor]);
+
+        const pickColor = useCallback((next: string) => {
+            setColor(next);
+            onPenColorChange?.(next);
+        }, [onPenColorChange]);
+
         const pointsRef = useRef<WhiteboardPoint[]>([]);
         const livePathRef = useRef('');
 
-        useEffect(() => { onContentChange?.(board.strokes.length > 0); }, [board.strokes.length, onContentChange]);
+        useEffect(() => {
+            onContentChange?.(board.strokes.length > 0);
+        }, [board.strokes.length, onContentChange]);
+
         useEffect(() => {
             if (!active) {
                 setPaletteOpen(false);
@@ -133,7 +250,7 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
             }
         }, [active, onToolbarHeightChange]);
 
-        const commitTrail = (trail: WhiteboardPoint[]) => {
+        const commitTrail = useCallback((trail: WhiteboardPoint[]) => {
             if (trail.length === 0) return;
             const current = boardRef.current.strokes;
             if (toolRef.current === 'eraser') {
@@ -146,19 +263,26 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
                 type: 'commit',
                 strokes: [...current, { points: trail, color: colorRef.current, width: widthRef.current }],
             });
-        };
+        }, []);
 
-        const finishGesture = (commit: boolean) => {
+        const finishGesture = useCallback((commit: boolean) => {
             const trail = pointsRef.current;
             if (commit) commitTrail(trail);
             pointsRef.current = [];
             livePathRef.current = '';
             setLivePath('');
-        };
+        }, [commitTrail]);
 
-        const panResponder = useRef(PanResponder.create({
-            onStartShouldSetPanResponder: (event) => activeRef.current && (!stylusOnlyRef.current || isStylusEvent(event)),
-            onMoveShouldSetPanResponder: (event) => activeRef.current && (!stylusOnlyRef.current || isStylusEvent(event)),
+        const panResponder = useMemo(() => PanResponder.create({
+            onStartShouldSetPanResponder: (event) => activeRef.current && canDrawRef.current
+                && (!stylusOnlyRef.current || isStylusEvent(event)),
+            onMoveShouldSetPanResponder: (event) => activeRef.current && canDrawRef.current
+                && (!stylusOnlyRef.current || isStylusEvent(event)),
+            onStartShouldSetPanResponderCapture: (event) => activeRef.current && canDrawRef.current
+                && (!stylusOnlyRef.current || isStylusEvent(event)),
+            onMoveShouldSetPanResponderCapture: (event) => activeRef.current && canDrawRef.current
+                && (!stylusOnlyRef.current || isStylusEvent(event)),
+            onPanResponderTerminationRequest: () => false,
             onPanResponderGrant: (event) => {
                 const point = { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY };
                 pointsRef.current = [point];
@@ -175,24 +299,24 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
                     if (dx * dx + dy * dy < MIN_POINT_DISTANCE_SQUARED) return;
                 }
                 pointsRef.current.push(point);
-                // A cheap polyline keeps long live strokes responsive. The committed stroke is
-                // replaced with the smooth quadratic path when the pointer is released.
                 livePathRef.current += ` L${point.x.toFixed(1)},${point.y.toFixed(1)}`;
                 setLivePath(livePathRef.current);
             },
             onPanResponderRelease: () => finishGesture(true),
             onPanResponderTerminate: () => finishGesture(false),
-        })).current;
+        }), [finishGesture]);
 
-        const reset = () => {
+        const reset = useCallback(() => {
             dispatch({ type: 'reset' });
             pointsRef.current = [];
             livePathRef.current = '';
             setLivePath('');
-        };
-        const undo = () => dispatch({ type: 'undo' });
-        const redo = () => dispatch({ type: 'redo' });
-        const requestClear = () => {
+        }, []);
+
+        const undo = useCallback(() => dispatch({ type: 'undo' }), []);
+        const redo = useCallback(() => dispatch({ type: 'redo' }), []);
+
+        const requestClear = useCallback(() => {
             if (boardRef.current.strokes.length === 0) return;
             confirm(
                 l('Yazı tahtası temizlensin mi?', 'Clear the whiteboard?'),
@@ -200,11 +324,12 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
                 () => dispatch({ type: 'commit', strokes: [] }),
                 { destructive: true },
             );
-        };
-        const save = async () => {
+        }, [l]);
+
+        const save = useCallback(async () => {
             const strokes = boardRef.current.strokes;
             if (strokes.length === 0) {
-            alert(l('Kaydedilecek bir şey yok', 'Nothing to save'), l('Önce yazı tahtasına bir şeyler çizin.', 'Draw something on the whiteboard first.'));
+                alert(l('Kaydedilecek bir şey yok', 'Nothing to save'), l('Önce yazı tahtasına bir şeyler çizin.', 'Draw something on the whiteboard first.'));
                 return;
             }
             if (saving) return;
@@ -225,7 +350,29 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
             } finally {
                 setSaving(false);
             }
-        };
+        }, [saving, size.width, size.height, l, t]);
+
+        const cycleStrokeWidth = useCallback(() => {
+            setStrokeWidth((current) => {
+                const currentIndex = STROKE_WIDTHS.indexOf(current);
+                return STROKE_WIDTHS[(currentIndex + 1) % STROKE_WIDTHS.length];
+            });
+        }, []);
+
+        const getSnapshot = useCallback((): WhiteboardCardSnapshot => {
+            return {
+                strokes: [...boardRef.current.strokes],
+                past: [...boardRef.current.past],
+                future: [...boardRef.current.future],
+            };
+        }, []);
+
+        const restoreSnapshot = useCallback((snapshot: WhiteboardCardSnapshot) => {
+            dispatch({ type: 'restore', snapshot });
+            pointsRef.current = [];
+            livePathRef.current = '';
+            setLivePath('');
+        }, []);
 
         useImperativeHandle(ref, () => ({
             clear: reset,
@@ -234,166 +381,272 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
             redo,
             save,
             hasContent: () => boardRef.current.strokes.length > 0,
-        }));
+            getSnapshot,
+            restoreSnapshot,
+        }), [reset, requestClear, undo, redo, save, getSnapshot, restoreSnapshot]);
 
-        const liveColor = tool === 'eraser' ? 'rgba(110,125,118,0.38)' : color;
-        const liveWidth = tool === 'eraser' ? Math.max(28, strokeWidth * 7) : strokeWidth;
-        const cycleStrokeWidth = () => {
-            const currentIndex = STROKE_WIDTHS.indexOf(strokeWidth);
-            setStrokeWidth(STROKE_WIDTHS[(currentIndex + 1) % STROKE_WIDTHS.length]);
-        };
+        const contextValue = useMemo<WhiteboardContextValue>(() => ({
+            board,
+            livePath,
+            tool,
+            setTool,
+            color,
+            pickColor,
+            strokeWidth,
+            cycleStrokeWidth,
+            paletteOpen,
+            setPaletteOpen,
+            saving,
+            active,
+            canDraw,
+            size,
+            setSize,
+            canvasRef,
+            panResponder,
+            undo,
+            redo,
+            requestClear,
+            reset,
+            save,
+            onDone,
+            onToolbarHeightChange,
+        }), [
+            board,
+            livePath,
+            tool,
+            color,
+            pickColor,
+            strokeWidth,
+            cycleStrokeWidth,
+            paletteOpen,
+            saving,
+            active,
+            canDraw,
+            size,
+            panResponder,
+            undo,
+            redo,
+            requestClear,
+            reset,
+            save,
+            onDone,
+            onToolbarHeightChange,
+        ]);
 
         return (
-            <View style={StyleSheet.absoluteFill} pointerEvents={active ? 'box-none' : 'none'}>
-                <View
-                    ref={canvasRef}
-                    collapsable={false}
-                    style={StyleSheet.absoluteFill}
-                    onLayout={(event) => setSize({
-                        width: event.nativeEvent.layout.width,
-                        height: event.nativeEvent.layout.height,
-                    })}
-                    {...panResponder.panHandlers}
-                >
-                    <Svg width={size.width} height={size.height}>
-                        {board.strokes.map((stroke, index) => (
-                            <Path
-                                key={index}
-                                d={toSmoothWhiteboardPath(stroke.points)}
-                                stroke={stroke.color}
-                                strokeWidth={stroke.width}
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        ))}
-                        {livePath !== '' && (
-                            <Path
-                                d={livePath}
-                                stroke={liveColor}
-                                strokeWidth={liveWidth}
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeDasharray={tool === 'eraser' ? '4 5' : undefined}
-                            />
-                        )}
-                    </Svg>
+            <WhiteboardContext.Provider value={contextValue}>
+                {children}
+            </WhiteboardContext.Provider>
+        );
+    },
+);
+
+export function WhiteboardCanvas({ style }: WhiteboardCanvasProps) {
+    const {
+        board,
+        livePath,
+        tool,
+        color,
+        strokeWidth,
+        size,
+        setSize,
+        canvasRef,
+        panResponder,
+        active,
+        canDraw,
+    } = useWhiteboard();
+
+    const liveColor = tool === 'eraser' ? 'rgba(110,125,118,0.38)' : color;
+    const liveWidth = tool === 'eraser' ? Math.max(28, strokeWidth * 7) : strokeWidth;
+
+    return (
+        <View
+            ref={canvasRef}
+            collapsable={false}
+            pointerEvents={active && canDraw ? 'auto' : 'none'}
+            style={style}
+            onLayout={(event) => setSize({
+                width: event.nativeEvent.layout.width,
+                height: event.nativeEvent.layout.height,
+            })}
+            {...panResponder.panHandlers}
+        >
+            <Svg width={size.width || '100%'} height={size.height || '100%'} style={StyleSheet.absoluteFill}>
+                {board.strokes.map((stroke, index) => (
+                    <Path
+                        key={index}
+                        d={toSmoothWhiteboardPath(stroke.points)}
+                        stroke={stroke.color}
+                        strokeWidth={stroke.width}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                ))}
+                {livePath !== '' && (
+                    <Path
+                        d={livePath}
+                        stroke={liveColor}
+                        strokeWidth={liveWidth}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeDasharray={tool === 'eraser' ? '4 5' : undefined}
+                    />
+                )}
+            </Svg>
+        </View>
+    );
+}
+
+export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToolbarProps) {
+    const {
+        board,
+        tool,
+        setTool,
+        color,
+        pickColor,
+        strokeWidth,
+        cycleStrokeWidth,
+        paletteOpen,
+        setPaletteOpen,
+        saving,
+        active,
+        undo,
+        redo,
+        requestClear,
+        onDone,
+        onToolbarHeightChange,
+    } = useWhiteboard();
+    const { l } = useI18n();
+    const colors = useThemeColors();
+    const styles = useMemo(() => createStyles(colors), [colors]);
+
+    if (!active) return null;
+
+    return (
+        <View style={[styles.toolbar, { top: toolbarTopOffset + Spacing.sm }, style]} pointerEvents="box-none">
+            <View
+                style={styles.toolbarPanel}
+                onLayout={(event) => onToolbarHeightChange?.(event.nativeEvent.layout.height)}
+            >
+                <View style={styles.toolbarRow}>
+                    <TouchableOpacity
+                        style={[styles.toolButton, tool === 'pen' && styles.toolButtonActive]}
+                        onPress={() => { setTool('pen'); setPaletteOpen(false); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Kalem', 'Pen')}
+                        accessibilityState={{ selected: tool === 'pen' }}
+                    >
+                        <Text style={[styles.toolSymbol, tool === 'pen' && styles.toolSymbolActive]}>✎</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.toolButton, tool === 'eraser' && styles.toolButtonActive]}
+                        onPress={() => { setTool('eraser'); setPaletteOpen(false); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Silgi', 'Eraser')}
+                        accessibilityState={{ selected: tool === 'eraser' }}
+                    >
+                        <Text style={[styles.eraserSymbol, tool === 'eraser' && styles.toolSymbolActive]}>▱</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.toolButton, paletteOpen && styles.toolButtonActive]}
+                        onPress={() => { setTool('pen'); setPaletteOpen((open) => !open); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Renk paleti', 'Color palette')}
+                        accessibilityState={{ expanded: paletteOpen }}
+                    >
+                        <View style={[styles.currentColor, { backgroundColor: color }]} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.toolButton}
+                        onPress={cycleStrokeWidth}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Çizgi kalınlığını değiştir', 'Change stroke width')}
+                        accessibilityHint={l('İnce, orta ve kalın arasında geçiş yapar', 'Cycles through thin, medium, and thick')}
+                    >
+                        <View style={[styles.widthPreview, {
+                            height: strokeWidth,
+                            backgroundColor: tool === 'pen' ? color : colors.textSecondary,
+                        }]} />
+                    </TouchableOpacity>
+
+                    <View style={styles.divider} />
+                    <TouchableOpacity
+                        style={[styles.toolButton, board.past.length === 0 && styles.toolButtonDisabled]}
+                        onPress={undo}
+                        disabled={board.past.length === 0}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Geri al', 'Undo')}
+                    >
+                        <Text style={styles.historySymbol}>↶</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.toolButton, board.future.length === 0 && styles.toolButtonDisabled]}
+                        onPress={redo}
+                        disabled={board.future.length === 0}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Yinele', 'Redo')}
+                    >
+                        <Text style={styles.historySymbol}>↷</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.toolButton, board.strokes.length === 0 && styles.toolButtonDisabled]}
+                        onPress={requestClear}
+                        disabled={board.strokes.length === 0}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Yazı tahtasını temizle', 'Clear whiteboard')}
+                    >
+                        <Text style={styles.clearSymbol}>×</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.doneButton, saving && styles.toolButtonDisabled]}
+                        onPress={onDone}
+                        disabled={saving}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Çizimi bitir', 'Finish drawing')}
+                    >
+                        {saving
+                            ? <ActivityIndicator size="small" color={colors.white} />
+                            : <Text style={styles.doneSymbol}>✓</Text>}
+                    </TouchableOpacity>
                 </View>
 
-                {active && (
-                    <View style={[styles.toolbar, { top: toolbarTopOffset + Spacing.sm }]} pointerEvents="box-none">
-                        <View
-                            style={styles.toolbarPanel}
-                            onLayout={(event) => onToolbarHeightChange?.(event.nativeEvent.layout.height)}
-                        >
-                            <View style={styles.toolbarRow}>
-                                <TouchableOpacity
-                                    style={[styles.toolButton, tool === 'pen' && styles.toolButtonActive]}
-                                    onPress={() => { setTool('pen'); setPaletteOpen(false); }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Kalem', 'Pen')}
-                                    accessibilityState={{ selected: tool === 'pen' }}
-                                >
-                                    <Text style={[styles.toolSymbol, tool === 'pen' && styles.toolSymbolActive]}>✎</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.toolButton, tool === 'eraser' && styles.toolButtonActive]}
-                                    onPress={() => { setTool('eraser'); setPaletteOpen(false); }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Silgi', 'Eraser')}
-                                    accessibilityState={{ selected: tool === 'eraser' }}
-                                >
-                                    <Text style={[styles.eraserSymbol, tool === 'eraser' && styles.toolSymbolActive]}>▱</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.toolButton, paletteOpen && styles.toolButtonActive]}
-                                    onPress={() => { setTool('pen'); setPaletteOpen((open) => !open); }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Renk paleti', 'Color palette')}
-                                    accessibilityState={{ expanded: paletteOpen }}
-                                >
-                                    <View style={[styles.currentColor, { backgroundColor: color }]} />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.toolButton}
-                                    onPress={cycleStrokeWidth}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Çizgi kalınlığını değiştir', 'Change stroke width')}
-                                    accessibilityHint={l('İnce, orta ve kalın arasında geçiş yapar', 'Cycles through thin, medium, and thick')}
-                                >
-                                    <View style={[styles.widthPreview, {
-                                        height: strokeWidth,
-                                        backgroundColor: tool === 'pen' ? color : colors.textSecondary,
-                                    }]} />
-                                </TouchableOpacity>
-
-                                <View style={styles.divider} />
-                                <TouchableOpacity
-                                    style={[styles.toolButton, board.past.length === 0 && styles.toolButtonDisabled]}
-                                    onPress={undo}
-                                    disabled={board.past.length === 0}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Geri al', 'Undo')}
-                                >
-                                    <Text style={styles.historySymbol}>↶</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.toolButton, board.future.length === 0 && styles.toolButtonDisabled]}
-                                    onPress={redo}
-                                    disabled={board.future.length === 0}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Yinele', 'Redo')}
-                                >
-                                    <Text style={styles.historySymbol}>↷</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.toolButton, board.strokes.length === 0 && styles.toolButtonDisabled]}
-                                    onPress={requestClear}
-                                    disabled={board.strokes.length === 0}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Yazı tahtasını temizle', 'Clear whiteboard')}
-                                >
-                                    <Text style={styles.clearSymbol}>×</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.doneButton, saving && styles.toolButtonDisabled]}
-                                    onPress={onDone}
-                                    disabled={saving}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Çizimi bitir', 'Finish drawing')}
-                                >
-                                    {saving
-                                        ? <ActivityIndicator size="small" color={colors.white} />
-                                        : <Text style={styles.doneSymbol}>✓</Text>}
-                                </TouchableOpacity>
-                            </View>
-
-                            {paletteOpen && (
-                                <View style={styles.palette} accessibilityRole="toolbar">
-                                    <Text style={styles.paletteLabel}>{l('Renk', 'Color')}</Text>
-                                    {STROKE_COLORS.map((swatchColor) => (
-                                        <TouchableOpacity
-                                            key={swatchColor}
-                                            style={[
-                                                styles.swatchButton,
-                                                color === swatchColor && styles.swatchButtonActive,
-                                            ]}
-                                            onPress={() => { setColor(swatchColor); setTool('pen'); }}
-                                            accessibilityRole="button"
-                                            accessibilityLabel={l(`Kalem rengi ${swatchColor}`, `Pen color ${swatchColor}`)}
-                                            accessibilityState={{ selected: color === swatchColor }}
-                                        >
-                                            <View style={[styles.swatch, { backgroundColor: swatchColor }]} />
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
+                {paletteOpen && (
+                    <View style={styles.palette} accessibilityRole="toolbar">
+                        <Text style={styles.paletteLabel}>{l('Renk', 'Color')}</Text>
+                        {STROKE_COLORS.map((swatchColor) => (
+                            <TouchableOpacity
+                                key={swatchColor}
+                                style={[
+                                    styles.swatchButton,
+                                    color === swatchColor && styles.swatchButtonActive,
+                                ]}
+                                onPress={() => { pickColor(swatchColor); setTool('pen'); }}
+                                accessibilityRole="button"
+                                accessibilityLabel={l(`Kalem rengi ${swatchColor}`, `Pen color ${swatchColor}`)}
+                                accessibilityState={{ selected: color === swatchColor }}
+                            >
+                                <View style={[styles.swatch, { backgroundColor: swatchColor }]} />
+                            </TouchableOpacity>
+                        ))}
                     </View>
                 )}
             </View>
+        </View>
+    );
+}
+
+export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayProps>(
+    function WhiteboardOverlay({ toolbarTopOffset = 0, ...providerProps }, ref) {
+        return (
+            <WhiteboardProvider ref={ref} {...providerProps}>
+                <View style={StyleSheet.absoluteFill} pointerEvents={providerProps.active ? 'box-none' : 'none'}>
+                    <WhiteboardCanvas style={StyleSheet.absoluteFill} />
+                    <WhiteboardToolbar toolbarTopOffset={toolbarTopOffset} />
+                </View>
+            </WhiteboardProvider>
         );
     },
 );
@@ -405,6 +658,7 @@ function createStyles(colors: ColorScheme) {
             left: Spacing.sm,
             right: Spacing.sm,
             alignItems: 'center',
+            zIndex: 100,
         },
         toolbarPanel: {
             maxWidth: '100%',

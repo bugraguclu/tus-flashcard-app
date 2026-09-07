@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     FlatList,
     Keyboard,
@@ -74,6 +74,10 @@ export default function DeckPickerModal({
     const [newDeckName, setNewDeckName] = useState('');
     const [createError, setCreateError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+    // Which deck the picker opens on. The caller owns this: it knows whether the operation is
+    // scoped to the deck being studied, the deck the selected cards live in, or the one already
+    // chosen, and passes that as `activeDeckName`. Reading the collection's current deck here
+    // instead would silently override a caller that deliberately pointed somewhere else.
     const targetDeckName = activeDeckName || selectedDeckName || null;
 
     // The deck list is the single source of truth for sibling order, so the picker lists decks
@@ -83,6 +87,13 @@ export default function DeckPickerModal({
         () => prioritizeDeckTree(tree, targetDeckName),
         [tree, targetDeckName],
     );
+
+    // Opening the picker is what resets its branches — not every new `decks` array a caller
+    // happens to build during render. Keying the reset on the tree instead would re-run it on
+    // each render at any call site that does not memoize the prop, snapping every branch the
+    // user opened shut again, so the tree is read through a ref rather than a dependency.
+    const prioritizedTreeRef = useRef(prioritizedTree);
+    prioritizedTreeRef.current = prioritizedTree;
 
     useEffect(() => {
         if (!visible) return;
@@ -94,8 +105,8 @@ export default function DeckPickerModal({
         setQuery('');
         setNewDeckName('');
         setCreateError(null);
-        setExpanded(initialExpandedDeckNames(prioritizedTree, targetDeckName));
-    }, [visible, prioritizedTree, targetDeckName]);
+        setExpanded(initialExpandedDeckNames(prioritizedTreeRef.current, targetDeckName));
+    }, [visible, targetDeckName]);
 
     const filteredTree = useMemo(
         () => filterDeckTree(prioritizedTree, query.trim()),

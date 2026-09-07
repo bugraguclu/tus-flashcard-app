@@ -29,15 +29,39 @@ export function formatStopwatch(totalSeconds: number): string {
  * The dwell timer starts when the card side appears. "Wait for audio" only postpones an action
  * whose dwell time has already elapsed; it must not restart the dwell timer after the audio ends.
  * The resulting delay is therefore the longer of the configured dwell time and the audio length.
+ *
+ * Drawing blocks the action outright. Anki has no whiteboard to reconcile this with, but it does
+ * give up on Auto Advance as soon as the reviewer stops being the learner's focus, and ink on the
+ * board is unsaved work: advancing the card discards the drawing and no undo brings it back. The
+ * caller also pauses the dwell timer while the board is open, so the wait resumes rather than
+ * restarting once drawing mode is closed.
  */
 export function shouldRunAutoAdvance(
     elapsedMs: number,
     targetMs: number,
     waitForAudio: boolean,
     audioActive: boolean,
+    drawingActive: boolean,
 ): boolean {
+    if (drawingActive) return false;
     if (Math.max(0, elapsedMs) < Math.max(0, targetMs)) return false;
     return !waitForAudio || !audioActive;
+}
+
+/**
+ * Whether advancing to `nextCardId` should wipe the reviewer whiteboard.
+ *
+ * Ink belongs to the card it was drawn over, so a move to another card clears it, as AnkiDroid
+ * does. A null id is not a card: the queue passes through null whenever it is rebuilt — after the
+ * learn-ahead countdown, at a timebox checkpoint, on the "all done" screen — and those gaps used
+ * to read as a card change and destroy a drawing the learner was still using.
+ */
+export function shouldClearWhiteboardForCard(
+    inkedCardId: number | null,
+    nextCardId: number | null,
+): boolean {
+    if (nextCardId === null) return false;
+    return inkedCardId !== nextCardId;
 }
 
 export interface StudyTimeEstimateOptions {

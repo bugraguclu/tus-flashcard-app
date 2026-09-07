@@ -81,6 +81,7 @@ vi.mock('./reviewLogger', () => ({
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
+    logManualEntry: vi.fn(),
 }));
 
 // A faithful stand-in for the storage layer: bury, suspend and leech behave exactly as

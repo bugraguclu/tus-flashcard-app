@@ -4,6 +4,7 @@ import { BorderRadius, FontSize, Spacing, type ColorScheme, useThemeColors } fro
 import { useI18n } from '../hooks/useI18n';
 import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
+import { initialExpandedDeckNames, prioritizeDeckTree } from '../lib/deckPickerExpansion';
 import DisclosureChevron from './DisclosureChevron';
 
 interface DeckExportSelectorProps {
@@ -26,12 +27,14 @@ export default function DeckExportSelector({
     const { l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const tree = useMemo(() => buildDeckTree(decks), [decks]);
-    const [expanded, setExpanded] = useState<Set<string>>(() => {
-        if (!initiallyExpandedDeck) return new Set();
-        const parts = initiallyExpandedDeck.split('::');
-        return new Set(parts.map((_, index) => parts.slice(0, index + 1).join('::')));
-    });
+    const rawTree = useMemo(() => buildDeckTree(decks), [decks]);
+    const tree = useMemo(
+        () => prioritizeDeckTree(rawTree, initiallyExpandedDeck),
+        [rawTree, initiallyExpandedDeck],
+    );
+    const [expanded, setExpanded] = useState<Set<string>>(() =>
+        initialExpandedDeckNames(tree, initiallyExpandedDeck),
+    );
     const allSelected = decks.length > 0 && decks.every((deck) => selectedIds.has(deck.id));
 
     const toggleAll = () => {

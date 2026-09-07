@@ -17,6 +17,9 @@ import {
 } from './ankiState';
 import { getDeckAncestors } from './models';
 import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
+import { constrainedFuzzBounds, setDueDateInterval } from './schedulingIntervals';
+import { fsrsLastReviewInfo } from './fsrsMemory';
+import { revlogByCard } from './fsrsMaintenance';
 import { foldSearchNode, parseSearchQuery, unquoteSearchValue } from './searchQuery';
 import { compileCardMatcher, type CardSearchContext } from './cardSearchMatch';
 import {
@@ -50,6 +53,7 @@ import {
     getTodayLimitUsageByDeck,
     logReview,
     type DailyLimitUsage,
+    logManualEntry,
 } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
@@ -562,35 +566,6 @@ function buildScopeClause(
     const clauses: string[] = [];
     const params: Array<string | number> = [];
 
-    if (selectedSubject) {
-        const homeDeckId = resolveSubjectDeckId(selectedSubject);
-        const homeDeck = homeDeckId === 1 ? null : getDeck(homeDeckId);
-        if (homeDeck) {
-            // Courses own a physical deck. Scope by that deck tree so imported Anki tags stay
-            // unchanged instead of injecting an app-only subject tag into every note.
-            clauses.push("(c.deckId = ? OR d.name LIKE ? ESCAPE '\\')");
-            params.push(homeDeckId, `${escapeLikePattern(homeDeck.name)}::%`);
-        } else {
-            // Legacy/unknown subjects fall back to a whole-tag match.
-            clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
-            params.push(`% ${escapeLikePattern(selectedSubject)} %`);
-        }
-    }
-
-    if (selectedTopic) {
-        // A topic is stored two ways: as a whole tag with spaces dashed ("Hata-Ayıklama")
-        // and verbatim as a note field, which appears JSON-quoted inside n.data. Substring
-        // matching the raw topic against n.data would also hit question/answer TEXT (topic
-        // "random" matching every card that merely mentions random), so require either the
-        // whole tag or the exact quoted field value.
-        const topicTag = selectedTopic.replace(/\s+/g, '-');
-        clauses.push("((' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\' OR n.data LIKE ? ESCAPE '\\')");
-        params.push(
-            `% ${escapeLikePattern(topicTag)} %`,
-            `%${escapeLikePattern(JSON.stringify(selectedTopic))}%`,
-        );
-    }
-
     if (selectedDeckName) {
         const selectedDeck = getDeckByName(selectedDeckName);
         if (selectedDeck?.isFiltered && selectedDeck.searchQuery) {
@@ -600,6 +575,35 @@ function buildScopeClause(
         } else {
             clauses.push("(d.name = ? OR d.name LIKE ? ESCAPE '\\')");
             params.push(selectedDeckName, `${escapeLikePattern(selectedDeckName)}::%`);
+        }
+    } else {
+        if (selectedSubject) {
+            const homeDeckId = resolveSubjectDeckId(selectedSubject);
+            const homeDeck = homeDeckId === 1 ? null : getDeck(homeDeckId);
+            if (homeDeck) {
+                // Courses own a physical deck. Scope by that deck tree so imported Anki tags stay
+                // unchanged instead of injecting an app-only subject tag into every note.
+                clauses.push("(c.deckId = ? OR d.name LIKE ? ESCAPE '\\')");
+                params.push(homeDeckId, `${escapeLikePattern(homeDeck.name)}::%`);
+            } else {
+                // Legacy/unknown subjects fall back to a whole-tag match.
+                clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
+                params.push(`% ${escapeLikePattern(selectedSubject)} %`);
+            }
+        }
+
+        if (selectedTopic) {
+            // A topic is stored two ways: as a whole tag with spaces dashed ("Hata-Ayıklama")
+            // and verbatim as a note field, which appears JSON-quoted inside n.data. Substring
+            // matching the raw topic against n.data would also hit question/answer TEXT (topic
+            // "random" matching every card that merely mentions random), so require either the
+            // whole tag or the exact quoted field value.
+            const topicTag = selectedTopic.replace(/\s+/g, '-');
+            clauses.push("((' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\' OR n.data LIKE ? ESCAPE '\\')");
+            params.push(
+                `% ${escapeLikePattern(topicTag)} %`,
+                `%${escapeLikePattern(JSON.stringify(selectedTopic))}%`,
+            );
         }
     }
 
@@ -960,8 +964,19 @@ function buildDeckRank(): (deckId: number) => number {
 /**
  * Anki's "easy days": shift a review interval so the due date avoids reduced/blocked
  * weekdays. Factor 0 always moves off the day; factor 0.5 moves half the cards off it
- * (deterministic by card id). Searches outward (+1, -1, +2, …) for the nearest allowed
- * day, never dropping below a 1-day interval.
+ * (deterministic by card id). Searches outward (+1, -1, +2, …) for the nearest allowed day.
+ *
+ * The shift is bounded by the card's own fuzz window. Upstream implements easy days inside the
+ * load balancer, which only ever picks a different day *within* `constrained_fuzz_bounds` — the
+ * same window plain fuzz draws from — so a preference for a weekday can rearrange due dates but
+ * can never produce an interval the scheduler would not have produced anyway. Applying the shift
+ * without that bound is what used to let a blocked weekday push a card outside anything Anki
+ * would write. Intervals under 2.5 days have no fuzz window at all (the window collapses to the
+ * interval itself), so they are never moved, and when no day inside the window is allowed the
+ * interval is left where the scheduler put it rather than moved outside.
+ *
+ * Reference: `rslib/src/scheduler/answering/load_balancer.rs` and
+ * `rslib/src/scheduler/states/fuzz.rs` (`constrained_fuzz_bounds`).
  */
 export function adjustIntervalForEasyDays(
     intervalDays: number,
@@ -969,6 +984,7 @@ export function adjustIntervalForEasyDays(
     easyDays: number[] | undefined,
     nowMs: number,
     rolloverHour: number,
+    maximumInterval: number = 36500,
 ): number {
     if (!Array.isArray(easyDays) || easyDays.length !== 7) return intervalDays;
     if (easyDays.every((factor) => factor >= 1)) return intervalDays;
@@ -983,13 +999,19 @@ export function adjustIntervalForEasyDays(
     if (factor >= 1) return intervalDays;
     if (factor > 0 && cardId % 2 === 0) return intervalDays; // "reduced": let half stay
 
-    for (let offset = 1; offset <= 6; offset++) {
+    // The window is derived from the interval the card actually got. Upstream derives it from the
+    // pre-fuzz interval, but the fuzzed value always lies inside that window, so the two windows
+    // differ by at most the rounding of their own centre — and either way the shift stays inside
+    // the band of intervals the scheduler considers interchangeable.
+    const { lower, upper } = constrainedFuzzBounds(intervalDays, 1, Math.max(1, maximumInterval));
+
+    for (let offset = 1; offset <= upper - lower; offset++) {
         for (const candidate of [intervalDays + offset, intervalDays - offset]) {
-            if (candidate < 1) continue;
+            if (candidate < lower || candidate > upper) continue;
             if (factorFor(candidate) >= 1) return candidate;
         }
     }
-    return intervalDays; // every weekday reduced — nothing sensible to prefer
+    return intervalDays; // no allowed day inside the fuzz window — leave the interval alone
 }
 
 /** Bury the answered card's siblings per deck config, reporting the queue each one came from. */
@@ -1918,6 +1940,7 @@ export function answerStudyCard(
             cardSettings.easyDays,
             nowMs,
             cardSettings.dayRolloverHour,
+            cardSettings.maxInterval,
         );
 
     const baseDue = scheduleResult.isLearning
@@ -2053,24 +2076,44 @@ export function forgetCard(cardId: number, settings: AppSettings): void {
     if (!card) return;
     const freshState = makeDefaultCardState(cardId, settings);
     saveAnkiCard(cardStateToAnkiCard(card, freshState, settings));
+    // The reset marker has to outlive the card's own fields: it is the only thing that tells FSRS
+    // to stop replaying the history from before the user forgot the card.
+    logManualEntry(card, 'reset', 0, card.ivl);
 }
 
 /** Anki's "Set Due Date": pins the card into the review queue, due in `days` days from today. */
 export function setCardDueInDays(cardId: number, days: number, settings: AppSettings): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
-    const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+    const nowMs = Date.now();
+    const today = localDayNumber(nowMs, settings.dayRolloverHour);
     const clampedDays = Math.max(0, Math.floor(days) || 0);
+    const lastReviewedAtMs = settings.fsrsEnabled === true
+        ? fsrsLastReviewInfo(revlogByCard([card.id]).get(card.id) ?? []).lastReviewedAtMs
+        : null;
+    // The reviewer's Set Due Date has to write the same interval the browser's does, or the same
+    // action would mean two different things depending on which screen the user reached it from.
+    const ivl = setDueDateInterval({
+        fsrsEnabled: settings.fsrsEnabled === true,
+        wasNew: card.type === 0,
+        currentInterval: card.ivl,
+        daysSinceLastReview: lastReviewedAtMs === null
+            ? null
+            : today - localDayNumber(lastReviewedAtMs, settings.dayRolloverHour),
+        requestedDays: clampedDays,
+        forceInterval: false,
+    });
     saveAnkiCard({
         ...card,
         type: 2,
         queue: 2,
         due: today + clampedDays,
-        ivl: Math.max(1, clampedDays),
+        ivl,
         left: 0,
-        mod: Math.floor(Date.now() / 1000),
+        mod: Math.floor(nowMs / 1000),
         usn: -1,
     });
+    logManualEntry(card, 'rescheduled', ivl, card.ivl);
 }
 
 export function getCardState(cardId: number, settings: AppSettings): CardState {
@@ -2602,3 +2645,31 @@ export function getBrowserCardCount(query: BrowserCardQuery = {}): number {
     );
     return row?.cnt || 0;
 }
+
+/**
+ * Total physical cards belonging to a deck (including its child decks).
+ * Used by study empty-state UI to distinguish an empty deck (0 cards total)
+ * from a deck whose cards are completed for today.
+ */
+export function getDeckTotalCardCount(deckName: string | null): number {
+    const db = getDB();
+    if (!deckName) {
+        const row = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM anki_cards');
+        return row?.cnt ?? 0;
+    }
+    const deck = getDeckByName(deckName);
+    if (deck?.isFiltered) {
+        const row = db.getFirstSync<{ cnt: number }>('SELECT COUNT(*) as cnt FROM anki_cards WHERE deckId = ?', deck.id);
+        return row?.cnt ?? 0;
+    }
+    const row = db.getFirstSync<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt
+         FROM anki_cards c
+         JOIN decks d ON d.id = c.deckId
+         WHERE d.name = ? OR d.name LIKE ? ESCAPE '\\'`,
+        deckName,
+        `${escapeLikePattern(deckName)}::%`,
+    );
+    return row?.cnt ?? 0;
+}
+

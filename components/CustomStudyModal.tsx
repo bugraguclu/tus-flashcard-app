@@ -24,6 +24,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
+import { useRepeatPress } from '../hooks/useRepeatPress';
 import { commitBoundedInteger, sanitizeSignedIntegerDraft, stepBoundedIntegerDraft } from '../lib/boundedNumber';
 import { alert } from '../lib/confirm';
 import {
@@ -178,14 +179,20 @@ export default function CustomStudyModal({
         setValueDraft(String(customStudyValueBounds(next, defaults).initial));
     }, [defaults]);
 
+    // Stepping reads the draft it is updating, so a burst of taps accumulates instead of
+    // every tap re-stepping the same value.
+    const stepValue = useCallback((delta: number) => {
+        setValueDraft((draft) => String(
+            stepBoundedIntegerDraft(draft, bounds.initial, delta, bounds.min, bounds.max),
+        ));
+    }, [bounds.initial, bounds.max, bounds.min]);
+
+    const decrementRepeat = useRepeatPress(() => stepValue(-1));
+    const incrementRepeat = useRepeatPress(() => stepValue(1));
+
     if (!deck) return null;
 
     const value = commitBoundedInteger(valueDraft, bounds.initial, bounds.min, bounds.max);
-    // Stepping reads the draft it is updating, so a burst of taps accumulates instead of
-    // every tap re-stepping the same value.
-    const stepValue = (delta: number) => setValueDraft((draft) => String(
-        stepBoundedIntegerDraft(draft, bounds.initial, delta, bounds.min, bounds.max),
-    ));
 
     const optionLabel = (candidate: CustomStudyOption): string => {
         switch (candidate) {
@@ -561,7 +568,7 @@ export default function CustomStudyModal({
                                     <View style={styles.spinnerRow}>
                                         <TouchableOpacity
                                             style={styles.stepButton}
-                                            onPress={() => stepValue(-1)}
+                                            {...decrementRepeat}
                                             accessibilityRole="button"
                                             accessibilityLabel={l('Azalt', 'Decrease')}
                                         >
@@ -572,6 +579,7 @@ export default function CustomStudyModal({
                                             value={valueDraft}
                                             onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
                                             onBlur={() => setValueDraft(String(value))}
+                                            onSubmitEditing={() => setValueDraft(String(value))}
                                             keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
                                             inputMode={bounds.min < 0 ? 'text' : 'numeric'}
                                             maxLength={6}
@@ -579,7 +587,7 @@ export default function CustomStudyModal({
                                         />
                                         <TouchableOpacity
                                             style={styles.stepButton}
-                                            onPress={() => stepValue(1)}
+                                            {...incrementRepeat}
                                             accessibilityRole="button"
                                             accessibilityLabel={l('Artır', 'Increase')}
                                         >
@@ -776,6 +784,7 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: Spacing.md,
             textAlign: 'center',
             fontSize: FontSize.md,
+            fontVariant: ['tabular-nums'] as any,
             color: colors.textPrimary,
         },
         spinnerSuffix: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },

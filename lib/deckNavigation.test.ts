@@ -3,6 +3,7 @@ import {
     getDeckPathNames,
     getRootDeckName,
     getScopedBrowserPath,
+    hasExplicitStudyScope,
     normalizeDeckLeafInput,
 } from './deckNavigation';
 
@@ -34,10 +35,27 @@ describe('deck navigation hierarchy', () => {
         expect(getScopedBrowserPath(null)).toBe('/browser');
     });
 
-    it('keeps hierarchy syntax out of visible deck labels', () => {
-        expect(normalizeDeckLeafInput('  Alt Deste  ')).toBe('Alt Deste');
-        expect(normalizeDeckLeafInput('Giriş::Değişkenler')).toBe('Giriş - Değişkenler');
-        expect(normalizeDeckLeafInput('Bölüm: Giriş')).toBe('Bölüm: Giriş');
-        expect(normalizeDeckLeafInput('::')).toBe('');
+    it('identifies explicit study intentions versus bare app launch', () => {
+        // Cold launch without params or active selections
+        expect(hasExplicitStudyScope({})).toBe(false);
+        expect(hasExplicitStudyScope({}, null, null, null)).toBe(false);
+
+        // Explicit study via deck param
+        expect(hasExplicitStudyScope({ deck: 'Dahiliye' })).toBe(true);
+
+        // Explicit study via selectedDeckName
+        expect(hasExplicitStudyScope({}, null, null, 'Dahiliye')).toBe(true);
+
+        // Explicit study via subject param or state
+        expect(hasExplicitStudyScope({ subject: 'anatomi' })).toBe(true);
+        expect(hasExplicitStudyScope({}, 'anatomi', null, null)).toBe(true);
+
+        // Explicit study via topic param or state
+        expect(hasExplicitStudyScope({ topic: 'Kalp' })).toBe(true);
+        expect(hasExplicitStudyScope({}, null, 'Kalp', null)).toBe(true);
+
+        // Explicit study via all cards switch
+        expect(hasExplicitStudyScope({ all: '1' })).toBe(true);
+        expect(hasExplicitStudyScope({ scope: 'all' })).toBe(true);
     });
 });

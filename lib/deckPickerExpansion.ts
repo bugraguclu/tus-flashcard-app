@@ -134,28 +134,47 @@ export function prioritizeDeckTree(
     return prioritizeLevel(nodes, 0);
 }
 
+/** The node for a resolved deck path, or null when the tree does not carry it. */
+function findDeckNode(nodes: DeckTreeNode[], name: string): DeckTreeNode | null {
+    for (const node of nodes) {
+        if (node.deck.name === name) return node;
+        const found = findDeckNode(node.children, name);
+        if (found) return found;
+    }
+    return null;
+}
+
 /**
  * Which branches are open the moment the picker appears.
  *
- * Opening every branch buries the top-level decks under a wall of sub-subdecks, so only the
- * root decks unfold: the user lands on their first level of subdecks and drills down from
- * there. A pre-selected or active deck is expanded along with its ancestors so its subdecks
- * are immediately visible, while other sibling subdecks remain closed.
+ * With a deck in play the picker opens on that deck alone: its ancestor chain unfolds so the
+ * branch is reachable, and the deck itself unfolds so its own subdecks are on screen. Nothing
+ * else does — not its sibling subdecks, and not the other root decks either. Opening every
+ * root instead buried the deck being studied under the first level of every unrelated tree.
+ *
+ * A top-level deck with no subdecks is the exception: it is already on screen and holds nothing
+ * to reveal, so singling it out would only collapse the rest of the collection for nothing. That
+ * case falls through to the no-target layout, which is also what an unresolvable deck gets: the
+ * roots unfold so the user lands on a first level of subdecks to drill down from.
  */
 export function initialExpandedDeckNames(
     nodes: DeckTreeNode[],
     selectedDeckName?: string | null,
 ): Set<string> {
     const names = new Set<string>();
-    for (const node of nodes) {
-        if (node.children.length > 0) names.add(node.deck.name);
-    }
     const resolvedName = resolveTargetDeckPath(nodes, selectedDeckName);
-    if (resolvedName) {
+    const revealsBranch = resolvedName !== null && (
+        resolvedName.includes('::') || (findDeckNode(nodes, resolvedName)?.children.length ?? 0) > 0
+    );
+    if (resolvedName && revealsBranch) {
         const parts = resolvedName.split('::');
         for (let index = 1; index <= parts.length; index += 1) {
             names.add(parts.slice(0, index).join('::'));
         }
+        return names;
+    }
+    for (const node of nodes) {
+        if (node.children.length > 0) names.add(node.deck.name);
     }
     return names;
 }

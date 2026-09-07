@@ -45,6 +45,7 @@ type ReviewerMenuIcon =
 export interface CardOptionsMenuProps {
     visible: boolean;
     onClose: () => void;
+    hasCurrentCard?: boolean;
     cardSuspended: boolean;
     noteMarked: boolean;
     /** Anki shows note-level Bury/Suspend choices only when the note has sibling cards. */
@@ -60,6 +61,7 @@ export interface CardOptionsMenuProps {
     onToggleMarkNote: () => void;
     onBuryNote: () => void;
     onSuspendNote: () => void;
+    canDeleteNote?: boolean;
     onDeleteNote: () => void;
     canUndo: boolean;
     onUndo: () => void;
@@ -154,16 +156,17 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                     ? l('Yeniden zamanla', 'Reschedule')
                     : l('Etiketleri düzenle', 'Edit tags');
 
-    const historyAction = props.whiteboardActive && props.whiteboardHasContent
+    const hasCard = props.hasCurrentCard !== false;
+    const historyAction = hasCard && props.whiteboardActive && props.whiteboardHasContent
         ? {
             icon: 'undo' as const,
             label: l('Konturu geri al', 'Undo stroke'),
             enabled: true,
             action: props.onUndoWhiteboard,
         }
-        : props.canRedo
+        : hasCard && props.canRedo
             ? { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: true, action: props.onRedo }
-            : props.canUndo
+            : hasCard && props.canUndo
                 ? { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: true, action: props.onUndo }
                 : { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: false, action: props.onUndo };
 
@@ -221,7 +224,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     onPress={() => runAndClose(historyAction.action)}
                                 />
 
-                                {props.whiteboardActive && (
+                                {hasCard && props.whiteboardActive && (
                                     <>
                                         <MenuRow
                                             styles={styles}
@@ -253,56 +256,62 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     styles={styles}
                                     colors={colors}
                                     icon="whiteboard"
+                                    disabled={!hasCard}
                                     label={props.whiteboardActive
                                         ? l('Yazı tahtasını devre dışı bırak', 'Disable whiteboard')
                                         : l('Yazı tahtasını etkinleştir', 'Enable whiteboard')}
                                     onPress={() => runAndClose(props.whiteboardActive ? props.onDisableWhiteboard : props.onToggleWhiteboard)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} onPress={() => runAndClose(props.onEditNote)} />
+                                <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} disabled={!hasCard} onPress={() => runAndClose(props.onEditNote)} />
                                 <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddNote)} />
-                                <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} onPress={() => setView('tags')} />
+                                <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} disabled={!hasCard} onPress={() => setView('tags')} />
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
+                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron disabled={!hasCard} onPress={() => setView('bury')} />
                                 ) : (
-                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
+                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} disabled={!hasCard} onPress={() => runAndClose(props.onBuryCard)} />
                                 )}
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya al', 'Suspend')} chevron onPress={() => setView('suspend')} />
+                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya al', 'Suspend')} chevron disabled={!hasCard} onPress={() => setView('suspend')} />
                                 ) : (
                                     <MenuRow
                                         styles={styles}
                                         colors={colors}
                                         icon="suspend"
+                                        disabled={!hasCard}
                                         label={props.cardSuspended ? l('Kartı askıdan çıkar', 'Unsuspend card') : l('Kartı askıya al', 'Suspend card')}
                                         onPress={() => runAndClose(props.onSuspendCard)}
+                                    />
+                                )}
+                                {props.canDeleteNote !== false && (
+                                    <MenuRow
+                                        styles={styles}
+                                        colors={colors}
+                                        icon="delete"
+                                        disabled={!hasCard}
+                                        label={l('Notu sil', 'Delete note')}
+                                        onPress={() => confirmAndClose(
+                                            l('Notu sil', 'Delete note'),
+                                            l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
+                                            props.onDeleteNote,
+                                            true,
+                                        )}
                                     />
                                 )}
                                 <MenuRow
                                     styles={styles}
                                     colors={colors}
-                                    icon="delete"
-                                    label={l('Notu sil', 'Delete note')}
-                                    onPress={() => confirmAndClose(
-                                        l('Notu sil', 'Delete note'),
-                                        l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
-                                        props.onDeleteNote,
-                                        true,
-                                    )}
-                                />
-                                <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="mark"
+                                    disabled={!hasCard}
                                     label={props.noteMarked ? l('Not işaretini kaldır', 'Unmark note') : l('Notu işaretle', 'Mark note')}
                                     onPress={() => runAndClose(props.onToggleMarkNote)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
+                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden zamanla', 'Reschedule')} chevron disabled={!hasCard} onPress={() => setView('reschedule')} />
                                 <MenuRow
                                     styles={styles}
                                     colors={colors}
                                     icon="replay"
                                     label={l('Sesi yeniden oynat', 'Replay audio')}
-                                    disabled={!props.cardHasAudio}
+                                    disabled={!hasCard || !props.cardHasAudio}
                                     onPress={() => runAndClose(props.onReplayAudio)}
                                 />
                                 <MenuRow
@@ -316,7 +325,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 />
                                 <MenuRow styles={styles} colors={colors} icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
                                 {props.onCardInfo ? (
-                                    <MenuRow styles={styles} colors={colors} icon="info" label={l('Kart bilgisi', 'Card info')} onPress={() => runAndClose(props.onCardInfo!)} />
+                                    <MenuRow styles={styles} colors={colors} icon="info" label={l('Kart bilgisi', 'Card info')} disabled={!hasCard} onPress={() => runAndClose(props.onCardInfo!)} />
                                 ) : null}
                             </>
                         )}

@@ -167,6 +167,97 @@ describe('deck picker expansion', () => {
         ]);
     });
 
+    it('leaves the other root decks closed so only the studied branch is unfolded', () => {
+        const tree = makeTree([
+            ...SAMPLE,
+            'Farmakoloji Notlarım',
+            'Farmakoloji Notlarım::Antibiyotikler',
+            'Özel Çalışma',
+            'Özel Çalışma::Zor Kartlar',
+        ]);
+        const activeDeck = 'TUS Kartları::Anatomi';
+        const prioritized = prioritizeDeckTree(tree, activeDeck);
+        const expanded = initialExpandedDeckNames(prioritized, activeDeck);
+
+        expect(expanded.has('Farmakoloji Notlarım')).toBe(false);
+        expect(expanded.has('Özel Çalışma')).toBe(false);
+
+        const names = flattenVisibleDeckPicker(prioritized, expanded, false).map((row) => row.node.deck.name);
+        expect(names).toEqual([
+            'TUS Kartları',
+            'TUS Kartları::Anatomi',
+            'TUS Kartları::Anatomi::Kaslar',
+            'TUS Kartları::Anatomi::Sinirler',
+            'TUS Kartları::Deneme ve Soru',
+            'TUS Kartları::Biyokimya',
+            'TUS Kartları::Coğrafya',
+            'Varsayılan',
+            'Farmakoloji Notlarım',
+            'Özel Çalışma',
+        ]);
+    });
+
+    it('still opens every root when no deck is active, so the picker is not a list of bare roots', () => {
+        const tree = makeTree([
+            ...SAMPLE,
+            'Farmakoloji Notlarım',
+            'Farmakoloji Notlarım::Antibiyotikler',
+        ]);
+        const expanded = initialExpandedDeckNames(tree, null);
+
+        expect(expanded.has('TUS Kartları')).toBe(true);
+        expect(expanded.has('Farmakoloji Notlarım')).toBe(true);
+        expect(expanded.has('TUS Kartları::Anatomi')).toBe(false);
+    });
+
+    it('opens only the active branch when the studied deck is a leaf under a busy collection', () => {
+        const tree = makeTree([
+            ...SAMPLE,
+            'Farmakoloji Notlarım',
+            'Farmakoloji Notlarım::Antibiyotikler',
+        ]);
+        const activeDeck = 'TUS Kartları::Deneme ve Soru::Klinik';
+        const prioritized = prioritizeDeckTree(tree, activeDeck);
+        const expanded = initialExpandedDeckNames(prioritized, activeDeck);
+
+        expect([...expanded].sort()).toEqual([
+            'TUS Kartları',
+            'TUS Kartları::Deneme ve Soru',
+            'TUS Kartları::Deneme ve Soru::Klinik',
+        ]);
+
+        const names = flattenVisibleDeckPicker(prioritized, expanded, false).map((row) => row.node.deck.name);
+        expect(names).not.toContain('TUS Kartları::Anatomi::Kaslar');
+        expect(names).not.toContain('Farmakoloji Notlarım::Antibiyotikler');
+    });
+
+    it('opens a targeted root deck alone, leaving the other roots closed', () => {
+        const tree = makeTree([
+            ...SAMPLE,
+            'Farmakoloji Notlarım',
+            'Farmakoloji Notlarım::Antibiyotikler',
+        ]);
+        const expanded = initialExpandedDeckNames(tree, 'TUS Kartları');
+
+        expect([...expanded]).toEqual(['TUS Kartları']);
+        expect(expanded.has('Farmakoloji Notlarım')).toBe(false);
+    });
+
+    it('falls back to the roots when the target is a top-level deck with nothing to reveal', () => {
+        const tree = makeTree([
+            ...SAMPLE,
+            'Farmakoloji Notlarım',
+            'Farmakoloji Notlarım::Antibiyotikler',
+        ]);
+        // The import screen defaults its target to "Varsayılan": singling that leaf out would
+        // collapse the whole collection to a list of bare root names for no gain.
+        const expanded = initialExpandedDeckNames(tree, 'Varsayılan');
+
+        expect(expanded.has('TUS Kartları')).toBe(true);
+        expect(expanded.has('Farmakoloji Notlarım')).toBe(true);
+        expect(expanded.has('TUS Kartları::Anatomi')).toBe(false);
+    });
+
     it('shows every match while searching, however deep it sits', () => {
         const tree = makeTree(SAMPLE);
         const names = flattenVisibleDeckPicker(filterDeckTree(tree, 'klinik'), new Set(), true)

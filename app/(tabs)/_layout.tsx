@@ -19,6 +19,7 @@ import { getNavigationCardCounts } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
 import { buildDeckTree, getAllDecks, getCardCountsByDeck } from '../../lib/deckManager';
 import { getDeckPathNames, getRootDeckName, getScopedBrowserPath } from '../../lib/deckNavigation';
+import { prioritizeDeckTree } from '../../lib/deckPickerExpansion';
 import {
     useAppSettings,
     useCollectionInvalidation,
@@ -51,6 +52,11 @@ export default function TabLayout() {
     } = useStudyScope();
 
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+    useEffect(() => {
+        if (selectedSubject) {
+            setExpandedSubject(selectedSubject);
+        }
+    }, [selectedSubject]);
     const [expandedDeckNames, setExpandedDeckNames] = useState<Set<string>>(new Set());
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
@@ -163,12 +169,20 @@ export default function TabLayout() {
     const subjects = useMemo(() => {
         if (isLoading) return [];
         try {
-            return activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
+            const list = activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
+            if (selectedSubject) {
+                const idx = list.findIndex((s) => s.id === selectedSubject);
+                if (idx > 0) {
+                    const matched = list[idx];
+                    return [matched, ...list.slice(0, idx), ...list.slice(idx + 1)];
+                }
+            }
+            return list;
         } catch (e) {
             console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [collectionVersion, activeDeckName, isLoading]);
+    }, [collectionVersion, activeDeckName, selectedSubject, isLoading]);
 
     // The reviewer menu is a deck navigator while a deck is active. A selected subdeck is a
     // highlight inside its top-level tree, not a new tree root: otherwise opening the hamburger
@@ -187,7 +201,8 @@ export default function TabLayout() {
                 settings.dayRolloverHour,
                 settings.learnAheadMinutes,
             );
-            return buildDeckTree(decks, counts, settings.dayRolloverHour);
+            const rawTree = buildDeckTree(decks, counts, settings.dayRolloverHour);
+            return prioritizeDeckTree(rawTree, activeDeckName);
         } catch (e) {
             console.warn('[Layout] sidebar deck tree failed:', e);
             return [];
@@ -278,7 +293,7 @@ export default function TabLayout() {
     const handleSubjectPress = (subjectId: string) => {
         setSelectedSubject(subjectId);
         setSelectedTopic(null);
-        navigate('/');
+        navigate(`/?subject=${encodeURIComponent(subjectId)}`);
     };
 
     const handleToggleExpand = (subjectId: string) => {
@@ -288,7 +303,7 @@ export default function TabLayout() {
     const handleTopicPress = (subjectId: string, topic: string) => {
         setSelectedSubject(subjectId);
         setSelectedTopic(topic);
-        navigate('/');
+        navigate(`/?subject=${encodeURIComponent(subjectId)}&topic=${encodeURIComponent(topic)}`);
     };
 
     const handleDeckPress = (deckName: string) => {
@@ -312,7 +327,7 @@ export default function TabLayout() {
         setSelectedTopic(null);
         setExpandedSubject(null);
         // Inside a deck, "Tüm Dersler" means that whole deck — not the whole collection.
-        navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/');
+        navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/?all=1');
     };
 
     return (
@@ -381,6 +396,7 @@ export default function TabLayout() {
                         </View>
                     ) : (
                         <Stack
+                            initialRouteName="decks"
                             screenOptions={{
                                 headerShown: false,
                                 contentStyle: { backgroundColor: colors.bgPrimary },
@@ -391,7 +407,10 @@ export default function TabLayout() {
                                 // iOS its push/pop and back gesture, and freezes what is behind.
                                 freezeOnBlur: true,
                             }}
-                        />
+                        >
+                            <Stack.Screen name="decks" />
+                            <Stack.Screen name="index" />
+                        </Stack>
                     )}
                 </View>
             </View>

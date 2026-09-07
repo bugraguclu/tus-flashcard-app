@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
-import { useCollectionInvalidation } from '../contexts/AppContext';
+import { useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import { createDeck, getAllDecks, getAvailableDeckName, renameDeck, updateFilteredDeck } from '../lib/deckManager';
 import {
     DEFAULT_SECOND_SEARCH_LIMIT,
@@ -56,6 +56,7 @@ export default function FilteredDeckOptionsModal({
 }: FilteredDeckOptionsModalProps) {
     const { t, l, locale } = useI18n();
     const { collectionVersion, invalidateCollection } = useCollectionInvalidation();
+    const { activeDeckName } = useStudyScope();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const insets = useSafeAreaInsets();
@@ -556,7 +557,7 @@ export default function FilteredDeckOptionsModal({
                         colors={colors}
                         decks={regularDecks}
                         selectedDeckName={currentPickerSelectedDeckName}
-                        activeDeckName={currentPickerSelectedDeckName}
+                        activeDeckName={currentPickerSelectedDeckName || activeDeckName || null}
                         title={l('Hedef deste', 'Target Deck')}
                         allDecksLabel={l('Tüm desteler', 'All decks')}
                         searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -730,16 +731,17 @@ function createStyles(colors: ColorScheme) {
             marginTop: 2,
         },
         numberInput: {
-            minWidth: 72,
+            minWidth: 84,
             height: 40,
             backgroundColor: colors.bgInput,
             borderRadius: BorderRadius.sm,
             borderWidth: 1,
             borderColor: colors.border,
-            paddingHorizontal: Spacing.md,
+            paddingHorizontal: Spacing.sm,
             textAlign: 'center',
             fontSize: FontSize.md,
             fontWeight: '600',
+            fontVariant: ['tabular-nums'] as any,
             color: colors.textPrimary,
         },
         pickerButton: {

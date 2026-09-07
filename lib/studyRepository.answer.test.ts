@@ -74,6 +74,7 @@ vi.mock('./reviewLogger', () => ({
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
+    logManualEntry: vi.fn(),
 }));
 
 vi.mock('./noteManager', () => ({
@@ -111,7 +112,7 @@ vi.mock('./noteManager', () => ({
 import { answerStudyCard, forgetCard, setCardDueInDays, undoAnswer } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
-import { deleteReviewById } from './reviewLogger';
+import { deleteReviewById, logManualEntry } from './reviewLogger';
 
 const settings: AppSettings = {
     language: 'system',
@@ -455,12 +456,47 @@ describe('setCardDueInDays', () => {
         expect(updated.ivl).toBe(3);
     });
 
-    it('clamps negative/invalid day counts to today (0)', () => {
+    it('leaves the reset marker FSRS looks for when a card is forgotten', () => {
+        shared.cards.set(33, { ...baseCard(33, 1, 2, 2), ivl: 45 });
+        vi.mocked(logManualEntry).mockClear();
+
+        forgetCard(33, settings);
+
+        // type 4 + factor 0 is the pair fsrsMemory's isReset() matches; without this row FSRS
+        // would keep replaying the history the user just asked it to throw away.
+        expect(logManualEntry).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 33 }),
+            'reset',
+            0,
+            45,
+        );
+    });
+
+    it('records a reschedule rather than a reset when the due date is set', () => {
+        shared.cards.set(34, { ...baseCard(34, 1, 2, 2), ivl: 6 });
+        vi.mocked(logManualEntry).mockClear();
+
+        setCardDueInDays(34, 3, settings);
+
+        // A reschedule must not read as a reset, or moving a card would silently wipe its
+        // memory state; that is what the separate 'rescheduled' kind is for.
+        expect(logManualEntry).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 34 }),
+            'rescheduled',
+            6,
+            6,
+        );
+    });
+
+    it('clamps negative/invalid day counts to today (0) without touching the interval', () => {
         shared.cards.set(32, baseCard(32, 1, 2, 2));
 
         setCardDueInDays(32, -5, settings);
 
         const updated = shared.cards.get(32)!;
-        expect(updated.ivl).toBe(1); // ivl is floored at 1 even when days clamp to 0
+        expect(updated.due).toBe(localDayNumber(Date.now(), settings.dayRolloverHour));
+        // Set Due Date moves when a card comes up, not how well it is known: under SM-2 a review
+        // card keeps the interval it earned unless the user forces one with the trailing "!".
+        expect(updated.ivl).toBe(6);
     });
 });

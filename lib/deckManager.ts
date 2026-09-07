@@ -14,7 +14,14 @@ import { getDB } from './db';
 import { dayNumberToYmd, localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 import { markSourcePackageDirty } from './ankiPackageArchive';
-import { assertCatalogDeckConfigMutable, assertCatalogDeckMutable, isCatalogDeck } from './catalogProtection';
+import {
+    assertCatalogDeckConfigMutable,
+    assertCatalogDeckMutable,
+    assertCatalogDeckNotDeletable,
+    assertCatalogDeckNotRenamable,
+    isCatalogDeck,
+    PaidCatalogProtectionError,
+} from './catalogProtection';
 import { getTodayLimitUsageByDeck } from './reviewLogger';
 
 /** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
@@ -164,6 +171,7 @@ export function initializeDeckDisclosureDefaults(): void {
  * (grave types: 0=card, 1=note, 2=deck).
  */
 export function deleteDeck(id: number): void {
+    assertCatalogDeckNotDeletable(id);
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
@@ -244,6 +252,7 @@ function returnFilteredCardsHome(filteredDeckId: number): void {
 }
 
 export function renameDeck(id: number, newName: string): void {
+    assertCatalogDeckNotRenamable(id);
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
@@ -940,17 +949,21 @@ export function setDeckLimits(deckId: number, newPerDay: number, maxReviewsPerDa
  * `newParentName` null means "make it a top-level deck".
  */
 export function moveDeckUnder(deckId: number, newParentName: string | null): string | null {
+    assertCatalogDeckNotRenamable(deckId);
     const deck = getDeck(deckId);
     if (!deck) return null;
 
     if (newParentName) {
+        const parent = getDeckByName(newParentName);
+        if (parent && isCatalogDeck(parent)) {
+            throw new PaidCatalogProtectionError('Katalog desteleri altına başka deste taşınamaz.');
+        }
         if (deck.isFiltered) {
             throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
         }
         if (newParentName === deck.name || newParentName.startsWith(`${deck.name}::`)) {
             throw new Error('Bir deste kendi altındaki bir desteye taşınamaz.');
         }
-        const parent = getDeckByName(newParentName);
         if (!parent) throw new Error('Hedef deste bulunamadı.');
         if (parent.isFiltered) throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
     }
@@ -972,6 +985,8 @@ export function reorderDeckRelative(
     targetDeckId: number,
     placement: 'before' | 'after',
 ): string {
+    assertCatalogDeckNotRenamable(deckId);
+    assertCatalogDeckNotRenamable(targetDeckId);
     const deck = getDeck(deckId);
     const target = getDeck(targetDeckId);
     if (!deck || !target) throw new Error('Deste bulunamadı.');

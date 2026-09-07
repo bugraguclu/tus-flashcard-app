@@ -16,6 +16,7 @@ export type WhiteboardHistoryAction =
     | { type: 'commit'; strokes: WhiteboardStroke[] }
     | { type: 'undo' }
     | { type: 'redo' }
+    | { type: 'restore'; snapshot: WhiteboardHistory }
     | { type: 'reset' };
 
 export const EMPTY_WHITEBOARD_HISTORY: WhiteboardHistory = { strokes: [], past: [], future: [] };
@@ -26,6 +27,13 @@ export function whiteboardHistoryReducer(
     action: WhiteboardHistoryAction,
 ): WhiteboardHistory {
     if (action.type === 'reset') return EMPTY_WHITEBOARD_HISTORY;
+    if (action.type === 'restore') {
+        return {
+            strokes: action.snapshot?.strokes ? [...action.snapshot.strokes] : [],
+            past: action.snapshot?.past ? [...action.snapshot.past] : [],
+            future: action.snapshot?.future ? [...action.snapshot.future] : [],
+        };
+    }
     if (action.type === 'undo') {
         const previous = state.past.at(-1);
         if (!previous) return state;

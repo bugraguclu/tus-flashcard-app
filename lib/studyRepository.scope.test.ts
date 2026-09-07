@@ -22,6 +22,7 @@ vi.mock('./db', () => ({
 
 import {
     adjustIntervalForEasyDays,
+    getDeckTotalCardCount,
     getFilteredDeckCardIds,
     getFilteredDeckCountCards,
     getStudyQueue,
@@ -286,6 +287,36 @@ describe('easy days', () => {
     it('leaves intervals alone when every day is normal', () => {
         expect(adjustIntervalForEasyDays(10, 42, [1, 1, 1, 1, 1, 1, 1], Date.now(), rolloverHour)).toBe(10);
         expect(adjustIntervalForEasyDays(10, 42, undefined, Date.now(), rolloverHour)).toBe(10);
+    });
+
+    it('never moves a card outside its own fuzz window', () => {
+        // Upstream runs easy days inside the load balancer, which only ever re-picks a day that
+        // plain fuzz could have chosen anyway. A 10-day interval fuzzes within [8, 12], so when
+        // every weekday inside that window is blocked the interval has to stay put -- reaching
+        // out to day 13 for an allowed weekday would schedule a review Anki would never write.
+        const nowMs = Date.now();
+        const today = localDayNumber(nowMs, rolloverHour);
+        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
+
+        const easyDays = [1, 1, 1, 1, 1, 1, 1];
+        for (let interval = 8; interval <= 12; interval += 1) easyDays[mondayIndex(today + interval)] = 0;
+
+        // Days 8..12 span five weekdays, so day 13 is necessarily one of the two still allowed.
+        expect(easyDays[mondayIndex(today + 13)]).toBe(1);
+        expect(adjustIntervalForEasyDays(10, 42, easyDays, nowMs, rolloverHour)).toBe(10);
+    });
+
+    it('does not move an interval too short to have a fuzz window', () => {
+        // Under 2.5 days the window collapses onto the interval itself, so there is no
+        // interchangeable day to move to even though the weekday is blocked.
+        const nowMs = Date.now();
+        const today = localDayNumber(nowMs, rolloverHour);
+        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
+
+        const easyDays = [1, 1, 1, 1, 1, 1, 1];
+        easyDays[mondayIndex(today + 2)] = 0;
+
+        expect(adjustIntervalForEasyDays(2, 42, easyDays, nowMs, rolloverHour)).toBe(2);
     });
 });
 
@@ -839,4 +870,42 @@ describe('queue counters and daily limits', () => {
         expect(result.cards.filter((c) => c.cardId === 2020)).toHaveLength(0);
         expect(result.upcomingCardsCount).toBeGreaterThanOrEqual(1);
     });
+
+    it('selectedDeckName overrides lingering selectedSubject and selectedTopic in getStudyQueue', () => {
+        // Create an isolated root deck with a card
+        const isolatedDeckId = 99;
+        saveDeck({ id: isolatedDeckId, name: 'Yeni Deste', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        saveNote(makeNote(9901, ['yeni'], ['Yeni Soru', 'Yeni Cevap', '']));
+        saveAnkiCard(makeCard(99001, 9901, isolatedDeckId, { queue: 0, type: 0, due: 1 }));
+
+        // Calling getStudyQueue with selectedDeckName: 'Yeni Deste', but with a lingering selectedSubject: 'Python'
+        // Prior to the fix, this evaluated to (c.deckId = Python OR d.name LIKE 'Python::%') AND (d.name = 'Yeni Deste') -> 0 cards
+        const queueWithLingeringSubject = getStudyQueue({
+            settings,
+            selectedSubject: 'Python',
+            selectedTopic: 'Temeller',
+            selectedDeckName: 'Yeni Deste',
+        });
+
+        expect(queueWithLingeringSubject.cards.map((c) => c.cardId)).toContain(99001);
+        expect(queueWithLingeringSubject.stats.newCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it('getDeckTotalCardCount accurately returns total card count for a deck and 0 for an empty deck', () => {
+        // An empty deck
+        const emptyDeckId = 88;
+        saveDeck({ id: emptyDeckId, name: 'Boş Deste', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        expect(getDeckTotalCardCount('Boş Deste')).toBe(0);
+
+        // A deck with cards
+        expect(getDeckTotalCardCount('Python')).toBeGreaterThan(0);
+        expect(getDeckTotalCardCount('Python::Temeller')).toBeGreaterThan(0);
+
+        // Non-existent deck
+        expect(getDeckTotalCardCount('Var Olmayan Deste')).toBe(0);
+
+        // Entire collection (null deck)
+        expect(getDeckTotalCardCount(null)).toBeGreaterThan(0);
+    });
 });
+
