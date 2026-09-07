@@ -53,4 +53,36 @@ describe('Anki notes-in-plain-text export', () => {
             'stable-guid', 'Custom', 'Parent::Child', 'Question\twith tab', 'Line 1\n"Line 2"', 'tag-one tag-two',
         ]]);
     });
+
+    it('reduces fields to plain text when HTML and media references are excluded', () => {
+        // Anki's "Include HTML and media references", unchecked: the `#html:false` header has to
+        // describe the fields under it, so markup and media markup are removed, not escaped.
+        db.runSync(
+            'UPDATE notes SET data = ? WHERE id = 99',
+            JSON.stringify({
+                id: 99, guid: 'stable-guid', noteTypeId: 77, mod: 1, usn: -1, tags: [],
+                fields: ['<b>Bold</b> &amp; plain [sound:a.mp3]', '<img src="x.png"> Answer<br>next'],
+                sfld: 'Bold', csum: 1, flags: 0,
+            }),
+        );
+
+        const text = buildExportText(undefined, undefined, { withHtml: false, withTags: false });
+        expect(text).toContain('#html:false');
+        const parsed = parseDelimited(text);
+        expect(parsed.rows[0].slice(3)).toEqual(['Bold & plain', 'Answer next']);
+    });
+
+    it('drops style blocks and typing placeholders even when HTML is kept', () => {
+        db.runSync(
+            'UPDATE notes SET data = ? WHERE id = 99',
+            JSON.stringify({
+                id: 99, guid: 'stable-guid', noteTypeId: 77, mod: 1, usn: -1, tags: [],
+                fields: ['<style>.x{}</style><b>Keep</b>', '[[type:Back]]<i>Answer</i>'],
+                sfld: 'Keep', csum: 1, flags: 0,
+            }),
+        );
+
+        const parsed = parseDelimited(buildExportText(undefined, undefined, { withTags: false }));
+        expect(parsed.rows[0].slice(3)).toEqual(['<b>Keep</b>', '<i>Answer</i>']);
+    });
 });

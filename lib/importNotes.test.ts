@@ -6,6 +6,7 @@ const h = vi.hoisted(() => {
         exec: [] as string[],
         existingGuids: [] as string[],
         createdDecks: [] as string[],
+        noteTypes: [] as any[],
     };
     function fnv(field: string): number {
         let hash = 0x811c9dc5;
@@ -41,7 +42,7 @@ vi.mock('./noteManager', () => ({
         else h.store.notes.push(stored);
     }),
     getCardsForNote: () => [],
-    getAllNoteTypes: () => [],
+    getAllNoteTypes: () => h.store.noteTypes,
     searchIndexCardFromNote: (_note: any, cardId: number) => ({ id: cardId }),
     getAllNotes: () => [
         ...h.store.notes.map((row) => JSON.parse(row.data)),
@@ -70,6 +71,7 @@ beforeEach(() => {
     h.store.exec.length = 0;
     h.store.existingGuids.length = 0;
     h.store.createdDecks.length = 0;
+    h.store.noteTypes.length = 0;
     createNoteMock.mockReset();
     createNoteMock.mockImplementation((noteType: any, fields: string[], _deckId: number, tags: string[] = []) => {
         const id = 1000 + h.store.notes.length;
@@ -123,9 +125,18 @@ describe('importDelimitedNotes', () => {
         expect(JSON.parse(h.store.notes[0].data).fields).toEqual(['Heart', 'Eski']);
     });
 
-    it('updates duplicate rows within the same file', () => {
+    it('reports an unchanged repeat of a row as already present, not as an update', () => {
+        // Anki's Update mode compares fields and tags first: an identical match is logged as
+        // "already present in collection" and nothing is written, so a re-import is a no-op.
         const res = importDelimitedNotes('Heart,Kalp\nHeart,Kalp', { noteType: NT, deckId: 1 });
+        expect(res).toMatchObject({ added: 1, updated: 0, duplicates: 1 });
+        expect(res.log.counts).toMatchObject({ added: 1, duplicate: 1, updated: 0 });
+    });
+
+    it('updates a repeat of a row whose fields changed', () => {
+        const res = importDelimitedNotes('Heart,Kalp\nHeart,Yürek', { noteType: NT, deckId: 1 });
         expect(res).toMatchObject({ added: 1, updated: 1, duplicates: 0 });
+        expect(res.log.counts).toMatchObject({ added: 1, updated: 1 });
     });
 
     it('imports duplicates when allowDuplicates is set', () => {
@@ -252,5 +263,95 @@ describe('importRows guid dedup (.apkg identity)', () => {
         });
         expect(res).toMatchObject({ added: 0, duplicates: 1 });
         expect(createNoteMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('Anki text-import parity', () => {
+    it('escapes the minimal HTML set and turns newlines into <br> when HTML is off', () => {
+        // Anki's importer renders fields as HTML, so with "Allow HTML in fields" off it escapes
+        // & < > " ' and converts a real newline in a quoted cell to <br>.
+        const res = importDelimitedNotes('"a & b <i>x</i> ""q"" \'s\'","line1\nline2"', {
+            noteType: NT,
+            deckId: 1,
+            isHtml: false,
+        });
+        expect(res.added).toBe(1);
+        expect(createNoteMock.mock.calls[0][1]).toEqual([
+            'a &amp; b &lt;i&gt;x&lt;/i&gt; &quot;q&quot; &#x27;s&#x27;',
+            'line1<br>line2',
+        ]);
+    });
+
+    it('leaves fields untouched when HTML is allowed', () => {
+        const res = importDelimitedNotes('<b>bold</b>,plain', { noteType: NT, deckId: 1, isHtml: true });
+        expect(res.added).toBe(1);
+        expect(createNoteMock.mock.calls[0][1]).toEqual(['<b>bold</b>', 'plain']);
+    });
+
+    it('logs a preserved first-field match instead of counting it as a plain duplicate', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 4, fields: ['Heart', 'Eski'], tags: [] }) });
+        const res = importDelimitedNotes('Heart,Kalp', { noteType: NT, deckId: 1, duplicateResolution: 'preserve' });
+        expect(res.log.counts).toMatchObject({ firstFieldMatch: 1, added: 0, updated: 0 });
+        expect(createNoteMock).not.toHaveBeenCalled();
+    });
+
+    it('logs an added note that collided with an existing first field', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 4, fields: ['Heart', 'Eski'], tags: [] }) });
+        const res = importDelimitedNotes('Heart,Kalp', { noteType: NT, deckId: 1, duplicateResolution: 'duplicate' });
+        expect(res.added).toBe(1);
+        expect(res.log.counts).toMatchObject({ firstFieldMatch: 1, added: 0 });
+    });
+
+    it('reports a match whose note type no longer lines up as conflicting', () => {
+        // Same first field, different note type: Anki cannot update it and never rewrites it.
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 9, fields: ['Heart', 'Eski'], tags: [] }) });
+        const res = importDelimitedNotes('Heart,Kalp', { noteType: NT, deckId: 1 });
+        expect(res).toMatchObject({ added: 0, updated: 0, duplicates: 1 });
+        expect(res.log.counts).toMatchObject({ conflicting: 1 });
+    });
+
+    it('logs an empty first field as a skipped row', () => {
+        const res = importDelimitedNotes(',only-back', { noteType: NT, deckId: 1 });
+        expect(res.log.counts).toMatchObject({ emptyFirstField: 1 });
+        expect(res.log.entries[0].status).toBe('emptyFirstField');
+    });
+
+    it('skips a row naming a note type the collection does not have', () => {
+        h.store.noteTypes.push({ id: 4, name: 'Temel', fields: [{}, {}], sortFieldIdx: 0 });
+        const res = importDelimitedNotes('#notetype column:1\nTemel,Front,Back\nYok,Front2,Back2', {
+            noteType: NT,
+            deckId: 1,
+        });
+        expect(res).toMatchObject({ added: 1, failed: 1 });
+        expect(res.log.counts).toMatchObject({ missingNotetype: 1, added: 1 });
+        expect(createNoteMock.mock.calls[0][1]).toEqual(['Front', 'Back']);
+    });
+
+    it('applies "tag all notes" to new and updated notes, and "tag updated notes" only to updates', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 4, fields: ['Heart', 'Eski'], tags: [] }) });
+        const res = importDelimitedNotes('Heart,Kalp\nLung,Akciğer', {
+            noteType: NT,
+            deckId: 1,
+            tags: ['batch1'],
+            updatedTags: ['revised'],
+        });
+        expect(res).toMatchObject({ added: 1, updated: 1 });
+        expect([...(createNoteMock.mock.calls[0][3] as string[])]).toEqual(['batch1']);
+        const stored = JSON.parse(h.store.notes.find((row) => JSON.parse(row.data).id === 10)!.data);
+        expect([...stored.tags].sort()).toEqual(['batch1', 'revised']);
+    });
+
+    it('does not treat "tag updated notes" as a reason to rewrite an identical note', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 4, fields: ['Heart', 'Kalp'], tags: [] }) });
+        const res = importDelimitedNotes('Heart,Kalp', { noteType: NT, deckId: 1, updatedTags: ['revised'] });
+        expect(res).toMatchObject({ added: 0, updated: 0, duplicates: 1 });
+        expect(JSON.parse(h.store.notes[0].data).tags).toEqual([]);
+    });
+
+    it('counts every examined row once in the log', () => {
+        h.store.notes.push({ csum: h.fnv('Heart'), noteTypeId: 4, data: JSON.stringify({ id: 10, noteTypeId: 4, fields: ['Heart', 'Kalp'], tags: [] }) });
+        const res = importDelimitedNotes('Heart,Kalp\nLung,Akciğer\n,bos', { noteType: NT, deckId: 1 });
+        expect(res.log.found).toBe(3);
+        expect(res.log.counts).toMatchObject({ duplicate: 1, added: 1, emptyFirstField: 1 });
     });
 });

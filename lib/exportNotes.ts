@@ -8,12 +8,50 @@ import { getAllAnkiCards, getAllNotes, getAllNoteTypes } from './noteManager';
 import { BUILTIN_NOTE_TYPES, type AnkiCard, type Deck, type Note, type NoteType } from './models';
 import { getDB } from './db';
 import { getAllDecks } from './deckManager';
-import { isCatalogNote } from './catalogProtection';
+import { isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
 
 function escapeField(value: string): string {
     // Anki's text exporter uses real CSV quoting, even though the separator is a tab.
     // This preserves embedded tabs, quotes and multiline fields byte-for-byte on import.
     return /[\t\r\n"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/**
+ * Anki drops two things from every plain-text export regardless of the HTML option: a field's
+ * `<style>` block and the `[[type:…]]` typing placeholder. Neither is note content — one is
+ * styling that belongs to the note type, the other is a template instruction — so carrying them
+ * into a text file would re-import them as literal text.
+ */
+function stripRedundantSections(value: string): string {
+    return value
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/\[\[type:[^\]]+\]\]/g, '');
+}
+
+/**
+ * Anki's "Include HTML and media references" option, unchecked: the field is reduced to the line
+ * of text a human reads. Media markup is removed rather than turned into a placeholder — the
+ * exported file is data, and an importer must not read "🖼️" back as note content.
+ *
+ * https://docs.ankiweb.net/exporting.html
+ */
+export function fieldToPlainText(value: string): string {
+    return stripRedundantSections(value)
+        // Anki's AV tags carry no readable text of their own.
+        .replace(/\[sound:[^\]]*\]/gi, ' ')
+        .replace(/\[anki:tts\b[^\]]*\][\s\S]*?\[\/anki:tts\]/gi, ' ')
+        .replace(/<(?:script|head)\b[^>]*>[\s\S]*?<\/(?:script|head)>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&#x27;/gi, "'")
+        // '&amp;' last, so an encoded '&amp;lt;' does not decay into a tag delimiter.
+        .replace(/&amp;/gi, '&')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 export interface NoteTextExportOptions {
@@ -70,10 +108,19 @@ export function buildExportTextFromData(
     options: NoteTextExportOptions = {},
 ): string {
     const withHtml = options.withHtml !== false;
+    // The `#html:` header tells an importer how to read the fields below it, so the fields have to
+    // agree with it: writing `#html:false` over markup would make a round trip escape it twice.
+    const exportField = withHtml ? stripRedundantSections : fieldToPlainText;
     const withTags = options.withTags !== false;
     const withDeck = options.withDeck !== false;
     const withNotetype = options.withNotetype !== false;
     const withGuid = options.withGuid !== false;
+    if (deckName && data.decks.some((deck) => (deck.name === deckName || deck.name.startsWith(`${deckName}::`)) && isCatalogDeck(deck))) {
+        throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
+    }
+    if (selectedNoteIds && data.notes.some((note) => selectedNoteIds.has(note.id) && isCatalogNote(note))) {
+        throw new PaidCatalogProtectionError('Ücretli katalog kartları dışa aktarılamaz.');
+    }
     const decks = new Map(data.decks.map((deck) => [deck.id, deck.name]));
     const scope = selectedNoteIds ?? (deckName
         ? new Set(data.cards.filter((card) => {
@@ -82,6 +129,9 @@ export function buildExportTextFromData(
         }).map((card) => card.noteId))
         : null);
     const notes = data.notes.filter((note) => !isCatalogNote(note) && (!scope || scope.has(note.id)));
+    if (notes.some((note) => isCatalogNote(note))) {
+        throw new PaidCatalogProtectionError('Ücretli katalog kartları dışa aktarılamaz.');
+    }
     const cards = data.cards;
     const noteTypes = new Map(data.noteTypes.map((noteType) => [noteType.id, noteType]));
     const fieldColumns = notes.reduce((max, note) => {
@@ -112,7 +162,7 @@ export function buildExportTextFromData(
                     : candidateCards[0];
             row.push(escapeField(decks.get(scopedCard?.deckId ?? 0) ?? ''));
         }
-        for (let i = 0; i < fieldColumns; i++) row.push(escapeField(note.fields[i] ?? ''));
+        for (let i = 0; i < fieldColumns; i++) row.push(escapeField(exportField(note.fields[i] ?? '')));
         if (withTags) row.push(escapeField(note.tags.join(' ')));
         lines.push(row.join('\t'));
     }

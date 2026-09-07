@@ -11,16 +11,22 @@ import { DEFAULT_DECK_CONFIG } from './models';
 import { getAllAnkiCards, getAllNotes, getAllNoteTypes } from './noteManager';
 import { getAllDecks, getAllDeckConfigs } from './deckManager';
 import { getDB } from './db';
-import { FILTERED_SEARCH_ORDER, parsePreviewDelays } from './filteredDeckOptions';
+import {
+    DEFAULT_SEARCH_LIMIT,
+    DEFAULT_SECOND_SEARCH_LIMIT,
+    FILTERED_SEARCH_ORDER,
+    parsePreviewDelays,
+} from './filteredDeckOptions';
 import { buildExportTextFromData } from './exportNotes';
 import { renderCardHtml } from './templates';
 import { readMediaBytes, sanitizeMediaFilename } from './mediaStore';
+import { extractMediaFilenames } from './mediaAttachment';
 import { pristineOriginalForExport } from './ankiPackageArchive';
 import { dayNumberToYmd, localDayNumber } from './ankiState';
 import { normalizeNewCardGatherOrder } from './queueBuild';
 import { loadSettings } from './storage';
 import { humanizeCardText } from './displayText';
-import { isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
+import { isCatalogCard, isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
 
 export type AnkiExportFormat = 'colpkg' | 'apkg' | 'notesTxt' | 'cardsTxt';
 
@@ -29,6 +35,10 @@ export interface ExportArtifact {
     mimeType: string;
     text?: string;
     bytes?: Uint8Array;
+    /** Anki reports what an export actually contained; these feed that confirmation. */
+    noteCount?: number;
+    cardCount?: number;
+    mediaCount?: number;
 }
 
 export interface AnkiPackageExportOptions {
@@ -68,8 +78,6 @@ interface WritableDb {
 }
 
 const FIELD_SEPARATOR = '\x1f';
-const MEDIA_REF_RE = /\[sound:([^\]]+)]|<(?:img|audio|video|source)\b[^>]*\bsrc=["']([^"']+)["']|url\(["']?([^"')]+)["']?\)/gi;
-
 function safeStem(deckName?: string): string {
     return (deckName?.split('::').pop() || 'koleksiyon')
         .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
@@ -212,11 +220,22 @@ function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: 
 
 /** Anki's legacy JSON shape for a filtered deck's search terms and preview delays. */
 function filteredDeckFields(deck: Deck): Record<string, unknown> {
+    // A deck that never had a field written falls back to the value `Deck::new_filtered` seeds it
+    // with, so an export says what Anki itself would have stored: 100 cards in Random order for the
+    // first term, and the deliberately smaller 20-card Due top-up for the second.
     const terms: [string, number, number][] = [
-        [deck.searchQuery ?? '', deck.searchLimit ?? 100, deck.searchOrder ?? FILTERED_SEARCH_ORDER.due],
+        [
+            deck.searchQuery ?? '',
+            deck.searchLimit ?? DEFAULT_SEARCH_LIMIT,
+            deck.searchOrder ?? FILTERED_SEARCH_ORDER.random,
+        ],
     ];
     if (deck.searchQuery2?.trim()) {
-        terms.push([deck.searchQuery2, deck.searchLimit2 ?? 100, deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due]);
+        terms.push([
+            deck.searchQuery2,
+            deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT,
+            deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due,
+        ]);
     }
     const [previewAgainSecs, previewHardSecs, previewGoodSecs] = parsePreviewDelays(deck.previewDelays);
     return {
@@ -444,10 +463,19 @@ async function buildPackage(
         }));
     const decks = scoped.decks;
     const exportedCards = returnCardsToHomeDeck(cards, decks);
+    if (notes.some(isCatalogNote) || exportedCards.some(isCatalogCard) || decks.some(isCatalogDeck)) {
+        throw new PaidCatalogProtectionError('Ücretli katalog kartları veya desteleri dışa aktarılamaz.');
+    }
     if (allowPristineOriginal && format === 'apkg' && includeScheduling && includeDeckConfigs) {
         const pristine = await pristineOriginalForExport(notes, cards, includeMedia);
         if (pristine) {
-            return { fileName: pristine.fileName, mimeType: 'application/zip', bytes: pristine.bytes };
+            return {
+                fileName: pristine.fileName,
+                mimeType: 'application/zip',
+                bytes: pristine.bytes,
+                noteCount: notes.length,
+                cardCount: exportedCards.length,
+            };
         }
     }
 
@@ -512,19 +540,16 @@ async function buildPackage(
         zip.file('collection.anki21', collection);
         const manifest: Record<string, string> = {};
         if (includeMedia) {
-            const filenames = new Set<string>();
-            for (const note of notes) for (const field of note.fields) {
-                MEDIA_REF_RE.lastIndex = 0;
-                let match: RegExpExecArray | null;
-                while ((match = MEDIA_REF_RE.exec(field))) filenames.add(sanitizeMediaFilename(match[1] || match[2] || match[3]));
-            }
-            for (const type of noteTypes) {
-                for (const source of [type.css, ...type.templates.flatMap((template) => [template.qfmt, template.afmt])]) {
-                    MEDIA_REF_RE.lastIndex = 0;
-                    let match: RegExpExecArray | null;
-                    while ((match = MEDIA_REF_RE.exec(source))) filenames.add(sanitizeMediaFilename(match[1] || match[2] || match[3]));
-                }
-            }
+            // The same scan the media audit runs, so a file the audit calls referenced is a file
+            // this package carries. They used to be two patterns that disagreed: an attachment
+            // written as `<a href="notes.pdf">` was referenced by the audit and left out of here.
+            const filenames = extractMediaFilenames([
+                ...notes.flatMap((note) => note.fields),
+                ...noteTypes.flatMap((type) => [
+                    type.css,
+                    ...type.templates.flatMap((template) => [template.qfmt, template.afmt]),
+                ]),
+            ]);
             for (const filename of filenames) {
                 const bytes = await readMediaBytes(filename);
                 if (!bytes) continue;
@@ -542,6 +567,9 @@ async function buildPackage(
             fileName: `${selectedCardIds ? 'secili-kartlar' : safeStem(deckName ?? snapshotStem)}.${format}`,
             mimeType: 'application/zip',
             bytes,
+            noteCount: notes.length,
+            cardCount: exportedCards.length,
+            mediaCount: Object.keys(manifest).length,
         };
     } finally {
         cleanup();
@@ -564,12 +592,13 @@ function buildCardsText(
     selectedCardIds?: number[],
     selectedDeckIds?: number[],
     withHtml = true,
-): string {
+): { text: string; cardCount: number } {
     const { notes, cards, decks } = scopedData(source, deckName, selectedCardIds, selectedDeckIds);
     const notesById = new Map(notes.map((note) => [note.id, note]));
     const types = new Map(source.noteTypes.map((type) => [type.id, type]));
     const deckNames = new Map(decks.map((deck) => [deck.id, deck.name]));
     const rows = ['#separator:tab', `#html:${withHtml}`];
+    let exported = 0;
     for (const card of cards) {
         const note = notesById.get(card.noteId);
         const type = note ? types.get(note.noteTypeId) : undefined;
@@ -578,8 +607,9 @@ function buildCardsText(
         const question = textCardSide(renderCardHtml(type, note, card.ord, 'question', options), withHtml, false);
         const answer = textCardSide(renderCardHtml(type, note, card.ord, 'answer', options), withHtml, true);
         rows.push(`${csvField(question)}\t${csvField(answer)}`);
+        exported++;
     }
-    return rows.join('\n');
+    return { text: rows.join('\n'), cardCount: exported };
 }
 
 export async function buildAnkiExport(
@@ -598,6 +628,7 @@ export async function buildAnkiExport(
     const selectionStem = selectedCardIds ? 'secili-kartlar' : stem;
     if (format === 'notesTxt') return {
         fileName: `${selectionStem}-notlar.txt`, mimeType: 'text/plain',
+        noteCount: selectedNoteIds.size,
         text: buildExportTextFromData(exportSource, deckName, selectedNoteIds, {
             withHtml: packageOptions.includeHtml,
             withTags: packageOptions.includeTags,
@@ -607,11 +638,15 @@ export async function buildAnkiExport(
             preferredDeckIds: selectedDeckIds ? new Set(selectedDeckIds) : undefined,
         }),
     };
-    if (format === 'cardsTxt') return {
-        fileName: `${selectionStem}-kartlar.txt`,
-        mimeType: 'text/plain',
-        text: buildCardsText(exportSource, deckName, selectedCardIds, selectedDeckIds, packageOptions.includeHtml !== false),
-    };
+    if (format === 'cardsTxt') {
+        const cards = buildCardsText(exportSource, deckName, selectedCardIds, selectedDeckIds, packageOptions.includeHtml !== false);
+        return {
+            fileName: `${selectionStem}-kartlar.txt`,
+            mimeType: 'text/plain',
+            text: cards.text,
+            cardCount: cards.cardCount,
+        };
+    }
     // A .colpkg is always the complete collection; deck scoping belongs to .apkg.
     return buildPackage(
         exportSource,

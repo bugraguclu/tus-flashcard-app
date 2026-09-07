@@ -13,12 +13,14 @@
 import { normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
 import JSZip from 'jszip';
 import { importRows, type RowImportCounts } from './importNotes';
+import { ImportLogBuilder } from './importLog';
 import { getNoteType, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
 import { BUILTIN_NOTE_TYPES, uniqueId, type AnkiCard, type CardFlag, type CardQueue, type CardType, type Deck, type DeckConfig, type Note, type NoteType } from './models';
 import { resolveSubjectDeckId } from './subjects';
 import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './types';
 import { ankiDueDayToLocal, applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { readMediaBytes, saveMediaBytes } from './mediaStore';
+import { rewriteMediaReferences } from './mediaAttachment';
 import { sanitizeMediaFilename } from './mediaFilename';
 import { getDB } from './db';
 import { DEFAULT_PREVIEW_DELAYS, parsePreviewDelays } from './filteredDeckOptions';
@@ -1075,7 +1077,7 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
 
     const standard = notes.filter((note) => !note.cloze);
     const cloze = notes.filter((note) => note.cloze);
-    const empty: RowImportCounts = { added: 0, updated: 0, duplicates: 0, emptyRows: 0, indexed: [], addedNotes: [] };
+    const empty: RowImportCounts = { added: 0, updated: 0, duplicates: 0, emptyRows: 0, failed: 0, log: new ImportLogBuilder().result(), indexed: [], addedNotes: [] };
 
     const stdCounts = standard.length
         ? importRows(standard.map(ankiNoteToFields), {
@@ -1351,16 +1353,10 @@ function rewriteImportedMediaReferences(packageId: string, renames: Record<strin
         let note: Note;
         try { note = JSON.parse(row.data) as Note; } catch { continue; }
         if (note.sourcePackageId !== packageId) continue;
-        const fields = note.fields.map((field) => {
-            let rewritten = field;
-            for (const [source, target] of Object.entries(renames)) {
-                rewritten = rewritten
-                    .split(`[sound:${source}]`).join(`[sound:${target}]`)
-                    .split(`src="${source}"`).join(`src="${target}"`)
-                    .split(`src='${source}'`).join(`src='${target}'`);
-            }
-            return rewritten;
-        });
+        // Every reference form the media scan knows about, so a renamed file cannot be left
+        // behind in a form the rewrite did not look for — an `<a href>` attachment, an
+        // unquoted attribute, a `url(…)`, or a name written with its entities escaped.
+        const fields = note.fields.map((field) => rewriteMediaReferences(field, renames));
         if (fields.every((field, index) => field === note.fields[index])) continue;
         note = { ...note, fields, mod: Math.floor(Date.now() / 1000), usn: -1 };
         db.runSync(

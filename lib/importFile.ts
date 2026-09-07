@@ -23,9 +23,11 @@ export const IMPORT_FORMATS: ImportFormat[] = [
         extensions: ['txt'],
     },
     {
+        // Anki's own file dialog accepts ".zip" for packages, because browsers and mail clients
+        // routinely rename a downloaded ".apkg". The archive content decides what it really is.
         id: 'apkg',
         mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
-        extensions: ['apkg'],
+        extensions: ['apkg', 'zip'],
     },
     {
         id: 'colpkg',
@@ -55,4 +57,32 @@ export function importFileNameFromUri(uri: string): string {
     const withoutQuery = uri.split(/[?#]/, 1)[0] ?? uri;
     const basename = withoutQuery.slice(withoutQuery.lastIndexOf('/') + 1);
     try { return decodeURIComponent(basename) || 'import'; } catch { return basename || 'import'; }
+}
+
+/**
+ * Anki's import dialog has one "All supported formats" filter and decides what a file is from its
+ * extension, so the app opens a single picker instead of asking the learner to pick a format
+ * before the file. iOS document pickers need the union of the declared types to allow that.
+ */
+export const ALL_IMPORT_MIME_TYPES: string[] = Array.from(
+    new Set(IMPORT_FORMATS.flatMap((format) => format.mimeTypes)),
+);
+
+export const ALL_IMPORT_EXTENSIONS: string[] = Array.from(
+    new Set(IMPORT_FORMATS.flatMap((format) => format.extensions)),
+);
+
+/** `.apkg`/`.colpkg` carry a whole collection; the text formats carry rows of fields. */
+export function isPackageImport(type: ImportFileType): boolean {
+    return type === 'apkg' || type === 'colpkg';
+}
+
+export function importFormatLabel(type: ImportFileType): string {
+    switch (type) {
+        case 'csv': return 'CSV';
+        case 'tsv': return 'TSV';
+        case 'txt': return 'TXT';
+        case 'apkg': return '.apkg';
+        case 'colpkg': return '.colpkg';
+    }
 }

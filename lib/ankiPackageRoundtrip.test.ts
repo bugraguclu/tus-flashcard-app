@@ -608,6 +608,33 @@ describe('lossless Anki package roundtrip', () => {
             .toMatchObject({ code: 'PAID_CATALOG_PROTECTED' });
     });
 
+    it('packs every file a note refers to, not only the ones written as an image', async () => {
+        await importApkg(await fixturePackage(), {
+            subject: 'medicine', topic: 'Imported', openReader: async (bytes) => openReader(bytes),
+        });
+        holder.media.set('notlar.pdf', new Uint8Array([37, 80, 68, 70]));
+        holder.media.set('zemin.png', new Uint8Array([137, 80, 78, 71]));
+
+        // A file attachment and a stylesheet background. The exporter's own pattern walked past
+        // the attachment, and the media audit's pattern walked past the background: two scans
+        // that disagreed about what counts as a reference. They are one scan now.
+        const note = getAllNotes()[0];
+        saveNote({
+            ...note,
+            fields: [
+                `${note.fields[0]}<a href="notlar.pdf">notlar</a>`,
+                '<div style="background: url(zemin.png)"></div>',
+                note.fields[2],
+            ],
+        });
+
+        const exported = await buildAnkiExport('apkg', undefined, true);
+        const manifest: Record<string, string> = JSON.parse(
+            await (await JSZip.loadAsync(exported.bytes!)).file('media')!.async('text'),
+        );
+        expect(Object.values(manifest).sort()).toEqual(['image.png', 'notlar.pdf', 'zemin.png']);
+    });
+
     it('updates a matching guid only when the incoming Anki note is newer', async () => {
         await importApkg(await fixturePackage('Original', 700), {
             subject: 'medicine', topic: 'Imported', openReader: async (bytes) => openReader(bytes),
