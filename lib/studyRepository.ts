@@ -1599,6 +1599,13 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         return limit;
     };
 
+    // Known divergence from upstream: only queue 2 is capped here. The manual's Daily Limits
+    // section says "Anki includes any learning cards that have crossed the day boundary (interday
+    // learning cards) in the review count, so those learning cards will be subject to the review
+    // limit" — `interdayLearningRows` above is loaded uncapped, so a large interday backlog can
+    // carry the day past the review limit. The deck-options help sheet
+    // (`lib/deckOptionsHelp.ts` → `dailyLimits`) tells the learner this build behaves that way;
+    // closing the gap means capping the two together and updating that sentence with it.
     let reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
 
     // Fallback for strict per-deck limits: if the limited fetch under-fills, do one full fetch.

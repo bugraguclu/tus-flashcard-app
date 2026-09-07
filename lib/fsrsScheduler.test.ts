@@ -329,3 +329,46 @@ describe('review interval fuzz', () => {
         expect(minimumReviewFuzzInterval(4.591988, 4, 36500)).toBe(5);
     });
 });
+
+/**
+ * The Deck Options "?" sheets tell the learner which SM-2 fields stop mattering once FSRS is on.
+ * That promise is only worth making while it is true, so it is pinned here: if one of these knobs
+ * ever reaches an FSRS interval, the sheet in lib/deckOptionsHelp.ts has become a lie, and this
+ * test is what says so.
+ */
+describe('the SM-2 fields the deck-options help says FSRS ignores', () => {
+    const everyOutcome = (settings: AppSettings) => ([1, 2, 3, 4] as Grade[]).flatMap((grade) => {
+        const learning = FsrsEngine.schedule(newCard(), grade, settings, NOW);
+        const review = FsrsEngine.schedule(reviewCard(), grade, settings, NOW);
+        const lapsed = FsrsEngine.schedule(reviewCard({ status: 'learning', relearningStep: 0, lapses: 3 }), grade, settings, NOW);
+        return [learning, review, lapsed].map((result) => ({
+            interval: result.interval,
+            minutes: result.minutesUntilDue,
+            isLearning: result.isLearning,
+        }));
+    });
+
+    it('schedules identically when the multipliers and fixed intervals move', () => {
+        const twisted = everyOutcome({
+            ...fsrsSettings,
+            startingEase: 4.1,
+            easyBonus: 2.6,
+            hardIntervalMultiplier: 0.4,
+            intervalModifier: 3,
+            lapseIntervalMultiplier: 0.9,
+            minLapseInterval: 21,
+            graduatingInterval: 9,
+            easyInterval: 30,
+        });
+
+        expect(twisted).toEqual(everyOutcome(fsrsSettings));
+    });
+
+    it('still clips to the maximum interval, the one field the sheet says keeps working', () => {
+        const uncapped = FsrsEngine.schedule(reviewCard(), 4, fsrsSettings, NOW);
+        const capped = FsrsEngine.schedule(reviewCard(), 4, { ...fsrsSettings, maxInterval: 5 }, NOW);
+
+        expect(uncapped.interval).toBeGreaterThan(5);
+        expect(capped.interval).toBeLessThanOrEqual(5);
+    });
+});

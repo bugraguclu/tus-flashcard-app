@@ -3,13 +3,18 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-const COPY_ROOTS = ['app', 'components'];
+// `lib` is in scope because localized product copy lives there too — the deck-options
+// help sheets, for one — and copy that moved out of a screen must not move out of this check.
+const COPY_ROOTS = ['app', 'components', 'lib'];
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx']);
 
 function sourceFiles(root: string): string[] {
     return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
         const fullPath = path.join(root, entry.name);
         if (entry.isDirectory()) return sourceFiles(fullPath);
+        // Product copy lives in source, not in tests. Scanning the tests too would make this file
+        // fail on the very patterns it searches for.
+        if (/\.test\.tsx?$/.test(entry.name)) return [];
         return SOURCE_EXTENSIONS.has(path.extname(entry.name)) ? [fullPath] : [];
     });
 }
