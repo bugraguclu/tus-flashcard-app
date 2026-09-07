@@ -331,6 +331,20 @@ export default function CardWebView({
      * with it, and it leaves the reviewer exactly where it was.
      */
     const openStoredAttachment = useCallback(async (filename: string) => {
+        // The share sheet is a way out of the app: AirDrop, Mail, Files, another app entirely.
+        // On a paid catalog card that is a copy of the content leaving the device, which is the
+        // one thing this surface exists to prevent — so a protected card's attachments are not
+        // handed off at all. Learners' own cards are unaffected.
+        if (isProtected) {
+            alert(
+                l('Korumalı içerik', 'Protected content'),
+                l(
+                    'Dahili TUS kartlarındaki ekler uygulama dışına aktarılamaz.',
+                    'Attachments on built-in TUS cards cannot be shared out of the app.',
+                ),
+            );
+            return;
+        }
         try {
             const Sharing = require('expo-sharing') as typeof import('expo-sharing');
             if (!(await Sharing.isAvailableAsync())) throw new Error('SHARING_UNAVAILABLE');
@@ -342,7 +356,7 @@ export default function CardWebView({
                 l('Bu ek şu anda açılamıyor.', 'This attachment cannot be opened right now.'),
             );
         }
-    }, [l]);
+    }, [isProtected, l]);
 
     /**
      * What a tapped link on a card does.

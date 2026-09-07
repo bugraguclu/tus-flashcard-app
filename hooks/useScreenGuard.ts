@@ -32,8 +32,14 @@ function ensureNativeBinding(): void {
         if (protect === lastRequestedProtection) return;
         lastRequestedProtection = protect;
         pendingNativeWrite = pendingNativeWrite
+            // The native call reports whether the window-level shield actually went in. That
+            // answer used to be dropped, so a build that could not install it — a future iOS
+            // that moves the private layer, the build switch off, Expo Go with no native half —
+            // went on believing it was protected while every screenshot went through. The
+            // policy is told either way, so the layers that do work can carry more of the load.
             .then(() => setNativeScreenProtection(protect))
-            .catch(() => undefined);
+            .then((installed) => screenGuard.setShielded(protect && installed))
+            .catch(() => screenGuard.setShielded(false));
     });
 }
 
@@ -55,6 +61,14 @@ export function useScreenGuard(active: boolean, holder: string): ScreenGuardSnap
         if (!active) return undefined;
         return screenGuard.acquire(holder);
     }, [active, holder]);
+
+    // Blanking after a screenshot ends on a clock, and the policy only emits when something is
+    // done to it. Without this the card would stay hidden until the next unrelated change.
+    useEffect(() => {
+        if (state.blankUntil === null) return undefined;
+        const timer = setTimeout(() => setState(screenGuard.snapshot()), Math.max(0, state.blankUntil - Date.now()));
+        return () => clearTimeout(timer);
+    }, [state.blankUntil]);
 
     return state;
 }

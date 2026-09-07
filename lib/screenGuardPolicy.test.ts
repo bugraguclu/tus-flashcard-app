@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ScreenGuardPolicy } from './screenGuardPolicy';
+import { SCREENSHOT_BLANK_MS, ScreenGuardPolicy } from './screenGuardPolicy';
 
 describe('screen guard policy', () => {
     it('protects while at least one screen holds the guard', () => {
@@ -109,8 +109,123 @@ describe('screen guard policy', () => {
         policy.acquire('reviewer');
         policy.acquire('browser');
         policy.setCaptured(true);
+        policy.setShielded(true);
+        policy.noteScreenshot();
 
         policy.reset();
-        expect(policy.snapshot()).toEqual({ protect: false, blank: false, holders: [], screenshots: 0 });
+        expect(policy.snapshot()).toEqual({
+            protect: false,
+            blank: false,
+            captured: false,
+            holders: [],
+            screenshots: 0,
+            shielded: false,
+            blankUntil: null,
+        });
+    });
+});
+
+/**
+ * A screenshot cannot be undone, so the only thing left to protect is the next one. Capturing a
+ * deck of nine thousand cards is a mechanical job at one shot per second and an impossible one
+ * when every shot costs a wait and a tap to bring the card back.
+ */
+describe('hiding the card after a screenshot', () => {
+    const T0 = 1_760_000_000_000;
+
+    it('hides the card for a few seconds after the shutter', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.acquire('reviewer');
+
+        expect(policy.snapshot(T0).blank).toBe(false);
+        policy.noteScreenshot(T0);
+
+        expect(policy.snapshot(T0).blank).toBe(true);
+        expect(policy.snapshot(T0 + SCREENSHOT_BLANK_MS - 1).blank).toBe(true);
+        // And it comes back on its own; nothing has to be turned off.
+        expect(policy.snapshot(T0 + SCREENSHOT_BLANK_MS).blank).toBe(false);
+    });
+
+    it('extends the wait when a second screenshot lands inside the first', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.acquire('reviewer');
+        policy.noteScreenshot(T0);
+        policy.noteScreenshot(T0 + 1000);
+
+        // Hammering the shutter buys nothing: the window is measured from the last one.
+        expect(policy.snapshot(T0 + SCREENSHOT_BLANK_MS).blank).toBe(true);
+        expect(policy.snapshot(T0 + 1000 + SCREENSHOT_BLANK_MS).blank).toBe(false);
+        expect(policy.snapshot(T0).screenshots).toBe(2);
+    });
+
+    it('never extends the wait backwards when shots arrive out of order', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.acquire('reviewer');
+        policy.noteScreenshot(T0 + 1000);
+        policy.noteScreenshot(T0);
+
+        expect(policy.snapshot(T0 + 1000 + SCREENSHOT_BLANK_MS - 1).blank).toBe(true);
+    });
+
+    it('reports when the blanking ends so the screen can bring the card back', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.acquire('reviewer');
+        expect(policy.snapshot(T0).blankUntil).toBeNull();
+
+        policy.noteScreenshot(T0);
+        expect(policy.snapshot(T0).blankUntil).toBe(T0 + SCREENSHOT_BLANK_MS);
+        expect(policy.snapshot(T0 + SCREENSHOT_BLANK_MS).blankUntil).toBeNull();
+    });
+
+    it('ignores a screenshot taken while no protected screen is showing', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.noteScreenshot(T0);
+
+        expect(policy.snapshot(T0).screenshots).toBe(0);
+        expect(policy.snapshot(T0).blank).toBe(false);
+        // And a screen opened afterwards is not blanked by a shot that predates it.
+        policy.acquire('reviewer');
+        expect(policy.snapshot(T0).blank).toBe(false);
+    });
+
+    it('keeps the card hidden for a running capture regardless of the screenshot clock', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.acquire('reviewer');
+        policy.setCaptured(true);
+        policy.noteScreenshot(T0);
+
+        expect(policy.snapshot(T0 + SCREENSHOT_BLANK_MS * 10).blank).toBe(true);
+        expect(policy.snapshot(T0 + SCREENSHOT_BLANK_MS * 10).captured).toBe(true);
+    });
+});
+
+/**
+ * The native call reports whether the window-level shield actually went in, and that answer used
+ * to be discarded — so a build that could not install it believed it was protected.
+ */
+describe('tracking whether the window shield is really installed', () => {
+    it('starts unshielded and records what the native side reported', () => {
+        const policy = new ScreenGuardPolicy();
+        policy.acquire('reviewer');
+        expect(policy.snapshot().shielded).toBe(false);
+
+        policy.setShielded(true);
+        expect(policy.snapshot().shielded).toBe(true);
+
+        policy.setShielded(false);
+        expect(policy.snapshot().shielded).toBe(false);
+    });
+
+    it('publishes a change in shield state so a screen can react to losing it', () => {
+        const policy = new ScreenGuardPolicy();
+        const seen: boolean[] = [];
+        policy.subscribe((state) => seen.push(state.shielded));
+
+        policy.setShielded(true);
+        // An unchanged value is not an event; only real transitions are published.
+        policy.setShielded(true);
+        policy.setShielded(false);
+
+        expect(seen).toEqual([false, true, false]);
     });
 });
