@@ -265,7 +265,6 @@ export default function BrowserScreen() {
     const [sortDescending, setSortDescending] = useState(() => readBrowserBoolean('browser_sort_desc', false));
     const [showAnswerSnippet, setShowAnswerSnippet] = useState(() => readBrowserBoolean('browser_show_answer', false));
     const [showScheduleDetails, setShowScheduleDetails] = useState(() => readBrowserBoolean('browser_show_schedule', true));
-    const [compactRows, setCompactRows] = useState(() => readBrowserBoolean('browser_compact_rows', false));
     const [expandedCard, setExpandedCard] = useState<number | null>(null);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const [deckScopePickerVisible, setDeckScopePickerVisible] = useState(false);
@@ -866,12 +865,10 @@ export default function BrowserScreen() {
         setDbSetting('browser_sort_desc', descending ? '1' : '0');
     }, []);
 
-    const updateBrowserOption = useCallback((key: 'answer' | 'schedule' | 'compact', value: boolean) => {
+    const updateBrowserOption = useCallback((key: 'answer' | 'schedule', value: boolean) => {
         if (key === 'answer') setShowAnswerSnippet(value);
         if (key === 'schedule') setShowScheduleDetails(value);
-        if (key === 'compact') setCompactRows(value);
-        const settingKey = key === 'compact' ? 'browser_compact_rows' : `browser_show_${key}`;
-        setDbSetting(settingKey, value ? '1' : '0');
+        setDbSetting(`browser_show_${key}`, value ? '1' : '0');
     }, []);
 
     const updateTableMode = useCallback((mode: BrowserTableMode) => {
@@ -1048,7 +1045,6 @@ export default function BrowserScreen() {
             <TouchableOpacity
                 style={[
                     styles.cardItem,
-                    compactRows && styles.cardItemCompact,
                     // The whole row carries the state, so the tint is unbroken rather than painted
                     // onto the header, the answer box and the detail block separately. Selection
                     // comes last: while picking cards, what is selected matters more than why a
@@ -1068,29 +1064,28 @@ export default function BrowserScreen() {
                 accessibilityRole={selectionMode ? 'checkbox' : 'button'}
                 accessibilityState={selectionMode ? { checked: isSelected } : undefined}
             >
-                <View style={[styles.cardItemHeader, compactRows && styles.cardItemHeaderCompact]}>
+                <View style={styles.cardItemHeader}>
                     {selectionMode && (
-                        <View style={[styles.selectionCheckbox, compactRows && styles.selectionCheckboxCompact, isSelected && styles.selectionCheckboxActive]}>
-                            {isSelected && <Text style={[styles.selectionCheckboxTick, compactRows && styles.selectionCheckboxTickCompact]}>✓</Text>}
+                        <View style={[styles.selectionCheckbox, isSelected && styles.selectionCheckboxActive]}>
+                            {isSelected && <Text style={[styles.selectionCheckboxTick]}>✓</Text>}
                         </View>
                     )}
-                    <Text style={[styles.cardIcon, compactRows && styles.cardIconCompact]}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
+                    <Text style={styles.cardIcon}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
                     <View style={styles.cardBody}>
                         <Text
                             style={[
                                 styles.cardQuestion,
-                                compactRows && styles.cardQuestionCompact,
                                 {
-                                    fontSize: (compactRows ? 13 : FontSize.md) * browserFontScale,
-                                    lineHeight: (compactRows ? 18 : 22) * browserFontScale,
+                                    fontSize: 13 * browserFontScale,
+                                    lineHeight: 18 * browserFontScale,
                                 },
                             ]}
-                            numberOfLines={isExpanded ? undefined : (compactRows ? 1 : 2)}
+                            numberOfLines={isExpanded ? undefined : 1}
                         >
                             {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames }) || l('🃏 (boş)', '🃏 (empty)')}
                         </Text>
-                        <View style={[styles.cardMeta, compactRows && styles.cardMetaCompact]}>
-                            <Text style={[styles.cardTopic, compactRows && styles.cardTopicCompact]} numberOfLines={1}>
+                        <View style={[styles.cardMeta]}>
+                            <Text style={[styles.cardTopic]} numberOfLines={1}>
                                 {isNotesMode
                                     ? `${rowNoteType ? localizeNoteTypeName(locale, rowNoteType.name) : l('Not', 'Note')} · ${noteDeckText}`
                                     : `${(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}${item.topic ? ` · ${item.topic}` : ''}`}
@@ -1107,10 +1102,9 @@ export default function BrowserScreen() {
                             <Text
                                 style={[
                                     styles.answerSnippet,
-                                    compactRows && styles.answerSnippetCompact,
-                                    { fontSize: (compactRows ? 11 : FontSize.sm) * browserFontScale, lineHeight: (compactRows ? 15 : 18) * browserFontScale },
+                                    { fontSize: 11 * browserFontScale, lineHeight: 15 * browserFontScale },
                                 ]}
-                                numberOfLines={compactRows ? 1 : 2}
+                                numberOfLines={1}
                             >
                                 {humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}
                             </Text>
@@ -1119,10 +1113,9 @@ export default function BrowserScreen() {
                             <Text
                                 style={[
                                     styles.scheduleMeta,
-                                    compactRows && styles.scheduleMetaCompact,
-                                    compactRows && { fontSize: 10 * browserFontScale, lineHeight: 13 * browserFontScale },
+                                    { fontSize: 10 * browserFontScale, lineHeight: 13 * browserFontScale },
                                 ]}
-                                numberOfLines={compactRows ? 1 : 2}
+                                numberOfLines={1}
                             >
                                 {isNotesMode
                                     ? `▤ ${noteScheduleText}`
@@ -1130,29 +1123,29 @@ export default function BrowserScreen() {
                             </Text>
                         )}
                     </View>
-                    <View style={[styles.cardActions, compactRows && styles.cardActionsCompact]}>
+                    <View style={[styles.cardActions]}>
                         {!selectionMode && (
                             <TouchableOpacity
-                                style={[styles.editBtn, compactRows && styles.editBtnCompact]}
+                                style={[styles.editBtn]}
                                 onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
                                 accessibilityRole="button"
                                 accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                             >
-                                <Text style={[styles.editBtnText, compactRows && styles.editBtnTextCompact]}>✏️</Text>
+                                <Text style={[styles.editBtnText]}>✏️</Text>
                             </TouchableOpacity>
                         )}
                         {item.noteMarked && (
-                            <Text style={[styles.flagIcon, compactRows && styles.flagIconCompact]} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
+                            <Text style={[styles.flagIcon]} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
                         )}
                         {!isNotesMode && flag > 0 && (
                             <Text
-                                style={[styles.flagIcon, compactRows && styles.flagIconCompact, { color: FLAG_COLORS[flag].color }]}
+                                style={[styles.flagIcon, { color: FLAG_COLORS[flag].color }]}
                                 accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
                             >
                                 ⚑
                             </Text>
                         )}
-                        {!isNotesMode && item.state.suspended && <Text style={[styles.suspendedIcon, compactRows && styles.suspendedIconCompact]}>⏸️</Text>}
+                        {!isNotesMode && item.state.suspended && <Text style={[styles.suspendedIcon]}>⏸️</Text>}
                     </View>
                 </View>
 
@@ -1413,7 +1406,7 @@ export default function BrowserScreen() {
                 renderItem={renderCard}
                 keyExtractor={(item) => String(item.cardId)}
                 style={styles.list}
-                contentContainerStyle={[styles.listContent, compactRows && styles.listContentCompact]}
+                contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshing={loading}
                 onRefresh={reload}
@@ -2128,13 +2121,6 @@ export default function BrowserScreen() {
                             </View>
                             <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} />
                         </View>
-                        <View style={styles.optionRow}>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionTitle}>{l('Kompakt satırlar', 'Compact rows')}</Text>
-                                <Text style={styles.optionCaption}>{l('Daha fazla kartı aynı ekranda gösterir.', 'Fits more cards on screen.')}</Text>
-                            </View>
-                            <Switch value={compactRows} onValueChange={(value) => updateBrowserOption('compact', value)} trackColor={{ true: colors.accentLight }} thumbColor={compactRows ? colors.accent : colors.textMuted} />
-                        </View>
                         <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
                             <Text style={styles.modalCloseText}>{t('common.close')}</Text>
                         </TouchableOpacity>
@@ -2287,8 +2273,7 @@ function createStyles(colors: ColorScheme) {
     },
 
     list: { flex: 1 },
-    listContent: { flexGrow: 1, padding: Spacing.lg, gap: 8 },
-    listContentCompact: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
+    listContent: { flexGrow: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
     emptyState: { flex: 1, justifyContent: 'center', paddingVertical: 48, paddingHorizontal: Spacing.xl, alignItems: 'center', gap: Spacing.sm },
     emptyTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700', textAlign: 'center' },
     emptyText: { color: colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center' },
@@ -2299,70 +2284,56 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
+        borderRadius: BorderRadius.sm + 1,
+        paddingVertical: 4,
+        paddingHorizontal: Spacing.md - 2,
         ...Shadows.sm,
     },
-    cardItemCompact: { paddingVertical: 4, paddingHorizontal: Spacing.md - 2, borderRadius: BorderRadius.sm + 1 },
     cardItemSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight },
     // Anki tints the row instead of fading it: a suspended card is out of the queue, not less
     // worth reading. Fading it was the old treatment and made the text look washed out.
     cardSuspended: { backgroundColor: colors.rowSuspendedBg, borderColor: colors.streak },
     cardBuried: { backgroundColor: colors.rowBuriedBg },
-    cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-    cardItemHeaderCompact: { gap: 8 },
-    cardIcon: { fontSize: 22, marginTop: 2 },
-    cardIconCompact: { fontSize: 17, marginTop: 1 },
+    cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+    cardIcon: { fontSize: 17, marginTop: 1 },
     cardBody: { flex: 1, minWidth: 0 },
-    cardQuestion: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary, lineHeight: 22 },
-    cardQuestionCompact: { fontWeight: '600' },
-    cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-    cardMetaCompact: { marginTop: 2, gap: 6 },
-    cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.xs, color: colors.textMuted },
-    cardTopicCompact: { fontSize: 11, lineHeight: 14 },
+    cardQuestion: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, lineHeight: 18 },
+    cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+    cardTopic: { flex: 1, minWidth: 0, fontSize: 11, lineHeight: 14, color: colors.textMuted },
     statusDot: { flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
     statusDotText: { fontSize: 9, fontWeight: '600' },
-    scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 3 },
-    scheduleMetaCompact: { marginTop: 1 },
-    answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
-    answerSnippetCompact: { marginTop: 2 },
+    scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
+    answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
     selectionCheckbox: {
-        width: 22,
-        height: 22,
-        marginTop: 3,
-        borderRadius: 5,
+        width: 17,
+        height: 17,
+        marginTop: 1,
+        borderRadius: 3,
         borderWidth: 1.5,
         borderColor: colors.border,
         backgroundColor: colors.bgCard,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    selectionCheckboxCompact: { width: 17, height: 17, marginTop: 1, borderRadius: 3 },
     selectionCheckboxActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-    selectionCheckboxTick: { color: colors.white, fontSize: 15, lineHeight: 17, fontWeight: '900' },
-    selectionCheckboxTickCompact: { fontSize: 11, lineHeight: 13 },
+    selectionCheckboxTick: { color: colors.white, fontSize: 11, lineHeight: 13, fontWeight: '900' },
     cardActions: {
-        width: 32,
+        width: 24,
         flexShrink: 0,
         alignItems: 'center',
-        gap: 5,
+        gap: 2,
     },
-    cardActionsCompact: { width: 24, gap: 2 },
     editBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 6,
+        width: 24,
+        height: 24,
+        borderRadius: 4,
         backgroundColor: colors.bgInput,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    editBtnCompact: { width: 24, height: 24, borderRadius: 4 },
-    editBtnText: { fontSize: 14 },
-    editBtnTextCompact: { fontSize: 12 },
-    suspendedIcon: { fontSize: 18 },
-    suspendedIconCompact: { fontSize: 14 },
-    flagIcon: { fontSize: 18 },
-    flagIconCompact: { fontSize: 14 },
+    editBtnText: { fontSize: 12 },
+    suspendedIcon: { fontSize: 14 },
+    flagIcon: { fontSize: 14 },
 
     expandedContent: { marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: colors.borderLight },
     answerBox: {
