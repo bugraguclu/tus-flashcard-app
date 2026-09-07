@@ -56,6 +56,47 @@ export function logReview(
     return entry;
 }
 
+/**
+ * Append the rating-less row Anki writes when the user reschedules a card by hand.
+ *
+ * Anki records these so the history stays complete, and gives them no rating: `ease = 0` is what
+ * marks a row as bookkeeping rather than an answer, which is why every counting query in this
+ * file excludes it. Two kinds exist and they are not interchangeable:
+ * - `reset` (type 4, factor 0) is the marker "Forget" leaves behind. FSRS looks for exactly this
+ *   pair and throws away everything before it, so the card is modelled from scratch.
+ * - `rescheduled` (type 5) is what "Set Due Date" leaves behind. It is inert for FSRS, which
+ *   simply skips it, and exists so the change is visible in card info and survives an export.
+ *
+ * Reference: `rslib/src/revlog/mod.rs` (`RevlogReviewKind`).
+ */
+export function logManualEntry(
+    card: AnkiCard,
+    kind: 'reset' | 'rescheduled',
+    newIvl: number,
+    lastIvl: number,
+): ReviewLog {
+    const entry: ReviewLog = {
+        id: uniqueId(),
+        cardId: card.id,
+        usn: -1,
+        ease: 0,
+        ivl: newIvl,
+        lastIvl,
+        factor: 0,
+        time: 0,
+        type: kind === 'reset' ? 4 : 5,
+    };
+
+    getDB().runSync(
+        `INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        entry.id, entry.cardId, entry.usn, entry.ease,
+        entry.ivl, entry.lastIvl, entry.factor, entry.time, entry.type,
+    );
+
+    return entry;
+}
+
 /** Get all reviews for a card (for Card Info display) */
 export function getReviewsForCard(cardId: number): ReviewLog[] {
     const db = getDB();
@@ -69,7 +110,7 @@ export function getReviewsForCard(cardId: number): ReviewLog[] {
 export function getReviewsInRange(startMs: number, endMs: number): ReviewLog[] {
     const db = getDB();
     return db.getAllSync<ReviewLog>(
-        'SELECT * FROM revlog WHERE id >= ? AND id <= ? ORDER BY id ASC',
+        'SELECT * FROM revlog WHERE id >= ? AND id <= ? AND ease != 0 ORDER BY id ASC',
         startMs, endMs
     );
 }
@@ -79,7 +120,7 @@ export function getTodayStudyTimeMs(rolloverHour: number = 4): number {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
     const row = db.getFirstSync<{ total: number }>(
-        'SELECT COALESCE(SUM(time), 0) as total FROM revlog WHERE id >= ?',
+        'SELECT COALESCE(SUM(time), 0) as total FROM revlog WHERE id >= ? AND ease != 0',
         startMs,
     );
     return row?.total || 0;
@@ -90,7 +131,7 @@ export function getTodayReviewCount(rolloverHour: number = 4): number {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
     const row = db.getFirstSync<{ cnt: number }>(
-        'SELECT COUNT(*) as cnt FROM revlog WHERE id >= ?',
+        'SELECT COUNT(*) as cnt FROM revlog WHERE id >= ? AND ease != 0',
         startMs,
     );
     return row?.cnt || 0;
@@ -128,7 +169,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
             `SELECT COUNT(*) AS reviewed,
                     COALESCE(SUM(CASE WHEN ease = 1 THEN 1 ELSE 0 END), 0) AS failed,
                     COALESCE(SUM(time), 0) AS timeMs
-             FROM revlog WHERE id >= ? AND cardId IN (${placeholders})`,
+             FROM revlog WHERE id >= ? AND ease != 0 AND cardId IN (${placeholders})`,
             startMs, ...cardIds,
         );
         const introduced = db.getFirstSync<{ cnt: number }>(
@@ -136,7 +177,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
              FROM (
                 SELECT cardId, MIN(id) AS firstReview
                 FROM revlog
-                WHERE cardId IN (${placeholders})
+                WHERE ease != 0 AND cardId IN (${placeholders})
                 GROUP BY cardId
              )
              WHERE firstReview >= ?`,
@@ -163,7 +204,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
              FROM revlog r
              JOIN anki_cards c ON c.id = r.cardId
              JOIN decks d ON d.id = c.deckId
-             WHERE r.id >= ? AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+             WHERE r.id >= ? AND r.ease != 0 AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
             startMs, deckName, escapedPrefix,
         );
 
@@ -183,13 +224,13 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
         `SELECT COUNT(*) AS reviewed,
                 COALESCE(SUM(CASE WHEN ease = 1 THEN 1 ELSE 0 END), 0) AS failed,
                 COALESCE(SUM(time), 0) AS timeMs
-         FROM revlog WHERE id >= ?`,
+         FROM revlog WHERE id >= ? AND ease != 0`,
         startMs,
     );
 
     const introduced = db.getFirstSync<{ cnt: number }>(
         `SELECT COUNT(*) AS cnt
-         FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog GROUP BY cardId)
+         FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 GROUP BY cardId)
          WHERE firstReview >= ?`,
         startMs,
     );
@@ -223,7 +264,7 @@ export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour:
             FROM revlog r
             JOIN anki_cards c ON c.id = r.cardId
             JOIN decks d ON d.id = c.deckId
-            WHERE d.name = ? OR d.name LIKE ? ESCAPE '\\'
+            WHERE r.ease != 0 AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')
             GROUP BY r.cardId
          )
          WHERE firstReview >= ?`,
@@ -252,7 +293,7 @@ export function getAverageAnswerMs(rolloverHour: number = 4, days: number = 7): 
     const row = db.getFirstSync<{ average: number | null; samples: number }>(
         `SELECT AVG(time) AS average, COUNT(*) AS samples
          FROM revlog
-         WHERE id >= ? AND type != 4 AND time > 0`,
+         WHERE id >= ? AND ease != 0 AND time > 0`,
         cutoffMs,
     );
 
@@ -299,7 +340,7 @@ export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, 
     try {
         for (const row of db.getAllSync<{ deckId: number; cnt: number }>(
             `SELECT c.deckId AS deckId, COUNT(*) AS cnt
-             FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog GROUP BY cardId) f
+             FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 GROUP BY cardId) f
              JOIN anki_cards c ON c.id = f.cardId
              WHERE f.firstReview >= ?
              GROUP BY c.deckId`,
@@ -377,7 +418,7 @@ export function getStudyStreak(rolloverHour: number = 4): StudyStreak {
     // and localDayNumber all agree on where a study day starts.
     const rows = db.getAllSync<{ d: string }>(
         `SELECT DISTINCT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
-         FROM revlog ORDER BY d ASC`,
+         FROM revlog WHERE ease != 0 ORDER BY d ASC`,
         shiftSec,
     );
 
@@ -428,7 +469,7 @@ export function getStudiedDaysBetween(
 
     const rows = db.getAllSync<{ d: string }>(
         `SELECT DISTINCT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
-         FROM revlog WHERE id >= ? AND id < ?`,
+         FROM revlog WHERE id >= ? AND id < ? AND ease != 0`,
         shiftSec, startMs, endMs,
     );
 
@@ -513,7 +554,7 @@ export function getDailyReviewCounts(days: number, rolloverHour: number = 4): { 
         `SELECT date(id/1000 - ?, 'unixepoch', 'localtime') as date,
                 COUNT(*) as count,
                 COALESCE(SUM(time), 0) as timeMs
-         FROM revlog WHERE id >= ?
+         FROM revlog WHERE id >= ? AND ease != 0
          GROUP BY date ORDER BY date`,
         shiftSec,
         startMs,
@@ -596,7 +637,7 @@ export function getHourlyBreakdown(): { hour: number; count: number; correct: nu
         `SELECT CAST(strftime('%H', id/1000, 'unixepoch', 'localtime') AS INTEGER) as hour,
                 COUNT(*) as count,
                 SUM(CASE WHEN ease >= 2 THEN 1 ELSE 0 END) as correct
-         FROM revlog GROUP BY hour ORDER BY hour`
+         FROM revlog WHERE ease != 0 GROUP BY hour ORDER BY hour`
     );
 
     // Fill all 24 hours (some may have no reviews)
@@ -612,7 +653,7 @@ export function getHourlyBreakdown(): { hour: number; count: number; correct: nu
 export function getButtonDistribution(): { ease: number; label: string; count: number }[] {
     const db = getDB();
     const rows = db.getAllSync<{ ease: number; cnt: number }>(
-        'SELECT ease, COUNT(*) as cnt FROM revlog GROUP BY ease ORDER BY ease'
+        'SELECT ease, COUNT(*) as cnt FROM revlog WHERE ease != 0 GROUP BY ease ORDER BY ease'
     );
     const labels = { 1: 'Tekrar', 2: 'Zor', 3: 'İyi', 4: 'Kolay' };
     return rows.map(r => ({

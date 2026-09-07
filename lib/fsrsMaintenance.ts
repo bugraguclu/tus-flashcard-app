@@ -80,7 +80,7 @@ function deckScopeClause(deckIds: number[] | undefined): { sql: string; params: 
 }
 
 /** Revlog rows for a set of cards, grouped by card and ordered oldest first. */
-function revlogByCard(cardIds: number[]): Map<number, FsrsRevlogEntry[]> {
+export function revlogByCard(cardIds: number[]): Map<number, FsrsRevlogEntry[]> {
     const result = new Map<number, FsrsRevlogEntry[]>();
     if (cardIds.length === 0) return result;
 

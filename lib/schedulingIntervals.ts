@@ -189,3 +189,42 @@ export function hardDelayMinutes(steps: number[], stepIndex: number): number {
 
     return currentMinutes;
 }
+
+/**
+ * The interval `Set Due Date` writes, which depends on the scheduler in force.
+ *
+ * Under SM-2 the interval only moves when the user asked for it with the trailing `!`; otherwise
+ * the card keeps the interval it earned and merely comes up on a different day.
+ *
+ * Under FSRS the rule is different, because the interval is an input to the memory state rather
+ * than a value the user owns:
+ * - a new card, or one whose interval is still `0`, keeps `0`. Forcing it to a day count would
+ *   invent a review history the card does not have.
+ * - any other card gets `daysSinceLastReview + requestedDays`, so the stored interval keeps
+ *   describing the whole gap the card will actually have gone unseen, not just the tail of it.
+ * `!` still wins over both, since it is the user saying the interval itself is what they mean.
+ *
+ * `daysSinceLastReview` is null when the card has no usable review in the log; there is then no
+ * gap to extend and the requested days are the whole of it.
+ *
+ * Reference: `rslib/src/scheduler/reviews.rs` (`Card::set_due_date`).
+ */
+export function setDueDateInterval(options: {
+    fsrsEnabled: boolean;
+    wasNew: boolean;
+    currentInterval: number;
+    daysSinceLastReview: number | null;
+    requestedDays: number;
+    forceInterval: boolean;
+}): number {
+    const requested = Math.max(1, Math.abs(options.requestedDays));
+    if (options.forceInterval) return requested;
+
+    if (options.fsrsEnabled) {
+        if (options.wasNew || options.currentInterval <= 0) return 0;
+        const elapsed = Math.max(0, options.daysSinceLastReview ?? 0);
+        return Math.max(1, elapsed + options.requestedDays);
+    }
+
+    return options.wasNew ? requested : options.currentInterval;
+}

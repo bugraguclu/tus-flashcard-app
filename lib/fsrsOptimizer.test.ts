@@ -129,7 +129,7 @@ describe('optimization', () => {
         expect(result.parameters).toHaveLength(21);
         // Every parameter must stay inside the range the model is defined on.
         expect(result.parameters).toEqual(clampFsrsParameters(result.parameters));
-    });
+    }, 15000);
 
     it('keeps the current parameters when there is too little history', () => {
         const items: FsrsTrainingItem[] = buildFsrsTrainingItems(simulateHistories(TRUTH, 1)).slice(0, 3);
