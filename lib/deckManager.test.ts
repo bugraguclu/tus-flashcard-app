@@ -75,11 +75,16 @@ const fakeDb = {
 
 vi.mock('./db', () => ({ getDB: () => fakeDb }));
 vi.mock('./noteManager', () => ({ saveAnkiCard: vi.fn() }));
+const clearedWhiteboardDecks = vi.hoisted(() => [] as number[]);
+vi.mock('./whiteboardSession', () => ({
+    clearDeckWhiteboards: (deckId: number) => { clearedWhiteboardDecks.push(deckId); },
+}));
 
 import { createDeck, deleteDeck, renameDeck, renamePreset } from './deckManager';
 
 describe('deckManager', () => {
     beforeEach(() => {
+        clearedWhiteboardDecks.length = 0;
         state.decks = [];
         state.configs = [];
         state.cards = [];
@@ -117,6 +122,10 @@ describe('deckManager', () => {
         expect(state.graves.filter((g) => g.type === 0).map((g) => g.oid).sort()).toEqual([10, 11, 12]);
         expect(state.graves.filter((g) => g.type === 1).map((g) => g.oid)).toEqual([100]);
         expect(state.graves.filter((g) => g.type === 2).map((g) => g.oid).sort()).toEqual([1, 2]);
+
+        // The board rows of a deleted deck and its subdecks go with it, or the ink and the pen
+        // colour of a deck nobody can open again stay in the settings table forever.
+        expect([...clearedWhiteboardDecks].sort()).toEqual([1, 2]);
     });
 
     it('P2: createDeck is idempotent on name', () => {

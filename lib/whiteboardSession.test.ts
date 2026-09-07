@@ -1,10 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// The card store keeps an in-memory copy that answers even with no database behind it, but the
+// per-deck board row goes straight to settings. Without a stand-in for that table, an assertion
+// about the deck row passes whether or not anything cleared it.
+const settingsRows = vi.hoisted(() => new Map<string, string>());
+vi.mock('./storage', () => ({
+    getDbSetting: (key: string) => settingsRows.get(key) ?? null,
+    setDbSetting: (key: string, value: string) => { settingsRows.set(key, value); },
+}));
 
 import {
     clearCardWhiteboard,
     clearDeckWhiteboards,
     DEFAULT_WHITEBOARD_DECK_STATE,
     loadCardWhiteboard,
+    loadWhiteboardDeckState,
+    saveWhiteboardDeckState,
     parseWhiteboardCardStore,
     parseWhiteboardDeckState,
     penColorForTheme,
@@ -15,6 +26,8 @@ import {
     type WhiteboardCardSnapshot,
     type WhiteboardDeckState,
 } from './whiteboardSession';
+
+beforeEach(() => { settingsRows.clear(); });
 
 const DEFAULTS = { light: '#111111', dark: '#f5f5f5' };
 
@@ -140,9 +153,13 @@ describe('card whiteboard snapshot persistence', () => {
         expect(loadCardWhiteboard(deckId, card1)).toBeNull();
         expect(loadCardWhiteboard(deckId, card2)).toEqual(snapshot2);
 
-        // Clear whole deck
+        // Clear whole deck: the ink goes, and so does the board's own row for that deck — the
+        // deck is being deleted, so a pen colour left behind would be inherited by whatever
+        // reuses the id.
+        saveWhiteboardDeckState(deckId, { ...parseWhiteboardDeckState(null), enabled: true, lightPenColor: '#ff0000' });
         clearDeckWhiteboards(deckId);
         expect(loadCardWhiteboard(deckId, card2)).toBeNull();
+        expect(loadWhiteboardDeckState(deckId)).toEqual(parseWhiteboardDeckState(null));
     });
 });
 
