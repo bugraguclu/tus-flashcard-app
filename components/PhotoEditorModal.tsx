@@ -27,10 +27,13 @@ import Svg, {
     Rect,
     Text as SvgText,
 } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { captureRef } from 'react-native-view-shot';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
+import { promptPermissionSettings } from '../lib/permissions';
 import { mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
 import { guessMimeFromFilename, saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import {
@@ -40,13 +43,24 @@ import {
     calculateSourceCropPixels,
     clampCropRect,
     clampPhotoPoint,
+    clampPhotoTextSize,
     cropPhotoAnnotation,
+    findPhotoSelectionHandle,
     isPhotoShapeDragCommittable,
+    isPointInPhotoImage,
     isPointInPhotoText,
     isPointInPhotoTrashZone,
     normalizePhotoRotation,
     normalizedRect,
+    PHOTO_ROTATE_HANDLE_OFFSET,
     photoArrowHead,
+    photoHandleTouchRadius,
+    photoRotateHandleSide,
+    photoImageAnchorPixels,
+    photoImageBounds,
+    photoImagePlacement,
+    photoPointerAngle,
+    photoSelectionHandlePoints,
     photoTextAnchorPixels,
     photoTextColors,
     photoTrashPillRect,
@@ -54,12 +68,21 @@ import {
     scalePhotoAnnotation,
     photoTrashZoneRect,
     resolvePhotoTextAlign,
+    resizePhotoImage,
+    resizePhotoImageByHandle,
+    resizePhotoTextByHandle,
+    resolvePhotoDragSnap,
+    resolvePhotoHandleRotation,
     resolvePhotoTextDragRelease,
     rotatePhotoAnnotationClockwise,
     type PhotoAnnotation,
+    type PhotoCornerHandle,
     type PhotoCropRect,
     type PhotoEraserMode,
+    type PhotoImage,
     type PhotoPoint,
+    type PhotoSelectionGeometry,
+    type PhotoSelectionHandle,
     type PhotoShape,
     type PhotoText,
     type PhotoTextAlign,
@@ -103,7 +126,7 @@ interface PhotoEditorModalProps {
     onSaved: (filename: string) => void;
 }
 
-type EditorTool = 'pen' | 'highlighter' | 'arrow' | 'rect' | 'ellipse' | 'cover' | 'text' | 'eraser' | 'crop';
+type EditorTool = 'pen' | 'highlighter' | 'arrow' | 'rect' | 'ellipse' | 'cover' | 'text' | 'image' | 'eraser' | 'crop';
 
 const TOOL_ITEMS: { id: EditorTool; icon: string }[] = [
     { id: 'pen', icon: '✏️' },
@@ -113,6 +136,7 @@ const TOOL_ITEMS: { id: EditorTool; icon: string }[] = [
     { id: 'ellipse', icon: '◯' },
     { id: 'cover', icon: '■' },
     { id: 'text', icon: 'T' },
+    { id: 'image', icon: '🖼️' },
     { id: 'eraser', icon: '⌫' },
     { id: 'crop', icon: '✂️' },
 ];
@@ -122,12 +146,15 @@ const WIDTHS = [3, 6, 10];
 const FONT_SIZES = [18, 24, 32, 44];
 /** Eraser tip radii in canvas points; independent from the pen width. */
 const ERASER_RADII = [12, 24, 42];
-const MIN_TEXT_SIZE = 12;
-const MAX_TEXT_SIZE = 96;
 /** Two fingers must travel this far apart before a pinch counts as a resize. */
 const PINCH_ACTIVATION_PX = 12;
+/** How soon after a tap a second one on the same label counts as opening it for editing. */
+const DOUBLE_TAP_MS = 320;
 /** Longest edge an exported PNG may reach. A card image past this is weight, not detail. */
 const EXPORT_MAX_DIMENSION = 2000;
+/** What one press of the picture pill's − and + does to the box it is sized in. */
+const PICTURE_STEP_DOWN = 0.85;
+const PICTURE_STEP_UP = 1.18;
 
 /** The off-screen surface an export is rendered on: its size, and its ratio to the live canvas. */
 type ExportSurface = { width: number; height: number; scale: number };
@@ -153,6 +180,70 @@ function makeId(): string {
 
 function sameSourceSize(a: { width: number; height: number }, b: { width: number; height: number }): boolean {
     return a.width === b.width && a.height === b.height;
+}
+
+/**
+ * The frame a label or a picture is manipulated by: the point it turns about, its box before
+ * that turn, and the turn itself.
+ *
+ * The two kinds answer those questions from different fields — a label from its font size and
+ * its text, a picture from the box it was placed in — and everything downstream (the handles,
+ * the resize, the snap, the frame on screen) works from the answers rather than from the
+ * annotation, so one set of controls serves both.
+ */
+function selectionGeometryFor(
+    annotation: PhotoText | PhotoImage,
+    canvas: { width: number; height: number },
+): PhotoSelectionGeometry {
+    if (annotation.type === 'text') {
+        return {
+            anchor: photoTextAnchorPixels(annotation, canvas.width, canvas.height),
+            bounds: calculatePhotoTextBounds(annotation, canvas.width, canvas.height),
+            rotation: annotation.rotation ?? 0,
+        };
+    }
+    return {
+        anchor: photoImageAnchorPixels(annotation, canvas.width, canvas.height),
+        bounds: photoImageBounds(annotation, canvas.width, canvas.height),
+        rotation: annotation.rotation ?? 0,
+    };
+}
+
+/**
+ * How far the middle of the frame sits from the point the annotation is placed by.
+ *
+ * A picture is placed by its centre and the answer is zero; a left-aligned label is placed by
+ * its left edge and hangs off to one side. Turning is affine, so the middle of the two turned
+ * corners is the turned middle — no second rotation is needed here.
+ */
+function selectionCentreOffset(geometry: PhotoSelectionGeometry): { x: number; y: number } {
+    const handles = photoSelectionHandlePoints(geometry);
+    return {
+        x: (handles.tl.x + handles.br.x) / 2 - geometry.anchor.x,
+        y: (handles.tl.y + handles.br.y) / 2 - geometry.anchor.y,
+    };
+}
+
+/** The annotation with this id, when it is one of the two kinds a frame is drawn around. */
+function objectById(annotations: PhotoAnnotation[], id: string): PhotoText | PhotoImage | undefined {
+    const found = annotations.find((ann) => ann.id === id);
+    return found && (found.type === 'text' || found.type === 'image') ? found : undefined;
+}
+
+/**
+ * A short tick under the finger, on the devices that have one.
+ *
+ * It marks the moments a drag cannot show on its own — a guide caught, an angle settled, the bin
+ * armed — and it is a courtesy rather than a dependency: a device without a taptic engine, or a
+ * build without the module, simply carries on.
+ */
+function tick() {
+    if (Platform.OS === 'web') return;
+    try {
+        void Haptics.selectionAsync().catch(() => undefined);
+    } catch {
+        // No haptics available on this device.
+    }
 }
 
 function smoothPath(points: PhotoPoint[], width: number, height: number): string {
@@ -274,6 +365,10 @@ function renderAnnotation(
             </G>
         );
     }
+
+    // Pictures are laid out in their own layer beneath this one (`renderPlacedPictures`), so
+    // every stroke, label and shape is drawn over them however late a picture is added.
+    if (annotation.type === 'image') return null;
 
     if (!annotation.start || !annotation.end) return null;
     const start = { x: (annotation.start.x ?? 0) * width, y: (annotation.start.y ?? 0) * height };
@@ -418,6 +513,9 @@ function drawAnnotationOnCanvas(
         return ctx.restore();
     }
 
+    // Painted by `drawPlacedPicturesOnCanvas` before this pass, for the reason above.
+    if (annotation.type === 'image') return ctx.restore();
+
     if (!annotation.start || !annotation.end) return ctx.restore();
     const start = { x: (annotation.start.x ?? 0) * width, y: (annotation.start.y ?? 0) * height };
     const end = { x: (annotation.end.x ?? 0) * width, y: (annotation.end.y ?? 0) * height };
@@ -456,6 +554,96 @@ function drawAnnotationOnCanvas(
     ctx.restore();
 }
 
+/**
+ * The pictures a page carries, laid out as real views under the ink.
+ *
+ * They are views rather than SVG nodes because both exporters have to be able to wait for them:
+ * the native export photographs this same tree off screen, and a picture that had not decoded
+ * yet would be photographed as a hole in the drawing. `onReady` is how that wait is counted.
+ */
+function renderPlacedPictures(
+    annotations: PhotoAnnotation[],
+    width: number,
+    height: number,
+    scale = 1,
+    onReady?: () => void,
+) {
+    return annotations.map((source, index) => {
+        if (source.type !== 'image') return null;
+        const picture = scalePhotoAnnotation(source, scale);
+        const bounds = photoImageBounds(picture, width, height);
+        const rotation = normalizePhotoRotation(picture.rotation ?? 0);
+        return (
+            <NativeImage
+                // Two copies of one picture are two placements, so the index keeps them apart
+                // even if a duplicate ever shares an id.
+                key={`${picture.id}-${index}`}
+                source={{ uri: picture.uri }}
+                fadeDuration={0}
+                resizeMode="stretch"
+                onLoad={onReady}
+                onError={onReady}
+                style={{
+                    position: 'absolute',
+                    left: bounds.x,
+                    top: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    // A view transform turns around the view's own centre, which is where the
+                    // picture's anchor is, so no origin has to be spelled out here.
+                    transform: rotation ? [{ rotate: `${rotation}deg` }] : undefined,
+                }}
+            />
+        );
+    });
+}
+
+/** Load one picture for a web export; the DOM decodes before the canvas can draw it. */
+function loadWebImage(uri: string): Promise<HTMLImageElement> {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new window.Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error('Image could not be loaded'));
+        element.src = uri;
+    });
+}
+
+/**
+ * The web export's counterpart to `renderPlacedPictures`: every placed picture, in order, under
+ * the pass that draws the ink. A picture that cannot be read is skipped rather than allowed to
+ * fail the whole save — the rest of the drawing is still worth keeping.
+ */
+async function drawPlacedPicturesOnCanvas(
+    ctx: CanvasRenderingContext2D,
+    annotations: PhotoAnnotation[],
+    width: number,
+    height: number,
+    scale = 1,
+): Promise<void> {
+    for (const source of annotations) {
+        if (source.type !== 'image') continue;
+        const picture = scalePhotoAnnotation(source, scale);
+        let element: HTMLImageElement;
+        try {
+            element = await loadWebImage(picture.uri);
+        } catch (error) {
+            console.warn('[PhotoEditor] a placed picture could not be exported:', error);
+            continue;
+        }
+        const bounds = photoImageBounds(picture, width, height);
+        const rotation = normalizePhotoRotation(picture.rotation ?? 0);
+        ctx.save();
+        if (rotation) {
+            const anchor = photoImageAnchorPixels(picture, width, height);
+            ctx.translate(anchor.x, anchor.y);
+            ctx.rotate((rotation * Math.PI) / 180);
+            ctx.translate(-anchor.x, -anchor.y);
+        }
+        ctx.drawImage(element, bounds.x, bounds.y, bounds.width, bounds.height);
+        ctx.restore();
+    }
+}
+
 async function rasterizePhotoWeb(
     uri: string,
     annotations: PhotoAnnotation[],
@@ -463,18 +651,14 @@ async function rasterizePhotoWeb(
 ): Promise<Uint8Array> {
     const width = Math.max(1, Math.round(surface.width));
     const height = Math.max(1, Math.round(surface.height));
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const element = new window.Image();
-        element.onload = () => resolve(element);
-        element.onerror = () => reject(new Error('Photo could not be loaded'));
-        element.src = uri;
-    });
+    const image = await loadWebImage(uri);
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
     ctx.drawImage(image, 0, 0, width, height);
+    await drawPlacedPicturesOnCanvas(ctx, annotations, width, height, surface.scale);
     annotations.forEach((annotation) => drawAnnotationOnCanvas(ctx, annotation, width, height, surface.scale));
     const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG encode failed')), 'image/png');
@@ -522,6 +706,7 @@ async function rasterizeBlankCanvasWeb(
         ctx.restore();
     }
 
+    await drawPlacedPicturesOnCanvas(ctx, annotations, canvas.width, canvas.height, surface.scale);
     annotations.forEach((annotation) => (
         drawAnnotationOnCanvas(ctx, annotation, canvas.width, canvas.height, surface.scale)
     ));
@@ -541,8 +726,9 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         { ...TOOL_ITEMS[4], label: l('Elips', 'Ellipse') },
         { ...TOOL_ITEMS[5], label: l('Ört', 'Cover') },
         { ...TOOL_ITEMS[6], label: l('Metin', 'Text') },
-        { ...TOOL_ITEMS[7], label: l('Silgi', 'Eraser') },
-        { ...TOOL_ITEMS[8], label: l('Kırp', 'Crop') },
+        { ...TOOL_ITEMS[7], label: l('Görsel', 'Picture') },
+        { ...TOOL_ITEMS[8], label: l('Silgi', 'Eraser') },
+        { ...TOOL_ITEMS[9], label: l('Kırp', 'Crop') },
     ], [l]);
 
     const aspectOptions = useMemo(() => [
@@ -575,7 +761,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const [textDraft, setTextDraft] = useState('');
     const [textBgStyle, setTextBgStyle] = useState<PhotoTextStyle>('badge');
     const [textAlign, setTextAlign] = useState<PhotoTextAlign>('center');
-    const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [rotating, setRotating] = useState(false);
     const [cropping, setCropping] = useState(false);
@@ -583,14 +769,25 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const [eraserCursor, setEraserCursor] = useState<{ x: number; y: number; radius: number } | null>(null);
     const [eraserRadius, setEraserRadius] = useState(ERASER_RADII[1]);
     const [eraserMode, setEraserMode] = useState<PhotoEraserMode>('partial');
-    const [isDraggingText, setIsDraggingText] = useState(false);
+    const [isDraggingSelection, setIsDraggingSelection] = useState(false);
     const [trashHovered, setTrashHovered] = useState(false);
+    // The handle currently under the finger, so the frame can highlight it and the floating
+    // controls can get out of the way of the corner being pulled.
+    const [activeHandle, setActiveHandle] = useState<PhotoSelectionHandle | null>(null);
+    // The angle a turn is passing through, shown while the knob is held.
+    const [rotationPreview, setRotationPreview] = useState<number | null>(null);
+    const [snapGuides, setSnapGuides] = useState({ x: false, y: false });
+    const [pictureSourceSheet, setPictureSourceSheet] = useState(false);
 
     // Set only for the length of one save: the off-screen surface the export is photographed on.
     const [exportSurface, setExportSurface] = useState<ExportSurface | null>(null);
     const exportSurfaceRef = useRef<View>(null);
     const exportLaidOutRef = useRef(false);
     const exportPhotoLoadedRef = useRef(false);
+    // How many placed pictures the export surface is waiting on, and how many have reported in.
+    // A picture that has not decoded yet is photographed as a hole in the drawing.
+    const exportPicturesTotalRef = useRef(0);
+    const exportPicturesReadyRef = useRef(0);
     const [cropBox, setCropBox] = useState<PhotoCropRect>({ x: 0, y: 0, width: 1, height: 1 });
     const [cropAspect, setCropAspect] = useState<string>('free');
 
@@ -614,8 +811,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     strokeWidthRef.current = strokeWidth;
     const fontSizeRef = useRef(fontSize);
     fontSizeRef.current = fontSize;
-    const selectedTextIdRef = useRef(selectedTextId);
-    selectedTextIdRef.current = selectedTextId;
+    const selectedIdRef = useRef(selectedId);
+    selectedIdRef.current = selectedId;
     const textBgStyleRef = useRef(textBgStyle);
     textBgStyleRef.current = textBgStyle;
     const textAlignRef = useRef(textAlign);
@@ -639,7 +836,21 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const updateTrashHovered = (next: boolean) => {
         if (trashHoveredRef.current === next) return;
         trashHoveredRef.current = next;
+        // Arming the bin is worth a tick: the finger is over the pill, not over the thing it is
+        // carrying, so the highlight alone is easy to miss.
+        if (next) tick();
         setTrashHovered(next);
+    };
+
+    // Mirrors the guides for the same reason: the gesture handlers were built on the first
+    // render and cannot read the state they are setting.
+    const snapGuidesRef = useRef({ x: false, y: false });
+    const updateSnapGuides = (next: { x: boolean; y: boolean }) => {
+        const current = snapGuidesRef.current;
+        if (current.x === next.x && current.y === next.y) return;
+        if ((next.x && !current.x) || (next.y && !current.y)) tick();
+        snapGuidesRef.current = next;
+        setSnapGuides(next);
     };
 
     // Touch coordinates must be resolved against the canvas itself. `locationX` is relative to
@@ -660,22 +871,49 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         initialBox: PhotoCropRect;
         startPoint: PhotoPoint;
     } | null>(null);
-    const textDragRef = useRef<{
+    const dragRef = useRef<{
         id: string;
         startPoint: PhotoPoint;
-        initialTextPoint: PhotoPoint;
+        initialPoint: PhotoPoint;
         hasMoved: boolean;
         /**
          * Where the finger was last seen, so the release can re-run the bin's hit test on state
          * the responder owns instead of on a rendered value it cannot see.
          */
         lastPoint: PhotoPoint | null;
+        /** Where the middle of the frame sits relative to the point being dragged. */
+        centreOffset: { x: number; y: number };
     } | null>(null);
+    /**
+     * A corner of the frame being pulled. The annotation is kept as it was when the corner was
+     * taken hold of, so every sample of the drag is measured from that one box rather than from
+     * the box the previous sample produced — the same reason a pinch keeps its starting size.
+     */
+    const handleDragRef = useRef<{
+        handle: PhotoCornerHandle;
+        annotation: PhotoText | PhotoImage;
+        beforeAnnotations: PhotoAnnotation[];
+        applied: boolean;
+    } | null>(null);
+    /** The knob being turned, and how far round the finger was from the object when it grabbed. */
+    const rotateDragRef = useRef<{
+        id: string;
+        grabOffset: number;
+        beforeAnnotations: PhotoAnnotation[];
+        applied: boolean;
+        snapped: boolean;
+    } | null>(null);
+    /** The last tap on a label, so a second one on the same label opens it for editing. */
+    const lastTapRef = useRef<{ id: string; at: number } | null>(null);
+    /** Where a label being written is going to land: the tap that opened the composer. */
+    const textDropPointRef = useRef<PhotoPoint | null>(null);
     const pinchRef = useRef<{
         id: string;
         startDistance: number;
         startAngle: number;
+        /** Labels grow by their font size, pictures by their box; only one of these is used. */
         initialFontSize: number;
+        initialBox: { width: number; height: number } | null;
         initialRotation: number;
         beforeAnnotations: PhotoAnnotation[];
         applied: boolean;
@@ -692,7 +930,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         redoStackRef.current = [];
         setRedoStack([]);
         setLiveAnnotation(null);
-        setSelectedTextId(null);
+        setSelectedId(null);
         setTextBgStyle('badge');
         setTextAlign('center');
         setTool('pen');
@@ -823,70 +1061,240 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         });
     };
 
-    const selectedAnnotation = useMemo(() => {
-        if (!selectedTextId) return null;
-        return (annotations.find((ann) => ann.id === selectedTextId && ann.type === 'text') as PhotoText) || null;
-    }, [annotations, selectedTextId]);
+    const selectedText = useMemo(() => {
+        if (!selectedId) return null;
+        return (annotations.find((ann) => ann.id === selectedId && ann.type === 'text') as PhotoText) || null;
+    }, [annotations, selectedId]);
 
-    const selectedBounds = useMemo(() => {
-        if (!selectedAnnotation) return null;
-        return calculatePhotoTextBounds(selectedAnnotation, canvasSize.width, canvasSize.height);
-    }, [selectedAnnotation, canvasSize.width, canvasSize.height]);
+    const selectedPicture = useMemo(() => {
+        if (!selectedId) return null;
+        return (annotations.find((ann) => ann.id === selectedId && ann.type === 'image') as PhotoImage) || null;
+    }, [annotations, selectedId]);
 
-    const selectedAnchor = useMemo(() => {
-        if (!selectedAnnotation) return { x: 0, y: 0 };
-        return photoTextAnchorPixels(selectedAnnotation, canvasSize.width, canvasSize.height);
-    }, [selectedAnnotation, canvasSize.width, canvasSize.height]);
+    // A label and a picture are both moved, resized and turned by the same frame, so the frame
+    // asks each of them for its geometry rather than being built twice.
+    const selectionGeometry = useMemo(() => {
+        const selected = selectedText ?? selectedPicture;
+        return selected ? selectionGeometryFor(selected, canvasSize) : null;
+    }, [selectedText, selectedPicture, canvasSize]);
+
+    const selectedBounds = selectionGeometry?.bounds ?? null;
+    const selectedAnchor = selectionGeometry?.anchor ?? { x: 0, y: 0 };
+    const selectedRotation = selectionGeometry?.rotation ?? 0;
+
+    // The handles are drawn at exactly the points the gesture handlers hit-test against, so a
+    // corner can never sit somewhere other than where the finger has to reach for it.
+    const rotateSide = useMemo(
+        () => (selectionGeometry ? photoRotateHandleSide(selectionGeometry, canvasSize) : 'top'),
+        [selectionGeometry, canvasSize],
+    );
+    const selectionHandles = useMemo(
+        () => (selectionGeometry ? photoSelectionHandlePoints(selectionGeometry, rotateSide) : null),
+        [selectionGeometry, rotateSide],
+    );
+
+    /** Take hold of an annotation, with the tick that tells the finger it has caught something. */
+    const selectAnnotation = (id: string) => {
+        if (selectedIdRef.current !== id) tick();
+        setSelectedId(id);
+    };
 
     const editSelectedText = () => {
-        if (!selectedAnnotation) return;
-        setTextDraft(selectedAnnotation.text);
-        setTextBgStyle(selectedAnnotation.bgStyle || 'badge');
-        setTextAlign(selectedAnnotation.textAlign || 'center');
-        setColor(selectedAnnotation.color);
-        setFontSize(selectedAnnotation.fontSize);
+        if (!selectedText) return;
+        setTextDraft(selectedText.text);
+        setTextBgStyle(selectedText.bgStyle || 'badge');
+        setTextAlign(selectedText.textAlign || 'center');
+        setColor(selectedText.color);
+        setFontSize(selectedText.fontSize);
         setTextModal(true);
     };
 
     const cycleSelectedTextStyle = () => {
-        if (!selectedTextId || !selectedAnnotation) return;
+        if (!selectedId || !selectedText) return;
         const stylesList: PhotoTextStyle[] = ['classic', 'badge', 'frosted', 'outline'];
-        const currentStyle = selectedAnnotation.bgStyle || 'classic';
+        const currentStyle = selectedText.bgStyle || 'classic';
         const nextStyle = stylesList[(stylesList.indexOf(currentStyle) + 1) % stylesList.length];
         setTextBgStyle(nextStyle);
-        const next = annotations.map((ann) => (ann.id === selectedTextId ? { ...ann, bgStyle: nextStyle } : ann));
+        const next = annotations.map((ann) => (ann.id === selectedId ? { ...ann, bgStyle: nextStyle } : ann));
         commitAnnotations(next);
     };
 
     const cycleSelectedTextAlign = () => {
-        if (!selectedTextId || !selectedAnnotation) return;
+        if (!selectedId || !selectedText) return;
         const aligns: PhotoTextAlign[] = ['center', 'right', 'left'];
-        const currentAlign = selectedAnnotation.textAlign || 'center';
+        const currentAlign = selectedText.textAlign || 'center';
         const nextAlign = aligns[(aligns.indexOf(currentAlign) + 1) % aligns.length];
         setTextAlign(nextAlign);
-        const next = annotations.map((ann) => (ann.id === selectedTextId ? { ...ann, textAlign: nextAlign } : ann));
+        const next = annotations.map((ann) => (ann.id === selectedId ? { ...ann, textAlign: nextAlign } : ann));
         commitAnnotations(next);
     };
 
     const deleteSelectedText = () => {
-        if (!selectedTextId) return;
-        const next = annotations.filter((ann) => ann.id !== selectedTextId);
+        if (!selectedId) return;
+        const next = annotations.filter((ann) => ann.id !== selectedId);
         commitAnnotations(next);
-        setSelectedTextId(null);
+        setSelectedId(null);
     };
 
     const changeSelectedTextSize = (delta: number) => {
-        if (!selectedTextId || !selectedAnnotation) return;
-        const newSize = Math.max(14, Math.min(52, (selectedAnnotation.fontSize || 20) + delta));
+        if (!selectedId || !selectedText) return;
+        const newSize = clampPhotoTextSize((selectedText.fontSize || 20) + delta);
         setFontSize(newSize);
-        const next = annotations.map((ann) => (ann.id === selectedTextId ? { ...ann, fontSize: newSize } : ann));
+        const next = annotations.map((ann) => (ann.id === selectedId ? { ...ann, fontSize: newSize } : ann));
         commitAnnotations(next);
     };
 
+    /** Resize the selected picture about its centre; the helper keeps its aspect and its limits. */
+    const resizeSelectedPicture = (factor: number) => {
+        if (!selectedPicture) return;
+        const resized = resizePhotoImage(selectedPicture, factor, canvasSizeRef.current);
+        if (resized === selectedPicture) return;
+        commitAnnotations(annotations.map((ann) => (ann.id === selectedPicture.id ? resized : ann)));
+    };
+
+    /** Turn the selected picture a quarter turn, for a photo that came in on its side. */
+    const rotateSelectedPicture = () => {
+        if (!selectedPicture) return;
+        const rotation = normalizePhotoRotation((selectedPicture.rotation ?? 0) + 90);
+        commitAnnotations(annotations.map((ann) => (
+            ann.id === selectedPicture.id ? { ...ann, rotation } : ann
+        )));
+    };
+
+    const deleteSelectedPicture = () => {
+        if (!selectedPicture) return;
+        commitAnnotations(annotations.filter((ann) => ann.id !== selectedPicture.id));
+        setSelectedId(null);
+    };
+
+    /** Ask for the library, then for one picture from it. Null means the user backed out. */
+    const pickPictureAsset = async (): Promise<ImagePicker.ImagePickerAsset | null> => {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+            await promptPermissionSettings({
+                title: l('İzin gerekli', 'Permission Required'),
+                message: l(
+                    'Sayfaya görsel eklemek için galeri izni gerekiyor. Ayarlardan erişim iznini açabilirsiniz.',
+                    'Allow photo library access to add a picture to the page. You can enable access in Settings.',
+                ),
+                settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                cancelLabel: t('common.cancel'),
+            });
+            return null;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: false,
+            quality: 1,
+            selectionLimit: 1,
+        });
+        if (result.canceled || !result.assets?.length) return null;
+        return result.assets[0];
+    };
+
+    /** The same, straight from the camera, for the page that is being drawn from life. */
+    const capturePictureAsset = async (): Promise<ImagePicker.ImagePickerAsset | null> => {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+            await promptPermissionSettings({
+                title: l('İzin gerekli', 'Permission Required'),
+                message: l(
+                    'Sayfaya fotoğraf çekmek için kamera izni gerekiyor. Ayarlardan kamera iznini açabilirsiniz.',
+                    'Allow camera access to put a photo on the page. You can enable camera access in Settings.',
+                ),
+                settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                cancelLabel: t('common.cancel'),
+            });
+            return null;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: false,
+            quality: 1,
+        });
+        if (result.canceled || !result.assets?.length) return null;
+        return result.assets[0];
+    };
+
+    /**
+     * Put a picture on the page.
+     *
+     * It lands under the finger that asked for it, at its own aspect and at a size that leaves
+     * the sheet visible around it, and it comes out selected: the frame is already there to drag
+     * it, pull it by a corner or turn it by, so choosing and placing are one action, not two.
+     */
+    const addPicture = async (from: 'library' | 'camera', at?: PhotoPoint | null) => {
+        try {
+            const asset = from === 'camera' ? await capturePictureAsset() : await pickPictureAsset();
+            if (!asset) return;
+            const canvas = canvasSizeRef.current;
+            const box = photoImagePlacement({
+                source: { width: asset.width, height: asset.height },
+                canvas,
+            });
+            // Dropped where the page was tapped, but never hanging off the sheet: a picture
+            // pushed half over the edge has no corner left to take hold of. One that is wider
+            // than the page it was dropped on simply takes the middle.
+            const halfWidth = box.width / 2 / Math.max(1, canvas.width);
+            const halfHeight = box.height / 2 / Math.max(1, canvas.height);
+            const target = clampPhotoPoint(at ?? { x: 0.5, y: 0.5 });
+            const picture: PhotoImage = {
+                id: makeId(),
+                type: 'image',
+                uri: asset.uri,
+                point: {
+                    x: halfWidth >= 0.5 ? 0.5 : Math.min(1 - halfWidth, Math.max(halfWidth, target.x)),
+                    y: halfHeight >= 0.5 ? 0.5 : Math.min(1 - halfHeight, Math.max(halfHeight, target.y)),
+                },
+                width: box.width,
+                height: box.height,
+                // A picture has no ink of its own; the base fields are carried for the annotation
+                // list's sake and only `opacity` ever reaches the screen.
+                color: '#ffffff',
+                opacity: 1,
+            };
+            // Warm the decoder while the user is still looking at the page, so the off-screen
+            // export surface can photograph the picture immediately instead of a blank box.
+            if (Platform.OS !== 'web') {
+                NativeImage.prefetch(asset.uri).catch(() => {});
+            }
+            commitAnnotations([...annotationsRef.current, picture]);
+            setSelectedId(picture.id);
+            setTool('image');
+        } catch (error) {
+            console.warn('[PhotoEditor] picture pick failed:', error);
+            alert(t('common.error'), l('Görsel eklenemedi.', 'Could not add the picture.'));
+        }
+    };
+
+    // Where on the page the picture being chosen is going to land, held while the source sheet
+    // is open: the tap that asked for it is long gone by the time the picker returns.
+    const pictureDropPointRef = useRef<PhotoPoint | null>(null);
+    const openPictureSource = (at: PhotoPoint | null) => {
+        pictureDropPointRef.current = at;
+        setPictureSourceSheet(true);
+    };
+
+    const addPictureFrom = (from: 'library' | 'camera') => {
+        setPictureSourceSheet(false);
+        const at = pictureDropPointRef.current;
+        pictureDropPointRef.current = null;
+        void addPicture(from, at);
+    };
+
+    // The gesture handlers are built once and keep the first render's copy of everything they
+    // close over, so the picker is reached through the same ref mirror the values above use.
+    const addPictureRef = useRef<(at: PhotoPoint) => void>(() => {});
+    addPictureRef.current = (at: PhotoPoint) => { openPictureSource(at); };
+
+    // The same mirror for opening a label the user has just double-tapped.
+    const editSelectedTextRef = useRef<() => void>(() => {});
+    editSelectedTextRef.current = editSelectedText;
+
     const updateColor = (newColor: string) => {
         setColor(newColor);
-        if (tool === 'text' && selectedTextId) {
-            const next = annotations.map((ann) => (ann.id === selectedTextId ? { ...ann, color: newColor } : ann));
+        if (tool === 'text' && selectedId) {
+            const next = annotations.map((ann) => (ann.id === selectedId ? { ...ann, color: newColor } : ann));
             commitAnnotations(next);
         }
     };
@@ -894,8 +1302,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const updateSize = (newSize: number) => {
         if (tool === 'text') {
             setFontSize(newSize);
-            if (selectedTextId) {
-                const next = annotations.map((ann) => (ann.id === selectedTextId ? { ...ann, fontSize: newSize } : ann));
+            if (selectedId) {
+                const next = annotations.map((ann) => (ann.id === selectedId ? { ...ann, fontSize: newSize } : ann));
                 commitAnnotations(next);
             }
         } else {
@@ -965,51 +1373,127 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 return;
             }
 
-            // 1. Check if tap hits the currently selected text
-            const selectedAnn = selectedTextIdRef.current
-                ? (annotationsRef.current.find((ann) => ann.id === selectedTextIdRef.current && ann.type === 'text') as PhotoText | undefined)
-                : null;
+            const { width: grantCanvasW, height: grantCanvasH } = canvasSizeRef.current;
+            const grantPointer = { x: point.x * grantCanvasW, y: point.y * grantCanvasH };
 
-            if (selectedAnn && isPointInPhotoText(selectedAnn, point, canvasSizeRef.current.width, canvasSizeRef.current.height, 28)) {
-                textDragRef.current = {
-                    id: selectedAnn.id,
+            /** Start moving an object, with the frame the snap and the bin will be measured on. */
+            const beginDrag = (target: PhotoText | PhotoImage) => {
+                dragRef.current = {
+                    id: target.id,
                     startPoint: point,
-                    initialTextPoint: { ...selectedAnn.point },
+                    initialPoint: { ...target.point },
                     hasMoved: false,
                     lastPoint: null,
+                    centreOffset: selectionCentreOffset(selectionGeometryFor(target, canvasSizeRef.current)),
                 };
-                return;
+            };
+
+            const selectedAnn = selectedIdRef.current
+                ? annotationsRef.current.find((ann) => ann.id === selectedIdRef.current)
+                : undefined;
+            const selectedObject = selectedAnn && (selectedAnn.type === 'text' || selectedAnn.type === 'image')
+                ? selectedAnn
+                : null;
+
+            // 1. The frame's own handles come before anything underneath them. A corner resizes
+            // what the frame is around and the knob turns it; both sit out on the frame, where
+            // nothing else is listening, so they are safe to claim whatever the tool in hand is.
+            if (selectedObject) {
+                const geometry = selectionGeometryFor(selectedObject, canvasSizeRef.current);
+                const handle = findPhotoSelectionHandle(
+                    grantPointer,
+                    photoSelectionHandlePoints(geometry, photoRotateHandleSide(geometry, canvasSizeRef.current)),
+                    photoHandleTouchRadius(geometry.bounds),
+                );
+                if (handle === 'rotate') {
+                    rotateDragRef.current = {
+                        id: selectedObject.id,
+                        grabOffset: normalizePhotoRotation(
+                            photoPointerAngle(grantPointer, geometry.anchor) - (selectedObject.rotation ?? 0),
+                        ),
+                        beforeAnnotations: annotationsRef.current,
+                        applied: false,
+                        snapped: false,
+                    };
+                    setActiveHandle('rotate');
+                    setRotationPreview(Math.round(normalizePhotoRotation(selectedObject.rotation ?? 0)));
+                    return;
+                }
+                if (handle) {
+                    handleDragRef.current = {
+                        handle,
+                        annotation: selectedObject,
+                        beforeAnnotations: annotationsRef.current,
+                        applied: false,
+                    };
+                    setActiveHandle(handle);
+                    return;
+                }
             }
 
-            // 2. The text tool grabs any label it lands on. Drawing tools deliberately do not,
-            // so a pen stroke can cross a label instead of picking it up.
-            if (currentTool === 'text') {
-                for (let i = annotationsRef.current.length - 1; i >= 0; i -= 1) {
-                    const ann = annotationsRef.current[i];
-                    if (ann.type === 'text' && isPointInPhotoText(ann as PhotoText, point, canvasSizeRef.current.width, canvasSizeRef.current.height, 28)) {
-                        setSelectedTextId(ann.id);
-                        setColor(ann.color);
-                        setFontSize(ann.fontSize);
-                        setTextBgStyle(ann.bgStyle || 'badge');
-                        setTextAlign(ann.textAlign || 'center');
-                        textDragRef.current = {
-                            id: ann.id,
-                            startPoint: point,
-                            initialTextPoint: { ...ann.point },
-                            hasMoved: false,
-                            lastPoint: null,
-                        };
+            /**
+             * The object under the finger, taken in the order the page draws them: labels sit
+             * over the ink and the ink over the pictures, so where a label overlaps a picture the
+             * label is what the finger has reached for.
+             */
+            const objectUnderFinger = ((): PhotoText | PhotoImage | null => {
+                const current = annotationsRef.current;
+                for (let i = current.length - 1; i >= 0; i -= 1) {
+                    const ann = current[i];
+                    if (ann.type === 'text' && isPointInPhotoText(ann, point, grantCanvasW, grantCanvasH, 28)) return ann;
+                }
+                for (let i = current.length - 1; i >= 0; i -= 1) {
+                    const ann = current[i];
+                    if (ann.type === 'image' && isPointInPhotoImage(ann, point, grantCanvasW, grantCanvasH, 12)) return ann;
+                }
+                return null;
+            })();
+
+            // 2. A tap on what is already selected starts moving it, whichever tool happens to be
+            // in hand. A second tap on a label opens it for editing, the way a text box does
+            // everywhere else — the pencil on the pill is for the finger that would rather aim.
+            if (selectedObject && objectUnderFinger?.id === selectedObject.id) {
+                if (selectedObject.type === 'text') {
+                    const now = Date.now();
+                    const previous = lastTapRef.current;
+                    lastTapRef.current = { id: selectedObject.id, at: now };
+                    if (previous && previous.id === selectedObject.id && now - previous.at <= DOUBLE_TAP_MS) {
+                        lastTapRef.current = null;
+                        editSelectedTextRef.current();
                         return;
                     }
                 }
+                beginDrag(selectedObject);
+                return;
             }
 
-            // 3. If text tool is active and tapped empty canvas:
+            // 3. The label and picture tools take hold of whatever object they land on, either
+            // kind: a page is a page, and the user should not have to remember which tool made
+            // the thing they are reaching for. Drawing tools deliberately grab neither, so a pen
+            // stroke can cross a label or run over a picture instead of picking it up.
+            if ((currentTool === 'text' || currentTool === 'image') && objectUnderFinger) {
+                selectAnnotation(objectUnderFinger.id);
+                if (objectUnderFinger.type === 'text') {
+                    // The pickers follow the label that was picked up, so the next change to a
+                    // colour or a size lands on the thing the user is looking at.
+                    setColor(objectUnderFinger.color);
+                    setFontSize(objectUnderFinger.fontSize);
+                    setTextBgStyle(objectUnderFinger.bgStyle || 'badge');
+                    setTextAlign(objectUnderFinger.textAlign || 'center');
+                    lastTapRef.current = { id: objectUnderFinger.id, at: Date.now() };
+                }
+                beginDrag(objectUnderFinger);
+                return;
+            }
+
+            // 4. The same tools on empty canvas: put the selection down if there is one, and
+            // otherwise start a new label or a new picture.
             if (currentTool === 'text') {
-                if (selectedTextIdRef.current) {
-                    setSelectedTextId(null);
+                if (selectedIdRef.current) {
+                    setSelectedId(null);
                     return;
                 }
+                textDropPointRef.current = point;
                 setTextDraft('');
                 setTextBgStyle('badge');
                 setTextAlign('center');
@@ -1017,8 +1501,17 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 return;
             }
 
-            if (selectedTextIdRef.current) {
-                setSelectedTextId(null);
+            if (currentTool === 'image') {
+                if (selectedIdRef.current) {
+                    setSelectedId(null);
+                    return;
+                }
+                addPictureRef.current(point);
+                return;
+            }
+
+            if (selectedIdRef.current) {
+                setSelectedId(null);
             }
 
             gestureRef.current = { start: point, points: [point] };
@@ -1037,12 +1530,14 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             const currentTool = toolRef.current;
             const touches = event.nativeEvent.touches ?? [];
 
-            // Two fingers on the selected label scale and twist it, the way story editors do.
-            if (touches.length >= 2 && selectedTextIdRef.current) {
+            // Two fingers on the selection scale and twist it, the way story editors do: a
+            // label by its font size, a picture by its box. A corner or the knob already has the
+            // gesture, though, so a second finger landing mid-drag must not take it over.
+            if (touches.length >= 2 && selectedIdRef.current && !handleDragRef.current && !rotateDragRef.current) {
                 const [first, second] = touches;
                 const selected = annotationsRef.current.find(
-                    (ann) => ann.id === selectedTextIdRef.current && ann.type === 'text',
-                ) as PhotoText | undefined;
+                    (ann) => ann.id === selectedIdRef.current && (ann.type === 'text' || ann.type === 'image'),
+                ) as PhotoText | PhotoImage | undefined;
                 if (!selected) return;
 
                 const distance = Math.hypot(second.pageX - first.pageX, second.pageY - first.pageY);
@@ -1053,14 +1548,17 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         id: selected.id,
                         startDistance: Math.max(1, distance),
                         startAngle: angle,
-                        initialFontSize: selected.fontSize,
+                        initialFontSize: selected.type === 'text' ? selected.fontSize : 0,
+                        initialBox: selected.type === 'image'
+                            ? { width: selected.width, height: selected.height }
+                            : null,
                         initialRotation: selected.rotation ?? 0,
                         beforeAnnotations: annotationsRef.current,
                         applied: false,
                     };
                     // A second finger ends any drag in progress so the label does not jump.
-                    textDragRef.current = null;
-                    setIsDraggingText(false);
+                    dragRef.current = null;
+                    setIsDraggingSelection(false);
                     updateTrashHovered(false);
                     return;
                 }
@@ -1076,11 +1574,29 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 }
                 pinch.applied = true;
 
-                const scaled = Math.round(Math.max(MIN_TEXT_SIZE, Math.min(
-                    MAX_TEXT_SIZE,
-                    pinch.initialFontSize * (distance / pinch.startDistance),
-                )));
                 const rotation = normalizePhotoRotation(pinch.initialRotation + turned);
+                const factor = distance / pinch.startDistance;
+                setRotationPreview(Math.round(rotation));
+
+                if (pinch.initialBox) {
+                    // Sized from the box the pinch started on rather than from the current one,
+                    // so the picture follows the fingers instead of compounding every sample.
+                    const initialBox = pinch.initialBox;
+                    const next = annotationsRef.current.map((ann) => {
+                        if (ann.id !== pinch.id || ann.type !== 'image') return ann;
+                        const resized = resizePhotoImage(
+                            { ...ann, width: initialBox.width, height: initialBox.height },
+                            factor,
+                            canvasSizeRef.current,
+                        );
+                        return { ...resized, rotation };
+                    });
+                    annotationsRef.current = next;
+                    setAnnotations(next);
+                    return;
+                }
+
+                const scaled = Math.round(clampPhotoTextSize(pinch.initialFontSize * factor));
                 const next = annotationsRef.current.map((ann) => (
                     ann.id === pinch.id && ann.type === 'text'
                         ? { ...ann, fontSize: scaled, rotation }
@@ -1097,6 +1613,66 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             if (pinchRef.current) return;
 
             const point = pointFromEvent(event);
+            const { width: moveCanvasW, height: moveCanvasH } = canvasSizeRef.current;
+            const movePointer = { x: point.x * moveCanvasW, y: point.y * moveCanvasH };
+
+            // A corner being pulled. Every sample is measured from the box the corner was taken
+            // hold of, never from the box the last sample produced, so the picture follows the
+            // finger instead of drifting away from it as the samples compound.
+            const resize = handleDragRef.current;
+            if (resize) {
+                const resized = resize.annotation.type === 'image'
+                    ? resizePhotoImageByHandle({
+                        annotation: resize.annotation,
+                        handle: resize.handle,
+                        pointer: movePointer,
+                        canvas: canvasSizeRef.current,
+                    })
+                    : resizePhotoTextByHandle({
+                        annotation: resize.annotation,
+                        handle: resize.handle,
+                        pointer: movePointer,
+                        canvas: canvasSizeRef.current,
+                    });
+                // A corner dragged back out to where it started asks for the size it was grabbed
+                // at, and that is a real answer: the original has to go back on the page rather
+                // than leaving the last sample's size standing.
+                if (objectById(annotationsRef.current, resized.id) === resized) return;
+                if (resized !== resize.annotation) resize.applied = true;
+                const next = annotationsRef.current.map((ann) => (ann.id === resized.id ? resized : ann));
+                annotationsRef.current = next;
+                setAnnotations(next);
+                // A label pulled bigger leaves the size picker holding its new size, so the next
+                // label is written at the size the last one ended up.
+                if (resized.type === 'text') setFontSize(resized.fontSize);
+                return;
+            }
+
+            // The knob being turned.
+            const turn = rotateDragRef.current;
+            if (turn) {
+                const target = annotationsRef.current.find((ann) => ann.id === turn.id);
+                if (!target || (target.type !== 'text' && target.type !== 'image')) return;
+                const geometry = selectionGeometryFor(target, canvasSizeRef.current);
+                const turned = resolvePhotoHandleRotation({
+                    pointer: movePointer,
+                    anchor: geometry.anchor,
+                    grabOffset: turn.grabOffset,
+                });
+                if (turned.snapped !== turn.snapped) {
+                    if (turned.snapped) tick();
+                    turn.snapped = turned.snapped;
+                }
+                if ((target.rotation ?? 0) === turned.rotation) return;
+                turn.applied = true;
+                const next = annotationsRef.current.map((ann) => (
+                    ann.id === turn.id ? { ...ann, rotation: turned.rotation } : ann
+                ));
+                annotationsRef.current = next;
+                setAnnotations(next);
+                setRotationPreview(Math.round(turned.rotation));
+                return;
+            }
 
             if (currentTool === 'crop') {
                 const drag = cropDragRef.current;
@@ -1158,20 +1734,29 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 return;
             }
 
-            if (textDragRef.current) {
-                const drag = textDragRef.current;
+            if (dragRef.current) {
+                const drag = dragRef.current;
                 const dx = point.x - drag.startPoint.x;
                 const dy = point.y - drag.startPoint.y;
                 drag.lastPoint = point;
                 if (Math.hypot(dx, dy) > 0.003) {
                     drag.hasMoved = true;
-                    setIsDraggingText(true);
+                    setIsDraggingSelection(true);
                 }
 
-                const newPoint = clampPhotoPoint({
-                    x: Math.max(0.04, Math.min(0.96, drag.initialTextPoint.x + dx)),
-                    y: Math.max(0.04, Math.min(0.96, drag.initialTextPoint.y + dy)),
+                const freePoint = clampPhotoPoint({
+                    x: Math.max(0.04, Math.min(0.96, drag.initialPoint.x + dx)),
+                    y: Math.max(0.04, Math.min(0.96, drag.initialPoint.y + dy)),
                 });
+                // Give way to the middle of the page when the drag comes within a fingertip of
+                // it, and show the guide it caught. Centring by eye on a phone is a fiddle.
+                const snap = resolvePhotoDragSnap({
+                    point: freePoint,
+                    centreOffset: drag.centreOffset,
+                    canvas: canvasSizeRef.current,
+                });
+                const newPoint = snap.point;
+                updateSnapGuides(drag.hasMoved ? snap.guides : { x: false, y: false });
 
                 // Highlight the bin from the same rect the release hit-tests against, so what the
                 // finger lights up is always what letting go will do. The bin is only on screen
@@ -1185,7 +1770,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 ));
 
                 const next = annotationsRef.current.map((ann) => (
-                    ann.id === drag.id && ann.type === 'text'
+                    ann.id === drag.id && (ann.type === 'text' || ann.type === 'image')
                         ? { ...ann, point: newPoint }
                         : ann
                 ));
@@ -1218,12 +1803,39 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             const pinch = pinchRef.current;
             if (pinch) {
                 pinchRef.current = null;
+                setRotationPreview(null);
                 if (pinch.applied) {
                     pushHistory({ ...snapshotEditor(), annotations: pinch.beforeAnnotations });
                 }
                 gestureRef.current = null;
-                textDragRef.current = null;
+                dragRef.current = null;
                 setLiveAnnotation(null);
+                return;
+            }
+            // A corner or the knob just let go. One history entry covers the whole gesture, taken
+            // from the state it started on, exactly as a pinch records itself.
+            const releasedResize = handleDragRef.current;
+            if (releasedResize) {
+                handleDragRef.current = null;
+                setActiveHandle(null);
+                // A pull that ended at the size it started on leaves nothing to undo: the object
+                // put back on the page is the very one the gesture began with.
+                const settledSize = objectById(annotationsRef.current, releasedResize.annotation.id);
+                if (releasedResize.applied && settledSize !== releasedResize.annotation) {
+                    pushHistory({ ...snapshotEditor(), annotations: releasedResize.beforeAnnotations });
+                }
+                return;
+            }
+            const releasedTurn = rotateDragRef.current;
+            if (releasedTurn) {
+                rotateDragRef.current = null;
+                setActiveHandle(null);
+                setRotationPreview(null);
+                const settledAngle = objectById(annotationsRef.current, releasedTurn.id);
+                const startingAngle = objectById(releasedTurn.beforeAnnotations, releasedTurn.id);
+                if (releasedTurn.applied && (settledAngle?.rotation ?? 0) !== (startingAngle?.rotation ?? 0)) {
+                    pushHistory({ ...snapshotEditor(), annotations: releasedTurn.beforeAnnotations });
+                }
                 return;
             }
             if (toolRef.current === 'crop') {
@@ -1245,8 +1857,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 erasedInCurrentGestureRef.current = false;
                 return;
             }
-            if (textDragRef.current) {
-                const drag = textDragRef.current;
+            if (dragRef.current) {
+                const drag = dragRef.current;
                 const { width: releaseCanvasW, height: releaseCanvasH } = canvasSizeRef.current;
                 // Decided from the drag record, which the responder owns, rather than from the
                 // `trashHovered` state: this handler was created on the first render and would
@@ -1258,18 +1870,19 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     canvasHeight: releaseCanvasH,
                     hasMoved: drag.hasMoved,
                 });
-                setIsDraggingText(false);
+                setIsDraggingSelection(false);
                 updateTrashHovered(false);
+                updateSnapGuides({ x: false, y: false });
 
                 if (outcome === 'delete') {
                     const next = annotationsRef.current.filter((ann) => ann.id !== drag.id);
                     commitAnnotations(next);
-                    setSelectedTextId(null);
+                    setSelectedId(null);
                 } else if (outcome === 'reposition') {
-                    const initialPt = drag.initialTextPoint;
+                    const initialPt = drag.initialPoint;
                     const dragId = drag.id;
                     const previousAnnotations = annotationsRef.current.map((ann) => (
-                        ann.id === dragId && ann.type === 'text'
+                        ann.id === dragId && (ann.type === 'text' || ann.type === 'image')
                             ? { ...ann, point: initialPt }
                             : ann
                     ));
@@ -1279,7 +1892,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     };
                     pushHistory(snapshot);
                 }
-                textDragRef.current = null;
+                dragRef.current = null;
                 return;
             }
             const gesture = gestureRef.current;
@@ -1314,6 +1927,11 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         },
         onPanResponderTerminate: () => {
             pinchRef.current = null;
+            handleDragRef.current = null;
+            rotateDragRef.current = null;
+            setActiveHandle(null);
+            setRotationPreview(null);
+            updateSnapGuides({ x: false, y: false });
             if (toolRef.current === 'eraser') {
                 setEraserCursor(null);
                 if (erasedInCurrentGestureRef.current && gestureStartAnnotationsRef.current) {
@@ -1326,10 +1944,10 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 gestureStartAnnotationsRef.current = null;
                 erasedInCurrentGestureRef.current = false;
             }
-            setIsDraggingText(false);
+            setIsDraggingSelection(false);
             updateTrashHovered(false);
             cropDragRef.current = null;
-            textDragRef.current = null;
+            dragRef.current = null;
             gestureRef.current = null;
             setLiveAnnotation(null);
         },
@@ -1424,7 +2042,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             };
             pageRef.current = turnedPage;
             setPage(turnedPage);
-            setSelectedTextId(null);
+            setSelectedId(null);
             return;
         }
         if (!sourceUri || !imageReady) return;
@@ -1479,7 +2097,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             setPage(trimmedPage);
             setCropBox({ x: 0, y: 0, width: 1, height: 1 });
             setCropAspect('free');
-            setSelectedTextId(null);
+            setSelectedId(null);
             setTool('pen');
             return;
         }
@@ -1537,11 +2155,18 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         });
     });
 
-    /** Hold until the off-screen surface has been laid out and its photo, if any, has loaded. */
+    /**
+     * Hold until the off-screen surface has been laid out, its photo (if any) has loaded, and
+     * every picture placed on the page has reported itself decoded. The deadline is the backstop:
+     * a picture that never loads costs the save a moment, not the whole drawing.
+     */
     const waitForExportSurface = async (needsPhoto: boolean) => {
         const deadline = Date.now() + 4000;
         while (Date.now() < deadline) {
-            if (exportLaidOutRef.current && (!needsPhoto || exportPhotoLoadedRef.current)) break;
+            const ready = exportLaidOutRef.current
+                && (!needsPhoto || exportPhotoLoadedRef.current)
+                && exportPicturesReadyRef.current >= exportPicturesTotalRef.current;
+            if (ready) break;
             await nextFrame();
         }
         // One more frame, so the finished tree is on the layer before the shutter.
@@ -1557,6 +2182,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     const captureExportSurface = async (surface: ExportSurface): Promise<string> => {
         exportLaidOutRef.current = false;
         exportPhotoLoadedRef.current = false;
+        exportPicturesReadyRef.current = 0;
+        exportPicturesTotalRef.current = annotationsRef.current.filter((ann) => ann.type === 'image').length;
         setExportSurface(surface);
         try {
             await waitForExportSurface(!pageRef.current);
@@ -1594,8 +2221,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
         // The selection frame, the eraser ring and the crop overlay are editing chrome, and the
         // native export is a capture of the live canvas — clear them before the shutter, then
         // let the removal reach the screen.
-        if (Platform.OS !== 'web' && (selectedTextIdRef.current || eraserCursor || tool === 'crop')) {
-            setSelectedTextId(null);
+        if (Platform.OS !== 'web' && (selectedIdRef.current || eraserCursor || tool === 'crop')) {
+            setSelectedId(null);
             setEraserCursor(null);
             if (tool === 'crop') {
                 setTool('pen');
@@ -1660,19 +2287,37 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
 
     const chooseTool = (nextTool: EditorTool) => {
         if (nextTool === 'text') {
-            if (selectedTextIdRef.current) {
+            const editingLabel = annotationsRef.current.some(
+                (ann) => ann.id === selectedIdRef.current && ann.type === 'text',
+            );
+            if (editingLabel) {
                 editSelectedText();
             } else {
+                // A picture may be the thing selected; the text tool puts it down rather than
+                // trying to edit it as a label.
+                setSelectedId(null);
+                textDropPointRef.current = null;
                 setTextDraft('');
                 setTextBgStyle('badge');
                 setTextAlign('center');
                 setTextModal(true);
             }
+        } else if (nextTool === 'image') {
+            setTool('image');
+            // With nothing on the page to select yet, the tool has only one thing it could mean,
+            // so it opens the picker straight away. Once a picture is there, tapping the tool
+            // just arms it: tap a picture to pick it up, tap the page to add another.
+            const hasPicture = annotationsRef.current.some((ann) => ann.type === 'image');
+            if (!hasPicture) {
+                setSelectedId(null);
+                // No tap to place it by yet: it takes the middle of the page.
+                openPictureSource(null);
+            }
         } else if (nextTool === 'crop') {
-            setSelectedTextId(null);
+            setSelectedId(null);
             setTool('crop');
         } else {
-            setSelectedTextId(null);
+            setSelectedId(null);
             setTool(nextTool);
         }
     };
@@ -1683,19 +2328,25 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
             setTextModal(false);
             return;
         }
-        if (selectedTextId) {
+        if (selectedId) {
             const next = annotations.map((ann) => (
-                ann.id === selectedTextId && ann.type === 'text'
+                ann.id === selectedId && ann.type === 'text'
                     ? { ...ann, text: value, color, fontSize, bgStyle: textBgStyle, textAlign }
                     : ann
             ));
             commitAnnotations(next);
         } else {
             const newId = makeId();
+            // A label lands where the page was tapped, kept far enough from the edge that its
+            // frame and its handles are still on the sheet. Written from the toolbar rather than
+            // from a tap, it takes the middle.
+            const drop = textDropPointRef.current;
             const newAnnotation: PhotoText = {
                 id: newId,
                 type: 'text',
-                point: { x: 0.5, y: 0.45 },
+                point: drop
+                    ? { x: Math.min(0.9, Math.max(0.1, drop.x)), y: Math.min(0.92, Math.max(0.08, drop.y)) }
+                    : { x: 0.5, y: 0.45 },
                 text: value,
                 color,
                 fontSize,
@@ -1705,8 +2356,9 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 opacity: 1,
             };
             commitAnnotations([...annotations, newAnnotation]);
-            setSelectedTextId(newId);
+            setSelectedId(newId);
         }
+        textDropPointRef.current = null;
         setTool('text');
         setTextModal(false);
     };
@@ -1735,14 +2387,53 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
     };
 
     const allAnnotations = liveAnnotation ? [...annotations, liveAnnotation] : annotations;
+    // While something is being moved, pulled by a corner, turned by the knob or pinched, the
+    // floating controls step aside: the finger is on the object, the bin is up, and a pill under
+    // the thumb is in the way of both.
+    const manipulating = isDraggingSelection || activeHandle !== null || rotationPreview !== null;
+
+    // What the frame actually covers on the page once its turn is applied: the box its four
+    // handles enclose. A turned object's upright box is not where the eye sees it — a label
+    // stood on its end is as tall as it was wide — so anything placed beside the frame is placed
+    // from this rather than from the box the geometry was measured in.
+    const selectionExtent = useMemo(() => {
+        if (!selectionHandles) return null;
+        const corners = [selectionHandles.tl, selectionHandles.tr, selectionHandles.bl, selectionHandles.br];
+        return {
+            left: Math.min(...corners.map((corner) => corner.x)),
+            right: Math.max(...corners.map((corner) => corner.x)),
+            top: Math.min(...corners.map((corner) => corner.y)),
+            bottom: Math.max(...corners.map((corner) => corner.y)),
+        };
+    }, [selectionHandles]);
+
+    // The pill takes the side of the frame the knob is not on — asked of the knob's own position
+    // rather than of the side it was given, because a turn carries it round with the object.
+    // They are reached for by the same thumb, and a pill drawn over the knob would take the
+    // touches meant to turn the object: the knob is painted underneath it and never grabbed.
+    const selectionPillTop = selectionExtent
+        ? (selectionHandles && selectionHandles.rotate.y > (selectionExtent.top + selectionExtent.bottom) / 2
+            ? Math.max(6, selectionExtent.top - 50)
+            : Math.min(canvasSize.height - 44, selectionExtent.bottom + 14))
+        : 0;
+    const selectionPillCentre = selectionExtent ? (selectionExtent.left + selectionExtent.right) / 2 : 0;
+    // Adding a picture is a page-building action: a photo being edited already is the picture,
+    // and pasting a second one over it is a different job from marking this one up.
+    const visibleToolItems = page ? toolItems : toolItems.filter((item) => item.id !== 'image');
     /** An untouched page has nothing to export; a photo is worth keeping on its own. */
     const nothingDrawn = page !== null && annotations.length === 0;
     const activeToolLabel = tool === 'crop'
         ? l('Kırpma alanını ayarlayın ve onaylayın', 'Adjust crop area and confirm')
         : tool === 'text'
-            ? selectedTextId
-                ? l('Metni sürükleyin veya düzenleyin', 'Drag or edit the text')
-                : l('Metin eklemek için dokunun', 'Tap to add text')
+            ? selectedText
+                ? l('Sürükleyin, köşeden boyutlandırın, düzenlemek için çift dokunun', 'Drag it, pull a corner, double-tap to edit')
+                : selectedPicture
+                    ? l('Sürükleyin, köşeden boyutlandırın, düğmeden çevirin', 'Drag it, pull a corner, turn it by the knob')
+                    : l('Metin eklemek için dokunun', 'Tap to add text')
+            : tool === 'image'
+                ? selectedPicture || selectedText
+                    ? l('Sürükleyin, köşeden boyutlandırın, düğmeden çevirin', 'Drag it, pull a corner, turn it by the knob')
+                    : l('Görsel eklemek için dokunun', 'Tap to add a picture')
             : tool === 'eraser'
                 ? eraserMode === 'partial'
                     ? l('Sürükleyerek dokunduğunuz yeri silin', 'Drag to rub out just what you touch')
@@ -1810,6 +2501,9 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 }}
                             />
                         ) : <ActivityIndicator color={colors.accent} />}
+                        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                            {renderPlacedPictures(allAnnotations, canvasSize.width, canvasSize.height)}
+                        </View>
                         <Svg width={canvasSize.width} height={canvasSize.height} style={StyleSheet.absoluteFill}>
                             {allAnnotations.map((annotation) => renderAnnotation(annotation, canvasSize.width, canvasSize.height))}
                         </Svg>
@@ -1831,8 +2525,19 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                             />
                         )}
 
-                        {/* Interactive Text Selection Overlay */}
-                        {selectedAnnotation && selectedBounds && !isDraggingText && (
+                        {/* The page's own centre lines, shown only while a drag is settling onto
+                            one of them, so the guide means something every time it appears. */}
+                        {snapGuides.x && (
+                            <View pointerEvents="none" style={[styles.snapGuide, styles.snapGuideVertical, { left: canvasSize.width / 2 - 1 }]} />
+                        )}
+                        {snapGuides.y && (
+                            <View pointerEvents="none" style={[styles.snapGuide, styles.snapGuideHorizontal, { top: canvasSize.height / 2 - 1 }]} />
+                        )}
+
+                        {/* The frame around whatever is selected: a label or a picture. It stays
+                            up through a drag, a pull and a turn, because the thing being moved is
+                            exactly the thing the frame is drawn around. */}
+                        {selectionGeometry && selectedBounds && selectionHandles && (
                             <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
                                 <View
                                     pointerEvents="none"
@@ -1848,25 +2553,80 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                                 selectedAnchor.y - (selectedBounds.y - 4),
                                                 0,
                                             ],
-                                            transform: [{ rotate: `${selectedAnnotation.rotation ?? 0}deg` }],
+                                            transform: [{ rotate: `${selectedRotation}deg` }],
                                         },
                                     ]}
                                 >
-                                    <View style={[styles.textHandle, styles.textHandleTL]} />
-                                    <View style={[styles.textHandle, styles.textHandleTR]} />
-                                    <View style={[styles.textHandle, styles.textHandleBL]} />
-                                    <View style={[styles.textHandle, styles.textHandleBR]} />
+                                    {/* The stem the knob hangs from. It lives inside the frame so
+                                        it leans with it without any maths of its own. */}
+                                    <View
+                                        style={[
+                                            styles.rotateStem,
+                                            rotateSide === 'bottom'
+                                                ? { top: selectedBounds.height + 8, height: PHOTO_ROTATE_HANDLE_OFFSET - 4 }
+                                                : { top: -PHOTO_ROTATE_HANDLE_OFFSET + 4, height: PHOTO_ROTATE_HANDLE_OFFSET - 4 },
+                                        ]}
+                                    />
                                 </View>
 
+                                {/* Corner handles, drawn at exactly the points the gesture
+                                    handlers hit-test against. Touches are read by the canvas
+                                    itself, which is why these stay out of the way. */}
+                                {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
+                                    <View
+                                        key={corner}
+                                        pointerEvents="none"
+                                        style={[
+                                            styles.selectionHandle,
+                                            {
+                                                left: selectionHandles[corner].x - 7,
+                                                top: selectionHandles[corner].y - 7,
+                                            },
+                                            activeHandle === corner && styles.selectionHandleActive,
+                                        ]}
+                                    />
+                                ))}
+
+                                <View
+                                    pointerEvents="none"
+                                    style={[
+                                        styles.rotateKnob,
+                                        {
+                                            left: selectionHandles.rotate.x - 15,
+                                            top: selectionHandles.rotate.y - 15,
+                                        },
+                                        activeHandle === 'rotate' && styles.rotateKnobActive,
+                                    ]}
+                                >
+                                    <Text style={[styles.rotateKnobIcon, activeHandle === 'rotate' && styles.rotateKnobIconActive]}>↻</Text>
+                                </View>
+
+                                {/* The angle, while it is being turned: a picture straightened by
+                                    eye is never quite straight, and this is how the user knows
+                                    the turn has settled on a quarter of one. */}
+                                {rotationPreview !== null && (
+                                    <View
+                                        pointerEvents="none"
+                                        style={[
+                                            styles.anglePill,
+                                            {
+                                                left: Math.max(4, Math.min(canvasSize.width - 56, selectionHandles.rotate.x - 26)),
+                                                top: Math.max(4, selectionHandles.rotate.y - 44),
+                                            },
+                                        ]}
+                                    >
+                                        <Text style={styles.anglePillText}>{rotationPreview}°</Text>
+                                    </View>
+                                )}
+
                                 {/* Floating Action Pill */}
+                                {selectedText && !manipulating && (
                                 <View
                                     style={[
                                         styles.textFloatingToolbar,
                                         {
-                                            top: selectedBounds.y < 52
-                                                ? Math.min(canvasSize.height - 44, selectedBounds.y + selectedBounds.height + 10)
-                                                : Math.max(6, selectedBounds.y - 46),
-                                            left: Math.max(6, Math.min(canvasSize.width - 236, selectedBounds.x + selectedBounds.width / 2 - 118)),
+                                            top: selectionPillTop,
+                                            left: Math.max(6, Math.min(canvasSize.width - 236, selectionPillCentre - 118)),
                                         },
                                     ]}
                                 >
@@ -1887,9 +2647,9 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                     >
                                         <View style={[
                                             styles.textStyleIconBadge,
-                                            (selectedAnnotation.bgStyle || 'classic') === 'badge' && styles.textStyleBadgeSolid,
-                                            (selectedAnnotation.bgStyle || 'classic') === 'frosted' && styles.textStyleBadgeFrosted,
-                                            (selectedAnnotation.bgStyle || 'classic') === 'outline' && styles.textStyleBadgeOutline,
+                                            (selectedText.bgStyle || 'classic') === 'badge' && styles.textStyleBadgeSolid,
+                                            (selectedText.bgStyle || 'classic') === 'frosted' && styles.textStyleBadgeFrosted,
+                                            (selectedText.bgStyle || 'classic') === 'outline' && styles.textStyleBadgeOutline,
                                         ]}>
                                             <Text style={styles.textStyleIconText}>A</Text>
                                         </View>
@@ -1902,7 +2662,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                         accessibilityLabel={l('Hizalamayı değiştir', 'Change alignment')}
                                     >
                                         <Text style={styles.textFloatingIcon}>
-                                            {(selectedAnnotation.textAlign || 'center') === 'left' ? '⇤' : (selectedAnnotation.textAlign || 'center') === 'right' ? '⇥' : '≡'}
+                                            {(selectedText.textAlign || 'center') === 'left' ? '⇤' : (selectedText.textAlign || 'center') === 'right' ? '⇥' : '≡'}
                                         </Text>
                                     </TouchableOpacity>
 
@@ -1935,11 +2695,65 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                         <Text style={styles.textFloatingDeleteIcon}>🗑</Text>
                                     </TouchableOpacity>
                                 </View>
+                                )}
+
+                                {/* The same pill for a picture: size it, turn it, throw it away.
+                                    Pinching does all three at once; these are for the finger that
+                                    wants one small step, and for a picture too big to pinch. */}
+                                {selectedPicture && !manipulating && (
+                                <View
+                                    style={[
+                                        styles.textFloatingToolbar,
+                                        {
+                                            top: selectionPillTop,
+                                            left: Math.max(6, Math.min(canvasSize.width - 172, selectionPillCentre - 86)),
+                                        },
+                                    ]}
+                                >
+                                    <TouchableOpacity
+                                        style={styles.textFloatingBtn}
+                                        onPress={() => resizeSelectedPicture(PICTURE_STEP_DOWN)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l('Görseli küçült', 'Make the picture smaller')}
+                                    >
+                                        <Text style={styles.textFloatingSmallA}>−</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.textFloatingBtn}
+                                        onPress={() => resizeSelectedPicture(PICTURE_STEP_UP)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l('Görseli büyüt', 'Make the picture bigger')}
+                                    >
+                                        <Text style={styles.textFloatingBigA}>+</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.textFloatingBtn}
+                                        onPress={rotateSelectedPicture}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l('Görseli çeyrek tur döndür', 'Turn the picture a quarter turn')}
+                                    >
+                                        <Text style={styles.textFloatingIcon}>↻</Text>
+                                    </TouchableOpacity>
+
+                                    <View style={styles.textFloatingDivider} />
+
+                                    <TouchableOpacity
+                                        style={[styles.textFloatingBtn, styles.textFloatingDeleteBtn]}
+                                        onPress={deleteSelectedPicture}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l('Görseli sil', 'Delete the picture')}
+                                    >
+                                        <Text style={styles.textFloatingDeleteIcon}>🗑</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                )}
                             </View>
                         )}
 
                         {/* Interactive Drag-to-Delete Trash Area */}
-                        {isDraggingText && (
+                        {isDraggingSelection && (
                             <View
                                 pointerEvents="none"
                                 style={[
@@ -2012,7 +2826,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
 
                 <View style={styles.controls}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolList}>
-                        {toolItems.map((item) => (
+                        {visibleToolItems.map((item) => (
                             <TouchableOpacity
                                 key={item.id}
                                 style={[styles.toolButton, tool === item.id && styles.toolButtonActive]}
@@ -2324,6 +3138,55 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     </View>
                 </Modal>
 
+                {/* Where the picture is coming from. Asked once, on the way to the picker, so
+                    the page keeps the tap that said where the picture should land. */}
+                <Modal
+                    visible={pictureSourceSheet}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setPictureSourceSheet(false)}
+                >
+                    <View style={styles.pageSheetOverlay}>
+                        <Pressable
+                            style={StyleSheet.absoluteFill}
+                            onPress={() => setPictureSourceSheet(false)}
+                            accessibilityLabel={l('Görsel kaynağı seçimini kapat', 'Close picture source options')}
+                        />
+                        <SwipeDismissSheet
+                            active={pictureSourceSheet}
+                            style={styles.pageSheet}
+                            onDismiss={() => setPictureSourceSheet(false)}
+                        >
+                            <Text style={styles.pageSheetTitle}>{l('Görsel ekle', 'Add a picture')}</Text>
+                            <TouchableOpacity
+                                style={styles.sourceRow}
+                                onPress={() => addPictureFrom('library')}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Galeriden görsel seç', 'Choose a picture from the library')}
+                            >
+                                <Text style={styles.sourceRowIcon}>🖼️</Text>
+                                <Text style={styles.sourceRowText}>{l('Galeriden seç', 'Choose from Library')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.sourceRow}
+                                onPress={() => addPictureFrom('camera')}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Kamerayla fotoğraf çek', 'Take a photo with the camera')}
+                            >
+                                <Text style={styles.sourceRowIcon}>📷</Text>
+                                <Text style={styles.sourceRowText}>{l('Fotoğraf çek', 'Take Photo')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.sourceCancel}
+                                onPress={() => setPictureSourceSheet(false)}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.sourceCancelText}>{t('common.cancel')}</Text>
+                            </TouchableOpacity>
+                        </SwipeDismissSheet>
+                    </View>
+                </Modal>
+
                 {/* Instagram-Style Fullscreen Text Composer Modal */}
                 <Modal visible={textModal} transparent animationType="fade" onRequestClose={() => setTextModal(false)}>
                     <KeyboardAvoidingView
@@ -2521,6 +3384,15 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 onError={() => { exportPhotoLoadedRef.current = true; }}
                             />
                         ) : null}
+                        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                            {renderPlacedPictures(
+                                annotations,
+                                exportSurface.width,
+                                exportSurface.height,
+                                exportSurface.scale,
+                                () => { exportPicturesReadyRef.current += 1; },
+                            )}
+                        </View>
                         <Svg
                             width={exportSurface.width}
                             height={exportSurface.height}
@@ -2603,6 +3475,20 @@ function createStyles(colors: ColorScheme) {
             gap: Spacing.xs,
         },
         pageSheetTitle: { color: '#ffffff', fontSize: FontSize.lg, fontWeight: '800' },
+        sourceRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: Spacing.md,
+            paddingVertical: Spacing.md,
+            paddingHorizontal: Spacing.sm,
+            borderRadius: BorderRadius.md,
+            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+            marginTop: Spacing.sm,
+        },
+        sourceRowIcon: { fontSize: FontSize.lg },
+        sourceRowText: { color: '#ffffff', fontSize: FontSize.md, fontWeight: '700' },
+        sourceCancel: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.xs },
+        sourceCancelText: { color: '#9ca3af', fontSize: FontSize.md, fontWeight: '700' },
         pageSheetLabel: { color: '#9ca3af', fontSize: FontSize.sm, fontWeight: '600', marginTop: Spacing.sm },
         pageChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
         pageChip: {
@@ -2675,19 +3561,62 @@ function createStyles(colors: ColorScheme) {
             borderRadius: 8,
             overflow: 'visible',
         },
-        textHandle: {
+        // The corners are laid out in canvas coordinates rather than inside the frame, so the
+        // handle the finger reaches for is drawn at the point the gesture handler tests.
+        selectionHandle: {
             position: 'absolute',
-            width: 9,
-            height: 9,
-            borderRadius: 5,
+            width: 14,
+            height: 14,
+            borderRadius: 7,
+            backgroundColor: '#ffffff',
+            borderWidth: 3,
+            borderColor: colors.accent,
+        },
+        selectionHandleActive: {
             backgroundColor: colors.accent,
-            borderWidth: 1.5,
+            borderColor: '#ffffff',
+            transform: [{ scale: 1.25 }],
+        },
+        rotateStem: {
+            position: 'absolute',
+            left: '50%',
+            width: 2,
+            marginLeft: -1,
+            backgroundColor: colors.accent,
+            opacity: 0.9,
+        },
+        rotateKnob: {
+            position: 'absolute',
+            width: 30,
+            height: 30,
+            borderRadius: 15,
+            backgroundColor: '#ffffff',
+            borderWidth: 2,
+            borderColor: colors.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        rotateKnobActive: {
+            backgroundColor: colors.accent,
             borderColor: '#ffffff',
         },
-        textHandleTL: { top: -4.5, left: -4.5 },
-        textHandleTR: { top: -4.5, right: -4.5 },
-        textHandleBL: { bottom: -4.5, left: -4.5 },
-        textHandleBR: { bottom: -4.5, right: -4.5 },
+        rotateKnobIcon: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800' },
+        rotateKnobIconActive: { color: '#ffffff' },
+        anglePill: {
+            position: 'absolute',
+            minWidth: 52,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor: 'rgba(17, 24, 39, 0.94)',
+            alignItems: 'center',
+        },
+        anglePillText: { color: '#ffffff', fontSize: FontSize.sm, fontWeight: '800' },
+        // Guides are the one piece of chrome that has to read against ink of any colour, so they
+        // take a hue nothing in the palette draws with.
+        snapGuide: { position: 'absolute', backgroundColor: '#ff2d95', opacity: 0.9 },
+        snapGuideVertical: { top: 0, bottom: 0, width: 2 },
+        snapGuideHorizontal: { left: 0, right: 0, height: 2 },
         textFloatingToolbar: {
             position: 'absolute',
             height: 38,

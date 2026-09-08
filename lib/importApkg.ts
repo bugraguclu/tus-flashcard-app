@@ -474,8 +474,6 @@ function importedDeckConfig(raw: Record<string, any>, id: number, packageId: str
         newReviewOrder: REVIEW_MIX_BY_ORDINAL[numberValue(raw.newMix, 0)] ?? 'mix',
         newCardGatherOrder: GATHER_ORDER_BY_ORDINAL[numberValue(raw.newGatherPriority, 0)] ?? 'deck',
         newCardSortOrder: NEW_SORT_ORDER_BY_ORDINAL[numberValue(raw.newSortOrder, 0)] ?? 'template',
-        // Anki's two retrievability orders are FSRS-only; a collection using one of them falls
-        // back to the default rather than inventing an order this scheduler cannot reproduce.
         reviewSortOrder: REVIEW_ORDER_BY_ORDINAL[numberValue(raw.reviewOrder, 0)] ?? 'dueRandom',
         secondsToShowQuestion: Math.max(0, Number(raw.secondsToShowQuestion) || 0),
         secondsToShowAnswer: Math.max(0, Number(raw.secondsToShowAnswer) || 0),
@@ -517,8 +515,8 @@ const NEW_SORT_ORDER_BY_ORDINAL: (NewCardSortOrder | undefined)[] = [
 ];
 const REVIEW_ORDER_BY_ORDINAL: (ReviewSortOrder | undefined)[] = [
     'dueRandom', 'dueThenDeck', 'deckThenDue', 'intervalsAsc', 'intervalsDesc',
-    'easeAsc', 'easeDesc', undefined /* retrievability asc (FSRS) */, 'random',
-    'added', 'reverseAdded', undefined /* retrievability desc (FSRS) */, 'relativeOverdueness',
+    'easeAsc', 'easeDesc', 'retrievabilityAsc', 'random',
+    'added', 'reverseAdded', 'retrievabilityDesc', 'relativeOverdueness',
 ];
 
 /**

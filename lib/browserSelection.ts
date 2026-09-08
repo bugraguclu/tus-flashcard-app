@@ -1,5 +1,5 @@
 import type { AppSettings, Grade } from './types';
-import type { AnkiCard } from './models';
+import type { AnkiCard, ReviewLog } from './models';
 import { localDayNumber } from './ankiState';
 import { fsrsLastReviewInfo } from './fsrsMemory';
 import { setDueDateInterval } from './schedulingIntervals';
@@ -119,8 +119,13 @@ export function repositionSelectedNewCards(
     return cards.length;
 }
 
-/** Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`. */
-export function setSelectedDueDate(cardIds: number[], range: DueRange, settings: AppSettings): number {
+/**
+ * Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`.
+ *
+ * Returns the bookkeeping revlog rows written, so a caller that offers undo can take them back
+ * out again; the browser ignores them.
+ */
+export function setSelectedDueDate(cardIds: number[], range: DueRange, settings: AppSettings): ReviewLog[] {
     const cards = selectedCards(cardIds);
     const nowMs = Date.now();
     const today = localDayNumber(nowMs, settings.dayRolloverHour);
@@ -128,6 +133,7 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
     const fsrsEnabled = settings.fsrsEnabled === true;
     // Only FSRS needs the review log, and only to measure the gap since the last real answer.
     const revlog = fsrsEnabled ? revlogByCard(cards.map((card) => card.id)) : null;
+    const written: ReviewLog[] = [];
 
     cards.forEach((card, index) => {
         // Stable spread makes a range useful and repeatable without clumping every card on one day.
@@ -158,26 +164,17 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
             mod: Math.floor(nowMs / 1000),
             usn: -1,
         });
-        logManualEntry(card, 'rescheduled', ivl, card.ivl);
+        written.push(logManualEntry(card, 'rescheduled', ivl, card.ivl));
     });
-    return cards.length;
+    return written;
 }
 
 /** Reset scheduling and append cards to the end of the new queue; review history is preserved. */
 export function resetSelectedProgress(cardIds: number[], settings: AppSettings): number {
     const cards = selectedCards(cardIds);
-    if (cards.length === 0) return 0;
-    const selectedIds = new Set(cards.map((card) => card.id));
-    let nextPosition = getAllAnkiCards()
-        .filter((card) => card.type === 0 && !selectedIds.has(card.id))
-        .reduce((max, card) => Math.max(max, card.due), 0) + 1;
-
-    for (const card of cards) {
-        forgetCard(card.id, settings);
-        const reset = getAnkiCard(card.id);
-        if (!reset) continue;
-        saveAnkiCard({ ...reset, due: nextPosition++, mod: Math.floor(Date.now() / 1000), usn: -1 });
-    }
+    // forgetCard already parks each card at the end of the new queue, and every card it resets
+    // extends that queue — so a selection comes out in its own order without extra bookkeeping.
+    for (const card of cards) forgetCard(card.id, settings);
     return cards.length;
 }
 

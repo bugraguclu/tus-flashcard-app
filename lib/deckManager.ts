@@ -1266,6 +1266,12 @@ export function createOrReplaceCustomStudySession(
 
     const existing = getDeckByName(name);
     if (existing?.isFiltered) {
+        // Anki does not merge a new custom study run into the session deck's current settings: it
+        // swaps the deck's whole filtered config for the one this run built
+        // (`apply_update_to_filtered_deck`). So every filtered field is written here, including the
+        // ones this run has no opinion about — a second filter, a hand-edited preview delay or an
+        // "allow empty" left over from the learner's own filtered-deck editing must not carry into
+        // the session Custom Study just asked for.
         existing.searchQuery = config.search;
         existing.searchLimit = sanitizedLimit;
         existing.searchOrder = config.order;
@@ -1273,6 +1279,8 @@ export function createOrReplaceCustomStudySession(
         existing.searchLimit2 = undefined;
         existing.searchOrder2 = undefined;
         existing.reschedule = config.reschedule;
+        existing.previewDelays = [...config.previewDelays];
+        existing.filteredAllowEmpty = false;
         existing.filteredDeckEmpty = false;
         existing.filteredDoneCardIds = [];
         existing.filteredBuildAt = Date.now();
@@ -1288,6 +1296,8 @@ export function createOrReplaceCustomStudySession(
     const session = createFilteredDeck(name, config.search, sanitizedLimit);
     session.searchOrder = config.order;
     session.reschedule = config.reschedule;
+    session.previewDelays = [...config.previewDelays];
+    session.filteredAllowEmpty = false;
     session.filteredDeckEmpty = false;
     session.filteredDoneCardIds = [];
     session.filteredBuildAt = Date.now();

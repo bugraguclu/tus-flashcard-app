@@ -259,15 +259,16 @@ const NEW_SORT_ORDER_ORDINAL: Record<string, number> = {
 };
 const REVIEW_ORDER_ORDINAL: Record<string, number> = {
     dueRandom: 0, dueThenDeck: 1, deckThenDue: 2, intervalsAsc: 3, intervalsDesc: 4,
-    easeAsc: 5, easeDesc: 6, random: 8, added: 9, reverseAdded: 10, relativeOverdueness: 12,
+    easeAsc: 5, easeDesc: 6, retrievabilityAsc: 7, random: 8, added: 9, reverseAdded: 10,
+    retrievabilityDesc: 11, relativeOverdueness: 12,
 };
 
 /**
- * Anki's two retrievability review orders (ordinals 7 and 11) are FSRS-only and have no local
- * equivalent, so importing one falls back to `dueRandom` (lib/importApkg.ts). Writing that
- * fallback straight back out would replace the author's choice with "day (random)" in the
- * exported package, which is exactly the loss `ankiRaw` exists to prevent, so the source ordinal
- * is re-emitted instead.
+ * Anki's two retrievability review orders (ordinals 7 and 11) are represented locally now, so a
+ * package that carries one imports and exports as itself. Presets imported by an earlier build
+ * could not: they were stored as `dueRandom` with the source ordinal parked in `ankiRaw`, and
+ * they are still on disk, so that ordinal is still re-emitted for them rather than exported as
+ * "day (random)" — a preset the learner has never opened must not lose its author's choice.
  *
  * A user who picks an order in Deck Options is choosing for themselves; that save drops the
  * preserved ordinal (`withoutPreservedReviewOrder`) so their own choice is what gets exported.

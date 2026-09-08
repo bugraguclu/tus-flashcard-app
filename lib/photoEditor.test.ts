@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
     applyAspectRatioToCropRect,
     applyPhotoEraserSweep,
+    clampPhotoImageScale,
+    isAnnotationHitBySweep,
+    isPointInPhotoImage,
+    PHOTO_IMAGE_MIN_EDGE,
+    photoImageBounds,
+    photoImagePlacement,
+    resizePhotoImage,
+    type PhotoImage,
     erasePhotoStrokeBySweep,
     normalizePhotoRotation,
     calculatePhotoTextBounds,
@@ -31,6 +39,24 @@ import {
     photoArrowHead,
     photoExportSurface,
     scalePhotoAnnotation,
+    clampPhotoTextSize,
+    findPhotoSelectionHandle,
+    oppositePhotoCorner,
+    photoAnchorForFixedCorner,
+    photoHandleResizeFactor,
+    photoHandleTouchRadius,
+    photoPointerAngle,
+    photoRotateHandleSide,
+    photoSelectionHandlePoints,
+    photoTextAnchorPixels,
+    photoImageAnchorPixels,
+    resizePhotoImageByHandle,
+    resizePhotoTextByHandle,
+    resolvePhotoDragSnap,
+    resolvePhotoHandleRotation,
+    PHOTO_ROTATE_HANDLE_OFFSET,
+    PHOTO_TEXT_MAX_SIZE,
+    PHOTO_TEXT_MIN_SIZE,
 } from './photoEditor';
 
 describe('photo editor geometry', () => {
@@ -732,5 +758,433 @@ describe('photo editor shape drags', () => {
         const start: PhotoPoint = { x: 0.5, y: 0.5 };
         expect(isPhotoShapeDragCommittable(start, { x: Number.NaN, y: 0.5 }, CANVAS_W, CANVAS_H)).toBe(false);
         expect(isPhotoShapeDragCommittable(start, { x: 0.5, y: Number.POSITIVE_INFINITY }, CANVAS_W, CANVAS_H)).toBe(false);
+    });
+});
+
+describe('pictures placed on a page', () => {
+    const CANVAS = { width: 360, height: 480 };
+
+    function picture(overrides: Partial<PhotoImage> = {}): PhotoImage {
+        return {
+            id: 'pic',
+            type: 'image',
+            uri: 'file:///tmp/kalp.png',
+            point: { x: 0.5, y: 0.5 },
+            width: 200,
+            height: 150,
+            color: '#ffffff',
+            opacity: 1,
+            ...overrides,
+        };
+    }
+
+    it('drops a new picture in at its own aspect, with the page still visible around it', () => {
+        const wide = photoImagePlacement({ source: { width: 4000, height: 2000 }, canvas: CANVAS });
+        expect(wide.width).toBeCloseTo(360 * 0.62, 6);
+        expect(wide.width / wide.height).toBeCloseTo(2, 6);
+        expect(wide.width).toBeLessThan(CANVAS.width);
+
+        // A tall picture runs out of page height first, so that edge is what caps it.
+        const tall = photoImagePlacement({ source: { width: 1000, height: 4000 }, canvas: CANVAS });
+        expect(tall.height).toBeCloseTo(480 * 0.62, 6);
+        expect(tall.width / tall.height).toBeCloseTo(0.25, 6);
+    });
+
+    it('falls back to a square when the picker reports no size at all', () => {
+        const box = photoImagePlacement({ source: { width: null, height: undefined }, canvas: CANVAS });
+        expect(box.width).toBeCloseTo(box.height, 6);
+        expect(box.width).toBeGreaterThanOrEqual(PHOTO_IMAGE_MIN_EDGE);
+    });
+
+    it('centres the box on the point the picture is positioned by', () => {
+        expect(photoImageBounds(picture({ point: { x: 0.5, y: 0.25 } }), 400, 400)).toEqual({
+            x: 100, y: 25, width: 200, height: 150,
+        });
+    });
+
+    it('hit-tests a turned picture in its own frame, not its upright one', () => {
+        const turned = picture({ width: 200, height: 40, rotation: 90 });
+        // Above the centre: outside the upright box, inside the one the user can see.
+        expect(isPointInPhotoImage(turned, { x: 0.5, y: 0.3 }, 400, 400)).toBe(true);
+        // Beside the centre: inside the upright box, outside the turned one.
+        expect(isPointInPhotoImage(turned, { x: 0.3, y: 0.5 }, 400, 400)).toBe(false);
+    });
+
+    it('keeps a resize inside its limits and exactly on its aspect ratio', () => {
+        const source = picture({ width: 400, height: 300 });
+        const grown = resizePhotoImage(source, 10, CANVAS);
+        // The ceiling is the page times the coverage limit, reached on the tighter edge first.
+        expect(grown.width).toBeCloseTo(400 * 2.7, 6);
+        expect(grown.width / grown.height).toBeCloseTo(4 / 3, 6);
+
+        const shrunk = resizePhotoImage(source, 0.001, CANVAS);
+        expect(Math.min(shrunk.width, shrunk.height)).toBeCloseTo(PHOTO_IMAGE_MIN_EDGE, 6);
+        expect(shrunk.width / shrunk.height).toBeCloseTo(4 / 3, 6);
+
+        // A factor that changes nothing hands the same object back, so no re-render is queued.
+        expect(resizePhotoImage(source, 1, CANVAS)).toBe(source);
+        expect(clampPhotoImageScale(source, Number.NaN, CANVAS)).toBe(1);
+    });
+
+    it('still lets an oversized picture be shrunk once it is past the ceiling', () => {
+        const huge = picture({ width: 4000, height: 3000 });
+        expect(clampPhotoImageScale(huge, 2, CANVAS)).toBe(1);
+        expect(clampPhotoImageScale(huge, 0.5, CANVAS)).toBeCloseTo(0.5, 6);
+    });
+
+    it('leaves pictures to the eraser and takes them with the page', () => {
+        const placed = picture();
+        // The eraser is for ink: a sweep straight across the picture must not remove it, or
+        // rubbing out a stroke drawn on top would take the picture with it.
+        expect(isAnnotationHitBySweep(placed, { x: 0.1, y: 0.5 }, { x: 0.9, y: 0.5 }, 400, 400)).toBe(false);
+        const sweep = applyPhotoEraserSweep(
+            [placed], { x: 0.1, y: 0.5 }, { x: 0.9, y: 0.5 }, 400, 400, 24, 'object',
+        );
+        expect(sweep.changed).toBe(false);
+        expect(sweep.annotations).toEqual([placed]);
+    });
+
+    it('turns and trims a picture with the sheet it was placed on', () => {
+        const turned = rotatePhotoAnnotationClockwise(picture({ point: { x: 0.25, y: 0.8 }, rotation: 30 }));
+        expect(turned).toMatchObject({ type: 'image', rotation: 120 });
+        expect((turned as PhotoImage).point.x).toBeCloseTo(0.2, 6);
+        expect((turned as PhotoImage).point.y).toBeCloseTo(0.25, 6);
+
+        const trimmed = cropPhotoAnnotation(
+            picture({ point: { x: 0.5, y: 0.4 } }),
+            { x: 0.2, y: 0.2, width: 0.6, height: 0.4 },
+        );
+        expect((trimmed as PhotoImage).point).toEqual({ x: 0.5, y: 0.5 });
+    });
+
+    it('takes both sides of the box up to an export surface', () => {
+        const exported = scalePhotoAnnotation(picture(), 4);
+        expect(exported.width).toBe(800);
+        expect(exported.height).toBe(600);
+        expect(exported.uri).toBe('file:///tmp/kalp.png');
+    });
+});
+
+describe('the selection frame a finger grabs', () => {
+    const CANVAS = { width: 360, height: 480 };
+
+    function picture(overrides: Partial<PhotoImage> = {}): PhotoImage {
+        return {
+            id: 'pic',
+            type: 'image',
+            uri: 'file:///tmp/kalp.png',
+            point: { x: 0.5, y: 0.5 },
+            width: 200,
+            height: 150,
+            color: '#ffffff',
+            opacity: 1,
+            ...overrides,
+        };
+    }
+
+    function label(overrides: Partial<PhotoText> = {}): PhotoText {
+        return {
+            id: 'txt',
+            type: 'text',
+            point: { x: 0.5, y: 0.5 },
+            text: 'Merhaba',
+            fontSize: 20,
+            bgStyle: 'badge',
+            textAlign: 'center',
+            color: '#ffffff',
+            width: 1,
+            opacity: 1,
+            ...overrides,
+        };
+    }
+
+    /** The frame the editor draws around a picture, in the picture's own upright coordinates. */
+    function frameOf(annotation: PhotoImage) {
+        return {
+            anchor: photoImageAnchorPixels(annotation, CANVAS.width, CANVAS.height),
+            bounds: photoImageBounds(annotation, CANVAS.width, CANVAS.height),
+            rotation: annotation.rotation ?? 0,
+        };
+    }
+
+    it('puts a handle on every corner and the knob above the top edge', () => {
+        const handles = photoSelectionHandlePoints(frameOf(picture()));
+        expect(handles.tl).toEqual({ x: 80, y: 165 });
+        expect(handles.tr).toEqual({ x: 280, y: 165 });
+        expect(handles.bl).toEqual({ x: 80, y: 315 });
+        expect(handles.br).toEqual({ x: 280, y: 315 });
+        expect(handles.rotate).toEqual({ x: 180, y: 165 - PHOTO_ROTATE_HANDLE_OFFSET });
+    });
+
+    it('carries the handles round with a picture that has been turned', () => {
+        const handles = photoSelectionHandlePoints(frameOf(picture({ rotation: 90 })));
+        // A quarter turn about the centre puts the top-left corner where the top-right was.
+        expect(handles.tl.x).toBeCloseTo(255, 6);
+        expect(handles.tl.y).toBeCloseTo(140, 6);
+        expect(handles.rotate.x).toBeCloseTo(180 + 75 + PHOTO_ROTATE_HANDLE_OFFSET, 6);
+        expect(handles.rotate.y).toBeCloseTo(240, 6);
+    });
+
+    it('hangs the knob under a picture that is pressed against the top of the page', () => {
+        const middle = frameOf(picture());
+        expect(photoRotateHandleSide(middle, CANVAS)).toBe('top');
+
+        // Its top edge is 1.8pt from the page's, so a knob above it would be clipped away.
+        const atTheTop = frameOf(picture({ point: { x: 0.5, y: 0.16 } }));
+        expect(photoRotateHandleSide(atTheTop, CANVAS)).toBe('bottom');
+        const knob = photoSelectionHandlePoints(atTheTop, 'bottom').rotate;
+        expect(knob.y).toBeCloseTo(atTheTop.bounds.y + atTheTop.bounds.height + PHOTO_ROTATE_HANDLE_OFFSET, 6);
+        expect(knob.y).toBeLessThan(CANVAS.height);
+
+        // A picture with no room on either side keeps the side it started on.
+        const enormous = frameOf(picture({ width: 4000, height: 4000 }));
+        expect(photoRotateHandleSide(enormous, CANVAS)).toBe('top');
+    });
+
+    it('gives a fingertip the handle it is nearest, and nothing when it is on neither', () => {
+        const handles = photoSelectionHandlePoints(frameOf(picture()));
+        expect(findPhotoSelectionHandle({ x: 84, y: 170 }, handles)).toBe('tl');
+        expect(findPhotoSelectionHandle({ x: 276, y: 310 }, handles)).toBe('br');
+        expect(findPhotoSelectionHandle({ x: 180, y: 137 }, handles)).toBe('rotate');
+        // The middle of a 200x150 picture is nowhere near a corner: that touch is a drag.
+        expect(findPhotoSelectionHandle({ x: 180, y: 240 }, handles)).toBeNull();
+    });
+
+    it('reads a corner drag as a scaling of the diagonal it is dragged along', () => {
+        const geometry = frameOf(picture());
+        // Twice the diagonal out from the corner that stays put.
+        expect(photoHandleResizeFactor({
+            handle: 'br',
+            pointer: { x: 80 + 400, y: 165 + 300 },
+            geometry,
+        })).toBeCloseTo(2, 6);
+        // Sideways off the diagonal only moves the picture along it, never out of aspect.
+        expect(photoHandleResizeFactor({
+            handle: 'br',
+            pointer: { x: 280 + 30, y: 315 - 40 },
+            geometry,
+        })).toBeCloseTo(1, 1);
+        // Dragged back past the corner it is measured from: the smallest box, not a flipped one.
+        expect(photoHandleResizeFactor({
+            handle: 'br',
+            pointer: { x: 20, y: 100 },
+            geometry,
+        })).toBeGreaterThan(0);
+        expect(photoHandleResizeFactor({
+            handle: 'br',
+            pointer: { x: 20, y: 100 },
+            geometry,
+        })).toBeLessThan(0.01);
+    });
+
+    it('resizes a picture about the corner opposite the one being dragged', () => {
+        const before = picture();
+        const after = resizePhotoImageByHandle({
+            annotation: before,
+            handle: 'br',
+            pointer: { x: 80 + 400, y: 165 + 300 },
+            canvas: CANVAS,
+        });
+        expect(after.width).toBeCloseTo(400, 6);
+        expect(after.height).toBeCloseTo(300, 6);
+        expect(after.width / after.height).toBeCloseTo(before.width / before.height, 6);
+        // The top-left corner has not moved a pixel; only the dragged corner travelled.
+        const anchored = photoSelectionHandlePoints(frameOf(after));
+        expect(anchored.tl.x).toBeCloseTo(80, 6);
+        expect(anchored.tl.y).toBeCloseTo(165, 6);
+    });
+
+    it('pins the opposite corner of a turned picture too', () => {
+        const before = picture({ rotation: 37 });
+        const pinned = photoSelectionHandlePoints(frameOf(before)).tl;
+        const after = resizePhotoImageByHandle({
+            annotation: before,
+            handle: 'br',
+            pointer: { x: 300, y: 400 },
+            canvas: CANVAS,
+        });
+        const moved = photoSelectionHandlePoints(frameOf(after)).tl;
+        expect(moved.x).toBeCloseTo(pinned.x, 6);
+        expect(moved.y).toBeCloseTo(pinned.y, 6);
+        expect(after.width / after.height).toBeCloseTo(before.width / before.height, 6);
+        expect(after.rotation).toBe(37);
+    });
+
+    it('will not let a corner drag shrink a picture out of reach', () => {
+        const shrunk = resizePhotoImageByHandle({
+            annotation: picture(),
+            handle: 'tl',
+            pointer: { x: 279, y: 314 },
+            canvas: CANVAS,
+        });
+        expect(Math.min(shrunk.width, shrunk.height)).toBeGreaterThanOrEqual(PHOTO_IMAGE_MIN_EDGE);
+    });
+
+    it('grows a label by its font size, keeping the corner it is measured from', () => {
+        const before = label();
+        const box = calculatePhotoTextBounds(before, CANVAS.width, CANVAS.height);
+        const after = resizePhotoTextByHandle({
+            annotation: before,
+            handle: 'br',
+            pointer: { x: box.x + box.width * 2, y: box.y + box.height * 2 },
+            canvas: CANVAS,
+        });
+        expect(after.fontSize).toBe(40);
+        const grown = calculatePhotoTextBounds(after, CANVAS.width, CANVAS.height);
+        expect(grown.x).toBeCloseTo(box.x, 6);
+        expect(grown.y).toBeCloseTo(box.y, 6);
+    });
+
+    it('keeps a label inside the size range every other control uses', () => {
+        const huge = resizePhotoTextByHandle({
+            annotation: label(),
+            handle: 'br',
+            pointer: { x: 4000, y: 4000 },
+            canvas: CANVAS,
+        });
+        expect(huge.fontSize).toBe(PHOTO_TEXT_MAX_SIZE);
+        expect(clampPhotoTextSize(4)).toBe(PHOTO_TEXT_MIN_SIZE);
+        expect(clampPhotoTextSize(Number.NaN)).toBe(PHOTO_TEXT_MIN_SIZE);
+    });
+
+    it('leaves an annotation alone when the drag asks for the size it already has', () => {
+        const before = picture();
+        expect(resizePhotoImageByHandle({
+            annotation: before,
+            handle: 'br',
+            pointer: { x: 280, y: 315 },
+            canvas: CANVAS,
+        })).toBe(before);
+
+        const text = label();
+        const box = calculatePhotoTextBounds(text, CANVAS.width, CANVAS.height);
+        expect(resizePhotoTextByHandle({
+            annotation: text,
+            handle: 'br',
+            pointer: { x: box.x + box.width, y: box.y + box.height },
+            canvas: CANVAS,
+        })).toBe(text);
+    });
+
+    it('leaves the middle of even a tiny label to the label', () => {
+        const tiny = label({ fontSize: PHOTO_TEXT_MIN_SIZE, text: 'A' });
+        const bounds = calculatePhotoTextBounds(tiny, CANVAS.width, CANVAS.height);
+        const geometry = {
+            anchor: photoTextAnchorPixels(tiny, CANVAS.width, CANVAS.height),
+            bounds,
+            rotation: 0,
+        };
+        const radius = photoHandleTouchRadius(bounds);
+        expect(radius).toBeLessThan(Math.hypot(bounds.width, bounds.height) / 2);
+        expect(findPhotoSelectionHandle(geometry.anchor, photoSelectionHandlePoints(geometry), radius)).toBeNull();
+        // Its corners are still reachable; only the middle of the box was given back.
+        const corner = photoSelectionHandlePoints(geometry).br;
+        expect(findPhotoSelectionHandle(corner, photoSelectionHandlePoints(geometry), radius)).toBe('br');
+        // A picture with room to spare keeps the full fingertip.
+        expect(photoHandleTouchRadius({ x: 0, y: 0, width: 300, height: 240 })).toBe(26);
+    });
+
+    it('names the corner that has to stand still', () => {
+        expect(oppositePhotoCorner('tl')).toBe('br');
+        expect(oppositePhotoCorner('tr')).toBe('bl');
+        expect(oppositePhotoCorner('bl')).toBe('tr');
+        expect(oppositePhotoCorner('br')).toBe('tl');
+    });
+
+    it('moves the anchor by exactly what the resize pushed the fixed corner', () => {
+        const before = frameOf(picture());
+        const after = { ...before, bounds: { x: 80, y: 165, width: 400, height: 300 } };
+        const anchor = photoAnchorForFixedCorner({ handle: 'br', before, after });
+        // The box measured with the anchor left alone starts at the same top-left corner, so
+        // the anchor does not have to move at all to keep it there.
+        expect(anchor.x).toBeCloseTo(before.anchor.x, 6);
+        expect(anchor.y).toBeCloseTo(before.anchor.y, 6);
+    });
+});
+
+describe('turning an annotation by its knob', () => {
+    const ANCHOR = { x: 180, y: 240 };
+
+    it('reports the direction of a finger in the degrees annotations store', () => {
+        expect(photoPointerAngle({ x: 280, y: 240 }, ANCHOR)).toBeCloseTo(0, 6);
+        expect(photoPointerAngle({ x: 180, y: 340 }, ANCHOR)).toBeCloseTo(90, 6);
+        expect(photoPointerAngle({ x: 180, y: 140 }, ANCHOR)).toBeCloseTo(270, 6);
+    });
+
+    it('turns with the finger from wherever the knob was taken hold of', () => {
+        // The knob sits above the frame, so grabbing an upright picture starts 90 degrees round.
+        const grabOffset = photoPointerAngle({ x: 180, y: 140 }, ANCHOR);
+        const turned = resolvePhotoHandleRotation({
+            pointer: { x: 180, y: 340 },
+            anchor: ANCHOR,
+            grabOffset,
+        });
+        expect(turned.rotation).toBeCloseTo(180, 6);
+    });
+
+    it('settles onto a quarter turn the finger is nearly at, and turns freely past that', () => {
+        const nearlyStraight = resolvePhotoHandleRotation({
+            pointer: { x: 180 + 100 * Math.cos((43 * Math.PI) / 180), y: 240 + 100 * Math.sin((43 * Math.PI) / 180) },
+            anchor: ANCHOR,
+            grabOffset: 0,
+        });
+        expect(nearlyStraight).toEqual({ rotation: 45, snapped: true });
+
+        const deliberate = resolvePhotoHandleRotation({
+            pointer: { x: 180 + 100 * Math.cos((30 * Math.PI) / 180), y: 240 + 100 * Math.sin((30 * Math.PI) / 180) },
+            anchor: ANCHOR,
+            grabOffset: 0,
+        });
+        expect(deliberate.snapped).toBe(false);
+        expect(deliberate.rotation).toBeCloseTo(30, 4);
+    });
+
+    it('can be told not to settle at all', () => {
+        const free = resolvePhotoHandleRotation({
+            pointer: { x: 180 + 100 * Math.cos((43 * Math.PI) / 180), y: 240 + 100 * Math.sin((43 * Math.PI) / 180) },
+            anchor: ANCHOR,
+            grabOffset: 0,
+            snap: false,
+        });
+        expect(free.snapped).toBe(false);
+        expect(free.rotation).toBeCloseTo(43, 4);
+    });
+});
+
+describe('settling a drag onto the middle of the page', () => {
+    const CANVAS = { width: 360, height: 480 };
+
+    it('takes a nearly centred drag to the centre and says which guide caught it', () => {
+        const snap = resolvePhotoDragSnap({ point: { x: 0.49, y: 0.7 }, canvas: CANVAS });
+        expect(snap.point.x).toBeCloseTo(0.5, 6);
+        expect(snap.point.y).toBeCloseTo(0.7, 6);
+        expect(snap.guides).toEqual({ x: true, y: false });
+    });
+
+    it('centres the box rather than the anchor a label hangs from', () => {
+        const snap = resolvePhotoDragSnap({
+            point: { x: 0.44, y: 0.5 },
+            centreOffset: { x: 20, y: 0 },
+            canvas: CANVAS,
+        });
+        expect(snap.point.x * CANVAS.width + 20).toBeCloseTo(180, 6);
+        expect(snap.guides).toEqual({ x: true, y: true });
+    });
+
+    it('leaves a drag that is nowhere near the middle exactly where it is', () => {
+        const point = { x: 0.2, y: 0.8 };
+        const snap = resolvePhotoDragSnap({ point, canvas: CANVAS });
+        expect(snap.point).toEqual(point);
+        expect(snap.guides).toEqual({ x: false, y: false });
+    });
+
+    it('is not fooled by a canvas or an offset that has no size', () => {
+        const snap = resolvePhotoDragSnap({
+            point: { x: 0.5, y: 0.5 },
+            centreOffset: { x: Number.NaN, y: Number.NaN },
+            canvas: { width: 0, height: 0 },
+        });
+        expect(Number.isFinite(snap.point.x)).toBe(true);
+        expect(Number.isFinite(snap.point.y)).toBe(true);
     });
 });

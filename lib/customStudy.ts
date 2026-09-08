@@ -55,12 +55,25 @@ export type CustomStudyRequest =
         excludeTags: string[];
     };
 
+/**
+ * Anki's preview delays for a custom study session, in Again/Hard/Good order.
+ *
+ * `custom_study_config` writes them on every session it builds — 60s, 600s and a zero that
+ * retires the card — rather than leaving whatever the deck happened to carry. It matters because
+ * the session deck is reused: the whole filtered config is replaced on each run
+ * (`apply_update_to_filtered_deck` swaps the deck's entire `DeckKind::Filtered`), so a delay the
+ * learner edited by hand last time must not survive into the next session.
+ */
+export const CUSTOM_STUDY_PREVIEW_DELAYS: readonly [number, number, number] = [60, 600, 0] as const;
+
 /** The filtered-deck term a custom study action builds. */
 export interface CustomStudySessionConfig {
     search: string;
     limit: number;
     order: number;
     reschedule: boolean;
+    /** Again/Hard/Good preview delays in seconds; always Anki's own three values. */
+    previewDelays: readonly [number, number, number];
 }
 
 export interface CustomStudyValueBounds {
@@ -83,6 +96,32 @@ export const EMPTY_CUSTOM_STUDY_DEFAULTS: CustomStudyDefaults = {
     includeTags: [],
     excludeTags: [],
 };
+
+/**
+ * What the tag chooser opens on.
+ *
+ * Anki does not replay the remembered lists directly: `custom_study_defaults` walks the tags the
+ * deck has *now* and marks each one included or excluded, so a tag that has since been renamed or
+ * removed from every note in the deck simply is not there to be preselected — and the "require one
+ * or more of these tags" box follows suit, because `TagLimit` ticks it only when a tag it actually
+ * listed came back included. Replaying the stored list instead would put a tag into the search
+ * that no card in the deck carries, and the session would gather nothing.
+ */
+export function customStudyTagSelection(
+    deckTags: string[],
+    defaults: CustomStudyDefaults = EMPTY_CUSTOM_STUDY_DEFAULTS,
+): { includeTags: string[]; excludeTags: string[]; requireTags: boolean } {
+    const remembered = (tags: string[]): string[] => {
+        const wanted = new Set(tags);
+        return deckTags.filter((tag) => wanted.has(tag));
+    };
+    const includeTags = remembered(defaults.includeTags);
+    return {
+        includeTags,
+        excludeTags: remembered(defaults.excludeTags),
+        requireTags: includeTags.length > 0,
+    };
+}
 
 /**
  * Spinner bounds per option. The two limit options accept negative deltas — Anki lets a learner
@@ -194,6 +233,7 @@ export function customStudySessionConfig(
                 limit: CUSTOM_STUDY_MAX_VALUE,
                 order: FILTERED_SEARCH_ORDER.random,
                 reschedule: false,
+                previewDelays: CUSTOM_STUDY_PREVIEW_DELAYS,
             };
         case 'ahead':
             return {
@@ -201,6 +241,7 @@ export function customStudySessionConfig(
                 limit: CUSTOM_STUDY_MAX_VALUE,
                 order: FILTERED_SEARCH_ORDER.due,
                 reschedule: true,
+                previewDelays: CUSTOM_STUDY_PREVIEW_DELAYS,
             };
         case 'preview':
             return {
@@ -208,6 +249,7 @@ export function customStudySessionConfig(
                 limit: CUSTOM_STUDY_MAX_VALUE,
                 order: FILTERED_SEARCH_ORDER.added,
                 reschedule: false,
+                previewDelays: CUSTOM_STUDY_PREVIEW_DELAYS,
             };
         case 'cram': {
             const { state, order, reschedule } = CRAM_KIND_SPEC[request.kind];
@@ -220,6 +262,7 @@ export function customStudySessionConfig(
                 limit: clampValue(request.cardLimit, 1, CUSTOM_STUDY_MAX_VALUE),
                 order,
                 reschedule,
+                previewDelays: CUSTOM_STUDY_PREVIEW_DELAYS,
             };
         }
     }

@@ -29,7 +29,13 @@ export interface Subject {
     topics: string[];
 }
 
-/** Anki's ReviewCardOrder, minus the two FSRS-only retrievability orders. */
+/**
+ * Anki's ReviewCardOrder in full (proto/anki/deck_config.proto).
+ *
+ * The two retrievability orders are offered only while FSRS is on, because that is the only time
+ * a card has the memory state they read; the deck options screen hides them otherwise, exactly as
+ * Anki's own `reviewOrderChoices(fsrs)` does.
+ */
 export type ReviewSortOrder =
     | 'dueRandom'
     | 'dueThenDeck'
@@ -38,6 +44,8 @@ export type ReviewSortOrder =
     | 'intervalsDesc'
     | 'easeAsc'
     | 'easeDesc'
+    | 'retrievabilityAsc'
+    | 'retrievabilityDesc'
     | 'relativeOverdueness'
     | 'random'
     | 'added'
@@ -378,10 +386,11 @@ export interface AppSettings {
     /** Reviews logged before this epoch-ms timestamp are ignored when deriving memory states. */
     ignoreRevlogsBeforeMs?: number;
     /**
-     * Anki's "reschedule cards on change": whether enabling FSRS or re-optimizing also rewrites
-     * existing due dates, rather than only affecting future answers.
+     * Anki's "reschedule cards on change" is deliberately absent: it is a request carried by one
+     * save of the deck options, not a stored preference, so that agreeing to rewrite every due
+     * date once cannot quietly rewrite them all again on the next unrelated save. The deck
+     * options screen holds it for the length of one save (`app/deck-options.tsx`).
      */
-    fsrsRescheduleOnChange?: boolean;
     /** Anki's collection-wide "short-term scheduling with learning steps" switch. */
     fsrsShortTermWithSteps?: boolean;
 }

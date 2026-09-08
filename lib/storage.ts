@@ -179,7 +179,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // FSRS is off until the learner turns it on, exactly as in Anki. The preset supplies the
     // parameters and retention targets once it is enabled.
     fsrsEnabled: false,
-    fsrsRescheduleOnChange: false,
     fsrsShortTermWithSteps: false,
     fsrsParameters: [...DEFAULT_FSRS_PARAMETERS],
     desiredRetention: FSRS_DEFAULT_DESIRED_RETENTION,
@@ -552,7 +551,6 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             // Collection-wide FSRS switches. Parameters and retention live on the preset and are
             // resolved per deck, so they are deliberately not stored here.
             fsrsEnabled: parsed.fsrsEnabled === true,
-            fsrsRescheduleOnChange: parsed.fsrsRescheduleOnChange === true,
             fsrsShortTermWithSteps: parsed.fsrsShortTermWithSteps === true,
         };
     } catch (e) {
@@ -626,7 +624,6 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         algorithm: settings.algorithm,
         audioPlaybackRate: settings.audioPlaybackRate ?? 1.0,
         fsrsEnabled: settings.fsrsEnabled === true,
-        fsrsRescheduleOnChange: settings.fsrsRescheduleOnChange === true,
         fsrsShortTermWithSteps: settings.fsrsShortTermWithSteps === true,
     };
 
@@ -640,7 +637,7 @@ function persistAppSettingsMeta(settings: AppSettings): void {
  */
 export function saveCollectionDeckOptions(options: Pick<AppSettings,
     'newCardsIgnoreReviewLimit' | 'limitsStartFromTop'>
-    & Partial<Pick<AppSettings, 'fsrsEnabled' | 'fsrsRescheduleOnChange' | 'fsrsShortTermWithSteps'>>): void {
+    & Partial<Pick<AppSettings, 'fsrsEnabled' | 'fsrsShortTermWithSteps'>>): void {
     const current = loadSettings();
     const validated = validateSettings({ ...current, ...options } as unknown as Record<string, unknown>);
     persistAppSettingsMeta(validated);

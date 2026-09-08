@@ -59,6 +59,12 @@ vi.mock('./db', () => ({
         execSync: (sql: string) => {
             shared.txLog.push(sql.trim());
         },
+        // The only query the code under test runs here is the "end of the new queue" lookup.
+        getFirstSync: (_sql: string, excludedCardId?: number) => ({
+            maxDue: [...shared.cards.values()]
+                .filter((card) => card.type === 0 && card.id !== excludedCardId)
+                .reduce((max, card) => Math.max(max, card.due), 0),
+        }),
     }),
 }));
 
@@ -109,7 +115,7 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard, forgetCard, setCardDueInDays, undoAnswer } from './studyRepository';
+import { answerStudyCard, forgetCard, undoAnswer } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
 import { deleteReviewById, logManualEntry } from './reviewLogger';
@@ -427,34 +433,6 @@ describe('forgetCard', () => {
         expect(updated.left).toBe(0);
     });
 
-    it('is a no-op when the card does not exist', () => {
-        expect(() => forgetCard(999, settings)).not.toThrow();
-        expect(shared.cards.has(999)).toBe(false);
-    });
-});
-
-describe('setCardDueInDays', () => {
-    beforeEach(() => {
-        shared.cards.clear();
-        shared.notes.clear();
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date(2026, 5, 20, 12, 0, 0));
-    });
-
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
-    it('pins a card into the review queue, due N days from today', () => {
-        shared.cards.set(31, baseCard(31, 1, 0, 0)); // starts as a new card
-
-        setCardDueInDays(31, 3, settings);
-
-        const updated = shared.cards.get(31)!;
-        expect(updated.type).toBe(2);
-        expect(updated.queue).toBe(2);
-        expect(updated.ivl).toBe(3);
-    });
 
     it('leaves the reset marker FSRS looks for when a card is forgotten', () => {
         shared.cards.set(33, { ...baseCard(33, 1, 2, 2), ivl: 45 });
@@ -472,31 +450,19 @@ describe('setCardDueInDays', () => {
         );
     });
 
-    it('records a reschedule rather than a reset when the due date is set', () => {
-        shared.cards.set(34, { ...baseCard(34, 1, 2, 2), ivl: 6 });
-        vi.mocked(logManualEntry).mockClear();
+    it('parks the card at the end of the new queue instead of keeping its review due day', () => {
+        shared.cards.set(35, { ...baseCard(35, 1, 2, 2), due: 20_800, ivl: 45 });
+        shared.cards.set(36, { ...baseCard(36, 1, 0, 0), due: 7 });
 
-        setCardDueInDays(34, 3, settings);
+        forgetCard(35, settings);
 
-        // A reschedule must not read as a reset, or moving a card would silently wipe its
-        // memory state; that is what the separate 'rescheduled' kind is for.
-        expect(logManualEntry).toHaveBeenCalledWith(
-            expect.objectContaining({ id: 34 }),
-            'rescheduled',
-            6,
-            6,
-        );
+        // `due` is a queue position once the card is new again, so the day number it carried as a
+        // review card would bury it behind every card the learner owns.
+        expect(shared.cards.get(35)!.due).toBe(8);
     });
-
-    it('clamps negative/invalid day counts to today (0) without touching the interval', () => {
-        shared.cards.set(32, baseCard(32, 1, 2, 2));
-
-        setCardDueInDays(32, -5, settings);
-
-        const updated = shared.cards.get(32)!;
-        expect(updated.due).toBe(localDayNumber(Date.now(), settings.dayRolloverHour));
-        // Set Due Date moves when a card comes up, not how well it is known: under SM-2 a review
-        // card keeps the interval it earned unless the user forces one with the trailing "!".
-        expect(updated.ivl).toBe(6);
+    it('is a no-op when the card does not exist', () => {
+        expect(() => forgetCard(999, settings)).not.toThrow();
+        expect(shared.cards.has(999)).toBe(false);
     });
 });
+

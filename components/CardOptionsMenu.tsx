@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
-import { sanitizeUnsignedIntegerDraft } from '../lib/boundedNumber';
+import { parseDueRange } from '../lib/browserSelection';
 
 type MenuView = 'menu' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
@@ -55,7 +55,7 @@ export interface CardOptionsMenuProps {
     onBuryCard: () => void;
     onSuspendCard: () => void;
     onForgetCard: () => void;
-    onSetDueDate: (days: number) => void;
+    onSetDueDate: (spec: string) => void;
     onDeckOptions: () => void;
     onCardInfo?: () => void;
     onToggleMarkNote: () => void;
@@ -97,6 +97,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const translateX = useRef(new Animated.Value(360)).current;
     const [view, setView] = useState<MenuView>('menu');
     const [dueDateInput, setDueDateInput] = useState('1');
+    const dueDateSpecValid = parseDueRange(dueDateInput) !== null;
     const [tagsInput, setTagsInput] = useState('');
 
     useEffect(() => {
@@ -389,22 +390,24 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                         {view === 'dueDate' && (
                             <View style={styles.formContent}>
                                 <Text style={styles.subDesc}>{l('Kart kaç gün sonra yeniden gösterilsin?', 'Show this card again in how many days?')}</Text>
+                                <Text style={styles.subDesc}>
+                                    {l('0 = bugün, 1 = yarın, 3-7 = aralıktan rastgele. Sonuna ! eklerseniz aralık da bu değere ayarlanır.',
+                                       '0 = today, 1 = tomorrow, 3-7 = random in range. Append ! to also set the interval to that value.')}
+                                </Text>
                                 <TextInput
                                     style={styles.textInput}
-                                    keyboardType="number-pad"
-                                    inputMode="numeric"
                                     value={dueDateInput}
-                                    onChangeText={(value) => setDueDateInput(sanitizeUnsignedIntegerDraft(value, 5))}
-                                    maxLength={5}
-                                    placeholder={l('gün', 'days')}
+                                    onChangeText={setDueDateInput}
+                                    maxLength={12}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    placeholder={l('örn. 1 veya 3-7!', 'e.g. 1 or 3-7!')}
                                     placeholderTextColor={colors.textMuted}
                                 />
                                 <TouchableOpacity
-                                    style={styles.confirmBtn}
-                                    onPress={() => {
-                                        const days = Math.max(0, Math.floor(Number(dueDateInput) || 0));
-                                        runAndClose(() => props.onSetDueDate(days));
-                                    }}
+                                    style={[styles.confirmBtn, !dueDateSpecValid && styles.confirmBtnDisabled]}
+                                    disabled={!dueDateSpecValid}
+                                    onPress={() => runAndClose(() => props.onSetDueDate(dueDateInput))}
                                 >
                                     <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>
@@ -582,6 +585,9 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accent,
+        },
+        confirmBtnDisabled: {
+            opacity: 0.4,
         },
         confirmBtnText: { color: colors.white, fontSize: FontSize.md, fontWeight: '700' },
     });

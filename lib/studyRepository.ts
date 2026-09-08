@@ -4,7 +4,7 @@ import { FSRS6_DEFAULT_DECAY } from './fsrs';
 import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import { getAllSubjects, getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
-import type { AnkiCard, Deck, Note, DeckConfig, NoteType } from './models';
+import type { AnkiCard, Deck, Note, DeckConfig, NoteType, ReviewLog } from './models';
 import {
     ankiCardIdFromLegacyCardId,
     ankiCardToCardState,
@@ -17,9 +17,7 @@ import {
 } from './ankiState';
 import { getDeckAncestors } from './models';
 import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
-import { constrainedFuzzBounds, setDueDateInterval } from './schedulingIntervals';
-import { fsrsLastReviewInfo } from './fsrsMemory';
-import { revlogByCard } from './fsrsMaintenance';
+import { constrainedFuzzBounds } from './schedulingIntervals';
 import { foldSearchNode, parseSearchQuery, unquoteSearchValue } from './searchQuery';
 import { compileCardMatcher, type CardSearchContext } from './cardSearchMatch';
 import {
@@ -412,8 +410,10 @@ function clauseForSearchTerm(term: string): SearchFragment | null {
         if (!Number.isFinite(days) || days <= 0) return null;
 
         const now = Date.now();
+        // Uncapped for the same reason `added:` is: the 31-day ceiling belonged to Anki before
+        // 2.1.39, and `write_rated` has counted back as far as it is asked to ever since.
         const cutoff = nextRolloverMs(now, collectionSearchSettings().rolloverHour)
-            - Math.min(365, Math.floor(days)) * 86400000;
+            - Math.floor(days) * 86400000;
         if (ease !== null && Number.isInteger(ease) && ease >= 1 && ease <= 4) {
             return {
                 sql: 'c.id IN (SELECT cardId FROM revlog WHERE id >= ? AND ease = ?)',
@@ -433,8 +433,11 @@ function clauseForSearchTerm(term: string): SearchFragment | null {
     if (term.startsWith('added:')) {
         const days = Number(unquote(term.slice(6)));
         if (!Number.isFinite(days) || days <= 0) return null;
+        // The window is not capped: `parse_added` only raises a zero to one, and `write_added`
+        // subtracts the full count of days from the rollover. A cap here would quietly shorten
+        // Custom Study's "preview new cards added in the last N days", whose spinner runs to 99999.
         const cutoff = nextRolloverMs(Date.now(), collectionSearchSettings().rolloverHour)
-            - Math.min(365, Math.floor(days)) * 86400000;
+            - Math.floor(days) * 86400000;
         return {
             sql: '(CASE WHEN c.created_at > 0 THEN c.created_at ELSE c.id END) >= ?',
             params: [cutoff],
@@ -948,7 +951,15 @@ function applyReviewOrder(cards: StudyCard[], settings: AppSettings, daySeed: st
     const order = settings.reviewSortOrder ?? 'dueRandom';
     const needsDeckRank = order === 'dueThenDeck' || order === 'deckThenDue';
     const deckRank = needsDeckRank ? buildDeckRank() : undefined;
-    return sortReviewCards(cards, order, { daySeed, fallbackDay: today, today, deckRank });
+    return sortReviewCards(cards, order, {
+        daySeed,
+        fallbackDay: today,
+        today,
+        deckRank,
+        // Anki passes the collection's scheduler into `review_order_sql`: the ease and relative
+        // overdueness orders read FSRS columns while it is on.
+        fsrs: settings.fsrsEnabled === true,
+    });
 }
 
 /** Display position of each deck, by the same name ordering the deck list uses. */
@@ -2061,6 +2072,12 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
     const card = getAnkiCard(cardId);
     if (!card) return;
 
+    // Anki refuses to bury a suspended card, because a bury expires at the next rollover and
+    // would therefore quietly bring the card back — see the "do not bury suspended cards as
+    // that would unsuspend them" branch of rslib's bury_or_suspend_cards. Unburying is the
+    // mirror image: only a card that is actually buried goes back into its queue.
+    if (buried ? card.queue === -1 : card.queue !== -2 && card.queue !== -3) return;
+
     saveAnkiCard({
         ...card,
         // Manual bury from the UI = user-buried (-3) in Anki.
@@ -2070,50 +2087,34 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
     });
 }
 
-/** Anki's "Forget": discards all scheduling progress and returns the card to brand-new. */
-export function forgetCard(cardId: number, settings: AppSettings): void {
-    const card = getAnkiCard(cardId);
-    if (!card) return;
-    const freshState = makeDefaultCardState(cardId, settings);
-    saveAnkiCard(cardStateToAnkiCard(card, freshState, settings));
-    // The reset marker has to outlive the card's own fields: it is the only thing that tells FSRS
-    // to stop replaying the history from before the user forgot the card.
-    logManualEntry(card, 'reset', 0, card.ivl);
+/**
+ * Position a card returned to the new queue takes: the end of that queue, as in Anki.
+ *
+ * `due` means something different for every card type — for a new card it is the queue position,
+ * so a review card's day number cannot simply be left in place when the card becomes new again.
+ */
+export function nextNewCardPosition(excludedCardId?: number): number {
+    const row = getDB().getFirstSync<{ maxDue: number | null }>(
+        `SELECT MAX(due) AS maxDue FROM anki_cards WHERE type = 0${excludedCardId === undefined ? '' : ' AND id != ?'}`,
+        ...(excludedCardId === undefined ? [] : [excludedCardId]),
+    );
+    return Math.max(0, Math.floor(row?.maxDue ?? 0)) + 1;
 }
 
-/** Anki's "Set Due Date": pins the card into the review queue, due in `days` days from today. */
-export function setCardDueInDays(cardId: number, days: number, settings: AppSettings): void {
+/** Anki's "Forget": discards all scheduling progress and returns the card to brand-new. */
+export function forgetCard(cardId: number, settings: AppSettings): ReviewLog | null {
     const card = getAnkiCard(cardId);
-    if (!card) return;
-    const nowMs = Date.now();
-    const today = localDayNumber(nowMs, settings.dayRolloverHour);
-    const clampedDays = Math.max(0, Math.floor(days) || 0);
-    const lastReviewedAtMs = settings.fsrsEnabled === true
-        ? fsrsLastReviewInfo(revlogByCard([card.id]).get(card.id) ?? []).lastReviewedAtMs
-        : null;
-    // The reviewer's Set Due Date has to write the same interval the browser's does, or the same
-    // action would mean two different things depending on which screen the user reached it from.
-    const ivl = setDueDateInterval({
-        fsrsEnabled: settings.fsrsEnabled === true,
-        wasNew: card.type === 0,
-        currentInterval: card.ivl,
-        daysSinceLastReview: lastReviewedAtMs === null
-            ? null
-            : today - localDayNumber(lastReviewedAtMs, settings.dayRolloverHour),
-        requestedDays: clampedDays,
-        forceInterval: false,
-    });
+    if (!card) return null;
+    const freshState = makeDefaultCardState(cardId, settings);
     saveAnkiCard({
-        ...card,
-        type: 2,
-        queue: 2,
-        due: today + clampedDays,
-        ivl,
-        left: 0,
-        mod: Math.floor(nowMs / 1000),
-        usn: -1,
+        ...cardStateToAnkiCard(card, freshState, settings),
+        // A forgotten card joins the back of the new queue. Without this it would keep the `due`
+        // it held as a review card — a day number read as a queue position of ~20 000.
+        due: nextNewCardPosition(cardId),
     });
-    logManualEntry(card, 'rescheduled', ivl, card.ivl);
+    // The reset marker has to outlive the card's own fields: it is the only thing that tells FSRS
+    // to stop replaying the history from before the user forgot the card.
+    return logManualEntry(card, 'reset', 0, card.ivl);
 }
 
 export function getCardState(cardId: number, settings: AppSettings): CardState {

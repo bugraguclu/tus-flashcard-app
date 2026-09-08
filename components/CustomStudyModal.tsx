@@ -31,6 +31,7 @@ import {
     CUSTOM_STUDY_CRAM_KINDS,
     CUSTOM_STUDY_MAX_TAGS,
     customStudySessionConfig,
+    customStudyTagSelection,
     customStudyValueBounds,
     EMPTY_CUSTOM_STUDY_DEFAULTS,
     type CustomStudyCramKind,
@@ -160,11 +161,15 @@ export default function CustomStudyModal({
         const deckDefaults = getCustomStudyDefaults(deck.id);
         setDefaults(deckDefaults);
         setAvailability(readAvailability(deck, settings));
-        setDeckTags(getAllTags({ deckIds: deckSubtreeIds(deck) }));
-        setIncludeTags(deckDefaults.includeTags);
-        setExcludeTags(deckDefaults.excludeTags);
-        // Anki ticks "require one or more of these tags" only when the last session used one.
-        setRequireTags(deckDefaults.includeTags.length > 0);
+        const tags = getAllTags({ deckIds: deckSubtreeIds(deck) });
+        setDeckTags(tags);
+        // Anki marks the deck's current tags as included/excluded rather than replaying the stored
+        // lists, so a tag the deck no longer carries drops out of the selection — and with it the
+        // "require one or more of these tags" tick, which Anki only sets for a tag it listed.
+        const selection = customStudyTagSelection(tags, deckDefaults);
+        setIncludeTags(selection.includeTags);
+        setExcludeTags(selection.excludeTags);
+        setRequireTags(selection.requireTags);
         setChoosingTags(false);
         setCramKind('new');
         setOption('newLimit');
@@ -373,6 +378,10 @@ export default function CustomStudyModal({
             );
             return;
         }
+        // Anki's tag chooser closes before the session is built, so a build that gathers nothing
+        // leaves the learner back on the option list — where the criteria can be widened — rather
+        // than in front of the tag lists it already accepted.
+        setChoosingTags(false);
         buildSession({
             option: 'cram',
             kind: cramKind,

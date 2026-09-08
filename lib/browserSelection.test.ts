@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnkiCard } from './models';
 import type { AppSettings } from './types';
+import { localDayNumber } from './ankiState';
+import { logManualEntry } from './reviewLogger';
 
 const harness = vi.hoisted(() => ({
     cards: new Map<number, AnkiCard>(),
@@ -15,7 +17,7 @@ vi.mock('./noteManager', () => ({
 }));
 
 vi.mock('./reviewLogger', () => ({
-    logManualEntry: vi.fn(),
+    logManualEntry: vi.fn(() => ({ id: 1 })),
 }));
 
 vi.mock('./studyRepository', () => ({
@@ -29,7 +31,12 @@ vi.mock('./studyRepository', () => ({
     },
     forgetCard: (cardId: number) => {
         const card = harness.cards.get(cardId)!;
-        harness.cards.set(cardId, { ...card, type: 0, queue: 0, ivl: 0, reps: 0, lapses: 0, left: 0 });
+        // Mirrors the real helper: a forgotten card goes to the back of the new queue, because
+        // `due` is a queue position once the card is new again.
+        const position = [...harness.cards.values()]
+            .filter((other) => other.id !== cardId && other.type === 0)
+            .reduce((max, other) => Math.max(max, other.due), 0) + 1;
+        harness.cards.set(cardId, { ...card, type: 0, queue: 0, due: position, ivl: 0, reps: 0, lapses: 0, left: 0 });
     },
     answerStudyCard: (cardId: number, grade: number) => {
         harness.grades.push({ cardId, grade });
@@ -136,6 +143,31 @@ describe('browser selection scheduling operations', () => {
 
         setSelectedDueDate([1], { minDays: 7, maxDays: 7, forceInterval: true }, settings);
         expect(harness.cards.get(1)?.ivl).toBe(7);
+    });
+
+    it('pins a card into the review queue on the requested day, negatives included', () => {
+        harness.cards.set(1, card(1, { type: 0, queue: 0 }));
+        harness.cards.set(2, card(2, { type: 2, queue: 2, ivl: 6 }));
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+
+        setSelectedDueDate([1], { minDays: 3, maxDays: 3, forceInterval: false }, settings);
+        expect(harness.cards.get(1)).toMatchObject({ type: 2, queue: 2, due: today + 3 });
+
+        // Anki's dialog accepts a negative day to make a card overdue on purpose.
+        setSelectedDueDate([2], { minDays: -5, maxDays: -5, forceInterval: false }, settings);
+        expect(harness.cards.get(2)).toMatchObject({ due: today - 5, ivl: 6 });
+    });
+
+    it('records a reschedule rather than a reset, and hands the row back for undo', () => {
+        harness.cards.set(1, card(1, { type: 2, queue: 2, ivl: 6 }));
+        vi.mocked(logManualEntry).mockClear().mockReturnValue({ id: 900 } as never);
+
+        const written = setSelectedDueDate([1], { minDays: 3, maxDays: 3, forceInterval: false }, settings);
+
+        // A reschedule must not read as a reset, or moving a card would silently wipe its
+        // memory state; that is what the separate 'rescheduled' kind is for.
+        expect(logManualEntry).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), 'rescheduled', 6, 6);
+        expect(written).toEqual([{ id: 900 }]);
     });
 
     it('resets cards to the end of the new queue and grades through the scheduler path', () => {

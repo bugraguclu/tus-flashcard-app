@@ -33,7 +33,31 @@ export type PhotoText = AnnotationBase & {
     rotation?: number;
 };
 
-export type PhotoAnnotation = PhotoStroke | PhotoShape | PhotoText;
+/**
+ * A picture placed on the page.
+ *
+ * Unlike the page's own source bitmap, this one is an annotation: it is carried through undo,
+ * crop and rotation with everything else the learner put on the sheet, and it is baked into the
+ * export rather than kept as a file of its own. Only the reference is stored, so the picture has
+ * to stay readable at `uri` for as long as the editor is open.
+ */
+export type PhotoImage = AnnotationBase & {
+    type: 'image';
+    /** Where the picture's bytes are: a picker or camera URI, read again at export time. */
+    uri: string;
+    /** Centre of the picture on the page, normalized. Rotation turns it around this point. */
+    point: PhotoPoint;
+    /**
+     * The box the picture is drawn in, in the units of the surface it was placed on.
+     * `AnnotationBase.width` carries the other half of it, which is why `scalePhotoAnnotation`
+     * already takes the picture up to an export surface — the height only has to follow.
+     */
+    height: number;
+    /** Clockwise rotation in degrees around the centre. */
+    rotation?: number;
+};
+
+export type PhotoAnnotation = PhotoStroke | PhotoShape | PhotoText | PhotoImage;
 
 export type PhotoTextBounds = {
     x: number;
@@ -158,6 +182,40 @@ export function photoTextAnchorPixels(
 }
 
 /**
+ * Turn a canvas pixel around an anchor, the way an annotation's own twist turns everything laid
+ * out from it. Labels and pictures are both drawn upright and then twisted around their anchor,
+ * so a corner's real place on the canvas is its upright place put through this.
+ */
+function rotateAroundAnchor(
+    px: number,
+    py: number,
+    anchor: { x: number; y: number },
+    rotation: number,
+): { x: number; y: number } {
+    if (!rotation) return { x: px, y: py };
+    const radians = (rotation * Math.PI) / 180;
+    const dx = px - anchor.x;
+    const dy = py - anchor.y;
+    return {
+        x: anchor.x + dx * Math.cos(radians) - dy * Math.sin(radians),
+        y: anchor.y + dx * Math.sin(radians) + dy * Math.cos(radians),
+    };
+}
+
+/**
+ * That turn undone: a canvas pixel mapped back into the frame the annotation was laid out in,
+ * so hit tests and eraser sweeps stay accurate once the user has twisted something.
+ */
+function unrotateAroundAnchor(
+    px: number,
+    py: number,
+    anchor: { x: number; y: number },
+    rotation: number,
+): { x: number; y: number } {
+    return rotateAroundAnchor(px, py, anchor, -rotation);
+}
+
+/**
  * Map a canvas pixel into the text's own (unrotated) frame, so hit tests and eraser
  * sweeps stay accurate once the user has twisted a label.
  */
@@ -168,16 +226,12 @@ export function toPhotoTextLocalPixels(
     canvasWidth: number,
     canvasHeight: number,
 ): { x: number; y: number } {
-    const rotation = textAnnotation.rotation ?? 0;
-    if (!rotation) return { x: px, y: py };
-    const anchor = photoTextAnchorPixels(textAnnotation, canvasWidth, canvasHeight);
-    const radians = (-rotation * Math.PI) / 180;
-    const dx = px - anchor.x;
-    const dy = py - anchor.y;
-    return {
-        x: anchor.x + dx * Math.cos(radians) - dy * Math.sin(radians),
-        y: anchor.y + dx * Math.sin(radians) + dy * Math.cos(radians),
-    };
+    return unrotateAroundAnchor(
+        px,
+        py,
+        photoTextAnchorPixels(textAnnotation, canvasWidth, canvasHeight),
+        textAnnotation.rotation ?? 0,
+    );
 }
 
 /** Keep a rotation angle inside [0, 360) so stored values never drift unbounded. */
@@ -206,7 +260,7 @@ export function rotatePhotoAnnotationClockwise(annotation: PhotoAnnotation): Pho
         const points = Array.isArray(annotation.points) ? annotation.points : [];
         return { ...annotation, points: points.map(rotatePhotoPointClockwise) };
     }
-    if (annotation.type === 'text') {
+    if (annotation.type === 'text' || annotation.type === 'image') {
         const point = annotation.point ? rotatePhotoPointClockwise(annotation.point) : { x: 0.5, y: 0.5 };
         return { ...annotation, point, rotation: normalizePhotoRotation((annotation.rotation ?? 0) + 90) };
     }
@@ -355,6 +409,509 @@ export function isPointInPhotoText(
 
 export type PhotoRect = { x: number; y: number; width: number; height: number };
 
+/** The smallest a placed picture may be shrunk to, in canvas points, so it stays grabbable. */
+export const PHOTO_IMAGE_MIN_EDGE = 40;
+/** The largest it may be grown to, as a multiple of the page: past this it is all off the sheet. */
+export const PHOTO_IMAGE_MAX_COVERAGE = 3;
+
+/** Centre of a placed picture in canvas pixels — the point it is positioned and turned around. */
+export function photoImageAnchorPixels(
+    annotation: PhotoImage,
+    canvasWidth: number,
+    canvasHeight: number,
+): { x: number; y: number } {
+    const point = annotation.point ?? { x: 0.5, y: 0.5 };
+    return { x: point.x * canvasWidth, y: point.y * canvasHeight };
+}
+
+/**
+ * The box a picture is drawn in, before its rotation is applied — which is exactly how it is
+ * rendered: laid out upright around its centre, then turned. The editor paints from these
+ * numbers and hit-tests against them, so the frame the finger sees is the frame it grabs.
+ */
+export function photoImageBounds(
+    annotation: PhotoImage,
+    canvasWidth: number,
+    canvasHeight: number,
+): PhotoRect {
+    const anchor = photoImageAnchorPixels(annotation, canvasWidth, canvasHeight);
+    const width = Math.max(1, annotation.width || 1);
+    const height = Math.max(1, annotation.height || 1);
+    return { x: anchor.x - width / 2, y: anchor.y - height / 2, width, height };
+}
+
+/** Map a canvas pixel into a picture's own (unrotated) frame. */
+export function toPhotoImageLocalPixels(
+    px: number,
+    py: number,
+    annotation: PhotoImage,
+    canvasWidth: number,
+    canvasHeight: number,
+): { x: number; y: number } {
+    return unrotateAroundAnchor(
+        px,
+        py,
+        photoImageAnchorPixels(annotation, canvasWidth, canvasHeight),
+        annotation.rotation ?? 0,
+    );
+}
+
+/** Whether a normalized pointer lands on a placed picture, with a fingertip's allowance. */
+export function isPointInPhotoImage(
+    annotation: PhotoImage,
+    point: PhotoPoint,
+    canvasWidth: number,
+    canvasHeight: number,
+    tolerance = 12,
+): boolean {
+    const bounds = photoImageBounds(annotation, canvasWidth, canvasHeight);
+    const local = toPhotoImageLocalPixels(
+        point.x * canvasWidth,
+        point.y * canvasHeight,
+        annotation,
+        canvasWidth,
+        canvasHeight,
+    );
+    return local.x >= bounds.x - tolerance
+        && local.x <= bounds.x + bounds.width + tolerance
+        && local.y >= bounds.y - tolerance
+        && local.y <= bounds.y + bounds.height + tolerance;
+}
+
+/**
+ * The box a freshly added picture is dropped into, in canvas points.
+ *
+ * It arrives at its own aspect ratio, large enough to work on and small enough that the page it
+ * was added to is still visible around it — a picture that filled the sheet edge to edge would
+ * leave nothing to draw on and no margin to grab it by.
+ */
+export function photoImagePlacement(input: {
+    /** The picture's own pixel size; a picker that reports nothing falls back to a square. */
+    source: { width?: number | null; height?: number | null };
+    /** The surface it is being dropped onto, in points. */
+    canvas: { width: number; height: number };
+    /** Fraction of the page the picture may take up along either edge. */
+    coverage?: number;
+}): { width: number; height: number } {
+    const rawCoverage = input.coverage ?? 0.62;
+    const coverage = Math.min(1, Math.max(0.05, Number.isFinite(rawCoverage) ? rawCoverage : 0.62));
+    const sourceWidth = Number(input.source?.width) || 0;
+    const sourceHeight = Number(input.source?.height) || 0;
+    const aspect = sourceWidth > 0 && sourceHeight > 0 ? sourceWidth / sourceHeight : 1;
+    const canvasWidth = Math.max(1, input.canvas.width);
+    const canvasHeight = Math.max(1, input.canvas.height);
+
+    let width = canvasWidth * coverage;
+    let height = width / aspect;
+    const maxHeight = canvasHeight * coverage;
+    if (height > maxHeight) {
+        height = maxHeight;
+        width = height * aspect;
+    }
+    return {
+        width: Math.max(PHOTO_IMAGE_MIN_EDGE, width),
+        height: Math.max(PHOTO_IMAGE_MIN_EDGE, height),
+    };
+}
+
+/**
+ * The resize factor a picture is actually allowed to take, so pinching cannot shrink it into a
+ * speck that is impossible to grab again or blow it up until every edge is off the page. The
+ * factor is clamped rather than the box, which is what keeps the aspect ratio exact however far
+ * the fingers travel.
+ *
+ * A limit only ever stops a resize; it never reverses one. A picture that is already past the
+ * ceiling — one placed on a page that was later cropped down, say — simply stops growing, rather
+ * than being snapped back to the ceiling by a press of the button that was asking it to grow.
+ */
+export function clampPhotoImageScale(
+    annotation: PhotoImage,
+    factor: number,
+    canvas: { width: number; height: number },
+): number {
+    if (!Number.isFinite(factor) || factor <= 0) return 1;
+    const width = Math.max(1, annotation.width || 1);
+    const height = Math.max(1, annotation.height || 1);
+    const minFactor = Math.max(PHOTO_IMAGE_MIN_EDGE / width, PHOTO_IMAGE_MIN_EDGE / height);
+    const maxFactor = Math.min(
+        (Math.max(1, canvas.width) * PHOTO_IMAGE_MAX_COVERAGE) / width,
+        (Math.max(1, canvas.height) * PHOTO_IMAGE_MAX_COVERAGE) / height,
+    );
+    if (factor > 1) return Math.min(factor, Math.max(1, maxFactor));
+    if (factor < 1) return Math.max(factor, Math.min(1, minFactor));
+    return 1;
+}
+
+/** Resize a picture about its centre, keeping its aspect and staying inside the limits above. */
+export function resizePhotoImage(
+    annotation: PhotoImage,
+    factor: number,
+    canvas: { width: number; height: number },
+): PhotoImage {
+    const applied = clampPhotoImageScale(annotation, factor, canvas);
+    if (applied === 1) return annotation;
+    return {
+        ...annotation,
+        width: Math.max(1, annotation.width || 1) * applied,
+        height: Math.max(1, annotation.height || 1) * applied,
+    };
+}
+
+/** A corner of the selection frame; dragging one resizes whatever the frame is around. */
+export type PhotoCornerHandle = 'tl' | 'tr' | 'bl' | 'br';
+/** Every grab point the frame offers: its four corners and the knob that turns it. */
+export type PhotoSelectionHandle = PhotoCornerHandle | 'rotate';
+
+/** How far outside the frame the rotation knob sits, in canvas points. */
+export const PHOTO_ROTATE_HANDLE_OFFSET = 30;
+/** How close a finger has to land to claim a handle rather than the object under it. */
+export const PHOTO_HANDLE_TOUCH_RADIUS = 26;
+/** The smallest and largest a label may be taken to, by a handle or by a pinch. */
+export const PHOTO_TEXT_MIN_SIZE = 12;
+export const PHOTO_TEXT_MAX_SIZE = 96;
+
+/** Keep a label's size inside the range every way of resizing one agrees on. */
+export function clampPhotoTextSize(size: number): number {
+    if (!Number.isFinite(size)) return PHOTO_TEXT_MIN_SIZE;
+    return Math.max(PHOTO_TEXT_MIN_SIZE, Math.min(PHOTO_TEXT_MAX_SIZE, size));
+}
+
+/**
+ * What the selection frame is drawn around: the point the annotation turns about, its box
+ * before that turn is applied, and the turn itself. A label and a picture answer these three
+ * questions differently, and everything below works on the answers rather than on the
+ * annotation, so one set of handles serves both.
+ */
+export type PhotoSelectionGeometry = {
+    anchor: { x: number; y: number };
+    bounds: PhotoRect;
+    rotation?: number;
+};
+
+/** Which side of the frame the rotation knob hangs off. */
+export type PhotoRotateHandleSide = 'top' | 'bottom';
+
+/**
+ * Where each grab point of the selection frame lands on the canvas, twist included.
+ *
+ * The editor paints the handles at these points and hit-tests fingers against the same ones, so
+ * a handle can never sit somewhere other than where it was drawn.
+ */
+export function photoSelectionHandlePoints(
+    geometry: PhotoSelectionGeometry,
+    rotateSide: PhotoRotateHandleSide = 'top',
+): Record<PhotoSelectionHandle, { x: number; y: number }> {
+    const { anchor, bounds } = geometry;
+    const rotation = geometry.rotation ?? 0;
+    const place = (x: number, y: number) => rotateAroundAnchor(x, y, anchor, rotation);
+    const knobY = rotateSide === 'bottom'
+        ? bounds.y + bounds.height + PHOTO_ROTATE_HANDLE_OFFSET
+        : bounds.y - PHOTO_ROTATE_HANDLE_OFFSET;
+    return {
+        tl: place(bounds.x, bounds.y),
+        tr: place(bounds.x + bounds.width, bounds.y),
+        bl: place(bounds.x, bounds.y + bounds.height),
+        br: place(bounds.x + bounds.width, bounds.y + bounds.height),
+        rotate: place(bounds.x + bounds.width / 2, knobY),
+    };
+}
+
+/**
+ * Which side of the frame the knob has room on.
+ *
+ * It hangs above the frame by default, out of the way of the object it turns. A page clips
+ * whatever leaves it, though, so a knob pushed off the sheet could be neither seen nor reached —
+ * for anything sitting against the top edge, or turned until its own top faces the edge, it
+ * swaps to the other side instead. Both the frame on screen and the finger's hit test ask this
+ * question, so the knob is always drawn where it can be grabbed.
+ */
+export function photoRotateHandleSide(
+    geometry: PhotoSelectionGeometry,
+    canvas: { width: number; height: number },
+    inset = PHOTO_HANDLE_TOUCH_RADIUS / 2,
+): PhotoRotateHandleSide {
+    const fits = (point: { x: number; y: number }) => point.x >= inset
+        && point.x <= canvas.width - inset
+        && point.y >= inset
+        && point.y <= canvas.height - inset;
+    if (fits(photoSelectionHandlePoints(geometry, 'top').rotate)) return 'top';
+    return fits(photoSelectionHandlePoints(geometry, 'bottom').rotate) ? 'bottom' : 'top';
+}
+
+/**
+ * How much of the canvas the handles of this particular frame may claim.
+ *
+ * A small label is barely wider than two fingertips: at the full radius its four corners would
+ * cover the middle of it as well, and the one gesture left would be resizing something that
+ * could no longer be picked up and moved. The radius therefore never reaches more than part of
+ * the way from the middle of the box to its corner, so the middle of even the smallest label is
+ * still the label.
+ */
+export function photoHandleTouchRadius(
+    bounds: PhotoRect,
+    radius = PHOTO_HANDLE_TOUCH_RADIUS,
+): number {
+    const centreToCorner = Math.hypot(Math.max(0, bounds.width), Math.max(0, bounds.height)) / 2;
+    return Math.min(radius, Math.max(8, centreToCorner * 0.6));
+}
+
+/**
+ * Which handle a finger has landed on, or null when it has landed on none of them.
+ *
+ * The nearest one wins rather than the first one found: the corners of a small label sit close
+ * enough together that a fingertip covers two, and the one whose centre the finger is actually
+ * closest to is the one it meant.
+ */
+export function findPhotoSelectionHandle(
+    pointer: { x: number; y: number },
+    handles: Record<PhotoSelectionHandle, { x: number; y: number }>,
+    radius = PHOTO_HANDLE_TOUCH_RADIUS,
+): PhotoSelectionHandle | null {
+    const ids: PhotoSelectionHandle[] = ['rotate', 'tl', 'tr', 'bl', 'br'];
+    let best: PhotoSelectionHandle | null = null;
+    let bestDistance = radius;
+    for (const id of ids) {
+        const handle = handles[id];
+        if (!handle) continue;
+        const distance = Math.hypot(pointer.x - handle.x, pointer.y - handle.y);
+        if (distance <= bestDistance) {
+            bestDistance = distance;
+            best = id;
+        }
+    }
+    return best;
+}
+
+/** The corner that stays put while the one across the box from it is dragged. */
+export function oppositePhotoCorner(handle: PhotoCornerHandle): PhotoCornerHandle {
+    if (handle === 'tl') return 'br';
+    if (handle === 'tr') return 'bl';
+    if (handle === 'bl') return 'tr';
+    return 'tl';
+}
+
+/** One corner of a box, in the frame's own upright coordinates. */
+function photoCornerLocalPoint(bounds: PhotoRect, corner: PhotoCornerHandle): { x: number; y: number } {
+    return {
+        x: corner === 'tl' || corner === 'bl' ? bounds.x : bounds.x + bounds.width,
+        y: corner === 'tl' || corner === 'tr' ? bounds.y : bounds.y + bounds.height,
+    };
+}
+
+/**
+ * How much bigger the finger is asking the frame to be.
+ *
+ * The corner across the box stays where it is, so the gesture is read as a scaling of the
+ * diagonal between the two corners: projecting the finger onto that diagonal keeps the aspect
+ * ratio exact and stops a sideways wobble from stretching the box. The finger is un-turned
+ * first, so a picture that has been twisted still resizes along its own edges.
+ */
+export function photoHandleResizeFactor(input: {
+    handle: PhotoCornerHandle;
+    /** The finger, in canvas pixels. */
+    pointer: { x: number; y: number };
+    /** The frame as it was when the handle was grabbed. */
+    geometry: PhotoSelectionGeometry;
+}): number {
+    const { geometry, handle, pointer } = input;
+    const fixed = photoCornerLocalPoint(geometry.bounds, oppositePhotoCorner(handle));
+    const dragged = photoCornerLocalPoint(geometry.bounds, handle);
+    const local = unrotateAroundAnchor(pointer.x, pointer.y, geometry.anchor, geometry.rotation ?? 0);
+    const diagonalX = dragged.x - fixed.x;
+    const diagonalY = dragged.y - fixed.y;
+    const diagonalLengthSquared = diagonalX * diagonalX + diagonalY * diagonalY;
+    if (diagonalLengthSquared <= 0) return 1;
+    const factor = ((local.x - fixed.x) * diagonalX + (local.y - fixed.y) * diagonalY) / diagonalLengthSquared;
+    // A finger dragged past the fixed corner is asking for a box turned inside out. It gets the
+    // smallest one the limits allow instead, which is what the caller's clamp makes of a factor
+    // this small — never a flipped picture, and never a jump back to full size.
+    if (!Number.isFinite(factor) || factor <= 0) return 0.001;
+    return factor;
+}
+
+/**
+ * Where the anchor has to move so the corner opposite the dragged one stays exactly where it was.
+ *
+ * A resize is measured from that fixed corner, but an annotation is positioned by its anchor — a
+ * picture's centre, a label's alignment point — and its box only follows the anchor. So the new
+ * size is measured first with the anchor left alone, and the anchor is then moved by however far
+ * that measurement pushed the corner that was supposed to stand still.
+ */
+export function photoAnchorForFixedCorner(input: {
+    handle: PhotoCornerHandle;
+    /** The frame as it was when the handle was grabbed. */
+    before: PhotoSelectionGeometry;
+    /** The frame at its new size, measured with the anchor still in its old place. */
+    after: PhotoSelectionGeometry;
+}): { x: number; y: number } {
+    const fixedCorner = oppositePhotoCorner(input.handle);
+    const rotation = input.before.rotation ?? 0;
+    const beforeLocal = photoCornerLocalPoint(input.before.bounds, fixedCorner);
+    const target = rotateAroundAnchor(beforeLocal.x, beforeLocal.y, input.before.anchor, rotation);
+
+    const anchor = input.after.anchor;
+    const afterLocal = photoCornerLocalPoint(input.after.bounds, fixedCorner);
+    // The corner's offset from the anchor is the same wherever the anchor is put, so the anchor
+    // that lands that corner on `target` is `target` less the offset, turned.
+    const turned = rotateAroundAnchor(afterLocal.x, afterLocal.y, anchor, rotation);
+    return {
+        x: target.x - (turned.x - anchor.x),
+        y: target.y - (turned.y - anchor.y),
+    };
+}
+
+/** Turn a canvas pixel back into the normalized point an annotation is positioned by. */
+function photoPointFromPixels(
+    pixels: { x: number; y: number },
+    canvas: { width: number; height: number },
+): PhotoPoint {
+    return clampPhotoPoint({
+        x: pixels.x / Math.max(1, canvas.width),
+        y: pixels.y / Math.max(1, canvas.height),
+    });
+}
+
+/** Resize a picture by one corner of its frame, with the opposite corner pinned in place. */
+export function resizePhotoImageByHandle(input: {
+    /** The picture as it was when the handle was grabbed. */
+    annotation: PhotoImage;
+    handle: PhotoCornerHandle;
+    pointer: { x: number; y: number };
+    canvas: { width: number; height: number };
+}): PhotoImage {
+    const { annotation, canvas, handle, pointer } = input;
+    const before: PhotoSelectionGeometry = {
+        anchor: photoImageAnchorPixels(annotation, canvas.width, canvas.height),
+        bounds: photoImageBounds(annotation, canvas.width, canvas.height),
+        rotation: annotation.rotation ?? 0,
+    };
+    const resized = resizePhotoImage(annotation, photoHandleResizeFactor({ handle, pointer, geometry: before }), canvas);
+    if (resized === annotation) return annotation;
+    const after: PhotoSelectionGeometry = {
+        anchor: before.anchor,
+        bounds: photoImageBounds(resized, canvas.width, canvas.height),
+        rotation: before.rotation,
+    };
+    return {
+        ...resized,
+        point: photoPointFromPixels(photoAnchorForFixedCorner({ handle, before, after }), canvas),
+    };
+}
+
+/** The same corner drag on a label, which grows by its font size rather than by a box. */
+export function resizePhotoTextByHandle(input: {
+    /** The label as it was when the handle was grabbed. */
+    annotation: PhotoText;
+    handle: PhotoCornerHandle;
+    pointer: { x: number; y: number };
+    canvas: { width: number; height: number };
+}): PhotoText {
+    const { annotation, canvas, handle, pointer } = input;
+    const before: PhotoSelectionGeometry = {
+        anchor: photoTextAnchorPixels(annotation, canvas.width, canvas.height),
+        bounds: calculatePhotoTextBounds(annotation, canvas.width, canvas.height),
+        rotation: annotation.rotation ?? 0,
+    };
+    const factor = photoHandleResizeFactor({ handle, pointer, geometry: before });
+    const fontSize = Math.round(clampPhotoTextSize(annotation.fontSize * factor));
+    if (fontSize === annotation.fontSize) return annotation;
+    const resized: PhotoText = { ...annotation, fontSize };
+    const after: PhotoSelectionGeometry = {
+        anchor: before.anchor,
+        bounds: calculatePhotoTextBounds(resized, canvas.width, canvas.height),
+        rotation: before.rotation,
+    };
+    return {
+        ...resized,
+        point: photoPointFromPixels(photoAnchorForFixedCorner({ handle, before, after }), canvas),
+    };
+}
+
+/** Angles a turn settles onto, and how close the finger has to be before it does. */
+export const PHOTO_ROTATION_SNAP_STEP = 45;
+export const PHOTO_ROTATION_SNAP_TOLERANCE = 6;
+
+/** The direction from an anchor to a finger, in the same clockwise degrees annotations store. */
+export function photoPointerAngle(
+    pointer: { x: number; y: number },
+    anchor: { x: number; y: number },
+): number {
+    return normalizePhotoRotation((Math.atan2(pointer.y - anchor.y, pointer.x - anchor.x) * 180) / Math.PI);
+}
+
+/**
+ * The angle a turn of the rotation knob is asking for.
+ *
+ * `grabOffset` is the gap between the finger's direction and the annotation's own angle at the
+ * moment the knob was taken hold of, so the object turns with the finger instead of jumping to
+ * put its knob underneath it. Quarter and half turns are worth landing on exactly — a picture
+ * straightened by eye is never quite straight — so the angle settles onto the nearest multiple
+ * of the snap step whenever the finger is already that close to it.
+ */
+export function resolvePhotoHandleRotation(input: {
+    pointer: { x: number; y: number };
+    anchor: { x: number; y: number };
+    grabOffset: number;
+    /** Pass false to turn freely, for a finger that is deliberately off the marks. */
+    snap?: boolean;
+}): { rotation: number; snapped: boolean } {
+    const raw = normalizePhotoRotation(photoPointerAngle(input.pointer, input.anchor) - input.grabOffset);
+    if (input.snap === false) return { rotation: raw, snapped: false };
+    const nearest = normalizePhotoRotation(Math.round(raw / PHOTO_ROTATION_SNAP_STEP) * PHOTO_ROTATION_SNAP_STEP);
+    let delta = Math.abs(raw - nearest);
+    if (delta > 180) delta = 360 - delta;
+    if (delta <= PHOTO_ROTATION_SNAP_TOLERANCE) return { rotation: nearest, snapped: true };
+    return { rotation: raw, snapped: false };
+}
+
+/** How close to the page's middle a box has to come before the drag settles onto it. */
+export const PHOTO_SNAP_TOLERANCE = 7;
+
+export type PhotoDragSnap = {
+    point: PhotoPoint;
+    /** Which of the page's centre lines the drag has settled onto, and so which to draw. */
+    guides: { x: boolean; y: boolean };
+};
+
+/**
+ * Settle a dragged annotation onto the middle of the page.
+ *
+ * Centring by eye on a phone is a fiddle, and a diagram a few pixels off centre reads as a
+ * mistake rather than as a choice, so the drag gives way to the page's own centre lines once it
+ * comes within a fingertip of them. The snap is applied to the box's centre rather than to the
+ * anchor, because the centre is what the eye judges: a left-aligned label is anchored at its
+ * left edge and would otherwise settle with its text hanging off to one side.
+ */
+export function resolvePhotoDragSnap(input: {
+    /** Where the drag would put the anchor, normalized. */
+    point: PhotoPoint;
+    /** The box centre's offset from that anchor, in canvas pixels, turn included. */
+    centreOffset?: { x: number; y: number };
+    canvas: { width: number; height: number };
+    tolerance?: number;
+}): PhotoDragSnap {
+    const canvasWidth = Math.max(1, input.canvas.width);
+    const canvasHeight = Math.max(1, input.canvas.height);
+    const rawTolerance = input.tolerance ?? PHOTO_SNAP_TOLERANCE;
+    const tolerance = Number.isFinite(rawTolerance) && rawTolerance > 0 ? rawTolerance : 0;
+    const offset = input.centreOffset ?? { x: 0, y: 0 };
+    const centreX = input.point.x * canvasWidth + (Number.isFinite(offset.x) ? offset.x : 0);
+    const centreY = input.point.y * canvasHeight + (Number.isFinite(offset.y) ? offset.y : 0);
+
+    let x = input.point.x;
+    let y = input.point.y;
+    const guides = { x: false, y: false };
+    if (Math.abs(centreX - canvasWidth / 2) <= tolerance) {
+        x = (canvasWidth / 2 - (Number.isFinite(offset.x) ? offset.x : 0)) / canvasWidth;
+        guides.x = true;
+    }
+    if (Math.abs(centreY - canvasHeight / 2) <= tolerance) {
+        y = (canvasHeight / 2 - (Number.isFinite(offset.y) ? offset.y : 0)) / canvasHeight;
+        guides.y = true;
+    }
+    return { point: { x, y }, guides };
+}
+
 /**
  * Layout of the bin that appears at the bottom of the canvas while a label is being dragged.
  *
@@ -493,6 +1050,11 @@ export function isAnnotationHitBySweep(
     const ey = endPoint.y * height;
     const sweepLength = Math.hypot(ex - sx, ey - sy);
     const numSamples = Math.max(1, Math.ceil(sweepLength / Math.max(8, tolerance * 0.6)));
+
+    // A picture is not ink. The eraser rubs out what was drawn, and a stroke made over a
+    // picture sits on top of it, so a sweep across one has to reach that stroke and leave the
+    // picture where it is. Pictures are removed by selecting them and using their own bin.
+    if (annotation.type === 'image') return false;
 
     if (annotation.type === 'text') {
         for (let i = 0; i <= numSamples; i += 1) {
@@ -828,7 +1390,7 @@ export function cropPhotoAnnotation(annotation: PhotoAnnotation, cropRect: Photo
             points: points.map((pt) => cropPhotoPoint(pt, cropRect)),
         };
     }
-    if (annotation.type === 'text') {
+    if (annotation.type === 'text' || annotation.type === 'image') {
         const point = annotation.point ? cropPhotoPoint(annotation.point, cropRect) : { x: 0.5, y: 0.5 };
         return {
             ...annotation,
@@ -945,5 +1507,8 @@ export function scalePhotoAnnotation<T extends PhotoAnnotation>(annotation: T, f
     const scaled: PhotoAnnotation = { ...annotation };
     if (typeof scaled.width === 'number') scaled.width *= factor;
     if (scaled.type === 'text' && typeof scaled.fontSize === 'number') scaled.fontSize *= factor;
+    // A picture's box is stored as `width` and this height together; scaling one without the
+    // other would export it stretched.
+    if (scaled.type === 'image' && typeof scaled.height === 'number') scaled.height *= factor;
     return scaled as T;
 }

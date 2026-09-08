@@ -1,6 +1,7 @@
 import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder, StudyCard } from './types';
 import type { DeckConfig } from './models';
 import { ymdToLocalDayNumber } from './ankiState';
+import { FSRS6_DEFAULT_DECAY, fsrsRetrievability } from './fsrs';
 
 /**
  * Spread `newCards` evenly across `reviewCards`, matching Anki's "mix with reviews" default.
@@ -153,7 +154,24 @@ export interface ReviewSortContext {
     today: number;
     /** Display rank of a deck, so "deck" orders follow the deck list rather than raw ids. */
     deckRank?: (deckId: number) => number;
+    /**
+     * Whether FSRS is scheduling this deck. Three of Anki's orders read a different column when
+     * it is: the two "ease" orders sort by FSRS difficulty, and relative overdueness is measured
+     * against retrievability rather than against the card's own interval
+     * (`review_order_sql(order, timing, fsrs)`).
+     */
+    fsrs?: boolean;
+    /** Wall clock, for the elapsed time a retrievability is read at. Defaults to now. */
+    nowMs?: number;
 }
+
+/**
+ * A card with no FSRS memory state reads as SQL NULL upstream, and SQLite orders NULL as the
+ * smallest value there is: it leads an ascending clause and trails a descending one. Standing in
+ * for it with negative infinity reproduces both, because the descending keys are negated.
+ */
+const MISSING_FSRS_KEY = Number.NEGATIVE_INFINITY;
+const DAY_MS = 86_400_000;
 
 /**
  * Anki's review sort orders (rslib storage/card/mod.rs `review_order_sql`). Every order falls back
@@ -165,6 +183,8 @@ export function sortReviewCards(
     context: ReviewSortContext,
 ): StudyCard[] {
     const { daySeed, fallbackDay, today, deckRank } = context;
+    const fsrs = context.fsrs === true;
+    const nowMs = context.nowMs ?? Date.now();
     const dueOf = (card: StudyCard) => ymdToLocalDayNumber(card.state.dueDate, fallbackDay);
     const rankOf = (card: StudyCard) => (deckRank ? deckRank(card.deckId) : card.deckId);
     // Anki: -(1 + (today - due + 0.001) / ivl) ascending, i.e. the most overdue relative to its
@@ -173,15 +193,69 @@ export function sortReviewCards(
     const overdueness = (card: StudyCard) =>
         (today - dueOf(card) + 0.001) / Math.max(1, card.state.interval);
 
+    /**
+     * Days since the card was last answered. The recorded answer time is the truth; a card that
+     * has none (an import, or a card scheduled before review times were kept) is measured from
+     * the schedule it is sitting on, which is the same fallback `extract_fsrs_retrievability`
+     * makes when a card carries no `last_review_time`.
+     */
+    const elapsedDaysOf = (card: StudyCard) => {
+        const lastReviewed = card.state.lastReviewedAtMs;
+        if (lastReviewed && lastReviewed > 0) return Math.max(0, (nowMs - lastReviewed) / DAY_MS);
+        return Math.max(0, today - (dueOf(card) - card.state.interval));
+    };
+
+    const retrievabilityOf = (card: StudyCard): number | null => {
+        const memory = card.state.memoryState;
+        if (!memory) return null;
+        return fsrsRetrievability(
+            memory.stability,
+            elapsedDaysOf(card),
+            card.state.decay ?? FSRS6_DEFAULT_DECAY,
+        );
+    };
+
+    const difficultyKey = (card: StudyCard, missing: number) =>
+        card.state.memoryState ? card.state.memoryState.difficulty : missing;
+    const retrievabilityKey = (card: StudyCard, missing: number) => retrievabilityOf(card) ?? missing;
+
+    /**
+     * Relative overdueness under FSRS: how far past its own target the card has fallen, as
+     * `-(R^(-1/decay) - 1) / (DR^(-1/decay) - 1)` ascending. A card with no memory state or no
+     * recorded target keeps the SM-2 measure, exactly as `extract_fsrs_relative_retrievability`
+     * falls back to it.
+     */
+    const relativeRetrievability = (card: StudyCard): number => {
+        const retrievability = retrievabilityOf(card);
+        const desired = card.state.desiredRetention;
+        if (retrievability === null || !desired || !Number.isFinite(desired)) {
+            return -overdueness(card);
+        }
+        const decay = card.state.decay ?? FSRS6_DEFAULT_DECAY;
+        const target = Math.max(0.0001, desired);
+        const current = Math.max(0.0001, retrievability);
+        return -(Math.pow(current, -1 / decay) - 1) / (Math.pow(target, -1 / decay) - 1);
+    };
+
     const keys: Record<ReviewSortOrder, (card: StudyCard) => number[]> = {
         dueRandom: (card) => [dueOf(card)],
         dueThenDeck: (card) => [dueOf(card), rankOf(card)],
         deckThenDue: (card) => [rankOf(card), dueOf(card)],
         intervalsAsc: (card) => [card.state.interval],
         intervalsDesc: (card) => [-card.state.interval],
-        easeAsc: (card) => [card.state.easeFactor],
-        easeDesc: (card) => [-card.state.easeFactor],
-        relativeOverdueness: (card) => [-overdueness(card)],
+        // The two ease orders keep their names and their ordinals under FSRS, but read the
+        // difficulty column instead — and in the opposite direction, because a card that is
+        // difficult is a card with a low ease. Anki relabels them in the dropdown for that
+        // reason; the queue has to make the same swap or the label would be a lie.
+        easeAsc: (card) => (fsrs
+            ? [-difficultyKey(card, MISSING_FSRS_KEY)]
+            : [card.state.easeFactor]),
+        easeDesc: (card) => (fsrs
+            ? [difficultyKey(card, MISSING_FSRS_KEY)]
+            : [-card.state.easeFactor]),
+        retrievabilityAsc: (card) => [retrievabilityKey(card, MISSING_FSRS_KEY)],
+        retrievabilityDesc: (card) => [-retrievabilityKey(card, MISSING_FSRS_KEY)],
+        relativeOverdueness: (card) => [fsrs ? relativeRetrievability(card) : -overdueness(card)],
         random: () => [],
         added: (card) => [card.noteId, card.templateOrd ?? 0],
         reverseAdded: (card) => [-card.noteId, card.templateOrd ?? 0],

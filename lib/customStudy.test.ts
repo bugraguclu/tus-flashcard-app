@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
     CUSTOM_STUDY_FORGOT_MAX_DAYS,
     CUSTOM_STUDY_MAX_VALUE,
+    CUSTOM_STUDY_PREVIEW_DELAYS,
     customStudySessionConfig,
+    customStudyTagSelection,
     customStudyValueBounds,
     deckSearchTerm,
     tagSearchTerms,
@@ -29,6 +31,7 @@ describe('custom study session configs', () => {
             limit: CUSTOM_STUDY_MAX_VALUE,
             order: FILTERED_SEARCH_ORDER.random,
             reschedule: false,
+            previewDelays: [60, 600, 0],
         });
     });
 
@@ -44,6 +47,7 @@ describe('custom study session configs', () => {
             limit: CUSTOM_STUDY_MAX_VALUE,
             order: FILTERED_SEARCH_ORDER.due,
             reschedule: true,
+            previewDelays: [60, 600, 0],
         });
     });
 
@@ -53,6 +57,7 @@ describe('custom study session configs', () => {
             limit: CUSTOM_STUDY_MAX_VALUE,
             order: FILTERED_SEARCH_ORDER.added,
             reschedule: false,
+            previewDelays: [60, 600, 0],
         });
     });
 
@@ -70,24 +75,28 @@ describe('custom study session configs', () => {
             limit: 100,
             order: FILTERED_SEARCH_ORDER.added,
             reschedule: true,
+            previewDelays: [60, 600, 0],
         });
         expect(cram('due')).toEqual({
             search: 'is:due deck:"Tıp"',
             limit: 100,
             order: FILTERED_SEARCH_ORDER.due,
             reschedule: true,
+            previewDelays: [60, 600, 0],
         });
         expect(cram('review')).toEqual({
             search: '-is:new deck:"Tıp"',
             limit: 100,
             order: FILTERED_SEARCH_ORDER.random,
             reschedule: true,
+            previewDelays: [60, 600, 0],
         });
         expect(cram('all')).toEqual({
             search: 'deck:"Tıp"',
             limit: 100,
             order: FILTERED_SEARCH_ORDER.random,
             reschedule: false,
+            previewDelays: [60, 600, 0],
         });
     });
 
@@ -184,5 +193,65 @@ describe('custom study spinner bounds', () => {
         expect(customStudyValueBounds('ahead')).toEqual({ min: 1, max: CUSTOM_STUDY_MAX_VALUE, initial: 1 });
         expect(customStudyValueBounds('preview')).toEqual({ min: 1, max: CUSTOM_STUDY_MAX_VALUE, initial: 1 });
         expect(customStudyValueBounds('cram')).toEqual({ min: 1, max: CUSTOM_STUDY_MAX_VALUE, initial: 100 });
+    });
+});
+
+describe('custom study preview delays', () => {
+    it('writes Anki\u2019s own three delays on every session it builds', () => {
+        // `custom_study_config` sets preview_again_secs/hard/good on each deck it produces, so the
+        // rescheduling options carry them too even though only a preview session reads them back.
+        const requests: CustomStudyRequest[] = [
+            { option: 'forgot', days: 7 },
+            { option: 'ahead', days: 3 },
+            { option: 'preview', days: 1 },
+            { option: 'cram', kind: 'all', cardLimit: 100, includeTags: [], excludeTags: [] },
+            { option: 'cram', kind: 'due', cardLimit: 20, includeTags: [], excludeTags: [] },
+        ];
+        for (const request of requests) {
+            expect(config(request)?.previewDelays).toEqual([60, 600, 0]);
+        }
+        expect(CUSTOM_STUDY_PREVIEW_DELAYS).toEqual([60, 600, 0]);
+    });
+});
+
+describe('custom study tag selection', () => {
+    const deckTags = ['anatomi', 'Fizyoloji', 'zor'];
+
+    it('preselects the remembered tags that the deck still carries', () => {
+        expect(customStudyTagSelection(deckTags, {
+            extendNew: 0,
+            extendReview: 0,
+            includeTags: ['Fizyoloji'],
+            excludeTags: ['zor'],
+        })).toEqual({ includeTags: ['Fizyoloji'], excludeTags: ['zor'], requireTags: true });
+    });
+
+    it('drops a remembered tag the deck no longer has, and the require box with it', () => {
+        // Anki rebuilds the flags from the deck's current tags, so a tag that was renamed away
+        // cannot come back into the search — a session filtered on it would gather nothing.
+        expect(customStudyTagSelection(deckTags, {
+            extendNew: 0,
+            extendReview: 0,
+            includeTags: ['patoloji'],
+            excludeTags: ['patoloji', 'zor'],
+        })).toEqual({ includeTags: [], excludeTags: ['zor'], requireTags: false });
+    });
+
+    it('lists the selection in the deck\u2019s own tag order, not the order it was stored in', () => {
+        expect(customStudyTagSelection(deckTags, {
+            extendNew: 0,
+            extendReview: 0,
+            includeTags: ['zor', 'anatomi'],
+            excludeTags: [],
+        }).includeTags).toEqual(['anatomi', 'zor']);
+    });
+
+    it('opens on nothing when the deck has no tags at all', () => {
+        expect(customStudyTagSelection([], {
+            extendNew: 0,
+            extendReview: 0,
+            includeTags: ['anatomi'],
+            excludeTags: ['zor'],
+        })).toEqual({ includeTags: [], excludeTags: [], requireTags: false });
     });
 });

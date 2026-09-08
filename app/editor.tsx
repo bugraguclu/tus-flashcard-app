@@ -19,7 +19,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
-import { confirm, alert } from '../lib/confirm';
+import { confirm, alert, choose } from '../lib/confirm';
 import {
     blockFormatValue,
     calculateToolbarButtonWidth,
@@ -65,13 +65,12 @@ import {
     getNoteType,
     searchIndexCardFromNote,
     setNoteTagsByCardId,
-    type DuplicateNoteResult,
 } from '../lib/noteManager';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
 import { safeExternalCallbackUrl } from '../lib/externalLinking';
-import { ANKI_STOCK_NOTE_TYPE_IDS, BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note } from '../lib/models';
+import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note, type NoteTypeField } from '../lib/models';
 import CardWebView from '../components/CardWebView';
-import MediaAttachButton, { FIELD_MEDIA_RE, type MediaAttachButtonHandle } from '../components/MediaAttachButton';
+import MediaAttachButton, { FIELD_MEDIA_RE } from '../components/MediaAttachButton';
 import RichTextEditor, {
     type RichTextEditorHandle,
     type RichTextCommand,
@@ -86,9 +85,21 @@ import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import { localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
 import { clozeFieldIndex, countCardsForNote, extractClozeNumbers, sanitizeUntrustedHtml } from '../lib/templates';
-import { getDbSetting, loadSettings, saveSettings, setDbSetting } from '../lib/storage';
+import { loadSettings, saveSettings } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
+import { editorFieldFontSize } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import {
+    CUSTOM_TOOLBAR_PRESETS,
+    loadCustomToolbarButtons,
+    persistCustomToolbarButtons,
+    sanitizeButtonText,
+    sanitizeToolbarSnippet,
+    type CustomToolbarButton,
+    type CustomToolbarPreset,
+    type LocalizedPresetText,
+} from '../lib/customToolbar';
+import { loadNoteTypeStickyFields, saveNoteTypeStickyFields } from '../lib/editorStickyFields';
 
 function parseCardId(raw: string | string[] | undefined): number | null {
     if (!raw) return null;
@@ -286,24 +297,9 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
     );
 }
 
-import {
-    CUSTOM_TOOLBAR_PRESETS,
-    loadCustomToolbarButtons,
-    persistCustomToolbarButtons,
-    sanitizeButtonText,
-    sanitizeCustomToolbarButton,
-    sanitizeToolbarSnippet,
-    type CustomToolbarButton,
-    type CustomToolbarPreset,
-    type LocalizedPresetText,
-} from '../lib/customToolbar';
-import {
-    loadNoteTypeStickyFields,
-    saveNoteTypeStickyFields,
-    loadStickyEditorFields,
-    saveStickyEditorFields,
-    type StickyFieldEntry,
-} from '../lib/editorStickyFields';
+// The overflow menu is drawn over the whole screen, so it has to be told where the header ends:
+// the safe-area inset the header sits below, plus the header itself.
+const EDITOR_HEADER_HEIGHT = 56;
 
 // The preview dialog picks its card body height before the card renders, so the sheet never
 // resizes once the WebView reports its intrinsic height. Everything else in the dialog — header,
@@ -455,13 +451,16 @@ export default function EditorScreen() {
         return list;
     }, [dataVersion, selectedNoteType]);
 
-    const fieldsToRender = useMemo(() => {
+    // The stand-in pair only appears when the chosen note type has gone missing; it carries no
+    // font or size of its own so those fall back to the editor's own preference rather than to a
+    // zero that would render the field's text at no height at all.
+    const fieldsToRender: NoteTypeField[] = useMemo(() => {
         if (selectedNoteType && selectedNoteType.fields.length > 0) {
             return selectedNoteType.fields;
         }
         return [
-            { ord: 0, name: 'Front', sticky: false, rtl: false, font: '', fontSize: 0 },
-            { ord: 1, name: 'Back', sticky: false, rtl: false, font: '', fontSize: 0 },
+            { ord: 0, name: 'Front', sticky: false, rtl: false },
+            { ord: 1, name: 'Back', sticky: false, rtl: false },
         ];
     }, [selectedNoteType]);
 
@@ -503,7 +502,6 @@ export default function EditorScreen() {
 
     const [activeFieldIndex, setActiveFieldIndex] = useState<number>(0);
     const fieldEditorRefs = useRef<(RichTextEditorHandle | null)[]>([]);
-    const fieldMediaRefs = useRef<(MediaAttachButtonHandle | null)[]>([]);
     const toolbarScrollRef = useRef<ScrollView>(null);
 
     useEffect(() => {
@@ -552,6 +550,12 @@ export default function EditorScreen() {
             ? getAllDecks().filter((deck) => !deck.isFiltered && !isCatalogDeck(deck))
             : [],
         [dataVersion, showDeckPicker],
+    );
+
+    // Read once per opening rather than on every render the open dialog goes through.
+    const previewAudioPlaybackRate = useMemo(
+        () => (showPreview ? loadSettings().audioPlaybackRate ?? 1.0 : 1.0),
+        [showPreview],
     );
 
     const previewPayload = useMemo(() => {
@@ -683,12 +687,11 @@ export default function EditorScreen() {
         return findDuplicateNote(cardTypeId, firstField, currentCard?.noteId);
     }, [fieldValues[0], cardTypeId, routeCardId, dataVersion]);
 
-    const duplicateDeckName = useMemo(() => {
-        if (!duplicateNote?.cardId) return null;
-        const card = getAnkiCard(duplicateNote.cardId);
-        if (!card) return null;
-        return getDeck(card.deckId)?.name ?? null;
-    }, [duplicateNote]);
+    // `findDuplicateNote` already joins the first card's deck, so the name is read off its result
+    // rather than fetched again: this runs on every keystroke in the first field.
+    const duplicateDeckName = duplicateNote?.deckName
+        ? duplicateNote.deckName.replaceAll('::', ' › ')
+        : null;
 
     const handleSelectNoteType = (newId: number) => {
         if (newId === cardTypeId) {
@@ -947,11 +950,7 @@ export default function EditorScreen() {
             l('Alanları temizle', 'Clear Fields'),
             l('Tüm alanlardaki içerik temizlensin mi?', 'Clear the contents of all fields?'),
             () => {
-                if (selectedNoteType) {
-                    setFieldValues(selectedNoteType.fields.map(() => ''));
-                } else {
-                    setFieldValues([]);
-                }
+                setFieldValues(fieldsToRender.map(() => ''));
                 fieldEditorRefs.current[0]?.focus();
             },
             { destructive: true },
@@ -975,19 +974,24 @@ export default function EditorScreen() {
         router.push(`/note-type?id=${cardTypeId}`);
     };
 
-    const persistEditorPreferences = () => {
-        const currentSettings = loadSettings();
-        saveSettings({
-            ...currentSettings,
-            editorFontSize: editorPreferences.fontSize,
-            editorCapitalizeSentences: editorPreferences.capitalizeSentences,
-            editorToolbarVisible: editorPreferences.toolbarVisible,
-            editorToolbarScrollable: editorPreferences.toolbarScrollable,
-        });
-    };
-
+    /**
+     * The overflow menu's four rows are app preferences, not part of the note being written, so
+     * they are written the moment they are toggled. Persisting them from the save path instead
+     * meant hiding the toolbar and then leaving without adding a note silently discarded the
+     * choice.
+     */
     const updateEditorPreferences = (patch: Partial<typeof editorPreferences>) => {
-        setEditorPreferences((current) => ({ ...current, ...patch }));
+        setEditorPreferences((current) => {
+            const next = { ...current, ...patch };
+            saveSettings({
+                ...loadSettings(),
+                editorFontSize: next.fontSize,
+                editorCapitalizeSentences: next.capitalizeSentences,
+                editorToolbarVisible: next.toolbarVisible,
+                editorToolbarScrollable: next.toolbarScrollable,
+            });
+            return next;
+        });
     };
 
     /**
@@ -1008,6 +1012,31 @@ export default function EditorScreen() {
             console.warn('[Editor] catalog tag save failed:', e);
             alert(t('common.error'), l('Etiketler kaydedilemedi.', 'Could not save the tags.'));
         }
+    };
+
+    /**
+     * Reset the screen for the next note the way Anki's Add dialog does: the pinned fields keep
+     * what they hold, everything else empties, and the deck, note type and tags stay as they were
+     * chosen. The baseline moves with them so the cleared screen is not immediately dirty.
+     */
+    const startNextNote = () => {
+        const nextFields = fieldsToRender.map((field, index) => (
+            pinnedFields.has(field.ord) ? (fieldValues[index] || '') : ''
+        ));
+        setFieldValues(nextFields);
+        setActiveFieldIndex(0);
+        resetDraftBaseline({
+            fields: nextFields,
+            question: nextFields[0] || '',
+            answer: nextFields[1] || '',
+            reverseAnswer: cardTypeId === 7 ? (nextFields[2] || '') : '',
+            cardTypeId,
+            deckId: targetDeckId,
+            tags: noteTags,
+        });
+        // The fields are controlled, so their documents are cleared by the render this state
+        // change causes; the caret is placed once that has happened.
+        requestAnimationFrame(() => fieldEditorRefs.current[0]?.focus());
     };
 
     const handleSave = () => {
@@ -1069,7 +1098,6 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
                 }
 
-                persistEditorPreferences();
                 resetDraftBaseline(currentDraft);
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
@@ -1088,24 +1116,35 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(created.note, generatedCard.id));
                 }
 
-                persistEditorPreferences();
                 persistStickyFieldValues();
                 resetDraftBaseline(currentDraft);
                 bumpDataVersion();
-                alert(
-                    t('common.completed'),
-                    l(
-                        `Not kaydedildi; ${created.cards.length} kart oluşturuldu.`,
-                        `Note saved; ${created.cards.length} card${created.cards.length === 1 ? '' : 's'} created.`,
-                    ),
-                    () => {
-                        if (externalSuccessUrl) {
-                            void Linking.openURL(externalSuccessUrl).catch(() => router.back());
-                        } else {
-                            router.back();
-                        }
-                    },
+                const savedMessage = l(
+                    `Not kaydedildi; ${created.cards.length} kart oluşturuldu.`,
+                    `Note saved; ${created.cards.length} card${created.cards.length === 1 ? '' : 's'} created.`,
                 );
+
+                // A Shortcuts/x-callback add has one note to write and a caller waiting for it, so
+                // it keeps the single acknowledgement and hands control straight back.
+                if (externalSuccessUrl) {
+                    alert(t('common.completed'), savedMessage, () => {
+                        void Linking.openURL(externalSuccessUrl).catch(() => router.back());
+                    });
+                    return;
+                }
+
+                // Anki's Add dialog stays open so a run of notes is one visit rather than one
+                // round trip through the deck list each. Leaving is still the other button, and
+                // it is what the acknowledgement offered before this choice existed.
+                void choose(
+                    t('common.completed'),
+                    savedMessage,
+                    l('Yeni not ekle', 'Add another'),
+                    l('Bitti', 'Done'),
+                ).then((addAnother) => {
+                    if (addAnother) startNextNote();
+                    else router.back();
+                });
             }
         } catch (e) {
             console.warn('[Editor] save failed:', e);
@@ -1113,23 +1152,46 @@ export default function EditorScreen() {
         }
     };
 
+    /**
+     * Anki deletes the note, not the one card that was opened, so the confirmation names the note
+     * and counts the siblings that go with it rather than promising to remove a single card.
+     */
     const handleDelete = () => {
         if (!routeCardId) return;
+        setShowOverflowMenu(false);
         if (isCatalog) {
             alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları silinemez.', 'Built-in TUS cards cannot be deleted.'));
             return;
         }
 
-        confirm(l('Kartı sil', 'Delete Card'), l('Bu kartı silmek istediğinizden emin misiniz?', 'Are you sure you want to delete this card?'), () => {
-            try {
-                deleteTusCardByCardId(routeCardId);
-                bumpDataVersion();
-                alert(l('Silindi', 'Deleted'), l('Kart silindi.', 'Card deleted.'), () => router.back());
-            } catch (e) {
-                console.warn('[Editor] delete failed:', e);
-                alert(t('common.error'), l('Kart silinemedi.', 'Could not delete the card.'));
-            }
-        }, { destructive: true });
+        const card = getAnkiCard(routeCardId);
+        const siblingCount = card ? getCardsForNote(card.noteId).length : 1;
+        confirm(
+            l('Notu sil', 'Delete Note'),
+            siblingCount > 1
+                ? l(
+                    `Bu not ve ondan üretilen ${siblingCount} kart silinsin mi? Bu işlem geri alınamaz.`,
+                    `Delete this note and the ${siblingCount} cards it generates? This cannot be undone.`,
+                )
+                : l(
+                    'Bu not silinsin mi? Bu işlem geri alınamaz.',
+                    'Delete this note? This cannot be undone.',
+                ),
+            () => {
+                try {
+                    deleteTusCardByCardId(routeCardId);
+                    // The note is gone, so the unsaved-changes guard must not stop the screen from
+                    // closing over a draft that no longer has anything to be saved into.
+                    resetDraftBaseline(currentDraft);
+                    bumpDataVersion();
+                    alert(l('Silindi', 'Deleted'), l('Not silindi.', 'Note deleted.'), () => router.back());
+                } catch (e) {
+                    console.warn('[Editor] delete failed:', e);
+                    alert(t('common.error'), l('Not silinemedi.', 'Could not delete the note.'));
+                }
+            },
+            { destructive: true },
+        );
     };
 
     type FormattingTool = {
@@ -1334,11 +1396,16 @@ export default function EditorScreen() {
     };
 
     const toolbarToolKeys = editorToolKeysForTab(toolbarTab);
-    // Cloze and the user's own buttons belong to the Insert tab; they insert, they do not format.
+    // The user's own buttons belong to the Insert tab; they insert, they do not format.
     const showsInsertExtras = toolbarTab === 'insert';
+    // Cloze is not one of them. It is the single button a cloze note cannot be written without —
+    // and the save error tells the learner to look for it "in the toolbar" — so it sits on the
+    // tab the toolbar opens on rather than two taps away.
+    const showsClozeTool = isCloze && toolbarTab === 'home';
 
     const toolbarItemCount = toolbarToolKeys.length
-        + (showsInsertExtras ? customToolbarButtons.length + 1 + (isCloze ? 1 : 0) : 0);
+        + (showsClozeTool ? 1 : 0)
+        + (showsInsertExtras ? customToolbarButtons.length + 1 : 0);
     const centerToolbar = toolbarItemCount * 44 <= screenWidth;
 
     const { buttonWidth: dynamicButtonWidth, isPeeking: shouldPeekScrollable } = calculateToolbarButtonWidth({
@@ -1350,11 +1417,11 @@ export default function EditorScreen() {
 
     const renderFormattingToolbarItems = () => (
         <>
-            {isCloze && showsInsertExtras && (
+            {showsClozeTool && (
                 <TouchableOpacity
                     style={[styles.formatButton, buttonWidthStyle]}
                     onPress={() => {
-                        const targetIndex = isCloze ? clozeFieldIndex(selectedNoteType) : activeFieldIndex;
+                        const targetIndex = clozeFieldIndex(selectedNoteType);
                         const targetEditor = fieldEditorRefs.current[targetIndex] ?? getActiveEditor();
                         targetEditor?.runCommand('cloze');
                     }}
@@ -1489,6 +1556,11 @@ export default function EditorScreen() {
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             >
                 <View style={styles.selectorGroup}>
+                    {/*
+                      * The note type is fixed once a note exists, as it is in Anki's edit dialog.
+                      * The row still answers a press: a tap that does nothing and says nothing
+                      * reads as a broken control rather than a locked one.
+                      */}
                     <TouchableOpacity
                         style={styles.ankiSelectorRow}
                         onPress={() => {
@@ -1496,10 +1568,20 @@ export default function EditorScreen() {
                                 alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartlarının not türü değiştirilemez.', 'Note type of built-in TUS cards cannot be changed.'));
                                 return;
                             }
-                            if (!isEditing) setShowCardTypePicker(true);
+                            if (isEditing) {
+                                alert(
+                                    l('Not türü değiştirilemez', 'Note Type Is Fixed'),
+                                    l(
+                                        'Var olan bir notun türü bu ekrandan değiştirilemez. Yeni bir not eklerken tür seçebilirsiniz.',
+                                        'An existing note keeps the note type it was created with. Choose a type when you add a new note.',
+                                    ),
+                                );
+                                return;
+                            }
+                            setShowCardTypePicker(true);
                         }}
-                        disabled={isEditing}
                         accessibilityRole="button"
+                        accessibilityState={{ disabled: isEditing }}
                         accessibilityLabel={l(`Kart türü: ${cardTypeLabel}`, `Note type: ${cardTypeLabel}`)}
                     >
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
@@ -1547,6 +1629,9 @@ export default function EditorScreen() {
                 {fieldsToRender.map((field, index) => {
                     const localizedName = localizeFieldName(locale, field.name);
                     const isPinned = pinnedFields.has(field.ord);
+                    // Anki stores a font, a size and a right-to-left flag on every field; the
+                    // rules for an unset or unusable value live in lib/editorFieldStyle.ts.
+                    const fieldFontSize = editorFieldFontSize(field.fontSize, editorPreferences.fontSize);
                     const placeholder = isCloze && index === 0
                         ? l('Metni yazın, sonra gizlenecek bölümü seçip […] düğmesine dokunun…', 'Enter text, then select the part to hide and tap […]…')
                         : isCloze && index === 1
@@ -1572,9 +1657,6 @@ export default function EditorScreen() {
                                             <PinIcon color={isPinned ? colors.accent : colors.textMuted} />
                                         </TouchableOpacity>
                                         <MediaAttachButton
-                                            ref={(el) => {
-                                                fieldMediaRefs.current[index] = el;
-                                            }}
                                             onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet)}
                                         />
                                     </View>
@@ -1610,7 +1692,9 @@ export default function EditorScreen() {
                                 }}
                                 placeholder={placeholder}
                                 colors={colors}
-                                fontSize={'fontSize' in field && typeof (field as any).fontSize === 'number' ? (field as any).fontSize : editorPreferences.fontSize}
+                                fontSize={fieldFontSize}
+                                fontFamily={field.font}
+                                rtl={field.rtl}
                                 capitalizeSentences={editorPreferences.capitalizeSentences}
                                 pasteClipboardImagesAsPng={editorPreferences.pasteClipboardImagesAsPng}
                                 scrollMode="contained"
@@ -1764,7 +1848,7 @@ export default function EditorScreen() {
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                         <KeyboardDismissIcon color={colors.accent} size={17} />
-                        <Text style={styles.keyboardDismissText}>{l('Klavyeyi Kapat', 'Done')}</Text>
+                        <Text style={styles.keyboardDismissText}>{l('Kapat', 'Done')}</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -1772,13 +1856,33 @@ export default function EditorScreen() {
             <View style={{ height: insets.bottom, backgroundColor: colors.bgCard }} pointerEvents="none" />
 
             {showOverflowMenu && (
-                <View style={styles.overflowOverlay}>
+                <View style={[styles.overflowOverlay, { paddingTop: insets.top + EDITOR_HEADER_HEIGHT }]}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
                         onPress={() => setShowOverflowMenu(false)}
                         accessibilityLabel={l('Seçenekler menüsünü kapat', 'Close options menu')}
                     />
                     <View style={styles.overflowMenu} accessibilityViewIsModal>
+                        {/* A catalog note's fields are read-only, so neither of these applies to it. */}
+                        {!isCatalog && (
+                            <TouchableOpacity
+                                style={styles.overflowItem}
+                                onPress={requestClearFields}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.overflowItemText}>{l('Alanları temizle', 'Clear fields')}</Text>
+                            </TouchableOpacity>
+                        )}
+                        {!isCatalog && isEditing && (
+                            <TouchableOpacity
+                                style={styles.overflowItem}
+                                onPress={handleDelete}
+                                accessibilityRole="button"
+                            >
+                                <Text style={[styles.overflowItemText, styles.dangerText]}>{l('Notu sil', 'Delete note')}</Text>
+                            </TouchableOpacity>
+                        )}
+                        {!isCatalog && <View style={styles.overflowSeparator} />}
                         <TouchableOpacity
                             style={styles.overflowItem}
                             onPress={() => runAfterOverflowClose(() => setShowFontSizePicker(true))}
@@ -1798,29 +1902,33 @@ export default function EditorScreen() {
                                 {editorPreferences.capitalizeSentences && <Text style={styles.overflowCheckboxMark}>✓</Text>}
                             </View>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.overflowItem}
-                            onPress={() => updateEditorPreferences({ toolbarVisible: !editorPreferences.toolbarVisible })}
-                            accessibilityRole="checkbox"
-                            accessibilityState={{ checked: editorPreferences.toolbarVisible }}
-                        >
-                            <Text style={styles.overflowItemText}>{l('Araç çubuğunu göster', 'Show toolbar')}</Text>
-                            <View style={[styles.overflowCheckbox, editorPreferences.toolbarVisible && styles.overflowCheckboxChecked]}>
-                                {editorPreferences.toolbarVisible && <Text style={styles.overflowCheckboxMark}>✓</Text>}
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.overflowItem, !editorPreferences.toolbarVisible && styles.overflowItemDisabled]}
-                            disabled={!editorPreferences.toolbarVisible}
-                            onPress={() => updateEditorPreferences({ toolbarScrollable: !editorPreferences.toolbarScrollable })}
-                            accessibilityRole="checkbox"
-                            accessibilityState={{ checked: editorPreferences.toolbarScrollable, disabled: !editorPreferences.toolbarVisible }}
-                        >
-                            <Text style={styles.overflowItemText}>{l('Araç çubuğunu kaydır', 'Scroll toolbar')}</Text>
-                            <View style={[styles.overflowCheckbox, editorPreferences.toolbarScrollable && styles.overflowCheckboxChecked]}>
-                                {editorPreferences.toolbarScrollable && <Text style={styles.overflowCheckboxMark}>✓</Text>}
-                            </View>
-                        </TouchableOpacity>
+                        {!isCatalog && (
+                            <TouchableOpacity
+                                style={styles.overflowItem}
+                                onPress={() => updateEditorPreferences({ toolbarVisible: !editorPreferences.toolbarVisible })}
+                                accessibilityRole="checkbox"
+                                accessibilityState={{ checked: editorPreferences.toolbarVisible }}
+                            >
+                                <Text style={styles.overflowItemText}>{l('Araç çubuğunu göster', 'Show toolbar')}</Text>
+                                <View style={[styles.overflowCheckbox, editorPreferences.toolbarVisible && styles.overflowCheckboxChecked]}>
+                                    {editorPreferences.toolbarVisible && <Text style={styles.overflowCheckboxMark}>✓</Text>}
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        {!isCatalog && (
+                            <TouchableOpacity
+                                style={[styles.overflowItem, !editorPreferences.toolbarVisible && styles.overflowItemDisabled]}
+                                disabled={!editorPreferences.toolbarVisible}
+                                onPress={() => updateEditorPreferences({ toolbarScrollable: !editorPreferences.toolbarScrollable })}
+                                accessibilityRole="checkbox"
+                                accessibilityState={{ checked: editorPreferences.toolbarScrollable, disabled: !editorPreferences.toolbarVisible }}
+                            >
+                                <Text style={styles.overflowItemText}>{l('Araç çubuğunu kaydır', 'Scroll toolbar')}</Text>
+                                <View style={[styles.overflowCheckbox, editorPreferences.toolbarScrollable && styles.overflowCheckboxChecked]}>
+                                    {editorPreferences.toolbarScrollable && <Text style={styles.overflowCheckboxMark}>✓</Text>}
+                                </View>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
             )}
@@ -2523,7 +2631,7 @@ export default function EditorScreen() {
                                     side={previewSide}
                                     scrollMode="contained"
                                     maxHeight={previewBodyHeight}
-                                    audioPlaybackRate={loadSettings().audioPlaybackRate ?? 1.0}
+                                    audioPlaybackRate={previewAudioPlaybackRate}
                                 />
                             )}
                         </View>
@@ -2548,7 +2656,7 @@ function createStyles(colors: ColorScheme) {
     container: { flex: 1, backgroundColor: colors.bgCard },
     keyboardArea: { flex: 1 },
     editorHeader: {
-        minHeight: 56,
+        minHeight: EDITOR_HEADER_HEIGHT,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.accent,
@@ -2719,7 +2827,6 @@ function createStyles(colors: ColorScheme) {
         ...StyleSheet.absoluteFill,
         alignItems: 'flex-end',
         backgroundColor: 'rgba(0,0,0,0.18)',
-        paddingTop: 58,
         paddingRight: 4,
         zIndex: 100,
         elevation: 100,
@@ -2742,6 +2849,11 @@ function createStyles(colors: ColorScheme) {
         gap: Spacing.sm,
     },
     overflowItemDisabled: { opacity: 0.4 },
+    overflowSeparator: {
+        height: StyleSheet.hairlineWidth,
+        marginVertical: 4,
+        backgroundColor: colors.border,
+    },
     overflowItemText: { flex: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
     overflowItemValue: { fontSize: FontSize.sm, color: colors.textSecondary },
     overflowChevron: { fontSize: 23, color: colors.textMuted },
@@ -3032,26 +3144,9 @@ function createStyles(colors: ColorScheme) {
         color: colors.textPrimary,
         backgroundColor: colors.bgSecondary,
     },
-    modalPrimary: {
-        minHeight: 48,
-        marginTop: Spacing.sm,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.sm,
-        backgroundColor: colors.accent,
-    },
-    modalPrimaryText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
     modalClose: { minHeight: 48, marginTop: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
     modalCloseText: { color: colors.textMuted, fontWeight: '600' },
-    label: {
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1.5,
-        color: colors.textMuted,
-        textTransform: 'uppercase',
-    },
     fieldLabelRow: { minHeight: 40, marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    fieldLabel: { fontSize: FontSize.xs, fontWeight: '700', color: colors.textMuted },
     fieldName: { flex: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     fieldActions: { flexDirection: 'row', alignItems: 'center' },
     fieldAction: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
