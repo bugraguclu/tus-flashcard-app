@@ -47,11 +47,19 @@ import {
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
-import { getDeckOptionsScopes } from '../lib/deckOptionsScope';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
 import { normalizeNewCardGatherOrder } from '../lib/queueBuild';
 import { withoutPreservedReviewOrder } from '../lib/exportAnkiPackage';
 import { saveCollectionDeckOptions } from '../lib/storage';
+import {
+    deckOptionsWarnings,
+    isDeckOptionFieldVisible,
+    resolveReviewSortOrderForScheduler,
+    reviewSortOrderChoices,
+    type DeckOptionsWarning,
+    type DeckOptionsWarningId,
+    type ReviewSortOrderLabelId,
+} from '../lib/deckOptionsRules';
 import {
     formatAnkiStepText,
     parseAnkiStepText,
@@ -89,11 +97,6 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 
 const DAY_FACTORS = [1, 0.5, 0] as const;
 
-function parseCount(text: string, fallback: number, max: number = 9999): number {
-    const value = parseInt(text, 10);
-    return Number.isFinite(value) ? Math.max(0, Math.min(max, value)) : fallback;
-}
-
 type ScreenStyles = ReturnType<typeof createStyles>;
 type SelectOption = { key: string; label: string };
 type OptionHelp = {
@@ -110,6 +113,9 @@ interface DeckOptionsContextValue {
     styles: ScreenStyles;
     colors: ColorScheme;
     errors: Partial<Record<string, string>>;
+    /** Anki's non-blocking advice, grouped by the field it is printed under. */
+    warnings: Record<string, DeckOptionsWarning[]>;
+    warningText: (id: DeckOptionsWarningId) => string;
 }
 
 const DeckOptionsContext = React.createContext<DeckOptionsContextValue | null>(null);
@@ -467,6 +473,40 @@ function Field({ field, label, value, onChange, hint, suffix, kind = 'integer', 
     );
 }
 
+/**
+ * Anki's `Warning` rows: what the value in the field above will do, printed where it applies.
+ * Nothing here stops a save — that is the difference between advice and an error.
+ */
+function FieldAdvice({ field }: { field: string }) {
+    const ctx = React.useContext(DeckOptionsContext);
+    const items = ctx?.warnings[field];
+    if (!ctx || !items?.length) return null;
+    const { styles } = ctx;
+    return (
+        <>
+            {items.map((warning) => (
+                <View
+                    key={warning.id}
+                    style={[
+                        styles.warningBox,
+                        warning.level === 'danger' && styles.warningBoxDanger,
+                        warning.level === 'info' && styles.warningBoxInfo,
+                    ]}
+                    accessibilityLiveRegion="polite"
+                >
+                    <Text style={[
+                        styles.warningText,
+                        warning.level === 'danger' && styles.warningTextDanger,
+                        warning.level === 'info' && styles.warningTextInfo,
+                    ]}>
+                        {ctx.warningText(warning.id)}
+                    </Text>
+                </View>
+            ))}
+        </>
+    );
+}
+
 function SwitchRow({ label, value, onChange, hint }: {
     label: string;
     value: boolean;
@@ -541,6 +581,14 @@ export default function DeckOptionsScreen() {
         form: formFromConfig(initialConfig, deck?.description ?? ''),
     }));
     const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    /**
+     * "Reschedule cards on change" is a request carried by one save, not a stored preference:
+     * Anki's screen starts it off every time it opens, so that agreeing to rewrite every due date
+     * once cannot quietly rewrite them all again on the next unrelated save.
+     */
+    const [rescheduleOnSave, setRescheduleOnSave] = useState(false);
+    /** Set by the optimizer so the save can record when these parameters were fitted. */
+    const [optimizedAtMs, setOptimizedAtMs] = useState<number | null>(null);
     const [optimizing, setOptimizing] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
     const [deckPickerOpen, setDeckPickerOpen] = useState(false);
@@ -612,7 +660,6 @@ export default function DeckOptionsScreen() {
             newIvlPercent: String(Math.round((config.newIvlPercent ?? 0) * 100)),
             // FSRS: the switches are collection-wide, the rest belongs to this preset.
             fsrsEnabled: settings.fsrsEnabled === true,
-            fsrsRescheduleOnChange: settings.fsrsRescheduleOnChange === true,
             fsrsShortTermWithSteps: settings.fsrsShortTermWithSteps === true,
             desiredRetention: (config.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION).toFixed(2),
             historicalRetention: (config.historicalRetention ?? FSRS_DEFAULT_HISTORICAL_RETENTION).toFixed(2),
@@ -626,7 +673,9 @@ export default function DeckOptionsScreen() {
         configId: nextConfigId,
         form: nextForm,
     });
-    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form });
+    // A reschedule request is an unsaved change like any other: it starts off, so it can only
+    // be on because the learner turned it on, and Save is what carries it out.
+    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave;
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -649,6 +698,8 @@ export default function DeckOptionsScreen() {
         setConfigId(nextId);
         setForm(nextForm);
         if (markSaved) setSavedSnapshot(snapshotForm(nextId, nextForm));
+        setRescheduleOnSave(false);
+        setOptimizedAtMs(null);
         setSaveState('idle');
         setSaveMessage('');
         setPresetPickerOpen(false);
@@ -669,6 +720,8 @@ export default function DeckOptionsScreen() {
         setConfigId(nextConfigId);
         setForm(nextForm);
         setSavedSnapshot(snapshotForm(nextConfigId, nextForm));
+        setRescheduleOnSave(false);
+        setOptimizedAtMs(null);
         setSaveState('idle');
         setSaveMessage('');
         setDeckPickerOpen(false);
@@ -725,10 +778,6 @@ export default function DeckOptionsScreen() {
     }, [configId, presetRevision]);
     const usedBy = currentPresetSummary.usedBy;
     const presetName = currentPresetSummary.name;
-    const deckScopes = useMemo(
-        () => getDeckOptionsScopes(getAllDecks()),
-        [deckRevision, presetRevision],
-    );
     const regularDecks = useMemo(
         () => getAllDecks().filter((d) => !d.isFiltered),
         [deckRevision],
@@ -767,6 +816,15 @@ export default function DeckOptionsScreen() {
         return l(`${min} ile ${max} arasında bir değer yazın.`, `Enter a value between ${min} and ${max}.`);
     };
 
+    /**
+     * Read the form.
+     *
+     * Two rules follow Anki. A field the running scheduler hides is still carried through — its
+     * stored value belongs to the preset and must survive a save made while FSRS is on — but it
+     * can never report an error, because an error the learner cannot see is an error they cannot
+     * fix. And a value that is merely unwise (a short maximum interval, Easy below Good) is
+     * advice, printed under the field by `deckOptionsWarnings`, never a refusal to save.
+     */
     const validateFormDraft = () => {
         type FormKey = keyof typeof form;
         const errors: Partial<Record<FormKey, string>> = {};
@@ -784,6 +842,18 @@ export default function DeckOptionsScreen() {
             const message = issueMessage(result.issue, min, max);
             if (message) errors[key] = message;
         };
+        /** A field the scheduler hides: keep a usable draft, fall back to what is stored. */
+        const hiddenInteger = (key: FormKey, min: number, max: number, stored: number) => {
+            integers[key] = parseBoundedIntegerDraft(String(form[key]), min, max).value ?? stored;
+        };
+        const hiddenDecimal = (key: FormKey, min: number, max: number, stored: number) => {
+            decimals[key] = parseBoundedDecimalDraft(String(form[key]), min, max).value ?? stored;
+        };
+        const shows = (field: Parameters<typeof isDeckOptionFieldVisible>[0]) =>
+            isDeckOptionFieldVisible(field, form.fsrsEnabled);
+        // The preset as it is on disk. Read from the memo rather than the database: this runs on
+        // every keystroke, and a stable object is also what keeps the advice below memoized.
+        const stored = initialConfig;
 
         integer('newPerDay', 0, 9999);
         integer('maxReviewsPerDay', 0, 9999);
@@ -791,29 +861,63 @@ export default function DeckOptionsScreen() {
         integer('deckReviewLimit', 0, 9999, true);
         integer('todayNewLimit', 0, 9999, true);
         integer('todayReviewLimit', 0, 9999, true);
-        integer('graduatingIvl', 1, 36500);
-        integer('easyIvl', 1, 36500);
-        integer('minIvl', 1, 36500);
         integer('leechThreshold', 1, 9999);
         integer('maxAnswerSecs', 1, 7200);
-        integer('secondsToShowQuestion', 0, 7200);
-        integer('secondsToShowAnswer', 0, 7200);
         integer('maxIvl', 1, 36500);
-        integer('newIvlPercent', 0, 100);
-        decimal('startingEase', 1.3, 5);
-        decimal('easyBonus', 1, 2);
-        decimal('hardIvl', 1, 2);
-        decimal('ivlModifier', 0.1, 3);
-        decimal('desiredRetention', FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX);
-        decimal('historicalRetention', 0.5, 0.99);
+        // Anki's Auto Advance dwells are fractions of a second, not whole ones: a card can be
+        // revealed after 2.5 seconds.
+        decimal('secondsToShowQuestion', 0, 7200);
+        decimal('secondsToShowAnswer', 0, 7200);
 
-        if (parseFsrsParameterText(form.fsrsParams) === null) {
+        if (shows('graduatingIvl')) integer('graduatingIvl', 1, 36500);
+        else hiddenInteger('graduatingIvl', 1, 36500, stored.graduatingIvl);
+        if (shows('easyIvl')) integer('easyIvl', 1, 36500);
+        else hiddenInteger('easyIvl', 1, 36500, stored.easyIvl);
+        if (shows('minIvl')) integer('minIvl', 1, 36500);
+        else hiddenInteger('minIvl', 1, 36500, stored.minIvl);
+        if (shows('newIvlPercent')) integer('newIvlPercent', 0, 100);
+        else hiddenInteger('newIvlPercent', 0, 100, Math.round((stored.newIvlPercent ?? 0) * 100));
+        // The multiplier bounds are Anki's, widened wherever this app was already more permissive
+        // so that a preset which arrived in a package can still be saved without being retyped.
+        if (shows('startingEase')) decimal('startingEase', 1.3, 5);
+        else hiddenDecimal('startingEase', 1.3, 5, stored.startingEase / 1000);
+        if (shows('easyBonus')) decimal('easyBonus', 1, 5);
+        else hiddenDecimal('easyBonus', 1, 5, stored.easyBonus);
+        if (shows('hardIvl')) decimal('hardIvl', 0.5, 2);
+        else hiddenDecimal('hardIvl', 0.5, 2, stored.hardIvl);
+        if (shows('ivlModifier')) decimal('ivlModifier', 0.1, 3);
+        else hiddenDecimal('ivlModifier', 0.1, 3, stored.ivlModifier);
+
+        if (shows('desiredRetention')) {
+            decimal('desiredRetention', FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX);
+        } else {
+            hiddenDecimal(
+                'desiredRetention',
+                FSRS_DESIRED_RETENTION_MIN,
+                FSRS_DESIRED_RETENTION_MAX,
+                stored.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION,
+            );
+        }
+        if (shows('historicalRetention')) {
+            decimal('historicalRetention', 0.5, 1);
+        } else {
+            hiddenDecimal(
+                'historicalRetention',
+                0.5,
+                1,
+                stored.historicalRetention ?? FSRS_DEFAULT_HISTORICAL_RETENTION,
+            );
+        }
+
+        if (shows('fsrsParams') && parseFsrsParameterText(form.fsrsParams) === null) {
             errors.fsrsParams = l(
                 'FSRS parametreleri 17, 19 veya 21 sayıdan oluşmalıdır.',
                 'FSRS parameters must be a list of 17, 19 or 21 numbers.',
             );
         }
-        if (form.ignoreRevlogsBefore.trim() !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(form.ignoreRevlogsBefore.trim())) {
+        if (shows('ignoreRevlogsBefore')
+            && form.ignoreRevlogsBefore.trim() !== ''
+            && !/^\d{4}-\d{2}-\d{2}$/.test(form.ignoreRevlogsBefore.trim())) {
             errors.ignoreRevlogsBefore = l('Tarihi YYYY-AA-GG olarak yazın.', 'Enter the date as YYYY-MM-DD.');
         }
 
@@ -831,16 +935,8 @@ export default function DeckOptionsScreen() {
                 'Separate steps with spaces: 30s, 10m, 2h, or 1d.',
             );
         }
-        const graduating = integers.graduatingIvl;
-        const easy = integers.easyIvl;
-        if (graduating !== undefined && easy !== undefined && easy < graduating) {
-            errors.easyIvl = l(
-                'Kolay aralığı mezuniyet aralığından kısa olamaz.',
-                'The Easy interval cannot be shorter than the graduating interval.',
-            );
-        }
 
-        return { errors, integers, decimals, learningSteps, relearningSteps };
+        return { errors, integers, decimals, learningSteps, relearningSteps, stored };
     };
 
     /**
@@ -897,6 +993,7 @@ export default function DeckOptionsScreen() {
             }
 
             set('fsrsParams', formatFsrsParameterText(result.parameters));
+            setOptimizedAtMs(Date.now());
             const warning = reviewCount < FSRS_RECOMMENDED_TRAINING_REVIEWS
                 ? l(
                     `\n\nUyarı: ${FSRS_RECOMMENDED_TRAINING_REVIEWS} tekrarın altında sonuçlar oynak olabilir.`,
@@ -920,6 +1017,115 @@ export default function DeckOptionsScreen() {
 
     const validation = validateFormDraft();
     const hasValidationErrors = Object.keys(validation.errors).length > 0;
+
+    /** Anki's warning lines, in this app's two languages. */
+    const warningText = (id: DeckOptionsWarningId): string => {
+        switch (id) {
+            case 'reviewsTooLow':
+                return l(
+                    'Tekrar limiti yeni kart limitine göre düşük. Dengeli bir yük için tekrar limitini günlük yeni kart sayısının yaklaşık 10 katı tutun.',
+                    'The review limit is low for this many new cards. For a balanced workload keep it around ten times the daily new-card count.',
+                );
+            case 'learningStepsAboveGraduating':
+                return l(
+                    'Son öğrenme adımı mezuniyet aralığından uzun; kart mezun olunca daha erken geri gelir.',
+                    'Your final learning step is longer than the graduating interval, so the card comes back sooner once it graduates.',
+                );
+            case 'learningStepsTooLargeForFsrs':
+            case 'relearningStepsTooLargeForFsrs':
+                return l(
+                    'FSRS açıkken bir gün veya daha uzun adımlar önerilmez: aralığı seçmek FSRS’in işidir.',
+                    'Steps of a day or more are not recommended with FSRS; choosing the interval is its job.',
+                );
+            case 'goodAboveEasy':
+                return l(
+                    'Kolay aralığı mezuniyet aralığından kısa; Kolay yanıtı kartı İyi’den daha erken geri getirir.',
+                    'The Easy interval is shorter than the graduating interval, so Easy brings the card back sooner than Good.',
+                );
+            case 'insertionOrderRandom':
+                return l(
+                    'Rastgele ekleme kartların konum numaralarını karıştırır. Günlük çalışma sırası yine Görüntüleme sırasından gelir.',
+                    'Random insertion shuffles the position numbers of new cards. The daily study order still comes from Display Order.',
+                );
+            case 'relearningStepsAboveMinimum':
+                return l(
+                    'Son yeniden öğrenme adımı en az aralıktan uzun; en az aralık bu kartlar için bir şey değiştirmez.',
+                    'Your final relearning step is longer than the minimum interval, so the minimum changes nothing for those cards.',
+                );
+            case 'maximumIntervalTooShort':
+                return l(
+                    'En fazla aralık kısa: iyi hatırlanan kartlar bile sık sık geri gelir ve tekrar yükü artar.',
+                    'A short maximum interval brings well-remembered cards back often, which raises your daily reviews.',
+                );
+            case 'maximumAnswerSecsAboveRecommended':
+                return l(
+                    'On dakikanın üzerindeki süreler istatistiklere olduğu gibi yazılır; verilen bir mola çalışma süresi gibi görünür.',
+                    'Times above ten minutes are recorded as they are, so a break gets logged as study time.',
+                );
+            case 'desiredRetentionTooLow':
+                return l(
+                    'Düşük hedef daha az tekrar, ama belirgin biçimde daha çok unutma demektir.',
+                    'A low target means fewer reviews, and noticeably more forgetting.',
+                );
+            case 'desiredRetentionTooHigh':
+                return l(
+                    'Yüksek hedef günlük tekrar sayısını hızla artırır; 0,90 çoğu deste için yeterlidir.',
+                    'A high target raises your daily reviews quickly; 0.90 is enough for most decks.',
+                );
+            case 'easyDaysNoNormalDays':
+                return l(
+                    'En az bir gün Normal kalmalı, yoksa tekrarların kaydırılabileceği gün kalmaz.',
+                    'Keep at least one day Normal, or there is nowhere left to move reviews to.',
+                );
+            case 'easyDaysNotRescheduled':
+                return l(
+                    'Bu değişiklik yalnızca bundan sonra hesaplanan aralıkları etkiler; mevcut vadeler yerinde kalır.',
+                    'This change only affects intervals calculated from now on; existing due dates stay where they are.',
+                );
+            case 'fsrsParamsStale':
+                return l(
+                    'Parametreler bir aydan uzun süredir optimize edilmedi; yeniden optimize etmek iyi olur.',
+                    'These parameters were last optimized over a month ago; running the optimizer again is worthwhile.',
+                );
+        }
+    };
+
+    /**
+     * Anki's deck options advice, keyed by the field it belongs under. None of it blocks a save:
+     * these are the warnings its own screen prints while happily storing the value.
+     */
+    const warningsByField = useMemo(() => {
+        const daysSinceOptimization = validation.stored.fsrsParamsOptimizedAtMs
+            ? (Date.now() - validation.stored.fsrsParamsOptimizedAtMs) / 86400000
+            : undefined;
+        const storedEasyDays = Array.isArray(validation.stored.easyDays) && validation.stored.easyDays.length === 7
+            ? validation.stored.easyDays
+            : [1, 1, 1, 1, 1, 1, 1];
+        const warnings = deckOptionsWarnings({
+            fsrsEnabled: form.fsrsEnabled,
+            learningSteps: validation.learningSteps,
+            relearningSteps: validation.relearningSteps,
+            insertionOrder: form.insertionOrder,
+            newPerDay: validation.integers.newPerDay,
+            reviewsPerDay: validation.integers.maxReviewsPerDay,
+            graduatingIvl: validation.integers.graduatingIvl,
+            easyIvl: validation.integers.easyIvl,
+            minIvl: validation.integers.minIvl,
+            maxIvl: validation.integers.maxIvl,
+            maxAnswerSecs: validation.integers.maxAnswerSecs,
+            desiredRetention: validation.decimals.desiredRetention,
+            easyDays: form.easyDays,
+            easyDaysChanged: form.easyDays.some((factor, index) => factor !== storedEasyDays[index]),
+            rescheduleOnChange: rescheduleOnSave,
+            daysSinceOptimization,
+        });
+        const grouped: Record<string, DeckOptionsWarning[]> = {};
+        for (const warning of warnings) {
+            (grouped[warning.field] ??= []).push(warning);
+        }
+        return grouped;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form, validation.stored, rescheduleOnSave]);
 
     const persistForm = (includeSubdecks = false): { saved: boolean; subdecksChanged: number } => {
         if (hasValidationErrors || !validation.learningSteps || validation.relearningSteps === null) {
@@ -958,7 +1164,6 @@ export default function DeckOptionsScreen() {
                 newCardSortOrder: form.newCardSortOrder,
                 newReviewOrder: form.newReviewOrder,
                 interdayLearningMix: form.interdayLearningMix,
-                reviewSortOrder: form.reviewSortOrder,
                 // Saving the form is an explicit choice, so it replaces any FSRS-only review
                 // order preserved from an imported package rather than being overridden by it.
                 ankiRaw: withoutPreservedReviewOrder(base.ankiRaw),
@@ -971,8 +1176,8 @@ export default function DeckOptionsScreen() {
                 showTimer: form.showTimer,
                 maxAnswerSecs: integer('maxAnswerSecs'),
                 stopTimerOnAnswer: form.stopTimerOnAnswer,
-                secondsToShowQuestion: integer('secondsToShowQuestion'),
-                secondsToShowAnswer: integer('secondsToShowAnswer'),
+                secondsToShowQuestion: decimal('secondsToShowQuestion'),
+                secondsToShowAnswer: decimal('secondsToShowAnswer'),
                 questionAction: form.questionAction,
                 waitForAudio: form.waitForAudio,
                 answerAction: form.answerAction,
@@ -987,6 +1192,12 @@ export default function DeckOptionsScreen() {
                 desiredRetention: decimal('desiredRetention'),
                 historicalRetention: decimal('historicalRetention'),
                 ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore),
+                // Stamped only by a run of the optimizer, so the "time to optimize again" nudge
+                // measures the age of the fit rather than the age of the last unrelated save.
+                fsrsParamsOptimizedAtMs: optimizedAtMs ?? base.fsrsParamsOptimizedAtMs,
+                // The review order follows the scheduler: a preset left on retrievability cannot
+                // stay there once FSRS is off, because no card carries the column any more.
+                reviewSortOrder: resolveReviewSortOrderForScheduler(form.reviewSortOrder, form.fsrsEnabled),
             };
 
             db.execSync('BEGIN TRANSACTION;');
@@ -1001,30 +1212,33 @@ export default function DeckOptionsScreen() {
                 settings.dayRolloverHour,
             );
             setDeckDescription(deck.id, form.description);
+            // Only the switches this screen actually owns. `fsrsShortTermWithSteps` is read for
+            // the optimizer's clamp and has no control here, so writing it back would do nothing
+            // but overwrite a value something else may have changed while this screen was open.
             saveCollectionDeckOptions({
                 newCardsIgnoreReviewLimit: form.newCardsIgnoreReviewLimit,
                 limitsStartFromTop: form.limitsStartFromTop,
                 fsrsEnabled: form.fsrsEnabled,
-                fsrsRescheduleOnChange: form.fsrsRescheduleOnChange,
-                fsrsShortTermWithSteps: form.fsrsShortTermWithSteps,
             });
             if (includeSubdecks) subdecksChanged = applyConfigToSubdecks(deck.id);
             db.execSync('COMMIT;');
             transactionOpen = false;
 
             // Anki recomputes memory states when an FSRS input changes, and rewrites due dates
-            // too when the learner asked for it. Nothing runs while FSRS is off.
+            // too when the learner asked for it. Nothing runs while FSRS is off. Asking for a
+            // reschedule is enough on its own: it is a request to redo the dates from the
+            // parameters already stored, whether or not this save changed any of them.
             const fsrsInputsChanged = form.fsrsEnabled
                 && (settings.fsrsEnabled !== true
                     || formatFsrsParameterText(base.fsrsParams) !== formatFsrsParameterText(updated.fsrsParams)
                     || base.desiredRetention !== updated.desiredRetention
                     || base.historicalRetention !== updated.historicalRetention
                     || base.ignoreRevlogsBeforeMs !== updated.ignoreRevlogsBeforeMs);
-            if (fsrsInputsChanged) {
+            if (fsrsInputsChanged || (form.fsrsEnabled && rescheduleOnSave)) {
                 try {
                     rebuildFsrsMemoryStates(
                         { ...settings, fsrsEnabled: true },
-                        { reschedule: form.fsrsRescheduleOnChange },
+                        { reschedule: rescheduleOnSave },
                     );
                 } catch (memoryError) {
                     console.warn('[DeckOptions] FSRS memory rebuild failed:', memoryError);
@@ -1039,6 +1253,8 @@ export default function DeckOptionsScreen() {
                 const normalizedForm = formFromConfig(getDeckConfig(configId), savedDeck.description, savedDeck, savedToday);
                 setForm(normalizedForm);
                 setSavedSnapshot(snapshotForm(configId, normalizedForm));
+                setRescheduleOnSave(false);
+                setOptimizedAtMs(null);
                 setPresetRevision((value) => value + 1);
                 setDeckRevision((value) => value + 1);
                 refreshData();
@@ -1188,6 +1404,40 @@ export default function DeckOptionsScreen() {
             : l('Ayarlar kaydedildi. Tüm alt desteler zaten bu ayar grubunda.', 'Settings were saved. All subdecks already use this preset.'));
     };
 
+    /** The review orders Anki offers for the scheduler in use, with its labels. */
+    const reviewOrderOptions: SelectOption[] = reviewSortOrderChoices(form.fsrsEnabled).map((choice) => {
+        const labels: Record<ReviewSortOrderLabelId, string> = {
+            dueThenRandom: l('Zamanı gelen, sonra rastgele', 'Due date, then random'),
+            dueThenDeck: l('Zamanı gelen, sonra deste', 'Due date, then deck'),
+            deckThenDue: l('Deste, sonra zamanı gelen', 'Deck, then due date'),
+            intervalsAsc: l('Aralık artan', 'Ascending intervals'),
+            intervalsDesc: l('Aralık azalan', 'Descending intervals'),
+            easeAsc: l('Kolaylık artan', 'Ascending ease'),
+            easeDesc: l('Kolaylık azalan', 'Descending ease'),
+            difficultyAsc: l('Zorluk artan', 'Ascending difficulty'),
+            difficultyDesc: l('Zorluk azalan', 'Descending difficulty'),
+            retrievabilityAsc: l('Hatırlanabilirlik artan', 'Ascending retrievability'),
+            retrievabilityDesc: l('Hatırlanabilirlik azalan', 'Descending retrievability'),
+            relativeOverdueness: l('Göreli gecikmişlik', 'Relative overdueness'),
+            random: l('Rastgele', 'Random'),
+            added: l('Eklenme sırası', 'Order added'),
+            reverseAdded: l('Son eklenen önce', 'Latest added first'),
+        };
+        return { key: choice.order, label: labels[choice.label] };
+    });
+
+    /**
+     * What the parameters field says beneath itself: when this preset was last fitted, which is
+     * the only way to tell a set the optimizer produced from the shipped defaults.
+     */
+    const optimizedAtHint = (() => {
+        const base = l('17, 19 veya 21 sayı. Boş bırakmak varsayılanlara döner.', '17, 19 or 21 numbers. Leaving it empty restores the defaults.');
+        const stampedAt = optimizedAtMs ?? validation.stored.fsrsParamsOptimizedAtMs;
+        if (!stampedAt) return base;
+        const date = new Date(stampedAt).toISOString().slice(0, 10);
+        return `${base} ${l(`Son optimizasyon: ${date}.`, `Last optimized: ${date}.`)}`;
+    })();
+
     const cancelLabel = t('common.cancel');
     const limitLabels = {
         preset: l('Ayar grubu', 'Preset'),
@@ -1328,7 +1578,10 @@ export default function DeckOptionsScreen() {
                 l('Aralık düzenleyici bütün tekrar aralıklarına ek bir çarpan uygular; en fazla aralık nihai üst sınırdır.', 'Interval modifier applies an extra multiplier to all review intervals; Maximum interval is the final upper bound.'),
                 l('Yeni aralık yüzdesi, Tekrar yanıtından sonra eski aralığın ne kadarının korunacağını belirler. 0, kartı en az aralığa döndürür.', 'New interval percentage controls how much of the old interval remains after Again. 0 resets the card to the minimum interval.'),
             ],
-            note: l('FSRS bu sürümde uygulanmış değildir. Ne yaptığınızdan emin değilseniz varsayılan değerleri koruyun.', 'FSRS is not implemented in this version. Keep the defaults unless you understand the scheduling impact.'),
+            note: l(
+                'Bu değerleri yalnızca FSRS kapalıyken görürsünüz; FSRS açıldığında aralıkları kartın hafıza durumu belirler ve bu çarpanlar kullanılmaz. Ne yaptığınızdan emin değilseniz varsayılanları koruyun.',
+                'These values are shown only while FSRS is off: with FSRS on, intervals come from each card’s memory state and the multipliers are unused. Keep the defaults unless you understand the scheduling impact.',
+            ),
             ...helpChrome,
         },
     } satisfies Record<string, OptionHelp>;
@@ -1356,7 +1609,6 @@ export default function DeckOptionsScreen() {
 
     const setScopedNewValue = (value: string) => set(newLimitScope === 'preset' ? 'newPerDay' : newLimitScope === 'deck' ? 'deckNewLimit' : 'todayNewLimit', value);
     const setScopedReviewValue = (value: string) => set(reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit', value);
-    const reviewsWarning = parseCount(scopedReviewValue || scopedReviewPlaceholder, 0) < Math.min(9999, parseCount(scopedNewValue || scopedNewPlaceholder, 0) * 10);
     const saveDisabled = saveState === 'saving' || !isDirty;
     const saveLabel = saveState === 'saving'
         ? l('Kaydediliyor…', 'Saving…')
@@ -1373,7 +1625,10 @@ export default function DeckOptionsScreen() {
         styles,
         colors,
         errors: validation.errors,
-    }), [styles, colors, validation.errors]);
+        warnings: warningsByField,
+        warningText,
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [styles, colors, validation.errors, warningsByField, l]);
 
     return (
         <DeckOptionsContext.Provider value={deckOptionsContextValue}>
@@ -1410,10 +1665,8 @@ export default function DeckOptionsScreen() {
                         accessibilityLabel={l(`Deste: ${deck.name.replaceAll('::', ' › ')}`, `Deck: ${deck.name.replaceAll('::', ' › ')}`)}
                     >
                         <View style={styles.presetSelectorTextWrap}>
+                            <Text style={styles.presetSelectorLabel}>{l('Deste', 'Deck')}</Text>
                             <Text style={styles.presetSelectorName} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
-                            <Text style={styles.presetSelectorMeta} numberOfLines={1}>
-                                {l(`Ayar grubu: ${presetName} · ${usedBy} deste`, `Preset: ${presetName} · ${usedBy} decks`)}
-                            </Text>
                         </View>
                         <Text style={styles.presetSelectorChevron}>⌄</Text>
                     </TouchableOpacity>
@@ -1432,6 +1685,25 @@ export default function DeckOptionsScreen() {
                         <Text style={styles.presetMoreButtonText}>•••</Text>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                    style={styles.presetRow}
+                    onPress={() => { Keyboard.dismiss(); setPresetPickerOpen(true); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={l(
+                        `Ayar grubu: ${presetName}, ${usedBy} destede kullanılıyor. Değiştirmek için dokunun.`,
+                        `Preset: ${presetName}, used by ${usedBy} decks. Tap to change.`,
+                    )}
+                >
+                    <View style={styles.presetSelectorTextWrap}>
+                        <Text style={styles.presetSelectorLabel}>{l('Ayar grubu', 'Preset')}</Text>
+                        <Text style={styles.presetSelectorName} numberOfLines={1}>{presetName}</Text>
+                    </View>
+                    <Text style={styles.presetSelectorMeta} numberOfLines={1}>
+                        {l(`${usedBy} deste`, `${usedBy} decks`)}
+                    </Text>
+                    <Text style={styles.presetSelectorChevron}>⌄</Text>
+                </TouchableOpacity>
 
                 <View
                     style={[
@@ -1476,14 +1748,7 @@ export default function DeckOptionsScreen() {
                         onChange={setScopedReviewValue}
                         inputRef={reviewLimitInputRef}
                     />
-                    {reviewsWarning ? (
-                        <View style={styles.warningBox}>
-                            <Text style={styles.warningText}>{l(
-                                'Tekrar limiti yeni kart limitine göre düşük. Dengeli bir yük için tekrar limitini günlük yeni kart sayısının yaklaşık 10 katı tutmanız önerilir.',
-                                'The review limit is low relative to the new-card limit. For a balanced workload, a review limit around 10× the daily new-card count is recommended.',
-                            )}</Text>
-                        </View>
-                    ) : null}
+                    <FieldAdvice field="maxReviewsPerDay" />
                     <SwitchRow
                         label={l('Yeni kartlar tekrar limitini yok saysın', 'New cards ignore review limit')}
                         value={form.newCardsIgnoreReviewLimit}
@@ -1507,8 +1772,16 @@ export default function DeckOptionsScreen() {
                     hint={l('Boşlukla ayırın: 1m 10m · birimler: s, m, h, d', 'Separate with spaces: 1m 10m · units: s, m, h, d')}
                     kind="steps"
                 />
-                <Field field="graduatingIvl" label={l('Mezuniyet aralığı (gün)', 'Graduating interval (days)')} value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
-                <Field field="easyIvl" label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
+                <FieldAdvice field="learningSteps" />
+                {/* FSRS derives the first day-scale interval from the card's own memory state,
+                    so these two are hidden while it is on, exactly as Anki hides them. */}
+                {!form.fsrsEnabled ? (
+                    <>
+                        <Field field="graduatingIvl" label={l('Mezuniyet aralığı (gün)', 'Graduating interval (days)')} value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
+                        <Field field="easyIvl" label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
+                        <FieldAdvice field="easyIvl" />
+                    </>
+                ) : null}
                 <SelectSetting
                     label={l('Ekleniş sırası', 'Insertion order')}
                     value={form.insertionOrder}
@@ -1518,6 +1791,7 @@ export default function DeckOptionsScreen() {
                     colors={colors}
                     cancelLabel={cancelLabel}
                 />
+                <FieldAdvice field="insertionOrder" />
                 </OptionCard>
 
                 <OptionCard wide={useTwoColumns} title={l('Unutmalar', 'Lapses')} styles={styles} help={optionHelp.lapses}>
@@ -1529,7 +1803,10 @@ export default function DeckOptionsScreen() {
                     hint={l('Boş bırakılırsa kart yeniden öğrenmeye girmez.', 'Leave empty to skip relearning.')}
                     kind="steps"
                 />
-                <Field field="minIvl" label={l('En az aralık (gün)', 'Minimum interval (days)')} value={form.minIvl} onChange={(t) => set('minIvl', t)} />
+                <FieldAdvice field="relearningSteps" />
+                {!form.fsrsEnabled ? (
+                    <Field field="minIvl" label={l('En az aralık (gün)', 'Minimum interval (days)')} value={form.minIvl} onChange={(t) => set('minIvl', t)} />
+                ) : null}
                 <Field
                     field="leechThreshold"
                     label={l('Sürekli unutulan kart eşiği', 'Leech threshold (lapses)')}
@@ -1558,7 +1835,19 @@ export default function DeckOptionsScreen() {
                     <SwitchRow
                         label={l('FSRS zamanlayıcısını kullan', 'Use the FSRS scheduler')}
                         value={form.fsrsEnabled}
-                        onChange={(value) => set('fsrsEnabled', value)}
+                        onChange={(value) => {
+                            setSaveState('idle');
+                            setSaveMessage('');
+                            // Switching the scheduler off takes away the column a retrievability
+                            // order sorts on, so the preset moves to the nearest order that is
+                            // still meaningful rather than silently sorting by nothing.
+                            setForm((prev) => ({
+                                ...prev,
+                                fsrsEnabled: value,
+                                reviewSortOrder: resolveReviewSortOrderForScheduler(prev.reviewSortOrder, value),
+                            }));
+                            if (!value) setRescheduleOnSave(false);
+                        }}
                     />
                     <Text style={styles.fieldHint}>
                         {l(
@@ -1580,15 +1869,20 @@ export default function DeckOptionsScreen() {
                                     '0.70–0.99. A higher value means more frequent reviews; Anki recommends 0.90.',
                                 )}
                             />
+                            <FieldAdvice field="desiredRetention" />
                             <SwitchRow
                                 label={l('Değişiklikte kartları yeniden zamanla', 'Reschedule cards on change')}
-                                value={form.fsrsRescheduleOnChange}
-                                onChange={(value) => set('fsrsRescheduleOnChange', value)}
+                                value={rescheduleOnSave}
+                                onChange={(value) => {
+                                    setSaveState('idle');
+                                    setSaveMessage('');
+                                    setRescheduleOnSave(value);
+                                }}
                             />
                             <Text style={styles.fieldHint}>
                                 {l(
-                                    'Kapalıyken yeni ayarlar yalnızca bundan sonraki cevapları etkiler; açıkken mevcut vade tarihleri de yeniden hesaplanır.',
-                                    'While off, new settings affect only future answers; while on, existing due dates are recomputed as well.',
+                                    'Kapalıyken yeni ayarlar yalnızca bundan sonraki cevapları etkiler; açıkken mevcut vade tarihleri de yeniden hesaplanır. Bu seçim tek bir kayda aittir ve ekran her açıldığında kapalı başlar.',
+                                    'While off, new settings affect only future answers; while on, existing due dates are recomputed as well. The choice belongs to one save: it starts off every time this screen opens.',
                                 )}
                             </Text>
 
@@ -1619,8 +1913,9 @@ export default function DeckOptionsScreen() {
                                 styles={styles}
                                 colors={colors}
                                 error={validation.errors.fsrsParams}
-                                hint={l('17, 19 veya 21 sayı. Boş bırakmak varsayılanlara döner.', '17, 19 or 21 numbers. Leaving it empty restores the defaults.')}
+                                hint={optimizedAtHint}
                             />
+                            <FieldAdvice field="fsrsParams" />
                             <Field
                                 field="historicalRetention"
                                 kind="decimal"
@@ -1705,19 +2000,7 @@ export default function DeckOptionsScreen() {
                 <SelectSetting
                     label={l('Tekrar sıralaması', 'Review sort order')}
                     value={form.reviewSortOrder}
-                    options={[
-                        { key: 'dueRandom', label: l('Zamanı gelen, sonra rastgele', 'Due date, then random') },
-                        { key: 'dueThenDeck', label: l('Zamanı gelen, sonra deste', 'Due date, then deck') },
-                        { key: 'deckThenDue', label: l('Deste, sonra zamanı gelen', 'Deck, then due date') },
-                        { key: 'intervalsAsc', label: l('Aralık artan', 'Ascending intervals') },
-                        { key: 'intervalsDesc', label: l('Aralık azalan', 'Descending intervals') },
-                        { key: 'easeAsc', label: l('Kolaylık artan', 'Ascending ease') },
-                        { key: 'easeDesc', label: l('Kolaylık azalan', 'Descending ease') },
-                        { key: 'relativeOverdueness', label: l('Göreli gecikmişlik', 'Relative overdueness') },
-                        { key: 'added', label: l('Eklenme sırası', 'Order added') },
-                        { key: 'reverseAdded', label: l('Ters eklenme sırası', 'Reverse order added') },
-                        { key: 'random', label: l('Rastgele', 'Random') },
-                    ]}
+                    options={reviewOrderOptions}
                     onChange={(key) => set('reviewSortOrder', key as ReviewSortOrder)}
                     styles={styles}
                     colors={colors}
@@ -1761,6 +2044,7 @@ export default function DeckOptionsScreen() {
 
                 <OptionCard wide={useTwoColumns} title={l('Zamanlayıcılar', 'Timers')} styles={styles} help={optionHelp.timers}>
                     <Field field="maxAnswerSecs" label={l('En fazla cevap süresi', 'Maximum answer time')} value={form.maxAnswerSecs} onChange={(value) => set('maxAnswerSecs', value)} suffix={l('sn', 'sec')} />
+                    <FieldAdvice field="maxAnswerSecs" />
                     <SwitchRow label={l('Ekran zamanlayıcısını göster', 'Show on-screen timer')} value={form.showTimer} onChange={(value) => set('showTimer', value)} />
                     <SwitchRow
                         label={l('Cevap gösterilince ekran zamanlayıcısını durdur', 'Stop on-screen timer on answer')}
@@ -1772,19 +2056,21 @@ export default function DeckOptionsScreen() {
                 <OptionCard wide={useTwoColumns} title={l('Otomatik ilerleme', 'Auto Advance')} styles={styles} help={optionHelp.autoAdvance}>
                     <Field
                         field="secondsToShowQuestion"
+                        kind="decimal"
                         label={l('Soruyu gösterme süresi', 'Question display time')}
                         value={form.secondsToShowQuestion}
                         onChange={(value) => set('secondsToShowQuestion', value)}
                         suffix={l('sn', 'sec')}
-                        hint={l('0 = kapalı', '0 = disabled')}
+                        hint={l('0 = kapalı · ondalık yazılabilir (2,5)', '0 = disabled · decimals allowed (2.5)')}
                     />
                     <Field
                         field="secondsToShowAnswer"
+                        kind="decimal"
                         label={l('Cevabı gösterme süresi', 'Answer display time')}
                         value={form.secondsToShowAnswer}
                         onChange={(value) => set('secondsToShowAnswer', value)}
                         suffix={l('sn', 'sec')}
-                        hint={l('0 = kapalı', '0 = disabled')}
+                        hint={l('0 = kapalı · ondalık yazılabilir (2,5)', '0 = disabled · decimals allowed (2.5)')}
                     />
                     <SelectSetting
                         label={l('Soru süresi dolunca', 'Question action')}
@@ -1843,15 +2129,30 @@ export default function DeckOptionsScreen() {
                         );
                     })}
                 </View>
+                <FieldAdvice field="easyDays" />
                 </OptionCard>
 
                 <OptionCard wide={useTwoColumns} title={l('Gelişmiş', 'Advanced')} styles={styles} help={optionHelp.advanced}>
-                <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,30–5,00 arası. Örn. 2,50', 'Between 1.30 and 5.00. E.g. 2.50')} />
-                <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} />
-                <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} />
-                <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
                 <Field field="maxIvl" label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
-                <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
+                <FieldAdvice field="maxIvl" />
+                {/* The ease multipliers are the classic scheduler's whole arithmetic; FSRS never
+                    reads one, so Anki hides them rather than leaving dials that turn nothing. */}
+                {!form.fsrsEnabled ? (
+                    <>
+                        <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,30–5,00 arası. Örn. 2,50', 'Between 1.30 and 5.00. E.g. 2.50')} />
+                        <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} hint={l('1,00–5,00 arası. Varsayılan 1,30', 'Between 1.00 and 5.00. Default 1.30')} />
+                        <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} hint={l('0,50–2,00 arası. Varsayılan 1,20', 'Between 0.50 and 2.00. Default 1.20')} />
+                        <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
+                        <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
+                    </>
+                ) : (
+                    <Text style={styles.fieldHint}>
+                        {l(
+                            'FSRS açıkken kolaylık çarpanları kullanılmaz; aralıkları kartın hafıza durumu belirler. Hedeflenen hatırlama oranı ve parametreler FSRS bölümündedir.',
+                            'With FSRS on the ease multipliers are unused: intervals come from each card’s memory state. Desired retention and the parameters live in the FSRS section.',
+                        )}
+                    </Text>
+                )}
                 </OptionCard>
 
                 <OptionCard wide={useTwoColumns} title={l('Deste açıklaması', 'Deck Description')} styles={styles}>
@@ -1873,7 +2174,8 @@ export default function DeckOptionsScreen() {
                     <View style={styles.actionMenu}>
                         {[
                             { label: l('Kaydet', 'Save'), action: handleSave },
-                            { label: l('Ayar grubunu değiştir', 'Change Preset'), action: () => setPresetPickerOpen(true) },
+                            // Changing the preset has its own row at the top of the screen now,
+                            // where Anki keeps it, so the menu is the actions on that preset.
                             { label: l('Bu deste için ayrı ayar grubu oluştur', 'Create a Separate Preset for This Deck'), action: handleClonePreset },
                             { label: l('Varsayılana dön', 'Restore Defaults'), action: handleRestoreDefaults },
                             { label: l('Ayar grubu ekle', 'Add Preset'), action: handleAddPreset },
@@ -2022,19 +2324,8 @@ function createStyles(colors: ColorScheme) {
         headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
         backText: { fontSize: 34, lineHeight: 36, color: colors.accent },
         headerTitleWrap: { flex: 1, paddingHorizontal: Spacing.xs },
-        headerEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1.1, color: colors.textMuted },
         headerTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
         headerSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
-        headerSaveButton: {
-            minWidth: 68,
-            minHeight: 44,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.accent,
-            paddingHorizontal: Spacing.md,
-        },
-        headerSaveText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
         content: {
             width: '100%',
             maxWidth: 1180,
@@ -2066,7 +2357,26 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: Spacing.md,
             marginRight: Spacing.sm,
         },
+        presetRow: {
+            width: '100%',
+            minHeight: 48,
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: BorderRadius.sm,
+            backgroundColor: colors.bgCard,
+            paddingHorizontal: Spacing.md,
+            marginBottom: Spacing.sm,
+        },
         presetSelectorTextWrap: { flex: 1, minWidth: 0 },
+        presetSelectorLabel: {
+            fontSize: 10,
+            fontWeight: '700',
+            letterSpacing: 0.6,
+            color: colors.textMuted,
+            textTransform: 'uppercase',
+        },
         presetSelectorName: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         presetSelectorMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
         presetSelectorChevron: { fontSize: 18, color: colors.textMuted, marginLeft: Spacing.sm },
@@ -2275,6 +2585,10 @@ function createStyles(colors: ColorScheme) {
         limitTabTextActive: { color: colors.white },
         warningBox: { backgroundColor: colors.btnHardBg, borderWidth: 1, borderColor: colors.btnHard, borderRadius: BorderRadius.sm, padding: Spacing.sm, marginTop: Spacing.sm },
         warningText: { color: colors.btnHard, fontSize: FontSize.xs, lineHeight: 17 },
+        warningBoxDanger: { backgroundColor: colors.btnAgainBg, borderColor: colors.btnAgain },
+        warningTextDanger: { color: colors.btnAgain },
+        warningBoxInfo: { backgroundColor: colors.bgSecondary, borderColor: colors.border },
+        warningTextInfo: { color: colors.textSecondary },
 
         parameterInput: {
             minHeight: 96,

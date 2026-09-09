@@ -623,6 +623,19 @@ describe('added: narrows a filtered deck to recently created cards', () => {
         expect(search('added:0')).toBe(2);
     });
 
+    it('reaches back as far as the spinner allows, with no year-long ceiling of its own', () => {
+        // Anki's parser only lifts a zero to one; `write_added` then subtracts the full count of
+        // days. Custom Study's "preview new cards added in the last N days" runs to 99999, so a
+        // cap here would silently hide a card the learner asked to see.
+        const now = Date.now();
+        saveNote(makeNote(44, [], ['iki yıl önce eklendi', 'cevap', '']));
+        saveAnkiCard(makeCard(1044, 44, 1, { type: 0, queue: 0, due: 4 }));
+        db.runSync('UPDATE anki_cards SET created_at = ? WHERE id = 1044', now - 700 * 86_400_000);
+
+        expect(search('added:365')).toBe(0);
+        expect(search('added:800')).toBe(1);
+    });
+
     it('falls back to the card id when no creation stamp was recorded', () => {
         const now = Date.now();
         saveNote(makeNote(43, [], ['eski satır', 'cevap', '']));

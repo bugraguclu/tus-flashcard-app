@@ -1,4 +1,5 @@
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import type { ReviewerOpName } from './reviewerUndo';
 import type { AppLanguage } from './types';
 
 export type SupportedLocale = 'tr' | 'en';
@@ -428,6 +429,30 @@ export function filteredOrderLabel(locale: SupportedLocale, order: number): stri
             'Relative overdueness',
         ];
     return labels[order] ?? labels[FILTERED_SEARCH_ORDER.due];
+}
+
+/**
+ * Name of the reviewer operation an undo step would take back.
+ *
+ * Anki labels its Undo/Redo entries with the operation ("Undo Bury Card"), which is the only
+ * thing that tells a learner whether Ctrl+Z is about to unbury a card or un-answer one.
+ */
+export function reviewerOpName(locale: SupportedLocale, op: ReviewerOpName): string {
+    const labels: Record<ReviewerOpName, [tr: string, en: string]> = {
+        answer: ['Kartı yanıtla', 'Answer card'],
+        buryCard: ['Kartı göm', 'Bury card'],
+        buryNote: ['Notu göm', 'Bury note'],
+        suspendCard: ['Kartı askıya al', 'Suspend card'],
+        unsuspendCard: ['Kartı askıdan çıkar', 'Unsuspend card'],
+        suspendNote: ['Notu askıya al', 'Suspend note'],
+        forgetCard: ['Kartı unut', 'Forget card'],
+        setDueDate: ['Son tarihi ayarla', 'Set due date'],
+        markNote: ['Notu işaretle', 'Mark note'],
+        unmarkNote: ['Not işaretini kaldır', 'Unmark note'],
+        updateTags: ['Etiketleri düzenle', 'Edit tags'],
+        setFlag: ['Bayrağı değiştir', 'Set flag'],
+    };
+    return labels[op][locale === 'tr' ? 0 : 1];
 }
 
 export function cardFlagName(locale: SupportedLocale, flag: number): string {

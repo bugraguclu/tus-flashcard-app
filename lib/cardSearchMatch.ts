@@ -212,7 +212,12 @@ function propPredicate(body: string, options: CardMatcherOptions): Predicate | n
     }
 }
 
-/** Cards added/edited in the last N days, counted from the day rollover as Anki does. */
+/**
+ * Cards added/edited in the last N days, counted from the day rollover as Anki does.
+ *
+ * The count is not capped — upstream's parser only lifts a zero to one — so this agrees with the
+ * SQL in lib/studyRepository.ts about how far back a window reaches.
+ */
 function dayWindowPredicate(
     rawDays: string,
     options: CardMatcherOptions,
@@ -220,7 +225,7 @@ function dayWindowPredicate(
 ): Predicate | null {
     const days = Number(rawDays);
     if (!Number.isFinite(days) || days <= 0) return null;
-    const cutoff = options.dayCutoffMs - (Math.min(365, Math.floor(days)) - 1) * DAY_MS;
+    const cutoff = options.dayCutoffMs - (Math.floor(days) - 1) * DAY_MS;
     return (card) => {
         const stamp = read(card);
         return stamp === undefined ? true : stamp >= cutoff;
@@ -262,13 +267,13 @@ function predicateForTerm(term: string, options: CardMatcherOptions): Predicate 
             const ease = rawEase === undefined ? null : Number(rawEase);
             const lookup = options.ratedWithin;
             if (!lookup) return ALWAYS;
-            return (card) => lookup(card.cardId, Math.min(365, Math.floor(days)), ease);
+            return (card) => lookup(card.cardId, Math.floor(days), ease);
         }
         case 'introduced': {
             const days = Number(body);
             const lookup = options.introducedWithin;
             if (!lookup || !Number.isFinite(days) || days <= 0) return ALWAYS;
-            return (card) => lookup(card.cardId, Math.min(365, Math.floor(days)));
+            return (card) => lookup(card.cardId, Math.floor(days));
         }
         case 'added':
             return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? ALWAYS;

@@ -10,7 +10,15 @@ import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { schedulerForSettings, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
-import { getAverageAnswerMs, getNewCardsIntroducedTodayInDeck, getStudyStreak, getTodayAnswerStats, type StudyStreak } from '../../lib/reviewLogger';
+import {
+    deleteReviewById,
+    getAverageAnswerMs,
+    getNewCardsIntroducedTodayInDeck,
+    getStudyStreak,
+    getTodayAnswerStats,
+    restoreReviewLog,
+    type StudyStreak,
+} from '../../lib/reviewLogger';
 import { resolveSettingsFromConfig } from '../../lib/settingsResolver';
 import {
     useAppSettings,
@@ -19,7 +27,7 @@ import {
     useStudyScope,
 } from '../../contexts/AppContext';
 import type { Grade, ReviewGestureAction, SessionStats, StudyCard } from '../../lib/types';
-import { DEFAULT_DECK_CONFIG, FLAG_COLORS, getDeckDisplayName, type AnkiCard, type CardFlag } from '../../lib/models';
+import { DEFAULT_DECK_CONFIG, FLAG_COLORS, getDeckDisplayName, type AnkiCard, type CardFlag, type ReviewLog } from '../../lib/models';
 import {
     getAnkiCard,
     getCardsForNote,
@@ -28,6 +36,7 @@ import {
     deleteNote,
     isNoteMarked,
     saveNote,
+    saveAnkiCard,
     setCardFlag,
     toggleNoteMark,
 } from '../../lib/noteManager';
@@ -74,13 +83,12 @@ import {
     getWaitingLearningCardIds,
     resolveSettingsForDeck,
     setCardBuried,
-    setCardDueInDays,
     setCardSuspended,
     undoAnswer,
     type AnswerSideEffects,
 } from '../../lib/studyRepository';
 import { useI18n } from '../../hooks/useI18n';
-import { cardFlagName } from '../../lib/i18n';
+import { cardFlagName, reviewerOpName } from '../../lib/i18n';
 import { alert, choose } from '../../lib/confirm';
 import { gradeForHardwareKey, matchesKeyBinding, matchesShowAnswerKey, normalizeHardwareKey } from '../../lib/hardwareKeyboard';
 import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
@@ -120,6 +128,15 @@ import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
 import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from '../../lib/reviewerSurface';
 import { ReviewerTtsLifecycle } from '../../lib/reviewerTtsLifecycle';
 import { loadReviewerTtsEnabled, saveReviewerTtsEnabled } from '../../lib/reviewerTtsState';
+import {
+    applyReviewerOpState,
+    captureReviewerOpState,
+    reviewerOpChangesScheduling,
+    type ReviewerOpChange,
+    type ReviewerOpName,
+} from '../../lib/reviewerUndo';
+import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
+import { canonifyTags } from '../../lib/noteTags';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -218,7 +235,16 @@ function KeepAwakeGuard() {
 
 type QueueStats = { newCount: number; learningCount: number; reviewCount: number };
 
-type UndoEntry = {
+/**
+ * One step on the reviewer's undo stack.
+ *
+ * Anki puts answers and the reviewer's other actions on a single stack, so Ctrl+Z walks back
+ * through "Bury Card", "Set Due Date" and "Answer Card" in the order they happened. An answer
+ * needs its own shape because undoing it has to replay scheduling side effects; everything else
+ * is restored from a plain snapshot of the rows it touched.
+ */
+type AnswerUndoEntry = {
+    kind: 'answer';
     cardId: number;
     reviewLogId: number;
     previousSnapshot: AnkiCard;
@@ -228,6 +254,8 @@ type UndoEntry = {
     grade: Grade;
     answerTimeMs: number;
 };
+
+type UndoEntry = AnswerUndoEntry | ({ kind: 'op' } & ReviewerOpChange);
 
 /**
  * Today's session numbers, always derived from the review log. The revlog is the durable
@@ -897,6 +925,7 @@ export default function StudyScreen() {
                 setUndoStack((prev) => [
                     ...prev.slice(-29),
                     {
+                        kind: 'answer',
                         cardId: currentCard.cardId,
                         reviewLogId: result.reviewLogId,
                         previousSnapshot: result.previousAnkiCard,
@@ -1059,6 +1088,30 @@ export default function StudyScreen() {
         return () => clearTimeout(timer);
     }, [answerFeedback]);
 
+    /**
+     * Step across a non-answer operation in either direction.
+     *
+     * Undo and redo are the same write with the two snapshot sides swapped, so both share this.
+     * An action that changed scheduling re-gathers the queue the way Anki's reviewer does after
+     * an operation that touched the study queues; one that only changed a note redraws the card
+     * in place, leaving a revealed answer revealed.
+     */
+    const applyReviewerOp = useCallback((change: ReviewerOpChange, direction: 'undo' | 'redo') => {
+        const target = direction === 'undo' ? change.before : change.after;
+        const other = direction === 'undo' ? change.after : change.before;
+        applyReviewerOpState(target, other, {
+            saveCard: saveAnkiCard,
+            saveNote,
+            insertReviewLog: restoreReviewLog,
+            deleteReviewLog: deleteReviewById,
+        });
+        invalidateCollection();
+        if (reviewerOpChangesScheduling(change)) {
+            markSchedulingStale();
+            buildQueue(undefined, false, true);
+        }
+    }, [invalidateCollection, markSchedulingStale, buildQueue]);
+
     const undoLast = useCallback(async () => {
         // Same re-entrancy guard as answerCard: repeated Ctrl+Z presses would pop two
         // stack entries while actually undoing the same answer twice.
@@ -1067,6 +1120,13 @@ export default function StudyScreen() {
 
         try {
             const undo = undoStack[undoStack.length - 1];
+
+            if (undo.kind === 'op') {
+                setUndoStack((prev) => prev.slice(0, -1));
+                setRedoStack((prev) => [...prev.slice(-29), undo]);
+                applyReviewerOp(undo, 'undo');
+                return;
+            }
 
             // If the collection was replaced (backup restore, import) the snapshot belongs to
             // a card that no longer exists — drop the stale stack instead of resurrecting it.
@@ -1095,7 +1155,7 @@ export default function StudyScreen() {
         } finally {
             isMutatingRef.current = false;
         }
-    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats]);
+    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp]);
 
     const redoLast = useCallback(async () => {
         if (redoStack.length === 0 || isMutatingRef.current) return;
@@ -1103,6 +1163,14 @@ export default function StudyScreen() {
 
         try {
             const redo = redoStack[redoStack.length - 1];
+
+            if (redo.kind === 'op') {
+                setRedoStack((prev) => prev.slice(0, -1));
+                setUndoStack((prev) => [...prev.slice(-29), redo]);
+                applyReviewerOp(redo, 'redo');
+                return;
+            }
+
             if (!getAnkiCard(redo.cardId)) {
                 console.warn('[Study] redo target missing, clearing stale redo stack.');
                 setRedoStack([]);
@@ -1119,6 +1187,7 @@ export default function StudyScreen() {
             setUndoStack((prev) => [
                 ...prev.slice(-29),
                 {
+                    kind: 'answer',
                     cardId: redo.cardId,
                     reviewLogId: result.reviewLogId,
                     previousSnapshot: result.previousAnkiCard,
@@ -1137,60 +1206,103 @@ export default function StudyScreen() {
         } finally {
             isMutatingRef.current = false;
         }
-    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats]);
+    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp]);
+
+    /**
+     * Run a reviewer action as an undoable operation, the way Anki runs every one of them.
+     *
+     * The rows the action will touch are read before and after it runs, and both sides go onto
+     * the same stack the answers use — so Undo steps back through "Bury Card" and "Answer Card"
+     * in the order they happened instead of skipping to the last answer. Starting a new operation
+     * ends the redo branch, as performing anything does in Anki.
+     */
+    const recordUndoableOp = useCallback((
+        op: ReviewerOpName,
+        cardIds: number[],
+        noteIds: number[],
+        mutate: () => (ReviewLog | null)[] | void,
+    ) => {
+        const before = captureReviewerOpState(cardIds, noteIds);
+        const written = mutate() ?? [];
+        setUndoStack((prev) => [
+            ...prev.slice(-29),
+            { kind: 'op', op, before, after: captureReviewerOpState(cardIds, noteIds, written) },
+        ]);
+        setRedoStack([]);
+    }, []);
 
     const handleSuspend = useCallback(() => {
         if (!currentCard) return;
-        setCardSuspended(currentCard.cardId, true, settings.dayRolloverHour);
+        recordUndoableOp('suspendCard', [currentCard.cardId], [], () => {
+            setCardSuspended(currentCard.cardId, true, settings.dayRolloverHour);
+        });
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue, recordUndoableOp]);
 
     const handleBury = useCallback(() => {
         if (!currentCard) return;
-        setCardBuried(currentCard.cardId, true, settings.dayRolloverHour);
+        recordUndoableOp('buryCard', [currentCard.cardId], [], () => {
+            setCardBuried(currentCard.cardId, true, settings.dayRolloverHour);
+        });
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue, recordUndoableOp]);
 
     // --- Card options menu (Anki-style) ---
 
     const handleToggleSuspendCard = useCallback(() => {
         if (!currentCard) return;
-        setCardSuspended(currentCard.cardId, !currentCard.state.suspended, settings.dayRolloverHour);
+        const suspend = !currentCard.state.suspended;
+        recordUndoableOp(suspend ? 'suspendCard' : 'unsuspendCard', [currentCard.cardId], [], () => {
+            setCardSuspended(currentCard.cardId, suspend, settings.dayRolloverHour);
+        });
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue, recordUndoableOp]);
 
     const handleFlag = useCallback((flag: CardFlag) => {
         if (!currentCard) return;
-        setCardFlag(currentCard.cardId, flag);
+        recordUndoableOp('setFlag', [currentCard.cardId], [], () => {
+            setCardFlag(currentCard.cardId, flag);
+        });
         invalidateCollection();
-    }, [currentCard, invalidateCollection]);
+    }, [currentCard, invalidateCollection, recordUndoableOp]);
 
     const handleForgetCard = useCallback(() => {
         if (!currentCard) return;
-        forgetCard(currentCard.cardId, settings);
+        recordUndoableOp('forgetCard', [currentCard.cardId], [], () => [forgetCard(currentCard.cardId, settings)]);
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings, markSchedulingStale, buildQueue, recordUndoableOp]);
 
-    const handleSetDueDate = useCallback((days: number) => {
+    const handleSetDueDate = useCallback((spec: string) => {
         if (!currentCard) return;
-        setCardDueInDays(currentCard.cardId, days, settings);
+        const range = parseDueRange(spec);
+        if (!range) return;
+        recordUndoableOp('setDueDate', [currentCard.cardId], [], () => (
+            setSelectedDueDate([currentCard.cardId], range, settings)
+        ));
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings, markSchedulingStale, buildQueue, recordUndoableOp]);
 
     const handleSaveTags = useCallback((raw: string) => {
         if (!currentCard) return;
         const note = getNote(currentCard.noteId);
         if (!note) return;
-        note.tags = raw.split(/\s+/).map((tag) => tag.trim()).filter(Boolean);
-        saveNote(note);
+        recordUndoableOp('updateTags', [], [currentCard.noteId], () => {
+            saveNote({
+                ...note,
+                tags: canonifyTags(raw),
+                mod: Math.floor(Date.now() / 1000),
+                usn: -1,
+            });
+        });
+        // A tag edit changes note text, not scheduling. Anki redraws the card in place for that,
+        // so the queue is left alone here and a revealed answer stays revealed.
         invalidateCollection();
-        buildQueue();
-    }, [currentCard, invalidateCollection, buildQueue]);
+    }, [currentCard, invalidateCollection, recordUndoableOp]);
 
     const handleDeckOptions = useCallback(() => {
         const deckId = currentCard ? (getAnkiCard(currentCard.cardId)?.deckId ?? targetDeckId) : targetDeckId;
@@ -1206,27 +1318,33 @@ export default function StudyScreen() {
 
     const handleToggleMarkNote = useCallback(() => {
         if (!currentCard) return;
-        toggleNoteMark(currentCard.noteId);
+        const note = getNote(currentCard.noteId);
+        if (!note) return;
+        recordUndoableOp(isNoteMarked(note) ? 'unmarkNote' : 'markNote', [], [currentCard.noteId], () => {
+            toggleNoteMark(currentCard.noteId);
+        });
         invalidateCollection();
-    }, [currentCard, invalidateCollection]);
+    }, [currentCard, invalidateCollection, recordUndoableOp]);
 
     const handleBuryNote = useCallback(() => {
         if (!currentCard) return;
-        for (const card of getCardsForNote(currentCard.noteId)) {
-            setCardBuried(card.id, true, settings.dayRolloverHour);
-        }
+        const siblingIds = getCardsForNote(currentCard.noteId).map((card) => card.id);
+        recordUndoableOp('buryNote', siblingIds, [], () => {
+            for (const cardId of siblingIds) setCardBuried(cardId, true, settings.dayRolloverHour);
+        });
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue, recordUndoableOp]);
 
     const handleSuspendNote = useCallback(() => {
         if (!currentCard) return;
-        for (const card of getCardsForNote(currentCard.noteId)) {
-            setCardSuspended(card.id, true, settings.dayRolloverHour);
-        }
+        const siblingIds = getCardsForNote(currentCard.noteId).map((card) => card.id);
+        recordUndoableOp('suspendNote', siblingIds, [], () => {
+            for (const cardId of siblingIds) setCardSuspended(cardId, true, settings.dayRolloverHour);
+        });
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue]);
+    }, [currentCard, settings.dayRolloverHour, markSchedulingStale, buildQueue, recordUndoableOp]);
 
     const handleDeleteNote = useCallback(() => {
         if (!currentCard) return;

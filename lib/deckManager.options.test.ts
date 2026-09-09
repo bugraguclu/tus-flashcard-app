@@ -6,6 +6,7 @@ import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 import { DEFAULT_DECK_CONFIG, type Deck } from './models';
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import { CUSTOM_STUDY_PREVIEW_DELAYS } from './customStudy';
 
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
@@ -686,6 +687,7 @@ const customStudySession = (
     limit,
     order: overrides.order ?? FILTERED_SEARCH_ORDER.due,
     reschedule: overrides.reschedule ?? true,
+    previewDelays: CUSTOM_STUDY_PREVIEW_DELAYS,
 });
 
 describe('createOrReplaceCustomStudySession', () => {
@@ -709,6 +711,44 @@ describe('createOrReplaceCustomStudySession', () => {
         expect(second.id).toBe(first.id);
         expect(second.searchQuery).toContain('tag:"zor"');
         expect(second.searchLimit).toBe(20);
+    });
+
+    it('gives the session Anki\u2019s preview delays instead of leaving them to the deck default', () => {
+        const deck = createDeck('Python');
+
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
+
+        expect(session.previewDelays).toEqual([60, 600, 0]);
+        expect(session.filteredAllowEmpty).toBe(false);
+    });
+
+    it('replaces the whole filtered config of the session it reuses', () => {
+        // Anki swaps the deck's entire filtered config on every custom study run
+        // (`apply_update_to_filtered_deck`), so settings the learner edited on the session deck by
+        // hand — a second filter, its own preview delays, "allow empty" — do not survive into the
+        // session the next run asked for.
+        const deck = createDeck('Python');
+        const first = customStudySession(deck.id, 'deck:"Python"', 50)!;
+        first.searchQuery2 = 'deck:"Python" is:due';
+        first.searchLimit2 = 20;
+        first.searchOrder2 = FILTERED_SEARCH_ORDER.due;
+        first.previewDelays = [45, 900, 120];
+        first.filteredAllowEmpty = true;
+        saveDeck(first);
+
+        const second = customStudySession(deck.id, 'deck:"Python" is:new', 30, {
+            order: FILTERED_SEARCH_ORDER.added,
+            reschedule: false,
+        })!;
+
+        expect(second.id).toBe(first.id);
+        expect(second.searchQuery2).toBeUndefined();
+        expect(second.searchLimit2).toBeUndefined();
+        expect(second.searchOrder2).toBeUndefined();
+        expect(second.previewDelays).toEqual([60, 600, 0]);
+        expect(second.filteredAllowEmpty).toBe(false);
+        expect(second.reschedule).toBe(false);
+        expect(second.searchOrder).toBe(FILTERED_SEARCH_ORDER.added);
     });
 
     it('refuses to build a session on a filtered deck', () => {

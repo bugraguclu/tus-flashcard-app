@@ -5,8 +5,8 @@ import type { ReviewSortOrder } from './types';
 
 /**
  * Anki's ReviewCardOrder ordinals (proto/anki/deck_config.proto). 7 and 11 are the FSRS-only
- * retrievability orders this scheduler cannot reproduce, so they survive a round trip through
- * `ankiRaw` rather than through `reviewSortOrder`.
+ * retrievability orders; they map to real orders now, but presets imported before they did are
+ * still stored as `dueRandom` with the source ordinal parked in `ankiRaw`.
  */
 const RETRIEVABILITY_ASCENDING = 7;
 const RETRIEVABILITY_DESCENDING = 11;
@@ -17,7 +17,7 @@ function config(overrides: Partial<DeckConfig> = {}): DeckConfig {
 }
 
 describe('exportedReviewOrder', () => {
-    it('re-emits an FSRS-only order the importer had to fall back on', () => {
+    it('re-emits a retrievability order an older build had to fall back on', () => {
         for (const ordinal of [RETRIEVABILITY_ASCENDING, RETRIEVABILITY_DESCENDING]) {
             const preset = config({
                 reviewSortOrder: 'dueRandom',
@@ -54,7 +54,8 @@ describe('exportedReviewOrder', () => {
     it('maps every locally representable order to Anki’s ordinal', () => {
         const expected: Record<ReviewSortOrder, number> = {
             dueRandom: 0, dueThenDeck: 1, deckThenDue: 2, intervalsAsc: 3, intervalsDesc: 4,
-            easeAsc: 5, easeDesc: 6, random: 8, added: 9, reverseAdded: 10,
+            easeAsc: 5, easeDesc: 6, retrievabilityAsc: RETRIEVABILITY_ASCENDING, random: 8,
+            added: 9, reverseAdded: 10, retrievabilityDesc: RETRIEVABILITY_DESCENDING,
             relativeOverdueness: RELATIVE_OVERDUENESS,
         };
 
@@ -65,7 +66,7 @@ describe('exportedReviewOrder', () => {
 });
 
 describe('withoutPreservedReviewOrder', () => {
-    it('drops an FSRS-only ordinal so a Deck Options save wins', () => {
+    it('drops a preserved ordinal so a Deck Options save wins', () => {
         const cleaned = withoutPreservedReviewOrder({ reviewOrder: RETRIEVABILITY_DESCENDING, name: 'Preset' });
 
         expect(cleaned).toEqual({ name: 'Preset' });
@@ -77,5 +78,18 @@ describe('withoutPreservedReviewOrder', () => {
 
         expect(withoutPreservedReviewOrder(raw)).toBe(raw);
         expect(withoutPreservedReviewOrder(undefined)).toBeUndefined();
+    });
+});
+
+describe('review orders imported from a package', () => {
+    it('keeps a retrievability order as itself through a round trip', () => {
+        // The ordinal is the contract with Anki: a package that arrives ordered by
+        // retrievability has to leave ordered by retrievability, not by day.
+        for (const [order, ordinal] of [
+            ['retrievabilityAsc', RETRIEVABILITY_ASCENDING],
+            ['retrievabilityDesc', RETRIEVABILITY_DESCENDING],
+        ] as const) {
+            expect(exportedReviewOrder(config({ reviewSortOrder: order }))).toBe(ordinal);
+        }
     });
 });

@@ -12,6 +12,7 @@ import { sanitizeToolbarSnippet } from '../lib/customToolbar';
 import { richTextBridgeScript, stripPendingStyleMarkers } from '../lib/richTextCommands';
 import { PROTECTED_CONTENT_CSS, PROTECTED_CONTENT_SCRIPT } from '../lib/protectedContentCss';
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
+import { editorFieldFontFamily } from '../lib/editorFieldStyle';
 import { sanitizeUntrustedHtml } from '../lib/templates';
 import {
     embeddedWebViewLayout,
@@ -68,6 +69,10 @@ interface RichTextEditorProps {
     colors: ColorScheme;
     minHeight?: number;
     fontSize?: number;
+    /** The note type's own font for this field; the system face is used when it is unset. */
+    fontFamily?: string;
+    /** The note type's right-to-left flag for this field (Anki's per-field `rtl`). */
+    rtl?: boolean;
     capitalizeSentences?: boolean;
     pasteClipboardImagesAsPng?: boolean;
     /** Keep the same vertical scroll owner across native fallback and WebView rendering. */
@@ -105,9 +110,12 @@ function editorDocument(
     nonce: string,
     scrollMode: EmbeddedWebViewScrollMode,
     editable: boolean = true,
+    fontFamily?: string,
+    rtl: boolean = false,
 ): string {
     const policy = editorContentSecurityPolicy(nonce);
     const safeValue = sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS);
+    const fieldFontFamily = editorFieldFontFamily(fontFamily);
     return `<!doctype html>
 <html>
 <head>
@@ -122,6 +130,8 @@ function editorDocument(
     padding: 8px 2px;
     outline: none;
     font-size: ${fontSize}px;
+    ${fieldFontFamily ? `font-family: ${fieldFontFamily};` : ''}
+    ${rtl ? 'text-align: right;' : ''}
     line-height: 1.45;
     overflow-wrap: anywhere;
     -webkit-user-select: ${editable ? 'text' : 'none'};
@@ -141,7 +151,7 @@ function editorDocument(
 </style>
 </head>
 <body>
-  <div id="editor" contenteditable="${editable ? 'true' : 'false'}" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
+  <div id="editor" dir="${rtl ? 'rtl' : 'auto'}" contenteditable="${editable ? 'true' : 'false'}" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
   <script nonce="${nonce}">
     ${richTextBridgeScript()}
     (function () {
@@ -487,6 +497,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     colors,
     minHeight = 58,
     fontSize = 16,
+    fontFamily,
+    rtl = false,
     capitalizeSentences = true,
     pasteClipboardImagesAsPng = false,
     scrollMode,
@@ -563,12 +575,12 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const mediaBaseUrl = getMediaBaseUrl();
     const source = useMemo(
         () => localMediaWebViewSource(
-            editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode, editable),
+            editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode, editable, fontFamily, rtl),
             mediaBaseUrl,
         ),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, mediaBaseUrl, editable],
+        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, mediaBaseUrl, editable, fontFamily, rtl],
     );
 
     useEffect(() => {
@@ -783,6 +795,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                                 lineHeight: Math.round(fontSize * 1.45),
                                 backgroundColor: colors.bgCard,
                             },
+                            rtl && styles.fallbackInputRtl,
                         ]}
                     />
                 </View>
@@ -803,6 +816,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         textAlignVertical: 'top',
     },
+    fallbackInputRtl: { writingDirection: 'rtl', textAlign: 'right' },
 });
 
 export default RichTextEditor;

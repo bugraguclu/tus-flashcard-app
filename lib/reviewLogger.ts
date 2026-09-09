@@ -663,6 +663,21 @@ export function getButtonDistribution(): { ease: number; label: string; count: n
     }));
 }
 
+/**
+ * Put a revlog row back under its original id.
+ *
+ * Undo restores history rather than rewriting it, so a row an undone action had written comes
+ * back with the same id and timestamp when the action is redone.
+ */
+export function restoreReviewLog(entry: ReviewLog): void {
+    getDB().runSync(
+        `INSERT OR REPLACE INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        entry.id, entry.cardId, entry.usn, entry.ease,
+        entry.ivl, entry.lastIvl, entry.factor, entry.time, entry.type,
+    );
+}
+
 export function deleteReviewById(reviewId: number): void {
     const db = getDB();
     db.runSync('DELETE FROM revlog WHERE id = ?', reviewId);
