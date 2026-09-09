@@ -3,6 +3,7 @@ import type { Deck } from './models';
 
 const state = vi.hoisted(() => ({
     decks: [] as { id: number; name: string }[],
+    configs: [] as { id: number; data: string }[],
     cards: [] as { id: number; noteId: number; deckId: number }[],
     notes: [] as { id: number }[],
     revlog: [] as number[],
@@ -24,6 +25,9 @@ const fakeDb = {
         if (sql.includes('FROM decks WHERE name = ?')) {
             const deck = state.decks.find((d) => d.name === params[0]);
             return deck ? { data: JSON.stringify(deck) } : null;
+        }
+        if (sql.includes('FROM deck_configs WHERE id = ?')) {
+            return state.configs.find((config) => config.id === params[0]) ?? null;
         }
         if (sql.includes('COUNT(*) AS cnt FROM anki_cards WHERE noteId = ?')) {
             return { cnt: state.cards.filter((c) => c.noteId === params[0]).length };
@@ -62,18 +66,27 @@ const fakeDb = {
             // saveDeck: params = [id, name, data, ...]
             state.decks = state.decks.filter((d) => d.id !== params[0]);
             state.decks.push({ id: params[0], name: params[1] });
+        } else if (sql.startsWith('INSERT OR REPLACE INTO deck_configs')) {
+            state.configs = state.configs.filter((config) => config.id !== params[0]);
+            state.configs.push({ id: params[0], data: params[1] });
         }
     },
 };
 
 vi.mock('./db', () => ({ getDB: () => fakeDb }));
 vi.mock('./noteManager', () => ({ saveAnkiCard: vi.fn() }));
+const clearedWhiteboardDecks = vi.hoisted(() => [] as number[]);
+vi.mock('./whiteboardSession', () => ({
+    clearDeckWhiteboards: (deckId: number) => { clearedWhiteboardDecks.push(deckId); },
+}));
 
-import { createDeck, deleteDeck, renameDeck } from './deckManager';
+import { createDeck, deleteDeck, renameDeck, renamePreset } from './deckManager';
 
 describe('deckManager', () => {
     beforeEach(() => {
+        clearedWhiteboardDecks.length = 0;
         state.decks = [];
+        state.configs = [];
         state.cards = [];
         state.notes = [];
         state.revlog = [];
@@ -109,6 +122,10 @@ describe('deckManager', () => {
         expect(state.graves.filter((g) => g.type === 0).map((g) => g.oid).sort()).toEqual([10, 11, 12]);
         expect(state.graves.filter((g) => g.type === 1).map((g) => g.oid)).toEqual([100]);
         expect(state.graves.filter((g) => g.type === 2).map((g) => g.oid).sort()).toEqual([1, 2]);
+
+        // The board rows of a deleted deck and its subdecks go with it, or the ink and the pen
+        // colour of a deck nobody can open again stay in the settings table forever.
+        expect([...clearedWhiteboardDecks].sort()).toEqual([1, 2]);
     });
 
     it('P2: createDeck is idempotent on name', () => {
@@ -123,5 +140,15 @@ describe('deckManager', () => {
         expect(() => renameDeck(1, 'B')).toThrow(/already exists/);
         // A rename to its own name is a no-op (no throw).
         expect(() => renameDeck(1, 'A')).not.toThrow();
+    });
+
+    it('does not replace a preset with a blank name and preserves its config id', () => {
+        state.configs = [{ id: 7, data: JSON.stringify({ id: 7, name: 'Preset A' }) }];
+
+        expect(() => renamePreset(7, '  ')).toThrow(/cannot be empty/);
+        expect(JSON.parse(state.configs[0].data)).toMatchObject({ id: 7, name: 'Preset A' });
+
+        renamePreset(7, '  Preset B  ');
+        expect(JSON.parse(state.configs[0].data)).toMatchObject({ id: 7, name: 'Preset B' });
     });
 });

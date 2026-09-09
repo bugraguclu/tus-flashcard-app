@@ -132,11 +132,18 @@ export function migrateLegacySubjectTopicsToDecks(): void {
             saveDeck(parent);
         }
 
-        const topics = [...subject.topics];
+        // Only materialize topics that are actually referenced by a note. The legacy editor's
+        // static topic registry contains many placeholders; creating all of them produced empty
+        // deck trees and ghost Browser filters on otherwise empty collections.
+        const usedTopics = new Set<string>();
         for (const note of allNotes) {
             if (!note.tags.includes(subject.id)) continue;
             const legacyTopic = note.fields[2]?.trim();
-            if (legacyTopic && !topics.includes(legacyTopic)) topics.push(legacyTopic);
+            if (legacyTopic) usedTopics.add(legacyTopic);
+        }
+        const topics = subject.topics.filter((topic) => usedTopics.has(topic));
+        for (const topic of usedTopics) {
+            if (!topics.includes(topic)) topics.push(topic);
         }
 
         for (let topicIndex = 0; topicIndex < topics.length; topicIndex++) {

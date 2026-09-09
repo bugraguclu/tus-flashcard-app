@@ -14,6 +14,7 @@ export interface SyncDb {
 
 const SCHEMA = `
 CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE session_stats (date TEXT PRIMARY KEY, data TEXT);
 CREATE TABLE note_types (id INTEGER PRIMARY KEY, name TEXT, data TEXT, updated_at INTEGER, usn INTEGER, tombstone INTEGER DEFAULT 0);
 CREATE TABLE notes (id INTEGER PRIMARY KEY, noteTypeId INTEGER, sfld TEXT, csum INTEGER, tags TEXT, data TEXT, updated_at INTEGER, usn INTEGER, tombstone INTEGER DEFAULT 0);
 CREATE TABLE decks (id INTEGER PRIMARY KEY, name TEXT, data TEXT, updated_at INTEGER, usn INTEGER, tombstone INTEGER DEFAULT 0);
@@ -22,7 +23,7 @@ CREATE TABLE anki_cards (
     id INTEGER PRIMARY KEY, noteId INTEGER, deckId INTEGER, ord INTEGER,
     type INTEGER, queue INTEGER, due INTEGER, ivl INTEGER, factor INTEGER,
     reps INTEGER, lapses INTEGER, "left" INTEGER, flags INTEGER, data TEXT,
-    updated_at INTEGER, usn INTEGER, tombstone INTEGER DEFAULT 0
+    updated_at INTEGER, created_at INTEGER NOT NULL DEFAULT 0, usn INTEGER, tombstone INTEGER DEFAULT 0
 );
 CREATE TABLE revlog (id INTEGER PRIMARY KEY, cardId INTEGER, usn INTEGER, ease INTEGER, ivl INTEGER, lastIvl INTEGER, factor INTEGER, time INTEGER, type INTEGER);
 CREATE TABLE graves (oid INTEGER, type INTEGER, usn INTEGER);

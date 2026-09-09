@@ -5,7 +5,7 @@ import {
     applyHierarchicalLimit,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
-    sortReviewsDueThenRandom,
+    sortReviewCards,
     splitIntradayLearning,
 } from './queueBuild';
 
@@ -197,14 +197,17 @@ describe('splitIntradayLearning (Anki learn-ahead serving order)', () => {
     });
 });
 
-describe('sortReviewsDueThenRandom', () => {
+describe('sortReviewCards: due date, then random', () => {
     function due(cardId: number, dueDate: string): StudyCard {
         return { cardId, state: { dueDate } } as unknown as StudyCard;
     }
 
+    const dueRandom = (cards: StudyCard[], daySeed: string) =>
+        sortReviewCards(cards, 'dueRandom', { daySeed, fallbackDay: 0, today: 0 });
+
     it('orders by due day first, regardless of input order', () => {
         const cards = [due(1, '2026-06-22'), due(2, '2026-06-20'), due(3, '2026-06-21')];
-        const sorted = sortReviewsDueThenRandom(cards, 'seed', 0);
+        const sorted = dueRandom(cards, 'seed');
         expect(sorted.map((c) => c.cardId)).toEqual([2, 3, 1]);
     });
 
@@ -212,11 +215,105 @@ describe('sortReviewsDueThenRandom', () => {
         const ids = Array.from({ length: 20 }, (_, i) => i);
         const sameDay = ids.map((i) => due(i, '2026-06-20'));
 
-        const a = sortReviewsDueThenRandom(sameDay, 'monday', 0).map((c) => c.cardId);
-        const b = sortReviewsDueThenRandom(sameDay, 'monday', 0).map((c) => c.cardId);
+        const a = dueRandom(sameDay, 'monday').map((c) => c.cardId);
+        const b = dueRandom(sameDay, 'monday').map((c) => c.cardId);
 
         expect(a).toEqual(b);                          // deterministic per seed
         expect(a).not.toEqual(ids);                    // actually shuffled (20! makes identity ~impossible)
         expect([...a].sort((x, y) => x - y)).toEqual(ids); // no cards lost
+    });
+});
+
+describe('sortReviewCards: the orders that read FSRS columns', () => {
+    const TODAY = 100;
+    const NOW_MS = Date.UTC(2026, 8, 8, 12);
+    const DAY_MS = 86_400_000;
+
+    /** A review card with an FSRS memory state, due `dueIn` days from today. */
+    function fsrsCard(cardId: number, options: {
+        stability?: number;
+        difficulty?: number;
+        daysSinceReview?: number;
+        interval?: number;
+        easeFactor?: number;
+        desiredRetention?: number;
+        memory?: boolean;
+    } = {}): StudyCard {
+        const daysSinceReview = options.daysSinceReview ?? 10;
+        const interval = options.interval ?? 10;
+        return {
+            cardId,
+            noteId: cardId,
+            state: {
+                dueDate: '2026-06-20',
+                interval,
+                easeFactor: options.easeFactor ?? 2500,
+                lastReviewedAtMs: NOW_MS - daysSinceReview * DAY_MS,
+                desiredRetention: options.desiredRetention ?? 0.9,
+                memoryState: options.memory === false
+                    ? null
+                    : { stability: options.stability ?? 10, difficulty: options.difficulty ?? 5 },
+            },
+        } as unknown as StudyCard;
+    }
+
+    const sort = (cards: StudyCard[], order: Parameters<typeof sortReviewCards>[1], fsrs: boolean) =>
+        sortReviewCards(cards, order, {
+            daySeed: 'seed',
+            fallbackDay: TODAY,
+            today: TODAY,
+            fsrs,
+            nowMs: NOW_MS,
+        }).map((card) => card.cardId);
+
+    it('sorts by ease factor while FSRS is off', () => {
+        const cards = [
+            fsrsCard(1, { easeFactor: 2500, difficulty: 9 }),
+            fsrsCard(2, { easeFactor: 1900, difficulty: 2 }),
+        ];
+
+        expect(sort(cards, 'easeAsc', false)).toEqual([2, 1]);
+        expect(sort(cards, 'easeDesc', false)).toEqual([1, 2]);
+    });
+
+    it('reads difficulty, reversed, while FSRS is on', () => {
+        // Anki keeps the ordinals and swaps the column: EASE_ASCENDING sorts by difficulty
+        // descending, because the hardest card is the one with the lowest ease. The dropdown
+        // relabels the entries for the same reason.
+        const cards = [
+            fsrsCard(1, { easeFactor: 2500, difficulty: 9 }),
+            fsrsCard(2, { easeFactor: 1900, difficulty: 2 }),
+        ];
+
+        expect(sort(cards, 'easeAsc', true)).toEqual([1, 2]);
+        expect(sort(cards, 'easeDesc', true)).toEqual([2, 1]);
+    });
+
+    it('orders by retrievability, with memory-less cards where SQL would put its NULLs', () => {
+        // Longer since the last review against the same stability means less is remembered.
+        const fresh = fsrsCard(1, { stability: 30, daysSinceReview: 1 });
+        const faded = fsrsCard(2, { stability: 30, daysSinceReview: 25 });
+        const unscheduled = fsrsCard(3, { memory: false });
+
+        expect(sort([faded, fresh, unscheduled], 'retrievabilityAsc', true)).toEqual([3, 2, 1]);
+        expect(sort([faded, fresh, unscheduled], 'retrievabilityDesc', true)).toEqual([1, 2, 3]);
+    });
+
+    it('measures relative overdueness against retrievability once FSRS is on', () => {
+        // Same days late, different stability: the fragile card has fallen further past its
+        // target and has to come first, which the interval-only measure cannot see.
+        const fragile = fsrsCard(1, { stability: 5, interval: 5, daysSinceReview: 15 });
+        const durable = fsrsCard(2, { stability: 60, interval: 5, daysSinceReview: 15 });
+
+        expect(sort([durable, fragile], 'relativeOverdueness', true)).toEqual([1, 2]);
+    });
+
+    it('keeps the SM-2 measure for a card FSRS has never scheduled', () => {
+        const noMemory = fsrsCard(1, { memory: false, interval: 2 });
+        const scheduled = fsrsCard(2, { stability: 200, interval: 2, daysSinceReview: 2 });
+
+        // The memory-less card falls back to interval overdueness rather than being dropped to
+        // an end of the queue, exactly as the SQL helper's fallback branch does.
+        expect(sort([scheduled, noMemory], 'relativeOverdueness', true)).toHaveLength(2);
     });
 });

@@ -42,7 +42,7 @@ describe('reviewLogger rollover + due logic', () => {
         expect(dbMocks.getFirstSync.mock.calls[0][1]).toBe(expectedStart);
     });
 
-    it('getFutureDueCounts uses localDayNumber()+days and returns cumulative counts', () => {
+    it('getFutureDueCounts uses localDayNumber()+days and returns daily counts', () => {
         vi.setSystemTime(new Date(2026, 2, 12, 5, 0, 0, 0));
         const today = localDayNumber(Date.now(), 4);
 
@@ -58,9 +58,9 @@ describe('reviewLogger rollover + due logic', () => {
 
         expect(result).toEqual([
             { date: dayNumberToYmd(today, 4), count: 2 },
-            { date: dayNumberToYmd(today + 1, 4), count: 2 },
-            { date: dayNumberToYmd(today + 2, 4), count: 5 },
-            { date: dayNumberToYmd(today + 3, 4), count: 5 },
+            { date: dayNumberToYmd(today + 1, 4), count: 0 },
+            { date: dayNumberToYmd(today + 2, 4), count: 3 },
+            { date: dayNumberToYmd(today + 3, 4), count: 0 },
         ]);
     });
 
@@ -84,8 +84,8 @@ describe('reviewLogger rollover + due logic', () => {
 
         expect(result).toEqual([
             { date: dayNumberToYmd(today, 4), count: 6 },      // 4 overdue + 2 due today
-            { date: dayNumberToYmd(today + 1, 4), count: 7 },
-            { date: dayNumberToYmd(today + 2, 4), count: 7 },
+            { date: dayNumberToYmd(today + 1, 4), count: 1 },
+            { date: dayNumberToYmd(today + 2, 4), count: 0 },
         ]);
     });
 });

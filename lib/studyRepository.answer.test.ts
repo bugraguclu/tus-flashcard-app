@@ -59,6 +59,12 @@ vi.mock('./db', () => ({
         execSync: (sql: string) => {
             shared.txLog.push(sql.trim());
         },
+        // The only query the code under test runs here is the "end of the new queue" lookup.
+        getFirstSync: (_sql: string, excludedCardId?: number) => ({
+            maxDue: [...shared.cards.values()]
+                .filter((card) => card.type === 0 && card.id !== excludedCardId)
+                .reduce((max, card) => Math.max(max, card.due), 0),
+        }),
     }),
 }));
 
@@ -74,6 +80,7 @@ vi.mock('./reviewLogger', () => ({
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
+    logManualEntry: vi.fn(),
 }));
 
 vi.mock('./noteManager', () => ({
@@ -108,9 +115,10 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard, forgetCard, setCardDueInDays } from './studyRepository';
+import { answerStudyCard, forgetCard, undoAnswer } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
+import { deleteReviewById, logManualEntry } from './reviewLogger';
 
 const settings: AppSettings = {
     language: 'system',
@@ -131,7 +139,7 @@ const settings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'after',
     newCardOrder: 'sequential',
-    newCardGatherOrder: 'topic',
+    newCardGatherOrder: 'deck',
     reviewSortOrder: 'dueRandom',
     autoPlayAudio: true,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
@@ -233,7 +241,7 @@ describe('answerStudyCard', () => {
         expect(shared.txLog).toContain('ROLLBACK;');
     });
 
-    it('scales an early review (review ahead) by elapsed time, not the full interval', () => {
+    it('grows an early review from elapsed time, the way Anki does', () => {
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
         // 10-day interval, still 8 days from due => only 2 days elapsed.
         shared.cards.set(30, {
@@ -247,9 +255,29 @@ describe('answerStudyCard', () => {
         answerStudyCard(30, 3, settings, 900);
         const updated = shared.cards.get(30)!;
 
-        // A due-today Good would give ~ivl * ease (≈25); reviewing 80% early shrinks it to ~1/5 of that.
-        expect(updated.ivl).toBeGreaterThanOrEqual(1);
-        expect(updated.ivl).toBeLessThanOrEqual(6);
+        // Anki's early-review Good is max(elapsed x ease, scheduled) — rslib review.rs
+        // `passing_early_review_intervals`. Two elapsed days x 2.5 stays under the scheduled 10,
+        // so the card keeps its 10 days instead of earning the ~25 an on-time Good would give.
+        expect(updated.ivl).toBe(10);
+    });
+
+    it('reconstructs elapsed days for an early review with no recorded review time', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        // Imported without a review log: lastReview is 0, so elapsed comes from due - ivl.
+        shared.cards.set(31, {
+            ...baseCard(31, 1, 2, 2),
+            ivl: 20,
+            reps: 6,
+            due: today + 12,
+            lastReview: 0,
+        });
+
+        answerStudyCard(31, 3, settings, 900);
+        const updated = shared.cards.get(31)!;
+
+        // 8 days elapsed x 2.5 = 20, which ties the scheduled interval — an on-time answer would
+        // have given ~50. Without the fallback the card would look due today and jump to 50.
+        expect(updated.ivl).toBe(20);
     });
 
     it('preview mode leaves the card and the revlog untouched', () => {
@@ -346,6 +374,39 @@ describe('answerStudyCard', () => {
     });
 });
 
+describe('undoAnswer', () => {
+    beforeEach(() => {
+        shared.cards.clear();
+        shared.txLog = [];
+        shared.throwOnSave = false;
+        vi.mocked(deleteReviewById).mockClear();
+    });
+
+    afterEach(() => {
+        shared.throwOnSave = false;
+    });
+
+    it('restores the complete card snapshot and removes the matching review log atomically', () => {
+        const snapshot = { ...baseCard(10, 1, 2, 2), due: 42, ivl: 12, reps: 7 };
+        shared.cards.set(10, { ...snapshot, due: 99, ivl: 30, reps: 8 });
+
+        undoAnswer(snapshot, 1234);
+
+        expect(shared.cards.get(10)).toEqual(snapshot);
+        expect(deleteReviewById).toHaveBeenCalledOnce();
+        expect(deleteReviewById).toHaveBeenCalledWith(1234);
+        expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'COMMIT;']);
+    });
+
+    it('rolls back without deleting review history when the card cannot be restored', () => {
+        shared.throwOnSave = true;
+
+        expect(() => undoAnswer(baseCard(10, 1, 2, 2), 1234)).toThrow('save failed');
+        expect(deleteReviewById).not.toHaveBeenCalled();
+        expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
+    });
+});
+
 describe('forgetCard', () => {
     beforeEach(() => {
         shared.cards.clear();
@@ -372,41 +433,36 @@ describe('forgetCard', () => {
         expect(updated.left).toBe(0);
     });
 
+
+    it('leaves the reset marker FSRS looks for when a card is forgotten', () => {
+        shared.cards.set(33, { ...baseCard(33, 1, 2, 2), ivl: 45 });
+        vi.mocked(logManualEntry).mockClear();
+
+        forgetCard(33, settings);
+
+        // type 4 + factor 0 is the pair fsrsMemory's isReset() matches; without this row FSRS
+        // would keep replaying the history the user just asked it to throw away.
+        expect(logManualEntry).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 33 }),
+            'reset',
+            0,
+            45,
+        );
+    });
+
+    it('parks the card at the end of the new queue instead of keeping its review due day', () => {
+        shared.cards.set(35, { ...baseCard(35, 1, 2, 2), due: 20_800, ivl: 45 });
+        shared.cards.set(36, { ...baseCard(36, 1, 0, 0), due: 7 });
+
+        forgetCard(35, settings);
+
+        // `due` is a queue position once the card is new again, so the day number it carried as a
+        // review card would bury it behind every card the learner owns.
+        expect(shared.cards.get(35)!.due).toBe(8);
+    });
     it('is a no-op when the card does not exist', () => {
         expect(() => forgetCard(999, settings)).not.toThrow();
         expect(shared.cards.has(999)).toBe(false);
     });
 });
 
-describe('setCardDueInDays', () => {
-    beforeEach(() => {
-        shared.cards.clear();
-        shared.notes.clear();
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date(2026, 5, 20, 12, 0, 0));
-    });
-
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
-    it('pins a card into the review queue, due N days from today', () => {
-        shared.cards.set(31, baseCard(31, 1, 0, 0)); // starts as a new card
-
-        setCardDueInDays(31, 3, settings);
-
-        const updated = shared.cards.get(31)!;
-        expect(updated.type).toBe(2);
-        expect(updated.queue).toBe(2);
-        expect(updated.ivl).toBe(3);
-    });
-
-    it('clamps negative/invalid day counts to today (0)', () => {
-        shared.cards.set(32, baseCard(32, 1, 2, 2));
-
-        setCardDueInDays(32, -5, settings);
-
-        const updated = shared.cards.get(32)!;
-        expect(updated.ivl).toBe(1); // ivl is floored at 1 even when days clamp to 0
-    });
-});

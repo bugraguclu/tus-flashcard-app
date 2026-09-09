@@ -2,13 +2,18 @@ import { Platform } from 'react-native';
 import { getLocales } from 'expo-localization';
 import * as Notifications from 'expo-notifications';
 import type { AppSettings } from './types';
-import { localDayNumber, nextRolloverMs } from './ankiState';
+import { localDayNumber } from './ankiState';
 import { getDB } from './db';
 import { resolveAppLocale } from './i18n';
+import { buildStudyReminderContent } from './studyNotificationContent';
+import {
+    normalizeStudyNotificationThreshold,
+    shouldSendStudyReminder,
+} from './studyNotificationPolicy';
 
 const STUDY_REMINDER_KIND = 'tusankim.study-reminder';
-// iOS retains at most 64 pending local notifications. At most 28 reminders + 28 badge-only
-// updates leaves headroom for future app-owned notifications.
+// iOS retains at most 64 pending local notifications. Twenty-eight daily reminders leave
+// headroom for future app-owned notifications.
 const STUDY_REMINDER_DAYS = 28;
 
 export type StudyNotificationPermissionState =
@@ -22,13 +27,11 @@ export type StudyNotificationPermission = {
     state: StudyNotificationPermissionState;
     canAskAgain: boolean;
     allowsAlert: boolean;
-    allowsBadge: boolean;
 };
 
 export type StudyNotificationSyncResult = {
     permission: StudyNotificationPermission;
     scheduledCount: number;
-    currentDueReviews: number;
 };
 
 let operations: Promise<unknown> = Promise.resolve();
@@ -52,23 +55,22 @@ function isIosAuthorized(status: Notifications.NotificationPermissionsStatus): b
 
 function mapPermission(status: Notifications.NotificationPermissionsStatus): StudyNotificationPermission {
     if (Platform.OS !== 'ios') {
-        return { state: 'unavailable', canAskAgain: false, allowsAlert: false, allowsBadge: false };
+        return { state: 'unavailable', canAskAgain: false, allowsAlert: false };
     }
 
     const authorized = isIosAuthorized(status);
     const allowsAlert = authorized && status.ios?.allowsAlert !== false;
-    const allowsBadge = authorized && status.ios?.allowsBadge !== false;
     let state: StudyNotificationPermissionState;
 
     if (authorized) {
-        state = allowsAlert && allowsBadge ? 'granted' : 'limited';
+        state = allowsAlert ? 'granted' : 'limited';
     } else if (status.ios?.status === Notifications.IosAuthorizationStatus.NOT_DETERMINED) {
         state = 'undetermined';
     } else {
         state = 'denied';
     }
 
-    return { state, canAskAgain: status.canAskAgain, allowsAlert, allowsBadge };
+    return { state, canAskAgain: status.canAskAgain, allowsAlert };
 }
 
 function canUsePermission(permission: StudyNotificationPermission): boolean {
@@ -78,13 +80,12 @@ function canUsePermission(permission: StudyNotificationPermission): boolean {
 export function configureStudyNotificationHandler(): void {
     if (handlerConfigured || Platform.OS !== 'ios') return;
     Notifications.setNotificationHandler({
-        handleNotification: async (notification) => {
-            const badgeOnly = notification.request.content.data?.presentation === 'badge';
+        handleNotification: async () => {
             return {
-                shouldShowBanner: !badgeOnly,
-                shouldShowList: !badgeOnly,
-                shouldPlaySound: !badgeOnly,
-                shouldSetBadge: true,
+                shouldShowBanner: true,
+                shouldShowList: true,
+                shouldPlaySound: true,
+                shouldSetBadge: false,
             };
         },
     });
@@ -93,7 +94,7 @@ export function configureStudyNotificationHandler(): void {
 
 export async function getStudyNotificationPermission(): Promise<StudyNotificationPermission> {
     if (Platform.OS !== 'ios') {
-        return { state: 'unavailable', canAskAgain: false, allowsAlert: false, allowsBadge: false };
+        return { state: 'unavailable', canAskAgain: false, allowsAlert: false };
     }
     return mapPermission(await Notifications.getPermissionsAsync());
 }
@@ -102,12 +103,14 @@ export async function requestStudyNotificationPermission(): Promise<StudyNotific
     if (Platform.OS !== 'ios') return getStudyNotificationPermission();
     configureStudyNotificationHandler();
     const current = await Notifications.getPermissionsAsync();
-    if (isIosAuthorized(current) || !current.canAskAgain) return mapPermission(current);
+    const mappedCurrent = mapPermission(current);
+    const provisional = current.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+    if (mappedCurrent.allowsAlert || (!provisional && !current.canAskAgain)) return mappedCurrent;
 
     const requested = await Notifications.requestPermissionsAsync({
         ios: {
             allowAlert: true,
-            allowBadge: true,
+            allowBadge: false,
             allowSound: true,
         },
     });
@@ -115,7 +118,30 @@ export async function requestStudyNotificationPermission(): Promise<StudyNotific
 }
 
 /**
- * Counts only due review cards, matching AnkiMobile's reminder/badge wording. New cards and
+ * New installs default reminders on without throwing an out-of-context system prompt. Apple
+ * provisional authorization delivers the first reminders quietly and lets the learner keep or
+ * disable them from Notification Center. An explicit toggle still requests normal alert access.
+ */
+export async function ensureDefaultStudyNotificationPermission(): Promise<StudyNotificationPermission> {
+    if (Platform.OS !== 'ios') return getStudyNotificationPermission();
+    configureStudyNotificationHandler();
+    const current = await Notifications.getPermissionsAsync();
+    if (current.ios?.status !== Notifications.IosAuthorizationStatus.NOT_DETERMINED) {
+        return mapPermission(current);
+    }
+
+    return mapPermission(await Notifications.requestPermissionsAsync({
+        ios: {
+            allowAlert: true,
+            allowBadge: false,
+            allowSound: true,
+            allowProvisional: true,
+        },
+    }));
+}
+
+/**
+ * Counts only due review cards for reminder text. New cards and
  * learning-step timers are deliberately excluded, as is every suspended/buried card (their
  * queues are negative in Anki's schema).
  */
@@ -133,15 +159,6 @@ function reminderDates(now: Date, hour: number, minute: number): Date[] {
     first.setHours(hour, minute, 0, 0);
     if (first.getTime() <= now.getTime()) first.setDate(first.getDate() + 1);
 
-    return Array.from({ length: STUDY_REMINDER_DAYS }, (_, index) => {
-        const date = new Date(first);
-        date.setDate(first.getDate() + index);
-        return date;
-    });
-}
-
-function rolloverDates(now: Date, rolloverHour: number): Date[] {
-    const first = new Date(nextRolloverMs(now.getTime(), rolloverHour));
     return Array.from({ length: STUDY_REMINDER_DAYS }, (_, index) => {
         const date = new Date(first);
         date.setDate(first.getDate() + index);
@@ -186,22 +203,6 @@ async function dismissOwnedStudyNotifications(): Promise<void> {
     );
 }
 
-async function setCurrentBadge(settings: AppSettings, permission: StudyNotificationPermission): Promise<number> {
-    const count = settings.studyNotificationsEnabled && permission.allowsBadge
-        ? getDueReviewCountAt(Date.now(), settings.dayRolloverHour)
-        : 0;
-    await Notifications.setBadgeCountAsync(count).catch(() => false);
-    return count;
-}
-
-export function refreshStudyNotificationBadge(settings: AppSettings): Promise<number> {
-    return serialize(async () => {
-        if (Platform.OS !== 'ios') return 0;
-        const permission = await getStudyNotificationPermission();
-        return setCurrentBadge(settings, permission);
-    });
-}
-
 export function disableStudyNotifications(): Promise<void> {
     return serialize(async () => {
         if (Platform.OS !== 'ios') return;
@@ -212,10 +213,9 @@ export function disableStudyNotifications(): Promise<void> {
 }
 
 /**
- * Rebuilds one-off local reminders and start-of-day badge updates for the next 28 days.
- * One-off requests let every day's
- * message and badge carry the actual number of reviews expected at that time, while skipping
- * days with no due reviews. Re-entering/backgrounding the app recalculates the series.
+ * Rebuilds one-off local reminders for the next 28 days. One-off requests let every day's
+ * message carry the expected number of reviews while skipping days with none due.
+ * Re-entering/backgrounding the app recalculates the series.
  */
 export function syncStudyNotifications(settings: AppSettings): Promise<StudyNotificationSyncResult> {
     return serialize(async () => {
@@ -223,59 +223,38 @@ export function syncStudyNotifications(settings: AppSettings): Promise<StudyNoti
             return {
                 permission: await getStudyNotificationPermission(),
                 scheduledCount: 0,
-                currentDueReviews: 0,
             };
         }
 
         configureStudyNotificationHandler();
         await cancelOwnedStudyNotifications();
+        // Clear badges left by older builds; this version never sets an app-icon badge.
+        await Notifications.setBadgeCountAsync(0).catch(() => false);
         const permission = await getStudyNotificationPermission();
 
         if (!settings.studyNotificationsEnabled || !canUsePermission(permission)) {
-            const currentDueReviews = await setCurrentBadge(settings, permission);
-            return { permission, scheduledCount: 0, currentDueReviews };
+            return { permission, scheduledCount: 0 };
         }
 
         const hour = Math.max(0, Math.min(23, Number(settings.studyNotificationHour ?? 9) || 0));
         const minute = Math.max(0, Math.min(59, Number(settings.studyNotificationMinute ?? 0) || 0));
+        const threshold = normalizeStudyNotificationThreshold(settings.studyNotificationThreshold);
         const scheduledIdentifiers: string[] = [];
 
         try {
-            // AnkiMobile refreshes the app-icon review badge at the start of the study day,
-            // independently from the user's chosen alert time. These requests carry no alert.
-            for (const date of rolloverDates(new Date(), settings.dayRolloverHour)) {
-                const dueReviews = getDueReviewCountAt(date.getTime(), settings.dayRolloverHour);
-                const dayKey = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
-                const identifier = await Notifications.scheduleNotificationAsync({
-                    identifier: `${STUDY_REMINDER_KIND}.badge.${dayKey}`,
-                    content: {
-                        badge: dueReviews,
-                        sound: false,
-                        data: { kind: STUDY_REMINDER_KIND, presentation: 'badge', dueReviews },
-                    },
-                    trigger: {
-                        type: Notifications.SchedulableTriggerInputTypes.DATE,
-                        date,
-                    },
-                });
-                scheduledIdentifiers.push(identifier);
-            }
-
             for (const date of reminderDates(new Date(), hour, minute)) {
                 const dueReviews = getDueReviewCountAt(date.getTime(), settings.dayRolloverHour);
-                if (dueReviews === 0) continue;
+                if (!shouldSendStudyReminder(dueReviews, threshold)) continue;
                 const copy = reminderCopy(settings, dueReviews);
                 const dayKey = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
                 const identifier = await Notifications.scheduleNotificationAsync({
                     identifier: `${STUDY_REMINDER_KIND}.${dayKey}`,
-                    content: {
-                        title: copy.title,
-                        body: copy.body,
-                        badge: dueReviews,
-                        sound: 'default',
-                        interruptionLevel: 'active',
-                        data: { kind: STUDY_REMINDER_KIND, route: '/decks', dueReviews },
-                    },
+                    content: buildStudyReminderContent(
+                        STUDY_REMINDER_KIND,
+                        copy.title,
+                        copy.body,
+                        dueReviews,
+                    ),
                     trigger: {
                         type: Notifications.SchedulableTriggerInputTypes.DATE,
                         date,
@@ -288,7 +267,6 @@ export function syncStudyNotifications(settings: AppSettings): Promise<StudyNoti
             throw error;
         }
 
-        const currentDueReviews = await setCurrentBadge(settings, permission);
-        return { permission, scheduledCount: scheduledIdentifiers.length, currentDueReviews };
+        return { permission, scheduledCount: scheduledIdentifiers.length };
     });
 }

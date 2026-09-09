@@ -20,11 +20,27 @@ vi.mock('./db', () => ({
     dbSearchCards: () => [],
 }));
 
-import { adjustIntervalForEasyDays, getFilteredDeckCardIds, getStudyQueue, getWaitingLearningCardIds } from './studyRepository';
+import {
+    adjustIntervalForEasyDays,
+    getDeckTotalCardCount,
+    getFilteredDeckCardIds,
+    getFilteredDeckCountCards,
+    getStudyQueue,
+    getWaitingLearningCardIds,
+} from './studyRepository';
 import { saveNote, saveAnkiCard, saveNoteType } from './noteManager';
-import { saveDeck, saveDeckConfig } from './deckManager';
+import {
+    buildDeckTree,
+    getAllDecks,
+    getBuriedCountForDeck,
+    getCardCountsByDeck,
+    saveDeck,
+    saveDeckConfig,
+} from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
 import { localDayNumber } from './ankiState';
+import { getDeckOverviewSnapshot } from './screenSnapshots';
+import { getDeckListSnapshot } from './deckListSnapshot';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -98,7 +114,7 @@ const settings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'mix',
     newCardOrder: 'sequential',
-    newCardGatherOrder: 'topic',
+    newCardGatherOrder: 'deck',
     reviewSortOrder: 'dueRandom',
     autoPlayAudio: true,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
@@ -204,6 +220,18 @@ afterEach(() => {
     db.close();
 });
 
+describe('deck overview snapshot', () => {
+    it('keeps queue counts, order and buried count equal to the existing repositories', () => {
+        const screen = getDeckOverviewSnapshot('Python', settings);
+        const directQueue = getStudyQueue({ settings, selectedDeckName: 'Python' });
+
+        expect(screen.queue?.stats).toEqual(directQueue.stats);
+        expect(screen.queue?.cards.map((card) => card.cardId))
+            .toEqual(directQueue.cards.map((card) => card.cardId));
+        expect(screen.buriedCount).toBe(getBuriedCountForDeck(1));
+    });
+});
+
 describe('scope filtering (subject/topic)', () => {
     it('selecting topic "random" serves only the random-topic card', () => {
         const result = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
@@ -260,6 +288,36 @@ describe('easy days', () => {
         expect(adjustIntervalForEasyDays(10, 42, [1, 1, 1, 1, 1, 1, 1], Date.now(), rolloverHour)).toBe(10);
         expect(adjustIntervalForEasyDays(10, 42, undefined, Date.now(), rolloverHour)).toBe(10);
     });
+
+    it('never moves a card outside its own fuzz window', () => {
+        // Upstream runs easy days inside the load balancer, which only ever re-picks a day that
+        // plain fuzz could have chosen anyway. A 10-day interval fuzzes within [8, 12], so when
+        // every weekday inside that window is blocked the interval has to stay put -- reaching
+        // out to day 13 for an allowed weekday would schedule a review Anki would never write.
+        const nowMs = Date.now();
+        const today = localDayNumber(nowMs, rolloverHour);
+        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
+
+        const easyDays = [1, 1, 1, 1, 1, 1, 1];
+        for (let interval = 8; interval <= 12; interval += 1) easyDays[mondayIndex(today + interval)] = 0;
+
+        // Days 8..12 span five weekdays, so day 13 is necessarily one of the two still allowed.
+        expect(easyDays[mondayIndex(today + 13)]).toBe(1);
+        expect(adjustIntervalForEasyDays(10, 42, easyDays, nowMs, rolloverHour)).toBe(10);
+    });
+
+    it('does not move an interval too short to have a fuzz window', () => {
+        // Under 2.5 days the window collapses onto the interval itself, so there is no
+        // interchangeable day to move to even though the weekday is blocked.
+        const nowMs = Date.now();
+        const today = localDayNumber(nowMs, rolloverHour);
+        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
+
+        const easyDays = [1, 1, 1, 1, 1, 1, 1];
+        easyDays[mondayIndex(today + 2)] = 0;
+
+        expect(adjustIntervalForEasyDays(2, 42, easyDays, nowMs, rolloverHour)).toBe(2);
+    });
 });
 
 describe('flag search (filtered decks)', () => {
@@ -298,6 +356,32 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(preview.cards.map((card) => card.cardId)).toEqual([1020]);
     });
 
+    it('excludes a negated term instead of searching for its text', () => {
+        // Anki's "-" negates the term that follows. Treating "-tag:random" as plain text would
+        // match nothing at all and silently produce an empty session.
+        makeFiltered('deck:"Python" -tag:random');
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId).sort()).toEqual([1020, 1030]);
+    });
+
+    it('joins alternatives with or, and groups them with parentheses', () => {
+        makeFiltered('tag:random or tag:Modüller');
+        const either = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(either.cards.map((card) => card.cardId).sort()).toEqual([1010, 1020]);
+
+        makeFiltered('deck:"Python" -(tag:random or tag:Modüller)');
+        const neither = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(neither.cards.map((card) => card.cardId)).toEqual([1030]);
+    });
+
+    it('keeps suspended cards out when the search says so', () => {
+        saveAnkiCard(makeCard(1010, 101, 7, { queue: -1 }));
+
+        makeFiltered('deck:"Python" -is:suspended');
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(queue.cards.map((card) => card.cardId).sort()).toEqual([1020, 1030]);
+    });
+
     it('rated:N:1 matches cards answered Again recently', () => {
         db.runSync(
             'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, 1, 1, 0, 2500, 3000, 0)',
@@ -309,16 +393,57 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(queue.cards.map((card) => card.cardId)).toEqual([1020]);
     });
 
-    it('applies the gather limit and the latest-added order', () => {
-        makeFiltered('deck:"Python"');
+    it('applies the gather limit and Anki\'s added / reverse-added orders', () => {
+        // Gather order is stored with Anki's own ordinals: 5 is "order added", 7 is
+        // "latest added first" (proto Deck.Filtered.SearchTerm.Order).
+        const gatherWithOrder = (searchOrder: number) => {
+            makeFiltered('deck:"Python"');
+            saveDeck({
+                id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+                description: '', collapsed: false, isFiltered: true,
+                searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder,
+            });
+            return getStudyQueue({ settings, selectedDeckName: 'Oturum' }).cards.map((card) => card.cardId);
+        };
+
+        expect(gatherWithOrder(5)).toEqual([1010, 1020]);
+        expect(gatherWithOrder(7)).toEqual([1030, 1020]);
+    });
+
+    it('keeps a note\u2019s cards together in template order for added / reverse-added', () => {
+        // rslib/src/storage/card/filtered.rs orders these by note id and card ordinal, not by
+        // card id: a note's siblings stay adjacent instead of scattering by creation time.
+        saveAnkiCard(makeCard(1040, 101, 7, { ord: 1 }));
+        const gatherWithOrder = (searchOrder: number) => {
+            saveDeck({
+                id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+                description: '', collapsed: false, isFiltered: true,
+                searchQuery: 'deck:"Python"', searchLimit: 10, searchOrder,
+            });
+            return getStudyQueue({ settings, selectedDeckName: 'Oturum' }).cards.map((card) => card.cardId);
+        };
+
+        // Card 1040 is the newest card but belongs to the oldest note, so it follows card 1010.
+        expect(gatherWithOrder(5)).toEqual([1010, 1040, 1020, 1030]);
+        expect(gatherWithOrder(7)).toEqual([1030, 1020, 1010, 1040]);
+    });
+
+    it('puts due-order learning and review cards on one timeline', () => {
+        // `due` is a day number for a review card and a clock time for a learning card, so
+        // comparing the raw column would sort every review card ahead of every learning card.
+        // Anki projects the day numbers onto the clock before comparing, and so does this.
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 2, queue: 2, due: today + 1, ivl: 10, factor: 2500 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: Date.now() - 60_000, left: 1 }));
         saveDeck({
             id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
             description: '', collapsed: false, isFiltered: true,
-            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
+            searchQuery: 'deck:"Python::Modüller & Hata Ayıklama"', searchLimit: 10, searchOrder: 6,
         });
 
-        const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
-        expect(queue.cards.map((card) => card.cardId)).toEqual([1030, 1020]);
+        // The learning card is already overdue; the review card is not due until tomorrow.
+        expect(getStudyQueue({ settings, selectedDeckName: 'Oturum' }).cards.map((card) => card.cardId))
+            .toEqual([1020, 1010]);
     });
 
     it('merges a second filter without duplicating cards', () => {
@@ -372,6 +497,149 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
     });
 });
 
+describe('deck-list filtered count snapshot', () => {
+    type ComparableDeckNode = {
+        deckId: number;
+        name: string;
+        newCount: number;
+        learnCount: number;
+        reviewCount: number;
+        totalCards: number;
+        children: ComparableDeckNode[];
+    };
+    const comparableTree = (tree: ReturnType<typeof buildDeckTree>): ComparableDeckNode[] => tree.map((node) => ({
+        deckId: node.deck.id,
+        name: node.deck.name,
+        newCount: node.newCount,
+        learnCount: node.learnCount,
+        reviewCount: node.reviewCount,
+        totalCards: node.totalCards,
+        children: comparableTree(node.children),
+    }));
+
+    const legacyDeckListTree = () => {
+        const decks = getAllDecks();
+        const counts = getCardCountsByDeck(Date.now(), settings.dayRolloverHour, settings.learnAheadMinutes);
+        const claimed = new Set<number>();
+        for (const deck of decks) {
+            if (!deck.isFiltered) continue;
+            const queue = getStudyQueue({ settings, selectedDeckName: deck.name });
+            const cards = (queue.allSessionCards ?? queue.cards).filter((card) => {
+                if (claimed.has(card.cardId)) return false;
+                claimed.add(card.cardId);
+                const home = counts.get(card.deckId);
+                if (home) {
+                    home.total = Math.max(0, home.total - 1);
+                    if (card.state.status === 'new') home.new = Math.max(0, home.new - 1);
+                    else if (card.state.status === 'learning') home.learn = Math.max(0, home.learn - 1);
+                    else home.review = Math.max(0, home.review - 1);
+                }
+                return true;
+            });
+            counts.set(deck.id, {
+                new: cards.filter((card) => card.state.status === 'new').length,
+                learn: cards.filter((card) => card.state.status === 'learning').length,
+                review: cards.filter((card) => card.state.status === 'review').length,
+                total: cards.length,
+            });
+        }
+        return buildDeckTree(decks, counts, settings.dayRolloverHour);
+    };
+
+    it('keeps normal and filtered deck counters equal to the previous screen algorithm', () => {
+        saveDeck({
+            id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
+        });
+        saveDeck({
+            id: 99, name: 'Oturum B', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random or tag:Modüller', searchLimit: 100,
+        });
+
+        expect(comparableTree(getDeckListSnapshot(settings, Date.now()).tree))
+            .toEqual(comparableTree(legacyDeckListTree()));
+    });
+
+    it('keeps subdeck totals and applies parent daily limits after filtered ownership', () => {
+        saveDeckConfig({ ...deckConfig, newPerDay: 1, maxReviewsPerDay: 1 });
+        const snapshot = getDeckListSnapshot(settings, Date.now());
+        const root = snapshot.tree.find((node) => node.deck.name === 'Python');
+
+        expect(root).toMatchObject({ newCount: 1, totalCards: 3 });
+        expect(root?.children.reduce((total, child) => total + child.totalCards, 0)).toBe(3);
+    });
+
+    it('matches the existing filtered queues and preserves first-deck ownership for overlaps', () => {
+        const first = {
+            id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2, searchOrder: 5,
+        } as const;
+        const second = {
+            id: 99, name: 'Oturum B', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random or tag:Modüller', searchLimit: 100,
+        } as const;
+        saveDeck(first);
+        saveDeck(second);
+
+        const existingFirst = getStudyQueue({ settings, selectedDeckName: first.name });
+        const existingSecond = getStudyQueue({ settings, selectedDeckName: second.name });
+        const snapshot = getFilteredDeckCountCards([first, second], settings, Date.now());
+
+        expect(snapshot.get(first.id)?.map((card) => card.cardId))
+            .toEqual((existingFirst.allSessionCards ?? existingFirst.cards).map((card) => card.cardId));
+        const firstOwned = new Set(snapshot.get(first.id)?.map((card) => card.cardId));
+        expect(snapshot.get(second.id)?.map((card) => card.cardId))
+            .toEqual((existingSecond.allSessionCards ?? existingSecond.cards)
+                .map((card) => card.cardId)
+                .filter((cardId) => !firstOwned.has(cardId)));
+    });
+
+    it('loads every filtered-deck membership with one batch query', () => {
+        saveDeck({
+            id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 2,
+        });
+        saveDeck({
+            id: 99, name: 'Oturum B', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'tag:random', searchLimit: 100,
+        });
+        const getAllSpy = vi.spyOn(db, 'getAllSync');
+
+        getDeckListSnapshot(settings, Date.now());
+
+        const membershipQueries = getAllSpy.mock.calls.filter(([sql]) => (
+            String(sql).includes('ROW_NUMBER() OVER') && String(sql).includes('filteredDeckId')
+        ));
+        expect(membershipQueries).toHaveLength(1);
+    });
+
+    it('keeps new, learning and review states used by deck-list counters', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveAnkiCard(makeCard(1010, 101, 7));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: Date.now() + 600_000, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 2, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500 }));
+        const filtered = {
+            id: 98, name: 'Durumlar', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true,
+            searchQuery: 'deck:"Python"', searchLimit: 100,
+        } as const;
+        saveDeck(filtered);
+
+        expect(getFilteredDeckCountCards([filtered], settings, Date.now()).get(filtered.id))
+            .toEqual(expect.arrayContaining([
+                expect.objectContaining({ cardId: 1010, status: 'new', homeDeckId: 7 }),
+                expect.objectContaining({ cardId: 1020, status: 'learning', homeDeckId: 7 }),
+                expect.objectContaining({ cardId: 1030, status: 'review', homeDeckId: 2 }),
+            ]));
+    });
+});
+
 describe('new-card gathering order', () => {
     it('serves new cards topic by topic in the course order, not raw position order', () => {
         // Position order would be 1005 (Hata Ayıklama), 1010 (random), 1020 (Modüller);
@@ -385,6 +653,45 @@ describe('new-card gathering order', () => {
 
         const queue = getStudyQueue({ settings, selectedSubject: 'araclar' });
         expect(queue.cards.map((card) => card.cardId)).toEqual([1020, 1010, 1005]);
+    });
+
+    it('walks positions in either direction, and takes the right end when the fetch is capped', () => {
+        const ascending = getStudyQueue({
+            settings: { ...settings, newCardGatherOrder: 'ascendingPosition' },
+        });
+        expect(ascending.cards.map((card) => card.cardId)).toEqual([1010, 1020, 1030]);
+
+        const descending = getStudyQueue({
+            settings: { ...settings, newCardGatherOrder: 'descendingPosition' },
+        });
+        expect(descending.cards.map((card) => card.cardId)).toEqual([1030, 1020, 1010]);
+
+        // With room for a single card, "descending" has to reach the *highest* position. Reading
+        // an ascending page and reversing it afterwards would have served 1010 instead.
+        const cappedDescending = getStudyQueue({
+            settings: { ...settings, newCardGatherOrder: 'descendingPosition', dailyNewLimit: 1 },
+        });
+        expect(cappedDescending.cards.map((card) => card.cardId)).toEqual([1030]);
+    });
+
+    it('keeps a note\'s siblings together when notes are gathered at random', () => {
+        // A second card on note 101, so the note has siblings to keep together.
+        saveAnkiCard(makeCard(1011, 101, 7, { ord: 1 }));
+
+        const queue = getStudyQueue({
+            settings: { ...settings, newCardGatherOrder: 'randomNotes', newCardSortOrder: 'noSort' },
+        });
+        const notes = queue.cards.map((card) => card.noteId);
+        const runs = notes.filter((note, index) => note !== notes[index - 1]);
+
+        expect(queue.cards).toHaveLength(4);
+        expect(runs).toHaveLength(new Set(notes).size);
+    });
+
+    it('honours a legacy gather order stored under its old name', () => {
+        const legacy = { ...settings, newCardGatherOrder: 'position' as never };
+        expect(getStudyQueue({ settings: legacy }).cards.map((card) => card.cardId))
+            .toEqual([1010, 1020, 1030]);
     });
 });
 
@@ -437,6 +744,11 @@ describe('one-shot study ahead', () => {
     });
 });
 
+/** Ids of the review-state cards a queue actually serves, ignoring new/learning cards. */
+function servedReviewIds(result: { cards: { cardId: number; state: { status: string } }[] }): number[] {
+    return result.cards.filter((card) => card.state.status === 'review').map((card) => card.cardId);
+}
+
 describe('queue counters and daily limits', () => {
     it('counts an intraday learning card due later today in learningCount', () => {
         const dueMs = Date.now() + 10 * 60_000;
@@ -472,4 +784,128 @@ describe('queue counters and daily limits', () => {
         expect(result.stats.newCount).toBe(0);
         expect(result.dailyNewLimitReached).toBe(true);
     });
+
+    it('stops serving reviews once today\'s review limit is spent', () => {
+        // Anki: "When this limit is reached, Anki will not show any more review cards for the
+        // day, even if there are more waiting." Answered reviews leave the due queue on their
+        // own, so only the review log can prove the limit was already spent.
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveDeckConfig({ ...deckConfig, maxReviewsPerDay: 2 });
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+        const limited: AppSettings = { ...settings, dailyReviewLimit: 2 };
+
+        const fresh = getStudyQueue({ settings: limited });
+        expect(servedReviewIds(fresh)).toHaveLength(2);
+        expect(fresh.stats.reviewCount).toBe(2);
+        expect(fresh.heldBackReviewCount).toBe(0);
+
+        // A review answered today (revlog type 1) spends one of the two slots. Its own card is
+        // scheduled into the future, exactly as answering would have left it.
+        saveAnkiCard(makeCard(9999, 103, 7, { type: 2, queue: 2, due: today + 12, ivl: 12, factor: 2500, reps: 4 }));
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, 3, 12, 5, 2500, 900, 1)',
+            Date.now(),
+            9999,
+        );
+
+        const partlySpent = getStudyQueue({ settings: limited });
+        expect(servedReviewIds(partlySpent)).toHaveLength(1);
+        expect(partlySpent.stats.reviewCount).toBe(1);
+        expect(partlySpent.heldBackReviewCount).toBe(1);
+
+        const fullySpent = getStudyQueue({ settings: limited, reviewsStudiedToday: 2 });
+        expect(servedReviewIds(fullySpent)).toHaveLength(0);
+        expect(fullySpent.stats.reviewCount).toBe(0);
+        expect(fullySpent.heldBackReviewCount).toBe(2);
+    });
+
+    it('spends each deck\'s own review allowance, and the parent\'s across the subtree', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        // Parent generous, each subdeck limited to a single review per day.
+        saveDeckConfig({ ...deckConfig, maxReviewsPerDay: 50 });
+        saveDeckConfig({ ...deckConfig, id: 2, name: 'Temeller', maxReviewsPerDay: 1 });
+        saveDeckConfig({ ...deckConfig, id: 3, name: 'Modüller', maxReviewsPerDay: 1 });
+        saveDeck({ id: 2, name: 'Python::Temeller', configId: 2, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        saveDeck({ id: 7, name: 'Python::Modüller & Hata Ayıklama', configId: 3, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+        saveAnkiCard(makeCard(1030, 103, 2, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+        // The review already answered today belongs to the Modüller deck, so only that deck's
+        // allowance is spent.
+        saveAnkiCard(makeCard(9999, 102, 7, { type: 2, queue: 2, due: today + 9, ivl: 9, factor: 2500, reps: 4 }));
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, 3, 9, 5, 2500, 900, 1)',
+            Date.now(),
+            9999,
+        );
+
+        const untouched = getStudyQueue({ settings, selectedDeckName: 'Python::Temeller' });
+        expect(servedReviewIds(untouched)).toEqual([1030]);
+
+        const spent = getStudyQueue({ settings, selectedDeckName: 'Python::Modüller & Hata Ayıklama' });
+        expect(servedReviewIds(spent)).toHaveLength(0);
+        expect(spent.heldBackReviewCount).toBe(1);
+    });
+
+    it('computes upcomingCardsCount for rollover when daily limit is reached', () => {
+        saveDeckConfig({ ...deckConfig, newPerDay: 2 });
+        const limited: AppSettings = { ...settings, dailyNewLimit: 2 };
+
+        // 3 new cards in deck. Today 2 are studied, 1 is held back.
+        const exhausted = getStudyQueue({ settings: limited, newCardsStudiedToday: 2 });
+        expect(exhausted.stats.newCount).toBe(0);
+        expect(exhausted.heldBackNewCount).toBe(3);
+        expect(exhausted.dailyNewLimitReached).toBe(true);
+        // Tomorrow at rollover, up to newPerDay (2) will be served from the 3 held back.
+        expect(exhausted.upcomingCardsCount).toBe(2);
+    });
+
+    it('computes upcomingCardsCount when reviews are scheduled for tomorrow', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveDeckConfig({ ...deckConfig, newPerDay: 0, maxReviewsPerDay: 10 });
+        saveAnkiCard(makeCard(2020, 101, 7, { type: 2, queue: 2, due: today + 1, ivl: 1, factor: 2500, reps: 1 }));
+
+        const result = getStudyQueue({ settings });
+        expect(result.cards.filter((c) => c.cardId === 2020)).toHaveLength(0);
+        expect(result.upcomingCardsCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it('selectedDeckName overrides lingering selectedSubject and selectedTopic in getStudyQueue', () => {
+        // Create an isolated root deck with a card
+        const isolatedDeckId = 99;
+        saveDeck({ id: isolatedDeckId, name: 'Yeni Deste', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        saveNote(makeNote(9901, ['yeni'], ['Yeni Soru', 'Yeni Cevap', '']));
+        saveAnkiCard(makeCard(99001, 9901, isolatedDeckId, { queue: 0, type: 0, due: 1 }));
+
+        // Calling getStudyQueue with selectedDeckName: 'Yeni Deste', but with a lingering selectedSubject: 'Python'
+        // Prior to the fix, this evaluated to (c.deckId = Python OR d.name LIKE 'Python::%') AND (d.name = 'Yeni Deste') -> 0 cards
+        const queueWithLingeringSubject = getStudyQueue({
+            settings,
+            selectedSubject: 'Python',
+            selectedTopic: 'Temeller',
+            selectedDeckName: 'Yeni Deste',
+        });
+
+        expect(queueWithLingeringSubject.cards.map((c) => c.cardId)).toContain(99001);
+        expect(queueWithLingeringSubject.stats.newCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it('getDeckTotalCardCount accurately returns total card count for a deck and 0 for an empty deck', () => {
+        // An empty deck
+        const emptyDeckId = 88;
+        saveDeck({ id: emptyDeckId, name: 'Boş Deste', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        expect(getDeckTotalCardCount('Boş Deste')).toBe(0);
+
+        // A deck with cards
+        expect(getDeckTotalCardCount('Python')).toBeGreaterThan(0);
+        expect(getDeckTotalCardCount('Python::Temeller')).toBeGreaterThan(0);
+
+        // Non-existent deck
+        expect(getDeckTotalCardCount('Var Olmayan Deste')).toBe(0);
+
+        // Entire collection (null deck)
+        expect(getDeckTotalCardCount(null)).toBeGreaterThan(0);
+    });
 });
+

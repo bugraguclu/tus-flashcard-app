@@ -21,7 +21,7 @@ const defaultSettings: AppSettings = {
     minLapseInterval: 1,
     queueOrder: 'after',
     newCardOrder: 'sequential',
-    newCardGatherOrder: 'topic',
+    newCardGatherOrder: 'deck',
     reviewSortOrder: 'dueRandom',
     autoPlayAudio: true,
     easyDays: [1, 1, 1, 1, 1, 1, 1],

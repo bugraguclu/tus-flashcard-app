@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
 import {
     useAudioRecorder,
@@ -8,8 +8,9 @@ import {
     setAudioModeAsync,
 } from 'expo-audio';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert } from '../lib/confirm';
-import { saveMediaBytes } from '../lib/mediaStore';
+import { alert, confirmAsync } from '../lib/confirm';
+import { promptPermissionSettings } from '../lib/permissions';
+import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
 import { useI18n } from '../hooks/useI18n';
 
@@ -34,17 +35,46 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
     const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
     const state = useAudioRecorderState(recorder, 200);
     const [saving, setSaving] = useState(false);
+    // The recorder outlives the dialog, and so does the duration of the last take. Without this
+    // the dialog reopens still showing "0:37" from the recording before it.
+    const [started, setStarted] = useState(false);
+    useEffect(() => { if (visible) setStarted(false); }, [visible]);
+
+    /**
+     * Hand the audio session back.
+     *
+     * Recording puts iOS into `playAndRecord`, which routes playback to the receiver rather than
+     * the speaker. This was set when a recording started and never unset, so one recording left
+     * every card sound and every text-to-speech reading for the rest of the session playing
+     * quietly out of the earpiece.
+     */
+    const releaseRecordingSession = async () => {
+        try {
+            await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+        } catch (e) {
+            console.warn('[AudioRecordModal] could not release the audio session:', e);
+        }
+    };
 
     const startRecording = async () => {
         try {
             const perm = await requestRecordingPermissionsAsync();
             if (!perm.granted) {
-                alert(l('İzin Gerekli', 'Permission Required'), l('Ses kaydetmek için mikrofon izni vermeniz gerekiyor.', 'Allow microphone access to record audio.'));
+                await promptPermissionSettings({
+                    title: l('İzin gerekli', 'Permission Required'),
+                    message: l(
+                        'Ses kaydetmek için mikrofon izni vermeniz gerekiyor. Ayarlardan mikrofon iznini açabilirsiniz.',
+                        'Allow microphone access to record audio. You can enable microphone access in Settings.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
                 return;
             }
             await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
             await recorder.prepareToRecordAsync();
             recorder.record();
+            setStarted(true);
         } catch (e) {
             console.warn('[AudioRecordModal] start failed:', e);
             alert(t('common.error'), l('Kayıt başlatılamadı.', 'Could not start recording.'));
@@ -54,20 +84,18 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
     const stopAndSave = async () => {
         try {
             await recorder.stop();
+            await releaseRecordingSession();
             const uri = recorder.uri;
             if (!uri) {
                 onClose();
                 return;
             }
             setSaving(true);
-            const response = await fetch(uri);
 
-            // The browser records into whatever container it supports (typically webm/opus),
-            // not m4a — name the file after the real container and keep its MIME type, or
-            // the <audio> player will refuse the mislabeled bytes.
             let extension = 'm4a';
-            let mimeType: string | undefined;
+            let mimeType: string | undefined = 'audio/mp4';
             if (Platform.OS === 'web') {
+                const response = await fetch(uri);
                 const blobType = (await response.clone().blob()).type;
                 if (blobType) {
                     mimeType = blobType;
@@ -76,13 +104,17 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                     else if (blobType.includes('wav')) extension = 'wav';
                     else if (blobType.includes('mp4') || blobType.includes('aac')) extension = 'm4a';
                 }
+                const bytes = new Uint8Array(await response.arrayBuffer());
+                const filename = sanitizeMediaFilename(`${Date.now()}_kayit.${extension}`);
+                await saveMediaBytes(filename, bytes, mimeType);
+                onSaved(filename);
+                onClose();
+            } else {
+                const filename = sanitizeMediaFilename(`${Date.now()}_kayit.${extension}`);
+                await saveMediaFromUri(filename, uri, mimeType);
+                onSaved(filename);
+                onClose();
             }
-
-            const bytes = new Uint8Array(await response.arrayBuffer());
-            const filename = sanitizeMediaFilename(`${Date.now()}_kayit.${extension}`);
-            await saveMediaBytes(filename, bytes, mimeType);
-            onSaved(filename);
-            onClose();
         } catch (e) {
             console.warn('[AudioRecordModal] save failed:', e);
             alert(t('common.error'), l('Ses kaydı kaydedilemedi.', 'Could not save the audio recording.'));
@@ -91,12 +123,27 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
         }
     };
 
+    /**
+     * Leave without keeping the recording.
+     *
+     * A recording in progress is unsaved work and the overlay behind the dialog is a large,
+     * easy target, so throwing one away is confirmed the way any other destructive action is.
+     */
     const discardAndClose = async () => {
+        if (state.isRecording) {
+            const discard = await confirmAsync(
+                l('Kayıt silinsin mi?', 'Discard recording?'),
+                l('Süren kayıt kaydedilmeden silinecek.', 'The recording in progress will be discarded.'),
+                { destructive: true },
+            );
+            if (!discard) return;
+        }
         try {
             if (state.isRecording) await recorder.stop();
         } catch (e) {
             console.warn('[AudioRecordModal] discard failed:', e);
         }
+        await releaseRecordingSession();
         onClose();
     };
 
@@ -109,8 +156,8 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
                     accessibilityLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
                 />
                 <View style={styles.card}>
-                    <Text style={styles.title}>🎙️ {l('Ses Kaydet', 'Record Audio')}</Text>
-                    <Text style={styles.duration}>{formatDuration(state.durationMillis)}</Text>
+                    <Text style={styles.title}>🎙️ {l('Ses kaydet', 'Record Audio')}</Text>
+                    <Text style={styles.duration}>{formatDuration(started ? state.durationMillis : 0)}</Text>
                     <Text style={styles.status}>
                         {state.isRecording ? l('Kayıt sürüyor…', 'Recording…') : saving ? l('Dosya kaydediliyor…', 'Saving recording…') : l('Başlamak için mikrofona dokunun', 'Tap the microphone to start')}
                     </Text>

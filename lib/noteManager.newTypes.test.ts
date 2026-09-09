@@ -125,6 +125,30 @@ describe('createTusCard: type-answer note type (id 8)', () => {
     });
 });
 
+describe('createTusCard: external field values', () => {
+    it('preserves fields that are not exposed by the compact editor', () => {
+        saveNoteType({
+            id: 99,
+            name: 'External',
+            kind: 'standard',
+            fields: [
+                { name: 'Front', ord: 0, sticky: false, rtl: false },
+                { name: 'Back', ord: 1, sticky: false, rtl: false },
+                { name: 'Source', ord: 2, sticky: false, rtl: false },
+            ],
+            templates: [{ name: 'Card 1', ord: 0, qfmt: '{{Front}}', afmt: '{{Back}}<br>{{Source}}' }],
+            css: '', sortFieldIdx: 0, mod: 0,
+        });
+
+        const { note } = createTusCard({
+            question: 'Q', answer: 'A', deckId: 1, noteTypeId: 99,
+            fieldValues: ['Q', 'A', 'External source'],
+        });
+
+        expect(getNote(note.id)?.fields).toEqual(['Q', 'A', 'External source']);
+    });
+});
+
 describe('findEmptyCards / deleteAnkiCardOnly', () => {
     it('finds no empty cards for a freshly created reversed note', () => {
         createTusCard({

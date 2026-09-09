@@ -10,7 +10,7 @@
  */
 
 import { Platform } from 'react-native';
-import { getLegacyFileSystem as getFileSystem } from './files';
+import { getLegacyFileSystem as getFileSystem, toFileUri, readUriBytes } from './files';
 import { sanitizeMediaFilename } from './mediaFilename';
 
 export { sanitizeMediaFilename };
@@ -153,7 +153,8 @@ export async function saveMediaBytes(filename: string, bytes: Uint8Array, mimeTy
         // which TS must assume a Uint8Array may wrap. The blob must carry a MIME type:
         // <img> sniffs a typeless blob happily, but <audio>/<video> refuse to play it.
         const type = mimeType || guessMimeFromFilename(safe);
-        await idbPut(safe, new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], type ? { type } : undefined));
+        const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+        await idbPut(safe, new Blob([buffer], type ? { type } : undefined));
         // The next lookup must see the new content, not a cached miss or a stale URL.
         objectUrlCache.delete(safe);
         return;
@@ -179,6 +180,40 @@ export async function saveMediaFile(filename: string, base64Data: string): Promi
     const dir = await ensureMediaDir();
     const fs = getFileSystem();
     await fs.writeAsStringAsync(`${dir}${safe}`, base64Data, { encoding: fs.EncodingType.Base64 });
+}
+
+/**
+ * The largest file the byte-copy fallback will attempt.
+ *
+ * That fallback goes through base64 twice — read the whole file into a base64 string, decode it
+ * to bytes, encode it back to write it — and a JS string is UTF-16, so the peak is around six
+ * times the file. A one-gigabyte video would ask for six gigabytes and take the app down with it.
+ * The native copy has no such cost and no such limit; this ceiling only decides whether the
+ * fallback is attempted or the attachment fails with a message.
+ */
+const MAX_FALLBACK_COPY_BYTES = 64 * 1024 * 1024;
+
+/** Store a media file from a local URI (fast native copy when available, byte fallback). Returns the sanitized filename. */
+export async function saveMediaFromUri(filename: string, uri: string, mimeType?: string): Promise<string> {
+    const safe = sanitizeMediaFilename(filename);
+
+    if (Platform.OS === 'web') {
+        const bytes = await readUriBytes(uri);
+        await saveMediaBytes(safe, bytes, mimeType);
+        return safe;
+    }
+
+    const dir = await ensureMediaDir();
+    const fs = getFileSystem();
+    const sourceLocation = toFileUri(uri);
+    try {
+        await fs.copyAsync({ from: sourceLocation, to: `${dir}${safe}` });
+    } catch (e) {
+        console.warn('[mediaStore] copyAsync failed, falling back to byte copy:', e);
+        const bytes = await readUriBytes(uri, MAX_FALLBACK_COPY_BYTES);
+        await saveMediaBytes(safe, bytes, mimeType);
+    }
+    return safe;
 }
 
 /**

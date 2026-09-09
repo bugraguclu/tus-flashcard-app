@@ -1,3 +1,5 @@
+import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import type { ReviewerOpName } from './reviewerUndo';
 import type { AppLanguage } from './types';
 
 export type SupportedLocale = 'tr' | 'en';
@@ -13,8 +15,9 @@ const tr = {
     'common.edit': 'Düzenle',
     'common.add': 'Ekle',
     'common.create': 'Oluştur',
-    'common.retry': 'Tekrar Dene',
+    'common.retry': 'Tekrar dene',
     'common.error': 'Hata',
+    'common.genericError': 'İşlem tamamlanamadı. Lütfen tekrar deneyin.',
     'common.completed': 'Tamamlandı',
     'common.loading': 'Yükleniyor…',
     'common.search': 'Ara',
@@ -33,6 +36,9 @@ const tr = {
     'common.turkish': 'Türkçe',
     'common.english': 'English',
 
+    'permissions.title': 'İzin Gerekli',
+    'permissions.openSettings': 'Ayarları Aç',
+
     'anki.again': 'Tekrar',
     'anki.hard': 'Zor',
     'anki.good': 'İyi',
@@ -40,27 +46,33 @@ const tr = {
     'anki.new': 'Yeni',
     'anki.learn': 'Öğrenme',
     'anki.review': 'Tekrar',
-    'anki.relearn': 'Yeniden Öğrenme',
+    'anki.relearn': 'Yeniden öğrenme',
     'anki.bury': 'Göm',
-    'anki.suspend': 'Askıya Al',
+    'anki.suspend': 'Askıya al',
     'anki.mark': 'İşaretle',
-    'anki.showAnswer': 'Cevabı Göster',
-    'anki.customStudy': 'Özel Çalışma',
-    'anki.filteredDeck': 'Filtrelenmiş Deste',
+    'anki.showAnswer': 'Cevabı göster',
+    'anki.customStudy': 'Özel çalışma',
+    'anki.filteredDeck': 'Filtrelenmiş deste',
 
-    'root.errorTitle': 'Bir hata oluştu',
+    'root.errorTitle': 'Beklenmeyen Bir Hata Oluştu',
+    'root.errorDescription': 'Uygulama çalışırken beklenmeyen bir durumla karşılaşıldı. Verileriniz güvende ve korunuyor.',
     'root.databaseError': 'Veritabanı başlatılamadı',
+    'root.startupErrorMessage': 'Uygulama başlatılamadı. Uygulamayı kapatıp yeniden açın; sorun sürerse destek ekibiyle iletişime geçin.',
+    'root.returnHome': 'Ana Ekrana Dön',
+    'root.technicalDetails': 'Teknik Detaylar',
+    'root.copyError': 'Hata Bilgisini Kopyala',
+    'root.errorCopied': 'Hata bilgisi panoya kopyalandı',
     'root.secondaryTab': '⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.',
-    'root.editCard': 'Kartı Düzenle',
-    'root.cardInfo': 'Kart Bilgisi',
-    'root.import': 'İçe Aktar',
+    'root.editCard': 'Kartı düzenle',
+    'root.cardInfo': 'Kart bilgisi',
+    'root.import': 'Deste içe aktar',
     'root.backups': 'Yedekler',
-    'root.noteTypes': 'Not Türleri',
-    'root.editNoteType': 'Not Türünü Düzenle',
+    'root.noteTypes': 'Not türleri',
+    'root.editNoteType': 'Not türünü düzenle',
 
     'settings.title': '⚙️ Ayarlar',
-    'settings.appearance': '🎨 Görünüm ve Dil',
-    'settings.language': 'Uygulama Dili',
+    'settings.appearance': '🎨 Görünüm ve dil',
+    'settings.language': 'Uygulama dili',
     'settings.languageDescription': 'Sistem seçiliyken uygulama cihaz dilini otomatik olarak takip eder.',
     'settings.languageSystem': 'Sistem',
     'settings.languageSystemValue': 'Cihaz dili: {{language}}',
@@ -68,63 +80,63 @@ const tr = {
     'settings.followSystem': 'Sistem',
     'settings.light': 'Açık',
     'settings.dark': 'Koyu',
-    'settings.preferences': '🧑‍💻 Kullanıcı Tercihleri',
-    'settings.dayStart': 'Yeni Gün Başlangıcı',
+    'settings.preferences': '🧑‍💻 Kullanıcı tercihleri',
+    'settings.dayStart': 'Yeni gün başlangıcı',
     'settings.dayStartDescription': 'Günlük istatistikler ve kart limitleri bu saatte yenilenir (varsayılan: 04.00).',
-    'settings.learnAhead': 'Öğrenme Kartlarını Erken Göster (dk.)',
+    'settings.learnAhead': 'Öğrenme kartlarını erken göster (dk.)',
     'settings.learnAheadOn': 'Süresinin dolmasına {{minutes}} dakikadan az kalan öğrenme kartları, sırada başka kart kalmadığında gösterilir.',
     'settings.learnAheadOff': 'Kapalı: öğrenme kartları yalnızca süreleri dolduğunda veya “Beklemeden Çalış” seçildiğinde gösterilir.',
-    'settings.keyBindings': 'Klavye Kısayolları',
+    'settings.keyBindings': 'Klavye kısayolları',
     'settings.keyBindingsDescription': 'Değiştir’i seçin, ardından atamak istediğiniz tuşa basın.',
-    'settings.keyReplayAudio': 'Sesi Yeniden Oynat',
-    'settings.keyBuryCard': 'Kartı Göm',
-    'settings.keySuspendCard': 'Kartı Askıya Al',
-    'settings.keyMarkNote': 'Notu İşaretle',
+    'settings.keyReplayAudio': 'Sesi yeniden oynat',
+    'settings.keyBuryCard': 'Kartı göm',
+    'settings.keySuspendCard': 'Kartı askıya al',
+    'settings.keyMarkNote': 'Notu işaretle',
     'settings.pressAKey': 'Bir tuşa basın…',
     'settings.cancelEscape': 'İptal (Esc)',
     'settings.change': 'Değiştir',
-    'settings.resetKeyBindings': 'Klavye Kısayollarını Sıfırla',
-    'settings.resetDefaults': 'Varsayılan Ayarlara Dön',
+    'settings.resetKeyBindings': 'Klavye kısayollarını sıfırla',
+    'settings.resetDefaults': 'Varsayılan ayarlara dön',
     'settings.resetDefaultsMessage': 'Görünüm, tercihler ve zamanlayıcı ayarları varsayılan değerlerine döner. Kartlarınız ve çalışma ilerlemeniz korunur.',
     'settings.defaultsRestored': 'Ayarlar varsayılan değerlerine döndürüldü.',
     'settings.scheduler': '🧠 Zamanlayıcı',
     'settings.schedulerDescription': 'Anki V3 zamanlama davranışı kullanılır. Tekrar, Zor, İyi ve Kolay yanıtları cihazınızda kalıcı olarak saklanır.',
     'settings.schedulerFlow': 'Öğrenme + yeniden öğrenme + tekrar akışı',
-    'settings.studyOptions': '📋 Çalışma Ayarları',
-    'settings.dailyNewLimit': 'Günlük Yeni Kart Limiti',
-    'settings.dailyReviewLimit': 'Günlük Tekrar Limiti',
-    'settings.newPlacement': 'Yeni Kart Yerleşimi',
+    'settings.studyOptions': '📋 Çalışma ayarları',
+    'settings.dailyNewLimit': 'Günlük yeni kart limiti',
+    'settings.dailyReviewLimit': 'Günlük tekrar limiti',
+    'settings.newPlacement': 'Yeni kart yerleşimi',
     'settings.mix': 'Karıştır',
-    'settings.newFirst': 'Önce Yeni',
-    'settings.newLast': 'Sonra Yeni',
-    'settings.newOrder': 'Yeni Kart Sırası',
+    'settings.newFirst': 'Önce yeni',
+    'settings.newLast': 'Sonra yeni',
+    'settings.newOrder': 'Yeni kart sırası',
     'settings.sequential': 'Sıralı',
     'settings.random': 'Rastgele',
-    'settings.learningSteps': 'Öğrenme Adımları (dakika)',
-    'settings.relearningSteps': 'Yeniden Öğrenme Adımları (dakika)',
-    'settings.graduatingInterval': 'Mezuniyet Aralığı (gün)',
-    'settings.easyInterval': 'Kolay Aralığı (gün)',
-    'settings.newIntervalAfterLapse': 'Unutma Sonrası Yeni Aralık (%)',
-    'settings.dataManagement': '💾 Veri Yönetimi',
-    'settings.exportData': '📤 Verileri Dışa Aktar',
-    'settings.importData': '📥 Verileri İçe Aktar',
-    'settings.checkDatabase': '🩺 Veritabanını Denetle',
-    'settings.resetProgress': '🗑️ İlerlemeyi Sıfırla',
-    'settings.about': 'ℹ️ Uygulama Hakkında',
+    'settings.learningSteps': 'Öğrenme adımları (dakika)',
+    'settings.relearningSteps': 'Yeniden öğrenme adımları (dakika)',
+    'settings.graduatingInterval': 'Mezuniyet aralığı (gün)',
+    'settings.easyInterval': 'Kolay aralığı (gün)',
+    'settings.newIntervalAfterLapse': 'Unutma sonrası yeni aralık (%)',
+    'settings.dataManagement': '💾 Veri yönetimi',
+    'settings.exportData': '📤 Verileri dışa aktar',
+    'settings.importData': '📥 Verileri içe aktar',
+    'settings.checkDatabase': '🩺 Veritabanını denetle',
+    'settings.resetProgress': '🗑️ İlerlemeyi sıfırla',
+    'settings.about': 'ℹ️ Uygulama hakkında',
     'settings.aboutDescription': 'Sürüm {{version}} · Kartlarınız ve çalışma geçmişiniz cihazınızda tutulur.',
-    'settings.privacy': 'Gizlilik Politikası',
+    'settings.privacy': 'Gizlilik politikası',
     'settings.openPrivacy': 'Gizlilik politikasını aç',
-    'settings.support': 'Destek ve İletişim',
+    'settings.support': 'Destek ve iletişim',
     'settings.openSupport': 'Destek sayfasını aç',
     'settings.exportTitle': 'Dışa Aktarma',
     'settings.exportCreated': 'Yedek dosyası oluşturuldu: {{fileName}}',
     'settings.exportFailed': 'Veriler dışa aktarılamadı.',
-    'settings.importTitle': 'Verileri İçe Aktar',
+    'settings.importTitle': 'Verileri içe aktar',
     'settings.importWarning': 'Seçilen dosya mevcut koleksiyonun yerini alacak. Bu işlem geri alınamaz.',
     'settings.imported': 'Veriler içe aktarıldı.',
     'settings.invalidBackup': 'Dosya içe aktarılamadı. Geçerli bir yedek dosyası seçin.',
     'settings.fileReadFailed': 'Dosya okunamadı.',
-    'settings.databaseCheck': 'Veritabanı Denetimi',
+    'settings.databaseCheck': 'Veritabanı denetimi',
     'settings.integrityOk': '✓ Dosya bütünlüğü: sorun yok',
     'settings.integrityIssue': '⚠️ Dosya bütünlüğü: {{result}}',
     'settings.noOrphanCards': '✓ Sahipsiz kart yok',
@@ -133,7 +145,7 @@ const tr = {
     'settings.orphanNotes': '⚠️ {{count}} kartsız not bulundu',
     'settings.searchRebuilt': '✓ Arama dizini yeniden oluşturuldu ({{count}} kart)',
     'settings.databaseCheckFailed': 'Veritabanı denetlenemedi.',
-    'settings.resetProgressTitle': 'İlerlemeyi Sıfırla',
+    'settings.resetProgressTitle': 'İlerlemeyi sıfırla',
     'settings.resetProgressWarning': 'Tüm çalışma ilerlemeniz silinecek. Bu işlem geri alınamaz.',
     'settings.resetDone': 'Sıfırlandı',
     'settings.progressCleared': 'Tüm çalışma ilerlemesi temizlendi.',
@@ -143,19 +155,18 @@ const tr = {
     'tabs.cards': 'Kartlar',
     'tabs.statistics': 'İstatistik',
     'tabs.settings': 'Ayarlar',
-    'tabs.loadingApp': 'TusAnkiM yükleniyor…',
     'tabs.openMenu': 'Menüyü aç',
     'tabs.closeMenu': 'Menüyü kapat',
     'tabs.backToDecks': 'Deste listesine dön',
-    'tabs.nativeOnly': 'Lütfen uygulamayı iOS veya Android cihazınızdan kullanın.',
-    'sidebar.spacedRepetition': 'Aralıklı Tekrar',
-    'sidebar.allCourses': 'Tüm Dersler',
+    'tabs.nativeOnly': 'Lütfen uygulamayı iPhone’unuzda kullanın.',
+    'sidebar.spacedRepetition': 'Aralıklı tekrar',
+    'sidebar.allCourses': 'Tüm dersler',
     'sidebar.hideTopics': 'Konuları gizle',
     'sidebar.showTopics': 'Konuları göster',
-    'sidebar.addCard': 'Kart Ekle',
+    'sidebar.addCard': 'Kart ekle',
     'sidebar.myCards': 'Kartlarım',
-    'sidebar.import': 'İçe Aktar',
-    'sidebar.noteTypes': 'Not Türleri',
+    'sidebar.import': 'İçe aktar',
+    'sidebar.noteTypes': 'Not türleri',
 } as const;
 
 export type TranslationKey = keyof typeof tr;
@@ -172,6 +183,7 @@ const en: Record<TranslationKey, string> = {
     'common.create': 'Create',
     'common.retry': 'Try Again',
     'common.error': 'Error',
+    'common.genericError': 'The action could not be completed. Please try again.',
     'common.completed': 'Done',
     'common.loading': 'Loading…',
     'common.search': 'Search',
@@ -190,6 +202,9 @@ const en: Record<TranslationKey, string> = {
     'common.turkish': 'Türkçe',
     'common.english': 'English',
 
+    'permissions.title': 'Permission Required',
+    'permissions.openSettings': 'Open Settings',
+
     'anki.again': 'Again',
     'anki.hard': 'Hard',
     'anki.good': 'Good',
@@ -206,11 +221,17 @@ const en: Record<TranslationKey, string> = {
     'anki.filteredDeck': 'Filtered Deck',
 
     'root.errorTitle': 'Something went wrong',
+    'root.errorDescription': 'An unexpected issue occurred while running the app. Your data is safe and intact.',
     'root.databaseError': 'Could not initialize the database',
+    'root.startupErrorMessage': 'The app could not start. Close and reopen it; if the issue continues, contact support.',
+    'root.returnHome': 'Return to Home',
+    'root.technicalDetails': 'Technical Details',
+    'root.copyError': 'Copy Error Info',
+    'root.errorCopied': 'Error info copied to clipboard',
     'root.secondaryTab': '⚠️ The app is open in another tab — changes in this tab will not be saved.',
     'root.editCard': 'Edit Card',
     'root.cardInfo': 'Card Info',
-    'root.import': 'Import',
+    'root.import': 'Import deck',
     'root.backups': 'Backups',
     'root.noteTypes': 'Note Types',
     'root.editNoteType': 'Edit Note Type',
@@ -300,11 +321,10 @@ const en: Record<TranslationKey, string> = {
     'tabs.cards': 'Cards',
     'tabs.statistics': 'Stats',
     'tabs.settings': 'Settings',
-    'tabs.loadingApp': 'Loading TusAnkiM…',
     'tabs.openMenu': 'Open menu',
     'tabs.closeMenu': 'Close menu',
     'tabs.backToDecks': 'Back to deck list',
-    'tabs.nativeOnly': 'Please use the app on an iOS or Android device.',
+    'tabs.nativeOnly': 'Please use the app on your iPhone.',
     'sidebar.spacedRepetition': 'Spaced Repetition',
     'sidebar.allCourses': 'All Subjects',
     'sidebar.hideTopics': 'Hide topics',
@@ -326,6 +346,11 @@ export function resolveAppLocale(
     return firstLanguage === 'tr' || firstLanguage?.startsWith('tr-') ? 'tr' : 'en';
 }
 
+/** Card and deck counts read as thousands everywhere: 9.583 in Turkish, 9,583 in English. */
+export function formatCount(value: number, locale: SupportedLocale): string {
+    return value.toLocaleString(localeTag(locale));
+}
+
 export function localeTag(locale: SupportedLocale): 'tr-TR' | 'en-US' {
     return locale === 'tr' ? 'tr-TR' : 'en-US';
 }
@@ -339,7 +364,7 @@ export function translate(locale: SupportedLocale, key: TranslationKey, params?:
     });
 }
 
-let activeLocale: SupportedLocale = 'en';
+let activeLocale: SupportedLocale = 'tr';
 
 export function setActiveLocale(locale: SupportedLocale): void {
     activeLocale = locale;
@@ -360,34 +385,74 @@ export function localizeNoteTypeName(locale: SupportedLocale, name: string): str
     return name;
 }
 
-/** Display labels for Anki filtered-deck gather order; the stored numeric value never changes. */
-export function filteredOrderLabel(locale: SupportedLocale, index: number): string {
+/** Localized display names for standard Anki field names; custom names pass through unchanged. */
+export function localizeFieldName(locale: SupportedLocale, name: string): string {
+    if (locale === 'en') return name;
+    if (name === 'Front') return 'Ön';
+    if (name === 'Back') return 'Arka';
+    if (name === 'Text') return 'Metin';
+    if (name === 'Back Extra') return 'Arka Ek';
+    if (name === 'Add Reverse') return 'Tersini Ekle';
+    return name;
+}
+
+/**
+ * Display labels for Anki's filtered-deck gather order, indexed by Anki's own ordinal.
+ * See lib/filteredDeckOptions.ts for the ordinal table.
+ */
+export function filteredOrderLabel(locale: SupportedLocale, order: number): string {
     const labels = locale === 'tr'
         ? [
-            'Vade sırası',
+            'En eski görülen önce',
             'Rastgele',
             'Aralıklar (artan)',
             'Aralıklar (azalan)',
-            'Ekleniş sırası',
-            'Son eklenen önce',
             'En çok unutulan',
-            'En eski görülen önce',
+            'Ekleniş sırası',
+            'Vade sırası',
+            'Son eklenen önce',
             'Hatırlanabilirlik (artan)',
             'Hatırlanabilirlik (azalan)',
+            'Göreceli gecikme',
         ]
         : [
-            'Order due',
+            'Oldest seen first',
             'Random',
             'Increasing intervals',
             'Decreasing intervals',
-            'Order added',
-            'Latest added first',
             'Most lapses',
-            'Oldest seen first',
+            'Order added',
+            'Order due',
+            'Latest added first',
             'Ascending retrievability',
             'Descending retrievability',
+            'Relative overdueness',
         ];
-    return labels[index] ?? labels[0];
+    return labels[order] ?? labels[FILTERED_SEARCH_ORDER.due];
+}
+
+/**
+ * Name of the reviewer operation an undo step would take back.
+ *
+ * Anki labels its Undo/Redo entries with the operation ("Undo Bury Card"), which is the only
+ * thing that tells a learner whether Ctrl+Z is about to unbury a card or un-answer one.
+ */
+export function reviewerOpName(locale: SupportedLocale, op: ReviewerOpName): string {
+    const labels: Record<ReviewerOpName, [tr: string, en: string]> = {
+        answer: ['Kartı yanıtla', 'Answer card'],
+        buryCard: ['Kartı göm', 'Bury card'],
+        buryNote: ['Notu göm', 'Bury note'],
+        suspendCard: ['Kartı askıya al', 'Suspend card'],
+        unsuspendCard: ['Kartı askıdan çıkar', 'Unsuspend card'],
+        suspendNote: ['Notu askıya al', 'Suspend note'],
+        forgetCard: ['Kartı unut', 'Forget card'],
+        setDueDate: ['Son tarihi ayarla', 'Set due date'],
+        markNote: ['Notu işaretle', 'Mark note'],
+        unmarkNote: ['Not işaretini kaldır', 'Unmark note'],
+        updateTags: ['Etiketleri düzenle', 'Edit tags'],
+        setFlag: ['Bayrağı değiştir', 'Set flag'],
+    };
+    return labels[op][locale === 'tr' ? 0 : 1];
 }
 
 export function cardFlagName(locale: SupportedLocale, flag: number): string {

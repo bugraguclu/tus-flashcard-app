@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { localeTag, resolveAppLocale, translate } from './i18n';
+import { localeTag, localizeFieldName, resolveAppLocale, translate, translateActive } from './i18n';
 
 describe('app locale resolution', () => {
+    it('defaults active locale to Turkish', () => {
+        expect(translateActive('common.ok')).toBe('Tamam');
+    });
     it('follows Turkish system locales', () => {
         expect(resolveAppLocale('system', ['tr-TR'])).toBe('tr');
         expect(localeTag(resolveAppLocale('system', ['tr']))).toBe('tr-TR');
@@ -28,5 +31,15 @@ describe('app locale resolution', () => {
         expect(['anki.again', 'anki.hard', 'anki.good', 'anki.easy'].map((key) =>
             translate('en', key as 'anki.again' | 'anki.hard' | 'anki.good' | 'anki.easy'),
         )).toEqual(['Again', 'Hard', 'Good', 'Easy']);
+    });
+
+    it('localizes standard field names and passes custom field names unchanged', () => {
+        expect(localizeFieldName('tr', 'Front')).toBe('Ön');
+        expect(localizeFieldName('tr', 'Back')).toBe('Arka');
+        expect(localizeFieldName('tr', 'Text')).toBe('Metin');
+        expect(localizeFieldName('tr', 'Back Extra')).toBe('Arka Ek');
+        expect(localizeFieldName('tr', 'Add Reverse')).toBe('Tersini Ekle');
+        expect(localizeFieldName('tr', 'Clinical Note')).toBe('Clinical Note');
+        expect(localizeFieldName('en', 'Front')).toBe('Front');
     });
 });

@@ -6,6 +6,8 @@
 
 import { Platform } from 'react-native';
 import type { WebSQLiteDatabase } from './webDb';
+import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
+import { openFtsSafeDatabaseSync } from './sqliteOpenOptions';
 
 // Both expo-sqlite and the web wrapper implement this surface, so callers never
 // branch on platform.
@@ -30,8 +32,7 @@ export function getDB(): DBHandle {
             }
             _db = webDb;
         } else {
-            const SQLite = require('expo-sqlite') as typeof import('expo-sqlite');
-            _db = SQLite.openDatabaseSync('tus_flashcard.db');
+            _db = openFtsSafeDatabaseSync('tus_flashcard.db');
         }
     }
     return _db;
@@ -257,6 +258,73 @@ const migrations: Migration[] = [
             `);
         },
     },
+    {
+        version: 8,
+        description: 'Stable card creation timestamps for statistics',
+        up: (db) => {
+            if (!hasColumn(db, 'anki_cards', 'created_at')) {
+                db.execSync('ALTER TABLE anki_cards ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0;');
+            }
+
+            // Older builds did not retain the local insertion time. updated_at is the best
+            // available value for imported/catalog cards; their Anki ids describe when the
+            // source author created them, not when the learner added them to this app.
+            const nowMs = Date.now();
+            const earliestReasonableMs = 946_684_800_000; // 2000-01-01
+            db.execSync(`
+                UPDATE anki_cards
+                SET created_at = CASE
+                    WHEN updated_at BETWEEN ${earliestReasonableMs} AND ${nowMs + 86_400_000} THEN updated_at
+                    WHEN id BETWEEN ${earliestReasonableMs} AND ${nowMs + 86_400_000} THEN id
+                    ELSE ${nowMs}
+                END
+                WHERE created_at = 0;
+                CREATE INDEX IF NOT EXISTS idx_anki_cards_created_at ON anki_cards(created_at);
+            `);
+        },
+    },
+    {
+        version: 9,
+        description: 'Composite scheduler index for deck queue scans',
+        up: (db) => {
+            // Mirrors Anki's cards(did, queue, due) index. The scheduler almost always narrows by
+            // deck before queue and due date; three independent indexes force SQLite to choose
+            // only one of those predicates and inspect many more rows in large collections.
+            db.execSync(`
+                CREATE INDEX IF NOT EXISTS idx_ac_sched
+                ON anki_cards(deckId, queue, due);
+            `);
+        },
+    },
+    {
+        version: 10,
+        description: 'Store filtered-deck gather order using Anki ordinals',
+        up: (db) => {
+            // Filtered decks used to store a local order numbering in which 0 meant "order due".
+            // Anki's ordinals are stored from here on, so an imported deck and a locally built one
+            // finally mean the same thing; saved decks are rewritten once through the legacy table.
+            const rows = db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM decks');
+            for (const row of rows) {
+                let deck: Record<string, unknown>;
+                try {
+                    deck = JSON.parse(row.data) as Record<string, unknown>;
+                } catch {
+                    continue;
+                }
+                if (deck.isFiltered !== true) continue;
+
+                let changed = false;
+                for (const key of ['searchOrder', 'searchOrder2'] as const) {
+                    if (deck[key] === undefined || deck[key] === null) continue;
+                    const remapped = ankiFilteredOrderFromLegacy(deck[key]);
+                    if (remapped === deck[key]) continue;
+                    deck[key] = remapped;
+                    changed = true;
+                }
+                if (changed) db.runSync('UPDATE decks SET data = ? WHERE id = ?', JSON.stringify(deck), row.id);
+            }
+        },
+    },
 ];
 
 // ---------- Run Migrations ----------
@@ -294,8 +362,14 @@ export function runMigrations(db: DBHandle): void {
 export function initDB(): DBHandle {
     const db = getDB();
     if (Platform.OS !== 'web') {
-        // WAL improves concurrent read/write throughput; native-only.
-        db.execSync('PRAGMA journal_mode = WAL;');
+        // Match the safe, portable parts of Anki's SQLite setup. WAL keeps reads responsive while
+        // imports/reviews write, the bounded page cache reduces repeated disk reads, and Android
+        // in particular benefits from keeping sort/search temporary tables out of the filesystem.
+        db.execSync(`
+            PRAGMA journal_mode = WAL;
+            PRAGMA cache_size = -40960;
+            PRAGMA temp_store = MEMORY;
+        `);
     }
     // No foreign_keys pragma: the schema declares no FK constraints (integrity is
     // enforced in code, as Anki does), so enabling it would be a misleading no-op.
@@ -343,6 +417,7 @@ export function buildFtsPrefixQuery(query: string): string {
 export function dbIndexAllCards(cards: SearchableCard[]): void {
     if (Platform.OS === 'web') return; // FTS5 unavailable on web
     const db = getDB();
+    const startedAt = Date.now();
     db.execSync('DELETE FROM cards_fts;');
     db.execSync('BEGIN TRANSACTION;');
 
@@ -361,6 +436,9 @@ export function dbIndexAllCards(cards: SearchableCard[]): void {
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
+    }
+    if (cards.length > 1000) {
+        console.log(`[Search] ${cards.length} kart indekslendi: ${Math.round((Date.now() - startedAt) / 100) / 10}s`);
     }
 }
 

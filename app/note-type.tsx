@@ -6,12 +6,12 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import { useCollectionInvalidation } from '../contexts/AppContext';
 import { getNoteType, saveNoteType } from '../lib/noteManager';
 import {
     renameNoteType,
@@ -27,6 +27,8 @@ import {
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import { useI18n } from '../hooks/useI18n';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 
 const MONOSPACE = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
@@ -50,16 +52,25 @@ export default function NoteTypeScreen() {
     const { t, l } = useI18n();
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { bumpDataVersion } = useApp();
+    const { invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     const id = Number(Array.isArray(params.id) ? params.id[0] : params.id);
     const [nt, setNt] = useState<NoteType | null>(null);
+    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
     useEffect(() => {
-        setNt(getNoteType(id));
+        const loaded = getNoteType(id);
+        setNt(loaded);
+        setSavedSnapshot(loaded ? stableSnapshot(loaded) : null);
     }, [id]);
+
+    const isDirty = hasSnapshotChanged(savedSnapshot, nt);
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
+        message: l('Kaydetmeden not türü düzenleme ekranından çıkılsın mı?', 'Leave the note type editor without saving?'),
+    });
 
     const preview = useMemo(() => (nt ? makePreview(nt, l('örneği', 'example')) : null), [nt, l]);
 
@@ -82,6 +93,7 @@ export default function NoteTypeScreen() {
         try {
             applyFieldEdit(nt.id, edit);
             setNt(edit.noteType);
+            setSavedSnapshot(stableSnapshot(edit.noteType));
             bumpDataVersion();
         } catch (e) {
             console.warn('[NoteType] field edit failed:', e);
@@ -98,7 +110,7 @@ export default function NoteTypeScreen() {
             alert(l('Uyarı', 'Warning'), l('Bir not türünde en az bir alan bulunmalıdır.', 'A note type must have at least one field.'));
             return;
         }
-        confirm(l('Alanı Sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted.`), () =>
+        confirm(l('Alanı sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted.`), () =>
             applyStructural(removeField(nt, ord)),
             { destructive: true },
         );
@@ -107,6 +119,7 @@ export default function NoteTypeScreen() {
     const handleSave = () => {
         try {
             saveNoteType(nt);
+            setSavedSnapshot(stableSnapshot(nt));
             bumpDataVersion();
             alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => router.back());
         } catch (e) {
@@ -161,8 +174,8 @@ export default function NoteTypeScreen() {
                 {isCloze ? (
                     <Text style={styles.help}>{l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.')}</Text>
                 ) : (
-                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, l('Yeni Alan', 'New Field')))}>
-                        <Text style={styles.addFieldText}>+ {l('Alan Ekle', 'Add Field')}</Text>
+                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, l('Yeni alan', 'New Field')))}>
+                        <Text style={styles.addFieldText}>+ {l('Alan ekle', 'Add Field')}</Text>
                     </TouchableOpacity>
                 )}
 
@@ -203,9 +216,9 @@ export default function NoteTypeScreen() {
                 <Text style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
                 <View style={styles.previewBox}>
                     <Text style={styles.previewCaption}>{l('Soru', 'Question')}</Text>
-                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="question" />
+                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="question" scrollMode="intrinsic" />
                     <Text style={styles.previewCaption}>{l('Cevap', 'Answer')}</Text>
-                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="answer" />
+                    <CardWebView noteType={nt} note={preview.note} card={preview.card} side="answer" scrollMode="intrinsic" />
                 </View>
 
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>

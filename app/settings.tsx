@@ -1,58 +1,89 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    AppState,
+    Keyboard,
     Linking,
+    Modal,
     Platform,
-    SafeAreaView,
+    Pressable,
     ScrollView,
     StyleSheet,
     Switch,
     Text,
     TextInput,
+    TouchableWithoutFeedback,
     TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import * as DocumentPicker from 'expo-document-picker';
-import * as Sharing from 'expo-sharing';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import {
+    BorderRadius,
+    FontSize,
+    Shadows,
+    Spacing,
+    useThemeColors,
+    type ColorScheme,
+} from '../constants/theme';
 import {
     DEFAULT_KEY_BINDINGS,
     DEFAULT_SETTINGS,
-    exportAllData,
-    importAllData,
     loadSettings,
-    resetAllData,
     resetSettingsToDefaults,
     saveSettings,
 } from '../lib/storage';
-import { checkDatabase } from '../lib/maintenance';
-import { downloadTextFileWeb, getLegacyFileSystem, readUriText } from '../lib/files';
-import { alert, confirm } from '../lib/confirm';
-import { useApp } from '../contexts/AppContext';
+import {
+    checkDatabase,
+    repairChangedRows,
+    repairableDefectCount,
+    totalDefectCount,
+    type DatabaseCheckResult,
+    type DatabaseOptimizeResult,
+    type MaintenanceStep,
+} from '../lib/maintenance';
+import { MaintenanceWorkflowError, optimizeDatabaseWithBackup } from '../lib/maintenanceWorkflow';
+import { alert, confirm, confirmAsync } from '../lib/confirm';
+import { promptPermissionSettings } from '../lib/permissions';
+import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
-import type { AppLanguage, AppSettings, KeyBindings, ThemeMode } from '../lib/types';
-import { normalizeHardwareKey } from '../lib/hardwareKeyboard';
+import type {
+    AppLanguage,
+    AppSettings,
+    KeyBindings,
+    ReviewGestureAction,
+    ReviewTapZone,
+    StudyNotificationThreshold,
+} from '../lib/types';
+import BoundedIntegerInput, { type BoundedIntegerInputHandle } from '../components/BoundedIntegerInput';
 import {
     disableStudyNotifications,
-    getDueReviewCountAt,
-    getStudyNotificationPermission,
     requestStudyNotificationPermission,
-    type StudyNotificationPermission,
 } from '../lib/studyNotifications';
+import {
+    normalizeStudyNotificationThreshold,
+    STUDY_NOTIFICATION_THRESHOLDS,
+} from '../lib/studyNotificationPolicy';
+import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
+import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
+import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { useRepeatPress } from '../hooks/useRepeatPress';
+
+import {
+    DEFAULT_ANSWER_TAP_ACTIONS,
+    DEFAULT_QUESTION_TAP_ACTIONS,
+    normalizeSwipeSensitivity,
+    REVIEW_TAP_ZONES,
+} from '../lib/reviewerTouchControls';
 
 type SectionId =
     | 'general'
     | 'newStudy'
     | 'reviewing'
     | 'notifications'
-    | 'appearance'
     | 'controls'
     | 'accessibility'
-    | 'backups'
     | 'data'
     | 'about';
 
@@ -64,11 +95,39 @@ type Category = {
 };
 
 const PRIVACY_URL = 'https://bugraguclu.github.io/tus-flashcard-app/privacy.html';
-const SUPPORT_URL = 'https://bugraguclu.github.io/tus-flashcard-app/';
+const SUPPORT_URL = 'https://bugraguclu.github.io/tus-flashcard-app/support.html';
+
+type GestureSettingKey = 'swipeLeftAction' | 'swipeRightAction' | 'swipeUpAction' | 'swipeDownAction';
+type TapSide = 'question' | 'answer';
+type GesturePickerTarget =
+    | { kind: 'swipe'; field: GestureSettingKey }
+    | { kind: 'tap'; side: TapSide; zone: ReviewTapZone };
+
+type MemoizedSectionProps = { render: () => React.ReactNode };
+
+const GeneralSettingsSection = React.memo(function GeneralSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
+const ReviewingSettingsSection = React.memo(function ReviewingSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
+const ControlsSettingsSection = React.memo(function ControlsSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
+
+const DataManagementSettingsSection = React.memo(function DataManagementSettingsSection({ render }: MemoizedSectionProps) {
+    return <>{render()}</>;
+});
 
 function formatKeyLabel(key: string): string {
     if (key === ' ') return 'Space';
     return key.length === 1 ? key.toUpperCase() : key;
+}
+
+function settingsMatch(actual: AppSettings, expected: AppSettings): boolean {
+    return stableSnapshot(actual) === stableSnapshot(expected);
 }
 
 const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
@@ -77,37 +136,108 @@ const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
     { field: 'hard', tr: 'Zor', en: 'Answer hard' },
     { field: 'good', tr: 'İyi', en: 'Answer good' },
     { field: 'easy', tr: 'Kolay', en: 'Answer easy' },
-    { field: 'replayAudio', tr: 'Medyayı yeniden oynat', en: 'Replay media' },
+    { field: 'replayAudio', tr: 'Sesi yeniden oynat', en: 'Replay audio' },
     { field: 'buryCard', tr: 'Kartı göm', en: 'Bury card' },
     { field: 'suspendCard', tr: 'Kartı askıya al', en: 'Suspend card' },
     { field: 'markNote', tr: 'Notu işaretle', en: 'Mark note' },
 ];
 
-function Group({ title, description, children, styles }: {
+function Group({ title, description, onHelpPress, helpLabel, children, styles }: {
     title: string;
     description?: string;
+    onHelpPress?: () => void;
+    helpLabel?: string;
     children: React.ReactNode;
     styles: ReturnType<typeof createStyles>;
 }) {
     return (
         <View style={styles.group}>
-            <Text style={styles.groupTitle}>{title}</Text>
+            <View style={styles.groupTitleRow}>
+                <Text style={styles.groupTitle}>{title}</Text>
+                {onHelpPress ? (
+                    <TouchableOpacity
+                        style={styles.groupHelpButton}
+                        onPress={onHelpPress}
+                        accessibilityRole="button"
+                        accessibilityLabel={helpLabel ?? title}
+                    >
+                        <Text style={styles.groupHelpText}>?</Text>
+                    </TouchableOpacity>
+                ) : null}
+            </View>
             {description ? <Text style={styles.groupDescription}>{description}</Text> : null}
             {children}
         </View>
     );
 }
 
-function ToggleRow({ label, summary, value, onChange, styles }: {
+function GestureActionRow({ icon, label, value, onPress, styles }: {
+    icon: string;
     label: string;
-    summary?: string;
-    value: boolean;
-    onChange: (value: boolean) => void;
+    value: string;
+    onPress: () => void;
     styles: ReturnType<typeof createStyles>;
 }) {
     return (
         <TouchableOpacity
-            style={styles.preferenceRow}
+            style={styles.gestureActionRow}
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${label}: ${value}`}
+        >
+            <View style={styles.gestureDirectionIcon}>
+                <Text style={styles.gestureDirectionText}>{icon}</Text>
+            </View>
+            <View style={styles.preferenceCopy}>
+                <Text style={styles.preferenceLabel}>{label}</Text>
+                <Text style={styles.gestureActionValue}>{value}</Text>
+            </View>
+            <Text style={styles.appearanceValueArrow}>›</Text>
+        </TouchableOpacity>
+    );
+}
+
+function DataActionRow({ icon, label, detail, onPress, danger = false, divider = true, disabled = false, styles }: {
+    icon: string;
+    label: string;
+    detail?: string;
+    onPress: () => void;
+    danger?: boolean;
+    divider?: boolean;
+    disabled?: boolean;
+    styles: ReturnType<typeof createStyles>;
+}) {
+    return (
+        <TouchableOpacity
+            style={[styles.dataActionRow, !divider && styles.dataActionRowNoDivider, disabled && { opacity: 0.5 }]}
+            onPress={onPress}
+            disabled={disabled}
+            accessibilityRole="button"
+            accessibilityState={{ disabled }}
+        >
+            <View style={[styles.dataActionIcon, danger && styles.dataActionIconDanger]}>
+                <Text style={[styles.dataActionIconText, danger && styles.dataActionIconTextDanger]}>{icon}</Text>
+            </View>
+            <View style={styles.dataActionCopy}>
+                <Text style={[styles.dataActionLabel, danger && styles.dangerText]}>{label}</Text>
+                {detail ? <Text style={styles.dataActionDetail}>{detail}</Text> : null}
+            </View>
+            <Text style={[styles.dataActionArrow, danger && styles.dangerText]}>›</Text>
+        </TouchableOpacity>
+    );
+}
+
+function ToggleRow({ label, summary, value, onChange, divider = true, styles }: {
+    label: string;
+    summary?: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    divider?: boolean;
+    styles: ReturnType<typeof createStyles>;
+}) {
+    return (
+        <TouchableOpacity
+            style={[styles.preferenceRow, !divider && styles.preferenceRowNoDivider]}
             onPress={() => onChange(!value)}
             activeOpacity={0.7}
             accessibilityRole="switch"
@@ -151,29 +281,118 @@ function ChoiceRow<T extends string>({ label, summary, value, options, onChange,
     );
 }
 
-function StepperRow({ label, summary, value, display, step, min, max, onChange, styles }: {
+function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, max, wrap = false, onChange, styles }: {
     label: string;
     summary?: string;
     value: number;
-    display?: string;
+    suffix?: string;
+    minimumDigits?: number;
     step: number;
     min: number;
     max: number;
+    wrap?: boolean;
     onChange: (value: number) => void;
     styles: ReturnType<typeof createStyles>;
 }) {
+    const { l } = useI18n();
+    const inputRef = useRef<BoundedIntegerInputHandle>(null);
+
+    const decrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(-step));
+    const incrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(step));
+
     return (
         <View style={styles.preferenceBlock}>
             <Text style={styles.preferenceLabel}>{label}</Text>
             {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
             <View style={styles.stepperRow}>
-                <TouchableOpacity style={styles.stepButton} onPress={() => onChange(Math.max(min, value - step))}>
+                <TouchableOpacity
+                    style={styles.stepButton}
+                    {...decrementRepeat}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} ${l('azalt', 'decrease')}`}
+                >
                     <Text style={styles.stepButtonText}>−</Text>
                 </TouchableOpacity>
-                <Text style={styles.stepValue}>{display ?? value}</Text>
-                <TouchableOpacity style={styles.stepButton} onPress={() => onChange(Math.min(max, value + step))}>
+                <BoundedIntegerInput
+                    ref={inputRef}
+                    value={value}
+                    min={min}
+                    max={max}
+                    wrap={wrap}
+                    suffix={suffix}
+                    minimumDigits={minimumDigits}
+                    onChange={onChange}
+                    accessibilityLabel={label}
+                    style={styles.stepValueInput}
+                />
+                <TouchableOpacity
+                    style={styles.stepButton}
+                    {...incrementRepeat}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${label} ${l('artır', 'increase')}`}
+                >
                     <Text style={styles.stepButtonText}>+</Text>
                 </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
+
+function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
+    value: number;
+    onChange: (value: number) => void;
+    label: string;
+    summary: string;
+    styles: ReturnType<typeof createStyles>;
+}) {
+    const normalized = normalizeSwipeSensitivity(value);
+    const [draft, setDraft] = useState(normalized);
+    const [trackWidth, setTrackWidth] = useState(1);
+
+    useEffect(() => setDraft(normalized), [normalized]);
+
+    const valueAt = (locationX: number) => normalizeSwipeSensitivity(
+        1 + (Math.max(0, Math.min(trackWidth, locationX - 10)) / trackWidth) * 199,
+    );
+    const commit = (next: number) => {
+        setDraft(next);
+        onChange(next);
+    };
+    const ratio = (draft - 1) / 199;
+
+    return (
+        <View style={styles.swipeSensitivityBlock}>
+            <View style={styles.swipeSensitivityHeader}>
+                <Text style={styles.preferenceLabel}>{label}</Text>
+                <Text style={styles.swipeSensitivityValue}>{draft}%</Text>
+            </View>
+            <Text style={styles.preferenceSummary}>{summary}</Text>
+            <View
+                style={styles.swipeSliderTouchTarget}
+                onStartShouldSetResponder={() => true}
+                onMoveShouldSetResponder={() => true}
+                onResponderGrant={(event) => setDraft(valueAt(event.nativeEvent.locationX))}
+                onResponderMove={(event) => setDraft(valueAt(event.nativeEvent.locationX))}
+                onResponderRelease={(event) => commit(valueAt(event.nativeEvent.locationX))}
+                onResponderTerminate={() => setDraft(normalized)}
+                accessible
+                accessibilityRole="adjustable"
+                accessibilityLabel={label}
+                accessibilityValue={{ min: 1, max: 200, now: draft, text: `${draft}%` }}
+                accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+                onAccessibilityAction={(event) => {
+                    if (event.nativeEvent.actionName === 'increment') commit(normalizeSwipeSensitivity(draft + 10));
+                    if (event.nativeEvent.actionName === 'decrement') commit(normalizeSwipeSensitivity(draft - 10));
+                }}
+            >
+                <View
+                    style={styles.swipeSliderTrack}
+                    pointerEvents="none"
+                    onLayout={(event) => setTrackWidth(Math.max(1, event.nativeEvent.layout.width))}
+                >
+                    <View style={[styles.swipeSliderFill, { width: `${ratio * 100}%` }]} />
+                    <View style={[styles.swipeSliderThumb, { left: `${ratio * 100}%` }]} />
+                </View>
             </View>
         </View>
     );
@@ -183,74 +402,160 @@ export default function SettingsScreen() {
     const router = useRouter();
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 600;
-    const canRecordHardwareKeys = Platform.OS !== 'web' || isDesktopWeb;
-    const { refreshData, bumpDataVersion, dataVersion } = useApp();
-    const { l, deviceLanguage } = useI18n();
+    const { refreshSettings: refreshData } = useAppSettings();
+    const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
+    const { refreshCatalogAccess } = useCatalogStatus();
+    const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
     const [activeSection, setActiveSection] = useState<SectionId | null>(null);
     const [search, setSearch] = useState('');
     const [recordingField, setRecordingField] = useState<keyof KeyBindings | null>(null);
-    const [notificationPermission, setNotificationPermission] = useState<StudyNotificationPermission>({
-        state: Platform.OS === 'ios' ? 'undetermined' : 'unavailable',
-        canAskAgain: Platform.OS === 'ios',
-        allowsAlert: false,
-        allowsBadge: false,
-    });
-    const [currentDueReviews, setCurrentDueReviews] = useState(0);
+    const [controlsHelpVisible, setControlsHelpVisible] = useState(false);
+    const [gesturePickerTarget, setGesturePickerTarget] = useState<GesturePickerTarget | null>(null);
+    const [tapSide, setTapSide] = useState<TapSide>('question');
+    const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
+    const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastSaveFailedRef = useRef(false);
+    const sectionScrollRef = useRef<ScrollView>(null);
+    const settingsRef = useRef(settings);
+    settingsRef.current = settings;
+
+    const isDirty = hasSnapshotChanged(savedSnapshot, settings);
+    useUnsavedChangesGuard(isDirty, {
+        title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
+        message: l(
+            'Ayarlarınız kaydedilmedi. Çıkarsanız değişiklikler kaybolacak.',
+            'Your settings have not been saved. They will be lost if you leave.',
+        ),
+    });
+
+    const gestureActionOptions = useMemo<Array<{ value: ReviewGestureAction; label: string }>>(() => [
+        { value: 'off', label: l('Eylem yok', 'No action') },
+        { value: 'showAnswer', label: l('Cevabı göster', 'Show answer') },
+        { value: 'again', label: l('Yanıtla: Tekrar', 'Answer: Again') },
+        { value: 'hard', label: l('Yanıtla: Zor', 'Answer: Hard') },
+        { value: 'good', label: l('Yanıtla: İyi', 'Answer: Good') },
+        { value: 'easy', label: l('Yanıtla: Kolay', 'Answer: Easy') },
+        { value: 'undo', label: l('Son işlemi geri al', 'Undo last action') },
+        { value: 'addNote', label: l('Not ekle', 'Add note') },
+        { value: 'edit', label: l('Notu düzenle', 'Edit note') },
+        { value: 'mark', label: l('Notu işaretle / işareti kaldır', 'Mark / unmark note') },
+        { value: 'bury', label: l('Kartı göm', 'Bury card') },
+        { value: 'suspend', label: l('Kartı askıya al', 'Suspend card') },
+        { value: 'replayAudio', label: l('Sesi yeniden oynat', 'Replay audio') },
+        { value: 'flag', label: l('Bayrak seçiciyi aç', 'Open flag picker') },
+        { value: 'tools', label: l('Araçları aç', 'Open tools') },
+        { value: 'decks', label: l('Destelere dön', 'Return to decks') },
+    ], [l]);
+
+    const gestureActionLabel = useCallback((action: ReviewGestureAction | undefined) => (
+        gestureActionOptions.find((option) => option.value === action)?.label
+        ?? gestureActionOptions[0].label
+    ), [gestureActionOptions]);
+
+    const notificationThresholdOptions = useMemo<Array<{
+        value: StudyNotificationThreshold | null;
+        label: string;
+    }>>(() => [
+        { value: null, label: l('Asla bildirme', 'Never notify') },
+        { value: 0, label: l('Bekleyen tekrar varsa', 'When reviews are waiting') },
+        ...STUDY_NOTIFICATION_THRESHOLDS
+            .filter((threshold) => threshold > 0)
+            .map((threshold) => ({
+                value: threshold,
+                label: l(
+                    `${threshold}’den fazla kartın zamanı geldiyse`,
+                    `More than ${threshold} cards are due`,
+                ),
+            })),
+    ], [l]);
+
+    const notificationThresholdLabel = (
+        enabled: boolean | undefined,
+        threshold: StudyNotificationThreshold | undefined,
+    ) => {
+        const value = enabled ? normalizeStudyNotificationThreshold(threshold) : null;
+        return notificationThresholdOptions.find((option) => option.value === value)?.label
+            ?? notificationThresholdOptions[1].label;
+    };
 
     useEffect(() => {
-        setSettings(loadSettings());
+        const loaded = loadSettings();
+        setSettings(loaded);
+        setSavedSnapshot(stableSnapshot(loaded));
         setLoading(false);
         return () => {
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         };
     }, []);
 
-    const updateSettings = (patch: Partial<AppSettings>): AppSettings => {
-        const updated = { ...settings, ...patch };
-        saveSettings(updated);
-        const persisted = loadSettings();
-        setSettings(persisted);
-        refreshData();
-        bumpDataVersion();
+    const showSavedState = useCallback(() => {
         setSaved(true);
         if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         savedTimerRef.current = setTimeout(() => setSaved(false), 1400);
-        return persisted;
-    };
+    }, []);
 
-    const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-        updateSettings({ [key]: value } as Pick<AppSettings, K>);
-    };
+    const updateSettings = useCallback((patch: Partial<AppSettings>) => {
+        setSettings((prev) => ({ ...prev, ...patch }));
+    }, []);
+
+    const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+        setSettings((prev) => ({ ...prev, [key]: value }));
+    }, []);
+
+    const openSection = useCallback((section: SectionId) => {
+        Keyboard.dismiss();
+        setActiveSection(section);
+    }, []);
 
     useEffect(() => {
-        if (activeSection !== 'notifications' || Platform.OS !== 'ios') return;
-        let active = true;
-        const refresh = () => {
-            void getStudyNotificationPermission()
-                .then((permission) => {
-                    if (!active) return;
-                    setNotificationPermission(permission);
-                    setCurrentDueReviews(getDueReviewCountAt(Date.now(), loadSettings().dayRolloverHour));
-                })
-                .catch((error) => console.warn('[Settings] notification status failed:', error));
-        };
-        refresh();
-        const subscription = AppState.addEventListener('change', (state) => {
-            if (state === 'active') refresh();
-        });
-        return () => {
-            active = false;
-            subscription.remove();
-        };
-    }, [activeSection, dataVersion]);
+        if (!activeSection) return;
+        sectionScrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [activeSection]);
 
-    const handleStudyNotificationsToggle = async (enabled: boolean) => {
+    const handleSaveSettings = useCallback(() => {
+        Keyboard.dismiss();
+        const current = settingsRef.current;
+        const result = saveSettings(current);
+        const persisted = loadSettings();
+        if (!result.ok || !settingsMatch(persisted, result.settings)) {
+            lastSaveFailedRef.current = true;
+            setSaved(false);
+            alert(
+                l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
+                l('Değişiklik cihaz depolamasına yazılamadı. Önceki ayarlar korunuyor.', 'The change could not be written to device storage. Your previous settings are preserved.'),
+            );
+            return;
+        }
+        setSettings(persisted);
+        setSavedSnapshot(stableSnapshot(persisted));
+        refreshData();
+        lastSaveFailedRef.current = false;
+
+        try {
+            const initialParsed = savedSnapshot ? JSON.parse(savedSnapshot) : null;
+            if (
+                initialParsed &&
+                (initialParsed.dayRolloverHour !== persisted.dayRolloverHour ||
+                 initialParsed.learnAheadMinutes !== persisted.learnAheadMinutes)
+            ) {
+                markSchedulingStale();
+            }
+        } catch { /* ignore parse error */ }
+
+        showSavedState();
+    }, [l, markSchedulingStale, refreshData, savedSnapshot, showSavedState]);
+
+    const handleStudyNotificationsToggle = async (
+        enabled: boolean,
+        threshold: StudyNotificationThreshold = normalizeStudyNotificationThreshold(settings.studyNotificationThreshold),
+    ) => {
         if (Platform.OS !== 'ios') {
             alert(l('Yalnızca iPhone ve iPad', 'iPhone and iPad only'), l('Bu ayar AnkiMobile uyumlu iOS bildirimleri içindir.', 'This setting controls AnkiMobile-compatible iOS notifications.'));
             return;
@@ -259,27 +564,54 @@ export default function SettingsScreen() {
         if (!enabled) {
             updateSetting('studyNotificationsEnabled', false);
             await disableStudyNotifications().catch((error) => console.warn('[Settings] notification disable failed:', error));
-            setCurrentDueReviews(0);
             return;
         }
 
         try {
             const permission = await requestStudyNotificationPermission();
-            setNotificationPermission(permission);
             if (permission.state !== 'granted' && permission.state !== 'limited') {
-                updateSetting('studyNotificationsEnabled', false);
-                alert(
-                    l('Bildirim izni gerekli', 'Notification permission required'),
-                    l('Günlük çalışma hatırlatmasını açmak için iOS Ayarları’nda bildirimlere izin verin.', 'Allow notifications in iOS Settings to enable the daily study reminder.'),
-                );
+                updateSettings({
+                    studyNotificationsEnabled: false,
+                    studyNotificationThreshold: threshold,
+                });
+                await promptPermissionSettings({
+                    title: l('Bildirim izni gerekli', 'Notification permission required'),
+                    message: l(
+                        'Günlük çalışma hatırlatmasını açmak için iOS Ayarları’nda bildirimlere izin verin.',
+                        'Allow notifications in iOS Settings to enable the daily study reminder.',
+                    ),
+                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                    cancelLabel: t('common.cancel'),
+                });
                 return;
             }
-            updateSetting('studyNotificationsEnabled', true);
-            setCurrentDueReviews(getDueReviewCountAt(Date.now(), settings.dayRolloverHour));
+            updateSettings({
+                studyNotificationsEnabled: true,
+                studyNotificationThreshold: threshold,
+            });
         } catch (error) {
             console.warn('[Settings] notification permission failed:', error);
-            alert(l('Bildirim açılamadı', 'Could not enable notifications'), l('Bildirim izni alınamadı. Lütfen iOS Ayarları’nı kontrol edin.', 'Notification permission could not be obtained. Check iOS Settings.'));
+            await promptPermissionSettings({
+                title: l('Bildirim açılamadı', 'Could not enable notifications'),
+                message: l(
+                    'Bildirim izni alınamadı. Lütfen iOS Ayarları’nı kontrol edin.',
+                    'Notification permission could not be obtained. Check iOS Settings.',
+                ),
+                settingsLabel: l('Ayarları Aç', 'Open Settings'),
+                cancelLabel: t('common.cancel'),
+            });
         }
+    };
+
+    const handleStudyNotificationPolicySelect = async (
+        value: StudyNotificationThreshold | null,
+    ) => {
+        setNotificationThresholdPickerVisible(false);
+        if (value === null) {
+            await handleStudyNotificationsToggle(false);
+            return;
+        }
+        await handleStudyNotificationsToggle(true, value);
     };
 
     useEffect(() => {
@@ -298,19 +630,8 @@ export default function SettingsScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDesktopWeb, recordingField, settings.keyBindings]);
 
-    const recordNativeHardwareKey = (rawKey: string) => {
-        if (!recordingField) return;
-        const key = normalizeHardwareKey(rawKey);
-        if (key === 'Escape') {
-            setRecordingField(null);
-            return;
-        }
-        updateSetting('keyBindings', { ...settings.keyBindings, [recordingField]: key });
-        setRecordingField(null);
-    };
-
     const categories = useMemo<Category[]>(() => [
-        { id: 'general', icon: '⚙️', title: l('Genel', 'General'), summary: l('Dil • Düzenleme • Sistem geneli', 'Language • Editing • System-wide') },
+        { id: 'general', icon: '⚙️', title: l('Genel', 'General'), summary: l('Dil • Tema • Düzenleme', 'Language • Theme • Editing') },
         { id: 'newStudy', icon: '🃏', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
         { id: 'reviewing', icon: '🧠', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
         {
@@ -318,16 +639,21 @@ export default function SettingsScreen() {
             icon: '🔔',
             title: l('Bildirimler', 'Notifications'),
             summary: settings.studyNotificationsEnabled
-                ? `${l('Açık', 'On')} · ${String(settings.studyNotificationHour ?? 9).padStart(2, '0')}:${String(settings.studyNotificationMinute ?? 0).padStart(2, '0')}`
+                ? `${notificationThresholdLabel(true, settings.studyNotificationThreshold)} · ${String(settings.studyNotificationHour ?? 9).padStart(2, '0')}:${String(settings.studyNotificationMinute ?? 0).padStart(2, '0')}`
                 : l('Kapalı', 'Off'),
         },
-        { id: 'appearance', icon: '🎨', title: l('Görünüm', 'Appearance'), summary: l('Temalar • Çalışma ekranı', 'Themes • Study screen') },
-        { id: 'controls', icon: '☝️', title: l('Kontroller', 'Controls'), summary: l('Hareketler • Klavye', 'Gestures • Keyboard') },
+        {
+            id: 'controls',
+            icon: '☝️',
+            title: l('Kontroller', 'Controls'),
+            summary: isDesktopWeb
+                ? l('Hareketler • Klavye', 'Gestures • Keyboard')
+                : l('Kaydırma • Dokunma', 'Swipe • Touch'),
+        },
         { id: 'accessibility', icon: '♿️', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
-        { id: 'backups', icon: '💾', title: l('Yedekler', 'Backups'), summary: l('Sıklık • Saklama süresi', 'Frequency • Lifetime') },
-        { id: 'data', icon: '🗄️', title: l('Veri Yönetimi', 'Data management'), summary: l('İçe aktar • Dışa aktar • Veritabanı', 'Import • Export • Database') },
+        { id: 'data', icon: '🗄️', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • Aktarım • Bakım', 'Backups • Transfer • Maintenance') },
         { id: 'about', icon: 'ℹ️', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
-    ], [l, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationsEnabled]);
+    ], [isDesktopWeb, l, notificationThresholdOptions, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationThreshold, settings.studyNotificationsEnabled]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
     const filteredCategories = categories.filter((item) => `${item.title} ${item.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
@@ -344,125 +670,336 @@ export default function SettingsScreen() {
         router.replace('/decks' as any);
     };
 
-    const handleExport = async () => {
-        try {
-            const json = await exportAllData();
-            const fileName = `tus-flashcard-export-${new Date().toISOString().split('T')[0]}.json`;
-            if (Platform.OS === 'web') {
-                downloadTextFileWeb(fileName, json);
-                return;
-            }
-            const fs = getLegacyFileSystem();
-            const target = `${fs.cacheDirectory ?? ''}${fileName}`;
-            await fs.writeAsStringAsync(target, json);
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(target, { mimeType: 'application/json', dialogTitle: fileName });
-            }
-        } catch (error) {
-            console.warn('[Settings] export failed:', error);
-            alert(l('Hata', 'Error'), l('Veriler dışa aktarılamadı.', 'Data could not be exported.'));
-        }
-    };
+    const handleExport = useCallback(() => router.push(DATA_EXPORT_ROUTE), [router]);
+    const handleImport = useCallback(() => router.push(DATA_IMPORT_ROUTE), [router]);
 
-    const handleImport = async () => {
-        try {
-            const picked = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'text/plain', '*/*'], copyToCacheDirectory: true });
-            if (picked.canceled || !picked.assets?.length) return;
-            const json = await readUriText(picked.assets[0].uri);
-            confirm(
-                l('Verileri İçe Aktar', 'Import Data'),
-                l('Mevcut koleksiyon içe aktarılan verilerle değiştirilecek.', 'The current collection will be replaced with the imported data.'),
-                async () => {
-                    const ok = await importAllData(json);
-                    if (!ok) {
-                        alert(l('Hata', 'Error'), l('Geçersiz yedek dosyası.', 'Invalid backup file.'));
-                        return;
-                    }
-                    setSettings(loadSettings());
-                    refreshData();
-                    bumpDataVersion();
-                    alert(l('Tamamlandı', 'Completed'), l('Veriler içe aktarıldı.', 'Data imported.'));
-                },
-                { destructive: true },
-            );
-        } catch (error) {
-            console.warn('[Settings] import failed:', error);
-            alert(l('Hata', 'Error'), l('Dosya okunamadı.', 'The file could not be read.'));
-        }
-    };
+    /** One line per defect, shared by the audit report and the repair preview so they agree. */
+    const describeFindings = useCallback((result: DatabaseCheckResult) => [
+        `${l('Sahipsiz kart', 'Orphaned cards')}: ${result.orphanCards}`,
+        `${l('Kartsız not', 'Notes without cards')}: ${result.orphanNotes}`,
+        `${l('Destesi kayıp kart', 'Cards with a missing deck')}: ${result.strandedCards}`,
+        `${l('Filtre artığı kalan kart', 'Cards left with filtered-deck state')}: ${result.filteredLeftoverCards}`,
+        `${l('Geçersiz aralıklı kart', 'Cards with an invalid interval')}: ${result.invalidIntervalCards}`,
+        `${l('Sırası taşmış yeni kart', 'New cards with an out-of-range position')}: ${result.highPositionNewCards}`,
+        `${l('Geçersiz tarihli kart', 'Cards with an invalid due date')}: ${result.invalidDueCards}`,
+        `${l('Geçersiz şablon sıralı kart', 'Cards with an invalid template ordinal')}: ${result.invalidOrdinalCards}`,
+        `${l('Artık ön-filtre tarihi taşıyan kart', 'Cards keeping a stale pre-filter due')}: ${result.orphanedOriginalDueCards}`,
+        `${l('Okunamayan not', 'Unreadable notes')}: ${result.unreadableNotes}`,
+    ], [l]);
 
-    const handleCheckDatabase = () => {
+    const handleCheckDatabase = useCallback(() => {
         try {
             const result = checkDatabase();
+            const integrityMessage = result.integrity === 'ok'
+                ? l('Bütünlük: tamam', 'Integrity: OK')
+                : result.integrity === 'check_failed'
+                    ? l('Bütünlük kontrolü tamamlanamadı', 'Integrity check could not be completed')
+                    : l('Bütünlük sorunu algılandı', 'An integrity issue was detected');
+
+            const hints: string[] = [];
+            if (repairableDefectCount(result) > 0) {
+                hints.push(l(
+                    '“Onar ve optimize et” bu satırları düzeltebilir.',
+                    '“Repair and optimize” can fix these rows.',
+                ));
+            }
+            if (result.unreadableNotes > 0) {
+                hints.push(l(
+                    'Okunamayan notlar otomatik onarılamaz: metinleri yalnızca bir yedekten geri gelebilir.',
+                    'Unreadable notes cannot be repaired automatically: their text can only come back from a backup.',
+                ));
+            }
+            if (totalDefectCount(result) === 0) {
+                hints.push(l('Onarılacak bir şey yok.', 'Nothing needs repair.'));
+            }
+
             alert(
-                l('Veritabanını Kontrol Et', 'Check Database'),
-                [
-                    result.integrity === 'ok' ? l('Bütünlük: tamam', 'Integrity: OK') : `${l('Bütünlük', 'Integrity')}: ${result.integrity}`,
-                    `${l('Sahipsiz kartlar', 'Orphan cards')}: ${result.orphanCards}`,
-                    `${l('Sahipsiz notlar', 'Orphan notes')}: ${result.orphanNotes}`,
-                    result.ftsReindexed > 0 ? `${l('Arama dizini yenilendi', 'Search index rebuilt')}: ${result.ftsReindexed}` : '',
-                ].filter(Boolean).join('\n'),
+                l('Veritabanını kontrol et', 'Check Database'),
+                [integrityMessage, ...describeFindings(result), '', ...hints].join('\n'),
             );
         } catch (error) {
             console.warn('[Settings] database check failed:', error);
             alert(l('Hata', 'Error'), l('Veritabanı kontrol edilemedi.', 'Database check failed.'));
         }
-    };
+    }, [describeFindings, l]);
 
-    const handleResetSettings = () => {
-        confirm(l('Varsayılan Ayarlar', 'Default Settings'), l('Tüm uygulama ayarları varsayılana döndürülsün mü?', 'Restore all app settings to defaults?'), () => {
-            resetSettingsToDefaults();
-            setSettings(loadSettings());
-            refreshData();
-            bumpDataVersion();
-        });
-    };
+    const stepLabel = useCallback((step: MaintenanceStep) => ({
+        repair: l('onarım', 'repair'),
+        reindex: l('indeks yenileme', 'reindex'),
+        analyze: l('istatistik güncelleme', 'analyze'),
+        search: l('arama dizini', 'search index'),
+        compact: l('sıkıştırma', 'compaction'),
+    }[step]), [l]);
 
-    const handleResetProgress = () => {
-        confirm(l('İlerlemeyi Sıfırla', 'Reset Progress'), l('Kartlar, çalışma geçmişi ve ilerleme silinecek.', 'Cards, review history, and progress will be deleted.'), async () => {
-            await resetAllData();
-            saveSettings(DEFAULT_SETTINGS);
-            setSettings(loadSettings());
-            refreshData();
-            bumpDataVersion();
-        }, { destructive: true });
-    };
+    /** What the run actually did, line by line — never a fixed sentence that outlives the facts. */
+    const describeOptimizeResult = useCallback((
+        result: DatabaseOptimizeResult,
+        backupFileName: string,
+    ) => {
+        const { repair } = result;
+        const lines: string[] = [];
 
-    const handleSelectStudyBackground = async () => {
-        try {
-            const picked = await DocumentPicker.getDocumentAsync({ type: 'image/*', copyToCacheDirectory: true });
-            if (picked.canceled || !picked.assets?.length) return;
-            const asset = picked.assets[0];
-            const fs = getLegacyFileSystem();
-            if (!fs.documentDirectory) throw new Error('Document directory unavailable');
-            const extension = asset.name?.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
-            const target = `${fs.documentDirectory}tus-study-background.${extension}`;
-            await fs.deleteAsync(target, { idempotent: true });
-            await fs.copyAsync({ from: asset.uri, to: target });
-            updateSetting('studyBackgroundImageUri', target);
-        } catch (error) {
-            console.warn('[Settings] study background failed:', error);
-            alert(l('Hata', 'Error'), l('Arka plan görseli kaydedilemedi.', 'The background image could not be saved.'));
+        if (repair.orphanCardsDeleted > 0) {
+            lines.push(l(`${repair.orphanCardsDeleted} sahipsiz kart silindi.`, `Deleted ${repair.orphanCardsDeleted} orphaned cards.`));
         }
-    };
+        if (repair.orphanNotesDeleted > 0) {
+            lines.push(l(`${repair.orphanNotesDeleted} kartsız not silindi.`, `Deleted ${repair.orphanNotesDeleted} notes that had no cards.`));
+        }
+        if (repair.strandedCardsRehomed > 0) {
+            lines.push(repair.recoveryDeckName
+                ? l(
+                    `${repair.strandedCardsRehomed} kartın destesi onarıldı; kurtarılanlar “${repair.recoveryDeckName}” destesinde.`,
+                    `Repaired the deck of ${repair.strandedCardsRehomed} cards; the rescued ones are in “${repair.recoveryDeckName}”.`,
+                )
+                : l(`${repair.strandedCardsRehomed} kart kendi destesine geri döndü.`, `Returned ${repair.strandedCardsRehomed} cards to their own deck.`));
+        }
+        if (repair.filteredLeftoversCleared > 0) {
+            lines.push(l(
+                `${repair.filteredLeftoversCleared} kartın filtrelenmiş deste artığı temizlendi.`,
+                `Cleared leftover filtered-deck state from ${repair.filteredLeftoversCleared} cards.`,
+            ));
+        }
+        if (repair.intervalsClamped > 0) {
+            lines.push(l(
+                `${repair.intervalsClamped} kartın geçersiz aralığı düzeltildi.`,
+                `Fixed the invalid interval on ${repair.intervalsClamped} cards.`,
+            ));
+        }
+        if (repair.newCardPositionsWrapped > 0) {
+            lines.push(l(
+                `${repair.newCardPositionsWrapped} yeni kartın sırası geçerli aralığa alındı.`,
+                `Brought the position of ${repair.newCardPositionsWrapped} new cards back into range.`,
+            ));
+        }
+        if (repair.duesRepaired > 0) {
+            lines.push(l(
+                `${repair.duesRepaired} kartın geçersiz tarihi düzeltildi.`,
+                `Fixed the invalid due date on ${repair.duesRepaired} cards.`,
+            ));
+        }
+        if (repair.ordinalsClamped > 0) {
+            lines.push(l(
+                `${repair.ordinalsClamped} kartın şablon sırası geçerli aralığa alındı.`,
+                `Brought the template ordinal of ${repair.ordinalsClamped} cards back into range.`,
+            ));
+        }
+        if (repair.originalDuesCleared > 0) {
+            lines.push(l(
+                `${repair.originalDuesCleared} kartın artık ön-filtre tarihi temizlendi.`,
+                `Cleared a stale pre-filter due from ${repair.originalDuesCleared} cards.`,
+            ));
+        }
+        if (repair.protectedRowsKept > 0) {
+            lines.push(l(
+                `${repair.protectedRowsKept} katalog satırına dokunulmadı; ücretli içerik yeniden kurularak onarılır.`,
+                `${repair.protectedRowsKept} catalog rows were left alone; paid content is repaired by reinstalling it.`,
+            ));
+        }
+        if (repair.unreadableNotes > 0) {
+            lines.push(l(
+                `${repair.unreadableNotes} not okunamıyor ve otomatik onarılamaz.`,
+                `${repair.unreadableNotes} notes are unreadable and cannot be repaired automatically.`,
+            ));
+        }
+        if (lines.length === 0) {
+            lines.push(l('Onarılacak bozuk satır yoktu.', 'There were no broken rows to repair.'));
+        }
 
-    const renderGeneral = () => (
+        lines.push(result.ftsReindexed > 0
+            ? l(`${result.ftsReindexed} kartın arama dizini yenilendi.`, `Search was rebuilt for ${result.ftsReindexed} cards.`)
+            : l('Veritabanı indeksleri yenilendi.', 'Database indexes were refreshed.'));
+
+        if (result.freedBytes > 0) {
+            const freed = result.freedBytes >= 1024 * 1024
+                ? `${Math.round(result.freedBytes / (1024 * 1024))} MB`
+                : `${Math.max(1, Math.round(result.freedBytes / 1024))} KB`;
+            lines.push(l(`${freed} yer geri kazanıldı.`, `${freed} of space was reclaimed.`));
+        }
+
+        if (result.failedSteps.length > 0) {
+            const names = result.failedSteps.map(stepLabel).join(', ');
+            lines.push('', l(`Tamamlanamayan adımlar: ${names}.`, `Steps that did not finish: ${names}.`));
+        }
+
+        lines.push('', l(`Güvenlik yedeği: ${backupFileName}`, `Safety backup: ${backupFileName}`));
+        return lines.join('\n');
+    }, [l, stepLabel]);
+
+    /**
+     * Audit first, then show what the repair would change, then repair. The learner approves the
+     * actual findings rather than a generic warning, and a run that deletes rows says so before
+     * it starts.
+     */
+    const handleOptimizeDatabase = useCallback(() => {
+        if (maintenanceAction) return;
+        void (async () => {
+            let findings: DatabaseCheckResult;
+            try {
+                findings = checkDatabase();
+            } catch (error) {
+                console.warn('[Settings] pre-repair audit failed:', error);
+                alert(
+                    l('Hata', 'Error'),
+                    l('Veritabanı okunamadı, onarım başlatılmadı.', 'The database could not be read, so no repair was started.'),
+                );
+                return;
+            }
+
+            const repairable = repairableDefectCount(findings);
+            const preview = repairable > 0
+                ? [
+                    l('Bulunanlar:', 'Found:'),
+                    ...describeFindings(findings),
+                    '',
+                    l(
+                        'Sahipsiz kartlar ve kartsız notlar silinecek, destesi kayıp kartlar kurtarılacak.',
+                        'Orphaned cards and notes without cards will be deleted, and cards whose deck is gone will be rescued.',
+                    ),
+                ].join('\n')
+                : l('Onarılacak bozuk satır bulunamadı.', 'No broken rows were found to repair.');
+
+            const accepted = await confirmAsync(
+                l('Veritabanını onar ve optimize et', 'Repair and Optimize Database'),
+                [
+                    preview,
+                    '',
+                    l(
+                        'Ardından veritabanı sıkıştırılır, indeksler ve arama dizini yenilenir. Başlamadan önce güvenlik yedeği alınacaktır.',
+                        'The database is then compacted and its indexes and search index refreshed. A safety backup will be created first.',
+                    ),
+                ].join('\n'),
+                { destructive: repairable > 0 },
+            );
+            if (!accepted) return;
+
+            setMaintenanceAction('optimize');
+            try {
+                // Allow the busy state to paint before synchronous SQLite maintenance.
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                const { backupFileName, result } = await optimizeDatabaseWithBackup();
+                // Deleted, moved and reindexed rows all invalidate what the open screens are showing.
+                if (repairChangedRows(result.repair) || result.ftsReindexed > 0) invalidateCollection();
+                alert(
+                    result.failedSteps.length > 0
+                        ? l('Kısmen tamamlandı', 'Partly Completed')
+                        : l('Optimizasyon tamamlandı', 'Optimization Complete'),
+                    describeOptimizeResult(result, backupFileName),
+                );
+            } catch (error) {
+                console.warn('[Settings] database optimization failed:', error);
+                const retained = error instanceof MaintenanceWorkflowError ? error.backupFileName : undefined;
+                alert(
+                    l('Optimizasyon tamamlanamadı', 'Optimization Failed'),
+                    retained
+                        ? l(
+                            `Onarım başlatıldı ama tamamlanamadı. ${retained} güvenlik yedeği korundu; Yedekler ekranından geri yükleyebilirsiniz.`,
+                            `The repair started but did not finish. Safety backup ${retained} was retained; you can restore it from Backups.`,
+                        )
+                        : l(
+                            'Güvenlik yedeği alınamadığı için hiçbir satır değiştirilmedi. Yedekler ekranını kontrol edip tekrar deneyin.',
+                            'No row was changed because the safety backup could not be created. Check Backups and try again.',
+                        ),
+                );
+            } finally {
+                setMaintenanceAction(null);
+            }
+        })();
+    }, [describeFindings, describeOptimizeResult, invalidateCollection, l, maintenanceAction]);
+
+    const handleResetSettings = useCallback(() => {
+        confirm(l('Varsayılan ayarlar', 'Default Settings'), l('Tüm uygulama ayarları varsayılana döndürülsün mü?', 'Restore all app settings to defaults?'), () => {
+            const result = resetSettingsToDefaults();
+            if (!result.ok) {
+                alert(l('Ayarlar sıfırlanamadı', 'Settings Not Reset'), l('Varsayılan ayarlar cihaz depolamasına yazılamadı.', 'Default settings could not be written to device storage.'));
+                return;
+            }
+            const persisted = loadSettings();
+            setSettings(persisted);
+            setSavedSnapshot(stableSnapshot(persisted));
+            refreshData();
+            markSchedulingStale();
+        });
+    }, [l, markSchedulingStale, refreshData]);
+
+    const handleResetProgress = useCallback(() => {
+        if (maintenanceAction) return;
+        confirm(l('İlerlemeyi sıfırla', 'Reset Progress'), l('Kartlar, çalışma geçmişi ve ilerleme silinecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulacak.', 'Cards, review history, and progress will be deleted after a restorable safety backup is created.'), () => {
+            void (async () => {
+                setMaintenanceAction('reset');
+                try {
+                    const { backupFileName } = await resetAllDataWithBackup();
+                    const persisted = loadSettings();
+                    setSettings(persisted);
+                    setSavedSnapshot(stableSnapshot(persisted));
+                    refreshData();
+                    invalidateCollection();
+                    // Reset removes both the installed catalog rows and its local access marker.
+                    await refreshCatalogAccess();
+                    alert(
+                        l('İlerleme sıfırlandı', 'Progress Reset'),
+                        l(`Geri dönüş için ${backupFileName} yedeği saklandı.`, `The backup ${backupFileName} was kept for recovery.`),
+                    );
+                } catch (error) {
+                    console.warn('[Settings] reset progress failed:', error);
+                    const retained = error instanceof ResetWorkflowError && error.backupFileName;
+                    alert(
+                        l('Sıfırlama tamamlanamadı', 'Reset Failed'),
+                        retained
+                            ? l(`Veriler tamamen sıfırlanamadı. ${retained} güvenlik yedeği korundu.`, `The reset did not complete. Safety backup ${retained} was retained.`)
+                            : l('Güvenlik yedeği oluşturulamadığı için hiçbir veri silinmedi.', 'No data was deleted because the safety backup could not be created.'),
+                    );
+                } finally {
+                    setMaintenanceAction(null);
+                }
+            })();
+        }, { destructive: true });
+    }, [invalidateCollection, l, maintenanceAction, refreshCatalogAccess, refreshData]);
+
+    const renderGeneral = useCallback(() => (
         <>
             <Group title={l('Dil', 'Language')} styles={styles}>
-                <ChoiceRow
-                    label={l('Uygulama dili', 'App language')}
-                    summary={settings.language === 'system'
-                        ? l(`Cihaz dili: ${deviceLanguage === 'tr' ? 'Türkçe' : 'English'}`, `Device language: ${deviceLanguage === 'tr' ? 'Türkçe' : 'English'}`)
-                        : l('Uygulamanın arayüz dilini seçin.', 'Choose the app interface language.')}
-                    value={settings.language}
-                    options={[
+                <View style={styles.themeChoiceRow}>
+                    {([
                         { value: 'system' as AppLanguage, label: l('Sistem', 'System') },
                         { value: 'tr' as AppLanguage, label: 'Türkçe' },
                         { value: 'en' as AppLanguage, label: 'English' },
-                    ]}
-                    onChange={(value) => updateSetting('language', value)}
-                    styles={styles}
-                />
+                    ]).map((option) => {
+                        const selected = settings.language === option.value;
+                        return (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={[styles.themeChoiceButton, selected && styles.themeChoiceButtonActive]}
+                                onPress={() => updateSetting('language', option.value)}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: selected }}
+                            >
+                                <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </Group>
+            <Group title={l('Tema', 'Theme')} styles={styles}>
+                <View style={styles.themeChoiceRow}>
+                    {([
+                        { value: 'system' as const, label: l('Sistem', 'System') },
+                        { value: 'light' as const, label: l('Açık', 'Light') },
+                        { value: 'dark' as const, label: l('Koyu', 'Dark') },
+                    ]).map((option) => {
+                        const selected = settings.themeMode === option.value;
+                        return (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={[styles.themeChoiceButton, selected && styles.themeChoiceButtonActive]}
+                                onPress={() => updateSetting('themeMode', option.value)}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: selected }}
+                            >
+                                <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
             </Group>
             <Group title={l('Düzenleme', 'Editing')} styles={styles}>
                 <ChoiceRow
@@ -476,15 +1013,77 @@ export default function SettingsScreen() {
                     onChange={(value) => updateSetting('newCardDeckMode', value)}
                     styles={styles}
                 />
+                <ToggleRow
+                    label={l('Pano görsellerini PNG olarak yapıştır', 'Paste clipboard images as PNG')}
+                    summary={l('Editöre yapıştırılan görseli koleksiyon medyasına dönüştürür; çevrimdışı ve dışa aktarmada korunur.', 'Converts pasted images into collection media so they remain available offline and in exports.')}
+                    value={Boolean(settings.pasteClipboardImagesAsPng)}
+                    onChange={(value) => updateSetting('pasteClipboardImagesAsPng', value)}
+                    styles={styles}
+                />
+                <ToggleRow
+                    label={l('Yazarak cevap alanlarını devre dışı bırak', 'Never type answers')}
+                    summary={l('Yazarak cevap şablonlarında klavyeyi açmadan normal kartı gösterir.', 'Shows type-answer cards without opening the answer keyboard.')}
+                    value={Boolean(settings.neverTypeAnswer)}
+                    onChange={(value) => updateSetting('neverTypeAnswer', value)}
+                    styles={styles}
+                />
+                {!settings.neverTypeAnswer ? (
+                    <>
+                        <ToggleRow
+                            label={l('Cevabı kartın içine yaz', 'Type answer into the card')}
+                            summary={l('Giriş alanını şablondaki {{type:Alan}} konumuna yerleştirir ve kartın #typeans stilini uygular.', 'Places the input at {{type:Field}} so the card’s #typeans styling applies.')}
+                            value={Boolean(settings.typeAnswerInCard)}
+                            onChange={(value) => updateSetting('typeAnswerInCard', value)}
+                            styles={styles}
+                        />
+                        <ToggleRow
+                            label={l('Yazarak cevap alanına odaklan', 'Focus type-in-answer')}
+                            summary={l('Yazarak cevap kartı açıldığında alanı seçer ve klavyeyi açar.', 'Selects the field and opens the keyboard when a type-answer card appears.')}
+                            value={settings.focusTypeAnswer !== false}
+                            onChange={(value) => updateSetting('focusTypeAnswer', value)}
+                            styles={styles}
+                        />
+                    </>
+                ) : null}
             </Group>
+            <View style={styles.group}>
+                <ToggleRow
+                    label={l('Dosya adlarını göster', 'Show filenames')}
+                    summary={l('Kart tarayıcısındaki soru/cevap alanlarında ses dosyası adlarını gösterir.', 'Displays audio filenames in the card browser question/answer fields.')}
+                    value={Boolean(settings.showBrowserAudioFilenames)}
+                    onChange={(value) => updateSetting('showBrowserAudioFilenames', value)}
+                    divider={false}
+                    styles={styles}
+                />
+            </View>
+            {Platform.OS === 'android' ? (
+                <Group title={l('Android gezinme', 'Android navigation')} description={l('AnkiDroid’dan esinlenen, Android’e özgü isteğe bağlı davranışlar.', 'Optional Android-specific behaviors inspired by AnkiDroid.')} styles={styles}>
+                    <ToggleRow label={l('Tam ekrandan sağa kaydırınca menüyü aç', 'Open menu with a full-screen right swipe')} value={Boolean(settings.fullScreenNavigationDrawer)} onChange={(value) => updateSetting('fullScreenNavigationDrawer', value)} styles={styles} />
+                    <ToggleRow label={l('Geri/çıkış için iki kez geri bas', 'Press back twice to go back/exit')} value={Boolean(settings.doubleBackToExit)} onChange={(value) => updateSetting('doubleBackToExit', value)} styles={styles} />
+                </Group>
+            ) : null}
             <TouchableOpacity style={styles.outlineButton} onPress={handleResetSettings}>
                 <Text style={styles.outlineButtonText}>↺ {l('Varsayılan ayarlara dön', 'Restore default settings')}</Text>
             </TouchableOpacity>
         </>
-    );
+    ), [handleResetSettings, l, settings, styles, updateSetting]);
 
     const renderNewStudy = () => (
         <>
+            <Group title={l('Yeni çalışma ekranı', 'New study screen')} styles={styles}>
+                <ToggleRow
+                    label={l('Yeni çalışma ekranını kullan', 'Use new study screen')}
+                    summary={settings.showStudyTopBar === false
+                        ? l(
+                            'Sabit yanıt alanını ve yönlü yanıt geri bildirimini etkinleştirir. Yeni araç çubuğu, aşağıdaki "Araç çubuğunu göster" kapalı olduğu sürece gizli kalır.',
+                            'Enables the fixed answer area and directional answer feedback. The new toolbar stays hidden while "Show toolbar" below is off.',
+                        )
+                        : l('Yeni araç çubuğu, sabit yanıt alanı ve yönlü yanıt geri bildirimini etkinleştirir.', 'Enables the new toolbar, fixed answer area and directional answer feedback.')}
+                    value={Boolean(settings.newStudyScreenEnabled)}
+                    onChange={(value) => updateSetting('newStudyScreenEnabled', value)}
+                    styles={styles}
+                />
+            </Group>
             <Group title={l('Ekran', 'Screen')} styles={styles}>
                 <ChoiceRow
                     label={l('Çerçeve stili', 'Frame style')}
@@ -495,19 +1094,40 @@ export default function SettingsScreen() {
                 />
                 <ToggleRow label={l('Kalan kart sayısını göster', 'Show remaining card count')} value={settings.showRemainingCount} onChange={(value) => updateSetting('showRemainingCount', value)} styles={styles} />
                 <ToggleRow label={l('Sesli kartlarda oynatma düğmelerini göster', 'Show play buttons on cards with audio')} value={settings.showAudioPlayButtons !== false} onChange={(value) => updateSetting('showAudioPlayButtons', value)} styles={styles} />
-                <ToggleRow label={l('Yanıt geri bildirimini göster', 'Show answer feedback')} summary={l('Yanıt verildiğinde dokunsal geri bildirim sağlar.', 'Provides haptic feedback when an answer is submitted.')} value={settings.showAnswerFeedback !== false} onChange={(value) => updateSetting('showAnswerFeedback', value)} styles={styles} />
+                <ToggleRow label={l('Yanıt geri bildirimini göster', 'Show answer feedback')} summary={l('Tekrar yanıtında kırmızı çarpı, tüm yanıt düğmelerinde dokunsal geri bildirim gösterir.', 'Shows a red cross for Again and haptic feedback for all answer buttons.')} value={settings.showAnswerFeedback !== false} onChange={(value) => updateSetting('showAnswerFeedback', value)} styles={styles} />
+                <ToggleRow label={l('Ortaya hizala', 'Center align')} summary={l('Kart içeriğini dikey olarak ortalar.', 'Centers card content vertically.')} value={Boolean(settings.centerCardContent)} onChange={(value) => updateSetting('centerCardContent', value)} styles={styles} />
+                <ToggleRow label={l('Deste başlığını göster', 'Show deck title')} value={settings.showDeckTitle !== false} onChange={(value) => updateSetting('showDeckTitle', value)} styles={styles} />
+                <ToggleRow label={l('Kalan süreyi göster', 'Show remaining time')} summary={l('Mevcut hızla tahmini bitiş süresini gösterir.', 'Shows an estimated time remaining at the current pace.')} value={Boolean(settings.showRemainingTime)} onChange={(value) => updateSetting('showRemainingTime', value)} styles={styles} />
             </Group>
             <Group title={l('Araç çubuğu', 'Toolbar')} styles={styles}>
-                <ToggleRow label={l('Üst araç çubuğunu göster', 'Show top toolbar')} summary={l('Geri, deste, bayrak ve diğer işlemleri gösterir.', 'Shows back, deck, flag and more actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
+                <ToggleRow label={l('Araç çubuğunu göster', 'Show toolbar')} summary={l('Geri, deste kapsamı, sayaçlar ve kart işlemlerini gösterir.', 'Shows back, deck scope, counts and card actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
+                {settings.showStudyTopBar !== false && Boolean(settings.newStudyScreenEnabled) ? (
+                    <ChoiceRow
+                        label={l('Araç çubuğu konumu', 'Toolbar position')}
+                        value={settings.reviewerToolbarPosition ?? 'top'}
+                        options={[
+                            { value: 'top', label: l('Üst', 'Top') },
+                            { value: 'bottom', label: l('Alt', 'Bottom') },
+                        ]}
+                        onChange={(value) => updateSetting('reviewerToolbarPosition', value)}
+                        styles={styles}
+                    />
+                ) : null}
             </Group>
             <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
                 <ToggleRow
                     label={l('Yanıt düğmelerini göster', 'Show answer buttons')}
-                    summary={l('Kapalıyken kartlar kaydırma hareketleriyle yanıtlanır.', 'When hidden, cards are answered with swipe gestures.')}
+                    summary={l('Kapalıyken kartlar dokunma bölgeleri veya kaydırma hareketleriyle yanıtlanır.', 'When hidden, cards are answered with tap zones or swipe gestures.')}
                     value={settings.showAnswerButtons !== false}
                     onChange={(value) => {
-                        if (!value && !settings.gesturesEnabled) {
-                            alert(l('Hareketleri etkinleştirin', 'Enable gestures'), l('Yanıt düğmelerini gizlemeden önce Kontroller bölümünde kaydırma hareketlerini etkinleştirin.', 'Enable swipe gestures in Controls before hiding answer buttons.'));
+                        if (!value && !settings.gesturesEnabled && settings.ninePointTouchEnabled === false) {
+                            alert(
+                                l('Dokunma veya kaydırmayı etkinleştirin', 'Enable taps or swipes'),
+                                l(
+                                    'Yanıt düğmelerini gizlemeden önce Kontroller bölümünde 9 noktalı dokunmayı veya kaydırma hareketlerini etkinleştirin.',
+                                    'Enable 9-point touch or swipe gestures in Controls before hiding answer buttons.',
+                                ),
+                            );
                             return;
                         }
                         updateSetting('showAnswerButtons', value);
@@ -516,144 +1136,162 @@ export default function SettingsScreen() {
                 />
                 <ToggleRow label={l('Sonraki inceleme süresini göster', 'Show next review time above answer buttons')} value={settings.showNextReviewTimes} onChange={(value) => updateSetting('showNextReviewTimes', value)} styles={styles} />
                 <ToggleRow label={l('Zor ve Kolay düğmelerini gizle', 'Hide Hard and Easy buttons')} summary={l('Yalnızca Tekrar ve İyi gösterilir.', 'Only Again and Good are shown.')} value={Boolean(settings.hideHardAndEasy)} onChange={(value) => updateSetting('hideHardAndEasy', value)} styles={styles} />
-                <ChoiceRow label={l('Yanıt düğmelerinin konumu', 'Answer buttons position')} value={settings.answerButtonsPosition ?? 'bottom'} options={[{ value: 'bottom', label: l('Alt', 'Bottom') }, { value: 'top', label: l('Üst', 'Top') }]} onChange={(value) => updateSetting('answerButtonsPosition', value)} styles={styles} />
                 <ToggleRow label={l('Otomatik ilerleme', 'Auto advance')} summary={l('Kart açıldıktan sekiz saniye sonra cevabı gösterir.', 'Reveals the answer eight seconds after a card opens.')} value={settings.autoAdvance} onChange={(value) => updateSetting('autoAdvance', value)} styles={styles} />
             </Group>
         </>
     );
 
-    const renderReviewing = () => (
+    const renderReviewing = useCallback(() => (
         <>
             <Group title={l('Zamanlama', 'Scheduling')} styles={styles}>
-                <StepperRow label={l('Sonraki günün başlangıcı', 'Start of next day')} summary={l('Günlük istatistikler ve limitler bu saatte yenilenir.', 'Daily statistics and limits reset at this hour.')} value={settings.dayRolloverHour} display={`${String(settings.dayRolloverHour).padStart(2, '0')}:00`} step={1} min={0} max={23} onChange={(value) => updateSetting('dayRolloverHour', value)} styles={styles} />
-                <StepperRow label={l('Önceden öğrenme sınırı', 'Learn ahead limit')} summary={l('Sırada başka kart kalmadığında öğrenme kartlarını erken gösterir.', 'Shows learning cards early when nothing else is queued.')} value={settings.learnAheadMinutes} display={`${settings.learnAheadMinutes} ${l('dk.', 'mins')}`} step={5} min={0} max={120} onChange={(value) => updateSetting('learnAheadMinutes', value)} styles={styles} />
-                <StepperRow label={l('Zaman kutusu sınırı', 'Timebox time limit')} summary={l('Bu süre dolunca çalışma özeti gösterilir; 0 kapalıdır.', 'Shows a study summary after this time; 0 disables it.')} value={settings.timeboxMinutes ?? 0} display={`${settings.timeboxMinutes ?? 0} ${l('dk.', 'mins')}`} step={5} min={0} max={180} onChange={(value) => updateSetting('timeboxMinutes', value)} styles={styles} />
+                <StepperRow label={l('Sonraki günün başlangıcı', 'Start of next day')} summary={l('Günlük istatistikler ve limitler bu saatte yenilenir.', 'Daily statistics and limits reset at this hour.')} value={settings.dayRolloverHour} suffix=":00" minimumDigits={2} step={1} min={0} max={23} wrap onChange={(value) => updateSetting('dayRolloverHour', value)} styles={styles} />
+                <StepperRow label={l('Önceden öğrenme sınırı', 'Learn ahead limit')} summary={l('Sırada başka kart kalmadığında öğrenme kartlarını erken gösterir.', 'Shows learning cards early when nothing else is queued.')} value={settings.learnAheadMinutes} suffix={l('dk.', 'mins')} step={5} min={0} max={120} onChange={(value) => updateSetting('learnAheadMinutes', value)} styles={styles} />
+                <StepperRow label={l('Zaman kutusu sınırı', 'Timebox time limit')} summary={l('Her zaman kutusu sona erdiğinde çalıştığınız kart sayısını gösterir; 0 özelliği kapatır.', 'Shows how many cards you studied when each timebox ends; 0 disables it.')} value={settings.timeboxMinutes ?? 0} suffix={l('dk.', 'mins')} step={1} min={0} max={9999} onChange={(value) => updateSetting('timeboxMinutes', value)} styles={styles} />
             </Group>
             <Group title={l('Gelişmiş', 'Advanced')} styles={styles}>
                 <ToggleRow label={l('Ekranı açık tut', 'Keep screen on')} summary={l('Çalışma sırasında ekran zaman aşımını devre dışı bırakır.', 'Disables screen timeout while reviewing.')} value={Boolean(settings.keepScreenOn)} onChange={(value) => updateSetting('keepScreenOn', value)} styles={styles} />
                 <ToggleRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={settings.autoPlayAudio} onChange={(value) => updateSetting('autoPlayAudio', value)} styles={styles} />
+                <ChoiceRow
+                    label={l('Ses oynatma hızı', 'Audio playback speed')}
+                    summary={l('Kartlardaki seslerin varsayılan çalma hızı.', 'Default playback speed for audio in cards.')}
+                    value={String(settings.audioPlaybackRate ?? 1.0)}
+                    options={[
+                        { label: '0.75x', value: '0.75' },
+                        { label: '1.0x', value: '1' },
+                        { label: '1.25x', value: '1.25' },
+                        { label: '1.5x', value: '1.5' },
+                        { label: '2.0x', value: '2' },
+                    ]}
+                    onChange={(value) => updateSetting('audioPlaybackRate', parseFloat(value))}
+                    styles={styles}
+                />
                 <ToggleRow label={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} value={settings.interruptAudioOnAnswer} onChange={(value) => updateSetting('interruptAudioOnAnswer', value)} styles={styles} />
             </Group>
         </>
+    ), [l, settings, styles, updateSetting]);
+
+    const renderNotifications = () => (
+        <Group title={l('Bildirimler', 'Notifications')} styles={styles}>
+            <ToggleRow
+                label={l('Bildirimler', 'Notifications')}
+                value={Boolean(settings.studyNotificationsEnabled)}
+                onChange={(value) => { void handleStudyNotificationsToggle(value); }}
+                styles={styles}
+            />
+            <TouchableOpacity
+                style={styles.preferenceRow}
+                onPress={() => setNotificationThresholdPickerVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel={l('Şu durumda bildir', 'Notify when')}
+                accessibilityValue={{ text: notificationThresholdLabel(settings.studyNotificationsEnabled, settings.studyNotificationThreshold) }}
+            >
+                <View style={styles.preferenceCopy}>
+                    <Text style={styles.preferenceLabel}>{l('Şu durumda bildir', 'Notify when')}</Text>
+                    <Text style={styles.preferenceSummary}>
+                        {notificationThresholdLabel(settings.studyNotificationsEnabled, settings.studyNotificationThreshold)}
+                    </Text>
+                </View>
+                <Text style={styles.appearanceValueArrow}>›</Text>
+            </TouchableOpacity>
+            {settings.studyNotificationsEnabled && Platform.OS === 'ios' ? (
+                <View style={styles.preferenceBlock}>
+                    <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
+                    <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte zamanı gelmiş kartlar kontrol edilir.', 'The reminder checks for due cards at this local time each day.')}</Text>
+                    <View style={styles.notificationTimeRow}>
+                        <BoundedIntegerInput
+                            value={settings.studyNotificationHour ?? 9}
+                            min={0}
+                            max={23}
+                            wrap
+                            minimumDigits={2}
+                            onChange={(value) => updateSetting('studyNotificationHour', value)}
+                            accessibilityLabel={l('Hatırlatma saati, saat', 'Reminder hour')}
+                        />
+                        <Text style={styles.timeSeparator}>:</Text>
+                        <BoundedIntegerInput
+                            value={settings.studyNotificationMinute ?? 0}
+                            min={0}
+                            max={59}
+                            wrap
+                            minimumDigits={2}
+                            onChange={(value) => updateSetting('studyNotificationMinute', value)}
+                            accessibilityLabel={l('Hatırlatma saati, dakika', 'Reminder minute')}
+                        />
+                    </View>
+                </View>
+            ) : null}
+        </Group>
     );
 
-    const renderNotifications = () => {
-        const time = new Date();
-        time.setHours(settings.studyNotificationHour ?? 9, settings.studyNotificationMinute ?? 0, 0, 0);
-        const permissionLabel = notificationPermission.state === 'granted'
-            ? l('İzin verildi', 'Allowed')
-            : notificationPermission.state === 'limited'
-                ? l('iOS’ta kısmen izin verildi', 'Partially allowed in iOS')
-                : notificationPermission.state === 'denied'
-                    ? l('iOS tarafından engellendi', 'Blocked by iOS')
-                    : notificationPermission.state === 'undetermined'
-                        ? l('Henüz izin istenmedi', 'Not requested yet')
-                        : l('Bu platformda kullanılamıyor', 'Unavailable on this platform');
-
-        return (
-            <>
-                <Group
-                    title={l('Çalışma hatırlatması', 'Study reminder')}
-                    description={l('AnkiMobile gibi, seçtiğiniz saatte yalnızca bekleyen tekrar kartınız varsa tek bir günlük bildirim gösterir. Öğrenme adımı dolan her kart için ayrı bildirim gönderilmez.', 'Like AnkiMobile, one daily alert appears at your selected time only when reviews are waiting. It does not alert separately for each learning step that becomes due.')}
-                    styles={styles}
-                >
-                    <ToggleRow
-                        label={l('Zamanı gelen kartlar için uyar', 'Alert when reviews are due')}
-                        summary={l('Bildirim, o gün bekleyen tekrar kartlarının sayısını içerir.', 'The alert includes the number of reviews waiting that day.')}
-                        value={Boolean(settings.studyNotificationsEnabled)}
-                        onChange={(value) => { void handleStudyNotificationsToggle(value); }}
-                        styles={styles}
-                    />
-                    {settings.studyNotificationsEnabled && Platform.OS === 'ios' ? (
-                        <View style={styles.preferenceBlock}>
-                            <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
-                            <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte kontrol edilir.', 'Reviews are checked at this local time each day.')}</Text>
-                            <View style={styles.notificationTimeRow}>
-                                <DateTimePicker
-                                    value={time}
-                                    mode="time"
-                                    display="compact"
-                                    locale={deviceLanguage === 'tr' ? 'tr-TR' : 'en-US'}
-                                    onChange={(_event, selectedTime) => {
-                                        if (!selectedTime) return;
-                                        updateSettings({
-                                            studyNotificationHour: selectedTime.getHours(),
-                                            studyNotificationMinute: selectedTime.getMinutes(),
-                                        });
-                                    }}
-                                />
-                            </View>
-                        </View>
-                    ) : null}
-                    <View style={styles.notificationStatusRow}>
-                        <View style={[styles.notificationStatusDot, (notificationPermission.state === 'granted' || notificationPermission.state === 'limited') && styles.notificationStatusDotActive]} />
-                        <View style={styles.preferenceCopy}>
-                            <Text style={styles.preferenceLabel}>{l('iOS bildirim izni', 'iOS notification permission')}</Text>
-                            <Text style={styles.preferenceSummary}>{permissionLabel}</Text>
-                        </View>
-                    </View>
-                    {(notificationPermission.state === 'denied' || notificationPermission.state === 'limited' || notificationPermission.state === 'granted') ? (
-                        <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openSettings().catch(() => undefined)}>
-                            <Text style={styles.actionButtonText}>{l('iOS bildirim ayarlarını aç', 'Open iOS notification settings')} ↗</Text>
-                        </TouchableOpacity>
-                    ) : null}
-                </Group>
-
-                <Group
-                    title={l('Uygulama simgesi rozeti', 'App icon badge')}
-                    description={l('Bildirimler açıkken rozet, şu anda bekleyen tekrar kartı sayısıyla otomatik güncellenir. Bildirimleri kapatmak rozeti temizler.', 'When notifications are enabled, the badge automatically shows the current number of waiting reviews. Turning notifications off clears it.')}
-                    styles={styles}
-                >
-                    <View style={styles.badgePreviewRow}>
-                        <View style={styles.badgePreviewIcon}>
-                            <Text style={styles.badgePreviewMark}>🧠</Text>
-                            {settings.studyNotificationsEnabled && notificationPermission.allowsBadge && currentDueReviews > 0 ? (
-                                <View style={styles.badgePreviewCount}>
-                                    <Text style={styles.badgePreviewCountText}>{currentDueReviews > 99 ? '99+' : currentDueReviews}</Text>
-                                </View>
-                            ) : null}
-                        </View>
-                        <View style={styles.preferenceCopy}>
-                            <Text style={styles.preferenceLabel}>{l('Bekleyen tekrarlar', 'Reviews waiting')}</Text>
-                            <Text style={styles.preferenceSummary}>
-                                {l(`${currentDueReviews} tekrar kartı`, `${currentDueReviews} review cards`)}
-                            </Text>
-                        </View>
-                    </View>
-                </Group>
-            </>
-        );
-    };
-
-    const renderAppearance = () => (
+    const renderControls = useCallback(() => (
         <>
-            <Group title={l('Temalar', 'Themes')} styles={styles}>
-                <ChoiceRow label={l('Tema', 'Theme')} value={settings.themeMode} options={[{ value: 'system' as ThemeMode, label: l('Sistemi izle', 'Follow system') }, { value: 'light' as ThemeMode, label: l('Açık', 'Light') }, { value: 'dark' as ThemeMode, label: l('Koyu', 'Dark') }]} onChange={(value) => updateSetting('themeMode', value)} styles={styles} />
-            </Group>
-            <Group title={l('Arka plan', 'Background')} styles={styles}>
-                <TouchableOpacity style={styles.actionButton} onPress={handleSelectStudyBackground}>
-                    <Text style={styles.actionButtonText}>{settings.studyBackgroundImageUri ? l('Arka plan görselini değiştir', 'Change background image') : l('Görsel seç', 'Select image')}</Text>
-                </TouchableOpacity>
-                {settings.studyBackgroundImageUri ? (
-                    <TouchableOpacity style={styles.actionButton} onPress={() => updateSetting('studyBackgroundImageUri', null)}>
-                        <Text style={styles.actionButtonText}>{l('Arka plan görselini kaldır', 'Remove background image')}</Text>
-                    </TouchableOpacity>
+            <Group
+                title={l('Dokunma ve kaydırma', 'Taps and swipes')}
+                description={l(
+                    'Kart yüzeyindeki dokuz bölgeye ve dört kaydırma yönüne ayrı eylemler atayın.',
+                    'Assign separate actions to the nine card zones and four swipe directions.',
+                )}
+                onHelpPress={() => setControlsHelpVisible(true)}
+                helpLabel={l('Çalışma kontrolleri yardımını aç', 'Open reviewer controls help')}
+                styles={styles}
+            >
+                <ToggleRow
+                    label={l('9 noktalı dokunma', '9-point touch')}
+                    summary={l('Kart yüzeyini 3×3 bölgeye ayırır; soru ve yanıt tarafları ayrı ayrı ayarlanır.', 'Divides the card surface into a 3×3 grid; question and answer sides are configured separately.')}
+                    value={settings.ninePointTouchEnabled !== false}
+                    onChange={(value) => updateSettings({
+                        ninePointTouchEnabled: value,
+                        ...(value || settings.gesturesEnabled || settings.showAnswerButtons !== false ? {} : { showAnswerButtons: true }),
+                    })}
+                    styles={styles}
+                />
+                {settings.ninePointTouchEnabled !== false ? (
+                    <View style={styles.tapMappingBlock}>
+                        <ChoiceRow
+                            label={l('Kart tarafı', 'Card side')}
+                            value={tapSide}
+                            options={[
+                                { value: 'question', label: l('Soru', 'Question') },
+                                { value: 'answer', label: l('Yanıt', 'Answer') },
+                            ]}
+                            onChange={setTapSide}
+                            styles={styles}
+                        />
+                        <View style={styles.tapGrid}>
+                            {REVIEW_TAP_ZONES.map((zone) => {
+                                const labels: Record<ReviewTapZone, string> = {
+                                    topLeft: l('Sol üst', 'Top left'),
+                                    topCenter: l('Üst', 'Top center'),
+                                    topRight: l('Sağ üst', 'Top right'),
+                                    middleLeft: l('Sol', 'Middle left'),
+                                    middleCenter: l('Orta', 'Center'),
+                                    middleRight: l('Sağ', 'Middle right'),
+                                    bottomLeft: l('Sol alt', 'Bottom left'),
+                                    bottomCenter: l('Alt', 'Bottom center'),
+                                    bottomRight: l('Sağ alt', 'Bottom right'),
+                                };
+                                const actions = tapSide === 'question'
+                                    ? settings.questionTapActions ?? DEFAULT_QUESTION_TAP_ACTIONS
+                                    : settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS;
+                                return (
+                                    <TouchableOpacity
+                                        key={`${tapSide}-${zone}`}
+                                        style={styles.tapGridCell}
+                                        onPress={() => setGesturePickerTarget({ kind: 'tap', side: tapSide, zone })}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${labels[zone]}: ${gestureActionLabel(actions[zone])}`}
+                                    >
+                                        <Text style={styles.tapGridZone}>{labels[zone]}</Text>
+                                        <Text style={styles.tapGridAction} numberOfLines={2}>{gestureActionLabel(actions[zone])}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
                 ) : null}
-            </Group>
-            <Group title={l('Çalışma ekranı', 'Study screen')} styles={styles}>
-                <ToggleRow label={l('Ortaya hizala', 'Center align')} summary={l('Kart içeriğini dikey olarak ortalar.', 'Centers card content vertically.')} value={Boolean(settings.centerCardContent)} onChange={(value) => updateSetting('centerCardContent', value)} styles={styles} />
-                <ToggleRow label={l('Deste başlığını göster', 'Show deck title')} value={settings.showDeckTitle !== false} onChange={(value) => updateSetting('showDeckTitle', value)} styles={styles} />
-                <ToggleRow label={l('Kalan süreyi göster', 'Show remaining time')} summary={l('Mevcut hızla tahmini bitiş süresini gösterir.', 'Shows an estimated time remaining at the current pace.')} value={Boolean(settings.showRemainingTime)} onChange={(value) => updateSetting('showRemainingTime', value)} styles={styles} />
-            </Group>
-        </>
-    );
-
-    const renderControls = () => (
-        <>
-            <Group title={l('Hareketler', 'Gestures')} styles={styles}>
                 <ToggleRow
                     label={l('Kaydırma hareketlerini etkinleştir', 'Enable swipe gestures')}
-                    summary={l('Sağa: cevabı göster/İyi, sola: cevabı göster/Tekrar. Hareketler kapatılırsa gizli cevap düğmeleri yeniden açılır.', 'Right: show answer/Good, left: show answer/Again. Hidden answer buttons are restored if gestures are disabled.')}
+                    summary={l('Kapalıyken çalışma ekranı tüm kaydırmaları normal kart gezinmesine bırakır.', 'When off, the reviewer leaves every swipe to normal card navigation.')}
                     value={Boolean(settings.gesturesEnabled)}
                     onChange={(value) => updateSettings({
                         gesturesEnabled: value,
@@ -661,106 +1299,270 @@ export default function SettingsScreen() {
                     })}
                     styles={styles}
                 />
-                <StepperRow label={l('Kaydırma hassasiyeti', 'Swipe sensitivity')} value={settings.swipeSensitivity ?? 100} display={`${settings.swipeSensitivity ?? 100}%`} step={25} min={25} max={200} onChange={(value) => updateSetting('swipeSensitivity', value)} styles={styles} />
-            </Group>
-            <Group title={l('Klavye', 'Keyboard')} description={l('Bir satırda Değiştir’e basın, ardından fiziksel klavyedeki yeni tuşa basın.', 'Choose Change on a row, then press the new key on the physical keyboard.')} styles={styles}>
-                {Platform.OS !== 'web' && recordingField ? (
-                    <TextInput
-                        autoFocus
-                        value=""
-                        onChangeText={() => undefined}
-                        onKeyPress={(event) => recordNativeHardwareKey(event.nativeEvent.key)}
-                        showSoftInputOnFocus={false}
-                        caretHidden
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        contextMenuHidden
-                        accessible={false}
-                        importantForAccessibility="no-hide-descendants"
-                        style={styles.hardwareKeyboardCapture}
-                    />
+                {settings.gesturesEnabled ? (
+                    <>
+                        <View style={styles.gesturePresetBlock}>
+                            <Text style={styles.preferenceLabel}>{l('Hazır düzenler', 'Presets')}</Text>
+                            <Text style={styles.preferenceSummary}>{l('Bir düzen seçin, ardından yönleri tek tek değiştirebilirsiniz.', 'Choose a preset, then fine-tune each direction.')}</Text>
+                            <View style={styles.choiceRow}>
+                                <TouchableOpacity
+                                    style={styles.choiceButton}
+                                    onPress={() => updateSettings({
+                                        swipeLeftAction: 'tools',
+                                        swipeRightAction: 'decks',
+                                        swipeUpAction: 'off',
+                                        swipeDownAction: 'off',
+                                    })}
+                                >
+                                    <Text style={styles.choiceText}>{l('iPhone için dengeli', 'Balanced for iPhone')}</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.choiceButton}
+                                    onPress={() => updateSettings({
+                                        swipeLeftAction: 'again',
+                                        swipeRightAction: 'good',
+                                        swipeUpAction: 'easy',
+                                        swipeDownAction: 'hard',
+                                    })}
+                                >
+                                    <Text style={styles.choiceText}>{l('Hızlı yanıt', 'Fast answers')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                        {([
+                            ['swipeLeftAction', '←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
+                            ['swipeRightAction', '→', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
+                            ['swipeUpAction', '↑', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
+                            ['swipeDownAction', '↓', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
+                        ] as Array<[GestureSettingKey, string, string, ReviewGestureAction]>).map(([field, icon, label, action]) => (
+                            <GestureActionRow
+                                key={field}
+                                icon={icon}
+                                label={label}
+                                value={gestureActionLabel(action)}
+                                onPress={() => setGesturePickerTarget({ kind: 'swipe', field })}
+                                styles={styles}
+                            />
+                        ))}
+                        <SwipeSensitivitySlider
+                            label={l('Kaydırma hassasiyeti', 'Swipe sensitivity')}
+                            summary={l('Yüksek değer daha kısa hareketleri, düşük değer daha uzun ve belirgin hareketleri algılar.', 'A higher value detects shorter movements; a lower value requires a longer, deliberate swipe.')}
+                            value={settings.swipeSensitivity ?? 100}
+                            onChange={(value) => updateSetting('swipeSensitivity', value)}
+                            styles={styles}
+                        />
+                    </>
                 ) : null}
-                {KEY_ROWS.map((row) => (
-                    <View key={row.field} style={styles.keyRow}>
-                        <Text style={styles.keyLabel}>{l(row.tr, row.en)}</Text>
-                        <View style={styles.keyActions}>
-                            <View style={styles.keyChip}><Text style={styles.keyChipText}>{recordingField === row.field ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(settings.keyBindings[row.field])}</Text></View>
-                            {canRecordHardwareKeys ? (
+            </Group>
+            {Platform.OS !== 'web' ? (
+                <Group title={l('Ekran kontrolü', 'On-screen control')} styles={styles}>
+                    <ToggleRow
+                        label={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
+                        summary={l('Araç menüsüne tek elle erişmek için çalışma ekranında sabit bir düğme gösterir.', 'Shows a fixed reviewer button for one-handed access to the Tools menu.')}
+                        value={Boolean(settings.showToolsOverlayButton)}
+                        onChange={(value) => updateSetting('showToolsOverlayButton', value)}
+                        divider={false}
+                        styles={styles}
+                    />
+                    {settings.showToolsOverlayButton ? (
+                        <View style={styles.overlayControlContainer}>
+                            <View style={styles.overlayControlHeader}>
+                                <Text style={styles.preferenceLabel}>{l('Düğme konumu', 'Button position')}</Text>
+                                <Text style={styles.preferenceSummary}>
+                                    {l('Tek elle çalışma sırasında başparmağınızla en rahat ulaşabileceğiniz tarafı belirleyin.', 'Select the side easiest to reach with your thumb during one-handed review.')}
+                                </Text>
+                            </View>
+
+                            <View style={styles.overlayPositionSegment}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.overlayPositionButton,
+                                        settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonActive,
+                                    ]}
+                                    onPress={() => updateSetting('toolsOverlayPosition', 'left')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: settings.toolsOverlayPosition === 'left' }}
+                                >
+                                    <Text style={[
+                                        styles.overlayPositionButtonText,
+                                        settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonTextActive,
+                                    ]}>
+                                        {l('◧ Sol taraf', '◧ Left side')}
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.overlayPositionButton,
+                                        (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonActive,
+                                    ]}
+                                    onPress={() => updateSetting('toolsOverlayPosition', 'right')}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: (settings.toolsOverlayPosition ?? 'right') === 'right' }}
+                                >
+                                    <Text style={[
+                                        styles.overlayPositionButtonText,
+                                        (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonTextActive,
+                                    ]}>
+                                        {l('◨ Sağ taraf', '◨ Right side')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.overlayPreviewWrap}>
+                                <Pressable
+                                    style={styles.overlayPreviewMock}
+                                    onPress={() => updateSetting('toolsOverlayPosition', settings.toolsOverlayPosition === 'left' ? 'right' : 'left')}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Düğme konumunu değiştir', 'Toggle button position')}
+                                >
+                                    <View style={styles.overlayPreviewTopBar}>
+                                        <View style={styles.overlayPreviewDot} />
+                                        <View style={styles.overlayPreviewHeaderLine} />
+                                        <View style={styles.overlayPreviewDot} />
+                                    </View>
+                                    <View style={styles.overlayPreviewCard}>
+                                        <View style={[styles.overlayPreviewTextLine, { width: '70%' }]} />
+                                        <View style={[styles.overlayPreviewTextLine, { width: '85%' }]} />
+                                        <View style={[styles.overlayPreviewTextLine, { width: '50%' }]} />
+                                    </View>
+                                    <View style={styles.overlayPreviewBottomBar}>
+                                        <View style={styles.overlayPreviewMiniBtn} />
+                                        <View style={styles.overlayPreviewMiniBtn} />
+                                        <View style={styles.overlayPreviewMiniBtn} />
+                                    </View>
+                                    <View
+                                        style={[
+                                            styles.overlayPreviewFloatingBtn,
+                                            settings.toolsOverlayPosition === 'left'
+                                                ? styles.overlayPreviewFloatingBtnLeft
+                                                : styles.overlayPreviewFloatingBtnRight,
+                                        ]}
+                                    >
+                                        <Text style={styles.overlayPreviewFloatingIcon}>⚙</Text>
+                                    </View>
+                                </Pressable>
+                                <Text style={styles.overlayPreviewCaption}>
+                                    {settings.toolsOverlayPosition === 'left'
+                                        ? l('Düğme ekranın sol alt tarafında görünecektir.', 'Button will appear on the bottom-left of the screen.')
+                                        : l('Düğme ekranın sağ alt tarafında görünecektir.', 'Button will appear on the bottom-right of the screen.')}
+                                </Text>
+                            </View>
+                        </View>
+                    ) : null}
+                </Group>
+            ) : null}
+            {isDesktopWeb ? (
+                <Group title={l('Klavye', 'Keyboard')} description={l('Bir satırda Değiştir’e basın, ardından fiziksel klavyedeki yeni tuşa basın.', 'Choose Change on a row, then press the new key on the physical keyboard.')} styles={styles}>
+                    {KEY_ROWS.map((row) => (
+                        <View key={row.field} style={styles.keyRow}>
+                            <Text style={styles.keyLabel}>{l(row.tr, row.en)}</Text>
+                            <View style={styles.keyActions}>
+                                <View style={styles.keyChip}><Text style={styles.keyChipText}>{recordingField === row.field ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(settings.keyBindings[row.field])}</Text></View>
                                 <TouchableOpacity style={styles.smallButton} onPress={() => setRecordingField(recordingField === row.field ? null : row.field)}>
                                     <Text style={styles.smallButtonText}>{recordingField === row.field ? l('İptal', 'Cancel') : l('Değiştir', 'Change')}</Text>
                                 </TouchableOpacity>
-                            ) : null}
+                            </View>
                         </View>
-                    </View>
-                ))}
-                {JSON.stringify(settings.keyBindings) !== JSON.stringify(DEFAULT_KEY_BINDINGS) ? (
-                    <TouchableOpacity style={styles.actionButton} onPress={() => updateSetting('keyBindings', DEFAULT_KEY_BINDINGS)}>
-                        <Text style={styles.actionButtonText}>{l('Kısayolları sıfırla', 'Reset shortcuts')}</Text>
-                    </TouchableOpacity>
-                ) : null}
-            </Group>
+                    ))}
+                    {JSON.stringify(settings.keyBindings) !== JSON.stringify(DEFAULT_KEY_BINDINGS) ? (
+                        <TouchableOpacity style={styles.actionButton} onPress={() => updateSetting('keyBindings', DEFAULT_KEY_BINDINGS)}>
+                            <Text style={styles.actionButtonText}>{l('Kısayolları sıfırla', 'Reset shortcuts')}</Text>
+                        </TouchableOpacity>
+                    ) : null}
+                </Group>
+            ) : null}
         </>
-    );
+    ), [gestureActionLabel, isDesktopWeb, l, recordingField, settings, styles, tapSide, updateSetting, updateSettings]);
 
     const renderAccessibility = () => (
         <>
             <Group title={l('Kart', 'Card')} styles={styles}>
-                <StepperRow label={l('Kart yakınlaştırma', 'Card zoom')} value={settings.cardZoomPercent ?? 100} display={`${settings.cardZoomPercent ?? 100}%`} step={10} min={50} max={200} onChange={(value) => updateSetting('cardZoomPercent', value)} styles={styles} />
-                <StepperRow label={l('Görsel yakınlaştırma', 'Image zoom')} value={settings.imageZoomPercent ?? 100} display={`${settings.imageZoomPercent ?? 100}%`} step={10} min={50} max={200} onChange={(value) => updateSetting('imageZoomPercent', value)} styles={styles} />
+                <StepperRow label={l('Kart yakınlaştırma', 'Card zoom')} value={settings.cardZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('cardZoomPercent', value)} styles={styles} />
+                <StepperRow label={l('Görsel yakınlaştırma', 'Image zoom')} value={settings.imageZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('imageZoomPercent', value)} styles={styles} />
             </Group>
             <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
-                <StepperRow label={l('Yanıt düğmesi boyutu', 'Answer button size')} value={settings.answerButtonScalePercent ?? 100} display={`${settings.answerButtonScalePercent ?? 100}%`} step={10} min={75} max={175} onChange={(value) => updateSetting('answerButtonScalePercent', value)} styles={styles} />
+                <StepperRow label={l('Yanıt düğmesi boyutu', 'Answer button size')} value={settings.answerButtonScalePercent ?? 100} suffix="%" step={10} min={100} max={175} onChange={(value) => updateSetting('answerButtonScalePercent', value)} styles={styles} />
                 <ToggleRow label={l('Büyük yanıt düğmelerini iki satırda göster', 'Show large answer buttons in two rows')} value={Boolean(settings.twoRowAnswerButtons)} onChange={(value) => updateSetting('twoRowAnswerButtons', value)} styles={styles} />
-                <StepperRow label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır.', '0 ms uses a normal tap.')} value={settings.showAnswerLongPressMs ?? 0} display={`${settings.showAnswerLongPressMs ?? 0} ms`} step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
-                <StepperRow label={l('Çift dokunma aralığı', 'Double tap time interval')} summary={l('Yanlışlıkla iki kez yanıtlamayı önler.', 'Prevents accidental double answers.')} value={settings.answerDoubleTapMs ?? 200} display={`${settings.answerDoubleTapMs ?? 200} ms`} step={50} min={0} max={1000} onChange={(value) => updateSetting('answerDoubleTapMs', value)} styles={styles} />
+                <StepperRow label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır.', '0 ms uses a normal tap.')} value={settings.showAnswerLongPressMs ?? 0} suffix="ms" step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
+                <StepperRow label={l('Çift dokunma aralığı', 'Double tap time interval')} summary={l('Yanlışlıkla iki kez yanıtlamayı önler.', 'Prevents accidental double answers.')} value={settings.answerDoubleTapMs ?? 200} suffix="ms" step={50} min={0} max={1000} onChange={(value) => updateSetting('answerDoubleTapMs', value)} styles={styles} />
             </Group>
             <Group title={l('Kart tarayıcısı', 'Card browser')} styles={styles}>
-                <StepperRow label={l('Yazı ölçeği', 'Font scaling')} value={settings.browserFontScalePercent ?? 100} display={`${settings.browserFontScalePercent ?? 100}%`} step={10} min={75} max={175} onChange={(value) => updateSetting('browserFontScalePercent', value)} styles={styles} />
+                <StepperRow label={l('Yazı ölçeği', 'Font scaling')} value={settings.browserFontScalePercent ?? 100} suffix="%" step={10} min={75} max={175} onChange={(value) => updateSetting('browserFontScalePercent', value)} styles={styles} />
             </Group>
         </>
     );
 
-    const renderBackups = () => (
+    const renderData = useCallback(() => (
         <>
-            <Group title={l('Otomatik yedekleme', 'Automatic backups')} description={l('Uygulama açıkken haftada bir koleksiyon yedeği oluşturulur. Geri yüklemeden önce ayrıca geri alınabilir bir güvenlik kopyası alınır.', 'A collection backup is created once a week while the app is active. A recoverable safety copy is also made before every restore.')} styles={styles}>
-                <ToggleRow label={l('Otomatik yedeklemeyi etkinleştir', 'Enable automatic backups')} value={settings.autoBackupEnabled !== false} onChange={(value) => updateSetting('autoBackupEnabled', value)} styles={styles} />
+            <Group title={l('Yedekleme', 'Backup')} styles={styles}>
+                <ToggleRow
+                    label={l('Otomatik yedekleme', 'Automatic backup')}
+                    summary={l('Haftada bir', 'Weekly')}
+                    value={settings.autoBackupEnabled !== false}
+                    onChange={(value) => updateSetting('autoBackupEnabled', value)}
+                    divider={false}
+                    styles={styles}
+                />
+                <DataActionRow
+                    icon="↻"
+                    label={l('Yedekleri yönet', 'Manage backups')}
+                    detail={l('Görüntüle veya geri yükle', 'View or restore')}
+                    onPress={() => router.push('/backups')}
+                    styles={styles}
+                />
             </Group>
-            <Group title={l('Saklama süresi', 'Lifetime')} styles={styles}>
-                <Text style={styles.groupDescription}>{l('En yeni 7 koleksiyon yedeği saklanır; daha eski olanlar otomatik silinir.', 'The newest 7 collection backups are kept; older copies are removed automatically.')}</Text>
-                <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/backups')}>
-                    <Text style={styles.actionButtonText}>{l('Yedekleri görüntüle ve geri yükle', 'View and restore backups')} ›</Text>
-                </TouchableOpacity>
+
+            <Group title={l('İçe ve dışa aktar', 'Import and export')} styles={styles}>
+                <DataActionRow icon="↑" label={l('Verileri dışa aktar', 'Export data')} onPress={handleExport} divider={false} styles={styles} />
+                <DataActionRow icon="↓" label={l('Deste ve verileri içe aktar', 'Import decks and data')} onPress={handleImport} styles={styles} />
+            </Group>
+
+            <Group title={l('Bakım', 'Maintenance')} styles={styles}>
+                <DataActionRow
+                    icon="✓"
+                    label={l('Veritabanını kontrol et', 'Check database')}
+                    detail={l('Salt okunur bütünlük denetimi', 'Read-only integrity audit')}
+                    onPress={handleCheckDatabase}
+                    disabled={maintenanceAction !== null}
+                    divider={false}
+                    styles={styles}
+                />
+                <DataActionRow
+                    icon="⌁"
+                    label={maintenanceAction === 'optimize' ? l('Optimize ediliyor…', 'Optimizing…') : l('Onar ve optimize et', 'Repair and optimize')}
+                    detail={l('Önce denetler ve onaylatır; yedek alıp bozuk satırları onarır ve indeksleri yeniler', 'Audits and confirms first, then backs up, repairs broken rows and refreshes indexes')}
+                    onPress={handleOptimizeDatabase}
+                    disabled={maintenanceAction !== null}
+                    styles={styles}
+                />
+                <DataActionRow
+                    icon="↺"
+                    label={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('İlerlemeyi sıfırla', 'Reset progress')}
+                    onPress={handleResetProgress}
+                    disabled={maintenanceAction !== null}
+                    danger
+                    styles={styles}
+                />
             </Group>
         </>
-    );
-
-    const renderData = () => (
-        <Group title={l('Koleksiyon', 'Collection')} styles={styles}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleExport}><Text style={styles.actionButtonText}>{l('Verileri dışa aktar', 'Export data')}</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleImport}><Text style={styles.actionButtonText}>{l('Verileri içe aktar', 'Import data')}</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleCheckDatabase}><Text style={styles.actionButtonText}>{l('Veritabanını kontrol et', 'Check database')}</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.dangerButton]} onPress={handleResetProgress}><Text style={[styles.actionButtonText, styles.dangerText]}>{l('İlerlemeyi sıfırla', 'Reset progress')}</Text></TouchableOpacity>
-        </Group>
-    );
+    ), [handleCheckDatabase, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
 
     const renderAbout = () => (
-        <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki uyumlu yerel çalışma uygulaması`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • Anki-compatible local study app`)} styles={styles}>
-            <TouchableOpacity style={styles.linkRow} onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.linkText}>{l('Gizlilik Politikası', 'Privacy Policy')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
+        <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paket desteğine sahip yerel öncelikli kart uygulaması`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • Local-first flashcard app with Anki package support`)} styles={styles}>
+            <TouchableOpacity style={styles.linkRow} onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.linkText}>{l('Gizlilik politikası', 'Privacy Policy')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
             <TouchableOpacity style={styles.linkRow} onPress={() => Linking.openURL(SUPPORT_URL)}><Text style={styles.linkText}>{l('Destek', 'Support')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
         </Group>
     );
 
     const renderActiveSection = () => {
         switch (activeSection) {
-            case 'general': return renderGeneral();
+            case 'general': return <GeneralSettingsSection render={renderGeneral} />;
             case 'newStudy': return renderNewStudy();
-            case 'reviewing': return renderReviewing();
+            case 'reviewing': return <ReviewingSettingsSection render={renderReviewing} />;
             case 'notifications': return renderNotifications();
-            case 'appearance': return renderAppearance();
-            case 'controls': return renderControls();
+            case 'controls': return <ControlsSettingsSection render={renderControls} />;
             case 'accessibility': return renderAccessibility();
-            case 'backups': return renderBackups();
-            case 'data': return renderData();
+            case 'data': return <DataManagementSettingsSection render={renderData} />;
             case 'about': return renderAbout();
             default: return null;
         }
@@ -771,6 +1573,7 @@ export default function SettingsScreen() {
     }
 
     return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <SafeAreaView style={styles.container}>
             <View style={styles.screenHeader}>
                 <TouchableOpacity
@@ -784,9 +1587,35 @@ export default function SettingsScreen() {
                 <Text style={styles.screenTitle} numberOfLines={1}>
                     {activeCategory?.title ?? l('Ayarlar', 'Settings')}
                 </Text>
-                {saved ? <Text style={styles.savedText}>✓ {l('Kaydedildi', 'Saved')}</Text> : <View style={styles.headerSpacer} />}
+                {activeSection || isDirty ? (
+                    <TouchableOpacity
+                        style={[
+                            styles.headerSaveButton,
+                            saved && styles.headerSaveButtonSaved,
+                            !isDirty && !saved && styles.headerSaveButtonDisabled,
+                        ]}
+                        onPress={handleSaveSettings}
+                        disabled={!isDirty && !saved}
+                        accessibilityRole="button"
+                        accessibilityLabel={saved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
+                    >
+                        <Text style={[styles.headerSaveText, saved && styles.headerSaveTextSaved]}>
+                            {saved ? `✓ ${l('Kaydedildi', 'Saved')}` : l('Kaydet', 'Save')}
+                        </Text>
+                    </TouchableOpacity>
+                ) : <View style={styles.headerSpacer} />}
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} automaticallyAdjustContentInsets>
+            <ScrollView
+                key={activeSection ?? 'settings-root'}
+                ref={sectionScrollRef}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                contentInsetAdjustmentBehavior="never"
+                automaticallyAdjustContentInsets={false}
+                automaticallyAdjustKeyboardInsets={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            >
                 {activeSection && activeCategory ? (
                     renderActiveSection()
                 ) : (
@@ -800,7 +1629,7 @@ export default function SettingsScreen() {
                                 <TouchableOpacity
                                     key={category.id}
                                     style={[styles.categoryRow, index > 0 && styles.categoryDivider]}
-                                    onPress={() => setActiveSection(category.id)}
+                                    onPress={() => openSection(category.id)}
                                     accessibilityRole="button"
                                 >
                                     <Text style={styles.categoryIcon}>{category.icon}</Text>
@@ -816,14 +1645,261 @@ export default function SettingsScreen() {
                     </>
                 )}
             </ScrollView>
+            {controlsHelpVisible ? <Modal
+                visible={controlsHelpVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setControlsHelpVisible(false)}
+                statusBarTranslucent
+            >
+                <View style={styles.controlsHelpOverlay}>
+                    <Pressable
+                        style={StyleSheet.absoluteFill}
+                        onPress={() => setControlsHelpVisible(false)}
+                        accessibilityLabel={l('Kontroller yardımını kapat', 'Close controls help')}
+                    />
+                    <View style={styles.controlsHelpCard} accessibilityViewIsModal>
+                        <View style={styles.controlsHelpHeader}>
+                            <View style={styles.controlsHelpHeaderCopy}>
+                                <Text style={styles.controlsHelpEyebrow}>{l('ÇALIŞMA KONTROLLERİ', 'REVIEWER CONTROLS')}</Text>
+                                <Text style={styles.controlsHelpTitle}>{l('Dokunma ve kaydırmayı özelleştirin', 'Customize taps and swipes')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.controlsHelpClose}
+                                onPress={() => setControlsHelpVisible(false)}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Yardımı kapat', 'Close help')}
+                            >
+                                <Text style={styles.controlsHelpCloseText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView
+                            style={styles.controlsHelpScroll}
+                            contentContainerStyle={styles.controlsHelpContent}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            <Text style={styles.controlsHelpIntro}>
+                                {l(
+                                    'Kartın dokuz bölgesini ve dört kaydırma yönünü en sık kullandığınız işlemlere bağlayabilirsiniz. Seçimleriniz yalnızca çalışma ekranında geçerlidir.',
+                                    'Connect the card’s nine tap zones and four swipe directions to the actions you use most. Your choices apply only while studying.',
+                                )}
+                            </Text>
+
+                            <View style={styles.controlsHelpPanel}>
+                                <Text style={styles.controlsHelpPanelTitle}>{l('9 noktalı dokunma', '9-point touch')}</Text>
+                                <Text style={styles.controlsHelpPanelText}>
+                                    {l(
+                                        'Soru tarafında varsayılan olarak her bölge yanıtı gösterir. Yanıt tarafında sol sütun Tekrar, orta sütun kapalı, sağ sütun İyi eylemini uygular. Bağlantılar, form alanları ve ses denetimleri kendi dokunmalarını almaya devam eder.',
+                                        'On the question side, every zone shows the answer by default. On the answer side, the left column answers Again, the center column is off, and the right column answers Good. Links, form fields, and audio controls continue to receive their own taps.',
+                                    )}
+                                </Text>
+                            </View>
+
+                            <View style={styles.controlsHelpStatus}>
+                                <View style={[styles.controlsHelpStatusDot, (settings.gesturesEnabled || settings.ninePointTouchEnabled !== false) && styles.controlsHelpStatusDotEnabled]} />
+                                <Text style={styles.controlsHelpStatusText}>
+                                    {l(
+                                        `9 noktalı dokunma ${settings.ninePointTouchEnabled !== false ? 'açık' : 'kapalı'} · Kaydırma ${settings.gesturesEnabled ? 'açık' : 'kapalı'}`,
+                                        `9-point touch ${settings.ninePointTouchEnabled !== false ? 'on' : 'off'} · Swipes ${settings.gesturesEnabled ? 'on' : 'off'}`,
+                                    )}
+                                </Text>
+                            </View>
+
+                            <Text style={styles.controlsHelpSectionTitle}>{l('Şu anki yönleriniz', 'Your current directions')}</Text>
+                            <View style={styles.controlsHelpDirectionList}>
+                                {([
+                                    ['←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
+                                    ['→', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
+                                    ['↑', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
+                                    ['↓', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
+                                ] as Array<[string, string, ReviewGestureAction]>).map(([icon, label, action]) => (
+                                    <View key={label} style={styles.controlsHelpDirectionRow}>
+                                        <View style={styles.controlsHelpDirectionIcon}>
+                                            <Text style={styles.controlsHelpDirectionIconText}>{icon}</Text>
+                                        </View>
+                                        <View style={styles.controlsHelpDirectionCopy}>
+                                            <Text style={styles.controlsHelpDirectionLabel}>{label}</Text>
+                                            <Text style={styles.controlsHelpDirectionValue}>{gestureActionLabel(action)}</Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
+
+                            <View style={styles.controlsHelpPanel}>
+                                <Text style={styles.controlsHelpPanelTitle}>{l('Yanıt hareketleri nasıl çalışır?', 'How do answer gestures work?')}</Text>
+                                <Text style={styles.controlsHelpPanelText}>
+                                    {l(
+                                        'Kartın sorusu açıksa bir yanıt eylemi önce cevabı gösterir. Cevap açıkken aynı dokunma veya kaydırma seçtiğiniz Tekrar, Zor, İyi ya da Kolay yanıtını uygular. Böylece görülmemiş bir cevap yanlışlıkla puanlanmaz.',
+                                        'When the question is showing, an answer action reveals it first. Once the answer is visible, the same tap or swipe applies your selected Again, Hard, Good, or Easy rating. This prevents an unseen answer from being graded accidentally.',
+                                    )}
+                                </Text>
+                            </View>
+
+                            <View style={styles.controlsHelpPanel}>
+                                <Text style={styles.controlsHelpPanelTitle}>{l('Hassasiyet ayarı', 'Sensitivity')}</Text>
+                                <Text style={styles.controlsHelpPanelText}>
+                                    {l(
+                                        `Geçerli değeriniz %${settings.swipeSensitivity ?? 100}. Yüksek değer kısa hareketleri daha kolay algılar; düşük değer daha uzun ve belirgin bir kaydırma ister. Başlangıç için %100 dengeli bir seçimdir.`,
+                                        `Your current value is ${settings.swipeSensitivity ?? 100}%. A higher value recognizes shorter movements; a lower value requires a longer, more deliberate swipe. 100% is a balanced starting point.`,
+                                    )}
+                                </Text>
+                            </View>
+
+                            <View style={styles.controlsHelpPanel}>
+                                <Text style={styles.controlsHelpPanelTitle}>{l('Hazır düzenler', 'Presets')}</Text>
+                                <View style={styles.controlsHelpBulletRow}>
+                                    <Text style={styles.controlsHelpBullet}>•</Text>
+                                    <Text style={styles.controlsHelpPanelText}><Text style={styles.controlsHelpStrong}>{l('iPhone için dengeli:', 'Balanced for iPhone:')}</Text> {l('sol Araçlar, sağ Desteler; dikey hareketler kapalı.', 'left opens Tools, right returns to Decks; vertical gestures are off.')}</Text>
+                                </View>
+                                <View style={styles.controlsHelpBulletRow}>
+                                    <Text style={styles.controlsHelpBullet}>•</Text>
+                                    <Text style={styles.controlsHelpPanelText}><Text style={styles.controlsHelpStrong}>{l('Hızlı yanıt:', 'Fast answers:')}</Text> {l('sol Tekrar, sağ İyi, yukarı Kolay, aşağı Zor.', 'left Again, right Good, up Easy and down Hard.')}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.controlsHelpNotice}>
+                                <Text style={styles.controlsHelpNoticeTitle}>{l('Güvenli kullanım', 'Safe operation')}</Text>
+                                <Text style={styles.controlsHelpNoticeText}>
+                                    {l(
+                                        'Kaydırmayı kapatırsanız kart hareketleri normal gezinmeye bırakılır. Yanıt düğmelerini gizlemek için 9 noktalı dokunma veya kaydırmadan en az biri etkin olmalıdır.',
+                                        'When swipes are off, card movements are left to normal navigation. Before hiding answer buttons, keep either 9-point touch or swipes enabled.',
+                                    )}
+                                </Text>
+                            </View>
+                        </ScrollView>
+
+                        <View style={styles.controlsHelpFooter}>
+                            <TouchableOpacity
+                                style={styles.controlsHelpDone}
+                                onPress={() => setControlsHelpVisible(false)}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.controlsHelpDoneText}>{l('Anladım', 'Got it')}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal> : null}
+            {gesturePickerTarget !== null ? <Modal
+                visible={gesturePickerTarget !== null}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setGesturePickerTarget(null)}
+            >
+                <View style={styles.themeModalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setGesturePickerTarget(null)} />
+                    <View style={[styles.themeModalCard, styles.gesturePickerCard]} accessibilityViewIsModal>
+                        <View style={styles.gesturePickerHeader}>
+                            <Text style={styles.themeModalTitle}>
+                                {gesturePickerTarget?.kind === 'tap'
+                                    ? l('Dokunma eylemi', 'Tap action')
+                                    : l('Kaydırma eylemi', 'Swipe action')}
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.gesturePickerClose}
+                                onPress={() => setGesturePickerTarget(null)}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Eylem seçiciyi kapat', 'Close action picker')}
+                            >
+                                <Text style={styles.gesturePickerCloseText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {gestureActionOptions.map((option) => {
+                                let selected = false;
+                                if (gesturePickerTarget?.kind === 'swipe') {
+                                    selected = (settings[gesturePickerTarget.field] ?? 'off') === option.value;
+                                } else if (gesturePickerTarget?.kind === 'tap') {
+                                    const actions = gesturePickerTarget.side === 'question'
+                                        ? settings.questionTapActions ?? DEFAULT_QUESTION_TAP_ACTIONS
+                                        : settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS;
+                                    selected = actions[gesturePickerTarget.zone] === option.value;
+                                }
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[styles.themeModalOption, selected && styles.themeModalOptionActive]}
+                                        onPress={() => {
+                                            if (gesturePickerTarget?.kind === 'swipe') {
+                                                updateSetting(gesturePickerTarget.field, option.value);
+                                            } else if (gesturePickerTarget?.kind === 'tap') {
+                                                const field = gesturePickerTarget.side === 'question'
+                                                    ? 'questionTapActions'
+                                                    : 'answerTapActions';
+                                                const fallback = gesturePickerTarget.side === 'question'
+                                                    ? DEFAULT_QUESTION_TAP_ACTIONS
+                                                    : DEFAULT_ANSWER_TAP_ACTIONS;
+                                                updateSetting(field, {
+                                                    ...(settings[field] ?? fallback),
+                                                    [gesturePickerTarget.zone]: option.value,
+                                                });
+                                            }
+                                            setGesturePickerTarget(null);
+                                        }}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ checked: selected }}
+                                    >
+                                        <Text style={[styles.themeModalOptionText, selected && styles.themeModalOptionTextActive]}>{option.label}</Text>
+                                        {selected ? <Text style={styles.themeModalCheck}>✓</Text> : null}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal> : null}
+            {notificationThresholdPickerVisible ? <Modal
+                visible={notificationThresholdPickerVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setNotificationThresholdPickerVisible(false)}
+            >
+                <View style={styles.themeModalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setNotificationThresholdPickerVisible(false)} />
+                    <View style={[styles.themeModalCard, styles.gesturePickerCard]} accessibilityViewIsModal>
+                        <View style={styles.gesturePickerHeader}>
+                            <Text style={styles.themeModalTitle}>{l('Şu durumda bildir', 'Notify when')}</Text>
+                            <TouchableOpacity
+                                style={styles.gesturePickerClose}
+                                onPress={() => setNotificationThresholdPickerVisible(false)}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Bildirim koşulu seçicisini kapat', 'Close notification condition picker')}
+                            >
+                                <Text style={styles.gesturePickerCloseText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {notificationThresholdOptions.map((option) => {
+                                const selected = option.value === null
+                                    ? !settings.studyNotificationsEnabled
+                                    : settings.studyNotificationsEnabled
+                                        && normalizeStudyNotificationThreshold(settings.studyNotificationThreshold) === option.value;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value ?? 'never'}
+                                        style={[styles.themeModalOption, selected && styles.themeModalOptionActive]}
+                                        onPress={() => { void handleStudyNotificationPolicySelect(option.value); }}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ checked: selected }}
+                                    >
+                                        <Text style={[styles.themeModalOptionText, selected && styles.themeModalOptionTextActive]}>{option.label}</Text>
+                                        {selected ? <Text style={styles.themeModalCheck}>✓</Text> : null}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal> : null}
         </SafeAreaView>
+        </TouchableWithoutFeedback>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
-        hardwareKeyboardCapture: { position: 'absolute', width: 1, height: 1, left: -10, bottom: 0, opacity: 0 },
         loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
         loadingIcon: { fontSize: 48 },
         screenHeader: {
@@ -837,8 +1913,12 @@ function createStyles(colors: ColorScheme) {
         },
         screenTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
         headerSpacer: { width: 72 },
+        headerSaveButton: { minWidth: 78, minHeight: 40, paddingHorizontal: Spacing.sm, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent },
+        headerSaveButtonSaved: { backgroundColor: colors.btnGoodBg, borderWidth: 1, borderColor: colors.btnGood },
+        headerSaveButtonDisabled: { opacity: 0.45 },
+        headerSaveText: { fontSize: FontSize.sm, fontWeight: '800', color: colors.white },
+        headerSaveTextSaved: { color: colors.btnGood },
         scrollContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
-        savedText: { fontSize: FontSize.xs, fontWeight: '700', color: colors.btnGood },
         searchBox: { height: 50, flexDirection: 'row', alignItems: 'center', borderRadius: BorderRadius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, paddingHorizontal: Spacing.lg, ...Shadows.sm },
         searchIcon: { fontSize: 25, color: colors.textSecondary, marginRight: Spacing.sm, transform: [{ rotate: '-20deg' }] },
         searchInput: { flex: 1, fontSize: FontSize.lg, color: colors.textPrimary, paddingVertical: 0 },
@@ -854,36 +1934,246 @@ function createStyles(colors: ColorScheme) {
         backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
         backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
         group: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, ...Shadows.sm },
-        groupTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
+        groupTitleRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
+        groupTitle: { flex: 1, fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
+        groupHelpButton: { width: 32, height: 32, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
+        groupHelpText: { fontSize: FontSize.md, color: colors.accent, fontWeight: '900' },
         groupDescription: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 19, marginBottom: Spacing.sm },
+        controlsHelpOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, backgroundColor: 'rgba(9, 20, 17, 0.56)' },
+        controlsHelpCard: { width: '100%', maxWidth: 540, maxHeight: '86%', overflow: 'hidden', borderRadius: BorderRadius.xl, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, ...Shadows.lg },
+        controlsHelpHeader: { flexDirection: 'row', alignItems: 'flex-start', padding: Spacing.lg, paddingBottom: Spacing.md, backgroundColor: colors.accentLight, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+        controlsHelpHeaderCopy: { flex: 1, minWidth: 0, paddingRight: Spacing.sm },
+        controlsHelpEyebrow: { marginBottom: 5, fontSize: 10, lineHeight: 14, letterSpacing: 1.2, fontWeight: '900', color: colors.accent },
+        controlsHelpTitle: { fontSize: FontSize.xl, lineHeight: 26, fontWeight: '800', color: colors.textPrimary },
+        controlsHelpClose: { width: 40, height: 40, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgCard },
+        controlsHelpCloseText: { fontSize: 29, lineHeight: 31, fontWeight: '300', color: colors.textSecondary },
+        controlsHelpScroll: { flexShrink: 1 },
+        controlsHelpContent: { padding: Spacing.lg, gap: Spacing.md },
+        controlsHelpIntro: { fontSize: FontSize.md, lineHeight: 22, color: colors.textSecondary },
+        controlsHelpStatus: { minHeight: 42, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
+        controlsHelpStatusDot: { width: 10, height: 10, marginRight: Spacing.sm, borderRadius: 5, backgroundColor: colors.textMuted },
+        controlsHelpStatusDotEnabled: { backgroundColor: colors.btnGood },
+        controlsHelpStatusText: { flex: 1, fontSize: FontSize.sm, lineHeight: 19, fontWeight: '700', color: colors.textPrimary },
+        controlsHelpSectionTitle: { marginTop: Spacing.xs, fontSize: FontSize.md, lineHeight: 21, fontWeight: '800', color: colors.textPrimary },
+        controlsHelpDirectionList: { overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
+        controlsHelpDirectionRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight },
+        controlsHelpDirectionIcon: { width: 34, height: 34, marginRight: Spacing.md, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
+        controlsHelpDirectionIconText: { fontSize: FontSize.lg, lineHeight: 22, fontWeight: '900', color: colors.accent },
+        controlsHelpDirectionCopy: { flex: 1, paddingVertical: Spacing.sm },
+        controlsHelpDirectionLabel: { fontSize: FontSize.sm, lineHeight: 18, fontWeight: '700', color: colors.textPrimary },
+        controlsHelpDirectionValue: { marginTop: 2, fontSize: FontSize.sm, lineHeight: 18, color: colors.accent },
+        controlsHelpPanel: { padding: Spacing.md, borderWidth: 1, borderColor: colors.borderLight, borderRadius: BorderRadius.md, backgroundColor: colors.bgCard },
+        controlsHelpPanelTitle: { marginBottom: 5, fontSize: FontSize.md, lineHeight: 21, fontWeight: '800', color: colors.textPrimary },
+        controlsHelpPanelText: { flex: 1, fontSize: FontSize.sm, lineHeight: 20, color: colors.textSecondary },
+        controlsHelpBulletRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: Spacing.xs },
+        controlsHelpBullet: { width: 18, fontSize: FontSize.md, lineHeight: 20, fontWeight: '900', color: colors.accent },
+        controlsHelpStrong: { fontWeight: '800', color: colors.textPrimary },
+        controlsHelpNotice: { padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: colors.accentLight },
+        controlsHelpNoticeTitle: { marginBottom: 4, fontSize: FontSize.sm, lineHeight: 19, fontWeight: '900', color: colors.accent },
+        controlsHelpNoticeText: { fontSize: FontSize.sm, lineHeight: 20, color: colors.textSecondary },
+        controlsHelpFooter: { padding: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.bgCard },
+        controlsHelpDone: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.md, backgroundColor: colors.accent },
+        controlsHelpDoneText: { fontSize: FontSize.md, fontWeight: '800', color: colors.white },
+        dataActionRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
+        dataActionRowNoDivider: { borderTopWidth: 0 },
+        dataActionIcon: { width: 36, height: 36, marginRight: Spacing.md, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
+        dataActionIconDanger: { backgroundColor: colors.btnAgainBg },
+        dataActionIconText: { fontSize: FontSize.lg, lineHeight: 22, fontWeight: '800', color: colors.accent },
+        dataActionIconTextDanger: { color: colors.btnAgain },
+        dataActionCopy: { flex: 1, paddingVertical: Spacing.sm },
+        dataActionLabel: { fontSize: FontSize.md, lineHeight: 20, fontWeight: '700', color: colors.textPrimary },
+        dataActionDetail: { marginTop: 2, fontSize: FontSize.sm, lineHeight: 18, color: colors.textMuted },
+        dataActionArrow: { paddingLeft: Spacing.sm, fontSize: 27, lineHeight: 29, fontWeight: '300', color: colors.textMuted },
         preferenceRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.sm },
+        preferenceRowNoDivider: { borderTopWidth: 0 },
         preferenceCopy: { flex: 1, paddingRight: Spacing.md },
         preferenceBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.md },
         preferenceLabel: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary, lineHeight: 20 },
         preferenceSummary: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 18, marginTop: 3 },
-        choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.md },
-        choiceButton: { minHeight: 42, paddingHorizontal: Spacing.md, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary },
+        appearanceValueArrow: { fontSize: 26, color: colors.textMuted, paddingLeft: Spacing.sm },
+        themeChoiceRow: { flexDirection: 'row', gap: Spacing.sm, paddingTop: Spacing.sm, paddingBottom: Spacing.xs },
+        themeChoiceButton: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary },
+        themeChoiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
+        themeChoiceText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textSecondary },
+        themeChoiceTextActive: { color: colors.accent, fontWeight: '800' },
+        overlayControlContainer: {
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.borderLight,
+            paddingTop: Spacing.md,
+            marginTop: Spacing.xs,
+        },
+        overlayControlHeader: {
+            marginBottom: Spacing.md,
+        },
+        overlayPositionSegment: {
+            flexDirection: 'row',
+            gap: Spacing.sm,
+            marginBottom: Spacing.md,
+        },
+        overlayPositionButton: {
+            flex: 1,
+            minHeight: 46,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: BorderRadius.md,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.bgSecondary,
+        },
+        overlayPositionButtonActive: {
+            borderColor: colors.accent,
+            backgroundColor: colors.accentLight,
+        },
+        overlayPositionButtonText: {
+            fontSize: FontSize.md,
+            fontWeight: '600',
+            color: colors.textSecondary,
+        },
+        overlayPositionButtonTextActive: {
+            color: colors.accent,
+            fontWeight: '800',
+        },
+        overlayPreviewWrap: {
+            alignItems: 'center',
+            paddingVertical: Spacing.sm,
+            borderRadius: BorderRadius.md,
+            backgroundColor: colors.bgSecondary,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+            padding: Spacing.md,
+        },
+        overlayPreviewMock: {
+            width: 170,
+            height: 125,
+            borderRadius: 14,
+            borderWidth: 1.5,
+            borderColor: colors.border,
+            backgroundColor: colors.bgCard,
+            overflow: 'hidden',
+            position: 'relative',
+            padding: 8,
+            justifyContent: 'space-between',
+            ...Shadows.sm,
+        },
+        overlayPreviewTopBar: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 2,
+            opacity: 0.5,
+        },
+        overlayPreviewDot: {
+            width: 5,
+            height: 5,
+            borderRadius: 2.5,
+            backgroundColor: colors.textMuted,
+        },
+        overlayPreviewHeaderLine: {
+            width: 44,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: colors.textMuted,
+        },
+        overlayPreviewCard: {
+            backgroundColor: colors.bgSecondary,
+            borderRadius: 8,
+            padding: 8,
+            gap: 5,
+            marginVertical: 4,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.borderLight,
+        },
+        overlayPreviewTextLine: {
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: colors.border,
+        },
+        overlayPreviewBottomBar: {
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: 4,
+            opacity: 0.45,
+        },
+        overlayPreviewMiniBtn: {
+            width: 28,
+            height: 8,
+            borderRadius: 3,
+            backgroundColor: colors.textMuted,
+        },
+        overlayPreviewFloatingBtn: {
+            position: 'absolute',
+            bottom: 12,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            backgroundColor: colors.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...Shadows.sm,
+            borderWidth: 2,
+            borderColor: colors.bgCard,
+        },
+        overlayPreviewFloatingBtnLeft: {
+            left: 10,
+        },
+        overlayPreviewFloatingBtnRight: {
+            right: 10,
+        },
+        overlayPreviewFloatingIcon: {
+            fontSize: 12,
+            color: colors.white,
+            lineHeight: 14,
+        },
+        overlayPreviewCaption: {
+            marginTop: Spacing.sm,
+            fontSize: FontSize.xs,
+            color: colors.textMuted,
+            textAlign: 'center',
+        },
+        choiceRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
+        choiceButton: { flex: 1, minWidth: 54, minHeight: 42, paddingHorizontal: Spacing.xs, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary },
         choiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        choiceText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-        choiceTextActive: { color: colors.accent, fontWeight: '800' },
+        choiceText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
+        choiceTextActive: { color: colors.accent, fontWeight: '800', textAlign: 'center' },
+        gesturePresetBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
+        tapMappingBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingBottom: Spacing.md },
+        tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
+        tapGridCell: { width: '33.3333%', minHeight: 78, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: Spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight },
+        tapGridZone: { fontSize: 11, lineHeight: 15, fontWeight: '800', color: colors.textSecondary, textAlign: 'center' },
+        tapGridAction: { marginTop: 4, fontSize: 11, lineHeight: 15, fontWeight: '700', color: colors.accent, textAlign: 'center' },
+        gestureActionRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.sm },
+        gestureDirectionIcon: { width: 38, height: 38, marginRight: Spacing.md, borderRadius: BorderRadius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight },
+        gestureDirectionText: { fontSize: FontSize.xl, color: colors.accent, fontWeight: '800' },
+        gestureActionValue: { marginTop: 2, fontSize: FontSize.sm, lineHeight: 18, color: colors.accent, fontWeight: '700' },
         stepperRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.md },
         stepButton: { width: 48, height: 44, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         stepButtonText: { fontSize: FontSize.xl, color: colors.textPrimary, fontWeight: '700' },
-        stepValue: { minWidth: 82, textAlign: 'center', fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
-        notificationTimeRow: { minHeight: 48, alignItems: 'flex-start', justifyContent: 'center', marginTop: Spacing.sm },
-        notificationStatusRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.sm },
-        notificationStatusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.textMuted },
-        notificationStatusDotActive: { backgroundColor: colors.btnGood },
-        badgePreviewRow: { minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: Spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.md },
-        badgePreviewIcon: { width: 58, height: 58, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentLight, borderWidth: 1, borderColor: colors.border, position: 'relative' },
-        badgePreviewMark: { fontSize: 28 },
-        badgePreviewCount: { position: 'absolute', top: -7, right: -9, minWidth: 24, height: 24, paddingHorizontal: 5, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.btnAgain, borderWidth: 2, borderColor: colors.bgCard },
-        badgePreviewCountText: { color: colors.white, fontSize: 10, fontWeight: '900' },
+        stepValueInput: { flex: 1, maxWidth: 148 },
+        swipeSensitivityBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
+        swipeSensitivityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
+        swipeSensitivityValue: { fontSize: FontSize.sm, fontWeight: '800', fontVariant: ['tabular-nums'] as any, color: colors.accent },
+        swipeSliderTouchTarget: { height: 46, justifyContent: 'center', marginTop: Spacing.sm, paddingHorizontal: 10 },
+        swipeSliderTrack: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.border, overflow: 'visible' },
+        swipeSliderFill: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.accent },
+        swipeSliderThumb: { position: 'absolute', top: -7, width: 20, height: 20, marginLeft: -10, borderRadius: 10, borderWidth: 2, borderColor: colors.bgCard, backgroundColor: colors.accent, ...Shadows.sm },
+        notificationTimeRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginTop: Spacing.sm, gap: Spacing.xs },
+        timeSeparator: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
         outlineButton: { minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         outlineButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+        themeModalOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl, backgroundColor: 'rgba(0,0,0,0.42)' },
+        themeModalCard: { width: '100%', maxWidth: 420, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, padding: Spacing.lg, ...Shadows.lg },
+        themeModalTitle: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary, marginBottom: Spacing.sm },
+        themeModalOption: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
+        themeModalOptionActive: { backgroundColor: colors.accentLight },
+        themeModalOptionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
+        themeModalOptionTextActive: { color: colors.accent, fontWeight: '800' },
+        themeModalCheck: { fontSize: FontSize.lg, color: colors.accent, fontWeight: '900' },
+        gesturePickerCard: { maxHeight: '82%', paddingBottom: Spacing.sm },
+        gesturePickerHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center' },
+        gesturePickerClose: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+        gesturePickerCloseText: { fontSize: 30, lineHeight: 32, color: colors.textMuted, fontWeight: '300' },
         actionButton: { minHeight: 48, marginTop: Spacing.sm, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md },
         actionButtonText: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '600', textAlign: 'center' },
-        dangerButton: { borderColor: '#e8c4c0' },
         dangerText: { color: colors.btnAgain },
         keyRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, gap: Spacing.sm },
         keyLabel: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },

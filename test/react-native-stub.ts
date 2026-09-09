@@ -11,3 +11,13 @@ export const Platform = {
         return spec.ios ?? spec.native ?? spec.default;
     },
 };
+
+export const Linking = {
+    openSettings: async (): Promise<void> => {},
+    openURL: async (_url: string): Promise<boolean> => true,
+    canOpenURL: async (_url: string): Promise<boolean> => true,
+};
+
+export const Alert = {
+    alert: (_title: string, _message?: string, _buttons?: any[], _options?: any): void => {},
+};
