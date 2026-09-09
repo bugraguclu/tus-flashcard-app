@@ -66,6 +66,34 @@ describe('deck options help sheets', () => {
         expect(missing).toEqual([]);
     });
 
+    // Upstream hides its SM-2 options once FSRS is on. The set hidden here is the set
+    // `lib/fsrsScheduler.ts` ignores, and the two halves of that sentence are tested in two
+    // places: `lib/fsrsScheduler.test.ts` proves moving these settings changes no FSRS outcome,
+    // and this proves the screen stops offering them. A field guarded here that FSRS does read —
+    // maximum interval, the learning steps, the leech settings — would strand a live control.
+    it('hides exactly the fields FSRS supersedes, and no others', () => {
+        const guarded = new Set(
+            Array.from(screenSource.matchAll(/supersededByFsrs\('([A-Za-z]+)'\)/g), (match) => match[1]),
+        );
+
+        expect([...guarded].sort()).toEqual([
+            'easyBonus',
+            'easyIvl',
+            'graduatingIvl',
+            'hardIvl',
+            'ivlModifier',
+            'minIvl',
+            'newIvlPercent',
+            'startingEase',
+        ]);
+    });
+
+    // Save refuses while any field is invalid, and a hidden field cannot be corrected. The guard
+    // has to yield to a validation error or turning FSRS on can lock the screen.
+    it('keeps a superseded field on screen while it still holds a validation error', () => {
+        expect(screenSource).toMatch(/supersededByFsrs\s*=\s*\([^)]*\):\s*boolean\s*=>\s*\n?\s*form\.fsrsEnabled\s*&&\s*!validation\.errors\[field\]/);
+    });
+
     it('does not claim FSRS is missing from a build that ships it', () => {
         const everySentence = OPTION_HELP_KEYS.flatMap((key) => [
             ...[turkish[key], english[key]].flatMap((sheet) => [sheet.summary, sheet.note ?? '', ...sheet.points]),

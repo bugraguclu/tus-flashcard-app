@@ -5,17 +5,12 @@
  * manual (https://docs.ankiweb.net/deck-options.html) and this app's own scheduler. Where the two
  * disagree, the sheet describes *this app* — a learner opens it to find out what the switch in
  * front of them does, and a help text documenting behaviour the code does not have is worse than
- * no help text at all. The two places the app knowingly differs from upstream say so in plain
- * words rather than quietly implying parity:
- *
- *   - Daily limits: upstream counts interday learning cards against the review limit
- *     ("Anki includes any learning cards that have crossed the day boundary … in the review
- *     count"). `buildStudyQueue` caps only queue 2, so this build does not.
- *   - Advanced: upstream hides the SM-2 multipliers once FSRS is on. This screen keeps them
- *     visible, and only `maxInterval` still reaches `lib/fsrsScheduler.ts`.
+ * no help text at all.
  *
  * Each claim is backed by the code named beside the entry. When one of those files changes, the
- * matching sentence here is what has to change with it.
+ * matching sentence here is what has to change with it — `lib/deckOptionsHelp.test.ts` pairs every
+ * sheet with the card that renders it, and `lib/fsrsScheduler.test.ts` pins the one promise these
+ * sheets make about the scheduler.
  */
 
 /** `l(turkish, english)` — the locale picker from `hooks/useI18n`. */
@@ -59,8 +54,8 @@ export function buildDeckOptionsHelp(l: Localize): Record<OptionHelpKey, OptionH
 
     return {
         // lib/studyRepository.ts `buildStudyQueue`: hierarchical caps via `deckKeysForCard` /
-        // `applyHierarchicalLimit`, `limitsStartFromTop` -> `limitRoot`,
-        // `newCardsIgnoreReviewLimit` -> `newCardsShareReviewLimit`.
+        // `applyHierarchicalLimit`, the interday-then-review budget, `limitsStartFromTop` ->
+        // `limitRoot`, and `newCardsIgnoreReviewLimit` -> `newCardsShareReviewLimit`.
         dailyLimits: {
             title: l('Günlük limitler nasıl uygulanır?', 'How daily limits are applied'),
             summary: l(
@@ -86,8 +81,8 @@ export function buildDeckOptionsHelp(l: Localize): Record<OptionHelpKey, OptionH
                 ),
             ],
             note: l(
-                'Limitler bekleyen kartları silmez; yalnızca bugün gösterilecek sayıyı keser. Gün sınırını aşmış öğrenme kartları bu sürümde ayrı sayılır ve tekrar limitine dahil edilmez — masaüstü Anki onları tekrar sayısına katar.',
-                'Limits never delete waiting cards; they only cap what today shows. Learning cards that crossed a day boundary are counted separately in this version and are not subject to the review limit — desktop Anki does include them in the review count.',
+                'Limitler bekleyen kartları silmez; yalnızca bugün gösterilecek sayıyı keser. Gün sınırını aşmış öğrenme kartları tekrar sayısına dahildir ve aynı tekrar limitini harcar; adım zamanlayıcısı süren gün içi öğrenme kartlarının günlük limiti yoktur.',
+                'Limits never delete waiting cards; they only cap what today shows. Learning cards that crossed a day boundary count as reviews and spend the same review limit; intraday learning cards, still inside their step timer, have no daily limit.',
             ),
             ...chrome,
         },
@@ -115,8 +110,8 @@ export function buildDeckOptionsHelp(l: Localize): Record<OptionHelpKey, OptionH
                 ),
             ],
             note: l(
-                'FSRS açıkken mezuniyet aralığı ve kolay aralığı kullanılmaz; ilk tekrar aralığını FSRS kendisi hesaplar. Öğrenme adımları her iki zamanlayıcıda da geçerlidir.',
-                'While FSRS is on, the graduating and easy intervals are not used — FSRS derives the first review interval itself. Learning steps apply under both schedulers.',
+                'Mezuniyet aralığı ile kolay aralığı SM-2’ye özgüdür ve FSRS açıkken gizlenir; ilk tekrar aralığını FSRS kendisi hesaplar. Öğrenme adımları her iki zamanlayıcıda da geçerlidir.',
+                'The graduating and easy intervals are specific to SM-2 and are hidden while FSRS is on, which derives the first review interval itself. Learning steps apply under both schedulers.',
             ),
             ...chrome,
         },
@@ -148,8 +143,8 @@ export function buildDeckOptionsHelp(l: Localize): Record<OptionHelpKey, OptionH
                 ),
             ],
             note: l(
-                'Yeniden öğrenme adımları ve leech ayarları her iki zamanlayıcıda da geçerlidir. En az aralık ise yalnızca SM-2 içindir: FSRS açıkken unutma sonrası aralığı FSRS kendi hesaplar ve bu alanı okumaz.',
-                'Relearning steps and the leech settings apply under both schedulers. Minimum interval is SM-2 only: while FSRS is on, it derives the post-lapse interval itself and does not read this field.',
+                'Yeniden öğrenme adımları ve leech ayarları her iki zamanlayıcıda da geçerlidir. En az aralık yalnızca SM-2’ye aittir ve FSRS açıkken gizlenir: unutma sonrası aralığı FSRS kendisi hesaplar.',
+                'Relearning steps and the leech settings apply under both schedulers. Minimum interval belongs to SM-2 alone and is hidden while FSRS is on, which derives the post-lapse interval itself.',
             ),
             ...chrome,
         },
@@ -395,8 +390,8 @@ export function buildDeckOptionsHelp(l: Localize): Record<OptionHelpKey, OptionH
                 ),
             ],
             note: l(
-                'FSRS açıkken bu bölümden yalnızca “En fazla aralık” çalışmaya devam eder; başlangıç kolaylığı, kolay bonusu, zor çarpanı, aralık düzenleyici ve unutma sonrası yeni aralık kullanılmaz. Masaüstü Anki bu alanları FSRS açıkken gizler, burada görünür kalırlar.',
-                'While FSRS is on, only “Maximum interval” from this section still applies; starting ease, easy bonus, the hard multiplier, the interval modifier and the post-lapse new interval are unused. Desktop Anki hides these fields when FSRS is on; here they stay visible.',
+                'FSRS açıkken bu bölümden yalnızca “En fazla aralık” kalır; başlangıç kolaylığı, kolay bonusu, zor çarpanı, aralık düzenleyici ve unutma sonrası yeni aralık SM-2’ye özgüdür ve gizlenir. Değerleri saklanır, FSRS’i kapattığınızda aynı hâlleriyle geri gelirler.',
+                'While FSRS is on, only “Maximum interval” remains here; starting ease, easy bonus, the hard multiplier, the interval modifier and the post-lapse new interval are specific to SM-2 and are hidden. Their values are kept, and return unchanged when you switch FSRS off.',
             ),
             ...chrome,
         },

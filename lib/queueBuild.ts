@@ -32,23 +32,51 @@ export function interleaveNewWithReviews(reviewCards: StudyCard[], newCards: Stu
 }
 
 /**
+ * What one limit has already handed out, so two queues can draw on the same allowance.
+ *
+ * Anki's review limit covers interday learning cards as well as reviews — "Anki includes any
+ * learning cards that have crossed the day boundary (interday learning cards) in the review
+ * count, so those learning cards will be subject to the review limit". Gathering them in two
+ * passes with a shared budget is how one cap covers both, with the interday pass drawing first
+ * because that is the order Anki gathers in.
+ */
+export interface HierarchicalLimitBudget {
+    /** Cards already taken against each deck key. */
+    counts: Map<string, number>;
+    /** Cards already taken against the global limit. */
+    taken: number;
+}
+
+export function emptyLimitBudget(): HierarchicalLimitBudget {
+    return { counts: new Map(), taken: 0 };
+}
+
+/** A budget can be replayed, so a re-fetch resumes from the same point rather than a clean slate. */
+export function cloneLimitBudget(budget: HierarchicalLimitBudget): HierarchicalLimitBudget {
+    return { counts: new Map(budget.counts), taken: budget.taken };
+}
+
+/**
  * Cap cards by a global limit and by each deck's limit applied hierarchically: a card counts
  * against its own deck and every ancestor (Anki "limits start from the top"), so a parent deck
  * caps the combined intake of all its subdecks. `deckKeysForCard` returns the deck name chain.
+ *
+ * Pass a `budget` to continue an allowance an earlier call started; it is updated in place.
  */
 export function applyHierarchicalLimit(
     cards: StudyCard[],
     globalLimit: number,
     deckKeysForCard: (card: StudyCard) => string[],
     limitForDeckKey: (deckKey: string) => number,
+    budget: HierarchicalLimitBudget = emptyLimitBudget(),
 ): StudyCard[] {
     if (globalLimit <= 0) return [];
 
     const result: StudyCard[] = [];
-    const counts = new Map<string, number>();
+    const counts = budget.counts;
 
     for (const card of cards) {
-        if (result.length >= globalLimit) break;
+        if (budget.taken >= globalLimit) break;
 
         const keys = deckKeysForCard(card);
         if (keys.some((key) => (counts.get(key) ?? 0) >= Math.max(0, limitForDeckKey(key)))) {
@@ -56,6 +84,7 @@ export function applyHierarchicalLimit(
         }
 
         result.push(card);
+        budget.taken += 1;
         for (const key of keys) {
             counts.set(key, (counts.get(key) ?? 0) + 1);
         }

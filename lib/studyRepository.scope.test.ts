@@ -907,5 +907,70 @@ describe('queue counters and daily limits', () => {
         // Entire collection (null deck)
         expect(getDeckTotalCardCount(null)).toBeGreaterThan(0);
     });
+
+    it('spends the review limit on interday learning cards before reviews', () => {
+        // Anki manual, Daily Limits: "Anki includes any learning cards that have crossed the day
+        // boundary (interday learning cards) in the review count, so those learning cards will be
+        // subject to the review limit." Two allowances would let a backlog of day-crossing
+        // learning cards carry the day well past the cap the learner set.
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveDeckConfig({ ...deckConfig, maxReviewsPerDay: 2 });
+        const limited: AppSettings = { ...settings, dailyReviewLimit: 2 };
+
+        saveNote(makeNote(104, ['araclar', 'random'], ['Dorduncu soru', 'Dorduncu cevap', 'random']));
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 3, queue: 3, due: today, ivl: 1, factor: 2500, reps: 3, left: 1001 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 3, queue: 3, due: today, ivl: 1, factor: 2500, reps: 3, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+        saveAnkiCard(makeCard(1040, 104, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+
+        const spent = getStudyQueue({ settings: limited });
+
+        // Interday draws first, so the two of them use up the whole allowance and no review lands.
+        expect(spent.cards.map((card) => card.cardId).sort()).toEqual([1010, 1020]);
+        expect(servedReviewIds(spent)).toEqual([]);
+        expect(spent.stats.learningCount).toBe(2);
+        expect(spent.stats.reviewCount).toBe(0);
+        // Both held-back reviews and the interday cards the cap turned away report together:
+        // one limit turned them away, so one number accounts for them.
+        expect(spent.heldBackReviewCount).toBe(2);
+    });
+
+    it('lets reviews have whatever the interday learning cards did not take', () => {
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveDeckConfig({ ...deckConfig, maxReviewsPerDay: 3 });
+        const limited: AppSettings = { ...settings, dailyReviewLimit: 3 };
+
+        saveNote(makeNote(104, ['araclar', 'random'], ['Dorduncu soru', 'Dorduncu cevap', 'random']));
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 3, queue: 3, due: today, ivl: 1, factor: 2500, reps: 3, left: 1001 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 3, queue: 3, due: today, ivl: 1, factor: 2500, reps: 3, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+        saveAnkiCard(makeCard(1040, 104, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+
+        const partial = getStudyQueue({ settings: limited });
+
+        expect(partial.stats.learningCount).toBe(2);
+        expect(servedReviewIds(partial)).toHaveLength(1);
+        expect(partial.heldBackReviewCount).toBe(1);
+    });
+
+    it('leaves intraday learning outside the review limit', () => {
+        // Cards still inside their step timer have no daily limit in Anki; capping them would
+        // strand a card mid-learning, which is the one thing a learning step must never do.
+        const today = localDayNumber(Date.now(), rolloverHour);
+        saveDeckConfig({ ...deckConfig, maxReviewsPerDay: 1 });
+        const limited: AppSettings = { ...settings, dailyReviewLimit: 1 };
+
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: Date.now() - 60_000, left: 1001 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: Date.now() - 30_000, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
+
+        const result = getStudyQueue({ settings: limited });
+
+        expect(result.stats.learningCount).toBe(2);
+        expect(result.cards.map((card) => card.cardId)).toContain(1010);
+        expect(result.cards.map((card) => card.cardId)).toContain(1020);
+        expect(servedReviewIds(result)).toEqual([1030]);
+    });
+
 });
 

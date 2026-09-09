@@ -913,6 +913,18 @@ export default function DeckOptionsScreen() {
     const validation = validateFormDraft();
     const hasValidationErrors = Object.keys(validation.errors).length > 0;
 
+    /**
+     * Anki hides its SM-2 options once FSRS is on — "SM-2 specific options, such as Graduating
+     * interval, Easy bonus, etc. are hidden". The set hidden here is exactly the set
+     * `lib/fsrsScheduler.ts` ignores, so the screen never offers a control that cannot reach the
+     * scheduler; `lib/fsrsScheduler.test.ts` is what keeps those two lists the same one.
+     *
+     * The exception is a field still holding a validation error. Save refuses while any field is
+     * invalid, so hiding one would block saving over a value the learner has no way to reach.
+     */
+    const supersededByFsrs = (field: keyof typeof form): boolean =>
+        form.fsrsEnabled && !validation.errors[field];
+
     const persistForm = (includeSubdecks = false): { saved: boolean; subdecksChanged: number } => {
         if (hasValidationErrors || !validation.learningSteps || validation.relearningSteps === null) {
             const firstError = Object.values(validation.errors)[0];
@@ -1362,8 +1374,12 @@ export default function DeckOptionsScreen() {
                     hint={l('Boşlukla ayırın: 1m 10m · birimler: s, m, h, d', 'Separate with spaces: 1m 10m · units: s, m, h, d')}
                     kind="steps"
                 />
-                <Field field="graduatingIvl" label={l('Mezuniyet aralığı (gün)', 'Graduating interval (days)')} value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
-                <Field field="easyIvl" label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
+                {!supersededByFsrs('graduatingIvl') && (
+                    <Field field="graduatingIvl" label={l('Mezuniyet aralığı (gün)', 'Graduating interval (days)')} value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
+                )}
+                {!supersededByFsrs('easyIvl') && (
+                    <Field field="easyIvl" label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
+                )}
                 <SelectSetting
                     label={l('Ekleniş sırası', 'Insertion order')}
                     value={form.insertionOrder}
@@ -1384,7 +1400,9 @@ export default function DeckOptionsScreen() {
                     hint={l('Boş bırakılırsa kart yeniden öğrenmeye girmez.', 'Leave empty to skip relearning.')}
                     kind="steps"
                 />
-                <Field field="minIvl" label={l('En az aralık (gün)', 'Minimum interval (days)')} value={form.minIvl} onChange={(t) => set('minIvl', t)} />
+                {!supersededByFsrs('minIvl') && (
+                    <Field field="minIvl" label={l('En az aralık (gün)', 'Minimum interval (days)')} value={form.minIvl} onChange={(t) => set('minIvl', t)} />
+                )}
                 <Field
                     field="leechThreshold"
                     label={l('Sürekli unutulan kart eşiği', 'Leech threshold (lapses)')}
@@ -1701,12 +1719,30 @@ export default function DeckOptionsScreen() {
                 </OptionCard>
 
                 <OptionCard wide={useTwoColumns} title={l('Gelişmiş', 'Advanced')} styles={styles} help={optionHelp.advanced}>
-                <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,30–5,00 arası. Örn. 2,50', 'Between 1.30 and 5.00. E.g. 2.50')} />
-                <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} />
-                <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} />
-                <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
-                <Field field="maxIvl" label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
-                <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
+                    {!supersededByFsrs('startingEase') && (
+                        <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,30–5,00 arası. Örn. 2,50', 'Between 1.30 and 5.00. E.g. 2.50')} />
+                    )}
+                    {!supersededByFsrs('easyBonus') && (
+                        <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} />
+                    )}
+                    {!supersededByFsrs('hardIvl') && (
+                        <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} />
+                    )}
+                    {!supersededByFsrs('ivlModifier') && (
+                        <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
+                    )}
+                    <Field field="maxIvl" label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
+                    {!supersededByFsrs('newIvlPercent') && (
+                        <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
+                    )}
+                    {form.fsrsEnabled ? (
+                        <Text style={styles.fieldHint}>
+                            {l(
+                                'Bu bölümün geri kalanı SM-2’ye özgüdür ve FSRS açıkken gizlenir. Değerler saklanır; FSRS’i kapatırsanız aynı hâlleriyle geri gelir.',
+                                'The rest of this section is specific to SM-2 and is hidden while FSRS is on. The values are kept, and return unchanged if you switch FSRS off.',
+                            )}
+                        </Text>
+                    ) : null}
                 </OptionCard>
 
                 <OptionCard wide={useTwoColumns} title={l('Deste açıklaması', 'Deck Description')} styles={styles}>

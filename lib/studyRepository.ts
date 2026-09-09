@@ -38,6 +38,8 @@ import { getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './dec
 import {
     applyHierarchicalLimit,
     buryBuildTimeSiblings,
+    cloneLimitBudget,
+    emptyLimitBudget,
     interleaveNewWithReviews,
     mixInterdayLearning,
     normalizeNewCardGatherOrder,
@@ -1599,14 +1601,25 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         return limit;
     };
 
-    // Known divergence from upstream: only queue 2 is capped here. The manual's Daily Limits
-    // section says "Anki includes any learning cards that have crossed the day boundary (interday
-    // learning cards) in the review count, so those learning cards will be subject to the review
-    // limit" — `interdayLearningRows` above is loaded uncapped, so a large interday backlog can
-    // carry the day past the review limit. The deck-options help sheet
-    // (`lib/deckOptionsHelp.ts` → `dailyLimits`) tells the learner this build behaves that way;
-    // closing the gap means capping the two together and updating that sentence with it.
-    let reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
+    const interdayBudget = emptyLimitBudget();
+
+    // One allowance covers interday learning and reviews together: "Anki includes any learning
+    // cards that have crossed the day boundary (interday learning cards) in the review count, so
+    // those learning cards will be subject to the review limit". Interday draws first, matching
+    // the order Anki gathers in — a card that already crossed a day boundary has waited longer
+    // than a review that came due today, so it is the one the remaining allowance should buy.
+    //
+    // Intraday learning is deliberately outside this: cards still inside their step timer have no
+    // daily limit in Anki, and capping them would strand a card mid-learning.
+    const interdayLearningForQueue = applyHierarchicalLimit(
+        learningCards.filter((card) => card.state.dueTime === 0),
+        reviewLimit,
+        deckKeysForCard,
+        reviewLimitForDeckKey,
+        interdayBudget,
+    );
+    const reviewBudget = cloneLimitBudget(interdayBudget);
+    let reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey, reviewBudget);
 
     // Fallback for strict per-deck limits: if the limited fetch under-fills, do one full fetch.
     // Siblings buried above are persisted, so a full re-fetch stays free of sibling pairs.
@@ -1630,7 +1643,13 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             daySeed,
             today,
         );
-        reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
+        reviewCardsForQueue = applyHierarchicalLimit(
+            reviewCards,
+            reviewLimit,
+            deckKeysForCard,
+            reviewLimitForDeckKey,
+            cloneLimitBudget(interdayBudget),
+        );
     }
 
     // Anki's collection-wide "new cards ignore review limit". With it off, the review cap covers
@@ -1690,11 +1709,10 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // Interday learning cards (dueTime 0) carry no step timer, so the preset's "interday
     // learning/review order" decides where they sit against the reviews instead.
     const intradayForQueue = learningCards.filter((card) => card.state.dueTime !== 0);
-    const interdayForQueue = learningCards.filter((card) => card.state.dueTime === 0);
     const { dueNow: learningDueNow, learnAhead: learningAhead } = splitIntradayLearning(intradayForQueue, nowMs);
     const reviewQueue = mixInterdayLearning(
         reviewCardsForQueue,
-        interdayForQueue,
+        interdayLearningForQueue,
         params.settings.interdayLearningMix ?? 'mix',
     );
 
@@ -1715,14 +1733,17 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         params.selectedDeckName,
     );
 
-    // Report both counts the way Anki's deck list does: what today's limits still allow, not the
+    // Report every count the way Anki's deck list does: what today's limits still allow, not the
     // raw backlog. The uncapped remainder feeds the "held back" message instead of silently
-    // inflating the badge past what the queue will ever serve. Learning cards have no daily
-    // limit in Anki, so that count stays raw.
+    // inflating the badge past what the queue will ever serve. Intraday learning has no daily
+    // limit, so that half stays raw; the interday half shares the review allowance and is
+    // reported — and held back — on the same terms as a review.
+    const servableInterdayLearningCount = interdayLearningForQueue.length;
     const servableNewCount = newCardsForQueue.length;
     const servableReviewCount = reviewCardsForQueue.length;
     const heldBackNewCount = Math.max(0, newCount - servableNewCount);
-    const heldBackReviewCount = Math.max(0, reviewCount - servableReviewCount);
+    const heldBackReviewCount = Math.max(0, reviewCount - servableReviewCount)
+        + Math.max(0, interdayLearningCount - servableInterdayLearningCount);
 
     let upcomingCardsCount = 0;
     if (nextLearningDue !== null) {
@@ -1758,7 +1779,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         cards,
         stats: {
             newCount: servableNewCount,
-            learningCount: intradayLearningCount + interdayLearningCount,
+            learningCount: intradayLearningCount + servableInterdayLearningCount,
             reviewCount: servableReviewCount,
         },
         nextLearningDue,
