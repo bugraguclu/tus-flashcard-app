@@ -47,6 +47,11 @@ gönderir; bu işlemler tamamen sizin kontrolünüzdedir. iOS cihaz depolaması 
 uygulama dosyaları tam veri koruması kullanır; Android sistem yedeklemesi kapalıdır.
 Paylaşılan JSON yedekleri ayrıca şifrelenmez, bu nedenle yalnızca güvendiğiniz konumlara
 gönderilmelidir.</p>
+<p>Dahili TUS kart koleksiyonu kurulurken, kartların içine kurulumunuza özgü görünmez bir işaret
+yerleştirilir. Bu işaret mağaza hesabı kimliğinizden türetilen kısa bir özettir; hesap kimliğinizin
+kendisini içermez, kartların görünen içeriğini değiştirmez ve cihazınızdan kendiliğinden hiçbir
+yere gönderilmez. Yalnızca koleksiyon izinsiz olarak dışarıda paylaşılırsa, kopyanın hangi
+kurulumdan çıktığını belirlemek için kullanılır. Kendi kartlarınız işaretlenmez.</p>
 
 <h2>İzinler</h2>
 <p>Bir karta medya eklemeyi siz başlattığınızda uygulama kamera, fotoğraf kitaplığı
@@ -120,6 +125,11 @@ features send your data only where you choose to send it — these actions are
 entirely under your control. App files use complete data protection while iOS device
 storage is locked, and Android system backup is disabled. Shared JSON backups are not
 separately encrypted, so they should be sent only to locations you trust.</p>
+<p>When the built-in TUS card catalog is installed, an invisible mark unique to your installation
+is placed inside its cards. The mark is a short digest derived from your store account id; it does
+not contain the id itself, it does not change the visible content of any card, and it is never
+sent anywhere from your device on its own. It is used only to identify which installation a copy
+came from if the catalog is shared without permission. Your own cards are never marked.</p>
 
 <h2>Permissions</h2>
 <p>When you initiate adding media to a card, the app may request access to the

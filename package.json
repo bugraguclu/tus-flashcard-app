@@ -23,6 +23,7 @@
     "build:catalog-manifest": "sucrase-node scripts/build-catalog-manifest.ts",
     "pack:catalog": "node scripts/pack-catalog-asset.ts",
     "audit:catalog": "sucrase-node scripts/audit-catalog.ts",
+    "trace:leak": "node scripts/trace-catalog-leak.mjs",
     "share:lan": "node scripts/share-expo-go.mjs --lan",
     "share:ngrok": "node scripts/share-expo-go.mjs --ngrok"
   },

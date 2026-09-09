@@ -40,6 +40,8 @@ import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { humanizeCardText } from './displayText';
+import { markCatalogNotes } from './catalogWatermark';
+import { resolveCatalogInstallMark } from './catalogInstallMark';
 
 /** Marks every row this module owns, so removal can never reach the learner's own content. */
 export const BKA_CATALOG_PACK = CATALOG_PACK_ID;
@@ -936,6 +938,14 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     }
 
     const mediaAt = Date.now();
+
+    // Every install stamps its own invisible mark into a sampled share of the notes, so a copy
+    // that turns up in a study group can be traced back to the account that installed it. It is
+    // the last thing done to the snapshot before it is written and it changes no visible text;
+    // see lib/catalogWatermark.ts for why it is safe to put in the field itself. A build with no
+    // store behind it gets an empty mark and installs the package exactly as it shipped.
+    const installMark = await resolveCatalogInstallMark();
+    snapshot = { ...snapshot, notes: markCatalogNotes(snapshot.notes, installMark) };
 
     const { restoredProgress } = writeCatalog(snapshot);
     const writtenAt = Date.now();
