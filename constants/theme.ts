@@ -53,8 +53,8 @@ const LightColors = {
     // surface without a bright slab behind the question.
     reviewerCard: '#ddefe7',
     reviewerCardBorder: '#c8e0d6',
-    // Cloze deletions on catalog cards: a blue that sits with the green palette, and the tint
-    // that marks a still-hidden deletion on the question side.
+    // Cloze deletions: the blue catalog cards use, which sits with the green palette, and the
+    // tint that marks a deletion still hidden on the question side of any cloze card.
     clozeText: '#1d5fa6',
     clozeTint: 'rgba(29, 95, 166, 0.12)',
 

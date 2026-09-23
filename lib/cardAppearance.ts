@@ -255,14 +255,13 @@ export interface CatalogCardCssOptions {
     nightMode: boolean;
     textColor: string;
     clozeColor: string;
-    clozeTint: string;
 }
 
 /**
  * Presentation of the curated catalog, which ships as an AnKing Cloze note type. The catalog is
  * the app's own content, so its cards take the app's text and cloze colours instead of AnKing's
- * pure blue on grey, a still-hidden deletion is tinted so the gap reads at a glance, and two
- * pieces of AnKing chrome meant for Anki's full-screen reviewer are dropped:
+ * pure blue on grey, and two pieces of AnKing chrome meant for Anki's full-screen reviewer are
+ * dropped:
  *
  * - the rule between the deletion and the extra fields when the card has no extra field for it
  *   to separate, which would otherwise end nearly every catalog answer in a lone line;
@@ -272,13 +271,11 @@ export interface CatalogCardCssOptions {
  * type built some other way is left alone. Night mode keeps AnKing's colours: the template
  * declares them `!important`, and they already suit a dark page.
  */
-export function catalogCardCss({ nightMode, textColor, clozeColor, clozeTint }: CatalogCardCssOptions): string {
+export function catalogCardCss({ nightMode, textColor, clozeColor }: CatalogCardCssOptions): string {
     const dayColors = nightMode
         ? ''
         : `.card.card{color:${textColor};}.card.card .cloze,.card.card a[href="#"]{color:${clozeColor};}`;
     return dayColors
-        + `.side-question .cloze[data-cloze]{padding:0 .25em;border-radius:.35em;background-color:${clozeTint};`
-        + '-webkit-box-decoration-break:clone;box-decoration-break:clone;}'
         + '.clozefield~br{display:none;}'
         + '.clozefield~hr:not(:has(~#extra,~.hints)){display:none;}';
 }

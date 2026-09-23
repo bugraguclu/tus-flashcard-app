@@ -297,6 +297,9 @@ export default function CardWebView({
         :where(hr){height:1px;border:0;margin:1em 0;background-color:${colors.border};}
         :where(code#typeans){font-family:inherit;font-size:inherit;}
         :where(#typearrow){color:${colors.textMuted};}
+        /* A deletion still hidden on the question side gets a soft tint, so the gap reads at a
+           glance even in a long paragraph. The note type's own .cloze colour and weight stand. */
+        :where(.side-question .cloze[data-cloze]){padding:0 .25em;border-radius:.35em;background-color:${colors.clozeTint};-webkit-box-decoration-break:clone;box-decoration-break:clone;}
         :where(#typeans.tus-type-answer-input){width:100%;min-height:46px;padding:10px 14px;border-radius:12px;border:1.5px solid ${colors.border};background-color:${colors.bgInput};color:inherit;outline:none;-webkit-appearance:none;appearance:none;}
         :where(#typeans.tus-type-answer-input:focus){border-color:${colors.accent};}
         ${reviewerCanvasCss({
@@ -309,7 +312,6 @@ export default function CardWebView({
             nightMode: isDark,
             textColor: colors.textPrimary,
             clozeColor: colors.clozeText,
-            clozeTint: colors.clozeTint,
         }) : ''}
         ${isLegacyTusNoteType(noteType) ? legacyTusCardCss({
             nightMode: isDark,

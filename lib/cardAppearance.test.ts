@@ -122,7 +122,7 @@ describe('reviewerCanvasCss', () => {
 });
 
 describe('catalogCardCss', () => {
-    const palette = { textColor: '#2c3e36', clozeColor: '#1d5fa6', clozeTint: 'rgba(29, 95, 166, 0.12)' };
+    const palette = { textColor: '#2c3e36', clozeColor: '#1d5fa6' };
 
     it('gives catalog cards the app colours in light mode', () => {
         const css = catalogCardCss({ ...palette, nightMode: false });
@@ -134,12 +134,6 @@ describe('catalogCardCss', () => {
         const css = catalogCardCss({ ...palette, nightMode: true });
         expect(css).not.toContain('.card.card{color:');
         expect(css).not.toContain('.card.card .cloze');
-    });
-
-    it('tints only the deletion still hidden on the question side', () => {
-        const css = catalogCardCss({ ...palette, nightMode: false });
-        expect(css).toContain('.side-question .cloze[data-cloze]{');
-        expect(css).toContain('background-color:rgba(29, 95, 166, 0.12);');
     });
 
     it('drops AnKing’s trailing breaks and a rule with nothing under it', () => {
