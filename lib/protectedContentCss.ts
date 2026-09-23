@@ -30,14 +30,24 @@ img {
 `.trim();
 
 /**
+ * The events that copy content out of a document. `selectstart` is included because a hardware
+ * keyboard can start a selection that never raises a callout.
+ */
+export const PROTECTED_BLOCKED_EVENTS = [
+    'copy', 'cut', 'beforecopy', 'beforecut', 'contextmenu', 'dragstart', 'selectstart',
+] as const;
+
+/** Cmd/Ctrl shortcuts that select all, copy, cut, print or save. */
+export const PROTECTED_BLOCKED_SHORTCUT_KEYS = ['a', 'c', 'x', 'p', 's'] as const;
+
+/**
  * Cancels the events that copy content out of the document.
  *
- * Capture-phase listeners run before anything a note template registered, and `selectstart`
- * is included because a hardware keyboard can start a selection that never raises a callout.
+ * Capture-phase listeners run before anything a note template registered.
  */
 export const PROTECTED_CONTENT_SCRIPT = `(function(){
     function prevent(event){ if (event) { event.preventDefault(); event.stopPropagation(); } }
-    var blocked = ['copy', 'cut', 'beforecopy', 'beforecut', 'contextmenu', 'dragstart', 'selectstart'];
+    var blocked = [${PROTECTED_BLOCKED_EVENTS.map((name) => `'${name}'`).join(', ')}];
     for (var index = 0; index < blocked.length; index++) {
         document.addEventListener(blocked[index], prevent, true);
     }
@@ -45,6 +55,25 @@ export const PROTECTED_CONTENT_SCRIPT = `(function(){
     document.addEventListener('keydown', function(event){
         if (!(event.metaKey || event.ctrlKey)) return;
         var key = String(event.key || '').toLowerCase();
-        if (key === 'a' || key === 'c' || key === 'x' || key === 'p' || key === 's') prevent(event);
+        if (${PROTECTED_BLOCKED_SHORTCUT_KEYS.map((key) => `key === '${key}'`).join(' || ')}) prevent(event);
     }, true);
 })();`;
+
+/**
+ * The same lockdown installed from outside a document. The web reviewer renders cards in a
+ * sandboxed iframe that may not run script of its own, but it is same-origin, so the host page can
+ * register the capture-phase listeners itself.
+ */
+export function installProtectedContentGuards(doc: Pick<Document, 'addEventListener'>): void {
+    const prevent = (event: Event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+    for (const name of PROTECTED_BLOCKED_EVENTS) doc.addEventListener(name, prevent, true);
+    doc.addEventListener('keydown', (event) => {
+        const keyboard = event as KeyboardEvent;
+        if (!(keyboard.metaKey || keyboard.ctrlKey)) return;
+        const key = String(keyboard.key || '').toLowerCase();
+        if ((PROTECTED_BLOCKED_SHORTCUT_KEYS as readonly string[]).includes(key)) prevent(keyboard);
+    }, true);
+}

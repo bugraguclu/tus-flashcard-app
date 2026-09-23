@@ -17,6 +17,7 @@ import {
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import {
     BorderRadius,
     Colors,
@@ -34,8 +35,8 @@ import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { isStudyReminderData } from '../lib/studyNotifications';
 import { inferImportFileType } from '../lib/importFile';
 import { parseExternalAppUrl } from '../lib/externalLinking';
-import { getAllNoteTypes } from '../lib/noteManager';
-import { getDeckByName } from '../lib/deckManager';
+import { externalActionRoute } from '../lib/externalActionRoute';
+import WebAppIntegrations from '../components/WebAppIntegrations';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
 // Hold the native splash until a real screen can paint. Without this it disappears the moment
@@ -61,7 +62,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 
 function ErrorAlertShieldIcon({ color, size = 40 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
                 fill="none"
@@ -78,7 +79,7 @@ function ErrorAlertShieldIcon({ color, size = 40 }: { color: string; size?: numb
 
 function ErrorCopyIcon({ color, size = 15 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
                 fill="none"
@@ -101,7 +102,7 @@ function ErrorCopyIcon({ color, size = 15 }: { color: string; size?: number }) {
 
 function ErrorCheckIcon({ color, size = 15 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="m5 12 5 5L20 7"
                 fill="none"
@@ -577,32 +578,9 @@ function AppStack() {
         const openIncomingUrl = (url: string | null) => {
             if (!active || !url) return;
             const externalAction = parseExternalAppUrl(url);
-            if (externalAction?.kind === 'search') {
-                router.push({ pathname: '/browser', params: { initialSearch: externalAction.query } } as any);
-                return;
-            }
-            if (externalAction?.kind === 'addnote') {
-                const noteType = getAllNoteTypes().find((entry) => (
-                    entry.name.normalize('NFC').toLocaleLowerCase() === externalAction.noteTypeName.normalize('NFC').toLocaleLowerCase()
-                ));
-                const deck = getDeckByName(externalAction.deckName);
-                if (!noteType || !deck || deck.isFiltered) {
-                    console.warn('[Linking] add-note target not found:', externalAction.noteTypeName, externalAction.deckName);
-                    return;
-                }
-                const fieldValues = noteType.fields.map((field) => externalAction.fields[field.name] ?? '');
-                router.push({
-                    pathname: '/editor',
-                    params: {
-                        deckId: String(deck.id),
-                        noteTypeId: String(noteType.id),
-                        question: fieldValues[0] ?? '',
-                        answer: fieldValues[1] ?? '',
-                        fieldValues: JSON.stringify(fieldValues),
-                        tags: externalAction.tags.join(' '),
-                        externalSuccessUrl: externalAction.successUrl ?? '',
-                    },
-                } as any);
+            if (externalAction) {
+                const route = externalActionRoute(externalAction);
+                if (route) router.push(route as any);
                 return;
             }
             if (!inferImportFileType(url)) return;
@@ -643,6 +621,7 @@ function AppStack() {
     return (
         <>
             <StatusBar style={DARK_MODE_UI_ENABLED ? 'auto' : 'dark'} />
+            {Platform.OS === 'web' ? <WebAppIntegrations /> : null}
             <Stack
                 screenOptions={{
                     headerShown: false,

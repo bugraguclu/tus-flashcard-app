@@ -190,7 +190,6 @@ export default function DecksScreen() {
     // reachable below the status bar/notch instead of hiding under it.
     const compactSheetTopInset = { paddingTop: insets.top + Spacing.md };
     const isDesktopWeb = Platform.OS === 'web' && !isCompact;
-    const supportsDeckDrag = isDesktopWeb || Platform.OS === 'ios' || Platform.OS === 'android';
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings } = useAppSettings();
@@ -632,9 +631,7 @@ export default function DecksScreen() {
             });
             setModal(null);
             refresh();
-            if (Platform.OS !== 'web') {
-                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-            }
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
         } catch (e) {
             console.warn('[Decks] create subdeck failed:', e);
             alert(t('common.error'), userFacingErrorMessage(
@@ -970,7 +967,7 @@ export default function DecksScreen() {
         dropTargetRef.current = target;
         setDropTarget(target);
 
-        if (target && Platform.OS !== 'web') {
+        if (target) {
             void Haptics.selectionAsync().catch(() => undefined);
         }
 
@@ -1090,9 +1087,7 @@ export default function DecksScreen() {
             updateDeckDrag(pageY);
         });
         updateDeckDrag(pageY);
-        if (Platform.OS !== 'web') {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-        }
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
     };
 
     const completeDeckDrag = () => {
@@ -1119,14 +1114,10 @@ export default function DecksScreen() {
                     getParentDeckName(nextName),
                 ));
                 refresh();
-                if (Platform.OS !== 'web') {
-                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-                }
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
             } catch (e) {
                 console.warn('[Decks] drag reorder failed:', e);
-                if (Platform.OS !== 'web') {
-                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
-                }
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
                 alert(t('common.error'), userFacingErrorMessage(
                     e,
                     l('Deste sıralanamadı. Lütfen tekrar deneyin.', 'Could not reorder the deck. Please try again.'),
@@ -1155,14 +1146,10 @@ export default function DecksScreen() {
                 targetParent,
             ));
             refresh();
-            if (Platform.OS !== 'web') {
-                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-            }
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
         } catch (e) {
             console.warn('[Decks] drag move failed:', e);
-            if (Platform.OS !== 'web') {
-                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
-            }
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
             alert(t('common.error'), userFacingErrorMessage(
                 e,
                 l('Deste taşınamadı. Lütfen tekrar deneyin.', 'Could not move the deck. Please try again.'),
@@ -1228,7 +1215,7 @@ export default function DecksScreen() {
         const rowDropFeedback = rowDropTarget ? dragDropFeedback : null;
         const isTrialCatalogDeck = catalogTier === 'trial' && deck.catalogPack === BKA_CATALOG_PACK;
         const isTrialCatalogRoot = isTrialCatalogDeck && deck.id === BKA_CATALOG_ROOT_DECK_ID;
-        const dragResponder = supportsDeckDrag && !deck.isFiltered && !isCatalogDeck(deck)
+        const dragResponder = !deck.isFiltered && !isCatalogDeck(deck)
             ? getDragResponder(node)
             : null;
         const maxIndentDepth = isCompact ? 4 : 10;
@@ -1353,7 +1340,7 @@ export default function DecksScreen() {
                     </View>
                 )}
 
-                {supportsDeckDrag && dragResponder && (
+                {dragResponder && (
                     <View
                         style={[styles.dragHandle, isDragging && styles.dragHandleActive]}
                         {...dragResponder.panHandlers}
@@ -1366,7 +1353,7 @@ export default function DecksScreen() {
                         <Text style={styles.dragHandleText}>⠿</Text>
                     </View>
                 )}
-                {supportsDeckDrag && !dragResponder && (
+                {!dragResponder && (
                     <View
                         style={[styles.dragHandle, styles.dragHandleDisabled]}
                         accessible
@@ -1398,7 +1385,6 @@ export default function DecksScreen() {
         l,
         openMenu,
         styles,
-        supportsDeckDrag,
         t,
         toggleExpand,
     ]);
@@ -2946,7 +2932,8 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
         justifyContent: 'center',
-        ...(Platform.OS === 'web' ? ({ cursor: 'grab' } as object) : null),
+        // A phone browser would otherwise claim the drag as a page scroll before the row moves.
+        ...(Platform.OS === 'web' ? ({ cursor: 'grab', touchAction: 'none' } as object) : null),
     },
     dragHandleActive: { backgroundColor: colors.accentLight, transform: [{ scale: 1.08 }] },
     dragHandleDisabled: { opacity: 0.25 },

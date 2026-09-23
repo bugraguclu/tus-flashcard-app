@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { RepeatPressController, type RepeatPressOptions } from '../lib/repeatPress';
 
@@ -23,7 +22,7 @@ export function useRepeatPress(
 
     const tick = useCallback(() => {
         actionRef.current();
-        if (options?.hapticFeedback !== false && Platform.OS !== 'web') {
+        if (options?.hapticFeedback !== false) {
             try {
                 void Haptics.selectionAsync().catch(() => undefined);
             } catch {

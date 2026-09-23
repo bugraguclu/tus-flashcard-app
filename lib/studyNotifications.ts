@@ -1,17 +1,21 @@
 import { Platform } from 'react-native';
-import { getLocales } from 'expo-localization';
 import * as Notifications from 'expo-notifications';
 import type { AppSettings } from './types';
-import { localDayNumber } from './ankiState';
-import { getDB } from './db';
-import { resolveAppLocale } from './i18n';
 import { buildStudyReminderContent } from './studyNotificationContent';
 import {
     normalizeStudyNotificationThreshold,
     shouldSendStudyReminder,
 } from './studyNotificationPolicy';
+import {
+    STUDY_REMINDER_KIND,
+    getDueReviewCountAt,
+    isStudyReminderData,
+    studyReminderCopy,
+    studyReminderDates,
+    studyReminderTime,
+} from './studyReminderSchedule';
 
-const STUDY_REMINDER_KIND = 'tusankim.study-reminder';
+export { getDueReviewCountAt, isStudyReminderData };
 // iOS retains at most 64 pending local notifications. Twenty-eight daily reminders leave
 // headroom for future app-owned notifications.
 const STUDY_REMINDER_DAYS = 28;
@@ -140,49 +144,18 @@ export async function ensureDefaultStudyNotificationPermission(): Promise<StudyN
     }));
 }
 
+/** Whether this build can deliver study reminders at all. */
+export function studyNotificationsSupported(): boolean {
+    return Platform.OS === 'ios';
+}
+
 /**
- * Counts only due review cards for reminder text. New cards and
- * learning-step timers are deliberately excluded, as is every suspended/buried card (their
- * queues are negative in Anki's schema).
+ * A tap on an iPhone reminder arrives as a notification response, which `app/_layout.tsx`
+ * handles directly. This hook-up point exists for the web build, whose reminders are shown by the
+ * page itself; here it never fires.
  */
-export function getDueReviewCountAt(atMs: number, rolloverHour: number): number {
-    const today = localDayNumber(atMs, rolloverHour);
-    const row = getDB().getFirstSync<{ count: number }>(
-        'SELECT COUNT(*) AS count FROM anki_cards WHERE queue = 2 AND due <= ?',
-        today,
-    );
-    return Math.max(0, Number(row?.count) || 0);
-}
-
-function reminderDates(now: Date, hour: number, minute: number): Date[] {
-    const first = new Date(now);
-    first.setHours(hour, minute, 0, 0);
-    if (first.getTime() <= now.getTime()) first.setDate(first.getDate() + 1);
-
-    return Array.from({ length: STUDY_REMINDER_DAYS }, (_, index) => {
-        const date = new Date(first);
-        date.setDate(first.getDate() + index);
-        return date;
-    });
-}
-
-function reminderCopy(settings: AppSettings, count: number): { title: string; body: string } {
-    const deviceLanguages = getLocales().map((locale) => locale.languageCode);
-    const locale = resolveAppLocale(settings.language, deviceLanguages);
-    if (locale === 'tr') {
-        return {
-            title: 'Çalışma zamanı',
-            body: count === 1 ? '1 tekrar kartı sizi bekliyor.' : `${count} tekrar kartı sizi bekliyor.`,
-        };
-    }
-    return {
-        title: 'Time to study',
-        body: count === 1 ? '1 review is waiting.' : `${count} reviews are waiting.`,
-    };
-}
-
-export function isStudyReminderData(data: Record<string, unknown> | null | undefined): boolean {
-    return data?.kind === STUDY_REMINDER_KIND;
+export function onStudyReminderOpened(_listener: () => void): () => void {
+    return () => undefined;
 }
 
 async function cancelOwnedStudyNotifications(): Promise<void> {
@@ -236,16 +209,15 @@ export function syncStudyNotifications(settings: AppSettings): Promise<StudyNoti
             return { permission, scheduledCount: 0 };
         }
 
-        const hour = Math.max(0, Math.min(23, Number(settings.studyNotificationHour ?? 9) || 0));
-        const minute = Math.max(0, Math.min(59, Number(settings.studyNotificationMinute ?? 0) || 0));
+        const { hour, minute } = studyReminderTime(settings);
         const threshold = normalizeStudyNotificationThreshold(settings.studyNotificationThreshold);
         const scheduledIdentifiers: string[] = [];
 
         try {
-            for (const date of reminderDates(new Date(), hour, minute)) {
+            for (const date of studyReminderDates(new Date(), hour, minute, STUDY_REMINDER_DAYS)) {
                 const dueReviews = getDueReviewCountAt(date.getTime(), settings.dayRolloverHour);
                 if (!shouldSendStudyReminder(dueReviews, threshold)) continue;
-                const copy = reminderCopy(settings, dueReviews);
+                const copy = studyReminderCopy(settings, dueReviews);
                 const dayKey = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
                 const identifier = await Notifications.scheduleNotificationAsync({
                     identifier: `${STUDY_REMINDER_KIND}.${dayKey}`,

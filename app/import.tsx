@@ -27,6 +27,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
 import { resolveInitialTargetDeckId } from '../lib/importTargetDeck';
@@ -65,7 +66,7 @@ import { userFacingErrorMessage } from '../lib/userFacingError';
 
 function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
@@ -111,11 +112,14 @@ export default function ImportScreen() {
     const router = useRouter();
     const params = useLocalSearchParams<{
         incomingUri?: string | string[];
+        /** A file handed over without a readable path — a web drop or launch — names itself here. */
+        incomingName?: string | string[];
         deckId?: string;
         deckName?: string;
         deck?: string;
     }>();
     const incomingUri = params.incomingUri;
+    const incomingName = params.incomingName;
     const { settings } = useAppSettings();
     const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
@@ -286,10 +290,11 @@ export default function ImportScreen() {
     useEffect(() => {
         const uri = Array.isArray(incomingUri) ? incomingUri[0] : incomingUri;
         if (!uri || handledIncomingUri.current === uri) return;
-        const incomingType = inferImportFileType(uri);
+        const name = (Array.isArray(incomingName) ? incomingName[0] : incomingName) || importFileNameFromUri(uri);
+        const incomingType = inferImportFileType(name) ?? inferImportFileType(uri);
         if (!incomingType) return;
         handledIncomingUri.current = uri;
-        void loadFile(uri, importFileNameFromUri(uri), incomingType).catch(reportFileError);
+        void loadFile(uri, name, incomingType).catch(reportFileError);
     // The URI is the event identity; localization changes must not re-import the file.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [incomingUri]);

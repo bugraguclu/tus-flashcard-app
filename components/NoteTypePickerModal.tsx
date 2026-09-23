@@ -9,6 +9,7 @@ import {
     View,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
 import { getAllNoteTypes, getNoteType } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type NoteType } from '../lib/models';
@@ -36,7 +37,7 @@ type Props = {
 
 function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="M15 18 9 12l6-6" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
@@ -44,7 +45,7 @@ function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
 
 function CheckIcon({ color, size = 22 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="m5 12.5 4.2 4L19 6.8" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
@@ -53,7 +54,7 @@ function CheckIcon({ color, size = 22 }: { color: string; size?: number }) {
 /** Two stacked cards — the shape of a standard note type that renders front/back templates. */
 function StandardTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="M8 3.6h10.4a2 2 0 0 1 2 2V16" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" opacity={0.55} />
             <Rect x={3.4} y={7} width={13.6} height={13.4} rx={2.4} fill="none" stroke={color} strokeWidth={1.8} />
             <Path d="M6.8 11.4h6.8M6.8 15.2h4.2" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
@@ -64,7 +65,7 @@ function StandardTypeIcon({ color, size = 21 }: { color: string; size?: number }
 /** Brackets around a hidden run of text — the shape of a cloze deletion. */
 function ClozeTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="M9 4.6H5.6v14.8H9M15 4.6h3.4v14.8H15" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
             <Circle cx={9.2} cy={12} r={1.15} fill={color} />
             <Circle cx={12} cy={12} r={1.15} fill={color} />

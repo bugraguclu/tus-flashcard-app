@@ -1,0 +1,36 @@
+{
+  "name": "TusAnkiM",
+  "short_name": "TusAnkiM",
+  "description": "Aralıklı tekrarla çalışılan, çevrimdışı kullanılabilen TUS kartları.",
+  "lang": "tr",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e8f5f0",
+  "theme_color": "#e8f5f0",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Desteler", "short_name": "Desteler", "url": "/decks" },
+    { "name": "Kart ekle", "short_name": "Kart ekle", "url": "/editor" },
+    { "name": "İstatistikler", "short_name": "İstatistik", "url": "/stats" }
+  ],
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "application/zip": [".apkg", ".colpkg"],
+        "text/csv": [".csv"],
+        "text/tab-separated-values": [".tsv"],
+        "text/plain": [".txt"]
+      }
+    }
+  ],
+  "launch_handler": { "client_mode": "focus-existing" }
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
 type Props = {
     color: string;
@@ -12,7 +13,7 @@ type Props = {
 export default function LockGlyph({ color, size = 16, open = false }: Props) {
     const scale = size / 16;
     return (
-        <Svg width={size} height={size * 1.125} viewBox="0 0 16 18" accessibilityElementsHidden>
+        <Svg width={size} height={size * 1.125} viewBox="0 0 16 18" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d={open ? 'M5 7V5a3 3 0 0 1 5.9-.75' : 'M5 7V5a3 3 0 0 1 6 0v2'}
                 fill="none"

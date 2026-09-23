@@ -100,29 +100,46 @@ export async function readUriBytes(uri: string, maxBytes?: number): Promise<Uint
     return bytes;
 }
 
-/** Trigger a browser download of the given text. Web only. */
-export function downloadTextFileWeb(
-    fileName: string,
-    contents: string,
-    mimeType = 'application/json',
-): void {
-    const blob = new Blob([contents], { type: mimeType });
+function downloadBlobWeb(fileName: string, blob: Blob): void {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = fileName;
     anchor.click();
-    URL.revokeObjectURL(url);
+    // Safari can still be reading the URL when click() returns; revoking at once cancels the save.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-/** Trigger a browser download of binary data. Web only. */
-export function downloadBytesFileWeb(fileName: string, contents: Uint8Array, mimeType: string): void {
+function blobFrom(contents: string | Uint8Array, mimeType: string): Blob {
+    if (typeof contents === 'string') return new Blob([contents], { type: mimeType });
     const copy = new Uint8Array(contents);
-    const blob = new Blob([copy.buffer as ArrayBuffer], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = fileName;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    return new Blob([copy.buffer as ArrayBuffer], { type: mimeType });
+}
+
+/**
+ * Hand an exported file over the way the iPhone app hands one to the share sheet. A touch device
+ * whose browser can share files gets the system share sheet; everything else gets a download,
+ * which is what a desktop user expects. A share the learner cancels stays cancelled; one the
+ * browser refuses (a lapsed user gesture, an unsupported type) still ends in a download.
+ */
+export async function shareOrDownloadFileWeb(
+    fileName: string,
+    contents: string | Uint8Array,
+    mimeType: string,
+): Promise<'shared' | 'downloaded' | 'cancelled'> {
+    const blob = blobFrom(contents, mimeType);
+    const touchFirst = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
+    if (touchFirst && typeof navigator !== 'undefined' && typeof navigator.canShare === 'function') {
+        const file = new File([blob], fileName, { type: mimeType });
+        if (navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: fileName });
+                return 'shared';
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
+            }
+        }
+    }
+    downloadBlobWeb(fileName, blob);
+    return 'downloaded';
 }

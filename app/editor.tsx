@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
 import { confirm, alert, choose } from '../lib/confirm';
@@ -119,7 +120,7 @@ function fieldHasContent(value: string): boolean {
 
 function EyeIcon({ color, size = 24 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="M2.3 12s3.7-6.1 9.7-6.1 9.7 6.1 9.7 6.1-3.7 6.1-9.7 6.1S2.3 12 2.3 12Z"
                 fill="none"
@@ -135,7 +136,7 @@ function EyeIcon({ color, size = 24 }: { color: string; size?: number }) {
 
 function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="M15 18 9 12l6-6" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
@@ -143,7 +144,7 @@ function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
 
 function CheckIcon({ color, size = 27 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="m5 12.5 4.2 4L19 6.8" fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
@@ -151,7 +152,7 @@ function CheckIcon({ color, size = 27 }: { color: string; size?: number }) {
 
 function MoreIcon({ color, size = 25 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Circle cx={12} cy={5} r={1.7} fill={color} />
             <Circle cx={12} cy={12} r={1.7} fill={color} />
             <Circle cx={12} cy={19} r={1.7} fill={color} />
@@ -161,7 +162,7 @@ function MoreIcon({ color, size = 25 }: { color: string; size?: number }) {
 
 function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
     );
@@ -169,7 +170,7 @@ function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number })
 
 function KeyboardDismissIcon({ color, size = 18 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="M20 4H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"
                 fill={color}
@@ -183,7 +184,7 @@ function KeyboardDismissIcon({ color, size = 18 }: { color: string; size?: numbe
 
 function PinIcon({ color, size = 21 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="M8.2 3.5h7.6l-1.1 5.1 2.8 3.1v1.5H6.5v-1.5l2.8-3.1-1.1-5.1ZM12 13.2v7.3"
                 fill="none"
@@ -277,7 +278,7 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
 
     if (name === 'math') {
         return (
-            <Svg width={size} height={size} viewBox="0 0 6.35 6.35" accessibilityElementsHidden>
+            <Svg width={size} height={size} viewBox="0 0 6.35 6.35" {...DECORATIVE_SVG_PROPS}>
                 <Path
                     fill={color}
                     d="M1.559 1.099v.457l1.49 1.808-1.49 1.807v.458h2.345a1.246 1.246 0 0 1-.22-.483H2.321l-.009-.016L3.7 3.404V3.33L2.312 1.597l.009-.016h1.702l.047.52h.526V1.1H1.559Z"
@@ -291,7 +292,7 @@ function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName
     }
 
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path fill={color} d={paths[name]} />
         </Svg>
     );

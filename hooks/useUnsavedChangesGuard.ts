@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { useNavigation } from 'expo-router';
 import { confirmAsync } from '../lib/confirm';
 
@@ -40,5 +41,19 @@ export function useUnsavedChangesGuard(
                 confirmationOpenRef.current = false;
             });
     }), [message, navigation, title]);
+
+    // A browser tab can also be closed or reloaded, which no navigation listener sees. The browser
+    // only offers its own generic prompt there, but that still stops the draft vanishing silently.
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
+        const onBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (!dirtyRef.current || allowNavigationRef.current) return;
+            event.preventDefault();
+            // Chromium still requires returnValue to be set before it shows the prompt.
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', onBeforeUnload);
+        return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    }, []);
 }
 

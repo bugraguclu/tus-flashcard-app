@@ -1,3 +1,4 @@
+const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
@@ -32,6 +33,23 @@ config.resolver.extraNodeModules = {
   'stream': emptyModule,
   'node:buffer': emptyModule,
   'buffer': emptyModule,
+};
+
+// Native-only packages that have no web build get a browser implementation of the same
+// contract, so screens import one module on every platform instead of branching themselves.
+const WEB_MODULE_OVERRIDES = {
+  // Renders nothing on web; the replacement draws the browser's own date/time controls.
+  '@react-native-community/datetimepicker': path.resolve(__dirname, 'components/WebDateTimePicker.tsx'),
+};
+
+const upstreamResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web' && Object.prototype.hasOwnProperty.call(WEB_MODULE_OVERRIDES, moduleName)) {
+    return { type: 'sourceFile', filePath: WEB_MODULE_OVERRIDES[moduleName] };
+  }
+  return upstreamResolveRequest
+    ? upstreamResolveRequest(context, moduleName, platform)
+    : context.resolveRequest(context, moduleName, platform);
 };
 
 module.exports = config;

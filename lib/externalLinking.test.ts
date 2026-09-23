@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseExternalAppUrl, safeExternalCallbackUrl } from './externalLinking';
+import {
+    externalAppUrlFromQuery,
+    parseExternalAppUrl,
+    safeExternalCallbackUrl,
+} from './externalLinking';
 
 describe('TusAnkiM x-callback URLs', () => {
     it('parses an add-note request with named fields and tags', () => {
@@ -41,5 +45,31 @@ describe('TusAnkiM x-callback URLs', () => {
         ]) {
             expect(safeExternalCallbackUrl(value)).toBeNull();
         }
+    });
+});
+
+describe('the web form of the x-callback URLs', () => {
+    it('reads the route query exactly as the matching tusankim:// URL', () => {
+        const fromWeb = externalAppUrlFromQuery({
+            action: 'addnote',
+            type: 'Basic',
+            deck: 'TUS::Dahiliye',
+            fldFront: 'Kalp',
+            fldBack: 'Heart',
+            tags: 'kardiyo marked',
+        });
+        expect(parseExternalAppUrl(fromWeb!)).toEqual(parseExternalAppUrl(
+            'tusankim://x-callback-url/addnote?type=Basic&deck=TUS%3A%3ADahiliye&fldFront=Kalp&fldBack=Heart&tags=kardiyo%20marked',
+        ));
+        expect(parseExternalAppUrl(externalAppUrlFromQuery({ action: 'search', query: 'tag:marked' })!))
+            .toEqual({ kind: 'search', query: 'tag:marked' });
+    });
+
+    it('keeps repeated parameters and refuses a missing or malformed action', () => {
+        expect(externalAppUrlFromQuery({ action: 'search', query: ['a', 'b'] }))
+            .toBe('tusankim://x-callback-url/search?query=a&query=b');
+        expect(externalAppUrlFromQuery({ type: 'Basic' })).toBeNull();
+        expect(externalAppUrlFromQuery({ action: 'add note' })).toBeNull();
+        expect(externalAppUrlFromQuery({ action: '../decks' })).toBeNull();
     });
 });
