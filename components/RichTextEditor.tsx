@@ -527,6 +527,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     allowingReadAccessToURL={mediaBaseUrl || undefined}
                     allowsInlineMediaPlayback={true}
                     mediaPlaybackRequiresUserAction={false}
+                    // The app owns the status bar; see the same prop in CardWebView.
+                    autoManageStatusBarEnabled={false}
                     // Android blocks file:// reads by default; field media lives in the app's own
                     // documentDirectory (getMediaBaseUrl), so images need this to render. The CSP
                     // keeps that access passive: field HTML gets no script nonce, no network, and

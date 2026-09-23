@@ -636,6 +636,11 @@ export default function CardWebView({
             useSharedProcessPool={false}
             // Audio attached to a card should play inline, not hijack iOS fullscreen.
             allowsInlineMediaPlayback
+            // The app owns the status bar (app/_layout.tsx). Left on, every WebView writes back
+            // the style it saw when it was created whenever any window shows or hides — the
+            // keyboard, the light/dark crossfade — so the clock kept the old theme's colour for
+            // as long as the reviewer stayed mounted.
+            autoManageStatusBarEnabled={false}
             // Android blocks file:// reads by default; media lives in the app's own
             // documentDirectory (getMediaBaseUrl), so images need this to render.
             // CSP limits file access to passive local card media. The imported card itself
