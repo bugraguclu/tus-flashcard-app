@@ -743,11 +743,12 @@ function sharedRuns(typed: string[], expected: string[]): SharedRun[] {
 }
 
 /**
- * Drops shared runs that are only coincidence: a run no longer than the unmatched text on each
- * side of it, such as a single letter the learner happened to share with a sentence they never
+ * Drops shared runs that are only coincidence: a run shorter than the unmatched text on both
+ * sides of it, such as a single letter the learner happened to share with a sentence they never
  * typed. Keeping it would split one mistake into several and scatter green through the answer.
- * A run that opens both answers, or closes them, always survives: it has no unmatched text on
- * that side, so nothing outweighs it there.
+ * A run next to a mistake no longer than itself is a real alignment — the `d` of "Tıroıd"
+ * against "Tiroid" sits after a one-letter slip — and stays, as does a run that opens or closes
+ * both answers, which has no unmatched text on that side at all.
  */
 function withoutIncidentalRuns(runs: SharedRun[], typedLength: number, expectedLength: number): SharedRun[] {
     let kept = runs;
@@ -765,7 +766,7 @@ function withoutIncidentalRuns(runs: SharedRun[], typedLength: number, expectedL
                 (after ? after.typed : typedLength) - (run.typed + run.length),
                 (after ? after.expected : expectedLength) - (run.expected + run.length),
             );
-            if (run.length <= gapBefore && run.length <= gapAfter) {
+            if (run.length < gapBefore && run.length < gapAfter) {
                 kept = kept.filter((_, position) => position !== index);
                 changed = true;
                 break;

@@ -695,6 +695,18 @@ describe('renderTypeAnswerDiff', () => {
         expect(correctLine.match(/class="typeGood"/g)).toHaveLength(2);
     });
 
+    it('keeps a one-letter match that only sits next to a one-letter slip', () => {
+        // Typed on a Turkish keyboard: each dotted i became a dotless ı. The final d still lines
+        // up with the answer's, so it stays good rather than being folded into the omission.
+        const html = renderTypeAnswerDiff('Tıroıd', 'Tiroid peroksidaz');
+        expect(html).toContain(
+            '<span class="typed"><span class="typeGood">T</span><span class="typeBad">ı</span>'
+            + '<span class="typeGood">ro</span><span class="typeBad">ı</span><span class="typeGood">d</span>'
+            + '<span class="typeMissed">---</span></span>',
+        );
+        expect(html).toContain('<span class="typeGood">d</span><span class="typeMissed"> peroksidaz</span>');
+    });
+
     it('never splits a character outside the basic plane', () => {
         const html = renderTypeAnswerDiff('🙂a', '🙂b');
         expect(html).toContain('<span class="typeGood">🙂</span><span class="typeBad">a</span>');
