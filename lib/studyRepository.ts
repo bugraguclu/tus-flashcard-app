@@ -469,7 +469,7 @@ function clauseForSearchTerm(term: string): SearchFragment | null {
         // JSON under `ankiData`. Difficulty is written as a 0-1 fraction in searches and stored
         // on the 1-10 scale.
         if (key === 's' || key === 'd') {
-            const column = `CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.${key}') AS REAL)`;
+            const column = key === 's' ? FSRS_STABILITY_SQL : FSRS_DIFFICULTY_SQL;
             return { sql: `${column} ${op} ?`, params: [key === 'd' ? value * 9 + 1 : value] };
         }
 
@@ -493,7 +493,7 @@ function clauseForSearchTerm(term: string): SearchFragment | null {
             const exponent = -1 / FSRS6_DEFAULT_DECAY;
             const safeValue = Math.min(1, Math.max(1e-9, value));
             const intervalPerStabilityDay = (Math.pow(safeValue, exponent) - 1) / (Math.pow(0.9, exponent) - 1);
-            const stability = "CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.s') AS REAL)";
+            const stability = FSRS_STABILITY_SQL;
             const elapsed = `(CASE WHEN COALESCE(json_extract(c.data, '$.lastReview'), 0) > 0
                     THEN (? - json_extract(c.data, '$.lastReview')) / 86400000.0
                     ELSE (? - (c.due - c.ivl)) END)`;
@@ -2134,9 +2134,21 @@ export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSe
 export type BrowserCardSortKey = 'sortField' | 'cardType' | 'due' | 'deck' | 'created' | 'modified'
     | 'interval' | 'ease' | 'lapses' | 'reviews' | 'stability' | 'difficulty' | 'retrievability';
 
-/** FSRS memory state, read out of the card JSON's Anki data blob. */
-const FSRS_STABILITY_SQL = "CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.s') AS REAL)";
-const FSRS_DIFFICULTY_SQL = "CAST(json_extract(json_extract(c.data, '$.ankiData'), '$.d') AS REAL)";
+/**
+ * One FSRS memory-state key, read out of the Anki data blob the card JSON keeps under `ankiData`.
+ * Imports copy that blob verbatim, so it can be empty, and SQLite throws on '' or any other text
+ * that is not JSON: one such card would fail the whole query. The blob is checked first instead,
+ * and a card without a readable one has no memory state and reads as NULL. That is the value
+ * Anki's `extract_fsrs_variable` (rslib/src/storage/sqlite.rs) gives it, and how
+ * `parseAnkiCardData` reads it here.
+ */
+function fsrsMemoryStateSql(key: 's' | 'd'): string {
+    const blob = "json_extract(c.data, '$.ankiData')";
+    return `(CASE WHEN json_valid(${blob}) THEN CAST(json_extract(${blob}, '$.${key}') AS REAL) END)`;
+}
+
+const FSRS_STABILITY_SQL = fsrsMemoryStateSql('s');
+const FSRS_DIFFICULTY_SQL = fsrsMemoryStateSql('d');
 /**
  * Retrievability itself needs a power function SQLite may not have, but it falls monotonically as
  * elapsed time grows relative to stability. Sorting on the negated ratio therefore orders cards

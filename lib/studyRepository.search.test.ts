@@ -706,4 +706,43 @@ describe('FSRS search properties', () => {
         expect(search('prop:s>0')).toBe(0);
         expect(search('prop:r>0')).toBe(0);
     });
+
+    describe('a card imported with a blank data blob', () => {
+        // A package can carry an empty cards.data, which the importer keeps verbatim. SQLite
+        // rejects '' as malformed JSON, so one such card must read as having no memory state, as
+        // it does in Anki, instead of making every FSRS search and sort over the collection throw.
+        beforeEach(() => {
+            withFsrs(3007, 67, { s: 40, d: 8.2 }, 5);
+            saveNote(makeNote(68, [], ['boş veri', 'cevap', '']));
+            saveAnkiCard({ ...makeCard(3008, 68, 1, { type: 2, queue: 2, due: 5, ivl: 10 }), ankiData: '' });
+            const stored = db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = 3008');
+            expect(JSON.parse(stored!.data).ankiData).toBe('');
+        });
+
+        it('leaves it out of prop:s, prop:d and prop:r', () => {
+            expect(search('prop:s>1')).toBe(1);
+            // No memory state is NULL, not zero: a zero stability would satisfy this.
+            expect(search('prop:s<1')).toBe(0);
+            expect(search('prop:d>0.5')).toBe(1);
+            expect(search('prop:r>0')).toBe(1);
+        });
+
+        it.each(['stability', 'difficulty', 'retrievability'] as const)(
+            'sorts it by %s as a card with no memory state in every browser mode',
+            (sortKey) => {
+                // SQLite orders NULL below every value: last descending, first ascending.
+                for (const [descending, expected] of [[true, [3007, 3008]], [false, [3008, 3007]]] as const) {
+                    const query = { sortKey, descending };
+                    const order = descending ? 'descending' : 'ascending';
+                    const cards = getBrowserCards(settings, query);
+                    expect(cards.map((card) => card.cardId), `cards mode, ${order}`).toEqual(expected);
+                    const notes = getBrowserCards(settings, { ...query, tableMode: 'notes' });
+                    expect(notes.map((card) => card.cardId), `notes mode, ${order}`).toEqual(expected);
+                    const searched = getBrowserRowIdsMatchingText(query, 'is:review');
+                    expect(searched, `search box, ${order}`).toEqual(expected);
+                }
+                expect(getBrowserRowIdsMatchingText({ sortKey }, 'prop:s>1')).toEqual([3007]);
+            },
+        );
+    });
 });
