@@ -195,8 +195,8 @@ afterEach(() => {
 describe('flag: masks the low three bits', () => {
     it('matches a flagged card even when other bits of c.flags are set', () => {
         saveNote(makeNote(1, [], ['kırmızı bayrak', 'cevap', '']));
-        // Anki reserves the upper bits; only 0b111 carries the flag. 9 = 0b1001 -> flag 1.
-        // 9 = 0b1001: flag 1 plus a reserved bit, as an imported Anki collection can carry.
+        // Anki reserves the upper bits and only 0b111 carries the flag, so 9 = 0b1001 is flag 1
+        // plus a reserved bit, as an imported Anki collection can carry.
         saveAnkiCard(makeCard(11, 1, 1, { type: 2, queue: 2, due: 0, flags: 9 as AnkiCard['flags'] }));
         expect(search('flag:1')).toBe(1);
         expect(search('flag:0')).toBe(0);
@@ -419,21 +419,21 @@ describe('prop: numeric card properties', () => {
         saveNote(makeNote(40, [], ['oturmuş kart', 'cevap', '']));
         saveNote(makeNote(41, [], ['taze kart', 'cevap', '']));
         saveNote(makeNote(42, [], ['yeni kart', 'cevap', '']));
-        // ivl 30 gün, 12 tekrar, 1 unutma, ease 2.50
+        // 30-day interval, 12 reviews, 1 lapse, ease 2.50
         saveAnkiCard(makeCard(40, 40, 1, {
             type: 2, queue: 2, due: 0, ivl: 30, reps: 12, lapses: 1, factor: 2500,
         }));
-        // ivl 4 gün, 6 tekrar, 5 unutma, ease 1.90 — zorlanılan kart
+        // 4-day interval, 6 reviews, 5 lapses, ease 1.90: a struggling card
         saveAnkiCard(makeCard(41, 41, 1, {
             type: 2, queue: 2, due: 0, ivl: 4, reps: 6, lapses: 5, factor: 1900,
         }));
-        // Yeni kart: due = kuyruk sırası
+        // A new card, whose due is its queue position
         saveAnkiCard(makeCard(42, 42, 1, { type: 0, queue: 0, due: 12, ivl: 0, reps: 0, lapses: 0, factor: 0 }));
     });
 
     it('compares the interval in days', () => {
         expect(search('prop:ivl>=21')).toBe(1);
-        expect(search('prop:ivl<21')).toBe(2); // taze kart + yeni kart (ivl 0)
+        expect(search('prop:ivl<21')).toBe(2); // the young card and the new card (ivl 0)
         expect(search('prop:ivl=30')).toBe(1);
     });
 
@@ -445,7 +445,7 @@ describe('prop: numeric card properties', () => {
 
     it('compares how often a card was forgotten', () => {
         expect(search('prop:lapses>=5')).toBe(1);
-        expect(search('prop:lapses=0')).toBe(1); // yalnızca yeni kart
+        expect(search('prop:lapses=0')).toBe(1); // only the new card
     });
 
     it('reads ease as a multiplier but compares the stored per-mille factor', () => {
@@ -466,7 +466,7 @@ describe('prop: numeric card properties', () => {
     it('supports every Anki comparison operator', () => {
         expect(search('prop:ivl>4')).toBe(1);
         expect(search('prop:ivl>=4')).toBe(2);
-        expect(search('prop:ivl<4')).toBe(1);  // yeni kart, ivl 0
+        expect(search('prop:ivl<4')).toBe(1);  // the new card, ivl 0
         expect(search('prop:ivl<=4')).toBe(2);
         expect(search('prop:ivl=4')).toBe(1);
         expect(search('prop:ivl!=4')).toBe(2);
