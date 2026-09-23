@@ -21,7 +21,7 @@ export interface CreateCourseResult {
 
 /** Root deck all course decks hang under; honors a renamed root deck. */
 function rootDeckName(): string {
-    return getDeck(1)?.name ?? 'Python';
+    return getDeck(1)?.name ?? 'Varsayılan';
 }
 
 export interface CreateCourseOptions {

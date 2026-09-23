@@ -15,31 +15,33 @@
 - Destek: `https://bugraguclu.github.io/tus-flashcard-app/support.html`
 - Koşullar: `https://bugraguclu.github.io/tus-flashcard-app/terms.html`
 
-> Yayın notu: Bu üç taslak URL 21 Ağustos 2026 kontrolünde 404 döndürmektedir. İlgili yerel HTML dosyaları yayımlanıp adresler HTTP 200 vermeden App Store Connect’e girilmemelidir.
+> Yayın notu: Bu üç adres 30 Ağustos 2026 kontrolünde 404 döndürmektedir. Depodaki
+> GitHub Pages iş akışı `docs/` klasörünü yayımlamaya hazırlar; depo ayarlarında Pages kaynağı
+> GitHub Actions olarak etkinleştirilip adresler HTTP 200 vermeden App Store Connect’e girilmemelidir.
 
 ## Promosyon metni (170 karakter sınırı)
 
-Her TUS dersinden 100 kartı ücretsiz dene. Anki uyumlu aralıklı tekrar ile çalış; istersen 9.583 kartlık tam koleksiyonu tek ödemeyle aç.
+Ücretsiz, Anki uyumlu aralıklı tekrar. Kendi kartlarını oluştur; istersen 9.583 kartlık hazır BKA TUS paketini de ücretsiz ekle.
 
 ## Açıklama
 
 TusAnkiM, TUS hazırlığını Anki benzeri aralıklı tekrar sistemiyle iPhone’a taşır.
 
-Ücretsiz olarak:
+Uygulamanın tamamı ücretsiz:
 • Kendi kartlarını ve destelerini oluştur
 • Anki paketlerini içe ve dışa aktar
-• Kartlarını aralıklı tekrar sistemiyle çalış
-• Çalışma geçmişini ve istatistiklerini takip et
-• 12 TUS dersinin her birinden 100 kartı dene — toplam 1.200 örnek kart
+• Aralıklı tekrar ile çalış, kartları filtrele ve etiketle
+• Çalışma geçmişini, istatistiklerini ve serini takip et
+• Otomatik yedekleme ile koleksiyonunu koru
 
-BKA TUS Tam Koleksiyon, tek seferlik uygulama içi satın almayla:
-• 9.583 çalışma kartı
-• 12 temel ve klinik bilim disiplini
-• 100’den fazla düzenli alt konu destesi
-• Denemede başladığın çalışma ilerlemesini koruyan kesintisiz geçiş
-• Apple hesabınla geri yüklenebilir süresiz erişim sunar
+İstersen ücretsiz hazır kart paketini ekle — BKA TUS:
+• 9.583 hazırlanmış çalışma kartı
+• 12 temel ve klinik bilim dersi
+• 12 ders altında 106 alt deste; kartların %65'i konu konu ayrılmış
+• Kendi destelerinin yanına eklenir; kendi kartların ve geçmişin olduğu gibi kalır
+• Ödeme, hesap veya mağaza doğrulaması olmadan cihazına kurulur
 
-Kartlar cihazında saklanır. Reklam yoktur. Üyelik açmadan çalışmaya başlayabilirsin.
+Hesap açmadan çalışmaya başlayabilirsin. Kartlar cihazında saklanır. Reklam yoktur.
 
 TusAnkiM yalnızca eğitim ve sınava hazırlık amaçlıdır; tıbbi tavsiye, tanı, tedavi önerisi veya klinik karar desteği değildir.
 
@@ -57,20 +59,24 @@ Yayıncı adı, gerçek destek e-postası/telefonu ve yasal adres App Store Conn
 
 6,9 inç iPhone için 1320 × 2868 portre PNG/JPG, alfa kanalsız; en az 1, en fazla 10:
 
-1. `Her dersten 100 kart ücretsiz`
-2. `TUS konuları düzenli alt destelerde`
-3. `Odaklı, okunaklı kart deneyimi`
-4. `Anki benzeri aralıklı tekrar`
-5. `9.583 kart · Tek ödeme · Süresiz`
+1. `Ücretsiz Anki tarzı çalışma`
+2. `Odaklı, okunaklı kart deneyimi`
+3. `Anki benzeri aralıklı tekrar`
+4. `İstersen hazır BKA TUS paketi`
+5. `9.583 hazır kart · Ücretsiz erişim`
 
 Hazır native QA dosyaları (`docs/app-store/screenshots/`):
 
-1. `00-ilk-acilis-teklif.jpg` — ilk açılış ve 1.500 TL teklif
-2. `01-deneme-desteleri.jpg` — her dersten 100 kartlık deneme
-3. `02-kart-soru.jpg` — Anatomi / Abdomen soru yüzü
+1. `00-deste-listesi.jpg` — ücretsiz deste listesi ve kurulmamış BKA TUS paketi
+2. `01-magaza-ekrani.jpg` — paket içeriği ve ücretsiz açma ekranı
+3. `02-kart-soru.jpg` — soru yüzü
 4. `03-kart-cevap.jpg` — cevap ve tekrar değerlendirme düğmeleri
 
-Dosyalar iPhone 17 Pro Max simülatöründen 1320 × 2868 boyutunda, alfa kanalsız JPG olarak alınmıştır. Ürün App Store Connect/RevenueCat üzerinde bağlandıktan sonra ilk görsel gerçek yerelleştirilmiş fiyat ve aktif satın alma düğmesiyle yeniden çekilmelidir; nihai set fiziksel iPhone’da da kontrol edilmelidir.
+Dosyalar iPhone 17 Pro Max simülatöründen 1320 × 2868 boyutunda, alfa kanalsız JPG olarak alınmıştır.
+
+Mevcut görseller geliştirme derlemesinden alınmıştır. Gönderilecek dört görsel de ödeme kapalı
+production yapılandırmasıyla alınmış Release/TestFlight derlemesinden yeniden çekilmeli; ücretsiz açma
+metni ve gerçek paket kurulumu görünmeli ve nihai set fiziksel iPhone’da kontrol edilmelidir.
 
 ## Yaş derecelendirmesi
 

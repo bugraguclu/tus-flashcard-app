@@ -10,6 +10,9 @@ const dbState = vi.hoisted(() => ({
     revlog: [] as any[],
     graves: [] as any[],
     session_stats: [] as any[],
+    exec: [] as string[],
+    failOnExec: null as string | null,
+    transactionSnapshot: null as null | Record<string, unknown>,
 }));
 
 const asyncStorageState = vi.hoisted(() => new Map<string, string>());
@@ -21,6 +24,36 @@ function normalize(sql: string): string {
 const fakeDb = {
     execSync(sql: string) {
         const q = normalize(sql);
+        dbState.exec.push(q);
+        if (q === 'BEGIN TRANSACTION;' || q === 'BEGIN;') {
+            dbState.transactionSnapshot = {
+                settings: new Map(dbState.settings),
+                note_types: [...dbState.note_types],
+                notes: [...dbState.notes],
+                anki_cards: [...dbState.anki_cards],
+                decks: [...dbState.decks],
+                deck_configs: [...dbState.deck_configs],
+                revlog: [...dbState.revlog],
+                graves: [...dbState.graves],
+                session_stats: [...dbState.session_stats],
+            };
+        }
+        if (dbState.failOnExec && q.includes(dbState.failOnExec)) throw new Error(`forced failure: ${dbState.failOnExec}`);
+        if (q === 'ROLLBACK;' && dbState.transactionSnapshot) {
+            const snapshot = dbState.transactionSnapshot as any;
+            dbState.settings = new Map(snapshot.settings);
+            dbState.note_types = snapshot.note_types;
+            dbState.notes = snapshot.notes;
+            dbState.anki_cards = snapshot.anki_cards;
+            dbState.decks = snapshot.decks;
+            dbState.deck_configs = snapshot.deck_configs;
+            dbState.revlog = snapshot.revlog;
+            dbState.graves = snapshot.graves;
+            dbState.session_stats = snapshot.session_stats;
+            dbState.transactionSnapshot = null;
+            return;
+        }
+        if (q === 'COMMIT;') dbState.transactionSnapshot = null;
         if (q.includes('DELETE FROM REVLOG')) dbState.revlog = [];
         if (q.includes('DELETE FROM ANKI_CARDS')) dbState.anki_cards = [];
         if (q.includes('DELETE FROM NOTES')) dbState.notes = [];
@@ -29,6 +62,7 @@ const fakeDb = {
         if (q.includes('DELETE FROM NOTE_TYPES')) dbState.note_types = [];
         if (q.includes('DELETE FROM GRAVES')) dbState.graves = [];
         if (q.includes('DELETE FROM SESSION_STATS')) dbState.session_stats = [];
+        if (q.includes('DELETE FROM SETTINGS')) dbState.settings.clear();
     },
     getFirstSync<T>(sql: string, ...params: any[]): T | null {
         const q = normalize(sql);
@@ -204,13 +238,25 @@ vi.mock('./legacyMigration', () => ({
 
 vi.mock('./ankiInit', () => ({
     initAnkiData: vi.fn(),
+    migrateLegacySubjectTopicsToDecks: vi.fn(),
 }));
 
 vi.mock('./noteManager', () => ({
     getSearchIndexCards: () => [],
 }));
 
-import { DEFAULT_SETTINGS, exportAllData, importAllData, loadSettings, saveSessionStats, saveSettings } from './storage';
+import {
+    DEFAULT_SETTINGS,
+    exportAllData,
+    importAllData,
+    loadSettings,
+    saveCollectionDeckOptions,
+    saveSessionStats,
+    saveSettings,
+    resetAllData,
+} from './storage';
+import { saveDeckConfig } from './deckManager';
+import { CATALOG_PACK_ID, CATALOG_PROGRESS_KEY } from './catalogRows';
 
 describe('storage import/export canonical round-trip', () => {
     beforeEach(() => {
@@ -224,6 +270,10 @@ describe('storage import/export canonical round-trip', () => {
         dbState.graves = [];
         dbState.session_stats = [];
         asyncStorageState.clear();
+        dbState.exec = [];
+        dbState.failOnExec = null;
+        dbState.transactionSnapshot = null;
+        vi.mocked(saveDeckConfig).mockReset();
 
         dbState.note_types.push({ id: 1, name: 'Basic', data: '{}', updated_at: 0, usn: -1, tombstone: 0 });
         dbState.notes.push({ id: 10, noteTypeId: 1, sfld: 'Q', csum: 1, tags: 'anatomi', data: '{}', updated_at: 0, usn: -1, tombstone: 0 });
@@ -271,5 +321,168 @@ describe('storage import/export canonical round-trip', () => {
 
         saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
         expect(loadSettings().language).toBe('tr');
+    });
+
+    it('defaults to Turkish when settings have not been configured', () => {
+        expect(DEFAULT_SETTINGS.language).toBe('tr');
+        expect(loadSettings().language).toBe('tr');
+    });
+
+    it('rolls settings metadata back and reports failure when deck-config persistence fails', () => {
+        expect(saveSettings({ ...DEFAULT_SETTINGS, language: 'en' }).ok).toBe(true);
+        const before = new Map(dbState.settings);
+        dbState.exec = [];
+        vi.mocked(saveDeckConfig).mockImplementationOnce(() => { throw new Error('disk full'); });
+
+        const result = saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
+
+        expect(result.ok).toBe(false);
+        expect(dbState.settings).toEqual(before);
+        expect(dbState.exec).toContain('BEGIN TRANSACTION;');
+        expect(dbState.exec).toContain('ROLLBACK;');
+    });
+
+    it('rolls back database deletion and preserves legacy storage when reset fails', async () => {
+        asyncStorageState.set('tus_settings_v2', '{"language":"tr"}');
+        const notesBefore = [...dbState.notes];
+        dbState.failOnExec = 'DELETE FROM NOTES';
+
+        await expect(resetAllData()).rejects.toThrow('forced failure');
+
+        expect(dbState.notes).toEqual(notesBefore);
+        expect(asyncStorageState.get('tus_settings_v2')).toBe('{"language":"tr"}');
+        expect(dbState.exec.at(-1)).toBe('ROLLBACK;');
+    });
+
+    it('persists both typed-answer presentation preferences', () => {
+        saveSettings({
+            ...DEFAULT_SETTINGS,
+            typeAnswerInCard: true,
+            focusTypeAnswer: false,
+        });
+
+        expect(loadSettings()).toMatchObject({
+            typeAnswerInCard: true,
+            focusTypeAnswer: false,
+        });
+    });
+
+    it('preserves a one-percent swipe sensitivity selected in Controls', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, swipeSensitivity: 1 });
+        expect(loadSettings().swipeSensitivity).toBe(1);
+    });
+
+    it('persists audio playback rate preference', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, audioPlaybackRate: 1.5 });
+        expect(loadSettings().audioPlaybackRate).toBe(1.5);
+    });
+
+    it('persists separate question and answer actions for all nine tap zones', () => {
+        saveSettings({
+            ...DEFAULT_SETTINGS,
+            ninePointTouchEnabled: true,
+            questionTapActions: { ...DEFAULT_SETTINGS.questionTapActions!, topLeft: 'replayAudio' },
+            answerTapActions: { ...DEFAULT_SETTINGS.answerTapActions!, bottomCenter: 'easy' },
+        });
+
+        expect(loadSettings()).toMatchObject({
+            ninePointTouchEnabled: true,
+            questionTapActions: { topLeft: 'replayAudio', middleCenter: 'showAnswer' },
+            answerTapActions: { bottomCenter: 'easy', middleLeft: 'again', middleRight: 'good' },
+        });
+    });
+
+    it('persists collection-wide deck options independently from a preset', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, newCardsIgnoreReviewLimit: true, limitsStartFromTop: true });
+
+        saveCollectionDeckOptions({ newCardsIgnoreReviewLimit: false, limitsStartFromTop: false });
+
+        expect(loadSettings()).toMatchObject({
+            newCardsIgnoreReviewLimit: false,
+            limitsStartFromTop: false,
+        });
+    });
+
+    it('rejects an incomplete canonical file before changing settings or tables', async () => {
+        saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
+        const originalNotes = [...dbState.notes];
+
+        const ok = await importAllData(JSON.stringify({
+            version: 6,
+            canonical: true,
+            settings: { ...DEFAULT_SETTINGS, language: 'en' },
+            tables: { notes: [] },
+        }));
+
+        expect(ok).toBe(false);
+        expect(loadSettings().language).toBe('tr');
+        expect(dbState.notes).toEqual(originalNotes);
+    });
+});
+
+describe('backups and the purchased card pack', () => {
+    const catalogNote = {
+        id: 11,
+        noteTypeId: 1,
+        sfld: 'BKA sorusu',
+        csum: 2,
+        tags: '',
+        data: JSON.stringify({ id: 11, catalogPack: CATALOG_PACK_ID, fields: ['BKA sorusu', 'BKA cevabı'] }),
+        updated_at: 0,
+        usn: -1,
+        tombstone: 0,
+    };
+    const studiedCatalogCard = {
+        id: 31, noteId: 11, deckId: 5, ord: 0, type: 2, queue: 2, due: 12, ivl: 21,
+        factor: 2350, reps: 4, lapses: 1, flags: 0, updated_at: 0, usn: -1, tombstone: 0,
+        data: JSON.stringify({
+            id: 31, noteId: 11, deckId: 5, type: 2, queue: 2, due: 12, ivl: 21, factor: 2350,
+            reps: 4, lapses: 1, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
+        }),
+    };
+    const untouchedCatalogCard = {
+        id: 32, noteId: 11, deckId: 5, ord: 0, type: 0, queue: 0, due: 1, ivl: 0,
+        factor: 2500, reps: 0, lapses: 0, flags: 0, updated_at: 0, usn: -1, tombstone: 0,
+        data: JSON.stringify({
+            id: 32, noteId: 11, deckId: 5, type: 0, queue: 0, due: 1, ivl: 0, factor: 2500,
+            reps: 0, lapses: 0, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
+        }),
+    };
+
+    beforeEach(() => {
+        dbState.notes = dbState.notes.filter((row: any) => row.id !== 11);
+        dbState.anki_cards = dbState.anki_cards.filter((row: any) => row.noteId !== 11);
+        dbState.decks = dbState.decks.filter((row: any) => row.id !== 5);
+        dbState.notes.push(catalogNote);
+        dbState.anki_cards.push(studiedCatalogCard, untouchedCatalogCard);
+        dbState.decks.push({ id: 5, name: 'BKA TUS', data: JSON.stringify({ id: 5, catalogPack: CATALOG_PACK_ID }), updated_at: 0, usn: -1, tombstone: 0 });
+    });
+
+    it('omits pack content but keeps the learner collection and their progress on it', async () => {
+        const json = await exportAllData();
+        const data = JSON.parse(json);
+
+        expect(data.tables.notes.map((row: any) => row.id)).toEqual([10]);
+        expect(data.tables.anki_cards.map((row: any) => row.id)).toEqual([20]);
+        // Paid card text must not travel inside a backup file the learner can share.
+        expect(json).not.toContain('BKA cevabı');
+        // Only the card with real study state is worth carrying.
+        expect(data.catalogProgress).toEqual({ '31': [2, 2, 12, 21, 2350, 4, 1, 0, 0, 0, 0, 0] });
+        // Note types, decks and presets stay whole so nothing the learner owns is orphaned.
+        expect(data.tables.decks.map((row: any) => row.id)).toEqual([1, 5]);
+        expect(data.tables.note_types).toHaveLength(1);
+    });
+
+    it('hands the pack progress to the installer when a backup is restored', async () => {
+        const json = await exportAllData();
+        dbState.settings.clear();
+
+        await importAllData(json);
+
+        expect(dbState.notes.map((row: any) => row.id)).toEqual([10]);
+        expect(dbState.anki_cards.map((row: any) => row.id)).toEqual([20]);
+        expect(JSON.parse(dbState.settings.get(CATALOG_PROGRESS_KEY)!)).toEqual({
+            '31': [2, 2, 12, 21, 2350, 4, 1, 0, 0, 0, 0, 0],
+        });
     });
 });

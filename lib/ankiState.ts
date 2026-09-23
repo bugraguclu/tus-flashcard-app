@@ -1,3 +1,4 @@
+import { memoryStateFromCardData, parseAnkiCardData, withFsrsMemoryState } from './fsrsCardData';
 import type { AppSettings, CardState } from './types';
 import type { AnkiCard } from './models';
 
@@ -237,6 +238,10 @@ export function ankiCardToCardState(
         ? (card.due || nowMs)
         : 0;
 
+    // FSRS memory state travels in Anki's own `cards.data` column, so it survives a package
+    // round trip and means the same thing to Anki as it does here.
+    const cardData = parseAnkiCardData(card.ankiData);
+
     return {
         cardId: card.id,
         interval: card.ivl || 0,
@@ -250,9 +255,34 @@ export function ankiCardToCardState(
         learningStep,
         relearningStep,
         lastReviewedAtMs: card.lastReview || 0,
-        elapsedDays: elapsedStudyDays(card.lastReview || 0, nowMs, settings.dayRolloverHour),
+        elapsedDays: elapsedSinceLastReview(card, todayNumber, nowMs, settings.dayRolloverHour),
         lapses: card.lapses || 0,
+        memoryState: memoryStateFromCardData(cardData),
+        desiredRetention: cardData.desiredRetention,
+        decay: cardData.decay,
     };
+}
+
+/**
+ * Days since the card was last answered, matching Anki's `Card::days_since_last_review`.
+ *
+ * Anki prefers the recorded review time and otherwise reconstructs it from the schedule: a review
+ * card due on `due` with interval `ivl` was last answered on `due - ivl`. That fallback matters
+ * for cards imported without a review log, whose `lastReview` is 0 — treating them as "answered
+ * today" would hide every early review from the scheduler.
+ */
+function elapsedSinceLastReview(
+    card: AnkiCard,
+    todayNumber: number,
+    nowMs: number,
+    rolloverHour: number,
+): number {
+    if (card.lastReview && card.lastReview > 0) {
+        return elapsedStudyDays(card.lastReview, nowMs, rolloverHour);
+    }
+    const isDayScheduled = card.queue === 2 || card.queue === 3 || card.type === 2;
+    if (!isDayScheduled || !card.ivl || card.ivl <= 0) return 0;
+    return Math.max(0, todayNumber - (card.due - card.ivl));
 }
 
 /** Encode a scheduled CardState back onto its AnkiCard (the disk shape). */
@@ -262,8 +292,15 @@ export function cardStateToAnkiCard(
     settings: AppSettings,
     nowMs: number = Date.now(),
 ): AnkiCard {
+    // A card answered under FSRS carries its new memory state; one answered under SM-2 leaves
+    // whatever state it had untouched, so switching schedulers back and forth loses nothing.
+    const ankiData = state.memoryState !== undefined
+        ? withFsrsMemoryState(card.ankiData, state.memoryState, state.desiredRetention, state.decay)
+        : card.ankiData;
+
     const updated: AnkiCard = {
         ...card,
+        ankiData,
         // Keep the on-disk card's own id: the AnkiCard passed in is the row of record, so its id
         // is authoritative. Deliberately NOT `id: state.cardId` — in the legacy-migration path
         // state.cardId is the pre-remap legacy id (anki id / 1000), which would fork the progress

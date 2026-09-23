@@ -7,40 +7,61 @@ import {
     Dimensions,
     Keyboard,
     Pressable,
+    BackHandler,
+    PanResponder,
+    Platform,
+    ToastAndroid,
 } from 'react-native';
-import { Slot, usePathname, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
-import { getSearchIndexCards } from '../../lib/noteManager';
+import { getNavigationCardCounts } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
-import { useApp } from '../../contexts/AppContext';
+import { buildDeckTree, getAllDecks, getCardCountsByDeck } from '../../lib/deckManager';
+import { getDeckPathNames, getRootDeckName, getScopedBrowserPath } from '../../lib/deckNavigation';
+import { prioritizeDeckTree } from '../../lib/deckPickerExpansion';
+import {
+    useAppSettings,
+    useCollectionInvalidation,
+    useStartupStatus,
+    useStudyPosition,
+    useStudyScope,
+} from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
 import { useI18n } from '../../hooks/useI18n';
-
-export { useApp } from '../../contexts/AppContext';
+import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
 export default function TabLayout() {
     const router = useRouter();
     const pathname = usePathname();
     const insets = useSafeAreaInsets();
     const colors = useThemeColors();
-    const { t, localeTag } = useI18n();
+    const { t, l, localeTag } = useI18n();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const { settings } = useAppSettings();
+    const { collectionVersion, getSchedulingRevision } = useCollectionInvalidation();
+    const { startupError, isLoading } = useStartupStatus();
+    const studyPosition = useStudyPosition();
     const {
         selectedSubject,
         setSelectedSubject,
         selectedTopic,
         setSelectedTopic,
-        studyPosition,
         activeDeckName,
-        dataVersion,
-        startupError,
-        isLoading,
-    } = useApp();
+        setActiveDeckName,
+    } = useStudyScope();
 
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+    useEffect(() => {
+        if (selectedSubject) {
+            setExpandedSubject(selectedSubject);
+        }
+    }, [selectedSubject]);
+    const [expandedDeckNames, setExpandedDeckNames] = useState<Set<string>>(new Set());
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
+    const [visibleSchedulingRevision, setVisibleSchedulingRevision] = useState(getSchedulingRevision);
+    const lastAndroidBackPressRef = useRef(0);
 
     const isWide = windowWidth >= 768;
 
@@ -67,6 +88,64 @@ export default function TabLayout() {
         lastTabPath.current = pathname;
     }
     const isDeckScreen = lastTabPath.current === '/decks';
+    const isStudyScreen = lastTabPath.current === '/';
+
+    // Card answers only mark the scheduler revision. Consume it at a navigation boundary (or
+    // when the drawer is explicitly opened) instead of querying counts on every answer.
+    const refreshVisibleSchedulingData = useCallback(() => {
+        const next = getSchedulingRevision();
+        setVisibleSchedulingRevision((previous) => (
+            consumeSchedulingRevision(previous, next, () => { })
+        ));
+    }, [getSchedulingRevision]);
+
+    useEffect(() => {
+        refreshVisibleSchedulingData();
+    }, [pathname, refreshVisibleSchedulingData]);
+
+    useEffect(() => {
+        if (Platform.OS !== 'android' || !settings.doubleBackToExit) return;
+        const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (sidebarOpen) {
+                setSidebarOpen(false);
+                return true;
+            }
+            if (pathname !== '/' && pathname !== '/decks') return false;
+            const now = Date.now();
+            if (now - lastAndroidBackPressRef.current <= 2_000) {
+                lastAndroidBackPressRef.current = 0;
+                if (pathname === '/') router.replace('/decks' as any);
+                else BackHandler.exitApp();
+                return true;
+            }
+            lastAndroidBackPressRef.current = now;
+            ToastAndroid.show(
+                pathname === '/'
+                    ? l('Çalışmadan çıkmak için tekrar geri basın', 'Press back again to leave study')
+                    : l('Uygulamadan çıkmak için tekrar geri basın', 'Press back again to exit'),
+                ToastAndroid.SHORT,
+            );
+            return true;
+        });
+        return () => subscription.remove();
+    }, [l, pathname, router, settings.doubleBackToExit, sidebarOpen]);
+
+    const fullScreenDrawerPanResponder = useMemo(() => PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (_event, gesture) => Boolean(
+            Platform.OS === 'android'
+            && settings.fullScreenNavigationDrawer
+            && !isWide
+            && !isDeckScreen
+            && !sidebarOpen
+            && gesture.dx > 18
+            && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5
+        ),
+        onPanResponderRelease: (_event, gesture) => {
+            if (gesture.dx < 54) return;
+            Keyboard.dismiss();
+            setSidebarOpen(true);
+        },
+    }), [isDeckScreen, isWide, settings.fullScreenNavigationDrawer, sidebarOpen]);
 
     useEffect(() => {
         const sub = Dimensions.addEventListener('change', ({ window }) => {
@@ -75,48 +154,91 @@ export default function TabLayout() {
         return () => sub?.remove();
     }, []);
 
-    const searchableCards = useMemo(() => {
+    const navigationCounts = useMemo(() => {
         if (isLoading) return [];
         try {
-            return getSearchIndexCards();
+            return getNavigationCardCounts();
         } catch (e) {
-            console.warn('[Layout] getSearchIndexCards failed:', e);
+            console.warn('[Layout] navigation counts failed:', e);
             return [];
         }
-    }, [dataVersion, isLoading]);
+    }, [collectionVersion, visibleSchedulingRevision, isLoading]);
 
     // Courses are deck-specific: the sidebar lists only the active deck's own courses
     // (an empty deck lists none). Without a deck context the full list stays visible.
     const subjects = useMemo(() => {
         if (isLoading) return [];
         try {
-            return activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
+            const list = activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
+            if (selectedSubject) {
+                const idx = list.findIndex((s) => s.id === selectedSubject);
+                if (idx > 0) {
+                    const matched = list[idx];
+                    return [matched, ...list.slice(0, idx), ...list.slice(idx + 1)];
+                }
+            }
+            return list;
         } catch (e) {
             console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [dataVersion, activeDeckName, isLoading]);
+    }, [collectionVersion, activeDeckName, selectedSubject, isLoading]);
+
+    // The reviewer menu is a deck navigator while a deck is active. A selected subdeck is a
+    // highlight inside its top-level tree, not a new tree root: otherwise opening the hamburger
+    // from `Parent::Child` would make every parent and sibling disappear.
+    const sidebarDeckTree = useMemo(() => {
+        if (isLoading || !activeDeckName) return [];
+        try {
+            const rootDeckName = getRootDeckName(activeDeckName);
+            if (!rootDeckName) return [];
+            const decks = getAllDecks().filter((deck) => (
+                deck.name === rootDeckName || deck.name.startsWith(`${rootDeckName}::`)
+            ));
+            if (decks.length === 0) return [];
+            const counts = getCardCountsByDeck(
+                Date.now(),
+                settings.dayRolloverHour,
+                settings.learnAheadMinutes,
+            );
+            const rawTree = buildDeckTree(decks, counts, settings.dayRolloverHour);
+            return prioritizeDeckTree(rawTree, activeDeckName);
+        } catch (e) {
+            console.warn('[Layout] sidebar deck tree failed:', e);
+            return [];
+        }
+    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes]);
+
+    // Reveal only the selected deck's ancestor chain. Opening every parent in a large catalog
+    // would flood the drawer with unrelated branches; manual expansion of siblings is preserved.
+    useEffect(() => {
+        setExpandedDeckNames((previous) => {
+            const next = new Set(previous);
+            for (const name of getDeckPathNames(activeDeckName)) next.add(name);
+            return next;
+        });
+    }, [activeDeckName, sidebarDeckTree]);
 
     const { subjectCounts, topicCounts } = useMemo(() => {
         const nextSubjectCounts = new Map<string, number>();
         const nextTopicCounts = new Map<string, Map<string, number>>();
 
-        for (const card of searchableCards) {
-            nextSubjectCounts.set(card.subject, (nextSubjectCounts.get(card.subject) ?? 0) + 1);
+        for (const row of navigationCounts) {
+            nextSubjectCounts.set(row.subject, (nextSubjectCounts.get(row.subject) ?? 0) + row.count);
 
-            let perTopic = nextTopicCounts.get(card.subject);
+            let perTopic = nextTopicCounts.get(row.subject);
             if (!perTopic) {
                 perTopic = new Map<string, number>();
-                nextTopicCounts.set(card.subject, perTopic);
+                nextTopicCounts.set(row.subject, perTopic);
             }
-            perTopic.set(card.topic, (perTopic.get(card.topic) ?? 0) + 1);
+            perTopic.set(row.topic, (perTopic.get(row.topic) ?? 0) + row.count);
         }
 
         return {
             subjectCounts: nextSubjectCounts,
             topicCounts: nextTopicCounts,
         };
-    }, [searchableCards]);
+    }, [navigationCounts]);
 
     const getSubjectCount = useCallback(
         (subjectId: string) => subjectCounts.get(subjectId) ?? 0,
@@ -148,14 +270,30 @@ export default function TabLayout() {
     );
 
     const navigate = useCallback((path: string) => {
-        router.push(path as any);
+        // The drawer belongs to the active study scope. Opening Kartlarım from a root deck or a
+        // deeply nested subdeck must browse that exact branch, never the whole collection.
+        const target = path === '/browser' ? getScopedBrowserPath(activeDeckName) : path;
+        const targetPathname = target.split('?')[0] || '/';
+
+        if (targetPathname === pathname) {
+            // Re-selecting the screen already on top is a scope change, not a screen change:
+            // update its params in place instead of stacking a second copy of the reviewer.
+            router.replace(target as any);
+        } else if (targetPathname === '/decks') {
+            // The deck list is the root of this stack. Returning to it pops back with the
+            // native pop animation rather than pushing a second deck list over the reviewer.
+            router.dismissTo(target as any);
+        } else {
+            router.push(target as any);
+        }
+
         if (!isWide) setSidebarOpen(false);
-    }, [isWide, router]);
+    }, [activeDeckName, isWide, pathname, router]);
 
     const handleSubjectPress = (subjectId: string) => {
         setSelectedSubject(subjectId);
         setSelectedTopic(null);
-        navigate('/');
+        navigate(`/?subject=${encodeURIComponent(subjectId)}`);
     };
 
     const handleToggleExpand = (subjectId: string) => {
@@ -165,7 +303,23 @@ export default function TabLayout() {
     const handleTopicPress = (subjectId: string, topic: string) => {
         setSelectedSubject(subjectId);
         setSelectedTopic(topic);
-        navigate('/');
+        navigate(`/?subject=${encodeURIComponent(subjectId)}&topic=${encodeURIComponent(topic)}`);
+    };
+
+    const handleDeckPress = (deckName: string) => {
+        setSelectedSubject(null);
+        setSelectedTopic(null);
+        setActiveDeckName(deckName);
+        navigate(`/?deck=${encodeURIComponent(deckName)}`);
+    };
+
+    const handleToggleDeckExpand = (deckName: string) => {
+        setExpandedDeckNames((previous) => {
+            const next = new Set(previous);
+            if (next.has(deckName)) next.delete(deckName);
+            else next.add(deckName);
+            return next;
+        });
     };
 
     const handleAllPress = () => {
@@ -173,26 +327,18 @@ export default function TabLayout() {
         setSelectedTopic(null);
         setExpandedSubject(null);
         // Inside a deck, "Tüm Dersler" means that whole deck — not the whole collection.
-        navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/');
+        navigate(activeDeckName ? `/?deck=${encodeURIComponent(activeDeckName)}` : '/?all=1');
     };
 
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.loadingEmoji}>🧠</Text>
-                <Text style={styles.loadingText}>{t('tabs.loadingApp')}</Text>
-            </View>
-        );
-    }
-
     return (
-        <View style={styles.container}>
-            {!isWide && !isDeckScreen && (
+        <View style={styles.container} {...fullScreenDrawerPanResponder.panHandlers}>
+            {!isWide && !isDeckScreen && !isStudyScreen && (
                 <View style={[styles.mobileHeader, { paddingTop: insets.top + Spacing.sm }]}>
                     <TouchableOpacity
                         style={styles.hamburger}
                         onPress={() => {
                             if (!sidebarOpen) Keyboard.dismiss();
+                            if (!sidebarOpen) refreshVisibleSchedulingData();
                             setSidebarOpen((prev) => !prev);
                         }}
                         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
@@ -220,6 +366,11 @@ export default function TabLayout() {
                         getSubjectCount={getSubjectCount}
                         getTopicCount={getTopicCount}
                         getTopicsForSubject={getTopicsForSubject}
+                        deckTree={sidebarDeckTree}
+                        activeDeckName={activeDeckName}
+                        expandedDeckNames={expandedDeckNames}
+                        onDeckPress={handleDeckPress}
+                        onToggleDeckExpand={handleToggleDeckExpand}
                         onAllPress={handleAllPress}
                         onSubjectPress={handleSubjectPress}
                         onToggleExpand={handleToggleExpand}
@@ -238,13 +389,28 @@ export default function TabLayout() {
                     {startupError ? (
                         <View style={styles.startupErrorContainer}>
                             <Text style={styles.startupErrorIcon}>📱</Text>
-                            <Text style={styles.startupErrorTitle}>{startupError}</Text>
+                            <Text style={styles.startupErrorTitle}>{t('root.errorTitle')}</Text>
                             <Text style={styles.startupErrorText}>
-                                {t('tabs.nativeOnly')}
+                                {t('root.startupErrorMessage')}
                             </Text>
                         </View>
                     ) : (
-                        <Slot />
+                        <Stack
+                            initialRouteName="decks"
+                            screenOptions={{
+                                headerShown: false,
+                                contentStyle: { backgroundColor: colors.bgPrimary },
+                                // A Slot renders one child with no transition and tears the
+                                // previous screen down, so switching between the deck list and
+                                // the reviewer rebuilt a 2,000-line screen with no animation and
+                                // lost its scroll position. A real stack keeps both alive, gives
+                                // iOS its push/pop and back gesture, and freezes what is behind.
+                                freezeOnBlur: true,
+                            }}
+                        >
+                            <Stack.Screen name="decks" />
+                            <Stack.Screen name="index" />
+                        </Stack>
                     )}
                 </View>
             </View>
@@ -255,14 +421,6 @@ export default function TabLayout() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.bgPrimary,
-    },
-    loadingEmoji: { fontSize: 48, marginBottom: 12 },
-    loadingText: { fontSize: FontSize.lg, color: colors.textMuted, fontWeight: '500' },
     appLayout: { flex: 1, flexDirection: 'row' },
 
     mobileHeader: {

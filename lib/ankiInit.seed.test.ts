@@ -14,8 +14,9 @@ vi.mock('./db', () => ({
     buildFtsPrefixQuery: () => '',
 }));
 
-import { ensureBuiltinNoteTypesSeeded } from './ankiInit';
+import { ensureBuiltinNoteTypesSeeded, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { BUILTIN_NOTE_TYPES } from './models';
+import { invalidateSubjectsCache } from './subjects';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -27,9 +28,13 @@ beforeAll(async () => {
 beforeEach(() => {
     db = createAppDb(SQL);
     dbHolder.db = db;
+    invalidateSubjectsCache();
 });
 
-afterEach(() => db.close());
+afterEach(() => {
+    invalidateSubjectsCache();
+    db.close();
+});
 
 describe('ensureBuiltinNoteTypesSeeded', () => {
     it('seeds every built-in note type into an empty table', () => {
@@ -151,5 +156,84 @@ describe('healSeededDeckDescriptions', () => {
 
         const row = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', 'Python');
         expect(JSON.parse(row!.data).description).toBe('Benim notlarım');
+    });
+});
+
+describe('migrateLegacySubjectTopicsToDecks', () => {
+    it('creates only topics referenced by real notes, not empty registry placeholders', () => {
+        const parentDeck = {
+            id: 42,
+            name: 'Dersim',
+            configId: 1,
+            mod: 0,
+            usn: 0,
+            description: '',
+            collapsed: false,
+            isFiltered: false,
+        };
+        const subject = {
+            id: 'legacy-ders',
+            name: 'Dersim',
+            icon: '📘',
+            topics: ['Kullanılan Konu', 'Boş Konu'],
+            deckId: parentDeck.id,
+            isCustom: true,
+        };
+        const note = {
+            id: 100,
+            guid: 'legacy-note',
+            noteTypeId: 1,
+            mod: 0,
+            usn: -1,
+            tags: [subject.id],
+            fields: ['Soru', 'Cevap', 'Kullanılan Konu'],
+            sfld: 'Soru',
+            csum: 1,
+            flags: 0,
+        };
+        const card = {
+            id: 200,
+            noteId: note.id,
+            deckId: parentDeck.id,
+            ord: 0,
+            mod: 0,
+            usn: -1,
+            type: 0,
+            queue: 0,
+            due: 1,
+            ivl: 0,
+            factor: 2500,
+            reps: 0,
+            lapses: 0,
+            left: 0,
+            flags: 0,
+        };
+
+        db.runSync('INSERT INTO settings (key, value) VALUES (?, ?)', 'user_subjects_v1', JSON.stringify([subject]));
+        db.runSync(
+            'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
+            parentDeck.id, parentDeck.name, JSON.stringify(parentDeck), 0, -1, 0,
+        );
+        db.runSync(
+            'INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            note.id, note.noteTypeId, note.sfld, note.csum, ` ${subject.id} `, JSON.stringify(note), 0, -1, 0,
+        );
+        db.runSync(
+            `INSERT INTO anki_cards
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            card.id, card.noteId, card.deckId, card.ord, card.type, card.queue, card.due,
+            card.ivl, card.factor, card.reps, card.lapses, card.left, card.flags,
+            JSON.stringify(card), 0, 0, -1, 0,
+        );
+        invalidateSubjectsCache();
+
+        migrateLegacySubjectTopicsToDecks();
+
+        const decks = db.getAllSync<{ name: string }>('SELECT name FROM decks ORDER BY name');
+        expect(decks.map((row) => row.name)).toContain('Dersim::Kullanılan Konu');
+        expect(decks.map((row) => row.name)).not.toContain('Dersim::Boş Konu');
+        const moved = db.getFirstSync<{ deckId: number }>('SELECT deckId FROM anki_cards WHERE id = ?', card.id);
+        expect(moved?.deckId).not.toBe(parentDeck.id);
     });
 });

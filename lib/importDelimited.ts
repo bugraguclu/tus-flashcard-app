@@ -16,6 +16,8 @@ export interface DelimitedMetadata {
     tags?: string[];
     tagsColumn?: number;
     guidColumn?: number;
+    deckColumn?: number;
+    notetypeColumn?: number;
     deck?: string;
     notetype?: string;
 }
@@ -38,6 +40,25 @@ const NAMED_SEPARATORS: Record<string, string> = {
 
 // Delimiters tried when no `#separator:` directive is present.
 const AUTO_DELIMITERS = ['\t', ',', ';'];
+
+export type SeparatorChoiceId = 'comma' | 'semicolon' | 'tab' | 'space' | 'pipe' | 'colon';
+
+/**
+ * The separators Anki's import screen offers, in its own order. A guessed separator is only a
+ * guess, so the learner must be able to override it and see the preview change.
+ */
+export const SEPARATOR_CHOICES: { id: SeparatorChoiceId; delimiter: string }[] = [
+    { id: 'comma', delimiter: ',' },
+    { id: 'semicolon', delimiter: ';' },
+    { id: 'tab', delimiter: '\t' },
+    { id: 'space', delimiter: ' ' },
+    { id: 'pipe', delimiter: '|' },
+    { id: 'colon', delimiter: ':' },
+];
+
+export function separatorChoiceForDelimiter(delimiter: string): SeparatorChoiceId | undefined {
+    return SEPARATOR_CHOICES.find((choice) => choice.delimiter === delimiter)?.id;
+}
 
 function resolveSeparator(raw: string): string | undefined {
     const named = NAMED_SEPARATORS[raw.trim().toLowerCase()];
@@ -107,6 +128,16 @@ function parseMetaLine(line: string, metadata: DelimitedMetadata): string | unde
         case 'guid column': {
             const n = parseInt(value, 10);
             if (n > 0) metadata.guidColumn = n;
+            return undefined;
+        }
+        case 'deck column': {
+            const n = parseInt(value, 10);
+            if (n > 0) metadata.deckColumn = n;
+            return undefined;
+        }
+        case 'notetype column': {
+            const n = parseInt(value, 10);
+            if (n > 0) metadata.notetypeColumn = n;
             return undefined;
         }
         case 'columns':

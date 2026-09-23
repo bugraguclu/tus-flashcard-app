@@ -1,0 +1,10 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["DeckShortcutsModule"],
+    "appDelegateSubscribers": ["DeckShortcutAppDelegateSubscriber"]
+  },
+  "android": {
+    "modules": ["com.tusankim.shortcuts.DeckShortcutsModule"]
+  }
+}

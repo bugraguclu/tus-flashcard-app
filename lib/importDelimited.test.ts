@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDelimited } from './importDelimited';
+import { parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from './importDelimited';
 
 describe('parseDelimited — delimiters', () => {
     it('parses comma-separated rows', () => {
@@ -122,8 +122,36 @@ describe('parseDelimited — comments and directives', () => {
         expect(metadata.columns).toEqual(['Front', 'Back', 'Extra']);
     });
 
+    it('reads Anki deck and notetype column headers', () => {
+        const { metadata } = parseDelimited('#deck column:2\n#notetype column:3\nfront,Deck,Type');
+        expect(metadata.deckColumn).toBe(2);
+        expect(metadata.notetypeColumn).toBe(3);
+    });
+
     it('reads a 1-based #tags column:', () => {
         const { metadata } = parseDelimited('#tags column:3\nq,a,t');
         expect(metadata.tagsColumn).toBe(3);
+    });
+});
+
+describe('separator choices shown on the import screen', () => {
+    it('offers exactly the separators Anki\'s import screen lists', () => {
+        expect(SEPARATOR_CHOICES.map((choice) => choice.id)).toEqual([
+            'comma', 'semicolon', 'tab', 'space', 'pipe', 'colon',
+        ]);
+        expect(SEPARATOR_CHOICES.map((choice) => choice.delimiter)).toEqual([',', ';', '\t', ' ', '|', ':']);
+    });
+
+    it('names the delimiter a parse guessed, so the screen can label it', () => {
+        const guessed = parseDelimited('a\tb\tc\n1\t2\t3');
+        expect(separatorChoiceForDelimiter(guessed.delimiter)).toBe('tab');
+        expect(separatorChoiceForDelimiter('~')).toBeUndefined();
+    });
+
+    it('re-parses the same text under an overridden separator', () => {
+        // Anki lets a learner correct a wrong guess and watch the preview change.
+        const text = 'a;b|c';
+        expect(parseDelimited(text, { delimiter: ';' }).rows).toEqual([['a', 'b|c']]);
+        expect(parseDelimited(text, { delimiter: '|' }).rows).toEqual([['a;b', 'c']]);
     });
 });

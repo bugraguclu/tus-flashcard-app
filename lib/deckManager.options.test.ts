@@ -5,6 +5,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 import { DEFAULT_DECK_CONFIG, type Deck } from './models';
+import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import { CUSTOM_STUDY_PREVIEW_DELAYS } from './customStudy';
 
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
@@ -28,14 +30,22 @@ import {
     getDeckConfig,
     getDeckConfigForDeck,
     getDeckTodayBoost,
+    getCustomStudyDefaults,
+    rememberCustomStudyExtend,
+    rememberCustomStudyTags,
+    getDeckTodayLimits,
     addDeckTodayBoost,
+    extendDeckTodayLimits,
     moveDeckUnder,
     reorderDeckRelative,
     renameDeck,
     saveDeck,
     saveDeckConfig,
     setDeckLimits,
+    setDeckLimitOverrides,
+    setDeckTodayLimits,
     createPreset,
+    restoreDeckConfigDefaults,
     deletePreset,
     assignDeckConfig,
     applyConfigToSubdecks,
@@ -45,6 +55,7 @@ import {
     updateFilteredDeck,
     buildDeckTree,
     getDirectDecksForScope,
+    getPopulatedDecksForScope,
     initializeDeckDisclosureDefaults,
     setDeckCollapsed,
     completeFilteredCard,
@@ -192,12 +203,52 @@ describe('getDirectDecksForScope', () => {
             'Tıp',
         ]);
         expect(getDirectDecksForScope(getAllDecks(), 'Python').map((deck) => deck.name)).toEqual([
-            'Python::Fonksiyonlar',
             'Python::Temeller',
+            'Python::Fonksiyonlar',
         ]);
         expect(getDirectDecksForScope(getAllDecks(), 'Python::Temeller').map((deck) => deck.name)).toEqual([
             'Python::Temeller::Yazdırma',
         ]);
+    });
+});
+
+describe('getPopulatedDecksForScope', () => {
+    it('hides empty ghost branches in every deck while retaining ancestors of real cards', () => {
+        const python = createDeck('Python');
+        const emptyModule = createDeck('Python::Modüller & Hata Ayıklama');
+        createDeck('Python::Modüller & Hata Ayıklama::random');
+        const tus = createDeck('BKA TUS');
+        const medicine = createDeck('BKA TUS::Dahiliye');
+        const cardiology = createDeck('BKA TUS::Dahiliye::Kardiyoloji');
+        createDeck('BKA TUS::Dahiliye::Boş Konu');
+        const counts = new Map([
+            [python.id, { total: 0 }],
+            [emptyModule.id, { total: 0 }],
+            [tus.id, { total: 0 }],
+            [medicine.id, { total: 0 }],
+            [cardiology.id, { total: 12 }],
+        ]);
+
+        expect(getPopulatedDecksForScope(getAllDecks(), counts, 'Python')).toEqual([]);
+        expect(getPopulatedDecksForScope(getAllDecks(), counts, 'BKA TUS').map((deck) => deck.name)).toEqual([
+            'BKA TUS::Dahiliye',
+            'BKA TUS::Dahiliye::Kardiyoloji',
+        ]);
+        expect(getPopulatedDecksForScope(getAllDecks(), counts, null).map((deck) => deck.name)).toEqual([
+            'BKA TUS',
+            'BKA TUS::Dahiliye',
+            'BKA TUS::Dahiliye::Kardiyoloji',
+        ]);
+        // Browser scope chips expose one useful level at a time: the populated ancestor remains
+        // reachable, while a grandchild appears only after entering its parent scope.
+        expect(getDirectDecksForScope(
+            getPopulatedDecksForScope(getAllDecks(), counts, null),
+            null,
+        ).map((deck) => deck.name)).toEqual(['BKA TUS']);
+        expect(getDirectDecksForScope(
+            getPopulatedDecksForScope(getAllDecks(), counts, 'BKA TUS'),
+            'BKA TUS',
+        ).map((deck) => deck.name)).toEqual(['BKA TUS::Dahiliye']);
     });
 });
 
@@ -254,6 +305,53 @@ describe('reorderDeckRelative', () => {
     });
 });
 
+describe('new deck ordering', () => {
+    it('always appends a new root deck instead of inserting it alphabetically', () => {
+        createDeck('Zooloji');
+        createDeck('Anatomi');
+        createDeck('Biyokimya');
+
+        expect(buildDeckTree(getAllDecks()).map((node) => node.deck.name)).toEqual([
+            'Zooloji',
+            'Anatomi',
+            'Biyokimya',
+        ]);
+    });
+
+    it('always appends a new subdeck to the end of its siblings', () => {
+        createDeck('TUS');
+        createDeck('TUS::Zooloji');
+        createDeck('TUS::Anatomi');
+
+        expect(buildDeckTree(getAllDecks())[0].children.map((node) => node.deck.name)).toEqual([
+            'TUS::Zooloji',
+            'TUS::Anatomi',
+        ]);
+    });
+
+    it('keeps legacy unordered decks in place and appends after them', () => {
+        saveDeck({
+            id: 10,
+            name: 'Zooloji',
+            configId: DEFAULT_DECK_CONFIG.id,
+            mod: 0,
+            usn: -1,
+            description: '',
+            collapsed: false,
+            isFiltered: false,
+        });
+
+        createDeck('Anatomi');
+
+        expect(buildDeckTree(getAllDecks()).map((node) => node.deck.name)).toEqual([
+            'Zooloji',
+            'Anatomi',
+        ]);
+        expect(getDeckByName('Zooloji')?.sortOrder).toBe(0);
+        expect(getDeckByName('Anatomi')?.sortOrder).toBe(1);
+    });
+});
+
 describe('setDeckLimits', () => {
     it('splits the deck off the shared preset on first edit', () => {
         const deck = createDeck('Limitli');
@@ -282,6 +380,36 @@ describe('setDeckLimits', () => {
     });
 });
 
+describe('Anki daily-limit scopes', () => {
+    it('keeps this-deck limits separate from a shared preset', () => {
+        const first = createDeck('A');
+        const second = createDeck('B');
+
+        setDeckLimitOverrides(first.id, 7, 70);
+
+        expect(getDeckByName('A')).toMatchObject({ configId: DEFAULT_DECK_CONFIG.id, newLimit: 7, reviewLimit: 70 });
+        expect(getDeckConfigForDeck(first.id, rolloverHour)).toMatchObject({ newPerDay: 7, maxReviewsPerDay: 70 });
+        expect(getDeckConfigForDeck(second.id, rolloverHour)).toMatchObject({
+            newPerDay: DEFAULT_DECK_CONFIG.newPerDay,
+            maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+        });
+    });
+
+    it('clears this-deck limits when the tab value is left blank', () => {
+        const deck = createDeck('A');
+        setDeckLimitOverrides(deck.id, 7, 70);
+
+        setDeckLimitOverrides(deck.id, undefined, undefined);
+
+        expect(getDeckByName('A')?.newLimit).toBeUndefined();
+        expect(getDeckByName('A')?.reviewLimit).toBeUndefined();
+        expect(getDeckConfigForDeck(deck.id, rolloverHour)).toMatchObject({
+            newPerDay: DEFAULT_DECK_CONFIG.newPerDay,
+            maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+        });
+    });
+});
+
 describe('deck tree counts', () => {
     it('caps an aggregated parent row by the parent daily limits', () => {
         const parent = createDeck('TUS');
@@ -297,6 +425,50 @@ describe('deck tree counts', () => {
             reviewCount: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
             totalCards: 573,
         });
+    });
+
+    it('shows what today\'s limits still allow, not the full daily allowance again', () => {
+        // Anki subtracts each deck's newToday/revToday from its limits, so a learner who already
+        // used the allowance sees the remainder rather than a badge that refills on every rebuild.
+        const parent = createDeck('TUS');
+        const child = createDeck('TUS::Dahiliye');
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 90, name: 'Sınırlı', newPerDay: 5, maxReviewsPerDay: 10 });
+        assignDeckConfig(parent.id, 90);
+        assignDeckConfig(child.id, 90);
+
+        // Two cards in the child deck: one introduced today, one review answered today. "Now"
+        // is always inside the current study day, whatever the rollover hour is.
+        const nowMs = Date.now();
+        db.runSync(
+            'INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone) VALUES (?, 1, ?, 0, 1, 1, 0, 0, 2500, 1, 0, 0, 0, NULL, 0, 0, -1, 0)',
+            501, child.id,
+        );
+        db.runSync(
+            'INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone) VALUES (?, 2, ?, 0, 2, 2, 0, 9, 2500, 4, 0, 0, 0, NULL, 0, 0, -1, 0)',
+            502, child.id,
+        );
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 501, -1, 3, -600, 0, 2500, 900, 0)',
+            nowMs,
+        );
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 502, -1, 3, 5, 2, 2500, 900, 1)',
+            nowMs - 40 * 86_400_000,
+        );
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 502, -1, 3, 9, 5, 2500, 900, 1)',
+            nowMs + 1,
+        );
+
+        const tree = buildDeckTree([parent, child], new Map([
+            [parent.id, { new: 0, learn: 0, review: 0, total: 0 }],
+            [child.id, { new: 40, learn: 0, review: 40, total: 80 }],
+        ]), rolloverHour);
+
+        // The child spent one new card and one review of its own allowance; the parent's
+        // allowance is spent by everything below it.
+        expect(tree[0].children[0]).toMatchObject({ newCount: 4, reviewCount: 9 });
+        expect(tree[0]).toMatchObject({ newCount: 4, reviewCount: 9 });
     });
 
     it('persists the disclosure state used by the mobile deck tree', () => {
@@ -329,6 +501,21 @@ describe('deck tree counts', () => {
 });
 
 describe('today-only limit boost', () => {
+    it('supports absolute today-only limits without changing the preset or deck override', () => {
+        const deck = createDeck('Bugün');
+        setDeckLimitOverrides(deck.id, 8, 80);
+
+        setDeckTodayLimits(deck.id, 3, 30, rolloverHour);
+
+        expect(getDeckTodayLimits(deck.id, rolloverHour)).toEqual({ newLimit: 3, reviewLimit: 30 });
+        expect(getDeckConfigForDeck(deck.id, rolloverHour)).toMatchObject({ newPerDay: 3, maxReviewsPerDay: 30 });
+        expect(getDeckByName('Bugün')).toMatchObject({ newLimit: 8, reviewLimit: 80 });
+        expect(getDeckConfig(DEFAULT_DECK_CONFIG.id)).toMatchObject({
+            newPerDay: DEFAULT_DECK_CONFIG.newPerDay,
+            maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
+        });
+    });
+
     it('adds on top of the persistent limits for today only', () => {
         const deck = createDeck('Boostlu');
         setDeckLimits(deck.id, 10, 100);
@@ -341,6 +528,66 @@ describe('today-only limit boost', () => {
         const config = getDeckConfigForDeck(deck.id, rolloverHour);
         expect(config.newPerDay).toBe(18);
         expect(config.maxReviewsPerDay).toBe(120);
+    });
+
+    it('shrinks today\'s allowance when the delta is negative', () => {
+        // Anki's custom study spinner goes below zero: the limit can be reduced for today only,
+        // and the effective limit is floored at zero rather than going negative.
+        const deck = createDeck('Azaltılmış');
+        setDeckLimits(deck.id, 10, 100);
+
+        addDeckTodayBoost(deck.id, -4, -150, rolloverHour);
+
+        expect(getDeckTodayBoost(deck.id, rolloverHour)).toEqual({ extraNew: -4, extraReview: -150 });
+        const config = getDeckConfigForDeck(deck.id, rolloverHour);
+        expect(config.newPerDay).toBe(6);
+        expect(config.maxReviewsPerDay).toBe(0);
+    });
+
+    it('extends the parents too, so their limits stop capping the deck away again', () => {
+        // Anki's custom study grants the headroom on every parent whose limit still applies
+        // (rslib decks/stats.rs `extend_limits`); this app applies parent limits by default, so
+        // extending only the child would hand out cards the parent immediately withholds.
+        const parent = createDeck('Tıp');
+        const child = createDeck('Tıp::Anatomi');
+        setDeckLimits(parent.id, 20, 200);
+        setDeckLimits(child.id, 10, 100);
+
+        extendDeckTodayLimits(child.id, 7, 15, rolloverHour, { includeParents: true });
+
+        expect(getDeckTodayBoost(child.id, rolloverHour)).toEqual({ extraNew: 7, extraReview: 15 });
+        expect(getDeckTodayBoost(parent.id, rolloverHour)).toEqual({ extraNew: 7, extraReview: 15 });
+    });
+
+    it('leaves the parents alone when limits do not start from the top', () => {
+        const parent = createDeck('Tıp');
+        const child = createDeck('Tıp::Anatomi');
+        setDeckLimits(parent.id, 20, 200);
+        setDeckLimits(child.id, 10, 100);
+
+        extendDeckTodayLimits(child.id, 7, 15, rolloverHour);
+
+        expect(getDeckTodayBoost(child.id, rolloverHour)).toEqual({ extraNew: 7, extraReview: 15 });
+        expect(getDeckTodayBoost(parent.id, rolloverHour)).toEqual({ extraNew: 0, extraReview: 0 });
+    });
+
+    it('shows the extra cards in the deck list the custom study dialog was opened from', () => {
+        // The deck row is where a learner checks that "increase today's new card limit" worked,
+        // so the tree's own cap has to see the boost too.
+        const parent = createDeck('Tıp');
+        const child = createDeck('Tıp::Anatomi');
+        setDeckLimits(parent.id, 20, 200);
+        setDeckLimits(child.id, 20, 200);
+        const counts = new Map([[child.id, { new: 500, learn: 0, review: 0, total: 500 }]]);
+
+        const before = buildDeckTree([parent, child], counts, rolloverHour)[0];
+        expect(before.newCount).toBe(20);
+
+        extendDeckTodayLimits(child.id, 20, 0, rolloverHour, { includeParents: true });
+
+        const after = buildDeckTree([parent, child], counts, rolloverHour)[0];
+        expect(after.newCount).toBe(40);
+        expect(after.children[0].newCount).toBe(40);
     });
 
     it('expires when the stored day no longer matches', () => {
@@ -383,6 +630,36 @@ describe('presets', () => {
         expect(getDeckConfig(DEFAULT_DECK_CONFIG.id).id).toBe(DEFAULT_DECK_CONFIG.id);
     });
 
+    it('restores preset scheduling defaults without changing its identity or deck limits', () => {
+        const deck = createDeck('A');
+        const preset = createPreset('Sınav modu');
+        assignDeckConfig(deck.id, preset.id);
+        saveDeckConfig({
+            ...preset,
+            newPerDay: 77,
+            maxReviewsPerDay: 888,
+            learningSteps: [2, 20],
+            autoPlayAudio: false,
+            ankiRaw: { opaque: 'preserved' },
+        });
+        setDeckLimitOverrides(deck.id, 31, 310);
+        setDeckTodayLimits(deck.id, 12, 120, rolloverHour);
+
+        const restored = restoreDeckConfigDefaults(preset.id);
+
+        expect(restored.id).toBe(preset.id);
+        expect(restored.name).toBe('Sınav modu');
+        expect(restored.newPerDay).toBe(DEFAULT_DECK_CONFIG.newPerDay);
+        expect(restored.maxReviewsPerDay).toBe(DEFAULT_DECK_CONFIG.maxReviewsPerDay);
+        expect(restored.learningSteps).toEqual(DEFAULT_DECK_CONFIG.learningSteps);
+        expect(restored.autoPlayAudio).toBe(DEFAULT_DECK_CONFIG.autoPlayAudio);
+        expect(restored.ankiRaw).toEqual({ opaque: 'preserved' });
+        expect(restored.usn).toBe(-1);
+        expect(getDeckByName('A')!.configId).toBe(preset.id);
+        expect(getDeckConfigForDeck(deck.id, rolloverHour).newPerDay).toBe(12);
+        expect(getDeckConfigForDeck(deck.id, rolloverHour).maxReviewsPerDay).toBe(120);
+    });
+
     it('applyConfigToSubdecks pushes the preset down the subtree only', () => {
         const parent = createDeck('A');
         createDeck('A::B');
@@ -400,11 +677,24 @@ describe('presets', () => {
     });
 });
 
+const customStudySession = (
+    deckId: number,
+    search: string,
+    limit = 50,
+    overrides: { order?: number; reschedule?: boolean } = {},
+) => createOrReplaceCustomStudySession(deckId, {
+    search,
+    limit,
+    order: overrides.order ?? FILTERED_SEARCH_ORDER.due,
+    reschedule: overrides.reschedule ?? true,
+    previewDelays: CUSTOM_STUDY_PREVIEW_DELAYS,
+});
+
 describe('createOrReplaceCustomStudySession', () => {
     it('creates Anki\'s single conventional custom-study deck', () => {
         const deck = createDeck('Python::Temeller');
 
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50);
+        const session = customStudySession(deck.id, 'deck:"Python::Temeller"', 50);
 
         expect(session).not.toBeNull();
         expect(session!.name).toBe('Özel Çalışma Oturumu');
@@ -414,25 +704,63 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('rebuilds the existing session instead of stacking duplicates', () => {
         const deck = createDeck('Python::Temeller');
-        const first = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
+        const first = customStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
 
-        const second = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller" tag:"zor"', 20)!;
+        const second = customStudySession(deck.id, 'deck:"Python::Temeller" tag:"zor"', 20)!;
 
         expect(second.id).toBe(first.id);
         expect(second.searchQuery).toContain('tag:"zor"');
         expect(second.searchLimit).toBe(20);
     });
 
+    it('gives the session Anki\u2019s preview delays instead of leaving them to the deck default', () => {
+        const deck = createDeck('Python');
+
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
+
+        expect(session.previewDelays).toEqual([60, 600, 0]);
+        expect(session.filteredAllowEmpty).toBe(false);
+    });
+
+    it('replaces the whole filtered config of the session it reuses', () => {
+        // Anki swaps the deck's entire filtered config on every custom study run
+        // (`apply_update_to_filtered_deck`), so settings the learner edited on the session deck by
+        // hand — a second filter, its own preview delays, "allow empty" — do not survive into the
+        // session the next run asked for.
+        const deck = createDeck('Python');
+        const first = customStudySession(deck.id, 'deck:"Python"', 50)!;
+        first.searchQuery2 = 'deck:"Python" is:due';
+        first.searchLimit2 = 20;
+        first.searchOrder2 = FILTERED_SEARCH_ORDER.due;
+        first.previewDelays = [45, 900, 120];
+        first.filteredAllowEmpty = true;
+        saveDeck(first);
+
+        const second = customStudySession(deck.id, 'deck:"Python" is:new', 30, {
+            order: FILTERED_SEARCH_ORDER.added,
+            reschedule: false,
+        })!;
+
+        expect(second.id).toBe(first.id);
+        expect(second.searchQuery2).toBeUndefined();
+        expect(second.searchLimit2).toBeUndefined();
+        expect(second.searchOrder2).toBeUndefined();
+        expect(second.previewDelays).toEqual([60, 600, 0]);
+        expect(second.filteredAllowEmpty).toBe(false);
+        expect(second.reschedule).toBe(false);
+        expect(second.searchOrder).toBe(FILTERED_SEARCH_ORDER.added);
+    });
+
     it('refuses to build a session on a filtered deck', () => {
         const deck = createDeck('Python::Temeller');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python::Temeller"', 50)!;
 
-        expect(createOrReplaceCustomStudySession(session.id, 'deck:x', 10)).toBeNull();
+        expect(customStudySession(session.id, 'deck:x', 10)).toBeNull();
     });
 
     it('supports Anki-style empty and rebuild without deleting the filtered deck', () => {
         const deck = createDeck('Python');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
 
         expect(emptyFilteredDeck(session.id)).toBe(true);
         expect(getDeckByName(session.name)?.filteredDeckEmpty).toBe(true);
@@ -443,7 +771,7 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('saving filter options rebuilds an emptied session', () => {
         const deck = createDeck('Python');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
         emptyFilteredDeck(session.id);
 
         updateFilteredDeck(session.id, {
@@ -463,7 +791,7 @@ describe('createOrReplaceCustomStudySession', () => {
 
     it('retires a completed card from the current build and restores it on undo', () => {
         const deck = createDeck('Python');
-        const session = createOrReplaceCustomStudySession(deck.id, 'deck:"Python"', 50)!;
+        const session = customStudySession(deck.id, 'deck:"Python"', 50)!;
 
         expect(completeFilteredCard(session.id, 123)).toBe(true);
         expect(completeFilteredCard(session.id, 123)).toBe(false);
@@ -471,5 +799,41 @@ describe('createOrReplaceCustomStudySession', () => {
 
         expect(restoreFilteredCard(session.id, 123)).toBe(true);
         expect(getDeckByName(session.name)?.filteredDoneCardIds).toEqual([]);
+    });
+});
+
+describe('custom study defaults', () => {
+    it('remembers the last positive limit delta per deck, but never a reduction', () => {
+        const deck = createDeck('Hatırlanan');
+
+        rememberCustomStudyExtend(deck.id, 'extendNew', 15);
+        rememberCustomStudyExtend(deck.id, 'extendReview', 40);
+        expect(getCustomStudyDefaults(deck.id)).toMatchObject({ extendNew: 15, extendReview: 40 });
+
+        rememberCustomStudyExtend(deck.id, 'extendNew', -5);
+        expect(getCustomStudyDefaults(deck.id).extendNew).toBe(15);
+    });
+
+    it('remembers the include/exclude tags of the last cram session, scoped to one deck', () => {
+        const deck = createDeck('Etiketli');
+        const other = createDeck('Diğer');
+
+        rememberCustomStudyTags(deck.id, ['Anatomi', 'Fizyoloji'], ['Zor']);
+
+        expect(getCustomStudyDefaults(deck.id)).toMatchObject({
+            includeTags: ['Anatomi', 'Fizyoloji'],
+            excludeTags: ['Zor'],
+        });
+        expect(getCustomStudyDefaults(other.id)).toMatchObject({ includeTags: [], excludeTags: [] });
+    });
+
+    it('starts from zero for a deck that has never run custom study', () => {
+        const deck = createDeck('Yeni');
+        expect(getCustomStudyDefaults(deck.id)).toEqual({
+            extendNew: 0,
+            extendReview: 0,
+            includeTags: [],
+            excludeTags: [],
+        });
     });
 });

@@ -8,6 +8,20 @@ import { buildFtsPrefixQuery, dbUpsertFtsCard, getDB } from './db';
 import { TUS_CARDS } from './data';
 import { getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import { humanizeCardText } from './displayText';
+import { markSourcePackageDirty } from './ankiPackageArchive';
+import {
+    assertCatalogCardMutable,
+    assertCatalogCardsMovable,
+    assertCatalogNoteContentMutable,
+    assertCatalogNoteMutable,
+    assertCatalogNoteNotDeletable,
+    assertCatalogNoteNotDuplicable,
+    assertCatalogNoteTypeNotChangeable,
+    assertCatalogNoteTypeMutable,
+    isCatalogCard,
+    isCatalogNote,
+    PaidCatalogProtectionError,
+} from './catalogProtection';
 
 /** Anki stores tags space-separated with a leading and trailing space (" a b "), so that a
  *  whole-tag search (`LIKE '% a %'`) cannot partially match a longer tag. Empty -> "". */
@@ -30,7 +44,19 @@ export function getNote(id: number): Note | null {
 }
 
 export function saveNote(note: Note): void {
+    assertCatalogNoteMutable(note);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id);
+    if (existing?.data) {
+        try {
+            const parsed = JSON.parse(existing.data) as Note;
+            assertCatalogNoteContentMutable(note, parsed);
+            markSourcePackageDirty(parsed.sourcePackageId);
+        } catch (e) {
+            if (e instanceof PaidCatalogProtectionError) throw e;
+            /* malformed legacy blobs are replaced below */
+        }
+    }
     db.runSync(
         `INSERT OR REPLACE INTO notes
          (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
@@ -48,6 +74,8 @@ export function saveNote(note: Note): void {
 }
 
 export function deleteNote(id: number): void {
+    assertCatalogNoteNotDeletable(id);
+    assertCatalogNoteMutable(id);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -225,9 +253,48 @@ export function getCardsForDeck(deckId: number): AnkiCard[] {
 }
 
 export function saveAnkiCard(card: AnkiCard): void {
+    assertCatalogCardMutable(card);
     const db = getDB();
     const nowMs = Date.now();
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = ?', card.id);
+    if (existing?.data) {
+        try {
+            const existingCard = JSON.parse(existing.data) as AnkiCard;
+            if (isCatalogCard(existingCard)) {
+                if (card.noteId !== existingCard.noteId) {
+                    throw new PaidCatalogProtectionError('Katalog kartlarının not bağlantısı değiştirilemez.');
+                }
+                if (card.deckId !== existingCard.deckId) {
+                    let isTargetFiltered = false;
+                    try {
+                        const targetDeckRow = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', card.deckId);
+                        isTargetFiltered = Boolean(targetDeckRow?.data && (JSON.parse(targetDeckRow.data) as { isFiltered?: boolean }).isFiltered);
+                    } catch {
+                        isTargetFiltered = false;
+                    }
+
+                    const isMovingToFiltered = Boolean(
+                        card.odid
+                        && card.odid === existingCard.deckId
+                        && isTargetFiltered
+                    );
+                    const isReturningFromFiltered = Boolean(
+                        existingCard.odid
+                        && existingCard.odid > 0
+                        && card.deckId === existingCard.odid
+                        && (!card.odid || card.odid === 0)
+                    );
+                    if (!isMovingToFiltered && !isReturningFromFiltered) {
+                        throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+                    }
+                }
+            }
+            markSourcePackageDirty(existingCard.sourcePackageId);
+        } catch (e) {
+            if (e instanceof PaidCatalogProtectionError) throw e;
+            /* malformed legacy blobs are replaced below */
+        }
+    }
 
     // Preserve any forward-compat keys the stored blob may carry that aren't on AnkiCard.
     let serializedData = JSON.stringify(card);
@@ -243,8 +310,8 @@ export function saveAnkiCard(card: AnkiCard): void {
     if (!existing) {
         db.runSync(
             `INSERT INTO anki_cards
-             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, usn, tombstone)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             card.id,
             card.noteId,
             card.deckId,
@@ -259,6 +326,7 @@ export function saveAnkiCard(card: AnkiCard): void {
             card.left ?? 0,
             card.flags,
             serializedData,
+            nowMs,
             nowMs,
             card.usn ?? -1,
             0,
@@ -338,6 +406,7 @@ export interface CardDeckMoveSnapshot {
  * mod and usn change, matching Anki's browser "Change Deck" action.
  */
 export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDeckMoveSnapshot[] {
+    assertCatalogCardsMovable(cardIds, targetDeckId);
     const uniqueCardIds = [...new Set(cardIds)];
     const moves = uniqueCardIds
         .map((cardId) => getAnkiCard(cardId))
@@ -433,8 +502,10 @@ export function unburyAllCards(rolloverHour: number = 4): number {
 
 export function isLeech(card: AnkiCard, threshold: number = 8): boolean {
     if (!threshold || card.lapses < threshold) return false;
-    // Anki fires leech on threshold, then every threshold/2 lapses after that.
-    return (card.lapses - threshold) % Math.max(1, Math.floor(threshold / 2)) === 0;
+    // Anki fires leech on threshold, then every threshold/2 lapses after that, rounding the half
+    // UP for odd thresholds (rslib `leech_threshold_met` casts to float before ceiling). Flooring
+    // collapses an odd threshold's half towards 1 and fires on every lapse past the threshold.
+    return (card.lapses - threshold) % Math.max(1, Math.ceil(threshold / 2)) === 0;
 }
 
 export function handleLeech(card: AnkiCard, action: 'suspend' | 'tag' = 'suspend'): void {
@@ -478,7 +549,14 @@ export function getNoteType(id: number): NoteType | null {
 }
 
 export function saveNoteType(nt: NoteType): void {
+    assertCatalogNoteTypeMutable(nt);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', nt.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as NoteType).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -501,8 +579,12 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
     const targetType = getNoteType(targetNoteTypeId);
     if (!targetType) return 0;
 
-    const db = getDB();
     const uniqueNoteIds = [...new Set(noteIds)];
+    for (const noteId of uniqueNoteIds) {
+        assertCatalogNoteTypeNotChangeable(noteId);
+    }
+
+    const db = getDB();
     let changed = 0;
 
     db.execSync('BEGIN TRANSACTION;');
@@ -571,6 +653,64 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
     return changed;
 }
 
+/** Compare two tag lists the way tags are matched everywhere else: NFC, case-insensitive. */
+function sameTagList(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((tag, index) => tag.normalize('NFC').toLocaleLowerCase()
+        === b[index].normalize('NFC').toLocaleLowerCase());
+}
+
+/**
+ * Replace a note's tags and nothing else.
+ *
+ * Tags are the learner's own metadata rather than the note's content, which is why the protection
+ * contract leaves them out of `assertCatalogNoteContentMutable` and why flags carry no assertion
+ * at all. This path is open on a catalog note for the same reason, on the trial tier as well as
+ * the full one: it re-reads the stored row and swaps only the tag list, so protected fields, the
+ * note type and the guid cannot travel through it even if the caller passes a doctored note.
+ * Everything else still goes through `saveNote`, which refuses a locked catalog note outright.
+ *
+ * Returns false when the note is gone or the tags already match.
+ */
+export function setNoteTags(noteId: number, tags: string[]): boolean {
+    const stored = getNote(noteId);
+    if (!stored) return false;
+
+    const seen = new Set<string>();
+    const nextTags: string[] = [];
+    for (const raw of tags) {
+        const tag = raw.normalize('NFC').trim();
+        if (!tag) continue;
+        const key = tag.toLocaleLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        nextTags.push(tag);
+    }
+    if (sameTagList(stored.tags, nextTags)) return false;
+
+    const next: Note = { ...stored, tags: nextTags, mod: Math.floor(Date.now() / 1000), usn: -1 };
+    markSourcePackageDirty(stored.sourcePackageId);
+    getDB().runSync(
+        'UPDATE notes SET tags = ?, data = ?, updated_at = ?, usn = ? WHERE id = ?',
+        serializeTags(next.tags),
+        JSON.stringify(next),
+        Date.now(),
+        next.usn ?? -1,
+        next.id,
+    );
+    for (const card of getCardsForNote(next.id)) {
+        dbUpsertFtsCard(searchIndexCardFromNote(next, card.id));
+    }
+    return true;
+}
+
+/** Replace the tags of the note a card belongs to. Returns false when the card or note is gone. */
+export function setNoteTagsByCardId(cardId: number, tags: string[]): boolean {
+    const card = getAnkiCard(cardId);
+    if (!card) return false;
+    return setNoteTags(card.noteId, tags);
+}
+
 /** Apply the same add/remove tag delta to multiple notes without erasing unrelated tags. */
 export function updateNotesTags(noteIds: number[], addTags: string[], removeTags: string[]): number {
     const db = getDB();
@@ -590,16 +730,10 @@ export function updateNotesTags(noteIds: number[], addTags: string[], removeTags
                 const key = tag.toLocaleLowerCase();
                 if (!existingKeys.has(key)) nextTags.push(tag);
             }
-            if (JSON.stringify(nextTags) === JSON.stringify(note.tags)) continue;
-
-            note.tags = nextTags;
-            note.mod = Math.floor(Date.now() / 1000);
-            note.usn = -1;
-            saveNote(note);
-            for (const card of getCardsForNote(note.id)) {
-                dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
-            }
-            changed += 1;
+            // Through `setNoteTags` rather than `saveNote`: a selection that happens to include a
+            // catalog note used to throw here and roll the whole batch back, so tagging fifty cards
+            // failed because one of them was protected.
+            if (setNoteTags(noteId, nextTags)) changed += 1;
         }
         db.execSync('COMMIT;');
     } catch (error) {
@@ -715,7 +849,55 @@ export function getSearchIndexCards(): SearchIndexCard[] {
          JOIN notes n ON n.id = c.noteId`
     );
 
-    return rows.map((row) => searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId));
+    // A single unreadable note blob must not cost the whole collection its search index: skip it
+    // here, and let the Settings database check report it as a note needing attention.
+    return rows.flatMap((row) => {
+        try {
+            return [searchIndexCardFromNote(JSON.parse(row.noteData), row.cardId)];
+        } catch {
+            return [];
+        }
+    });
+}
+
+export interface NavigationCardCount {
+    subject: string;
+    topic: string;
+    count: number;
+}
+
+/** Sidebar counts without materializing every card/question/answer into JS. Native builds read
+ * the already-maintained FTS projection; the web fallback parses each distinct note once. */
+export function getNavigationCardCounts(): NavigationCardCount[] {
+    const db = getDB();
+    try {
+        const indexed = db.getAllSync<{ subject: string; topic: string; count: number }>(
+            `SELECT subject, topic, COUNT(*) AS count
+             FROM cards_fts
+             GROUP BY subject, topic`,
+        ).map((row) => ({ subject: row.subject, topic: row.topic, count: Number(row.count) || 0 }));
+        if (indexed.some((row) => row.count > 0)) return indexed;
+    } catch { /* FTS can be unavailable during early web/database migration startup. */ }
+
+    const subjectTags = getSubjectIdSet();
+    const counts = new Map<string, NavigationCardCount>();
+    for (const row of db.getAllSync<{ noteData: string; count: number }>(
+        `SELECT n.data AS noteData, COUNT(c.id) AS count
+         FROM notes n
+         JOIN anki_cards c ON c.noteId = n.id
+         GROUP BY n.id`,
+    )) {
+        try {
+            const note = JSON.parse(row.noteData) as Note;
+            const subject = note.catalogSubject ?? note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
+            const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General');
+            const key = `${subject}\u001f${topic}`;
+            const existing = counts.get(key);
+            if (existing) existing.count += Number(row.count) || 0;
+            else counts.set(key, { subject, topic, count: Number(row.count) || 0 });
+        } catch { /* Skip malformed legacy note blobs; maintenance can repair them. */ }
+    }
+    return [...counts.values()];
 }
 
 /**
@@ -750,6 +932,58 @@ export function findTusCardIdByFirstField(question: string): number | null {
     return null;
 }
 
+export interface DuplicateNoteResult {
+    noteId: number;
+    cardId: number | null;
+    firstField: string;
+    deckName?: string;
+}
+
+/**
+ * Checks whether an existing note with the same noteTypeId shares the exact same first field
+ * (ignoring outer whitespace). Matches Anki's duplicate-check behavior on add/edit.
+ */
+export function findDuplicateNote(
+    noteTypeId: number,
+    firstFieldValue: string,
+    excludeNoteId?: number,
+): DuplicateNoteResult | null {
+    const target = firstFieldValue.trim();
+    if (!target) return null;
+
+    const db = getDB();
+    const csum = checksumField(target);
+
+    const rows = db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
+        `SELECT n.id AS noteId, c.id AS cardId, d.name AS deckName, n.data AS noteData
+         FROM notes n
+         LEFT JOIN anki_cards c ON c.noteId = n.id AND c.ord = 0
+         LEFT JOIN decks d ON d.id = c.deckId
+         WHERE n.csum = ? AND n.noteTypeId = ? ${excludeNoteId ? 'AND n.id != ?' : ''}
+         LIMIT 10`,
+        ...(excludeNoteId ? [csum, noteTypeId, excludeNoteId] : [csum, noteTypeId]),
+    );
+
+    for (const row of rows) {
+        try {
+            const parsed = JSON.parse(row.noteData) as { fields?: string[] };
+            const field0 = parsed.fields?.[0];
+            if (typeof field0 === 'string' && field0.trim() === target) {
+                return {
+                    noteId: row.noteId,
+                    cardId: row.cardId,
+                    firstField: field0,
+                    deckName: row.deckName || undefined,
+                };
+            }
+        } catch {
+            // Skip unparseable row
+        }
+    }
+
+    return null;
+}
+
 export function createTusCard(input: {
     /** Legacy grouping metadata. New Anki-style editor cards use deckId instead. */
     subject?: string;
@@ -763,6 +997,8 @@ export function createTusCard(input: {
     noteTypeId?: number;
     /** Value for Anki's Add Reverse field (type 7); legacy type 6 keeps its old override. */
     reverseAnswer?: string;
+    /** Complete field list supplied by an external add-note integration or dynamic editor. */
+    fieldValues?: string[];
 }): { note: Note; card: AnkiCard; cards: AnkiCard[] } {
     const noteTypeId = input.noteTypeId ?? 1;
     const noteType = getNoteType(noteTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId);
@@ -774,12 +1010,18 @@ export function createTusCard(input: {
         topic ? topic.replace(/\s+/g, '-') : undefined,
     ].filter((tag): tag is string => Boolean(tag));
 
-    const fields = noteType.fields.map(() => '');
-    fields[0] = input.question;
-    if (fields.length > 1) fields[1] = input.answer;
-    if (noteTypeId === 7 && fields.length > 2) fields[2] = (input.reverseAnswer ?? '').trim();
-    if ([4, 5, 6].includes(noteTypeId) && fields.length > 2) fields[2] = topic;
-    if (noteTypeId === 6 && fields.length > 3) fields[3] = (input.reverseAnswer ?? '').trim();
+    const fields = noteType.fields.map((_, index) => input.fieldValues?.[index] ?? '');
+    if (Array.isArray(input.fieldValues) && input.fieldValues.length > 0) {
+        input.fieldValues.forEach((val, index) => {
+            if (index < fields.length) fields[index] = val;
+        });
+    } else {
+        fields[0] = input.question;
+        if (fields.length > 1) fields[1] = input.answer;
+        if (noteTypeId === 7 && fields.length > 2) fields[2] = (input.reverseAnswer ?? '').trim();
+        if ([4, 5, 6].includes(noteTypeId) && fields.length > 2) fields[2] = topic;
+        if (noteTypeId === 6 && fields.length > 3) fields[3] = (input.reverseAnswer ?? '').trim();
+    }
 
     const { note, cards } = createNote(noteType, fields, deckId, tags);
 
@@ -796,6 +1038,7 @@ export function updateTusCardByCardId(
         answer: string;
         reverseAnswer?: string;
         deckId?: number;
+        fieldValues?: string[];
     },
 ): { note: Note; card: AnkiCard } | null {
     const card = getAnkiCard(cardId);
@@ -804,20 +1047,39 @@ export function updateTusCardByCardId(
     const note = getNote(card.noteId);
     if (!note) return null;
 
-    // The compact editor owns the first two (and optional Add Reverse) fields. Notes of
-    // richer types may carry legacy/imported fields, so keep every slot the editor does not show.
+    if (isCatalogCard(card) || isCatalogNote(note)) {
+        if (input.deckId !== undefined && input.deckId !== card.deckId) {
+            throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+        }
+        if (input.subject !== undefined && resolveSubjectDeckId(input.subject) !== card.deckId) {
+            throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+        }
+    }
+
     const noteType = getNoteType(note.noteTypeId);
-    const fieldCount = Math.max(noteType?.fields.length ?? 2, note.fields.length, 2);
+    const fieldCount = Math.max(
+        noteType?.fields.length ?? 2,
+        note.fields.length,
+        input.fieldValues?.length ?? 0,
+        2,
+    );
     const fields = [...note.fields];
     fields.length = fieldCount;
     for (let i = 0; i < fieldCount; i++) fields[i] = fields[i] ?? '';
-    fields[0] = input.question;
-    fields[1] = input.answer;
-    if (input.topic !== undefined && (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6)) {
-        fields[2] = input.topic;
+
+    if (Array.isArray(input.fieldValues) && input.fieldValues.length > 0) {
+        input.fieldValues.forEach((val, i) => {
+            fields[i] = val;
+        });
+    } else {
+        fields[0] = input.question;
+        fields[1] = input.answer;
+        if (input.topic !== undefined && (note.noteTypeId === 4 || note.noteTypeId === 5 || note.noteTypeId === 6)) {
+            fields[2] = input.topic;
+        }
+        if (note.noteTypeId === 6 && input.reverseAnswer !== undefined) fields[3] = input.reverseAnswer.trim();
+        if (note.noteTypeId === 7 && input.reverseAnswer !== undefined) fields[2] = input.reverseAnswer.trim();
     }
-    if (note.noteTypeId === 6 && input.reverseAnswer !== undefined) fields[3] = input.reverseAnswer.trim();
-    if (note.noteTypeId === 7 && input.reverseAnswer !== undefined) fields[2] = input.reverseAnswer.trim();
 
     note.fields = fields;
     note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
@@ -944,13 +1206,25 @@ export function findEmptyCards(): EmptyCardEntry[] {
  * findEmptyCards(), where the note (and its other cards) may still be perfectly valid.
  */
 export function deleteAnkiCardOnly(cardId: number): void {
+    deleteAnkiCardsOnly([cardId]);
+}
+
+/** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
+export function deleteAnkiCardsOnly(cardIds: number[]): void {
+    if (cardIds.length === 0) return;
+    if (cardIds.some(isCatalogCard)) {
+        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez.');
+    }
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
-        db.runSync('DELETE FROM revlog WHERE cardId = ?', cardId);
-        db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
-        db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
-        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+        const uniqueIds = [...new Set(cardIds)];
+        for (const cardId of uniqueIds) {
+            db.runSync('DELETE FROM revlog WHERE cardId = ?', cardId);
+            db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
+            db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
+            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
+        }
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -960,15 +1234,44 @@ export function deleteAnkiCardOnly(cardId: number): void {
 
 // ---- Tag Management ----
 
-export function getAllTags(): string[] {
+export interface TagCollectionScope {
+    deckIds?: number[];
+    cardIds?: number[];
+}
+
+/**
+ * Return the exact tags stored by Anki, optionally limited to cards in the active browser scope.
+ * No display cleanup is performed here: short tags such as `+` or `1` can be author-owned data
+ * and must survive import/export unchanged.
+ */
+export function getAllTags(scope: TagCollectionScope = {}): string[] {
     const db = getDB();
+    const clauses: string[] = [];
+    const params: number[] = [];
+    const addIds = (column: string, ids: number[] | undefined) => {
+        if (!ids) return;
+        if (ids.length === 0) {
+            clauses.push('1 = 0');
+            return;
+        }
+        clauses.push(`${column} IN (${ids.map(() => '?').join(', ')})`);
+        params.push(...ids);
+    };
+    addIds('c.deckId', scope.deckIds);
+    addIds('c.id', scope.cardIds);
+    const cardScope = clauses.length
+        ? ` AND EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND ${clauses.join(' AND ')})`
+        : '';
 
     // Extract distinct space-separated tags fully in SQL to avoid JS-side full-table splitting.
     const rows = db.getAllSync<{ tag: string }>(
-        `WITH RECURSIVE split(tag, rest) AS (
-            SELECT '', TRIM(tags) || ' '
-            FROM notes
-            WHERE tags IS NOT NULL AND TRIM(tags) != ''
+        `WITH RECURSIVE scoped(tags) AS (
+            SELECT n.tags
+            FROM notes n
+            WHERE n.tags IS NOT NULL AND TRIM(n.tags) != ''${cardScope}
+        ),
+        split(tag, rest) AS (
+            SELECT '', TRIM(tags) || ' ' FROM scoped
             UNION ALL
             SELECT
                 TRIM(SUBSTR(rest, 1, INSTR(rest, ' ') - 1)),
@@ -980,6 +1283,7 @@ export function getAllTags(): string[] {
         FROM split
         WHERE tag != ''
         ORDER BY tag COLLATE NOCASE`,
+        ...params,
     );
 
     return rows.map((row) => row.tag);
@@ -1025,6 +1329,7 @@ export function toggleNoteMark(noteId: number): boolean {
 
 /** Duplicates a note (fields + tags) into a fresh note, generating cards in the same deck. */
 export function duplicateNote(noteId: number): { note: Note; cards: AnkiCard[] } | null {
+    assertCatalogNoteNotDuplicable(noteId);
     const note = getNote(noteId);
     if (!note) return null;
 

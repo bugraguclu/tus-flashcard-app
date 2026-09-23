@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useLocales } from 'expo-localization';
-import { useApp } from '../contexts/AppContext';
+import { useLanguagePreference } from '../contexts/AppContext';
 import {
     localeTag,
     resolveAppLocale,
@@ -9,6 +9,7 @@ import {
     type TranslationKey,
     type TranslationParams,
 } from '../lib/i18n';
+import { DEFAULT_SETTINGS } from '../lib/storage';
 
 function useDeviceLanguageCodes() {
     const deviceLocales = useLocales();
@@ -18,7 +19,7 @@ function useDeviceLanguageCodes() {
 /** Used by startup/error surfaces that render before persisted settings are available. */
 export function useSystemI18n() {
     const deviceLanguageCodes = useDeviceLanguageCodes();
-    const locale = resolveAppLocale('system', deviceLanguageCodes);
+    const locale = resolveAppLocale(DEFAULT_SETTINGS.language, deviceLanguageCodes);
     const t = useCallback(
         (key: TranslationKey, params?: TranslationParams) => translate(locale, key, params),
         [locale],
@@ -28,9 +29,9 @@ export function useSystemI18n() {
 }
 
 export function useI18n() {
-    const { settings } = useApp();
+    const languagePreference = useLanguagePreference();
     const deviceLanguageCodes = useDeviceLanguageCodes();
-    const locale = resolveAppLocale(settings.language, deviceLanguageCodes);
+    const locale = resolveAppLocale(languagePreference, deviceLanguageCodes);
 
     useEffect(() => {
         setActiveLocale(locale);
@@ -47,7 +48,7 @@ export function useI18n() {
         l,
         locale,
         localeTag: localeTag(locale),
-        preference: settings.language,
+        preference: languagePreference,
         deviceLanguage: resolveAppLocale('system', deviceLanguageCodes),
     };
 }

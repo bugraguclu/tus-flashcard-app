@@ -17,11 +17,11 @@ import {
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
-import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
+import { parseDueRange } from '../lib/browserSelection';
 
-type MenuView = 'menu' | 'flag' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
+type MenuView = 'menu' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
     | 'undo'
     | 'redo'
@@ -39,34 +39,35 @@ type ReviewerMenuIcon =
     | 'reschedule'
     | 'replay'
     | 'voice'
-    | 'deck';
+    | 'deck'
+    | 'info';
 
 export interface CardOptionsMenuProps {
     visible: boolean;
-    /** The separate reviewer flag button opens this same side panel directly on flag colors. */
-    initialView?: 'menu' | 'flag';
     onClose: () => void;
+    hasCurrentCard?: boolean;
     cardSuspended: boolean;
     noteMarked: boolean;
     /** Anki shows note-level Bury/Suspend choices only when the note has sibling cards. */
     hasSiblingCards: boolean;
     cardHasAudio: boolean;
     onReplayAudio: () => void;
-    onFlag: (flag: CardFlag) => void;
     onBuryCard: () => void;
     onSuspendCard: () => void;
     onForgetCard: () => void;
-    onSetDueDate: (days: number) => void;
+    onSetDueDate: (spec: string) => void;
     onDeckOptions: () => void;
+    onCardInfo?: () => void;
     onToggleMarkNote: () => void;
     onBuryNote: () => void;
     onSuspendNote: () => void;
+    canDeleteNote?: boolean;
     onDeleteNote: () => void;
     canUndo: boolean;
     onUndo: () => void;
     canRedo: boolean;
     onRedo: () => void;
-    onAddCard: () => void;
+    onAddNote: () => void;
     onEditNote: () => void;
     noteTags: string;
     onSaveTags: (tags: string) => void;
@@ -96,6 +97,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const translateX = useRef(new Animated.Value(360)).current;
     const [view, setView] = useState<MenuView>('menu');
     const [dueDateInput, setDueDateInput] = useState('1');
+    const dueDateSpecValid = parseDueRange(dueDateInput) !== null;
     const [tagsInput, setTagsInput] = useState('');
 
     useEffect(() => {
@@ -103,7 +105,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         // The reviewer menu is a full-height side surface. Do not let a keyboard left open
         // by typed-answer/editor content reduce its opening bounds.
         Keyboard.dismiss();
-        setView(props.initialView ?? 'menu');
+        setView('menu');
         translateX.setValue(panelWidth + 16);
         const animation = Animated.spring(translateX, {
             toValue: 0,
@@ -114,7 +116,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         });
         animation.start();
         return () => animation.stop();
-    }, [props.visible, props.initialView, panelWidth, translateX]);
+    }, [props.visible, panelWidth, translateX]);
 
     useEffect(() => {
         if (view === 'tags') setTagsInput(props.noteTags);
@@ -122,7 +124,9 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
     const close = () => {
         if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
-        setView('menu');
+        // Keep the current panel rendered while the native Modal fades out. Switching a flag
+        // panel back to the main menu here makes the overflow menu flash for one frame during
+        // dismissal. The opening effect selects the correct view on the next presentation.
         setDueDateInput('1');
         props.onClose();
     };
@@ -143,36 +147,29 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
         setView(view === 'dueDate' ? 'reschedule' : 'menu');
     };
-    const sheetTitle = view === 'flag'
-        ? l('Bayrak rengi', 'Flag color')
-        : view === 'dueDate'
-            ? l('Son tarihi ayarla', 'Set due date')
-            : view === 'bury'
-                ? l('Göm', 'Bury')
-                : view === 'suspend'
-                    ? l('Askıya Al', 'Suspend')
-                    : view === 'reschedule'
-                        ? l('Yeniden Zamanla', 'Reschedule')
-                        : l('Etiketleri düzenle', 'Edit tags');
+    const sheetTitle = view === 'dueDate'
+        ? l('Son tarihi ayarla', 'Set due date')
+        : view === 'bury'
+            ? l('Göm', 'Bury')
+            : view === 'suspend'
+                ? l('Askıya al', 'Suspend')
+                : view === 'reschedule'
+                    ? l('Yeniden zamanla', 'Reschedule')
+                    : l('Etiketleri düzenle', 'Edit tags');
 
-    const flagNames = [
-        l('Bayrak yok', 'No flag'), l('Kırmızı', 'Red'), l('Turuncu', 'Orange'),
-        l('Yeşil', 'Green'), l('Mavi', 'Blue'), l('Pembe', 'Pink'),
-        l('Turkuaz', 'Turquoise'), l('Mor', 'Purple'),
-    ];
-
-    const historyAction = props.whiteboardActive && props.whiteboardHasContent
+    const hasCard = props.hasCurrentCard !== false;
+    const historyAction = hasCard && props.whiteboardActive && props.whiteboardHasContent
         ? {
             icon: 'undo' as const,
             label: l('Konturu geri al', 'Undo stroke'),
             enabled: true,
             action: props.onUndoWhiteboard,
         }
-        : props.canRedo
+        : hasCard && props.canRedo
             ? { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: true, action: props.onRedo }
-            : props.canUndo
-                ? { icon: 'undo' as const, label: l('Geri Al', 'Undo'), enabled: true, action: props.onUndo }
-                : { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: false, action: props.onRedo };
+            : hasCard && props.canUndo
+                ? { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: true, action: props.onUndo }
+                : { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: false, action: props.onUndo };
 
     return (
         <Modal
@@ -228,7 +225,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     onPress={() => runAndClose(historyAction.action)}
                                 />
 
-                                {props.whiteboardActive && (
+                                {hasCard && props.whiteboardActive && (
                                     <>
                                         <MenuRow
                                             styles={styles}
@@ -260,56 +257,62 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     styles={styles}
                                     colors={colors}
                                     icon="whiteboard"
+                                    disabled={!hasCard}
                                     label={props.whiteboardActive
                                         ? l('Yazı tahtasını devre dışı bırak', 'Disable whiteboard')
                                         : l('Yazı tahtasını etkinleştir', 'Enable whiteboard')}
                                     onPress={() => runAndClose(props.whiteboardActive ? props.onDisableWhiteboard : props.onToggleWhiteboard)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} onPress={() => runAndClose(props.onEditNote)} />
-                                <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddCard)} />
-                                <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} onPress={() => setView('tags')} />
+                                <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} disabled={!hasCard} onPress={() => runAndClose(props.onEditNote)} />
+                                <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddNote)} />
+                                <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} disabled={!hasCard} onPress={() => setView('tags')} />
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron onPress={() => setView('bury')} />
+                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron disabled={!hasCard} onPress={() => setView('bury')} />
                                 ) : (
-                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
+                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} disabled={!hasCard} onPress={() => runAndClose(props.onBuryCard)} />
                                 )}
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya Al', 'Suspend')} chevron onPress={() => setView('suspend')} />
+                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya al', 'Suspend')} chevron disabled={!hasCard} onPress={() => setView('suspend')} />
                                 ) : (
                                     <MenuRow
                                         styles={styles}
                                         colors={colors}
                                         icon="suspend"
+                                        disabled={!hasCard}
                                         label={props.cardSuspended ? l('Kartı askıdan çıkar', 'Unsuspend card') : l('Kartı askıya al', 'Suspend card')}
                                         onPress={() => runAndClose(props.onSuspendCard)}
+                                    />
+                                )}
+                                {props.canDeleteNote !== false && (
+                                    <MenuRow
+                                        styles={styles}
+                                        colors={colors}
+                                        icon="delete"
+                                        disabled={!hasCard}
+                                        label={l('Notu sil', 'Delete note')}
+                                        onPress={() => confirmAndClose(
+                                            l('Notu sil', 'Delete note'),
+                                            l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
+                                            props.onDeleteNote,
+                                            true,
+                                        )}
                                     />
                                 )}
                                 <MenuRow
                                     styles={styles}
                                     colors={colors}
-                                    icon="delete"
-                                    label={l('Notu sil', 'Delete note')}
-                                    onPress={() => confirmAndClose(
-                                        l('Notu sil', 'Delete note'),
-                                        l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
-                                        props.onDeleteNote,
-                                        true,
-                                    )}
-                                />
-                                <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="mark"
+                                    disabled={!hasCard}
                                     label={props.noteMarked ? l('Not işaretini kaldır', 'Unmark note') : l('Notu işaretle', 'Mark note')}
                                     onPress={() => runAndClose(props.onToggleMarkNote)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden Zamanla', 'Reschedule')} chevron onPress={() => setView('reschedule')} />
+                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden zamanla', 'Reschedule')} chevron disabled={!hasCard} onPress={() => setView('reschedule')} />
                                 <MenuRow
                                     styles={styles}
                                     colors={colors}
                                     icon="replay"
-                                    label={l('Medyayı yeniden oynat', 'Replay media')}
-                                    disabled={!props.cardHasAudio}
+                                    label={l('Sesi yeniden oynat', 'Replay audio')}
+                                    disabled={!hasCard || !props.cardHasAudio}
                                     onPress={() => runAndClose(props.onReplayAudio)}
                                 />
                                 <MenuRow
@@ -317,11 +320,14 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     colors={colors}
                                     icon="voice"
                                     label={props.voicePlaybackEnabled
-                                        ? l('Ses yeniden oynatmayı kapat', 'Disable voice playback')
-                                        : l('Ses yeniden oynatmayı aç', 'Enable voice playback')}
+                                        ? l('Metin okumayı kapat', 'Disable text to speech')
+                                        : l('Metin okumayı aç', 'Enable text to speech')}
                                     onPress={() => runAndClose(props.onToggleVoicePlayback)}
                                 />
                                 <MenuRow styles={styles} colors={colors} icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
+                                {props.onCardInfo ? (
+                                    <MenuRow styles={styles} colors={colors} icon="info" label={l('Kart bilgisi', 'Card info')} disabled={!hasCard} onPress={() => runAndClose(props.onCardInfo!)} />
+                                ) : null}
                             </>
                         )}
 
@@ -381,40 +387,27 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                             </View>
                         )}
 
-                        {view === 'flag' && (
-                            <>
-                                {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
-                                    <TouchableOpacity
-                                        key={flag}
-                                        style={styles.row}
-                                        onPress={() => runAndClose(() => props.onFlag(flag))}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={flagNames[flag]}
-                                    >
-                                        <View style={[styles.flagSwatch, { backgroundColor: FLAG_COLORS[flag].color }]} />
-                                        <Text style={styles.rowLabel}>{flagNames[flag]}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </>
-                        )}
-
                         {view === 'dueDate' && (
                             <View style={styles.formContent}>
                                 <Text style={styles.subDesc}>{l('Kart kaç gün sonra yeniden gösterilsin?', 'Show this card again in how many days?')}</Text>
+                                <Text style={styles.subDesc}>
+                                    {l('0 = bugün, 1 = yarın, 3-7 = aralıktan rastgele. Sonuna ! eklerseniz aralık da bu değere ayarlanır.',
+                                       '0 = today, 1 = tomorrow, 3-7 = random in range. Append ! to also set the interval to that value.')}
+                                </Text>
                                 <TextInput
                                     style={styles.textInput}
-                                    keyboardType="number-pad"
                                     value={dueDateInput}
                                     onChangeText={setDueDateInput}
-                                    placeholder={l('gün', 'days')}
+                                    maxLength={12}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    placeholder={l('örn. 1 veya 3-7!', 'e.g. 1 or 3-7!')}
                                     placeholderTextColor={colors.textMuted}
                                 />
                                 <TouchableOpacity
-                                    style={styles.confirmBtn}
-                                    onPress={() => {
-                                        const days = Math.max(0, Math.floor(Number(dueDateInput) || 0));
-                                        runAndClose(() => props.onSetDueDate(days));
-                                    }}
+                                    style={[styles.confirmBtn, !dueDateSpecValid && styles.confirmBtnDisabled]}
+                                    disabled={!dueDateSpecValid}
+                                    onPress={() => runAndClose(() => props.onSetDueDate(dueDateInput))}
                                 >
                                     <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>
@@ -499,6 +492,12 @@ function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
             )}
             {name === 'voice' && <Path d="M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V5Zm-3 6a6 6 0 0 0 12 0M12 17v4m-3 0h6" {...common} />}
             {name === 'deck' && <Path d="M4 6h6m4 0h6M4 12h10m4 0h2M4 18h3m4 0h9M10 4v4m4 2v4m-7 2v4" {...common} />}
+            {name === 'info' && (
+                <>
+                    <Circle cx={12} cy={12} r={9} {...common} />
+                    <Path d="M12 16v-4m0-4h.01" {...common} />
+                </>
+            )}
         </Svg>
     );
 }
@@ -510,7 +509,7 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'flex-end',
         },
         scrim: {
-            ...StyleSheet.absoluteFillObject,
+            ...StyleSheet.absoluteFill,
             backgroundColor: 'rgba(0,0,0,0.22)',
         },
         sheet: {
@@ -586,6 +585,9 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accent,
+        },
+        confirmBtnDisabled: {
+            opacity: 0.4,
         },
         confirmBtnText: { color: colors.white, fontSize: FontSize.md, fontWeight: '700' },
     });

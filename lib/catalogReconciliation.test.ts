@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CatalogAccessState } from './catalogPurchases';
-import { reconcileCatalogAccessWithInstalledTier } from './catalogReconciliation';
+import { reconcileCatalogAccessWithInstall } from './catalogReconciliation';
 
 const state = (overrides: Partial<CatalogAccessState>): CatalogAccessState => ({
     status: 'ready',
@@ -13,34 +13,31 @@ const state = (overrides: Partial<CatalogAccessState>): CatalogAccessState => ({
 });
 
 describe('catalog entitlement reconciliation', () => {
-    it('keeps a previously verified lifetime catalog available during a transient store error', () => {
-        const result = reconcileCatalogAccessWithInstalledTier(
+    it('keeps an installed lifetime catalog available during a transient store error', () => {
+        const result = reconcileCatalogAccessWithInstall(
             state({ status: 'error', error: 'Bağlantı kurulamadı' }),
-            'full',
+            true,
         );
 
         expect(result.hasAccess).toBe(true);
         expect(result.error).toContain('çevrimdışı erişim korunuyor');
     });
 
-    it('does not unlock a trial installation during a store error', () => {
-        expect(reconcileCatalogAccessWithInstalledTier(
-            state({ status: 'error' }),
-            'trial',
-        ).hasAccess).toBe(false);
+    it('does not unlock an uninstalled catalog during a store error', () => {
+        expect(reconcileCatalogAccessWithInstall(state({ status: 'error' }), false).hasAccess).toBe(false);
     });
 
-    it('honors a successful locked receipt response even if full cards were cached locally', () => {
-        expect(reconcileCatalogAccessWithInstalledTier(
+    it('honors a successful locked receipt response even if the cards are still installed', () => {
+        expect(reconcileCatalogAccessWithInstall(
             state({ status: 'ready', hasAccess: false }),
-            'full',
+            true,
         ).hasAccess).toBe(false);
     });
 
     it('fails closed when the production store is not configured', () => {
-        expect(reconcileCatalogAccessWithInstalledTier(
+        expect(reconcileCatalogAccessWithInstall(
             state({ status: 'unconfigured', configured: false }),
-            'full',
+            true,
         ).hasAccess).toBe(false);
     });
 });

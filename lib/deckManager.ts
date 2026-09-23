@@ -1,10 +1,29 @@
 // Deck and deck-config storage: CRUD, name hierarchy, deck tree, and per-deck card counts.
 
+import {
+    CUSTOM_STUDY_DECK_NAME,
+    CUSTOM_STUDY_MAX_VALUE,
+    EMPTY_CUSTOM_STUDY_DEFAULTS,
+    type CustomStudyDefaults,
+    type CustomStudySessionConfig,
+} from './customStudy';
 import type { Deck, DeckConfig, AnkiCard } from './models';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, getParentDeckName, uniqueId } from './models';
+import { DEFAULT_SECOND_SEARCH_LIMIT, FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { getDB } from './db';
 import { dayNumberToYmd, localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
+import { markSourcePackageDirty } from './ankiPackageArchive';
+import { clearDeckWhiteboards } from './whiteboardSession';
+import {
+    assertCatalogDeckConfigMutable,
+    assertCatalogDeckMutable,
+    assertCatalogDeckNotDeletable,
+    assertCatalogDeckNotRenamable,
+    isCatalogDeck,
+    PaidCatalogProtectionError,
+} from './catalogProtection';
+import { getTodayLimitUsageByDeck } from './reviewLogger';
 
 /** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
 function escapeLikePattern(value: string): string {
@@ -92,7 +111,14 @@ export function getAvailableDeckSubtreeName(deckId: number, desiredName: string)
 }
 
 export function saveDeck(deck: Deck): void {
+    assertCatalogDeckMutable(deck);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', deck.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as Deck).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
         deck.id,
@@ -125,6 +151,7 @@ export function initializeDeckDisclosureDefaults(): void {
     }
 
     for (const deck of decks) {
+        if (isCatalogDeck(deck)) continue;
         const depth = deck.name.split('::').length - 1;
         if (depth >= 1 && parentNames.has(deck.name) && deck.collapsed !== true) {
             saveDeck({ ...deck, collapsed: true });
@@ -145,9 +172,11 @@ export function initializeDeckDisclosureDefaults(): void {
  * (grave types: 0=card, 1=note, 2=deck).
  */
 export function deleteDeck(id: number): void {
+    assertCatalogDeckNotDeletable(id);
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
+    assertCatalogDeckMutable(deck);
 
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -156,6 +185,7 @@ export function deleteDeck(id: number): void {
             db.runSync('DELETE FROM decks WHERE id = ?', id);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
             db.execSync('COMMIT;');
+            forgetWhiteboards([id]);
             return;
         }
 
@@ -202,9 +232,25 @@ export function deleteDeck(id: number): void {
         }
 
         db.execSync('COMMIT;');
+        forgetWhiteboards(deckIds);
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
+    }
+}
+
+/**
+ * Drop the board rows of decks that no longer exist. Runs after the commit, so a delete that rolls
+ * back leaves the drawings alone, and never throws: losing a deck must not fail because a pen
+ * colour could not be forgotten.
+ */
+function forgetWhiteboards(deckIds: number[]): void {
+    for (const deckId of deckIds) {
+        try {
+            clearDeckWhiteboards(deckId);
+        } catch (e) {
+            console.warn('[Deck] Failed to clear whiteboards for deleted deck:', e);
+        }
     }
 }
 
@@ -224,9 +270,11 @@ function returnFilteredCardsHome(filteredDeckId: number): void {
 }
 
 export function renameDeck(id: number, newName: string): void {
+    assertCatalogDeckNotRenamable(id);
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
+    assertCatalogDeckMutable(deck);
     if (newName === deck.name) return;
 
     // Deck names are unique; refuse to rename onto an existing (different) deck.
@@ -336,6 +384,7 @@ export function createDeck(name: string, configId?: number): Deck {
     }
 
     const now = uniqueId();
+    const parent = getParentDeckName(name);
     const deck: Deck = {
         id: now,
         name,
@@ -345,11 +394,11 @@ export function createDeck(name: string, configId?: number): Deck {
         description: '',
         collapsed: false,
         isFiltered: false,
+        sortOrder: nextSiblingSortOrderForAppend(parent),
     };
     saveDeck(deck);
 
     // Ensure parent decks exist
-    const parent = getParentDeckName(name);
     if (parent && !getDeckByName(parent)) {
         createDeck(parent, configId);
     }
@@ -370,11 +419,14 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         isFiltered: true,
         searchQuery,
         searchLimit: limit || 100,
-        searchOrder: 0,
+        // Anki's brand-new filtered deck gathers its first filter randomly (rslib
+        // Deck::new_filtered), so a deck created here starts where Anki's would.
+        searchOrder: FILTERED_SEARCH_ORDER.random,
         filteredAllowEmpty: false,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
         filteredBuildAt: now,
+        sortOrder: nextSiblingSortOrderForAppend(null),
     };
     saveDeck(deck);
     return deck;
@@ -401,6 +453,35 @@ function compareDeckDisplayOrder(a: Deck, b: Deck): number {
 }
 
 /**
+ * Freeze any legacy alphabetical siblings into their currently visible order, then return the
+ * next position. This makes every newly created deck append to its sibling list instead of being
+ * inserted alphabetically. Catalog decks already carry explicit positions and are never edited.
+ */
+function nextSiblingSortOrderForAppend(parentName: string | null): number {
+    const siblings = getAllDecks()
+        .filter((deck) => getParentDeckName(deck.name) === parentName)
+        .sort(compareDeckDisplayOrder);
+    let nextOrder = siblings.reduce(
+        (max, sibling) => Number.isFinite(sibling.sortOrder) ? Math.max(max, sibling.sortOrder!) : max,
+        -1,
+    ) + 1;
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    for (const sibling of siblings) {
+        if (Number.isFinite(sibling.sortOrder)) continue;
+        // Bundled catalog trees are installed with explicit positions. Keep this guard so an
+        // older catalog row can never be mutated merely because the learner adds a personal deck.
+        if (isCatalogDeck(sibling)) continue;
+        sibling.sortOrder = nextOrder++;
+        sibling.mod = nowSec;
+        sibling.usn = -1;
+        saveDeck(sibling);
+    }
+
+    return nextOrder;
+}
+
+/**
  * Deck shortcuts for a collection/deck scope. Collection scope exposes root decks;
  * a deck scope exposes only its immediate children. Each returned deck can then be
  * treated as the root of its complete subtree by consumers such as Browser/Stats.
@@ -414,6 +495,38 @@ export function getDirectDecksForScope(
         .filter((deck) => (includeFiltered || !deck.isFiltered)
             && getParentDeckName(deck.name) === scopeName)
         .sort(compareDeckDisplayOrder);
+}
+
+/**
+ * Return only deck branches that actually contain at least one card in the requested scope.
+ *
+ * Browser shortcuts used to include every persisted descendant. An early Ders/Konu migration
+ * created empty descendants, so those rows surfaced as "ghost" chips even though the selected
+ * deck correctly reported zero cards. Keeping the empty decks themselves is intentional (users
+ * may have created them), but an empty branch is not a useful card filter.
+ */
+export function getPopulatedDecksForScope(
+    decks: Deck[],
+    cardCounts: Map<number, { total: number }>,
+    scopeName: string | null,
+): Deck[] {
+    const candidates = decks.filter((deck) => !deck.isFiltered && (
+        scopeName ? deck.name.startsWith(`${scopeName}::`) : true
+    ));
+    const candidateNames = new Set(candidates.map((deck) => deck.name));
+    const populatedNames = new Set<string>();
+
+    for (const deck of candidates) {
+        if ((cardCounts.get(deck.id)?.total ?? 0) <= 0) continue;
+
+        let branchName: string | null = deck.name;
+        while (branchName) {
+            if (candidateNames.has(branchName)) populatedNames.add(branchName);
+            branchName = getParentDeckName(branchName);
+        }
+    }
+
+    return candidates.filter((deck) => populatedNames.has(deck.name));
 }
 
 export function buildDeckTree(
@@ -459,8 +572,17 @@ export function buildDeckTree(
     };
     sortBranch(roots);
 
+    // What each deck already spent of today's allowance, so the tree shows what is still to come
+    // rather than the full daily allotment all over again (Anki's per-deck newToday/revToday).
+    const usageByDeckId = getTodayLimitUsageByDeck(rolloverHour);
+    const spent = new Map<string, { newIntroduced: number; reviewsAnswered: number }>();
+
     // Aggregate counts from children up
     function aggregateCounts(node: DeckTreeNode): void {
+        const own = usageByDeckId.get(node.deck.id);
+        const used = { newIntroduced: own?.newIntroduced ?? 0, reviewsAnswered: own?.reviewsAnswered ?? 0 };
+        spent.set(node.deck.name, used);
+
         for (const child of node.children) {
             aggregateCounts(child);
             // Filtered decks reference cards from their home decks. In this app they are gathered
@@ -470,15 +592,21 @@ export function buildDeckTree(
             node.learnCount += child.learnCount;
             node.reviewCount += child.reviewCount;
             node.totalCards += child.totalCards;
+            const childUsed = spent.get(child.deck.name);
+            if (childUsed) {
+                used.newIntroduced += childUsed.newIntroduced;
+                used.reviewsAnswered += childUsed.reviewsAnswered;
+            }
         }
 
         // When the parent is selected, its own limits cap the total drawn from all children.
         // This keeps the deck-list number aligned with the overview/study queue instead of
-        // advertising the uncapped sum of every subdeck.
+        // advertising the uncapped sum of every subdeck. The cap is what today's limits still
+        // allow: Anki does not hand out a deck's full allowance twice in one day.
         if (!node.deck.isFiltered) {
             const config = getDeckConfigForDeck(node.deck.id, rolloverHour);
-            node.newCount = Math.min(node.newCount, Math.max(0, config.newPerDay));
-            node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay));
+            node.newCount = Math.min(node.newCount, Math.max(0, config.newPerDay - used.newIntroduced));
+            node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay - used.reviewsAnswered));
         }
     }
     roots.forEach(aggregateCounts);
@@ -519,17 +647,32 @@ export function getDeckConfigForDeck(deckId: number, rolloverHour: number = 4): 
     const deck = getDeck(deckId);
     const config = getDeckConfig(deck?.configId || DEFAULT_DECK_CONFIG.id);
 
+    // Anki keeps per-deck limits separate from the shared preset, so two decks can share every
+    // scheduling option while retaining different daily caps.
+    if (Number.isFinite(deck?.newLimit)) config.newPerDay = Math.max(0, Math.floor(deck!.newLimit!));
+    if (Number.isFinite(deck?.reviewLimit)) config.maxReviewsPerDay = Math.max(0, Math.floor(deck!.reviewLimit!));
+
     // Anki's "today only" limit bump (custom study / deck options): layered on top of the
     // persistent config so every consumer — queue build, counts, previews — sees it at once.
     const boost = getDeckTodayBoost(deckId, rolloverHour);
-    if (boost.extraNew > 0) config.newPerDay += boost.extraNew;
-    if (boost.extraReview > 0) config.maxReviewsPerDay += boost.extraReview;
+    if (boost.extraNew !== 0) config.newPerDay = Math.max(0, config.newPerDay + boost.extraNew);
+    if (boost.extraReview !== 0) config.maxReviewsPerDay = Math.max(0, config.maxReviewsPerDay + boost.extraReview);
+    const today = getDeckTodayLimits(deckId, rolloverHour);
+    if (today.newLimit !== undefined) config.newPerDay = today.newLimit;
+    if (today.reviewLimit !== undefined) config.maxReviewsPerDay = today.reviewLimit;
 
     return config;
 }
 
 export function saveDeckConfig(config: DeckConfig): void {
+    assertCatalogDeckConfigMutable(config);
     const db = getDB();
+    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM deck_configs WHERE id = ?', config.id);
+    if (existing?.data) {
+        try {
+            markSourcePackageDirty((JSON.parse(existing.data) as DeckConfig).sourcePackageId);
+        } catch { /* malformed legacy blobs are replaced below */ }
+    }
     db.runSync(
         'INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)',
         config.id, JSON.stringify(config)
@@ -553,8 +696,27 @@ export function createPreset(name: string, cloneFromId: number = DEFAULT_DECK_CO
 
 export function renamePreset(configId: number, name: string): void {
     const config = getDeckConfig(configId);
-    config.name = name.trim() || config.name;
+    const nextName = name.normalize('NFC').trim();
+    if (!nextName) throw new Error('A preset name cannot be empty.');
+    if (nextName === config.name) return;
+    config.name = nextName;
     saveDeckConfig(config);
+}
+
+/** Restore a preset's scheduling values while keeping its identity and import metadata. */
+export function restoreDeckConfigDefaults(configId: number): DeckConfig {
+    const current = getDeckConfig(configId);
+    assertCatalogDeckConfigMutable(current);
+    const restored: DeckConfig = {
+        ...current,
+        ...DEFAULT_DECK_CONFIG,
+        id: current.id,
+        name: current.name,
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+    };
+    saveDeckConfig(restored);
+    return restored;
 }
 
 /** Delete a preset; decks using it fall back to the shared default. The default itself stays. */
@@ -620,6 +782,16 @@ interface DeckTodayBoost {
     extraReview: number;
 }
 
+interface DeckTodayLimits {
+    ymd: string;
+    newLimit?: number;
+    reviewLimit?: number;
+}
+
+function deckTodayLimitsKey(deckId: number): string {
+    return `deck_today_limits:${deckId}`;
+}
+
 function todayBoostYmd(rolloverHour: number): string {
     return dayNumberToYmd(localDayNumber(Date.now(), rolloverHour), rolloverHour);
 }
@@ -637,27 +809,122 @@ export function getDeckTodayBoost(deckId: number, rolloverHour: number = 4): { e
         const parsed = JSON.parse(row.value) as DeckTodayBoost;
         if (parsed.ymd !== todayBoostYmd(rolloverHour)) return { extraNew: 0, extraReview: 0 };
         return {
-            extraNew: Math.max(0, Math.floor(parsed.extraNew) || 0),
-            extraReview: Math.max(0, Math.floor(parsed.extraReview) || 0),
+            extraNew: Math.trunc(parsed.extraNew) || 0,
+            extraReview: Math.trunc(parsed.extraReview) || 0,
         };
     } catch {
         return { extraNew: 0, extraReview: 0 };
     }
 }
 
-/** Anki custom study "increase today's limits": adds on top of any bump already granted today. */
+/**
+ * Anki custom study "increase today's limits": adds on top of any bump already granted today.
+ * A negative delta shrinks today's allowance, which is what Anki's spinner does below zero; the
+ * resulting limit is floored at zero when the queue is built.
+ */
 export function addDeckTodayBoost(deckId: number, extraNew: number, extraReview: number, rolloverHour: number = 4): void {
+    const todayLimits = getDeckTodayLimits(deckId, rolloverHour);
+    if (todayLimits.newLimit !== undefined || todayLimits.reviewLimit !== undefined) {
+        const effective = getDeckConfigForDeck(deckId, rolloverHour);
+        const addNew = Math.trunc(extraNew) || 0;
+        const addReview = Math.trunc(extraReview) || 0;
+        setDeckTodayLimits(
+            deckId,
+            todayLimits.newLimit !== undefined || addNew !== 0 ? effective.newPerDay + addNew : undefined,
+            todayLimits.reviewLimit !== undefined || addReview !== 0 ? effective.maxReviewsPerDay + addReview : undefined,
+            rolloverHour,
+        );
+        return;
+    }
     const current = getDeckTodayBoost(deckId, rolloverHour);
     const next: DeckTodayBoost = {
         ymd: todayBoostYmd(rolloverHour),
-        extraNew: current.extraNew + Math.max(0, Math.floor(extraNew) || 0),
-        extraReview: current.extraReview + Math.max(0, Math.floor(extraReview) || 0),
+        extraNew: current.extraNew + (Math.trunc(extraNew) || 0),
+        extraReview: current.extraReview + (Math.trunc(extraReview) || 0),
     };
     getDB().runSync(
         'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
         deckBoostKey(deckId),
         JSON.stringify(next),
     );
+}
+
+/**
+ * Anki's custom study "increase today's limit" (`Collection::extend_limits`). Anki grants the
+ * headroom on the deck itself, and on every parent as well when a parent's limit can hold the
+ * deck back — the collection-wide "limits start from the top" preference. Without that second
+ * step the extra cards would be handed out by the deck and then taken away again by its parent.
+ */
+export function extendDeckTodayLimits(
+    deckId: number,
+    extraNew: number,
+    extraReview: number,
+    rolloverHour: number = 4,
+    options: { includeParents?: boolean } = {},
+): void {
+    addDeckTodayBoost(deckId, extraNew, extraReview, rolloverHour);
+    if (!options.includeParents) return;
+
+    let parentName = getParentDeckName(getDeck(deckId)?.name ?? '');
+    while (parentName) {
+        const parent = getDeckByName(parentName);
+        if (parent) addDeckTodayBoost(parent.id, extraNew, extraReview, rolloverHour);
+        parentName = getParentDeckName(parentName);
+    }
+}
+
+/** Absolute "Today only" limits from Anki's deck-options tabs. */
+export function getDeckTodayLimits(deckId: number, rolloverHour: number = 4): { newLimit?: number; reviewLimit?: number } {
+    const row = getDB().getFirstSync<{ value: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        deckTodayLimitsKey(deckId),
+    );
+    if (!row?.value) return {};
+    try {
+        const parsed = JSON.parse(row.value) as DeckTodayLimits;
+        if (parsed.ymd !== todayBoostYmd(rolloverHour)) return {};
+        const clamp = (value: unknown) => Number.isFinite(value)
+            ? Math.max(0, Math.min(9999, Math.floor(value as number)))
+            : undefined;
+        return { newLimit: clamp(parsed.newLimit), reviewLimit: clamp(parsed.reviewLimit) };
+    } catch {
+        return {};
+    }
+}
+
+export function setDeckTodayLimits(
+    deckId: number,
+    newLimit: number | undefined,
+    reviewLimit: number | undefined,
+    rolloverHour: number = 4,
+): void {
+    const clamp = (value: number | undefined) => Number.isFinite(value)
+        ? Math.max(0, Math.min(9999, Math.floor(value as number)))
+        : undefined;
+    const next: DeckTodayLimits = {
+        ymd: todayBoostYmd(rolloverHour),
+        newLimit: clamp(newLimit),
+        reviewLimit: clamp(reviewLimit),
+    };
+    getDB().runSync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        deckTodayLimitsKey(deckId),
+        JSON.stringify(next),
+    );
+}
+
+/** Save/clear Anki's "This deck" limit overrides without cloning the shared preset. */
+export function setDeckLimitOverrides(deckId: number, newLimit?: number, reviewLimit?: number): void {
+    const deck = getDeck(deckId);
+    if (!deck) return;
+    const clamp = (value: number | undefined) => Number.isFinite(value)
+        ? Math.max(0, Math.min(9999, Math.floor(value as number)))
+        : undefined;
+    deck.newLimit = clamp(newLimit);
+    deck.reviewLimit = clamp(reviewLimit);
+    deck.mod = Math.floor(Date.now() / 1000);
+    deck.usn = -1;
+    saveDeck(deck);
 }
 
 /**
@@ -700,17 +967,21 @@ export function setDeckLimits(deckId: number, newPerDay: number, maxReviewsPerDa
  * `newParentName` null means "make it a top-level deck".
  */
 export function moveDeckUnder(deckId: number, newParentName: string | null): string | null {
+    assertCatalogDeckNotRenamable(deckId);
     const deck = getDeck(deckId);
     if (!deck) return null;
 
     if (newParentName) {
+        const parent = getDeckByName(newParentName);
+        if (parent && isCatalogDeck(parent)) {
+            throw new PaidCatalogProtectionError('Katalog desteleri altına başka deste taşınamaz.');
+        }
         if (deck.isFiltered) {
             throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
         }
         if (newParentName === deck.name || newParentName.startsWith(`${deck.name}::`)) {
             throw new Error('Bir deste kendi altındaki bir desteye taşınamaz.');
         }
-        const parent = getDeckByName(newParentName);
         if (!parent) throw new Error('Hedef deste bulunamadı.');
         if (parent.isFiltered) throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
     }
@@ -732,6 +1003,8 @@ export function reorderDeckRelative(
     targetDeckId: number,
     placement: 'before' | 'after',
 ): string {
+    assertCatalogDeckNotRenamable(deckId);
+    assertCatalogDeckNotRenamable(targetDeckId);
     const deck = getDeck(deckId);
     const target = getDeck(targetDeckId);
     if (!deck || !target) throw new Error('Deste bulunamadı.');
@@ -836,6 +1109,7 @@ export interface FilteredDeckOptions {
     searchLimit2?: number;
     searchOrder2?: number;
     reschedule: boolean;
+    previewDelays?: number[];
     allowEmpty?: boolean;
 }
 
@@ -845,14 +1119,19 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
     if (!deck?.isFiltered) return;
 
     deck.searchQuery = options.searchQuery;
-    deck.searchLimit = Math.max(1, Math.min(9999, Math.floor(options.searchLimit) || 100));
+    deck.searchLimit = Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(options.searchLimit) || 100));
     deck.searchOrder = options.searchOrder;
     deck.searchQuery2 = options.searchQuery2?.trim() ? options.searchQuery2 : undefined;
     deck.searchLimit2 = options.searchQuery2?.trim()
-        ? Math.max(1, Math.min(9999, Math.floor(options.searchLimit2 ?? 100) || 100))
+        ? Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(options.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT))
         : undefined;
-    deck.searchOrder2 = options.searchQuery2?.trim() ? (options.searchOrder2 ?? 0) : undefined;
+    deck.searchOrder2 = options.searchQuery2?.trim()
+        ? (options.searchOrder2 ?? FILTERED_SEARCH_ORDER.due)
+        : undefined;
     deck.reschedule = options.reschedule;
+    if (options.previewDelays) {
+        deck.previewDelays = options.previewDelays;
+    }
     deck.filteredAllowEmpty = options.allowEmpty ?? false;
     // Saving filtered-deck options is Anki's Build/Rebuild action.
     deck.filteredDeckEmpty = false;
@@ -911,31 +1190,97 @@ export function restoreFilteredCard(deckId: number, cardId: number): boolean {
     return true;
 }
 
-export const CUSTOM_STUDY_PREFIX = 'Özel Çalışma Oturumu';
+/** Anki reuses one conventional deck name for every custom study session. */
+export const CUSTOM_STUDY_PREFIX = CUSTOM_STUDY_DECK_NAME;
+
+function customStudyDefaultsKey(deckId: number): string {
+    return `deck_custom_study:${deckId}`;
+}
+
+/**
+ * The per-deck values Anki reopens the custom study dialog with: the last limit deltas, and the
+ * include/exclude tags of the last "study by card state or tag" run.
+ */
+export function getCustomStudyDefaults(deckId: number): CustomStudyDefaults {
+    const row = getDB().getFirstSync<{ value: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        customStudyDefaultsKey(deckId),
+    );
+    if (!row?.value) return EMPTY_CUSTOM_STUDY_DEFAULTS;
+
+    try {
+        const parsed = JSON.parse(row.value) as Partial<CustomStudyDefaults>;
+        const tagList = (value: unknown): string[] => (Array.isArray(value)
+            ? value.filter((tag): tag is string => typeof tag === 'string' && tag.trim() !== '')
+            : []);
+        return {
+            extendNew: Math.trunc(Number(parsed.extendNew)) || 0,
+            extendReview: Math.trunc(Number(parsed.extendReview)) || 0,
+            includeTags: tagList(parsed.includeTags),
+            excludeTags: tagList(parsed.excludeTags),
+        };
+    } catch {
+        return EMPTY_CUSTOM_STUDY_DEFAULTS;
+    }
+}
+
+function saveCustomStudyDefaults(deckId: number, defaults: CustomStudyDefaults): void {
+    getDB().runSync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        customStudyDefaultsKey(deckId),
+        JSON.stringify(defaults),
+    );
+}
+
+/** Anki only remembers a positive delta, so the dialog never reopens asking to shrink a limit. */
+export function rememberCustomStudyExtend(
+    deckId: number,
+    field: 'extendNew' | 'extendReview',
+    delta: number,
+): void {
+    const value = Math.trunc(delta) || 0;
+    if (value <= 0) return;
+    saveCustomStudyDefaults(deckId, { ...getCustomStudyDefaults(deckId), [field]: value });
+}
+
+/** Tag choices are stored only after a session was successfully built, matching Anki. */
+export function rememberCustomStudyTags(deckId: number, includeTags: string[], excludeTags: string[]): void {
+    saveCustomStudyDefaults(deckId, { ...getCustomStudyDefaults(deckId), includeTags, excludeTags });
+}
 
 /**
  * Create — or rebuild — Anki's single conventional Custom Study Session. Renaming the session
  * preserves it; the next Custom Study action then creates a fresh deck with the conventional name.
+ * Returns null when a regular deck already owns the reserved name, which is Anki's
+ * "rename the existing deck first" case.
  */
 export function createOrReplaceCustomStudySession(
     baseDeckId: number,
-    searchQuery: string,
-    limit: number = 100,
-    options: { reschedule?: boolean; searchOrder?: number } = {},
+    config: CustomStudySessionConfig,
 ): Deck | null {
     const base = getDeck(baseDeckId);
     if (!base || base.isFiltered) return null;
 
     const name = CUSTOM_STUDY_PREFIX;
-    const sanitizedLimit = Math.max(1, Math.min(9999, Math.floor(limit) || 100));
+    const sanitizedLimit = Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(config.limit) || CUSTOM_STUDY_MAX_VALUE));
 
     const existing = getDeckByName(name);
     if (existing?.isFiltered) {
-        existing.searchQuery = searchQuery;
+        // Anki does not merge a new custom study run into the session deck's current settings: it
+        // swaps the deck's whole filtered config for the one this run built
+        // (`apply_update_to_filtered_deck`). So every filtered field is written here, including the
+        // ones this run has no opinion about — a second filter, a hand-edited preview delay or an
+        // "allow empty" left over from the learner's own filtered-deck editing must not carry into
+        // the session Custom Study just asked for.
+        existing.searchQuery = config.search;
         existing.searchLimit = sanitizedLimit;
-        existing.searchOrder = options.searchOrder ?? 0;
+        existing.searchOrder = config.order;
         existing.searchQuery2 = undefined;
-        existing.reschedule = options.reschedule ?? true;
+        existing.searchLimit2 = undefined;
+        existing.searchOrder2 = undefined;
+        existing.reschedule = config.reschedule;
+        existing.previewDelays = [...config.previewDelays];
+        existing.filteredAllowEmpty = false;
         existing.filteredDeckEmpty = false;
         existing.filteredDoneCardIds = [];
         existing.filteredBuildAt = Date.now();
@@ -948,9 +1293,11 @@ export function createOrReplaceCustomStudySession(
     // A regular deck using Anki's reserved conventional name must not be overwritten.
     if (existing) return null;
 
-    const session = createFilteredDeck(name, searchQuery, sanitizedLimit);
-    session.searchOrder = options.searchOrder ?? 0;
-    session.reschedule = options.reschedule ?? true;
+    const session = createFilteredDeck(name, config.search, sanitizedLimit);
+    session.searchOrder = config.order;
+    session.reschedule = config.reschedule;
+    session.previewDelays = [...config.previewDelays];
+    session.filteredAllowEmpty = false;
     session.filteredDeckEmpty = false;
     session.filteredDoneCardIds = [];
     session.filteredBuildAt = Date.now();

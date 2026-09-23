@@ -1,0 +1,399 @@
+{
+  "schemaVersion": 1,
+  "lastVerified": "2026-09-06",
+  "product": "TusAnkiM",
+  "sources": [
+    {
+      "id": "anki-manual",
+      "priority": 1,
+      "platform": "cross-platform behavior",
+      "url": "https://docs.ankiweb.net/intro.html",
+      "useFor": ["studying", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
+    },
+    {
+      "id": "anki-manual-empty-cards",
+      "priority": 1,
+      "platform": "cross-platform card generation and maintenance behavior",
+      "url": "https://docs.ankiweb.net/templates/generation.html#card-generation--deletion",
+      "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
+    },
+    {
+      "id": "anki-manual-check-database",
+      "priority": 1,
+      "platform": "cross-platform collection maintenance behavior",
+      "url": "https://docs.ankiweb.net/files.html#checking-your-collection",
+      "useFor": ["database integrity check", "rebuilding internal structures", "collection optimization", "what a repair pass is expected to fix"]
+    },
+    {
+      "id": "anki-manual-text-import",
+      "priority": 1,
+      "platform": "cross-platform text import behavior",
+      "url": "https://docs.ankiweb.net/importing/text-files.html",
+      "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives", "deck columns", "GUID columns", "field separator override", "allow HTML in fields", "field mapping", "tag all notes", "tag updated notes"]
+    },
+    {
+      "id": "anki-manual-editing",
+      "priority": 1,
+      "platform": "cross-platform note/card semantics",
+      "url": "https://docs.ankiweb.net/editing.html",
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes"]
+    },
+    {
+      "id": "anki-manual-collection-packages",
+      "priority": 1,
+      "platform": "cross-platform collection package behavior",
+      "url": "https://docs.ankiweb.net/exporting.html#collection-colpkg",
+      "useFor": ["colpkg collection replacement", "collection package scheduling", "replacement media semantics"]
+    },
+    {
+      "id": "anki-manual-deck-options",
+      "priority": 1,
+      "platform": "cross-platform deck-option behavior",
+      "url": "https://docs.ankiweb.net/deck-options.html",
+      "useFor": ["presets", "rename current preset", "separate subdeck presets", "save to all subdecks", "daily limits", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
+    },
+    {
+      "id": "anki-manual-preferences",
+      "priority": 1,
+      "platform": "cross-platform preferences",
+      "url": "https://docs.ankiweb.net/preferences.html",
+      "useFor": ["timebox time limit", "learn ahead limit", "reviewer preferences"]
+    },
+    {
+      "id": "anki-manual-tts",
+      "priority": 1,
+      "platform": "cross-platform text-to-speech behavior",
+      "url": "https://docs.ankiweb.net/templates/fields.html#text-to-speech-for-individual-fields",
+      "useFor": ["TTS template tags", "TTS language", "ordered voice preferences", "speech speed", "multi-field TTS"]
+    },
+    {
+      "id": "anki-manual-typed-answer",
+      "priority": 1,
+      "platform": "cross-platform typed-answer behavior",
+      "url": "https://docs.ankiweb.net/templates/fields.html#checking-your-answer",
+      "useFor": ["typed-answer template marker", "Enter to reveal", "typed-answer diff", "#typeans styling"]
+    },
+    {
+      "id": "anki-manual-filtered-decks",
+      "priority": 1,
+      "platform": "cross-platform filtered-deck behavior",
+      "url": "https://docs.ankiweb.net/filtered-decks.html",
+      "useFor": ["filtered deck creation", "filtered deck gather order", "second filter", "rescheduling", "home decks", "excluded cards"]
+    },
+    {
+      "id": "anki-manual-statistics",
+      "priority": 1,
+      "platform": "cross-platform statistics behavior",
+      "url": "https://docs.ankiweb.net/stats.html",
+      "useFor": ["statistics time periods", "today summary", "future due", "reviews", "review time", "card counts", "review intervals", "answer buttons", "true retention"]
+    },
+    {
+      "id": "ankimobile-manual",
+      "priority": 1,
+      "platform": "iOS and iPadOS UX",
+      "url": "https://docs.ankimobile.net/",
+      "useFor": ["deck list", "rename deck", "reviewer", "study tools", "gestures", "notifications", "file hand-off", "accessibility"]
+    },
+    {
+      "id": "ankimobile-study-tools",
+      "priority": 1,
+      "platform": "iOS and iPadOS reviewer actions",
+      "url": "https://docs.ankimobile.net/study-tools.html",
+      "useFor": ["Add action", "study tools actions", "assigning actions to taps/swipes/top bar", "frequent actions"]
+    },
+    {
+      "id": "ankimobile-editing",
+      "priority": 1,
+      "platform": "iOS and iPadOS note/card editing",
+      "url": "https://docs.ankimobile.net/editing.html",
+      "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study"]
+    },
+    {
+      "id": "ankimobile-preferences",
+      "priority": 1,
+      "platform": "iOS and iPadOS preferences",
+      "url": "https://docs.ankimobile.net/preferences.html",
+      "useFor": ["review feedback", "tools overlay", "typed answers", "nine-zone question and answer taps", "interactive tap pass-through", "swipes", "general settings", "study notifications", "media maintenance"]
+    },
+    {
+      "id": "ankimobile-tts",
+      "priority": 1,
+      "platform": "iOS and iPadOS text-to-speech",
+      "url": "https://docs.ankimobile.net/tts.html",
+      "useFor": ["iOS system voices", "Enhanced voice installation", "TTS mute-switch behavior"]
+    },
+    {
+      "id": "ankimobile-url-schemes",
+      "priority": 1,
+      "platform": "iOS and iPadOS automation",
+      "url": "https://docs.ankimobile.net/url-schemes.html",
+      "useFor": ["x-callback-url", "add-note automation", "browser search automation", "Shortcuts interoperability"]
+    },
+    {
+      "id": "anki-manual-browsing",
+      "priority": 1,
+      "platform": "cross-platform browser behavior",
+      "url": "https://docs.ankiweb.net/browsing.html#table-modes",
+      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "Notes-mode row aggregation and first-card semantics", "flag filtering"]
+    },
+    {
+      "id": "anki-source",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki",
+      "license": "AGPL-3.0-or-later/GPL-family; inspect behavior, do not copy into MIT code",
+      "useFor": ["ambiguous scheduler behavior", "collection schema", "package format", "template rendering", "timebox checkpoint flow"]
+    },
+    {
+      "id": "anki-source-timebox-collection",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/collection.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["timebox wall-clock limit", "timebox repetition count", "timebox block reset"]
+    },
+    {
+      "id": "anki-source-timebox-reviewer",
+      "priority": 2,
+      "platform": "desktop reviewer",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/reviewer.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["post-answer timebox check", "Continue and Finish choices", "deck-browser exit"]
+    },
+    {
+      "id": "anki-source-custom-study",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/custom_study.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["custom study search per option", "custom study gather order and reschedule flag", "custom study deck reuse", "empty-result refusal", "cram kinds and tag include/exclude"]
+    },
+    {
+      "id": "anki-source-custom-study-dialog",
+      "priority": 2,
+      "platform": "desktop dialog",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/customstudy.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["custom study option list", "spinner bounds and defaults", "available new/review card labels", "choose-tags step"]
+    },
+    {
+      "id": "anki-source-deck-proto",
+      "priority": 2,
+      "platform": "collection schema",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["filtered deck search term ordinals", "filtered deck config fields"]
+    },
+    {
+      "id": "fsrs-rs",
+      "priority": 2,
+      "platform": "scheduler algorithm",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs",
+      "license": "BSD-3-Clause; algorithm reference, implemented independently",
+      "useFor": ["FSRS-6 formulas", "default parameters", "parameter bounds", "memory state from SM-2", "reference test vectors"]
+    },
+    {
+      "id": "anki-source-fsrs",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/scheduler/fsrs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["memory state from the review log", "reviews_for_fsrs selection rules", "rescheduling on change", "desired/historical retention"]
+    },
+    {
+      "id": "anki-source-scheduler-states",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/scheduler/states",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["learning/review/relearning state machine", "FSRS interval constraints and fuzz", "short-term scheduling threshold"]
+    },
+    {
+      "id": "ankidroid-source",
+      "priority": 3,
+      "platform": "Android",
+      "url": "https://github.com/ankidroid/Anki-Android",
+      "license": "GPL-3.0-family; inspect behavior, do not copy into MIT code",
+      "useFor": ["Android-specific UI", "filtered deck options layout", "whiteboard", "TTS", "Android file integration"]
+    },
+    {
+      "id": "ankidroid-manual-typed-answer",
+      "priority": 3,
+      "platform": "Android typed-answer presentation reference",
+      "url": "https://docs.ankidroid.org/manual.html#type-in-the-answer-feature",
+      "useFor": ["in-card versus separate typed-answer input", "typed-answer focus preference"]
+    },
+    {
+      "id": "ankidroid-manual-notifications",
+      "priority": 3,
+      "platform": "Android notification behavior reference",
+      "url": "https://docs.ankidroid.org/manual.html#notifications",
+      "useFor": ["due-card notification thresholds", "Android vibration", "Android notification LED"]
+    },
+    {
+      "id": "ankidroid-new-study-screen",
+      "priority": 3,
+      "platform": "Android reviewer presentation reference",
+      "url": "https://forums.ankiweb.net/t/new-study-screen-official-thread/67394",
+      "useFor": ["new study screen opt-in", "compact reviewer toolbar", "directional answer feedback", "two-button mode", "reviewer control placement"]
+    },
+    {
+      "id": "android-shortcut-manager",
+      "priority": 1,
+      "platform": "Android launcher integration",
+      "url": "https://developer.android.com/reference/android/content/pm/ShortcutManager",
+      "useFor": ["pinned deck shortcuts", "launcher approval behavior", "unsupported-launcher fallback"]
+    },
+    {
+      "id": "apple-add-voice-shortcut-ui",
+      "priority": 1,
+      "platform": "iOS and iPadOS system shortcuts",
+      "url": "https://developer.apple.com/documentation/intentsui/inuiaddvoiceshortcutviewcontroller",
+      "useFor": ["deck-specific Apple Shortcuts confirmation", "Shortcuts app hand-off", "user-approved shortcut creation"]
+    },
+    {
+      "id": "apple-speech-voice-quality",
+      "priority": 1,
+      "platform": "iOS and iPadOS speech synthesis",
+      "url": "https://developer.apple.com/documentation/avfaudio/avspeechsynthesisvoicequality",
+      "useFor": ["system TTS voice quality", "Enhanced and Premium installed voices"]
+    },
+    {
+      "id": "owasp-masvs",
+      "priority": 1,
+      "platform": "mobile application security",
+      "url": "https://mas.owasp.org/MASVS/",
+      "useFor": ["local data protection", "untrusted WebView content", "platform security boundaries"]
+    },
+    {
+      "id": "owasp-csp-cheat-sheet",
+      "priority": 1,
+      "platform": "web and embedded HTML",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html",
+      "useFor": ["card HTML isolation", "web content security policy", "XSS defense in depth"]
+    },
+    {
+      "id": "apple-default-data-protection",
+      "priority": 1,
+      "platform": "iOS local data protection",
+      "url": "https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.default-data-protection",
+      "useFor": ["complete file protection", "device-lock storage boundary"]
+    },
+    {
+      "id": "apple-app-transport-security",
+      "priority": 1,
+      "platform": "iOS network transport policy",
+      "url": "https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity",
+      "useFor": ["arbitrary-load denial", "local-network load denial", "HTTPS transport boundary"]
+    },
+    {
+      "id": "apple-notification-authorization",
+      "priority": 1,
+      "platform": "iOS local notifications",
+      "url": "https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications",
+      "useFor": ["notification permission", "provisional authorization", "system-owned delivery controls"]
+    },
+    {
+      "id": "apple-local-notification-scheduling",
+      "priority": 1,
+      "platform": "iOS local notifications",
+      "url": "https://developer.apple.com/documentation/usernotifications/scheduling-a-notification-locally-from-your-app",
+      "useFor": ["local notification content", "calendar delivery", "pending request cancellation"]
+    },
+    {
+      "id": "github-actions-secure-use",
+      "priority": 1,
+      "platform": "software supply chain",
+      "url": "https://docs.github.com/en/actions/reference/security/secure-use",
+      "useFor": ["immutable action SHA pins", "least-privilege workflow permissions", "CI hardening"]
+    },
+    {
+      "id": "fsrs-algorithm-wiki",
+      "priority": 1,
+      "platform": "cross-platform FSRS algorithm specification",
+      "url": "https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm",
+      "useFor": ["FSRS-6 formulas", "power forgetting curve and decay/FACTOR relation", "difficulty linear damping and mean reversion", "short-term stability", "default parameter vector"]
+    },
+    {
+      "id": "fsrs-rs-model",
+      "priority": 2,
+      "platform": "cross-platform FSRS reference implementation",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/model.rs",
+      "useFor": ["initial stability and difficulty", "stability after success and failure", "short-term stability clamp", "parameter conversion between FSRS generations"]
+    },
+    {
+      "id": "fsrs-rs-parameter-clipper",
+      "priority": 2,
+      "platform": "cross-platform FSRS parameter bounds",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/parameter_clipper.rs",
+      "useFor": ["per-parameter clamp table", "w17/w18 ceiling from relearning step count", "w19 floor when short-term scheduling is enabled"]
+    },
+    {
+      "id": "fsrs-rs-inference",
+      "priority": 2,
+      "platform": "cross-platform FSRS scheduling entry points",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/inference.rs",
+      "useFor": ["next_states golden vector", "next_interval from desired retention", "memory state from SM-2"]
+    },
+    {
+      "id": "anki-source-scheduler-fuzz",
+      "priority": 3,
+      "platform": "cross-platform review interval fuzz",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/fuzz.rs",
+      "useFor": ["fuzz ranges and deltas", "constrained fuzz bounds", "minimum review fuzz interval", "per-card fuzz determinism"]
+    },
+    {
+      "id": "anki-source-scheduler-review-state",
+      "priority": 3,
+      "platform": "cross-platform review answering",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/review.rs",
+      "useFor": ["FSRS passing interval chaining", "deck options skipped under FSRS", "failing review interval", "leech threshold"]
+    },
+    {
+      "id": "anki-source-fsrs-memory-state",
+      "priority": 3,
+      "platform": "cross-platform FSRS memory state and rescheduling",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/fsrs/memory_state.rs",
+      "useFor": ["memory state from review log", "SM-2 fallback", "reschedule cards on change", "previous interval for the fuzz floor"]
+    },
+    {
+      "id": "anki-source-fsrs-params",
+      "priority": 3,
+      "platform": "cross-platform FSRS training data selection",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/fsrs/params.rs",
+      "useFor": ["which revlog entries feed FSRS", "cramming and manual entry filtering", "ignore-revlogs-before cutoff", "delta between reviews"]
+    },
+    {
+      "id": "anki-source-set-due-date",
+      "priority": 3,
+      "platform": "cross-platform manual rescheduling",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/reviews.rs",
+      "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards"]
+    },
+    {
+      "id": "anki-source-csv-import",
+      "priority": 3,
+      "platform": "cross-platform text import field handling",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/import.rs",
+      "useFor": ["field escaping when HTML is off", "newline to <br> conversion", "column to field/tags mapping", "meta columns excluded from fields"]
+    },
+    {
+      "id": "anki-source-text-import-log",
+      "priority": 3,
+      "platform": "cross-platform import outcome reporting",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/import.rs",
+      "useFor": ["import log buckets", "identical match reported as already present", "preserve vs duplicate vs update outcomes", "missing note type and deck rows", "empty first field rows", "tags applied to added and updated notes"]
+    },
+    {
+      "id": "anki-source-csv-export",
+      "priority": 3,
+      "platform": "cross-platform plain-text export",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/export.rs",
+      "useFor": ["include HTML and media references", "style block and typing placeholder removal", "#separator and column header lines"]
+    }
+  ],
+  "requiredDocs": [
+    "docs/ANKI_COMPATIBILITY.md",
+    "docs/IOS_RELEASE_CHECKLIST.md"
+  ]
+}

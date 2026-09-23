@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnkiCard } from './models';
 import type { AppSettings } from './types';
+import { localDayNumber } from './ankiState';
+import { logManualEntry } from './reviewLogger';
 
 const harness = vi.hoisted(() => ({
     cards: new Map<number, AnkiCard>(),
@@ -10,7 +12,12 @@ const harness = vi.hoisted(() => ({
 vi.mock('./noteManager', () => ({
     getAllAnkiCards: () => [...harness.cards.values()],
     getAnkiCard: (cardId: number) => harness.cards.get(cardId) ?? null,
+    getCardsForNote: (noteId: number) => [...harness.cards.values()].filter((card) => card.noteId === noteId),
     saveAnkiCard: (card: AnkiCard) => harness.cards.set(card.id, { ...card }),
+}));
+
+vi.mock('./reviewLogger', () => ({
+    logManualEntry: vi.fn(() => ({ id: 1 })),
 }));
 
 vi.mock('./studyRepository', () => ({
@@ -24,7 +31,12 @@ vi.mock('./studyRepository', () => ({
     },
     forgetCard: (cardId: number) => {
         const card = harness.cards.get(cardId)!;
-        harness.cards.set(cardId, { ...card, type: 0, queue: 0, ivl: 0, reps: 0, lapses: 0, left: 0 });
+        // Mirrors the real helper: a forgotten card goes to the back of the new queue, because
+        // `due` is a queue position once the card is new again.
+        const position = [...harness.cards.values()]
+            .filter((other) => other.id !== cardId && other.type === 0)
+            .reduce((max, other) => Math.max(max, other.due), 0) + 1;
+        harness.cards.set(cardId, { ...card, type: 0, queue: 0, due: position, ivl: 0, reps: 0, lapses: 0, left: 0 });
     },
     answerStudyCard: (cardId: number, grade: number) => {
         harness.grades.push({ cardId, grade });
@@ -32,6 +44,7 @@ vi.mock('./studyRepository', () => ({
 }));
 
 import {
+    expandSelectedCardsToNotes,
     gradeSelectedNow,
     parseDueRange,
     repositionSelectedNewCards,
@@ -39,6 +52,7 @@ import {
     setSelectedDueDate,
     toggleSelectedBury,
     toggleSelectedSuspend,
+    setDueDateInterval,
 } from './browserSelection';
 
 const settings = { dayRolloverHour: 4 } as AppSettings;
@@ -86,6 +100,14 @@ describe('parseDueRange', () => {
 });
 
 describe('browser selection scheduling operations', () => {
+    it('expands a notes-mode row selection to every sibling card without duplicates', () => {
+        harness.cards.set(1, card(1, { noteId: 10, ord: 0 }));
+        harness.cards.set(2, card(2, { noteId: 10, ord: 1 }));
+        harness.cards.set(3, card(3, { noteId: 20, ord: 0 }));
+
+        expect(expandSelectedCardsToNotes([1, 2, 3])).toEqual([1, 2, 3]);
+    });
+
     it('toggles suspend and bury for every card based on the current card', () => {
         harness.cards.set(1, card(1));
         harness.cards.set(2, card(2, { queue: -1 }));
@@ -123,6 +145,31 @@ describe('browser selection scheduling operations', () => {
         expect(harness.cards.get(1)?.ivl).toBe(7);
     });
 
+    it('pins a card into the review queue on the requested day, negatives included', () => {
+        harness.cards.set(1, card(1, { type: 0, queue: 0 }));
+        harness.cards.set(2, card(2, { type: 2, queue: 2, ivl: 6 }));
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+
+        setSelectedDueDate([1], { minDays: 3, maxDays: 3, forceInterval: false }, settings);
+        expect(harness.cards.get(1)).toMatchObject({ type: 2, queue: 2, due: today + 3 });
+
+        // Anki's dialog accepts a negative day to make a card overdue on purpose.
+        setSelectedDueDate([2], { minDays: -5, maxDays: -5, forceInterval: false }, settings);
+        expect(harness.cards.get(2)).toMatchObject({ due: today - 5, ivl: 6 });
+    });
+
+    it('records a reschedule rather than a reset, and hands the row back for undo', () => {
+        harness.cards.set(1, card(1, { type: 2, queue: 2, ivl: 6 }));
+        vi.mocked(logManualEntry).mockClear().mockReturnValue({ id: 900 } as never);
+
+        const written = setSelectedDueDate([1], { minDays: 3, maxDays: 3, forceInterval: false }, settings);
+
+        // A reschedule must not read as a reset, or moving a card would silently wipe its
+        // memory state; that is what the separate 'rescheduled' kind is for.
+        expect(logManualEntry).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), 'rescheduled', 6, 6);
+        expect(written).toEqual([{ id: 900 }]);
+    });
+
     it('resets cards to the end of the new queue and grades through the scheduler path', () => {
         harness.cards.set(1, card(1, { type: 2, queue: 2, due: 100, ivl: 20, reps: 4 }));
         harness.cards.set(2, card(2, { due: 8 }));
@@ -132,5 +179,58 @@ describe('browser selection scheduling operations', () => {
 
         expect(gradeSelectedNow([1, 2], 3, settings)).toBe(2);
         expect(harness.grades).toEqual([{ cardId: 1, grade: 3 }, { cardId: 2, grade: 3 }]);
+    });
+});
+
+describe('setDueDateInterval', () => {
+    const base = {
+        fsrsEnabled: false,
+        wasNew: false,
+        currentInterval: 30,
+        daysSinceLastReview: null as number | null,
+        requestedDays: 5,
+        forceInterval: false,
+    };
+
+    it('keeps the earned interval under SM-2 unless the user forces it', () => {
+        expect(setDueDateInterval(base)).toBe(30);
+        expect(setDueDateInterval({ ...base, forceInterval: true })).toBe(5);
+    });
+
+    it('gives a new SM-2 card the interval it was asked to sit at', () => {
+        expect(setDueDateInterval({ ...base, wasNew: true, currentInterval: 0 })).toBe(5);
+    });
+
+    it('leaves a new or zero-interval card at zero under FSRS', () => {
+        // Writing a day count here would invent a review history the card has never had.
+        expect(setDueDateInterval({ ...base, fsrsEnabled: true, wasNew: true, currentInterval: 0 })).toBe(0);
+        expect(setDueDateInterval({ ...base, fsrsEnabled: true, currentInterval: 0 })).toBe(0);
+    });
+
+    it('extends the interval across the whole unseen gap under FSRS', () => {
+        // Answered 12 days ago and pushed 5 days out: the card will have gone 17 days unseen.
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: 12, requestedDays: 5,
+        })).toBe(17);
+    });
+
+    it('falls back to the requested days when FSRS finds no usable last review', () => {
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: null, requestedDays: 5,
+        })).toBe(5);
+    });
+
+    it('lets the forcing "!" win over the FSRS rule', () => {
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: 12, requestedDays: 5, forceInterval: true,
+        })).toBe(5);
+    });
+
+    it('never writes an interval below one day for a card that has one', () => {
+        // A negative day count means "overdue by N"; the stored interval still has to stay real.
+        expect(setDueDateInterval({
+            ...base, fsrsEnabled: true, daysSinceLastReview: 0, requestedDays: -3,
+        })).toBe(1);
+        expect(setDueDateInterval({ ...base, wasNew: true, requestedDays: -3 })).toBe(3);
     });
 });
