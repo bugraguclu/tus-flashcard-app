@@ -82,3 +82,35 @@ export function reviewerUndoShortcutHint(undoKeys: string[], supportsModifierCho
     return labels.join(' / ');
 }
 
+
+export interface AnswerScrollGeometry {
+    /** Offset of the answer's `id=answer` element from the top of the card document. */
+    anchorInDocument: number;
+    /** Offset of the card document from the top of the scroll content. */
+    documentInContent: number;
+    contentHeight: number;
+    viewportHeight: number;
+    /** Space to leave above the anchor so the divider itself stays in view. */
+    margin: number;
+}
+
+/**
+ * Where the reviewer scrolls when the answer is revealed, or null when it should stay put.
+ *
+ * Anki brings the element with `id=answer` to the top of the view; a card that already fits on
+ * screen has nowhere to scroll, and a target past the end is clamped to the last scroll position,
+ * which is where `scrollIntoView` ends up in the same situation.
+ * https://docs.ankiweb.net/templates/styling.html#fading-and-scrolling
+ */
+export function answerScrollTarget({
+    anchorInDocument,
+    documentInContent,
+    contentHeight,
+    viewportHeight,
+    margin,
+}: AnswerScrollGeometry): number | null {
+    const maxScroll = contentHeight - viewportHeight;
+    const target = documentInContent + anchorInDocument - margin;
+    if (maxScroll <= 0 || target <= 0) return null;
+    return Math.min(target, maxScroll);
+}

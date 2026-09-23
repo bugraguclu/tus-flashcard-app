@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    answerScrollTarget,
     canUndoReview,
     isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
@@ -90,5 +91,25 @@ describe('reviewer undo shortcut', () => {
         // Native gets a key name with no modifier flags: advertise only what works.
         expect(reviewerUndoShortcutHint(['z', 'u'], false)).toBe('Z / U');
         expect(reviewerUndoShortcutHint([], true)).toBe('Ctrl+Z');
+    });
+});
+
+describe('answerScrollTarget', () => {
+    const geometry = { documentInContent: 60, contentHeight: 1400, viewportHeight: 600, margin: 12 };
+
+    it('brings the answer anchor to the top of the viewport', () => {
+        expect(answerScrollTarget({ ...geometry, anchorInDocument: 500 })).toBe(548);
+    });
+
+    it('stays put when the card already fits on screen', () => {
+        expect(answerScrollTarget({ ...geometry, contentHeight: 580, anchorInDocument: 300 })).toBeNull();
+    });
+
+    it('stays put when the anchor is already at the top', () => {
+        expect(answerScrollTarget({ ...geometry, documentInContent: 0, anchorInDocument: 8 })).toBeNull();
+    });
+
+    it('clamps to the end of the content like scrollIntoView does', () => {
+        expect(answerScrollTarget({ ...geometry, anchorInDocument: 1300 })).toBe(800);
     });
 });

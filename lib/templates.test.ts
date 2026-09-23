@@ -631,31 +631,74 @@ describe('Anki cloze hint parity', () => {
 });
 
 describe('renderTypeAnswerDiff', () => {
-    it('marks an exact match fully good', () => {
-        const html = renderTypeAnswerDiff('mitoz', 'mitoz');
-        expect(html).toContain('typeGood');
-        expect(html).not.toContain('typeBad');
-        expect(html).not.toContain('typeMissed');
+    it('marks an exact match as one good run, the way Anki does', () => {
+        expect(renderTypeAnswerDiff('mitoz', 'mitoz'))
+            .toBe('<code id="typeans" class="typeanswer"><span class="typeGood">mitoz</span></code>');
     });
 
-    it('marks an empty answer as fully missed', () => {
-        const html = renderTypeAnswerDiff('', 'mitoz');
-        expect(html).toContain('typeMissed');
-        expect(html).toContain('mitoz');
+    it('shows only the expected answer when nothing was typed', () => {
+        // Anki's compare_answer: an empty entry gets the answer with no comparison marks at all,
+        // not a line of "missed" highlighting.
+        expect(renderTypeAnswerDiff('   ', 'mitoz'))
+            .toBe('<code id="typeans" class="typeanswer">mitoz</code>');
     });
 
-    it('highlights the differing run without discarding the matching prefix/suffix', () => {
-        const html = renderTypeAnswerDiff('mitoz', 'mayoz');
-        expect(html).toContain('typeBad');
-        expect(html).toContain('typeMissed');
-        // "m" and "oz" are shared between "mitoz" and "mayoz" — should show up unmarked/good.
-        expect(html).toContain('typeGood');
+    it('puts the typed line above the expected line with Anki’s arrow between them', () => {
+        expect(renderTypeAnswerDiff('mitoz', 'mayoz')).toBe(
+            '<code id="typeans" class="typeanswer">'
+            + '<span class="typed"><span class="typeGood">m</span><span class="typeBad">it</span><span class="typeGood">oz</span></span>'
+            + '<br><span id="typearrow">&darr;</span><br>'
+            + '<span class="correct"><span class="typeGood">m</span><span class="typeMissed">ay</span><span class="typeGood">oz</span></span>'
+            + '</code>',
+        );
     });
 
-    it('is case- and whitespace-sensitive but trims surrounding whitespace', () => {
-        const html = renderTypeAnswerDiff('  mitoz  ', 'mitoz');
-        expect(html).toContain('typeGood');
-        expect(html).not.toContain('typeBad');
+    it('marks each character left out with a dash in the typed line', () => {
+        const html = renderTypeAnswerDiff('mtoz', 'mitoz');
+        expect(html).toContain('<span class="typed"><span class="typeGood">m</span><span class="typeMissed">-</span><span class="typeGood">toz</span></span>');
+        expect(html).toContain('<span class="correct"><span class="typeGood">m</span><span class="typeMissed">i</span><span class="typeGood">toz</span></span>');
+    });
+
+    it('marks extra typed characters bad without touching the expected line', () => {
+        const html = renderTypeAnswerDiff('mitozz', 'mitoz');
+        expect(html).toContain('<span class="typed"><span class="typeGood">mitoz</span><span class="typeBad">z</span></span>');
+        expect(html).toContain('<span class="correct"><span class="typeGood">mitoz</span></span>');
+    });
+
+    it('is case-sensitive but trims surrounding whitespace', () => {
+        expect(renderTypeAnswerDiff('  mitoz  ', 'mitoz')).not.toContain('typeBad');
+        expect(renderTypeAnswerDiff('Mitoz', 'mitoz')).toContain('<span class="typeBad">M</span>');
+    });
+
+    it('escapes both lines', () => {
+        const html = renderTypeAnswerDiff('<i>', 'a&b');
+        expect(html).toContain('<span class="typeBad">&lt;i&gt;</span>');
+        expect(html).toContain('<span class="typeMissed">a&amp;b</span>');
+    });
+
+    it('marks a long omission with three dashes rather than one per character', () => {
+        const html = renderTypeAnswerDiff('bulbus', 'bulbus, a. vertebralis');
+        expect(html).toContain('<span class="typed"><span class="typeGood">bulbus</span><span class="typeMissed">---</span></span>');
+        expect(html).toContain('<span class="typeMissed">, a. vertebralis</span>');
+    });
+
+    it('keeps a partly typed list to whole runs instead of stray letters', () => {
+        const expected = 'bulbus--\na vertebralis ve dalları(a.\nspinalis pos ve ant)---\nC1-3 spinal sinir meningeal dalları---';
+        const html = renderTypeAnswerDiff('bulbus a vertebralıs', expected);
+        // "ı" and "s" also occur later in the answer; pairing them with "dalları" and "spinalis"
+        // would scatter green through text the learner never typed.
+        expect(html).toContain(
+            '<span class="typed"><span class="typeGood">bulbus</span><span class="typeBad"> </span>'
+            + '<span class="typeGood">a vertebral</span><span class="typeBad">ıs</span></span>',
+        );
+        const correctLine = html.slice(html.indexOf('<span class="correct">'));
+        expect(correctLine.match(/class="typeGood"/g)).toHaveLength(2);
+    });
+
+    it('never splits a character outside the basic plane', () => {
+        const html = renderTypeAnswerDiff('🙂a', '🙂b');
+        expect(html).toContain('<span class="typeGood">🙂</span><span class="typeBad">a</span>');
+        expect(html).toContain('<span class="typeGood">🙂</span><span class="typeMissed">b</span>');
     });
 });
 

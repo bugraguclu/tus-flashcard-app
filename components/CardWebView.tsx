@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
-import type { NoteType, Note, AnkiCard, Deck } from '../lib/models';
+import { isLegacyTusNoteType, type NoteType, type Note, type AnkiCard, type Deck } from '../lib/models';
 import { renderCardHtml } from '../lib/templates';
-import { reviewerSurfaceCss } from '../lib/cardAppearance';
+import { catalogCardCss, documentCss, legacyTusCardCss, reviewerCanvasCss } from '../lib/cardAppearance';
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
-import { useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
+import { useIsDarkTheme, useThemeColors } from '../constants/theme';
 import { CARD_CONTENT_CSP_META, safeExternalCardUrl } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl } from '../lib/localMediaDocument';
 import { confirm } from '../lib/confirm';
@@ -56,16 +56,47 @@ const HINT_BINDER = `(function(){
  * Measures the rendered card and reports its height back to React Native. Runs after load and
  * again whenever images finish or the layout changes, so cloze reveals and late-loading media
  * resize the frame instead of being clipped.
+ *
+ * Trailing padding is capped rather than measured. Templates written for Anki's full-screen
+ * reviewer pad the bottom of the card so its last line clears the answer bar — the AnKing note
+ * type adds 5em on mobile plus 2rem under `#qa` — and in a frame that sizes itself to the card
+ * that padding is a screenful of blank space under every card. A sentinel after the last child
+ * of `#qa` marks where the content ends; padding is empty by definition, so trimming it never
+ * clips anything the card shows.
  */
 const HEIGHT_REPORTER = `(function(){
     var lastHeight = 0;
+    var MAX_TRAILING_SPACE = 16;
+    function sentinel(){
+        var qa = document.getElementById('qa');
+        if (!qa) return null;
+        var marker = document.getElementById('tus-content-end');
+        if (!marker) {
+            marker = document.createElement('div');
+            marker.id = 'tus-content-end';
+            marker.setAttribute('aria-hidden', 'true');
+            marker.style.cssText = 'display:block;height:0;margin:0;padding:0;border:0;clear:both;';
+        }
+        if (marker.parentNode !== qa || qa.lastChild !== marker) qa.appendChild(marker);
+        return marker;
+    }
     function report(){
         var body = document.body;
         if (!body) return;
         // The card element, not the document: documentElement.scrollHeight is never smaller than
         // the viewport, so measuring it would lock the frame at whatever height it already has.
         var card = document.querySelector('.card');
-        var height = card ? Math.ceil(card.getBoundingClientRect().height) : body.scrollHeight;
+        var height = body.scrollHeight;
+        if (card) {
+            var rect = card.getBoundingClientRect();
+            height = rect.height;
+            var end = sentinel();
+            if (end) {
+                var trailing = rect.bottom - end.getBoundingClientRect().top;
+                if (trailing > MAX_TRAILING_SPACE) height -= trailing - MAX_TRAILING_SPACE;
+            }
+            height = Math.ceil(height);
+        }
         if (Math.abs(height - lastHeight) <= 1) return;
         lastHeight = height;
         if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(String(height));
@@ -86,6 +117,30 @@ const HEIGHT_REPORTER = `(function(){
 })();
 ${HINT_BINDER}
 true;`;
+
+/**
+ * Reports where the answer starts, so the reviewer can scroll to it the way Anki does: its
+ * reviewer brings the element with `id=answer` to the top of the view once the side's images
+ * have loaded, which is why the reveal waits for them here too. The stock templates put that id
+ * on the `<hr>` between the question and the answer; a template without one is not scrolled.
+ * https://docs.ankiweb.net/templates/styling.html#fading-and-scrolling
+ */
+const ANSWER_ANCHOR_REPORTER = `(function(){
+    function post(){
+        var anchor = document.getElementById('answer');
+        if (!anchor || !window.ReactNativeWebView) return;
+        var top = anchor.getBoundingClientRect().top + (window.pageYOffset || 0);
+        window.ReactNativeWebView.postMessage('ANSWER:' + Math.max(0, Math.round(top)));
+    }
+    var pending = Array.prototype.filter.call(document.images, function(image){ return !image.complete; });
+    if (pending.length === 0) { post(); return; }
+    var remaining = pending.length;
+    function settle(){ remaining -= 1; if (remaining === 0) post(); }
+    pending.forEach(function(image){
+        image.addEventListener('load', settle);
+        image.addEventListener('error', settle);
+    });
+})();`;
 
 interface CardWebViewProps {
     noteType: NoteType;
@@ -115,7 +170,6 @@ interface CardWebViewProps {
     imageZoomPercent?: number;
     showAudioPlayButtons?: boolean;
     centerContent?: boolean;
-    frameStyle?: 'card' | 'plain';
     /**
      * `intrinsic`: the parent owns vertical scrolling and this frame grows with its document.
      * `contained`: this fixed-height frame owns vertical scrolling from its first render.
@@ -129,6 +183,11 @@ interface CardWebViewProps {
     onCardTap?: (xRatio: number, yRatio: number) => void;
     /** Playback rate for audio in cards (0.75, 1.0, 1.25, 1.5, 2.0). */
     audioPlaybackRate?: number;
+    /**
+     * Answer side only: receives the offset of the template's `id=answer` element within the
+     * card, once the side's images have loaded. Intrinsic frames only.
+     */
+    onAnswerAnchor?: (offsetY: number) => void;
 }
 
 export default function CardWebView({
@@ -150,19 +209,17 @@ export default function CardWebView({
     imageZoomPercent = 100,
     showAudioPlayButtons = true,
     centerContent = false,
-    frameStyle = 'card',
     scrollMode,
     minHeight = 140,
     maxHeight,
     onCardTap,
     audioPlaybackRate = 1.0,
+    onAnswerAnchor,
 }: CardWebViewProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
     const isDark = useIsDarkTheme();
     const { height: windowHeight } = useWindowDimensions();
-    const styles = useMemo(() => createStyles(colors), [colors]);
-    const plainFrame = frameStyle === 'plain';
     // Scroll ownership is a usage-context decision, never a consequence of an asynchronous
     // height report. Reviewer cards grow intrinsically inside the outer ScrollView; a bounded
     // preview gives the WebView a fixed viewport and enables its scrolling on the first frame.
@@ -175,7 +232,6 @@ export default function CardWebView({
         containedHeight: maxHeight,
     });
     const { frameHeight, scrollEnabled: scrollsInside } = layout;
-    const surfaceColor = plainFrame ? 'transparent' : colors.bgCard;
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
     const webViewRef = useRef<WebView | null>(null);
     // Imported markup may contain its own #typeans. A per-instance token ensures only the input
@@ -233,9 +289,33 @@ export default function CardWebView({
         .tus-audio-speed-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;font-size:12px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${colors.accent};background:${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};border:1px solid ${colors.border};border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap;line-height:1.3;}
         .tus-audio-speed-btn:active{opacity:0.7;}
         ${centerContent ? 'body{display:flex!important;align-items:center;justify-content:center;}' : ''}
-        /* Catalog cards use the app's reviewer surface. The repeated .card selector is
-           intentional: it also wins over Anki templates such as .nightMode.card. */
-        ${reviewerSurfaceCss({ catalogPack: noteType.catalogPack, surfaceColor, plainFrame })}
+        /* Defaults for elements a note type rarely styles. :where() keeps them at zero
+           specificity, so any rule the note type writes for the same element still wins. Anki's
+           reviewer draws hr as a 1px rule with 1em of space. It sets the typed-answer comparison
+           in a monospace face, which on a phone wraps a list answer into a narrow column of
+           broken words, so the comparison keeps the card's own typeface here. */
+        :where(hr){height:1px;border:0;margin:1em 0;background-color:${colors.border};}
+        :where(code#typeans){font-family:inherit;font-size:inherit;}
+        :where(#typearrow){color:${colors.textMuted};}
+        :where(#typeans.tus-type-answer-input){width:100%;min-height:46px;padding:10px 14px;border-radius:12px;border:1.5px solid ${colors.border};background-color:${colors.bgInput};color:inherit;outline:none;-webkit-appearance:none;appearance:none;}
+        :where(#typeans.tus-type-answer-input:focus){border-color:${colors.accent};}
+        ${reviewerCanvasCss({
+            authoredCss: documentCss(renderedHtml),
+            catalogPack: noteType.catalogPack,
+            nightMode: isDark,
+            nightTextColor: colors.textPrimary,
+        })}
+        ${noteType.catalogPack ? catalogCardCss({
+            nightMode: isDark,
+            textColor: colors.textPrimary,
+            clozeColor: colors.clozeText,
+            clozeTint: colors.clozeTint,
+        }) : ''}
+        ${isLegacyTusNoteType(noteType) ? legacyTusCardCss({
+            nightMode: isDark,
+            secondaryText: colors.textSecondary,
+            mutedText: colors.textMuted,
+        }) : ''}
         ${isProtected ? PROTECTED_CONTENT_CSS : ''}
     </style>`;
     // Without a viewport tag WKWebView assumes a 980 px desktop page and scales the result down,
@@ -265,6 +345,11 @@ export default function CardWebView({
         ? typeAnswerBridgeScript(typeAnswerToken, autoFocusTypeAnswer)
         : '';
     const sizingScript = scrollMode === 'intrinsic' ? HEIGHT_REPORTER : `${HINT_BINDER}true;`;
+    const anchorScript = onAnswerAnchor && side === 'answer' && scrollMode === 'intrinsic'
+        ? ANSWER_ANCHOR_REPORTER
+        : '';
+    const answerAnchorRef = useRef(onAnswerAnchor);
+    answerAnchorRef.current = onAnswerAnchor;
     const audioSpeedScript = `(function(){
         var speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
         var defRate = ${JSON.stringify(audioPlaybackRate || 1.0)};
@@ -413,7 +498,7 @@ export default function CardWebView({
     }, [pauseAudioSignal]);
 
     if (Platform.OS === 'web') {
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:${plainFrame ? 0 : 12}px;background:${surfaceColor};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};}</style></head><body>${webHtml}</body></html>`;
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:0;background:transparent;color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};}</style></head><body>${webHtml}</body></html>`;
         return (
             <iframe
                 ref={iframeRef}
@@ -519,8 +604,7 @@ export default function CardWebView({
                     border: 'none',
                     width: '100%',
                     height: frameHeight,
-                    backgroundColor: surfaceColor,
-                    borderRadius: plainFrame ? 0 : 8,
+                    backgroundColor: 'transparent',
                 }}
             />
         );
@@ -546,12 +630,17 @@ export default function CardWebView({
             originWhitelist={['about:blank', 'file://*']}
             source={nativeSource}
             dataDetectorTypes="none"
-            style={[styles.webView, { height: frameHeight }, plainFrame && styles.webViewPlain]}
-            injectedJavaScript={`${sizingScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}${protectScript}true;`}
+            style={[styles.webView, { height: frameHeight }]}
+            injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}${protectScript}true;`}
             onMessage={(event) => {
                 const data = String(event.nativeEvent.data);
                 if (data.startsWith('AUDIO:')) {
                     audioActiveRef.current?.(data.slice(6) === '1');
+                    return;
+                }
+                if (data.startsWith('ANSWER:')) {
+                    const offset = Number(data.slice(7));
+                    if (Number.isFinite(offset)) answerAnchorRef.current?.(offset);
                     return;
                 }
                 if (data.startsWith('TAP:')) {
@@ -611,13 +700,9 @@ export default function CardWebView({
     );
 }
 
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-        webView: {
-            backgroundColor: colors.bgCard,
-        },
-        webViewPlain: {
-            backgroundColor: 'transparent',
-        },
-    });
-}
+const styles = StyleSheet.create({
+    // The reviewer (or the preview) paints the canvas; the card document is laid over it.
+    webView: {
+        backgroundColor: 'transparent',
+    },
+});

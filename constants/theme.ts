@@ -49,6 +49,15 @@ const LightColors = {
     rowSuspendedBg: '#fcf1cf',
     rowBuriedBg: '#e6ebe9',
 
+    // The reviewer's card panel. A tint of the page rather than white: the card reads as a
+    // surface without a bright slab behind the question.
+    reviewerCard: '#ddefe7',
+    reviewerCardBorder: '#c8e0d6',
+    // Cloze deletions on catalog cards: a blue that sits with the green palette, and the tint
+    // that marks a still-hidden deletion on the question side.
+    clozeText: '#1d5fa6',
+    clozeTint: 'rgba(29, 95, 166, 0.12)',
+
     white: '#ffffff',
     transparent: 'transparent',
 };
@@ -91,6 +100,11 @@ const DarkColors: ColorScheme = {
 
     rowSuspendedBg: '#3b3218',
     rowBuriedBg: '#232826',
+
+    reviewerCard: '#121513',
+    reviewerCardBorder: '#252b28',
+    clozeText: '#5aa9f0',
+    clozeTint: 'rgba(90, 169, 240, 0.16)',
 
     white: '#ffffff',
     transparent: 'transparent',

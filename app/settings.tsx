@@ -1075,10 +1075,13 @@ export default function SettingsScreen() {
                     label={l('Yeni çalışma ekranını kullan', 'Use new study screen')}
                     summary={settings.showStudyTopBar === false
                         ? l(
-                            'Sabit yanıt alanını ve yönlü yanıt geri bildirimini etkinleştirir. Yeni araç çubuğu, aşağıdaki "Araç çubuğunu göster" kapalı olduğu sürece gizli kalır.',
-                            'Enables the fixed answer area and directional answer feedback. The new toolbar stays hidden while "Show toolbar" below is off.',
+                            'Yönlü yanıt geri bildirimini etkinleştirir. Yeni araç çubuğu, aşağıdaki "Araç çubuğunu göster" kapalı olduğu sürece gizli kalır.',
+                            'Enables directional answer feedback. The new toolbar stays hidden while "Show toolbar" below is off.',
                         )
-                        : l('Yeni araç çubuğu, sabit yanıt alanı ve yönlü yanıt geri bildirimini etkinleştirir.', 'Enables the new toolbar, fixed answer area and directional answer feedback.')}
+                        : l(
+                            'Kalan kart sayılarını, süreyi ve tahmini bitişi gösteren yeni araç çubuğunu ve yönlü yanıt geri bildirimini etkinleştirir.',
+                            'Enables the new toolbar with remaining counts, timer and estimated finish, and directional answer feedback.',
+                        )}
                     value={Boolean(settings.newStudyScreenEnabled)}
                     onChange={(value) => updateSetting('newStudyScreenEnabled', value)}
                     styles={styles}

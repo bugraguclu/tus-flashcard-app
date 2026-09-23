@@ -1,5 +1,26 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, TextInput, StyleSheet, Platform, Modal, Pressable, PanResponder, useWindowDimensions, AppState, type ViewProps } from 'react-native';
+import {
+    View,
+    Text,
+    ActivityIndicator,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    StyleSheet,
+    Platform,
+    Modal,
+    Pressable,
+    PanResponder,
+    useWindowDimensions,
+    AppState,
+    Keyboard,
+    LayoutAnimation,
+    type KeyboardEvent as NativeKeyboardEvent,
+    type LayoutChangeEvent,
+    type NativeScrollEvent,
+    type NativeSyntheticEvent,
+    type ViewProps,
+} from 'react-native';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
@@ -115,6 +136,7 @@ import {
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
 import { hasExplicitStudyScope } from '../../lib/deckNavigation';
 import {
+    answerScrollTarget,
     canUndoReview,
     isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
@@ -223,6 +245,21 @@ function ReviewerSettingsIcon({ color }: { color: string }) {
     );
 }
 
+/** Corner radius of the card frame; the whiteboard canvas is clipped to the same shape. */
+const CARD_FRAME_RADIUS = 20;
+
+/**
+ * Smallest frame the card document is given. The card panel sets the card's own minimum height
+ * and centres a short document inside it, so the document itself only needs room for a line.
+ */
+const CARD_DOCUMENT_MIN_HEIGHT = 32;
+
+/** Space left above the answer when the reviewer scrolls to it, so the divider stays visible. */
+const ANSWER_ANCHOR_MARGIN = 12;
+
+/** How long a reported answer anchor may still move the scroll view once it has arrived. */
+const ANSWER_ANCHOR_TTL_MS = 1500;
+
 // Study-ahead passes survive the study screen unmounting (hopping to another deck via the
 // deck list and back). A pass is consumed by answering its card — never by navigation.
 let persistedStudyAheadIds: number[] = [];
@@ -288,7 +325,7 @@ export default function StudyScreen() {
     const pathname = usePathname();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { width } = useWindowDimensions();
+    const { width, height: windowHeight } = useWindowDimensions();
     const isCompact = width < 600;
     const routeSelectedDeckName = typeof params.deck === 'string' ? params.deck : null;
     // The URL/deep link chooses the initial study scope. Switching decks from the reviewer is a
@@ -2222,6 +2259,103 @@ export default function StudyScreen() {
         settings.focusTypeAnswer,
     ]);
 
+    // Anki scrolls a revealed answer to the template's `id=answer` element once the side's images
+    // have loaded (ts/reviewer/index.ts). The card document reports that offset; the positions
+    // below place the document inside the scroll content, so the same element can be brought to
+    // the top of the viewport. A drag by the learner cancels a scroll that has not happened yet.
+    const scrollOffsetRef = useRef(0);
+    const scrollViewportHeightRef = useRef(0);
+    const scrollContentHeightRef = useRef(0);
+    const cardContainerYRef = useRef(0);
+    const cardBodyYRef = useRef(0);
+    const cardFrameYRef = useRef(0);
+    const pendingAnswerAnchorRef = useRef<number | null>(null);
+
+    // The anchor usually arrives before the answer's new height has been laid out, so the target
+    // is recomputed on every layout change until the anchor expires rather than taken once.
+    const scrollToPendingAnswer = useCallback(() => {
+        const anchor = pendingAnswerAnchorRef.current;
+        if (anchor === null) return;
+        const next = answerScrollTarget({
+            anchorInDocument: anchor,
+            documentInContent: cardContainerYRef.current + cardBodyYRef.current + cardFrameYRef.current,
+            contentHeight: scrollContentHeightRef.current,
+            viewportHeight: scrollViewportHeightRef.current,
+            margin: ANSWER_ANCHOR_MARGIN,
+        });
+        if (next === null || Math.abs(next - scrollOffsetRef.current) < 2) return;
+        reviewerScrollRef.current?.scrollTo({ y: next, animated: true });
+    }, []);
+    const handleAnswerAnchor = useCallback((offsetY: number) => {
+        pendingAnswerAnchorRef.current = offsetY;
+        scrollToPendingAnswer();
+        setTimeout(() => {
+            if (pendingAnswerAnchorRef.current === offsetY) pendingAnswerAnchorRef.current = null;
+        }, ANSWER_ANCHOR_TTL_MS);
+    }, [scrollToPendingAnswer]);
+    const cancelAnswerScroll = useCallback(() => {
+        pendingAnswerAnchorRef.current = null;
+    }, []);
+    const handleReviewerScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+    }, []);
+    const handleReviewerViewportLayout = useCallback((event: LayoutChangeEvent) => {
+        scrollViewportHeightRef.current = event.nativeEvent.layout.height;
+        scrollToPendingAnswer();
+    }, [scrollToPendingAnswer]);
+    const handleReviewerContentSize = useCallback((_width: number, height: number) => {
+        scrollContentHeightRef.current = height;
+        scrollToPendingAnswer();
+    }, [scrollToPendingAnswer]);
+    useEffect(() => {
+        pendingAnswerAnchorRef.current = null;
+    }, [currentCard?.cardId, showingAnswer]);
+
+    // A typed-answer card keeps its text box and Show Answer button above the software keyboard,
+    // so the question stays at the top and the answer box sits where the thumbs are. Only iOS
+    // needs this: Android resizes the window for the keyboard on its own.
+    const [typeAnswerFocused, setTypeAnswerFocused] = useState(false);
+    const [keyboardInset, setKeyboardInset] = useState(0);
+    const keyboardInsetRef = useRef(0);
+    const keyboardLiftActive = Boolean(currentCard && !showingAnswer && typeAnswerField);
+    const keyboardLiftActiveRef = useRef(keyboardLiftActive);
+    keyboardLiftActiveRef.current = keyboardLiftActive;
+    const windowHeightRef = useRef(windowHeight);
+    windowHeightRef.current = windowHeight;
+    useEffect(() => {
+        if (Platform.OS !== 'ios') return;
+        const follow = (event: NativeKeyboardEvent) => {
+            const overlap = Math.max(0, windowHeightRef.current - event.endCoordinates.screenY);
+            const next = keyboardLiftActiveRef.current ? overlap : 0;
+            if (next === keyboardInsetRef.current) return;
+            keyboardInsetRef.current = next;
+            if (event.duration) {
+                LayoutAnimation.configureNext({
+                    duration: event.duration,
+                    update: { duration: event.duration, type: LayoutAnimation.Types.keyboard },
+                });
+            }
+            setKeyboardInset(next);
+        };
+        const subscriptions = [
+            Keyboard.addListener('keyboardWillShow', follow),
+            Keyboard.addListener('keyboardWillChangeFrame', follow),
+            Keyboard.addListener('keyboardWillHide', follow),
+        ];
+        return () => subscriptions.forEach((subscription) => subscription.remove());
+    }, []);
+    // Revealing the answer unmounts the text box and the keyboard's own hide event lowers the bar
+    // in step with it. Should no event arrive (a hardware keyboard, say), the bar still settles.
+    useEffect(() => {
+        if (keyboardLiftActive || keyboardInsetRef.current === 0) return;
+        const timer = setTimeout(() => {
+            keyboardInsetRef.current = 0;
+            setKeyboardInset(0);
+        }, 450);
+        return () => clearTimeout(timer);
+    }, [keyboardLiftActive]);
+    const [answerBarHeight, setAnswerBarHeight] = useState(0);
+
     if (!hasStudyScope) {
         return <Redirect href="/decks" />;
     }
@@ -2246,9 +2380,10 @@ export default function StudyScreen() {
             style={[
                 styles.answerBtn,
                 settings.twoRowAnswerButtons && styles.answerBtnTwoRow,
-                { backgroundColor: color, borderColor: color, minHeight: 52 * answerScale },
+                { backgroundColor: color, borderColor: color, minHeight: 56 * answerScale },
             ]}
             onPress={() => answerCard(grade)}
+            activeOpacity={0.78}
             accessibilityRole="button"
             accessibilityLabel={l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
         >
@@ -2276,6 +2411,19 @@ export default function StudyScreen() {
             </Text>
         </TouchableOpacity>
     ) : null;
+
+    const plainFrame = settings.studyFrameStyle === 'plain';
+    // Anki underlines the count of the queue the card on screen was drawn from.
+    const currentQueueBucket = currentCard ? statusToQueueBucket(currentCard.state.status) : null;
+    const queueCountStyle = (bucket: keyof QueueStats, color: string) => [
+        styles.queueCount,
+        { color },
+        currentQueueBucket === bucket && styles.queueCountCurrent,
+    ];
+    const queueCountsLabel = l(
+        `${queueStats.newCount} yeni, ${queueStats.learningCount} öğrenme, ${queueStats.reviewCount} tekrar kartı`,
+        `${queueStats.newCount} new, ${queueStats.learningCount} learning, ${queueStats.reviewCount} review cards`,
+    );
 
     const gradePresentation: Record<Grade, { label: string; time: string; color: string }> | null = preview ? {
         1: { label: t('anki.again'), time: preview.again, color: colors.btnAgain },
@@ -2357,16 +2505,10 @@ export default function StudyScreen() {
                     <Text style={styles.toolbarDeckTitle} numberOfLines={1}>{reviewerDeckTitle}</Text>
                 ) : null}
                 {currentCard && settings.showRemainingCount ? (
-                    <View
-                        style={styles.queueCounts}
-                        accessibilityLabel={l(
-                            `${queueStats.newCount} yeni, ${queueStats.learningCount} öğrenme, ${queueStats.reviewCount} tekrar kartı`,
-                            `${queueStats.newCount} new, ${queueStats.learningCount} learning, ${queueStats.reviewCount} review cards`,
-                        )}
-                    >
-                        <Text style={[styles.queueCount, { color: colors.badgeNew }]}>{queueStats.newCount}</Text>
-                        <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
-                        <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
+                    <View style={styles.queueCounts} accessibilityLabel={queueCountsLabel}>
+                        <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
+                        <Text style={queueCountStyle('learningCount', colors.badgeLearn)}>{queueStats.learningCount}</Text>
+                        <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
                     </View>
                 ) : settings.showDeckTitle === false ? (
                     <Text style={styles.toolbarDeckFallback}>▦</Text>
@@ -2447,6 +2589,87 @@ export default function StudyScreen() {
                 >
                     <Text style={styles.toolbarActionIcon}>⋮</Text>
                 </TouchableOpacity>
+            </View>
+        </View>
+    ) : null;
+
+    // One answer bar for both layouts, pinned above the home indicator as in AnkiMobile: the
+    // Show Answer button and the grades stay where the thumb already is, card after card. The
+    // classic layout keeps its counts here, which is also where AnkiMobile shows them.
+    const typeAnswerInBar = Boolean(typeAnswerField && !typeAnswerInCard && !showingAnswer);
+    const showAnswerLongPressMs = settings.showAnswerLongPressMs ?? 0;
+    const toolsInlineButton = (
+        <TouchableOpacity
+            style={styles.reviewerToolsInlineBtn}
+            onPress={openMoreMenu}
+            accessibilityRole="button"
+            accessibilityLabel={l('Araçlar', 'Tools')}
+        >
+            <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
+        </TouchableOpacity>
+    );
+    const answerBar = currentCard && (hasFixedReviewControls || !newStudyScreenEnabled) ? (
+        <View
+            style={[
+                styles.answerBar,
+                {
+                    paddingBottom: keyboardInset > 0
+                        ? keyboardInset + Spacing.sm
+                        : Math.max(insets.bottom, isCompact ? Spacing.lg : Spacing.md),
+                },
+            ]}
+            onLayout={(event) => setAnswerBarHeight(event.nativeEvent.layout.height)}
+        >
+            <View style={styles.answerBarContent}>
+                {!newStudyScreenEnabled ? (
+                    <View style={styles.queueStrip}>
+                        {settings.showRemainingCount ? (
+                            <View style={styles.queueCounts} accessible accessibilityLabel={queueCountsLabel}>
+                                <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
+                                <Text style={queueCountStyle('learningCount', colors.badgeLearn)}>{queueStats.learningCount}</Text>
+                                <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
+                            </View>
+                        ) : <View />}
+                        <Text style={styles.queueStripToday} numberOfLines={1}>
+                            {l(`Bugün ${sessionStats.reviewed} tekrar`, `${sessionStats.reviewed} reviewed today`)}
+                        </Text>
+                    </View>
+                ) : null}
+                {typeAnswerInBar ? (
+                    <TextInput
+                        ref={nativeTypeAnswerRef}
+                        style={[styles.typeAnswerInput, typeAnswerFocused && styles.typeAnswerInputFocused]}
+                        value={typedAnswer}
+                        onChangeText={setTypedAnswer}
+                        onFocus={() => setTypeAnswerFocused(true)}
+                        onBlur={() => setTypeAnswerFocused(false)}
+                        placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
+                        placeholderTextColor={colors.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        maxLength={MAX_TYPE_ANSWER_CHARS}
+                        returnKeyType="done"
+                        onSubmitEditing={() => submitTypedAnswer(typedAnswer)}
+                        accessibilityLabel={l('Yanıtınız', 'Your answer')}
+                    />
+                ) : null}
+                {!showingAnswer ? (
+                    <View style={styles.reviewerAnswerRow}>
+                        {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? toolsInlineButton : null}
+                        <TouchableOpacity
+                            style={[styles.showAnswerBtn, settings.showToolsOverlayButton && styles.showAnswerBtnWithTools]}
+                            onPress={showAnswerLongPressMs === 0 ? () => setShowingAnswer(true) : undefined}
+                            onLongPress={showAnswerLongPressMs > 0 ? () => setShowingAnswer(true) : undefined}
+                            delayLongPress={showAnswerLongPressMs}
+                            activeOpacity={0.82}
+                            accessibilityRole="button"
+                            accessibilityLabel={t('anki.showAnswer')}
+                        >
+                            <Text style={styles.showAnswerText}>{t('anki.showAnswer')}</Text>
+                        </TouchableOpacity>
+                        {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? toolsInlineButton : null}
+                    </View>
+                ) : answerButtons}
             </View>
         </View>
     ) : null;
@@ -2587,10 +2810,23 @@ export default function StudyScreen() {
                 <ScrollView
                     ref={reviewerScrollRef}
                     style={styles.cardScroll}
-                    contentContainerStyle={styles.cardArea}
+                    contentContainerStyle={[
+                        styles.cardArea,
+                        (!currentCard || settings.centerCardContent) && styles.cardAreaCentered,
+                    ]}
+                    keyboardShouldPersistTaps="handled"
+                    scrollEventThrottle={16}
+                    onScroll={handleReviewerScroll}
+                    onScrollBeginDrag={cancelAnswerScroll}
+                    onLayout={handleReviewerViewportLayout}
+                    onContentSizeChange={handleReviewerContentSize}
                 >
                     {currentCard ? (
-                        <View style={styles.cardContainer} {...gesturePanResponder.panHandlers}>
+                        <View
+                            style={styles.cardContainer}
+                            onLayout={(event) => { cardContainerYRef.current = event.nativeEvent.layout.y; }}
+                            {...gesturePanResponder.panHandlers}
+                        >
                             <View style={styles.cardMetaRow}>
                                 <View style={styles.cardContext}>
                                     <Text style={styles.cardSubject} numberOfLines={1}>
@@ -2606,7 +2842,7 @@ export default function StudyScreen() {
                                         </View>
                                     ) : null}
                                 </View>
-                                {streak.current > 0 ? (
+                                {newStudyScreenEnabled && streak.current > 0 ? (
                                     <View
                                         style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
                                         accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
@@ -2615,11 +2851,14 @@ export default function StudyScreen() {
                                     </View>
                                 ) : null}
                             </View>
-                            <View style={[
-                                styles.cardBody,
-                                settings.studyFrameStyle === 'plain' && styles.cardBodyPlain,
-                                settings.centerCardContent && styles.cardBodyCentered,
-                            ]}>
+                            <View
+                                style={[
+                                    styles.cardBody,
+                                    plainFrame && styles.cardBodyPlain,
+                                    settings.centerCardContent && styles.cardBodyCentered,
+                                ]}
+                                onLayout={(event) => { cardBodyYRef.current = event.nativeEvent.layout.y; }}
+                            >
                                 {currentNoteMarked || currentFlag > 0 ? (
                                     <View
                                         style={styles.cardIndicators}
@@ -2640,6 +2879,12 @@ export default function StudyScreen() {
                                         >⚑</Text>
                                     </View>
                                 ) : null}
+                                <View
+                                    onLayout={(event) => {
+                                        cardFrameYRef.current = event.nativeEvent.layout.y;
+                                        scrollToPendingAnswer();
+                                    }}
+                                >
                                 {renderPayload ? (
                                     <CardWebView
                                         key={`card-webview-${currentCard.cardId}`}
@@ -2660,14 +2905,15 @@ export default function StudyScreen() {
                                         imageZoomPercent={settings.imageZoomPercent}
                                         showAudioPlayButtons={settings.showAudioPlayButtons}
                                         centerContent={settings.centerCardContent}
-                                        frameStyle={settings.studyFrameStyle}
                                         scrollMode="intrinsic"
+                                        minHeight={CARD_DOCUMENT_MIN_HEIGHT}
                                         typeAnswerInCard={!showingAnswer && typeAnswerInCard}
                                         autoFocusTypeAnswer={!showingAnswer && typeAnswerInCard && settings.focusTypeAnswer !== false}
                                         onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
                                         onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
                                         onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
                                         audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
+                                        onAnswerAnchor={showingAnswer ? handleAnswerAnchor : undefined}
                                     />
                                 ) : !showingAnswer ? (
                                     settings.ninePointTouchEnabled ? (
@@ -2701,61 +2947,17 @@ export default function StudyScreen() {
                                         </View>
                                     )
                                 )}
-
-                                {typeAnswerField && !typeAnswerInCard && !showingAnswer && (
-                                    <TextInput
-                                        ref={nativeTypeAnswerRef}
-                                        style={styles.typeAnswerInput}
-                                        value={typedAnswer}
-                                        onChangeText={setTypedAnswer}
-                                        placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
-                                        placeholderTextColor={colors.textMuted}
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                        maxLength={MAX_TYPE_ANSWER_CHARS}
-                                        returnKeyType="done"
-                                        onSubmitEditing={() => submitTypedAnswer(typedAnswer)}
-                                    />
-                                )}
-                                {!newStudyScreenEnabled && !showingAnswer ? (
-                                    <TouchableOpacity
-                                        style={[styles.showAnswerBtn, styles.classicInlineAnswerButton]}
-                                        onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
-                                        onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
-                                        delayLongPress={settings.showAnswerLongPressMs ?? 0}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={t('anki.showAnswer')}
-                                    >
-                                        <Text style={styles.showAnswerText}>👁️ {t('anki.showAnswer')}</Text>
-                                    </TouchableOpacity>
-                                ) : null}
+                                </View>
                                 <WhiteboardCanvas
                                     style={[
                                         StyleSheet.absoluteFill,
                                         {
-                                            borderRadius: settings.studyFrameStyle === 'plain' ? 0 : BorderRadius.md,
+                                            borderRadius: plainFrame ? 0 : CARD_FRAME_RADIUS,
                                             overflow: 'hidden',
                                         },
                                     ]}
                                 />
                             </View>
-                            {!newStudyScreenEnabled && answerButtons ? (
-                                <View style={styles.classicAnswerButtons}>{answerButtons}</View>
-                            ) : null}
-                            {!newStudyScreenEnabled ? (
-                                <View style={styles.classicQueueInfo}>
-                                    {settings.showRemainingCount ? (
-                                        <View style={styles.queueCounts}>
-                                            <Text style={[styles.queueCount, { color: colors.badgeNew }]}>{queueStats.newCount}</Text>
-                                            <Text style={styles.classicQueueSeparator}>+</Text>
-                                            <Text style={[styles.queueCount, { color: colors.badgeLearn }]}>{queueStats.learningCount}</Text>
-                                            <Text style={styles.classicQueueSeparator}>+</Text>
-                                            <Text style={[styles.queueCount, { color: colors.badgeReview }]}>{queueStats.reviewCount}</Text>
-                                        </View>
-                                    ) : null}
-                                    <Text style={styles.classicQueueText}>{l('Bugün', 'Today')}: {sessionStats.reviewed} {l('tekrar', 'reviews')}</Text>
-                                </View>
-                            ) : null}
                         </View>
                     ) : nextLearningDue ? (
                         <View style={styles.emptyState}>
@@ -2952,53 +3154,7 @@ export default function StudyScreen() {
 
             {newStudyScreenEnabled && toolbarPosition === 'bottom' ? reviewerToolbar : null}
 
-            {newStudyScreenEnabled && currentCard && (!showingAnswer || answerButtons) ? (
-                <View
-                    style={[
-                        styles.reviewerAnswerArea,
-                        { paddingBottom: Math.max(insets.bottom, isCompact ? Spacing.lg : Spacing.md) },
-                    ]}
-                >
-                    {!showingAnswer ? (
-                        <View style={styles.reviewerAnswerRow}>
-                            {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? (
-                                <TouchableOpacity
-                                    style={styles.reviewerToolsInlineBtn}
-                                    onPress={openMoreMenu}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Araçlar', 'Tools')}
-                                >
-                                    <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                            <TouchableOpacity
-                                style={[
-                                    styles.showAnswerBtn,
-                                    settings.showToolsOverlayButton && styles.showAnswerBtnWithTools,
-                                ]}
-                                onPress={(settings.showAnswerLongPressMs ?? 0) === 0 ? () => setShowingAnswer(true) : undefined}
-                                onLongPress={(settings.showAnswerLongPressMs ?? 0) > 0 ? () => setShowingAnswer(true) : undefined}
-                                delayLongPress={settings.showAnswerLongPressMs ?? 0}
-                                activeOpacity={0.82}
-                                accessibilityRole="button"
-                                accessibilityLabel={t('anki.showAnswer')}
-                            >
-                                <Text style={styles.showAnswerText}>{t('anki.showAnswer')}</Text>
-                            </TouchableOpacity>
-                            {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? (
-                                <TouchableOpacity
-                                    style={styles.reviewerToolsInlineBtn}
-                                    onPress={openMoreMenu}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Araçlar', 'Tools')}
-                                >
-                                    <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                        </View>
-                    ) : answerButtons}
-                </View>
-            ) : null}
+            {answerBar}
 
             {Platform.OS !== 'web' && pathname === '/' && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible && (
                 <TextInput
@@ -3022,7 +3178,7 @@ export default function StudyScreen() {
                     style={[
                         styles.toolsOverlayButton,
                         settings.toolsOverlayPosition === 'left' ? styles.toolsOverlayLeft : styles.toolsOverlayRight,
-                        { bottom: Math.max(insets.bottom, 12) + 12 },
+                        { bottom: (answerBar ? answerBarHeight : Math.max(insets.bottom, 12)) + 12 },
                     ]}
                     onPress={openMoreMenu}
                     accessibilityRole="button"
@@ -3144,7 +3300,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         alignItems: 'center',
         minHeight: 54,
         paddingHorizontal: isCompact ? Spacing.xs : Spacing.lg,
-        backgroundColor: colors.bgCard,
+        backgroundColor: colors.bgPrimary,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderColor: colors.borderLight,
@@ -3152,9 +3308,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     classicToolbar: {
         flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 62,
+        minHeight: 56,
         paddingHorizontal: isCompact ? Spacing.xs : Spacing.lg,
-        backgroundColor: colors.bgCard,
+        backgroundColor: colors.bgPrimary,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
@@ -3196,22 +3352,23 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     cardScroll: { flex: 1, minHeight: 0 },
     cardArea: {
         flexGrow: 1,
-        paddingHorizontal: isCompact ? Spacing.md : Spacing.xxl,
-        paddingVertical: isCompact ? Spacing.sm : Spacing.lg,
+        paddingHorizontal: isCompact ? Spacing.lg : Spacing.xxl,
+        paddingTop: isCompact ? Spacing.md : Spacing.lg,
+        paddingBottom: Spacing.xl,
         alignItems: 'center',
-        justifyContent: 'center',
     },
-    cardContainer: { width: '100%', maxWidth: 760, flexGrow: 1, justifyContent: 'center' },
+    cardAreaCentered: { justifyContent: 'center' },
+    cardContainer: { width: '100%', maxWidth: 760 },
     cardMetaRow: {
-        minHeight: 32,
+        minHeight: 28,
         flexDirection: 'row',
         alignItems: 'center',
         gap: Spacing.sm,
-        paddingHorizontal: isCompact ? Spacing.xs : Spacing.sm,
-        marginBottom: Spacing.xs,
+        paddingHorizontal: Spacing.xs,
+        marginBottom: Spacing.sm,
     },
 
-    cardSubject: { flexShrink: 0, maxWidth: isCompact ? 100 : 220, fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
+    cardSubject: { flexShrink: 0, maxWidth: isCompact ? '55%' : 260, fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
     cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.sm, color: colors.textMuted },
     previewBadge: {
         flexShrink: 0,
@@ -3232,20 +3389,22 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     cardBody: {
         position: 'relative',
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        padding: isCompact ? Spacing.md : Spacing.xl,
-        ...Shadows.md,
-        minHeight: isCompact ? 220 : 260,
+        justifyContent: 'center',
+        backgroundColor: colors.reviewerCard,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.reviewerCardBorder,
+        borderRadius: CARD_FRAME_RADIUS,
+        paddingHorizontal: isCompact ? Spacing.lg : Spacing.xxl,
+        paddingVertical: isCompact ? Spacing.xl : Spacing.xxxl,
+        minHeight: isCompact ? 200 : 260,
     },
     cardBodyPlain: {
+        backgroundColor: 'transparent',
         borderWidth: 0,
         borderRadius: 0,
-        backgroundColor: colors.bgPrimary,
-        shadowOpacity: 0,
-        elevation: 0,
+        paddingHorizontal: Spacing.xs,
+        paddingVertical: Spacing.sm,
+        minHeight: 0,
     },
     cardBodyCentered: { minHeight: isCompact ? 320 : 420, justifyContent: 'center' },
     cardIndicators: {
@@ -3276,16 +3435,18 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     questionText: { fontSize: 22, fontWeight: '500', lineHeight: 32, color: colors.textPrimary },
 
     typeAnswerInput: {
-        marginTop: Spacing.lg,
-        borderWidth: 1,
+        width: '100%',
+        minHeight: 50,
+        borderWidth: 1.5,
         borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
+        borderRadius: 14,
         backgroundColor: colors.bgInput,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        fontSize: FontSize.md,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        fontSize: 17,
         color: colors.textPrimary,
     },
+    typeAnswerInputFocused: { borderColor: colors.accent },
     toolsOverlayButton: {
         position: 'absolute',
         zIndex: 240,
@@ -3315,32 +3476,40 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
 
     showAnswerBtn: {
         width: '100%',
-        maxWidth: 760,
         minHeight: 54,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xl,
         backgroundColor: colors.accent,
-        borderRadius: BorderRadius.lg,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         ...Shadows.sm,
     },
-    showAnswerText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white },
-    classicInlineAnswerButton: { marginTop: Spacing.xl },
-    classicAnswerButtons: { marginTop: Spacing.md },
-    classicQueueInfo: { alignItems: 'center', gap: Spacing.xs, paddingTop: Spacing.md },
-    classicQueueSeparator: { color: colors.textMuted, fontSize: FontSize.sm },
-    classicQueueText: { color: colors.textMuted, fontSize: FontSize.sm },
+    showAnswerText: { fontSize: 17, fontWeight: '700', color: colors.white, letterSpacing: 0.2 },
 
-    reviewerAnswerArea: {
+    answerBar: {
         width: '100%',
         alignItems: 'center',
-        paddingHorizontal: isCompact ? Spacing.md : Spacing.xxl,
+        paddingHorizontal: isCompact ? Spacing.lg : Spacing.xxl,
         paddingTop: Spacing.sm,
-        paddingBottom: isCompact ? Spacing.lg : Spacing.md,
-        backgroundColor: colors.bgCard,
-        borderTopWidth: 1,
-        borderTopColor: colors.borderLight,
+        backgroundColor: colors.bgPrimary,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
+    },
+    answerBarContent: { width: '100%', maxWidth: 760, gap: Spacing.sm },
+    queueStrip: {
+        minHeight: 22,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: Spacing.md,
+        paddingHorizontal: Spacing.xs,
+    },
+    queueStripToday: {
+        flexShrink: 1,
+        fontSize: FontSize.sm,
+        color: colors.textMuted,
+        fontVariant: ['tabular-nums'] as any,
     },
     reviewerAnswerRow: {
         width: '100%',
@@ -3383,7 +3552,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         fontWeight: '700',
         color: colors.textMuted,
     },
-    answerButtons: { width: '100%', maxWidth: 760, flexDirection: 'row', gap: isCompact ? 6 : 10 },
+    answerButtons: { width: '100%', flexDirection: 'row', gap: isCompact ? 8 : 10 },
     answerButtonsTwoRows: { flexWrap: 'wrap' },
     answerBtn: {
         flex: 1,
@@ -3391,16 +3560,16 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 56,
-        paddingVertical: isCompact ? 10 : 14,
+        paddingVertical: Spacing.sm,
         paddingHorizontal: 4,
-        borderRadius: BorderRadius.md,
+        borderRadius: 14,
         borderWidth: 1,
-        gap: 2,
+        gap: 1,
         ...Shadows.sm,
     },
     answerBtnTwoRow: { flexBasis: '47%', flexGrow: 1 },
-    btnTime: { color: colors.white, opacity: 0.78, fontSize: FontSize.xs, fontWeight: '700' },
-    btnLabel: { color: colors.white, fontSize: isCompact ? 14 : 16, fontWeight: '800' },
+    btnTime: { color: colors.white, opacity: 0.85, fontSize: FontSize.sm, fontWeight: '700', fontVariant: ['tabular-nums'] as any },
+    btnLabel: { color: colors.white, fontSize: isCompact ? 15 : 16, fontWeight: '800' },
 
     answerTimer: {
         flexShrink: 0,
@@ -3423,6 +3592,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     remainingTime: { flexShrink: 0, fontSize: FontSize.sm, color: colors.textMuted, fontVariant: ['tabular-nums'] as any },
     queueCounts: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: isCompact ? 7 : 9 },
     queueCount: { fontSize: FontSize.md, fontWeight: '800', fontVariant: ['tabular-nums'] as any },
+    queueCountCurrent: { textDecorationLine: 'underline' },
 
     emptyState: { alignItems: 'center', padding: 40 },
     emptyIcon: { fontSize: 56, marginBottom: Spacing.md },

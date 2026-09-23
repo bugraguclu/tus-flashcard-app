@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-09-06",
+  "lastVerified": "2026-09-23",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -109,6 +109,13 @@
       "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study"]
     },
     {
+      "id": "ankimobile-study-screen",
+      "priority": 1,
+      "platform": "iOS and iPadOS reviewer layout",
+      "url": "https://docs.ankimobile.net/study-screen.html",
+      "useFor": ["remaining counts at the bottom of the study screen", "answer buttons in the bottom area", "next times above the answer buttons", "tap anywhere to show the answer"]
+    },
+    {
       "id": "ankimobile-preferences",
       "priority": 1,
       "platform": "iOS and iPadOS preferences",
@@ -159,6 +166,37 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/reviewer.py",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["post-answer timebox check", "Continue and Finish choices", "deck-browser exit"]
+    },
+    {
+      "id": "anki-source-reviewer-css",
+      "priority": 2,
+      "platform": "desktop reviewer presentation",
+      "url": "https://github.com/ankitects/anki/blob/main/ts/reviewer/reviewer.scss",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["night-mode page colour and text override (body.nightMode)", "typed-answer comparison colours", "answer separator rule"]
+    },
+    {
+      "id": "anki-source-reviewer-scroll",
+      "priority": 2,
+      "platform": "desktop reviewer presentation",
+      "url": "https://github.com/ankitects/anki/blob/main/ts/reviewer/index.ts",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["scroll to the id=answer element once images load", "per-card body classes"]
+    },
+    {
+      "id": "anki-source-typeanswer",
+      "priority": 2,
+      "platform": "desktop and shared core",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/typeanswer.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["typed-answer comparison markup", "empty entry shows the expected answer only", "typed line, arrow and expected line", "omission markers"]
+    },
+    {
+      "id": "anki-manual-styling-scroll",
+      "priority": 1,
+      "platform": "cross-platform reviewer behavior",
+      "url": "https://docs.ankiweb.net/templates/styling.html#fading-and-scrolling",
+      "useFor": ["automatic scroll to the answer", "moving or removing id=answer"]
     },
     {
       "id": "anki-source-custom-study",

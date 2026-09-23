@@ -25,6 +25,7 @@ import {
     Shadows,
     Spacing,
     ThemeColorsProvider,
+    useIsDarkTheme,
     useThemeColors,
 } from '../constants/theme';
 import { initWebDb, isPrimaryTab } from '../lib/db';
@@ -569,6 +570,7 @@ function StartupGate({ children }: { children: React.ReactNode }) {
 function AppStack() {
     const router = useRouter();
     const colors = useThemeColors();
+    const isDarkTheme = useIsDarkTheme();
     const { t } = useI18n();
 
     useEffect(() => {
@@ -642,7 +644,10 @@ function AppStack() {
 
     return (
         <>
-            <StatusBar style={DARK_MODE_UI_ENABLED ? 'auto' : 'dark'} />
+            {/* Follows the theme the app resolved rather than iOS ("auto"): the in-app Light/Dark
+                choice can differ from the system appearance, and the clock has to stay legible on
+                the page that is actually drawn. */}
+            <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
             <Stack
                 screenOptions={{
                     headerShown: false,
