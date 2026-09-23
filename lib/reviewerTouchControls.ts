@@ -78,3 +78,43 @@ export function swipeThresholdForSensitivity(value: unknown): number {
     const sensitivity = normalizeSwipeSensitivity(value);
     return Math.max(28, Math.round(82 - sensitivity * 0.32));
 }
+
+/** Width of the strip along each screen edge where a vertical review swipe may start. */
+export const VERTICAL_SWIPE_EDGE_WIDTH = 36;
+
+/** A finished drag: total movement, and the screen x where it began. */
+export interface ReviewSwipeGesture {
+    dx: number;
+    dy: number;
+    x0: number;
+}
+
+export interface ReviewSwipeBindings {
+    left: ReviewGestureAction;
+    right: ReviewGestureAction;
+    up: ReviewGestureAction;
+    down: ReviewGestureAction;
+}
+
+/**
+ * The action a finished swipe asks for, or null when it asks for none. A horizontal swipe counts
+ * anywhere on the card; a vertical one only when it began at a screen edge, which is how AnkiMobile
+ * keeps long cards scrollable and their text selectable through the middle.
+ */
+export function resolveReviewSwipeAction(
+    gesture: ReviewSwipeGesture,
+    bindings: ReviewSwipeBindings,
+    screenWidth: number,
+    sensitivity: unknown,
+): ReviewGestureAction | null {
+    const horizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
+    const beganAtEdge = gesture.x0 <= VERTICAL_SWIPE_EDGE_WIDTH
+        || gesture.x0 >= screenWidth - VERTICAL_SWIPE_EDGE_WIDTH;
+    if (!horizontal && !beganAtEdge) return null;
+    const distance = horizontal ? Math.abs(gesture.dx) : Math.abs(gesture.dy);
+    if (distance < swipeThresholdForSensitivity(sensitivity)) return null;
+    const action = horizontal
+        ? (gesture.dx > 0 ? bindings.right : bindings.left)
+        : (gesture.dy > 0 ? bindings.down : bindings.up);
+    return action === 'off' ? null : action;
+}

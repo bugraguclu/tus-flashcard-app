@@ -238,7 +238,6 @@ function objectById(annotations: PhotoAnnotation[], id: string): PhotoText | Pho
  * build without the module, simply carries on.
  */
 function tick() {
-    if (Platform.OS === 'web') return;
     try {
         void Haptics.selectionAsync().catch(() => undefined);
     } catch {

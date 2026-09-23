@@ -15,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { getAllTags } from '../lib/noteManager';
 import { useI18n } from '../hooks/useI18n';
@@ -26,8 +27,7 @@ function SearchIcon({ color, size = 20 }: { color: string; size?: number }) {
             height={size}
             viewBox="0 0 24 24"
             fill="none"
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            {...DECORATIVE_SVG_PROPS}
         >
             <Circle cx={10.5} cy={10.5} r={6.5} stroke={color} strokeWidth={2.2} />
             <Path d="M15.4 15.4 21 21" stroke={color} strokeWidth={2.2} strokeLinecap="round" />

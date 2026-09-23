@@ -15,6 +15,7 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm } from '../lib/confirm';
@@ -449,7 +450,7 @@ function MenuRow({ styles, colors, icon, label, onPress, chevron, disabled = fal
 function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
     const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     return (
-        <Svg width={24} height={24} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={24} height={24} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             {name === 'undo' && <Path d="M9 7H4V2M4.5 7A8 8 0 1 1 6 18" {...common} />}
             {name === 'redo' && <Path d="M15 7h5V2m-.5 5A8 8 0 1 0 18 18" {...common} />}
             {name === 'whiteboard' && (

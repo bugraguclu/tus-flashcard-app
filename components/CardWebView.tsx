@@ -21,7 +21,11 @@ import {
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
 import { isCatalogCard, isCatalogNote } from '../lib/catalogProtection';
-import { PROTECTED_CONTENT_CSS, PROTECTED_CONTENT_SCRIPT } from '../lib/protectedContentCss';
+import {
+    PROTECTED_CONTENT_CSS,
+    PROTECTED_CONTENT_SCRIPT,
+    installProtectedContentGuards,
+} from '../lib/protectedContentCss';
 
 /**
  * Anki's document classes. AnkiDroid ships `<html class="mobile android linux js">` and the
@@ -127,6 +131,11 @@ interface CardWebViewProps {
     maxHeight?: number;
     /** Reports a non-interactive tap as normalized x/y coordinates within the visible card. */
     onCardTap?: (xRatio: number, yRatio: number) => void;
+    /**
+     * Web only: reports a finished touch or pen swipe that began on the card. The browser hands
+     * pointer input over the card to the iframe, so the reviewer's pan responder never sees it.
+     */
+    onCardSwipe?: (gesture: { dx: number; dy: number; x0: number }) => void;
     /** Playback rate for audio in cards (0.75, 1.0, 1.25, 1.5, 2.0). */
     audioPlaybackRate?: number;
 }
@@ -155,6 +164,7 @@ export default function CardWebView({
     minHeight = 140,
     maxHeight,
     onCardTap,
+    onCardSwipe,
     audioPlaybackRate = 1.0,
 }: CardWebViewProps) {
     const colors = useThemeColors();
@@ -188,6 +198,8 @@ export default function CardWebView({
     const typeAnswerSubmitRef = useRef(onTypeAnswerSubmit);
     typedAnswerChangeRef.current = onTypedAnswerChange;
     typeAnswerSubmitRef.current = onTypeAnswerSubmit;
+    const cardSwipeRef = useRef(onCardSwipe);
+    cardSwipeRef.current = onCardSwipe;
     // Held in a ref so the playback effects never have to list the callback as a dependency —
     // a new function identity from the parent must not re-trigger playback.
     const audioActiveRef = useRef(onAudioActiveChange);
@@ -413,7 +425,7 @@ export default function CardWebView({
     }, [pauseAudioSignal]);
 
     if (Platform.OS === 'web') {
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:${plainFrame ? 0 : 12}px;background:${surfaceColor};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};}</style></head><body>${webHtml}</body></html>`;
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:${plainFrame ? 0 : 12}px;background:${surfaceColor};color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};${onCardSwipe ? 'touch-action:pan-y pinch-zoom;' : ''}}</style></head><body>${webHtml}</body></html>`;
         return (
             <iframe
                 ref={iframeRef}
@@ -462,8 +474,31 @@ export default function CardWebView({
                             if (autoFocusTypeAnswer) requestAnimationFrame(() => input.focus());
                         }
                     }
+                    // A swipe ends in a click as well; that click must not also count as a tap.
+                    let swipeEndedAt = 0;
+                    if (onCardSwipe) {
+                        let start: { x: number; y: number; pointerId: number } | null = null;
+                        doc.addEventListener('pointerdown', (event) => {
+                            // A mouse drag over the card selects text, as it does on any page.
+                            if (!event.isPrimary || event.pointerType === 'mouse') return;
+                            start = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+                        }, true);
+                        doc.addEventListener('pointercancel', () => { start = null; }, true);
+                        doc.addEventListener('pointerup', (event) => {
+                            if (!start || event.pointerId !== start.pointerId) return;
+                            const dx = event.clientX - start.x;
+                            const dy = event.clientY - start.y;
+                            const frameLeft = iframeRef.current?.getBoundingClientRect().left ?? 0;
+                            const x0 = frameLeft + start.x;
+                            start = null;
+                            if (Math.hypot(dx, dy) < 12) return;
+                            swipeEndedAt = Date.now();
+                            cardSwipeRef.current?.({ dx, dy, x0 });
+                        }, true);
+                    }
                     if (onCardTap) {
                         doc.addEventListener('click', (event) => {
+                            if (Date.now() - swipeEndedAt < 400) return;
                             const target = event.target as Element | null;
                             if (!target || typeof target.closest !== 'function' || target.closest('a,button,input,textarea,select,label,audio,video,[contenteditable="true"],[role="button"],.tappable,[onclick]')) return;
                             const selection = iframeRef.current?.contentWindow?.getSelection();
@@ -506,10 +541,9 @@ export default function CardWebView({
                         }
                     });
                     if (isProtected) {
-                        // Same lockdown the native WebView gets, run inside the iframe document.
-                        const script = doc.createElement('script');
-                        script.textContent = PROTECTED_CONTENT_SCRIPT;
-                        doc.body.appendChild(script);
+                        // The sandbox refuses script inside the card, so the same lockdown the native
+                        // WebView injects is installed from the host page instead.
+                        installProtectedContentGuards(doc);
                     }
                     if (scrollMode === 'intrinsic') {
                         setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));

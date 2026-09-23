@@ -1,16 +1,20 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { InteractionManager, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import type { WebViewMessageEvent } from 'react-native-webview';
 import type { ColorScheme } from '../constants/theme';
 import { base64ToBytes } from '../lib/files';
-import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
+import { getMediaBaseUrl, getWebMediaUrl, isBareMediaReference, saveMediaBytes } from '../lib/mediaStore';
 import { mediaReferenceSnippet } from '../lib/mediaAttachment';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
 import { sanitizeToolbarSnippet } from '../lib/customToolbar';
-import { richTextBridgeScript, stripPendingStyleMarkers } from '../lib/richTextCommands';
-import { PROTECTED_CONTENT_CSS, PROTECTED_CONTENT_SCRIPT } from '../lib/protectedContentCss';
+import { stripPendingStyleMarkers } from '../lib/richTextCommands';
+import { PROTECTED_CONTENT_CSS } from '../lib/protectedContentCss';
+import {
+    RICH_TEXT_EDITOR_CONFIG_ID,
+    RICH_TEXT_EDITOR_SCRIPT,
+    richTextEditorConfigJson,
+} from '../lib/richTextEditorScript';
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { editorFieldFontFamily } from '../lib/editorFieldStyle';
 import { sanitizeUntrustedHtml } from '../lib/templates';
@@ -112,6 +116,8 @@ function editorDocument(
     editable: boolean = true,
     fontFamily?: string,
     rtl: boolean = false,
+    /** Web only: the app page's origin, which the document's script answers to. */
+    hostOrigin?: string,
 ): string {
     const policy = editorContentSecurityPolicy(nonce);
     const safeValue = sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS);
@@ -152,338 +158,67 @@ function editorDocument(
 </head>
 <body>
   <div id="editor" dir="${rtl ? 'rtl' : 'auto'}" contenteditable="${editable ? 'true' : 'false'}" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
-  <script nonce="${nonce}">
-    ${richTextBridgeScript()}
-    (function () {
-      const editor = document.getElementById('editor');
-      ${editable ? '' : PROTECTED_CONTENT_SCRIPT}
-      // Selection and pending-format handling lives in lib/richTextCommands.ts so it can be
-      // unit-tested against a fake DOM; see the WebKit notes there for why it is not inline.
-      const bridge = createTusFormattingBridge(editor, document);
-      let lastHeight = 0;
-      let lastState = '';
-      editor.innerHTML = ${safeJsValue(safeValue)};
-
-      function cleanForExport(html) {
-        if (!html) return '';
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
-        const wraps = temp.querySelectorAll('.tus-audio-wrap');
-        for (let i = 0; i < wraps.length; i++) {
-          const wrap = wraps[i];
-          const aud = wrap.querySelector('audio');
-          if (aud && wrap.parentNode) {
-            delete aud.dataset.tusSpeedInit;
-            wrap.parentNode.insertBefore(aud, wrap);
-            wrap.remove();
-          }
-        }
-        const btns = temp.querySelectorAll('.tus-audio-speed-btn');
-        for (let j = 0; j < btns.length; j++) {
-          btns[j].remove();
-        }
-        return temp.innerHTML;
-      }
-
-      function initAudioControls() {
-        const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
-        const audios = editor.querySelectorAll('audio');
-        for (let i = 0; i < audios.length; i++) {
-          (function (audio) {
-            if (audio.dataset.tusSpeedInit) return;
-            audio.dataset.tusSpeedInit = 'true';
-            let curRate = 1.0;
-            audio.playbackRate = curRate;
-            audio.defaultPlaybackRate = curRate;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'tus-audio-speed-btn';
-            btn.setAttribute('contenteditable', 'false');
-            btn.textContent = curRate + 'x';
-            btn.addEventListener('click', function (e) {
-              e.preventDefault();
-              e.stopPropagation();
-              let idx = speeds.indexOf(audio.playbackRate || 1.0);
-              if (idx === -1) idx = 1;
-              const next = speeds[(idx + 1) % speeds.length];
-              audio.playbackRate = next;
-              audio.defaultPlaybackRate = next;
-              btn.textContent = next + 'x';
-            });
-            if (audio.parentNode && !audio.parentNode.classList.contains('tus-audio-wrap')) {
-              const wrap = document.createElement('span');
-              wrap.className = 'tus-audio-wrap';
-              wrap.setAttribute('contenteditable', 'false');
-              audio.parentNode.insertBefore(wrap, audio);
-              wrap.appendChild(audio);
-              wrap.appendChild(btn);
-            }
-          })(audios[i]);
-        }
-      }
-
-      initAudioControls();
-
-      function isChangeCaseShortcut(event) {
-        if (event.metaKey || event.ctrlKey || event.altKey) return false;
-        return !!event.shiftKey && String(event.key || '').toLowerCase() === 'f3';
-      }
-
-      function post(payload) {
-        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(payload));
-      }
-
-      function saveSelection() { bridge.saveSelection(); }
-
-      function restoreSelection() { bridge.restoreSelection(); }
-
-      // Toolbar state follows the caret, not just the last command. A press on a native toolbar
-      // button takes first-responder status away from the WebView, so a reading taken while the
-      // caret is not in the document would blank every lit button between two presses — the last
-      // reading from inside the editor is kept instead, exactly as a ribbon stays lit.
-      function reportState(force) {
-        const signals = bridge.readSignals();
-        if (!signals.inEditor && !force) return;
-        const serialized = JSON.stringify(signals);
-        if (!force && serialized === lastState) return;
-        lastState = serialized;
-        post({ type: 'state', state: signals });
-      }
-
-      function reportHeight() {
-        requestAnimationFrame(function () {
-          const height = Math.max(${minHeight}, Math.ceil(editor.scrollHeight));
-          if (height !== lastHeight) {
-            lastHeight = height;
-            post({ type: 'height', height: height });
-          }
-        });
-      }
-
-      function emitChange() {
-        saveSelection();
-        post({ type: 'change', html: cleanForExport(editor.innerHTML) });
-        reportState(true);
-        reportHeight();
-      }
-
-      function insertCloze() {
-        restoreSelection();
-        const selection = window.getSelection();
-        const selectedText = selection && selection.rangeCount ? selection.toString() : '';
-        const used = Array.from(editor.innerHTML.matchAll(/\\{\\{c(\\d+)::/gi)).map(function (match) { return Number(match[1]) || 0; });
-        const next = used.length ? Math.max.apply(null, used) + 1 : 1;
-        bridge.editDocument(function () {
-          return document.execCommand('insertText', false, '{{c' + next + '::' + selectedText + '}}');
-        });
-      }
-
-      window.__tusEditorCommand = function (payload) {
-        if (payload.command === 'cloze') {
-          insertCloze();
-        } else {
-          const result = bridge.runCommand(payload.command, payload.value || null);
-          if (payload.command === 'hiliteColor' && !result.applied) {
-            bridge.runCommand('backColor', payload.value || null);
-          }
-        }
-        emitChange();
-      };
-
-      window.__tusEditorRequestState = function () { reportState(true); };
-
-      window.__tusEditorReplaceSelectionText = function (text) {
-        bridge.replaceSelectionText(text);
-        emitChange();
-      };
-
-      // Paragraph-level formatting (line spacing). Kept apart from __tusEditorCommand because it
-      // is not an execCommand verb and must not go through the pending-typing-style repair path.
-      window.__tusEditorBlockStyle = function (property, value) {
-        bridge.applyBlockStyle(property, value);
-        emitChange();
-      };
-
-      window.__tusEditorInsertHtml = function (html) {
-        restoreSelection();
-        let processedHtml = html;
-        if (typeof html === 'string') {
-          processedHtml = html.replace(/\[sound:([^\]]+)\]/gi, function (_, fn) {
-            return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
-          });
-        }
-        bridge.editDocument(function () { return document.execCommand('insertHTML', false, processedHtml); });
-        initAudioControls();
-        emitChange();
-      };
-
-      window.__tusEditorWrapSelection = function (prefix, suffix) {
-        restoreSelection();
-        const selection = window.getSelection();
-        if (!selection || !selection.rangeCount) return;
-
-        const range = selection.getRangeAt(0);
-        const selectedContainer = document.createElement('div');
-        selectedContainer.appendChild(range.cloneContents());
-        const selectedHtml = selectedContainer.innerHTML;
-        const markerBase = '__tus_editor_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-        const startMarkerId = markerBase + '_start';
-        const endMarkerId = markerBase + '_end';
-
-        if (range.collapsed) {
-          const cursorMarkerId = markerBase + '_cursor';
-          bridge.editDocument(function () {
-            return document.execCommand(
-              'insertHTML',
-              false,
-              prefix + '<span id="' + cursorMarkerId + '">&#8203;</span>' + suffix,
-            );
-          });
-          const cursorMarker = document.getElementById(cursorMarkerId);
-          if (cursorMarker) {
-            const caret = document.createRange();
-            caret.setStartBefore(cursorMarker);
-            caret.collapse(true);
-            cursorMarker.remove();
-            selection.removeAllRanges();
-            selection.addRange(caret);
-          }
-        } else {
-          bridge.editDocument(function () {
-            return document.execCommand(
-              'insertHTML',
-              false,
-              '<span id="' + startMarkerId + '"></span>' + prefix + selectedHtml + suffix + '<span id="' + endMarkerId + '"></span>',
-            );
-          });
-          const startMarker = document.getElementById(startMarkerId);
-          const endMarker = document.getElementById(endMarkerId);
-          if (startMarker && endMarker) {
-            const formattedSelection = document.createRange();
-            formattedSelection.setStartAfter(startMarker);
-            formattedSelection.setEndBefore(endMarker);
-            startMarker.remove();
-            endMarker.remove();
-            selection.removeAllRanges();
-            selection.addRange(formattedSelection);
-          }
-        }
-        saveSelection();
-        emitChange();
-      };
-
-      window.__tusEditorSetHtml = function (html) {
-        if (cleanForExport(editor.innerHTML) === html) return;
-        editor.innerHTML = html;
-        initAudioControls();
-        bridge.clearSavedRange();
-        reportHeight();
-      };
-
-      window.__tusEditorFocus = function () { editor.focus(); };
-      window.__tusEditorBlur = function () {
-        if (document.activeElement && typeof document.activeElement.blur === 'function') {
-          document.activeElement.blur();
-        }
-        editor.blur();
-      };
-      editor.addEventListener('input', function () { bridge.noteEdit('typing'); emitChange(); });
-      // A hardware keyboard is the second way this editor is driven, so the shortcut table is the
-      // same one the toolbar buttons use and every press lands on the same command path — the
-      // toolbar therefore lights up for Cmd+B exactly as it does for a tap.
-      editor.addEventListener('keydown', function (event) {
-        if (!${editable ? 'true' : 'false'}) {
-          if ((event.metaKey || event.ctrlKey) && (event.key === 'c' || event.key === 'a')) return;
-          event.preventDefault();
-          return;
-        }
-        // Change Case is Shift+F3 in Word, the one binding with no Cmd or Ctrl, so it is matched
-        // before the modifier-gated table rather than inside it.
-        if (isChangeCaseShortcut(event)) {
-          event.preventDefault();
-          post({ type: 'shortcut', shortcut: 'changeCase' });
-          return;
-        }
-        const shortcut = bridge.resolveShortcut(event);
-        if (shortcut) {
-          event.preventDefault();
-          // Grow and shrink are not execCommand verbs: the size ladder lives in the toolbar, which
-          // is the only side that knows which step comes next. They go back to React as-is.
-          if (shortcut.command === 'growFont' || shortcut.command === 'shrinkFont') {
-            post({ type: 'shortcut', shortcut: shortcut.command });
-            return;
-          }
-          window.__tusEditorCommand({ command: shortcut.command, value: shortcut.value || null });
-          return;
-        }
-        if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
-          // Word starts a normal paragraph after a heading and leaves a quote once the line is
-          // empty. The default insertion runs first, so a failed normalization still leaves the
-          // user with the new line they asked for.
-          setTimeout(function () {
-            if (bridge.normalizeBlockAfterEnter()) emitChange();
-            else reportState(false);
-          }, 0);
-        }
-      });
-      editor.addEventListener('paste', function (event) {
-        if (!${editable ? 'true' : 'false'}) {
-          event.preventDefault();
-          return;
-        }
-        if (!${pasteClipboardImagesAsPng ? 'true' : 'false'}) return;
-        const items = Array.from((event.clipboardData && event.clipboardData.items) || [])
-          .filter(function (item) { return item.kind === 'file' && /^image\//i.test(item.type || ''); });
-        if (!items.length) return;
-        event.preventDefault();
-        saveSelection();
-        items.forEach(function (item) {
-          const file = item.getAsFile();
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = function () {
-            const image = new Image();
-            image.onload = function () {
-              const canvas = document.createElement('canvas');
-              const sourceWidth = image.naturalWidth || image.width;
-              const sourceHeight = image.naturalHeight || image.height;
-              const maxDimension = 4096;
-              const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
-              canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-              canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-              const context = canvas.getContext('2d');
-              if (!context || !canvas.width || !canvas.height) return;
-              context.drawImage(image, 0, 0, canvas.width, canvas.height);
-              post({ type: 'pasteImage', dataUrl: canvas.toDataURL('image/png') });
-            };
-            image.src = String(reader.result || '');
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-      // The focused field owns the toolbar, so its state is always resent: the previous field's
-      // reading is still what the toolbar shows, and a deduplicated report would leave it there.
-      editor.addEventListener('focus', function () { post({ type: 'focus' }); reportState(true); });
-      editor.addEventListener('blur', saveSelection);
-      window.addEventListener('pagehide', saveSelection);
-      editor.addEventListener('keyup', function () { saveSelection(); reportState(false); });
-      editor.addEventListener('mouseup', function () { saveSelection(); reportState(false); });
-      editor.addEventListener('touchend', function () { saveSelection(); reportState(false); });
-      document.addEventListener('selectionchange', function () {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount && editor.contains(selection.anchorNode)) {
-          saveSelection();
-          reportState(false);
-        }
-      });
-      if (window.ResizeObserver) new ResizeObserver(reportHeight).observe(editor);
-      reportHeight();
-      post({ type: 'ready' });
-    })();
-  </script>
+  <script type="application/json" id="${RICH_TEXT_EDITOR_CONFIG_ID}">${richTextEditorConfigJson({
+    html: safeValue,
+    minHeight,
+    editable,
+    pasteImagesAsPng: pasteClipboardImagesAsPng,
+    hostOrigin,
+  })}</script>
+  <script nonce="${nonce}">${RICH_TEXT_EDITOR_SCRIPT}</script>
 </body>
 </html>`;
 }
+
+/** The functions the field document installs on its window for the host to call. */
+type EditorFunction =
+    | '__tusEditorFocus'
+    | '__tusEditorBlur'
+    | '__tusEditorCommand'
+    | '__tusEditorInsertHtml'
+    | '__tusEditorWrapSelection'
+    | '__tusEditorBlockStyle'
+    | '__tusEditorReplaceSelectionText'
+    | '__tusEditorRequestState'
+    | '__tusEditorSetHtml';
+
+interface EditorCall {
+    fn: EditorFunction;
+    args: unknown[];
+}
+
+/** A call written out for WebView injection, each argument embedded as a JSON literal. */
+function injectableEditorCall({ fn, args }: EditorCall): string {
+    const literals = args.map((arg) => (JSON.stringify(arg) ?? 'undefined')
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e'));
+    return `window.${fn} && window.${fn}(${literals.join(', ')}); true;`;
+}
+
+/**
+ * Web fields keep Anki's bare media filenames, which the field iframe cannot load: the files live
+ * in IndexedDB. Each such reference is pointed at the file's object URL for display, and the real
+ * filename is kept in data-tus-src, which the document script restores before a field is saved.
+ */
+async function resolveWebFieldMedia(doc: Document): Promise<void> {
+    const elements = Array.from(doc.querySelectorAll('img[src], audio[src], video[src], source[src]'));
+    for (const element of elements) {
+        if (element.hasAttribute('data-tus-src')) continue;
+        const src = element.getAttribute('src') ?? '';
+        if (!isBareMediaReference(src)) continue;
+        const url = await getWebMediaUrl(src);
+        if (!url || element.getAttribute('src') !== src) continue;
+        element.setAttribute('data-tus-src', src);
+        element.setAttribute('src', url);
+        // A <source> is only read when its media element loads, so the element has to reload.
+        if (element.tagName.toLowerCase() === 'source') {
+            (element.parentElement as HTMLMediaElement | null)?.load?.();
+        }
+    }
+}
+
+/** How long the web field may take to start before the plain-text fallback is offered. */
+const WEB_EDITOR_START_TIMEOUT_MS = 3_000;
 
 const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(function RichTextEditor({
     value,
@@ -505,11 +240,14 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     editable = true,
 }, ref) {
     const webViewRef = useRef<WebView>(null);
+    // Web renders the same field document in a same-origin iframe instead of a WebView.
+    const iframeRef = useRef<HTMLIFrameElement | null>(null);
+    const mediaObserverRef = useRef<MutationObserver | null>(null);
     const fallbackInputRef = useRef<TextInput>(null);
     const lastEditorValueRef = useRef(value);
     const latestValueRef = useRef(value);
     const editorReadyRef = useRef(false);
-    const pendingScriptsRef = useRef<string[]>([]);
+    const pendingCallsRef = useRef<EditorCall[]>([]);
     const pastedImageSequenceRef = useRef(0);
     const editorNonceRef = useRef(createEditorNonce());
     latestValueRef.current = value;
@@ -571,32 +309,66 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     // media directory and the WebView resolves those names itself. The field HTML is never
     // rewritten, which is what keeps an absolute path out of the saved note.
     const mediaBaseUrl = getMediaBaseUrl();
-    const source = useMemo(
-        () => localMediaWebViewSource(
-            editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode, editable, fontFamily, rtl),
-            mediaBaseUrl,
-        ),
+    const hostOrigin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : undefined;
+    const documentHtml = useMemo(
+        () => editorDocument(value, placeholder, colors, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, editorNonceRef.current, scrollMode, editable, fontFamily, rtl, hostOrigin),
         // Recreate only when visual language/theme changes. Controlled value changes are injected
         // below so typing never reloads the WebView or loses its selection.
-        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, mediaBaseUrl, editable, fontFamily, rtl],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, editable, fontFamily, rtl, hostOrigin],
     );
+    const source = useMemo(
+        () => localMediaWebViewSource(documentHtml, mediaBaseUrl),
+        [documentHtml, mediaBaseUrl],
+    );
+    const [webFallbackDue, setWebFallbackDue] = useState(false);
 
     useEffect(() => {
         editorReadyRef.current = false;
         if (!handedOffRef.current) setIsReady(false);
+        if (Platform.OS !== 'web') return undefined;
+        // The iframe normally reports ready within a frame or two. Should it never start, the
+        // plain-text field below still lets the learner edit rather than leaving a dead box.
+        setWebFallbackDue(false);
+        const timer = setTimeout(() => {
+            if (!editorReadyRef.current) setWebFallbackDue(true);
+        }, WEB_EDITOR_START_TIMEOUT_MS);
+        return () => clearTimeout(timer);
     }, [source]);
 
-    const inject = (script: string) => webViewRef.current?.injectJavaScript(`${script}; true;`);
-    const runWhenReady = (script: string) => {
+    const callEditor = (call: EditorCall) => {
+        if (Platform.OS === 'web') {
+            // Same-origin frame: its window functions are called directly, no script is evaluated.
+            const target = iframeRef.current?.contentWindow as unknown as Record<string, unknown> | null | undefined;
+            const fn = target?.[call.fn];
+            if (typeof fn === 'function') fn(...call.args);
+            return;
+        }
+        webViewRef.current?.injectJavaScript(injectableEditorCall(call));
+    };
+    const runWhenReady = (call: EditorCall) => {
         if (!webViewMounted) {
             setWebViewMounted(true);
         }
         if (!editorReadyRef.current) {
-            pendingScriptsRef.current.push(script);
+            pendingCallsRef.current.push(call);
             return;
         }
-        inject(script);
+        callEditor(call);
     };
+    const watchWebFieldMedia = () => {
+        mediaObserverRef.current?.disconnect();
+        const doc = iframeRef.current?.contentDocument;
+        if (!doc?.body) return;
+        const resolve = () => {
+            void resolveWebFieldMedia(doc).catch((error) => console.warn('[RichTextEditor] media resolve failed:', error));
+        };
+        const observer = new MutationObserver(resolve);
+        observer.observe(doc.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['src'] });
+        mediaObserverRef.current = observer;
+        resolve();
+    };
+    useEffect(() => () => mediaObserverRef.current?.disconnect(), []);
 
     useImperativeHandle(ref, () => ({
         focus: () => {
@@ -605,57 +377,50 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 fallbackInputRef.current?.focus();
                 return;
             }
-            runWhenReady('window.__tusEditorFocus && window.__tusEditorFocus()');
+            runWhenReady({ fn: '__tusEditorFocus', args: [] });
         },
         blur: () => {
             fallbackInputRef.current?.blur();
             if (editorReadyRef.current) {
-                inject('window.__tusEditorBlur && window.__tusEditorBlur()');
+                callEditor({ fn: '__tusEditorBlur', args: [] });
             }
         },
         runCommand: (command, commandValue) => {
             if (!editable) return;
-            const payload = safeJsValue(JSON.stringify({ command, value: commandValue }));
-            runWhenReady(`window.__tusEditorCommand && window.__tusEditorCommand(JSON.parse(${payload}))`);
+            runWhenReady({ fn: '__tusEditorCommand', args: [{ command, value: commandValue }] });
         },
         insertHtml: (html) => {
             if (!editable) return;
-            runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(sanitizeUntrustedHtml(html))})`);
+            runWhenReady({ fn: '__tusEditorInsertHtml', args: [sanitizeUntrustedHtml(html)] });
         },
         wrapSelection: (prefix, suffix) => {
             if (!editable) return;
             const safePrefix = sanitizeToolbarSnippet(prefix);
             const safeSuffix = sanitizeToolbarSnippet(suffix);
-            runWhenReady(
-                `window.__tusEditorWrapSelection && window.__tusEditorWrapSelection(${safeJsValue(safePrefix)}, ${safeJsValue(safeSuffix)})`,
-            );
+            runWhenReady({ fn: '__tusEditorWrapSelection', args: [safePrefix, safeSuffix] });
         },
         applyBlockStyle: (property, blockValue) => {
             if (!editable) return;
-            runWhenReady(
-                `window.__tusEditorBlockStyle && window.__tusEditorBlockStyle(${safeJsValue(property)}, ${safeJsValue(blockValue)})`,
-            );
+            runWhenReady({ fn: '__tusEditorBlockStyle', args: [property, blockValue] });
         },
         replaceSelectionText: (text) => {
             if (!editable) return;
-            runWhenReady(
-                `window.__tusEditorReplaceSelectionText && window.__tusEditorReplaceSelectionText(${safeJsValue(text)})`,
-            );
+            runWhenReady({ fn: '__tusEditorReplaceSelectionText', args: [text] });
         },
-        requestFormatState: () => runWhenReady('window.__tusEditorRequestState && window.__tusEditorRequestState()'),
+        requestFormatState: () => runWhenReady({ fn: '__tusEditorRequestState', args: [] }),
     }));
 
     useEffect(() => {
         if (value === lastEditorValueRef.current) return;
         lastEditorValueRef.current = value;
         if (!editorReadyRef.current) return;
-        inject(`window.__tusEditorSetHtml && window.__tusEditorSetHtml(${safeJsValue(sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS))})`);
+        callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS)] });
     }, [value]);
 
-    const handleMessage = async (event: WebViewMessageEvent) => {
+    const handleMessage = async (data: string) => {
         try {
-            if (event.nativeEvent.data.length > MAX_EDITOR_MESSAGE_CHARS) return;
-            const message = JSON.parse(event.nativeEvent.data) as {
+            if (data.length > MAX_EDITOR_MESSAGE_CHARS) return;
+            const message = JSON.parse(data) as {
                 type?: string;
                 html?: string;
                 height?: number;
@@ -673,10 +438,14 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 editorReadyRef.current = true;
                 const latestValue = latestValueRef.current;
                 lastEditorValueRef.current = latestValue;
-                inject(`window.__tusEditorSetHtml && window.__tusEditorSetHtml(${safeJsValue(sanitizeUntrustedHtml(latestValue).slice(0, MAX_EDITOR_HTML_CHARS))})`);
-                const pending = pendingScriptsRef.current;
-                pendingScriptsRef.current = [];
-                pending.forEach(inject);
+                callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(latestValue).slice(0, MAX_EDITOR_HTML_CHARS)] });
+                const pending = pendingCallsRef.current;
+                pendingCallsRef.current = [];
+                pending.forEach(callEditor);
+                if (Platform.OS === 'web') {
+                    setWebFallbackDue(false);
+                    watchWebFieldMedia();
+                }
                 if (!fallbackFocusedRef.current) {
                     completeHandoff();
                 }
@@ -697,21 +466,44 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 const filename = `pasted_${Date.now()}_${sequence}.png`;
                 await saveMediaBytes(filename, bytes, 'image/png');
                 const snippet = mediaReferenceSnippet('image', filename);
-                runWhenReady(`window.__tusEditorInsertHtml && window.__tusEditorInsertHtml(${safeJsValue(snippet)})`);
+                runWhenReady({ fn: '__tusEditorInsertHtml', args: [snippet] });
             }
         } catch {
             // Ignore non-editor WebView messages.
         }
     };
+    const handleMessageRef = useRef(handleMessage);
+    handleMessageRef.current = handleMessage;
+
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
+        const onMessage = (event: MessageEvent) => {
+            if (event.source !== iframeRef.current?.contentWindow || event.origin !== window.location.origin) return;
+            const data = event.data as { tusEditor?: unknown } | null;
+            if (data && typeof data.tusEditor === 'string') void handleMessageRef.current(data.tusEditor);
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, []);
 
     return (
         <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
-            {webViewMounted && (
+            {Platform.OS === 'web' ? (
+                <iframe
+                    ref={iframeRef}
+                    title={placeholder}
+                    srcDoc={documentHtml}
+                    // Scripts for the field document's own editor script (CSP allows only it), and
+                    // same-origin so the host can call into it and resolve media from IndexedDB.
+                    sandbox="allow-scripts allow-same-origin"
+                    style={{ display: 'block', border: 'none', width: '100%', height: frameHeight, backgroundColor: colors.bgCard }}
+                />
+            ) : webViewMounted && (
                 <WebView
                     ref={webViewRef}
                     source={source}
                     originWhitelist={['about:blank', 'file://*']}
-                    onMessage={handleMessage}
+                    onMessage={(event) => { void handleMessage(event.nativeEvent.data); }}
                     onShouldStartLoadWithRequest={(request) => isLocalMediaDocumentUrl(request.url, mediaBaseUrl)}
                     style={{ backgroundColor: colors.bgCard }}
                     containerStyle={{ backgroundColor: colors.bgCard }}
@@ -747,7 +539,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     bounces={false}
                 />
             )}
-            {(!webViewMounted || !isReady) && (
+            {(!webViewMounted || !isReady) && (Platform.OS !== 'web' || webFallbackDue) && (
                 <View
                     style={webViewMounted ? [StyleSheet.absoluteFill, { backgroundColor: colors.bgCard }] : undefined}
                     pointerEvents="auto"
@@ -766,7 +558,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                         onBlur={() => {
                             fallbackFocusedRef.current = false;
                             if (editorReadyRef.current) {
-                                inject(`window.__tusEditorSetHtml && window.__tusEditorSetHtml(${safeJsValue(sanitizeUntrustedHtml(latestValueRef.current).slice(0, MAX_EDITOR_HTML_CHARS))})`);
+                                callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(latestValueRef.current).slice(0, MAX_EDITOR_HTML_CHARS)] });
                                 completeHandoff();
                             }
                             if (mountPendingRef.current) {

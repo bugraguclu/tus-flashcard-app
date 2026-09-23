@@ -58,7 +58,10 @@ import type {
 import BoundedIntegerInput, { type BoundedIntegerInputHandle } from '../components/BoundedIntegerInput';
 import {
     disableStudyNotifications,
+    getStudyNotificationPermission,
     requestStudyNotificationPermission,
+    studyNotificationsSupported,
+    type StudyNotificationPermissionState,
 } from '../lib/studyNotifications';
 import {
     normalizeStudyNotificationThreshold,
@@ -419,6 +422,14 @@ export default function SettingsScreen() {
     const [gesturePickerTarget, setGesturePickerTarget] = useState<GesturePickerTarget | null>(null);
     const [tapSide, setTapSide] = useState<TapSide>('question');
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
+    // A browser grants notifications per site and can revoke them at any time, so the web build
+    // reads the permission back instead of trusting the stored toggle.
+    const [webNotificationPermission, setWebNotificationPermission] = useState<StudyNotificationPermissionState | null>(null);
+    const refreshWebNotificationPermission = useCallback(() => {
+        if (Platform.OS !== 'web') return;
+        void getStudyNotificationPermission().then((permission) => setWebNotificationPermission(permission.state));
+    }, []);
+    useEffect(() => { refreshWebNotificationPermission(); }, [refreshWebNotificationPermission]);
     const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaveFailedRef = useRef(false);
@@ -556,8 +567,13 @@ export default function SettingsScreen() {
         enabled: boolean,
         threshold: StudyNotificationThreshold = normalizeStudyNotificationThreshold(settings.studyNotificationThreshold),
     ) => {
-        if (Platform.OS !== 'ios') {
-            alert(l('Yalnızca iPhone ve iPad', 'iPhone and iPad only'), l('Bu ayar AnkiMobile uyumlu iOS bildirimleri içindir.', 'This setting controls AnkiMobile-compatible iOS notifications.'));
+        if (!studyNotificationsSupported()) {
+            alert(
+                l('Bildirimler desteklenmiyor', 'Notifications not supported'),
+                Platform.OS === 'web'
+                    ? l('Bu tarayıcı site bildirimlerini desteklemiyor.', 'This browser does not support site notifications.')
+                    : l('Bu ayar AnkiMobile uyumlu iOS bildirimleri içindir.', 'This setting controls AnkiMobile-compatible iOS notifications.'),
+            );
             return;
         }
 
@@ -569,11 +585,23 @@ export default function SettingsScreen() {
 
         try {
             const permission = await requestStudyNotificationPermission();
+            refreshWebNotificationPermission();
             if (permission.state !== 'granted' && permission.state !== 'limited') {
                 updateSettings({
                     studyNotificationsEnabled: false,
                     studyNotificationThreshold: threshold,
                 });
+                if (Platform.OS === 'web') {
+                    // A page cannot open the browser's settings; it can only say where they are.
+                    alert(
+                        l('Bildirim izni gerekli', 'Notification permission required'),
+                        l(
+                            'Günlük çalışma hatırlatması için tarayıcınızın site ayarlarından bu siteye bildirim izni verin.',
+                            'Allow notifications for this site in your browser’s site settings to enable the daily study reminder.',
+                        ),
+                    );
+                    return;
+                }
                 await promptPermissionSettings({
                     title: l('Bildirim izni gerekli', 'Notification permission required'),
                     message: l(
@@ -1193,7 +1221,30 @@ export default function SettingsScreen() {
                 </View>
                 <Text style={styles.appearanceValueArrow}>›</Text>
             </TouchableOpacity>
-            {settings.studyNotificationsEnabled && Platform.OS === 'ios' ? (
+            {settings.studyNotificationsEnabled && Platform.OS === 'web' ? (
+                <View style={styles.preferenceBlock}>
+                    <Text style={styles.preferenceSummary}>
+                        {l(
+                            'Tarayıcıda hatırlatmalar TusAnkiM bir sekmede açıkken gönderilir; sekme kapalıyken gelmez.',
+                            'In a browser, reminders arrive while TusAnkiM is open in a tab; they cannot arrive while it is closed.',
+                        )}
+                    </Text>
+                    {webNotificationPermission && webNotificationPermission !== 'granted' ? (
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => { void handleStudyNotificationsToggle(true); }}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.actionButtonText}>
+                                {webNotificationPermission === 'denied'
+                                    ? l('Bildirim izni reddedildi · Nasıl açılır?', 'Notifications blocked · How to allow')
+                                    : l('Tarayıcı bildirim iznini ver', 'Allow browser notifications')}
+                            </Text>
+                        </TouchableOpacity>
+                    ) : null}
+                </View>
+            ) : null}
+            {settings.studyNotificationsEnabled && studyNotificationsSupported() ? (
                 <View style={styles.preferenceBlock}>
                     <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
                     <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte zamanı gelmiş kartlar kontrol edilir.', 'The reminder checks for due cards at this local time each day.')}</Text>
@@ -1354,103 +1405,101 @@ export default function SettingsScreen() {
                     </>
                 ) : null}
             </Group>
-            {Platform.OS !== 'web' ? (
-                <Group title={l('Ekran kontrolü', 'On-screen control')} styles={styles}>
-                    <ToggleRow
-                        label={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
-                        summary={l('Araç menüsüne tek elle erişmek için çalışma ekranında sabit bir düğme gösterir.', 'Shows a fixed reviewer button for one-handed access to the Tools menu.')}
-                        value={Boolean(settings.showToolsOverlayButton)}
-                        onChange={(value) => updateSetting('showToolsOverlayButton', value)}
-                        divider={false}
-                        styles={styles}
-                    />
-                    {settings.showToolsOverlayButton ? (
-                        <View style={styles.overlayControlContainer}>
-                            <View style={styles.overlayControlHeader}>
-                                <Text style={styles.preferenceLabel}>{l('Düğme konumu', 'Button position')}</Text>
-                                <Text style={styles.preferenceSummary}>
-                                    {l('Tek elle çalışma sırasında başparmağınızla en rahat ulaşabileceğiniz tarafı belirleyin.', 'Select the side easiest to reach with your thumb during one-handed review.')}
-                                </Text>
-                            </View>
-
-                            <View style={styles.overlayPositionSegment}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.overlayPositionButton,
-                                        settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonActive,
-                                    ]}
-                                    onPress={() => updateSetting('toolsOverlayPosition', 'left')}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: settings.toolsOverlayPosition === 'left' }}
-                                >
-                                    <Text style={[
-                                        styles.overlayPositionButtonText,
-                                        settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonTextActive,
-                                    ]}>
-                                        {l('◧ Sol taraf', '◧ Left side')}
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.overlayPositionButton,
-                                        (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonActive,
-                                    ]}
-                                    onPress={() => updateSetting('toolsOverlayPosition', 'right')}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: (settings.toolsOverlayPosition ?? 'right') === 'right' }}
-                                >
-                                    <Text style={[
-                                        styles.overlayPositionButtonText,
-                                        (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonTextActive,
-                                    ]}>
-                                        {l('◨ Sağ taraf', '◨ Right side')}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.overlayPreviewWrap}>
-                                <Pressable
-                                    style={styles.overlayPreviewMock}
-                                    onPress={() => updateSetting('toolsOverlayPosition', settings.toolsOverlayPosition === 'left' ? 'right' : 'left')}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Düğme konumunu değiştir', 'Toggle button position')}
-                                >
-                                    <View style={styles.overlayPreviewTopBar}>
-                                        <View style={styles.overlayPreviewDot} />
-                                        <View style={styles.overlayPreviewHeaderLine} />
-                                        <View style={styles.overlayPreviewDot} />
-                                    </View>
-                                    <View style={styles.overlayPreviewCard}>
-                                        <View style={[styles.overlayPreviewTextLine, { width: '70%' }]} />
-                                        <View style={[styles.overlayPreviewTextLine, { width: '85%' }]} />
-                                        <View style={[styles.overlayPreviewTextLine, { width: '50%' }]} />
-                                    </View>
-                                    <View style={styles.overlayPreviewBottomBar}>
-                                        <View style={styles.overlayPreviewMiniBtn} />
-                                        <View style={styles.overlayPreviewMiniBtn} />
-                                        <View style={styles.overlayPreviewMiniBtn} />
-                                    </View>
-                                    <View
-                                        style={[
-                                            styles.overlayPreviewFloatingBtn,
-                                            settings.toolsOverlayPosition === 'left'
-                                                ? styles.overlayPreviewFloatingBtnLeft
-                                                : styles.overlayPreviewFloatingBtnRight,
-                                        ]}
-                                    >
-                                        <Text style={styles.overlayPreviewFloatingIcon}>⚙</Text>
-                                    </View>
-                                </Pressable>
-                                <Text style={styles.overlayPreviewCaption}>
-                                    {settings.toolsOverlayPosition === 'left'
-                                        ? l('Düğme ekranın sol alt tarafında görünecektir.', 'Button will appear on the bottom-left of the screen.')
-                                        : l('Düğme ekranın sağ alt tarafında görünecektir.', 'Button will appear on the bottom-right of the screen.')}
-                                </Text>
-                            </View>
+            <Group title={l('Ekran kontrolü', 'On-screen control')} styles={styles}>
+                <ToggleRow
+                    label={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
+                    summary={l('Araç menüsüne tek elle erişmek için çalışma ekranında sabit bir düğme gösterir.', 'Shows a fixed reviewer button for one-handed access to the Tools menu.')}
+                    value={Boolean(settings.showToolsOverlayButton)}
+                    onChange={(value) => updateSetting('showToolsOverlayButton', value)}
+                    divider={false}
+                    styles={styles}
+                />
+                {settings.showToolsOverlayButton ? (
+                    <View style={styles.overlayControlContainer}>
+                        <View style={styles.overlayControlHeader}>
+                            <Text style={styles.preferenceLabel}>{l('Düğme konumu', 'Button position')}</Text>
+                            <Text style={styles.preferenceSummary}>
+                                {l('Tek elle çalışma sırasında başparmağınızla en rahat ulaşabileceğiniz tarafı belirleyin.', 'Select the side easiest to reach with your thumb during one-handed review.')}
+                            </Text>
                         </View>
-                    ) : null}
-                </Group>
-            ) : null}
+
+                        <View style={styles.overlayPositionSegment}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.overlayPositionButton,
+                                    settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonActive,
+                                ]}
+                                onPress={() => updateSetting('toolsOverlayPosition', 'left')}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: settings.toolsOverlayPosition === 'left' }}
+                            >
+                                <Text style={[
+                                    styles.overlayPositionButtonText,
+                                    settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonTextActive,
+                                ]}>
+                                    {l('◧ Sol taraf', '◧ Left side')}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.overlayPositionButton,
+                                    (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonActive,
+                                ]}
+                                onPress={() => updateSetting('toolsOverlayPosition', 'right')}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: (settings.toolsOverlayPosition ?? 'right') === 'right' }}
+                            >
+                                <Text style={[
+                                    styles.overlayPositionButtonText,
+                                    (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonTextActive,
+                                ]}>
+                                    {l('◨ Sağ taraf', '◨ Right side')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.overlayPreviewWrap}>
+                            <Pressable
+                                style={styles.overlayPreviewMock}
+                                onPress={() => updateSetting('toolsOverlayPosition', settings.toolsOverlayPosition === 'left' ? 'right' : 'left')}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Düğme konumunu değiştir', 'Toggle button position')}
+                            >
+                                <View style={styles.overlayPreviewTopBar}>
+                                    <View style={styles.overlayPreviewDot} />
+                                    <View style={styles.overlayPreviewHeaderLine} />
+                                    <View style={styles.overlayPreviewDot} />
+                                </View>
+                                <View style={styles.overlayPreviewCard}>
+                                    <View style={[styles.overlayPreviewTextLine, { width: '70%' }]} />
+                                    <View style={[styles.overlayPreviewTextLine, { width: '85%' }]} />
+                                    <View style={[styles.overlayPreviewTextLine, { width: '50%' }]} />
+                                </View>
+                                <View style={styles.overlayPreviewBottomBar}>
+                                    <View style={styles.overlayPreviewMiniBtn} />
+                                    <View style={styles.overlayPreviewMiniBtn} />
+                                    <View style={styles.overlayPreviewMiniBtn} />
+                                </View>
+                                <View
+                                    style={[
+                                        styles.overlayPreviewFloatingBtn,
+                                        settings.toolsOverlayPosition === 'left'
+                                            ? styles.overlayPreviewFloatingBtnLeft
+                                            : styles.overlayPreviewFloatingBtnRight,
+                                    ]}
+                                >
+                                    <Text style={styles.overlayPreviewFloatingIcon}>⚙</Text>
+                                </View>
+                            </Pressable>
+                            <Text style={styles.overlayPreviewCaption}>
+                                {settings.toolsOverlayPosition === 'left'
+                                    ? l('Düğme ekranın sol alt tarafında görünecektir.', 'Button will appear on the bottom-left of the screen.')
+                                    : l('Düğme ekranın sağ alt tarafında görünecektir.', 'Button will appear on the bottom-right of the screen.')}
+                            </Text>
+                        </View>
+                    </View>
+                ) : null}
+            </Group>
             {isDesktopWeb ? (
                 <Group title={l('Klavye', 'Keyboard')} description={l('Bir satırda Değiştir’e basın, ardından fiziksel klavyedeki yeni tuşa basın.', 'Choose Change on a row, then press the new key on the physical keyboard.')} styles={styles}>
                     {KEY_ROWS.map((row) => (

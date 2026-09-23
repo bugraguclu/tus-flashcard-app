@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
 import { compileCardMatcher } from '../lib/cardSearchMatch';
 import { localDayNumber, nextRolloverMs, ymdToLocalDayNumber } from '../lib/ankiState';
@@ -124,8 +125,7 @@ function SearchIcon({ color }: { color: string }) {
             height={18}
             viewBox="0 0 24 24"
             fill="none"
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            {...DECORATIVE_SVG_PROPS}
         >
             <Circle cx={10.5} cy={10.5} r={6.5} stroke={color} strokeWidth={1.8} />
             <Path d="M15.4 15.4 21 21" stroke={color} strokeWidth={1.8} strokeLinecap="round" />

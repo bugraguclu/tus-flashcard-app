@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { BorderRadius, FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { alert } from '../lib/confirm';
-import { downloadBytesFileWeb, downloadTextFileWeb, getLegacyFileSystem } from '../lib/files';
+import { getLegacyFileSystem, shareOrDownloadFileWeb } from '../lib/files';
 import { buildAnkiExport, type AnkiExportFormat, type ExportCollectionSource } from '../lib/exportAnkiPackage';
 import { bytesToBase64 } from '../lib/mediaStore';
 import { useI18n } from '../hooks/useI18n';
@@ -186,8 +186,8 @@ export default function ExportScreen() {
             }
             setSummary(lines.length ? lines : null);
             if (Platform.OS === 'web') {
-                if (artifact.text !== undefined) downloadTextFileWeb(artifact.fileName, artifact.text, artifact.mimeType);
-                else if (artifact.bytes) downloadBytesFileWeb(artifact.fileName, artifact.bytes, artifact.mimeType);
+                const contents = artifact.text ?? artifact.bytes;
+                if (contents !== undefined) await shareOrDownloadFileWeb(artifact.fileName, contents, artifact.mimeType);
                 return;
             }
             const fs = getLegacyFileSystem();

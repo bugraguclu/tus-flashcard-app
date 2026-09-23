@@ -296,7 +296,7 @@ export async function getWebMediaUrl(filename: string): Promise<string | null> {
 const MEDIA_SRC_RE = /(<(?:img|audio|video|source)\b[^>]*\ssrc=")([^"]+)(")/gi;
 
 /** Bare filename refs (Anki convention) need resolving; absolute/external URLs do not. */
-function isBareMediaRef(src: string): boolean {
+export function isBareMediaReference(src: string): boolean {
     return !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(src);
 }
 
@@ -320,7 +320,7 @@ export async function resolveWebMediaInHtml(html: string): Promise<string> {
 
     const refs = new Set<string>();
     for (const match of html.matchAll(MEDIA_SRC_RE)) {
-        if (isBareMediaRef(match[2])) refs.add(match[2]);
+        if (isBareMediaReference(match[2])) refs.add(match[2]);
     }
     if (refs.size === 0) return html;
 

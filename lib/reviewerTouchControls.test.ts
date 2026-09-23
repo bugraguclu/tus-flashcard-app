@@ -4,9 +4,13 @@ import {
     DEFAULT_QUESTION_TAP_ACTIONS,
     normalizeReviewTapActions,
     normalizeSwipeSensitivity,
+    resolveReviewSwipeAction,
     reviewTapZoneAt,
     swipeThresholdForSensitivity,
+    type ReviewSwipeBindings,
 } from './reviewerTouchControls';
+
+const BINDINGS: ReviewSwipeBindings = { left: 'tools', right: 'decks', up: 'easy', down: 'off' };
 
 describe('reviewer touch controls', () => {
     it('maps normalized card points into all nine zones', () => {
@@ -46,5 +50,22 @@ describe('reviewer touch controls', () => {
         expect(swipeThresholdForSensitivity(1)).toBe(82);
         expect(swipeThresholdForSensitivity(100)).toBe(50);
         expect(swipeThresholdForSensitivity(200)).toBe(28);
+    });
+
+    it('reads a horizontal swipe anywhere on the card once it passes the threshold', () => {
+        expect(resolveReviewSwipeAction({ dx: 60, dy: 5, x0: 180 }, BINDINGS, 390, 100)).toBe('decks');
+        expect(resolveReviewSwipeAction({ dx: -60, dy: 5, x0: 180 }, BINDINGS, 390, 100)).toBe('tools');
+        expect(resolveReviewSwipeAction({ dx: 40, dy: 5, x0: 180 }, BINDINGS, 390, 100)).toBeNull();
+        expect(resolveReviewSwipeAction({ dx: 40, dy: 5, x0: 180 }, BINDINGS, 390, 200)).toBe('decks');
+    });
+
+    it('accepts a vertical swipe only when it began at a screen edge', () => {
+        expect(resolveReviewSwipeAction({ dx: 2, dy: -80, x0: 180 }, BINDINGS, 390, 100)).toBeNull();
+        expect(resolveReviewSwipeAction({ dx: 2, dy: -80, x0: 20 }, BINDINGS, 390, 100)).toBe('easy');
+        expect(resolveReviewSwipeAction({ dx: 2, dy: -80, x0: 370 }, BINDINGS, 390, 100)).toBe('easy');
+    });
+
+    it('treats a direction bound to "off" as no action', () => {
+        expect(resolveReviewSwipeAction({ dx: 2, dy: 80, x0: 10 }, BINDINGS, 390, 100)).toBeNull();
     });
 });

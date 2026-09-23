@@ -71,3 +71,24 @@ export function parseExternalAppUrl(rawUrl: string): ExternalAppAction | null {
         successUrl: safeExternalCallbackUrl(url.searchParams.get('x-success')),
     };
 }
+
+/**
+ * The web form of the same automation: `https://<site>/x-callback-url?action=addnote&type=…`.
+ *
+ * A browser cannot own the `tusankim:` scheme, so the site answers at one route and names the
+ * action in the query — a static host can serve that route, while `/x-callback-url/addnote` would
+ * need a server rewrite. The parameters are turned back into the `tusankim://` URL
+ * `parseExternalAppUrl` reads, so both platforms share one parser and one set of limits.
+ */
+export function externalAppUrlFromQuery(params: Record<string, string | string[] | undefined>): string | null {
+    const rawAction = params.action;
+    const action = Array.isArray(rawAction) ? rawAction[0] : rawAction;
+    if (!action || !/^[a-z]+$/i.test(action)) return null;
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+        if (key === 'action' || value === undefined) continue;
+        for (const item of Array.isArray(value) ? value : [value]) query.append(key, item);
+    }
+    const search = query.toString();
+    return `tusankim://x-callback-url/${action}${search ? `?${search}` : ''}`;
+}

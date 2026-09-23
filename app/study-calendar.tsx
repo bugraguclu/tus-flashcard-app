@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
 import {
@@ -41,7 +42,7 @@ import {
 /** Three ascending bars: the analytics button's glyph. */
 function StudyAnalyticsIcon({ color, size = 22 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Rect x="4" y="13" width="4.4" height="8" rx="1.4" fill={color} />
             <Rect x="9.8" y="8" width="4.4" height="13" rx="1.4" fill={color} />
             <Rect x="15.6" y="3.5" width="4.4" height="17.5" rx="1.4" fill={color} />

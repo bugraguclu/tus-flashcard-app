@@ -101,7 +101,8 @@ import {
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
     reviewTapZoneAt,
-    swipeThresholdForSensitivity,
+    resolveReviewSwipeAction,
+    type ReviewSwipeGesture,
 } from '../../lib/reviewerTouchControls';
 import { extractAnkiTtsSegments } from '../../lib/ankiTts';
 import { AnkiSpeechQueue } from '../../lib/ankiSpeechQueue';
@@ -866,7 +867,7 @@ export default function StudyScreen() {
         isMutatingRef.current = true;
 
         try {
-            if (Platform.OS !== 'web' && settings.showAnswerFeedback !== false) {
+            if (settings.showAnswerFeedback !== false) {
                 try {
                     const Haptics = require('expo-haptics');
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1434,98 +1435,6 @@ export default function StudyScreen() {
         setStudyAheadCardIds((prev) => Array.from(new Set([...prev, ...waitingIds])));
     }, [selectedSubject, selectedTopic, selectedDeckName]);
 
-    // DOM keyboard events are web-only. Native physical keyboards use the responder-chain
-    // capture below, while this listener also handles desktop modifier shortcuts.
-    useEffect(() => {
-        if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-
-        const isEditableTarget = (target: EventTarget | null): boolean => {
-            if (!(target instanceof HTMLElement)) return false;
-            const tag = target.tagName.toLowerCase();
-            return tag === 'input' || tag === 'textarea' || target.isContentEditable;
-        };
-
-        const { showAnswer, replayAudio: replayKey, buryCard, suspendCard, markNote } = settings.keyBindings;
-
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (isEditableTarget(event.target)) return;
-
-            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
-                event.preventDefault();
-                void undoLast();
-                return;
-            }
-
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                handleReturnToDecks();
-                return;
-            }
-
-            if (!event.ctrlKey && !event.metaKey && !event.altKey && isReviewerUndoKey(event.key, undoKeys)) {
-                event.preventDefault();
-                void undoLast();
-                return;
-            }
-
-            if (!currentCard) return;
-
-            // Anki: Ctrl/Cmd+1..7 toggles the matching flag on the current card.
-            if ((event.ctrlKey || event.metaKey) && event.key >= '1' && event.key <= '7') {
-                event.preventDefault();
-                const flag = Number(event.key) as CardFlag;
-                const active = (getAnkiCard(currentCard.cardId)?.flags ?? 0) as CardFlag;
-                handleFlag(active === flag ? 0 : flag);
-                return;
-            }
-
-            if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-                if (matchesKeyBinding(event.key, replayKey)) {
-                    event.preventDefault();
-                    setAudioSignal((value) => value + 1);
-                    return;
-                }
-                if (matchesKeyBinding(event.key, buryCard)) {
-                    event.preventDefault();
-                    handleBury();
-                    return;
-                }
-                if (matchesKeyBinding(event.key, suspendCard)) {
-                    event.preventDefault();
-                    handleSuspend();
-                    return;
-                }
-                if (matchesKeyBinding(event.key, markNote)) {
-                    event.preventDefault();
-                    handleToggleMarkNote();
-                    return;
-                }
-            }
-
-            if (matchesShowAnswerKey(event.key, showAnswer)) {
-                if (!showingAnswer) {
-                    event.preventDefault();
-                    setShowingAnswer(true);
-                } else {
-                    event.preventDefault();
-                    void answerCard(3);
-                }
-                return;
-            }
-
-            if (!showingAnswer) return;
-
-            const grade = gradeForHardwareKey(event.key, settings.keyBindings);
-            if (grade !== null) {
-                event.preventDefault();
-                void answerCard(grade);
-            }
-        };
-
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [answerCard, currentCard, showingAnswer, undoLast, settings.keyBindings, undoKeys, handleFlag, handleBury, handleSuspend, handleToggleMarkNote]);
-
     const getPreview = useCallback(() => {
         if (!currentCard) return null;
         if (previewMode) {
@@ -1934,6 +1843,30 @@ export default function StudyScreen() {
         runReviewGestureAction,
     ]);
 
+    // A finished swipe, from the pan responder or — on web, where the card is an iframe the responder
+    // never sees — from the card document itself.
+    const handleCardSwipe = useCallback((gesture: ReviewSwipeGesture) => {
+        if (!settings.gesturesEnabled || !currentCard || whiteboardActive) return;
+        const action = resolveReviewSwipeAction(gesture, {
+            left: settings.swipeLeftAction ?? 'tools',
+            right: settings.swipeRightAction ?? 'decks',
+            up: settings.swipeUpAction ?? 'off',
+            down: settings.swipeDownAction ?? 'off',
+        }, width, settings.swipeSensitivity);
+        if (action) runReviewGestureAction(action);
+    }, [
+        settings.gesturesEnabled,
+        settings.swipeSensitivity,
+        settings.swipeLeftAction,
+        settings.swipeRightAction,
+        settings.swipeUpAction,
+        settings.swipeDownAction,
+        currentCard,
+        whiteboardActive,
+        width,
+        runReviewGestureAction,
+    ]);
+
     const gesturePanResponder = useMemo(() => {
         const shouldHandleGesture = (_event: unknown, gesture: { dx: number; dy: number; x0: number }) => {
             if (!settings.gesturesEnabled || !currentCard || whiteboardActive) return false;
@@ -1960,22 +1893,10 @@ export default function StudyScreen() {
             // A parent ScrollView normally wins vertical drags on iOS. Capture only when the user
             // explicitly assigned an up/down action; "off" keeps normal long-card scrolling intact.
             onMoveShouldSetPanResponderCapture: shouldHandleGesture,
-            onPanResponderRelease: (_event, gesture) => {
-                if (!settings.gesturesEnabled || !currentCard || whiteboardActive) return;
-                const threshold = swipeThresholdForSensitivity(settings.swipeSensitivity);
-                const horizontal = Math.abs(gesture.dx) > Math.abs(gesture.dy);
-                if (!horizontal && gesture.x0 > 36 && gesture.x0 < width - 36) return;
-                const distance = horizontal ? Math.abs(gesture.dx) : Math.abs(gesture.dy);
-                if (distance < threshold) return;
-                const action = horizontal
-                    ? (gesture.dx > 0 ? settings.swipeRightAction ?? 'decks' : settings.swipeLeftAction ?? 'tools')
-                    : (gesture.dy > 0 ? settings.swipeDownAction ?? 'off' : settings.swipeUpAction ?? 'off');
-                runReviewGestureAction(action);
-            },
+            onPanResponderRelease: (_event, gesture) => handleCardSwipe(gesture),
         });
     }, [
         settings.gesturesEnabled,
-        settings.swipeSensitivity,
         settings.swipeLeftAction,
         settings.swipeRightAction,
         settings.swipeUpAction,
@@ -1983,7 +1904,7 @@ export default function StudyScreen() {
         currentCard,
         whiteboardActive,
         width,
-        runReviewGestureAction,
+        handleCardSwipe,
     ]);
 
     // The whiteboard persists ink per card during the session: advancing to another card
@@ -2120,7 +2041,7 @@ export default function StudyScreen() {
     }, []);
 
     useEffect(() => {
-        if (Platform.OS === 'web' || !typeAnswerField || typeAnswerInCard
+        if (!typeAnswerField || typeAnswerInCard
             || settings.focusTypeAnswer === false || showingAnswer
             || toolsMenuVisible || flagMenuVisible || deckPickerVisible) return;
         const timer = setTimeout(() => nativeTypeAnswerRef.current?.focus(), 50);
@@ -2136,48 +2057,55 @@ export default function StudyScreen() {
         deckPickerVisible,
     ]);
 
-    const handleNativeShortcutKey = useCallback((rawKey: string) => {
-        if (toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) return;
+    /**
+     * One shortcut table for every keyboard: iPhone hardware keys arrive through the hidden
+     * responder-chain capture below, browser keys through the DOM listener after it. Returns
+     * whether the key was consumed.
+     */
+    const handleShortcutKey = useCallback((rawKey: string): boolean => {
+        if (toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) return false;
         const key = normalizeHardwareKey(rawKey);
 
         if (key === 'Escape') {
             handleReturnToDecks();
-            return;
+            return true;
         }
 
         if (isReviewerUndoKey(key, undoKeys)) {
             void undoLast();
-            return;
+            return true;
         }
 
-        if (!currentCard) return;
+        if (!currentCard) return false;
         const bindings = settings.keyBindings;
 
         if (matchesKeyBinding(key, bindings.replayAudio)) {
             replayAudio();
-            return;
+            return true;
         }
         if (matchesKeyBinding(key, bindings.buryCard)) {
             handleBury();
-            return;
+            return true;
         }
         if (matchesKeyBinding(key, bindings.suspendCard)) {
             handleSuspend();
-            return;
+            return true;
         }
         if (matchesKeyBinding(key, bindings.markNote)) {
             handleToggleMarkNote();
-            return;
+            return true;
         }
         if (matchesShowAnswerKey(key, bindings.showAnswer)) {
             if (!showingAnswer) setShowingAnswer(true);
             else void answerCard(3);
-            return;
+            return true;
         }
-        if (!showingAnswer) return;
+        if (!showingAnswer) return false;
 
         const grade = gradeForHardwareKey(key, bindings);
-        if (grade !== null) void answerCard(grade);
+        if (grade === null) return false;
+        void answerCard(grade);
+        return true;
     }, [
         currentCard,
         toolsMenuVisible,
@@ -2195,6 +2123,46 @@ export default function StudyScreen() {
         showingAnswer,
         answerCard,
     ]);
+
+    // Browser keys reach the same table through a DOM listener. It stands down while another
+    // screen is on top of the reviewer or any dialog is open — iOS gets both for free, because
+    // the capture input loses focus — and adds the desktop modifier shortcuts Anki has.
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+
+        const isEditableTarget = (target: EventTarget | null): boolean => {
+            if (!(target instanceof HTMLElement)) return false;
+            const tag = target.tagName.toLowerCase();
+            return tag === 'input' || tag === 'textarea' || target.isContentEditable;
+        };
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (pathname !== '/' || event.defaultPrevented || isEditableTarget(event.target)) return;
+            if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+
+            if (event.ctrlKey || event.metaKey) {
+                const key = event.key.toLowerCase();
+                if (key === 'z') {
+                    event.preventDefault();
+                    void undoLast();
+                    return;
+                }
+                // Anki: Ctrl/Cmd+1..7 toggles the matching flag on the current card.
+                if (currentCard && key >= '1' && key <= '7') {
+                    event.preventDefault();
+                    const flag = Number(key) as CardFlag;
+                    const active = (getAnkiCard(currentCard.cardId)?.flags ?? 0) as CardFlag;
+                    handleFlag(active === flag ? 0 : flag);
+                }
+                return;
+            }
+            if (event.altKey) return;
+            if (handleShortcutKey(event.key)) event.preventDefault();
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [pathname, currentCard, undoLast, handleFlag, handleShortcutKey]);
 
     // A hidden, soft-keyboard-free TextInput participates in iOS' responder chain and receives
     // physical-keyboard events. Real type-answer inputs take focus normally; after the answer is
@@ -2667,6 +2635,7 @@ export default function StudyScreen() {
                                         onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
                                         onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
                                         onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
+                                        onCardSwipe={Platform.OS === 'web' ? handleCardSwipe : undefined}
                                         audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
                                     />
                                 ) : !showingAnswer ? (
@@ -3005,7 +2974,7 @@ export default function StudyScreen() {
                     ref={nativeShortcutCaptureRef}
                     value=""
                     onChangeText={() => undefined}
-                    onKeyPress={(event) => handleNativeShortcutKey(event.nativeEvent.key)}
+                    onKeyPress={(event) => { handleShortcutKey(event.nativeEvent.key); }}
                     showSoftInputOnFocus={false}
                     caretHidden
                     autoCapitalize="none"

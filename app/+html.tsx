@@ -1,34 +1,9 @@
 import React from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
-
-const PRODUCTION_CSP = [
-    "default-src 'self'",
-    // Expo Router emits this one fixed hydration flag. Hashing it avoids granting every
-    // injected inline script permission to run.
-    "script-src 'self' 'wasm-unsafe-eval' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "media-src 'self' data: blob:",
-    "font-src 'self' data:",
-    "connect-src 'self'",
-    "worker-src 'self' blob:",
-    "frame-src 'self' blob:",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-].join('; ');
-
-// Expo's local development server uses WebSockets and loopback HTTP.
-const DEVELOPMENT_CSP = PRODUCTION_CSP.replace(
-    "connect-src 'self'",
-    "connect-src 'self' http: https: ws: wss:",
-).replace(
-    "script-src 'self' 'wasm-unsafe-eval' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'",
-);
+import { WEB_APP_DEVELOPMENT_CSP, WEB_APP_PRODUCTION_CSP } from '../lib/webAppContentSecurityPolicy';
 
 export default function Root({ children }: { children: React.ReactNode }) {
-    const csp = process.env.NODE_ENV === 'production' ? PRODUCTION_CSP : DEVELOPMENT_CSP;
+    const csp = process.env.NODE_ENV === 'production' ? WEB_APP_PRODUCTION_CSP : WEB_APP_DEVELOPMENT_CSP;
     return (
         <html lang="tr">
             <head>
@@ -36,6 +11,15 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 <meta httpEquiv="Content-Security-Policy" content={csp} />
                 <meta name="referrer" content="no-referrer" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                {/* Installable like the iPhone app: home-screen icon, standalone window, theme bar. */}
+                <link rel="manifest" href="/manifest.webmanifest" />
+                <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-title" content="TusAnkiM" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+                <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e8f5f0" />
+                <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
                 <ScrollViewStyleReset />
             </head>
             <body>{children}</body>
