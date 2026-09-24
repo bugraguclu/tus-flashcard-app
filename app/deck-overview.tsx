@@ -137,6 +137,15 @@ export default function DeckOverviewScreen() {
 
     const studyDisabled = Boolean(deck.isFiltered && deck.filteredDeckEmpty);
 
+    // This screen sits on the root stack, above the stack that holds the deck list and the
+    // reviewer. Pushing '/' from here opened a second copy of that stack, so leaving study landed
+    // on the copy and a back swipe brought this overview back. dismissTo closes this screen and
+    // everything above that stack, then opens the reviewer on top of the existing deck list; a
+    // reviewer already open there (the iPad sidebar's calendar) takes the deck in place instead.
+    const handleStudyNow = () => {
+        router.dismissTo({ pathname: '/', params: { deck: deck.name } } as any);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.navBar}>
@@ -223,7 +232,7 @@ export default function DeckOverviewScreen() {
 
                 <TouchableOpacity
                     style={[styles.studyBtn, totalReady === 0 && styles.studyBtnIdle, studyDisabled && styles.buttonDisabled]}
-                    onPress={() => router.push({ pathname: '/', params: { deck: deck.name } } as any)}
+                    onPress={handleStudyNow}
                     disabled={studyDisabled}
                     accessibilityRole="button"
                 >
