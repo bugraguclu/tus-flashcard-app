@@ -1712,9 +1712,12 @@ export default function StudyScreen() {
      *
      * `router.back()` would instead unwind to the deck overview, or to whichever screen study was
      * opened from, which is a different destination each time and would make the label a lie.
+     * `router.navigate()` pushes a second deck list over the reviewer in Expo Router, which keeps
+     * the reviewer mounted underneath and grows the stack on every round trip; `dismissTo` pops
+     * back to the list at the root of this stack, or replaces the reviewer when there is none.
      * https://docs.ankimobile.net/study-screen.html
      */
-    const handleReturnToDecks = useCallback(() => router.navigate('/decks'), [router]);
+    const handleReturnToDecks = useCallback(() => router.dismissTo('/decks'), [router]);
     const openDeckPicker = useCallback(() => setDeckPickerVisible(true), []);
     const handlePickDeck = useCallback((name: string | null) => {
         setDeckPickerVisible(false);
@@ -2595,7 +2598,7 @@ export default function StudyScreen() {
 
     // One answer bar for both layouts, pinned above the home indicator as in AnkiMobile: the
     // Show Answer button and the grades stay where the thumb already is, card after card. The
-    // classic layout keeps its counts here, which is also where AnkiMobile shows them.
+    // classic layout centres its counts under them, "new + learning + review" as in Anki's bottom bar.
     const typeAnswerInBar = Boolean(typeAnswerField && !typeAnswerInCard && !showingAnswer);
     const showAnswerLongPressMs = settings.showAnswerLongPressMs ?? 0;
     const toolsInlineButton = (
@@ -2621,20 +2624,6 @@ export default function StudyScreen() {
             onLayout={(event) => setAnswerBarHeight(event.nativeEvent.layout.height)}
         >
             <View style={styles.answerBarContent}>
-                {!newStudyScreenEnabled ? (
-                    <View style={styles.queueStrip}>
-                        {settings.showRemainingCount ? (
-                            <View style={styles.queueCounts} accessible accessibilityLabel={queueCountsLabel}>
-                                <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
-                                <Text style={queueCountStyle('learningCount', colors.badgeLearn)}>{queueStats.learningCount}</Text>
-                                <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
-                            </View>
-                        ) : <View />}
-                        <Text style={styles.queueStripToday} numberOfLines={1}>
-                            {l(`Bugün ${sessionStats.reviewed} tekrar`, `${sessionStats.reviewed} reviewed today`)}
-                        </Text>
-                    </View>
-                ) : null}
                 {typeAnswerInBar ? (
                     <TextInput
                         ref={nativeTypeAnswerRef}
@@ -2670,6 +2659,15 @@ export default function StudyScreen() {
                         {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? toolsInlineButton : null}
                     </View>
                 ) : answerButtons}
+                {!newStudyScreenEnabled && settings.showRemainingCount ? (
+                    <View style={styles.queueFooter} accessible accessibilityLabel={queueCountsLabel}>
+                        <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
+                        <Text style={styles.queueFooterSeparator}>+</Text>
+                        <Text style={queueCountStyle('learningCount', colors.badgeLearn)}>{queueStats.learningCount}</Text>
+                        <Text style={styles.queueFooterSeparator}>+</Text>
+                        <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
+                    </View>
+                ) : null}
             </View>
         </View>
     ) : null;
@@ -3497,20 +3495,14 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderTopColor: colors.border,
     },
     answerBarContent: { width: '100%', maxWidth: 760, gap: Spacing.sm },
-    queueStrip: {
+    queueFooter: {
         minHeight: 22,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: Spacing.md,
-        paddingHorizontal: Spacing.xs,
+        justifyContent: 'center',
+        gap: 6,
     },
-    queueStripToday: {
-        flexShrink: 1,
-        fontSize: FontSize.sm,
-        color: colors.textMuted,
-        fontVariant: ['tabular-nums'] as any,
-    },
+    queueFooterSeparator: { fontSize: FontSize.sm, color: colors.textMuted },
     reviewerAnswerRow: {
         width: '100%',
         maxWidth: 760,
