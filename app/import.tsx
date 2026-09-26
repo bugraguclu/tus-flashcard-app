@@ -11,24 +11,12 @@
  * https://docs.ankiweb.net/importing/packaged-decks.html
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import Svg, { Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
-import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { useThemeColors } from '../constants/theme';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
 import { resolveInitialTargetDeckId } from '../lib/importTargetDeck';
 import { alert, confirmAsync } from '../lib/confirm';
@@ -63,14 +51,8 @@ import {
 import { importLogFromCounts, type ImportLog } from '../lib/importLog';
 import ScreenHeader from '../components/ScreenHeader';
 import { userFacingErrorMessage } from '../lib/userFacingError';
-
-function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
+import { createImportStyles } from '../components/import/importStyles';
+import { ChevronDownIcon, ChoiceModal } from '../components/import/ImportControls';
 
 const MAX_TEXT_CHARS = 50_000_000;
 const MAX_TEXT_BYTES = 50 * 1024 * 1024;
@@ -124,7 +106,7 @@ export default function ImportScreen() {
     const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const styles = useMemo(() => createImportStyles(colors), [colors]);
 
     const [file, setFile] = useState<PickedFile | null>(null);
     const [importing, setImporting] = useState(false);
@@ -1110,276 +1092,4 @@ export default function ImportScreen() {
             />
         </SafeAreaView>
     );
-}
-
-interface ChoiceModalProps {
-    visible: boolean;
-    title: string;
-    cancelLabel: string;
-    options: { value: string; label: string; hint?: string; selected: boolean }[];
-    styles: ReturnType<typeof createStyles>;
-    onSelect: (value: string) => void;
-    onClose: () => void;
-}
-
-/** The centered list Anki's import selects drop down into, reused by every option on this screen. */
-function ChoiceModal({ visible, title, cancelLabel, options, styles, onSelect, onClose }: ChoiceModalProps) {
-    if (!visible) return null;
-    return (
-        <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={cancelLabel} />
-                <View style={styles.modalCard}>
-                    <Text style={styles.modalTitle}>{title}</Text>
-                    <ScrollView style={styles.modalList} contentContainerStyle={styles.modalListContent}>
-                        {options.map((option) => (
-                            <TouchableOpacity
-                                key={option.value}
-                                style={[styles.modalOption, option.selected && styles.modalOptionActive]}
-                                onPress={() => onSelect(option.value)}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected: option.selected }}
-                            >
-                                <View style={styles.modalOptionCopy}>
-                                    <Text style={[styles.modalOptionText, option.selected && styles.modalOptionTextActive]}>
-                                        {option.label}
-                                    </Text>
-                                    {option.hint ? <Text style={styles.modalOptionHint}>{option.hint}</Text> : null}
-                                </View>
-                                {option.selected ? <Text style={styles.modalCheck}>✓</Text> : null}
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose} accessibilityRole="button">
-                        <Text style={styles.modalCloseText}>{cancelLabel}</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-        container: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: {
-            width: '100%',
-            maxWidth: 760,
-            alignSelf: 'center',
-            padding: Spacing.lg,
-            paddingBottom: 100,
-            gap: Spacing.md,
-        },
-
-        emptyCard: {
-            gap: Spacing.md,
-            padding: Spacing.lg,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        emptyTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
-        emptyBody: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textSecondary },
-        formatList: { gap: Spacing.sm },
-        formatItem: { gap: 2 },
-        formatName: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
-        formatDescription: { fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted },
-
-        section: {
-            padding: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        sectionTitle: {
-            fontSize: 10,
-            fontWeight: '700',
-            letterSpacing: 1.5,
-            color: colors.textMuted,
-            textTransform: 'uppercase',
-            marginBottom: 4,
-        },
-        subsectionTitle: {
-            fontSize: 10,
-            fontWeight: '700',
-            letterSpacing: 1.5,
-            color: colors.textMuted,
-            textTransform: 'uppercase',
-            marginTop: Spacing.md,
-            marginBottom: 2,
-        },
-
-        fileRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: 4 },
-        fileCopy: { flex: 1, gap: 2 },
-        fileName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        fileMeta: { fontSize: FontSize.xs, color: colors.textMuted },
-
-        optionRow: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        optionLabel: { flexShrink: 0, fontSize: FontSize.md, color: colors.textPrimary },
-        optionValue: { flex: 1, textAlign: 'right', fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
-        optionValueMuted: { flex: 1, textAlign: 'right', fontSize: FontSize.sm, color: colors.textMuted },
-        optionHint: { fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted, paddingVertical: 6 },
-
-        toggleRow: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.md,
-            paddingVertical: 8,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        toggleCopy: { flex: 1, gap: 2 },
-        checkbox: {
-            width: 22,
-            height: 22,
-            borderRadius: 3,
-            borderWidth: 2,
-            borderColor: colors.textMuted,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
-        checkmark: { color: colors.white, fontSize: 16, fontWeight: '800', lineHeight: 18 },
-
-        tagRow: {
-            gap: 6,
-            paddingVertical: 10,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        tagInput: {
-            minHeight: 42,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgInput,
-            paddingHorizontal: Spacing.md,
-            fontSize: FontSize.md,
-            color: colors.textPrimary,
-        },
-
-        mappingRow: {
-            minHeight: 50,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        mappingInfo: { flex: 1, gap: 2 },
-        mappingColumn: { fontSize: FontSize.xs, fontWeight: '700', color: colors.textMuted },
-        mappingSample: { fontSize: FontSize.sm, color: colors.textPrimary },
-        mappingBadge: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            maxWidth: 190,
-            minHeight: 34,
-            paddingHorizontal: 10,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.accent,
-            backgroundColor: colors.accentLight,
-        },
-        mappingBadgeText: { flexShrink: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-        mappingLockedBadge: {
-            maxWidth: 190,
-            minHeight: 34,
-            justifyContent: 'center',
-            paddingHorizontal: 10,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgSecondary,
-        },
-        mappingLockedText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted },
-
-        previewTable: { paddingTop: 4 },
-        previewHeaderRow: { flexDirection: 'row' },
-        previewRow: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
-        previewCell: { width: 150, paddingVertical: 8, paddingRight: Spacing.md },
-        previewHeaderText: { fontSize: FontSize.xs, fontWeight: '800', color: colors.textMuted, textTransform: 'uppercase' },
-        previewCellText: { fontSize: FontSize.sm, lineHeight: 18, color: colors.textPrimary },
-
-        destructiveNotice: { fontSize: FontSize.sm, lineHeight: 20, color: colors.btnAgain, paddingVertical: 4 },
-
-        primaryButton: {
-            minHeight: 50,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.accent,
-        },
-        primaryButtonDisabled: { opacity: 0.5 },
-        primaryButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-        secondaryButton: {
-            minHeight: 38,
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-        },
-        secondaryButtonText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-
-        modalOverlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.35)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: Spacing.lg,
-        },
-        modalCard: {
-            width: '100%',
-            maxWidth: 480,
-            maxHeight: '80%',
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-            overflow: 'hidden',
-        },
-        modalTitle: {
-            fontSize: FontSize.md,
-            fontWeight: '800',
-            color: colors.textPrimary,
-            padding: Spacing.md,
-        },
-        modalList: { flexGrow: 0 },
-        modalListContent: { paddingBottom: 4 },
-        modalOption: {
-            minHeight: 50,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: 8,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        modalOptionActive: { backgroundColor: colors.accentLight },
-        modalOptionCopy: { flex: 1, gap: 2 },
-        modalOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
-        modalOptionTextActive: { color: colors.accent, fontWeight: '700' },
-        modalOptionHint: { fontSize: FontSize.xs, lineHeight: 16, color: colors.textMuted },
-        modalCheck: { fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
-        modalClose: {
-            minHeight: 48,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
-        },
-        modalCloseText: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
-    });
 }
