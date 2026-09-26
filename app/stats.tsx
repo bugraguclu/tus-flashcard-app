@@ -16,7 +16,7 @@ import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shad
 import { createDeck, getAvailableDeckName } from '../lib/deckManager';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import WeekStreakStrip from '../components/WeekStreakStrip';
-import StatsBarChart from '../components/StatsBarChart';
+import ClassicStatsBarChart from '../components/stats/ClassicStatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { ChartScrollLockProvider } from '../components/stats/ChartScrollLock';
 import ReviewsSection from '../components/stats/ReviewsSection';
@@ -370,7 +370,7 @@ export default function StatsScreen() {
                             </TouchableOpacity>
                         ))}
                     </View>
-                    <StatsBarChart
+                    <ClassicStatsBarChart
                         points={showBacklog ? ankiStats.futureDueWithBacklog : ankiStats.futureDue}
                         todayIndex={showBacklog ? ankiStats.futureDueWithBacklogTodayIndex : 0}
                         series={[
@@ -417,7 +417,7 @@ export default function StatsScreen() {
                 <View style={styles.ankiCard}>
                     <Text style={styles.chartTitle}>{l('Cevap düğmeleri', 'Answer Buttons')}</Text>
                     <Text style={styles.chartSubtitle}>{l('Seçilen dönemde Tekrar, Zor, İyi ve Kolay yanıtlarının kart türlerine göre dağılımı.', 'Again, Hard, Good, and Easy answers in the selected period, split by card type.')}</Text>
-                    <StatsBarChart
+                    <ClassicStatsBarChart
                         points={answerButtonPoints}
                         series={[
                             { label: l('Öğrenme', 'Learning'), color: colors.badgeLearn },
@@ -468,7 +468,7 @@ export default function StatsScreen() {
                 <View style={styles.ankiCard}>
                     <Text style={styles.chartTitle}>{l('Tekrar aralıkları', 'Review Intervals')}</Text>
                     <Text style={styles.chartSubtitle}>{l('Tekrar kartlarının mevcut aralık dağılımı. Zaman aralığı, grafikte gösterilecek en uzun aralığı sınırlar.', 'Current interval distribution of review cards. The selected time range limits the longest interval shown.')}</Text>
-                    <StatsBarChart
+                    <ClassicStatsBarChart
                         points={ankiStats.intervals}
                         series={[{ label: l('Kartlar', 'Cards'), color: colors.accent }]}
                         colors={colors}

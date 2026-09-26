@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, G, Line, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
-import { FontSize, Spacing, dropShadow, type ColorScheme } from '../constants/theme';
-import type { StatsSeriesPoint } from '../lib/ankiStats';
-import { axisTicks, barGeometry, compactAxisValue, labelIndexes, tooltipPlacement } from '../lib/chartAxis';
+import { FontSize, Spacing, dropShadow, type ColorScheme } from '../../constants/theme';
+import type { StatsSeriesPoint } from '../../lib/ankiStats';
+import { axisTicks, barGeometry, compactAxisValue, labelIndexes, tooltipPlacement } from '../../lib/chartAxis';
 
 export interface StatsChartSeries {
     label: string;
@@ -59,7 +59,7 @@ const MAX_BAR_WIDTH = 26;
 /** Roughly the width one date label needs before its neighbour starts to crowd it. */
 const LABEL_SLOT = 58;
 
-export default function StatsBarChart({
+export default function ClassicStatsBarChart({
     points,
     series,
     colors,
