@@ -1,18 +1,8 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    useWindowDimensions,
-    Modal,
-    Pressable,
-} from 'react-native';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
-import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../constants/theme';
+import { useThemeColors } from '../constants/theme';
 import { createDeck, getAvailableDeckName } from '../lib/deckManager';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import WeekStreakStrip from '../components/WeekStreakStrip';
@@ -44,13 +34,15 @@ import {
     formatPercent,
     formatStudyDuration,
 } from '../lib/statsPresentation';
+import { createStatsScreenStyles } from '../components/stats/statsScreenStyles';
+import StatsRangePicker from '../components/stats/StatsRangePicker';
 
 export default function StatsScreen() {
     const { t, l, locale, localeTag } = useI18n();
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
+    const styles = useMemo(() => createStatsScreenStyles(colors, isCompact), [colors, isCompact]);
     const router = useRouter();
     const params = useLocalSearchParams();
     const { settings } = useAppSettings();
@@ -587,328 +579,19 @@ export default function StatsScreen() {
                 }}
             />}
 
-            <Modal
-                visible={rangePickerVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setRangePickerVisible(false)}
-            >
-                <Pressable style={styles.pickerOverlay} onPress={() => setRangePickerVisible(false)}>
-                    <Pressable style={styles.pickerCard} onPress={() => {}} accessibilityViewIsModal>
-                        <View style={styles.pickerHeader}>
-                            <Text style={styles.pickerTitle}>{l('Zaman aralığı', 'Time Range')}</Text>
-                            <TouchableOpacity
-                                style={styles.pickerClose}
-                                onPress={() => setRangePickerVisible(false)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Zaman seçiciyi kapat', 'Close time range picker')}
-                            >
-                                <Text style={styles.pickerCloseText}>×</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
-                            {([
-                                ['week', l('Son hafta', 'Last Week')],
-                                ['month', l('Son ay', 'Last Month')],
-                                ['threeMonths', l('Son 3 ay', 'Last 3 Months')],
-                                ['year', l('Son 1 yıl', 'Last Year')],
-                                ['all', l('Tüm zamanlar', 'All Time')],
-                            ] as [StatsRangeKey, string][]).map(([key, label]) => (
-                                <TouchableOpacity
-                                    key={key}
-                                    style={[styles.pickerRow, rangeKey === key && styles.pickerRowActive]}
-                                    onPress={() => {
-                                        setRangeKey(key);
-                                        setRangePickerVisible(false);
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected: rangeKey === key }}
-                                >
-                                    <Text style={styles.pickerRowIcon}>◷</Text>
-                                    <Text style={[styles.pickerRowText, rangeKey === key && styles.pickerRowTextActive]}>{label}</Text>
-                                    {rangeKey === key && <Text style={styles.pickerCheck}>✓</Text>}
-                                </TouchableOpacity>
-                            ))}
-
-                            <View style={[styles.customRangeBlock, rangeKey === 'custom' && styles.customRangeBlockActive]}>
-                                <View style={styles.customRangeHeading}>
-                                    <Text style={styles.customRangeTitle}>{l('Özel tarih aralığı', 'Custom Date Range')}</Text>
-                                    {rangeKey === 'custom' && <Text style={styles.pickerCheck}>✓</Text>}
-                                </View>
-                                <View style={styles.datePickerRow}>
-                                    <Text style={styles.datePickerLabel}>{l('Başlangıç', 'Start')}</Text>
-                                    <DateTimePicker
-                                        value={customStart}
-                                        mode="date"
-                                        display="compact"
-                                        maximumDate={customEnd}
-                                        locale={localeTag}
-                                        onChange={(_event, value) => value && setCustomStart(value)}
-                                    />
-                                </View>
-                                <View style={styles.datePickerRow}>
-                                    <Text style={styles.datePickerLabel}>{l('Bitiş', 'End')}</Text>
-                                    <DateTimePicker
-                                        value={customEnd}
-                                        mode="date"
-                                        display="compact"
-                                        minimumDate={customStart}
-                                        maximumDate={new Date()}
-                                        locale={localeTag}
-                                        onChange={(_event, value) => value && setCustomEnd(value)}
-                                    />
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.applyRangeButton}
-                                    onPress={() => {
-                                        setRangeKey('custom');
-                                        setRangePickerVisible(false);
-                                    }}
-                                    accessibilityRole="button"
-                                >
-                                    <Text style={styles.applyRangeButtonText}>{l('Bu aralığı kullan', 'Use This Range')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </ScrollView>
-                    </Pressable>
-                </Pressable>
-            </Modal>
+            <StatsRangePicker
+                rangePickerVisible={rangePickerVisible}
+                setRangePickerVisible={setRangePickerVisible}
+                rangeKey={rangeKey}
+                setRangeKey={setRangeKey}
+                customStart={customStart}
+                setCustomStart={setCustomStart}
+                customEnd={customEnd}
+                setCustomEnd={setCustomEnd}
+                localeTag={localeTag}
+                styles={styles}
+                l={l}
+            />
         </SafeAreaView>
     );
-}
-
-function createStyles(colors: ColorScheme, isCompact: boolean) {
-    return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.bgPrimary },
-    screenHeader: {
-        minHeight: 56,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
-        backgroundColor: colors.bgCard,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border,
-    },
-    screenTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
-    headerSpacer: { width: 44 },
-    scrollContent: {
-        width: '100%',
-        maxWidth: 880,
-        alignSelf: 'center',
-        padding: isCompact ? Spacing.md : Spacing.lg,
-        gap: Spacing.md,
-    },
-    backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
-    selectorsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-    inlineLoadState: {
-        minHeight: 88,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: Spacing.xs,
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgSecondary,
-    },
-    inlineLoadIcon: { fontSize: 24, color: colors.textMuted },
-    inlineLoadText: { color: colors.textMuted, fontSize: FontSize.sm },
-    scopeSelector: {
-        flex: 1,
-        minWidth: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 6,
-        minHeight: 44,
-        paddingHorizontal: Spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgCard,
-    },
-    scopeSelectorText: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
-    scopeSelectorCaret: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800', marginTop: 2 },
-
-    todayCard: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        ...Shadows.sm,
-    },
-    cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.md, marginBottom: Spacing.lg },
-    sectionTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
-    cardEyebrow: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16, marginTop: 2 },
-    liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: Spacing.sm, paddingVertical: 5, borderRadius: BorderRadius.full, backgroundColor: colors.accentLight },
-    liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
-    liveBadgeText: { color: colors.accent, fontSize: FontSize.xs, fontWeight: '800' },
-    chartToggleRow: {
-        flexDirection: 'row',
-        alignSelf: 'flex-start',
-        backgroundColor: colors.bgInput,
-        borderRadius: BorderRadius.sm,
-        padding: 2,
-        marginBottom: Spacing.xs,
-    },
-    chartToggle: { paddingVertical: 4, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.sm - 2 },
-    chartToggleActive: { backgroundColor: colors.bgCard },
-    chartToggleText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
-    chartToggleTextActive: { color: colors.textPrimary },
-    todayGrid: { flexDirection: 'row', gap: Spacing.sm, flexWrap: isCompact ? 'wrap' : 'nowrap' },
-    todayStat: {
-        flexGrow: 1,
-        flexBasis: isCompact ? '46%' : 0,
-        minHeight: 96,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: Spacing.sm,
-        paddingHorizontal: Spacing.xs,
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgSecondary,
-    },
-    todayNumber: { fontSize: FontSize.xxxl, fontWeight: '800', color: colors.accent },
-    todayNumberCompact: { fontSize: FontSize.xl, lineHeight: 26, fontWeight: '800', color: colors.accent, textAlign: 'center' },
-    todayLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500', marginTop: 2 },
-
-    streakCard: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        ...Shadows.sm,
-    },
-    streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: Spacing.xs },
-    bestBadge: { alignItems: 'flex-end', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: colors.streakBg },
-    bestBadgeLabel: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '700' },
-    bestBadgeValue: { color: colors.streak, fontSize: FontSize.md, fontWeight: '900', marginTop: 1 },
-    streakBody: {
-        flexDirection: isCompact ? 'column' : 'row',
-        alignItems: isCompact ? 'stretch' : 'center',
-        justifyContent: 'space-between',
-        gap: isCompact ? Spacing.lg : Spacing.xl,
-        flexWrap: 'wrap',
-    },
-    streakInfo: { flexShrink: 1, minWidth: isCompact ? 0 : 180 },
-    streakStripWrap: { flexGrow: 1, minWidth: isCompact ? 0 : 300, width: isCompact ? '100%' : undefined },
-    streakRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, flexWrap: 'wrap' },
-    streakNumber: { fontSize: 44, fontWeight: '700', color: colors.btnHard },
-    streakUnit: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-    ankiCard: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        ...Shadows.sm,
-    },
-    chartTitle: { fontSize: FontSize.xl, lineHeight: 24, fontWeight: '800', color: colors.textPrimary },
-    chartSubtitle: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textMuted, marginTop: 4, marginBottom: Spacing.md },
-    metricRow: {
-        flexDirection: 'row',
-        alignItems: 'stretch',
-        justifyContent: 'space-around',
-        gap: Spacing.sm,
-        flexWrap: 'wrap',
-        marginTop: Spacing.md,
-        paddingTop: Spacing.md,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.borderLight,
-    },
-    metricItem: { flexGrow: 1, flexBasis: isCompact ? '28%' : 0, alignItems: 'center', justifyContent: 'center', minWidth: 82, minHeight: 62, padding: Spacing.sm, borderRadius: BorderRadius.sm, backgroundColor: colors.bgSecondary },
-    metricValue: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
-    metricLabel: { color: colors.textMuted, fontSize: FontSize.xs, textAlign: 'center', marginTop: 2 },
-    buttonCountGrid: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.md },
-    buttonCountItem: { flex: 1, alignItems: 'center', paddingVertical: Spacing.sm, backgroundColor: colors.bgSecondary, borderRadius: BorderRadius.sm },
-    buttonCountValue: { fontSize: FontSize.lg, fontWeight: '900' },
-    buttonCountLabel: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 1 },
-    overviewCard: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        ...Shadows.sm,
-    },
-    overviewBar: {
-        flexDirection: 'row',
-        height: 16,
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: Spacing.md,
-        backgroundColor: colors.borderLight,
-    },
-    overviewSegment: { height: '100%' },
-    compositionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-    compositionItem: { flexGrow: 1, flexBasis: isCompact ? '46%' : '22%', minWidth: 132, padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
-    compositionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    compositionSwatch: { width: 9, height: 9, borderRadius: 3 },
-    compositionLabel: { flex: 1, color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '700' },
-    compositionValueRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Spacing.sm, marginTop: 5 },
-    compositionValue: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '900' },
-    compositionPercent: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '700' },
-
-    pickerOverlay: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    pickerCard: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '82%',
-        overflow: 'hidden',
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
-        ...Shadows.lg,
-    },
-    pickerHeader: {
-        minHeight: 72,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    pickerTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800' },
-    pickerClose: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
-    pickerCloseText: { color: colors.textMuted, fontSize: 30, lineHeight: 32, fontWeight: '300' },
-    pickerScroll: { paddingVertical: Spacing.xs },
-    pickerRow: {
-        minHeight: 50,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: 10,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    pickerRowActive: { backgroundColor: colors.accentLight },
-    pickerRowIcon: { width: 22, textAlign: 'center', color: colors.textMuted, fontSize: 18 },
-    pickerRowText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-    pickerRowTextActive: { color: colors.accent, fontWeight: '800' },
-    pickerCheck: { color: colors.accent, fontSize: 19, fontWeight: '900' },
-    customRangeBlock: {
-        margin: Spacing.md,
-        padding: Spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.bgSecondary,
-    },
-    customRangeBlockActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-    customRangeHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
-    customRangeTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
-    datePickerRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
-    datePickerLabel: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '700' },
-    applyRangeButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm, borderRadius: BorderRadius.sm, backgroundColor: colors.accent },
-    applyRangeButtonText: { color: colors.white, fontSize: FontSize.sm, fontWeight: '800' },
-    });
 }
