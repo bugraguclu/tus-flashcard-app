@@ -164,12 +164,15 @@ export default function CatalogScreen() {
                         </Text>
                     </View>
                     <Text style={styles.heroTitle}>
-                        {l('TUS için hazır\n9.583 kart', 'TUS-ready\n9,583 cards')}
+                        {l(
+                            `TUS için hazır\n${number(BKA_MANIFEST.totals.cards)} kart`,
+                            `TUS-ready\n${number(BKA_MANIFEST.totals.cards)} cards`,
+                        )}
                     </Text>
                     <Text style={styles.heroSubtitle}>
                         {l(
-                            'Uygulamanın tamamı ücretsizdir. Bu paket, 12 dersin tamamını kapsayan hazır soru ve bilgi kartlarını deste listenize ekler.',
-                            'The app itself is free. This pack adds ready-made question and knowledge cards covering all 12 courses to your deck list.',
+                            `Uygulamanın tamamı ücretsizdir. Bu paket, ${BKA_MANIFEST.totals.courses} dersin tamamını kapsayan hazır soru ve bilgi kartlarını deste listenize ekler.`,
+                            `The app itself is free. This pack adds ready-made question and knowledge cards covering all ${BKA_MANIFEST.totals.courses} courses to your deck list.`,
                         )}
                     </Text>
 

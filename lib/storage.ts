@@ -849,7 +849,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
 /**
  * Full-collection snapshot, minus the purchased card pack.
  *
- * Those 9,583 notes and cards are ~6.4 MB of the collection and can always be reinstalled from
+ * The pack's notes and cards are ~6.4 MB of the collection and can always be reinstalled from
  * the bundled package, so copying them into every weekly backup would waste tens of megabytes and
  * would also spread paid content as plain text. What cannot be recreated — the learner's own
  * decks and notes, their review log, and their scheduling progress on catalog cards — is kept.
