@@ -88,7 +88,7 @@ import {
     type AnswerSideEffects,
 } from '../../lib/studyRepository';
 import { useI18n } from '../../hooks/useI18n';
-import { cardFlagName, localizeTopicName, reviewerOpName } from '../../lib/i18n';
+import { cardFlagName, formatCount, localizeTopicName, reviewerOpName } from '../../lib/i18n';
 import { alert, choose } from '../../lib/confirm';
 import {
     gradeForHardwareKey,
@@ -98,6 +98,7 @@ import {
     typesCharacter,
 } from '../../lib/hardwareKeyboard';
 import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
+import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
 import { useScreenGuard } from '../../hooks/useScreenGuard';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
@@ -2308,7 +2309,10 @@ export default function StudyScreen() {
         >
             <Text style={styles.catalogPurchaseBtnText}>🔓 {l('Tam paketi ücretsiz açın', 'Unlock the Full Pack for Free')}</Text>
             <Text style={styles.catalogPurchaseBtnHint}>
-                {l('Ödeme olmadan 9.583 kartın tamamına erişin', 'Access all 9,583 cards without payment')}
+                {l(
+                    `Ödeme olmadan ${formatCount(BKA_MANIFEST.totals.cards, locale)} kartın tamamına erişin`,
+                    `Access all ${formatCount(BKA_MANIFEST.totals.cards, locale)} cards without payment`,
+                )}
             </Text>
         </TouchableOpacity>
     ) : null;

@@ -12,9 +12,9 @@
 - Type: `Non-Consumable`
 - Türkiye temel fiyatı: App Store Connect’te `₺1.500` fiyat noktası (mevcutsa; son tutarı Apple belirler)
 - Display Name (TR): `BKA TUS Tam Koleksiyon`
-- Description (TR): `12 dersi kapsayan 9.583 hazır TUS kartı`
+- Description (TR): `12 dersi kapsayan 9.575 hazır TUS kartı`
 - Display Name (EN): `BKA TUS Complete Catalog`
-- Description (EN): `9,583 ready-made TUS cards across 12 courses`
+- Description (EN): `9,575 ready-made TUS cards across 12 courses`
 - RevenueCat entitlement: `bka_tus_complete`
 - RevenueCat offering: `default`
 
@@ -29,7 +29,7 @@ TusAnkiM is a free, accountless, Anki-style spaced-repetition flashcard app. Eve
 
 The current build contains no active purchase flow. To open the optional pre-made card pack: launch the app → Desteler (Decks) → tap “BKA TUS” → tap “Kartları ücretsiz aç” (Unlock cards for free). The full pack is installed locally without contacting Apple or RevenueCat.
 
-The dormant product ID is com.tusankim.bka.complete.lifetime. It must not be submitted or advertised while payment is disabled. Installing the 9,583 cards does not modify anything the user created.
+The dormant product ID is com.tusankim.bka.complete.lifetime. It must not be submitted or advertised while payment is disabled. Installing the 9,575 cards does not modify anything the user created.
 
 No account, review credentials or sandbox purchase is required for the current build.
 

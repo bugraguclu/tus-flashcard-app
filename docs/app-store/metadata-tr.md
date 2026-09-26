@@ -21,7 +21,7 @@
 
 ## Promosyon metni (170 karakter sınırı)
 
-Ücretsiz, Anki uyumlu aralıklı tekrar. Kendi kartlarını oluştur; istersen 9.583 kartlık hazır BKA TUS paketini de ücretsiz ekle.
+Ücretsiz, Anki uyumlu aralıklı tekrar. Kendi kartlarını oluştur; istersen 9.575 kartlık hazır BKA TUS paketini de ücretsiz ekle.
 
 ## Açıklama
 
@@ -35,7 +35,7 @@ Uygulamanın tamamı ücretsiz:
 • Otomatik yedekleme ile koleksiyonunu koru
 
 İstersen ücretsiz hazır kart paketini ekle — BKA TUS:
-• 9.583 hazırlanmış çalışma kartı
+• 9.575 hazırlanmış çalışma kartı
 • 12 temel ve klinik bilim dersi
 • 12 ders altında 106 alt deste; kartların %65'i konu konu ayrılmış
 • Kendi destelerinin yanına eklenir; kendi kartların ve geçmişin olduğu gibi kalır
@@ -63,7 +63,7 @@ Yayıncı adı, gerçek destek e-postası/telefonu ve yasal adres App Store Conn
 2. `Odaklı, okunaklı kart deneyimi`
 3. `Anki benzeri aralıklı tekrar`
 4. `İstersen hazır BKA TUS paketi`
-5. `9.583 hazır kart · Ücretsiz erişim`
+5. `9.575 hazır kart · Ücretsiz erişim`
 
 Hazır native QA dosyaları (`docs/app-store/screenshots/`):
 
