@@ -2,8 +2,48 @@
 
 This file applies to the entire repository. Every AI agent and human contributor must read
 `docs/ANKI_COMPATIBILITY.md` and `docs/IOS_RELEASE_CHECKLIST.md` before changing product
-behaviour, scheduling, storage, import/export, or iOS configuration. Treat
+behaviour, scheduling, storage, import/export, or iOS configuration; of
+`docs/ANKI_COMPATIBILITY_NOTES.md`, read only the section for the area being changed. Treat
 `docs/anki-reference-sources.json` as the canonical source registry.
+
+## Where things live
+
+- Screens are expo-router routes in `app/`: the reviewer is `app/(tabs)/index.tsx`, the deck list
+  `app/(tabs)/decks.tsx`, the root layout (startup, error screen) `app/_layout.tsx`; every other
+  screen is `app/<name>.tsx` (`editor`, `browser`, `deck-options`, `deck-overview`, `import`,
+  `export`, `stats`, `settings`, `backups`, `catalog`, `note-types`, `empty-cards`, ...).
+- A screen's pieces (dialogs, rows, toolbars, styles) live in `components/<feature>/`: `editor`,
+  `deck-options`, `browser`, `photo-editor`, `import`, `stats`. Shared components sit in `components/`.
+- Study data: `lib/studyRepository.ts` re-exports `studyQueue` (today's queue), `studyAnswer`
+  (answer, undo, suspend, bury, forget), `filteredDeckQueue`, `browserRepository` (browser queries),
+  `studyCardRows` and `studySearchSql` (search to SQL). Queue ordering is `lib/queueBuild.ts`,
+  review logging `lib/reviewLogger.ts`.
+- Scheduling: `lib/scheduler.ts` (classic), `lib/fsrs*.ts` (FSRS), `lib/ankiState.ts` (card state,
+  day numbers). Reviewer behaviour: `lib/reviewer*.ts`; card rendering `components/CardWebView.tsx`
+  with `lib/templates.ts` and `lib/cardAppearance.ts`.
+- Decks: `lib/deckManager.ts` re-exports `deckStore`, `deckPresets`, `deckLimits`, `filteredDecks`
+  (with Custom Study sessions) and `deckTree`. Notes and cards: `lib/noteManager.ts` re-exports
+  `noteStore`, `noteTypeStore`, `noteTagStore` and `tusCards` (the editor's save path).
+- Import/export: `lib/importApkg.ts` (with `importApkgLossless`, `importApkgMedia`, `apkgFormat`),
+  `lib/importNotes.ts`, `lib/importDelimited.ts`, `lib/importFile.ts`, `lib/importLog.ts`,
+  `lib/exportAnkiPackage.ts`, `lib/exportNotes.ts`.
+- Storage: `lib/db.ts` (SQLite, schema, migrations); `lib/storage.ts` re-exports `settingsStore`
+  and `backupData`; backups `lib/backup*.ts`; database check `lib/maintenance*.ts`.
+- Catalog and purchases: `lib/bkaCatalog.ts`, `lib/catalog*.ts`, `lib/catalogProtection.ts`,
+  `lib/purchasesSdk.ts`. App-wide state: `contexts/AppContext.tsx`. Theme: `constants/theme.ts`.
+  Copy: `lib/i18n.ts` keys and inline `l('Türkçe', 'English')`. Web-only code is in `*.web.ts`.
+
+## Working in this repository
+
+- Search with `rg` or `git grep`. A plain `grep -r` from the root also walks `node_modules`, `ios`
+  and the worktrees (over 100,000 files). `.ignore` keeps `package-lock.json`, the catalog manifest
+  and `docs/archive/` out of `rg`.
+- `docs/archive/` holds dated session reports. Do not read it unless asked.
+- Keep files under about 800 lines. Move a growing screen's pieces into `components/<feature>/`,
+  never into `app/`, where every file is a route. Split a growing `lib/` module by concern; if other
+  code imports it, keep it re-exporting its old API, and never let the new modules import the file
+  that re-exports them (an import cycle can hand a module an undefined constant at load time).
+- Start agent sessions from the repository root, not from `ios/TusAnkiM`.
 
 ## Product direction
 
@@ -65,8 +105,8 @@ behaviour, scheduling, storage, import/export, or iOS configuration. Treat
 - Keep the app usable offline. Network features must fail closed without blocking local study.
 - Use the minimum live-test ladder in `docs/IOS_RELEASE_CHECKLIST.md`; do not substitute a
   simulator tap-through for deterministic unit and integration coverage.
-- Update the compatibility matrix and source registry in the same change when adding or
-  changing an Anki-facing capability.
+- Update the compatibility matrix row, its section in `docs/ANKI_COMPATIBILITY_NOTES.md` and the
+  source registry in the same change when adding or changing an Anki-facing capability.
 
 ## Required verification
 
