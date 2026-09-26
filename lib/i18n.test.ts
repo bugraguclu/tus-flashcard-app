@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { localeTag, localizeFieldName, resolveAppLocale, translate, translateActive } from './i18n';
+import {
+    localeTag,
+    localizeCardTemplateName,
+    localizeFieldName,
+    localizeTopicName,
+    resolveAppLocale,
+    translate,
+    translateActive,
+} from './i18n';
 
 describe('app locale resolution', () => {
     it('defaults active locale to Turkish', () => {
@@ -41,5 +49,19 @@ describe('app locale resolution', () => {
         expect(localizeFieldName('tr', 'Add Reverse')).toBe('Tersini Ekle');
         expect(localizeFieldName('tr', 'Clinical Note')).toBe('Clinical Note');
         expect(localizeFieldName('en', 'Front')).toBe('Front');
+    });
+
+    it('localizes stock card template names and passes custom names unchanged', () => {
+        expect(localizeCardTemplateName('tr', 'Card 1')).toBe('Kart 1');
+        expect(localizeCardTemplateName('tr', 'Card 12')).toBe('Kart 12');
+        expect(localizeCardTemplateName('tr', 'Card 1 reversed')).toBe('Card 1 reversed');
+        expect(localizeCardTemplateName('tr', 'Tanım')).toBe('Tanım');
+        expect(localizeCardTemplateName('en', 'Card 1')).toBe('Card 1');
+    });
+
+    it('translates only the untitled-topic sentinel', () => {
+        expect(localizeTopicName('tr', 'General')).toBe('Genel');
+        expect(localizeTopicName('tr', 'Kardiyoloji')).toBe('Kardiyoloji');
+        expect(localizeTopicName('en', 'General')).toBe('General');
     });
 });

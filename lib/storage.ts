@@ -1,8 +1,7 @@
-// ============================================================
-// TUS Flashcard - Storage Layer
-// Canonical source: SQLite (Anki tables + deck config + app/session metadata)
-// AsyncStorage is used only for legacy import/migration sources.
-// ============================================================
+/**
+ * Storage layer. SQLite is the canonical source (Anki tables, deck config, app and session
+ * metadata); AsyncStorage is read only as a legacy import and migration source.
+ */
 
 import {
     DEFAULT_FSRS_PARAMETERS,
@@ -14,6 +13,7 @@ import type { CardState, SessionStats, AppSettings, AlgorithmType, ThemeMode, Ke
 import type { Card } from './types';
 import { todayLocalYMD } from './scheduler';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
+import { getDbSetting, setDbSetting } from './dbSettings';
 import {
     CATALOG_PROGRESS_KEY,
     encodeCatalogProgress,
@@ -165,7 +165,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     // The queue has always counted new cards and reviews against separate allowances; keeping
     // that as the default means enabling the option is an opt-in change, never a silent one.
     newCardsIgnoreReviewLimit: true,
-    limitsStartFromTop: true,
+    // Off, as Anki's `apply_all_parent_limits` is: a deck's daily allowance is read from the deck
+    // the learner opened, not squeezed again by every ancestor above it, until the switch in Deck
+    // Options is turned on. A collection that already stored a value keeps it — the readers below
+    // only fall back to this default when the key was never written at all.
+    limitsStartFromTop: false,
     easyDays: [1, 1, 1, 1, 1, 1, 1],
     hardIntervalMultiplier: 1.2,
     easyBonus: 1.3,
@@ -185,28 +189,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     historicalRetention: FSRS_DEFAULT_HISTORICAL_RETENTION,
 };
 
-/** Read a raw key from the SQLite settings table (guard keys, metadata blobs). */
-export function getDbSetting(key: string): string | null {
-    try {
-        const db = getDB();
-        const row = db.getFirstSync('SELECT value FROM settings WHERE key = ?', key) as { value?: string } | null;
-        return typeof row?.value === 'string' ? row.value : null;
-    } catch (e) {
-        console.warn('[Storage] getDbSetting failed:', e);
-        return null;
-    }
-}
-
-/** Write a raw key to the SQLite settings table. Failures are logged, not thrown. */
-export function setDbSetting(key: string, value: string): void {
-    try {
-        const db = getDB();
-        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
-    } catch (e) {
-        console.warn('[Storage] setDbSetting failed:', e);
-        // DB may not be initialized yet.
-    }
-}
+export { getDbSetting, setDbSetting };
 
 // --- Legacy Card States (AsyncStorage migration source only) ---
 export async function loadCardStates(): Promise<Record<string, CardState>> {
@@ -543,7 +526,7 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             studyNotificationMinute: Math.max(0, Math.min(59, Number(parsed.studyNotificationMinute ?? 0) || 0)),
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             newCardsIgnoreReviewLimit: parsed.newCardsIgnoreReviewLimit !== false,
-            limitsStartFromTop: parsed.limitsStartFromTop !== false,
+            limitsStartFromTop: parsed.limitsStartFromTop === true,
             dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
@@ -785,7 +768,7 @@ function validateSettings(settings: Record<string, unknown>): AppSettings {
     validated.newCardGatherOrder = normalizeNewCardGatherOrder(validated.newCardGatherOrder);
     validated.newCardOrder = validated.newCardOrder === 'random' ? 'random' : 'sequential';
     validated.newCardsIgnoreReviewLimit = validated.newCardsIgnoreReviewLimit !== false;
-    validated.limitsStartFromTop = validated.limitsStartFromTop !== false;
+    validated.limitsStartFromTop = validated.limitsStartFromTop === true;
     validated.algorithm = 'ANKI_V3';
     validated.language = normalizeLanguage(validated.language);
     validated.themeMode = normalizeThemeMode(validated.themeMode);

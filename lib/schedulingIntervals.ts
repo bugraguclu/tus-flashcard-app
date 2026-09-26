@@ -209,6 +209,31 @@ export function hardDelayMinutes(steps: number[], stepIndex: number): number {
  *
  * Reference: `rslib/src/scheduler/reviews.rs` (`Card::set_due_date`).
  */
+export interface DueRange {
+    minDays: number;
+    maxDays: number;
+    forceInterval: boolean;
+}
+
+/**
+ * Parse Anki's Set Due Date syntax: `5`, `3-7`, `-2`, and an optional trailing `!`.
+ *
+ * The same grammar backs the browser dialog and the reviewer sheet, because in Anki they are the
+ * same dialog. `!` means "also make the interval this many days"; a range picks a day inside it.
+ */
+export function parseDueRange(input: string): DueRange | null {
+    const match = input.trim().match(/^(-?\d+)(?:\s*-\s*(-?\d+))?\s*(!)?$/);
+    if (!match) return null;
+    const first = Number(match[1]);
+    const second = match[2] === undefined ? first : Number(match[2]);
+    if (!Number.isSafeInteger(first) || !Number.isSafeInteger(second)) return null;
+    return {
+        minDays: Math.min(first, second),
+        maxDays: Math.max(first, second),
+        forceInterval: match[3] === '!',
+    };
+}
+
 export function setDueDateInterval(options: {
     fsrsEnabled: boolean;
     wasNew: boolean;

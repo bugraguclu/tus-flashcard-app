@@ -1251,10 +1251,10 @@ export default function DecksScreen() {
             >
                 {rowDropFeedback && (isDropBefore || isDropAfter) && (
                     <View
-                        pointerEvents="none"
                         style={[
                             styles.deckDropLabel,
                             isDropBefore ? styles.deckDropLabelBefore : styles.deckDropLabelAfter,
+                            { pointerEvents: 'none' },
                         ]}
                     >
                         <Text style={styles.deckDropLabelText} numberOfLines={1}>
@@ -1263,7 +1263,7 @@ export default function DecksScreen() {
                     </View>
                 )}
                 {rowDropFeedback && isInsideDropTarget && (
-                    <View pointerEvents="none" style={styles.deckInsideDropBadge}>
+                    <View style={[styles.deckInsideDropBadge, { pointerEvents: 'none' }]}>
                         <Text style={styles.deckInsideDropBadgeText} numberOfLines={1}>
                             {rowDropFeedback.title}
                         </Text>
@@ -2403,10 +2403,10 @@ export default function DecksScreen() {
 
                 {draggingDeck && getParentDeckName(draggingDeck) && (
                     <View
-                        pointerEvents="none"
                         style={[
                             styles.rootDropZone,
                             dropTarget === ROOT_DROP_TARGET && styles.rootDropZoneActive,
+                            { pointerEvents: 'none' },
                         ]}
                     >
                         <Text style={[
@@ -2422,7 +2422,6 @@ export default function DecksScreen() {
 
                 {!isDesktopWeb && draggingDeck && (
                     <Animated.View
-                        pointerEvents="none"
                         style={[
                             styles.mobileDragPreview,
                             {
@@ -2440,6 +2439,7 @@ export default function DecksScreen() {
                                     },
                                 ],
                             },
+                            { pointerEvents: 'none' },
                         ]}
                     >
                         <Text style={styles.mobileDragPreviewTitle} numberOfLines={1}>
@@ -2469,7 +2469,7 @@ export default function DecksScreen() {
                 />
             )}
 
-            <View style={styles.fabWrap} pointerEvents="box-none">
+            <View style={styles.fabWrap}>
                 {showAddMenu && (
                     <View style={styles.fabActions}>
                         <View style={styles.fabActionRow}>
@@ -2999,6 +2999,8 @@ function createStyles(colors: ColorScheme) {
         bottom: 112,
         zIndex: 30,
         alignItems: 'flex-end',
+        // Kept in the stylesheet: react-native-web applies 'box-none' only to compiled styles.
+        pointerEvents: 'box-none',
     },
     fabActions: {
         gap: Spacing.md,

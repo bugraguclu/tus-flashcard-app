@@ -43,6 +43,13 @@ let _saveDirty = false;
 // other's snapshot. Default true so a lone tab — or a browser without the Web
 // Locks API — always persists.
 let _isPrimary = true;
+// Set once a read-only tab has been handed the writer lock and is reloading to use it.
+let _writerTakeoverReload = false;
+
+const WRITER_LOCK = 'tus-flashcard-writer';
+
+/** `Error.name` of the failure thrown when a saved collection exists but cannot be read back. */
+export const STORAGE_READ_ERROR_NAME = 'WebStorageReadError';
 
 /** Open the IndexedDB database, lazily creating the snapshot object store. */
 function openIdb(): Promise<IDBDatabase> {
@@ -77,27 +84,53 @@ function idbLoad(): Promise<Uint8Array | null> {
     );
 }
 
+// The writer tab keeps one connection open for its lifetime, so the save on page hide can start its
+// write in the same task as the event, not after an asynchronous open a closing page never reaches.
+let _idbConnection: IDBDatabase | null = null;
+
+function keepConnection(db: IDBDatabase): void {
+    _idbConnection = db;
+    // Another page upgrading the schema, or the browser clearing site data, closes it under us.
+    db.onversionchange = () => {
+        db.close();
+        if (_idbConnection === db) _idbConnection = null;
+    };
+    db.onclose = () => {
+        if (_idbConnection === db) _idbConnection = null;
+    };
+}
+
+/** Start writing `bytes` over the snapshot now; the promise settles when the write commits. */
+function writeSnapshot(db: IDBDatabase, bytes: Uint8Array, closeAfter: boolean): Promise<void> {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(bytes, IDB_KEY);
+    return new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => {
+            if (closeAfter) db.close();
+            resolve();
+        };
+        tx.onerror = () => {
+            if (closeAfter) db.close();
+            reject(tx.error);
+        };
+        tx.onabort = () => {
+            if (closeAfter) db.close();
+            reject(tx.error);
+        };
+    });
+}
+
 /** Overwrite the persisted snapshot with the given bytes. */
 function idbSave(bytes: Uint8Array): Promise<void> {
-    return openIdb().then(
-        (db) =>
-            new Promise<void>((resolve, reject) => {
-                const tx = db.transaction(IDB_STORE, 'readwrite');
-                tx.objectStore(IDB_STORE).put(bytes, IDB_KEY);
-                tx.oncomplete = () => {
-                    db.close();
-                    resolve();
-                };
-                tx.onerror = () => {
-                    db.close();
-                    reject(tx.error);
-                };
-                tx.onabort = () => {
-                    db.close();
-                    reject(tx.error);
-                };
-            }),
-    );
+    if (_idbConnection) {
+        try {
+            return writeSnapshot(_idbConnection, bytes, false);
+        } catch {
+            // The connection was closing; a fresh one below takes the write.
+            _idbConnection = null;
+        }
+    }
+    return openIdb().then((db) => writeSnapshot(db, bytes, true));
 }
 
 /**
@@ -136,6 +169,20 @@ function flushPersist(): void {
         clearTimeout(_saveTimer);
         _saveTimer = null;
     }
+    if (!_sqlDb || !_isPrimary) return;
+    // The page can be discarded right after this event, so the write starts now on the open
+    // connection, even while an earlier save is still committing: IndexedDB commits the two in
+    // the order they started, and this one carries the newest state.
+    if (_idbConnection) {
+        try {
+            void writeSnapshot(_idbConnection, _sqlDb.export(), false)
+                .catch((e) => console.warn('[WebDB] Failed to persist database to IndexedDB:', e));
+            _saveDirty = false;
+            return;
+        } catch {
+            _idbConnection = null;
+        }
+    }
     void persistToIdb();
 }
 
@@ -151,19 +198,30 @@ function electWriter(): Promise<void> {
     if (!locks) return Promise.resolve();
 
     const settled = new Promise<void>((resolve) => {
-        locks.request('tus-flashcard-writer', { ifAvailable: true }, (lock) => {
+        locks.request(WRITER_LOCK, { ifAvailable: true }, (lock) => {
             _isPrimary = !!lock;
             resolve();
             if (lock) return new Promise<void>(() => {}); // hold for this tab's lifetime
+        }).catch((error: unknown) => {
+            // A browser can refuse the lock outright (site data blocked, an opaque origin). The
+            // app still has to start, so this tab stays the writer, as it does without Web Locks.
+            console.warn('[WebDB] Writer lock unavailable:', error);
+            resolve();
         });
     });
 
     // Blocks until the current writer releases the lock (its tab closed), then
     // reloads so this tab re-initialises from the latest snapshot as the writer.
-    locks.request('tus-flashcard-writer', () => {
-        if (!_isPrimary) window.location.reload();
+    // Nothing edited in a read-only tab can be saved, so its unsaved-changes prompt
+    // stands down for this reload: cancelling it would leave this tab holding the
+    // lock without saving, and every other tab waiting behind it.
+    locks.request(WRITER_LOCK, () => {
+        if (!_isPrimary) {
+            _writerTakeoverReload = true;
+            window.location.reload();
+        }
         return new Promise<void>(() => {});
-    });
+    }).catch(() => undefined);
 
     return settled;
 }
@@ -184,14 +242,22 @@ function decodeLegacySnapshot(): Uint8Array | null {
     }
 }
 
-/** Load the snapshot: IndexedDB first, else migrate the legacy localStorage copy once. */
+/**
+ * Load the snapshot: IndexedDB first, else migrate the legacy localStorage copy once. A failed
+ * read is thrown rather than taken for an empty store: starting on a new empty database here would
+ * save it over the learner's collection a moment later.
+ */
 async function loadPersisted(): Promise<Uint8Array | null> {
+    let fromIdb: Uint8Array | null;
     try {
-        const fromIdb = await idbLoad();
-        if (fromIdb && fromIdb.length > 0) return fromIdb;
+        fromIdb = await idbLoad();
     } catch (e) {
         console.warn('[WebDB] Failed to load database from IndexedDB:', e);
+        const error = new Error('The saved collection could not be read from IndexedDB.', { cause: e });
+        error.name = STORAGE_READ_ERROR_NAME;
+        throw error;
     }
+    if (fromIdb && fromIdb.length > 0) return fromIdb;
 
     const legacy = decodeLegacySnapshot();
     if (legacy) {
@@ -338,6 +404,10 @@ export function initWebDatabase(): Promise<WebSQLiteDatabase> {
 
         await electWriter();
         void requestPersistentStorage();
+        if (_isPrimary) {
+            // Only the writer saves; without the kept connection saves still open one each time.
+            openIdb().then(keepConnection).catch((e) => console.warn('[WebDB] Could not keep IndexedDB open:', e));
+        }
 
         // IndexedDB writes are async and cannot complete during `beforeunload`, so flush
         // on the events that fire reliably before the page is discarded.
@@ -364,6 +434,11 @@ export function getWebDatabase(): WebSQLiteDatabase | null {
 /** Whether this tab is the elected writer. Non-writer tabs don't persist changes. */
 export function isPrimaryTab(): boolean {
     return _isPrimary;
+}
+
+/** Whether this read-only tab is reloading to take over as the writer. */
+export function isWriterTakeoverReloading(): boolean {
+    return _writerTakeoverReload;
 }
 
 export interface SqlJsReader {

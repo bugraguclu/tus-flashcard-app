@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
+import { goBackOr } from '../lib/backNavigation';
 import { useCollectionInvalidation } from '../contexts/AppContext';
 import { getNoteType, saveNoteType } from '../lib/noteManager';
 import {
@@ -121,7 +122,7 @@ export default function NoteTypeScreen() {
             saveNoteType(nt);
             setSavedSnapshot(stableSnapshot(nt));
             bumpDataVersion();
-            alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => router.back());
+            alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => goBackOr(router, '/note-types'));
         } catch (e) {
             console.warn('[NoteType] save failed:', e);
             alert(t('common.error'), l('Not türü kaydedilemedi.', 'Could not save the note type.'));
@@ -224,7 +225,7 @@ export default function NoteTypeScreen() {
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
                     <Text style={styles.saveBtnText}>💾 {t('common.save')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => goBackOr(router, '/note-types')}>
                     <Text style={styles.cancelBtnText}>{t('common.close')}</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -235,7 +236,7 @@ export default function NoteTypeScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    content: { padding: Spacing.lg, gap: Spacing.sm },
+    content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.md, color: colors.textMuted, padding: Spacing.lg },
     label: {
         fontSize: 10,

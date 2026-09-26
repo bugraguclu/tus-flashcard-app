@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router as globalRouter, useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
-import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import {
     ActivityIndicator,
@@ -26,19 +26,22 @@ import {
     Shadows,
     Spacing,
     ThemeColorsProvider,
+    useIsDarkTheme,
     useThemeColors,
 } from '../constants/theme';
-import { initWebDb, isPrimaryTab } from '../lib/db';
+import { initWebDb, isPrimaryTab, isStorageReadError } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { screenGuardStackListeners } from '../hooks/useScreenGuard';
-import { isStudyReminderData } from '../lib/studyNotifications';
+import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { inferImportFileType } from '../lib/importFile';
 import { parseExternalAppUrl } from '../lib/externalLinking';
 import { externalActionRoute } from '../lib/externalActionRoute';
 import WebAppIntegrations from '../components/WebAppIntegrations';
 import { userFacingErrorMessage } from '../lib/userFacingError';
+// Imported here, ahead of the router, so its `popstate` listener is added before the router's.
+import '../lib/webPopStateGuard';
 
 // Hold the native splash until a real screen can paint. Without this it disappears the moment
 // the JS bundle mounts — long before migrations finish — so a cold launch shows the launch
@@ -474,9 +477,10 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
         initWebDb()
             .then(() => setReady(true))
             .catch((e) => {
-                const msg = e instanceof Error ? e.message : String(e);
                 console.error('[WebDbGate] initWebDb failed:', e);
-                setError(msg);
+                setError(isStorageReadError(e)
+                    ? t('root.storageReadError')
+                    : e instanceof Error ? e.message : String(e));
             });
     }, []);
 
@@ -492,13 +496,9 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
                     <Text style={errorStyles.message}>{safeMessage}</Text>
                     <TouchableOpacity
                         style={errorStyles.primaryButton}
-                        onPress={() => {
-                            setError(null);
-                            setReady(false);
-                            initWebDb()
-                                .then(() => setReady(true))
-                                .catch((e2) => setError(e2 instanceof Error ? e2.message : String(e2)));
-                        }}
+                        // sql.js keeps a failed WebAssembly start for the life of the page, so a
+                        // second attempt in place fails at once; a reload starts everything afresh.
+                        onPress={() => window.location.reload()}
                     >
                         <Text style={errorStyles.primaryButtonText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
@@ -571,7 +571,26 @@ function StartupGate({ children }: { children: React.ReactNode }) {
 function AppStack() {
     const router = useRouter();
     const colors = useThemeColors();
-    const { t } = useI18n();
+    const isDarkTheme = useIsDarkTheme();
+    const { t, locale } = useI18n();
+
+    // The page's own chrome — scroll bars, native date and time inputs, the mobile address bar and
+    // an installed app's title bar — follows the app's Light/Dark/System choice, as UIKit does on
+    // iPhone, rather than the system scheme the static page could only guess from.
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+        document.documentElement.style.colorScheme = isDarkTheme ? 'dark' : 'light';
+        document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+            meta.setAttribute('content', colors.bgPrimary);
+        });
+    }, [colors.bgPrimary, isDarkTheme]);
+
+    // The static page is served as Turkish; once English is chosen, screen readers, hyphenation
+    // and the browser's translate offer need the document language to say so.
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+        document.documentElement.lang = locale;
+    }, [locale]);
 
     useEffect(() => {
         if (Platform.OS === 'web') return;
@@ -598,25 +617,10 @@ function AppStack() {
         };
     }, [router]);
 
+    // The web build takes reminder clicks in WebAppIntegrations, which is mounted below.
     useEffect(() => {
-        if (Platform.OS !== 'ios') return;
-        const openReminder = (response: Notifications.NotificationResponse | null) => {
-            if (!response || !isStudyReminderData(response.notification.request.content.data)) return;
-            router.replace('/decks' as any);
-            Notifications.clearLastNotificationResponse();
-        };
-
-        let active = true;
-        void Notifications.getLastNotificationResponseAsync()
-            .then((response) => {
-                if (active) openReminder(response);
-            })
-            .catch((error) => console.warn('[Notifications] launch response failed:', error));
-        const subscription = Notifications.addNotificationResponseReceivedListener(openReminder);
-        return () => {
-            active = false;
-            subscription.remove();
-        };
+        if (Platform.OS !== 'ios') return undefined;
+        return onStudyReminderOpened(() => router.replace('/decks' as any));
     }, [router]);
 
     return (
@@ -693,10 +697,9 @@ function AppStack() {
                         ...dismissibleSheetPresentation,
                         gestureEnabled: true,
                         gestureDirection: 'vertical',
-                        headerShown: true,
-                        title: t('root.cardInfo'),
-                        headerStyle: { backgroundColor: colors.bgSecondary },
-                        headerTintColor: colors.accent,
+                        // The screen draws its own title and back control. A native header on top
+                        // of that repeated both and pushed the first section under the bar.
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen
@@ -770,6 +773,12 @@ function AppStack() {
 export default function RootLayout() {
     return (
         <SafeAreaProvider>
+            {/* The browser tab and shared links name the app; the static pages carry it as well. */}
+            {Platform.OS === 'web' ? (
+                <Head>
+                    <title>TusAnkiM</title>
+                </Head>
+            ) : null}
             <AppErrorBoundary>
                 <WebDbGate>
                     <AppProvider>

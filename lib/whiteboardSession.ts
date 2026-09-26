@@ -11,7 +11,7 @@
 //
 // https://github.com/ankidroid/Anki-Android/blob/main/AnkiDroid/src/main/java/com/ichi2/anki/MetaDB.kt
 
-import { getDbSetting, setDbSetting } from './storage';
+import { getDbSetting, setDbSetting } from './dbSettings';
 
 /** Per-deck board preferences, mirroring the columns of AnkiDroid's `whiteboardState` row. */
 export interface WhiteboardDeckState {

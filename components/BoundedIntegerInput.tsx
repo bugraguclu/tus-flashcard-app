@@ -138,7 +138,7 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
                 maxLength={maxChars}
                 accessibilityLabel={accessibilityLabel}
             />
-            {suffix ? <Text style={styles.suffix} pointerEvents="none">{suffix}</Text> : null}
+            {suffix ? <Text style={[styles.suffix, { pointerEvents: 'none' }]}>{suffix}</Text> : null}
         </Pressable>
     );
 });

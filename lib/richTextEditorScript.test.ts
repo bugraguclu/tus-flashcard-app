@@ -68,7 +68,13 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         for (const listener of listeners.get(type) ?? []) listener({ preventDefault: () => undefined, ...event });
         frames.splice(0).forEach((frame) => frame());
     };
-    return { posted, dispatch, editorHtml: () => html, setEditorHtml: (value: string) => { html = value; } };
+    return {
+        posted,
+        dispatch,
+        editorHtml: () => html,
+        setEditorHtml: (value: string) => { html = value; },
+        readHtml: () => (window.__tusEditorReadHtml as () => unknown)(),
+    };
 }
 
 const baseConfig: RichTextEditorDocumentConfig = {
@@ -114,6 +120,29 @@ describe('rich text field script', () => {
             (entry.message as { type: string; html?: string }).type === 'change'
             && (entry.message as { html?: string }).html === 'yeni <i>metin</i>'
         ))).toBe(true);
+    });
+
+    it('numbers each edit it reports so a late message cannot pass for a newer one', () => {
+        const run = runEditorScript({ ...baseConfig, hostOrigin: 'https://app.example' }, 'web');
+        run.setEditorHtml('ilk');
+        run.dispatch('input');
+        run.setEditorHtml('ilk ikinci');
+        run.dispatch('input');
+        const changes = run.posted
+            .map((entry) => entry.message as { type: string; html?: string; seq?: number })
+            .filter((message) => message.type === 'change');
+        expect(changes).toEqual([
+            { type: 'change', html: 'ilk', seq: 1 },
+            { type: 'change', html: 'ilk ikinci', seq: 2 },
+        ]);
+    });
+
+    it('lets the web host read the newest edit before its message has been delivered', () => {
+        const run = runEditorScript({ ...baseConfig, hostOrigin: 'https://app.example' }, 'web');
+        expect(run.readHtml()).toEqual({ html: baseConfig.html, seq: 0 });
+        run.setEditorHtml('son kelime');
+        run.dispatch('input');
+        expect(run.readHtml()).toEqual({ html: 'son kelime', seq: 1 });
     });
 
     it('stays silent on web without a host origin to address', () => {

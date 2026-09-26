@@ -59,22 +59,31 @@ export function createWebBackupStore(): BackupStore {
             const db = await openIdb();
             return new Promise((resolve, reject) => {
                 const tx = db.transaction(IDB_STORE, 'readonly');
-                const store = tx.objectStore(IDB_STORE);
-                const keysReq = store.getAllKeys();
-                const valuesReq = store.getAll();
+                const backups: BackupInfo[] = [];
+                // One snapshot at a time: a snapshot can run to tens of megabytes, and reading
+                // them all at once (getAll) held every one in memory together, which a phone's
+                // browser can kill the tab for. Only the size and the date are kept.
+                const cursorReq = tx.objectStore(IDB_STORE).openCursor();
+                cursorReq.onsuccess = () => {
+                    const cursor = cursorReq.result;
+                    if (!cursor) return;
+                    const stored = cursor.value as StoredBackup | undefined;
+                    backups.push({
+                        name: String(cursor.key),
+                        size: stored?.contents.length ?? 0,
+                        createdAt: stored?.createdAt ?? 0,
+                    });
+                    cursor.continue();
+                };
                 tx.oncomplete = () => {
                     db.close();
-                    const keys = keysReq.result as string[];
-                    const values = valuesReq.result as StoredBackup[];
-                    resolve(
-                        keys.map((name, i) => ({
-                            name,
-                            size: values[i]?.contents.length ?? 0,
-                            createdAt: values[i]?.createdAt ?? 0,
-                        })),
-                    );
+                    resolve(backups);
                 };
                 tx.onerror = () => {
+                    db.close();
+                    reject(tx.error);
+                };
+                tx.onabort = () => {
                     db.close();
                     reject(tx.error);
                 };

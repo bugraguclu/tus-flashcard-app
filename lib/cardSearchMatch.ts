@@ -56,10 +56,16 @@ export interface CardMatcherOptions {
     introducedWithin?: (cardId: number, days: number) => boolean;
 }
 
+/**
+ * What one term says about one card. `undefined` means the context cannot tell — a `rated:`
+ * without a review-log lookup, an `added:` on a card loaded without its creation stamp — and
+ * also stands for a term that narrows nothing, such as an empty or half-typed one.
+ */
+type Verdict = boolean | undefined;
+type TermTest = (card: CardSearchContext) => Verdict;
 type Predicate = (card: CardSearchContext) => boolean;
 
-/** A term the current context cannot answer never removes a card: the authority is elsewhere. */
-const ALWAYS: Predicate = () => true;
+const UNKNOWN: TermTest = () => undefined;
 
 const DAY_MS = 86_400_000;
 
@@ -118,9 +124,9 @@ function searchableText(card: CardSearchContext): string {
     return `${card.text} ${card.tags.join(' ')} ${card.deckName}`;
 }
 
-function textPredicate(term: string): Predicate {
+function textPredicate(term: string): TermTest {
     const value = unquoteSearchValue(term);
-    if (!value) return ALWAYS;
+    if (!value) return UNKNOWN;
 
     // A quoted phrase is matched as a phrase; bare words keep the app's per-word prefix search,
     // which behaves like Anki's implicit `word*`.
@@ -131,7 +137,7 @@ function textPredicate(term: string): Predicate {
     return (card) => matchesSearch(searchableText(card), value);
 }
 
-function statePredicate(state: string, options: CardMatcherOptions): Predicate | null {
+function statePredicate(state: string, options: CardMatcherOptions): TermTest | null {
     switch (state) {
         // new/learn/review/relearn read the card's type, so a suspended or buried card still
         // reports the state it is in; only the queue-based states read the queue.
@@ -154,7 +160,7 @@ function statePredicate(state: string, options: CardMatcherOptions): Predicate |
     }
 }
 
-function propPredicate(body: string, options: CardMatcherOptions): Predicate | null {
+function propPredicate(body: string, options: CardMatcherOptions): TermTest | null {
     const match = body.match(/^(ivl|reps|lapses|ease|pos|due|s|d|r)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
     if (!match) return null;
 
@@ -164,19 +170,25 @@ function propPredicate(body: string, options: CardMatcherOptions): Predicate | n
 
     switch (key) {
         // FSRS properties. Difficulty is written as a 0-1 fraction in searches but stored on the
-        // 1-10 scale, and a new card has no retrievability at all.
+        // 1-10 scale, and a new card has no retrievability at all. A card without a memory state
+        // (null) fails them; a context loaded without memory states (undefined) cannot tell.
         case 's': {
             const compare = numericComparison(op, value);
-            return (card) => (card.memoryState ? compare(card.memoryState.stability) : false);
+            return (card) => (card.memoryState === undefined
+                ? undefined
+                : card.memoryState !== null && compare(card.memoryState.stability));
         }
         case 'd': {
             const compare = numericComparison(op, value * 9 + 1);
-            return (card) => (card.memoryState ? compare(card.memoryState.difficulty) : false);
+            return (card) => (card.memoryState === undefined
+                ? undefined
+                : card.memoryState !== null && compare(card.memoryState.difficulty));
         }
         case 'r': {
             const compare = numericComparison(op, value);
             return (card) => {
-                if (card.type === 0 || !card.memoryState) return false;
+                if (card.type === 0 || card.memoryState === null) return false;
+                if (card.memoryState === undefined) return undefined;
                 // Days since the last answer, falling back to the schedule for a card whose
                 // review time was never recorded — the same fallback the scheduler uses.
                 const elapsedDays = card.lastReviewedAtMs && card.lastReviewedAtMs > 0
@@ -222,17 +234,17 @@ function dayWindowPredicate(
     rawDays: string,
     options: CardMatcherOptions,
     read: (card: CardSearchContext) => number | undefined,
-): Predicate | null {
+): TermTest | null {
     const days = Number(rawDays);
     if (!Number.isFinite(days) || days <= 0) return null;
     const cutoff = options.dayCutoffMs - (Math.floor(days) - 1) * DAY_MS;
     return (card) => {
         const stamp = read(card);
-        return stamp === undefined ? true : stamp >= cutoff;
+        return stamp === undefined ? undefined : stamp >= cutoff;
     };
 }
 
-function predicateForTerm(term: string, options: CardMatcherOptions): Predicate {
+function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
     const separator = term.indexOf(':');
     if (separator <= 0 || isQuotedTerm(term)) return textPredicate(term);
 
@@ -241,56 +253,56 @@ function predicateForTerm(term: string, options: CardMatcherOptions): Predicate 
 
     switch (prefix) {
         case 'deck': {
-            if (!body) return ALWAYS;
+            if (!body) return UNKNOWN;
             const matches = hierarchicalMatcher(body);
             return (card) => matches(card.deckName);
         }
         case 'tag': {
-            if (!body) return ALWAYS;
+            if (!body) return UNKNOWN;
             if (body === 'none') return (card) => card.tags.length === 0;
             const matches = hierarchicalMatcher(body);
             return (card) => card.tags.some(matches);
         }
         case 'is':
-            return statePredicate(body.toLowerCase(), options) ?? ALWAYS;
+            return statePredicate(body.toLowerCase(), options) ?? UNKNOWN;
         case 'flag': {
             const value = Number(body);
-            if (!Number.isInteger(value) || value < 0 || value > 7) return ALWAYS;
+            if (!Number.isInteger(value) || value < 0 || value > 7) return UNKNOWN;
             return (card) => (card.flags & 7) === value;
         }
         case 'prop':
-            return propPredicate(body, options) ?? ALWAYS;
+            return propPredicate(body, options) ?? UNKNOWN;
         case 'rated': {
             const [rawDays, rawEase] = body.split(':');
             const days = Number(rawDays);
-            if (!Number.isFinite(days) || days <= 0) return ALWAYS;
+            if (!Number.isFinite(days) || days <= 0) return UNKNOWN;
             const ease = rawEase === undefined ? null : Number(rawEase);
             const lookup = options.ratedWithin;
-            if (!lookup) return ALWAYS;
+            if (!lookup) return UNKNOWN;
             return (card) => lookup(card.cardId, Math.floor(days), ease);
         }
         case 'introduced': {
             const days = Number(body);
             const lookup = options.introducedWithin;
-            if (!lookup || !Number.isFinite(days) || days <= 0) return ALWAYS;
+            if (!lookup || !Number.isFinite(days) || days <= 0) return UNKNOWN;
             return (card) => lookup(card.cardId, Math.floor(days));
         }
         case 'added':
-            return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? ALWAYS;
+            return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? UNKNOWN;
         case 'edited':
-            return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? ALWAYS;
+            return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? UNKNOWN;
         case 'note': {
-            if (!body) return ALWAYS;
+            if (!body) return UNKNOWN;
             const matches = wildcardMatcher(body);
-            return (card) => (card.noteTypeName === undefined ? true : matches(card.noteTypeName));
+            return (card) => (card.noteTypeName === undefined ? undefined : matches(card.noteTypeName));
         }
         case 'card': {
-            if (!body) return ALWAYS;
+            if (!body) return UNKNOWN;
             // Anki accepts a template name or its 1-based number.
             const ordinal = Number(body);
             if (Number.isInteger(ordinal) && ordinal > 0) return (card) => card.templateOrd === ordinal - 1;
             const matches = wildcardMatcher(body);
-            return (card) => (card.templateName === undefined ? true : matches(card.templateName));
+            return (card) => (card.templateName === undefined ? undefined : matches(card.templateName));
         }
         case 'nid': {
             const ids = idList(body);
@@ -305,14 +317,14 @@ function predicateForTerm(term: string, options: CardMatcherOptions): Predicate 
             try {
                 regex = new RegExp(body, 'i');
             } catch {
-                return ALWAYS; // A half-typed pattern narrows nothing instead of throwing.
+                return UNKNOWN; // A half-typed pattern narrows nothing instead of throwing.
             }
             return (card) => regex.test(noteText(card));
         }
         case 'w': {
             // Whole word rather than the prefix match a bare word gets.
             const word = normalizeSearchText(body);
-            if (!word) return ALWAYS;
+            if (!word) return UNKNOWN;
             return (card) => normalizeSearchText(searchableText(card))
                 .split(/[^\p{L}\p{N}]+/u)
                 .some((candidate) => candidate === word);
@@ -326,7 +338,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): Predicate 
             const fieldKey = foldKey(term.slice(0, separator));
             const matches = wildcardMatcher(body);
             return (card) => {
-                if (!card.fields) return true;
+                if (!card.fields) return undefined;
                 const entry = Object.entries(card.fields)
                     .find(([name]) => foldKey(name) === fieldKey);
                 if (!entry) return matchesSearch(searchableText(card), unquoteSearchValue(term));
@@ -341,18 +353,41 @@ function predicateForTerm(term: string, options: CardMatcherOptions): Predicate 
  * which callers read as "everything matches".
  *
  * A term the supplied context cannot answer — `rated:` without a review-log lookup, `note:` on a
- * context with no note type — is treated as satisfied rather than failed. The browser filters the
- * full result set through a context that has everything; the per-page pass then only has to avoid
- * contradicting it.
+ * context with no note type — is left undecided, and stays undecided under `-`, `and` and `or`
+ * unless the rest of the query settles the card either way. Only a definite "no" removes a card.
+ * The browser filters the full result set through a context that has everything; the per-page
+ * pass then only has to avoid contradicting it, which a negated term would otherwise do by
+ * turning "cannot tell" into "no".
  */
 export function compileCardMatcher(query: string, options: CardMatcherOptions): Predicate | null {
     const parsed = parseSearchQuery(query);
     if (!parsed) return null;
 
-    return foldSearchNode<Predicate>(parsed, {
+    const test = foldSearchNode<TermTest>(parsed, {
         term: (text) => predicateForTerm(text, options),
-        not: (child) => (card) => !child(card),
-        and: (parts) => (card) => parts.every((part) => part(card)),
-        or: (parts) => (card) => parts.some((part) => part(card)),
+        not: (child) => (card) => {
+            const verdict = child(card);
+            return verdict === undefined ? undefined : !verdict;
+        },
+        and: (parts) => (card) => {
+            let verdict: Verdict = true;
+            for (const part of parts) {
+                const next = part(card);
+                if (next === false) return false;
+                if (next === undefined) verdict = undefined;
+            }
+            return verdict;
+        },
+        or: (parts) => (card) => {
+            let verdict: Verdict = false;
+            for (const part of parts) {
+                const next = part(card);
+                if (next === true) return true;
+                if (next === undefined) verdict = undefined;
+            }
+            return verdict;
+        },
     });
+    if (!test) return null;
+    return (card) => test(card) !== false;
 }

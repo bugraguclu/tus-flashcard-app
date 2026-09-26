@@ -11,6 +11,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 <meta httpEquiv="Content-Security-Policy" content={csp} />
                 <meta name="referrer" content="no-referrer" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+                <meta name="description" content="Aralıklı tekrarla çalışılan, çevrimdışı kullanılabilen TUS kartları." />
                 {/* Installable like the iPhone app: home-screen icon, standalone window, theme bar. */}
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />

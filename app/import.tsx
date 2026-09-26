@@ -46,7 +46,7 @@ import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteM
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
-import { dbUpsertFtsCard } from '../lib/db';
+import { dbUpsertFtsCard, readOnlyTabMessage } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
@@ -359,6 +359,11 @@ export default function ImportScreen() {
 
     const runImport = async (textOptions: ImportOptions | null, backupFirst: boolean) => {
         if (!file) return;
+        const readOnly = readOnlyTabMessage();
+        if (readOnly) {
+            alert(t('common.error'), readOnly);
+            return;
+        }
         setImporting(true);
         // Let the spinner paint before the synchronous, possibly large import blocks the thread.
         await new Promise((resolve) => setTimeout(resolve, 0));

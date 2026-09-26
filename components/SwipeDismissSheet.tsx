@@ -3,6 +3,7 @@ import {
     Animated,
     Keyboard,
     PanResponder,
+    Platform,
     StyleProp,
     StyleSheet,
     TouchableOpacity,
@@ -24,6 +25,8 @@ interface SwipeDismissSheetProps {
 
 const DISMISS_DISTANCE = 72;
 const DISMISS_VELOCITY = 0.8;
+// The browser has no native animation driver; asking for it only logs a fallback warning.
+const NATIVE_DRIVER = Platform.OS !== 'web';
 
 /** A bottom-sheet surface whose grabber can be tapped or pulled down to dismiss it. */
 export default function SwipeDismissSheet({
@@ -56,7 +59,7 @@ export default function SwipeDismissSheet({
         Animated.timing(translateY, {
             toValue: Math.max(height, 600),
             duration: 180,
-            useNativeDriver: true,
+            useNativeDriver: NATIVE_DRIVER,
         }).start(() => onDismiss());
     }, [height, onDismiss, translateY]);
 
@@ -84,7 +87,7 @@ export default function SwipeDismissSheet({
                 toValue: 0,
                 speed: 22,
                 bounciness: 5,
-                useNativeDriver: true,
+                useNativeDriver: NATIVE_DRIVER,
             }).start();
         },
         onPanResponderTerminate: () => {
@@ -92,7 +95,7 @@ export default function SwipeDismissSheet({
                 toValue: 0,
                 speed: 22,
                 bounciness: 5,
-                useNativeDriver: true,
+                useNativeDriver: NATIVE_DRIVER,
             }).start();
         },
         onPanResponderTerminationRequest: () => false,

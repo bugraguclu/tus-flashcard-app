@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // per-deck board row goes straight to settings. Without a stand-in for that table, an assertion
 // about the deck row passes whether or not anything cleared it.
 const settingsRows = vi.hoisted(() => new Map<string, string>());
-vi.mock('./storage', () => ({
+vi.mock('./dbSettings', () => ({
     getDbSetting: (key: string) => settingsRows.get(key) ?? null,
     setDbSetting: (key: string, value: string) => { settingsRows.set(key, value); },
 }));

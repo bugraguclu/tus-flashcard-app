@@ -434,6 +434,31 @@ export default function CardWebView({
                 onLoad={() => {
                     const doc = iframeRef.current?.contentDocument;
                     if (!doc?.body) return;
+                    // A click on the card moves keyboard focus into this document, whose keys never
+                    // reach the page, so the reviewer's shortcuts and a dialog's Escape would stop
+                    // working. Each key is replayed on the frame element, from where it bubbles
+                    // through the page as if the card were part of it; a field keeps its own keys.
+                    const forwardKey = (event: KeyboardEvent) => {
+                        const target = event.target as HTMLElement | null;
+                        if (target?.isContentEditable || /^(input|textarea|select)$/i.test(target?.tagName ?? '')) return;
+                        const frame = iframeRef.current;
+                        if (!frame) return;
+                        const replay = new KeyboardEvent(event.type, {
+                            key: event.key,
+                            code: event.code,
+                            location: event.location,
+                            repeat: event.repeat,
+                            ctrlKey: event.ctrlKey,
+                            metaKey: event.metaKey,
+                            altKey: event.altKey,
+                            shiftKey: event.shiftKey,
+                            bubbles: true,
+                            cancelable: true,
+                        });
+                        if (!frame.dispatchEvent(replay)) event.preventDefault();
+                    };
+                    doc.addEventListener('keydown', forwardKey);
+                    doc.addEventListener('keyup', forwardKey);
                     // The iframe is sandboxed without allow-scripts, so the hint reveal is bound
                     // from here — the document is same-origin, which is all the binding needs.
                     doc.querySelectorAll('a.hint[data-hint-target]').forEach((link) => {

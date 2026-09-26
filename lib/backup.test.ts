@@ -302,6 +302,17 @@ describe('restoreBackup', () => {
         expect(h.imports).toHaveLength(2);
     });
 
+    it('refuses to restore in a web tab that cannot save, touching nothing', async () => {
+        const h = makeHarness();
+        const { fileName } = await createBackupNow(h.deps);
+        const filesBefore = [...h.files.keys()];
+
+        await expect(restoreBackup(fileName, { ...h.deps, isWriter: () => false })).rejects.toThrow();
+
+        expect([...h.files.keys()]).toEqual(filesBefore);
+        expect(h.imports).toHaveLength(0);
+    });
+
     it('does not write a snapshot when the backup itself cannot be read', async () => {
         const h = makeHarness();
 

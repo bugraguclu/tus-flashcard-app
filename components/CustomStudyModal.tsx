@@ -267,8 +267,9 @@ export default function CustomStudyModal({
                 option === 'newLimit' ? delta : 0,
                 option === 'reviewLimit' ? delta : 0,
                 settings.dayRolloverHour,
-                // Anki extends the parents too whenever their limits still cap this deck.
-                { includeParents: settings.limitsStartFromTop !== false },
+                // Anki extends a parent's allowance only while `apply_all_parent_limits` is on,
+                // because only then can that parent still hold this deck back.
+                { includeParents: settings.limitsStartFromTop === true },
             );
             rememberCustomStudyExtend(deck.id, field, delta);
             onClose();

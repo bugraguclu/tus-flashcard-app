@@ -2,7 +2,7 @@ import type { AppSettings, Grade } from './types';
 import type { AnkiCard, ReviewLog } from './models';
 import { localDayNumber } from './ankiState';
 import { fsrsLastReviewInfo } from './fsrsMemory';
-import { setDueDateInterval } from './schedulingIntervals';
+import { parseDueRange, setDueDateInterval, type DueRange } from './schedulingIntervals';
 import { logManualEntry } from './reviewLogger';
 import { revlogByCard } from './fsrsMaintenance';
 import {
@@ -17,26 +17,6 @@ import {
     setCardBuried,
     setCardSuspended,
 } from './studyRepository';
-
-export interface DueRange {
-    minDays: number;
-    maxDays: number;
-    forceInterval: boolean;
-}
-
-/** Parse Anki's browser due syntax: `5`, `3-7`, `-2`, and an optional trailing `!`. */
-export function parseDueRange(input: string): DueRange | null {
-    const match = input.trim().match(/^(-?\d+)(?:\s*-\s*(-?\d+))?\s*(!)?$/);
-    if (!match) return null;
-    const first = Number(match[1]);
-    const second = match[2] === undefined ? first : Number(match[2]);
-    if (!Number.isSafeInteger(first) || !Number.isSafeInteger(second)) return null;
-    return {
-        minDays: Math.min(first, second),
-        maxDays: Math.max(first, second),
-        forceInterval: match[3] === '!',
-    };
-}
 
 function selectedCards(cardIds: number[]): AnkiCard[] {
     return [...new Set(cardIds)]
@@ -188,4 +168,4 @@ export function gradeSelectedNow(cardIds: number[], grade: Grade, settings: AppS
     return graded;
 }
 
-export { setDueDateInterval } from './schedulingIntervals';
+export { parseDueRange, setDueDateInterval, type DueRange } from './schedulingIntervals';

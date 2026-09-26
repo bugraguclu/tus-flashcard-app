@@ -278,8 +278,22 @@ export default function TabLayout() {
 
         if (targetPathname === pathname) {
             // Re-selecting the screen already on top is a scope change, not a screen change:
-            // update its params in place instead of stacking a second copy of the reviewer.
-            router.replace(target as any);
+            // its query changes in place, so the reviewer keeps its session (the card on screen,
+            // undo, timers) rather than being remounted by a replace. Every scope key is written,
+            // so a key the new scope does not name is cleared rather than carried over.
+            const scope: Record<string, string | undefined> = {
+                deck: undefined,
+                subject: undefined,
+                topic: undefined,
+                all: undefined,
+                scope: undefined,
+            };
+            for (const pair of (target.split('?')[1] ?? '').split('&')) {
+                if (!pair) continue;
+                const [key, value = ''] = pair.split('=');
+                scope[decodeURIComponent(key)] = decodeURIComponent(value);
+            }
+            router.setParams(scope as any);
         } else if (targetPathname === '/decks') {
             // The deck list is the root of this stack. Returning to it pops back with the
             // native pop animation rather than pushing a second deck list over the reviewer.

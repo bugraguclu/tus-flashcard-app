@@ -13,6 +13,7 @@ import { useCatalogStatus } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
+import { readOnlyTabMessage } from '../lib/db';
 import { formatCount } from '../lib/i18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
 
@@ -39,6 +40,11 @@ export default function CatalogUnlockSheet({ visible, onClose, onUnlocked }: Pro
 
     const unlock = async () => {
         if (submitting || catalogInstalling) return;
+        const readOnly = readOnlyTabMessage();
+        if (readOnly) {
+            setError(readOnly);
+            return;
+        }
         setSubmitting(true);
         setError(null);
         try {

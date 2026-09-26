@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useColorScheme, type ColorSchemeName } from 'react-native';
+import { Platform, useColorScheme, type ColorSchemeName } from 'react-native';
 
 export type ColorScheme = typeof LightColors;
 export type ThemeMode = 'system' | 'light' | 'dark';
@@ -49,6 +49,18 @@ const LightColors = {
     rowSuspendedBg: '#fcf1cf',
     rowBuriedBg: '#e6ebe9',
 
+    // Statistics charts. Card states keep the colours Anki gives them (new blue, learning orange,
+    // relearning red, young and mature green), stepped per theme and checked as a set: every pair
+    // that sits side by side in a stack stays apart under colour-blindness simulation (ΔE ≥ 8)
+    // and with full colour vision (ΔE ≥ 15).
+    chartNew: '#2f7fc1',
+    chartLearn: '#e08a1e',
+    chartRelearn: '#d1453b',
+    chartYoung: '#6cc28a',
+    chartMature: '#1f7a4a',
+    chartFiltered: '#8a63c9',
+    chartGood: '#27864e',
+
     white: '#ffffff',
     transparent: 'transparent',
 };
@@ -91,6 +103,14 @@ const DarkColors: ColorScheme = {
 
     rowSuspendedBg: '#3b3218',
     rowBuriedBg: '#232826',
+
+    chartNew: '#3a84ca',
+    chartLearn: '#d08000',
+    chartRelearn: '#af2934',
+    chartYoung: '#54a863',
+    chartMature: '#137738',
+    chartFiltered: '#9470cd',
+    chartGood: '#1d7d3e',
 
     white: '#ffffff',
     transparent: 'transparent',
@@ -171,26 +191,44 @@ export const FontSize = {
     title: 32,
 };
 
+interface DropShadow {
+    /** Horizontal offset in points; negative casts the shadow to the left. */
+    x?: number;
+    /** Vertical offset in points. */
+    y: number;
+    /** Blur radius in points. */
+    blur: number;
+    /** Opacity of the black shadow, 0–1. */
+    opacity: number;
+    /** Android's elevation, kept for parity with the shadow's weight. */
+    elevation?: number;
+}
+
+/**
+ * A black drop shadow in the form each platform draws: React Native's shadow props natively and
+ * `boxShadow` on web, where react-native-web draws the same shadow but warns on every shadow* prop.
+ */
+export function dropShadow({ x = 0, y, blur, opacity, elevation }: DropShadow) {
+    return Platform.select({
+        web: { boxShadow: `${x}px ${y}px ${blur}px rgba(0, 0, 0, ${opacity})` },
+        default: {
+            shadowColor: '#000',
+            shadowOffset: { width: x, height: y },
+            shadowOpacity: opacity,
+            shadowRadius: blur,
+            ...(elevation === undefined ? {} : { elevation }),
+        },
+    });
+}
+
+/** Removes a shadow a base style gave, on every platform. */
+export const NO_SHADOW = Platform.select({
+    web: { boxShadow: 'none' },
+    default: { shadowOpacity: 0, elevation: 0 },
+});
+
 export const Shadows = {
-    sm: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 3,
-        elevation: 1,
-    },
-    md: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.07,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    lg: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 5,
-    },
+    sm: dropShadow({ y: 1, blur: 3, opacity: 0.06, elevation: 1 }),
+    md: dropShadow({ y: 2, blur: 8, opacity: 0.07, elevation: 3 }),
+    lg: dropShadow({ y: 4, blur: 16, opacity: 0.08, elevation: 5 }),
 };

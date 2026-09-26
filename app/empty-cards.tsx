@@ -158,7 +158,7 @@ export default function EmptyCardsScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: { padding: Spacing.lg, gap: Spacing.sm },
+        content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
         help: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 20 },
         loadingBox: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxl },
         emptyBox: { alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xxl },

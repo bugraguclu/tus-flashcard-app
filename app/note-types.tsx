@@ -58,7 +58,7 @@ export default function NoteTypesScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    content: { padding: Spacing.lg, gap: Spacing.sm },
+    content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm },
     row: {
         flexDirection: 'row',

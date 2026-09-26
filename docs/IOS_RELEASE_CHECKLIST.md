@@ -38,7 +38,7 @@ Run only the row touched by the change, plus the release smoke below for a relea
 | Browser filters | Open the flag dropdown from the browser overflow menu; toggle two checkboxes, confirm the selected count and result chip, then restore “Tümünü seç” |
 | Browser table mode | Switch from Cards to Notes; confirm the modal closes, the total changes to notes, sibling cards collapse into one row, aggregate scheduling details appear, and switching back restores individual card rows |
 | Filtered deck options | Open Create Filtered Deck from the deck list and Browse; verify the same full-screen form opens, all ten order choices appear in Anki order, second-filter fields expand, the help card scrolls, and Build returns to the created deck |
-| Statistics charts | Open Statistics on the smallest supported iPhone in the light and the dark theme. Tap a bar and confirm the caption above the plot and the legend below it switch to that bar, then tap it again to clear them; slide a finger sideways across a chart and confirm the selection follows while the page holds still, then drag vertically over the same chart and confirm the page scrolls. Confirm Future Due opens on one month and offers the backlog switch only when a card is overdue, that the calendar opens on the current week and a tapped day names its date, and that Card Counts, True Retention and the tile figures are written with the locale's separators (`%85,0`). Under Dönem, switch Week/Month/3 months/Year/All and apply a custom range: only the charts below the control may change. With VoiceOver, swipe up and down on a chart and on the calendar to step through their bars and days. Turn FSRS on and confirm Stability, Difficulty and Retrievability replace Card Ease |
+| Statistics charts | Open Statistics on the smallest supported iPhone in the light and the dark theme; confirm the 12-month default, scroll across every chart, tap a non-empty Future Due, Answer Buttons or Review Intervals bar to pin and dismiss its exact-value readout, toggle Future Due backlog, and verify empty states, axis units and Card Counts percentages. On Reviews, Hourly Breakdown and Added, slide a finger sideways across the plot: the caption above it follows the finger while the page holds still, and a vertical drag over the same chart still scrolls the page; switch Reviews between count and time, and tap an hour to see it marked on the success-rate line too. Tap an Added bar: Kartlarım opens on that bar's cards (an `added:` search) in the deck they went into, and going back returns to Statistics with the deck and range kept. With VoiceOver, swipe up and down on Reviews, Hourly Breakdown and Added to step through their bars, and double-tap a selected Added bar to open its cards |
 | Database check and repair | On a copy of a real collection, run “Veritabanını kontrol et” and note each count; run “Onar ve optimize et”, accept the confirmation, and verify the safety backup appears before any row changes, the summary names the same defect classes the audit reported, and a second audit comes back clean |
 | Editor scroll handoff | In a note whose field is longer than the screen, scroll from outside the field into it: verify the outer page scrolls up to roughly 320px of field height and the field itself takes over past that, in both directions, without the keyboard closing or the page jumping |
 | Photo editor capture | Annotate one photo and one blank canvas page, save both, and reopen them from the card: verify the saved PNG carries the annotations at the drawing's own resolution rather than a screen-sized copy, and that a crop and a quarter turn survive the round trip. On the blank page also add a picture from the library and one from the camera, drag each until it settles on a centre guide, pull a corner to resize it and check the opposite corner stays put, turn it by the knob and check the readout settles on 90°, then draw over it before saving: the exported PNG must carry each picture where it was left, at the size and angle it was left, with the ink on top of it. Repeat the corner pull and the knob on a text label, double-tap it to reopen the composer, and put a picture against the top edge to confirm its knob swaps below the frame instead of disappearing. This path has no automated coverage — a regression here is only visible on device |
@@ -69,12 +69,27 @@ schema changed.
 ## Web regression target
 
 `npm run web` serves the same screens from Metro; `npm run build:web` is the production bundle CI
-builds, with the strict Content-Security-Policy and the service worker. Only the production build
-proves the rich text field runs under that policy, so check web-facing changes there:
+builds, with the strict Content-Security-Policy and the service worker. `vercel.json` publishes the
+same bundle from `master` as the public browser preview, so a push to `master` changes what
+visitors see. Only the production build proves the rich text field runs under that policy, so check
+web-facing changes there:
 
 - Add a note: both fields start as rich text (no raw-HTML fallback), a toolbar format applies to
   the selection, and a picture attached to a field shows in the field and in the reviewer.
 - Drop an `.apkg` and a `.txt` export onto the window: each opens `/import` with its filename.
 - Open `/x-callback-url?action=addnote&type=Basic&deck=…&fldFront=…`: the editor opens filled in.
 - In Settings > Notifications, the toggle asks the browser for permission and the time can be set.
-- Load the deck list once, stop the server and reload: the app still starts from the cache.
+- Load the deck list once, stop the server and reload: the app still starts from the cache. With
+  the server still stopped, open a route never visited (e.g. `/stats`): it starts from the cached
+  page too.
+- Type into the back field and press ✓ straight away: both fields are saved, no duplicate warning
+  names the note just added, and "Bitti" leaves without asking to discard changes.
+- With an unsaved draft in the editor, press the browser's Back: the same "Değişiklikler atılsın
+  mı?" question appears, İptal keeps the draft, and Tamam leaves.
+- Reload the page on `/editor` or `/card-info`: the back arrow opens the deck list.
+- Study with the mouse: click the card, then press Space and 1–4; click the undo button, then press
+  Space. The keys answer the reviewer every time rather than the control that was clicked.
+- In a phone-width window, press Tab in the reviewer: focus starts on the visible header controls,
+  never on the closed sidebar.
+- Open an address that does not exist (e.g. `/bir-sey-yok`): the themed "Sayfa bulunamadı" page
+  appears, and "Destelere dön" opens the deck list without leaving the bad address in history.

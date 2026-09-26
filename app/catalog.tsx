@@ -17,6 +17,8 @@ import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogP
 import { BKA_MANIFEST } from '../lib/bkaManifest';
 import { formatCount } from '../lib/i18n';
 import { alert } from '../lib/confirm';
+import { readOnlyTabMessage } from '../lib/db';
+import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import DisclosureChevron from '../components/DisclosureChevron';
 import LockGlyph from '../components/LockGlyph';
@@ -53,6 +55,11 @@ export default function CatalogScreen() {
 
     const buy = async () => {
         if (busy || owned || !canBuy) return;
+        const readOnly = readOnlyTabMessage();
+        if (readOnly) {
+            alert(l('Kartlar açılamadı', 'Cards could not be unlocked'), readOnly);
+            return;
+        }
         setBusy('purchase');
         try {
             const result = await purchaseCatalog();
@@ -112,7 +119,7 @@ export default function CatalogScreen() {
             <View style={[styles.topBar, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
                 <Pressable
                     style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-                    onPress={() => router.back()}
+                    onPress={() => goBackOr(router)}
                     accessibilityRole="button"
                     accessibilityLabel={l('Kapat', 'Close')}
                     hitSlop={8}
@@ -143,10 +150,9 @@ export default function CatalogScreen() {
                 >
                     {heroSize.width > 0 && (
                         <Svg
-                            style={StyleSheet.absoluteFill}
+                            style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
                             width={heroSize.width}
                             height={heroSize.height}
-                            pointerEvents="none"
                         >
                             <Defs>
                                 <LinearGradient id="heroFill" x1="0" y1="0" x2="1" y2="1">

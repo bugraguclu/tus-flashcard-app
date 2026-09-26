@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
 import Svg, { Circle, G, Line, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
-import { FontSize, Spacing, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, dropShadow, type ColorScheme } from '../constants/theme';
 import type { StatsSeriesPoint } from '../lib/ankiStats';
 import { axisTicks, barGeometry, compactAxisValue, labelIndexes, tooltipPlacement } from '../lib/chartAxis';
 
@@ -400,8 +400,8 @@ export default function StatsBarChart({
                                 top: tooltipTop,
                                 opacity: tooltipSize.width > 0 ? 1 : 0,
                             },
+                            { pointerEvents: 'none' },
                         ]}
-                        pointerEvents="none"
                         onLayout={(event) => {
                             const { width: w, height: h } = event.nativeEvent.layout;
                             if (w !== tooltipSize.width || h !== tooltipSize.height) {
@@ -480,11 +480,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: StyleSheet.hairlineWidth,
         gap: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.18,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 3 },
-        elevation: 4,
+        ...dropShadow({ y: 3, blur: 8, opacity: 0.18, elevation: 4 }),
     },
     tooltipLabel: { fontSize: FontSize.xs, fontWeight: '700', marginBottom: 2 },
     tooltipRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },

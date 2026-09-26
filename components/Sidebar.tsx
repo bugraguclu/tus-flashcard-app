@@ -13,6 +13,7 @@ import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } fro
 import type { Subject } from '../lib/types';
 import type { DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName } from '../lib/models';
+import { localizeTopicName } from '../lib/i18n';
 import { useI18n } from '../hooks/useI18n';
 
 export const SIDEBAR_WIDTH = 292;
@@ -90,7 +91,7 @@ const stylesForIcon = StyleSheet.create({
 });
 
 export function Sidebar(props: SidebarProps) {
-    const { t, l } = useI18n();
+    const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const {
@@ -116,6 +117,9 @@ export function Sidebar(props: SidebarProps) {
         navigate,
         statsPath = '/stats',
     } = props;
+    // On narrow screens the closed drawer is only moved off-screen, so it must also leave the
+    // Tab order and the screen-reader tree; otherwise focus lands on controls nobody can see.
+    const hidden = !isWide && !sidebarOpen;
 
     const renderDeckNodes = (nodes: DeckTreeNode[], depth = 0): React.ReactNode => nodes.map((node) => {
         const { deck, children } = node;
@@ -191,8 +195,8 @@ export function Sidebar(props: SidebarProps) {
 
     return (
         <View
-            pointerEvents={isWide || sidebarOpen ? 'auto' : 'none'}
-            style={[styles.sidebar, !isWide && !sidebarOpen && styles.sidebarHidden]}
+            style={[styles.sidebar, hidden && styles.sidebarHidden, { pointerEvents: hidden ? 'none' : 'auto' }]}
+            aria-hidden={hidden}
         >
             <TouchableOpacity
                 style={styles.sidebarHeader}
@@ -266,7 +270,7 @@ export function Sidebar(props: SidebarProps) {
                                     >
                                         <View style={[styles.topicDot, isTopicSelected && styles.topicDotActive]} />
                                         <Text style={[styles.topicName, isTopicSelected && styles.topicNameActive]}>
-                                            {topic}
+                                            {localizeTopicName(locale, topic)}
                                         </Text>
                                         <Text style={[styles.topicCount, isTopicSelected && styles.topicCountActive]}>
                                             {getTopicCount(subject.id, topic)}
@@ -333,7 +337,8 @@ function createStyles(colors: ColorScheme) {
     },
     sidebarHidden: {
         ...(Platform.OS === 'web'
-            ? { transform: [{ translateX: -SIDEBAR_WIDTH }] as any }
+            // Browsers skip visibility:hidden content when tabbing; aria-hidden alone would not.
+            ? { transform: [{ translateX: -SIDEBAR_WIDTH }] as any, visibility: 'hidden' as any }
             : { transform: [{ translateX: -SIDEBAR_WIDTH }] }),
     },
     sidebarHeader: {

@@ -7,6 +7,7 @@
 import { Platform } from 'react-native';
 import type { WebSQLiteDatabase } from './webDb';
 import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
+import { translateActive } from './i18n';
 import { openFtsSafeDatabaseSync } from './sqliteOpenOptions';
 
 // Both expo-sqlite and the web wrapper implement this surface, so callers never
@@ -50,6 +51,30 @@ export function isPrimaryTab(): boolean {
     if (Platform.OS !== 'web') return true;
     const { isPrimaryTab: webIsPrimary } = require('./webDb') as typeof import('./webDb');
     return webIsPrimary();
+}
+
+/**
+ * Whether this web tab is reloading to become the writer. It could not save anything it edited,
+ * so prompts that would keep the page open stand down. Always false on native.
+ */
+export function isWriterTakeoverReloading(): boolean {
+    if (Platform.OS !== 'web') return false;
+    const { isWriterTakeoverReloading: reloading } = require('./webDb') as typeof import('./webDb');
+    return reloading();
+}
+
+/**
+ * Why this tab cannot run a collection-wide change, or null when it can. A web tab that is not
+ * the writer keeps its changes in memory only, so an import, a restore or unlocking the catalog
+ * would appear to succeed and then vanish on the next reload; such workflows check this first.
+ */
+export function readOnlyTabMessage(): string | null {
+    return isPrimaryTab() ? null : translateActive('root.readOnlyTabAction');
+}
+
+/** Whether `initWebDb()` failed because the saved collection could not be read back. */
+export function isStorageReadError(error: unknown): boolean {
+    return error instanceof Error && error.name === 'WebStorageReadError';
 }
 
 // ---------- Migrations ----------
@@ -337,6 +362,16 @@ export function runMigrations(db: DBHandle): void {
 
     const row = db.getFirstSync<{ version: number }>('SELECT version FROM schema_version LIMIT 1');
     let currentVersion = row?.version ?? 0;
+
+    // A newer build has already moved this collection past every migration this one knows. An
+    // older build (a web page still cached from before a release) would read columns and stored
+    // values it does not understand and save them back its own way, so it stops here instead.
+    const newestKnownVersion = migrations[migrations.length - 1]?.version ?? 0;
+    if (currentVersion > newestKnownVersion) {
+        throw new Error(
+            `Collection schema v${currentVersion} is newer than this build supports (v${newestKnownVersion}).`,
+        );
+    }
 
     for (const migration of migrations) {
         if (migration.version <= currentVersion) continue;

@@ -38,6 +38,7 @@ const tr = {
 
     'permissions.title': 'İzin Gerekli',
     'permissions.openSettings': 'Ayarları Aç',
+    'permissions.webSiteSettings': 'Tarayıcı bu izni vermedi. Adres çubuğunun yanındaki site ayarlarından bu siteye izin verip tekrar deneyin.',
 
     'anki.again': 'Tekrar',
     'anki.hard': 'Zor',
@@ -57,12 +58,14 @@ const tr = {
     'root.errorTitle': 'Beklenmeyen Bir Hata Oluştu',
     'root.errorDescription': 'Uygulama çalışırken beklenmeyen bir durumla karşılaşıldı. Verileriniz güvende ve korunuyor.',
     'root.databaseError': 'Veritabanı başlatılamadı',
+    'root.storageReadError': 'Kayıtlı koleksiyonunuz tarayıcı depolamasından okunamadı. Hiçbir şey silinmedi; sayfayı yeniden yükleyip tekrar deneyin. Sorun sürerse tarayıcının bu site için veri saklamaya izin verdiğini kontrol edin.',
     'root.startupErrorMessage': 'Uygulama başlatılamadı. Uygulamayı kapatıp yeniden açın; sorun sürerse destek ekibiyle iletişime geçin.',
     'root.returnHome': 'Ana Ekrana Dön',
     'root.technicalDetails': 'Teknik Detaylar',
     'root.copyError': 'Hata Bilgisini Kopyala',
     'root.errorCopied': 'Hata bilgisi panoya kopyalandı',
     'root.secondaryTab': '⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.',
+    'root.readOnlyTabAction': 'Uygulama başka bir sekmede açık ve bu sekmedeki değişiklikler kaydedilmiyor, bu yüzden bu işlem burada yapılamaz. Diğer sekmeyi kapatıp bu sayfayı yeniden yükleyin.',
     'root.editCard': 'Kartı düzenle',
     'root.cardInfo': 'Kart bilgisi',
     'root.import': 'Deste içe aktar',
@@ -204,6 +207,7 @@ const en: Record<TranslationKey, string> = {
 
     'permissions.title': 'Permission Required',
     'permissions.openSettings': 'Open Settings',
+    'permissions.webSiteSettings': 'The browser did not grant this permission. Allow it for this site in the site settings next to the address bar, then try again.',
 
     'anki.again': 'Again',
     'anki.hard': 'Hard',
@@ -223,12 +227,14 @@ const en: Record<TranslationKey, string> = {
     'root.errorTitle': 'Something went wrong',
     'root.errorDescription': 'An unexpected issue occurred while running the app. Your data is safe and intact.',
     'root.databaseError': 'Could not initialize the database',
+    'root.storageReadError': 'Your saved collection could not be read from browser storage. Nothing was deleted; reload the page to try again. If it keeps happening, check that the browser allows this site to store data.',
     'root.startupErrorMessage': 'The app could not start. Close and reopen it; if the issue continues, contact support.',
     'root.returnHome': 'Return to Home',
     'root.technicalDetails': 'Technical Details',
     'root.copyError': 'Copy Error Info',
     'root.errorCopied': 'Error info copied to clipboard',
     'root.secondaryTab': '⚠️ The app is open in another tab — changes in this tab will not be saved.',
+    'root.readOnlyTabAction': 'The app is open in another tab and changes in this tab are not saved, so this cannot be done here. Close the other tab and reload this page.',
     'root.editCard': 'Edit Card',
     'root.cardInfo': 'Card Info',
     'root.import': 'Import deck',
@@ -394,6 +400,22 @@ export function localizeFieldName(locale: SupportedLocale, name: string): string
     if (name === 'Back Extra') return 'Arka Ek';
     if (name === 'Add Reverse') return 'Tersini Ekle';
     return name;
+}
+
+/** Localized display names for Anki's stock card template names ("Card 1"); custom names pass through unchanged. */
+export function localizeCardTemplateName(locale: SupportedLocale, name: string): string {
+    if (locale === 'en') return name;
+    const stock = /^Card (\d+)$/.exec(name);
+    return stock ? `Kart ${stock[1]}` : name;
+}
+
+/**
+ * Display name for a card's topic. A note that names no topic is filed under the sentinel
+ * 'General' by the study repository and the search index; only that sentinel is translated.
+ */
+export function localizeTopicName(locale: SupportedLocale, topic: string): string {
+    if (locale === 'en') return topic;
+    return topic === 'General' ? 'Genel' : topic;
 }
 
 /**

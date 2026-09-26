@@ -8,7 +8,16 @@ vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
 }));
 
-import { getAnkiStatsSnapshot, resolveStatsDateRange } from './ankiStats';
+import {
+    getAddedCardDeckNames,
+    getAddedDays,
+    getAnkiStatsSnapshot,
+    getDeckTypeCounts,
+    getHourBreakdown,
+    getReviewDays,
+    rangeStudyDays,
+    resolveStatsDateRange,
+} from './ankiStats';
 import { localDayNumber } from './ankiState';
 import { getStatsScreenSnapshot } from './screenSnapshots';
 import { DEFAULT_SETTINGS } from './storage';
@@ -16,6 +25,13 @@ import { getStudyStreak, getTodayAnswerStats } from './reviewLogger';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
+
+const ROLLOVER = 4;
+const DAY_MS = 86_400_000;
+/** Tuesday 22 September 2026, noon local time. */
+const NOW = new Date(2026, 8, 22, 12, 0, 0).getTime();
+const TODAY = localDayNumber(NOW, ROLLOVER);
+const at = (day: number, hour: number, minute: number = 0) => new Date(2026, 8, day, hour, minute).getTime();
 
 beforeAll(async () => {
     SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' });
@@ -35,45 +51,58 @@ function addDeck(id: number, name: string) {
     );
 }
 
-function addCard(
-    id: number,
-    noteId: number,
-    deckId: number,
-    queue: number,
-    due: number,
-    ivl: number,
-    createdAt: number = id,
-) {
+interface CardOptions {
+    noteId?: number;
+    type: number;
+    queue: number;
+    due: number;
+    ivl?: number;
+    createdAt?: number;
+    data?: Record<string, unknown>;
+}
+
+function addCard(id: number, deckId: number, options: CardOptions) {
+    const noteId = options.noteId ?? id;
     db.runSync(
-        'INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, 1, ?, 0, ?, ?, 0, -1, 0)',
+        'INSERT OR IGNORE INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, 1, ?, 0, ?, ?, 0, -1, 0)',
         noteId, `N${noteId}`, '', '{}',
     );
+    const data = { id, noteId, deckId, type: options.type, queue: options.queue, due: options.due, odue: 0, odid: 0, ...options.data };
     db.runSync(
         `INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor,
             reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone)
-         VALUES (?, ?, ?, 0, ?, ?, ?, ?, 2500, 0, 0, 0, 0, '{}', ?, ?, -1, 0)`,
-        id, noteId, deckId, queue === 0 ? 0 : 2, queue, due, ivl, createdAt, createdAt,
+         VALUES (?, ?, ?, 0, ?, ?, ?, ?, 2500, 0, 0, 0, 0, ?, 0, ?, -1, 0)`,
+        id, noteId, deckId, options.type, options.queue, options.due, options.ivl ?? 0,
+        JSON.stringify(data), options.createdAt ?? id,
     );
 }
 
-function addReview(id: number, cardId: number, ease: number, lastIvl: number, type = 1) {
+function addReview(
+    id: number,
+    cardId: number,
+    ease: number,
+    options: { type?: number; lastIvl?: number; time?: number } = {},
+) {
     db.runSync(
-        'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, ?, 10, ?, 2500, 4000, ?)',
-        id, cardId, ease, lastIvl, type,
+        'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, ?, 10, ?, 2500, ?, ?)',
+        id, cardId, ease, options.lastIvl ?? 10, options.time ?? 4000, options.type ?? 1,
     );
 }
 
-describe('Anki statistics snapshot', () => {
-    it('keeps the deferred screen snapshot equal to the existing statistics functions', () => {
+describe('statistics screen snapshot', () => {
+    it('hands the screen the same figures the read model computes, scoped to the deck subtree', () => {
         const now = Date.now();
-        const today = localDayNumber(now, 4);
+        const today = localDayNumber(now, ROLLOVER);
         addDeck(10, 'TUS');
         addDeck(11, 'TUS::Dahiliye');
-        addCard(now - 20_000, 1, 10, 2, today + 1, 10);
-        addCard(now - 10_000, 2, 11, 0, 1, 0);
-        addReview(now - 1_000, now - 20_000, 3, 10);
-        const range = resolveStatsDateRange('week', new Date(), new Date(), 4, now);
-        const settings = { ...DEFAULT_SETTINGS, dayRolloverHour: 4 };
+        addDeck(12, 'Başka');
+        addCard(1, 10, { type: 2, queue: 2, due: today + 1, ivl: 10, createdAt: now - 20_000 });
+        addCard(2, 11, { type: 0, queue: 0, due: 1, createdAt: now - 10_000 });
+        addCard(3, 12, { type: 2, queue: 2, due: today + 1, ivl: 60 });
+        addReview(now - 1_000, 1, 3);
+        addReview(now - 900, 3, 3);
+        const range = resolveStatsDateRange('week', new Date(), new Date(), ROLLOVER, now);
+        const settings = { ...DEFAULT_SETTINGS, dayRolloverHour: ROLLOVER };
 
         const screen = getStatsScreenSnapshot({
             deckName: 'TUS',
@@ -84,38 +113,60 @@ describe('Anki statistics snapshot', () => {
         });
 
         expect(screen.ankiStats).toEqual(
-            getAnkiStatsSnapshot('TUS', range, 4, 'tr-TR', undefined, { includeBacklog: true }),
+            getAnkiStatsSnapshot('TUS', range, ROLLOVER, 'tr-TR', undefined, { includeBacklog: true }),
         );
-        expect(screen.todayStats).toEqual(getTodayAnswerStats(4, 'TUS'));
-        expect(screen.streak).toEqual(getStudyStreak(4));
+        expect(screen.todayStats).toEqual(getTodayAnswerStats(ROLLOVER, 'TUS'));
+        expect(screen.streak).toEqual(getStudyStreak(ROLLOVER));
+        expect(screen.reviewDays).toEqual(getReviewDays('TUS', ROLLOVER));
+        expect(screen.addedDays).toEqual(getAddedDays('TUS', ROLLOVER));
+        expect(screen.hours).toEqual(getHourBreakdown('TUS', range));
+        expect(screen.ankiStats.cardCounts.totalCards).toBe(2);
+        expect(screen.reviewDays.reduce((sum, day) => sum + day.young, 0)).toBe(1);
+        expect(screen.deckStats.map((deck) => deck.name)).toEqual(['TUS::Dahiliye']);
+        expect(screen.deckStats[0]).toMatchObject({ total: 1, newCount: 1, studied: 0, pct: 0 });
     });
 
+    it('measures deck progress by card type, so a suspended new card is not counted as studied', () => {
+        addDeck(10, 'Kaynak');
+        addDeck(11, 'Filtreli');
+        addCard(1, 10, { type: 0, queue: -1, due: 1 });                         // new, suspended
+        addCard(2, 10, { type: 2, queue: -1, due: TODAY, ivl: 30 });            // mature, suspended
+        addCard(3, 10, { type: 3, queue: 1, due: NOW, ivl: 2 });                // relearning
+        // Lent to a filtered deck: still progress of the deck it came from.
+        addCard(4, 11, { type: 2, queue: 2, due: TODAY, ivl: 4, data: { odid: 10, odue: TODAY } });
+
+        expect(getDeckTypeCounts().get(10)).toEqual({ total: 4, newCards: 1, learn: 1, young: 1, mature: 1 });
+        expect(getDeckTypeCounts().has(11)).toBe(false);
+    });
+});
+
+describe('Anki graphs', () => {
     it('uses the selected deck subtree and preserves Anki category rules', () => {
         const now = Date.now();
-        const today = localDayNumber(now, 4);
+        const today = localDayNumber(now, ROLLOVER);
         addDeck(10, 'TUS');
         addDeck(11, 'TUS::Dahiliye');
         addDeck(12, 'Başka');
 
-        addCard(now - 50_000, 1, 10, 2, today + 1, 10);  // young, due tomorrow
-        addCard(now - 40_000, 2, 11, 2, today + 2, 30);  // mature future
-        addCard(now - 30_000, 3, 11, 2, today - 1, 45);  // overdue, not future due
-        addCard(now - 20_000, 4, 11, 0, 1, 0);          // unseen
-        addCard(now - 10_000, 5, 11, -1, 0, 0);         // suspended
-        addCard(now - 5_000, 6, 12, 2, today + 1, 60);  // unrelated deck
+        addCard(1, 10, { type: 2, queue: 2, due: today + 1, ivl: 10 });  // young, due tomorrow
+        addCard(2, 11, { type: 2, queue: 2, due: today + 2, ivl: 30 });  // mature future
+        addCard(3, 11, { type: 2, queue: 2, due: today - 1, ivl: 45 });  // overdue, not future due
+        addCard(4, 11, { type: 0, queue: 0, due: 1 });                   // unseen
+        addCard(5, 11, { type: 2, queue: -1, due: 0 });                  // suspended
+        addCard(6, 12, { type: 2, queue: 2, due: today + 1, ivl: 60 });  // unrelated deck
 
-        addReview(now - 4_000, now - 50_000, 1, 10);    // Again on young
-        addReview(now - 3_000, now - 40_000, 3, 30);    // Good on mature
-        addReview(now - 2_000, now - 5_000, 4, 60);     // unrelated
+        addReview(now - 4_000, 1, 1, { lastIvl: 10 });  // Again on young
+        addReview(now - 3_000, 2, 3, { lastIvl: 30 });  // Good on mature
+        addReview(now - 2_000, 6, 4, { lastIvl: 60 });  // unrelated
 
-        const range = { startMs: now - 86_400_000, endMs: now + 1, spanDays: 7 };
-        const stats = getAnkiStatsSnapshot('TUS', range, 4, 'tr-TR');
+        const range = { startMs: now - DAY_MS, endMs: now + 1, spanDays: 7 };
+        const stats = getAnkiStatsSnapshot('TUS', range, ROLLOVER, 'tr-TR');
 
         expect(stats.futureDueTotal).toBe(2);
         expect(stats.dueTomorrow).toBe(1);
-        expect(stats.reviewTotal).toBe(2);
         expect(stats.answerButtons[0].young).toBe(1);
         expect(stats.answerButtons[2].mature).toBe(1);
+        expect(stats.answerButtons.reduce((sum, point) => sum + point.learning + point.young + point.mature, 0)).toBe(2);
         expect(stats.cardCounts).toMatchObject({
             mature: 2,
             youngLearn: 1,
@@ -124,101 +175,28 @@ describe('Anki statistics snapshot', () => {
             totalCards: 5,
             totalNotes: 5,
         });
-        expect(stats.addedTotal).toBe(5);
-        expect(stats.addedSpanDays).toBe(7);
         expect(stats.longestInterval).toBe(45);
-    });
-
-    it('builds inclusive custom ranges at the configured rollover hour', () => {
-        const start = new Date(2026, 7, 1);
-        const end = new Date(2026, 7, 3);
-        const range = resolveStatsDateRange('custom', start, end, 4, new Date(2026, 7, 10).getTime());
-
-        expect(new Date(range.startMs).getHours()).toBe(4);
-        expect(new Date(range.endMs).getDate()).toBe(4);
-        expect(range.spanDays).toBe(3);
-    });
-
-    it('uses the local insertion date instead of an imported Anki card id', () => {
-        const now = Date.now();
-        const sourceIdFrom2020 = new Date(2020, 0, 10, 12).getTime();
-        addDeck(10, 'İçe Aktarılan');
-        addCard(sourceIdFrom2020, 1, 10, 0, 1, 0, now);
-
-        const range = resolveStatsDateRange('all', new Date(), new Date(), 4, now);
-        const stats = getAnkiStatsSnapshot('İçe Aktarılan', range, 4, 'tr-TR');
-
-        expect(stats.addedTotal).toBe(1);
-        expect(stats.added).toHaveLength(1);
-        expect(stats.added[0].label).not.toContain('2020');
-        expect(stats.added[0].values).toEqual([1]);
-        expect(stats.addedSpanDays).toBeGreaterThanOrEqual(1);
-    });
-
-    it('ends an all-history axis on the current study day before the rollover hour', () => {
-        // 01:30 on the 1st with a 04:00 rollover still belongs to the previous month's study day.
-        // An axis built from the raw calendar date would open a September bucket for a study day
-        // that has not begun, so the all-history graph would show a trailing empty column.
-        const beforeRollover = new Date(2026, 8, 1, 1, 30).getTime();
-        const addedAt = new Date(2026, 7, 31, 22, 0).getTime();
-        addDeck(10, 'Gece');
-        addCard(addedAt, 1, 10, 0, 1, 0, addedAt);
-        addReview(addedAt, addedAt, 3, 10);
-
-        const range = resolveStatsDateRange('all', new Date(), new Date(), 4, beforeRollover);
-        const stats = getAnkiStatsSnapshot('Gece', range, 4, 'tr-TR');
-
-        expect(stats.addedTotal).toBe(1);
-        expect(stats.added).toHaveLength(1);
-        expect(stats.addedSpanDays).toBe(1);
-        expect(stats.reviews).toHaveLength(1);
-        expect(stats.reviewMinutes).toHaveLength(1);
-    });
-
-    it('fills the selected date range with live zero-value buckets', () => {
-        const now = new Date(2026, 7, 22, 12).getTime();
-        const today = localDayNumber(now, 4);
-        addDeck(10, 'Dinamik');
-        addCard(now, 1, 10, 2, today + 1, 10, now);
-        addReview(now, now, 3, 10);
-
-        const range = resolveStatsDateRange('week', new Date(), new Date(), 4, now);
-        const stats = getAnkiStatsSnapshot('Dinamik', range, 4, 'tr-TR');
-
-        expect(stats.added).toHaveLength(7);
-        expect(stats.reviews).toHaveLength(7);
-        expect(stats.futureDue).toHaveLength(7);
-        expect(stats.added.at(-1)?.values).toEqual([1]);
-        expect(stats.reviews.at(-1)?.values.reduce((sum, value) => sum + value, 0)).toBe(1);
-    });
-
-    it('starts the last-week range on the previous study day before rollover', () => {
-        const beforeRollover = new Date(2026, 7, 22, 2, 0).getTime();
-        const range = resolveStatsDateRange('week', new Date(), new Date(), 4, beforeRollover);
-
-        expect(new Date(range.startMs).getDate()).toBe(15);
-        expect(new Date(range.startMs).getHours()).toBe(4);
     });
 
     it('starts Future Due at today unless the backlog is asked for', () => {
         addDeck(1, 'Tıp');
-        const today = localDayNumber(Date.now(), 4);
-        addCard(10, 10, 1, 2, today - 5, 30);   // 5 gün gecikmiş
-        addCard(11, 11, 1, 2, today, 30);       // bugün
-        addCard(12, 12, 1, 2, today + 3, 30);   // 3 gün sonra
+        const today = localDayNumber(Date.now(), ROLLOVER);
+        addCard(10, 1, { type: 2, queue: 2, due: today - 5, ivl: 30 });  // five days overdue
+        addCard(11, 1, { type: 2, queue: 2, due: today, ivl: 30 });      // due today
+        addCard(12, 1, { type: 2, queue: 2, due: today + 3, ivl: 30 });  // due in three days
 
-        const range = resolveStatsDateRange('month', new Date(), new Date(), 4);
-        const withoutBacklog = getAnkiStatsSnapshot(null, range, 4, 'tr-TR');
+        const range = resolveStatsDateRange('month', new Date(), new Date(), ROLLOVER);
+        const withoutBacklog = getAnkiStatsSnapshot(null, range, ROLLOVER, 'tr-TR');
         // Anki's chart begins at today; an overdue card is simply not on it.
         expect(withoutBacklog.futureDueTodayIndex).toBe(0);
         expect(withoutBacklog.backlogTotal).toBe(0);
         expect(withoutBacklog.futureDueTotal).toBe(2);
-        // Precomputed with-backlog data is always available on the snapshot for instant toggling
+        // The backlog view is computed alongside, so the switch does not have to query again.
         expect(withoutBacklog.futureDueWithBacklogTotal).toBe(3);
         expect(withoutBacklog.futureDueBacklogTotal).toBe(1);
         expect(withoutBacklog.futureDueWithBacklogTodayIndex).toBeGreaterThan(0);
 
-        const withBacklog = getAnkiStatsSnapshot(null, range, 4, 'tr-TR', undefined, {
+        const withBacklog = getAnkiStatsSnapshot(null, range, ROLLOVER, 'tr-TR', undefined, {
             includeBacklog: true,
         });
         expect(withBacklog.backlogTotal).toBe(1);
@@ -232,50 +210,145 @@ describe('Anki statistics snapshot', () => {
         expect(beforeToday).toBe(1);
     });
 
-    it('reports review minutes on the same buckets as review counts', () => {
-        addDeck(1, 'Tıp');
-        addCard(10, 10, 1, 2, 0, 30);
-        const now = Date.now();
-        // Two answers today: 4 s each (the fixture's revlog time), one young, one mature.
-        addReview(now - 60_000, 10, 3, 5);
-        addReview(now - 30_000, 10, 3, 40);
+    it('gives Future Due one bar per day of a week-long range', () => {
+        addDeck(1, 'Dinamik');
+        addCard(1, 1, { type: 2, queue: 2, due: localDayNumber(Date.now(), ROLLOVER) + 1, ivl: 10 });
 
-        const range = resolveStatsDateRange('week', new Date(), new Date(), 4);
-        const snapshot = getAnkiStatsSnapshot(null, range, 4, 'tr-TR');
-
-        expect(snapshot.reviewMinutes).toHaveLength(snapshot.reviews.length);
-        expect(snapshot.reviewMinutes.map((point) => point.label))
-            .toEqual(snapshot.reviews.map((point) => point.label));
-
-        const totalMinutes = snapshot.reviewMinutes
-            .flatMap((point) => point.values)
-            .reduce((sum, value) => sum + value, 0);
-        expect(totalMinutes).toBeCloseTo(snapshot.reviewTimeMs / 60_000, 6);
-
-        // The split follows the same young/mature rule the counts use.
-        const dayWithData = snapshot.reviewMinutes.find(
-            (point) => point.values.some((value) => value > 0),
-        )!;
-        expect(dayWithData.values[1]).toBeCloseTo(4_000 / 60_000, 6); // young
-        expect(dayWithData.values[2]).toBeCloseTo(4_000 / 60_000, 6); // mature
+        const range = resolveStatsDateRange('week', new Date(), new Date(), ROLLOVER);
+        const stats = getAnkiStatsSnapshot('Dinamik', range, ROLLOVER, 'tr-TR');
+        expect(stats.futureDue).toHaveLength(7);
+        expect(stats.futureDue[1].values).toEqual([1, 0]);
     });
 
-    it('can scope charts to the live membership of a filtered deck', () => {
+    it('can scope every chart to the live membership of a filtered deck', () => {
         const now = Date.now();
-        const today = localDayNumber(now, 4);
+        const today = localDayNumber(now, ROLLOVER);
         addDeck(10, 'Bir');
         addDeck(11, 'İki');
-        addCard(now - 30_000, 1, 10, 2, today + 1, 10);
-        addCard(now - 20_000, 2, 11, 2, today + 1, 30);
-        addReview(now - 1_000, now - 30_000, 3, 10);
-        addReview(now - 500, now - 20_000, 3, 30);
+        addCard(1, 10, { type: 2, queue: 2, due: today + 1, ivl: 10, createdAt: now - 30_000 });
+        addCard(2, 11, { type: 2, queue: 2, due: today + 1, ivl: 30, createdAt: now - 20_000 });
+        addReview(now - 1_000, 1, 3, { lastIvl: 10 });
+        addReview(now - 500, 2, 3, { lastIvl: 30 });
 
-        const range = { startMs: now - 86_400_000, endMs: now + 1, spanDays: 7 };
-        const stats = getAnkiStatsSnapshot('Özel Çalışma Oturumu', range, 4, 'tr-TR', [now - 30_000]);
-
+        const range = { startMs: now - DAY_MS, endMs: now + 1, spanDays: 7 };
+        const stats = getAnkiStatsSnapshot('Özel Çalışma Oturumu', range, ROLLOVER, 'tr-TR', [1]);
         expect(stats.cardCounts.totalCards).toBe(1);
         expect(stats.futureDueTotal).toBe(1);
-        expect(stats.reviewTotal).toBe(1);
-        expect(stats.addedTotal).toBe(1);
+        expect(stats.answerButtons.reduce((sum, point) => sum + point.learning + point.young + point.mature, 0)).toBe(1);
+
+        const reviewDays = getReviewDays('Özel Çalışma Oturumu', ROLLOVER, [1]);
+        expect(reviewDays.reduce((sum, day) => sum + day.young + day.mature, 0)).toBe(1);
+        expect(getAddedDays('Özel Çalışma Oturumu', ROLLOVER, [1]).reduce((sum, day) => sum + day.count, 0)).toBe(1);
+        expect(getHourBreakdown('Özel Çalışma Oturumu', range, [1]).reduce((sum, hour) => sum + hour.total, 0)).toBe(1);
+        // A filtered deck that gathered nothing shows nothing, not the whole collection.
+        expect(getAnkiStatsSnapshot('Boş', range, ROLLOVER, 'tr-TR', []).cardCounts.totalCards).toBe(0);
+    });
+});
+
+describe('review and added history', () => {
+    beforeEach(() => {
+        addDeck(1, 'Tıp');
+        addCard(1, 1, { type: 2, queue: 2, due: TODAY, ivl: 30, createdAt: at(1, 12) });
+        addCard(2, 1, { type: 2, queue: 2, due: TODAY, ivl: 5, createdAt: at(1, 12) });
+    });
+
+    it('buckets answers into study days, split by kind, and ignores rescheduling rows', () => {
+        addReview(at(22, 9), 1, 3, { type: 1, lastIvl: 30, time: 5000 });   // mature
+        addReview(at(22, 9, 1), 2, 1, { type: 1, lastIvl: 5, time: 7000 });  // young
+        addReview(at(22, 9, 2), 2, 3, { type: 2, lastIvl: 1, time: 3000 });  // relearning
+        addReview(at(22, 9, 3), 2, 3, { type: 3, lastIvl: 5, time: 2000 });  // filtered
+        addReview(at(22, 9, 4), 1, 0, { type: 5, time: 0 });                // Set Due Date bookkeeping
+        // 02:30 belongs to the previous study day with a 04:00 rollover.
+        addReview(at(22, 2, 30), 1, 3, { type: 0, lastIvl: 0, time: 9000 });
+
+        const reviewDays = getReviewDays(null, ROLLOVER);
+        expect(reviewDays).toHaveLength(2);
+        expect(reviewDays[0]).toMatchObject({ day: TODAY - 1, learn: 1, learnMs: 9000 });
+        expect(reviewDays[1]).toMatchObject({
+            day: TODAY,
+            learn: 0,
+            young: 1,
+            mature: 1,
+            relearn: 1,
+            filtered: 1,
+            youngMs: 7000,
+            matureMs: 5000,
+            relearnMs: 3000,
+            filteredMs: 2000,
+        });
+    });
+
+    it('dates an imported card by when it was added here, not by its Anki id', () => {
+        const sourceIdFrom2020 = new Date(2020, 0, 10, 12).getTime();
+        addCard(sourceIdFrom2020, 1, { type: 0, queue: 0, due: 1, createdAt: at(21, 15) });
+        expect(getAddedDays(null, ROLLOVER)).toEqual([
+            { day: TODAY - 21, count: 2 },
+            { day: TODAY - 1, count: 1 },
+        ]);
+    });
+
+    it('names the decks the cards of an Added bar went into', () => {
+        addDeck(10, 'TUS');
+        addDeck(11, 'TUS::Farmakoloji');
+        addDeck(12, 'TUS::Patoloji');
+        addDeck(13, 'Default');
+        addCard(10, 11, { type: 0, queue: 0, due: 1, createdAt: at(21, 10) });
+        addCard(11, 11, { type: 0, queue: 0, due: 2, createdAt: at(21, 11) });
+        addCard(12, 12, { type: 0, queue: 0, due: 3, createdAt: at(21, 12) });
+        // 03:00 on the 22nd is still the 21st's study day with a 04:00 rollover.
+        addCard(13, 13, { type: 0, queue: 0, due: 4, createdAt: at(22, 3) });
+        addCard(14, 13, { type: 0, queue: 0, due: 5, createdAt: at(22, 9) });
+
+        expect(getAddedCardDeckNames(null, TODAY - 1, TODAY - 1, ROLLOVER))
+            .toEqual(['Default', 'TUS::Farmakoloji', 'TUS::Patoloji']);
+        expect(getAddedCardDeckNames('TUS', TODAY - 1, TODAY - 1, ROLLOVER))
+            .toEqual(['TUS::Farmakoloji', 'TUS::Patoloji']);
+        expect(getAddedCardDeckNames(null, TODAY, TODAY, ROLLOVER)).toEqual(['Default']);
+        expect(getAddedCardDeckNames('Özel Çalışma', TODAY - 1, TODAY, ROLLOVER, [12])).toEqual(['TUS::Patoloji']);
+        expect(getAddedCardDeckNames(null, TODAY - 9, TODAY - 2, ROLLOVER)).toEqual([]);
+    });
+
+    it('groups answers by local clock hour, leaving filtered-deck answers out', () => {
+        addReview(at(22, 9, 15), 1, 3, { type: 1 });
+        addReview(at(22, 9, 45), 1, 1, { type: 1 });
+        addReview(at(22, 21, 40), 1, 3, { type: 0 });
+        addReview(at(22, 21, 41), 1, 3, { type: 3 });
+        addReview(at(22, 21, 42), 1, 0, { type: 5 });
+        addReview(new Date(2026, 0, 2, 9).getTime(), 1, 3, { type: 1 });   // outside the range
+
+        const range = resolveStatsDateRange('week', new Date(), new Date(), ROLLOVER, NOW);
+        const hours = getHourBreakdown(null, range);
+        expect(hours).toHaveLength(24);
+        expect(hours[9]).toEqual({ hour: 9, total: 2, correct: 1 });
+        expect(hours[21]).toEqual({ hour: 21, total: 1, correct: 1 });
+        expect(hours.reduce((sum, hour) => sum + hour.total, 0)).toBe(3);
+    });
+});
+
+describe('ranges', () => {
+    it('builds inclusive custom ranges at the configured rollover hour', () => {
+        const range = resolveStatsDateRange('custom', new Date(2026, 7, 1), new Date(2026, 7, 3), ROLLOVER, NOW);
+        expect(new Date(range.startMs).getHours()).toBe(ROLLOVER);
+        expect(new Date(range.endMs).getDate()).toBe(4);
+        expect(range.spanDays).toBe(3);
+    });
+
+    it('starts a relative range on the right study day and ends it with the current one', () => {
+        const beforeRollover = new Date(2026, 7, 22, 2, 0).getTime();
+        const range = resolveStatsDateRange('week', new Date(), new Date(), ROLLOVER, beforeRollover);
+        expect(new Date(range.startMs).getDate()).toBe(15);
+        expect(new Date(range.startMs).getHours()).toBe(ROLLOVER);
+        // An answer given later that night still belongs to the range.
+        expect(range.endMs).toBe(new Date(2026, 7, 22, ROLLOVER).getTime());
+        expect(rangeStudyDays(range, ROLLOVER, null)).toEqual({
+            firstDay: localDayNumber(beforeRollover, ROLLOVER) - 6,
+            lastDay: localDayNumber(beforeRollover, ROLLOVER),
+        });
+    });
+
+    it('starts an all-time range on the first day with data', () => {
+        const range = resolveStatsDateRange('all', new Date(), new Date(), ROLLOVER, NOW);
+        expect(rangeStudyDays(range, ROLLOVER, TODAY - 40)).toEqual({ firstDay: TODAY - 40, lastDay: TODAY });
+        expect(rangeStudyDays(range, ROLLOVER, null)).toEqual({ firstDay: TODAY, lastDay: TODAY });
     });
 });

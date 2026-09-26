@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
+import { readOnlyTabMessage } from '../lib/db';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     createBackupNow,
@@ -116,6 +117,11 @@ export default function BackupsScreen() {
         });
 
     const handleRestore = (name: string) => {
+        const readOnly = readOnlyTabMessage();
+        if (readOnly) {
+            alert(t('common.error'), readOnly);
+            return;
+        }
         confirm(
             l('Yedeği geri yükle', 'Restore Backup'),
             l('Bu yedek mevcut koleksiyonun yerini alacak. Geri yüklemeden önce mevcut durumun otomatik bir kopyası oluşturulur.', 'This backup will replace the current collection. A copy of the current state is created automatically before restoring.'),
@@ -258,7 +264,7 @@ export default function BackupsScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    content: { padding: Spacing.lg, gap: Spacing.sm },
+    content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.7, color: colors.textMuted, marginTop: Spacing.xs },
     nameInput: {
         borderWidth: 1,

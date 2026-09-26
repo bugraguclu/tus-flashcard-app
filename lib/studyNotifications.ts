@@ -150,12 +150,28 @@ export function studyNotificationsSupported(): boolean {
 }
 
 /**
- * A tap on an iPhone reminder arrives as a notification response, which `app/_layout.tsx`
- * handles directly. This hook-up point exists for the web build, whose reminders are shown by the
- * page itself; here it never fires.
+ * Runs `listener` when the learner opens a study reminder; returns the unsubscribe function. A tap
+ * that launched the app is read once from the last notification response, and later taps arrive
+ * through the response listener. Keeping this here, behind the platform split, is what keeps
+ * `expo-notifications` out of the web bundle: importing it there registers a push-token listener
+ * the browser cannot serve.
  */
-export function onStudyReminderOpened(_listener: () => void): () => void {
-    return () => undefined;
+export function onStudyReminderOpened(listener: () => void): () => void {
+    if (Platform.OS !== 'ios') return () => undefined;
+    let active = true;
+    const open = (response: Notifications.NotificationResponse | null) => {
+        if (!active || !response || !isStudyReminderData(response.notification.request.content.data)) return;
+        listener();
+        Notifications.clearLastNotificationResponse();
+    };
+    void Notifications.getLastNotificationResponseAsync()
+        .then(open)
+        .catch((error) => console.warn('[Notifications] launch response failed:', error));
+    const subscription = Notifications.addNotificationResponseReceivedListener(open);
+    return () => {
+        active = false;
+        subscription.remove();
+    };
 }
 
 async function cancelOwnedStudyNotifications(): Promise<void> {

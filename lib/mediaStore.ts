@@ -70,6 +70,9 @@ async function idbPut(name: string, blob: Blob): Promise<void> {
         tx.objectStore(WEB_MEDIA_STORE).put(blob, name);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'));
+        // A full quota is reported when the transaction commits, through `abort` alone; without
+        // this the write would never settle and an import or attachment would wait forever.
+        tx.onabort = () => reject(tx.error ?? new Error('IndexedDB write aborted'));
     });
 }
 

@@ -107,7 +107,7 @@ export default function WebAppIntegrations() {
 
     if (!dragging) return null;
     return (
-        <View style={styles.overlay} pointerEvents="none" accessibilityLiveRegion="polite">
+        <View style={[styles.overlay, { pointerEvents: 'none' }]} accessibilityLiveRegion="polite">
             <View style={styles.card}>
                 <Text style={styles.title}>{l('İçe aktarmak için bırakın', 'Drop to import')}</Text>
                 <Text style={styles.body}>.apkg · .colpkg · .csv · .tsv · .txt</Text>

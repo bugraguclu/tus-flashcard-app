@@ -38,7 +38,7 @@ import { humanizeCardText } from '../lib/displayText';
 import { useI18n } from '../hooks/useI18n';
 import type { SupportedLocale } from '../lib/i18n';
 import { cardFlagName } from '../lib/i18n';
-import { localizeNoteTypeName } from '../lib/i18n';
+import { localizeNoteTypeName, localizeTopicName } from '../lib/i18n';
 import {
     createDeck,
     getAvailableDeckName,
@@ -1061,7 +1061,11 @@ export default function BrowserScreen() {
                     toggleCardSelection(item.cardId);
                 }}
                 activeOpacity={0.7}
-                accessibilityRole={selectionMode ? 'checkbox' : 'button'}
+                // react-native-web renders the button role as a <button>, and this row holds the
+                // edit button, which a <button> may not contain. On web the row stays a focusable
+                // element that Enter toggles, and the edit button keeps the button role.
+                accessibilityRole={selectionMode ? 'checkbox' : Platform.OS === 'web' ? undefined : 'button'}
+                focusable={Platform.OS === 'web' ? true : undefined}
                 accessibilityState={selectionMode ? { checked: isSelected } : undefined}
             >
                 <View style={styles.cardItemHeader}>
@@ -1088,7 +1092,7 @@ export default function BrowserScreen() {
                             <Text style={[styles.cardTopic]} numberOfLines={1}>
                                 {isNotesMode
                                     ? `${rowNoteType ? localizeNoteTypeName(locale, rowNoteType.name) : l('Not', 'Note')} · ${noteDeckText}`
-                                    : `${(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}${item.topic ? ` · ${item.topic}` : ''}`}
+                                    : `${(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}${item.topic ? ` · ${localizeTopicName(locale, item.topic)}` : ''}`}
                             </Text>
                             {!isNotesMode && item.state.status !== 'new' ? (
                                 <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
@@ -1293,7 +1297,7 @@ export default function BrowserScreen() {
                     onPress={() => searchInputRef.current?.focus()}
                     accessible={false}
                 >
-                    <View style={styles.searchIcon} pointerEvents="none">
+                    <View style={[styles.searchIcon, { pointerEvents: 'none' }]}>
                         <SearchIcon color={colors.textMuted} />
                     </View>
                     <TextInput
@@ -2018,7 +2022,7 @@ export default function BrowserScreen() {
                 onRequestClose={() => setPreviewIndex(null)}
             >
                 <SafeAreaView style={styles.previewContainer}>
-                    <View style={styles.previewGrabberArea} pointerEvents="none">
+                    <View style={[styles.previewGrabberArea, { pointerEvents: 'none' }]}>
                         <View style={styles.previewGrabber} />
                     </View>
                     <View style={styles.previewHeader}>
@@ -2130,14 +2134,14 @@ export default function BrowserScreen() {
                                 <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
                                 <Text style={styles.optionCaption}>{l('Kart satırında cevabın kısa bir bölümünü gösterir.', 'Shows a short answer excerpt in each row.')}</Text>
                             </View>
-                            <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} />
+                            <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} />
                         </View>
                         <View style={styles.optionRow}>
                             <View style={styles.optionCopy}>
                                 <Text style={styles.optionTitle}>{l('Zamanlama ayrıntıları', 'Scheduling details')}</Text>
                                 <Text style={styles.optionCaption}>{l('Son çalışma ve sonraki gösterim bilgisini gösterir.', 'Shows last review and next due information.')}</Text>
                             </View>
-                            <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} />
+                            <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} />
                         </View>
                         <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
                             <Text style={styles.modalCloseText}>{t('common.close')}</Text>

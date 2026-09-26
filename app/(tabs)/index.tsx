@@ -5,7 +5,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, FontSize, NO_SHADOW, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { schedulerForSettings, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
@@ -88,9 +88,15 @@ import {
     type AnswerSideEffects,
 } from '../../lib/studyRepository';
 import { useI18n } from '../../hooks/useI18n';
-import { cardFlagName, reviewerOpName } from '../../lib/i18n';
+import { cardFlagName, localizeTopicName, reviewerOpName } from '../../lib/i18n';
 import { alert, choose } from '../../lib/confirm';
-import { gradeForHardwareKey, matchesKeyBinding, matchesShowAnswerKey, normalizeHardwareKey } from '../../lib/hardwareKeyboard';
+import {
+    gradeForHardwareKey,
+    matchesKeyBinding,
+    matchesShowAnswerKey,
+    normalizeHardwareKey,
+    typesCharacter,
+} from '../../lib/hardwareKeyboard';
 import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
 import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
 import { useScreenGuard } from '../../hooks/useScreenGuard';
@@ -257,6 +263,12 @@ type AnswerUndoEntry = {
 };
 
 type UndoEntry = AnswerUndoEntry | ({ kind: 'op' } & ReviewerOpChange);
+
+/** The operation an undo step would take back, for the Anki-style "Undo Bury Card" label. */
+function undoEntryOp(entry: UndoEntry | undefined): ReviewerOpName | null {
+    if (!entry) return null;
+    return entry.kind === 'op' ? entry.op : 'answer';
+}
 
 /**
  * Today's session numbers, always derived from the review log. The revlog is the durable
@@ -446,6 +458,12 @@ export default function StudyScreen() {
         () => reviewerUndoShortcutHint(undoKeys, Platform.OS === 'web'),
         [undoKeys],
     );
+    // Anki labels Undo and Redo with the operation they act on, so the learner can see whether
+    // the next Undo unburies a card or takes back an answer.
+    const undoOp = undoEntryOp(undoStack[undoStack.length - 1]);
+    const redoOp = undoEntryOp(redoStack[redoStack.length - 1]);
+    const undoOpLabel = undoOp ? reviewerOpName(locale, undoOp) : null;
+    const redoOpLabel = redoOp ? reviewerOpName(locale, redoOp) : null;
     const nativeTypeAnswerRef = useRef<TextInput>(null);
     const reviewerScrollRef = useRef<ScrollView>(null);
     const [fallbackTapSurface, setFallbackTapSurface] = useState({ width: 1, height: 1 });
@@ -1584,9 +1602,12 @@ export default function StudyScreen() {
      *
      * `router.back()` would instead unwind to the deck overview, or to whichever screen study was
      * opened from, which is a different destination each time and would make the label a lie.
+     * `router.navigate()` pushes a second deck list over the reviewer in Expo Router, which keeps
+     * the reviewer mounted underneath and grows the stack on every round trip; `dismissTo` pops
+     * back to the list at the root of this stack, or replaces the reviewer when there is none.
      * https://docs.ankimobile.net/study-screen.html
      */
-    const handleReturnToDecks = useCallback(() => router.navigate('/decks'), [router]);
+    const handleReturnToDecks = useCallback(() => router.dismissTo('/decks'), [router]);
     const openDeckPicker = useCallback(() => setDeckPickerVisible(true), []);
     const handlePickDeck = useCallback((name: string | null) => {
         setDeckPickerVisible(false);
@@ -2127,6 +2148,10 @@ export default function StudyScreen() {
     // Browser keys reach the same table through a DOM listener. It stands down while another
     // screen is on top of the reviewer or any dialog is open — iOS gets both for free, because
     // the capture input loses focus — and adds the desktop modifier shortcuts Anki has.
+    const consumedWebKeyRef = useRef<string | null>(null);
+    // How focus last moved: by a pointer, or by Tab. Chrome's own :focus-visible switches on for a
+    // clicked button as soon as any key is pressed, so it cannot tell the two apart here.
+    const webFocusModalityRef = useRef<'pointer' | 'keyboard'>('pointer');
     useEffect(() => {
         if (Platform.OS !== 'web' || typeof window === 'undefined') return;
 
@@ -2135,33 +2160,76 @@ export default function StudyScreen() {
             const tag = target.tagName.toLowerCase();
             return tag === 'input' || tag === 'textarea' || target.isContentEditable;
         };
+        // A control reached with Tab keeps Space and Enter, as keyboard users expect. One a click
+        // left focused (undo, the flag, a closed menu's opener) does not: it would take the keys
+        // for itself, and Space would undo or reopen a menu instead of showing the answer.
+        const isKeyboardFocusedControl = (target: EventTarget | null): boolean => (
+            webFocusModalityRef.current === 'keyboard'
+            && target instanceof HTMLElement
+            && (target.tagName === 'BUTTON' || target.getAttribute('role') === 'button')
+        );
+        const onPointerDown = () => { webFocusModalityRef.current = 'pointer'; };
+        const isMacPlatform = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
+
+        // The reviewer listens in the capture phase, ahead of the focused control, and stops a key
+        // it acts on — including the key's release, on which a button would otherwise fire. The
+        // key is remembered across this effect's re-runs: acting on it (showing the answer) re-runs
+        // the effect before the key comes up.
+        const consume = (event: KeyboardEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            consumedWebKeyRef.current = event.key;
+        };
 
         const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Tab') webFocusModalityRef.current = 'keyboard';
             if (pathname !== '/' || event.defaultPrevented || isEditableTarget(event.target)) return;
             if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+            if ((event.key === ' ' || event.key === 'Enter') && isKeyboardFocusedControl(event.target)) return;
+            // AltGr and the Mac Option key type characters (@ on a Turkish keyboard is AltGr+Q or
+            // Option+Q); such a press is the character, not a Ctrl or Alt chord.
+            const typed = typesCharacter({
+                key: event.key,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                altKey: event.altKey,
+                altGraph: event.getModifierState?.('AltGraph') ?? false,
+            }, isMacPlatform);
 
-            if (event.ctrlKey || event.metaKey) {
+            if (!typed && (event.ctrlKey || event.metaKey)) {
                 const key = event.key.toLowerCase();
                 if (key === 'z') {
-                    event.preventDefault();
+                    consume(event);
                     void undoLast();
                     return;
                 }
                 // Anki: Ctrl/Cmd+1..7 toggles the matching flag on the current card.
                 if (currentCard && key >= '1' && key <= '7') {
-                    event.preventDefault();
+                    consume(event);
                     const flag = Number(key) as CardFlag;
                     const active = (getAnkiCard(currentCard.cardId)?.flags ?? 0) as CardFlag;
                     handleFlag(active === flag ? 0 : flag);
                 }
                 return;
             }
-            if (event.altKey) return;
-            if (handleShortcutKey(event.key)) event.preventDefault();
+            if (!typed && event.altKey) return;
+            if (handleShortcutKey(event.key)) consume(event);
+        };
+        const onKeyUp = (event: KeyboardEvent) => {
+            if (consumedWebKeyRef.current === null || event.key !== consumedWebKeyRef.current) return;
+            consumedWebKeyRef.current = null;
+            event.preventDefault();
+            event.stopPropagation();
         };
 
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
+        window.addEventListener('pointerdown', onPointerDown, true);
+        window.addEventListener('keydown', onKeyDown, true);
+        window.addEventListener('keyup', onKeyUp, true);
+        return () => {
+            window.removeEventListener('pointerdown', onPointerDown, true);
+            window.removeEventListener('keydown', onKeyDown, true);
+            window.removeEventListener('keyup', onKeyUp, true);
+        };
     }, [pathname, currentCard, undoLast, handleFlag, handleShortcutKey]);
 
     // A hidden, soft-keyboard-free TextInput participates in iOS' responder chain and receives
@@ -2374,13 +2442,13 @@ export default function StudyScreen() {
                     onPress={() => { void undoLast(); }}
                     disabled={!canUndoReview(undoStack.length)}
                     accessibilityRole="button"
-                    accessibilityLabel={canUndoReview(undoStack.length)
-                        ? l('Son cevabı geri al', 'Undo last answer')
-                        : l('Geri alınacak cevap yok', 'No answer to undo')}
+                    accessibilityLabel={undoOpLabel
+                        ? l(`Geri al: ${undoOpLabel}`, `Undo: ${undoOpLabel}`)
+                        : l('Geri alınacak işlem yok', 'Nothing to undo')}
                     accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                    {...webTitle(canUndoReview(undoStack.length)
-                        ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
-                        : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                    {...webTitle(undoOpLabel
+                        ? l(`Geri al: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
+                        : l('Geri alınacak işlem yok', 'Nothing to undo'))}
                 >
                     <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                 </TouchableOpacity>
@@ -2454,13 +2522,13 @@ export default function StudyScreen() {
                     onPress={() => { void undoLast(); }}
                     disabled={!canUndoReview(undoStack.length)}
                     accessibilityRole="button"
-                    accessibilityLabel={canUndoReview(undoStack.length)
-                        ? l('Son cevabı geri al', 'Undo last answer')
-                        : l('Geri alınacak cevap yok', 'No answer to undo')}
+                    accessibilityLabel={undoOpLabel
+                        ? l(`Geri al: ${undoOpLabel}`, `Undo: ${undoOpLabel}`)
+                        : l('Geri alınacak işlem yok', 'Nothing to undo')}
                     accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                    {...webTitle(canUndoReview(undoStack.length)
-                        ? l(`Son cevabı geri al${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo last answer${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
-                        : l('Geri alınacak cevap yok', 'No answer to undo'))}
+                    {...webTitle(undoOpLabel
+                        ? l(`Geri al: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
+                        : l('Geri alınacak işlem yok', 'Nothing to undo'))}
                 >
                     <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
                 </TouchableOpacity>
@@ -2510,8 +2578,8 @@ export default function StudyScreen() {
                         styles.answerFeedbackLeft,
                         styles.answerFeedbackAgain,
                         { bottom: feedbackBottom },
+                        { pointerEvents: 'none' },
                     ]}
-                    pointerEvents="none"
                     accessibilityLiveRegion="polite"
                 >
                     <Text style={styles.answerFeedbackText}>×</Text>
@@ -2549,7 +2617,7 @@ export default function StudyScreen() {
                 {whiteboardTopInset > 0 ? (
                     // This participates in layout, so the scroll viewport itself begins below the
                     // floating toolbar. The question therefore stays unobscured even while scrolling.
-                    <View style={{ height: whiteboardTopInset }} pointerEvents="none" />
+                    <View style={[{ height: whiteboardTopInset }, { pointerEvents: 'none' }]} />
                 ) : null}
 
                 <ScrollView
@@ -2566,7 +2634,7 @@ export default function StudyScreen() {
                                     </Text>
                                     {currentCard.topic ? <Text style={styles.contextSeparator}>›</Text> : null}
                                     {currentCard.topic ? (
-                                        <Text style={styles.cardTopic} numberOfLines={1}>{currentCard.topic}</Text>
+                                        <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, currentCard.topic)}</Text>
                                     ) : null}
                                     {previewMode ? (
                                         <View style={styles.previewBadge}>
@@ -2590,8 +2658,7 @@ export default function StudyScreen() {
                             ]}>
                                 {currentNoteMarked || currentFlag > 0 ? (
                                     <View
-                                        style={styles.cardIndicators}
-                                        pointerEvents="none"
+                                        style={[styles.cardIndicators, { pointerEvents: 'none' }]}
                                         accessible
                                         accessibilityLabel={[
                                             currentNoteMarked ? l('Not işaretli', 'Note marked') : '',
@@ -3025,8 +3092,10 @@ export default function StudyScreen() {
                 onDeleteNote={handleDeleteNote}
                 canUndo={undoStack.length > 0}
                 onUndo={undoLast}
+                undoLabel={undoOpLabel}
                 canRedo={redoStack.length > 0}
                 onRedo={redoLast}
+                redoLabel={redoOpLabel}
                 onAddNote={handleAddNote}
                 onEditNote={handleEditNote}
                 noteTags={renderPayload?.note.tags.join(' ') ?? ''}
@@ -3213,8 +3282,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderWidth: 0,
         borderRadius: 0,
         backgroundColor: colors.bgPrimary,
-        shadowOpacity: 0,
-        elevation: 0,
+        ...NO_SHADOW,
     },
     cardBodyCentered: { minHeight: isCompact ? 320 : 420, justifyContent: 'center' },
     cardIndicators: {

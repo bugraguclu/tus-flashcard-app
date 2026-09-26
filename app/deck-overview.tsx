@@ -23,6 +23,7 @@ import {
 import { FILTERED_SEARCH_ORDER } from '../lib/filteredDeckOptions';
 import { getDeckDisplayName } from '../lib/models';
 import { alert, confirm } from '../lib/confirm';
+import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
@@ -79,7 +80,7 @@ export default function DeckOverviewScreen() {
                 <View style={styles.navBar}>
                     <TouchableOpacity
                         style={styles.navButton}
-                        onPress={() => router.back()}
+                        onPress={() => goBackOr(router)}
                         accessibilityRole="button"
                         accessibilityLabel={t('tabs.backToDecks')}
                     >
@@ -91,7 +92,7 @@ export default function DeckOverviewScreen() {
                     <View style={styles.navButton} />
                 </View>
                 <ScrollView contentContainerStyle={styles.content}>
-                    <View style={styles.inlineLoadState} pointerEvents="none" accessible>
+                    <View style={[styles.inlineLoadState, { pointerEvents: 'none' }]} accessible>
                         <Text style={styles.inlineLoadIcon}>{overviewError ? '!' : '▤'}</Text>
                         <Text style={styles.missing}>
                             {loading
@@ -136,12 +137,21 @@ export default function DeckOverviewScreen() {
 
     const studyDisabled = Boolean(deck.isFiltered && deck.filteredDeckEmpty);
 
+    // This screen sits on the root stack, above the stack that holds the deck list and the
+    // reviewer. Pushing '/' from here opened a second copy of that stack, so leaving study landed
+    // on the copy and a back swipe brought this overview back. dismissTo closes this screen and
+    // everything above that stack, then opens the reviewer on top of the existing deck list; a
+    // reviewer already open there (the iPad sidebar's calendar) takes the deck in place instead.
+    const handleStudyNow = () => {
+        router.dismissTo({ pathname: '/', params: { deck: deck.name } } as any);
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.navBar}>
                 <TouchableOpacity
                     style={styles.navButton}
-                    onPress={() => router.back()}
+                    onPress={() => goBackOr(router)}
                     accessibilityRole="button"
                     accessibilityLabel={t('tabs.backToDecks')}
                 >
@@ -222,7 +232,7 @@ export default function DeckOverviewScreen() {
 
                 <TouchableOpacity
                     style={[styles.studyBtn, totalReady === 0 && styles.studyBtnIdle, studyDisabled && styles.buttonDisabled]}
-                    onPress={() => router.push({ pathname: '/', params: { deck: deck.name } } as any)}
+                    onPress={handleStudyNow}
                     disabled={studyDisabled}
                     accessibilityRole="button"
                 >
@@ -342,7 +352,7 @@ function createStyles(colors: ColorScheme) {
         navButtonText: { fontSize: 34, lineHeight: 36, color: colors.accent, fontWeight: '400' },
         navMoreText: { fontSize: 16, color: colors.textMuted, fontWeight: '800', letterSpacing: -1 },
         navTitle: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        content: { padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch', paddingBottom: Spacing.xxxl },
+        content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch', paddingBottom: Spacing.xxxl },
         missing: { color: colors.textMuted, fontSize: FontSize.md },
         inlineLoadState: {
             minHeight: 120,

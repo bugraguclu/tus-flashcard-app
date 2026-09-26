@@ -135,3 +135,59 @@ export function tooltipPlacement(
         flipped: true,
     };
 }
+
+/** Which bucket a horizontal position falls in, clamped to the buckets that exist. */
+export function indexAtPosition(x: number, plotLeft: number, step: number, count: number): number | null {
+    if (count <= 0 || !(step > 0) || !Number.isFinite(x)) return null;
+    return Math.min(count - 1, Math.max(0, Math.floor((x - plotLeft) / step)));
+}
+
+export interface StackSegment {
+    /** Which series the segment belongs to. */
+    series: number;
+    y: number;
+    height: number;
+    /** The segment the bar ends on, which alone gets the rounded cap. */
+    top: boolean;
+}
+
+/**
+ * The drawn pieces of one stacked bar, bottom to top. Each piece is as tall as its value on the
+ * axis, less a surface-coloured gap where another piece sits on it, so neighbouring series read
+ * as separate without a stroke drawn round them. A non-zero value never collapses below one
+ * point, so a small bucket stays visible.
+ */
+export function stackSegments(
+    values: readonly number[],
+    axisTop: number,
+    plotBottom: number,
+    plotHeight: number,
+    gap: number = 2,
+): StackSegment[] {
+    if (!(axisTop > 0) || !(plotHeight > 0)) return [];
+    const present = values
+        .map((value, series) => ({ series, value }))
+        .filter((entry) => entry.value > 0);
+    const segments: StackSegment[] = [];
+    let bottom = plotBottom;
+    present.forEach((entry, index) => {
+        const full = Math.max(1, (entry.value / axisTop) * plotHeight);
+        const isTop = index === present.length - 1;
+        const drawn = isTop ? full : Math.max(1, full - gap);
+        segments.push({ series: entry.series, y: bottom - drawn, height: drawn, top: isTop });
+        bottom -= full;
+    });
+    return segments;
+}
+
+/**
+ * SVG path of a bar whose data end is rounded and whose base stays square, so every bar reads as
+ * growing from the same baseline.
+ */
+export function roundedTopBarPath(x: number, y: number, width: number, height: number, radius: number = 4): string {
+    const r = Math.max(0, Math.min(radius, width / 2, height));
+    const right = x + width;
+    const bottom = y + height;
+    if (r === 0) return `M${x},${bottom}V${y}H${right}V${bottom}Z`;
+    return `M${x},${bottom}V${y + r}Q${x},${y} ${x + r},${y}H${right - r}Q${right},${y} ${right},${y + r}V${bottom}Z`;
+}

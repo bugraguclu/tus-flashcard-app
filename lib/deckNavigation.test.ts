@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import {
+    commonDeckAncestor,
     getDeckPathNames,
     getRootDeckName,
     getScopedBrowserPath,
     hasExplicitStudyScope,
     normalizeDeckLeafInput,
 } from './deckNavigation';
+
+describe('commonDeckAncestor', () => {
+    it('is the deck itself when every card went into one deck', () => {
+        expect(commonDeckAncestor(['TUS::Farmakoloji'])).toBe('TUS::Farmakoloji');
+        expect(commonDeckAncestor(['TUS::Farmakoloji', 'TUS::Farmakoloji'])).toBe('TUS::Farmakoloji');
+    });
+
+    it('climbs to the deepest deck holding them all', () => {
+        expect(commonDeckAncestor(['TUS::Dahiliye::Kardiyoloji', 'TUS::Dahiliye::Nefroloji'])).toBe('TUS::Dahiliye');
+        expect(commonDeckAncestor(['TUS', 'TUS::Cerrahi'])).toBe('TUS');
+        // A shared prefix of a name is not a shared deck.
+        expect(commonDeckAncestor(['TUS::Farma', 'TUS::Farmakoloji'])).toBe('TUS');
+    });
+
+    it('has no answer for decks under different roots, or for no decks at all', () => {
+        expect(commonDeckAncestor(['TUS', 'Default'])).toBeNull();
+        expect(commonDeckAncestor([])).toBeNull();
+    });
+});
 
 describe('deck navigation hierarchy', () => {
     it('keeps a nested selection attached to its top-level deck', () => {

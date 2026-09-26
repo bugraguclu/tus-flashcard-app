@@ -250,7 +250,7 @@ export default function TagPickerModal({
 
                     <View style={styles.searchContainer}>
                         <View style={styles.searchField}>
-                            <View style={styles.searchIconContainer} pointerEvents="none">
+                            <View style={[styles.searchIconContainer, { pointerEvents: 'none' }]}>
                                 <SearchIcon color={colors.textMuted} />
                             </View>
                             <TextInput

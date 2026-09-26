@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
     View,
     Text,
@@ -18,9 +18,17 @@ import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../con
 import WeekStreakStrip from '../components/WeekStreakStrip';
 import StatsBarChart from '../components/StatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
+import { ChartScrollLockProvider } from '../components/stats/ChartScrollLock';
+import ReviewsSection from '../components/stats/ReviewsSection';
+import HourlySection from '../components/stats/HourlySection';
+import AddedSection from '../components/stats/AddedSection';
+import DeckProgressSection from '../components/stats/DeckProgressSection';
 import { useI18n } from '../hooks/useI18n';
 import { formatCount } from '../lib/i18n';
-import { resolveStatsDateRange, type StatsRangeKey } from '../lib/ankiStats';
+import { getAddedCardDeckNames, rangeStudyDays, resolveStatsDateRange, type StatsRangeKey } from '../lib/ankiStats';
+import { localDayNumber } from '../lib/ankiState';
+import { commonDeckAncestor } from '../lib/deckNavigation';
+import { addedSearchForDays } from '../lib/statsSeries';
 import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import {
@@ -30,11 +38,11 @@ import {
     getStatsScreenSnapshot,
 } from '../lib/screenSnapshots';
 import {
-    formatChartMinutes,
+    formatDecimal,
     formatIntervalDays,
     formatPartPercent,
+    formatPercent,
     formatStudyDuration,
-    perDayAverage,
 } from '../lib/statsPresentation';
 
 export default function StatsScreen() {
@@ -56,10 +64,11 @@ export default function StatsScreen() {
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [rangePickerVisible, setRangePickerVisible] = useState(false);
     const [rangeKey, setRangeKey] = useState<StatsRangeKey>('year');
-    // Anki's "Time" checkbox on the Reviews graph: same buckets, minutes instead of card counts.
-    const [reviewsAsTime, setReviewsAsTime] = useState(false);
     // Anki's "backlog" checkbox on Future Due, on by default there (BoolKey::FutureDueShowBacklog).
     const [showBacklog, setShowBacklog] = useState(true);
+    // Scrolling pauses while a finger slides sideways across one of the charts that can be scrubbed.
+    const [scrollLocked, setScrollLocked] = useState(false);
+    const scrollRef = useRef<ScrollView>(null);
     const [customStart, setCustomStart] = useState(() => {
         const date = new Date();
         date.setMonth(date.getMonth() - 1);
@@ -96,9 +105,11 @@ export default function StatsScreen() {
                         ? `${customStart.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })} – ${customEnd.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })}`
                         : l('Tüm zamanlar', 'All Time');
 
+    // Recomputed with the data version so a range that ends "today" still means today after the
+    // screen has been left open across a study session or a rollover.
     const statsRange = useMemo(
         () => resolveStatsDateRange(rangeKey, customStart, customEnd, settings.dayRolloverHour),
-        [rangeKey, customStart, customEnd, settings.dayRolloverHour],
+        [rangeKey, customStart, customEnd, settings.dayRolloverHour, dataVersion, schedulingRevision],
     );
 
     const statsSnapshotKey = useMemo(() => JSON.stringify([
@@ -127,6 +138,10 @@ export default function StatsScreen() {
     const todayStats = statsSnapshot?.todayStats ?? EMPTY_TODAY_STATS;
     const streak = statsSnapshot?.streak ?? EMPTY_STUDY_STREAK;
     const deckStats = statsSnapshot?.deckStats ?? [];
+    const reviewDays = statsSnapshot?.reviewDays ?? [];
+    const addedDays = statsSnapshot?.addedDays ?? [];
+    const reviewSpan = rangeStudyDays(statsRange, settings.dayRolloverHour, reviewDays[0]?.day ?? null);
+    const addedSpan = rangeStudyDays(statsRange, settings.dayRolloverHour, addedDays[0]?.day ?? null);
     const deckPickerItems = useMemo(
         () => deckPickerVisible
             ? [...(statsSnapshot?.decks ?? [])].sort((a, b) => a.name.localeCompare(b.name, localeTag))
@@ -162,6 +177,10 @@ export default function StatsScreen() {
                     : l('Kolay', 'Easy'),
         values: [point.learning, point.young, point.mature],
     })), [ankiStats.answerButtons, l]);
+    const answerTotal = answerButtonPoints.reduce(
+        (sum, point) => sum + point.values.reduce((pointSum, value) => pointSum + value, 0),
+        0,
+    );
 
     const cardCountRows = useMemo(() => ([
         { key: 'mature', label: l('Olgun', 'Mature'), count: ankiStats.cardCounts.mature, color: colors.badgeReview },
@@ -182,11 +201,30 @@ export default function StatsScreen() {
         router.replace('/decks' as any);
     };
 
+    /**
+     * Anki links a bar of the Added graph to a browser search for its cards. The browser opens in
+     * the deck those cards went into when they share one, and in this screen's scope otherwise.
+     */
+    const openAddedCards = (firstDay: number, lastDay: number) => {
+        const rolloverHour = settings.dayRolloverHour;
+        let deck = deckScope;
+        // A filtered deck owns no cards; only its own scope lists exactly the cards counted here.
+        if (statsSnapshot?.filteredScopeCardIds === undefined) {
+            try {
+                deck = commonDeckAncestor(getAddedCardDeckNames(deckScope, firstDay, lastDay, rolloverHour)) ?? deckScope;
+            } catch (error) {
+                console.warn('[Stats] added card decks failed:', error);
+            }
+        }
+        const initialSearch = addedSearchForDays(firstDay, lastDay, localDayNumber(Date.now(), rolloverHour));
+        router.push({ pathname: '/browser', params: deck ? { deck, initialSearch } : { initialSearch } } as any);
+    };
+
     const accuracy = todayStats.reviewed > 0
         ? Math.round((todayStats.passed / todayStats.reviewed) * 100)
         : 0;
     const countValue = (value: number) => formatCount(Math.round(value), locale);
-    const timeValue = (value: number) => formatChartMinutes(value, locale);
+    const percentValue = (value: number) => formatPercent(value, locale);
     const chartInteractionHint = l(
         'Ayrıntıyı sabitlemek için bir sütuna dokunun; kapatmak için yeniden dokunun.',
         'Tap a bar to pin its details; tap it again to close.',
@@ -195,8 +233,6 @@ export default function StatsScreen() {
         'Başka bir deste veya zaman aralığı seçerek tekrar deneyin.',
         'Try another deck or time range.',
     );
-    const reviewAverage = ankiStats.daysStudied > 0 ? ankiStats.reviewTotal / ankiStats.daysStudied : 0;
-    const answerSeconds = ankiStats.reviewTotal > 0 ? ankiStats.reviewTimeMs / ankiStats.reviewTotal / 1000 : 0;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -213,7 +249,13 @@ export default function StatsScreen() {
                 <Text style={styles.screenTitle} numberOfLines={1}>{t('common.statistics')}</Text>
                 <View style={styles.headerSpacer} />
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ChartScrollLockProvider value={setScrollLocked}>
+            <ScrollView
+                ref={scrollRef}
+                scrollEnabled={!scrollLocked}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
                 <View style={styles.selectorsRow}>
                     <TouchableOpacity
                         style={styles.scopeSelector}
@@ -237,7 +279,7 @@ export default function StatsScreen() {
                     </TouchableOpacity>
                 </View>
                 {(loading || Boolean(statsError)) && (
-                    <View style={styles.inlineLoadState} pointerEvents="none" accessible>
+                    <View style={[styles.inlineLoadState, { pointerEvents: 'none' }]} accessible>
                         <Text style={styles.inlineLoadIcon}>{statsError ? '!' : '📊'}</Text>
                         <Text style={styles.inlineLoadText}>
                             {statsError
@@ -262,7 +304,7 @@ export default function StatsScreen() {
                             <Text style={styles.todayLabel}>{l('Yanıtlanan', 'Reviews')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={[styles.todayNumber, { color: colors.btnGood }]}>{todayStats.reviewed > 0 ? `${accuracy}%` : '—'}</Text>
+                            <Text style={[styles.todayNumber, { color: colors.btnGood }]}>{todayStats.reviewed > 0 ? percentValue(accuracy) : '—'}</Text>
                             <Text style={styles.todayLabel}>{l('Doğruluk', 'Accuracy')}</Text>
                         </View>
                         <View style={styles.todayStat}>
@@ -354,7 +396,7 @@ export default function StatsScreen() {
                     />
                     <View style={styles.metricRow}>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(showBacklog ? ankiStats.futureDueWithBacklogTotal : ankiStats.futureDueTotal)}</Text><Text style={styles.metricLabel}>{l('Toplam', 'Total')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{ankiStats.dailyLoad.toFixed(1)}</Text><Text style={styles.metricLabel}>{l('Günlük yük', 'Daily load')}</Text></View>
+                        <View style={styles.metricItem}><Text style={styles.metricValue}>{formatDecimal(ankiStats.dailyLoad, locale, 1, true)}</Text><Text style={styles.metricLabel}>{l('Günlük yük', 'Daily load')}</Text></View>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.dueTomorrow)}</Text><Text style={styles.metricLabel}>{l('Yarın', 'Tomorrow')}</Text></View>
                         {showBacklog && (
                             <View style={styles.metricItem}>
@@ -365,69 +407,12 @@ export default function StatsScreen() {
                     </View>
                 </View>
 
-                <View style={styles.ankiCard}>
-                    <Text style={styles.chartTitle}>{l('Tekrarlar', 'Reviews')}</Text>
-                    <Text style={styles.chartSubtitle}>
-                        {reviewsAsTime
-                            ? l('Seçilen dönemde, kart türüne göre çalışmaya ayırdığınız süre.', 'Study time in the selected period, split by card type.')
-                            : l('Seçilen dönemde, kart türüne göre verdiğiniz yanıtların sayısı.', 'Answers in the selected period, split by card type.')}
-                    </Text>
-                    <View style={styles.chartToggleRow}>
-                        {([
-                            { key: false, label: l('Kart sayısı', 'Cards') },
-                            { key: true, label: l('Süre', 'Time') },
-                        ] as const).map((option) => (
-                            <TouchableOpacity
-                                key={String(option.key)}
-                                style={[styles.chartToggle, reviewsAsTime === option.key && styles.chartToggleActive]}
-                                onPress={() => setReviewsAsTime(option.key)}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected: reviewsAsTime === option.key }}
-                            >
-                                <Text style={[
-                                    styles.chartToggleText,
-                                    reviewsAsTime === option.key && styles.chartToggleTextActive,
-                                ]}>
-                                    {option.label}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                    <StatsBarChart
-                        points={reviewsAsTime ? ankiStats.reviewMinutes : ankiStats.reviews}
-                        series={[
-                            { label: l('Öğrenme', 'Learning'), color: colors.badgeLearn },
-                            { label: l('Genç', 'Young'), color: colors.badgeNew },
-                            { label: l('Olgun', 'Mature'), color: colors.badgeReview },
-                            { label: l('Yeniden öğrenme', 'Relearning'), color: colors.btnAgain },
-                            { label: l('Filtrelenmiş', 'Filtered'), color: colors.textMuted },
-                        ]}
-                        colors={colors}
-                        emptyLabel={l('Bu zaman aralığında tekrar yok.', 'No reviews in this time range.')}
-                        emptyHint={chartEmptyHint}
-                        height={190}
-                        cumulative
-                        cumulativeLabel={l('Birikimli', 'Cumulative')}
-                        formatValue={reviewsAsTime ? timeValue : countValue}
-                        formatAxisValue={reviewsAsTime ? timeValue : undefined}
-                        formatCumulative={reviewsAsTime ? timeValue : countValue}
-                        totalLabel={reviewsAsTime ? l('Toplam süre', 'Total time') : l('Toplam', 'Total')}
-                        valueAxisLabel={reviewsAsTime ? l('Süre', 'Time') : l('Yanıt', 'Answers')}
-                        cumulativeAxisLabel={reviewsAsTime ? l('Birikimli süre', 'Cumulative time') : l('Birikimli yanıt', 'Cumulative answers')}
-                        accessibilityLabel={l(
-                            `Tekrarlar grafiği. ${ankiStats.reviewTotal} yanıt, ${ankiStats.daysStudied} çalışma günü, toplam ${formatStudyDuration(ankiStats.reviewTimeMs, locale)}.`,
-                            `Reviews chart. ${ankiStats.reviewTotal} answers across ${ankiStats.daysStudied} study days, ${formatStudyDuration(ankiStats.reviewTimeMs, locale)} total.`,
-                        )}
-                        interactionHint={chartInteractionHint}
-                    />
-                    <View style={styles.metricRow}>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.reviewTotal)}</Text><Text style={styles.metricLabel}>{l('Yanıt', 'Answers')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.daysStudied)}</Text><Text style={styles.metricLabel}>{l('Çalışılan gün', 'Days studied')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{formatStudyDuration(ankiStats.reviewTimeMs, locale)}</Text><Text style={styles.metricLabel}>{l('Toplam süre', 'Total time')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{reviewAverage > 0 ? reviewAverage.toFixed(1) : '—'}</Text><Text style={styles.metricLabel}>{l('Günlük yanıt', 'Per study day')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{answerSeconds > 0 ? `${answerSeconds.toFixed(1)} ${locale === 'tr' ? 'sn' : 's'}` : '—'}</Text><Text style={styles.metricLabel}>{l('Yanıt başına', 'Per answer')}</Text></View>
-                    </View>
-                </View>
+                <ReviewsSection
+                    reviewDays={reviewDays}
+                    firstDay={reviewSpan.firstDay}
+                    lastDay={reviewSpan.lastDay}
+                    rangeTitle={rangeTitle}
+                />
 
                 <View style={styles.ankiCard}>
                     <Text style={styles.chartTitle}>{l('Cevap düğmeleri', 'Answer Buttons')}</Text>
@@ -447,8 +432,8 @@ export default function StatsScreen() {
                         valueAxisLabel={l('Yanıt', 'Answers')}
                         formatValue={countValue}
                         accessibilityLabel={l(
-                            `Cevap düğmeleri grafiği. Seçilen dönemde toplam ${ankiStats.reviewTotal} yanıt.`,
-                            `Answer buttons chart. ${ankiStats.reviewTotal} answers in the selected period.`,
+                            `Cevap düğmeleri grafiği. Seçilen dönemde toplam ${answerTotal} yanıt.`,
+                            `Answer buttons chart. ${answerTotal} answers in the selected period.`,
                         )}
                         interactionHint={chartInteractionHint}
                     />
@@ -470,13 +455,15 @@ export default function StatsScreen() {
                         {correctShares.map((share) => (
                             <View key={share.label} style={styles.metricItem}>
                                 <Text style={styles.metricValue}>
-                                    {share.total > 0 ? `${share.percent}%` : '—'}
+                                    {share.total > 0 ? percentValue(share.percent) : '—'}
                                 </Text>
                                 <Text style={styles.metricLabel}>{share.label}</Text>
                             </View>
                         ))}
                     </View>
                 </View>
+
+                <HourlySection hours={statsSnapshot.hours} rangeTitle={rangeTitle} />
 
                 <View style={styles.ankiCard}>
                     <Text style={styles.chartTitle}>{l('Tekrar aralıkları', 'Review Intervals')}</Text>
@@ -494,6 +481,7 @@ export default function StatsScreen() {
                         valueAxisLabel={l('Kart', 'Cards')}
                         cumulativeAxisLabel={l('Kartların yüzdesi', 'Share of cards')}
                         formatValue={countValue}
+                        formatCumulative={percentValue}
                         accessibilityLabel={l(
                             `Tekrar aralıkları grafiği. Ortalama aralık ${formatIntervalDays(ankiStats.averageInterval, locale)}, en uzun aralık ${formatIntervalDays(ankiStats.longestInterval, locale)}.`,
                             `Review intervals chart. Average interval ${formatIntervalDays(ankiStats.averageInterval, locale)}; longest interval ${formatIntervalDays(ankiStats.longestInterval, locale)}.`,
@@ -532,14 +520,14 @@ export default function StatsScreen() {
 
                     <View style={styles.compositionGrid}>
                         {cardCountRows.map((item) => (
-                            <View key={item.key} style={styles.compositionItem} accessible accessibilityLabel={`${item.label}: ${item.count}, ${formatPartPercent(item.count, ankiStats.cardCounts.totalCards)}`}>
+                            <View key={item.key} style={styles.compositionItem} accessible accessibilityLabel={`${item.label}: ${item.count}, ${formatPartPercent(item.count, ankiStats.cardCounts.totalCards, locale)}`}>
                                 <View style={styles.compositionLabelRow}>
                                     <View style={[styles.compositionSwatch, { backgroundColor: item.color }]} />
                                     <Text style={styles.compositionLabel} numberOfLines={1}>{item.label}</Text>
                                 </View>
                                 <View style={styles.compositionValueRow}>
                                     <Text style={styles.compositionValue}>{countValue(item.count)}</Text>
-                                    <Text style={styles.compositionPercent}>{formatPartPercent(item.count, ankiStats.cardCounts.totalCards)}</Text>
+                                    <Text style={styles.compositionPercent}>{formatPartPercent(item.count, ankiStats.cardCounts.totalCards, locale)}</Text>
                                 </View>
                             </View>
                         ))}
@@ -548,79 +536,33 @@ export default function StatsScreen() {
                     <View style={styles.metricRow}>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.cardCounts.totalCards)}</Text><Text style={styles.metricLabel}>{l('Toplam kart', 'Total cards')}</Text></View>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.cardCounts.totalNotes)}</Text><Text style={styles.metricLabel}>{l('Toplam not', 'Total notes')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{ankiStats.cardCounts.totalNotes > 0 ? (ankiStats.cardCounts.totalCards / ankiStats.cardCounts.totalNotes).toFixed(1) : '—'}</Text><Text style={styles.metricLabel}>{l('Not başına kart', 'Cards per note')}</Text></View>
+                        <View style={styles.metricItem}><Text style={styles.metricValue}>{ankiStats.cardCounts.totalNotes > 0 ? formatDecimal(ankiStats.cardCounts.totalCards / ankiStats.cardCounts.totalNotes, locale, 1, true) : '—'}</Text><Text style={styles.metricLabel}>{l('Not başına kart', 'Cards per note')}</Text></View>
                     </View>
                 </View>
 
-                <View style={styles.ankiCard}>
-                    <Text style={styles.chartTitle}>{l('Eklenenler', 'Added')}</Text>
-                    <Text style={styles.chartSubtitle}>{l('Seçilen dönemde oluşturulan yeni kartlar ve zaman içinde biriken toplam.', 'New cards created in the selected period and their running total over time.')}</Text>
-                    <StatsBarChart
-                        points={ankiStats.added}
-                        series={[{ label: l('Yeni kart', 'New cards'), color: colors.badgeNew }]}
-                        colors={colors}
-                        emptyLabel={l('Bu zaman aralığında eklenen kart yok.', 'No cards were added in this time range.')}
-                        emptyHint={chartEmptyHint}
-                        height={170}
-                        cumulative
-                        cumulativeLabel={l('Birikimli', 'Cumulative')}
-                        valueAxisLabel={l('Kart', 'Cards')}
-                        cumulativeAxisLabel={l('Birikimli kart', 'Cumulative cards')}
-                        formatValue={countValue}
-                        accessibilityLabel={l(
-                            `Eklenenler grafiği. Seçilen dönemde ${ankiStats.addedTotal} kart oluşturuldu.`,
-                            `Added chart. ${ankiStats.addedTotal} cards were created in the selected period.`,
-                        )}
-                        interactionHint={chartInteractionHint}
-                    />
-                    <View style={styles.metricRow}>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.addedTotal)}</Text><Text style={styles.metricLabel}>{l('Toplam eklenen', 'Total added')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{ankiStats.addedSpanDays > 0 ? perDayAverage(ankiStats.addedTotal, ankiStats.addedSpanDays).toFixed(1) : '—'}</Text><Text style={styles.metricLabel}>{l('Takvim günü ortalaması', 'Per calendar day')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.addedSpanDays)}</Text><Text style={styles.metricLabel}>{l('Kapsanan gün', 'Days covered')}</Text></View>
-                    </View>
-                </View>
+                <AddedSection
+                    addedDays={addedDays}
+                    firstDay={addedSpan.firstDay}
+                    lastDay={addedSpan.lastDay}
+                    rangeTitle={rangeTitle}
+                    onOpenCards={openAddedCards}
+                />
 
-                {(deckStats.length > 0 || !deckScope) && (
-                    <Text style={styles.sectionTitle2}>
-                        {deckScope ? l('Alt deste ilerlemesi', 'Subdeck Progress') : l('Deste bazlı ilerleme', 'Progress by Deck')}
-                    </Text>
-                )}
-                {deckStats.map((deck) => (
-                    <TouchableOpacity
-                        key={deck.name}
-                        style={styles.subjectRow}
-                        onPress={() => setDeckScope(deck.name)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l(`${deck.displayName} destesinin istatistiklerini göster`, `Show statistics for ${deck.displayName}`)}
-                        accessibilityValue={{ min: 0, max: 100, now: deck.pct, text: `${deck.pct}%` }}
-                    >
-                        <View style={styles.subjectHeader}>
-                            <Text style={styles.subjectIcon}>🗃️</Text>
-                            <Text style={styles.subjectName}>{deck.displayName}</Text>
-                            <Text style={styles.subjectPct}>{deck.pct}%</Text>
-                            <Text style={styles.subjectChevron}>›</Text>
-                        </View>
-                        <View style={styles.subjectProgress}>
-                            <View style={[styles.progressSegment, { width: `${deck.pct}%`, backgroundColor: colors.accent }]} />
-                        </View>
-                        <View style={styles.subjectDetail}>
-                            <Text style={styles.subjectDetailText}>
-                                {l(`${deck.studied}/${deck.total} çalışıldı`, `${deck.studied}/${deck.total} studied`)} · {t('anki.new')} {deck.newCount} · {t('anki.learn')} {deck.learningCount} · {t('anki.review')} {deck.reviewCount}
-                            </Text>
-                            <Text style={styles.subjectDetailText}>
-                                {l('Genç', 'Young')} {deck.youngCount} · {l('Olgun', 'Mature')} {deck.matureCount}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
-                {!deckScope && deckStats.length === 0 && (
-                    <Text style={styles.scopeHint}>{l('Henüz deste yok — Desteler ekranından bir deste oluşturun.', 'No decks yet — create one from the Decks screen.')}</Text>
-                )}
+                <DeckProgressSection
+                    title={deckScope ? l('Alt desteler', 'Subdecks') : l('Desteler', 'Decks')}
+                    decks={deckStats}
+                    onSelectDeck={(name) => {
+                        // The deck was picked from the foot of the page; its figures start at the top.
+                        setDeckScope(name);
+                        scrollRef.current?.scrollTo({ y: 0, animated: true });
+                    }}
+                />
 
                 <View style={{ height: 40 }} />
                 </>
                 )}
             </ScrollView>
+            </ChartScrollLockProvider>
 
             {deckPickerVisible && <DeckPickerModal
                 visible={deckPickerVisible}
@@ -785,7 +727,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     scopeSelectorText: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
     scopeSelectorCaret: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800', marginTop: 2 },
-    scopeHint: { fontSize: FontSize.sm, color: colors.textMuted },
 
     todayCard: {
         backgroundColor: colors.bgCard,
@@ -838,7 +779,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         ...Shadows.sm,
     },
     streakHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: Spacing.xs },
-    streakBest: { fontSize: FontSize.sm, color: colors.textMuted },
     bestBadge: { alignItems: 'flex-end', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: BorderRadius.md, backgroundColor: colors.streakBg },
     bestBadgeLabel: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '700' },
     bestBadgeValue: { color: colors.streak, fontSize: FontSize.md, fontWeight: '900', marginTop: 1 },
@@ -899,11 +839,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.borderLight,
     },
     overviewSegment: { height: '100%' },
-    overviewLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.lg, marginBottom: Spacing.sm },
-    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    legendDot: { width: 8, height: 8, borderRadius: 4 },
-    legendText: { fontSize: FontSize.sm, color: colors.textSecondary },
-    algorithmInfo: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 4 },
     compositionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
     compositionItem: { flexGrow: 1, flexBasis: isCompact ? '46%' : '22%', minWidth: 132, padding: Spacing.md, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },
     compositionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -912,36 +847,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     compositionValueRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Spacing.sm, marginTop: 5 },
     compositionValue: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '900' },
     compositionPercent: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '700' },
-
-    sectionTitle2: {
-        fontSize: FontSize.lg,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        marginTop: Spacing.sm,
-    },
-    subjectRow: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        ...Shadows.sm,
-    },
-    subjectHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-    subjectIcon: { fontSize: 18 },
-    subjectName: { flex: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-    subjectPct: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
-    subjectProgress: {
-        height: 8,
-        backgroundColor: colors.borderLight,
-        borderRadius: 4,
-        overflow: 'hidden',
-        marginBottom: 7,
-    },
-    progressSegment: { height: '100%', borderRadius: 4 },
-    subjectChevron: { color: colors.textMuted, fontSize: 22, lineHeight: 24, fontWeight: '500' },
-    subjectDetail: {},
-    subjectDetailText: { fontSize: FontSize.xs, color: colors.textMuted },
 
     pickerOverlay: {
         flex: 1,

@@ -403,6 +403,23 @@ describe('storage import/export canonical round-trip', () => {
         });
     });
 
+    it('leaves "limits start from top" off until it is asked for, as Anki does', () => {
+        // Anki's `apply_all_parent_limits` is one of the config bools that default to false, so a
+        // collection nobody has configured reads a deck's allowance from the deck the learner
+        // opened rather than squeezing it again through every ancestor.
+        expect(DEFAULT_SETTINGS.limitsStartFromTop).toBe(false);
+        expect(loadSettings().limitsStartFromTop).toBe(false);
+    });
+
+    it('keeps the switch on for a collection that had already turned it on', () => {
+        // The default only answers for a key that was never written. A learner who turned this on
+        // must not have it flipped back under them by an update — their daily limits would change
+        // without anyone touching the switch.
+        saveCollectionDeckOptions({ newCardsIgnoreReviewLimit: true, limitsStartFromTop: true });
+
+        expect(loadSettings().limitsStartFromTop).toBe(true);
+    });
+
     it('rejects an incomplete canonical file before changing settings or tables', async () => {
         saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
         const originalNotes = [...dbState.notes];

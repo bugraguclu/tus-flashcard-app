@@ -35,6 +35,7 @@ import {
     getBuriedCountForDeck,
     getCardCountsByDeck,
     saveDeck,
+    setDeckLimitOverrides,
     saveDeckConfig,
 } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
@@ -229,6 +230,50 @@ describe('deck overview snapshot', () => {
         expect(screen.queue?.cards.map((card) => card.cardId))
             .toEqual(directQueue.cards.map((card) => card.cardId));
         expect(screen.buriedCount).toBe(getBuriedCountForDeck(1));
+    });
+});
+
+describe('limits start from top', () => {
+    // Anki's `apply_all_parent_limits` is off unless the learner turns it on, and this is what the
+    // switch decides: whether opening a subdeck answers to that subdeck's own allowance, or is
+    // squeezed a second time by every ancestor above it (rslib `apply_all_parent_limits`).
+    const seedSubdeckWithStricterParent = () => {
+        setDeckLimitOverrides(1, 1, 200);
+        setDeckLimitOverrides(2, 5, 200);
+        for (const id of [1031, 1032]) {
+            saveNote(makeNote(id, ['temeller', 'Veri-Tipleri'], [`soru ${id}`, 'cevap', 'Veri Tipleri']));
+            saveAnkiCard(makeCard(id, id, 2));
+        }
+    };
+
+    it('serves the subdeck its own allowance while the switch is off', () => {
+        seedSubdeckWithStricterParent();
+
+        const queue = getStudyQueue({ settings, selectedDeckName: 'Python::Temeller' });
+
+        // Three new cards live in the subdeck and its own limit is five, so the parent's limit of
+        // one is not consulted at all: the learner opened the subdeck.
+        expect(queue.stats.newCount).toBe(3);
+    });
+
+    it('lets the parent cap the subdeck once the switch is on', () => {
+        seedSubdeckWithStricterParent();
+
+        const queue = getStudyQueue({
+            settings: { ...settings, limitsStartFromTop: true },
+            selectedDeckName: 'Python::Temeller',
+        });
+
+        expect(queue.stats.newCount).toBe(1);
+    });
+
+    it('reads an unconfigured collection as having the switch off', () => {
+        // `limitsStartFromTop` is absent from this fixture's settings, which is how a collection
+        // that has never opened Deck Options reaches the queue builder.
+        seedSubdeckWithStricterParent();
+        expect(settings.limitsStartFromTop).toBeUndefined();
+
+        expect(getStudyQueue({ settings, selectedDeckName: 'Python::Temeller' }).stats.newCount).toBe(3);
     });
 });
 

@@ -904,17 +904,20 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
         };
     }
 
+    // Installation is the first thing a buyer sees after paying, so each phase is timed and
+    // reported once: a support question about a slow install has an answer in the log.
+    const startedAt = Date.now();
+    // The package is loaded and unpacked before the installed catalog is touched. The web build
+    // downloads it, and a download that fails must leave the learner the catalog they had.
+    const { zip, cachedUri } = await loadBundledPackage();
+    const collectionBytes = await extractCollectionFromZip(zip);
+
     // Tier replacement removes only catalog-marked rows and stashes scheduling progress. User
     // decks remain untouched, and matching card ids recover their progress in the new tier.
     if (currentTier !== null || parseRows<Deck>('decks').some((row) => isCatalogRow(row.value))) {
         uninstallBkaCatalog();
     }
 
-    // Installation is the first thing a buyer sees after paying, so each phase is timed and
-    // reported once: a support question about a slow install has an answer in the log.
-    const startedAt = Date.now();
-    const { zip, cachedUri } = await loadBundledPackage();
-    const collectionBytes = await extractCollectionFromZip(zip);
     const reader = await openAnkiReader(collectionBytes);
     let snapshot: BkaCatalogSnapshot;
     try {

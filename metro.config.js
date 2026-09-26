@@ -19,6 +19,16 @@ if (!config.resolver.assetExts.includes('tuspack')) {
   config.resolver.assetExts.push('tuspack');
 }
 
+// Agent worktrees of this repository live under `.claude/worktrees`, each with its own
+// node_modules. Metro must neither watch nor resolve into them: a node_modules swap inside one
+// crashed this checkout's file watcher and took the dev server down.
+const WORKTREES = /[\\/]\.claude[\\/]worktrees[\\/].*/;
+const defaultBlockList = config.resolver.blockList;
+config.resolver.blockList = [
+    ...(Array.isArray(defaultBlockList) ? defaultBlockList : defaultBlockList ? [defaultBlockList] : []),
+    WORKTREES,
+];
+
 const emptyModule = require.resolve('metro-runtime/src/modules/empty-module.js');
 
 config.resolver.extraNodeModules = {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-09-06",
+  "lastVerified": "2026-09-24",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -390,6 +390,22 @@
       "platform": "cross-platform plain-text export",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/export.rs",
       "useFor": ["include HTML and media references", "style block and typing placeholder removal", "#separator and column header lines"]
+    },
+    {
+      "id": "anki-source-stats-graphs",
+      "priority": 3,
+      "platform": "cross-platform statistics data",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/stats/graphs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["which answers the Reviews graph counts, by kind", "hourly breakdown without filtered-deck answers", "the date the Added graph files a card under"]
+    },
+    {
+      "id": "anki-source-stats-graphs-ui",
+      "priority": 3,
+      "platform": "cross-platform statistics presentation",
+      "url": "https://github.com/ankitects/anki/tree/main/ts/routes/graphs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["the table under the Reviews graph", "the browser search a bar of the Added graph opens"]
     }
   ],
   "requiredDocs": [

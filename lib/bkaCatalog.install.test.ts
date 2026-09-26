@@ -10,7 +10,7 @@ import initSqlJs from 'sql.js';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
-const holder = vi.hoisted(() => ({ db: null as any, SQL: null as any }));
+const holder = vi.hoisted(() => ({ db: null as any, SQL: null as any, failPackageRead: false }));
 
 vi.mock('./db', () => ({
     getDB: () => holder.db,
@@ -23,7 +23,11 @@ vi.mock('expo-asset', () => ({
 }));
 vi.mock('./bkaCatalogAsset', () => ({ requireBkaCatalogAsset: () => 0 }));
 vi.mock('./files', () => ({
-    readUriBytes: async () => new Uint8Array(readFileSync('assets/catalog/bka-tus-complete.apkg')),
+    readUriBytes: async () => {
+        // The web build downloads the package; this stands in for that download failing.
+        if (holder.failPackageRead) throw new Error('Network request failed');
+        return new Uint8Array(readFileSync('assets/catalog/bka-tus-complete.apkg'));
+    },
 }));
 vi.mock('./importApkg', async () => {
     const actual = await vi.importActual<typeof import('./importApkg')>('./importApkg');
@@ -127,6 +131,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
     holder.db = createAppDb(holder.SQL);
+    holder.failPackageRead = false;
     db = holder.db;
     seedLearnerCollection(db);
 });
@@ -350,6 +355,21 @@ describe('BKA catalog installation', () => {
         expect(db.getFirstSync<{ value: string }>(
             'SELECT value FROM settings WHERE key = ?', 'bka_tus_catalog_package_v1')?.value,
         ).toBe(BKA_MANIFEST.sha256);
+    }, 120_000);
+
+    it('keeps the installed catalog when the package for a refresh cannot be loaded', async () => {
+        await installBkaCatalog();
+        db.runSync(
+            'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+            'bka_tus_catalog_package_v1', 'onceki-paketin-hash-i',
+        );
+        holder.failPackageRead = true;
+
+        await expect(installBkaCatalog()).rejects.toThrow();
+
+        expect(getInstalledBkaCardCount()).toBe(BKA_MANIFEST.totals.cards);
+        expect(isBkaCatalogInstalled()).toBe(true);
+        expect(learnerRowsIntact(db)).toEqual({ noteType: true, deck: true, note: true, card: true, config: true });
     }, 120_000);
 
     it('gives the catalog its own root deck when the learner already owns that name', async () => {

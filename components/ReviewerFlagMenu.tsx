@@ -10,7 +10,7 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
 import { cardFlagName } from '../lib/i18n';
@@ -88,11 +88,7 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: BorderRadius.sm,
             borderBottomLeftRadius: BorderRadius.sm,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: -4, height: 4 },
-            shadowOpacity: 0.22,
-            shadowRadius: 10,
-            elevation: 16,
+            ...dropShadow({ x: -4, y: 4, blur: 10, opacity: 0.22, elevation: 16 }),
         },
         header: {
             minHeight: 54,

@@ -60,6 +60,13 @@ export interface RichTextEditorHandle {
     replaceSelectionText: (text: string) => void;
     /** Ask the document to resend its caret state, e.g. after the toolbar changes fields. */
     requestFormatState: () => void;
+    /**
+     * Hand any edit the host has not heard about yet to `onChange` before returning. Web reads the
+     * same-origin field document directly, since the browser can deliver the message for the last
+     * keystroke after a click made later. A native WebView cannot be read synchronously, so there
+     * this does nothing and its messages stay the only channel.
+     */
+    flushChange: () => void;
 }
 
 interface RichTextEditorProps {
@@ -245,6 +252,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const mediaObserverRef = useRef<MutationObserver | null>(null);
     const fallbackInputRef = useRef<TextInput>(null);
     const lastEditorValueRef = useRef(value);
+    /** The newest edit number taken from the current document, by message or by direct read. */
+    const lastChangeSeqRef = useRef(0);
     const latestValueRef = useRef(value);
     const editorReadyRef = useRef(false);
     const pendingCallsRef = useRef<EditorCall[]>([]);
@@ -408,7 +417,32 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             runWhenReady({ fn: '__tusEditorReplaceSelectionText', args: [text] });
         },
         requestFormatState: () => runWhenReady({ fn: '__tusEditorRequestState', args: [] }),
+        flushChange: () => {
+            if (Platform.OS !== 'web' || !editorReadyRef.current) return;
+            const read = (iframeRef.current?.contentWindow as unknown as {
+                __tusEditorReadHtml?: () => { html?: unknown; seq?: unknown };
+            } | null | undefined)?.__tusEditorReadHtml;
+            if (typeof read !== 'function') return;
+            const reading = read();
+            if (typeof reading?.html === 'string') acceptDocumentChange(reading.html, reading.seq);
+        },
     }));
+
+    /**
+     * Take an edit from the field document. Messages can arrive after a direct read has already
+     * taken a newer state, so anything numbered at or below the last accepted edit is dropped
+     * rather than written back over it.
+     */
+    const acceptDocumentChange = (html: string, seq: unknown) => {
+        if (!editable || html.length > MAX_EDITOR_HTML_CHARS) return;
+        if (typeof seq === 'number') {
+            if (seq <= lastChangeSeqRef.current) return;
+            lastChangeSeqRef.current = seq;
+        }
+        const safeHtml = sanitizeUntrustedHtml(stripPendingStyleMarkers(html));
+        lastEditorValueRef.current = safeHtml;
+        onChange(safeHtml);
+    };
 
     useEffect(() => {
         if (value === lastEditorValueRef.current) return;
@@ -427,15 +461,14 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 state?: unknown;
                 dataUrl?: string;
                 shortcut?: string;
+                seq?: unknown;
             };
             if (message.type === 'change' && typeof message.html === 'string') {
-                if (!editable) return;
-                if (message.html.length > MAX_EDITOR_HTML_CHARS) return;
-                const safeHtml = sanitizeUntrustedHtml(stripPendingStyleMarkers(message.html));
-                lastEditorValueRef.current = safeHtml;
-                onChange(safeHtml);
+                acceptDocumentChange(message.html, message.seq);
             } else if (message.type === 'ready') {
                 editorReadyRef.current = true;
+                // A rebuilt document (theme, font size) numbers its edits from the start again.
+                lastChangeSeqRef.current = 0;
                 const latestValue = latestValueRef.current;
                 lastEditorValueRef.current = latestValue;
                 callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(latestValue).slice(0, MAX_EDITOR_HTML_CHARS)] });
@@ -543,8 +576,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             )}
             {(!webViewMounted || !isReady) && (Platform.OS !== 'web' || webFallbackDue) && (
                 <View
-                    style={webViewMounted ? [StyleSheet.absoluteFill, { backgroundColor: colors.bgCard }] : undefined}
-                    pointerEvents="auto"
+                    style={[webViewMounted ? [StyleSheet.absoluteFill, { backgroundColor: colors.bgCard }] : undefined, { pointerEvents: 'auto' }]}
                 >
                     <TextInput
                         ref={fallbackInputRef}

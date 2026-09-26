@@ -546,8 +546,8 @@ describe('today-only limit boost', () => {
 
     it('extends the parents too, so their limits stop capping the deck away again', () => {
         // Anki's custom study grants the headroom on every parent whose limit still applies
-        // (rslib decks/stats.rs `extend_limits`); this app applies parent limits by default, so
-        // extending only the child would hand out cards the parent immediately withholds.
+        // (rslib decks/stats.rs `extend_limits`, guarded by `ApplyAllParentLimits`). With that
+        // switch on, extending only the child would hand out cards the parent withholds again.
         const parent = createDeck('Tıp');
         const child = createDeck('Tıp::Anatomi');
         setDeckLimits(parent.id, 20, 200);

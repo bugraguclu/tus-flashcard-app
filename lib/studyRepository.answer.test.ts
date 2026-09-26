@@ -115,7 +115,7 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard, forgetCard, undoAnswer } from './studyRepository';
+import { answerStudyCard, forgetCard, setCardBuried, setCardSuspended, undoAnswer } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
 import { deleteReviewById, logManualEntry } from './reviewLogger';
@@ -404,6 +404,50 @@ describe('undoAnswer', () => {
         expect(() => undoAnswer(baseCard(10, 1, 2, 2), 1234)).toThrow('save failed');
         expect(deleteReviewById).not.toHaveBeenCalled();
         expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
+    });
+});
+
+describe('setCardBuried', () => {
+    beforeEach(() => {
+        shared.cards.clear();
+        shared.notes.clear();
+    });
+
+    it('buries a live card as user-buried', () => {
+        shared.cards.set(40, baseCard(40, 1, 2, 2));
+
+        setCardBuried(40, true, settings.dayRolloverHour);
+
+        expect(shared.cards.get(40)!.queue).toBe(-3);
+    });
+
+    it('leaves a suspended card suspended', () => {
+        shared.cards.set(41, { ...baseCard(41, 1, 2, 2), queue: -1 });
+
+        setCardBuried(41, true, settings.dayRolloverHour);
+
+        // Anki refuses this on purpose: a bury expires at the next rollover, so burying a
+        // suspended card would quietly bring it back into the queue.
+        expect(shared.cards.get(41)!.queue).toBe(-1);
+    });
+
+    it('unburies only a card that is actually buried', () => {
+        shared.cards.set(42, { ...baseCard(42, 1, 2, 2), queue: -2 });
+        shared.cards.set(43, { ...baseCard(43, 1, 2, 2), queue: -1 });
+
+        setCardBuried(42, false, settings.dayRolloverHour);
+        setCardBuried(43, false, settings.dayRolloverHour);
+
+        expect(shared.cards.get(42)!.queue).toBe(2);
+        expect(shared.cards.get(43)!.queue).toBe(-1);
+    });
+
+    it('still suspends a buried card, since suspend outranks bury in Anki', () => {
+        shared.cards.set(44, { ...baseCard(44, 1, 2, 2), queue: -3 });
+
+        setCardSuspended(44, true, settings.dayRolloverHour);
+
+        expect(shared.cards.get(44)!.queue).toBe(-1);
     });
 });
 

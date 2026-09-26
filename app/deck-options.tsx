@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
+import { goBackOr } from '../lib/backNavigation';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     getDeck,
@@ -144,7 +145,7 @@ function OptionCard({ title, children, styles, wide = false, help }: {
                         accessibilityHint={help.summary}
                         accessibilityState={{ expanded: helpOpen }}
                     >
-                        <View style={styles.helpBadge} pointerEvents="none">
+                        <View style={[styles.helpBadge, { pointerEvents: 'none' }]}>
                             <Text style={styles.helpBadgeText}>?</Text>
                         </View>
                     </TouchableOpacity>
@@ -1636,7 +1637,7 @@ export default function DeckOptionsScreen() {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.headerButton}
-                    onPress={() => router.back()}
+                    onPress={() => goBackOr(router)}
                     accessibilityRole="button"
                     accessibilityLabel={l('Deste genel bakışına dön', 'Back to deck overview')}
                 >
@@ -1714,9 +1715,9 @@ export default function DeckOptionsScreen() {
                             : saveState === 'saved'
                                 ? styles.saveStatusSuccess
                                 : styles.saveStatusPending,
+                        { pointerEvents: currentStatusMessage ? 'auto' : 'none' },
                     ]}
                     accessibilityLiveRegion="polite"
-                    pointerEvents={currentStatusMessage ? 'auto' : 'none'}
                 >
                     <View style={[
                         styles.saveStatusDot,

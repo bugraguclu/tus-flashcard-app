@@ -13,6 +13,7 @@ import { FLAG_COLORS } from '../lib/models';
 import { getAnkiCard, getNote, getNoteType } from '../lib/noteManager';
 import { getDeck } from '../lib/deckManager';
 import { getReviewsForCard } from '../lib/reviewLogger';
+import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import { FSRS6_DEFAULT_DECAY, fsrsRetrievability } from '../lib/fsrs';
 import { memoryStateFromCardData, parseAnkiCardData } from '../lib/fsrsCardData';
@@ -29,8 +30,8 @@ function parseCardId(raw: string | string[] | undefined): number {
 
 export default function CardInfoScreen() {
     const { t, l, locale, localeTag } = useI18n();
-    const { settings } = useAppSettings();
     const router = useRouter();
+    const { settings } = useAppSettings();
     const params = useLocalSearchParams();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -63,7 +64,7 @@ export default function CardInfoScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
+                    <TouchableOpacity onPress={() => goBackOr(router)} accessibilityRole="button">
                         <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
                     </TouchableOpacity>
                     <Text style={styles.title}>{t('root.cardInfo')}</Text>
@@ -91,12 +92,15 @@ export default function CardInfoScreen() {
         : null;
 
     const typeLabel = card.type === 0 ? t('anki.new') : card.type === 1 ? t('anki.learn') : card.type === 2 ? t('anki.review') : t('anki.relearn');
+    // Anki's queue constants: -2 is SchedBuried (a sibling the scheduler set aside) and -3 is
+    // UserBuried (the learner's own "Bury card"). Naming them the other way round reported every
+    // manual bury as the scheduler's doing.
     const queueLabel = card.queue === -1
         ? l('Askıda', 'Suspended')
         : card.queue === -2
-            ? l('Kullanıcı tarafından gömüldü', 'Buried manually')
+            ? l('Zamanlayıcı tarafından gömüldü', 'Buried by scheduler')
             : card.queue === -3
-                ? l('Zamanlayıcı tarafından gömüldü', 'Buried by scheduler')
+                ? l('Kullanıcı tarafından gömüldü', 'Buried manually')
                 : card.queue === 0
                     ? t('anki.new')
                     : card.queue === 1 || card.queue === 3
@@ -165,6 +169,15 @@ export default function CardInfoScreen() {
         }
     };
 
+    /**
+     * Anki's Card Info counts only answers, never the rating-less rows Set Due Date and Forget
+     * leave behind — `ease = 0` is exactly the marker that separates the two (rslib counts
+     * entries with `button_chosen > 0`).
+     */
+    const answeredReviews = reviews.filter((entry) => entry.ease > 0);
+    const totalReviewMs = answeredReviews.reduce((sum, entry) => sum + entry.time, 0);
+    const firstReviewAt = answeredReviews.length > 0 ? new Date(answeredReviews[0].id) : null;
+
     const reviewTypeLabel = (type: number) => {
         if (type === 0) return t('anki.learn');
         if (type === 1) return t('anki.review');
@@ -176,7 +189,7 @@ export default function CardInfoScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
+                <TouchableOpacity onPress={() => goBackOr(router)} accessibilityRole="button">
                     <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.title}>{t('root.cardInfo')}</Text>
@@ -256,8 +269,20 @@ export default function CardInfoScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Teknik bilgi', 'Technical Information')}</Text>
                     <InfoRow
+                        label={l('İlk çalışma', 'First review')}
+                        value={firstReviewAt ? formatDateTime(firstReviewAt) : l('Hiç çalışılmadı', 'Never studied')}
+                    />
+                    <InfoRow
                         label={l('Son çalışma', 'Last review')}
                         value={card.lastReview ? formatDateTime(new Date(card.lastReview)) : l('Hiç çalışılmadı', 'Never studied')}
+                    />
+                    <InfoRow
+                        label={l('Ortalama süre', 'Average time')}
+                        value={answeredReviews.length > 0 ? formatTime(totalReviewMs / answeredReviews.length) : '—'}
+                    />
+                    <InfoRow
+                        label={l('Toplam süre', 'Total time')}
+                        value={answeredReviews.length > 0 ? formatTime(totalReviewMs) : '—'}
                     />
                     <InfoRow label={l('Kart şablonu', 'Card template')} value={`#${card.ord + 1}`} />
                 </View>
@@ -281,10 +306,9 @@ export default function CardInfoScreen() {
                     {reviews.map((rev, index) => {
                         const ease = easeLabel(rev.ease);
                         const date = new Date(rev.id);
-                        const dateStr = date.toLocaleDateString(localeTag);
                         return (
                             <View key={rev.id} style={[styles.tableRow, index % 2 === 0 && styles.tableRowEven]}>
-                                <Text style={[styles.td, { flex: 2 }]}>{dateStr}</Text>
+                                <Text style={[styles.td, { flex: 2 }]}>{formatDateTime(date)}</Text>
                                 <Text style={[styles.td, { flex: 1, color: ease.color, fontWeight: '700' }]}>{ease.text}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{formatIvl(rev.ivl)}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{(rev.factor / 10).toFixed(0)}%</Text>
@@ -345,7 +369,7 @@ function createStyles(colors: ColorScheme) {
     },
     backBtn: { fontSize: FontSize.md, color: colors.accent, fontWeight: '600' },
     title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-    content: { flex: 1, padding: Spacing.lg },
+    content: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg },
 
     section: {
         backgroundColor: colors.bgCard,

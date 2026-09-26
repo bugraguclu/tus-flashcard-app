@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
-import Purchases, { LOG_LEVEL, type CustomerInfo, type PurchasesPackage } from 'react-native-purchases';
+import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+import Purchases, { LOG_LEVEL } from './purchasesSdk';
 import { getDB } from './db';
 import { CATALOG_INSTALL_KEY } from './catalogRows';
 

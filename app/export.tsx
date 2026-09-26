@@ -321,6 +321,9 @@ export default function ExportScreen() {
                         style={[styles.actionButton, (!selectionExport && selectedDeckIds.size === 0) && styles.actionButtonDisabled]}
                         onPress={handleExport}
                         disabled={busy || (!selectionExport && selectedDeckIds.size === 0)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Dışa aktar', 'Export')}
+                        accessibilityState={{ disabled: busy || (!selectionExport && selectedDeckIds.size === 0), busy }}
                     >
                         {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.actionText}>{l('Dışa aktar', 'Export')}</Text>}
                     </TouchableOpacity>

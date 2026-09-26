@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { axisTicks, barGeometry, compactAxisValue, labelIndexes, niceStep, tooltipPlacement } from './chartAxis';
+import {
+    axisTicks,
+    barGeometry,
+    compactAxisValue,
+    indexAtPosition,
+    labelIndexes,
+    niceStep,
+    roundedTopBarPath,
+    stackSegments,
+    tooltipPlacement,
+} from './chartAxis';
 
 describe('axisTicks', () => {
     it('lands on round numbers rather than the raw maximum', () => {
@@ -155,5 +165,52 @@ describe('tooltipPlacement', () => {
     it('does not fight a chart narrower than the box', () => {
         const { left } = tooltipPlacement(50, 120, box, { width: 100, height: 190 });
         expect(left).toBe(4);
+    });
+});
+
+describe('indexAtPosition', () => {
+    it('finds the bucket under a finger and clamps to the ends', () => {
+        expect(indexAtPosition(34, 34, 10, 5)).toBe(0);
+        expect(indexAtPosition(55, 34, 10, 5)).toBe(2);
+        expect(indexAtPosition(0, 34, 10, 5)).toBe(0);
+        expect(indexAtPosition(500, 34, 10, 5)).toBe(4);
+    });
+
+    it('has nothing to find in an empty chart', () => {
+        expect(indexAtPosition(40, 34, 10, 0)).toBeNull();
+        expect(indexAtPosition(40, 34, 0, 5)).toBeNull();
+    });
+});
+
+describe('stackSegments', () => {
+    it('stacks bottom to top and leaves a gap only between pieces', () => {
+        const segments = stackSegments([10, 0, 30], 40, 200, 100, 2);
+        expect(segments.map((segment) => segment.series)).toEqual([0, 2]);
+        // 10 of 40 is 25 points tall; the piece under another gives up two points to the gap.
+        expect(segments[0]).toMatchObject({ y: 177, height: 23, top: false });
+        // The top piece keeps its full height, so the bar still ends exactly on its total.
+        expect(segments[1]).toMatchObject({ y: 100, height: 75, top: true });
+    });
+
+    it('keeps a tiny non-zero value visible', () => {
+        const [segment] = stackSegments([1], 10_000, 200, 100);
+        expect(segment.height).toBe(1);
+    });
+
+    it('draws nothing for an empty bucket or a degenerate axis', () => {
+        expect(stackSegments([0, 0], 10, 200, 100)).toEqual([]);
+        expect(stackSegments([5], 0, 200, 100)).toEqual([]);
+    });
+});
+
+describe('roundedTopBarPath', () => {
+    it('rounds the data end and keeps the base square', () => {
+        const path = roundedTopBarPath(10, 20, 12, 50, 4);
+        expect(path.startsWith('M10,70V24Q10,20 14,20H18Q22,20 22,24V70Z')).toBe(true);
+    });
+
+    it('shrinks the radius to fit a thin or short bar', () => {
+        expect(roundedTopBarPath(0, 0, 2, 50, 4)).toContain('Q0,0 1,0');
+        expect(roundedTopBarPath(0, 0, 12, 0, 4)).toBe('M0,0V0H12V0Z');
     });
 });

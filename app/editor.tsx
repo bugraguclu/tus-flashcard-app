@@ -69,6 +69,7 @@ import {
 } from '../lib/noteManager';
 import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
 import { safeExternalCallbackUrl } from '../lib/externalLinking';
+import { goBackOr } from '../lib/backNavigation';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note, type NoteTypeField } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import MediaAttachButton, { FIELD_MEDIA_RE } from '../components/MediaAttachButton';
@@ -84,7 +85,7 @@ import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
 import { dbUpsertFtsCard } from '../lib/db';
 import { useI18n } from '../hooks/useI18n';
-import { localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
+import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
 import { clozeFieldIndex, countCardsForNote, extractClozeNumbers, sanitizeUntrustedHtml } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
@@ -470,7 +471,7 @@ export default function EditorScreen() {
         [routeCardId, cardTypeId],
     );
 
-    const [fieldValues, setFieldValues] = useState<string[]>(() => {
+    const [fieldValues, setFieldValuesState] = useState<string[]>(() => {
         if (routeFieldValues.length > 0) return routeFieldValues;
         const noteType = getNoteType(routeNoteTypeId ?? 1) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === (routeNoteTypeId ?? 1));
         const count = noteType?.fields.length ?? 2;
@@ -492,6 +493,15 @@ export default function EditorScreen() {
         }
         return initial;
     });
+    // Each field reports its edits from its own document, and React applies them on a later
+    // render. A save pressed in between would otherwise write the previous render's fields and
+    // drop the last words typed, so every write also lands here at once and saving reads this.
+    const fieldValuesRef = useRef(fieldValues);
+    const setFieldValues = useCallback((next: React.SetStateAction<string[]>) => {
+        const resolved = typeof next === 'function' ? next(fieldValuesRef.current) : next;
+        fieldValuesRef.current = resolved;
+        setFieldValuesState(resolved);
+    }, []);
 
     const [pinnedFields, setPinnedFields] = useState<Set<number>>(() => {
         return new Set(
@@ -652,15 +662,19 @@ export default function EditorScreen() {
         if (baseline) resetDraftBaseline({ ...baseline, deckId: targetDeckId });
     }, [routeCardId, targetDeckId]);
 
-    const currentDraft: EditorDraftState = useMemo(() => ({
-        fields: fieldValues,
-        question: fieldValues[0] || '',
-        answer: fieldValues[1] || '',
-        reverseAnswer: cardTypeId === 7 ? (fieldValues[2] || '') : '',
+    const draftFromFields = (fields: string[]): EditorDraftState => ({
+        fields,
+        question: fields[0] || '',
+        answer: fields[1] || '',
+        reverseAnswer: cardTypeId === 7 ? (fields[2] || '') : '',
         cardTypeId,
         deckId: targetDeckId,
         tags: noteTags,
-    }), [fieldValues, cardTypeId, targetDeckId, noteTags]);
+    });
+    const currentDraft: EditorDraftState = useMemo(
+        () => draftFromFields(fieldValues),
+        [fieldValues, cardTypeId, targetDeckId, noteTags],
+    );
     const isDirty = hasEditorDraftChanged(initialDraftKey, currentDraft, isEditing);
     useUnsavedChangesGuard(isDirty, {
         title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
@@ -681,12 +695,17 @@ export default function EditorScreen() {
         });
     };
 
+    // The note this screen has just added, until the fields move on to the next one. The fields
+    // still hold its text while the save is acknowledged, and it must not be reported as a
+    // duplicate of itself.
+    const [savedNoteId, setSavedNoteId] = useState<number | null>(null);
+
     const duplicateNote = useMemo(() => {
         const firstField = fieldValues[0];
         if (!firstField || !firstField.trim()) return null;
         const currentCard = routeCardId ? getAnkiCard(routeCardId) : null;
-        return findDuplicateNote(cardTypeId, firstField, currentCard?.noteId);
-    }, [fieldValues[0], cardTypeId, routeCardId, dataVersion]);
+        return findDuplicateNote(cardTypeId, firstField, currentCard?.noteId ?? savedNoteId ?? undefined);
+    }, [fieldValues[0], cardTypeId, routeCardId, savedNoteId, dataVersion]);
 
     // `findDuplicateNote` already joins the first card's deck, so the name is read off its result
     // rather than fetched again: this runs on every keystroke in the first field.
@@ -703,7 +722,7 @@ export default function EditorScreen() {
         if (!newType) return;
 
         const count = newType.fields.length;
-        const nextFields = new Array(count).fill('').map((_, i) => fieldValues[i] || '');
+        const nextFields = new Array(count).fill('').map((_, i) => fieldValuesRef.current[i] || '');
 
         const stickyDefaults = routeCardId ? {} : loadNoteTypeStickyFields(newId);
         for (let i = 0; i < count; i++) {
@@ -726,12 +745,17 @@ export default function EditorScreen() {
         return fieldEditorRefs.current[activeFieldIndex] ?? fieldEditorRefs.current[0] ?? null;
     };
 
+    /** Bring every field's newest edit into `fieldValuesRef` before a handler reads the fields. */
+    const flushFieldEdits = () => {
+        fieldEditorRefs.current.forEach((fieldEditor) => fieldEditor?.flushChange());
+    };
+
     const persistStickyFieldValues = (pinned: Set<number> = pinnedFields) => {
         const persisted: Record<number, { pinned: boolean; value: string }> = {};
         if (selectedNoteType) {
             selectedNoteType.fields.forEach((field, index) => {
                 if (pinned.has(field.ord)) {
-                    persisted[field.ord] = { pinned: true, value: fieldValues[index] || '' };
+                    persisted[field.ord] = { pinned: true, value: fieldValuesRef.current[index] || '' };
                 }
             });
         }
@@ -943,7 +967,7 @@ export default function EditorScreen() {
     };
 
     const handleBack = () => {
-        router.back();
+        goBackOr(router);
     };
     const requestClearFields = () => {
         setShowOverflowMenu(false);
@@ -1008,7 +1032,7 @@ export default function EditorScreen() {
             setNoteTagsByCardId(routeCardId, noteTags);
             resetDraftBaseline(currentDraft);
             bumpDataVersion();
-            alert(t('common.completed'), l('Etiketler kaydedildi.', 'Tags saved.'), () => router.back());
+            alert(t('common.completed'), l('Etiketler kaydedildi.', 'Tags saved.'), () => goBackOr(router));
         } catch (e) {
             console.warn('[Editor] catalog tag save failed:', e);
             alert(t('common.error'), l('Etiketler kaydedilemedi.', 'Could not save the tags.'));
@@ -1022,19 +1046,12 @@ export default function EditorScreen() {
      */
     const startNextNote = () => {
         const nextFields = fieldsToRender.map((field, index) => (
-            pinnedFields.has(field.ord) ? (fieldValues[index] || '') : ''
+            pinnedFields.has(field.ord) ? (fieldValuesRef.current[index] || '') : ''
         ));
         setFieldValues(nextFields);
+        setSavedNoteId(null);
         setActiveFieldIndex(0);
-        resetDraftBaseline({
-            fields: nextFields,
-            question: nextFields[0] || '',
-            answer: nextFields[1] || '',
-            reverseAnswer: cardTypeId === 7 ? (nextFields[2] || '') : '',
-            cardTypeId,
-            deckId: targetDeckId,
-            tags: noteTags,
-        });
+        resetDraftBaseline(draftFromFields(nextFields));
         // The fields are controlled, so their documents are cleared by the render this state
         // change causes; the caret is placed once that has happened.
         requestAnimationFrame(() => fieldEditorRefs.current[0]?.focus());
@@ -1045,11 +1062,14 @@ export default function EditorScreen() {
             handleSaveCatalogTags();
             return;
         }
+        flushFieldEdits();
         dismissEditorKeyboard();
         setShowOverflowMenu(false);
+        const latestFields = fieldValuesRef.current;
+        const savedDraft = draftFromFields(latestFields);
         const currentFields = selectedNoteType
-            ? selectedNoteType.fields.map((_, i) => (fieldValues[i] || '').trim())
-            : fieldValues.map((f) => f.trim());
+            ? selectedNoteType.fields.map((_, i) => (latestFields[i] || '').trim())
+            : latestFields.map((f) => f.trim());
 
         const mockNote: Note = {
             id: 0,
@@ -1099,9 +1119,9 @@ export default function EditorScreen() {
                     dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
                 }
 
-                resetDraftBaseline(currentDraft);
+                resetDraftBaseline(savedDraft);
                 bumpDataVersion();
-                alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => router.back());
+                alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => goBackOr(router));
             } else {
                 const created = createTusCard({
                     question: currentFields[0] || '',
@@ -1118,7 +1138,8 @@ export default function EditorScreen() {
                 }
 
                 persistStickyFieldValues();
-                resetDraftBaseline(currentDraft);
+                resetDraftBaseline(savedDraft);
+                setSavedNoteId(created.note.id);
                 bumpDataVersion();
                 const savedMessage = l(
                     `Not kaydedildi; ${created.cards.length} kart oluşturuldu.`,
@@ -1129,7 +1150,7 @@ export default function EditorScreen() {
                 // it keeps the single acknowledgement and hands control straight back.
                 if (externalSuccessUrl) {
                     alert(t('common.completed'), savedMessage, () => {
-                        void Linking.openURL(externalSuccessUrl).catch(() => router.back());
+                        void Linking.openURL(externalSuccessUrl).catch(() => goBackOr(router));
                     });
                     return;
                 }
@@ -1144,7 +1165,7 @@ export default function EditorScreen() {
                     l('Bitti', 'Done'),
                 ).then((addAnother) => {
                     if (addAnother) startNextNote();
-                    else router.back();
+                    else goBackOr(router);
                 });
             }
         } catch (e) {
@@ -1183,9 +1204,9 @@ export default function EditorScreen() {
                     deleteTusCardByCardId(routeCardId);
                     // The note is gone, so the unsaved-changes guard must not stop the screen from
                     // closing over a draft that no longer has anything to be saved into.
-                    resetDraftBaseline(currentDraft);
+                    resetDraftBaseline(draftFromFields(fieldValuesRef.current));
                     bumpDataVersion();
-                    alert(l('Silindi', 'Deleted'), l('Not silindi.', 'Note deleted.'), () => router.back());
+                    alert(l('Silindi', 'Deleted'), l('Not silindi.', 'Note deleted.'), () => goBackOr(router));
                 } catch (e) {
                     console.warn('[Editor] delete failed:', e);
                     alert(t('common.error'), l('Not silinemedi.', 'Could not delete the note.'));
@@ -1389,7 +1410,8 @@ export default function EditorScreen() {
             label: l('HTML kaynağı', 'HTML source'),
             onPress: () => {
                 Keyboard.dismiss();
-                const currentVal = fieldValues[activeFieldIndex] ?? '';
+                flushFieldEdits();
+                const currentVal = fieldValuesRef.current[activeFieldIndex] ?? '';
                 setHtmlEditorValue(currentVal);
                 setShowHtmlEditor(true);
             },
@@ -1501,7 +1523,7 @@ export default function EditorScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={{ height: insets.top, backgroundColor: colors.accent }} pointerEvents="none" />
+            <View style={[{ height: insets.top, backgroundColor: colors.accent }, { pointerEvents: 'none' }]} />
             <View style={styles.editorHeader}>
                 <TouchableOpacity
                     style={styles.headerAction}
@@ -1767,7 +1789,7 @@ export default function EditorScreen() {
                 >
                     <Text style={styles.summaryLabel}>{l('Kartlar:', 'Cards:')}</Text>
                     <Text style={styles.summaryValue}>
-                        {selectedNoteType?.templates.map((template) => template.name).join(' · ') || '—'}
+                        {selectedNoteType?.templates.map((template) => localizeCardTemplateName(locale, template.name)).join(' · ') || '—'}
                     </Text>
                     <Text style={styles.summaryChevron}>›</Text>
                 </TouchableOpacity>
@@ -1854,7 +1876,7 @@ export default function EditorScreen() {
                 </View>
             )}
             </KeyboardAvoidingView>
-            <View style={{ height: insets.bottom, backgroundColor: colors.bgCard }} pointerEvents="none" />
+            <View style={[{ height: insets.bottom, backgroundColor: colors.bgCard }, { pointerEvents: 'none' }]} />
 
             {showOverflowMenu && (
                 <View style={[styles.overflowOverlay, { paddingTop: insets.top + EDITOR_HEADER_HEIGHT }]}>

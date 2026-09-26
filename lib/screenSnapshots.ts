@@ -1,4 +1,15 @@
-import { getAnkiStatsSnapshot, type AnkiStatsSnapshot, type StatsDateRange } from './ankiStats';
+import {
+    getAddedDays,
+    getAnkiStatsSnapshot,
+    getDeckTypeCounts,
+    getHourBreakdown,
+    getReviewDays,
+    type AddedDay,
+    type AnkiStatsSnapshot,
+    type HourBucket,
+    type ReviewDay,
+    type StatsDateRange,
+} from './ankiStats';
 import {
     getAllDecks,
     getBuriedCountForDeck,
@@ -22,7 +33,6 @@ import {
     getStudyQueue,
     type BrowserCardQuery,
 } from './studyRepository';
-import { perDeckBucketsSql } from './statsHelpers';
 import { getAllSubjects } from './subjects';
 import type { AppSettings, StudyCard, Subject } from './types';
 import { localDayNumber } from './ankiState';
@@ -48,11 +58,6 @@ export const EMPTY_ANKI_STATS: AnkiStatsSnapshot = {
     backlogTotal: 0,
     dueTomorrow: 0,
     dailyLoad: 0,
-    reviews: [],
-    reviewMinutes: [],
-    reviewTotal: 0,
-    reviewTimeMs: 0,
-    daysStudied: 0,
     answerButtons: [1, 2, 3, 4].map((ease) => ({
         ease: ease as 1 | 2 | 3 | 4,
         learning: 0,
@@ -63,9 +68,6 @@ export const EMPTY_ANKI_STATS: AnkiStatsSnapshot = {
     averageInterval: 0,
     longestInterval: 0,
     cardCounts: { mature: 0, youngLearn: 0, unseen: 0, suspendedBuried: 0, totalCards: 0, totalNotes: 0 },
-    added: [],
-    addedTotal: 0,
-    addedSpanDays: 0,
 };
 
 export interface StatsDeckProgress {
@@ -74,9 +76,9 @@ export interface StatsDeckProgress {
     total: number;
     newCount: number;
     learningCount: number;
-    reviewCount: number;
     youngCount: number;
     matureCount: number;
+    /** Cards studied at least once, whatever queue they sit in now. */
     studied: number;
     pct: number;
 }
@@ -85,6 +87,11 @@ export interface StatsScreenSnapshot {
     ankiStats: AnkiStatsSnapshot;
     todayStats: TodayAnswerStats;
     streak: StudyStreak;
+    /** Every study day with answers; the Reviews graph buckets them by the chosen range. */
+    reviewDays: ReviewDay[];
+    /** Every study day cards were added on, for the Added graph. */
+    addedDays: AddedDay[];
+    hours: HourBucket[];
     deckStats: StatsDeckProgress[];
     decks: Deck[];
     filteredScopeCardIds?: number[];
@@ -120,13 +127,14 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
             filteredScopeCardIds = [];
         }
     }
+    const rolloverHour = params.settings.dayRolloverHour;
 
     let ankiStats = EMPTY_ANKI_STATS;
     try {
         ankiStats = getAnkiStatsSnapshot(
             params.deckName,
             params.range,
-            params.settings.dayRolloverHour,
+            rolloverHour,
             params.localeTag,
             filteredScopeCardIds,
             params.includeBacklog !== undefined ? { includeBacklog: params.includeBacklog } : undefined,
@@ -137,59 +145,64 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
 
     let todayStats = EMPTY_TODAY_STATS;
     try {
-        todayStats = getTodayAnswerStats(
-            params.settings.dayRolloverHour,
-            params.deckName ?? undefined,
-            filteredScopeCardIds,
-        );
+        todayStats = getTodayAnswerStats(rolloverHour, params.deckName ?? undefined, filteredScopeCardIds);
     } catch (error) {
         console.warn('[Stats] getTodayAnswerStats failed:', error);
     }
 
     let streak = EMPTY_STUDY_STREAK;
     try {
-        streak = getStudyStreak(params.settings.dayRolloverHour);
+        streak = getStudyStreak(rolloverHour);
     } catch (error) {
         console.warn('[Stats] getStudyStreak failed:', error);
     }
 
-    const todayDay = localDayNumber(Date.now(), params.settings.dayRolloverHour);
+    const todayDay = localDayNumber(Date.now(), rolloverHour);
     const monday = todayDay - ((new Date(todayDay * 86_400_000).getUTCDay() + 6) % 7);
     let currentWeekStudiedDays = new Set<string>();
     try {
-        currentWeekStudiedDays = getStudiedDaysBetween(
-            monday,
-            monday + 6,
-            params.settings.dayRolloverHour,
-        );
+        currentWeekStudiedDays = getStudiedDaysBetween(monday, monday + 6, rolloverHour);
     } catch (error) {
         console.warn('[Stats] current week failed:', error);
+    }
+
+    let reviewDays: ReviewDay[] = [];
+    try {
+        reviewDays = getReviewDays(params.deckName, rolloverHour, filteredScopeCardIds);
+    } catch (error) {
+        console.warn('[Stats] review history failed:', error);
+    }
+
+    let addedDays: AddedDay[] = [];
+    try {
+        addedDays = getAddedDays(params.deckName, rolloverHour, filteredScopeCardIds);
+    } catch (error) {
+        console.warn('[Stats] added history failed:', error);
+    }
+
+    let hours: HourBucket[] = [];
+    try {
+        hours = getHourBreakdown(params.deckName, params.range, filteredScopeCardIds);
+    } catch (error) {
+        console.warn('[Stats] hourly breakdown failed:', error);
     }
 
     let deckStats: StatsDeckProgress[] = [];
     try {
         const regularDecks = decks.filter((deck) => !deck.isFiltered);
-        const perDeck = perDeckBucketsSql();
+        const perDeck = getDeckTypeCounts();
         deckStats = getDirectDecksForScope(regularDecks, params.deckName)
             .map((root) => {
-                const totals = {
-                    total: 0,
-                    newCount: 0,
-                    learningCount: 0,
-                    reviewCount: 0,
-                    youngCount: 0,
-                    matureCount: 0,
-                };
+                const totals = { total: 0, newCount: 0, learningCount: 0, youngCount: 0, matureCount: 0 };
                 for (const deck of regularDecks) {
                     if (deck.name !== root.name && !deck.name.startsWith(`${root.name}::`)) continue;
-                    const bucket = perDeck.get(deck.id);
-                    if (!bucket) continue;
-                    totals.total += bucket.total;
-                    totals.newCount += bucket.newCount;
-                    totals.learningCount += bucket.learningCount;
-                    totals.reviewCount += bucket.reviewCount;
-                    totals.youngCount += bucket.youngCount;
-                    totals.matureCount += bucket.matureCount;
+                    const counts = perDeck.get(deck.id);
+                    if (!counts) continue;
+                    totals.total += counts.total;
+                    totals.newCount += counts.newCards;
+                    totals.learningCount += counts.learn;
+                    totals.youngCount += counts.young;
+                    totals.matureCount += counts.mature;
                 }
                 const studied = totals.total - totals.newCount;
                 return {
@@ -209,6 +222,9 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
         ankiStats,
         todayStats,
         streak,
+        reviewDays,
+        addedDays,
+        hours,
         deckStats,
         decks,
         filteredScopeCardIds,

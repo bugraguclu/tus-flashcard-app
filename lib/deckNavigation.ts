@@ -28,6 +28,20 @@ export function getScopedBrowserPath(deckName: string | null | undefined): strin
     return deckName ? `/browser?deck=${encodeURIComponent(deckName)}` : '/browser';
 }
 
+/** The deepest deck that holds every one of these decks, or null when they share no root. */
+export function commonDeckAncestor(deckNames: readonly string[]): string | null {
+    if (deckNames.length === 0) return null;
+    let common = deckNames[0].split('::');
+    for (const name of deckNames.slice(1)) {
+        const parts = name.split('::');
+        let shared = 0;
+        while (shared < common.length && shared < parts.length && common[shared] === parts[shared]) shared += 1;
+        common = common.slice(0, shared);
+        if (common.length === 0) return null;
+    }
+    return common.join('::');
+}
+
 export interface StudyScopeParams {
     deck?: string | null;
     subject?: string | null;

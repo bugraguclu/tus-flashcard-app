@@ -463,8 +463,7 @@ export function WhiteboardCanvas({ style }: WhiteboardCanvasProps) {
         <View
             ref={canvasRef}
             collapsable={false}
-            pointerEvents={active && canDraw ? 'auto' : 'none'}
-            style={style}
+            style={[style, { pointerEvents: active && canDraw ? 'auto' : 'none' }]}
             onLayout={(event) => setSize({
                 width: event.nativeEvent.layout.width,
                 height: event.nativeEvent.layout.height,
@@ -525,7 +524,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
     if (!active) return null;
 
     return (
-        <View style={[styles.toolbar, { top: toolbarTopOffset + Spacing.sm }, style]} pointerEvents="box-none">
+        <View style={[styles.toolbar, { top: toolbarTopOffset + Spacing.sm }, style]}>
             <View
                 style={styles.toolbarPanel}
                 onLayout={(event) => onToolbarHeightChange?.(event.nativeEvent.layout.height)}
@@ -642,7 +641,7 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
     function WhiteboardOverlay({ toolbarTopOffset = 0, ...providerProps }, ref) {
         return (
             <WhiteboardProvider ref={ref} {...providerProps}>
-                <View style={StyleSheet.absoluteFill} pointerEvents={providerProps.active ? 'box-none' : 'none'}>
+                <View style={providerProps.active ? layerStyles.active : layerStyles.inactive}>
                     <WhiteboardCanvas style={StyleSheet.absoluteFill} />
                     <WhiteboardToolbar toolbarTopOffset={toolbarTopOffset} />
                 </View>
@@ -650,6 +649,12 @@ export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayP
         );
     },
 );
+
+// Pointer-event modes live in compiled styles: react-native-web ignores 'box-none' in inline objects.
+const layerStyles = StyleSheet.create({
+    active: { ...StyleSheet.absoluteFill, pointerEvents: 'box-none' },
+    inactive: { ...StyleSheet.absoluteFill, pointerEvents: 'none' },
+});
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
@@ -659,6 +664,7 @@ function createStyles(colors: ColorScheme) {
             right: Spacing.sm,
             alignItems: 'center',
             zIndex: 100,
+            pointerEvents: 'box-none',
         },
         toolbarPanel: {
             maxWidth: '100%',

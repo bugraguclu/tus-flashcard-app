@@ -17,10 +17,10 @@ import {
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
-import { parseDueRange } from '../lib/browserSelection';
+import { parseDueRange } from '../lib/schedulingIntervals';
 
 type MenuView = 'menu' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
 type ReviewerMenuIcon =
@@ -68,6 +68,10 @@ export interface CardOptionsMenuProps {
     onUndo: () => void;
     canRedo: boolean;
     onRedo: () => void;
+    /** Name of the operation Undo would take back, as Anki labels its own Undo entry. */
+    undoLabel?: string | null;
+    /** Name of the operation Redo would reapply. */
+    redoLabel?: string | null;
     onAddNote: () => void;
     onEditNote: () => void;
     noteTags: string;
@@ -113,7 +117,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
             damping: 24,
             stiffness: 260,
             mass: 0.8,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
         });
         animation.start();
         return () => animation.stop();
@@ -159,18 +163,15 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                     : l('Etiketleri düzenle', 'Edit tags');
 
     const hasCard = props.hasCurrentCard !== false;
-    const historyAction = hasCard && props.whiteboardActive && props.whiteboardHasContent
-        ? {
-            icon: 'undo' as const,
-            label: l('Konturu geri al', 'Undo stroke'),
-            enabled: true,
-            action: props.onUndoWhiteboard,
-        }
-        : hasCard && props.canRedo
-            ? { icon: 'redo' as const, label: l('Yinele', 'Redo'), enabled: true, action: props.onRedo }
-            : hasCard && props.canUndo
-                ? { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: true, action: props.onUndo }
-                : { icon: 'undo' as const, label: l('Geri al', 'Undo'), enabled: false, action: props.onUndo };
+    // Anki names its history entries after the operation they act on ("Undo Bury Card"), which is
+    // the only thing that tells the learner whether Undo is about to unbury a card or un-answer
+    // one. Undo and Redo are separate entries there, so Redo never hides a step still to undo.
+    const undoLabel = props.undoLabel
+        ? l(`Geri al: ${props.undoLabel}`, `Undo: ${props.undoLabel}`)
+        : l('Geri al', 'Undo');
+    const redoLabel = props.redoLabel
+        ? l(`Yinele: ${props.redoLabel}`, `Redo: ${props.redoLabel}`)
+        : l('Yinele', 'Redo');
 
     return (
         <Modal
@@ -217,14 +218,34 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                     >
                         {view === 'menu' && (
                             <>
+                                {hasCard && props.whiteboardActive && props.whiteboardHasContent && (
+                                    <MenuRow
+                                        styles={styles}
+                                        colors={colors}
+                                        icon="undo"
+                                        label={l('Konturu geri al', 'Undo stroke')}
+                                        onPress={() => runAndClose(props.onUndoWhiteboard)}
+                                    />
+                                )}
+                                {/* Undo survives the end of the queue: the last answer of a
+                                    session is exactly the one a learner needs to take back. */}
                                 <MenuRow
                                     styles={styles}
                                     colors={colors}
-                                    icon={historyAction.icon}
-                                    label={historyAction.label}
-                                    disabled={!historyAction.enabled}
-                                    onPress={() => runAndClose(historyAction.action)}
+                                    icon="undo"
+                                    label={undoLabel}
+                                    disabled={!props.canUndo}
+                                    onPress={() => runAndClose(props.onUndo)}
                                 />
+                                {props.canRedo && (
+                                    <MenuRow
+                                        styles={styles}
+                                        colors={colors}
+                                        icon="redo"
+                                        label={redoLabel}
+                                        onPress={() => runAndClose(props.onRedo)}
+                                    />
+                                )}
 
                                 {hasCard && props.whiteboardActive && (
                                     <>
@@ -519,11 +540,7 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: 4,
             borderBottomLeftRadius: 4,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: -4, height: 4 },
-            shadowOpacity: 0.22,
-            shadowRadius: 10,
-            elevation: 16,
+            ...dropShadow({ x: -4, y: 4, blur: 10, opacity: 0.22, elevation: 16 }),
         },
         sheetScroll: {
             flexGrow: 0,

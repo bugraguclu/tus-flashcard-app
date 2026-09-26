@@ -33,6 +33,7 @@ import {
     resetSettingsToDefaults,
     saveSettings,
 } from '../lib/storage';
+import { isModifierOnlyKey } from '../lib/hardwareKeyboard';
 import {
     checkDatabase,
     repairChangedRows,
@@ -238,6 +239,7 @@ function ToggleRow({ label, summary, value, onChange, divider = true, styles }: 
     divider?: boolean;
     styles: ReturnType<typeof createStyles>;
 }) {
+    const colors = useThemeColors();
     return (
         <TouchableOpacity
             style={[styles.preferenceRow, !divider && styles.preferenceRowNoDivider]}
@@ -250,7 +252,8 @@ function ToggleRow({ label, summary, value, onChange, divider = true, styles }: 
                 <Text style={styles.preferenceLabel}>{label}</Text>
                 {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
             </View>
-            <Switch value={value} onValueChange={onChange} trackColor={{ true: '#71c7a5' }} />
+            {/* react-native-web paints the off track only from `false`; left out, it is transparent. */}
+            <Switch value={value} onValueChange={onChange} trackColor={{ false: colors.border, true: '#71c7a5' }} />
         </TouchableOpacity>
     );
 }
@@ -389,8 +392,7 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
                 }}
             >
                 <View
-                    style={styles.swipeSliderTrack}
-                    pointerEvents="none"
+                    style={[styles.swipeSliderTrack, { pointerEvents: 'none' }]}
                     onLayout={(event) => setTrackWidth(Math.max(1, event.nativeEvent.layout.width))}
                 >
                     <View style={[styles.swipeSliderFill, { width: `${ratio * 100}%` }]} />
@@ -438,6 +440,8 @@ export default function SettingsScreen() {
     settingsRef.current = settings;
 
     const isDirty = hasSnapshotChanged(savedSnapshot, settings);
+    // The confirmation lingers briefly after a save, but an edit made meanwhile is not saved.
+    const showSaved = saved && !isDirty;
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -645,7 +649,12 @@ export default function SettingsScreen() {
     useEffect(() => {
         if (!isDesktopWeb || typeof window === 'undefined' || !recordingField) return;
         const onKeyDown = (event: KeyboardEvent) => {
+            // A modifier pressed on its own is the start of a key, not a binding: AltGr or Option
+            // is how a Turkish keyboard types @, so the character that follows is what is kept.
+            if (isModifierOnlyKey(event.key)) return;
+            // Heard ahead of the focused "change" button, so Enter can be recorded too.
             event.preventDefault();
+            event.stopPropagation();
             if (event.key === 'Escape') {
                 setRecordingField(null);
                 return;
@@ -653,8 +662,8 @@ export default function SettingsScreen() {
             updateSetting('keyBindings', { ...settings.keyBindings, [recordingField]: event.key });
             setRecordingField(null);
         };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDesktopWeb, recordingField, settings.keyBindings]);
 
@@ -1622,7 +1631,7 @@ export default function SettingsScreen() {
     }
 
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardDismissArea>
         <SafeAreaView style={styles.container}>
             <View style={styles.screenHeader}>
                 <TouchableOpacity
@@ -1640,16 +1649,16 @@ export default function SettingsScreen() {
                     <TouchableOpacity
                         style={[
                             styles.headerSaveButton,
-                            saved && styles.headerSaveButtonSaved,
-                            !isDirty && !saved && styles.headerSaveButtonDisabled,
+                            showSaved && styles.headerSaveButtonSaved,
+                            !isDirty && !showSaved && styles.headerSaveButtonDisabled,
                         ]}
                         onPress={handleSaveSettings}
-                        disabled={!isDirty && !saved}
+                        disabled={!isDirty && !showSaved}
                         accessibilityRole="button"
-                        accessibilityLabel={saved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
+                        accessibilityLabel={showSaved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
                     >
-                        <Text style={[styles.headerSaveText, saved && styles.headerSaveTextSaved]}>
-                            {saved ? `✓ ${l('Kaydedildi', 'Saved')}` : l('Kaydet', 'Save')}
+                        <Text style={[styles.headerSaveText, showSaved && styles.headerSaveTextSaved]}>
+                            {showSaved ? `✓ ${l('Kaydedildi', 'Saved')}` : l('Kaydet', 'Save')}
                         </Text>
                     </TouchableOpacity>
                 ) : <View style={styles.headerSpacer} />}
@@ -1942,6 +1951,19 @@ export default function SettingsScreen() {
                 </View>
             </Modal> : null}
         </SafeAreaView>
+        </KeyboardDismissArea>
+    );
+}
+
+/**
+ * Closes the iPhone keyboard when the learner taps outside a field. On web the same press also
+ * fires for the click that focuses a field and would blur it at once, so the web build leaves it out.
+ */
+function KeyboardDismissArea({ children }: { children: React.ReactElement }) {
+    if (Platform.OS === 'web') return children;
+    return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            {children}
         </TouchableWithoutFeedback>
     );
 }

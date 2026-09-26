@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -15,11 +15,48 @@ export function DialogHost() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [request, setRequest] = useState<DialogRequest | null>(null);
+    const cancelButtonRef = useRef<View>(null);
+    const acceptButtonRef = useRef<View>(null);
 
     useEffect(() => {
         if (Platform.OS !== 'web') return;
         return registerDialogHost(setRequest);
     }, []);
+
+    // Keyboard focus rests on a button, so Enter answers the dialog the way its buttons read:
+    // Cancel for a destructive question, the main action otherwise. The modal's focus trap puts
+    // focus on the first element that takes it — the backdrop, whose press dismisses — both when
+    // the dialog opens and whenever focus is pulled outside (a closing menu hands it back to its
+    // opener), so each time the backdrop or the card receives it, it is moved on after the trap.
+    const preferredButton = (): HTMLElement | null => {
+        const preferCancel = request?.destructive && request.kind !== 'alert';
+        return ((preferCancel ? cancelButtonRef.current : null) ?? acceptButtonRef.current) as unknown as HTMLElement | null;
+    };
+    const moveFocusToPreferredButton = (event: { target: unknown; currentTarget: unknown }) => {
+        // Focus reaching a button bubbles through here too; only the surface itself is moved on.
+        if (event.target !== event.currentTarget) return;
+        requestAnimationFrame(() => preferredButton()?.focus?.());
+    };
+
+    useEffect(() => {
+        if (!request || Platform.OS !== 'web') return undefined;
+        let frame = 0;
+        let attempts = 0;
+        // The modal mounts its content a frame or two after it opens, so the button is looked
+        // for until it exists.
+        const focusWhenMounted = () => {
+            const button = preferredButton();
+            if (button?.focus) {
+                button.focus();
+                return;
+            }
+            attempts += 1;
+            if (attempts < 10) frame = requestAnimationFrame(focusWhenMounted);
+        };
+        frame = requestAnimationFrame(focusWhenMounted);
+        return () => cancelAnimationFrame(frame);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [request]);
 
     if (!request) return null;
 
@@ -51,10 +88,15 @@ export function DialogHost() {
             <Pressable
                 style={[styles.backdrop, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl }]}
                 onPress={dismiss}
+                // A click outside still dismisses; the keyboard only ever stops on the buttons.
+                tabIndex={-1}
+                onFocus={moveFocusToPreferredButton}
             >
                 <Pressable
                     style={styles.card}
                     onPress={(event) => event.stopPropagation()}
+                    tabIndex={-1}
+                    onFocus={moveFocusToPreferredButton}
                     accessibilityViewIsModal
                     accessibilityRole="alert"
                 >
@@ -73,6 +115,7 @@ export function DialogHost() {
                     <View style={styles.actions}>
                         {(isConfirm || isChoice) && (
                             <Pressable
+                                ref={cancelButtonRef}
                                 style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.buttonPressed]}
                                 onPress={cancel}
                                 accessibilityRole="button"
@@ -81,6 +124,7 @@ export function DialogHost() {
                             </Pressable>
                         )}
                         <Pressable
+                            ref={acceptButtonRef}
                             style={({ pressed }) => [
                                 styles.button,
                                 request.destructive ? styles.destructive : styles.accept,

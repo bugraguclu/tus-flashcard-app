@@ -49,6 +49,8 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   const bridge = createTusFormattingBridge(editor, document);
   let lastHeight = 0;
   let lastState = '';
+  // Numbers each reported edit, so the host can tell a late message from a newer reading.
+  let changeSeq = 0;
   editor.innerHTML = typeof config.html === 'string' ? config.html : '';
 
   function cleanForExport(html) {
@@ -163,7 +165,8 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
 
   function emitChange() {
     saveSelection();
-    post({ type: 'change', html: cleanForExport(editor.innerHTML) });
+    changeSeq += 1;
+    post({ type: 'change', html: cleanForExport(editor.innerHTML), seq: changeSeq });
     reportState(true);
     reportHeight();
   }
@@ -192,6 +195,12 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   };
 
   window.__tusEditorRequestState = function () { reportState(true); };
+
+  // The web host reads the field straight from this document before it saves: the message for
+  // the last keystroke can still be queued behind the click that saves.
+  window.__tusEditorReadHtml = function () {
+    return { html: cleanForExport(editor.innerHTML), seq: changeSeq };
+  };
 
   window.__tusEditorReplaceSelectionText = function (text) {
     bridge.replaceSelectionText(text);

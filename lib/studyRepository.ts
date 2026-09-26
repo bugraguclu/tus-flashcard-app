@@ -1550,7 +1550,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // Anki's collection-wide "limits start from top" decides how far up that chain goes — with it
     // off, studying a subdeck answers only to that subdeck and its own children, so a parent's
     // stricter cap no longer bleeds down into a deck the learner opened directly.
-    const limitRoot = params.settings.limitsStartFromTop === false ? params.selectedDeckName : null;
+    const limitRoot = params.settings.limitsStartFromTop === true ? null : params.selectedDeckName;
     const withinLimitRoot = (key: string): boolean =>
         !limitRoot || key === limitRoot || key.startsWith(`${limitRoot}::`);
     const deckNameCache = new Map<number, string | null>();

@@ -52,7 +52,7 @@ export default function ProtectedContentShield({ state }: { state: ScreenGuardSn
     }
 
     return (
-        <View style={styles.banner} pointerEvents="none" accessibilityRole="alert">
+        <View style={[styles.banner, { pointerEvents: 'none' }]} accessibilityRole="alert">
             <LockGlyph color={colors.btnAgain} size={15} />
             <Text style={styles.bannerText}>
                 {l(

@@ -11,6 +11,8 @@ const MEDIA_PLACEHOLDERS: Array<[RegExp, string]> = [
     [/<img\b[^>]*\/?>/gi, ' 🖼️ Görsel '],
 ];
 
+const BLOCK_TAG = /<\/?(?:address|article|aside|blockquote|dd|details|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi;
+
 type HumanizeCardTextOptions = {
     showAudioFilenames?: boolean;
 };
@@ -63,7 +65,10 @@ export function humanizeCardText(text: string, options: HumanizeCardTextOptions 
 
     result = result
         .replace(/<br\s*\/?>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
+        // A block boundary separates words; inline formatting sits inside a word run, so
+        // "<b>Mitral</b>, triküspit" reads "Mitral, triküspit", not "Mitral , triküspit".
+        .replace(BLOCK_TAG, ' ')
+        .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/gi, ' ')
         .replace(/&amp;/gi, '&')
         .replace(/&lt;/gi, '<')

@@ -31,7 +31,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { captureRef } from 'react-native-view-shot';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
@@ -2500,7 +2500,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 }}
                             />
                         ) : <ActivityIndicator color={colors.accent} />}
-                        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                        <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
                             {renderPlacedPictures(allAnnotations, canvasSize.width, canvasSize.height)}
                         </View>
                         <Svg width={canvasSize.width} height={canvasSize.height} style={StyleSheet.absoluteFill}>
@@ -2510,7 +2510,6 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         {/* Interactive Eraser Indicator */}
                         {eraserCursor && (
                             <View
-                                pointerEvents="none"
                                 style={[
                                     styles.eraserIndicator,
                                     {
@@ -2520,6 +2519,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                         height: eraserCursor.radius * 2,
                                         borderRadius: eraserCursor.radius,
                                     },
+                                    { pointerEvents: 'none' },
                                 ]}
                             />
                         )}
@@ -2527,19 +2527,18 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         {/* The page's own centre lines, shown only while a drag is settling onto
                             one of them, so the guide means something every time it appears. */}
                         {snapGuides.x && (
-                            <View pointerEvents="none" style={[styles.snapGuide, styles.snapGuideVertical, { left: canvasSize.width / 2 - 1 }]} />
+                            <View style={[styles.snapGuide, styles.snapGuideVertical, { left: canvasSize.width / 2 - 1 }, { pointerEvents: 'none' }]} />
                         )}
                         {snapGuides.y && (
-                            <View pointerEvents="none" style={[styles.snapGuide, styles.snapGuideHorizontal, { top: canvasSize.height / 2 - 1 }]} />
+                            <View style={[styles.snapGuide, styles.snapGuideHorizontal, { top: canvasSize.height / 2 - 1 }, { pointerEvents: 'none' }]} />
                         )}
 
                         {/* The frame around whatever is selected: a label or a picture. It stays
                             up through a drag, a pull and a turn, because the thing being moved is
                             exactly the thing the frame is drawn around. */}
                         {selectionGeometry && selectedBounds && selectionHandles && (
-                            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+                            <View style={styles.selectionLayer}>
                                 <View
-                                    pointerEvents="none"
                                     style={[
                                         styles.textSelectionBox,
                                         {
@@ -2554,6 +2553,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                             ],
                                             transform: [{ rotate: `${selectedRotation}deg` }],
                                         },
+                                        { pointerEvents: 'none' },
                                     ]}
                                 >
                                     {/* The stem the knob hangs from. It lives inside the frame so
@@ -2574,7 +2574,6 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
                                     <View
                                         key={corner}
-                                        pointerEvents="none"
                                         style={[
                                             styles.selectionHandle,
                                             {
@@ -2582,12 +2581,12 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                                 top: selectionHandles[corner].y - 7,
                                             },
                                             activeHandle === corner && styles.selectionHandleActive,
+                                            { pointerEvents: 'none' },
                                         ]}
                                     />
                                 ))}
 
                                 <View
-                                    pointerEvents="none"
                                     style={[
                                         styles.rotateKnob,
                                         {
@@ -2595,6 +2594,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                             top: selectionHandles.rotate.y - 15,
                                         },
                                         activeHandle === 'rotate' && styles.rotateKnobActive,
+                                        { pointerEvents: 'none' },
                                     ]}
                                 >
                                     <Text style={[styles.rotateKnobIcon, activeHandle === 'rotate' && styles.rotateKnobIconActive]}>↻</Text>
@@ -2605,13 +2605,13 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                     the turn has settled on a quarter of one. */}
                                 {rotationPreview !== null && (
                                     <View
-                                        pointerEvents="none"
                                         style={[
                                             styles.anglePill,
                                             {
                                                 left: Math.max(4, Math.min(canvasSize.width - 56, selectionHandles.rotate.x - 26)),
                                                 top: Math.max(4, selectionHandles.rotate.y - 44),
                                             },
+                                            { pointerEvents: 'none' },
                                         ]}
                                     >
                                         <Text style={styles.anglePillText}>{rotationPreview}°</Text>
@@ -2754,7 +2754,6 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         {/* Interactive Drag-to-Delete Trash Area */}
                         {isDraggingSelection && (
                             <View
-                                pointerEvents="none"
                                 style={[
                                     styles.textTrashZone,
                                     {
@@ -2764,6 +2763,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                         height: trashPill.height,
                                     },
                                     trashHovered && styles.textTrashZoneHovered,
+                                    { pointerEvents: 'none' },
                                 ]}
                             >
                                 <Text style={[styles.textTrashIcon, trashHovered && styles.textTrashIconHovered]}>🗑</Text>
@@ -2781,7 +2781,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
 
                         {/* Interactive Crop Box Overlay */}
                         {tool === 'crop' && (
-                            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                            <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
                                 {/* Dimming masks */}
                                 <View style={[styles.cropDim, { top: 0, left: 0, right: 0, height: cropBox.y * canvasSize.height }]} />
                                 <View style={[styles.cropDim, { top: (cropBox.y + cropBox.height) * canvasSize.height, left: 0, right: 0, bottom: 0 }]} />
@@ -3354,11 +3354,11 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                     <View
                         ref={exportSurfaceRef}
                         collapsable={false}
-                        pointerEvents="none"
                         onLayout={() => { exportLaidOutRef.current = true; }}
                         style={[
                             styles.exportSurface,
                             { width: exportSurface.width, height: exportSurface.height },
+                            { pointerEvents: 'none' },
                         ]}
                     >
                         {page ? (
@@ -3383,7 +3383,7 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                                 onError={() => { exportPhotoLoadedRef.current = true; }}
                             />
                         ) : null}
-                        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                        <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
                             {renderPlacedPictures(
                                 annotations,
                                 exportSurface.width,
@@ -3414,6 +3414,8 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: '#111827' },
+        // Kept in the stylesheet: react-native-web applies 'box-none' only to compiled styles.
+        selectionLayer: { ...StyleSheet.absoluteFill, pointerEvents: 'box-none' },
         header: {
             minHeight: 62,
             flexDirection: 'row',
@@ -3627,10 +3629,7 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             paddingHorizontal: 6,
             gap: 4,
-            shadowColor: '#000',
-            shadowOpacity: 0.45,
-            shadowRadius: 6,
-            shadowOffset: { width: 0, height: 2 },
+            ...dropShadow({ y: 2, blur: 6, opacity: 0.45 }),
             zIndex: 99,
         },
         textFloatingBtn: {
@@ -3682,10 +3681,7 @@ function createStyles(colors: ColorScheme) {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
-            shadowColor: '#000',
-            shadowOpacity: 0.45,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 3 },
+            ...dropShadow({ y: 3, blur: 8, opacity: 0.45 }),
             zIndex: 999,
         },
         textTrashZoneHovered: {
@@ -3872,10 +3868,7 @@ function createStyles(colors: ColorScheme) {
             borderWidth: 2,
             borderColor: 'rgba(255, 255, 255, 0.95)',
             backgroundColor: 'rgba(239, 68, 68, 0.28)',
-            shadowColor: '#000',
-            shadowOpacity: 0.4,
-            shadowRadius: 5,
-            shadowOffset: { width: 0, height: 1 },
+            ...dropShadow({ y: 1, blur: 5, opacity: 0.4 }),
             zIndex: 99,
         },
         eraserModeGroup: {
@@ -4013,10 +4006,7 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: '#ffffff',
             borderWidth: 2,
             borderColor: colors.accent,
-            shadowColor: '#000',
-            shadowOpacity: 0.5,
-            shadowRadius: 4,
-            shadowOffset: { width: 0, height: 2 },
+            ...dropShadow({ y: 2, blur: 4, opacity: 0.5 }),
         },
         instagramSliderMinLabel: {
             color: 'rgba(255, 255, 255, 0.5)',

@@ -15,10 +15,6 @@ vi.mock('./db', () => ({ getDB: () => dbHolder.db }));
 
 import {
     getAverageAnswerMs,
-    getButtonDistribution,
-    getDailyReviewCounts,
-    getHourlyBreakdown,
-    getReviewStats,
     getStudiedDaysBetween,
     getStudyStreak,
     getTodayAnswerStats,
@@ -101,21 +97,13 @@ describe('revlog queries ignore rating-less bookkeeping rows', () => {
         expect(getStudiedDaysBetween(today, today, rolloverHour).size).toBe(0);
     });
 
-    it('keeps bookkeeping rows out of the averages and distributions', () => {
+    it('keeps bookkeeping rows out of the average answer time', () => {
         const now = Date.now();
         addAnswer(now - 3000, 1, 3, 6000);
         addManualEntry(now - 2000, 1, 5);
 
         // A zero-time row would halve the average if it were counted.
         expect(getAverageAnswerMs(rolloverHour, 7)).toBe(6000);
-
-        const buttons = getButtonDistribution();
-        expect(buttons.some((entry) => entry.ease === 0)).toBe(false);
-        expect(buttons.find((entry) => entry.ease === 3)?.count).toBe(1);
-
-        expect(getHourlyBreakdown().reduce((sum, hour) => sum + hour.count, 0)).toBe(1);
-        expect(getReviewStats(now - 60_000, now).totalReviews).toBe(1);
-        expect(getDailyReviewCounts(2, rolloverHour).reduce((sum, day) => sum + day.count, 0)).toBe(1);
     });
 
     it('scopes to a deck subtree without counting bookkeeping rows', () => {

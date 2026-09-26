@@ -20,6 +20,7 @@ import { Platform } from 'react-native';
 import { todayLocalYMD } from './scheduler';
 import { isPrimaryTab } from './db';
 import { getLegacyFileSystem } from './files';
+import { translateActive } from './i18n';
 import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting } from './storage';
 import { validateCanonicalBackupData } from './backupValidation';
 
@@ -438,6 +439,8 @@ export async function importBackupContents(
 ): Promise<{ ok: boolean; preRestoreName: string | null }> {
     assertValidBackupContents(contents);
     const d = resolveDeps(deps);
+    // A web tab that is not the writer would restore into memory only and lose it on reload.
+    if (!d.isWriter()) throw new Error(translateActive('root.readOnlyTabAction'));
 
     const currentContents = await d.exportData();
     assertValidBackupContents(currentContents);
