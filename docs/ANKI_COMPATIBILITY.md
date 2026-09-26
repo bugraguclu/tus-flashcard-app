@@ -3,7 +3,8 @@
 Last reviewed: 2026-09-04
 
 TusAnkiM is an independent Anki alternative with local-first storage and iPhone as its sole
-release target; web is only a local/CI regression target. “Compatible” here means a behaviour or interchange path has explicit code and tests; it
+release target; web is a local/CI regression target, also published as a browser preview, not a
+release. “Compatible” here means a behaviour or interchange path has explicit code and tests; it
 does not mean every Anki client feature is present. The canonical external references are listed
 in `docs/anki-reference-sources.json`.
 

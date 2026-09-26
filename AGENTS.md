@@ -10,8 +10,9 @@ behaviour, scheduling, storage, import/export, or iOS configuration. Treat
 - TusAnkiM is an independent, local-first alternative to Anki, not an Anki-branded product.
 - iPhone is the sole release target. Preserve iOS safe areas, native back gestures, file
   hand-off, keyboard behaviour, accessibility labels, and recoverable data flows.
-- Keep web working only as the local/CI regression target. Android is not a shipped target;
-  retained Android code must not dictate the iOS interaction model.
+- Keep web working as the local/CI regression target. `vercel.json` also publishes it as the
+  public browser preview linked from the README; that preview is not a release target. Android is
+  not a shipped target; retained Android code must not dictate the iOS interaction model.
 - Prefer behavioural and package compatibility over copying another client's visual design.
 - Do not claim full Anki parity. A capability is “compatible” only when the matrix records it
   as implemented and an automated or named manual test supports the claim.

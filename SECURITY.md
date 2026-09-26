@@ -3,8 +3,10 @@
 ## Supported version
 
 Security fixes are applied to the current iOS `1.x` release line. Update to the newest available
-App Store build before reporting a problem. The web build is a local/CI regression target, not a
-publicly supported deployment; Android is not a release target.
+App Store build before reporting a problem. The web build is a local/CI regression target that is
+also published as a browser preview at <https://tusankim.vercel.app>. The preview follows `master`
+and is not a supported release, but it runs the same code, so report problems found there the same
+way. Android is not a release target.
 
 ## Reporting a vulnerability
 

@@ -68,8 +68,10 @@ schema changed.
 ## Web regression target
 
 `npm run web` serves the same screens from Metro; `npm run build:web` is the production bundle CI
-builds, with the strict Content-Security-Policy and the service worker. Only the production build
-proves the rich text field runs under that policy, so check web-facing changes there:
+builds, with the strict Content-Security-Policy and the service worker. `vercel.json` publishes the
+same bundle from `master` as the public browser preview, so a push to `master` changes what
+visitors see. Only the production build proves the rich text field runs under that policy, so check
+web-facing changes there:
 
 - Add a note: both fields start as rich text (no raw-HTML fallback), a toolbar format applies to
   the selection, and a picture attached to a field shows in the field and in the reviewer.
