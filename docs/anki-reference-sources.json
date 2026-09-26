@@ -410,6 +410,7 @@
   ],
   "requiredDocs": [
     "docs/ANKI_COMPATIBILITY.md",
+    "docs/ANKI_COMPATIBILITY_NOTES.md",
     "docs/IOS_RELEASE_CHECKLIST.md"
   ]
 }
