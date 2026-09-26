@@ -29,6 +29,7 @@ import {
 } from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
 import { useI18n } from '../../hooks/useI18n';
+import { screenGuardStackListeners } from '../../hooks/useScreenGuard';
 import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
 export default function TabLayout() {
@@ -397,6 +398,7 @@ export default function TabLayout() {
                     ) : (
                         <Stack
                             initialRouteName="decks"
+                            screenListeners={screenGuardStackListeners}
                             screenOptions={{
                                 headerShown: false,
                                 contentStyle: { backgroundColor: colors.bgPrimary },

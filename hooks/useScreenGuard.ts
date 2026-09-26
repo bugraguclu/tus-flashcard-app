@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigation } from 'expo-router';
 import {
     addCaptureStateListener,
     addScreenshotListener,
@@ -6,6 +7,12 @@ import {
     setNativeScreenProtection,
 } from '../modules/screen-guard';
 import { screenGuard, type ScreenGuardSnapshot } from '../lib/screenGuardPolicy';
+import {
+    isScreenVisible,
+    nextScreenVisibility,
+    type ScreenVisibility,
+    type ScreenVisibilityEvent,
+} from '../lib/screenVisibility';
 
 /**
  * Binds a screen that shows paid catalog content to the app's capture protection.
@@ -38,13 +45,20 @@ function ensureNativeBinding(): void {
 }
 
 /**
- * Hold capture protection while `active` is true.
+ * Hold capture protection while `active` is true and the screen can be seen.
  *
  * `holder` names the screen so overlapping screens each keep their own hold; the returned
  * snapshot tells the caller when to blank its content because a recording is already running.
+ *
+ * Protection covers the whole window, so a screen left mounted underneath another one — the
+ * reviewer after "back to decks", or under Settings — lets go once it is fully covered. Holding
+ * on would keep the deck list and every other screen out of screenshots and recordings, and
+ * count a screenshot of them as one of the catalog. The hold returns on the first frame of any
+ * transition that reveals the screen again, a back swipe included.
  */
 export function useScreenGuard(active: boolean, holder: string): ScreenGuardSnapshot {
     const [state, setState] = useState<ScreenGuardSnapshot>(() => screenGuard.snapshot());
+    const visible = isScreenVisible(useScreenVisibility());
 
     useEffect(() => {
         ensureNativeBinding();
@@ -52,9 +66,56 @@ export function useScreenGuard(active: boolean, holder: string): ScreenGuardSnap
     }, []);
 
     useEffect(() => {
-        if (!active) return undefined;
+        if (!active || !visible) return undefined;
         return screenGuard.acquire(holder);
-    }, [active, holder]);
+    }, [active, visible, holder]);
 
     return state;
+}
+
+const gestureCancelListeners = new Set<() => void>();
+
+/**
+ * Pass as `screenListeners` to every stack. An abandoned back swipe is reported only to the
+ * screen on top, and the screen it had started to reveal has to hear about it to let go again.
+ */
+export const screenGuardStackListeners = {
+    gestureCancel: () => gestureCancelListeners.forEach((listener) => listener()),
+};
+
+/** The part of a stack screen's navigation object that visibility is read from. */
+interface StackScreenEvents {
+    isFocused(): boolean;
+    addListener(type: 'focus', listener: () => void): () => void;
+    addListener(
+        type: 'transitionStart' | 'transitionEnd',
+        listener: (event: { data: { closing: boolean } }) => void,
+    ): () => void;
+}
+
+/** Tracks `lib/screenVisibility.ts` for the screen the calling component renders in. */
+function useScreenVisibility(): ScreenVisibility {
+    const navigation = useNavigation<StackScreenEvents>();
+    const [visibility, setVisibility] = useState<ScreenVisibility>('shown');
+
+    useEffect(() => {
+        const apply = (event: ScreenVisibilityEvent) => {
+            setVisibility((current) => nextScreenVisibility(current, event));
+        };
+        const onGestureCancel = () => apply({ type: 'gestureCancel' });
+        gestureCancelListeners.add(onGestureCancel);
+        const unsubscribers = [
+            navigation.addListener('focus', () => apply({ type: 'focus' })),
+            navigation.addListener('transitionStart', ({ data }) => {
+                apply({ type: 'transitionStart', closing: data.closing, focused: navigation.isFocused() });
+            }),
+            navigation.addListener('transitionEnd', ({ data }) => {
+                apply({ type: 'transitionEnd', closing: data.closing, focused: navigation.isFocused() });
+            }),
+            () => gestureCancelListeners.delete(onGestureCancel),
+        ];
+        return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+    }, [navigation]);
+
+    return visibility;
 }

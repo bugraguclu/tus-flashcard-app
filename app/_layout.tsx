@@ -32,6 +32,7 @@ import { initWebDb, isPrimaryTab } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
+import { screenGuardStackListeners } from '../hooks/useScreenGuard';
 import { isStudyReminderData } from '../lib/studyNotifications';
 import { inferImportFileType } from '../lib/importFile';
 import { parseExternalAppUrl } from '../lib/externalLinking';
@@ -623,6 +624,7 @@ function AppStack() {
             <StatusBar style={DARK_MODE_UI_ENABLED ? 'auto' : 'dark'} />
             {Platform.OS === 'web' ? <WebAppIntegrations /> : null}
             <Stack
+                screenListeners={screenGuardStackListeners}
                 screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: colors.bgPrimary },

@@ -22,8 +22,25 @@ import UIKit
  */
 
 /// Re-parents a window beneath the private canvas layer of a secure text field.
+///
+/// The canvas carries the flag the compositor honours when it renders a screenshot, a recording
+/// or a mirrored display, and the flag covers everything beneath it. Three details keep the
+/// window safe to live there:
+///
+///  - The field is never a subview while its layer is borrowed. UIKit only builds the canvas for
+///    a secure field inside a window, so the field visits the window and leaves again at once;
+///    the canvas stays behind in its layer. A subview whose layer was moved out of its
+///    superview's layer lost that layer on removal, and the next touch crashed on it.
+///  - UIKit builds `subviews` from `layer.sublayers`, keeping every sublayer whose delegate is a
+///    view. Hung straight off the canvas, the window became a subview of its own descendant and
+///    the next trait change (light/dark, text size) walked that loop until the main thread ran
+///    out of stack. The window layer sits in a delegate-less `hostLayer` instead.
+///  - The window keeps its on-screen position. The field has a zero frame at the origin and the
+///    host layer cancels whatever offset the canvas sits at; a centred field used to drag the
+///    whole app half a screen down and to the right.
 private final class SecureLayerShield {
   private let field = UITextField()
+  private let hostLayer = CALayer()
   private weak var shieldedWindow: UIWindow?
   private weak var originalSuperlayer: CALayer?
 
@@ -31,37 +48,38 @@ private final class SecureLayerShield {
 
   func install(on window: UIWindow) -> Bool {
     guard !isInstalled else { return true }
+    guard let superlayer = window.layer.superlayer else { return false }
 
     field.isSecureTextEntry = true
-    field.isUserInteractionEnabled = false
-    field.backgroundColor = .clear
-    field.translatesAutoresizingMaskIntoConstraints = false
     window.addSubview(field)
-    NSLayoutConstraint.activate([
-      field.centerXAnchor.constraint(equalTo: window.centerXAnchor),
-      field.centerYAnchor.constraint(equalTo: window.centerYAnchor),
-    ])
+    field.layoutIfNeeded()
+    field.removeFromSuperview()
+    guard let canvas = field.layer.sublayers?.last else { return false }
 
-    // The canvas is created by UIKit only once the field is in a hierarchy and secure.
-    guard let canvas = field.layer.sublayers?.last, let superlayer = window.layer.superlayer else {
-      field.removeFromSuperview()
-      return false
-    }
+    // A layer with no view behind it animates every change; the swap has to be instant.
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    superlayer.addSublayer(field.layer)
+    canvas.addSublayer(hostLayer)
+    hostLayer.frame = canvas.convert(superlayer.bounds, from: superlayer)
+    hostLayer.addSublayer(window.layer)
+    CATransaction.commit()
 
     originalSuperlayer = superlayer
-    superlayer.addSublayer(field.layer)
-    canvas.addSublayer(window.layer)
     shieldedWindow = window
     return true
   }
 
   func remove() {
     guard let window = shieldedWindow else { return }
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
     // Put the window layer back where UIKit expects it before detaching the shield, otherwise
     // the app renders to a layer that is no longer in the tree and the screen goes black.
     originalSuperlayer?.addSublayer(window.layer)
+    hostLayer.removeFromSuperlayer()
     field.layer.removeFromSuperlayer()
-    field.removeFromSuperview()
+    CATransaction.commit()
     shieldedWindow = nil
     originalSuperlayer = nil
   }
