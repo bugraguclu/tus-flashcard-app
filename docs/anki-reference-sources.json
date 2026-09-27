@@ -470,6 +470,30 @@
       "url": "https://github.com/ankitects/anki/tree/main/ts/routes/graphs",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["the table under the Reviews graph", "the browser search a bar of the Added graph opens"]
+    },
+    {
+      "id": "rust-1.92-sort-unstable",
+      "priority": 3,
+      "platform": "Rust standard library sort that orders Anki's preset recompute",
+      "url": "https://github.com/rust-lang/rust/tree/1.92.0/library/core/src/slice/sort",
+      "license": "MIT OR Apache-2.0; ported with attribution, verified against Anki output",
+      "useFor": ["ipnsort: insertion sort up to 20, existing-run check, quicksort", "pseudo-median pivot, branchless cyclic Lomuto partition, sorting networks for up to 32 elements", "heapsort fallback after 2*log2(n) unbalanced partitions"]
+    },
+    {
+      "id": "permutation-0.4.1",
+      "priority": 3,
+      "platform": "Rust crate Anki uses to visit cards by review count",
+      "url": "https://docs.rs/permutation/0.4.1/permutation/fn.sort_unstable_by_key.html",
+      "license": "MIT; behavior reference",
+      "useFor": ["sort_unstable_by_key over card indices", "apply_slice_in_place gathers cards in sorted order"]
+    },
+    {
+      "id": "anki-26.05-rust-toolchain",
+      "priority": 3,
+      "platform": "Rust toolchain Anki 26.05 is built with",
+      "url": "https://github.com/ankitects/anki/blob/e64c6b1aee3e8d668fb8bbe084beada8e070d985/rust-toolchain.toml",
+      "license": "AGPL-3.0-or-later; version reference only",
+      "useFor": ["Rust 1.92.0, which fixes the unstable sort's tie order"]
     }
   ],
   "requiredDocs": [

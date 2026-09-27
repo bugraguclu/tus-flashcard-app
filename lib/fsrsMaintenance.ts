@@ -34,6 +34,7 @@ import {
 } from './fsrsMemory';
 import { desiredRetentionFor, fsrsParametersFor, recordedDecayFor } from './fsrsScheduler';
 import { withReviewFuzz } from './schedulingIntervals';
+import { rustSortUnstableIndicesByKey } from './rustSortUnstable';
 import { resolveSettingsForDeck } from './studyCardRows';
 import type { AppSettings } from './types';
 
@@ -85,9 +86,18 @@ function loadCardsInScope(deckIds: number[] | undefined): AnkiCard[] {
 
 const PROGRESS_INTERVAL = 250;
 
+/**
+ * Anki's `DeckIdsWithoutChildren`: cards in these decks, and cards an imported filtered deck
+ * holds whose home deck is one of them.
+ */
 function deckScopeClause(deckIds: number[] | undefined): { sql: string; params: number[] } {
     if (!deckIds || deckIds.length === 0) return { sql: '', params: [] };
-    return { sql: ` AND c.deckId IN (${deckIds.map(() => '?').join(', ')})`, params: [...deckIds] };
+    const list = deckIds.map(() => '?').join(', ');
+    const homeDeck = "json_extract(c.data, '$.odid')";
+    return {
+        sql: ` AND (c.deckId IN (${list}) OR (${homeDeck} != 0 AND ${homeDeck} IN (${list})))`,
+        params: [...deckIds, ...deckIds],
+    };
 }
 
 export { revlogByCard } from './fsrsCardInputs';
@@ -135,8 +145,9 @@ export function rebuildFsrsMemoryStates(
         for (const card of batch) {
             const entries = revlogs.get(card.id);
             if (!entries || entries.length === 0) continue;
-            const deckSettings = settingsCache.get(card.deckId) ?? resolveSettingsForDeck(card.deckId, settings);
-            settingsCache.set(card.deckId, deckSettings);
+            const homeDeckId = card.odid || card.deckId;
+            const deckSettings = settingsCache.get(homeDeckId) ?? resolveSettingsForDeck(homeDeckId, settings);
+            settingsCache.set(homeDeckId, deckSettings);
             candidates.push({
                 card,
                 settings: deckSettings,
@@ -146,15 +157,11 @@ export function rebuildFsrsMemoryStates(
         }
     }
 
-    // Anki updates cards in order of history length, which only matters to the load balancer's
-    // running counts while it reschedules. Ties keep card order.
     const rescheduler = options.reschedule && options.loadBalance !== false ? buildReschedulerState(settings, nowMs) : null;
-    if (rescheduler) {
-        candidates.sort((a, b) => (a.history?.reviews.length ?? 0) - (b.history?.reviews.length ?? 0));
-    }
+    const visitOrder = ankiVisitOrder(candidates);
 
-    for (let index = 0; index < candidates.length; index++) {
-        const { card, settings: deckSettings, history, lastReview } = candidates[index];
+    for (let index = 0; index < visitOrder.length; index++) {
+        const { card, settings: deckSettings, history, lastReview } = visitOrder[index];
         result.cardsInspected += 1;
 
         const params = fsrsParametersFor(deckSettings);
@@ -196,6 +203,43 @@ export function rebuildFsrsMemoryStates(
     }
 
     return result;
+}
+
+/**
+ * The order Anki's `update_memory_state` visits cards in (rslib/src/scheduler/fsrs/memory_state.rs):
+ * one preset at a time. Within a preset, cards whose log yields nothing usable come first. The
+ * rest follow in card order, sorted by the length of the FSRS item their log yields, using Rust's
+ * unstable sort. The order of the presets themselves does not matter, because each preset is
+ * balanced only against its own day counts.
+ */
+function ankiVisitOrder(candidates: readonly RebuildCandidate[]): RebuildCandidate[] {
+    const byPreset = new Map<number, RebuildCandidate[]>();
+    for (const candidate of candidates) {
+        const presetId = getDeck(candidate.card.odid || candidate.card.deckId)?.configId || DEFAULT_DECK_CONFIG.id;
+        const group = byPreset.get(presetId) ?? [];
+        group.push(candidate);
+        byPreset.set(presetId, group);
+    }
+
+    const ordered: RebuildCandidate[] = [];
+    for (const group of byPreset.values()) {
+        const withItems: RebuildCandidate[] = [];
+        for (const candidate of group) {
+            if (candidate.history) withItems.push(candidate);
+            else ordered.push(candidate);
+        }
+        const order = rustSortUnstableIndicesByKey(withItems.map((candidate) => ankiItemLength(candidate.history!)));
+        for (const index of order) ordered.push(withItems[index]);
+    }
+    return ordered;
+}
+
+/**
+ * Reviews in the FSRS item Anki builds from a card's log. A history that does not reach back to
+ * a learning step drops its first review, which becomes the starting state instead.
+ */
+function ankiItemLength(history: FsrsReviewHistory): number {
+    return history.complete ? history.reviews.length : Math.max(0, history.reviews.length - 1);
 }
 
 /** The preset a card is counted under: its home deck's. */

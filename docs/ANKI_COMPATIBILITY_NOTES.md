@@ -77,6 +77,9 @@ change. What that pins:
   `card id + reps`, for review fuzz, the learning-step fuzz and the load balancer;
 - the load balancer and Easy Days (`lib/loadBalancer.ts`, `lib/loadBalancerSession.ts`), built
   with the study queue and fed by each answer, as Anki does;
+- the order a preset recompute visits cards in, which decides the balanced days when it
+  reschedules: preset by preset, cards sorted by the length of their FSRS item with Rust 1.92's
+  unstable sort, ported in `lib/rustSortUnstable.ts` (ties do not keep card order);
 - review-log rows: kind (a review answered early is a filtered review), `ivl`/`lastIvl` in days
   or negative seconds, and the shifted difficulty in the ease column; `lrt` and `pos` on the card;
 - a deck's own desired retention, the preset-level validation that resets an out-of-band
@@ -88,9 +91,7 @@ change. What that pins:
 
 Full item-by-item record in `docs/AUDIT_FSRS_ANKI_PARITY.md`
 
-**Next compatibility gate:** Known differences: with the load balancer on, rescheduling after a
-preset change visits cards in Anki's unstable-sort order, which moves about 4% of the balanced
-days; memory states differ in the last bits in about 1% of cases because the platform's exp/pow
+**Next compatibility gate:** Known differences: memory states differ in the last bits in about 1% of cases because the platform's exp/pow
 are not correctly rounded (intervals never differed in the recorded vectors); the optimizer is not
 Anki's trainer and will not reproduce its numbers; preview answers write no cramming revlog row;
 Forget always resets the review and lapse counts; the browser's retrievability sort and the SQL

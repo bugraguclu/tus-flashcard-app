@@ -406,3 +406,29 @@ farklı sayı üretir.
 npx vitest run lib/fsrsAnkiParity.test.ts   → 6 test (UTC, New York ve Tokyo saat dilimlerinde de)
 npm run quality                             → bkz. değişiklik kaydı
 ```
+
+---
+
+# Dördüncü geçiş — 27 Eylül 2026: kalan farkların kapatılması
+
+Üçüncü geçişin "Kalan farklar" listesi bu geçişte tek tek ele alındı. Ölçüm yine Anki 26.05'in
+kendisine karşı yapıldı (`scripts/anki-oracle/`).
+
+## 1. Dengeleyici açıkken toplu yeniden planlama sırası — kapatıldı
+
+Anki bir ön ayarı yeniden hesaplarken kartları `permutation::sort_unstable_by_key` ile FSRS
+öğesinin uzunluğuna göre sıralıyor (`memory_state.rs`). Kararsız sıralama, eşit uzunluktaki kartları
+Rust'ın kendi algoritmasının bıraktığı sırada bırakıyor. Dengeleyicinin gün sayaçları her kartla
+değiştiği için bu sıra, kartların hangi güne düşeceğini de belirliyor. Uygulama önceden eşitleri kart
+sırasında tutuyordu ve günlerin ~%4'ü farklıydı.
+
+- `lib/rustSortUnstable.ts`: Rust 1.92.0'ın (Anki 26.05'in derlendiği sürüm) `ipnsort`'u `usize`
+  için aynen taşındı. Kaynak MIT/Apache-2.0, dosyada atıfla.
+- `lib/fsrsMaintenance.ts`: kartlar ön ayar ön ayar, önce öğesi olmayanlar, sonra bu sırayla
+  ziyaret ediliyor. Tamamlanmamış geçmişte ilk tekrar başlangıç durumuna dönüştüğü için öğe bir
+  eksik sayılıyor. Kapsam, Anki'nin `DeckIdsWithoutChildren`'ı gibi, filtreli destedeki kartı
+  ana destesinden de buluyor.
+- Ölçüm: dengeleyici açık 1 563 kart (en büyük ön ayar 549 kart) ve kapalı 168 kart. Hepsinde
+  aralık, gün ve revlog satırı Anki ile aynı. Anki'nin revlog kimliklerinden okunan ziyaret sırası
+  da her turda birebir aynı. `test/fixtures/anki-26.05-fsrs.json` artık 87 kartlık dengeli bir tur
+  içeriyor ve test sırayı da doğruluyor.

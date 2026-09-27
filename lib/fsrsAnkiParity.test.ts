@@ -287,38 +287,75 @@ describe('load balancer', () => {
     });
 });
 
+interface RecordedRescheduleCard {
+    cid: number;
+    nid: number;
+    before: any;
+    after: { ivl: number; due: number };
+    entries: any[];
+    /** Anki's `Rescheduled` rows: [id, ease, ivl, lastIvl, factor, type]. */
+    rescheduled: number[][];
+}
+
+/** The balanced rounds keep each card as [cid, nid, before, [ivl, due], revlog rows, rescheduled rows]. */
+function expandRescheduleCard(card: any[]): RecordedRescheduleCard {
+    const [cid, nid, before, [ivl, due], rows, rescheduled] = card;
+    return {
+        cid, nid, before, after: { ivl, due }, rescheduled,
+        entries: rows.map(([id, ease, rowIvl, lastIvl, factor, type]: number[]) => ({ id, ease, ivl: rowIvl, lastIvl, factor, type })),
+    };
+}
+
+function replayReschedule(round: any, cards: RecordedRescheduleCard[], loadBalance: boolean, wholeRound: boolean) {
+    vi.useFakeTimers();
+    vi.setSystemTime(round.runAtMs);
+    seedCollection({
+        params: [],
+        desiredRetention: round.desiredRetention,
+        easyDays: round.easyDays,
+    }, cards.map((card) => card.nid));
+    for (const card of cards) {
+        saveAnkiCard(appCard(card.before, card.cid, card.nid, round.today, round.runAtMs));
+        insertRevlog(card.cid, card.entries);
+    }
+    rebuildFsrsMemoryStates(
+        { ...DEFAULT_SETTINGS, fsrsEnabled: true, dayRolloverHour: ROLLOVER },
+        { deckIds: [1], reschedule: true, loadBalance },
+        round.runAtMs,
+    );
+    vi.useRealTimers();
+
+    const appToday = localDayNumber(round.runAtMs, ROLLOVER);
+    for (const card of cards) {
+        const saved = JSON.parse(dbHolder.db.getFirstSync('SELECT data FROM anki_cards WHERE id = ?', card.cid).data) as AnkiCard;
+        const label = `card ${card.cid}`;
+        expect(saved.ivl, label).toBe(card.after.ivl);
+        expect(saved.due - appToday, label).toBe(card.after.due - round.today);
+        const rows = dbHolder.db.getAllSync('SELECT ease, ivl, lastIvl, factor FROM revlog WHERE cardId = ? AND type = 5', card.cid);
+        expect(rows.map((row: any) => [row.ease, row.ivl, row.lastIvl, row.factor]), label)
+            .toEqual(card.rescheduled.map((row) => [row[1], row[2], row[3], row[4]]));
+    }
+
+    // Anki writes its rows as it visits the cards, so their ids record the visiting order. The order
+    // of a subset differs from the order of the whole round, so only a complete round can show it.
+    if (!wholeRound) return;
+    const ankiOrder = cards
+        .filter((card) => card.rescheduled.length > 0)
+        .sort((a, b) => a.rescheduled[0][0] - b.rescheduled[0][0])
+        .map((card) => card.cid);
+    const appOrder = dbHolder.db.getAllSync('SELECT cardId FROM revlog WHERE type = 5 ORDER BY id').map((row: any) => row.cardId);
+    expect(appOrder).toEqual(ankiOrder);
+}
+
 describe('rescheduling after a preset change', () => {
     it('moves each review card to the interval and day Anki moves it to', () => {
+        // The unbalanced round is trimmed to its first cards; their days do not depend on order.
         const round = fixture.reschedule[0];
-        vi.useFakeTimers();
-        vi.setSystemTime(round.runAtMs);
-        seedCollection({
-            params: [],
-            desiredRetention: round.desiredRetention,
-            easyDays: round.easyDays,
-        }, round.cards.map((card: any) => card.nid));
-        for (const card of round.cards) {
-            saveAnkiCard(appCard(card.before, card.cid, card.nid, round.today, round.runAtMs));
-            insertRevlog(card.cid, card.entries);
-        }
-        // Recorded with Anki's load balancer off: with it on, Anki visits cards in an order that
-        // depends on its unstable sort, which the balanced days then depend on too.
-        rebuildFsrsMemoryStates(
-            { ...DEFAULT_SETTINGS, fsrsEnabled: true, dayRolloverHour: ROLLOVER },
-            { deckIds: [1], reschedule: true, loadBalance: false },
-            round.runAtMs,
-        );
-        vi.useRealTimers();
+        replayReschedule(round, round.cards, false, false);
+    });
 
-        const appToday = localDayNumber(round.runAtMs, ROLLOVER);
-        for (const card of round.cards) {
-            const saved = JSON.parse(dbHolder.db.getFirstSync('SELECT data FROM anki_cards WHERE id = ?', card.cid).data) as AnkiCard;
-            const label = `card ${card.cid}`;
-            expect(saved.ivl, label).toBe(card.after.ivl);
-            expect(saved.due - appToday, label).toBe(card.after.due - round.today);
-            const rows = dbHolder.db.getAllSync('SELECT ease, ivl, lastIvl, factor FROM revlog WHERE cardId = ? AND type = 5', card.cid);
-            expect(rows.map((row: any) => [row.ease, row.ivl, row.lastIvl, row.factor]), label)
-                .toEqual(card.rescheduled.map((row: number[]) => [row[1], row[2], row[3], row[4]]));
-        }
+    it('visits cards in the order of Rust\'s unstable sort, which the load balancer\'s days depend on', () => {
+        const round = fixture.rescheduleBalanced[0];
+        replayReschedule(round, round.cards.map(expandRescheduleCard), true, true);
     });
 });

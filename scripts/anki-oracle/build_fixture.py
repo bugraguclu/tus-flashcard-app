@@ -7,6 +7,7 @@ Usage (from scripts/anki-oracle, after running the generators):
     ./run.sh gen_fuzz.py 5 400 fuzz.json
     ./run.sh gen_lb.py 34 40 lb.json
     ./run.sh gen_resched.py 1 3 off resched.json
+    ./run.sh gen_resched.py 11 1 on resched_lb.json 110
     python3 build_fixture.py ../../test/fixtures/anki-26.05-fsrs.json
 """
 import json
@@ -53,6 +54,20 @@ def compact(node):
 
 states, memory, answers = load("states.json"), load("memory.json"), load("answers.json")
 fuzz, lb, resched = load("fuzz.json"), load("lb.json"), load("resched.json")
+resched_lb = load("resched_lb.json")
+
+
+def compact_resched_round(rnd):
+    """A rescheduling round with each card as a list:
+    [cid, nid, before, [ivl, due] after, revlog rows, rescheduled rows]."""
+    return {
+        "today": rnd["today"], "nextDayAt": rnd["nextDayAt"], "runAtMs": rnd["runAtMs"],
+        "easyDays": rnd["easyDays"], "desiredRetention": rnd["desiredRetention"],
+        "cards": [[c["cid"], c["nid"], c["before"], [c["after"]["ivl"], c["after"]["due"]],
+                   [[e["id"], e["ease"], e["ivl"], e["lastIvl"], e["factor"], e["type"]] for e in c["entries"]],
+                   c["rescheduled"]] for c in rnd["cards"]],
+    }
+
 
 fixture = {
     "meta": {"anki": states["meta"]["anki"], "buildhash": states["meta"]["buildhash"], "fsrs": "5.2.0",
@@ -69,6 +84,7 @@ fixture = {
     "fuzz": pick(fuzz["cases"], 120),
     "loadBalancer": [],
     "reschedule": resched["rounds"][:1],
+    "rescheduleBalanced": [compact_resched_round(r) for r in resched_lb["rounds"][:1]],
 }
 for rnd in lb["rounds"][:3]:
     window = [[c["id"], c["nid"], c["due"] - rnd["today"]] for c in rnd["snapshot"] if 0 <= c["due"] - rnd["today"] < 99]
