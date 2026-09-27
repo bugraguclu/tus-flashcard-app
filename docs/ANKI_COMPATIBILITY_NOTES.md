@@ -85,7 +85,13 @@ change. What that pins:
 - a deck's own desired retention, the preset-level validation that resets an out-of-band
   retention to 90%, the ignore-before date read as midnight UTC, recomputing only the decks whose
   inputs a save changed, clearing FSRS data when FSRS is switched off or a card changes deck, and
-  Set Due Date and Forget under FSRS;
+  Set Due Date under FSRS;
+- Reset Card (formerly Forget, `lib/resetCards.ts`) with Anki's two options, "Restore original
+  position where possible" (on by default) and "Reset repetition and lapse counts" (off by
+  default). The reviewer and the browser each remember the last choice. The card, its `cards.data`
+  and its review-log row match Anki's for every combination (`lib/resetCards.test.ts`). Cards
+  without a position to restore are numbered from the highest new-card position, where Anki keeps
+  a separate `nextPos` counter;
 - retrievability for card info, the review sort orders and `prop:r`: seconds since `lrt`, the
   card's own decay (0.5 when it has none).
 
@@ -94,7 +100,7 @@ Full item-by-item record in `docs/AUDIT_FSRS_ANKI_PARITY.md`
 **Next compatibility gate:** Known differences: memory states differ in the last bits in about 1% of cases because the platform's exp/pow
 are not correctly rounded (intervals never differed in the recorded vectors); the optimizer is not
 Anki's trainer and will not reproduce its numbers; preview answers write no cramming revlog row;
-Forget always resets the review and lapse counts; the browser's retrievability sort and the SQL
+the browser's retrievability sort and the SQL
 `prop:r` of filtered decks stay approximations when presets use different decays. Still to add:
 retention/true-retention graphs and the FSRS simulator
 

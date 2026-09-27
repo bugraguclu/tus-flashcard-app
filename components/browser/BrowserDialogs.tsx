@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';
 import type { Note, AnkiCard, Deck, NoteType } from '../../lib/models';
-import type { BrowserTableMode } from '../../lib/studyRepository';
+import type { BrowserTableMode, ResetCardOptions } from '../../lib/studyRepository';
 import { localizeNoteTypeName, type SupportedLocale } from '../../lib/i18n';
 import { changeNotesType } from '../../lib/noteManager';
 import CardWebView from '../../components/CardWebView';
@@ -24,6 +24,7 @@ import {
     gradeSelectedNow,
     parseDueRange,
     repositionSelectedNewCards,
+    resetSelectedProgress,
     setSelectedDueDate,
 } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
@@ -148,6 +149,69 @@ export function RepositionModal({
                     </View>
                 </View>
             </KeyboardAvoidingView>
+        </Modal>
+    );
+}
+
+interface ResetCardsModalProps {
+    l: BrowserI18n['l'];
+    /** The options on screen; null while the dialog is closed. */
+    options: ResetCardOptions | null;
+    runSelectionAction: (action: () => void) => void;
+    selectedActionCardIds: number[];
+    setOptions: Dispatch<SetStateAction<ResetCardOptions | null>>;
+    styles: BrowserStyles;
+    t: BrowserI18n['t'];
+}
+
+/** Anki's Reset Card for the selected cards, with its two options. */
+export function ResetCardsModal({
+    l,
+    options,
+    runSelectionAction,
+    selectedActionCardIds,
+    setOptions,
+    styles,
+    t,
+}: ResetCardsModalProps) {
+    const close = () => setOptions(null);
+    const toggle = (key: keyof ResetCardOptions) => setOptions((current) => (current ? { ...current, [key]: !current[key] } : current));
+    const rows: Array<{ key: keyof ResetCardOptions; label: string }> = [
+        { key: 'restorePosition', label: l('Mümkünse ilk sırasına geri koy', 'Restore original position where possible') },
+        { key: 'resetCounts', label: l('Tekrar ve unutma sayılarını sıfırla', 'Reset repetition and lapse counts') },
+    ];
+    return (
+        <Modal visible={options !== null} transparent animationType="fade" onRequestClose={close}>
+            <View style={styles.modalOverlay}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+                <View style={styles.modalCard} accessibilityViewIsModal>
+                    <Text style={styles.modalTitle}>{l('Kartları sıfırla', 'Reset Cards')}</Text>
+                    <Text style={styles.modalCaption}>
+                        {l(`${selectedActionCardIds.length} kart Yeni durumuna döner. Tekrar geçmişi korunur.`,
+                            `${selectedActionCardIds.length} cards go back to New. Their review history is kept.`)}
+                    </Text>
+                    {rows.map(({ key, label }) => {
+                        const checked = options?.[key] ?? false;
+                        return (
+                            <TouchableOpacity key={key} style={styles.checkboxRow} onPress={() => toggle(key)} accessibilityRole="checkbox" accessibilityState={{ checked }}>
+                                <View style={[styles.checkbox, checked && styles.checkboxChecked]}>{checked ? <Text style={styles.checkboxTick}>✓</Text> : null}</View>
+                                <Text style={styles.checkboxLabel}>{label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                    <View style={styles.dialogActions}>
+                        <TouchableOpacity style={styles.dialogButton} onPress={close}><Text style={styles.dialogButtonText}>{t('common.cancel')}</Text></TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.dialogButton, styles.dialogButtonPrimary]}
+                            onPress={() => {
+                                if (!options) return;
+                                close();
+                                runSelectionAction(() => resetSelectedProgress(selectedActionCardIds, options));
+                            }}
+                        ><Text style={styles.dialogButtonPrimaryText}>{l('Sıfırla', 'Reset')}</Text></TouchableOpacity>
+                    </View>
+                </View>
+            </View>
         </Modal>
     );
 }

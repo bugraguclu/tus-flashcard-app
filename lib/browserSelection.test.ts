@@ -7,6 +7,7 @@ import { logManualEntry } from './reviewLogger';
 const harness = vi.hoisted(() => ({
     cards: new Map<number, AnkiCard>(),
     grades: [] as Array<{ cardId: number; grade: number }>,
+    resets: [] as Array<{ cardIds: number[]; options: unknown; context: string }>,
 }));
 
 vi.mock('./noteManager', () => ({
@@ -37,14 +38,9 @@ vi.mock('./studyRepository', () => ({
         const card = harness.cards.get(cardId)!;
         harness.cards.set(cardId, { ...card, queue: buried ? -3 : card.type === 0 ? 0 : 2 });
     },
-    forgetCard: (cardId: number) => {
-        const card = harness.cards.get(cardId)!;
-        // Mirrors the real helper: a forgotten card goes to the back of the new queue, because
-        // `due` is a queue position once the card is new again.
-        const position = [...harness.cards.values()]
-            .filter((other) => other.id !== cardId && other.type === 0)
-            .reduce((max, other) => Math.max(max, other.due), 0) + 1;
-        harness.cards.set(cardId, { ...card, type: 0, queue: 0, due: position, ivl: 0, reps: 0, lapses: 0, left: 0 });
+    resetCardsToNew: (cardIds: number[], options: { resetCounts: boolean }, context: string) => {
+        harness.resets.push({ cardIds, options, context });
+        return [];
     },
     answerStudyCard: (cardId: number, grade: number) => {
         harness.grades.push({ cardId, grade });
@@ -92,6 +88,7 @@ function card(id: number, overrides: Partial<AnkiCard> = {}): AnkiCard {
 beforeEach(() => {
     harness.cards.clear();
     harness.grades.length = 0;
+    harness.resets.length = 0;
 });
 
 describe('parseDueRange', () => {
@@ -197,12 +194,13 @@ describe('browser selection scheduling operations', () => {
         expect(logManualEntry).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), 'manual', ivl, 10, 600);
     });
 
-    it('resets cards to the end of the new queue and grades through the scheduler path', () => {
+    it('resets the selection with the chosen options as the browser, and grades through the scheduler path', () => {
         harness.cards.set(1, card(1, { type: 2, queue: 2, due: 100, ivl: 20, reps: 4 }));
         harness.cards.set(2, card(2, { due: 8 }));
 
-        expect(resetSelectedProgress([1], settings)).toBe(1);
-        expect(harness.cards.get(1)).toMatchObject({ type: 0, queue: 0, due: 9, ivl: 0, reps: 0 });
+        const options = { restorePosition: true, resetCounts: false };
+        expect(resetSelectedProgress([1, 1, 99], options)).toBe(1);
+        expect(harness.resets).toEqual([{ cardIds: [1], options, context: 'browser' }]);
 
         expect(gradeSelectedNow([1, 2], 3, settings)).toBe(2);
         expect(harness.grades).toEqual([{ cardId: 1, grade: 3 }, { cardId: 2, grade: 3 }]);

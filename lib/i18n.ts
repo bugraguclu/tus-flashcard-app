@@ -467,7 +467,7 @@ export function reviewerOpName(locale: SupportedLocale, op: ReviewerOpName): str
         suspendCard: ['Kartı askıya al', 'Suspend card'],
         unsuspendCard: ['Kartı askıdan çıkar', 'Unsuspend card'],
         suspendNote: ['Notu askıya al', 'Suspend note'],
-        forgetCard: ['Kartı unut', 'Forget card'],
+        forgetCard: ['Kartı sıfırla', 'Reset card'],
         setDueDate: ['Son tarihi ayarla', 'Set due date'],
         markNote: ['Notu işaretle', 'Mark note'],
         unmarkNote: ['Not işaretini kaldır', 'Unmark note'],

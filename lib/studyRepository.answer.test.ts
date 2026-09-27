@@ -121,10 +121,10 @@ vi.mock('./noteManager', () => ({
     handleLeech: vi.fn(),
 }));
 
-import { answerStudyCard, forgetCard, setCardBuried, setCardSuspended, undoAnswer } from './studyRepository';
+import { answerStudyCard, setCardBuried, setCardSuspended, undoAnswer } from './studyRepository';
 import { localDayNumber } from './ankiState';
 import { handleLeech } from './noteManager';
-import { deleteReviewById, logManualEntry } from './reviewLogger';
+import { deleteReviewById } from './reviewLogger';
 
 const settings: AppSettings = {
     language: 'system',
@@ -471,79 +471,4 @@ describe('setCardBuried', () => {
     });
 });
 
-describe('forgetCard', () => {
-    beforeEach(() => {
-        shared.cards.clear();
-        shared.notes.clear();
-    });
-
-    it('resets a reviewed card back to brand-new, discarding scheduling progress', () => {
-        shared.cards.set(30, {
-            ...baseCard(30, 1, 2, 2),
-            ivl: 45,
-            reps: 12,
-            lapses: 3,
-            factor: 2100,
-        });
-
-        forgetCard(30, settings);
-
-        const updated = shared.cards.get(30)!;
-        expect(updated.type).toBe(0);
-        expect(updated.queue).toBe(0);
-        expect(updated.ivl).toBe(0);
-        expect(updated.reps).toBe(0);
-        expect(updated.lapses).toBe(0);
-        expect(updated.left).toBe(0);
-    });
-
-
-    it('leaves the reset marker FSRS looks for when a card is forgotten', () => {
-        shared.cards.set(33, { ...baseCard(33, 1, 2, 2), ivl: 45 });
-        vi.mocked(logManualEntry).mockClear();
-
-        forgetCard(33, settings);
-
-        // type 4 + factor 0 is the pair fsrsMemory's isReset() matches; without this row FSRS
-        // would keep replaying the history the user just asked it to throw away.
-        expect(logManualEntry).toHaveBeenCalledWith(
-            expect.objectContaining({ id: 33 }),
-            'reset',
-            0,
-            45,
-        );
-    });
-
-    // Anki's `schedule_as_new` drops the memory state, so the card's next answer is a first
-    // review again; the review time recorded on it stays.
-    it('drops the FSRS memory state but keeps the recorded review time', () => {
-        shared.cards.set(34, {
-            ...baseCard(34, 1, 2, 2),
-            ivl: 45,
-            ankiData: JSON.stringify({ s: 40, d: 6, dr: 0.9, decay: 0.154, lrt: 1_790_000_000 }),
-        });
-
-        forgetCard(34, settings);
-
-        const data = JSON.parse(shared.cards.get(34)!.ankiData ?? '{}');
-        expect(data.s).toBeUndefined();
-        expect(data.d).toBeUndefined();
-        expect(data.lrt).toBe(1_790_000_000);
-    });
-
-    it('parks the card at the end of the new queue instead of keeping its review due day', () => {
-        shared.cards.set(35, { ...baseCard(35, 1, 2, 2), due: 20_800, ivl: 45 });
-        shared.cards.set(36, { ...baseCard(36, 1, 0, 0), due: 7 });
-
-        forgetCard(35, settings);
-
-        // `due` is a queue position once the card is new again, so the day number it carried as a
-        // review card would bury it behind every card the learner owns.
-        expect(shared.cards.get(35)!.due).toBe(8);
-    });
-    it('is a no-op when the card does not exist', () => {
-        expect(() => forgetCard(999, settings)).not.toThrow();
-        expect(shared.cards.has(999)).toBe(false);
-    });
-});
 

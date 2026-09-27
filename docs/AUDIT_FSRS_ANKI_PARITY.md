@@ -432,3 +432,19 @@ sırasında tutuyordu ve günlerin ~%4'ü farklıydı.
   aralık, gün ve revlog satırı Anki ile aynı. Anki'nin revlog kimliklerinden okunan ziyaret sırası
   da her turda birebir aynı. `test/fixtures/anki-26.05-fsrs.json` artık 87 kartlık dengeli bir tur
   içeriyor ve test sırayı da doğruluyor.
+
+## 2. "Unut" her zaman sayaçları sıfırlıyordu — kapatıldı
+
+Anki 26.05'te işlemin adı "Reset Card" ve iki seçeneği var: "Restore original position where
+possible" (varsayılan açık) ve "Reset repetition and lapse counts" (varsayılan kapalı). Son seçim
+gözden geçirici ve tarayıcı için ayrı ayrı hatırlanıyor (`BoolKey::RestorePosition*`,
+`ResetCounts*`).
+
+- `lib/resetCards.ts`: `Card::schedule_as_new` gibi çalışıyor. Kart filtreli desteden çıkıyor,
+  aralığı, ease'i, hafıza durumu ve `pos`'u siliniyor. `lrt`, `left`, `dr` ve `decay` kalıyor.
+  Pozisyon, mümkünse eski yerine geri konuyor. Tür 4, ease sütunu 0 olan revlog satırı yazılıyor.
+- Gözden geçiricinin menüsünde ve tarayıcıda, iki seçenekli "Kartı sıfırla" penceresi açılıyor.
+- Ölçüm: Anki'nin `schedule_cards_as_new`'undan 60 durum, 123 kart (her kart türü, 33'ü filtreli
+  destede, dört seçenek bileşimi). Kart alanları, `cards.data` ve revlog satırı birebir aynı.
+- Bilinen fark: geri konacak pozisyonu olmayan kart, en yüksek yeni kart pozisyonunun bir fazlasını
+  alıyor. Anki ayrı bir `nextPos` sayacı tutuyor. Yeni kartlar arasındaki sıra aynı.

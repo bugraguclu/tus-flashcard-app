@@ -10,7 +10,7 @@ import { deleteNote, type CardDeckMoveSnapshot } from '../../lib/noteManager';
 import { setDbSetting } from '../../lib/storage';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { alert, confirm } from '../../lib/confirm';
-import { resetSelectedProgress, toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
+import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import { ALL_CARD_FLAGS, BROWSER_SORT_KEYS } from './browserHelpers';
@@ -21,6 +21,8 @@ interface SelectionMenuModalProps {
     hasCatalogNotesSelected: boolean;
     l: BrowserI18n['l'];
     openSelectionTags: () => void;
+    /** Opens Reset Cards with the options last used in the browser. */
+    openResetDialog: () => void;
     refreshSelection: () => void;
     router: ReturnType<typeof useRouter>;
     runSelectionAction: (action: () => void) => void;
@@ -53,6 +55,7 @@ export function SelectionMenuModal({
     hasCatalogNotesSelected,
     l,
     openSelectionTags,
+    openResetDialog,
     refreshSelection,
     router,
     runSelectionAction,
@@ -150,15 +153,10 @@ export function SelectionMenuModal({
                             style={styles.selectionMenuItem}
                             onPress={() => {
                                 setShowSelectionMenu(false);
-                                confirm(
-                                    l('İlerlemeyi sıfırla', 'Reset Progress'),
-                                    l(`${selectedActionCardIds.length} kart yeni kuyruğunun sonuna taşınacak. İnceleme geçmişi korunur.`, `${selectedActionCardIds.length} cards will be moved to the end of the new queue. Review history is preserved.`),
-                                    () => runSelectionAction(() => resetSelectedProgress(selectedActionCardIds, settings)),
-                                    { destructive: true },
-                                );
+                                openResetDialog();
                             }}
                         >
-                            <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('İlerlemeyi sıfırla', 'Reset progress')}</Text>
+                            <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('Kartları sıfırla…', 'Reset cards…')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
                             <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>

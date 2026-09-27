@@ -22,10 +22,12 @@ import type { StudyCard } from '../lib/types';
 import { isLegacyTusNoteType, type CardFlag, type Note } from '../lib/models';
 import {
     getBrowserCards,
+    getResetCardDefaults,
     setCardSuspended,
     type BrowserCardQuery,
     type BrowserCardSortKey,
     type BrowserTableMode,
+    type ResetCardOptions,
 } from '../lib/studyRepository';
 import { useI18n } from '../hooks/useI18n';
 import { createDeck, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
@@ -79,6 +81,7 @@ import {
     DueDateModal,
     GradeNowModal,
     RepositionModal,
+    ResetCardsModal,
     SearchHelpModal,
 } from '../components/browser/BrowserDialogs';
 
@@ -138,6 +141,7 @@ export default function BrowserScreen() {
     const [repositionStep, setRepositionStep] = useState('1');
     const [repositionShiftExisting, setRepositionShiftExisting] = useState(true);
     const [showDueDialog, setShowDueDialog] = useState(false);
+    const [resetDialogOptions, setResetDialogOptions] = useState<ResetCardOptions | null>(null);
     const [dueInput, setDueInput] = useState('0');
     const [showGradePicker, setShowGradePicker] = useState(false);
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
@@ -180,6 +184,7 @@ export default function BrowserScreen() {
         || showNoteTypePicker
         || showSelectionTags
         || showRepositionDialog
+        || resetDialogOptions !== null
         || showDueDialog
         || showGradePicker
         || previewIndex !== null;
@@ -1121,6 +1126,7 @@ export default function BrowserScreen() {
                 hasCatalogNotesSelected={hasCatalogNotesSelected}
                 l={l}
                 openSelectionTags={openSelectionTags}
+                openResetDialog={() => setResetDialogOptions(getResetCardDefaults('browser'))}
                 refreshSelection={refreshSelection}
                 router={router}
                 runSelectionAction={runSelectionAction}
@@ -1226,6 +1232,16 @@ export default function BrowserScreen() {
                 selectedNoteIds={selectedNoteIds}
                 setShowNoteTypePicker={setShowNoteTypePicker}
                 showNoteTypePicker={showNoteTypePicker}
+                styles={styles}
+                t={t}
+            />
+
+            <ResetCardsModal
+                l={l}
+                options={resetDialogOptions}
+                runSelectionAction={runSelectionAction}
+                selectedActionCardIds={selectedActionCardIds}
+                setOptions={setResetDialogOptions}
                 styles={styles}
                 t={t}
             />

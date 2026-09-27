@@ -8,6 +8,7 @@ Usage (from scripts/anki-oracle, after running the generators):
     ./run.sh gen_lb.py 34 40 lb.json
     ./run.sh gen_resched.py 1 3 off resched.json
     ./run.sh gen_resched.py 11 1 on resched_lb.json 110
+    ./run.sh gen_forget.py 3 60 forget.json
     python3 build_fixture.py ../../test/fixtures/anki-26.05-fsrs.json
 """
 import json
@@ -54,7 +55,7 @@ def compact(node):
 
 states, memory, answers = load("states.json"), load("memory.json"), load("answers.json")
 fuzz, lb, resched = load("fuzz.json"), load("lb.json"), load("resched.json")
-resched_lb = load("resched_lb.json")
+resched_lb, forget = load("resched_lb.json"), load("forget.json")
 
 
 def compact_resched_round(rnd):
@@ -85,6 +86,7 @@ fixture = {
     "loadBalancer": [],
     "reschedule": resched["rounds"][:1],
     "rescheduleBalanced": [compact_resched_round(r) for r in resched_lb["rounds"][:1]],
+    "resetCards": forget["cases"],
 }
 for rnd in lb["rounds"][:3]:
     window = [[c["id"], c["nid"], c["due"] - rnd["today"]] for c in rnd["snapshot"] if 0 <= c["due"] - rnd["today"] < 99]

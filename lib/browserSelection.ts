@@ -13,9 +13,10 @@ import {
 } from './noteManager';
 import {
     answerStudyCard,
-    forgetCard,
+    resetCardsToNew,
     setCardBuried,
     setCardSuspended,
+    type ResetCardOptions,
 } from './studyRepository';
 
 function selectedCards(cardIds: number[]): AnkiCard[] {
@@ -159,12 +160,13 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
     return written;
 }
 
-/** Reset scheduling and append cards to the end of the new queue; review history is preserved. */
-export function resetSelectedProgress(cardIds: number[], settings: AppSettings): number {
+/**
+ * Anki's Reset Card for the selection: back to the new queue in selection order, review history
+ * preserved. The options become the browser's defaults for next time.
+ */
+export function resetSelectedProgress(cardIds: number[], options: ResetCardOptions): number {
     const cards = selectedCards(cardIds);
-    // forgetCard already parks each card at the end of the new queue, and every card it resets
-    // extends that queue — so a selection comes out in its own order without extra bookkeeping.
-    for (const card of cards) forgetCard(card.id, settings);
+    resetCardsToNew(cards.map((card) => card.id), options, 'browser');
     return cards.length;
 }
 

@@ -1,6 +1,6 @@
 /**
  * The study data API, re-exported from the modules that implement it:
- * studyQueue, filteredDeckQueue, studyAnswer, browserRepository, studyCardRows and
+ * studyQueue, filteredDeckQueue, studyAnswer, resetCards, browserRepository, studyCardRows and
  * studySearchSql. New code can import from those modules directly.
  */
 export {
@@ -19,10 +19,15 @@ export {
     answerStudyCard,
     setCardSuspended,
     setCardBuried,
-    nextNewCardPosition,
-    forgetCard,
     getCardState,
 } from './studyAnswer';
+export {
+    nextNewCardPosition,
+    resetCardsToNew,
+    getResetCardDefaults,
+    DEFAULT_RESET_CARD_OPTIONS,
+} from './resetCards';
+export type { ResetCardOptions, ResetCardContext } from './resetCards';
 export type {
     BuriedSiblingSnapshot,
     AnswerSideEffects,

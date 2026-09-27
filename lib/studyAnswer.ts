@@ -1,6 +1,6 @@
 import { getDB } from './db';
 import type { CardState, AppSettings, Grade, StudyCard } from './types';
-import type { AnkiCard, DeckConfig, ReviewLog } from './models';
+import type { AnkiCard, DeckConfig } from './models';
 import {
     ankiCardToCardState,
     cardStateToAnkiCard,
@@ -27,12 +27,12 @@ import {
     saveNote,
 } from './noteManager';
 import { getDeckConfigForDeck } from './deckManager';
-import { deleteReviewById, logReview, logManualEntry, revlogFactorForAnswer } from './reviewLogger';
+import { deleteReviewById, logReview, revlogFactorForAnswer } from './reviewLogger';
 import { makeStudyCard, resolveSettingsForDeck } from './studyCardRows';
 
 /**
- * Answering and undoing a card, and the per-card actions beside it: suspend, bury, forget,
- * and the card state the reviewer shows.
+ * Answering and undoing a card, and the per-card actions beside it: suspend, bury, and the card
+ * state the reviewer shows. Resetting a card to new lives in resetCards.
  */
 
 /** A sibling the bury policy pulled out of today's queue, with the queue it came from. */
@@ -399,38 +399,6 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
         mod: Math.floor(Date.now() / 1000),
         usn: -1,
     });
-}
-
-/**
- * Position a card returned to the new queue takes: the end of that queue, as in Anki.
- *
- * `due` means something different for every card type — for a new card it is the queue position,
- * so a review card's day number cannot simply be left in place when the card becomes new again.
- */
-export function nextNewCardPosition(excludedCardId?: number): number {
-    const row = getDB().getFirstSync<{ maxDue: number | null }>(
-        `SELECT MAX(due) AS maxDue FROM anki_cards WHERE type = 0${excludedCardId === undefined ? '' : ' AND id != ?'}`,
-        ...(excludedCardId === undefined ? [] : [excludedCardId]),
-    );
-    return Math.max(0, Math.floor(row?.maxDue ?? 0)) + 1;
-}
-
-/** Anki's "Forget": discards all scheduling progress and returns the card to brand-new. */
-export function forgetCard(cardId: number, settings: AppSettings): ReviewLog | null {
-    const card = getAnkiCard(cardId);
-    if (!card) return null;
-    // Anki's `schedule_as_new` drops the FSRS memory state: the card's next answer is a first
-    // review again. The recorded review time, desired retention and decay stay on the card.
-    const freshState: CardState = { ...makeDefaultCardState(cardId, settings), memoryState: null };
-    saveAnkiCard({
-        ...cardStateToAnkiCard(card, freshState, settings),
-        // A forgotten card joins the back of the new queue. Without this it would keep the `due`
-        // it held as a review card — a day number read as a queue position of ~20 000.
-        due: nextNewCardPosition(cardId),
-    });
-    // The reset marker has to outlive the card's own fields: it is the only thing that tells FSRS
-    // to stop replaying the history from before the user forgot the card.
-    return logManualEntry(card, 'reset', 0, card.ivl);
 }
 
 export function getCardState(cardId: number, settings: AppSettings): CardState {

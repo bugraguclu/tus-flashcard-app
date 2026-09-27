@@ -494,6 +494,22 @@
       "url": "https://github.com/ankitects/anki/blob/e64c6b1aee3e8d668fb8bbe084beada8e070d985/rust-toolchain.toml",
       "license": "AGPL-3.0-or-later; version reference only",
       "useFor": ["Rust 1.92.0, which fixes the unstable sort's tie order"]
+    },
+    {
+      "id": "anki-source-schedule-as-new",
+      "priority": 3,
+      "platform": "cross-platform Reset Card (formerly Forget)",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/new.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["schedule_as_new: restore position, reset counts, drop memory state", "reschedule_cards_as_new remembers the options per context", "the manual review-log row a reset writes"]
+    },
+    {
+      "id": "anki-source-forget-dialog",
+      "priority": 3,
+      "platform": "desktop Reset Card dialog",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/operations/scheduling.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["the two checkboxes and their remembered defaults", "reviewer and browser contexts"]
     }
   ],
   "requiredDocs": [

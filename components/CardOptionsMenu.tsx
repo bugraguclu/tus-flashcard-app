@@ -8,6 +8,7 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
+    Switch,
     Text,
     TextInput,
     TouchableOpacity,
@@ -21,8 +22,9 @@ import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type Color
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import { parseDueRange } from '../lib/schedulingIntervals';
+import type { ResetCardOptions } from '../lib/resetCards';
 
-type MenuView = 'menu' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'tags';
+type MenuView = 'menu' | 'dueDate' | 'bury' | 'suspend' | 'reschedule' | 'reset' | 'tags';
 type ReviewerMenuIcon =
     | 'undo'
     | 'redo'
@@ -55,7 +57,9 @@ export interface CardOptionsMenuProps {
     onReplayAudio: () => void;
     onBuryCard: () => void;
     onSuspendCard: () => void;
-    onForgetCard: () => void;
+    /** Anki's Reset Card; its options open at the last choice made in the reviewer. */
+    loadResetCardDefaults: () => ResetCardOptions;
+    onResetCard: (options: ResetCardOptions) => void;
     onSetDueDate: (spec: string) => void;
     onDeckOptions: () => void;
     onCardInfo?: () => void;
@@ -104,6 +108,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const [dueDateInput, setDueDateInput] = useState('1');
     const dueDateSpecValid = parseDueRange(dueDateInput) !== null;
     const [tagsInput, setTagsInput] = useState('');
+    const [resetOptions, setResetOptions] = useState<ResetCardOptions>({ restorePosition: true, resetCounts: false });
 
     useEffect(() => {
         if (!props.visible) return;
@@ -126,6 +131,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     useEffect(() => {
         if (view === 'tags') setTagsInput(props.noteTags);
     }, [view, props.noteTags]);
+
 
     const close = () => {
         if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
@@ -150,7 +156,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
     const goToParent = () => {
         if (view === 'tags' || view === 'dueDate') Keyboard.dismiss();
-        setView(view === 'dueDate' ? 'reschedule' : 'menu');
+        setView(view === 'dueDate' || view === 'reset' ? 'reschedule' : 'menu');
     };
     const sheetTitle = view === 'dueDate'
         ? l('Son tarihi ayarla', 'Set due date')
@@ -160,7 +166,9 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                 ? l('Askıya al', 'Suspend')
                 : view === 'reschedule'
                     ? l('Yeniden zamanla', 'Reschedule')
-                    : l('Etiketleri düzenle', 'Edit tags');
+                    : view === 'reset'
+                        ? l('Kartı sıfırla', 'Reset card')
+                        : l('Etiketleri düzenle', 'Edit tags');
 
     const hasCard = props.hasCurrentCard !== false;
     // Anki names its history entries after the operation they act on ("Undo Bury Card"), which is
@@ -380,13 +388,11 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     styles={styles}
                                     colors={colors}
                                     icon="redo"
-                                    label={l('Kartı unut…', 'Forget card…')}
-                                    onPress={() => confirmAndClose(
-                                        l('Kartı unut', 'Forget card'),
-                                        l('Bu kartın tüm zamanlama ilerlemesi silinir ve kart Yeni durumuna sıfırlanır. Bu işlem geri alınamaz.', 'All scheduling progress for this card will be deleted and the card will be reset to New. This cannot be undone.'),
-                                        props.onForgetCard,
-                                        true,
-                                    )}
+                                    label={l('Kartı sıfırla…', 'Reset card…')}
+                                    onPress={() => {
+                                        setResetOptions(props.loadResetCardDefaults());
+                                        setView('reset');
+                                    }}
                                 />
                             </>
                         )}
@@ -405,6 +411,35 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 />
                                 <TouchableOpacity style={styles.confirmBtn} onPress={() => runAndClose(() => props.onSaveTags(tagsInput))}>
                                     <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {view === 'reset' && (
+                            <View style={styles.formContent}>
+                                <Text style={styles.subDesc}>
+                                    {l('Kart Yeni durumuna döner. Tekrar geçmişi korunur.', 'The card goes back to New. Its review history is kept.')}
+                                </Text>
+                                <OptionSwitch
+                                    styles={styles}
+                                    colors={colors}
+                                    label={l('Mümkünse ilk sırasına geri koy', 'Restore original position where possible')}
+                                    value={resetOptions.restorePosition}
+                                    onChange={(restorePosition) => setResetOptions((current) => ({ ...current, restorePosition }))}
+                                />
+                                <OptionSwitch
+                                    styles={styles}
+                                    colors={colors}
+                                    label={l('Tekrar ve unutma sayılarını sıfırla', 'Reset repetition and lapse counts')}
+                                    value={resetOptions.resetCounts}
+                                    onChange={(resetCounts) => setResetOptions((current) => ({ ...current, resetCounts }))}
+                                />
+                                <TouchableOpacity
+                                    style={styles.confirmBtn}
+                                    onPress={() => runAndClose(() => props.onResetCard(resetOptions))}
+                                    accessibilityRole="button"
+                                >
+                                    <Text style={styles.confirmBtnText}>{l('Sıfırla', 'Reset')}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -465,6 +500,26 @@ function MenuRow({ styles, colors, icon, label, onPress, chevron, disabled = fal
             <Text style={[styles.rowLabel, disabled && styles.rowLabelDisabled]}>{label}</Text>
             {chevron && <Text style={styles.rowChevron}>›</Text>}
         </TouchableOpacity>
+    );
+}
+
+function OptionSwitch({ styles, colors, label, value, onChange }: {
+    styles: ReturnType<typeof createStyles>;
+    colors: ColorScheme;
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+}) {
+    return (
+        <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>{label}</Text>
+            <Switch
+                value={value}
+                onValueChange={onChange}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                accessibilityLabel={label}
+            />
+        </View>
     );
 }
 
@@ -584,6 +639,15 @@ function createStyles(colors: ColorScheme) {
             marginRight: 14,
         },
         formContent: { paddingTop: Spacing.md },
+        switchRow: {
+            minHeight: 48,
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: Spacing.md,
+            marginBottom: Spacing.sm,
+            gap: Spacing.sm,
+        },
+        switchLabel: { flex: 1, color: colors.textPrimary, fontSize: 15, lineHeight: 20 },
         subDesc: { color: colors.textSecondary, fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
         textInput: {
             minHeight: 48,

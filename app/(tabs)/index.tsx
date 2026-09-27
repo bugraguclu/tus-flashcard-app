@@ -77,15 +77,17 @@ import DeckPickerModal from '../../components/DeckPickerModal';
 import CatalogUnlockSheet from '../../components/CatalogUnlockSheet';
 import {
     answerStudyCard,
-    forgetCard,
     getDeckTotalCardCount,
+    getResetCardDefaults,
     getStudyQueue,
     getWaitingLearningCardIds,
+    resetCardsToNew,
     resolveSettingsForDeck,
     setCardBuried,
     setCardSuspended,
     undoAnswer,
     type AnswerSideEffects,
+    type ResetCardOptions,
 } from '../../lib/studyRepository';
 import { loadBalancerForCard } from '../../lib/loadBalancerSession';
 import { useI18n } from '../../hooks/useI18n';
@@ -1290,12 +1292,13 @@ export default function StudyScreen() {
         invalidateCollection();
     }, [currentCard, invalidateCollection, recordUndoableOp]);
 
-    const handleForgetCard = useCallback(() => {
+    const handleResetCard = useCallback((options: ResetCardOptions) => {
         if (!currentCard) return;
-        recordUndoableOp('forgetCard', [currentCard.cardId], [], () => [forgetCard(currentCard.cardId, settings)]);
+        recordUndoableOp('forgetCard', [currentCard.cardId], [], () => resetCardsToNew([currentCard.cardId], options, 'reviewer'));
         markSchedulingStale();
         buildQueue();
-    }, [currentCard, settings, markSchedulingStale, buildQueue, recordUndoableOp]);
+    }, [currentCard, markSchedulingStale, buildQueue, recordUndoableOp]);
+    const loadResetCardDefaults = useCallback(() => getResetCardDefaults('reviewer'), []);
 
     const handleSetDueDate = useCallback((spec: string) => {
         if (!currentCard) return;
@@ -3095,7 +3098,8 @@ export default function StudyScreen() {
                 onReplayAudio={replayAudio}
                 onBuryCard={handleBury}
                 onSuspendCard={handleToggleSuspendCard}
-                onForgetCard={handleForgetCard}
+                loadResetCardDefaults={loadResetCardDefaults}
+                onResetCard={handleResetCard}
                 onSetDueDate={handleSetDueDate}
                 onDeckOptions={handleDeckOptions}
                 onCardInfo={currentCard ? handleCardInfo : undefined}

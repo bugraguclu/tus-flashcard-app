@@ -15,7 +15,7 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
 - A screen's pieces (dialogs, rows, toolbars, styles) live in `components/<feature>/`: `editor`,
   `deck-options`, `browser`, `photo-editor`, `import`, `stats`. Shared components sit in `components/`.
 - Study data: `lib/studyRepository.ts` re-exports `studyQueue` (today's queue), `studyAnswer`
-  (answer, undo, suspend, bury, forget), `filteredDeckQueue`, `browserRepository` (browser queries),
+  (answer, undo, suspend, bury), `resetCards` (Reset Card), `filteredDeckQueue`, `browserRepository` (browser queries),
   `studyCardRows` and `studySearchSql` (search to SQL). Queue ordering is `lib/queueBuild.ts`,
   review logging `lib/reviewLogger.ts`.
 - Scheduling: `lib/scheduler.ts` (classic), `lib/fsrs*.ts` (FSRS), `lib/ankiState.ts` (card state,
