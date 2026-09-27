@@ -165,3 +165,53 @@ export function ankiWeightedIndex(weights: readonly number[], rng: AnkiStdRng): 
     }
     return low;
 }
+
+/**
+ * `(0..length).collect::<Vec<_>>().shuffle(rng)` as rand 0.9 does it: a forward Fisher–Yates
+ * whose swap positions come from `IncreasingUniform`, which draws one u32 and spends it on as
+ * many consecutive positions as fit (`seq/increasing_uniform.rs`). fsrs-rs shuffles its training
+ * batches this way.
+ */
+export function ankiShuffledIndices(length: number, rng: AnkiStdRng): number[] {
+    const indices = Array.from({ length }, (_, index) => index);
+    if (length <= 1) return indices;
+    let n = 0;
+    let chunk = 0;
+    let chunkRemaining = 1;
+    for (let position = 0; position < length; position++) {
+        const nextN = n + 1;
+        let nextRemaining: number;
+        if (chunkRemaining > 0) {
+            nextRemaining = chunkRemaining - 1;
+        } else {
+            const [bound, remaining] = increasingUniformBound(nextN);
+            chunk = rng.rangeU32(0, bound);
+            nextRemaining = remaining - 1;
+        }
+        let index: number;
+        if (nextRemaining === 0) {
+            index = chunk;
+        } else {
+            index = chunk % nextN;
+            chunk = Math.floor(chunk / nextN);
+        }
+        chunkRemaining = nextRemaining;
+        n = nextN;
+        const held = indices[position];
+        indices[position] = indices[index];
+        indices[index] = held;
+    }
+    return indices;
+}
+
+/** `calculate_bound_u32`: m·(m+1)·…, as far as it fits in a u32, and how many factors that is. */
+function increasingUniformBound(m: number): [number, number] {
+    let product = m;
+    let current = m + 1;
+    for (;;) {
+        const next = product * current;
+        if (next > 0xffff_ffff) return [product, current - m];
+        product = next;
+        current += 1;
+    }
+}

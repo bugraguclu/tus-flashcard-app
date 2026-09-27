@@ -22,8 +22,7 @@ vi.mock('./db', () => ({
 }));
 
 import {
-    collectFsrsTrainingHistories,
-    countFsrsTrainingReviews,
+    collectFsrsTrainingItems,
     rebuildFsrsMemoryStates,
 } from './fsrsMaintenance';
 
@@ -234,8 +233,8 @@ describe('rebuilding memory states', () => {
     });
 });
 
-describe('training histories', () => {
-    it('collects complete histories and counts their predictable reviews', () => {
+describe('training items', () => {
+    it('makes an item of every spaced review on cards whose log starts with learning, in log order', () => {
         insertCard(2001);
         insertRevlog(2001, [
             { daysAgo: 30, ease: 3, ivl: 1, type: REVLOG_KIND.learning },
@@ -249,10 +248,21 @@ describe('training histories', () => {
             { daysAgo: 10, ease: 3, ivl: 20, type: REVLOG_KIND.review },
         ]);
 
-        const histories = collectFsrsTrainingHistories(settings, {}, NOW);
+        const { items, reviews } = collectFsrsTrainingItems([1], settings, 0, NOW);
 
-        expect(histories).toHaveLength(1);
-        expect(histories[0].reviews).toHaveLength(3);
-        expect(countFsrsTrainingReviews(histories)).toBe(2);
+        expect(items.map((item) => item.length)).toEqual([2, 3]);
+        expect(items[0].revlogId).toBeLessThan(items[1].revlogId);
+        expect(reviews).toBe(3);
+    });
+
+    it('leaves out suspended cards, as Anki\'s default search does', () => {
+        insertCard(2003);
+        insertRevlog(2003, [
+            { daysAgo: 30, ease: 3, ivl: 1, type: REVLOG_KIND.learning },
+            { daysAgo: 29, ease: 3, ivl: 3, type: REVLOG_KIND.review },
+        ]);
+        dbHolder.db.runSync('UPDATE anki_cards SET queue = -1 WHERE id = 2003');
+
+        expect(collectFsrsTrainingItems([1], settings, 0, NOW).items).toHaveLength(0);
     });
 });

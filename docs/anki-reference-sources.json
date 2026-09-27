@@ -550,6 +550,54 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/storage/revlog/studied_today.sql",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["every answer counts, including filtered previews; manual and rescheduled rows do not"]
+    },
+    {
+      "id": "fsrs-rs-5.2.0-training",
+      "priority": 2,
+      "platform": "FSRS optimizer Anki 26.05 runs",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/tree/v5.2.0/src",
+      "license": "BSD-3-Clause; ported with attribution, verified against Anki output",
+      "useFor": ["compute_parameters: outlier filter, pre-training, recency weights, batching, five epochs, best epoch", "parameter_initialization.rs ternary search and smooth_and_fill", "batch_shuffle.rs and cosine_annealing.rs", "evaluate log loss"]
+    },
+    {
+      "id": "burn-0.17.1-adam",
+      "priority": 3,
+      "platform": "Optimizer fsrs-rs trains with",
+      "url": "https://github.com/tracel-ai/burn/blob/v0.17.1/crates/burn-core/src/optim/adam.rs",
+      "license": "MIT OR Apache-2.0; algorithm reimplemented in f32, verified against Anki output",
+      "useFor": ["Adam moments and bias correction in f32", "clamp and mask_where gradients (autodiff defaults)"]
+    },
+    {
+      "id": "rand-0.9.4-shuffle",
+      "priority": 3,
+      "platform": "Batch shuffling fsrs-rs relies on",
+      "url": "https://github.com/rust-random/rand/blob/0.9.4/src/seq/increasing_uniform.rs",
+      "license": "MIT OR Apache-2.0; algorithm reimplemented, verified against Anki output",
+      "useFor": ["SliceRandom::shuffle through IncreasingUniform"]
+    },
+    {
+      "id": "ndarray-0.16.1-sum",
+      "priority": 3,
+      "platform": "Summation order behind fsrs-rs losses",
+      "url": "https://github.com/rust-ndarray/ndarray/blob/0.16.1/src/numeric_util.rs",
+      "license": "MIT OR Apache-2.0; algorithm reimplemented",
+      "useFor": ["eightfold unrolled_fold used by sum()"]
+    },
+    {
+      "id": "anki-source-compute-params",
+      "priority": 3,
+      "platform": "cross-platform Optimize button",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/fsrs/params.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["fsrs_items_for_training and reviews_for_fsrs(training)", "keeping current parameters unless the log loss improves", "short-term check with several relearning steps"]
+    },
+    {
+      "id": "anki-source-fsrs-options-ui",
+      "priority": 3,
+      "platform": "cross-platform Optimize button",
+      "url": "https://github.com/ankitects/anki/blob/main/ts/routes/deck-options/FsrsOptions.svelte",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["default search preset:\"name\" -is:suspended", "relearning steps counted within a day", "already optimal at four decimals", "pressing Optimize again aborts"]
     }
   ],
   "requiredDocs": [

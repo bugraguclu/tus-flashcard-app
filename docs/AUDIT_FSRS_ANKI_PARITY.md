@@ -492,3 +492,32 @@ Uygulamada bekleme süresi destede (`filteredPreviewDue`) saklanıyor, uygulama 
 korunuyor. Önizleme cevabı geri alınabiliyor. Ölçüm: Anki'den 6 tur, 72 cevap (FSRS açık ve kapalı,
 gün sınırını aşan gecikmeler dahil). Revlog satırları ve kart verisi birebir aynı, geri dönüş
 zamanı saniye içinde aynı.
+
+## 5. "Optimize et" Anki'nin eğitimi değildi — kapatıldı
+
+Uygulamanın optimizer'ı sayısal türevli, 2 000 öğeyle ve 15 turla sınırlı bir Adam'dı. Bütün
+koleksiyonu kullanıyordu, askıdaki kartları da alıyordu. Anki'nin parametrelerinden tamamen farklı
+sonuç veriyordu. Artık Anki'nin `compute_params` + fsrs-rs 5.2.0 `compute_parameters` yolu adım
+adım uygulanıyor:
+
+- Öğeler Anki'nin varsayılan aramasıyla (`preset:"ad" -is:suspended`) toplanıyor.
+  `fsrs_items_for_training` kurallarıyla kuruluyor, son tekrarın revlog kimliğine göre sıralanıyor.
+- Aykırı (ilk puan, ilk aralık) çiftleri atılıyor. İlk kararlılıklar f64 üçlü aramayla ön
+  eğitiliyor ve `smooth_and_fill` ile düzeltiliyor.
+- Öğeler yakınlığa göre ağırlıklanıyor, 64 tekrardan uzunları atılıyor. Uzunluğa göre sıralanıp
+  512'lik gruplara bölünüyor. Beş tur boyunca gruplar rand 0.9'un `shuffle`'ı (StdRng tohum 2023)
+  ile karıştırılıyor.
+- Her grup Burn 0.17.1'in Adam'ının (eps 1e-8) bir adımı: kosinüs öğrenme hızı, ağırlıklı log
+  loss + başlangıca L2 çekimi. Her adımdan sonra parametreler kırpılıyor. En düşük kayıplı tur
+  seçiliyor.
+- Türevler modelin f32 hesabının ters modda türevi (`lib/fsrsTraining.ts`).
+- Sonuç, log loss'u mevcut parametrelerden iyi değilse benimsenmiyor. Birden çok günlük yeniden
+  öğrenme adımında Anki'nin kısa vade kontrolü uygulanıyor. "Zaten uygun" kontrolü 4 ondalıkla.
+  Eğitim ekranı dondurmadan gruplar arasında nefes alıyor, düğmeye yeniden basınca duruyor.
+
+Ölçüm: Anki'nin `compute_fsrs_params_from_items`'ı ve bir koleksiyon üzerinde
+`compute_fsrs_params`'ı, simüle edilmiş öğrencilerle 9 veri kümesinde çalıştırıldı (123 – 6 875
+öğe). Her parametre Anki'ninkinden en çok 5·10⁻⁷ uzakta. 4 ondalıkta 21 parametrenin 21'i her
+kümede aynı. Koleksiyon yolunda öğe sayısı ve Anki'nin log loss'u birebir. Web sürümünde Anki'den
+dışa aktarılmış 400 kartlık bir paket içe aktarılıp "Optimize et"e basıldı. Çıkan 21 parametre
+Anki'nin sonucuyla gösterilen 6 ondalıkta aynı.

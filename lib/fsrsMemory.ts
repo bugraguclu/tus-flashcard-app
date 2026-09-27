@@ -190,6 +190,63 @@ export function fsrsReviewHistory(
     return { reviews, complete, firstGraded: selected[0] ?? null };
 }
 
+/** One training example: a card's reviews up to one that came on a later day than the one before. */
+export interface FsrsTrainingItem {
+    /** The card's filtered reviews; the item is the first `length` of them. */
+    reviews: readonly FsrsReview[];
+    length: number;
+    /** The review-log id of the item's last review. Anki trains on items in this order. */
+    revlogId: number;
+}
+
+/**
+ * The training items one card's log yields, as `reviews_for_fsrs` builds them when training
+ * (`rslib/src/scheduler/fsrs/params.rs`). A card without a learning run, or whose last learning
+ * run began before the ignore-before date, yields nothing: training never seeds a state from SM-2.
+ * `answers` is how many of the card's answers the items draw on.
+ */
+export function fsrsTrainingItemsForCard(
+    entries: readonly FsrsRevlogEntry[],
+    nextDayAtMs: number,
+    ignoreRevlogsBeforeMs: number = 0,
+): { items: FsrsTrainingItem[]; answers: number } {
+    const none = { items: [], answers: 0 };
+    const ordered = [...entries].sort((a, b) => a.id - b.id);
+
+    let firstOfLastLearnRun: number | null = null;
+    let firstUserGradeIndex: number | null = null;
+    for (let index = ordered.length - 1; index >= 0; index--) {
+        const entry = ordered[index];
+        if (isCramming(entry)) continue;
+        const withinCutoff = entry.id > ignoreRevlogsBeforeMs;
+        const interday = entry.ivl >= 1 || entry.ivl <= -86_400;
+        if (hasRating(entry) && withinCutoff && interday) firstUserGradeIndex = index;
+
+        if (hasRating(entry) && entry.type === REVLOG_KIND.learning) {
+            firstOfLastLearnRun = index;
+        } else if (isReset(entry)) {
+            if (firstOfLastLearnRun !== null || firstUserGradeIndex !== null) break;
+            return none;
+        } else if (firstOfLastLearnRun !== null) {
+            break;
+        }
+    }
+    if (firstOfLastLearnRun === null || ordered[firstOfLastLearnRun].id < ignoreRevlogsBeforeMs) return none;
+
+    const selected = ordered.slice(firstOfLastLearnRun).filter(affectsScheduling);
+    const reviews: FsrsReview[] = selected.map((entry, index) => ({
+        rating: Math.min(4, Math.max(1, Math.round(entry.ease))) as FsrsRating,
+        deltaDays: index === 0
+            ? 0
+            : Math.max(0, daysElapsed(selected[index - 1], nextDayAtMs) - daysElapsed(entry, nextDayAtMs)),
+    }));
+    const items: FsrsTrainingItem[] = [];
+    for (let index = 1; index < reviews.length; index++) {
+        if (reviews[index].deltaDays > 0) items.push({ reviews, length: index + 1, revlogId: selected[index].id });
+    }
+    return items.length > 0 ? { items, answers: selected.length } : none;
+}
+
 export interface FsrsCardForMemory {
     /** Current interval in days; 0 for a card that was never scheduled in days. */
     interval: number;

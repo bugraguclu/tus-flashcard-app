@@ -94,6 +94,13 @@ change. What that pins:
   a separate `nextPos` counter;
 - retrievability for card info, the review sort orders and `prop:r`: seconds since `lrt`, the
   card's own decay (0.5 when it has none);
+- "Optimize" (`lib/fsrsTraining.ts`, `lib/fsrsPretrain.ts`, `lib/fsrsOptimizer.ts`): Anki's
+  `compute_params` around fsrs-rs 5.2.0's trainer. It gathers the preset's unsuspended cards,
+  builds items as `fsrs_items_for_training` does, drops outliers, pre-trains the starting
+  stabilities, and trains five epochs of Burn 0.17.1's Adam on shuffled length-sorted batches
+  (seed 2023) with the cosine learning rate and the L2 pull. It keeps the best epoch and adopts
+  the result only when its log loss beats the current parameters. On items recorded from Anki,
+  every parameter lands within 5e-7 of Anki's (`lib/fsrsTraining.test.ts`);
 - the browser's retrievability column sort and a filtered deck's gather orders
   (`lib/ankiSortKeys.ts`): Anki's `extract_fsrs_retrievability`,
   `extract_fsrs_relative_retrievability` and `fnvhash` tiebreak, computed in f32 in JS because
@@ -102,8 +109,7 @@ change. What that pins:
 Full item-by-item record in `docs/AUDIT_FSRS_ANKI_PARITY.md`
 
 **Next compatibility gate:** Known differences: memory states differ in the last bits in about 1% of cases because the platform's exp/pow
-are not correctly rounded (intervals never differed in the recorded vectors); the optimizer is not
-Anki's trainer and will not reproduce its numbers; a filtered deck's `prop:r` compares in 64-bit SQL, which can only differ from Anki's 32-bit value
+are not correctly rounded (intervals never differed in the recorded vectors); a filtered deck's `prop:r` compares in 64-bit SQL, which can only differ from Anki's 32-bit value
 for a card within about a second of the threshold. Still to add:
 retention/true-retention graphs and the FSRS simulator
 

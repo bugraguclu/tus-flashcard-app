@@ -11,6 +11,7 @@ Usage (from scripts/anki-oracle, after running the generators):
     ./run.sh gen_forget.py 3 60 forget.json
     ./run.sh gen_sortkeys.py 5 120 sortkeys.json
     ./run.sh gen_preview.py 4 6 preview.json
+    ./run.sh gen_optimize.py 8 optimize.json small
     python3 build_fixture.py ../../test/fixtures/anki-26.05-fsrs.json
 """
 import json
@@ -58,7 +59,7 @@ def compact(node):
 states, memory, answers = load("states.json"), load("memory.json"), load("answers.json")
 fuzz, lb, resched = load("fuzz.json"), load("lb.json"), load("resched.json")
 resched_lb, forget, sortkeys = load("resched_lb.json"), load("forget.json"), load("sortkeys.json")
-preview = load("preview.json")
+preview, optimize = load("preview.json"), load("optimize.json")
 
 
 def compact_resched_round(rnd):
@@ -92,6 +93,7 @@ fixture = {
     "resetCards": forget["cases"],
     "sortKeys": sortkeys,
     "previewAnswers": preview["rounds"],
+    "optimize": optimize,
 }
 for rnd in lb["rounds"][:3]:
     window = [[c["id"], c["nid"], c["due"] - rnd["today"]] for c in rnd["snapshot"] if 0 <= c["due"] - rnd["today"] < 99]

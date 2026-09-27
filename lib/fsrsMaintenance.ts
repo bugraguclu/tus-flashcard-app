@@ -28,9 +28,11 @@ import {
     fsrsLastReviewInfo,
     fsrsMemoryStateForCard,
     fsrsReviewHistory,
+    fsrsTrainingItemsForCard,
     type FsrsLastReviewInfo,
     type FsrsRevlogEntry,
     type FsrsReviewHistory,
+    type FsrsTrainingItem,
 } from './fsrsMemory';
 import { desiredRetentionFor, fsrsParametersFor, recordedDecayFor } from './fsrsScheduler';
 import { withReviewFuzz } from './schedulingIntervals';
@@ -440,27 +442,26 @@ export function clearFsrsMemoryStates(nowMs: number = Date.now()): number {
 }
 
 /**
- * Review histories for the optimizer. Only cards whose log reaches back to a learning step are
- * returned, because a truncated history has no trustworthy starting state to train from.
+ * The optimizer's training items for these decks, as Anki's `compute_params` gathers them with
+ * its default search (`preset:"name" -is:suspended`): every unsuspended card, each card's log made
+ * into items by `fsrs_items_for_training`, all ordered by the review that ends them. `reviews` is
+ * how many answers the items draw on.
  */
-export function collectFsrsTrainingHistories(
+export function collectFsrsTrainingItems(
+    deckIds: number[],
     settings: AppSettings,
-    options: { deckIds?: number[]; ignoreRevlogsBeforeMs?: number } = {},
+    ignoreRevlogsBeforeMs: number,
     nowMs: number = Date.now(),
-): FsrsReviewHistory[] {
-    const db = getDB();
-    const scope = deckScopeClause(options.deckIds);
-    const rows = db.getAllSync<{ id: number; cardId: number; ease: number; ivl: number; factor: number; type: number }>(
+): { items: FsrsTrainingItem[]; reviews: number } {
+    const scope = deckScopeClause(deckIds);
+    const rows = getDB().getAllSync<{ id: number; cardId: number; ease: number; ivl: number; factor: number; type: number }>(
         `SELECT r.id, r.cardId, r.ease, r.ivl, r.factor, r.type
          FROM revlog r
          JOIN anki_cards c ON c.id = r.cardId
-         WHERE 1=1${scope.sql}
+         WHERE c.queue != -1${scope.sql}
          ORDER BY r.cardId, r.id`,
         ...scope.params,
     );
-
-    const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
-    const ignoreBefore = options.ignoreRevlogsBeforeMs ?? settings.ignoreRevlogsBeforeMs ?? 0;
 
     const byCard = new Map<number, FsrsRevlogEntry[]>();
     for (const row of rows) {
@@ -469,15 +470,14 @@ export function collectFsrsTrainingHistories(
         byCard.set(row.cardId, entries);
     }
 
-    const histories: FsrsReviewHistory[] = [];
+    const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
+    const items: FsrsTrainingItem[] = [];
+    let reviews = 0;
     for (const entries of byCard.values()) {
-        const history = fsrsReviewHistory(entries, nextDayAtMs, ignoreBefore);
-        if (history && history.complete && history.reviews.length > 1) histories.push(history);
+        const card = fsrsTrainingItemsForCard(entries, nextDayAtMs, ignoreRevlogsBeforeMs);
+        items.push(...card.items);
+        reviews += card.answers;
     }
-    return histories;
-}
-
-/** How many reviews are available to train on, for the deck-options summary line. */
-export function countFsrsTrainingReviews(histories: readonly FsrsReviewHistory[]): number {
-    return histories.reduce((total, history) => total + Math.max(0, history.reviews.length - 1), 0);
+    items.sort((a, b) => a.revlogId - b.revlogId);
+    return { items, reviews };
 }

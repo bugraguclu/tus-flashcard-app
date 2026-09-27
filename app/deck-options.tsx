@@ -72,15 +72,8 @@ import {
     parseFsrsCutoffDate,
     parseFsrsParameterText,
 } from '../lib/fsrs';
+import { optimizeFsrsPreset } from '../lib/fsrsOptimizer';
 import {
-    FSRS_MIN_TRAINING_REVIEWS,
-    FSRS_RECOMMENDED_TRAINING_REVIEWS,
-    buildFsrsTrainingItems,
-    optimizeFsrsParameters,
-} from '../lib/fsrsOptimizer';
-import {
-    collectFsrsTrainingHistories,
-    countFsrsTrainingReviews,
     clearFsrsMemoryStates,
     decksNeedingMemoryRecompute,
     fsrsDeckInputsByDeck,
@@ -173,6 +166,9 @@ export default function DeckOptionsScreen() {
     /** Set by the optimizer so the save can record when these parameters were fitted. */
     const [optimizedAtMs, setOptimizedAtMs] = useState<number | null>(null);
     const [optimizing, setOptimizing] = useState(false);
+    // Share of the training done, while "Optimize" runs; pressing it again stops the run.
+    const [optimizeProgress, setOptimizeProgress] = useState(0);
+    const stopOptimizingRef = useRef(false);
     const [saveMessage, setSaveMessage] = useState('');
     const [deckPickerOpen, setDeckPickerOpen] = useState(false);
     const [presetPickerOpen, setPresetPickerOpen] = useState(false);
@@ -538,76 +534,63 @@ export default function DeckOptionsScreen() {
     };
 
     /**
-     * Anki's "Optimize" button. Training runs on the JS thread, so the interactive path is capped
-     * to a few thousand reviews and a short schedule; that is enough to move the parameters off
-     * the defaults without freezing the screen.
+     * Anki's "Optimize" button: train on the preset's own history the way Anki trains, and keep
+     * the current parameters when they already explain it at least as well. Training yields to
+     * the screen between batches; pressing the button again stops it, as in Anki.
      */
-    const INTERACTIVE_TRAINING_ITEM_CAP = 2000;
-    const INTERACTIVE_TRAINING_ITERATIONS = 15;
-
-    const handleOptimizeFsrs = () => {
+    const handleOptimizeFsrs = async () => {
         Keyboard.dismiss();
-        if (optimizing) return;
+        if (optimizing) {
+            stopOptimizingRef.current = true;
+            return;
+        }
+        stopOptimizingRef.current = false;
+        setOptimizeProgress(0);
         setOptimizing(true);
         try {
-            const ignoreBefore = parseFsrsCutoffDate(form.ignoreRevlogsBefore);
-            const histories = collectFsrsTrainingHistories(settings, { ignoreRevlogsBeforeMs: ignoreBefore });
-            const reviewCount = countFsrsTrainingReviews(histories);
+            const current = parseFsrsParameterText(form.fsrsParams) ?? [];
+            const result = await optimizeFsrsPreset({
+                deckIds: getDecksUsingConfig(configId).map((presetDeck) => presetDeck.id),
+                settings,
+                currentParameters: current,
+                relearningStepsMinutes: parseAnkiStepText(form.relearningSteps, true) ?? [],
+                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore) ?? 0,
+                onProgress: (done, total) => {
+                    setOptimizeProgress(done / total);
+                    return !stopOptimizingRef.current;
+                },
+            });
+            if (!result) return;
 
-            if (reviewCount < FSRS_MIN_TRAINING_REVIEWS) {
+            if (result.alreadyOptimal && result.items === 0) {
                 alert(
-                    l('Yeterli geçmiş yok', 'Not enough history'),
-                    l(
-                        `Optimizasyon için en az ${FSRS_MIN_TRAINING_REVIEWS} tekrar gerekiyor; şu an ${reviewCount} var. Bir süre daha çalışıp tekrar deneyin.`,
-                        `Optimizing needs at least ${FSRS_MIN_TRAINING_REVIEWS} reviews; there are ${reviewCount}. Study a while longer and try again.`,
-                    ),
+                    l('Eğitilecek tekrar yok', 'No reviews to train on'),
+                    l('Bu ayar grubunun kartlarında henüz optimizasyonda kullanılabilecek tekrar yok.', 'The cards of this preset have no reviews optimization can use yet.'),
                 );
                 return;
             }
-
-            const items = buildFsrsTrainingItems(histories, INTERACTIVE_TRAINING_ITEM_CAP);
-            // Train inside the box Anki's trainer uses, which depends on the preset being edited:
-            // extra relearning steps lower the shared w17/w18 ceiling, and same-day repeats put a
-            // floor under w19. An unparseable steps field falls back to the single-step ceiling.
-            const relearningSteps = parseAnkiStepText(form.relearningSteps, true);
-            const result = optimizeFsrsParameters(items, {
-                initialParameters: parseFsrsParameterText(form.fsrsParams) ?? undefined,
-                iterations: INTERACTIVE_TRAINING_ITERATIONS,
-                clamp: {
-                    numRelearningSteps: relearningSteps?.length ?? 1,
-                    enableShortTerm: form.fsrsShortTermWithSteps,
-                },
-            });
-
-            if (!result.improved) {
+            if (result.alreadyOptimal) {
                 alert(
-                    l('Parametreler zaten uygun', 'Parameters already fit'),
-                    l(
-                        'Mevcut parametreler bu geçmişi daha iyi açıklıyor; değişiklik yapılmadı.',
-                        'The current parameters already explain this history best; nothing was changed.',
-                    ),
+                    l('Parametreler zaten uygun', 'Parameters already optimal'),
+                    l('Mevcut parametreler bu geçmişi en iyi açıklıyor; değişiklik yapılmadı.', 'Your parameters are already optimal; nothing was changed.'),
                 );
                 return;
             }
 
             set('fsrsParams', formatFsrsParameterText(result.parameters));
             setOptimizedAtMs(Date.now());
-            const warning = reviewCount < FSRS_RECOMMENDED_TRAINING_REVIEWS
-                ? l(
-                    `\n\nUyarı: ${FSRS_RECOMMENDED_TRAINING_REVIEWS} tekrarın altında sonuçlar oynak olabilir.`,
-                    `\n\nNote: below ${FSRS_RECOMMENDED_TRAINING_REVIEWS} reviews the result can be unstable.`,
-                )
-                : '';
+            const before = result.logLossBefore?.toFixed(4) ?? '—';
+            const after = result.logLossAfter?.toFixed(4) ?? '—';
             alert(
                 l('Parametreler güncellendi', 'Parameters updated'),
                 l(
-                    `${result.after.reviewCount} tekrar üzerinde tahmin hatası ${result.before.logLoss.toFixed(4)} → ${result.after.logLoss.toFixed(4)}. Uygulamak için Kaydet'e basın.${warning}`,
-                    `Prediction error over ${result.after.reviewCount} reviews: ${result.before.logLoss.toFixed(4)} → ${result.after.logLoss.toFixed(4)}. Press Save to apply.${warning}`,
+                    `${result.reviews} tekrar üzerinde tahmin hatası (log loss) ${before} → ${after}. Uygulamak için Kaydet'e basın.`,
+                    `Log loss over ${result.reviews} reviews: ${before} → ${after}. Press Save to apply.`,
                 ),
             );
         } catch (error) {
             console.warn('[DeckOptions] FSRS optimization failed:', error);
-            alert(t('common.error'), l('Parametreler hesaplanamadı.', 'Could not compute the parameters.'));
+            alert(t('common.error'), l('Parametreler hesaplanamadı: geçmiş yeterli değil.', 'Could not compute the parameters: not enough history.'));
         } finally {
             setOptimizing(false);
         }
@@ -720,7 +703,7 @@ export default function DeckOptionsScreen() {
                 fsrsParams: parseFsrsParameterText(form.fsrsParams) ?? undefined,
                 desiredRetention: decimal('desiredRetention'),
                 historicalRetention: decimal('historicalRetention'),
-                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore),
+                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore) ?? 0,
                 // Stamped only by a run of the optimizer, so the "time to optimize again" nudge
                 // measures the age of the fit rather than the age of the last unrelated save.
                 fsrsParamsOptimizedAtMs: optimizedAtMs ?? base.fsrsParamsOptimizedAtMs,
@@ -1298,20 +1281,19 @@ export default function DeckOptionsScreen() {
                             <TouchableOpacity
                                 style={[styles.optimizeButton, optimizing && styles.optimizeButtonBusy]}
                                 onPress={handleOptimizeFsrs}
-                                disabled={optimizing}
                                 accessibilityRole="button"
-                                accessibilityState={{ disabled: optimizing }}
+                                accessibilityHint={optimizing ? l('Durdurmak için dokunun', 'Tap to stop') : undefined}
                             >
                                 <Text style={styles.optimizeButtonText}>
                                     {optimizing
-                                        ? l('Hesaplanıyor…', 'Optimizing…')
+                                        ? l(`Hesaplanıyor… %${Math.round(optimizeProgress * 100)} (durdur)`, `Optimizing… ${Math.round(optimizeProgress * 100)}% (stop)`)
                                         : l('Parametreleri optimize et', 'Optimize parameters')}
                                 </Text>
                             </TouchableOpacity>
                             <Text style={styles.fieldHint}>
                                 {l(
-                                    'Kendi tekrar geçmişinizden 21 parametreyi yeniden hesaplar. Sonuç yalnızca mevcut parametrelerden daha iyi tahmin ediyorsa alana yazılır.',
-                                    'Refits the 21 parameters from your own review history. The result is written to the field only when it predicts better than the current one.',
+                                    'Bu ayar grubunun askıda olmayan kartlarının geçmişinden 21 parametreyi Anki\'nin eğitimiyle yeniden hesaplar. Sonuç yalnızca mevcut parametrelerden daha iyi tahmin ediyorsa alana yazılır.',
+                                    'Refits the 21 parameters from the history of this preset\'s unsuspended cards, the way Anki trains them. The result is written to the field only when it predicts better than the current one.',
                                 )}
                             </Text>
 
