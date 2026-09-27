@@ -1,4 +1,5 @@
 import { getDB } from './db';
+import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
 import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import type { AppSettings, StudyCard } from './types';
 import type { Note, NoteType } from './models';
@@ -7,7 +8,6 @@ import { compileCardMatcher, type CardSearchContext } from './cardSearchMatch';
 import { getDeckByName } from './deckManager';
 import {
     FSRS_DIFFICULTY_SQL,
-    FSRS_RETRIEVABILITY_SQL,
     FSRS_STABILITY_SQL,
     clauseForSearchTerm,
     collectionSearchSettings,
@@ -112,8 +112,50 @@ const BROWSER_SORT_SQL: Record<BrowserCardSortKey, string> = {
     reviews: 'c.reps',
     stability: FSRS_STABILITY_SQL,
     difficulty: FSRS_DIFFICULTY_SQL,
-    retrievability: FSRS_RETRIEVABILITY_SQL,
+    // Ordered in JS after the query, see sortByRetrievability; SQL keeps the card id order.
+    retrievability: 'c.id',
 };
+
+/** The tables every browser query joins; search terms read the note, note type and deck. */
+const BROWSER_FROM = `FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId`;
+
+interface RetrievabilityInputs {
+    cardId: number;
+    due: number;
+    ivl: number;
+    odue: number | null;
+    ankiData: string | null;
+}
+
+/** Each card's retrievability as Anki computes it for its browser column, read at one moment. */
+function retrievabilityByCard(rows: readonly RetrievabilityInputs[]): Map<number, number | null> {
+    const nowMs = Date.now();
+    const today = localDayNumber(nowMs, collectionSearchSettings().rolloverHour);
+    return new Map(rows.map((row) => [row.cardId, ankiCardRetrievability(row, nowMs, today)]));
+}
+
+/**
+ * Anki's retrievability sort (`extract_fsrs_retrievability(...) asc`, rslib/src/search/mod.rs).
+ * It needs fsrs-rs's 32-bit forgetting curve with each card's own decay, which SQLite cannot
+ * compute, so rows are sorted here. A card without a memory state stands where SQLite puts NULL:
+ * first ascending, last descending. Anki leaves equal values in scan order; like every other
+ * column here, they fall back to card id.
+ */
+function sortByRetrievability<T extends { id: number }>(
+    items: T[],
+    retrievability: (item: T) => number | null,
+    descending: boolean,
+): T[] {
+    const keyed = items.map((item) => ({ item, key: retrievability(item) }));
+    keyed.sort((a, b) => {
+        const order = compareSqlAscending(a.key, b.key) || a.item.id - b.item.id;
+        return descending ? -order : order;
+    });
+    return keyed.map(({ item }) => item);
+}
 
 interface BrowserNoteRow {
     noteId: number;
@@ -153,10 +195,11 @@ function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
         // A note's FSRS figures are the average across its cards, matching the interval column.
         stability: `AVG(${FSRS_STABILITY_SQL.replaceAll('c.data', 'c_all.data')})`,
         difficulty: `AVG(${FSRS_DIFFICULTY_SQL.replaceAll('c.data', 'c_all.data')})`,
-        retrievability: `AVG(${FSRS_RETRIEVABILITY_SQL.replaceAll('c.data', 'c_all.data').replaceAll('c.due', 'c_all.due').replaceAll('c.ivl', 'c_all.ivl').replaceAll('c.type', 'c_all.type')})`,
+        // Averaged in JS below, from each card's retrievability as Anki computes it.
+        retrievability: 'n.id',
     };
 
-    return db.getAllSync<BrowserNoteRow>(
+    const rows = db.getAllSync<BrowserNoteRow>(
         `WITH matched_notes AS (
             SELECT DISTINCT c.noteId AS noteId
             FROM anki_cards c
@@ -191,6 +234,41 @@ function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
         GROUP BY n.id
         ORDER BY ${sortSql[query.sortKey ?? 'sortField']} ${direction}, n.id ${direction}`,
         ...where.params,
+    );
+    if (query.sortKey !== 'retrievability') return rows;
+
+    // A note's figure is the mean over its cards that have one, as SQL's AVG would take it.
+    const cards: RetrievabilityInputs[] = [];
+    const noteIds = rows.map((row) => row.noteId);
+    const noteOfCard = new Map<number, number>();
+    for (let index = 0; index < noteIds.length; index += 400) {
+        const chunk = noteIds.slice(index, index + 400);
+        for (const card of db.getAllSync<RetrievabilityInputs & { noteId: number }>(
+            `SELECT c.id AS cardId, c.noteId AS noteId, c.due AS due, c.ivl AS ivl,
+                json_extract(c.data, '$.odue') AS odue, json_extract(c.data, '$.ankiData') AS ankiData
+             FROM anki_cards c WHERE c.noteId IN (${chunk.map(() => '?').join(', ')})`,
+            ...chunk,
+        )) {
+            cards.push(card);
+            noteOfCard.set(card.cardId, card.noteId);
+        }
+    }
+    const sums = new Map<number, { total: number; count: number }>();
+    for (const [cardId, value] of retrievabilityByCard(cards)) {
+        if (value === null) continue;
+        const noteId = noteOfCard.get(cardId)!;
+        const sum = sums.get(noteId) ?? { total: 0, count: 0 };
+        sum.total += value;
+        sum.count += 1;
+        sums.set(noteId, sum);
+    }
+    return sortByRetrievability(
+        rows.map((row) => ({ ...row, id: row.noteId })),
+        (row) => {
+            const sum = sums.get(row.noteId);
+            return sum ? sum.total / sum.count : null;
+        },
+        query.descending === true,
     );
 }
 
@@ -255,6 +333,7 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
         noteEditedAt: number;
         ankiData: string | null;
         lastReview: number | null;
+        odue: number | null;
     }>(
         `SELECT
             c.id AS cardId,
@@ -266,15 +345,21 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
             c.flags AS flags, c.created_at AS createdAt,
             n.updated_at AS noteEditedAt,
             json_extract(c.data, '$.ankiData') AS ankiData,
-            json_extract(c.data, '$.lastReview') AS lastReview
-         FROM anki_cards c
-         JOIN notes n ON n.id = c.noteId
-         JOIN note_types nt ON nt.id = n.noteTypeId
-         JOIN decks d ON d.id = c.deckId
+            json_extract(c.data, '$.lastReview') AS lastReview,
+            json_extract(c.data, '$.odue') AS odue
+         ${BROWSER_FROM}
          ${where.sql}
          ORDER BY ${sortSql} ${direction}, c.id ${direction}`,
         ...where.params,
     );
+    if (query.sortKey === 'retrievability' && query.tableMode !== 'notes') {
+        const retrievability = retrievabilityByCard(rows);
+        rows.splice(0, rows.length, ...sortByRetrievability(
+            rows.map((row) => ({ ...row, id: row.cardId })),
+            (row) => retrievability.get(row.cardId) ?? null,
+            query.descending === true,
+        ));
+    }
 
     const noteData = loadJsonRowsByIds(db, 'notes', [...new Set(rows.map((row) => row.noteId))]);
     const noteTypeData = loadJsonRowsByIds(db, 'note_types', [...new Set(rows.map((row) => row.noteTypeId))]);
@@ -483,8 +568,7 @@ export function getBrowserCards(settings: AppSettings, query: BrowserCardQuery =
     // Do not project the large note/notetype JSON blobs through the cards JOIN. A reverse-card
     // note would duplicate its note JSON and a shared notetype (CSS + templates) would otherwise
     // be copied thousands of times into JS memory. Load each unique blob once and hydrate by id.
-    const rows = db.getAllSync<QueueCardRow & { noteTypeId: number }>(
-        `SELECT
+    const rowSelect = `SELECT
             c.id AS cardId, c.noteId AS noteId, c.deckId AS deckId,
             c.ord AS ord, c.type AS type, c.queue AS queue,
             c.due AS due, c.ivl AS ivl, c.factor AS factor,
@@ -492,15 +576,16 @@ export function getBrowserCards(settings: AppSettings, query: BrowserCardQuery =
             c.flags AS flags, c.data AS cardData,
             n.noteTypeId AS noteTypeId,
             NULL AS noteData, NULL AS noteTypeData
-         FROM anki_cards c
-         JOIN notes n ON n.id = c.noteId
-         JOIN note_types nt ON nt.id = n.noteTypeId
-         JOIN decks d ON d.id = c.deckId
-         ${where.sql}
-         ORDER BY ${sortSql} ${direction}, c.id ${direction}${limitSql}${offsetSql}`,
-        ...where.params,
-        ...paginationParams,
-    );
+         ${BROWSER_FROM}`;
+    const rows = query.sortKey === 'retrievability'
+        ? browserRowsByRetrievability(db, rowSelect, where, query)
+        : db.getAllSync<QueueCardRow & { noteTypeId: number }>(
+            `${rowSelect}
+             ${where.sql}
+             ORDER BY ${sortSql} ${direction}, c.id ${direction}${limitSql}${offsetSql}`,
+            ...where.params,
+            ...paginationParams,
+        );
     const noteData = loadJsonRowsByIds(db, 'notes', [...new Set(rows.map((row) => row.noteId))]);
     const noteTypeData = loadJsonRowsByIds(db, 'note_types', [...new Set(rows.map((row) => row.noteTypeId))]);
     const hydratedRows = rows.flatMap((row) => {
@@ -509,6 +594,41 @@ export function getBrowserCards(settings: AppSettings, query: BrowserCardQuery =
         return storedNote && storedType ? [{ ...row, noteData: storedNote, noteTypeData: storedType }] : [];
     });
     return toStudyCards(hydratedRows, settings, Date.now(), { includeRawCard: true, includeRawNote: true });
+}
+
+/** One page of the cards table sorted by retrievability: every match is keyed, then paged. */
+function browserRowsByRetrievability(
+    db: ReturnType<typeof getDB>,
+    rowSelect: string,
+    where: { sql: string; params: Array<string | number> },
+    query: BrowserCardQuery,
+): Array<QueueCardRow & { noteTypeId: number }> {
+    const inputs = db.getAllSync<RetrievabilityInputs>(
+        `SELECT c.id AS cardId, c.due AS due, c.ivl AS ivl,
+            json_extract(c.data, '$.odue') AS odue, json_extract(c.data, '$.ankiData') AS ankiData
+         ${BROWSER_FROM}
+         ${where.sql}`,
+        ...where.params,
+    );
+    const retrievability = retrievabilityByCard(inputs);
+    const ordered = sortByRetrievability(
+        inputs.map((row) => ({ id: row.cardId })),
+        (row) => retrievability.get(row.id) ?? null,
+        query.descending === true,
+    ).map((row) => row.id);
+    const offset = Number.isFinite(query.offset) ? Math.max(0, Math.floor(query.offset as number)) : 0;
+    const end = Number.isFinite(query.limit) && (query.limit as number) > 0 ? offset + Math.floor(query.limit as number) : undefined;
+    const pageIds = ordered.slice(offset, end);
+
+    const byId = new Map<number, QueueCardRow & { noteTypeId: number }>();
+    for (let index = 0; index < pageIds.length; index += 400) {
+        const chunk = pageIds.slice(index, index + 400);
+        for (const row of db.getAllSync<QueueCardRow & { noteTypeId: number }>(
+            `${rowSelect} WHERE c.id IN (${chunk.map(() => '?').join(', ')})`,
+            ...chunk,
+        )) byId.set(Number(row.cardId), row);
+    }
+    return pageIds.flatMap((id) => byId.get(id) ?? []);
 }
 
 export function getBrowserCardCount(query: BrowserCardQuery = {}): number {

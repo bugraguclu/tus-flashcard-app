@@ -448,3 +448,27 @@ gözden geçirici ve tarayıcı için ayrı ayrı hatırlanıyor (`BoolKey::Rest
   destede, dört seçenek bileşimi). Kart alanları, `cards.data` ve revlog satırı birebir aynı.
 - Bilinen fark: geri konacak pozisyonu olmayan kart, en yüksek yeni kart pozisyonunun bir fazlasını
   alıyor. Anki ayrı bir `nextPos` sayacı tutuyor. Yeni kartlar arasındaki sıra aynı.
+
+## 3. Hatırlanabilirliğe göre sıralama ve filtreli deste sıraları — kapatıldı
+
+Tarayıcı, hatırlanabilirliğe göre sıralarken `(due − ivl − şimdi) / S` oranını kullanıyordu. Bu
+oran `lrt`'yi ve kartın kendi decay'ini görmüyordu. Filtreli deste de iki hatırlanabilirlik
+sırasını ve göreli gecikmeyi aralığa göre gecikmeyle yaklaşık alıyordu. Eşitlikleri `c.id` ile
+bozuyordu, Anki ise `fnvhash(c.id, c.mod)` kullanıyor.
+
+- `lib/ankiSortKeys.ts`: Anki'nin SQLite'a kaydettiği `extract_fsrs_retrievability`,
+  `extract_fsrs_relative_retrievability` ve `fnvhash` (64-bit FNV-1a) fonksiyonları JS'de, f32
+  aritmetiğiyle ve Anki'nin u32/i64 taşma kurallarıyla yazıldı.
+- Tarayıcı (kart ve not modu) bu değerle JS'de sıralıyor. Değeri olmayan kart artan sırada başta,
+  azalan sırada sonda, SQLite'ın NULL'u koyduğu yerde.
+- Filtreli destenin tüm sıraları (rastgele hariç) JS'de Anki'nin anahtarları ve `fnvhash` ile
+  kuruluyor. Deste listesi sayaçları da aynı toplama yolunu kullanıyor.
+- Ölçüm: Anki'nin kendi SQL fonksiyonlarından 121 kart (karışık decay, `lrt`'li ve `lrt`'siz,
+  öğrenme, gün içi, yeni, askıda). `fnvhash` 121'de birebir. Hatırlanabilirlik 3 dışında bit
+  düzeyinde aynı, kalanlar son bitte. Tarayıcı sırası iki yönde de Anki ile aynı. Filtreli deste,
+  rastgele dışındaki 10 sıranın hepsinde Anki'nin topladığı kartları aynı sırayla topluyor.
+- Kalan fark: yeni kartın pozisyonu, "vade" ve "göreli gecikme" sıralarında gün sayısı gibi
+  okunuyor. Anki günleri koleksiyonun kuruluşundan, uygulama 1970'ten sayıyor. Pozisyonu
+  koleksiyon yaşından büyük yeni kart burada başa, Anki'de sona düşer. Filtreli destenin SQL
+  `prop:r`'si 64-bit karşılaştırıyor. Bu yalnızca eşiğe bir saniye kadar yakın kartta Anki'nin
+  32-bit değerinden ayrılabilir.

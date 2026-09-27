@@ -510,6 +510,30 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/operations/scheduling.py",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["the two checkboxes and their remembered defaults", "reviewer and browser contexts"]
+    },
+    {
+      "id": "anki-source-filtered-gather-order",
+      "priority": 3,
+      "platform": "cross-platform filtered deck gathering",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/storage/card/filtered.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["order_and_limit_for_search: each gather order's SQL", "fnvhash(c.id, c.mod) tiebreak", "retrievability orders empty while FSRS is off"]
+    },
+    {
+      "id": "anki-source-browser-sort",
+      "priority": 3,
+      "platform": "cross-platform browser column sorting",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/search/mod.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["retrievability column sorts by extract_fsrs_retrievability", "descending flips asc to desc, leaving ties in scan order"]
+    },
+    {
+      "id": "fnv-crate",
+      "priority": 3,
+      "platform": "Rust hasher behind Anki's fnvhash SQL function",
+      "url": "https://docs.rs/fnv/latest/fnv/struct.FnvHasher.html",
+      "license": "MIT OR Apache-2.0; algorithm reimplemented, verified against Anki output",
+      "useFor": ["64-bit FNV-1a over each integer's little-endian bytes", "result read back as a signed integer"]
     }
   ],
   "requiredDocs": [

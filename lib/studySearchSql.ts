@@ -328,12 +328,3 @@ export const FSRS_STABILITY_SQL = fsrsMemoryStateSql('s');
 
 export const FSRS_DIFFICULTY_SQL = fsrsMemoryStateSql('d');
 
-/**
- * Retrievability itself needs a power function SQLite may not have, but it falls monotonically as
- * elapsed time grows relative to stability. Sorting on the negated ratio therefore orders cards
- * exactly as retrievability would — ascending puts the most-forgotten cards first. The day figure
- * is UTC rather than rollover-aligned, which can only matter for cards within a day of each other.
- */
-export const FSRS_RETRIEVABILITY_SQL = `(CASE WHEN ${FSRS_STABILITY_SQL} > 0 AND c.type != 0
-    THEN ((c.due - c.ivl - CAST(strftime('%s', 'now') AS REAL) / 86400.0) / ${FSRS_STABILITY_SQL})
-    END)`;

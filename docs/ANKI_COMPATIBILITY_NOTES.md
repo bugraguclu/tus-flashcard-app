@@ -93,15 +93,19 @@ change. What that pins:
   without a position to restore are numbered from the highest new-card position, where Anki keeps
   a separate `nextPos` counter;
 - retrievability for card info, the review sort orders and `prop:r`: seconds since `lrt`, the
-  card's own decay (0.5 when it has none).
+  card's own decay (0.5 when it has none);
+- the browser's retrievability column sort and a filtered deck's gather orders
+  (`lib/ankiSortKeys.ts`): Anki's `extract_fsrs_retrievability`,
+  `extract_fsrs_relative_retrievability` and `fnvhash` tiebreak, computed in f32 in JS because
+  SQLite has neither the functions nor 32-bit math (`lib/ankiSortKeys.test.ts`).
 
 Full item-by-item record in `docs/AUDIT_FSRS_ANKI_PARITY.md`
 
 **Next compatibility gate:** Known differences: memory states differ in the last bits in about 1% of cases because the platform's exp/pow
 are not correctly rounded (intervals never differed in the recorded vectors); the optimizer is not
 Anki's trainer and will not reproduce its numbers; preview answers write no cramming revlog row;
-the browser's retrievability sort and the SQL
-`prop:r` of filtered decks stay approximations when presets use different decays. Still to add:
+a filtered deck's `prop:r` compares in 64-bit SQL, which can only differ from Anki's 32-bit value
+for a card within about a second of the threshold. Still to add:
 retention/true-retention graphs and the FSRS simulator
 
 ## Hierarchical decks and presets
@@ -126,7 +130,9 @@ retention/true-retention graphs and the FSRS simulator
 
 **Evidence:** Context-preserving overview panels, two independent filters, all 11 gather search orders (0..10) stored with Anki's own ordinals (migration 10), rescheduling/preview modes whose Again/Hard/Good delays mirror Anki's `preview_again_secs`/`preview_hard_secs`/`preview_good_secs` (read from `Deck.Filtered` fields 7/5/6, which `decks.proto` numbers out of order; an omitted field imports as zero exactly as proto3 and Anki's schema-11 serde defaults leave it, and `60`/`600`/`0` are used only when creating a deck, matching `Deck::new_filtered`, whose second search term also starts at 20 cards) with Easy always retiring the card as `preview_filter.rs` does, gather orders built from `rslib/src/storage/card/filtered.rs` including its note-id/ordinal added order and its single timeline for due order, reviewer session countdown timers, excluded-card reporting, in-app help, deck manager, `lib/filteredDeckOptions.test.ts`, `lib/studyRepository.scope.test.ts`, and reviewer preview queue tests
 
-**Next compatibility gate:** Retrievability ascending/descending and relative overdueness are approximated by overdue time relative to the last interval; Anki resolves all three through FSRS memory state in a registered SQL function, and answers the retrievability pair with no ordering at all when FSRS is off. A filtered deck is never written to an exported package and its cards return to their home deck; upstream instead exports it as filtered when every original deck is present, and otherwise converts it to a regular deck keeping the cards inside it
+**Gather order:** every order but random is computed in JS from Anki's own keys, including the retrievability pair and relative overdueness, which Anki takes from registered SQL functions, and the `fnvhash(c.id, c.mod)` tiebreak (`lib/filteredDeckQueue.ts`, `lib/ankiSortKeys.ts`). With FSRS off the retrievability pair keeps only the tiebreak, as upstream. Checked against a filtered deck Anki 26.05 built for each order: the same cards in the same order (`lib/ankiSortKeys.test.ts`).
+
+**Next compatibility gate:** For a new card, the due and relative-overdueness orders read the queue position as a day number. Anki counts those days from the collection's creation and this app from 1970, so a new card whose position is beyond the collection's age in days is gathered first here and last in Anki. A filtered deck is never written to an exported package and its cards return to their home deck; upstream instead exports it as filtered when every original deck is present, and otherwise converts it to a regular deck keeping the cards inside it
 
 ## Custom study dialog
 

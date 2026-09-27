@@ -590,7 +590,7 @@ describe('deck-list filtered count snapshot', () => {
                 .filter((cardId) => !firstOwned.has(cardId)));
     });
 
-    it('loads every filtered-deck membership with one batch query', () => {
+    it('gathers each filtered-deck term once and loads the gathered cards in one query', () => {
         saveDeck({
             id: 98, name: 'Oturum A', configId: 1, mod: 0, usn: 0,
             description: '', collapsed: false, isFiltered: true,
@@ -605,10 +605,12 @@ describe('deck-list filtered count snapshot', () => {
 
         getDeckListSnapshot(settings, Date.now());
 
-        const membershipQueries = getAllSpy.mock.calls.filter(([sql]) => (
-            String(sql).includes('ROW_NUMBER() OVER') && String(sql).includes('filteredDeckId')
-        ));
-        expect(membershipQueries).toHaveLength(1);
+        // One gather per term (the order and its fnvhash tiebreak are computed in JS), then a
+        // single lookup for everything gathered: the cost follows the terms, not the cards.
+        const gatherQueries = getAllSpy.mock.calls.filter(([sql]) => String(sql).includes('AS lastReviewId'));
+        const detailQueries = getAllSpy.mock.calls.filter(([sql]) => String(sql).includes('c.deckId AS homeDeckId'));
+        expect(gatherQueries).toHaveLength(2);
+        expect(detailQueries).toHaveLength(1);
     });
 
     it('keeps new, learning and review states used by deck-list counters', () => {
