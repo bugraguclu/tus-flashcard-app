@@ -38,6 +38,7 @@ import {
     getDeckTodayLimits,
     setDeckTodayLimits,
     setDeckLimitOverrides,
+    setDeckDesiredRetention,
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
@@ -80,6 +81,9 @@ import {
 import {
     collectFsrsTrainingHistories,
     countFsrsTrainingReviews,
+    clearFsrsMemoryStates,
+    decksNeedingMemoryRecompute,
+    fsrsDeckInputsByDeck,
     rebuildFsrsMemoryStates,
 } from '../lib/fsrsMaintenance';
 import { useI18n } from '../hooks/useI18n';
@@ -102,6 +106,9 @@ import { PresetActionsMenu, PresetPickerModal, RenamePresetModal } from '../comp
 import type { SelectOption } from '../components/deck-options/types';
 
 const DAY_FACTORS = [1, 0.5, 0] as const;
+
+/** Desired retention has a shared-preset value and a deck-only override, but no "today only". */
+const RETENTION_SCOPES = ['preset', 'deck'] as const;
 
 export default function DeckOptionsScreen() {
     const { t, l } = useI18n();
@@ -175,6 +182,10 @@ export default function DeckOptionsScreen() {
     const initialScope = (params.scope === 'deck' || params.scope === 'today') ? params.scope : 'preset';
     const [newLimitScope, setNewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
     const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
+    // Anki opens desired retention on "This deck" when the deck carries its own value.
+    const [retentionScope, setRetentionScope] = useState<'preset' | 'deck'>(
+        deck?.desiredRetention === undefined ? 'preset' : 'deck',
+    );
 
     useEffect(() => {
         if (params.scope === 'deck' || params.scope === 'today') {
@@ -194,6 +205,7 @@ export default function DeckOptionsScreen() {
             maxReviewsPerDay: String(config.maxReviewsPerDay),
             deckNewLimit: sourceDeck?.newLimit === undefined ? '' : String(sourceDeck.newLimit),
             deckReviewLimit: sourceDeck?.reviewLimit === undefined ? '' : String(sourceDeck.reviewLimit),
+            deckDesiredRetention: sourceDeck?.desiredRetention === undefined ? '' : sourceDeck.desiredRetention.toFixed(2),
             todayNewLimit: sourceTodayLimits.newLimit === undefined ? '' : String(sourceTodayLimits.newLimit),
             todayReviewLimit: sourceTodayLimits.reviewLimit === undefined ? '' : String(sourceTodayLimits.reviewLimit),
             learningSteps: formatAnkiStepText(config.learningSteps ?? []),
@@ -412,8 +424,8 @@ export default function DeckOptionsScreen() {
             const message = issueMessage(result.issue, min, max);
             if (message) errors[key] = message;
         };
-        const decimal = (key: FormKey, min: number, max: number) => {
-            const result = parseBoundedDecimalDraft(String(form[key]), min, max);
+        const decimal = (key: FormKey, min: number, max: number, allowEmpty = false) => {
+            const result = parseBoundedDecimalDraft(String(form[key]), min, max, allowEmpty);
             decimals[key] = result.value;
             const message = issueMessage(result.issue, min, max);
             if (message) errors[key] = message;
@@ -466,6 +478,7 @@ export default function DeckOptionsScreen() {
 
         if (shows('desiredRetention')) {
             decimal('desiredRetention', FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX);
+            decimal('deckDesiredRetention', FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX, true);
         } else {
             hiddenDecimal(
                 'desiredRetention',
@@ -473,6 +486,13 @@ export default function DeckOptionsScreen() {
                 FSRS_DESIRED_RETENTION_MAX,
                 stored.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION,
             );
+            // Hidden with FSRS off, the deck's own target is kept rather than cleared.
+            decimals.deckDesiredRetention = parseBoundedDecimalDraft(
+                String(form.deckDesiredRetention),
+                FSRS_DESIRED_RETENTION_MIN,
+                FSRS_DESIRED_RETENTION_MAX,
+                true,
+            ).value ?? deck?.desiredRetention;
         }
         if (shows('historicalRetention')) {
             decimal('historicalRetention', 0.5, 1);
@@ -497,11 +517,13 @@ export default function DeckOptionsScreen() {
             errors.ignoreRevlogsBefore = l('Tarihi YYYY-AA-GG olarak yazın.', 'Enter the date as YYYY-MM-DD.');
         }
 
-        const learningSteps = parseAnkiStepText(form.learningSteps);
-        if (!learningSteps) {
+        // Anki accepts an empty list here: new cards then graduate straight away, or under FSRS
+        // stay in short-term learning while their interval is under half a day.
+        const learningSteps = parseAnkiStepText(form.learningSteps, true);
+        if (learningSteps === null) {
             errors.learningSteps = l(
-                'En az bir geçerli adım yazın: 30s, 10m, 2h veya 1d.',
-                'Enter at least one valid step: 30s, 10m, 2h, or 1d.',
+                'Adımları boşlukla ayırın: 30s, 10m, 2h veya 1d.',
+                'Separate steps with spaces: 30s, 10m, 2h, or 1d.',
             );
         }
         const relearningSteps = parseAnkiStepText(form.relearningSteps, true);
@@ -619,7 +641,8 @@ export default function DeckOptionsScreen() {
             minIvl: validation.integers.minIvl,
             maxIvl: validation.integers.maxIvl,
             maxAnswerSecs: validation.integers.maxAnswerSecs,
-            desiredRetention: validation.decimals.desiredRetention,
+            // Anki warns about the retention the deck will actually use: its own, else the preset's.
+            desiredRetention: validation.decimals.deckDesiredRetention ?? validation.decimals.desiredRetention,
             easyDays: form.easyDays,
             easyDaysChanged: form.easyDays.some((factor, index) => factor !== storedEasyDays[index]),
             rescheduleOnChange: rescheduleOnSave,
@@ -634,7 +657,7 @@ export default function DeckOptionsScreen() {
     }, [form, validation.stored, rescheduleOnSave]);
 
     const persistForm = (includeSubdecks = false): { saved: boolean; subdecksChanged: number } => {
-        if (hasValidationErrors || !validation.learningSteps || validation.relearningSteps === null) {
+        if (hasValidationErrors || validation.learningSteps === null || validation.relearningSteps === null) {
             const firstError = Object.values(validation.errors)[0];
             alert(
                 l('Ayarları kontrol edin', 'Check the settings'),
@@ -706,11 +729,15 @@ export default function DeckOptionsScreen() {
                 reviewSortOrder: resolveReviewSortOrderForScheduler(form.reviewSortOrder, form.fsrsEnabled),
             };
 
+            // What each deck scheduled with before this save, so only the decks whose FSRS inputs
+            // actually change are recomputed afterwards, as in Anki.
+            const fsrsInputsBefore = fsrsDeckInputsByDeck();
             db.execSync('BEGIN TRANSACTION;');
             transactionOpen = true;
             saveDeckConfig(updated);
             if (deck.configId !== configId) assignDeckConfig(deck.id, configId);
             setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, validation.integers.deckReviewLimit);
+            setDeckDesiredRetention(deck.id, validation.decimals.deckDesiredRetention);
             setDeckTodayLimits(
                 deck.id,
                 validation.integers.todayNewLimit,
@@ -730,25 +757,28 @@ export default function DeckOptionsScreen() {
             db.execSync('COMMIT;');
             transactionOpen = false;
 
-            // Anki recomputes memory states when an FSRS input changes, and rewrites due dates
-            // too when the learner asked for it. Nothing runs while FSRS is off. Asking for a
-            // reschedule is enough on its own: it is a request to redo the dates from the
-            // parameters already stored, whether or not this save changed any of them.
-            const fsrsInputsChanged = form.fsrsEnabled
-                && (settings.fsrsEnabled !== true
-                    || formatFsrsParameterText(base.fsrsParams) !== formatFsrsParameterText(updated.fsrsParams)
-                    || base.desiredRetention !== updated.desiredRetention
-                    || base.historicalRetention !== updated.historicalRetention
-                    || base.ignoreRevlogsBeforeMs !== updated.ignoreRevlogsBeforeMs);
-            if (fsrsInputsChanged || (form.fsrsEnabled && rescheduleOnSave)) {
-                try {
-                    rebuildFsrsMemoryStates(
-                        { ...settings, fsrsEnabled: true },
-                        { reschedule: rescheduleOnSave },
-                    );
-                } catch (memoryError) {
-                    console.warn('[DeckOptions] FSRS memory rebuild failed:', memoryError);
+            // Anki recomputes memory states only for the decks whose FSRS inputs this save
+            // changed — every deck when FSRS was just switched on — and rewrites those decks' due
+            // dates too when the learner asked for it (`update_deck_configs_inner`). Switching
+            // FSRS off drops the states instead.
+            const fsrsToggled = (settings.fsrsEnabled === true) !== form.fsrsEnabled;
+            try {
+                if (form.fsrsEnabled) {
+                    const deckIds = decksNeedingMemoryRecompute(fsrsInputsBefore, fsrsDeckInputsByDeck(), {
+                        fsrsToggled,
+                        reschedule: rescheduleOnSave,
+                    });
+                    if (deckIds.length > 0) {
+                        rebuildFsrsMemoryStates(
+                            { ...settings, fsrsEnabled: true },
+                            { deckIds, reschedule: rescheduleOnSave },
+                        );
+                    }
+                } else if (fsrsToggled) {
+                    clearFsrsMemoryStates();
                 }
+            } catch (memoryError) {
+                console.warn('[DeckOptions] FSRS memory rebuild failed:', memoryError);
             }
 
             // The transaction is already durable here. A presentation refresh must never turn a
@@ -1224,16 +1254,29 @@ export default function DeckOptionsScreen() {
 
                     {form.fsrsEnabled && (
                         <>
+                            <LimitTabs
+                                value={retentionScope}
+                                onChange={setRetentionScope}
+                                styles={styles}
+                                labels={limitLabels}
+                                keys={RETENTION_SCOPES}
+                            />
                             <Field
-                                field="desiredRetention"
+                                field={retentionScope === 'preset' ? 'desiredRetention' : 'deckDesiredRetention'}
                                 kind="decimal"
                                 label={l('Hedeflenen hatırlama oranı', 'Desired retention')}
-                                value={form.desiredRetention}
-                                onChange={(value) => set('desiredRetention', value)}
-                                hint={l(
-                                    '0,70–0,99. Yüksek değer daha sık tekrar demektir; Anki 0,90 önerir.',
-                                    '0.70–0.99. A higher value means more frequent reviews; Anki recommends 0.90.',
-                                )}
+                                value={retentionScope === 'preset' ? form.desiredRetention : form.deckDesiredRetention}
+                                onChange={(value) => set(retentionScope === 'preset' ? 'desiredRetention' : 'deckDesiredRetention', value)}
+                                placeholder={retentionScope === 'deck' ? form.desiredRetention : undefined}
+                                hint={retentionScope === 'preset'
+                                    ? l(
+                                        '0,70–0,99. Yüksek değer daha sık tekrar demektir; Anki 0,90 önerir.',
+                                        '0.70–0.99. A higher value means more frequent reviews; Anki recommends 0.90.',
+                                    )
+                                    : l(
+                                        'Yalnızca bu deste için; boş bırakılırsa ayar grubunun değeri geçerli olur.',
+                                        'For this deck only; leave it empty to use the preset’s value.',
+                                    )}
                             />
                             <FieldAdvice field="desiredRetention" />
                             <SwitchRow

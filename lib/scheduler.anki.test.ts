@@ -314,8 +314,10 @@ describe('ANKI_V3 scheduler', () => {
         expect(goodWithLowModifier).toBeLessThan(goodWithNeutralModifier);
     });
 
-    it('uses deterministic fuzz based on study day + card id', () => {
-        const baseCard = makeReviewCard({ interval: 30, easeFactor: 2.5, cardId: 42 });
+    // Anki seeds review fuzz with `card id + reps` (`get_fuzz_seed`), so the pick depends on the
+    // card and how often it has been answered, never on the clock.
+    it('fuzzes deterministically from the card id and its review count', () => {
+        const baseCard = makeReviewCard({ interval: 30, easeFactor: 2.5, cardId: 42, repetition: 5 });
         const now = new Date(2026, 2, 12, 13, 0, 0, 0).getTime();
 
         const first = engine.schedule(baseCard, 3 as Grade, defaultSettings, now).interval;
@@ -325,10 +327,12 @@ describe('ANKI_V3 scheduler', () => {
         const differentCards = [77, 78, 79].map((cardId) => (
             engine.schedule({ ...baseCard, cardId }, 3 as Grade, defaultSettings, now).interval
         ));
-        const nextDay = engine.schedule(baseCard, 3 as Grade, defaultSettings, now + 24 * 3600 * 1000).interval;
+        const differentReps = [6, 7, 8].map((repetition) => (
+            engine.schedule({ ...baseCard, repetition }, 3 as Grade, defaultSettings, now).interval
+        ));
 
         expect(differentCards.some((value) => value !== first)).toBe(true);
-        expect(nextDay).not.toBe(first);
+        expect(differentReps.some((value) => value !== first)).toBe(true);
     });
 
     it('never drops ease below 1.3', () => {

@@ -10,7 +10,7 @@ import { formatDays, schedulerForSettings } from './scheduler';
 import {
     constrainInterval,
     constrainedFuzzBounds,
-    minimumReviewFuzzInterval,
+    withReviewFuzz,
 } from './schedulingIntervals';
 import type { AppSettings, CardState, Grade } from './types';
 
@@ -127,7 +127,7 @@ describe('FSRS learning cards', () => {
     });
 
     it('graduates on the last step and stores the desired retention and decay it used', () => {
-        const good = schedule(newCard({ learningStep: 1 }), 3);
+        const good = schedule(newCard({ status: 'learning', learningStep: 1 }), 3);
         expect(good.isLearning).toBe(false);
         expect(good.stateUpdates.status).toBe('review');
         expect(good.stateUpdates.desiredRetention).toBe(0.9);
@@ -144,7 +144,8 @@ describe('FSRS review cards', () => {
         expect(hard.interval).toBeLessThan(good.interval);
         expect(good.interval).toBeLessThan(easy.interval);
         expect(good.stateUpdates.status).toBe('review');
-        expect(good.stateUpdates.repetition).toBe(5);
+        // The review count is the answer path's to raise, for every answer alike.
+        expect(good.stateUpdates.repetition).toBeUndefined();
     });
 
     it('lands within a fuzz window of the raw FSRS interval', () => {
@@ -267,7 +268,7 @@ describe('FSRS and the SM-2 ease factor', () => {
     });
 
     it('graduates a learning card on the preset’s starting ease', () => {
-        const graduated = schedule(newCard({ learningStep: 1 }), 3);
+        const graduated = schedule(newCard({ status: 'learning', learningStep: 1 }), 3);
         expect(graduated.stateUpdates.easeFactor).toBe(fsrsSettings.startingEase);
     });
 });
@@ -308,24 +309,54 @@ describe('review interval fuzz', () => {
         }
     });
 
-    it('picks a value inside the window, deterministically per card and study day', () => {
-        const seed = { cardId: 4242, nowMs: NOW, rolloverHour: 4 };
-        for (const [interval, minimum, maximum, lower, upper] of CASES) {
-            const picked = constrainInterval(interval, minimum, maximum, seed);
-            expect(picked).toBeGreaterThanOrEqual(lower);
-            expect(picked).toBeLessThanOrEqual(upper);
-            expect(constrainInterval(interval, minimum, maximum, seed)).toBe(picked);
+    // The lower/middle/upper picks are upstream's own assertions for fuzz factors 0, 0.5 and 0.99.
+    it('picks the day the fuzz factor points at, exactly as Anki does', () => {
+        const PICKS: Array<[interval: number, minimum: number, maximum: number, lower: number, middle: number, upper: number]> = [
+            [1.0, 1, 1000, 1, 1, 1],
+            [2.49, 1, 1000, 2, 2, 2],
+            [2.5, 1, 1000, 2, 3, 4],
+            [7.0, 1, 1000, 5, 7, 9],
+            [17.0, 1, 1000, 14, 17, 20],
+            [37.0, 1, 1000, 33, 37, 41],
+            [2.0, 2, 1000, 2, 2, 2],
+            [2.0, 3, 1000, 3, 4, 4],
+            [2.0, 3, 3, 3, 3, 3],
+            [6.9, 3, 1000, 5, 7, 9],
+            [7.0, 3, 1000, 5, 7, 9],
+            [7.1, 3, 1000, 5, 7, 9],
+            [19.9, 3, 1000, 17, 20, 23],
+            [20.0, 3, 1000, 17, 20, 23],
+            [20.1, 3, 1000, 17, 20, 23],
+            [100.0, 101, 1000, 101, 105, 108],
+            [100.0, 1, 99, 92, 96, 99],
+            [100.0, 97, 103, 97, 100, 103],
+        ];
+        for (const [interval, minimum, maximum, lower, middle, upper] of PICKS) {
+            expect([0, 0.5, 0.99].map((factor) => withReviewFuzz({ factor }, interval, minimum, maximum)))
+                .toEqual([lower, middle, upper]);
         }
-        // A different card, or the next study day, gets its own draw.
-        const other = constrainInterval(37, 1, 1000, { ...seed, cardId: 9 });
-        expect(other).toBeGreaterThanOrEqual(33);
-        expect(other).toBeLessThanOrEqual(41);
+        // Without a fuzz factor the interval is only rounded and clamped.
+        expect(withReviewFuzz(null, 1.5, 1, 100)).toBe(2);
+        expect(withReviewFuzz(null, 0.1, 1, 100)).toBe(1);
+        expect(withReviewFuzz(null, 101, 1, 100)).toBe(100);
+        expect(constrainInterval(37, 1, 1000, { factor: 0.5 })).toBe(37);
     });
 
-    // Anki's `minimum_review_fuzz_interval`; the assertions are upstream's own.
+    // `passing_fsrs_review_intervals`: a passing interval that grew past the card's current one
+    // may not be fuzzed back to it or below; one that shrank (a lower desired retention, say) has
+    // no floor at all.
     it('keeps fuzz from clawing back a grown interval, but not a genuinely shrunken one', () => {
-        expect(minimumReviewFuzzInterval(2.7269483, 4, 36500)).toBe(4);
-        expect(minimumReviewFuzzInterval(2.7269483, 5, 36500)).toBe(0);
-        expect(minimumReviewFuzzInterval(4.591988, 4, 36500)).toBe(5);
+        const grown = reviewCard({ interval: 10, memoryState: { stability: 30, difficulty: 5 } });
+        for (const grade of [2, 3, 4] as const) {
+            expect(schedule(grown, grade).interval).toBeGreaterThanOrEqual(11);
+        }
+        const shrunk = reviewCard({
+            interval: 400,
+            lastReviewedAtMs: NOW - 2 * DAY_MS,
+            memoryState: { stability: 20, difficulty: 5 },
+        });
+        const states = fsrsNextStates(DEFAULT_FSRS_PARAMETERS, shrunk.memoryState!, 0.9, 2);
+        expect(schedule(shrunk, 3).interval).toBeLessThan(400);
+        expect(Math.abs(schedule(shrunk, 3).interval - states.good.interval)).toBeLessThan(states.good.interval * 0.2 + 2);
     });
 });

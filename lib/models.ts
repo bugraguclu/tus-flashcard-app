@@ -234,6 +234,8 @@ export interface Deck {
     /** Anki's per-deck daily-limit overrides; absent means use the selected preset. */
     newLimit?: number;
     reviewLimit?: number;
+    /** Anki's per-deck desired retention ("This deck" under FSRS); absent means the preset's. */
+    desiredRetention?: number;
     mod: number;
     usn: number;
     description: string;

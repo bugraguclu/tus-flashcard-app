@@ -1,10 +1,15 @@
 /**
  * FSRS-6 (Free Spaced Repetition Scheduler), implemented from the published algorithm.
  *
- * Behaviour derived from open-spaced-repetition/fsrs-rs (`src/model.rs`, `src/inference.rs`,
- * `src/parameter_clipper.rs`) and Anki's use of it in `rslib/src/scheduler/fsrs/`. Those projects
- * are GPL-family; nothing is copied here — the formulas are the published FSRS-6 equations and the
- * observable contract is pinned by lib/fsrs.test.ts against upstream's own documented values.
+ * Behaviour follows open-spaced-repetition/fsrs-rs 5.2.0 (`src/model.rs`, `src/inference.rs`,
+ * `src/parameter_clipper.rs`, BSD-3-Clause), the version Anki 26.05 schedules with, and Anki's use
+ * of it in `rslib/src/scheduler/`. Nothing is copied; the equations are the published FSRS-6 ones.
+ *
+ * fsrs-rs computes in 32-bit floats, so every step here does too (`Math.fround` after each
+ * operation, in upstream's order). Rounding each step to f32 is exact for +, -, * and /, and for
+ * exp, pow and ln it agrees with a correctly rounded f32 result, so memory states match Anki's to
+ * the last bit in practice and whole-day intervals round the same way. lib/fsrsAnkiParity.test.ts
+ * pins this against output recorded from Anki itself.
  *
  * The model keeps two numbers per card:
  *   stability  (S) — days until recall probability falls to 90%
@@ -59,11 +64,50 @@ export const FSRS_DIFFICULTY_MIN = 1;
 export const FSRS_DIFFICULTY_MAX = 10;
 const FSRS_INITIAL_STABILITY_MAX = 100;
 
-/** Anki's allowed desired-retention range; outside it the scheduler misbehaves badly. */
+/** The desired-retention range the deck options accept. The equations themselves take any value. */
 export const FSRS_DESIRED_RETENTION_MIN = 0.7;
 export const FSRS_DESIRED_RETENTION_MAX = 0.99;
 export const FSRS_DEFAULT_DESIRED_RETENTION = 0.9;
 export const FSRS_DEFAULT_HISTORICAL_RETENTION = 0.9;
+
+const f32 = Math.fround;
+const add = (a: number, b: number) => f32(a + b);
+const sub = (a: number, b: number) => f32(a - b);
+const mul = (a: number, b: number) => f32(a * b);
+const div = (a: number, b: number) => f32(a / b);
+const exp = (x: number) => f32(Math.exp(x));
+const pow = (base: number, exponent: number) => f32(Math.pow(base, exponent));
+const clamp32 = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const S_MIN = f32(FSRS_STABILITY_MIN);
+const S_MAX = FSRS_STABILITY_MAX;
+/** `0.9f32.ln()`, the constant upstream folds into the forgetting curve. */
+const LN_0_9 = f32(Math.log(f32(0.9)));
+
+/**
+ * The shortest decimal that reads back as the same 32-bit float, so a value stored for Anki
+ * prints as `0.212` rather than `0.21199999749660492` while still meaning exactly the same f32.
+ */
+export function toF32Decimal(value: number): number {
+    const single = f32(value);
+    if (!Number.isFinite(single) || single === 0) return single;
+    for (let digits = 1; digits <= 9; digits++) {
+        const candidate = Number(single.toPrecision(digits));
+        if (f32(candidate) === single) return candidate;
+    }
+    return single;
+}
+
+/**
+ * Anki's `round_to_places` for a value it writes into the card data column: scale, round half away
+ * from zero and scale back, all in f32. Stability keeps 4 places, difficulty 3, desired retention
+ * 2 and decay 3, and the next review starts from these rounded numbers, not the unrounded ones.
+ */
+export function roundFsrsValueForStorage(value: number, decimalPlaces: number): number {
+    const factor = 10 ** decimalPlaces;
+    const scaled = mul(value, factor);
+    return toF32Decimal(div(Math.sign(scaled) * Math.round(Math.abs(scaled)), factor));
+}
 
 /**
  * Per-parameter bounds. Two of the entries are not constants upstream:
@@ -101,14 +145,11 @@ const PARAMETER_BOUNDS: ReadonlyArray<readonly [number, number]> = [
     [0.1, 0.8],
 ];
 
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
-
 /**
  * Accept a stored parameter list of any FSRS generation and return 21 FSRS-6 parameters.
- * An FSRS-4.5/5 list is converted the way upstream converts it, so a preset imported from an
- * older Anki keeps scheduling the same way instead of being silently reset to the defaults.
+ * An FSRS-4.5/5 list is converted the way upstream converts it (`check_and_fill_parameters`, in
+ * f32), so a preset imported from an older Anki keeps scheduling the same way instead of being
+ * silently reset to the defaults.
  */
 export function normalizeFsrsParameters(params: readonly number[] | undefined | null): number[] {
     const values = Array.isArray(params) ? params.map(Number) : [];
@@ -118,11 +159,12 @@ export function normalizeFsrsParameters(params: readonly number[] | undefined | 
     if (values.length === 0) return [...DEFAULT_FSRS_PARAMETERS];
 
     if (values.length === 17) {
-        const converted = [...values];
-        converted[4] = converted[5] * 2 + converted[4];
-        converted[5] = Math.log(converted[5] * 3 + 1) / 3;
-        converted[6] = converted[6] + 0.5;
-        return [...converted, 0, 0, 0, FSRS5_DEFAULT_DECAY];
+        const converted = values.map(f32);
+        // `w5.mul_add(2, w4)` and `w5.mul_add(3, 1)` are fused, so each is rounded once.
+        converted[4] = f32(converted[5] * 2 + converted[4]);
+        converted[5] = div(f32(Math.log(f32(converted[5] * 3 + 1))), 3);
+        converted[6] = add(converted[6], 0.5);
+        return [...converted.map(toF32Decimal), 0, 0, 0, FSRS5_DEFAULT_DECAY];
     }
     if (values.length === 19) return [...values, 0, FSRS5_DEFAULT_DECAY];
 
@@ -147,9 +189,24 @@ const W17_W18_MAX = 2.0;
  */
 function w17w18Ceiling(params: readonly number[], numRelearningSteps: number): number {
     if (numRelearningSteps <= 1) return W17_W18_MAX;
-    const budget = -(Math.log(params[11]) + Math.log(Math.pow(2, params[13]) - 1) + params[14] * 0.3)
-        / numRelearningSteps;
-    return Math.min(W17_W18_MAX, Math.sqrt(Math.max(0.01, budget)));
+    const lnW11 = f32(Math.log(params[11]));
+    const lnPow = f32(Math.log(sub(pow(2, params[13]), 1)));
+    const budget = div(-add(add(lnW11, lnPow), mul(params[14], f32(0.3))), numRelearningSteps);
+    return Math.min(W17_W18_MAX, f32(Math.sqrt(Math.max(f32(0.01), budget))));
+}
+
+/** The 21 f32 weights the model runs on: normalized, then clipped like `FSRS::new` clips them. */
+function modelWeights(params: readonly number[], options: FsrsClampOptions = {}): number[] {
+    const normalized = normalizeFsrsParameters(params).map(f32);
+    const ceiling = w17w18Ceiling(normalized, options.numRelearningSteps ?? 1);
+    const w19Floor = options.enableShortTerm ? f32(0.01) : 0;
+
+    return normalized.map((value, index) => {
+        const [min, max] = PARAMETER_BOUNDS[index];
+        if (index === 17 || index === 18) return clamp32(value, f32(min), ceiling);
+        if (index === 19) return clamp32(value, w19Floor, f32(max));
+        return clamp32(value, f32(min), f32(max));
+    });
 }
 
 /**
@@ -157,22 +214,14 @@ function w17w18Ceiling(params: readonly number[], numRelearningSteps: number): n
  *
  * With no options this is the clamp upstream applies when it builds a scheduler, which is what
  * every scheduling path here wants. The optimizer passes the preset's relearning-step count and
- * short-term flag so training explores the same box Anki's trainer explores.
+ * short-term flag so training explores the same box Anki's trainer explores. Values come back as
+ * their shortest f32 decimals, so they print cleanly and still mean exactly what the model uses.
  */
 export function clampFsrsParameters(
     params: readonly number[],
     options: FsrsClampOptions = {},
 ): number[] {
-    const normalized = normalizeFsrsParameters(params);
-    const ceiling = w17w18Ceiling(normalized, options.numRelearningSteps ?? 1);
-    const w19Floor = options.enableShortTerm ? 0.01 : 0.0;
-
-    return normalized.map((value, index) => {
-        if (index === 17 || index === 18) return clamp(value, PARAMETER_BOUNDS[index][0], ceiling);
-        if (index === 19) return clamp(value, w19Floor, PARAMETER_BOUNDS[index][1]);
-        const [min, max] = PARAMETER_BOUNDS[index];
-        return clamp(value, min, max);
-    });
+    return modelWeights(params, options).map(toF32Decimal);
 }
 
 /** True when the list can be used as-is: 21 finite values inside their bounds. */
@@ -184,60 +233,114 @@ export function areFsrsParametersValid(params: readonly number[] | undefined | n
 }
 
 /**
- * The forgetting curve's exponent. FSRS-6 stores it as the last parameter; older parameter sets
- * have no such entry and use the fixed FSRS-5 value.
+ * The forgetting curve's exponent as Anki records it on a card (`get_decay_from_params`): the
+ * last FSRS-6 parameter as stored, the fixed FSRS-5 value for an older list, and the FSRS-6
+ * default for a preset that was never optimized.
  */
 export function decayFromParameters(params: readonly number[] | undefined | null): number {
     if (!params || params.length === 0) return FSRS6_DEFAULT_DECAY;
     if (params.length < FSRS_PARAMETER_COUNT) return FSRS5_DEFAULT_DECAY;
     const decay = Number(params[20]);
-    return Number.isFinite(decay) && decay > 0 ? decay : FSRS6_DEFAULT_DECAY;
+    return Number.isFinite(decay) ? decay : FSRS6_DEFAULT_DECAY;
 }
 
-/** `factor` normalizes the curve so that retrievability is exactly 0.9 after `stability` days. */
-function curveFactor(decay: number): number {
-    return Math.pow(0.9, 1 / -decay) - 1;
+/** The model's curve factor (`power_forgetting_curve`): e^(ln 0.9 / -w20) - 1, in f32. */
+function modelCurveFactor(w20: number): number {
+    return sub(exp(mul(div(1, -w20), LN_0_9)), 1);
+}
+
+/** Retrievability after `elapsed` days as the model sees it during a review. */
+function modelRetrievability(w: readonly number[], elapsed: number, stability: number): number {
+    return pow(add(mul(div(elapsed, stability), modelCurveFactor(w[20])), 1), -w[20]);
+}
+
+/** `Model::next_interval`: days until retrievability falls to the desired retention. */
+function modelNextInterval(w: readonly number[], stability: number, desiredRetention: number): number {
+    const inverseDecay = div(1, -w[20]);
+    return mul(div(stability, modelCurveFactor(w[20])), sub(pow(f32(desiredRetention), inverseDecay), 1));
 }
 
 /**
- * Probability of recalling a card `daysElapsed` days after its last review.
- * `decay` is the stored positive value, not the negated exponent.
+ * Probability of recalling a card `daysElapsed` days after its last review, as Anki reports it in
+ * card info, sorting and search (`current_retrievability`). `decay` is the stored positive value.
  */
 export function fsrsRetrievability(stability: number, daysElapsed: number, decay: number): number {
-    const safeStability = Math.max(FSRS_STABILITY_MIN, stability);
-    const elapsed = Math.max(0, daysElapsed);
-    return Math.pow((elapsed / safeStability) * curveFactor(decay) + 1, -decay);
+    const positiveDecay = f32(decay);
+    const factor = sub(pow(f32(0.9), div(1, -positiveDecay)), 1);
+    return pow(add(mul(div(f32(Math.max(0, daysElapsed)), f32(stability)), factor), 1), -positiveDecay);
 }
 
-/** Days to wait so that recall probability lands on `desiredRetention`. */
+/**
+ * Retrievability for display, sorting and search, exactly as Anki derives it: seconds since the
+ * last review, and the decay stored on the card — falling back to the FSRS-5 value when the card
+ * has none, as Anki does (`current_retrievability_seconds`).
+ */
+export function fsrsRetrievabilityAfterSeconds(
+    memory: FsrsMemoryState,
+    secondsElapsed: number,
+    cardDecay: number | undefined | null,
+): number {
+    const seconds = Math.max(0, Math.min(0xffff_ffff, Math.trunc(secondsElapsed)));
+    const decay = Number.isFinite(cardDecay) ? Number(cardDecay) : FSRS5_DEFAULT_DECAY;
+    return fsrsRetrievability(memory.stability, div(f32(seconds), 86_400), decay);
+}
+
+/**
+ * Seconds since a card's last review, measured the way Anki's retrievability search, sort and
+ * card info measure it (`extract_fsrs_retrievability`): from the review time recorded on the card
+ * (`lrt`) when there is one, otherwise back from its due day by its interval. An intraday learning
+ * card has no due day; its due time is used instead.
+ */
+export function fsrsSecondsSinceLastReview(card: {
+    lastReviewTimeSecs?: number;
+    /** Due day number, or null while the card is due at an intraday time. */
+    dueDay: number | null;
+    dueTimeMs?: number;
+    ivl: number;
+}, nowMs: number, today: number): number {
+    const nowSecs = Math.floor(nowMs / 1000);
+    if (card.lastReviewTimeSecs !== undefined && card.lastReviewTimeSecs > 0) {
+        return Math.max(0, nowSecs - Math.floor(card.lastReviewTimeSecs));
+    }
+    if (card.dueDay === null) {
+        return Math.max(0, nowSecs - (Math.floor((card.dueTimeMs ?? nowMs) / 1000) - card.ivl));
+    }
+    return Math.max(0, today - (card.dueDay - card.ivl)) * 86_400;
+}
+
+/**
+ * Anki's relative overdueness under FSRS (`extract_fsrs_relative_retrievability`): how far past
+ * its own target a card has fallen, `-(R^(-1/decay) - 1) / (DR^(-1/decay) - 1)`, ascending. A card
+ * with no memory state or no recorded target uses the SM-2 measure, the elapsed days over the
+ * interval, as Anki does.
+ */
+export function fsrsRelativeRetrievability(
+    memory: FsrsMemoryState | null | undefined,
+    desiredRetention: number | undefined | null,
+    cardDecay: number | undefined | null,
+    secondsElapsed: number,
+    interval: number,
+): number {
+    if (memory && desiredRetention !== undefined && desiredRetention !== null && Number.isFinite(desiredRetention)) {
+        const decay = f32(Number.isFinite(cardDecay) ? Number(cardDecay) : FSRS5_DEFAULT_DECAY);
+        const target = Math.max(f32(0.0001), f32(desiredRetention));
+        const current = Math.max(f32(0.0001), fsrsRetrievabilityAfterSeconds(memory, secondsElapsed, decay));
+        const inverse = div(-1, decay);
+        return div(-sub(pow(current, inverse), 1), sub(pow(target, inverse), 1));
+    }
+    const days = Math.floor(Math.max(0, secondsElapsed) / 86_400);
+    return div(-add(f32(days), f32(0.001)), Math.max(1, f32(interval)));
+}
+
+/** Days to wait so that recall probability lands on `desiredRetention`, from a stored decay. */
 export function fsrsNextInterval(stability: number, desiredRetention: number, decay: number): number {
-    const retention = clamp(desiredRetention, FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX);
-    const safeStability = Math.max(FSRS_STABILITY_MIN, stability);
-    const exponent = -decay;
-    return (safeStability / curveFactor(decay)) * (Math.pow(retention, 1 / exponent) - 1);
-}
-
-function initialStability(w: readonly number[], rating: FsrsRating): number {
-    return w[Math.min(3, Math.max(0, rating - 1))];
+    const w20 = clamp32(f32(decay), f32(0.1), f32(0.8));
+    const inverseDecay = div(1, -w20);
+    return mul(div(f32(stability), modelCurveFactor(w20)), sub(pow(f32(desiredRetention), inverseDecay), 1));
 }
 
 function initialDifficulty(w: readonly number[], rating: number): number {
-    return w[4] - Math.exp(w[5] * (rating - 1)) + 1;
-}
-
-/** Difficulty moves less near the edges of its range, so it cannot be pinned at 1 or 10. */
-function linearDamping(deltaDifficulty: number, oldDifficulty: number): number {
-    return ((10 - oldDifficulty) * deltaDifficulty) / 9;
-}
-
-function nextDifficulty(w: readonly number[], difficulty: number, rating: FsrsRating): number {
-    const delta = -w[6] * (rating - 3);
-    return difficulty + linearDamping(delta, difficulty);
-}
-
-/** Every review pulls difficulty back toward the value an "Easy" first answer would have set. */
-function meanReversion(w: readonly number[], newDifficulty: number): number {
-    return w[7] * (initialDifficulty(w, 4) - newDifficulty) + newDifficulty;
+    return add(sub(w[4], exp(mul(w[5], sub(rating, 1)))), 1);
 }
 
 function stabilityAfterSuccess(
@@ -249,15 +352,13 @@ function stabilityAfterSuccess(
 ): number {
     const hardPenalty = rating === 2 ? w[15] : 1;
     const easyBonus = rating === 4 ? w[16] : 1;
-    return stability * (
-        Math.exp(w[8])
-        * (11 - difficulty)
-        * Math.pow(stability, -w[9])
-        * (Math.exp((1 - retrievability) * w[10]) - 1)
-        * hardPenalty
-        * easyBonus
-        + 1
-    );
+    let increase = exp(w[8]);
+    increase = mul(increase, add(-difficulty, 11));
+    increase = mul(increase, pow(stability, -w[9]));
+    increase = mul(increase, sub(exp(mul(add(-retrievability, 1), w[10])), 1));
+    increase = mul(increase, hardPenalty);
+    increase = mul(increase, easyBonus);
+    return mul(stability, add(increase, 1));
 }
 
 function stabilityAfterFailure(
@@ -266,25 +367,80 @@ function stabilityAfterFailure(
     difficulty: number,
     retrievability: number,
 ): number {
-    const postLapse = w[11]
-        * Math.pow(difficulty, -w[12])
-        * (Math.pow(stability + 1, w[13]) - 1)
-        * Math.exp((1 - retrievability) * w[14]);
+    let postLapse = mul(w[11], pow(difficulty, -w[12]));
+    postLapse = mul(postLapse, sub(pow(add(stability, 1), w[13]), 1));
+    postLapse = mul(postLapse, exp(mul(add(-retrievability, 1), w[14])));
     // A lapse may never leave the card more stable than one short-term repeat would.
-    return Math.min(postLapse, stability / Math.exp(w[17] * w[18]));
+    const ceiling = div(stability, exp(mul(w[17], w[18])));
+    return ceiling < postLapse ? ceiling : postLapse;
 }
 
-/** Same-day repeats move stability by a much smaller factor than a spaced review. */
+/**
+ * Same-day repeats move stability by a much smaller factor than a spaced review. Only Good and
+ * Easy are held at or above the current stability; Again and Hard may lower it
+ * (`stability_short_term`, `rating >= 3`).
+ */
 function stabilityShortTerm(w: readonly number[], stability: number, rating: FsrsRating): number {
-    const increase = Math.exp(w[17] * (rating - 3 + w[18])) * Math.pow(stability, -w[19]);
-    return stability * (rating >= 2 ? Math.max(increase, 1) : increase);
+    let increase = mul(exp(mul(w[17], add(sub(rating, 3), w[18]))), pow(stability, -w[19]));
+    if (rating >= 3) increase = Math.max(increase, 1);
+    return mul(stability, increase);
+}
+
+/** Difficulty moves less near the edges of its range, so it cannot be pinned at 1 or 10. */
+function nextDifficulty(w: readonly number[], difficulty: number, rating: FsrsRating): number {
+    const delta = mul(-w[6], sub(rating, 3));
+    return add(difficulty, mul(add(-difficulty, 10), div(delta, 9)));
+}
+
+/** Every review pulls difficulty back toward the value an "Easy" first answer would have set. */
+function meanReversion(w: readonly number[], newDifficulty: number): number {
+    return add(mul(w[7], sub(initialDifficulty(w, 4), newDifficulty)), newDifficulty);
+}
+
+/** `Model::step` for one card, on weights that are already f32 and clipped. */
+function modelStep(
+    w: readonly number[],
+    state: FsrsMemoryState,
+    deltaDays: number,
+    rating: FsrsRating,
+    isFirstReview: boolean,
+): FsrsMemoryState {
+    const rawStability = f32(state.stability);
+    if (isFirstReview && rawStability === 0) {
+        const initialRating = Math.min(4, Math.max(1, rating));
+        return {
+            stability: clamp32(w[initialRating - 1], S_MIN, S_MAX),
+            difficulty: clamp32(initialDifficulty(w, initialRating), FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX),
+        };
+    }
+
+    const lastStability = clamp32(rawStability, S_MIN, S_MAX);
+    const lastDifficulty = clamp32(f32(state.difficulty), FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX);
+    const elapsed = f32(Math.max(0, deltaDays));
+
+    let stability: number;
+    if (elapsed === 0) {
+        stability = stabilityShortTerm(w, lastStability, rating);
+    } else {
+        const retrievability = modelRetrievability(w, elapsed, lastStability);
+        stability = rating === 1
+            ? stabilityAfterFailure(w, lastStability, lastDifficulty, retrievability)
+            : stabilityAfterSuccess(w, lastStability, lastDifficulty, retrievability, rating);
+    }
+
+    const difficulty = clamp32(
+        meanReversion(w, nextDifficulty(w, lastDifficulty, rating)),
+        FSRS_DIFFICULTY_MIN,
+        FSRS_DIFFICULTY_MAX,
+    );
+    return { stability: clamp32(stability, S_MIN, S_MAX), difficulty };
 }
 
 /**
  * Advance one memory state by a single review.
  *
- * `isFirstReview` marks a card that has never been answered: its state comes from the initial
- * stability/difficulty parameters rather than from an update.
+ * `isFirstReview` marks the first review of a card that has no state yet: its state then comes
+ * from the initial stability/difficulty parameters rather than from an update.
  */
 export function fsrsStep(
     params: readonly number[],
@@ -293,34 +449,7 @@ export function fsrsStep(
     rating: FsrsRating,
     isFirstReview: boolean,
 ): FsrsMemoryState {
-    const w = clampFsrsParameters(params);
-    const lastStability = clamp(state.stability, FSRS_STABILITY_MIN, FSRS_STABILITY_MAX);
-    const lastDifficulty = clamp(state.difficulty, FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX);
-    const elapsed = Math.max(0, deltaDays);
-
-    if (isFirstReview) {
-        return {
-            stability: clamp(initialStability(w, rating), FSRS_STABILITY_MIN, FSRS_STABILITY_MAX),
-            difficulty: clamp(initialDifficulty(w, rating), FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX),
-        };
-    }
-
-    const retrievability = fsrsRetrievability(lastStability, elapsed, decayFromParameters(w));
-    let stability = rating === 1
-        ? stabilityAfterFailure(w, lastStability, lastDifficulty, retrievability)
-        : stabilityAfterSuccess(w, lastStability, lastDifficulty, retrievability, rating);
-    if (elapsed === 0) stability = stabilityShortTerm(w, lastStability, rating);
-
-    const difficulty = clamp(
-        meanReversion(w, nextDifficulty(w, lastDifficulty, rating)),
-        FSRS_DIFFICULTY_MIN,
-        FSRS_DIFFICULTY_MAX,
-    );
-
-    return {
-        stability: clamp(stability, FSRS_STABILITY_MIN, FSRS_STABILITY_MAX),
-        difficulty,
-    };
+    return modelStep(modelWeights(params), state, deltaDays, rating, isFirstReview);
 }
 
 /**
@@ -333,14 +462,14 @@ export function fsrsNextStates(
     desiredRetention: number,
     daysElapsed: number,
 ): FsrsNextStates {
-    const w = clampFsrsParameters(params);
-    const decay = decayFromParameters(w);
+    const w = modelWeights(params);
     const isFirstReview = memory === null;
     const current = memory ?? { stability: 0, difficulty: 0 };
+    const elapsed = Math.max(0, Math.trunc(daysElapsed));
 
     const stateFor = (rating: FsrsRating): FsrsItemState => {
-        const next = fsrsStep(w, current, daysElapsed, rating, isFirstReview);
-        return { memory: next, interval: fsrsNextInterval(next.stability, desiredRetention, decay) };
+        const next = modelStep(w, current, elapsed, rating, isFirstReview);
+        return { memory: next, interval: modelNextInterval(w, next.stability, desiredRetention) };
     };
 
     return { again: stateFor(1), hard: stateFor(2), good: stateFor(3), easy: stateFor(4) };
@@ -348,42 +477,37 @@ export function fsrsNextStates(
 
 /**
  * Approximate a memory state from SM-2 values, for a card whose review history is missing or was
- * truncated. `historicalRetention` is the retention the learner is assumed to have had.
+ * truncated (`memory_state_from_sm2`). `historicalRetention` is the retention the learner is
+ * assumed to have had. Returns null where upstream reports invalid input.
  */
 export function fsrsMemoryStateFromSm2(
     params: readonly number[],
     easeFactor: number,
     intervalDays: number,
     historicalRetention: number = FSRS_DEFAULT_HISTORICAL_RETENTION,
-): FsrsMemoryState {
-    const w = clampFsrsParameters(params);
-    const decay = decayFromParameters(w);
-    const exponent = -decay;
-    const factor = Math.pow(0.9, 1 / exponent) - 1;
-    const retention = clamp(historicalRetention, 0.5, 0.99);
-    const interval = Math.max(FSRS_STABILITY_MIN, intervalDays);
-
-    const stability = (interval * factor) / (Math.pow(retention, 1 / exponent) - 1);
-    const difficulty = 11 - (easeFactor - 1)
-        / (Math.exp(w[8]) * Math.pow(stability, -w[9]) * (Math.exp((1 - retention) * w[10]) - 1));
-
+): FsrsMemoryState | null {
+    const w = modelWeights(params);
+    const decay = -w[20];
+    const retention = f32(historicalRetention);
+    const inverseDecay = div(1, decay);
+    const factor = sub(pow(f32(0.9), inverseDecay), 1);
+    const stability = div(mul(Math.max(f32(intervalDays), S_MIN), factor), sub(pow(retention, inverseDecay), 1));
+    const denominator = mul(
+        mul(exp(w[8]), pow(stability, -w[9])),
+        f32(Math.expm1(mul(sub(1, retention), w[10]))),
+    );
+    const difficulty = sub(11, div(sub(f32(easeFactor), 1), denominator));
+    if (!Number.isFinite(stability) || !Number.isFinite(difficulty)) return null;
     return {
-        stability: clamp(
-            Number.isFinite(stability) ? stability : FSRS_STABILITY_MIN,
-            FSRS_STABILITY_MIN,
-            FSRS_STABILITY_MAX,
-        ),
-        difficulty: clamp(
-            Number.isFinite(difficulty) ? difficulty : FSRS_DIFFICULTY_MAX,
-            FSRS_DIFFICULTY_MIN,
-            FSRS_DIFFICULTY_MAX,
-        ),
+        stability,
+        difficulty: clamp32(difficulty, FSRS_DIFFICULTY_MIN, FSRS_DIFFICULTY_MAX),
     };
 }
 
 /**
- * Replay a review history into a memory state. Returns null for an empty history, so the caller
- * can fall back to the SM-2 approximation the way Anki does.
+ * Replay a review history into a memory state (`FSRS::memory_state`). Returns the starting state
+ * for an empty history — or null when there is none, so the caller can fall back to the SM-2
+ * approximation the way Anki does.
  */
 export function fsrsMemoryStateFromReviews(
     params: readonly number[],
@@ -391,30 +515,14 @@ export function fsrsMemoryStateFromReviews(
     startingState: FsrsMemoryState | null = null,
 ): FsrsMemoryState | null {
     if (reviews.length === 0) return startingState;
-    const w = clampFsrsParameters(params);
+    const w = modelWeights(params);
 
     let state: FsrsMemoryState = startingState ?? { stability: 0, difficulty: 0 };
     reviews.forEach((review, index) => {
-        const isFirstReview = startingState === null && index === 0;
-        state = fsrsStep(w, state, review.deltaDays, review.rating, isFirstReview);
+        state = modelStep(w, state, review.deltaDays, review.rating, index === 0);
     });
+    if (!Number.isFinite(state.stability) || !Number.isFinite(state.difficulty)) return null;
     return state;
-}
-
-/** Retrievability of a stored state today, or null when the card has no FSRS state yet. */
-export function fsrsCurrentRetrievability(
-    memory: FsrsMemoryState | null | undefined,
-    daysElapsed: number,
-    params: readonly number[],
-): number | null {
-    if (!memory || !Number.isFinite(memory.stability) || memory.stability <= 0) return null;
-    // Clamp first: the scheduler always works from clamped parameters, so a decay outside
-    // [0.1, 0.8] must not produce a retrievability the scheduler would never agree with.
-    return fsrsRetrievability(
-        memory.stability,
-        daysElapsed,
-        decayFromParameters(clampFsrsParameters(params)),
-    );
 }
 
 /** Render parameters for the deck-options text field, the way Anki shows them. */
@@ -443,22 +551,28 @@ export function parseFsrsParameterText(text: string): number[] | null {
 }
 
 /**
- * Anki's "ignore reviews before" cutoff is a plain calendar date in the learner's own timezone.
- * Formatting it through UTC would shift it by a day for anyone east or west of Greenwich, so both
- * directions work in local time.
+ * Anki's "ignore reviews before" cutoff is a plain calendar date, which Anki turns into midnight
+ * UTC of that date (`ignore_revlogs_before_date_to_ms`), not midnight in the learner's timezone.
+ * Formatting rounds to the nearest UTC midnight, so a cutoff an earlier version stored as local
+ * midnight still reads back as the date the learner typed.
  */
 export function formatFsrsCutoffDate(timestampMs: number | undefined | null): string {
     if (!timestampMs || !Number.isFinite(timestampMs)) return '';
-    const date = new Date(timestampMs);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${date.getFullYear()}-${month}-${day}`;
+    const date = new Date(Math.round(timestampMs / 86_400_000) * 86_400_000);
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${date.getUTCFullYear()}-${month}-${day}`;
 }
 
 export function parseFsrsCutoffDate(text: string | undefined | null): number | undefined {
     if (typeof text !== 'string') return undefined;
-    const trimmed = text.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return undefined;
-    const parsed = Date.parse(`${trimmed}T00:00:00`);
-    return Number.isFinite(parsed) ? parsed : undefined;
+    const match = text.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return undefined;
+    const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+    const parsed = Date.UTC(year, month - 1, day);
+    const check = new Date(parsed);
+    if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
+        return undefined;
+    }
+    return parsed;
 }

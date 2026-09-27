@@ -380,6 +380,7 @@ function browserSearchContext(
         memoryState: memoryStateFromCardData(fsrsData),
         decay: fsrsData.decay,
         lastReviewedAtMs: Number(row.lastReview) || undefined,
+        lastReviewTimeSecs: fsrsData.lastReviewTimeSecs,
     };
 }
 

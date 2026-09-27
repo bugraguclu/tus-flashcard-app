@@ -8,16 +8,22 @@
  */
 
 import { getDB } from './db';
+import { ankiCardSeed, ankiFuzzFactor } from './ankiRandom';
 import { localDayNumber, nextRolloverMs } from './ankiState';
-import { getDeckConfigForDeck } from './deckManager';
+import { getAllDecks, getDeck } from './deckStore';
+import { getAllDeckConfigs } from './deckPresets';
 import { saveAnkiCard } from './noteManager';
-import type { AnkiCard } from './models';
+import { DEFAULT_DECK_CONFIG, type AnkiCard } from './models';
+import { fsrsNextInterval, type FsrsMemoryState } from './fsrs';
+import { updateAnkiCardData } from './fsrsCardData';
+import { revlogByCard } from './fsrsCardInputs';
 import {
-    fsrsNextInterval,
-    decayFromParameters,
-    type FsrsMemoryState,
-} from './fsrs';
-import { withFsrsMemoryState } from './fsrsCardData';
+    moveRescheduledDue,
+    parseEasyDays,
+    rescheduledInterval,
+    type ReschedulerState,
+} from './loadBalancer';
+import { logManualEntry, revlogFactorForScheduling } from './reviewLogger';
 import {
     fsrsLastReviewInfo,
     fsrsMemoryStateForCard,
@@ -26,9 +32,9 @@ import {
     type FsrsRevlogEntry,
     type FsrsReviewHistory,
 } from './fsrsMemory';
-import { desiredRetentionFor, fsrsParametersFor } from './fsrsScheduler';
-import { constrainInterval, minimumReviewFuzzInterval } from './schedulingIntervals';
-import { resolveSettingsFromConfig } from './settingsResolver';
+import { desiredRetentionFor, fsrsParametersFor, recordedDecayFor } from './fsrsScheduler';
+import { withReviewFuzz } from './schedulingIntervals';
+import { resolveSettingsForDeck } from './studyCardRows';
 import type { AppSettings } from './types';
 
 export interface FsrsScopeOptions {
@@ -38,6 +44,11 @@ export interface FsrsScopeOptions {
     reschedule?: boolean;
     /** Report progress; return false to stop. Called every few hundred cards. */
     onProgress?: (processed: number, total: number) => boolean | void;
+    /**
+     * Balance the rescheduled days against the collection's workload, as Anki does with its load
+     * balancer on (its default, with no switch in the interface). Off only for comparisons.
+     */
+    loadBalance?: boolean;
 }
 
 export interface FsrsRebuildResult {
@@ -79,49 +90,34 @@ function deckScopeClause(deckIds: number[] | undefined): { sql: string; params: 
     return { sql: ` AND c.deckId IN (${deckIds.map(() => '?').join(', ')})`, params: [...deckIds] };
 }
 
-/** Revlog rows for a set of cards, grouped by card and ordered oldest first. */
-export function revlogByCard(cardIds: number[]): Map<number, FsrsRevlogEntry[]> {
-    const result = new Map<number, FsrsRevlogEntry[]>();
-    if (cardIds.length === 0) return result;
+export { revlogByCard } from './fsrsCardInputs';
 
-    const rows = getDB().getAllSync<{ id: number; cardId: number; ease: number; ivl: number; lastIvl: number; factor: number; type: number }>(
-        `SELECT id, cardId, ease, ivl, lastIvl, factor, type
-         FROM revlog
-         WHERE cardId IN (${cardIds.map(() => '?').join(', ')})
-         ORDER BY cardId, id`,
-        ...cardIds,
-    );
-
-    for (const row of rows) {
-        const entries = result.get(row.cardId) ?? [];
-        entries.push({
-            id: row.id,
-            ease: row.ease,
-            ivl: row.ivl,
-            lastIvl: row.lastIvl,
-            factor: row.factor,
-            type: row.type,
-        });
-        result.set(row.cardId, entries);
-    }
-    return result;
+interface RebuildCandidate {
+    card: AnkiCard;
+    settings: AppSettings;
+    history: FsrsReviewHistory | null;
+    lastReview: FsrsLastReviewInfo;
 }
 
 /**
- * Derive and store every card's FSRS memory state.
+ * Derive and store FSRS memory states, and optionally reschedule, the way Anki's
+ * `update_memory_state` does when a preset's FSRS inputs change:
  *
- * A card that has never been answered keeps no state; one whose review log was truncated is
- * seeded from its SM-2 values. When `reschedule` is set, review cards also get a due date
- * recomputed from the fresh stability, exactly as Anki does.
+ *  - new cards, and cards with nothing at all in the review log, are left untouched; they get a
+ *    state from their SM-2 values or from scratch when they are next answered;
+ *  - a card whose log holds no usable answer loses its memory state, but still records the
+ *    preset's desired retention and decay;
+ *  - every other card gets the state its log implies;
+ *  - with rescheduling, each review card that is not suspended and has a counted answer gets a
+ *    new interval from that state, anchored on its last review, and a "rescheduled" log entry.
  */
 export function rebuildFsrsMemoryStates(
     settings: AppSettings,
     options: FsrsScopeOptions = {},
     nowMs: number = Date.now(),
 ): FsrsRebuildResult {
-    const cards = loadCardsInScope(options.deckIds);
+    const cards = loadCardsInScope(options.deckIds).filter((card) => card.type !== 0);
     const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
-    const todayNumber = localDayNumber(nowMs, settings.dayRolloverHour);
     const settingsCache = new Map<number, AppSettings>();
     const result: FsrsRebuildResult = {
         cardsInspected: 0,
@@ -131,65 +127,68 @@ export function rebuildFsrsMemoryStates(
     };
 
     // The review log is read in batches so a large collection never materializes its whole history.
+    const candidates: RebuildCandidate[] = [];
     const BATCH = 400;
     for (let offset = 0; offset < cards.length; offset += BATCH) {
         const batch = cards.slice(offset, offset + BATCH);
         const revlogs = revlogByCard(batch.map((card) => card.id));
-
         for (const card of batch) {
-            result.cardsInspected += 1;
-
-            const deckSettings = settingsCache.get(card.deckId)
-                ?? resolveSettingsFromConfig(getDeckConfigForDeck(card.deckId, settings.dayRolloverHour), settings);
+            const entries = revlogs.get(card.id);
+            if (!entries || entries.length === 0) continue;
+            const deckSettings = settingsCache.get(card.deckId) ?? resolveSettingsForDeck(card.deckId, settings);
             settingsCache.set(card.deckId, deckSettings);
+            candidates.push({
+                card,
+                settings: deckSettings,
+                history: fsrsReviewHistory(entries, nextDayAtMs, deckSettings.ignoreRevlogsBeforeMs ?? 0),
+                lastReview: fsrsLastReviewInfo(entries),
+            });
+        }
+    }
 
-            const params = fsrsParametersFor(deckSettings);
-            const desiredRetention = desiredRetentionFor(deckSettings);
-            const ignoreBefore = deckSettings.ignoreRevlogsBeforeMs ?? 0;
-            const entries = revlogs.get(card.id) ?? [];
-            const history = fsrsReviewHistory(entries, nextDayAtMs, ignoreBefore);
+    // Anki updates cards in order of history length, which only matters to the load balancer's
+    // running counts while it reschedules. Ties keep card order.
+    const rescheduler = options.reschedule && options.loadBalance !== false ? buildReschedulerState(settings, nowMs) : null;
+    if (rescheduler) {
+        candidates.sort((a, b) => (a.history?.reviews.length ?? 0) - (b.history?.reviews.length ?? 0));
+    }
 
-            const memory = fsrsMemoryStateForCard(params, history, {
+    for (let index = 0; index < candidates.length; index++) {
+        const { card, settings: deckSettings, history, lastReview } = candidates[index];
+        result.cardsInspected += 1;
+
+        const params = fsrsParametersFor(deckSettings);
+        const desiredRetention = desiredRetentionFor(deckSettings);
+        const memory = history
+            ? fsrsMemoryStateForCard(params, history, {
                 interval: card.ivl || 0,
-                easeFactor: card.factor > 0 ? card.factor / 1000 : 2.5,
-                isNew: card.type === 0,
-            }, deckSettings.historicalRetention);
+                easeFactor: (card.factor || 0) / 1000,
+                isNew: false,
+            }, deckSettings.historicalRetention)
+            : null;
 
-            const nextAnkiData = withFsrsMemoryState(
-                card.ankiData,
-                memory,
+        let updated: AnkiCard = {
+            ...card,
+            ankiData: updateAnkiCardData(card.ankiData, {
+                stability: memory?.stability ?? null,
+                difficulty: memory?.difficulty ?? null,
                 desiredRetention,
-                decayFromParameters(params),
-            );
-            const rescheduled = options.reschedule && memory && card.type === 2 && card.queue >= 0
-                ? rescheduledFields(
-                    card,
-                    memory,
-                    fsrsLastReviewInfo(entries),
-                    desiredRetention,
-                    params,
-                    deckSettings,
-                    todayNumber,
-                    nowMs,
-                )
-                : null;
+                decay: recordedDecayFor(deckSettings),
+            }),
+        };
 
-            if (nextAnkiData !== card.ankiData || rescheduled) {
-                saveAnkiCard({
-                    ...card,
-                    ...(rescheduled ?? {}),
-                    ankiData: nextAnkiData,
-                    mod: Math.floor(nowMs / 1000),
-                    usn: -1,
-                });
-                if (nextAnkiData !== card.ankiData) result.cardsUpdated += 1;
-                if (rescheduled) result.cardsRescheduled += 1;
-            }
+        if (options.reschedule && memory && card.type === 2 && card.queue !== -1 && lastReview.lastReviewedAtMs !== null) {
+            updated = rescheduleCard(updated, memory, lastReview, desiredRetention, params, deckSettings, rescheduler, nowMs);
+            result.cardsRescheduled += 1;
         }
 
-        if (options.onProgress) {
-            const keepGoing = options.onProgress(Math.min(offset + BATCH, cards.length), cards.length);
-            if (keepGoing === false) {
+        if (updated.ankiData !== card.ankiData || updated.ivl !== card.ivl || updated.due !== card.due || updated.odue !== card.odue) {
+            saveAnkiCard({ ...updated, mod: Math.floor(nowMs / 1000), usn: -1 });
+            if (updated.ankiData !== card.ankiData) result.cardsUpdated += 1;
+        }
+
+        if (options.onProgress && ((index + 1) % PROGRESS_INTERVAL === 0 || index + 1 === candidates.length)) {
+            if (options.onProgress(index + 1, candidates.length) === false) {
                 result.stopped = true;
                 break;
             }
@@ -199,45 +198,201 @@ export function rebuildFsrsMemoryStates(
     return result;
 }
 
+/** The preset a card is counted under: its home deck's. */
+function presetIdForDeck(deckId: number, presetByDeck: Map<number, number>): number | undefined {
+    return presetByDeck.get(deckId);
+}
+
+/** Read the counts Anki's rescheduler balances against (`Rescheduler::new`). */
+function buildReschedulerState(settings: AppSettings, nowMs: number): ReschedulerState {
+    const db = getDB();
+    const today = localDayNumber(nowMs, settings.dayRolloverHour);
+    const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
+    const presetByDeck = new Map<number, number>();
+    for (const deck of getAllDecks()) {
+        if (!deck.isFiltered) presetByDeck.set(deck.id, deck.configId || DEFAULT_DECK_CONFIG.id);
+    }
+
+    const dueCountsByPreset = new Map<number, Map<number, number>>();
+    const dueRows = db.getAllSync<{ data: string }>('SELECT data FROM anki_cards WHERE type = 2 AND queue != -1');
+    for (const row of dueRows) {
+        let card: AnkiCard;
+        try {
+            card = JSON.parse(row.data) as AnkiCard;
+        } catch {
+            continue;
+        }
+        const presetId = presetIdForDeck(card.odid || card.deckId, presetByDeck);
+        if (presetId === undefined) continue;
+        const due = card.odid ? card.odue : card.due;
+        const counts = dueCountsByPreset.get(presetId) ?? new Map<number, number>();
+        counts.set(due, (counts.get(due) ?? 0) + 1);
+        dueCountsByPreset.set(presetId, counts);
+    }
+
+    const dueTodayByPreset = new Map<number, number>();
+    for (const [presetId, counts] of dueCountsByPreset) {
+        let dueToday = 0;
+        for (const [due, count] of counts) if (due <= today) dueToday += count;
+        dueTodayByPreset.set(presetId, dueToday);
+    }
+
+    const reviewedTodayByPreset = new Map<number, number>();
+    const reviewedRows = db.getAllSync<{ cardId: number; data: string }>(
+        `SELECT DISTINCT r.cardId AS cardId, c.data AS data
+         FROM revlog r JOIN anki_cards c ON c.id = r.cardId
+         WHERE r.id > ? AND r.ease > 0 AND (r.type < 3 OR r.factor != 0)`,
+        nextDayAtMs - 86_400_000,
+    );
+    for (const row of reviewedRows) {
+        let card: AnkiCard;
+        try {
+            card = JSON.parse(row.data) as AnkiCard;
+        } catch {
+            continue;
+        }
+        const presetId = presetIdForDeck(card.odid || card.deckId, presetByDeck);
+        if (presetId !== undefined) reviewedTodayByPreset.set(presetId, (reviewedTodayByPreset.get(presetId) ?? 0) + 1);
+    }
+
+    return {
+        today,
+        nextDayAtMs,
+        dueCountsByPreset,
+        dueTodayByPreset,
+        reviewedTodayByPreset,
+        easyDaysByPreset: new Map(getAllDeckConfigs().map((config) => [config.id, parseEasyDays(config.easyDays)])),
+    };
+}
+
 /**
- * The interval and due day a review card should get from its memory state. The new due date keeps
- * the card's own last-review day as its anchor, so rescheduling never bunches the whole collection
- * onto today. Returns null when nothing would change.
+ * A review card's new interval and due day from its fresh memory state (Anki's rescheduling
+ * closure in `update_memory_state`).
  *
- * The fuzz floor comes from the interval the card had *before* its last answer, not from the
- * interval it has now — that is what Anki compares against (`get_last_revlog_info` feeds
- * `previous_interval` into `minimum_review_fuzz_interval` in `memory_state.rs`). Using the current
- * interval instead would let a card whose interval already grew keep a floor it has outgrown.
+ * The interval may not fall below the one the card had *before* its last answer when it grew
+ * since then (`get_last_revlog_info`'s previous interval); fuzz uses the seed of that last answer
+ * (`card id + reps - 1`); and the due day is counted from the day of the last review, so
+ * rescheduling never bunches the whole collection onto today.
  */
-function rescheduledFields(
+function rescheduleCard(
     card: AnkiCard,
     memory: FsrsMemoryState,
     lastReview: FsrsLastReviewInfo,
     desiredRetention: number,
     params: readonly number[],
     settings: AppSettings,
-    todayNumber: number,
+    rescheduler: ReschedulerState | null,
     nowMs: number,
-): Pick<AnkiCard, 'ivl' | 'due'> | null {
-    const rawInterval = fsrsNextInterval(memory.stability, desiredRetention, decayFromParameters(params));
+): AnkiCard {
+    const nextDayAtSecs = Math.floor(nextRolloverMs(nowMs, settings.dayRolloverHour) / 1000);
+    const lastReviewSecs = Math.floor((lastReview.lastReviewedAtMs ?? 0) / 1000);
+    const daysElapsed = Math.floor(Math.max(0, nextDayAtSecs - lastReviewSecs) / 86_400);
+    const today = localDayNumber(nowMs, settings.dayRolloverHour);
+
+    const interval = fsrsNextInterval(memory.stability, desiredRetention, params[20]);
     const previousInterval = Math.max(0, lastReview.previousInterval);
-    const minimum = Math.max(1, minimumReviewFuzzInterval(rawInterval, previousInterval, settings.maxInterval));
-    const interval = constrainInterval(rawInterval, minimum, settings.maxInterval, {
-        cardId: card.id,
-        nowMs,
-        rolloverHour: settings.dayRolloverHour,
-    });
+    const minimum = Math.max(1, Math.trunc(interval) > previousInterval ? previousInterval + 1 : 0);
+    const seed = ankiCardSeed(card.id, Math.max(0, card.reps - 1));
+    const presetId = getDeck(card.odid || card.deckId)?.configId || DEFAULT_DECK_CONFIG.id;
 
-    // Anki anchors the new due date on the revlog's own last-review time; `card.lastReview` is
-    // only a fallback for a collection imported without its history.
-    const lastReviewedAtMs = lastReview.lastReviewedAtMs ?? (card.lastReview > 0 ? card.lastReview : 0);
-    const daysSinceLastReview = lastReviewedAtMs > 0
-        ? Math.max(0, todayNumber - localDayNumber(lastReviewedAtMs, settings.dayRolloverHour))
-        : 0;
-    const due = todayNumber - daysSinceLastReview + interval;
+    const balanced = rescheduler
+        ? rescheduledInterval(rescheduler, interval, minimum, settings.maxInterval, daysElapsed, presetId, seed)
+        : null;
+    const newInterval = balanced ?? withReviewFuzz({ factor: ankiFuzzFactor(seed) }, interval, minimum, settings.maxInterval);
 
-    if (interval === card.ivl && due === card.due) return null;
-    return { ivl: interval, due };
+    const inFiltered = Boolean(card.odid);
+    const dueBefore = inFiltered ? card.odue : card.due;
+    const dueAfter = today - daysElapsed + newInterval;
+    if (rescheduler) moveRescheduledDue(rescheduler, dueBefore, dueAfter, presetId);
+
+    const rescheduled: AnkiCard = {
+        ...card,
+        ivl: newInterval,
+        ...(inFiltered ? { odue: dueAfter } : { due: dueAfter }),
+    };
+    logManualEntry(rescheduled, 'rescheduled', newInterval, card.ivl, revlogFactorForScheduling(memory, card.factor));
+    return rescheduled;
+}
+
+/** The FSRS inputs one deck schedules with, as far as deciding what a save must recompute. */
+export interface FsrsDeckInputs {
+    params: string;
+    desiredRetention: number;
+    easyDays: string;
+}
+
+/**
+ * Every normal deck's FSRS inputs: its preset's parameters and easy days, and its effective
+ * desired retention — the deck's own override when it has one, else the preset's.
+ */
+export function fsrsDeckInputsByDeck(): Map<number, FsrsDeckInputs> {
+    const configs = new Map(getAllDeckConfigs().map((config) => [config.id, config]));
+    const inputs = new Map<number, FsrsDeckInputs>();
+    for (const deck of getAllDecks()) {
+        if (deck.isFiltered) continue;
+        const config = configs.get(deck.configId || DEFAULT_DECK_CONFIG.id) ?? DEFAULT_DECK_CONFIG;
+        inputs.set(deck.id, {
+            params: JSON.stringify(config.fsrsParams ?? []),
+            desiredRetention: deck.desiredRetention ?? config.desiredRetention ?? 0.9,
+            easyDays: JSON.stringify(config.easyDays ?? []),
+        });
+    }
+    return inputs;
+}
+
+/**
+ * The decks whose memory states a deck-options save has to recompute (Anki's
+ * `update_deck_configs_inner`): all of them when FSRS was just switched on, otherwise those whose
+ * parameters or effective desired retention changed — and, when rescheduling was asked for, those
+ * whose easy days changed. Historical retention and the ignore-before date do not count; Anki
+ * leaves the states alone for those until the next change that does.
+ */
+export function decksNeedingMemoryRecompute(
+    before: Map<number, FsrsDeckInputs>,
+    after: Map<number, FsrsDeckInputs>,
+    options: { fsrsToggled: boolean; reschedule: boolean },
+): number[] {
+    const deckIds: number[] = [];
+    for (const [deckId, current] of after) {
+        const previous = before.get(deckId);
+        if (options.fsrsToggled
+            || !previous
+            || previous.params !== current.params
+            || previous.desiredRetention !== current.desiredRetention
+            || (options.reschedule && previous.easyDays !== current.easyDays)) {
+            deckIds.push(deckId);
+        }
+    }
+    return deckIds;
+}
+
+/**
+ * Switching FSRS off drops every answered card's memory state, desired retention and decay, as
+ * Anki's `clear_fsrs_data` does; the states are derived afresh from the log when it comes back on.
+ */
+export function clearFsrsMemoryStates(nowMs: number = Date.now()): number {
+    const rows = getDB().getAllSync<{ data: string }>(
+        'SELECT data FROM anki_cards c WHERE c.type != 0 AND EXISTS (SELECT 1 FROM revlog r WHERE r.cardId = c.id)',
+    );
+    let cleared = 0;
+    for (const row of rows) {
+        let card: AnkiCard;
+        try {
+            card = JSON.parse(row.data) as AnkiCard;
+        } catch {
+            continue;
+        }
+        const ankiData = updateAnkiCardData(card.ankiData, {
+            stability: null,
+            difficulty: null,
+            desiredRetention: null,
+            decay: null,
+        });
+        if (ankiData === card.ankiData) continue;
+        saveAnkiCard({ ...card, ankiData, mod: Math.floor(nowMs / 1000), usn: -1 });
+        cleared += 1;
+    }
+    return cleared;
 }
 
 /**

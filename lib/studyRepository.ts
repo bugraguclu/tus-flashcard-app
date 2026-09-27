@@ -15,7 +15,6 @@ export type {
     StudyQueueParams,
 } from './studyQueue';
 export {
-    adjustIntervalForEasyDays,
     undoAnswer,
     answerStudyCard,
     setCardSuspended,

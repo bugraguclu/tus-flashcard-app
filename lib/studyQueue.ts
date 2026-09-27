@@ -25,6 +25,7 @@ import {
 } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { buildFilteredDeckQueue } from './filteredDeckQueue';
+import { rebuildLoadBalancer } from './loadBalancerSession';
 import {
     buildScopeClause,
     countRowsByQueue,
@@ -214,6 +215,8 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const nowMs = Date.now();
     const today = localDayNumber(nowMs, params.settings.dayRolloverHour);
     const settingsCache = new Map<number, AppSettings>();
+    // Anki builds its load balancer together with the study queue, from the counts of that moment.
+    rebuildLoadBalancer(params.settings.dayRolloverHour, nowMs);
 
     // Filtered decks bypass the daily queue entirely: their saved search IS the session.
     if (params.selectedDeckName) {

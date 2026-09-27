@@ -131,16 +131,35 @@ describe('rebuilding memory states', () => {
         expect(data.difficulty).toBeGreaterThanOrEqual(1);
         expect(data.difficulty).toBeLessThanOrEqual(10);
         expect(data.desiredRetention).toBe(0.9);
-        expect(data.decay).toBeCloseTo(0.1542, 6);
+        // Anki keeps three decimals of decay on the card.
+        expect(data.decay).toBe(0.154);
     });
 
-    it('falls back to the card’s SM-2 values when it has no review log', () => {
+    // Anki's `update_memory_state` only visits cards that appear in the review log; the others
+    // get a state from their SM-2 values when they are next answered.
+    it('leaves a card with no review log untouched', () => {
         insertCard(1002, { ivl: 30, factor: 2300 });
+
+        const result = rebuildFsrsMemoryStates(settings, {}, NOW);
+
+        expect(result.cardsInspected).toBe(0);
+        expect(readCard(1002).ankiData).toBeUndefined();
+    });
+
+    it('clears the state of a card whose log holds no answer, but records the preset on it', () => {
+        insertCard(1007, {
+            ivl: 30,
+            ankiData: JSON.stringify({ s: 12, d: 5 }),
+        });
+        insertRevlog(1007, [{ daysAgo: 3, ease: 0, ivl: 30, type: REVLOG_KIND.manual, factor: 2500 }]);
 
         rebuildFsrsMemoryStates(settings, {}, NOW);
 
-        // With the default historical retention the implied stability is the interval itself.
-        expect(parseAnkiCardData(readCard(1002).ankiData).stability).toBeCloseTo(30, 3);
+        const data = parseAnkiCardData(readCard(1007).ankiData);
+        expect(data.stability).toBeUndefined();
+        expect(data.difficulty).toBeUndefined();
+        expect(data.desiredRetention).toBe(0.9);
+        expect(data.decay).toBe(0.154);
     });
 
     it('leaves a new card without a memory state', () => {
@@ -170,11 +189,36 @@ describe('rebuilding memory states', () => {
         expect(after.ivl).toBeGreaterThan(before.ivl);
         // The new due date is anchored on the last review, not on today.
         expect(after.due).toBe(dayNumber(NOW) - 5 + after.ivl);
+
+        // Anki logs every rescheduled card with a rating-less "rescheduled" row whose ease column
+        // carries the shifted difficulty, truncated to permille.
+        const row = db.getFirstSync<{ ease: number; ivl: number; lastIvl: number; factor: number; type: number }>(
+            'SELECT ease, ivl, lastIvl, factor, type FROM revlog WHERE cardId = ? AND type = 5', 1004,
+        )!;
+        const difficulty = parseAnkiCardData(after.ankiData).difficulty!;
+        expect(row).toMatchObject({ ease: 0, ivl: after.ivl, lastIvl: before.ivl, type: 5 });
+        expect(Math.abs(row.factor - ((difficulty - 1) / 9 + 0.1) * 1000)).toBeLessThan(1.5);
+    });
+
+    it('does not reschedule a suspended card', () => {
+        insertCard(1008, { queue: -1 });
+        insertRevlog(1008, [
+            { daysAgo: 30, ease: 3, ivl: 1, type: REVLOG_KIND.learning },
+            { daysAgo: 5, ease: 4, ivl: 10, type: REVLOG_KIND.review },
+        ]);
+        const before = readCard(1008);
+
+        const result = rebuildFsrsMemoryStates(settings, { reschedule: true }, NOW);
+
+        expect(result.cardsRescheduled).toBe(0);
+        expect(readCard(1008).due).toBe(before.due);
     });
 
     it('honours a deck scope and reports progress', () => {
         insertCard(1005);
         insertCard(1006);
+        insertRevlog(1005, [{ daysAgo: 5, ease: 3, ivl: 10, type: REVLOG_KIND.review }]);
+        insertRevlog(1006, [{ daysAgo: 6, ease: 3, ivl: 10, type: REVLOG_KIND.review }]);
         const seen: number[] = [];
 
         const result = rebuildFsrsMemoryStates(settings, {

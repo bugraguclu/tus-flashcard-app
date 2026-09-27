@@ -4,7 +4,9 @@ import {
     FSRS_DEFAULT_HISTORICAL_RETENTION,
     FSRS_DESIRED_RETENTION_MAX,
     FSRS_DESIRED_RETENTION_MIN,
+    formatFsrsCutoffDate,
     normalizeFsrsParameters,
+    parseFsrsCutoffDate,
 } from './fsrs';
 import type { DeckConfig } from './models';
 import { normalizeNewCardGatherOrder } from './queueBuild';
@@ -23,8 +25,9 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         dailyReviewLimit: Number.isFinite(config.maxReviewsPerDay) && config.maxReviewsPerDay >= 0
             ? config.maxReviewsPerDay
             : base.dailyReviewLimit,
-        learningSteps: config.learningSteps?.length > 0 ? [...config.learningSteps] : base.learningSteps,
-        lapseSteps: config.relearningSteps?.length > 0 ? [...config.relearningSteps] : base.lapseSteps,
+        // An empty list is a real setting in Anki (graduate at once / FSRS short-term), not a gap.
+        learningSteps: Array.isArray(config.learningSteps) ? [...config.learningSteps] : base.learningSteps,
+        lapseSteps: Array.isArray(config.relearningSteps) ? [...config.relearningSteps] : base.lapseSteps,
         graduatingInterval: config.graduatingIvl > 0 ? config.graduatingIvl : base.graduatingInterval,
         easyInterval: config.easyIvl > 0 ? config.easyIvl : base.easyInterval,
         // Permille -> float, floored at Anki's hard ease minimum of 1.3.
@@ -69,21 +72,32 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         fsrsParameters: normalizeFsrsParameters(config.fsrsParams ?? base.fsrsParameters),
         desiredRetention: clampDesiredRetention(config.desiredRetention ?? base.desiredRetention),
         historicalRetention: clampHistoricalRetention(config.historicalRetention ?? base.historicalRetention),
+        // Canonical midnight UTC of the stored date, which is how Anki reads the cutoff.
         ignoreRevlogsBeforeMs: Number.isFinite(config.ignoreRevlogsBeforeMs)
-            ? config.ignoreRevlogsBeforeMs
+            ? parseFsrsCutoffDate(formatFsrsCutoffDate(config.ignoreRevlogsBeforeMs))
             : base.ignoreRevlogsBeforeMs,
     };
 }
 
-/** Anki refuses to schedule outside this band; a stray stored value is pulled back into it. */
-export function clampDesiredRetention(value: unknown): number {
+/**
+ * Anki validates both retention targets whenever it reads a preset
+ * (`ensure_deck_config_values_valid` in rslib/src/deckconfig/mod.rs): a value outside its band is
+ * not pulled to the nearest edge but replaced by the default, 90%.
+ */
+function validRetention(value: unknown, min: number, max: number, fallback: number): number {
     const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return FSRS_DEFAULT_DESIRED_RETENTION;
-    return Math.min(FSRS_DESIRED_RETENTION_MAX, Math.max(FSRS_DESIRED_RETENTION_MIN, parsed));
+    if (!Number.isFinite(parsed)) return fallback;
+    const single = Math.fround(parsed);
+    if (single < Math.fround(min) || single > Math.fround(max)) return fallback;
+    return parsed;
 }
 
+/** Desired retention: 70%–99%, otherwise Anki's default. */
+export function clampDesiredRetention(value: unknown): number {
+    return validRetention(value, FSRS_DESIRED_RETENTION_MIN, FSRS_DESIRED_RETENTION_MAX, FSRS_DEFAULT_DESIRED_RETENTION);
+}
+
+/** Historical retention: 70%–97%, otherwise Anki's default. */
 export function clampHistoricalRetention(value: unknown): number {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return FSRS_DEFAULT_HISTORICAL_RETENTION;
-    return Math.min(0.99, Math.max(0.5, parsed));
+    return validRetention(value, 0.7, 0.97, FSRS_DEFAULT_HISTORICAL_RETENTION);
 }

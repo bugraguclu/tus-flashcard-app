@@ -71,6 +71,7 @@ vi.mock('./db', () => ({
 }));
 
 vi.mock('./deckManager', () => ({
+    getDeck: () => null,
     getDeckByName: () => null,
     getDeckConfigForDeck: () => ({ ...deckConfig }),
 }));
@@ -82,6 +83,7 @@ vi.mock('./reviewLogger', () => ({
     },
     deleteReviewById: vi.fn(),
     logManualEntry: vi.fn(),
+    revlogFactorForAnswer: (_memory: unknown, ease: number) => ease,
 }));
 
 // A faithful stand-in for the storage layer: bury, suspend and leech behave exactly as

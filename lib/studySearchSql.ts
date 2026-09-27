@@ -1,5 +1,5 @@
 import { getDB } from './db';
-import { FSRS6_DEFAULT_DECAY } from './fsrs';
+import { FSRS5_DEFAULT_DECAY } from './fsrs';
 import { localDayNumber, nextRolloverMs } from './ankiState';
 import { foldSearchNode, parseSearchQuery, unquoteSearchValue } from './searchQuery';
 
@@ -210,31 +210,36 @@ export function clauseForSearchTerm(term: string): SearchFragment | null {
         if (key === 'r') {
             // Retrievability is monotonic in elapsed time, so instead of raising a power in SQL
             // the comparison is inverted: R(t) op v holds exactly when the elapsed days sit on the
-            // matching side of the interval that would produce retrievability v. Cards scheduled
-            // under a non-default decay are compared with the default curve here; the browser
-            // (lib/cardSearchMatch.ts) evaluates them exactly.
+            // matching side of the interval that would produce retrievability v on the card's own
+            // curve. Elapsed time follows `extract_fsrs_retrievability`: from the review time the
+            // card records (`lrt`), otherwise back from its due day by its interval; a card with
+            // no stored decay is read on the FSRS-5 curve, as Anki reads it.
             if (value < 0 || value > 1) return null;
             const invertedOp = { '>': '<', '>=': '<=', '<': '>', '<=': '>=', '=': '=', '!=': '!=' }[op];
             if (!invertedOp) return null;
 
             const { rolloverHour } = collectionSearchSettings();
             const nowMs = Date.now();
-            const dayCutoffMs = nextRolloverMs(nowMs, rolloverHour) - 86400000;
             const today = localDayNumber(nowMs, rolloverHour);
-            // Days per unit of stability at which retrievability equals `value`. Search accepts
-            // any retention, so the curve is evaluated directly rather than through the
-            // scheduler's helper, which clamps to the range FSRS is allowed to schedule in.
-            const exponent = -1 / FSRS6_DEFAULT_DECAY;
             const safeValue = Math.min(1, Math.max(1e-9, value));
-            const intervalPerStabilityDay = (Math.pow(safeValue, exponent) - 1) / (Math.pow(0.9, exponent) - 1);
-            const stability = FSRS_STABILITY_SQL;
-            const elapsed = `(CASE WHEN COALESCE(json_extract(c.data, '$.lastReview'), 0) > 0
-                    THEN (? - json_extract(c.data, '$.lastReview')) / 86400000.0
+            const daysPerStabilityDay = (decay: number) => {
+                const exponent = -1 / decay;
+                return (Math.pow(safeValue, exponent) - 1) / (Math.pow(0.9, exponent) - 1);
+            };
+            const decays = storedFsrsDecays();
+            const multiplier = decays.length === 0
+                ? String(daysPerStabilityDay(FSRS5_DEFAULT_DECAY))
+                : `(CASE ${FSRS_DECAY_SQL} ${decays.map((decay) => `WHEN ${decay} THEN ${daysPerStabilityDay(decay)}`).join(' ')}`
+                    + ` ELSE ${daysPerStabilityDay(FSRS5_DEFAULT_DECAY)} END)`;
+            const lastReview = fsrsCardDataSql('lrt');
+            const elapsed = `(CASE WHEN COALESCE(${lastReview}, 0) > 0
+                    THEN (? - ${lastReview}) / 86400.0
+                    WHEN c.due > 365000 THEN (? - (c.due / 1000 - c.ivl)) / 86400.0
                     ELSE (? - (c.due - c.ivl)) END)`;
 
             return {
-                sql: `(c.type != 0 AND ${stability} IS NOT NULL AND ${elapsed} ${invertedOp} (${stability} * ?))`,
-                params: [dayCutoffMs, today, intervalPerStabilityDay],
+                sql: `(c.type != 0 AND ${FSRS_STABILITY_SQL} IS NOT NULL AND ${elapsed} ${invertedOp} (${FSRS_STABILITY_SQL} * ${multiplier}))`,
+                params: [Math.floor(nowMs / 1000), Math.floor(nowMs / 1000), today],
             };
         }
 
@@ -298,9 +303,25 @@ export function buildFilteredSearchClause(searchQuery: string): { clauses: strin
  * Anki's `extract_fsrs_variable` (rslib/src/storage/sqlite.rs) gives it, and how
  * `parseAnkiCardData` reads it here.
  */
-function fsrsMemoryStateSql(key: 's' | 'd'): string {
+function fsrsCardDataSql(key: 's' | 'd' | 'lrt' | 'decay'): string {
     const blob = "json_extract(c.data, '$.ankiData')";
     return `(CASE WHEN json_valid(${blob}) THEN CAST(json_extract(${blob}, '$.${key}') AS REAL) END)`;
+}
+
+function fsrsMemoryStateSql(key: 's' | 'd'): string {
+    return fsrsCardDataSql(key);
+}
+
+const FSRS_DECAY_SQL = fsrsCardDataSql('decay');
+
+/** The distinct forgetting-curve decays recorded on cards, one per preset that scheduled them. */
+function storedFsrsDecays(): number[] {
+    const rows = getDB().getAllSync<{ decay: number | null }>(
+        `SELECT DISTINCT ${FSRS_DECAY_SQL} AS decay FROM anki_cards c`,
+    );
+    return rows
+        .map((row) => Number(row.decay))
+        .filter((decay) => Number.isFinite(decay) && decay > 0);
 }
 
 export const FSRS_STABILITY_SQL = fsrsMemoryStateSql('s');

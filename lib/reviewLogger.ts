@@ -2,6 +2,7 @@
 // today's totals, daily-limit usage, the study streak and the studied days of the weekly strip
 // from it. The Statistics charts read the log through ankiStats.ts.
 
+import type { FsrsMemoryState } from './fsrs';
 import type { ReviewLog, AnkiCard } from './models';
 import { getDB } from './db';
 import { uniqueId } from './models';
@@ -59,23 +60,52 @@ export function logReview(
 }
 
 /**
- * Append the rating-less row Anki writes when the user reschedules a card by hand.
+ * Anki's `difficulty_shifted`: FSRS difficulty mapped onto 0.1–1.1, the range of the revlog's ease
+ * column when FSRS wrote the row. Computed in f32 like Anki.
+ */
+function difficultyShifted(memory: FsrsMemoryState): number {
+    const f32 = Math.fround;
+    return f32(f32(f32(f32(memory.difficulty) - 1) / 9) + f32(0.1));
+}
+
+/**
+ * The ease column of an answer's revlog row: the shifted difficulty under FSRS, rounded to
+ * permille (`RevlogEntryPartial::into_revlog_entry`); otherwise the SM-2 ease the answer left,
+ * which is 0 for a (re)learning step of a card that has not graduated.
+ */
+export function revlogFactorForAnswer(memory: FsrsMemoryState | null | undefined, easePermille: number): number {
+    if (!memory) return easePermille;
+    return Math.round(Math.fround(difficultyShifted(memory) * 1000));
+}
+
+/**
+ * The ease column of a bookkeeping row (`log_scheduled_review`): the shifted difficulty truncated
+ * to permille when the card has a memory state, otherwise its ease factor.
+ */
+export function revlogFactorForScheduling(memory: FsrsMemoryState | null | undefined, easePermille: number): number {
+    if (!memory) return easePermille;
+    return Math.trunc(Math.fround(difficultyShifted(memory) * 1000));
+}
+
+/**
+ * Append the rating-less row Anki writes when a card is rescheduled other than by an answer.
  *
  * Anki records these so the history stays complete, and gives them no rating: `ease = 0` is what
  * marks a row as bookkeeping rather than an answer, which is why every counting query in this
- * file excludes it. Two kinds exist and they are not interchangeable:
+ * file excludes it. The kinds are not interchangeable:
  * - `reset` (type 4, factor 0) is the marker "Forget" leaves behind. FSRS looks for exactly this
  *   pair and throws away everything before it, so the card is modelled from scratch.
- * - `rescheduled` (type 5) is what "Set Due Date" leaves behind. It is inert for FSRS, which
- *   simply skips it, and exists so the change is visible in card info and survives an export.
- *
- * Reference: `rslib/src/revlog/mod.rs` (`RevlogReviewKind`).
+ * - `manual` (type 4, non-zero factor) is what "Set Due Date" leaves behind.
+ * - `rescheduled` (type 5) is what rescheduling after a preset change leaves behind.
+ * FSRS skips the last two, since they carry no answer; they keep the change visible in card
+ * info and survive an export.
  */
 export function logManualEntry(
     card: AnkiCard,
-    kind: 'reset' | 'rescheduled',
+    kind: 'reset' | 'manual' | 'rescheduled',
     newIvl: number,
     lastIvl: number,
+    factor: number = 0,
 ): ReviewLog {
     const entry: ReviewLog = {
         id: uniqueId(),
@@ -84,9 +114,9 @@ export function logManualEntry(
         ease: 0,
         ivl: newIvl,
         lastIvl,
-        factor: 0,
+        factor: kind === 'reset' ? 0 : factor,
         time: 0,
-        type: kind === 'reset' ? 4 : 5,
+        type: kind === 'rescheduled' ? 5 : 4,
     };
 
     getDB().runSync(

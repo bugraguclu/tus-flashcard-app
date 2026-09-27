@@ -55,7 +55,7 @@ export interface FsrsReviewHistory {
     firstGraded: FsrsRevlogEntry | null;
 }
 
-const DAY_MS = 86_400_000;
+const DAY_SECS = 86_400;
 
 function hasRating(entry: FsrsRevlogEntry): boolean {
     return entry.ease > 0;
@@ -75,9 +75,13 @@ function affectsScheduling(entry: FsrsRevlogEntry): boolean {
     return hasRating(entry) && !isCramming(entry);
 }
 
-/** Whole study days between an entry and the next rollover. */
+/**
+ * Whole days between an entry and the next rollover. Anki truncates the entry to whole seconds
+ * first (`RevlogEntry::days_elapsed`), which matters for an answer in the last second of a day.
+ */
 function daysElapsed(entry: FsrsRevlogEntry, nextDayAtMs: number): number {
-    return Math.max(0, Math.floor((nextDayAtMs - entry.id) / DAY_MS));
+    const nextDayAtSecs = Math.floor(nextDayAtMs / 1000);
+    return Math.max(0, Math.floor((nextDayAtSecs - Math.floor(entry.id / 1000)) / DAY_SECS));
 }
 
 export interface FsrsLastReviewInfo {
@@ -189,17 +193,19 @@ export function fsrsReviewHistory(
 export interface FsrsCardForMemory {
     /** Current interval in days; 0 for a card that was never scheduled in days. */
     interval: number;
-    /** Ease factor as a multiplier (2.5), not permille. */
+    /** Ease factor as a multiplier (2.5), not permille; 0 when the card carries none. */
     easeFactor: number;
     isNew: boolean;
 }
 
 /**
- * The memory state to store on a card.
+ * The memory state to store on a card (`fsrs_item_for_memory_state` + `Card::set_memory_state`).
  *
- * A complete history is replayed as-is. A truncated one is seeded from the first surviving
- * review's SM-2 values, and a card with no usable history at all falls back to its current
- * interval and ease — which is how Anki bootstraps a collection that has never used FSRS.
+ * A complete history is replayed as-is. A truncated one is seeded from the SM-2 values of the
+ * first surviving review — its interval (at least a day, so an intraday or negative entry counts
+ * as one) and its ease, 2.5 when the entry recorded none — and the rest is replayed on top. A card
+ * with no usable history at all falls back to its current interval and ease, which is how Anki
+ * bootstraps a card that has never been scheduled by FSRS; a card still in learning gets none.
  */
 export function fsrsMemoryStateForCard(
     params: readonly number[],
@@ -211,13 +217,16 @@ export function fsrsMemoryStateForCard(
         if (history.complete) return fsrsMemoryStateFromReviews(params, history.reviews);
 
         const seedEntry = history.firstGraded;
-        const seedInterval = Math.max(1, seedEntry ? Math.abs(seedEntry.ivl) : card.interval);
-        const seedEase = seedEntry && seedEntry.factor > 0 ? seedEntry.factor / 1000 : 2.5;
+        const seedInterval = Math.max(1, seedEntry ? seedEntry.ivl : card.interval);
+        const seedEase = Math.fround((seedEntry && seedEntry.factor !== 0 ? seedEntry.factor : 2500) / 1000);
         const starting = fsrsMemoryStateFromSm2(params, seedEase, seedInterval, historicalRetention);
+        if (!starting) return null;
 
         // An ease factor at or below 1.1 marks an entry FSRS itself wrote, where the "ease"
         // column carries the difficulty rather than an SM-2 factor.
-        if (seedEase <= 1.1) starting.difficulty = (seedEase - 0.1) * 9 + 1;
+        if (seedEase <= 1.1) {
+            starting.difficulty = Math.fround(Math.fround(Math.fround(seedEase - Math.fround(0.1)) * 9) + 1);
+        }
 
         // The seeding review is now represented by the starting state, so it is not replayed.
         return fsrsMemoryStateFromReviews(params, history.reviews.slice(1), starting);

@@ -21,7 +21,6 @@ vi.mock('./db', () => ({
 }));
 
 import {
-    adjustIntervalForEasyDays,
     getDeckTotalCardCount,
     getFilteredDeckCardIds,
     getFilteredDeckCountCards,
@@ -310,58 +309,6 @@ describe('scope filtering (subject/topic)', () => {
 
         const modules = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'Modüller' });
         expect(modules.nextLearningDue).toBe(dueMs);
-    });
-});
-
-describe('easy days', () => {
-    it('shifts a review off a blocked weekday to the nearest allowed day', () => {
-        const nowMs = Date.now();
-        // Block whatever weekday a 10-day interval would land on.
-        const today = localDayNumber(nowMs, rolloverHour);
-        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
-        const blocked = mondayIndex(today + 10);
-        const easyDays = [1, 1, 1, 1, 1, 1, 1];
-        easyDays[blocked] = 0;
-
-        const adjusted = adjustIntervalForEasyDays(10, 42, easyDays, nowMs, rolloverHour);
-        expect(adjusted).not.toBe(10);
-        expect(Math.abs(adjusted - 10)).toBeLessThanOrEqual(2);
-        expect(mondayIndex(today + adjusted)).not.toBe(blocked);
-    });
-
-    it('leaves intervals alone when every day is normal', () => {
-        expect(adjustIntervalForEasyDays(10, 42, [1, 1, 1, 1, 1, 1, 1], Date.now(), rolloverHour)).toBe(10);
-        expect(adjustIntervalForEasyDays(10, 42, undefined, Date.now(), rolloverHour)).toBe(10);
-    });
-
-    it('never moves a card outside its own fuzz window', () => {
-        // Upstream runs easy days inside the load balancer, which only ever re-picks a day that
-        // plain fuzz could have chosen anyway. A 10-day interval fuzzes within [8, 12], so when
-        // every weekday inside that window is blocked the interval has to stay put -- reaching
-        // out to day 13 for an allowed weekday would schedule a review Anki would never write.
-        const nowMs = Date.now();
-        const today = localDayNumber(nowMs, rolloverHour);
-        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
-
-        const easyDays = [1, 1, 1, 1, 1, 1, 1];
-        for (let interval = 8; interval <= 12; interval += 1) easyDays[mondayIndex(today + interval)] = 0;
-
-        // Days 8..12 span five weekdays, so day 13 is necessarily one of the two still allowed.
-        expect(easyDays[mondayIndex(today + 13)]).toBe(1);
-        expect(adjustIntervalForEasyDays(10, 42, easyDays, nowMs, rolloverHour)).toBe(10);
-    });
-
-    it('does not move an interval too short to have a fuzz window', () => {
-        // Under 2.5 days the window collapses onto the interval itself, so there is no
-        // interchangeable day to move to even though the weekday is blocked.
-        const nowMs = Date.now();
-        const today = localDayNumber(nowMs, rolloverHour);
-        const mondayIndex = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
-
-        const easyDays = [1, 1, 1, 1, 1, 1, 1];
-        easyDays[mondayIndex(today + 2)] = 0;
-
-        expect(adjustIntervalForEasyDays(2, 42, easyDays, nowMs, rolloverHour)).toBe(2);
     });
 });
 

@@ -6,7 +6,7 @@
  * column is also where add-ons and future Anki versions park their own state.
  */
 
-import type { FsrsMemoryState } from './fsrs';
+import { roundFsrsValueForStorage, type FsrsMemoryState } from './fsrs';
 
 export interface AnkiCardData {
     /** `pos` — the position a new card had before it was moved out of the new queue. */
@@ -67,6 +67,17 @@ export function parseAnkiCardData(raw: string | undefined | null): AnkiCardData 
 }
 
 /**
+ * Decimal places Anki keeps when it writes each FSRS value (`CardData::convert_to_json`). The
+ * rounding is part of the scheduling contract: the next review starts from the rounded numbers.
+ */
+const STORED_DECIMALS: Partial<Record<keyof AnkiCardData, number>> = {
+    stability: 4,
+    difficulty: 3,
+    desiredRetention: 2,
+    decay: 3,
+};
+
+/**
  * Write the column back, keeping every key this app does not model. An entry is omitted when it
  * has no value, so a card without FSRS state serializes exactly as Anki would write it.
  */
@@ -91,17 +102,38 @@ export function serializeAnkiCardData(data: AnkiCardData, previousRaw?: string |
         if (value === undefined || value === null) continue;
         if (typeof value === 'number' && !Number.isFinite(value)) continue;
         if (field === 'customData' && value === '') continue;
-        result[key] = value;
+        const decimals = STORED_DECIMALS[field];
+        result[key] = decimals !== undefined && typeof value === 'number'
+            ? roundFsrsValueForStorage(value, decimals)
+            : value;
     }
 
     return Object.keys(result).length > 0 ? JSON.stringify(result) : undefined;
 }
 
-/** The stored memory state, or null when the card has never been scheduled by FSRS. */
+/**
+ * The stored memory state, or null when the card has never been scheduled by FSRS. Like Anki's
+ * `CardData::memory_state`, both halves being present is all it takes.
+ */
 export function memoryStateFromCardData(data: AnkiCardData): FsrsMemoryState | null {
     if (data.stability === undefined || data.difficulty === undefined) return null;
-    if (!(data.stability > 0)) return null;
     return { stability: data.stability, difficulty: data.difficulty };
+}
+
+/**
+ * Apply changes to the column, leaving every other key alone: a value sets a key, `null`
+ * removes it, and a field that is not mentioned is kept as it was.
+ */
+export function updateAnkiCardData(
+    previousRaw: string | undefined | null,
+    changes: { [K in keyof AnkiCardData]?: AnkiCardData[K] | null },
+): string | undefined {
+    const data = parseAnkiCardData(previousRaw);
+    for (const [field, value] of Object.entries(changes) as Array<[keyof AnkiCardData, unknown]>) {
+        if (value === undefined) continue;
+        (data as Record<string, unknown>)[field] = value === null ? undefined : value;
+    }
+    return serializeAnkiCardData(data, previousRaw);
 }
 
 /** Merge a freshly computed memory state into the column, leaving other keys alone. */

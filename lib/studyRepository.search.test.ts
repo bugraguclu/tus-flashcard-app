@@ -671,7 +671,14 @@ describe('FSRS search properties', () => {
         saveAnkiCard({
             ...makeCard(cardId, noteId, 1, { type: 2, queue: 2, due: 5, ivl: 10 }),
             lastReview: Date.now() - lastReviewDaysAgo * 86_400_000,
-            ankiData: JSON.stringify({ s: state.s, d: state.d, dr: 0.9, decay: 0.1542 }),
+            // `prop:r` reads the review time Anki records on the card (`lrt`), in seconds.
+            ankiData: JSON.stringify({
+                s: state.s,
+                d: state.d,
+                dr: 0.9,
+                decay: 0.1542,
+                lrt: Math.floor((Date.now() - lastReviewDaysAgo * 86_400_000) / 1000),
+            }),
         });
     };
 

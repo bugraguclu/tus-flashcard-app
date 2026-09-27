@@ -9,6 +9,7 @@ const shared = vi.hoisted(() => ({
     reviewId: 1000,
     throwOnSave: false,
     lastRevlogInterval: 0,
+    lastRevlogType: -1,
 }));
 
 const testNoteType: NoteType = {
@@ -69,18 +70,23 @@ vi.mock('./db', () => ({
 }));
 
 vi.mock('./deckManager', () => ({
+    getDeck: () => null,
     getDeckByName: () => null,
     getDeckConfigForDeck: () => ({ ...deckConfig }),
 }));
 
 vi.mock('./reviewLogger', () => ({
-    logReview: (_card: AnkiCard, _grade: number, interval: number) => {
+    logReview: (
+        _card: AnkiCard, _grade: number, interval: number, _lastIvl: number, _factor: number, _time: number, type: number,
+    ) => {
         shared.reviewId += 1;
         shared.lastRevlogInterval = interval;
+        shared.lastRevlogType = type;
         return { id: shared.reviewId } as ReviewLog;
     },
     deleteReviewById: vi.fn(),
     logManualEntry: vi.fn(),
+    revlogFactorForAnswer: (_memory: unknown, ease: number) => ease,
 }));
 
 vi.mock('./noteManager', () => ({
@@ -350,9 +356,23 @@ describe('answerStudyCard', () => {
         expect(handleLeech).toHaveBeenCalledTimes(1);
     });
 
-    it('logs the real interday-learning interval, not a clamped -1 second', () => {
-        // A relearning step of one day makes the lapsed card interday (queue 3), where `due`
-        // is a day number — the case the old revlog formula mis-converted to -1.
+    // A review card can only be answered before its due day from a filtered deck, and Anki logs
+    // such an answer as a filtered review (`ReviewState::revlog_kind`, days_late < 0).
+    it('logs a review answered before its due day as a filtered review', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        shared.cards.set(23, { ...baseCard(23, 1, 2, 2), due: today + 4, ivl: 10 });
+        answerStudyCard(23, 3, settings, 800);
+        expect(shared.lastRevlogType).toBe(3);
+
+        shared.cards.set(24, { ...baseCard(24, 1, 2, 2), due: today, ivl: 10 });
+        answerStudyCard(24, 3, settings, 800);
+        expect(shared.lastRevlogType).toBe(1);
+    });
+
+    it('logs an interday-learning step in days, as Anki does', () => {
+        // A relearning step of one day makes the lapsed card interday (queue 3). Anki counts a
+        // step that reaches past the next rollover in days (`IntervalKind::maybe_as_days`) and
+        // logs days as a positive number (`as_revlog_interval`).
         const original = deckConfig.relearningSteps;
         deckConfig.relearningSteps = [1440]; // 1 day
         try {
@@ -367,7 +387,7 @@ describe('answerStudyCard', () => {
             const updated = shared.cards.get(22)!;
 
             expect(updated.queue).toBe(3);                       // interday learning
-            expect(shared.lastRevlogInterval).toBe(-86400);      // one day in negative seconds
+            expect(shared.lastRevlogInterval).toBe(1);           // one day, as a day count
         } finally {
             deckConfig.relearningSteps = original;
         }
@@ -492,6 +512,23 @@ describe('forgetCard', () => {
             0,
             45,
         );
+    });
+
+    // Anki's `schedule_as_new` drops the memory state, so the card's next answer is a first
+    // review again; the review time recorded on it stays.
+    it('drops the FSRS memory state but keeps the recorded review time', () => {
+        shared.cards.set(34, {
+            ...baseCard(34, 1, 2, 2),
+            ivl: 45,
+            ankiData: JSON.stringify({ s: 40, d: 6, dr: 0.9, decay: 0.154, lrt: 1_790_000_000 }),
+        });
+
+        forgetCard(34, settings);
+
+        const data = JSON.parse(shared.cards.get(34)!.ankiData ?? '{}');
+        expect(data.s).toBeUndefined();
+        expect(data.d).toBeUndefined();
+        expect(data.lrt).toBe(1_790_000_000);
     });
 
     it('parks the card at the end of the new queue instead of keeping its review due day', () => {

@@ -15,7 +15,8 @@ import { getDeck } from '../lib/deckManager';
 import { getReviewsForCard } from '../lib/reviewLogger';
 import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
-import { FSRS6_DEFAULT_DECAY, fsrsRetrievability } from '../lib/fsrs';
+import { fsrsRetrievabilityAfterSeconds } from '../lib/fsrs';
+import { fsrsLastReviewTimeMs } from '../lib/fsrsCardInputs';
 import { memoryStateFromCardData, parseAnkiCardData } from '../lib/fsrsCardData';
 import { cardFlagName, localizeNoteTypeName } from '../lib/i18n';
 import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
@@ -80,14 +81,16 @@ export default function CardInfoScreen() {
     const { card, note, noteType, deck, reviews, createdAt, modifiedAt } = payload;
 
     // FSRS state, when the card has been scheduled by it. Retrievability is "how likely you are to
-    // remember this right now", derived from the stability and the days since the last review.
+    // remember this right now": Anki's card info reads it from the seconds since the last review
+    // (the card's `lrt`, else its newest answer in the log) on the card's own decay.
     const cardData = parseAnkiCardData(card.ankiData);
     const memory = memoryStateFromCardData(cardData);
-    const retrievability = memory && card.lastReview > 0
-        ? fsrsRetrievability(
-            memory.stability,
-            Math.max(0, (Date.now() - card.lastReview) / 86_400_000),
-            cardData.decay ?? FSRS6_DEFAULT_DECAY,
+    const lastReviewMs = memory ? fsrsLastReviewTimeMs(card) : 0;
+    const retrievability = memory
+        ? fsrsRetrievabilityAfterSeconds(
+            memory,
+            Math.floor(Date.now() / 1000) - Math.floor(lastReviewMs / 1000),
+            cardData.decay,
         )
         : null;
 

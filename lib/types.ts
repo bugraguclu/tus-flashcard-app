@@ -1,5 +1,6 @@
 import type { AnkiCard, Note } from './models';
 import type { FsrsMemoryState } from './fsrs';
+import type { IntervalBalancer } from './schedulingIntervals';
 
 /**
  * Simple flashcard shape used for legacy data and seed content.
@@ -98,6 +99,8 @@ export interface CardState {
     learningStep: number;
     relearningStep: number;
     lastReviewedAtMs: number;
+    /** Anki's own record of the last review (`lrt`), in epoch seconds, when the card carries one. */
+    lastReviewTimeSecs?: number;
     elapsedDays: number;
     lapses: number;
 
@@ -106,8 +109,8 @@ export interface CardState {
      * scheduled by FSRS, which is also how a brand-new card starts.
      */
     memoryState?: FsrsMemoryState | null;
-    /** The desired retention the card was last scheduled with (Anki's `dr`). */
-    desiredRetention?: number;
+    /** The desired retention the card was last scheduled with (Anki's `dr`); null clears it. */
+    desiredRetention?: number | null;
     /** The forgetting-curve decay the card was last scheduled with (Anki's `decay`). */
     decay?: number;
 }
@@ -138,11 +141,28 @@ export type Grade = 1 | 2 | 3 | 4;
  */
 export type AlgorithmType = 'ANKI_V3' | 'FSRS';
 
+/** Inputs to one answer that live outside the card itself. */
+export interface ScheduleContext {
+    /** Anki's load balancer for the card's preset, when one is active this session. */
+    balancer?: IntervalBalancer | null;
+}
+
 export interface SchedulerEngine {
     name: string;
     description: string;
-    schedule: (cardState: CardState, grade: Grade, settings: AppSettings, nowMs?: number) => ScheduleResult;
-    previewIntervals: (cardState: CardState, settings: AppSettings, nowMs?: number) => IntervalPreview;
+    schedule: (
+        cardState: CardState,
+        grade: Grade,
+        settings: AppSettings,
+        nowMs?: number,
+        context?: ScheduleContext,
+    ) => ScheduleResult;
+    previewIntervals: (
+        cardState: CardState,
+        settings: AppSettings,
+        nowMs?: number,
+        context?: ScheduleContext,
+    ) => IntervalPreview;
 }
 
 /** 'system' follows the OS light/dark setting; 'light'/'dark' pin it. */

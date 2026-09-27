@@ -295,3 +295,114 @@ enableShortTerm }` geçiyor, yani eğitim zamanı parametre kutusu gerçekten uy
 npx tsc --noEmit   → temiz
 npx vitest run     → 126 dosya, 1327 test, tamamı geçti
 ```
+
+---
+
+# Üçüncü geçiş — 27 Eylül 2026: Anki 26.05'in kendisine karşı ölçüm
+
+İlk iki geçiş kaynak okuyarak ve elle hesaplanmış beklenen değerlerle yapılmıştı. Bu geçişte
+bilgisayarda kurulu **Anki 26.05** (derleme `e64c6b1a`, fsrs-rs 5.2.0, rand 0.9.4) doğrudan
+referans olarak çalıştırıldı: Anki.app'in içindeki Python ve Rust arka ucu `scripts/anki-oracle/`
+betikleriyle sürüldü, binlerce rastgele ama tekrarlanabilir durum için Anki'nin yazdığı her değer
+kaydedildi ve uygulamanın aynı girdilerle ürettiği değerle karşılaştırıldı. Anki kodu kopyalanmadı;
+yalnızca çıktıları (sayılar) `test/fixtures/anki-26.05-fsrs.json` içinde test verisi olarak tutuluyor.
+
+## Kısa sonuç
+
+Önceki geçişlerin "matches" dediği birkaç madde Anki 26.05'e göre **yanlıştı**. Hepsi düzeltildi.
+Son ölçümde:
+
+| Karşılaştırma | Vaka | Sonuç |
+| --- | --- | --- |
+| Dört düğmenin sonucu (tür, gün, saniye, S, D) | 12 000 | Gün/saniye/tür %100 aynı; S/D %99 bit düzeyinde aynı, kalan ~%1 son bitlerde (≤ 5·10⁻⁶) |
+| Revlog'dan hafıza durumu | 3 000 | 2 894 bit düzeyinde aynı, 106 son bitlerde |
+| Uçtan uca cevap (kart + `cards.data` + revlog satırı) | 2 000 | Tüm alanlar aynı; 5 kartta saklanan S'nin 4. ondalığı |
+| `fuzz_delta` (kimlik 2⁵²'ye, tekrar 5 000'e kadar) | 400 | %100 aynı |
+| Yük dengeleyicili aralık | 2 991 | %100 aynı (%47'sinde dengeleyici günü düz fuzz'dan farklı güne taşıdı) |
+| Değişince yeniden planla (dengeleyici kapalı) | 168 | %100 aynı |
+| Değişince yeniden planla (dengeleyici açık) | 546 | %96 aynı |
+
+Son bit farkları algoritmadan değil platformdan geliyor: fsrs-rs 32-bit float çalışıyor, macOS'un
+`expf`/`powf`'u her girdide doğru yuvarlanmıyor. İncelenen her vaka, bir exp/pow sonucunu 1 ulp
+kaydırınca Anki'nin değerine birebir dönüşüyor. Anki'nin kendisi de Windows/Android'de bu düzeyde
+farklı sayı üretir.
+
+## Bulunan ve düzeltilen sapmalar
+
+1. **Aynı gün "Zor" (short-term) tabanı** — `lib/fsrs.ts`. fsrs-rs 5.2.0 çarpanı yalnızca
+   `rating >= 3` (Good/Easy) için 1'e tabanlıyor; uygulama Hard'ı da tabanlıyordu. İlk geçişin
+   12. maddesi ("`rating >= 2` üst kaynakla birebir") yanlıştı. S = 20'lik kart aynı gün Hard →
+   Anki ≈ 10, uygulama 20 veriyordu.
+2. **f32 aritmetiği ve işlem sırası** — `lib/fsrs.ts` fsrs-rs'in her işlemini aynı sırayla f32'de
+   yapıyor (linear damping `(10−D)·(ΔD/9)`, `memory_state_from_sm2`'de `exp_m1`, tabansız S).
+3. **Saklanan değerlerin yuvarlanması** — `lib/fsrsCardData.ts`. Anki `cards.data`'ya S'yi 4,
+   D'yi 3, DR'yi 2, decay'i 3 ondalıkla yazar ve bir sonraki cevap yuvarlanmış değerden başlar
+   (FSRS-6'nın 0.1542'si kartta 0.154 olur). Uygulama tam hassasiyet saklıyordu.
+4. **Geçen gün sayısı** — `lib/fsrsScheduler.ts`. Anki: son tekrardan *sonraki gün sınırına*
+   kadar tam 24 saatlik bloklar; son tekrar `lrt`'den, yoksa revlog'daki son sayılan cevaptan.
+5. **Hafıza durumu olmayan eski kart** — cevaplanmış ama durumu olmayan kart (SM-2'den gelen,
+   desteye taşınan) Anki'de revlog'dan/SM-2 değerlerinden türetiliyor; uygulama onu "ilk kez
+   görülen kart" sayıp ilk parametrelerden başlatıyordu (`lib/fsrsCardInputs.ts`).
+6. **Fuzz tohumu** — `lib/ankiRandom.ts`. Anki'nin `StdRng`'si (PCG32 ile genişletilen tohum,
+   ChaCha12, `random_range`, `WeightedIndex`) birebir yazıldı; tohum `kart kimliği + reps`.
+   İlk geçişin 15. maddesi "bilinçli fark" olarak bırakılmıştı; artık aynı gün seçiliyor.
+7. **Fuzz penceresi f32'de** ve **büyüyen aralık tabanı** — Anki 26.05'te taban yalnızca
+   `round(aralık) > eski ? eski+1 : 0`; uygulamadaki "pencere içindeyse eskisi" dalı eski bir
+   sürümden kalmaydı.
+8. **Yük dengeleyici ve Kolay günler** — Anki 26.05'te varsayılan açık, arayüzde anahtarı yok;
+   90 güne kadarki her aralığı gün başına kart sayısı, kardeş kartlar ve kolay günlere göre
+   ağırlıklı seçiyor (`lib/loadBalancer.ts`). Uygulamadaki ayrı "kolay günler kaydırması"
+   kaldırıldı, dengeleyici kuyruğun kurulduğu anda okunuyor ve her cevapla güncelleniyor.
+9. **Öğrenme adımları** — "Zor" gecikmesi saniye ve tamsayı bölmeyle (1m/10m → 5m30s, 6m değil);
+   gün içi adıma Anki'nin %25 / en çok 5 dakikalık öğrenme fuzz'u; FSRS kısa vadeli aralıklar
+   saniye hassasiyetinde; gün sınırını aşan adım gün cinsinden.
+10. **Tekrar sayısı (`reps`)** — Anki her cevapta artırır; uygulama yalnızca tekrara geçişte
+    artırıyordu. Fuzz tohumu buna bağlı.
+11. **Yeniden öğrenmedeki kartın aralığı ve ease'i** — Hard/Good adımlarında Anki aralığı sabit
+    tutar; yeniden öğrenmeden çıkışta ease değişmez, öğrenme adımlarında ease'e dokunulmaz.
+    Uygulama her adımda aralığı ve ease'i değiştiriyordu.
+12. **Revlog sütunları** — tür (erken cevaplanan tekrar = filtreli tekrar, 3), `ivl`/`lastIvl`
+    gün ya da negatif saniye (gün sınırını aşan adım pozitif gün), ease sütununda FSRS altında
+    kaydırılmış zorluk (`round(((D−1)/9+0.1)·1000)`), öğrenmede SM-2 ease'i 0.
+13. **Kart alanları** — öğrenme kartının `ivl`'i değişmez, `left` yalnızca kalan adım sayısı
+    (Anki 26.05 "bugün" kısmını yazmıyor), yeni kart ilk cevapta `pos`, her cevapta `lrt`.
+14. **Boş adım listeleri** — Anki öğrenme/yeniden öğrenme adımlarının boş kalmasına izin veriyor;
+    uygulamanın formu boş öğrenme adımını reddediyor, çözümleyici boş listeyi varsayılana
+    çeviriyordu. İkisi de düzeltildi, SM-2 motoru boş adımı Anki gibi ele alıyor.
+15. **Ön ayar doğrulaması** — Anki DR'yi [0.70, 0.99], geçmiş hatırlamayı [0.70, 0.97] dışında
+    bulursa kırpmıyor, 0.9'a döndürüyor.
+16. **Desteye özel hedef hatırlama** — Anki 26.05'in "Bu deste" sekmesi eklendi (model,
+    çözümleyici, .apkg alanı 10 ve eski JSON'daki yüzde).
+17. **Deste seçenekleri kaydı** — Anki yalnızca parametresi ya da etkin DR'si değişen (yeniden
+    planla seçiliyse kolay günleri de değişen) desteleri yeniden hesaplar ve yeniden planlar;
+    FSRS açılınca hepsini, kapatılınca FSRS verisini siler. Uygulama her kayıtta bütün koleksiyonu
+    işliyordu; "yeniden planla" işaretliyken değişiklik olmadan da tüm tarihleri değiştiriyordu.
+18. **Toplu yeniden hesaplama** — revlog'u olmayan kart hiç ziyaret edilmez; kullanılabilir cevabı
+    olmayanın durumu boşaltılır ama DR/decay yazılır; yeniden planlama yalnızca sayılan cevabı olan,
+    askıda olmayan tekrar kartına, `reps−1` tohumlu fuzz ve `Rescheduled` (tür 5) satırıyla.
+19. **Son tarihi ayarla** — 26.05 kuralı: hafıza durumu olan kartta `lrt`'den geçen gün + istenen
+    gün (`!` etkisiz), `lrt` yoksa aralık tarih kadar kaydırılır; satır türü 4 ve ease sütunu dolu.
+20. **Unut** — FSRS hafıza durumu siliniyor (uygulamada unutulan kart eski hafızayla devam
+    ediyordu). **Deste değiştirme** de Anki gibi FSRS verisini siliyor (geri alınabilir).
+21. **Hatırlanabilirlik gösterimi/arama/sıralama** — `lrt`'den saniye, kartın kendi decay'i
+    (yoksa 0.5), "şimdi"ye göre; göreli gecikme Anki formülüyle.
+22. **Yok say tarihi** — Anki "şu tarihten önce" değerini UTC gece yarısı olarak okuyor.
+23. **Düğme etiketleri** — kuyruktaki tekrar kartları kart verisi olmadan yükleniyordu; FSRS
+    altında etiketler hafıza durumunu görmüyordu. Artık tam kart ve aynı dengeleyici kullanılıyor.
+
+## Kalan farklar
+
+- Dengeleyici açıkken "değişince yeniden planla": Anki kartları Rust'ın kararsız sıralamasıyla
+  işliyor; eşit tekrar sayılı kartların sırası sayaçları değiştirdiği için günlerin ~%4'ü farklı.
+- S/D'nin son bitleri (~%1), yukarıda açıklandığı gibi platform kaynaklı.
+- Optimizer Anki'nin eğiticisi değil; önizleme cevabı cramming satırı yazmıyor; "Unut" tekrar ve
+  hata sayılarını her zaman sıfırlıyor (Anki'de varsayılan kapalı bir seçenek).
+- Tarayıcının hatırlanabilirlik sıralaması ve filtreli destenin SQL `prop:r`'si, farklı decay'li
+  ön ayarlar karıştığında yaklaşık (SQLite'ta üs alma garanti değil).
+
+## Çalıştırılan doğrulama
+
+```
+npx vitest run lib/fsrsAnkiParity.test.ts   → 6 test (UTC, New York ve Tokyo saat dilimlerinde de)
+npm run quality                             → bkz. değişiklik kaydı
+```

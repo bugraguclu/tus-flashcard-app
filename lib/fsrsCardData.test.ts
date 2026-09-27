@@ -40,16 +40,19 @@ describe('Anki card data column', () => {
         expect(serializeAnkiCardData({ stability: Number.NaN })).toBeUndefined();
     });
 
+    // Anki's `CardData::memory_state` asks only that both halves are there; the scheduler then
+    // clamps a zero stability up to its minimum rather than treating the card as unscheduled.
     it('exposes a memory state only when both halves are present', () => {
         expect(memoryStateFromCardData({ stability: 10, difficulty: 5 })).toEqual({ stability: 10, difficulty: 5 });
         expect(memoryStateFromCardData({ stability: 10 })).toBeNull();
-        expect(memoryStateFromCardData({ stability: 0, difficulty: 5 })).toBeNull();
+        expect(memoryStateFromCardData({ stability: 0, difficulty: 5 })).toEqual({ stability: 0, difficulty: 5 });
         expect(memoryStateFromCardData({})).toBeNull();
     });
 
     it('writes and clears the memory state without disturbing other keys', () => {
         const withState = withFsrsMemoryState('{"pos":3}', { stability: 12.5, difficulty: 6 }, 0.9, 0.1542);
-        expect(JSON.parse(withState!)).toEqual({ pos: 3, s: 12.5, d: 6, dr: 0.9, decay: 0.1542 });
+        // Anki keeps three decimals of decay on the card, so FSRS-6's 0.1542 is written as 0.154.
+        expect(JSON.parse(withState!)).toEqual({ pos: 3, s: 12.5, d: 6, dr: 0.9, decay: 0.154 });
 
         const cleared = withFsrsMemoryState(withState, null, undefined, undefined);
         expect(JSON.parse(cleared!)).toEqual({ pos: 3 });

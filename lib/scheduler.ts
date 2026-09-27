@@ -17,7 +17,9 @@ import {
     formatMinutes,
     getToday,
     hardDelayMinutes,
+    reviewFuzzFor,
     todayLocalYMD,
+    type ReviewFuzz,
 } from './schedulingIntervals';
 
 // Ease deltas, matching Anki rslib/src/scheduler/states/review.rs.
@@ -54,7 +56,7 @@ function computeReviewIntervals(
     cs: CardState,
     settings: AppSettings,
     elapsedDays: number = 0,
-    fuzz?: { cardId: number; nowMs: number },
+    fuzz?: ReviewFuzz,
 ): { hard: number; good: number; easy: number } {
     const cur = Math.max(1, cs.interval || 1);
     const ef = cs.easeFactor || settings.startingEase;
@@ -87,9 +89,7 @@ function computeReviewIntervals(
     // so that hard <= good <= easy; hard minimum is 0 when hardFactor <= 1.0 (may shrink).
     const delay = Math.max(0, daysLate);
 
-    const fp = fuzz
-        ? { cardId: cs.cardId, nowMs: fuzz.nowMs, rolloverHour: settings.dayRolloverHour }
-        : undefined;
+    const fp = fuzz;
 
     const hardMin = hf <= 1.0 ? 0 : cur + 1;
     const hard = constrainInterval(cur * hf * im, hardMin, max, fp);
@@ -124,7 +124,7 @@ const AnkiV3Engine: SchedulerEngine = {
     name: 'ANKI_V3',
     description: 'Anki V3 compatible scheduler (learning/relearning/review)',
 
-    schedule: (cs: CardState, grade: Grade, settings: AppSettings, nowMs?: number): ScheduleResult => {
+    schedule: (cs, grade, settings, nowMs, context): ScheduleResult => {
         if (grade !== 1 && grade !== 2 && grade !== 3 && grade !== 4) {
             throw new Error(`Invalid grade: ${grade}. Expected 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy).`);
         }
@@ -132,19 +132,31 @@ const AnkiV3Engine: SchedulerEngine = {
         const elapsedDays = elapsedDaysFor(cs, now, settings);
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
+        const fuzz = reviewFuzzFor(cs.cardId, cs.repetition, context?.balancer ?? null);
 
         if (isRelearning) return ankiV3Relearning(cs, grade, settings, now, elapsedDays);
-        if (isLearning) return ankiV3Learning(cs, grade, settings, now, elapsedDays);
-        return ankiV3Review(cs, grade, settings, now, elapsedDays);
+        if (isLearning) return ankiV3Learning(cs, grade, settings, now, elapsedDays, fuzz);
+        return ankiV3Review(cs, grade, settings, now, elapsedDays, fuzz);
     },
 
-    previewIntervals: (cs: CardState, settings: AppSettings, nowMs?: number): IntervalPreview => {
+    previewIntervals: (cs, settings, nowMs): IntervalPreview => {
         const now = typeof nowMs === 'number' ? nowMs : Date.now();
         const elapsedDays = elapsedDaysFor(cs, now, settings);
         const learningSteps = settings.learningSteps;
         const lapseSteps = settings.lapseSteps;
         const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
+
+        if (isLearning && !isRelearning && learningSteps.length === 0) {
+            const graduating = `${settings.graduatingInterval} gün`;
+            return {
+                again: graduating,
+                hard: graduating,
+                good: graduating,
+                easy: `${settings.easyInterval} gün`,
+                againMinutes: settings.graduatingInterval * MINUTES_PER_DAY,
+            };
+        }
 
         if (isLearning && !isRelearning) {
             const step = cs.learningStep || 0;
@@ -158,6 +170,17 @@ const AnkiV3Engine: SchedulerEngine = {
                 easy: `${settings.easyInterval} gün`,
                 againMinutes: learningSteps[0] || 1,
                 hardMinutes: hardMin,
+            };
+        }
+
+        if (isRelearning && lapseSteps.length === 0) {
+            const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
+            return {
+                again: formatDays(relearnInterval),
+                hard: formatDays(relearnInterval),
+                good: formatDays(relearnInterval),
+                easy: formatDays(computeRelearningEasyInterval(cs, settings)),
+                againMinutes: relearnInterval * MINUTES_PER_DAY,
             };
         }
 
@@ -199,10 +222,30 @@ function ankiV3Learning(
     settings: AppSettings,
     now: number,
     elapsedDays: number,
+    fuzz: ReviewFuzz,
 ): ScheduleResult {
     const steps = settings.learningSteps;
     const step = cs.learningStep || 0;
     const nextMin = steps[step + 1] ?? null;
+
+    // With no learning steps Anki has nothing to repeat: Again and Hard graduate on the
+    // graduating interval, like Good (rslib states/learning.rs, SM-2 branch).
+    if (steps.length === 0 && (grade === 1 || grade === 2)) {
+        const gradInterval = constrainInterval(settings.graduatingInterval, 1, settings.maxInterval, fuzz);
+        return {
+            interval: gradInterval,
+            isLearning: false,
+            stateUpdates: {
+                learningStep: -1,
+                relearningStep: -1,
+                status: 'review',
+                interval: gradInterval,
+                easeFactor: settings.startingEase,
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
+        };
+    }
 
     if (grade === 1) {
         return {
@@ -252,12 +295,7 @@ function ankiV3Learning(
         }
 
         // Graduate: fuzzed graduating interval + initial ease factor.
-        const gradInterval = constrainInterval(
-            settings.graduatingInterval,
-            1,
-            settings.maxInterval,
-            { cardId: cs.cardId, nowMs: now, rolloverHour: settings.dayRolloverHour },
-        );
+        const gradInterval = constrainInterval(settings.graduatingInterval, 1, settings.maxInterval, fuzz);
         return {
             interval: gradInterval,
             isLearning: false,
@@ -275,12 +313,7 @@ function ankiV3Learning(
     }
 
     // Easy: graduate immediately with the fuzzed easy interval + initial ease factor.
-    const easyInt = constrainInterval(
-        settings.easyInterval,
-        1,
-        settings.maxInterval,
-        { cardId: cs.cardId, nowMs: now, rolloverHour: settings.dayRolloverHour },
-    );
+    const easyInt = constrainInterval(settings.easyInterval, 1, settings.maxInterval, fuzz);
     return {
         interval: easyInt,
         isLearning: false,
@@ -307,6 +340,24 @@ function ankiV3Relearning(
     const steps = settings.lapseSteps;
     const step = cs.relearningStep;
     const nextMin = steps[step + 1] ?? null;
+
+    // With no relearning steps left to run, Anki returns the card to review on the interval it
+    // was given when it lapsed (rslib states/relearning.rs, SM-2 branch).
+    if (steps.length === 0 && grade !== 4) {
+        const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
+        return {
+            interval: relearnInterval,
+            isLearning: false,
+            stateUpdates: {
+                relearningStep: -1,
+                learningStep: -1,
+                status: 'review',
+                interval: relearnInterval,
+                lastReviewedAtMs: now,
+                elapsedDays,
+            },
+        };
+    }
 
     if (grade === 1) {
         return {
@@ -392,6 +443,7 @@ function ankiV3Review(
     settings: AppSettings,
     now: number,
     elapsedDays: number,
+    fuzz: ReviewFuzz,
 ): ScheduleResult {
     const ef = cs.easeFactor || settings.startingEase;
     const cur = Math.max(1, cs.interval || 1);
@@ -439,7 +491,7 @@ function ankiV3Review(
     }
 
     // Fuzzed intervals with chained minimums guarantee hard <= good <= easy.
-    const intervals = computeReviewIntervals(cs, settings, elapsedDays, { cardId: cs.cardId, nowMs: now });
+    const intervals = computeReviewIntervals(cs, settings, elapsedDays, fuzz);
 
     if (grade === 2) {
         const newEase = Math.max(MINIMUM_EASE_FACTOR, ef + EASE_FACTOR_HARD_DELTA);

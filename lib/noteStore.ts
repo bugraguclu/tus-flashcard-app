@@ -9,6 +9,7 @@ import {
 } from './models';
 import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
+import { updateAnkiCardData } from './fsrsCardData';
 import { buildFtsPrefixQuery, getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
@@ -397,14 +398,20 @@ export interface CardDeckMoveSnapshot {
     cardId: number;
     previousDeckId: number;
     targetDeckId: number;
+    /** The card's data column before the move, which the move strips of its FSRS values. */
+    previousAnkiData?: string;
+    /** The data column the move wrote, so undo can tell whether anything touched it since. */
+    movedAnkiData?: string;
 }
 
 /**
  * Move a browser selection to another deck as one undoable operation.
  *
  * The caller owns the undo stack, while this function keeps the database write atomic and
- * returns the original deck of every card. Scheduling data is preserved exactly; only deckId,
- * mod and usn change, matching Anki's browser "Change Deck" action.
+ * returns the original deck of every card. Scheduling is kept as it was, but the FSRS memory
+ * state, desired retention and decay are dropped, as Anki's `Card::set_deck` does: the card may
+ * now follow another preset, so its state is derived again from its review log, under that
+ * preset's parameters, when it is next answered.
  */
 export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDeckMoveSnapshot[] {
     assertCatalogCardsMovable(cardIds, targetDeckId);
@@ -416,6 +423,13 @@ export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDe
             cardId: card.id,
             previousDeckId: card.deckId,
             targetDeckId,
+            previousAnkiData: card.ankiData,
+            movedAnkiData: updateAnkiCardData(card.ankiData, {
+                stability: null,
+                difficulty: null,
+                desiredRetention: null,
+                decay: null,
+            }),
         }));
 
     if (moves.length === 0) return [];
@@ -427,7 +441,7 @@ export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDe
         for (const move of moves) {
             const card = getAnkiCard(move.cardId);
             if (!card) continue;
-            saveAnkiCard({ ...card, deckId: targetDeckId, mod: nowSec, usn: -1 });
+            saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, mod: nowSec, usn: -1 });
         }
         db.execSync('COMMIT;');
     } catch (error) {
@@ -450,7 +464,9 @@ export function undoCardsMovedToDeck(moves: CardDeckMoveSnapshot[]): number {
         for (const move of moves) {
             const card = getAnkiCard(move.cardId);
             if (!card) continue;
-            saveAnkiCard({ ...card, deckId: move.previousDeckId, mod: nowSec, usn: -1 });
+            // The FSRS values come back only if nothing (an answer, say) has rewritten them since.
+            const ankiData = card.ankiData === move.movedAnkiData ? move.previousAnkiData : card.ankiData;
+            saveAnkiCard({ ...card, deckId: move.previousDeckId, ankiData, mod: nowSec, usn: -1 });
             restored += 1;
         }
         db.execSync('COMMIT;');

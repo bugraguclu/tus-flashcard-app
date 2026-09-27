@@ -3,6 +3,7 @@ import { getSubjectIdSet, resolveSubjectDeckId } from './subjects';
 import type { CardState, AppSettings, StudyCard } from './types';
 import type { AnkiCard, Note, NoteType } from './models';
 import { ankiCardToCardState, legacyCardIdFromAnkiCardId } from './ankiState';
+import { withFsrsInputs } from './fsrsCardInputs';
 import { getAnkiCard, MARKED_TAG } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
@@ -353,9 +354,14 @@ export function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?
 
     const config = getDeckConfigForDeck(deckId);
     const resolved = resolveSettingsFromConfig(config, base);
+    // Anki's `effective_desired_retention`: the deck's own target wins over its preset's.
+    const deckRetention = getDeck(deckId)?.desiredRetention;
+    const effective = typeof deckRetention === 'number' && Number.isFinite(deckRetention)
+        ? { ...resolved, desiredRetention: deckRetention }
+        : resolved;
 
-    cache?.set(deckId, resolved);
-    return resolved;
+    cache?.set(deckId, effective);
+    return effective;
 }
 
 export function makeStudyCard(
@@ -382,7 +388,7 @@ export function makeStudyCard(
         noteMarked: note.tags.includes(MARKED_TAG),
         templateOrd: card.ord,
         // TODO(boundary): remove CardState materialization from queue path once scheduler works directly on AnkiCard.
-        state: stateOverride ?? ankiCardToCardState(card, settings, nowMs),
+        state: stateOverride ?? withFsrsInputs(ankiCardToCardState(card, settings, nowMs), card, settings, nowMs),
         rawCard: includeRawCard ? card : undefined,
         rawNote: includeRawNote ? note : undefined,
     };
@@ -415,9 +421,12 @@ export function toStudyCards(
                 noteTypeCache.set(note.noteTypeId, noteType);
             }
 
-            // Parse full card blob only for learning queues (left/decode needed)
-            // or when caller explicitly needs a full raw card object.
+            const cardSettings = resolveSettingsForDeck(row.deckId, baseSettings, settingsCache);
+            // Parse the full card blob for learning queues (left/decode needed), under FSRS (the
+            // memory state and last review time live in it, and the answer buttons read them), or
+            // when the caller explicitly needs a full raw card object.
             const needsFullCard = options.includeRawCard
+                || cardSettings.fsrsEnabled === true
                 || row.queue === 1
                 || row.queue === 3
                 || row.type === 1
@@ -434,7 +443,6 @@ export function toStudyCards(
                 card = makeShallowCardFromRow(row, nowMs);
             }
 
-            const cardSettings = resolveSettingsForDeck(card.deckId, baseSettings, settingsCache);
             acc.push(makeStudyCard(
                 card,
                 note,

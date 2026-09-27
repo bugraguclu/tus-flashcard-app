@@ -18,6 +18,14 @@ vi.mock('./noteManager', () => ({
 
 vi.mock('./reviewLogger', () => ({
     logManualEntry: vi.fn(() => ({ id: 1 })),
+    // The real rule, reduced to what these tests look at: FSRS cards log their difficulty.
+    revlogFactorForScheduling: (memory: { difficulty: number } | null, ease: number) => (
+        memory ? Math.trunc(((memory.difficulty - 1) / 9 + 0.1) * 1000) : ease
+    ),
+}));
+
+vi.mock('./studyCardRows', () => ({
+    resolveSettingsForDeck: () => ({ startingEase: 2.5, dayRolloverHour: 4 }),
 }));
 
 vi.mock('./studyRepository', () => ({
@@ -164,10 +172,29 @@ describe('browser selection scheduling operations', () => {
 
         const written = setSelectedDueDate([1], { minDays: 3, maxDays: 3, forceInterval: false }, settings);
 
-        // A reschedule must not read as a reset, or moving a card would silently wipe its
-        // memory state; that is what the separate 'rescheduled' kind is for.
-        expect(logManualEntry).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), 'rescheduled', 6, 6);
+        // Anki logs Set Due Date as a manual row that carries the card's ease, so it never reads
+        // as the factor-0 reset marker that would wipe the memory state.
+        expect(logManualEntry).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), 'manual', 6, 6, 2500);
         expect(written).toEqual([{ id: 900 }]);
+    });
+
+    it('measures an FSRS card from its recorded last review and ignores the forcing "!"', () => {
+        const nowMs = Date.now();
+        const lastReviewSecs = Math.floor(nowMs / 1000) - 12 * 86_400;
+        harness.cards.set(1, card(1, {
+            type: 2,
+            queue: 2,
+            ivl: 10,
+            ankiData: JSON.stringify({ s: 20, d: 5.5, lrt: lastReviewSecs }),
+        }));
+        vi.mocked(logManualEntry).mockClear();
+
+        setSelectedDueDate([1], { minDays: 5, maxDays: 5, forceInterval: true }, settings);
+
+        // Reviewed twelve days ago (counted to the next rollover) and pushed five days out.
+        const ivl = harness.cards.get(1)!.ivl;
+        expect([17, 18]).toContain(ivl);
+        expect(logManualEntry).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), 'manual', ivl, 10, 600);
     });
 
     it('resets cards to the end of the new queue and grades through the scheduler path', () => {
@@ -183,54 +210,42 @@ describe('browser selection scheduling operations', () => {
 });
 
 describe('setDueDateInterval', () => {
+    // Anki 26.05, `Card::set_due_date` in rslib/src/scheduler/reviews.rs.
+    const NEXT_DAY_AT = Date.UTC(2026, 2, 12, 1, 0, 0);
     const base = {
-        fsrsEnabled: false,
-        wasNew: false,
+        hasMemoryState: false,
+        isReviewOrRelearning: true,
         currentInterval: 30,
-        daysSinceLastReview: null as number | null,
+        lastReviewTimeMs: null as number | null,
+        nextDayAtMs: NEXT_DAY_AT,
+        daysUntilCurrentDue: 2,
         requestedDays: 5,
         forceInterval: false,
     };
 
-    it('keeps the earned interval under SM-2 unless the user forces it', () => {
+    it('keeps the earned interval of a review card without a memory state unless forced', () => {
         expect(setDueDateInterval(base)).toBe(30);
         expect(setDueDateInterval({ ...base, forceInterval: true })).toBe(5);
     });
 
-    it('gives a new SM-2 card the interval it was asked to sit at', () => {
-        expect(setDueDateInterval({ ...base, wasNew: true, currentInterval: 0 })).toBe(5);
+    it('gives a new or learning card without a memory state the requested days', () => {
+        expect(setDueDateInterval({ ...base, isReviewOrRelearning: false, currentInterval: 0 })).toBe(5);
+        expect(setDueDateInterval({ ...base, isReviewOrRelearning: false, requestedDays: 0 })).toBe(1);
     });
 
-    it('leaves a new or zero-interval card at zero under FSRS', () => {
-        // Writing a day count here would invent a review history the card has never had.
-        expect(setDueDateInterval({ ...base, fsrsEnabled: true, wasNew: true, currentInterval: 0 })).toBe(0);
-        expect(setDueDateInterval({ ...base, fsrsEnabled: true, currentInterval: 0 })).toBe(0);
+    it('extends an FSRS card across the whole unseen gap, whatever "!" says', () => {
+        // Reviewed 12 whole days before the next rollover and pushed 5 days out: 17 days unseen.
+        const lastReviewTimeMs = NEXT_DAY_AT - 12 * 86_400_000 - 3_600_000;
+        expect(setDueDateInterval({ ...base, hasMemoryState: true, lastReviewTimeMs })).toBe(17);
+        expect(setDueDateInterval({ ...base, hasMemoryState: true, lastReviewTimeMs, forceInterval: true })).toBe(17);
     });
 
-    it('extends the interval across the whole unseen gap under FSRS', () => {
-        // Answered 12 days ago and pushed 5 days out: the card will have gone 17 days unseen.
+    it('moves an FSRS card without a recorded review by as many days as its due date moves', () => {
+        // Due in 2 days, now due in 5: the interval grows by 3.
+        expect(setDueDateInterval({ ...base, hasMemoryState: true })).toBe(33);
+        // Pulled in from 10 days out to today, a short interval stops at zero.
         expect(setDueDateInterval({
-            ...base, fsrsEnabled: true, daysSinceLastReview: 12, requestedDays: 5,
-        })).toBe(17);
-    });
-
-    it('falls back to the requested days when FSRS finds no usable last review', () => {
-        expect(setDueDateInterval({
-            ...base, fsrsEnabled: true, daysSinceLastReview: null, requestedDays: 5,
-        })).toBe(5);
-    });
-
-    it('lets the forcing "!" win over the FSRS rule', () => {
-        expect(setDueDateInterval({
-            ...base, fsrsEnabled: true, daysSinceLastReview: 12, requestedDays: 5, forceInterval: true,
-        })).toBe(5);
-    });
-
-    it('never writes an interval below one day for a card that has one', () => {
-        // A negative day count means "overdue by N"; the stored interval still has to stay real.
-        expect(setDueDateInterval({
-            ...base, fsrsEnabled: true, daysSinceLastReview: 0, requestedDays: -3,
-        })).toBe(1);
-        expect(setDueDateInterval({ ...base, wasNew: true, requestedDays: -3 })).toBe(3);
+            ...base, hasMemoryState: true, currentInterval: 2, daysUntilCurrentDue: 10, requestedDays: 0,
+        })).toBe(0);
     });
 });

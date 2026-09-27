@@ -194,6 +194,21 @@ export function setDeckLimitOverrides(deckId: number, newLimit?: number, reviewL
 }
 
 /**
+ * The deck's own desired retention (Anki's "This deck" tab under FSRS), or undefined to follow
+ * the preset. Kept as the learner typed it; the deck options form bounds it to 70%–99%.
+ */
+export function setDeckDesiredRetention(deckId: number, desiredRetention?: number): void {
+    const deck = getDeck(deckId);
+    if (!deck) return;
+    const value = desiredRetention !== undefined && Number.isFinite(desiredRetention) ? desiredRetention : undefined;
+    if (deck.desiredRetention === value) return;
+    deck.desiredRetention = value;
+    deck.mod = Math.floor(Date.now() / 1000);
+    deck.usn = -1;
+    saveDeck(deck);
+}
+
+/**
  * Persistent per-deck daily limits (Anki deck options "this deck"). The first edit splits the
  * deck off the shared preset onto its own config, so sibling decks keep their existing limits.
  */

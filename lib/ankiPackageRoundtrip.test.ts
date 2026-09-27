@@ -511,7 +511,8 @@ describe('lossless Anki package roundtrip', () => {
         expect(reimported?.fsrsParams).toHaveLength(21);
         expect(reimported?.desiredRetention).toBeCloseTo(0.85, 5);
         expect(reimported?.historicalRetention).toBeCloseTo(0.8, 5);
-        expect(reimported?.ignoreRevlogsBeforeMs).toBe(Date.parse('2025-06-01T00:00:00'));
+        // Anki reads the cutoff date as midnight UTC (`ignore_revlogs_before_date_to_ms`).
+        expect(reimported?.ignoreRevlogsBeforeMs).toBe(Date.UTC(2025, 5, 1));
         expect(parseAnkiCardData(getAllAnkiCards()[0].ankiData).stability).toBeCloseTo(31.7, 4);
     });
 

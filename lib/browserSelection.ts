@@ -1,10 +1,10 @@
 import type { AppSettings, Grade } from './types';
 import type { AnkiCard, ReviewLog } from './models';
-import { localDayNumber } from './ankiState';
-import { fsrsLastReviewInfo } from './fsrsMemory';
+import { localDayNumber, nextRolloverMs } from './ankiState';
+import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import { parseDueRange, setDueDateInterval, type DueRange } from './schedulingIntervals';
-import { logManualEntry } from './reviewLogger';
-import { revlogByCard } from './fsrsMaintenance';
+import { logManualEntry, revlogFactorForScheduling } from './reviewLogger';
+import { resolveSettingsForDeck } from './studyCardRows';
 import {
     getAllAnkiCards,
     getAnkiCard,
@@ -100,7 +100,9 @@ export function repositionSelectedNewCards(
 }
 
 /**
- * Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`.
+ * Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`
+ * (`Collection::set_due_date`): every card becomes a review card due on the chosen day, a card
+ * without an ease factor takes its preset's starting ease, and a manual log row records the change.
  *
  * Returns the bookkeeping revlog rows written, so a caller that offers undo can take them back
  * out again; the browser ignores them.
@@ -109,42 +111,50 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
     const cards = selectedCards(cardIds);
     const nowMs = Date.now();
     const today = localDayNumber(nowMs, settings.dayRolloverHour);
+    const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
     const span = range.maxDays - range.minDays + 1;
-    const fsrsEnabled = settings.fsrsEnabled === true;
-    // Only FSRS needs the review log, and only to measure the gap since the last real answer.
-    const revlog = fsrsEnabled ? revlogByCard(cards.map((card) => card.id)) : null;
     const written: ReviewLog[] = [];
 
     cards.forEach((card, index) => {
         // Stable spread makes a range useful and repeatable without clumping every card on one day.
         const days = range.minDays + (span <= 1 ? 0 : index % span);
-        const lastReviewedAtMs = revlog
-            ? fsrsLastReviewInfo(revlog.get(card.id) ?? []).lastReviewedAtMs
-            : null;
-        const daysSinceLastReview = lastReviewedAtMs === null
-            ? null
-            : today - localDayNumber(lastReviewedAtMs, settings.dayRolloverHour);
+        const cardData = parseAnkiCardData(card.ankiData);
+        const memory = memoryStateFromCardData(cardData);
+        const currentDue = card.odid ? card.odue : card.due;
+        const daysUntilCurrentDue = card.queue === 1 || card.queue === 4
+            ? Math.trunc((Math.floor(currentDue / 1000) - Math.floor(nextDayAtMs / 1000)) / 86_400)
+            : currentDue - today;
 
         const ivl = setDueDateInterval({
-            fsrsEnabled,
-            wasNew: card.type === 0,
+            hasMemoryState: memory !== null,
+            isReviewOrRelearning: card.type === 2 || card.type === 3,
             currentInterval: card.ivl,
-            daysSinceLastReview,
+            lastReviewTimeMs: cardData.lastReviewTimeSecs ? cardData.lastReviewTimeSecs * 1000 : null,
+            nextDayAtMs,
+            daysUntilCurrentDue,
             requestedDays: days,
             forceInterval: range.forceInterval,
         });
+        const factor = card.factor > 0
+            ? card.factor
+            : Math.round(resolveSettingsForDeck(card.odid || card.deckId, settings).startingEase * 1000);
 
-        saveAnkiCard({
+        const updated: AnkiCard = {
             ...card,
             type: 2,
             queue: 2,
             due: today + days,
             ivl,
+            factor,
             left: 0,
+            odid: 0,
+            odue: 0,
+            deckId: card.odid || card.deckId,
             mod: Math.floor(nowMs / 1000),
             usn: -1,
-        });
-        written.push(logManualEntry(card, 'rescheduled', ivl, card.ivl));
+        };
+        saveAnkiCard(updated);
+        written.push(logManualEntry(updated, 'manual', ivl, card.ivl, revlogFactorForScheduling(memory, factor)));
     });
     return written;
 }

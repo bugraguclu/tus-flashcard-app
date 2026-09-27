@@ -5,7 +5,7 @@
 // it. The grammar is shared with the filtered-deck builder (lib/searchQuery.ts); only the term
 // evaluation lives here.
 
-import { FSRS6_DEFAULT_DECAY, fsrsRetrievability, type FsrsMemoryState } from './fsrs';
+import { fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview, type FsrsMemoryState } from './fsrs';
 import { matchesSearch, normalizeSearchText } from './searchText';
 import { foldSearchNode, isQuotedTerm, parseSearchQuery, unquoteSearchValue } from './searchQuery';
 
@@ -38,8 +38,10 @@ export interface CardSearchContext {
     memoryState?: FsrsMemoryState | null;
     /** The forgetting-curve decay the card was scheduled with. */
     decay?: number;
-    /** Epoch ms of the card's last review, for `prop:r`. */
+    /** Epoch ms of the card's last review. */
     lastReviewedAtMs?: number;
+    /** Anki's recorded last review time (`lrt`), in epoch seconds, which `prop:r` reads first. */
+    lastReviewTimeSecs?: number;
 }
 
 export interface CardMatcherOptions {
@@ -185,21 +187,20 @@ function propPredicate(body: string, options: CardMatcherOptions): TermTest | nu
                 : card.memoryState !== null && compare(card.memoryState.difficulty));
         }
         case 'r': {
+            // `extract_fsrs_retrievability`: seconds since the recorded review time, else back from
+            // the due day by the interval, read on the card's own decay (0.5 when it has none).
             const compare = numericComparison(op, value);
             return (card) => {
                 if (card.type === 0 || card.memoryState === null) return false;
                 if (card.memoryState === undefined) return undefined;
-                // Days since the last answer, falling back to the schedule for a card whose
-                // review time was never recorded — the same fallback the scheduler uses.
-                const elapsedDays = card.lastReviewedAtMs && card.lastReviewedAtMs > 0
-                    ? Math.max(0, (options.dayCutoffMs - card.lastReviewedAtMs) / DAY_MS)
-                    : Math.max(0, options.today - (card.due - card.ivl));
-                const retrievability = fsrsRetrievability(
-                    card.memoryState.stability,
-                    elapsedDays,
-                    card.decay ?? FSRS6_DEFAULT_DECAY,
-                );
-                return compare(retrievability);
+                const intraday = card.queue === 1 || card.queue === 4;
+                const seconds = fsrsSecondsSinceLastReview({
+                    lastReviewTimeSecs: card.lastReviewTimeSecs,
+                    dueDay: intraday ? null : card.due,
+                    dueTimeMs: intraday ? card.due : undefined,
+                    ivl: card.ivl,
+                }, options.nowMs, options.today);
+                return compare(fsrsRetrievabilityAfterSeconds(card.memoryState, seconds, card.decay));
             };
         }
         case 'due': {

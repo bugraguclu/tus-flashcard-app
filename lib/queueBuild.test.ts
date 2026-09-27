@@ -249,6 +249,8 @@ describe('sortReviewCards: the orders that read FSRS columns', () => {
                 interval,
                 easeFactor: options.easeFactor ?? 2500,
                 lastReviewedAtMs: NOW_MS - daysSinceReview * DAY_MS,
+                // Anki's retrievability sort reads the review time recorded on the card (`lrt`).
+                lastReviewTimeSecs: Math.floor((NOW_MS - daysSinceReview * DAY_MS) / 1000),
                 desiredRetention: options.desiredRetention ?? 0.9,
                 memoryState: options.memory === false
                     ? null

@@ -67,4 +67,5 @@ export {
     setDeckTodayLimits,
     setDeckLimitOverrides,
     setDeckLimits,
+    setDeckDesiredRetention,
 } from './deckLimits';

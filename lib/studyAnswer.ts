@@ -6,10 +6,15 @@ import {
     cardStateToAnkiCard,
     makeDefaultCardState,
     localDayNumber,
+    nextRolloverMs,
     restoreQueueFromType,
 } from './ankiState';
+import { ankiCardSeed } from './ankiRandom';
+import { updateAnkiCardData } from './fsrsCardData';
+import { withFsrsInputs } from './fsrsCardInputs';
+import { loadBalancerForCard, recordLoadBalancedAnswer } from './loadBalancerSession';
 import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
-import { constrainedFuzzBounds } from './schedulingIntervals';
+import { learningDelayAsDays, learningIntervalWithFuzz, learningStepSecs } from './schedulingIntervals';
 import {
     buryCard,
     getAnkiCard,
@@ -22,7 +27,7 @@ import {
     saveNote,
 } from './noteManager';
 import { getDeckConfigForDeck } from './deckManager';
-import { deleteReviewById, logReview, logManualEntry } from './reviewLogger';
+import { deleteReviewById, logReview, logManualEntry, revlogFactorForAnswer } from './reviewLogger';
 import { makeStudyCard, resolveSettingsForDeck } from './studyCardRows';
 
 /**
@@ -55,59 +60,6 @@ export interface ReviewResult {
     wasNewCard: boolean;
     reviewLogId: number;
     sideEffects: AnswerSideEffects;
-}
-
-/**
- * Anki's "easy days": shift a review interval so the due date avoids reduced/blocked
- * weekdays. Factor 0 always moves off the day; factor 0.5 moves half the cards off it
- * (deterministic by card id). Searches outward (+1, -1, +2, …) for the nearest allowed day.
- *
- * The shift is bounded by the card's own fuzz window. Upstream implements easy days inside the
- * load balancer, which only ever picks a different day *within* `constrained_fuzz_bounds` — the
- * same window plain fuzz draws from — so a preference for a weekday can rearrange due dates but
- * can never produce an interval the scheduler would not have produced anyway. Applying the shift
- * without that bound is what used to let a blocked weekday push a card outside anything Anki
- * would write. Intervals under 2.5 days have no fuzz window at all (the window collapses to the
- * interval itself), so they are never moved, and when no day inside the window is allowed the
- * interval is left where the scheduler put it rather than moved outside.
- *
- * Reference: `rslib/src/scheduler/answering/load_balancer.rs` and
- * `rslib/src/scheduler/states/fuzz.rs` (`constrained_fuzz_bounds`).
- */
-export function adjustIntervalForEasyDays(
-    intervalDays: number,
-    cardId: number,
-    easyDays: number[] | undefined,
-    nowMs: number,
-    rolloverHour: number,
-    maximumInterval: number = 36500,
-): number {
-    if (!Array.isArray(easyDays) || easyDays.length !== 7) return intervalDays;
-    if (easyDays.every((factor) => factor >= 1)) return intervalDays;
-    if (intervalDays < 1) return intervalDays;
-
-    const today = localDayNumber(nowMs, rolloverHour);
-    const mondayIndexOf = (dayNumber: number) => (new Date(dayNumber * 86400000).getUTCDay() + 6) % 7;
-
-    const factorFor = (interval: number) => easyDays[mondayIndexOf(today + interval)] ?? 1;
-
-    const factor = factorFor(intervalDays);
-    if (factor >= 1) return intervalDays;
-    if (factor > 0 && cardId % 2 === 0) return intervalDays; // "reduced": let half stay
-
-    // The window is derived from the interval the card actually got. Upstream derives it from the
-    // pre-fuzz interval, but the fuzzed value always lies inside that window, so the two windows
-    // differ by at most the rounding of their own centre — and either way the shift stays inside
-    // the band of intervals the scheduler considers interchangeable.
-    const { lower, upper } = constrainedFuzzBounds(intervalDays, 1, Math.max(1, maximumInterval));
-
-    for (let offset = 1; offset <= upper - lower; offset++) {
-        for (const candidate of [intervalDays + offset, intervalDays - offset]) {
-            if (candidate < lower || candidate > upper) continue;
-            if (factorFor(candidate) >= 1) return candidate;
-        }
-    }
-    return intervalDays; // no allowed day inside the fuzz window — leave the interval alone
 }
 
 /** Bury the answered card's siblings per deck config, reporting the queue each one came from. */
@@ -207,6 +159,48 @@ export function undoAnswer(snapshot: AnkiCard, reviewLogId: number, sideEffects?
     }
 }
 
+/**
+ * The revlog row Anki writes for an answer (`RevlogEntryPartial`), apart from the rating and time:
+ *  - `type` is the card's state before the answer — learning (new cards included), review, or
+ *    relearning; a review answered before its due day, which only a filtered deck allows, is
+ *    logged as a filtered review;
+ *  - `ivl` is where the answer sent the card: days, or seconds as a negative number for a step
+ *    that stays within today;
+ *  - `lastIvl` is the same measure of the state the card came from;
+ *  - `factor` holds the shifted FSRS difficulty under FSRS, and otherwise the ease factor, which
+ *    is 0 while a card is still learning.
+ */
+function answerRevlogFields(
+    before: AnkiCard,
+    beforeState: CardState,
+    after: AnkiCard,
+    afterState: CardState,
+    settings: AppSettings,
+    today: number,
+    secsUntilRollover: number,
+    ivl: number,
+): { type: 0 | 1 | 2 | 3; ivl: number; lastIvl: number; factor: number } {
+    let type: 0 | 1 | 2 | 3 = 0;
+    if (before.type === 3) type = 2;
+    else if (before.type === 2) type = (before.odid ? before.odue : before.due) > today ? 3 : 1;
+
+    let lastIvl = 0;
+    if (before.type === 2) {
+        lastIvl = before.ivl;
+    } else if (before.type === 1 || before.type === 3) {
+        const relearning = before.type === 3;
+        const steps = relearning ? settings.lapseSteps : settings.learningSteps;
+        const index = relearning ? beforeState.relearningStep : beforeState.learningStep;
+        const secs = steps.length > 0 ? learningStepSecs(steps[Math.max(0, Math.min(steps.length - 1, index))]) : 0;
+        lastIvl = learningDelayAsDays(secs, secsUntilRollover) ?? -secs;
+    }
+
+    const factor = settings.fsrsEnabled
+        ? revlogFactorForAnswer(afterState.memoryState, after.factor)
+        : (after.type === 1 ? 0 : after.factor);
+    return { type, ivl, lastIvl, factor };
+}
+
 export function answerStudyCard(
     cardId: number,
     grade: Grade,
@@ -227,7 +221,13 @@ export function answerStudyCard(
     }
 
     const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings);
-    const currentState = ankiCardToCardState(currentAnkiCard, cardSettings, nowMs);
+    const rolloverHour = cardSettings.dayRolloverHour;
+    const currentState = withFsrsInputs(
+        ankiCardToCardState(currentAnkiCard, cardSettings, nowMs),
+        currentAnkiCard,
+        cardSettings,
+        nowMs,
+    );
     const noteType = getNoteType(note.noteTypeId);
     const deckConfig = getDeckConfigForDeck(currentAnkiCard.deckId);
 
@@ -244,58 +244,68 @@ export function answerStudyCard(
     }
 
     const scheduler = schedulerForSettings(cardSettings);
-    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs);
+    const balancer = loadBalancerForCard(currentAnkiCard, rolloverHour, nowMs);
+    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs, { balancer });
 
-    // Easy days: nudge the review interval so the due date lands on an allowed weekday.
-    const scheduledInterval = scheduleResult.isLearning
-        ? scheduleResult.interval
-        : adjustIntervalForEasyDays(
-            scheduleResult.interval,
-            currentAnkiCard.id,
-            cardSettings.easyDays,
-            nowMs,
-            cardSettings.dayRolloverHour,
-            cardSettings.maxInterval,
-        );
+    const nowSecs = Math.floor(nowMs / 1000);
+    const today = localDayNumber(nowMs, rolloverHour);
+    const secsUntilRollover = Math.floor(nextRolloverMs(nowMs, rolloverHour) / 1000) - nowSecs;
+    // A (re)learning delay that reaches past the next rollover counts in days (Anki's
+    // `maybe_as_days`); a shorter one is pushed back by Anki's learning-step fuzz.
+    const learningSecs = scheduleResult.isLearning ? Math.round((scheduleResult.minutesUntilDue ?? 0) * 60) : 0;
+    const learningDays = scheduleResult.isLearning ? learningDelayAsDays(learningSecs, secsUntilRollover) : null;
+    const learningDueMs = scheduleResult.isLearning && learningDays === null
+        ? (nowSecs + learningIntervalWithFuzz(ankiCardSeed(currentAnkiCard.id, currentAnkiCard.reps), learningSecs)) * 1000
+        : 0;
 
     const baseDue = scheduleResult.isLearning
         ? {
             status: 'learning' as const,
-            dueDate: todayLocalYMD(new Date(nowMs), cardSettings.dayRolloverHour),
-            dueTime: scheduleResult.minutesUntilDue
-                ? nowMs + scheduleResult.minutesUntilDue * 60000
-                : nowMs + 60000,
+            dueDate: learningDays === null
+                ? todayLocalYMD(new Date(nowMs), rolloverHour)
+                : addDaysLocalYMD(learningDays, new Date(nowMs), rolloverHour),
+            dueTime: learningDueMs,
         }
         : {
             status: 'review' as const,
-            dueDate: addDaysLocalYMD(scheduledInterval, new Date(nowMs), cardSettings.dayRolloverHour),
+            dueDate: addDaysLocalYMD(scheduleResult.interval, new Date(nowMs), rolloverHour),
             dueTime: 0,
         };
 
     const nextState: CardState = {
         ...currentState,
         ...scheduleResult.stateUpdates,
-        ...(scheduleResult.isLearning ? null : { interval: scheduledInterval }),
+        // Anki counts every answer, learning steps included.
+        repetition: (currentState.repetition || 0) + 1,
+        // With FSRS off, an answer leaves no memory state or desired retention behind, as in Anki.
+        ...(cardSettings.fsrsEnabled ? null : { memoryState: null, desiredRetention: null }),
         cardId: currentAnkiCard.id,
         ...baseDue,
     };
 
-    const updatedAnkiCard = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
+    const converted = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
+    const updatedAnkiCard: AnkiCard = {
+        ...converted,
+        // Anki records the answer time on the card itself (`lrt`), which FSRS reads back, and
+        // remembers where a new card sat in the new queue (`pos`) so "Forget" can put it back.
+        ankiData: updateAnkiCardData(converted.ankiData, {
+            lastReviewTimeSecs: nowSecs,
+            ...(currentAnkiCard.type === 0 ? { originalPosition: Math.max(0, currentAnkiCard.due) } : null),
+        }),
+        // An intraday step stays intraday even when its fuzz carries it past the rollover.
+        ...(scheduleResult.isLearning && learningDays === null ? { queue: 1 as const, due: learningDueMs } : null),
+    };
 
-    const reviewType: 0 | 1 | 2 = currentAnkiCard.type === 2 ? 1 : currentAnkiCard.type === 3 ? 2 : 0;
-    // Revlog interval (Anki: positive = days, negative = seconds). The three queues encode `due`
-    // differently, so each needs its own conversion.
-    let revlogInterval: number;
-    if (updatedAnkiCard.queue === 2) {
-        revlogInterval = updatedAnkiCard.ivl;                    // review: interval already in days
-    } else if (updatedAnkiCard.queue === 3) {
-        // interday learning: `due` is a day number, not a timestamp -> log the delay in seconds.
-        const daysUntilDue = Math.max(1, updatedAnkiCard.due - localDayNumber(nowMs, cardSettings.dayRolloverHour));
-        revlogInterval = -daysUntilDue * 86400;
-    } else {
-        // intraday learning: `due` is a ms timestamp.
-        revlogInterval = -Math.max(1, Math.round((updatedAnkiCard.due - nowMs) / 1000));
-    }
+    const revlogFields = answerRevlogFields(
+        currentAnkiCard,
+        currentState,
+        updatedAnkiCard,
+        nextState,
+        cardSettings,
+        today,
+        secsUntilRollover,
+        scheduleResult.isLearning ? (learningDays ?? -learningSecs) : updatedAnkiCard.ivl,
+    );
 
     const db = getDB();
     let reviewLogId = 0;
@@ -310,11 +320,11 @@ export function answerStudyCard(
         const reviewLog = logReview(
             updatedAnkiCard,
             grade,
-            revlogInterval,
-            currentAnkiCard.ivl,
-            updatedAnkiCard.factor,
+            revlogFields.ivl,
+            revlogFields.lastIvl,
+            revlogFields.factor,
             answerTimeMs,
-            reviewType,
+            revlogFields.type,
             deckConfig.maxAnswerSecs,
         );
         reviewLogId = reviewLog.id;
@@ -339,6 +349,7 @@ export function answerStudyCard(
         db.execSync('ROLLBACK;');
         throw error;
     }
+    recordLoadBalancedAnswer(updatedAnkiCard, rolloverHour, nowMs);
 
     const updatedStudyCard = makeStudyCard(
         updatedAnkiCard,
@@ -408,7 +419,9 @@ export function nextNewCardPosition(excludedCardId?: number): number {
 export function forgetCard(cardId: number, settings: AppSettings): ReviewLog | null {
     const card = getAnkiCard(cardId);
     if (!card) return null;
-    const freshState = makeDefaultCardState(cardId, settings);
+    // Anki's `schedule_as_new` drops the FSRS memory state: the card's next answer is a first
+    // review again. The recorded review time, desired retention and decay stay on the card.
+    const freshState: CardState = { ...makeDefaultCardState(cardId, settings), memoryState: null };
     saveAnkiCard({
         ...cardStateToAnkiCard(card, freshState, settings),
         // A forgotten card joins the back of the new queue. Without this it would keep the `due`

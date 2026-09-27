@@ -7,7 +7,7 @@ import {
     areFsrsParametersValid,
     clampFsrsParameters,
     decayFromParameters,
-    fsrsCurrentRetrievability,
+    fsrsRetrievabilityAfterSeconds,
     fsrsMemoryStateFromReviews,
     fsrsMemoryStateFromSm2,
     fsrsNextInterval,
@@ -87,11 +87,18 @@ describe('FSRS forgetting curve', () => {
         expect(fsrsNextInterval(37, 0.8, decay)).toBeGreaterThan(fsrsNextInterval(37, 0.9, decay));
     });
 
-    it('reports the retrievability of a stored state, or nothing for a card without one', () => {
-        expect(fsrsCurrentRetrievability({ stability: 10, difficulty: 5 }, 10, DEFAULT_FSRS_PARAMETERS))
-            .toBeCloseTo(0.9, 6);
-        expect(fsrsCurrentRetrievability(null, 3, DEFAULT_FSRS_PARAMETERS)).toBeNull();
-        expect(fsrsCurrentRetrievability({ stability: 0, difficulty: 5 }, 3, DEFAULT_FSRS_PARAMETERS)).toBeNull();
+    // Card info, search and sort read retrievability the way Anki's `extract_fsrs_retrievability`
+    // does: seconds since the last review, on the decay recorded on the card — and on the FSRS-5
+    // curve when the card records none, not on FSRS-6's default.
+    it('reads retrievability after seconds on the card’s own decay, defaulting to FSRS-5’s', () => {
+        const memory = { stability: 10, difficulty: 5 };
+        expect(fsrsRetrievabilityAfterSeconds(memory, 10 * 86_400, 0.154)).toBeCloseTo(0.9, 6);
+        expect(fsrsRetrievabilityAfterSeconds(memory, 30 * 86_400, undefined))
+            .toBeCloseTo(fsrsRetrievability(10, 30, FSRS5_DEFAULT_DECAY), 6);
+        expect(fsrsRetrievabilityAfterSeconds(memory, 30 * 86_400, 0.154))
+            .toBeGreaterThan(fsrsRetrievabilityAfterSeconds(memory, 30 * 86_400, undefined));
+        // Half a day in counts as half a day, not as zero.
+        expect(fsrsRetrievabilityAfterSeconds(memory, 43_200, 0.154)).toBeLessThan(1);
     });
 });
 
@@ -186,15 +193,15 @@ describe('FSRS memory states', () => {
 
 describe('SM-2 conversion', () => {
     it('keeps the old interval as the stability at the default historical retention', () => {
-        const state = fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.5, 30, 0.9);
+        const state = fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.5, 30, 0.9)!;
         expect(state.stability).toBeCloseTo(30, 4);
         expect(state.difficulty).toBeGreaterThanOrEqual(FSRS_DIFFICULTY_MIN);
         expect(state.difficulty).toBeLessThanOrEqual(FSRS_DIFFICULTY_MAX);
     });
 
     it('reads a lower ease factor as a harder card', () => {
-        const easy = fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.8, 30, 0.9);
-        const hard = fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 1.4, 30, 0.9);
+        const easy = fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.8, 30, 0.9)!;
+        const hard = fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 1.4, 30, 0.9)!;
         expect(hard.difficulty).toBeGreaterThan(easy.difficulty);
     });
 
@@ -202,8 +209,8 @@ describe('SM-2 conversion', () => {
         // Remembering only 80% at a 30-day interval means the card was scheduled beyond its
         // strength, so the implied stability is below the interval — and above it when the
         // learner was recalling more than 90%.
-        expect(fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.5, 30, 0.8).stability).toBeLessThan(30);
-        expect(fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.5, 30, 0.95).stability).toBeGreaterThan(30);
+        expect(fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.5, 30, 0.8)!.stability).toBeLessThan(30);
+        expect(fsrsMemoryStateFromSm2(DEFAULT_FSRS_PARAMETERS, 2.5, 30, 0.95)!.stability).toBeGreaterThan(30);
     });
 });
 
@@ -229,12 +236,15 @@ describe('parameter text field', () => {
 });
 
 describe('ignore-before cutoff date', () => {
-    it('round-trips a calendar date in the learner’s own timezone', () => {
+    // Anki reads the date as midnight UTC (`ignore_revlogs_before_date_to_ms`).
+    it('reads a calendar date as midnight UTC, as Anki does, and round-trips it', () => {
         const ms = parseFsrsCutoffDate('2025-06-01');
-        expect(ms).toBe(Date.parse('2025-06-01T00:00:00'));
+        expect(ms).toBe(Date.UTC(2025, 5, 1));
         expect(formatFsrsCutoffDate(ms)).toBe('2025-06-01');
-        // A UTC-based formatter would report the previous day east of Greenwich.
-        expect(formatFsrsCutoffDate(Date.parse('2025-01-01T00:30:00'))).toBe('2025-01-01');
+        // A cutoff stored by an earlier version as local midnight still reads back as its date.
+        expect(formatFsrsCutoffDate(Date.UTC(2025, 5, 1) - 3 * 3_600_000)).toBe('2025-06-01');
+        expect(formatFsrsCutoffDate(Date.UTC(2025, 5, 1) + 5 * 3_600_000)).toBe('2025-06-01');
+        expect(parseFsrsCutoffDate('2025-02-31')).toBeUndefined();
     });
 
     it('treats anything that is not a date as no cutoff', () => {
@@ -288,28 +298,21 @@ describe('FSRS-6 golden vectors', () => {
     });
 
     // A same-day repeat uses S' = S * e^(w17 * (G - 3 + w18)) * S^-w19, and upstream floors the
-    // multiplier at 1 for every grade above Again — so Hard, Good and Easy can only hold or raise
-    // stability, while Again may lower it.
+    // multiplier at 1 only for Good and Easy (`rating >= 3`), so those two can only hold or raise
+    // stability while Hard and Again may lower it. Anki 26.05 confirms Hard lowering it: a card at
+    // S = 20 answered Hard a second time the same day drops to about 10.
     // https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/model.rs (stability_short_term)
-    it('floors the same-day multiplier at 1 for Hard, Good and Easy but not Again', () => {
+    it('floors the same-day multiplier at 1 for Good and Easy but not for Hard or Again', () => {
         const before = { stability: 20, difficulty: 5 };
-        for (const rating of [2, 3, 4] as const) {
+        for (const rating of [3, 4] as const) {
             expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, rating, false).stability)
                 .toBeGreaterThanOrEqual(before.stability);
         }
+        expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, 2, false).stability).toBeCloseTo(10.030085, 5);
         expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, 1, false).stability)
             .toBeLessThan(before.stability);
     });
 
-    it('reads retrievability through the clamped decay, as the scheduler does', () => {
-        // 0.05 is below the legal decay floor of 0.1; clamping must give the same number the
-        // scheduler would use, not the out-of-range one.
-        const illegal = [...DEFAULT_FSRS_PARAMETERS.slice(0, 20), 0.05];
-        const expected = fsrsRetrievability(10, 10, 0.1);
-
-        expect(fsrsCurrentRetrievability({ stability: 10, difficulty: 5 }, 10, illegal))
-            .toBeCloseTo(expected, 9);
-    });
 });
 
 describe('training-time parameter bounds', () => {
@@ -333,9 +336,10 @@ describe('training-time parameter bounds', () => {
         const budget = -(Math.log(params[11]) + Math.log(Math.pow(2, params[13]) - 1) + params[14] * 0.3);
         const expected = Math.min(2, Math.sqrt(Math.max(0.01, budget / steps)));
 
+        // Upstream derives the ceiling in f32, so it agrees with this f64 formula to about 7 digits.
         const clamped = clampFsrsParameters(params, { numRelearningSteps: steps });
-        expect(clamped[17]).toBeCloseTo(expected, 9);
-        expect(clamped[18]).toBeCloseTo(expected, 9);
+        expect(clamped[17]).toBeCloseTo(expected, 6);
+        expect(clamped[18]).toBeCloseTo(expected, 6);
         expect(expected).toBeLessThan(2);
     });
 

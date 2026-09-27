@@ -319,15 +319,17 @@ export function SelectSetting({ label, value, options, onChange, styles, colors,
     );
 }
 
-export function LimitTabs({ value, onChange, styles, labels }: {
-    value: 'preset' | 'deck' | 'today';
-    onChange: (value: 'preset' | 'deck' | 'today') => void;
+export function LimitTabs<Key extends 'preset' | 'deck' | 'today'>({ value, onChange, styles, labels, keys }: {
+    value: Key;
+    onChange: (value: Key) => void;
     styles: DeckOptionsStyles;
     labels: { preset: string; deck: string; today: string };
+    /** The tabs to offer; desired retention has no "today only" value in Anki. */
+    keys?: readonly Key[];
 }) {
     return (
         <View style={styles.limitTabs}>
-            {(['preset', 'deck', 'today'] as const).map((key) => (
+            {(keys ?? (['preset', 'deck', 'today'] as unknown as readonly Key[])).map((key) => (
                 <TouchableOpacity
                     key={key}
                     style={[styles.limitTab, value === key && styles.limitTabActive]}

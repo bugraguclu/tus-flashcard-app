@@ -1,4 +1,4 @@
-import { memoryStateFromCardData, parseAnkiCardData, withFsrsMemoryState } from './fsrsCardData';
+import { memoryStateFromCardData, parseAnkiCardData, updateAnkiCardData } from './fsrsCardData';
 import type { AppSettings, CardState } from './types';
 import type { AnkiCard } from './models';
 
@@ -146,41 +146,6 @@ export function nextRolloverMs(nowMs: number, rolloverHour: number): number {
     return boundary.getTime();
 }
 
-/**
- * How many of the remaining learning steps fall before the next rollover, by walking the
- * step delays forward from the current step's due time. Always at least 1.
- */
-function computeRemainingToday(
-    steps: number[],
-    stepIndex: number,
-    firstDueMs: number,
-    nowMs: number,
-    rolloverHour: number,
-): number {
-    if (steps.length === 0) return 1;
-
-    const remainingTotal = Math.max(1, steps.length - stepIndex);
-    const rollMs = nextRolloverMs(nowMs, rolloverHour);
-
-    let reviewDueMs = Math.max(firstDueMs, nowMs);
-    let count = 0;
-
-    for (let offset = 0; offset < remainingTotal; offset++) {
-        if (reviewDueMs <= rollMs) {
-            count += 1;
-        }
-
-        const nextStepIdx = stepIndex + offset + 1;
-        if (nextStepIdx >= steps.length) {
-            break;
-        }
-
-        reviewDueMs += Math.max(0, steps[nextStepIdx] || 0) * 60000;
-    }
-
-    return Math.max(1, Math.min(remainingTotal, count));
-}
-
 /** Whole study days between two timestamps; 0 when there is no previous review. */
 export function elapsedStudyDays(lastReviewMs: number, nowMs: number, rolloverHour: number): number {
     if (!lastReviewMs || lastReviewMs <= 0) return 0;
@@ -254,9 +219,13 @@ export function ankiCardToCardState(
         easeFactor: card.factor && card.factor > 0 ? permilleToEase(card.factor) : settings.startingEase,
         learningStep,
         relearningStep,
-        lastReviewedAtMs: card.lastReview || 0,
+        // Anki's own record of the last review (`lrt`) wins over the app's denormalized copy.
+        lastReviewedAtMs: cardData.lastReviewTimeSecs !== undefined && cardData.lastReviewTimeSecs > 0
+            ? cardData.lastReviewTimeSecs * 1000
+            : card.lastReview || 0,
         elapsedDays: elapsedSinceLastReview(card, todayNumber, nowMs, settings.dayRolloverHour),
         lapses: card.lapses || 0,
+        lastReviewTimeSecs: cardData.lastReviewTimeSecs,
         memoryState: memoryStateFromCardData(cardData),
         desiredRetention: cardData.desiredRetention,
         decay: cardData.decay,
@@ -292,11 +261,18 @@ export function cardStateToAnkiCard(
     settings: AppSettings,
     nowMs: number = Date.now(),
 ): AnkiCard {
-    // A card answered under FSRS carries its new memory state; one answered under SM-2 leaves
-    // whatever state it had untouched, so switching schedulers back and forth loses nothing.
-    const ankiData = state.memoryState !== undefined
-        ? withFsrsMemoryState(card.ankiData, state.memoryState, state.desiredRetention, state.decay)
-        : card.ankiData;
+    // FSRS values travel in Anki's own card data column. A state that says nothing about one of
+    // them leaves it alone; `null` removes it, the way Anki clears a memory state on "Forget".
+    const ankiData = state.memoryState === undefined && state.desiredRetention === undefined && state.decay === undefined
+        ? card.ankiData
+        : updateAnkiCardData(card.ankiData, {
+            ...(state.memoryState === undefined ? {} : {
+                stability: state.memoryState?.stability ?? null,
+                difficulty: state.memoryState?.difficulty ?? null,
+            }),
+            desiredRetention: state.desiredRetention,
+            decay: state.decay,
+        });
 
     const updated: AnkiCard = {
         ...card,
@@ -340,27 +316,21 @@ export function cardStateToAnkiCard(
             ? Math.max(0, state.relearningStep || 0)
             : Math.max(0, state.learningStep || 0);
 
-        const remainingTotal = steps.length > 0 ? Math.max(1, steps.length - stepIndex) : 1;
+        // Anki 26.05 keeps only the number of steps left here — none at all without steps — and
+        // no longer packs a "left today" count into the thousands.
+        const remainingSteps = steps.length > 0 ? Math.max(0, steps.length - stepIndex) : 0;
         const todayDay = localDayNumber(nowMs, settings.dayRolloverHour);
 
         // Intraday step (queue 1) stores a timestamp in `due`; a step that crosses the rollover
         // becomes interday (queue 3) and stores a day number instead.
         let queue: 1 | 3;
         let due: number;
-        let remainingToday: number;
 
         if (state.dueTime > 0) {
             const dueTime = state.dueTime;
             const dueDay = localDayNumber(dueTime, settings.dayRolloverHour);
             queue = dueDay > todayDay ? 3 : 1;
             due = queue === 3 ? dueDay : dueTime;
-            remainingToday = computeRemainingToday(
-                steps,
-                stepIndex,
-                dueTime,
-                nowMs,
-                settings.dayRolloverHour,
-            );
         } else {
             const dueDayFromDate = ymdToLocalDayNumber(
                 state.dueDate,
@@ -371,26 +341,18 @@ export function cardStateToAnkiCard(
             if (dueDayFromDate > todayDay) {
                 queue = 3;
                 due = dueDayFromDate;
-                remainingToday = 1;
             } else {
                 const fallbackDueTime = nowMs + 60000;
                 const dueDay = localDayNumber(fallbackDueTime, settings.dayRolloverHour);
                 queue = dueDay > todayDay ? 3 : 1;
                 due = queue === 3 ? dueDay : fallbackDueTime;
-                remainingToday = computeRemainingToday(
-                    steps,
-                    stepIndex,
-                    fallbackDueTime,
-                    nowMs,
-                    settings.dayRolloverHour,
-                );
             }
         }
 
         updated.type = relearning ? 3 : 1;
         updated.queue = queue;
         updated.due = due;
-        updated.left = encodeAnkiLeft(remainingTotal, remainingToday);
+        updated.left = remainingSteps;
         return updated;
     }
 

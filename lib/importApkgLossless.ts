@@ -1,4 +1,4 @@
-import { normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
+import { normalizeFsrsParameters, parseFsrsCutoffDate, toF32Decimal } from './fsrs';
 import { searchIndexCardFromNote } from './noteManager';
 import {
     uniqueId,
@@ -184,6 +184,8 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 raw.extendNew = protoNumber(kind, 2);
                 raw.extendRev = protoNumber(kind, 3);
                 raw.desc = protoString(kind, 4);
+                // `optional float desired_retention = 10`: the deck's own FSRS target, if set.
+                if (kind.has(10)) raw.desiredRetentionExact = protoFloat(kind, 10);
             } else {
                 raw.resched = Boolean(protoNumber(kind, 1));
                 // Kept optional rather than defaulted so the raw record still says which tags the
@@ -418,6 +420,21 @@ function importedPreviewDelays(raw: Record<string, any>): [number, number, numbe
     ]);
 }
 
+/**
+ * A deck's own desired retention: the exact float the protobuf schema stores, or the whole
+ * percent the legacy JSON schema stores (`desiredRetention: 85` is 0.85, as Anki reads it).
+ */
+function importedDeckRetention(raw: Record<string, any>): number | undefined {
+    if (numberValue(raw.dyn) === 1) return undefined;
+    const exact = Number(raw.desiredRetentionExact);
+    if (raw.desiredRetentionExact !== undefined && Number.isFinite(exact)) return toF32Decimal(exact);
+    const percent = Number(raw.desiredRetention);
+    if (raw.desiredRetention !== undefined && raw.desiredRetention !== null && Number.isFinite(percent)) {
+        return toF32Decimal(Math.fround(percent) / 100);
+    }
+    return undefined;
+}
+
 function importedDeck(raw: Record<string, any>, id: number, configId: number, packageId: string): Deck {
     const terms = Array.isArray(raw.terms) ? raw.terms : [];
     return {
@@ -437,6 +454,7 @@ function importedDeck(raw: Record<string, any>, id: number, configId: number, pa
         searchOrder2: Array.isArray(terms[1]) ? numberValue(terms[1][2]) : undefined,
         reschedule: raw.resched === undefined ? undefined : boolValue(raw.resched),
         previewDelays: numberValue(raw.dyn) === 1 ? importedPreviewDelays(raw) : undefined,
+        desiredRetention: importedDeckRetention(raw),
         ankiRaw: raw,
         sourcePackageId: packageId,
     };

@@ -87,6 +87,7 @@ import {
     undoAnswer,
     type AnswerSideEffects,
 } from '../../lib/studyRepository';
+import { loadBalancerForCard } from '../../lib/loadBalancerSession';
 import { useI18n } from '../../hooks/useI18n';
 import { cardFlagName, formatCount, localizeTopicName, reviewerOpName } from '../../lib/i18n';
 import { alert, choose } from '../../lib/confirm';
@@ -1476,7 +1477,16 @@ export default function StudyScreen() {
         // interval and the FSRS parameters all live there, not on the collection defaults.
         const cardSettings = resolveSettingsForDeck(currentCard.deckId, settings);
         const scheduler = schedulerForSettings(cardSettings);
-        return scheduler.previewIntervals(currentCard.state, cardSettings);
+        // The load balancer can move a review day, so the labels ask it exactly as the answer will.
+        const nowMs = Date.now();
+        const balancer = loadBalancerForCard({
+            id: currentCard.cardId,
+            reps: currentCard.state.repetition,
+            noteId: currentCard.noteId,
+            deckId: currentCard.deckId,
+            odid: currentCard.rawCard?.odid ?? 0,
+        }, cardSettings.dayRolloverHour, nowMs);
+        return scheduler.previewIntervals(currentCard.state, cardSettings, nowMs, { balancer });
     }, [currentCard, settings, previewMode, selectedDeckName]);
 
     const renderPayload = useMemo(() => {

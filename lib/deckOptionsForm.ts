@@ -75,9 +75,12 @@ export function parseBoundedDecimalDraft(
     text: string,
     min: number,
     max: number,
+    allowEmpty: boolean = false,
 ): NumericDraftResult {
     const trimmed = text.trim();
-    if (!trimmed) return { value: undefined, issue: 'required' };
+    if (!trimmed) return allowEmpty
+        ? { value: undefined, issue: null }
+        : { value: undefined, issue: 'required' };
     if (!/^\d+(?:[.,]\d+)?$/.test(trimmed)) return { value: undefined, issue: 'number' };
     const value = Number(trimmed.replace(',', '.'));
     if (!Number.isFinite(value)) return { value: undefined, issue: 'number' };

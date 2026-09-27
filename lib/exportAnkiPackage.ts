@@ -201,8 +201,16 @@ function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: 
     for (const deck of decks) {
         // Anki turns exported filtered decks into normal decks when scheduling is stripped.
         const exportsAsFiltered = includeScheduling && deck.isFiltered;
+        // The deck's own desired retention is written from the deck below, never from a stale copy.
+        const raw: Record<string, unknown> = { ...(deck.ankiRaw ?? {}) };
+        delete raw.desiredRetention;
+        delete raw.desiredRetentionExact;
         map[String(deck.id)] = {
-            ...(deck.ankiRaw ?? {}),
+            ...raw,
+            // Anki's legacy schema keeps a deck's own desired retention as a whole percent.
+            ...(includeDeckConfigs && !deck.isFiltered && deck.desiredRetention !== undefined
+                ? { desiredRetention: Math.round(deck.desiredRetention * 100) }
+                : {}),
             id: deck.id, name: deck.name, mod: deck.mod, usn: deck.usn ?? -1, desc: deck.description || '',
             dyn: exportsAsFiltered ? 1 : 0,
             collapsed: includeScheduling ? deck.collapsed : false,
