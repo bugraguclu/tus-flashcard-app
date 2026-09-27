@@ -34,6 +34,7 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         filteredAllowEmpty: false,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
+        filteredPreviewDue: {},
         filteredBuildAt: now,
         sortOrder: nextSiblingSortOrderForAppend(null),
     };
@@ -76,6 +77,7 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
     // Saving filtered-deck options is Anki's Build/Rebuild action.
     deck.filteredDeckEmpty = false;
     deck.filteredDoneCardIds = [];
+    deck.filteredPreviewDue = {};
     deck.filteredBuildAt = Date.now();
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
@@ -88,6 +90,7 @@ export function emptyFilteredDeck(deckId: number): boolean {
     if (!deck?.isFiltered) return false;
     deck.filteredDeckEmpty = true;
     deck.filteredDoneCardIds = [];
+    deck.filteredPreviewDue = {};
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
     saveDeck(deck);
@@ -100,6 +103,7 @@ export function rebuildFilteredDeck(deckId: number): boolean {
     if (!deck?.isFiltered) return false;
     deck.filteredDeckEmpty = false;
     deck.filteredDoneCardIds = [];
+    deck.filteredPreviewDue = {};
     deck.filteredBuildAt = Date.now();
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
@@ -118,6 +122,21 @@ export function completeFilteredCard(deckId: number, cardId: number): boolean {
     deck.usn = -1;
     saveDeck(deck);
     return true;
+}
+
+/**
+ * Hold a previewed card back until `dueMs`, or release it with null. Anki keeps such a card in
+ * the preview-repeat queue with a due time; here it stays in the deck's build with that time.
+ */
+export function setFilteredPreviewDue(deckId: number, cardId: number, dueMs: number | null): void {
+    const deck = getDeck(deckId);
+    if (!deck?.isFiltered) return;
+    const pending = { ...(deck.filteredPreviewDue ?? {}) };
+    if (dueMs === null) delete pending[String(cardId)];
+    else pending[String(cardId)] = dueMs;
+    deck.filteredPreviewDue = pending;
+    deck.usn = -1;
+    saveDeck(deck);
 }
 
 /** Put a completed card back into the active filtered build when its answer is undone. */
@@ -223,6 +242,7 @@ export function createOrReplaceCustomStudySession(
         existing.filteredAllowEmpty = false;
         existing.filteredDeckEmpty = false;
         existing.filteredDoneCardIds = [];
+        existing.filteredPreviewDue = {};
         existing.filteredBuildAt = Date.now();
         existing.mod = Math.floor(Date.now() / 1000);
         existing.usn = -1;
@@ -240,6 +260,7 @@ export function createOrReplaceCustomStudySession(
     session.filteredAllowEmpty = false;
     session.filteredDeckEmpty = false;
     session.filteredDoneCardIds = [];
+    session.filteredPreviewDue = {};
     session.filteredBuildAt = Date.now();
     saveDeck(session);
     return session;

@@ -137,7 +137,9 @@ type FilteredDeckQueueDefinition = Pick<Deck,
     | 'searchOrder2'
     | 'filteredDeckEmpty'
     | 'filteredDoneCardIds'
+    | 'filteredPreviewDue'
     | 'filteredBuildAt'
+    | 'reschedule'
 >;
 
 export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: AppSettings, nowMs: number): StudyQueueResult {
@@ -169,23 +171,33 @@ export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settin
 
     const gatheredCards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map() });
     const todayYmd = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
+    // A previewed card waiting out its delay is Anki's preview repeat: an intraday learning card
+    // that is held back until its time and then shown ahead of the rest, earliest first.
+    const previewDue = (card: { cardId: number }): number | undefined => deck.filteredPreviewDue?.[String(card.cardId)];
+    const returningPreviews = gatheredCards
+        .filter((card) => (previewDue(card) ?? Number.POSITIVE_INFINITY) <= nowMs)
+        .sort((a, b) => previewDue(a)! - previewDue(b)!);
     // New and review cards are intentionally gathered regardless of dueness (preview/review
-    // ahead). Learning cards still obey their step timer, or a failed card would immediately
-    // loop after every queue refresh.
-    const cards = gatheredCards.filter((card) => {
-        if (card.state.status !== 'learning') return true;
+    // ahead). With rescheduling on, learning cards still obey their step timer, or a failed card
+    // would immediately loop after every queue refresh. A preview deck ignores it: Anki moves
+    // every card it gathers there into the review queue.
+    const previewDeck = deck.reschedule === false;
+    const cards = [...returningPreviews, ...gatheredCards.filter((card) => {
+        if (previewDue(card) !== undefined) return false;
+        if (previewDeck || card.state.status !== 'learning') return true;
         if (card.state.dueTime > 0) return card.state.dueTime <= nowMs;
         return card.state.dueDate <= todayYmd;
-    });
+    })];
+    const statusOf = (card: typeof gatheredCards[number]) => (previewDue(card) !== undefined ? 'learning' : card.state.status);
     const stats = {
-        newCount: gatheredCards.filter((card) => card.state.status === 'new').length,
-        learningCount: gatheredCards.filter((card) => card.state.status === 'learning').length,
-        reviewCount: gatheredCards.filter((card) => card.state.status === 'review').length,
+        newCount: gatheredCards.filter((card) => statusOf(card) === 'new').length,
+        learningCount: gatheredCards.filter((card) => statusOf(card) === 'learning').length,
+        reviewCount: gatheredCards.filter((card) => statusOf(card) === 'review').length,
     };
 
     const futureLearningTimes = gatheredCards
-        .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
-        .map((card) => card.state.dueTime);
+        .map((card) => previewDue(card) ?? (!previewDeck && card.state.status === 'learning' ? card.state.dueTime : 0))
+        .filter((dueTime) => dueTime > nowMs);
 
     return {
         cards,
@@ -216,6 +228,7 @@ type FilteredDeckCountDefinition = Pick<Deck,
     | 'searchOrder2'
     | 'filteredDeckEmpty'
     | 'filteredDoneCardIds'
+    | 'filteredPreviewDue'
     | 'filteredBuildAt'
 >;
 
@@ -306,11 +319,14 @@ export function getFilteredDeckCountCards(
 
         seen.add(row.cardId);
         claimedCardIds.add(row.cardId);
-        const status: CardState['status'] = row.queue === 0
-            ? 'new'
-            : row.queue === 1 || row.queue === 3 || row.type === 1 || row.type === 3
-                ? 'learning'
-                : 'review';
+        // A previewed card waiting out its delay counts as learning, as Anki's preview repeat does.
+        const status: CardState['status'] = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined
+            ? 'learning'
+            : row.queue === 0
+                ? 'new'
+                : row.queue === 1 || row.queue === 3 || row.type === 1 || row.type === 3
+                    ? 'learning'
+                    : 'review';
         result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status });
     }
 

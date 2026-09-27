@@ -534,6 +534,22 @@
       "url": "https://docs.rs/fnv/latest/fnv/struct.FnvHasher.html",
       "license": "MIT OR Apache-2.0; algorithm reimplemented, verified against Anki output",
       "useFor": ["64-bit FNV-1a over each integer's little-endian bytes", "result read back as a signed integer"]
+    },
+    {
+      "id": "anki-source-preview-answering",
+      "priority": 3,
+      "platform": "cross-platform answers in a preview filtered deck",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/answering/preview.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["apply_preview_state: preview-repeat queue with a fuzzed due time", "finished previews return the card home", "the revlog row a preview answer writes"]
+    },
+    {
+      "id": "anki-source-studied-today",
+      "priority": 3,
+      "platform": "cross-platform today's study count",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/storage/revlog/studied_today.sql",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["every answer counts, including filtered previews; manual and rescheduled rows do not"]
     }
   ],
   "requiredDocs": [

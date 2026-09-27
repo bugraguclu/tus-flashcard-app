@@ -28,6 +28,7 @@ export {
     rebuildFilteredDeck,
     completeFilteredCard,
     restoreFilteredCard,
+    setFilteredPreviewDue,
     CUSTOM_STUDY_PREFIX,
     getCustomStudyDefaults,
     rememberCustomStudyExtend,

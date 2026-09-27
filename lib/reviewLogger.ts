@@ -149,6 +149,13 @@ export function getTodayStudyTimeMs(rolloverHour: number = 4): number {
     return row?.total || 0;
 }
 
+/**
+ * A preview answer (a filtered review with no ease) never spends a home deck's new-card
+ * allowance: Anki charges it to the filtered deck it was answered in. So it cannot be the answer
+ * that introduced a card.
+ */
+const INTRODUCES_CARD = 'NOT (type = 3 AND factor = 0)';
+
 /** Get today's review count */
 export function getTodayReviewCount(rolloverHour: number = 4): number {
     const db = getDB();
@@ -200,7 +207,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
              FROM (
                 SELECT cardId, MIN(id) AS firstReview
                 FROM revlog
-                WHERE ease != 0 AND cardId IN (${placeholders})
+                WHERE ease != 0 AND ${INTRODUCES_CARD} AND cardId IN (${placeholders})
                 GROUP BY cardId
              )
              WHERE firstReview >= ?`,
@@ -253,7 +260,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
 
     const introduced = db.getFirstSync<{ cnt: number }>(
         `SELECT COUNT(*) AS cnt
-         FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 GROUP BY cardId)
+         FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 AND ${INTRODUCES_CARD} GROUP BY cardId)
          WHERE firstReview >= ?`,
         startMs,
     );
@@ -287,7 +294,7 @@ export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour:
             FROM revlog r
             JOIN anki_cards c ON c.id = r.cardId
             JOIN decks d ON d.id = c.deckId
-            WHERE r.ease != 0 AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')
+            WHERE r.ease != 0 AND NOT (r.type = 3 AND r.factor = 0) AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')
             GROUP BY r.cardId
          )
          WHERE firstReview >= ?`,
@@ -363,7 +370,7 @@ export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, 
     try {
         for (const row of db.getAllSync<{ deckId: number; cnt: number }>(
             `SELECT c.deckId AS deckId, COUNT(*) AS cnt
-             FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 GROUP BY cardId) f
+             FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 AND ${INTRODUCES_CARD} GROUP BY cardId) f
              JOIN anki_cards c ON c.id = f.cardId
              WHERE f.firstReview >= ?
              GROUP BY c.deckId`,

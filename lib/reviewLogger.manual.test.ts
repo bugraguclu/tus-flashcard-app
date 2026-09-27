@@ -133,4 +133,25 @@ describe('revlog queries ignore rating-less bookkeeping rows', () => {
 
         expect(getTodayLimitUsageByDeck(rolloverHour).get(5)?.newIntroduced ?? 0).toBe(0);
     });
+
+    it('counts a preview answer as studied but not as the answer that introduced the card', () => {
+        // Anki charges a preview answer to the filtered deck it was given in, never to the home
+        // deck's new-card allowance; the card is introduced by its first real answer.
+        const now = Date.now();
+        db.runSync("INSERT INTO decks (id, name, usn) VALUES (5, 'Mikrobiyoloji', -1)");
+        addCard(1, 5);
+        db.runSync(
+            'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 1, -1, 3, -600, -60, 0, 4000, 3)',
+            now - 3000,
+        );
+
+        expect(getTodayAnswerStats(rolloverHour).reviewed).toBe(1);
+        expect(getTodayAnswerStats(rolloverHour).newCardsIntroduced).toBe(0);
+        expect(getTodayAnswerStats(rolloverHour, 'Mikrobiyoloji').newCardsIntroduced).toBe(0);
+        expect(getTodayLimitUsageByDeck(rolloverHour).get(5)?.newIntroduced ?? 0).toBe(0);
+
+        addAnswer(now - 1000, 1, 3);
+        expect(getTodayAnswerStats(rolloverHour).newCardsIntroduced).toBe(1);
+        expect(getTodayLimitUsageByDeck(rolloverHour).get(5)?.newIntroduced).toBe(1);
+    });
 });

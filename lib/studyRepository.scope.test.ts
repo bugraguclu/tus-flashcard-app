@@ -487,6 +487,29 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(queue.stats.learningCount).toBe(1);
         expect(queue.nextLearningDue).toBe(dueMs);
     });
+
+    it('holds a previewed card back until its delay has run, then shows it first', () => {
+        const nowMs = Date.now();
+        // A learning card whose own step timer has not run: a preview deck shows it anyway,
+        // because Anki moves everything a preview deck gathers into the review queue.
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: nowMs + 10 * 60_000, left: 1001 }));
+        const previewDeck = (filteredPreviewDue: Record<string, number>) => saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true, reschedule: false,
+            searchQuery: 'deck:"Python"', filteredBuildAt: nowMs, filteredPreviewDue,
+        });
+
+        previewDeck({ 1020: nowMs + 60_000 });
+        const waiting = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        // Due order: a new card's position sorts ahead of any learning card's clock time.
+        expect(waiting.cards.map((card) => card.cardId)).toEqual([1030, 1010]);
+        expect(waiting.stats.learningCount).toBe(2);
+        expect(waiting.nextLearningDue).toBe(nowMs + 60_000);
+
+        previewDeck({ 1030: nowMs - 1000, 1020: nowMs - 5000 });
+        const returning = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(returning.cards.map((card) => card.cardId)).toEqual([1020, 1030, 1010]);
+    });
 });
 
 describe('deck-list filtered count snapshot', () => {

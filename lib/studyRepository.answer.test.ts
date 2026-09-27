@@ -286,14 +286,22 @@ describe('answerStudyCard', () => {
         expect(updated.ivl).toBe(20);
     });
 
-    it('preview mode leaves the card and the revlog untouched', () => {
+    it('preview mode leaves the schedule alone but logs a filtered review, and brings the card back after its delay', () => {
         const before = { ...shared.cards.get(10)! };
+        const answeredAt = Date.now();
 
-        const result = answerStudyCard(10, 3, settings, 900, { preview: true });
+        const result = answerStudyCard(10, 2, { ...settings, fsrsEnabled: false }, 900, { preview: { delays: [60, 600, 0] } });
 
         expect(shared.cards.get(10)).toEqual(before);
-        expect(result.reviewLogId).toBe(0);
-        expect(shared.txLog).not.toContain('BEGIN TRANSACTION;');
+        expect(result.reviewLogId).toBeGreaterThan(0);
+        expect(shared.lastRevlogType).toBe(3);
+        expect(shared.lastRevlogInterval).toBe(-600);
+        // Anki's learning-step fuzz adds at most a quarter of the delay, capped at five minutes.
+        expect(result.previewDueMs).toBeGreaterThanOrEqual(Math.floor(answeredAt / 1000) * 1000 + 600_000);
+        expect(result.previewDueMs).toBeLessThanOrEqual(Math.floor(answeredAt / 1000) * 1000 + 750_000);
+
+        // Easy always finishes the preview.
+        expect(answerStudyCard(10, 4, { ...settings, fsrsEnabled: false }, 900, { preview: { delays: [60, 600, 0] } }).previewDueMs).toBeNull();
     });
 
     it('grows a mature review card on Good instead of collapsing it', () => {

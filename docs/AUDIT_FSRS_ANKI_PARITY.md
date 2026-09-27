@@ -472,3 +472,23 @@ bozuyordu, Anki ise `fnvhash(c.id, c.mod)` kullanıyor.
   koleksiyon yaşından büyük yeni kart burada başa, Anki'de sona düşer. Filtreli destenin SQL
   `prop:r`'si 64-bit karşılaştırıyor. Bu yalnızca eşiğe bir saniye kadar yakın kartta Anki'nin
   32-bit değerinden ayrılabilir.
+
+## 4. Önizleme cevapları revlog'a yazılmıyordu — kapatıldı
+
+Yeniden planlaması kapalı filtreli destede (önizleme) verilen cevap hiçbir şey yazmıyordu.
+Bekleme süresi yalnızca oturumun belleğinde tutuluyordu ve cevap geri alınamıyordu. Anki 26.05
+`apply_preview_state` ile şunları yapıyor:
+
+- Tür 3 (filtreli) revlog satırı yazıyor. Ease sütunu 0, `ivl` önizleme gecikmesi, `lastIvl` "Tekrar"
+  gecikmesi. İkisi de negatif saniye, gün sınırını aşıyorsa gün. FSRS ve optimizer bu satırı
+  "cramming" diye atlıyor. Satır "bugün çalışılan"a sayılıyor ama ana destenin yeni kart hakkından
+  düşmüyor (Anki bunu filtreli desteye yazar).
+- Kartın planı, `reps`'i ve `lrt`'si değişmiyor. Kardeşler gömülüyor. FSRS açıksa kart güncelleyici
+  ön ayarın decay'ini karta yazıyor, eksik hafıza durumunu türetiyor.
+- Gecikmeli cevapta kart, öğrenme adımı fuzz'ıyla birlikte önizleme-tekrar kuyruğunda bekliyor.
+  Süre dolunca diğerlerinden önce geliyor. Kolay ya da sıfır gecikme kartı desteden çıkarıyor.
+
+Uygulamada bekleme süresi destede (`filteredPreviewDue`) saklanıyor, uygulama yeniden açılsa da
+korunuyor. Önizleme cevabı geri alınabiliyor. Ölçüm: Anki'den 6 tur, 72 cevap (FSRS açık ve kapalı,
+gün sınırını aşan gecikmeler dahil). Revlog satırları ve kart verisi birebir aynı, geri dönüş
+zamanı saniye içinde aynı.

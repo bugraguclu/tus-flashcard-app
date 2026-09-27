@@ -252,7 +252,10 @@ export interface Deck {
     searchQuery2?: string;
     searchLimit2?: number;
     searchOrder2?: number;
-    /** Anki's "reschedule cards based on my answers". False = preview mode: answers never touch the cards. */
+    /**
+     * Anki's "reschedule cards based on my answers". False is preview mode: an answer leaves the
+     * card's scheduling alone and is logged as a filtered review with no ease.
+     */
     reschedule?: boolean;
     /**
      * Anki's preview_again_secs / preview_hard_secs / preview_good_secs, in that order, used when
@@ -270,6 +273,11 @@ export interface Deck {
     filteredDeckEmpty?: boolean;
     /** Cards completed since the last filtered-deck build; kept out until the next rebuild. */
     filteredDoneCardIds?: number[];
+    /**
+     * Preview cards waiting out a delay, as epoch ms keyed by card id: Anki's preview-repeat
+     * queue, where the card sits with a due time until it is shown again.
+     */
+    filteredPreviewDue?: Record<string, number>;
     /** Millisecond timestamp of the last Build/Rebuild action. */
     filteredBuildAt?: number;
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */

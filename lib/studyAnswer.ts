@@ -10,7 +10,9 @@ import {
     restoreQueueFromType,
 } from './ankiState';
 import { ankiCardSeed } from './ankiRandom';
-import { updateAnkiCardData } from './fsrsCardData';
+import { memoryStateFromCardData, parseAnkiCardData, updateAnkiCardData } from './fsrsCardData';
+import { previewDelaySecondsForGrade } from './filteredDeckOptions';
+import { recordedDecayFor } from './fsrsScheduler';
 import { withFsrsInputs } from './fsrsCardInputs';
 import { loadBalancerForCard, recordLoadBalancedAnswer } from './loadBalancerSession';
 import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
@@ -46,7 +48,7 @@ export interface BuriedSiblingSnapshot {
  *
  * Anki treats answering as a single undoable operation ("Undo Answer Card") that also takes back
  * the sibling burying and the leech action, so these captures travel with the card snapshot and
- * are reverted in the same transaction. Empty for a preview answer, which writes nothing.
+ * are reverted in the same transaction.
  */
 export interface AnswerSideEffects {
     buriedSiblings: BuriedSiblingSnapshot[];
@@ -60,6 +62,16 @@ export interface ReviewResult {
     wasNewCard: boolean;
     reviewLogId: number;
     sideEffects: AnswerSideEffects;
+    /**
+     * Preview answers only: when the card is shown again (epoch ms, with Anki's learning-step
+     * fuzz), or null when the answer finished its preview.
+     */
+    previewDueMs?: number | null;
+}
+
+/** The preview delays of the filtered deck a card is answered in (Anki's `preview_*_secs`). */
+export interface PreviewAnswerOptions {
+    delays: number[] | undefined;
 }
 
 /** Bury the answered card's siblings per deck config, reporting the queue each one came from. */
@@ -206,7 +218,7 @@ export function answerStudyCard(
     grade: Grade,
     settings: AppSettings,
     answerTimeMs: number,
-    options: { preview?: boolean } = {},
+    options: { preview?: PreviewAnswerOptions } = {},
 ): ReviewResult {
     const nowMs = Date.now();
 
@@ -231,16 +243,10 @@ export function answerStudyCard(
     const noteType = getNoteType(note.noteTypeId);
     const deckConfig = getDeckConfigForDeck(currentAnkiCard.deckId);
 
-    // Preview mode (filtered deck with "reschedule" off): show the card, change nothing —
-    // no card mutation, no revlog row, nothing to undo. Mirrors Anki's preview behavior.
     if (options.preview) {
-        return {
-            updatedCard: makeStudyCard(currentAnkiCard, note, noteType, cardSettings, nowMs, true),
-            previousAnkiCard: { ...currentAnkiCard },
-            wasNewCard: false,
-            reviewLogId: 0,
-            sideEffects: { buriedSiblings: [] },
-        };
+        return answerInPreview(currentAnkiCard, currentState, grade, cardSettings, deckConfig, answerTimeMs, options.preview, nowMs, () => (
+            makeStudyCard(getAnkiCard(currentAnkiCard.id) ?? currentAnkiCard, note, noteType, cardSettings, nowMs, true)
+        ));
     }
 
     const scheduler = schedulerForSettings(cardSettings);
@@ -367,6 +373,82 @@ export function answerStudyCard(
         wasNewCard: currentState.status === 'new',
         reviewLogId,
         sideEffects,
+    };
+}
+
+/**
+ * An answer in a filtered deck with rescheduling off (Anki's `apply_preview_state`). The card's
+ * schedule is left alone: no repetition, no review time, no new memory state from the answer.
+ * The answer is still logged as a filtered review with an ease of 0, which FSRS and the optimizer
+ * skip as cramming. `ivl` is the preview delay and `lastIvl` the deck's Again delay, both as
+ * negative seconds or, past the rollover, days. Siblings are buried as for any answer. Easy, or a
+ * button whose delay is zero, finishes the preview; any other button brings the card back after
+ * its delay plus Anki's learning-step fuzz. Under FSRS, Anki's card updater also stamps the
+ * preset's decay on the card and derives a missing memory state, as it does for every answer.
+ */
+function answerInPreview(
+    card: AnkiCard,
+    state: CardState,
+    grade: Grade,
+    settings: AppSettings,
+    deckConfig: DeckConfig,
+    answerTimeMs: number,
+    preview: PreviewAnswerOptions,
+    nowMs: number,
+    studyCard: () => StudyCard,
+): ReviewResult {
+    const nowSecs = Math.floor(nowMs / 1000);
+    const secsUntilRollover = Math.floor(nextRolloverMs(nowMs, settings.dayRolloverHour) / 1000) - nowSecs;
+    const asRevlogInterval = (secs: number) => learningDelayAsDays(secs, secsUntilRollover) ?? (secs === 0 ? 0 : -secs);
+    const delay = previewDelaySecondsForGrade(preview.delays, grade);
+
+    let updated = card;
+    if (settings.fsrsEnabled) {
+        const hasMemory = memoryStateFromCardData(parseAnkiCardData(card.ankiData)) !== null;
+        const derived = !hasMemory && state.memoryState ? state.memoryState : null;
+        updated = {
+            ...card,
+            ankiData: updateAnkiCardData(card.ankiData, {
+                decay: recordedDecayFor(settings),
+                ...(derived ? { stability: derived.stability, difficulty: derived.difficulty } : null),
+            }),
+            mod: nowSecs,
+            usn: -1,
+        };
+    }
+
+    const db = getDB();
+    let reviewLogId = 0;
+    const sideEffects: AnswerSideEffects = { buriedSiblings: [] };
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        if (updated !== card) saveAnkiCard(updated);
+        reviewLogId = logReview(
+            updated,
+            grade,
+            asRevlogInterval(delay),
+            asRevlogInterval(previewDelaySecondsForGrade(preview.delays, 1)),
+            0,
+            answerTimeMs,
+            3,
+            deckConfig.maxAnswerSecs,
+        ).id;
+        sideEffects.buriedSiblings = applySiblingBuryPolicy(card, deckConfig);
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+
+    return {
+        updatedCard: studyCard(),
+        previousAnkiCard: card,
+        wasNewCard: false,
+        reviewLogId,
+        sideEffects,
+        previewDueMs: delay === 0
+            ? null
+            : (nowSecs + learningIntervalWithFuzz(ankiCardSeed(card.id, card.reps), delay)) * 1000,
     };
 }
 

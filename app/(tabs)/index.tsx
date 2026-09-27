@@ -49,6 +49,7 @@ import {
     getDeckByName,
     getDeckConfigForDeck,
     restoreFilteredCard,
+    setFilteredPreviewDue,
 } from '../../lib/deckManager';
 import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
@@ -262,6 +263,8 @@ type AnswerUndoEntry = {
     /** Rows the answer changed beyond this card: buried siblings, an added leech tag. */
     sideEffects: AnswerSideEffects;
     filteredDeckId?: number;
+    /** A preview answer: its deck, the delays it used and the card's wait before the answer. */
+    preview?: { deckId: number; delays: number[] | undefined; previousDueMs: number | null };
     grade: Grade;
     answerTimeMs: number;
 };
@@ -577,15 +580,6 @@ export default function StudyScreen() {
         return Boolean(deck?.isFiltered && deck.reschedule === false);
     }, [selectedDeckName, collectionVersion]);
 
-    // Preview leaves the DB untouched, so a rebuilt queue would re-gather every card the
-    // user already went through. Track them per session; a scope change starts fresh.
-    const previewDoneIdsRef = useRef<Set<number>>(new Set());
-    const previewPendingDueMapRef = useRef<Map<number, number>>(new Map());
-    useEffect(() => {
-        previewDoneIdsRef.current.clear();
-        previewPendingDueMapRef.current.clear();
-    }, [selectedSubject, selectedTopic, selectedDeckName]);
-
     // Entering a different study scope or changing the preference starts a new reviewer block.
     // Continue resets the same tracker after the checkpoint choice below.
     useEffect(() => {
@@ -617,31 +611,9 @@ export default function StudyScreen() {
             extraLearningCardIds: studyAheadCardIds,
         });
 
-        // A preview session re-gathers untouched cards on every rebuild; drop the ones
-        // already answered this session so the queue actually progresses.
-        const nowMs = Date.now();
-        let sessionCards = result.cards;
-        let previewNextDue: number | null = null;
-        if (previewMode) {
-            const pendingMap = previewPendingDueMapRef.current;
-            const doneIds = previewDoneIdsRef.current;
-            const futureDelays: number[] = [];
-            sessionCards = result.cards.filter((card) => {
-                if (doneIds.has(card.cardId)) return false;
-                const pendingDue = pendingMap.get(card.cardId);
-                if (pendingDue !== undefined) {
-                    if (pendingDue > nowMs) {
-                        futureDelays.push(pendingDue);
-                        return false;
-                    }
-                    pendingMap.delete(card.cardId);
-                }
-                return true;
-            });
-            if (futureDelays.length > 0) {
-                previewNextDue = Math.min(...futureDelays);
-            }
-        }
+        // A preview deck keeps its finished cards and their waiting delays on the deck itself,
+        // so the queue it builds already leaves them out.
+        const sessionCards = result.cards;
 
         // Background refreshes must not yank the card the user is looking at (or hide the
         // answer they are reading) — keep it in front and merge the fresh queue behind it.
@@ -664,7 +636,7 @@ export default function StudyScreen() {
             setShowingAnswer(false);
         }
 
-        setNextLearningDue(previewMode ? (previewNextDue ?? (sessionCards.length === 0 && result.nextLearningDue ? result.nextLearningDue : null)) : result.nextLearningDue);
+        setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
         setDailyNewLimitReached(result.dailyNewLimitReached);
         setHeldBackNewCount(result.heldBackNewCount);
@@ -901,9 +873,13 @@ export default function StudyScreen() {
 
             const elapsed = answerTimerRef.current.elapsed(Date.now());
 
+            const activeFilteredDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
+            const previewDeck = previewMode && activeFilteredDeck?.isFiltered ? activeFilteredDeck : null;
             let result;
             try {
-                result = answerStudyCard(currentCard.cardId, grade, settings, elapsed, { preview: previewMode });
+                result = answerStudyCard(currentCard.cardId, grade, settings, elapsed, previewDeck
+                    ? { preview: { delays: previewDeck.previewDelays } }
+                    : {});
             } catch (e) {
                 // The card can vanish under us when the collection is replaced (backup restore,
                 // import) while this screen holds a stale queue. Resync instead of crashing;
@@ -916,22 +892,32 @@ export default function StudyScreen() {
                 return;
             }
 
-            const activeFilteredDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
-            // When the card is coming back later, the moment it is due again. The preview queue is
-            // held in these refs rather than in the card, because preview never writes scheduling.
+            // A preview answer that set a delay: when the card is due again.
             let previewRequeueAt: number | null = null;
-            if (previewMode) {
-                const delaySec = previewDelaySecondsForGrade(activeFilteredDeck?.previewDelays, grade);
-                if (delaySec > 0) {
-                    previewRequeueAt = Date.now() + delaySec * 1000;
-                    previewPendingDueMapRef.current.set(currentCard.cardId, previewRequeueAt);
-                } else {
-                    previewPendingDueMapRef.current.delete(currentCard.cardId);
-                    previewDoneIdsRef.current.add(currentCard.cardId);
-                    if (activeFilteredDeck) {
-                        completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
-                    }
-                }
+            if (previewDeck) {
+                // The deck holds the card back until its delay has run, or retires it when the
+                // answer finished its preview, as Anki's preview-repeat queue does.
+                const previousDueMs = previewDeck.filteredPreviewDue?.[String(currentCard.cardId)] ?? null;
+                previewRequeueAt = result.previewDueMs ?? null;
+                setFilteredPreviewDue(previewDeck.id, currentCard.cardId, previewRequeueAt);
+                const finished = previewRequeueAt === null;
+                if (finished) completeFilteredCard(previewDeck.id, currentCard.cardId);
+
+                setRedoStack([]);
+                setUndoStack((prev) => [
+                    ...prev.slice(-29),
+                    {
+                        kind: 'answer',
+                        cardId: currentCard.cardId,
+                        reviewLogId: result.reviewLogId,
+                        previousSnapshot: result.previousAnkiCard,
+                        sideEffects: result.sideEffects,
+                        filteredDeckId: finished ? previewDeck.id : undefined,
+                        preview: { deckId: previewDeck.id, delays: previewDeck.previewDelays, previousDueMs },
+                        grade,
+                        answerTimeMs: elapsed,
+                    },
+                ]);
             } else {
                 // A filtered deck is a build snapshot, not a live saved search. Once a card has
                 // finished its learning/relearning steps, retire it from this build so background
@@ -1013,7 +999,7 @@ export default function StudyScreen() {
             setQueue((prevQueue) => {
                 const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
                 // Preview (Anki): a button with a delay brings the card back only once that delay
-                // has run, so the card waits in previewPendingDueMapRef instead of re-entering the
+                // has run, so the card waits on the deck's preview schedule instead of re-entering the
                 // queue now. A zero delay — always the case for Easy — retires it from the session.
                 const shouldReinsert = previewMode
                     ? false
@@ -1170,6 +1156,9 @@ export default function StudyScreen() {
             if (undo.filteredDeckId) {
                 restoreFilteredCard(undo.filteredDeckId, undo.cardId);
             }
+            if (undo.preview) {
+                setFilteredPreviewDue(undo.preview.deckId, undo.cardId, undo.preview.previousDueMs);
+            }
 
             // Deleting the revlog row already reverted the day's numbers; re-read them.
             const restoredStats = refreshSessionStats();
@@ -1201,7 +1190,12 @@ export default function StudyScreen() {
                 return;
             }
 
-            const result = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs);
+            const result = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, redo.preview
+                ? { preview: { delays: redo.preview.delays } }
+                : {});
+            if (redo.preview) {
+                setFilteredPreviewDue(redo.preview.deckId, redo.cardId, result.previewDueMs ?? null);
+            }
             if (redo.filteredDeckId) {
                 completeFilteredCard(redo.filteredDeckId, redo.cardId);
             }
@@ -1218,6 +1212,7 @@ export default function StudyScreen() {
                     // captures from the answer this redo replaces.
                     sideEffects: result.sideEffects,
                     filteredDeckId: redo.filteredDeckId,
+                    preview: redo.preview,
                     grade: redo.grade,
                     answerTimeMs: redo.answerTimeMs,
                 },

@@ -103,8 +103,7 @@ Full item-by-item record in `docs/AUDIT_FSRS_ANKI_PARITY.md`
 
 **Next compatibility gate:** Known differences: memory states differ in the last bits in about 1% of cases because the platform's exp/pow
 are not correctly rounded (intervals never differed in the recorded vectors); the optimizer is not
-Anki's trainer and will not reproduce its numbers; preview answers write no cramming revlog row;
-a filtered deck's `prop:r` compares in 64-bit SQL, which can only differ from Anki's 32-bit value
+Anki's trainer and will not reproduce its numbers; a filtered deck's `prop:r` compares in 64-bit SQL, which can only differ from Anki's 32-bit value
 for a card within about a second of the threshold. Still to add:
 retention/true-retention graphs and the FSRS simulator
 
@@ -129,6 +128,8 @@ retention/true-retention graphs and the FSRS simulator
 **Status:** Implemented
 
 **Evidence:** Context-preserving overview panels, two independent filters, all 11 gather search orders (0..10) stored with Anki's own ordinals (migration 10), rescheduling/preview modes whose Again/Hard/Good delays mirror Anki's `preview_again_secs`/`preview_hard_secs`/`preview_good_secs` (read from `Deck.Filtered` fields 7/5/6, which `decks.proto` numbers out of order; an omitted field imports as zero exactly as proto3 and Anki's schema-11 serde defaults leave it, and `60`/`600`/`0` are used only when creating a deck, matching `Deck::new_filtered`, whose second search term also starts at 20 cards) with Easy always retiring the card as `preview_filter.rs` does, gather orders built from `rslib/src/storage/card/filtered.rs` including its note-id/ordinal added order and its single timeline for due order, reviewer session countdown timers, excluded-card reporting, in-app help, deck manager, `lib/filteredDeckOptions.test.ts`, `lib/studyRepository.scope.test.ts`, and reviewer preview queue tests
+
+**Preview answers:** an answer in a deck with rescheduling off follows `apply_preview_state`. The card's schedule, repetitions and review time stay as they were. The answer is logged as a filtered review with no ease (`ivl` the preview delay, `lastIvl` the Again delay, negative seconds or days past the rollover), which FSRS and the optimizer skip as cramming and which counts as studied today but never as introducing a card. Siblings are buried, and under FSRS the card gets the preset's decay and any missing memory state, as for every Anki answer. A delayed card waits on the deck (`filteredPreviewDue`) with Anki's learning-step fuzz, across restarts, and comes back ahead of the rest. A preview answer can be undone. Checked against 72 answers recorded from Anki 26.05 (`lib/previewAnswers.test.ts`).
 
 **Gather order:** every order but random is computed in JS from Anki's own keys, including the retrievability pair and relative overdueness, which Anki takes from registered SQL functions, and the `fnvhash(c.id, c.mod)` tiebreak (`lib/filteredDeckQueue.ts`, `lib/ankiSortKeys.ts`). With FSRS off the retrievability pair keeps only the tiebreak, as upstream. Checked against a filtered deck Anki 26.05 built for each order: the same cards in the same order (`lib/ankiSortKeys.test.ts`).
 
