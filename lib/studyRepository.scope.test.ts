@@ -577,6 +577,20 @@ describe('deck-list filtered count snapshot', () => {
             .toEqual(comparableTree(legacyDeckListTree()));
     });
 
+    it('takes a previewed new card off its home deck\'s new count while it waits', () => {
+        const nowMs = Date.now();
+        saveDeck({
+            id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
+            description: '', collapsed: false, isFiltered: true, reschedule: false,
+            searchQuery: 'deck:"Python"', filteredBuildAt: nowMs, filteredPreviewDue: { 1020: nowMs + 600_000 },
+        });
+
+        const { counts } = getDeckListSnapshot(settings, nowMs);
+        // Both of deck 7's new cards belong to the session, so neither is left at home.
+        expect(counts.get(7)).toMatchObject({ new: 0, learn: 0, total: 0 });
+        expect(counts.get(98)).toMatchObject({ new: 2, learn: 1, review: 0, total: 3 });
+    });
+
     it('keeps subdeck totals and applies parent daily limits after filtered ownership', () => {
         saveDeckConfig({ ...deckConfig, newPerDay: 1, maxReviewsPerDay: 1 });
         const snapshot = getDeckListSnapshot(settings, Date.now());

@@ -215,7 +215,10 @@ export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settin
 export interface FilteredDeckCountCard {
     cardId: number;
     homeDeckId: number;
+    /** How the filtered deck counts the card. */
     status: CardState['status'];
+    /** How the home deck counted the card before the filtered deck took it. */
+    homeStatus: CardState['status'];
 }
 
 type FilteredDeckCountDefinition = Pick<Deck,
@@ -319,15 +322,16 @@ export function getFilteredDeckCountCards(
 
         seen.add(row.cardId);
         claimedCardIds.add(row.cardId);
+        const homeStatus: CardState['status'] = row.queue === 0
+            ? 'new'
+            : row.queue === 1 || row.queue === 3 || row.type === 1 || row.type === 3
+                ? 'learning'
+                : 'review';
         // A previewed card waiting out its delay counts as learning, as Anki's preview repeat does.
-        const status: CardState['status'] = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined
-            ? 'learning'
-            : row.queue === 0
-                ? 'new'
-                : row.queue === 1 || row.queue === 3 || row.type === 1 || row.type === 3
-                    ? 'learning'
-                    : 'review';
-        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status });
+        // Answering in preview leaves the card itself untouched, so its home deck still counts it
+        // as `homeStatus`.
+        const status = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined ? 'learning' : homeStatus;
+        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus });
     }
 
     return result;
