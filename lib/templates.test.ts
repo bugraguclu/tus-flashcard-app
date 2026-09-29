@@ -512,6 +512,17 @@ describe('Anki template parity (rslib/src/template.rs)', () => {
         expect(html).toContain('<div class="card card1 side-question nightMode night_mode">');
         expect(html).toContain('<div id="qa" dir="auto">');
     });
+
+    it('sets the typed-answer comparison in black on Anki\'s pastel marks, readable on a night page', () => {
+        const nt = BUILTIN_NOTE_TYPES.find((n) => n.id === 1)! as NoteType;
+        const html = renderCardHtml(nt, {
+            id: 7, guid: 'g', noteTypeId: nt.id, mod: 0, usn: -1, tags: [],
+            fields: ['soru', 'cevap'], sfld: 'soru', csum: 0, flags: 0,
+        }, 0, 'answer', { nightMode: true });
+        expect(html).toContain('.typeGood { background: #afa; color: black; }');
+        expect(html).toContain('.typeBad { background: #faa; color: black; }');
+        expect(html).toContain('.typeMissed { background: #ccc; color: black; }');
+    });
 });
 
 describe('field sanitizer (attribute-aware rewrite)', () => {

@@ -26,6 +26,7 @@ import {
     PROTECTED_CONTENT_SCRIPT,
     installProtectedContentGuards,
 } from '../lib/protectedContentCss';
+import { defaultCardTextCss } from '../lib/cardPageDefaults';
 
 /**
  * Anki's document classes. AnkiDroid ships `<html class="mobile android linux js">` and the
@@ -253,9 +254,11 @@ export default function CardWebView({
     // Without a viewport tag WKWebView assumes a 980 px desktop page and scales the result down,
     // which renders every card at roughly 40% of its intended size on an iPhone.
     const viewportMeta = '<meta name="viewport" content="width=device-width, initial-scale=1">';
-    // Keep preference CSS last so user-selected accessibility/display settings override
-    // imported note-type CSS without mutating the note template itself.
-    const html = `${viewportMeta}${renderedHtml}${preferenceCss}`;
+    // The theme's text colour goes first, under the note type's CSS, as Anki's does. Preference
+    // CSS goes last so user-selected accessibility/display settings override imported note-type
+    // CSS without mutating the note template itself.
+    const themeTextCss = `<style>${defaultCardTextCss(colors.textPrimary)}</style>`;
+    const html = `${viewportMeta}${themeTextCss}${renderedHtml}${preferenceCss}`;
     const nativeHtml = `${CARD_CONTENT_CSP_META}${html}`;
     const nativeSource = useMemo(
         () => ({ html: nativeHtml, baseUrl: mediaBaseUrl }),
