@@ -592,6 +592,8 @@ function AppStack() {
         document.documentElement.lang = locale;
     }, [locale]);
 
+    // The only handler for file hand-offs and x-callback actions: `app/+native-intent.tsx` keeps
+    // Expo Router from also reading these URLs as screen addresses.
     useEffect(() => {
         if (Platform.OS === 'web') return;
         let active = true;
