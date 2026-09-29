@@ -99,6 +99,7 @@ async function fixturePackage(
         rev: { perDay: 300, ease4: 1.4, hardFactor: 1.15, ivlFct: 0.95, maxIvl: 20000, bury: true },
         lapse: { delays: [15], minInt: 2, leechFails: 6, leechAction: 0, mult: 0.2 },
         desiredRetention: 0.91,
+        easyDaysPercentages: [1, 1, 1, 1, 1, 0.5, 0],
     };
     collection.run('INSERT INTO col VALUES (1, ?, 0, 0, 11, 0, 0, 0, ?, ?, ?, ?, ?)', [
         Math.floor(Date.now() / 1000) - 100 * 86400, '{}', JSON.stringify({ 1000: model }),
@@ -514,6 +515,36 @@ describe('lossless Anki package roundtrip', () => {
         // Anki reads the cutoff date as midnight UTC (`ignore_revlogs_before_date_to_ms`).
         expect(reimported?.ignoreRevlogsBeforeMs).toBe(Date.UTC(2025, 5, 1));
         expect(parseAnkiCardData(getAllAnkiCards()[0].ankiData).stability).toBeCloseTo(31.7, 4);
+    });
+
+    it('exports a preset\u2019s Easy Days under Anki\u2019s key, over the ones it was imported with', async () => {
+        await importApkg(await fixturePackage(), {
+            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        // The package's preset JSON is kept as ankiRaw, so it still holds Anki's own key with the
+        // values the preset arrived with. The learner then changes them here.
+        const config = getAllDeckConfigs().find((entry) => entry.name === 'Imported Options')!;
+        expect(config.ankiRaw?.easyDaysPercentages).toEqual([1, 1, 1, 1, 1, 0.5, 0]);
+        const edited = [0, 1, 1, 0.5, 1, 1, 1];
+        saveDeckConfig({ ...config, easyDays: edited });
+
+        const artifact = await buildAnkiExport('apkg', 'Medicine', true);
+        const zip = await JSZip.loadAsync(artifact.bytes!);
+        const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+        const dconf = Object.values(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)) as any[];
+        reader.close();
+        const exported = dconf.find((entry) => entry.name === 'Imported Options');
+        // Anki reads only `easyDaysPercentages`; earlier builds of this app read only `easyDays`.
+        expect(exported.easyDaysPercentages).toEqual(edited);
+        expect(exported.easyDays).toEqual(edited);
+
+        resetCollection();
+        await importApkg(artifact.bytes!, {
+            subject: 'medicine', topic: 'Imported', fileName: 'easy-days.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        expect(getAllDeckConfigs().find((entry) => entry.name === 'Imported Options')?.easyDays).toEqual(edited);
     });
 
     it('exports only cards from the exact deck ids selected in the deck tree', async () => {

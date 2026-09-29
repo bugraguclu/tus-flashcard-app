@@ -201,9 +201,9 @@ retention/true-retention graphs and the FSRS simulator
 
 **Status:** Implemented subset with bounded archive and SQLite validation
 
-**Evidence:** package round-trip, backup-source export, archive-security, SQLite-security and import integration tests; a stored snapshot can be exported without consulting or replacing the live collection, known file size is checked before reading, and every package import creates a recovery backup
+**Evidence:** package round-trip, backup-source export, archive-security, SQLite-security and import integration tests; a stored snapshot can be exported without consulting or replacing the live collection, known file size is checked before reading, and every package import creates a recovery backup; an exported preset carries its Easy Days under Anki's `easyDaysPercentages` key, over any values it was imported with, and also as `easyDays` for earlier builds of this app (`lib/ankiPackageRoundtrip.test.ts`)
 
-**Next compatibility gate:** Maintain fixtures from current Anki releases and physical-device large-package smoke
+**Next compatibility gate:** Maintain fixtures from current Anki releases and physical-device large-package smoke; Anki 26.05 rejects a whole exported package when a deck lacks `lrnToday`, `revToday`, `newToday` or `timeToday`, and only decks imported from a schema-11 package carry them
 
 ## `.colpkg` replacement
 
