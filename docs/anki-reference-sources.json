@@ -200,6 +200,14 @@
       "useFor": ["the unicase collation Anki registers for schema-18 name columns, name indexes and the tags table", "why SQLite outside Anki cannot open or check those objects"]
     },
     {
+      "id": "anki-source-exchange-gather",
+      "priority": 2,
+      "platform": "package import and export",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/gather.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["the decks a package import or export takes: those holding its cards, their original decks only with scheduling, and every parent", "the Default deck left out without scheduling, so its cards join the importing collection's own"]
+    },
+    {
       "id": "anki-source-deck-schema11",
       "priority": 2,
       "platform": "legacy deck JSON in .apkg and .colpkg",

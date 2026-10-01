@@ -13,6 +13,7 @@ import {
 } from './models';
 import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './types';
 import { ankiDueDayToLocal } from './importApkgProgress';
+import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
 import { parsePreviewDelays } from './filteredDeckOptions';
 import {
@@ -664,8 +665,21 @@ export function importAnkiReaderLossless(
 
         const importedDeckNames = new Set<string>();
         const reservedDeckNames = new Set(existingDecks.map((row) => row.name));
+        // Only the decks the package's cards use, chosen as Anki chooses them, so the empty Default
+        // deck every package carries stays out. A collection package replaces the collection and
+        // brings all of its decks. When an import without progress leaves the package's Default
+        // deck out, its cards keep deck id 1 below and so join this collection's own default deck.
+        const decksToImport = options.replaceCollection ? null : packageDecksToImport(
+            Object.entries(meta.decks).map(([sourceKey, raw]) => ({
+                id: numberValue(raw.id, numberValue(sourceKey)),
+                name: String(raw.name || 'Anki Deck'),
+            })),
+            cardRows.map((row) => ({ did: numberValue(row.did), odid: numberValue(row.odid) })),
+            { withScheduling, hasOwnDefaultDeck: existingDecks.some((row) => row.id === ANKI_DEFAULT_DECK_ID) },
+        );
         for (const [sourceKey, raw] of Object.entries(meta.decks)) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
+            if (decksToImport && !decksToImport.has(sourceId)) continue;
             const sourceName = String(raw.name || 'Anki Deck');
             const sourceFiltered = numberValue(raw.dyn) === 1;
             const compatible = (row: { data: string }): boolean => {

@@ -25,11 +25,13 @@ vi.mock('./mediaStore', () => ({
     readMediaBytes: async (name: string) => holder.media.get(name) ?? null,
 }));
 
+import type { Database } from 'sql.js';
 import { extractCollectionBytes, hardenAndValidateAnkiReader, importApkg } from './importApkg';
 import { ankiDueDayToLocal } from './importApkgProgress';
 import { openSqlJsReader } from './webDb';
 import { getAllAnkiCards, getAllNotes, getAllNoteTypes } from './noteManager';
-import { getAllDeckConfigs, getAllDecks } from './deckManager';
+import { getAllDeckConfigs, getAllDecks, saveDeck, saveDeckConfig } from './deckManager';
+import { DEFAULT_DECK_CONFIG, DEFAULT_DECKS } from './models';
 
 const FIXTURES = path.resolve(__dirname, '../test/fixtures');
 const MODERN = 'anki-26.05-modern.apkg';
@@ -55,12 +57,37 @@ function fixture(name: string): Uint8Array {
     return new Uint8Array(readFileSync(path.join(FIXTURES, name)));
 }
 
-/** Imports a fixture through the web build's own reader, the path the bug report came from. */
-function importFixture(name: string) {
-    return importApkg(fixture(name), {
-        subject: 'tus', topic: 'Anki', nowMs: NOW_MS, rolloverHour: ROLLOVER_HOUR, fileName: name,
+/** Imports package bytes through the web build's own reader, the path the bug report came from. */
+function importPackage(bytes: Uint8Array, fileName: string, withScheduling = true) {
+    return importApkg(bytes, {
+        subject: 'tus', topic: 'Anki', nowMs: NOW_MS, rolloverHour: ROLLOVER_HOUR, fileName, withScheduling,
         openReader: openSqlJsReader,
     });
+}
+
+function importFixture(name: string) {
+    return importPackage(fixture(name), name);
+}
+
+/** The legacy export with its collection edited, as the scripts/anki-oracle probes edited it. */
+async function editedLegacyFixture(edit: (collection: Database) => void): Promise<Uint8Array> {
+    const zip = await JSZip.loadAsync(fixture(LEGACY));
+    const collection = new SQL.Database(await zip.file('collection.anki21')!.async('uint8array'));
+    edit(collection);
+    zip.file('collection.anki21', collection.export());
+    collection.close();
+    return zip.generateAsync({ type: 'uint8array' });
+}
+
+/** What a fresh install starts with, including the default deck an Anki Default deck must not duplicate. */
+function seedFreshInstall() {
+    saveDeckConfig({ ...DEFAULT_DECK_CONFIG });
+    for (const deck of DEFAULT_DECKS) saveDeck(deck);
+}
+
+function cardsPerDeck(): Record<string, number> {
+    const cards = getAllAnkiCards();
+    return Object.fromEntries(getAllDecks().map((deck) => [deck.name, cards.filter((card) => card.deckId === deck.id).length]));
 }
 
 /** Where Anki's due number lands: a day for reviews, a timestamp for learning, a position for new cards. */
@@ -231,5 +258,43 @@ describe('a package exported by Anki 26.05', () => {
 
         expect(importedCollection()).toEqual(legacy);
         expect(legacy.notes).toHaveLength(anki.notes.length);
+    });
+});
+
+// Every expectation here is the deck list Anki 26.05 produced from the same package, imported
+// through scripts/anki-oracle into a collection whose Default deck was renamed to this app's name.
+describe('the decks an Anki package brings into a collection', () => {
+    beforeEach(seedFreshInstall);
+
+    it.each([MODERN, LEGACY])('leaves out the empty Default deck every package carries (%s)', async (name) => {
+        await importFixture(name);
+        const recorded: Record<string, number> = {};
+        for (const card of anki.cards) recorded[card.deck] = (recorded[card.deck] ?? 0) + 1;
+        expect(cardsPerDeck()).toEqual({ ...recorded, Varsayılan: 0 });
+    });
+
+    it('leaves out any other deck that holds no card', async () => {
+        const bytes = await editedLegacyFixture((collection) => {
+            const decks = JSON.parse(String(collection.exec('SELECT decks FROM col')[0].values[0][0]));
+            const child = Object.values<any>(decks).find((deck) => deck.name.includes('::'));
+            decks[1700000000001] = { ...child, id: 1700000000001, name: 'TUS Örnek::Boş alt' };
+            decks[1700000000002] = { ...child, id: 1700000000002, name: 'Boş kök' };
+            collection.run('UPDATE col SET decks = ?', [JSON.stringify(decks)]);
+        });
+        await importPackage(bytes, 'empty-decks.apkg');
+        expect(getAllDecks().map((deck) => deck.name).sort()).toEqual(['TUS Örnek', 'TUS Örnek::Kardiyoloji', 'Varsayılan']);
+    });
+
+    it('brings a Default deck that holds a card along with its progress, and files the card here without it', async () => {
+        const bytes = await editedLegacyFixture((collection) => {
+            collection.run('UPDATE cards SET did = 1 WHERE id = (SELECT MIN(id) FROM cards)');
+        });
+        await importPackage(bytes, 'default-card.apkg', true);
+        expect(cardsPerDeck()).toEqual({ Default: 1, 'TUS Örnek': 1, 'TUS Örnek::Kardiyoloji': 5, Varsayılan: 0 });
+
+        resetCollection();
+        seedFreshInstall();
+        await importPackage(bytes, 'default-card.apkg', false);
+        expect(cardsPerDeck()).toEqual({ 'TUS Örnek': 1, 'TUS Örnek::Kardiyoloji': 5, Varsayılan: 1 });
     });
 });

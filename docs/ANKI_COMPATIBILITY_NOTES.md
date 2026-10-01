@@ -220,6 +220,15 @@ against that record, and the two formats against each other. The default format 
 - 32-bit floats read as their shortest decimal, the way Anki writes them to the legacy JSON;
 - the media manifest read as a zstd-compressed `MediaEntries` protobuf, entries numbered by position.
 
+Like Anki, an import creates only the decks the package's cards use: the decks they are in, a
+filtered card's home deck when progress is imported, and every deck above those. The empty Default
+deck every package carries therefore stays out instead of appearing beside this app's own default
+deck, and so does any other deck without cards. A Default deck that holds a card comes along with
+progress; without progress its cards join this collection's own default deck. A `.colpkg` replaces
+the collection with all of its decks (`lib/importApkgDecks.test.ts`, and
+`lib/importApkg.ankiExport.test.ts` on the fixtures; each case was measured in Anki 26.05 through
+`scripts/anki-oracle`).
+
 Package round-trip, backup-source export, archive-security, SQLite-security and import integration
 tests cover the rest; a stored snapshot can be exported without consulting or replacing the live
 collection, known file size is checked before reading, and every package import creates a recovery
