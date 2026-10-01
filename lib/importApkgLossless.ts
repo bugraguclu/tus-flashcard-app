@@ -116,9 +116,11 @@ function protoString(fields: ProtoFields, field: number, fallback = ''): string 
     return value ? new TextDecoder().decode(value) : fallback;
 }
 
+// Floats are read as the shortest decimal of their 32-bit value, which is how Anki writes the same
+// value into the legacy JSON: 0.9 rather than 0.8999999761581421.
 function protoFloat(fields: ProtoFields, field: number, fallback = 0): number {
     const value = protoBytes(fields, field);
-    return value?.length === 4 ? new DataView(value.buffer, value.byteOffset, 4).getFloat32(0, true) : fallback;
+    return value?.length === 4 ? toF32Decimal(new DataView(value.buffer, value.byteOffset, 4).getFloat32(0, true)) : fallback;
 }
 
 function protoFloats(fields: ProtoFields, field: number): number[] {
@@ -128,7 +130,7 @@ function protoFloats(fields: ProtoFields, field: number): number[] {
         if (!(value instanceof Uint8Array)) continue;
         if (value.length % 4 === 0) {
             const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
-            for (let offset = 0; offset < value.length; offset += 4) result.push(view.getFloat32(offset, true));
+            for (let offset = 0; offset < value.length; offset += 4) result.push(toF32Decimal(view.getFloat32(offset, true)));
         }
     }
     return result;
@@ -144,7 +146,30 @@ function protoFloats(fields: ProtoFields, field: number): number[] {
  */
 const FILTERED_PREVIEW_FIELD = { legacyDelayMinutes: 4, hardSecs: 5, goodSecs: 6, againSecs: 7 } as const;
 
-/** Convert Anki's normalized schema-15+ protobuf metadata to the legacy interchange shape. */
+/**
+ * `DeckConfig.Config.new_card_insert_order` numbers Due 0 and Random 1; the legacy JSON's
+ * `new.order` numbers them the other way round, random 0 and due 1.
+ */
+const PROTO_INSERT_ORDER_RANDOM = 1;
+
+/**
+ * Schema-18 `decks.name` separates a deck's path components with \x1f; the legacy JSON, Anki's
+ * interface and this app use "::".
+ * https://github.com/ankitects/anki/blob/main/rslib/src/decks/name.rs
+ */
+function humanDeckName(stored: string): string {
+    return stored.replaceAll('\x1f', '::');
+}
+
+/**
+ * Convert Anki's normalized schema-15+ protobuf metadata to the legacy interchange shape.
+ *
+ * The blobs are proto3, which leaves out a scalar that is zero or false, so a missing preset field
+ * is read as zero rather than as the value Anki gives a new preset. A preset with no new cards a
+ * day, for one, is stored without its `new_per_day`. Fields that Anki's options screen never lets
+ * reach zero keep a fallback for hand-made packages.
+ * https://github.com/ankitects/anki/blob/main/proto/anki/deck_config.proto
+ */
 function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyCollectionMeta | null {
     try {
         const models: JsonMap = {};
@@ -176,7 +201,7 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
             const filteredBytes = protoBytes(kindContainer, 2);
             const kind = protobufFields(normalBytes ?? filteredBytes ?? new Uint8Array());
             const raw: Record<string, any> = {
-                id: numberValue(row.id), name: String(row.name), mod: numberValue(row.mtime_secs), usn: numberValue(row.usn, -1),
+                id: numberValue(row.id), name: humanDeckName(String(row.name)), mod: numberValue(row.mtime_secs), usn: numberValue(row.usn, -1),
                 collapsed: Boolean(protoNumber(common, 1)), browserCollapsed: Boolean(protoNumber(common, 2)), dyn: filteredBytes ? 1 : 0,
             };
             if (normalBytes) {
@@ -209,8 +234,8 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
             const cfg = protobufFields(row.config);
             dconf[String(row.id)] = {
                 id: numberValue(row.id), name: String(row.name), mod: numberValue(row.mtime_secs), usn: numberValue(row.usn, -1),
-                new: { delays: protoFloats(cfg, 1), perDay: protoNumber(cfg, 9, 20), initialFactor: Math.round(protoFloat(cfg, 11, 2.5) * 1000), ints: [protoNumber(cfg, 18, 1), protoNumber(cfg, 19, 4)], order: protoNumber(cfg, 20), bury: Boolean(protoNumber(cfg, 27)) },
-                rev: { perDay: protoNumber(cfg, 10, 200), ease4: protoFloat(cfg, 12, 1.3), hardFactor: protoFloat(cfg, 13, 1.2), ivlFct: protoFloat(cfg, 15, 1), maxIvl: protoNumber(cfg, 16, 36500), bury: Boolean(protoNumber(cfg, 28)) },
+                new: { delays: protoFloats(cfg, 1), perDay: protoNumber(cfg, 9), initialFactor: Math.round(protoFloat(cfg, 11, 2.5) * 1000), ints: [protoNumber(cfg, 18, 1), protoNumber(cfg, 19, 4)], order: protoNumber(cfg, 20) === PROTO_INSERT_ORDER_RANDOM ? 0 : 1, bury: Boolean(protoNumber(cfg, 27)) },
+                rev: { perDay: protoNumber(cfg, 10), ease4: protoFloat(cfg, 12, 1.3), hardFactor: protoFloat(cfg, 13, 1.2), ivlFct: protoFloat(cfg, 15, 1), maxIvl: protoNumber(cfg, 16, 36500), bury: Boolean(protoNumber(cfg, 28)) },
                 lapse: { delays: protoFloats(cfg, 2), mult: protoFloat(cfg, 14), minInt: protoNumber(cfg, 17, 1), leechAction: protoNumber(cfg, 21), leechFails: protoNumber(cfg, 22, 8) },
                 autoplay: !Boolean(protoNumber(cfg, 23)),
                 maxTaken: protoNumber(cfg, 24, 60),
@@ -227,8 +252,8 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 secondsToShowQuestion: protoFloat(cfg, 41),
                 secondsToShowAnswer: protoFloat(cfg, 42),
                 answerAction: protoNumber(cfg, 43),
-                waitForAudio: Boolean(protoNumber(cfg, 44, 1)),
-                easyDays: protoFloats(cfg, 4),
+                waitForAudio: Boolean(protoNumber(cfg, 44)),
+                easyDaysPercentages: protoFloats(cfg, 4),
                 fsrsWeights: protoFloats(cfg, 3),
                 fsrsParams5: protoFloats(cfg, 5),
                 fsrsParams6: protoFloats(cfg, 6),
@@ -298,6 +323,18 @@ function importedNoteType(raw: Record<string, any>, id: number, packageId: strin
     };
 }
 
+/**
+ * A preset's Easy Days percentages. Anki's legacy JSON names them `easyDaysPercentages`. This app's
+ * own exports write the current values as `easyDays`, next to any `easyDaysPercentages` the preset
+ * was first imported with, so `easyDays` wins when both are present.
+ */
+function importedEasyDays(raw: Record<string, any>): number[] {
+    const values = Array.isArray(raw.easyDays) ? raw.easyDays : raw.easyDaysPercentages;
+    return Array.isArray(values) && values.length === 7
+        ? floatArray(values, [1, 1, 1, 1, 1, 1, 1])
+        : [1, 1, 1, 1, 1, 1, 1];
+}
+
 /** The newest FSRS parameter list a package carries, normalized to FSRS-6's 21 values. */
 function importedFsrsParams(raw: Record<string, any>): number[] | undefined {
     for (const key of ['fsrsParams6', 'fsrsParams5', 'fsrsWeights', 'fsrsParams4']) {
@@ -353,9 +390,7 @@ function importedDeckConfig(raw: Record<string, any>, id: number, packageId: str
         autoPlayAudio: boolValue(raw.autoplay, true),
         // Anki stores the positive form (`replayq`: replay the question with the answer).
         skipQuestionWhenReplayingAnswer: !boolValue(raw.replayq, true),
-        easyDays: Array.isArray(raw.easyDays) && raw.easyDays.length === 7
-            ? floatArray(raw.easyDays, [1, 1, 1, 1, 1, 1, 1])
-            : [1, 1, 1, 1, 1, 1, 1],
+        easyDays: importedEasyDays(raw),
         // FSRS: the newest parameter generation the package carries wins, and older ones are
         // converted rather than dropped (lib/fsrs.ts normalizeFsrsParameters).
         fsrsParams: importedFsrsParams(raw),

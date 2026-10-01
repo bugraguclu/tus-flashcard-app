@@ -52,10 +52,56 @@ const IMPORT_TABLE_ROW_LIMITS: Record<string, number> = {
 
 const MAX_NOTE_FIELD_CHARS = 10 * 1024 * 1024;
 
+// Anki registers this collation in its Rust backend and orders the names of schema-18 note types,
+// fields, templates, decks, presets and tags with it. sql.js and expo-sqlite do not have it.
+// https://github.com/ankitects/anki/blob/main/rslib/src/storage/sqlite.rs
+const ANKI_NAME_COLLATION = 'unicase';
+
+// Every table an importer reads. One of these is never dropped to get past a missing collation:
+// the import then fails instead of quietly losing the table's rows.
+const IMPORTED_TABLES = new Set(['col', 'notes', 'cards', 'revlog', 'notetypes', 'fields', 'templates', 'decks', 'deck_config']);
+
+function quoteIdentifier(name: string): string {
+    return `"${name.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Drops, from the reader's in-memory copy of the collection, whatever SQLite cannot open without
+ * Anki's name collation: the indexes ordered by it, and a table keyed by it that no importer reads.
+ *
+ * SQLite needs a collation to open an index or table ordered by it, and PRAGMA quick_check opens
+ * all of them. On a schema-18 collection, Anki's default package format since 2.1.50, the check
+ * therefore fails with "no such collation sequence: unicase". In a real package this drops the
+ * name indexes, which only hold a sorted copy of the names, and the tags table, which lists tags
+ * the notes carry themselves. The name columns keep their declared collation, so a later query
+ * that compares names fails loudly instead of sorting them some other way.
+ */
+function dropObjectsOrderedByAnkiCollation(reader: SqliteReader): void {
+    if (!reader.execSync) return;
+    const objects = reader.getAllSync<{ type: string; name: string; tbl_name: string; sql: string | null }>(
+        "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table', 'index')",
+    );
+    const ordered = objects.filter((object) => reader.getAllSync<{ coll: string | null }>(
+        'SELECT coll FROM pragma_index_xinfo(?)', object.name,
+    ).some((column) => String(column.coll ?? '').toLowerCase() === ANKI_NAME_COLLATION));
+    const tables = new Set(ordered
+        .filter((object) => object.type === 'table' && !IMPORTED_TABLES.has(object.name.toLowerCase()))
+        .map((object) => object.name));
+    for (const table of tables) reader.execSync(`DROP TABLE ${quoteIdentifier(table)}`);
+    // An index behind a UNIQUE or PRIMARY KEY constraint has no SQL of its own and cannot be
+    // dropped alone; it is left for the integrity check to reject.
+    for (const index of ordered) {
+        if (index.type === 'index' && index.sql && !tables.has(index.tbl_name)) {
+            reader.execSync(`DROP INDEX ${quoteIdentifier(index.name)}`);
+        }
+    }
+}
+
 /** Put an untrusted Anki database in read-only mode and reject hostile/corrupt structures. */
 export function hardenAndValidateAnkiReader(reader: SqliteReader): void {
     reader.execSync?.('PRAGMA trusted_schema = OFF');
     reader.execSync?.('PRAGMA cell_size_check = ON');
+    dropObjectsOrderedByAnkiCollation(reader);
 
     const integrity = reader.getFirstSync<Record<string, unknown>>('PRAGMA quick_check(1)');
     if (!integrity || String(Object.values(integrity)[0] ?? '').toLowerCase() !== 'ok') {
@@ -228,7 +274,28 @@ export async function extractCollectionBytes(zipBytes: Uint8Array): Promise<Uint
     return extractCollectionFromZip(await loadAnkiZip(zipBytes));
 }
 
+/**
+ * Marks a collection as a rollback-journal database, in place.
+ *
+ * Anki writes collection.anki21b in WAL mode: bytes 18 and 19 of the SQLite header are 2. A package
+ * carries no -wal file, so the main file already holds every page, but SQLite cannot open a WAL
+ * database from memory, and every query on one that expo-sqlite deserialized fails with "unable to
+ * open database file". Set to 1, the same pages open in rollback mode on every platform.
+ * https://www.sqlite.org/fileformat2.html#file_format_version_numbers
+ */
+function asRollbackJournal(collection: Uint8Array): Uint8Array {
+    if (collection.length >= 100) {
+        if (collection[18] === 2) collection[18] = 1;
+        if (collection[19] === 2) collection[19] = 1;
+    }
+    return collection;
+}
+
 export async function extractCollectionFromZip(zip: JSZipType): Promise<Uint8Array> {
+    return asRollbackJournal(await readCollectionEntry(zip));
+}
+
+async function readCollectionEntry(zip: JSZipType): Promise<Uint8Array> {
     async function inflate(file: import('jszip').JSZipObject): Promise<Uint8Array> {
         assertZipEntrySize(file, MAX_COLLECTION_BYTES, 'Koleksiyon');
         const bytes = await file.async('uint8array');

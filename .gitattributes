@@ -1,5 +1,6 @@
 * text=auto eol=lf
 
+*.apkg binary
 *.gif binary
 *.ico binary
 *.jpeg binary

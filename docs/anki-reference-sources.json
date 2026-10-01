@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-09-27",
+  "lastVerified": "2026-09-29",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -183,6 +183,45 @@
       "url": "https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["filtered deck search term ordinals", "filtered deck config fields"]
+    },
+    {
+      "id": "anki-source-sqlite-collations",
+      "priority": 2,
+      "platform": "collection schema",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/storage/sqlite.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["the unicase collation Anki registers for schema-18 name columns, name indexes and the tags table", "why SQLite outside Anki cannot open or check those objects"]
+    },
+    {
+      "id": "anki-source-deck-names",
+      "priority": 2,
+      "platform": "collection schema",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/decks/name.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["schema-18 deck names stored with the 0x1F unit separator between components", "the :: form the legacy JSON and the interface use"]
+    },
+    {
+      "id": "anki-source-deck-config-proto",
+      "priority": 2,
+      "platform": "collection schema",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/deck_config.proto",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["preset field numbers in schema-18 collections", "proto3 zero and false values left out (0 new cards a day, wait for audio off)", "new card insert order numbered Due 0, Random 1, the reverse of the legacy new.order", "Easy Days percentages", "gather, sort, review order, mix and auto-advance ordinals"]
+    },
+    {
+      "id": "anki-source-import-export-proto",
+      "priority": 2,
+      "platform": "package format",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/import_export.proto",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["MediaEntries media manifest of the default package format", "media zip entries numbered by manifest position"]
+    },
+    {
+      "id": "sqlite-file-format-version-numbers",
+      "priority": 3,
+      "platform": "SQLite database file header",
+      "url": "https://www.sqlite.org/fileformat2.html#file_format_version_numbers",
+      "useFor": ["WAL-mode header bytes 18 and 19 of Anki's collection.anki21b", "opening an exported collection from memory in rollback-journal mode"]
     },
     {
       "id": "fsrs-rs",
@@ -405,7 +444,7 @@
       "platform": "desktop and shared core, the version FSRS parity is measured against",
       "url": "https://github.com/ankitects/anki/tree/e64c6b1aee3e8d668fb8bbe084beada8e070d985/rslib/src",
       "license": "AGPL-3.0-or-later; behavior reference only, outputs recorded by scripts/anki-oracle",
-      "useFor": ["FSRS parity vectors in test/fixtures/anki-26.05-fsrs.json", "answering: learning-step fuzz, maybe_as_days, revlog kind/ivl/lastIvl/ease columns, lrt and pos", "card data rounding (s 4, d 3, dr 2, decay 3 decimals)", "days elapsed from next_day_at", "memory state computed on demand for answered cards without one", "Set Due Date and Forget under FSRS", "Change Deck clearing FSRS data"]
+      "useFor": ["FSRS parity vectors in test/fixtures/anki-26.05-fsrs.json", "package exports in both formats in test/fixtures/anki-26.05-modern.apkg and anki-26.05-legacy.apkg, recorded by scripts/anki-oracle/gen_apkg.py", "answering: learning-step fuzz, maybe_as_days, revlog kind/ivl/lastIvl/ease columns, lrt and pos", "card data rounding (s 4, d 3, dr 2, decay 3 decimals)", "days elapsed from next_day_at", "memory state computed on demand for answered cards without one", "Set Due Date and Forget under FSRS", "Change Deck clearing FSRS data"]
     },
     {
       "id": "fsrs-rs-5.2.0",

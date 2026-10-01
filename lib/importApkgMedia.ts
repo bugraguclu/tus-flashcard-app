@@ -231,10 +231,12 @@ function readVarint(bytes: Uint8Array, state: { offset: number }): number {
     throw new Error('Geçersiz Anki medya manifesti.');
 }
 
+// A length is read into its own variable before it moves the offset: `offset += readVarint(...)`
+// would add it to the offset from before the length's own bytes.
 function skipProtoField(bytes: Uint8Array, state: { offset: number }, wire: number): void {
     if (wire === 0) { readVarint(bytes, state); return; }
     if (wire === 1) { state.offset += 8; return; }
-    if (wire === 2) { state.offset += readVarint(bytes, state); return; }
+    if (wire === 2) { const length = readVarint(bytes, state); state.offset += length; return; }
     if (wire === 5) { state.offset += 4; return; }
     throw new Error('Desteklenmeyen Anki medya alanı.');
 }
@@ -249,7 +251,9 @@ function parseModernMediaManifest(bytes: Uint8Array): Record<string, string> {
         const field = tag >>> 3;
         const wire = tag & 7;
         if (field !== 1 || wire !== 2) { skipProtoField(bytes, outer, wire); continue; }
-        const end = outer.offset + readVarint(bytes, outer);
+        const length = readVarint(bytes, outer);
+        const end = outer.offset + length;
+        if (end > bytes.length) throw new Error('Geçersiz Anki medya manifesti.');
         const inner = { offset: outer.offset };
         let name = '';
         let legacyIndex: number | undefined;

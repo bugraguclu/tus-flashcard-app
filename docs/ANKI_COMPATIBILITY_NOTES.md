@@ -201,9 +201,33 @@ retention/true-retention graphs and the FSRS simulator
 
 **Status:** Implemented subset with bounded archive and SQLite validation
 
-**Evidence:** package round-trip, backup-source export, archive-security, SQLite-security and import integration tests; a stored snapshot can be exported without consulting or replacing the live collection, known file size is checked before reading, and every package import creates a recovery backup
+**Evidence:** `lib/importApkg.ankiExport.test.ts` imports one collection as Anki 26.05 exported it
+in both formats: the default (`test/fixtures/anki-26.05-modern.apkg`, a zstd-compressed schema-18
+collection with zstd media) and "Support older Anki versions" (`anki-26.05-legacy.apkg`). Both are
+recorded, with Anki's own record of the collection, by `scripts/anki-oracle/gen_apkg.py`. Note
+types, notes, decks, every preset option the app uses, cards, review history and media are checked
+against that record, and the two formats against each other. The default format needs:
 
-**Next compatibility gate:** Maintain fixtures from current Anki releases and physical-device large-package smoke
+- its name indexes and tags table dropped from the importer's in-memory copy. Anki orders them
+  with a `unicase` collation that only its own backend registers, so SQLite cannot open them and
+  validation failed with "no such collation sequence: unicase" on the web and on iPhone. The import
+  reads neither, and the package itself is kept byte for byte;
+- its WAL-mode header marked as a rollback journal, because expo-sqlite cannot open a WAL database
+  from memory ("unable to open database file" on iPhone);
+- deck names read with `\x1f` between their parts, where the legacy JSON has `::`;
+- presets read as proto3, which leaves out zero and false (0 new cards a day, wait for audio off),
+  and whose new-card insertion order is numbered the other way round from the legacy JSON;
+- 32-bit floats read as their shortest decimal, the way Anki writes them to the legacy JSON;
+- the media manifest read as a zstd-compressed `MediaEntries` protobuf, entries numbered by position.
+
+Package round-trip, backup-source export, archive-security, SQLite-security and import integration
+tests cover the rest; a stored snapshot can be exported without consulting or replacing the live
+collection, known file size is checked before reading, and every package import creates a recovery
+backup
+
+**Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release, and run
+the physical-device large-package smoke. Easy Days set in this app are exported as `easyDays`, a key
+Anki ignores; Anki reads `easyDaysPercentages`
 
 ## `.colpkg` replacement
 

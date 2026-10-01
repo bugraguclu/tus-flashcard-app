@@ -1,0 +1,555 @@
+{
+ "meta": {
+  "anki": "26.05",
+  "buildhash": "e64c6b1a",
+  "crt": 1756121404,
+  "exportedAtMs": 1790681404171
+ },
+ "notes": [
+  {
+   "guid": "exdj8tv+,R",
+   "notetype": "Basic",
+   "mod": 1790681404,
+   "fields": [
+    "Kalbin doğal pacemaker'ı?",
+    "SA düğümü<img src=\"kalp.png\">"
+   ],
+   "tags": [
+    "kardiyoloji",
+    "Önemli"
+   ]
+  },
+  {
+   "guid": "LsjGPq&P%$",
+   "notetype": "Basic (and reversed card)",
+   "mod": 1790681404,
+   "fields": [
+    "Digoksin",
+    "Na⁺/K⁺-ATPaz inhibitörü"
+   ],
+   "tags": [
+    "TUS::Farmakoloji"
+   ]
+  },
+  {
+   "guid": "nvA!h4`?l~",
+   "notetype": "Cloze",
+   "mod": 1790681404,
+   "fields": [
+    "{{c1::Aspirin}} COX'u {{c2::geri dönüşümsüz}} inhibe eder.",
+    "Trombosit ömrü boyunca [sound:üfürüm.mp3]"
+   ],
+   "tags": [
+    "TUS::Farmakoloji",
+    "Önemli"
+   ]
+  },
+  {
+   "guid": "ECBX(AyL*[",
+   "notetype": "Farmakoloji (TUS)",
+   "mod": 1790681404,
+   "fields": [
+    "Metoprolol",
+    "β1 seçici bloker",
+    "Bradikardi<img src=\"şema.png\">"
+   ],
+   "tags": []
+  },
+  {
+   "guid": "cv-WA$M&6}",
+   "notetype": "Basic",
+   "mod": 1790681404,
+   "fields": [
+    "Tip 2 diyabette ilk basamak?",
+    "Metformin"
+   ],
+   "tags": [
+    "Şeker"
+   ]
+  }
+ ],
+ "cards": [
+  {
+   "id": 1790681404106,
+   "guid": "exdj8tv+,R",
+   "deck": "TUS Örnek::Kardiyoloji",
+   "ord": 0,
+   "type": 2,
+   "queue": 2,
+   "due": 421,
+   "ivl": 21,
+   "factor": 2300,
+   "reps": 1,
+   "lapses": 0,
+   "left": 0,
+   "odue": 0,
+   "odid": 0,
+   "flags": 0,
+   "data": "{\"pos\":825,\"s\":16.1507,\"d\":2.482,\"dr\":0.87,\"decay\":0.2,\"lrt\":1790681404}"
+  },
+  {
+   "id": 1790681404107,
+   "guid": "LsjGPq&P%$",
+   "deck": "TUS Örnek::Kardiyoloji",
+   "ord": 0,
+   "type": 1,
+   "queue": 1,
+   "due": 1790681551,
+   "ivl": 0,
+   "factor": 0,
+   "reps": 1,
+   "lapses": 0,
+   "left": 2,
+   "odue": 0,
+   "odid": 0,
+   "flags": 0,
+   "data": "{\"pos\":82,\"s\":0.2172,\"d\":7.011,\"dr\":0.87,\"decay\":0.2,\"lrt\":1790681404}"
+  },
+  {
+   "id": 1790681404108,
+   "guid": "LsjGPq&P%$",
+   "deck": "TUS Örnek::Kardiyoloji",
+   "ord": 1,
+   "type": 0,
+   "queue": -2,
+   "due": 82,
+   "ivl": 0,
+   "factor": 0,
+   "reps": 0,
+   "lapses": 0,
+   "left": 0,
+   "odue": 0,
+   "odid": 0,
+   "flags": 2,
+   "data": "{}"
+  },
+  {
+   "id": 1790681404109,
+   "guid": "nvA!h4`?l~",
+   "deck": "TUS Örnek::Kardiyoloji",
+   "ord": 0,
+   "type": 1,
+   "queue": 1,
+   "due": 1790682520,
+   "ivl": 0,
+   "factor": 0,
+   "reps": 1,
+   "lapses": 0,
+   "left": 1,
+   "odue": 0,
+   "odid": 0,
+   "flags": 0,
+   "data": "{\"pos\":647,\"s\":3.2602,\"d\":4.885,\"dr\":0.87,\"decay\":0.2,\"lrt\":1790681404}"
+  },
+  {
+   "id": 1790681404110,
+   "guid": "nvA!h4`?l~",
+   "deck": "TUS Örnek::Kardiyoloji",
+   "ord": 1,
+   "type": 0,
+   "queue": -1,
+   "due": 647,
+   "ivl": 0,
+   "factor": 0,
+   "reps": 0,
+   "lapses": 0,
+   "left": 0,
+   "odue": 0,
+   "odid": 0,
+   "flags": 0,
+   "data": "{}"
+  },
+  {
+   "id": 1790681404111,
+   "guid": "ECBX(AyL*[",
+   "deck": "TUS Örnek::Kardiyoloji",
+   "ord": 0,
+   "type": 2,
+   "queue": 2,
+   "due": 403,
+   "ivl": 3,
+   "factor": 2300,
+   "reps": 0,
+   "lapses": 0,
+   "left": 0,
+   "odue": 0,
+   "odid": 0,
+   "flags": 0,
+   "data": "{\"pos\":694}"
+  },
+  {
+   "id": 1790681404112,
+   "guid": "cv-WA$M&6}",
+   "deck": "TUS Örnek",
+   "ord": 0,
+   "type": 0,
+   "queue": -3,
+   "due": 5,
+   "ivl": 0,
+   "factor": 0,
+   "reps": 0,
+   "lapses": 0,
+   "left": 0,
+   "odue": 0,
+   "odid": 0,
+   "flags": 0,
+   "data": "{}"
+  }
+ ],
+ "revlog": [
+  {
+   "id": 1790681404112,
+   "cid": 1790681404106,
+   "ease": 4,
+   "ivl": 21,
+   "lastIvl": 0,
+   "factor": 265,
+   "time": 4,
+   "type": 0
+  },
+  {
+   "id": 1790681404113,
+   "cid": 1790681404107,
+   "ease": 1,
+   "ivl": -120,
+   "lastIvl": 0,
+   "factor": 768,
+   "time": 0,
+   "type": 0
+  },
+  {
+   "id": 1790681404115,
+   "cid": 1790681404109,
+   "ease": 3,
+   "ivl": -900,
+   "lastIvl": 0,
+   "factor": 532,
+   "time": 0,
+   "type": 0
+  },
+  {
+   "id": 1790681404116,
+   "cid": 1790681404111,
+   "ease": 0,
+   "ivl": 3,
+   "lastIvl": 0,
+   "factor": 2300,
+   "time": 0,
+   "type": 4
+  }
+ ],
+ "decks": [
+  {
+   "name": "TUS Örnek",
+   "desc": "",
+   "collapsed": true,
+   "config": "Tekrar ayarları"
+  },
+  {
+   "name": "TUS Örnek::Kardiyoloji",
+   "desc": "Kalp ve damar <b>notları</b>",
+   "collapsed": true,
+   "config": "Kardiyoloji ayarları"
+  }
+ ],
+ "notetypes": [
+  {
+   "name": "Basic",
+   "type": 0,
+   "sortf": 0,
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    {
+     "name": "Front",
+     "ord": 0,
+     "sticky": false,
+     "rtl": false
+    },
+    {
+     "name": "Back",
+     "ord": 1,
+     "sticky": false,
+     "rtl": false
+    }
+   ],
+   "templates": [
+    {
+     "name": "Card 1",
+     "ord": 0,
+     "qfmt": "{{Front}}",
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
+    }
+   ]
+  },
+  {
+   "name": "Basic (and reversed card)",
+   "type": 0,
+   "sortf": 0,
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n",
+   "fields": [
+    {
+     "name": "Front",
+     "ord": 0,
+     "sticky": false,
+     "rtl": false
+    },
+    {
+     "name": "Back",
+     "ord": 1,
+     "sticky": false,
+     "rtl": false
+    }
+   ],
+   "templates": [
+    {
+     "name": "Card 1",
+     "ord": 0,
+     "qfmt": "{{Front}}",
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
+    },
+    {
+     "name": "Card 2",
+     "ord": 1,
+     "qfmt": "{{Back}}",
+     "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}"
+    }
+   ]
+  },
+  {
+   "name": "Cloze",
+   "type": 1,
+   "sortf": 0,
+   "css": ".card {\n    font-family: arial;\n    font-size: 20px;\n    line-height: 1.5;\n    text-align: center;\n    color: black;\n    background-color: white;\n}\n.cloze {\n    font-weight: bold;\n    color: blue;\n}\n.nightMode .cloze {\n    color: lightblue;\n}\n",
+   "fields": [
+    {
+     "name": "Text",
+     "ord": 0,
+     "sticky": false,
+     "rtl": false
+    },
+    {
+     "name": "Back Extra",
+     "ord": 1,
+     "sticky": false,
+     "rtl": false
+    }
+   ],
+   "templates": [
+    {
+     "name": "Cloze",
+     "ord": 0,
+     "qfmt": "{{cloze:Text}}",
+     "afmt": "{{cloze:Text}}<br>\n{{Back Extra}}"
+    }
+   ]
+  },
+  {
+   "name": "Farmakoloji (TUS)",
+   "type": 0,
+   "sortf": 1,
+   "css": ".card { font-family: Inter; color: #1d3557; }",
+   "fields": [
+    {
+     "name": "İlaç",
+     "ord": 0,
+     "sticky": false,
+     "rtl": false
+    },
+    {
+     "name": "Mekanizma",
+     "ord": 1,
+     "sticky": true,
+     "rtl": false
+    },
+    {
+     "name": "Yan etki",
+     "ord": 2,
+     "sticky": false,
+     "rtl": true
+    }
+   ],
+   "templates": [
+    {
+     "name": "İlaç kartı",
+     "ord": 0,
+     "qfmt": "{{İlaç}}",
+     "afmt": "{{FrontSide}}<hr id=answer>{{Mekanizma}}<br>{{Yan etki}}"
+    }
+   ]
+  }
+ ],
+ "configs": [
+  {
+   "id": 1790681404091,
+   "mod": 1790681404,
+   "name": "Kardiyoloji ayarları",
+   "usn": -1,
+   "maxTaken": 90,
+   "autoplay": false,
+   "timer": 1,
+   "replayq": false,
+   "new": {
+    "bury": true,
+    "delays": [
+     2.0,
+     15.0
+    ],
+    "initialFactor": 2300,
+    "ints": [
+     2,
+     6,
+     0
+    ],
+    "order": 0,
+    "perDay": 15
+   },
+   "rev": {
+    "bury": true,
+    "ease4": 1.45,
+    "ivlFct": 0.95,
+    "maxIvl": 3650,
+    "perDay": 150,
+    "hardFactor": 1.1
+   },
+   "lapse": {
+    "delays": [
+     5.0,
+     30.0
+    ],
+    "leechAction": 0,
+    "leechFails": 6,
+    "minInt": 2,
+    "mult": 0.2
+   },
+   "dyn": false,
+   "newMix": 1,
+   "newPerDayMinimum": 0,
+   "interdayLearningMix": 2,
+   "reviewOrder": 4,
+   "newSortOrder": 3,
+   "newGatherPriority": 5,
+   "buryInterdayLearning": true,
+   "fsrsWeights": [],
+   "fsrsParams5": [],
+   "fsrsParams6": [
+    0.2172,
+    1.1771,
+    3.2602,
+    16.1507,
+    7.0114,
+    0.57,
+    2.0966,
+    0.0069,
+    1.5261,
+    0.112,
+    1.0178,
+    1.849,
+    0.1133,
+    0.3127,
+    2.2934,
+    0.2191,
+    3.0004,
+    0.7536,
+    0.3332,
+    0.1437,
+    0.2
+   ],
+   "desiredRetention": 0.87,
+   "ignoreRevlogsBeforeDate": "2025-01-15",
+   "easyDaysPercentages": [
+    1.0,
+    1.0,
+    0.9,
+    1.0,
+    1.0,
+    0.5,
+    0.0
+   ],
+   "stopTimerOnAnswer": true,
+   "secondsToShowQuestion": 5.5,
+   "secondsToShowAnswer": 3.3,
+   "questionAction": 1,
+   "answerAction": 2,
+   "waitForAudio": true,
+   "sm2Retention": 0.85,
+   "weightSearch": ""
+  },
+  {
+   "id": 1790681404092,
+   "mod": 1790681404,
+   "name": "Tekrar ayarları",
+   "usn": -1,
+   "maxTaken": 60,
+   "autoplay": true,
+   "timer": 0,
+   "replayq": true,
+   "new": {
+    "bury": false,
+    "delays": [
+     1.0,
+     10.0
+    ],
+    "initialFactor": 2500,
+    "ints": [
+     1,
+     4,
+     0
+    ],
+    "order": 1,
+    "perDay": 0
+   },
+   "rev": {
+    "bury": false,
+    "ease4": 1.3,
+    "ivlFct": 1.0,
+    "maxIvl": 36500,
+    "perDay": 0,
+    "hardFactor": 1.2
+   },
+   "lapse": {
+    "delays": [
+     10.0
+    ],
+    "leechAction": 1,
+    "leechFails": 8,
+    "minInt": 1,
+    "mult": 0.0
+   },
+   "dyn": false,
+   "newMix": 0,
+   "newPerDayMinimum": 0,
+   "interdayLearningMix": 0,
+   "reviewOrder": 0,
+   "newSortOrder": 0,
+   "newGatherPriority": 0,
+   "buryInterdayLearning": false,
+   "fsrsWeights": [],
+   "fsrsParams5": [],
+   "fsrsParams6": [],
+   "desiredRetention": 0.9,
+   "ignoreRevlogsBeforeDate": "",
+   "easyDaysPercentages": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "stopTimerOnAnswer": false,
+   "secondsToShowQuestion": 0.0,
+   "secondsToShowAnswer": 0.0,
+   "questionAction": 0,
+   "answerAction": 0,
+   "waitForAudio": false,
+   "sm2Retention": 0.9,
+   "weightSearch": ""
+  }
+ ],
+ "media": {
+  "kalp.png": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGM4o2T8HwAFAAIh6JBuHgAAAABJRU5ErkJggg==",
+  "şema.png": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQNQ3/DwACxQGp1PeI2gAAAABJRU5ErkJggg==",
+  "üfürüm.mp3": "SUQzBAAAAAAAAA=="
+ }
+}
