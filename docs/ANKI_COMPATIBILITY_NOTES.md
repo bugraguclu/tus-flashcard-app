@@ -227,12 +227,21 @@ backup. An exported preset carries its Easy Days under Anki's `easyDaysPercentag
 values it was imported with, and also as `easyDays` for earlier builds of this app; its interday
 learning burying goes under Anki's top-level `buryInterdayLearning` key the same way, whether the
 preset was made here or imported (`lib/ankiPackageRoundtrip.test.ts`), and Anki 26.05 imports
-both kinds with the app's value (checked through `scripts/anki-oracle`)
+both kinds with the app's value (checked through `scripts/anki-oracle`).
 
-**Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release, and run
-the physical-device large-package smoke. Anki 26.05 rejects a whole exported package when a deck
-lacks `lrnToday`, `revToday`, `newToday` or `timeToday`, and only decks imported from a schema-11
-package carry them
+Anki 26.05 accepts the packages this app exports. It refuses a whole package whose deck lacks one of
+the `lrnToday`, `revToday`, `newToday` and `timeToday` pairs ("decoding decks: JsonError"), so
+every exported deck carries all four, zeroed: a pair counts days from its own collection's creation
+and this package is created on the day it is exported. It also refuses a deck that names a preset
+the package lacks ("No such deck config"), so an export without presets still carries preset 1,
+which its decks then name, as Anki's own exports carry their Default preset
+(`lib/exportAnkiPackage.ankiImport.test.ts`). Exports of both fixtures, with and without progress,
+imported into Anki under all four combinations of its import options with every deck, card and
+review (`scripts/anki-oracle/import_app_export.py`)
+
+**Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release and import
+an app export into it with `scripts/anki-oracle/import_app_export.py`, and run the physical-device
+large-package smoke
 
 ## `.colpkg` replacement
 

@@ -460,7 +460,13 @@ describe('lossless Anki package roundtrip', () => {
         ))).toBe(true);
         expect(reader.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM revlog')?.count).toBe(0);
         expect(reader.getFirstSync<{ tags: string }>('SELECT tags FROM notes')?.tags).toBe(' cardio important ');
-        expect(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)).toEqual({});
+        // Anki's shareable export still carries its Default preset, the one every deck names, and
+        // refuses a package without it ("No such deck config"). Only the defaults travel: the
+        // learner's own preset 1 here is the imported one, with 30 new cards a day.
+        const presets = JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf);
+        expect(Object.keys(presets)).toEqual(['1']);
+        expect(presets['1'].new.perDay).toBe(DEFAULT_DECK_CONFIG.newPerDay);
+        expect(presets['1']).not.toHaveProperty('fsrsParams6');
         const decks = Object.values(JSON.parse(reader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks)) as any[];
         expect(decks.map((deck) => deck.name)).toEqual(expect.arrayContaining(['Medicine', 'Medicine::Cardiology']));
         expect(decks.every((deck) => deck.conf === 1)).toBe(true);

@@ -1,6 +1,6 @@
 # Anki compatibility baseline
 
-Last reviewed: 2026-09-29
+Last reviewed: 2026-10-01
 
 TusAnkiM is an independent Anki alternative with local-first storage and iPhone as its sole
 release target; web is a local/CI regression target, also published as a browser preview, not a
@@ -44,7 +44,7 @@ When an Anki-facing capability changes, update its row here and its section ther
 | [Whiteboard/scratchpad and drawing attachment](ANKI_COMPATIBILITY_NOTES.md#whiteboardscratchpad-and-drawing-attachment) | Implemented subset | `lib/blankCanvas.test.ts`, `lib/photoEditor.test.ts`, `lib/reviewerTimers.test.ts` … | Apple Pencil-only mode is pending. |
 | [Browser, card/note table modes, tags, flags, marks, suspend/bury, reposition](ANKI_COMPATIBILITY_NOTES.md#browser-cardnote-table-modes-tags-flags-marks-suspendbury-reposition) | Implemented subset | `lib/cardSearchMatch.test.ts` | Expand full Anki search grammar and flag naming. |
 | [Empty Cards maintenance](ANKI_COMPATIBILITY_NOTES.md#empty-cards-maintenance) | Implemented subset | Canonical `/empty-cards` full-screen route; reports cards whose generated front/cloze/template is no longer valid, deletes cards without deleting … | Add a named iPhone smoke test for VoiceOver, scan failure and destructive deletion |
-| [`.apkg` import/export with media and scheduling](ANKI_COMPATIBILITY_NOTES.md#apkg-importexport-with-media-and-scheduling) | Implemented subset with bounded archive and SQLite validation | `lib/importApkg.ankiExport.test.ts` imports Anki 26.05's own exports in both package formats; package round-trip, archive-security and SQLite-security tests … | Re-record the Anki export fixtures for each new Anki release; physical-device large-package smoke |
+| [`.apkg` import/export with media and scheduling](ANKI_COMPATIBILITY_NOTES.md#apkg-importexport-with-media-and-scheduling) | Implemented subset with bounded archive and SQLite validation | `lib/importApkg.ankiExport.test.ts` imports Anki 26.05's own exports in both package formats; `lib/exportAnkiPackage.ankiImport.test.ts` pins what Anki needs to accept ours; round-trip and security tests … | Re-record the Anki export fixtures and import an app export into each new Anki release; physical-device large-package smoke |
 | [`.colpkg` replacement](ANKI_COMPATIBILITY_NOTES.md#colpkg-replacement) | Implemented with explicit destructive confirmation and pre-operation safety backup | import confirmation and backup tests | Add real-device large-package smoke |
 | [CSV/TSV/TXT import/export](ANKI_COMPATIBILITY_NOTES.md#csvtsvtxt-importexport) | Implemented | `lib/importNotes.test.ts`, `lib/importLog.test.ts`, `lib/importDelimited.test.ts` … | Keep metadata-header fixtures; the mapping table draws at most 24 columns |
 | [Import screen and Import Log](ANKI_COMPATIBILITY_NOTES.md#import-screen-and-import-log) | Implemented | `lib/importLog.test.ts`, `lib/importFile.test.ts` | "Merge note types" is not offered: a schema-conflicting note type is imported as a separate copy instead, so no inert control is shown. |

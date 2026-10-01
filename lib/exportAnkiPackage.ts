@@ -218,6 +218,14 @@ function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: 
             conf: includeDeckConfigs ? deck.configId || 1 : 1,
             extendNew: includeScheduling ? Number(deck.ankiRaw?.extendNew ?? 0) : 0,
             extendRev: includeScheduling ? Number(deck.ankiRaw?.extendRev ?? 0) : 0,
+            // Anki refuses the whole package when a deck lacks one of these [day, count] pairs, and
+            // only decks imported from a schema-11 package carry them. A carried pair counts days
+            // from its source collection's creation, while this package is created today, so every
+            // deck starts the day with nothing studied.
+            lrnToday: [0, 0],
+            revToday: [0, 0],
+            newToday: [0, 0],
+            timeToday: [0, 0],
             // The saved search and preview delays live on the deck, not in ankiRaw, so a deck built
             // or edited here would otherwise export with whatever terms it was imported with.
             ...(exportsAsFiltered ? filteredDeckFields(deck) : {}),
@@ -310,9 +318,11 @@ function deckConfigMap(
     includeScheduling: boolean,
     includeDeckConfigs: boolean,
 ): string {
-    if (!includeDeckConfigs) return '{}';
+    // Anki refuses a package whose deck names a preset the package lacks ("No such deck config").
+    // Without presets every deck names preset 1, which is then written with the defaults, the way
+    // Anki's own exports carry its Default preset.
     const configIds = new Set(decks.map((deck) => deck.configId || 1));
-    const configs = sourceConfigs.filter((config) => configIds.has(config.id));
+    const configs = includeDeckConfigs ? sourceConfigs.filter((config) => configIds.has(config.id)) : [];
     if (!configs.length) configs.push({ ...DEFAULT_DECK_CONFIG });
     const map: Record<string, unknown> = {};
     for (const config of configs) {
