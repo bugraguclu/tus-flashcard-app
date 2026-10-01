@@ -74,6 +74,13 @@
       "useFor": ["typed-answer template marker", "Enter to reveal", "typed-answer diff", "#typeans styling"]
     },
     {
+      "id": "anki-manual-styling-night-mode",
+      "priority": 1,
+      "platform": "cross-platform card styling",
+      "url": "https://docs.ankiweb.net/templates/styling.html#night-mode",
+      "useFor": ["nightMode card class", "note-type night-mode rules"]
+    },
+    {
       "id": "anki-manual-filtered-decks",
       "priority": 1,
       "platform": "cross-platform filtered-deck behavior",
@@ -645,6 +652,14 @@
       "url": "https://github.com/ankitects/anki/blob/main/ts/routes/deck-options/FsrsOptions.svelte",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default search preset:\"name\" -is:suspended", "relearning steps counted within a day", "already optimal at four decimals", "pressing Optimize again aborts"]
+    },
+    {
+      "id": "anki-source-webview-css",
+      "priority": 3,
+      "platform": "desktop card page defaults",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/data/web/css/webview.scss",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["default page text colour that follows the theme (body color: var(--fg))", "a note type's own colour rules outranking that default"]
     }
   ],
   "requiredDocs": [

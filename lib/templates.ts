@@ -971,16 +971,18 @@ function wrapInCardHtml(
     const safeCss = scrubCss(css);
 
     // AnkiDroid's flashcard.css, minus the parts that only make sense with its own chrome: the
-    // reset, word wrapping, media that fits the screen, and the typed-answer comparison colours.
+    // reset, word wrapping and media that fits the screen. The typed-answer comparison uses Anki
+    // reviewer's own rules — pastel marks with black text, the same in both themes, so the marks
+    // stay legible on a night-mode page (ts/reviewer/reviewer.scss).
     const baseCss = 'html,body{margin:0;padding:0;}'
         + ' .card{overflow-wrap:break-word;}'
         + ' .card img, .card video { max-width: 100%; height: auto; }'
         + ' .card audio { max-width: 100%; }'
         + ' #typeans.tus-type-answer-input { box-sizing: border-box; max-width: 100%; font: inherit; }'
-        + ' .typeanswer { white-space: pre-wrap; }'
-        + ' .typeGood { background: #0f0; }'
-        + ' .typeBad { background: #f00; }'
-        + ' .typeMissed { background: #ccc; }';
+        + ' .typeanswer, code#typeans { white-space: pre-wrap; font-variant-ligatures: none; }'
+        + ' .typeGood { background: #afa; color: black; }'
+        + ' .typeBad { background: #faa; color: black; }'
+        + ' .typeMissed { background: #ccc; color: black; }';
 
     const platform = shell?.platformClasses?.trim();
     const cardClasses = [
