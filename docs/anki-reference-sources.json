@@ -499,7 +499,7 @@
       "platform": "cross-platform legacy preset JSON in .apkg and .colpkg",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/deckconfig/schema11.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["camelCase keys: Easy Days are read only from easyDaysPercentages", "unknown keys such as easyDays are kept in other and never read"]
+      "useFor": ["camelCase keys: Easy Days are read only from easyDaysPercentages", "unknown keys such as easyDays are kept in other and never read", "buryInterdayLearning is a top-level key beside the v3 scheduler options, not part of new or rev"]
     },
     {
       "id": "anki-source-retrievability-sql",

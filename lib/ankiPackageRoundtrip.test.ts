@@ -25,6 +25,7 @@ import { getAllAnkiCards, getAllNotes, getAllNoteTypes, saveAnkiCard, saveNote }
 import { createDeck, getAllDeckConfigs, getAllDecks, saveDeckConfig } from './deckManager';
 import { DEFAULT_FSRS_PARAMETERS, clampFsrsParameters } from './fsrs';
 import { parseAnkiCardData } from './fsrsCardData';
+import { DEFAULT_DECK_CONFIG } from './models';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -100,6 +101,7 @@ async function fixturePackage(
         lapse: { delays: [15], minInt: 2, leechFails: 6, leechAction: 0, mult: 0.2 },
         desiredRetention: 0.91,
         easyDaysPercentages: [1, 1, 1, 1, 1, 0.5, 0],
+        buryInterdayLearning: true,
     };
     collection.run('INSERT INTO col VALUES (1, ?, 0, 0, 11, 0, 0, 0, ?, ?, ?, ?, ?)', [
         Math.floor(Date.now() / 1000) - 100 * 86400, '{}', JSON.stringify({ 1000: model }),
@@ -545,6 +547,41 @@ describe('lossless Anki package roundtrip', () => {
             openReader: async (bytes) => openReader(bytes),
         });
         expect(getAllDeckConfigs().find((entry) => entry.name === 'Imported Options')?.easyDays).toEqual(edited);
+    });
+
+    it('exports each preset\u2019s interday learning burying under Anki\u2019s key', async () => {
+        // The preset a fresh install starts with. The importer gives the parent deck it creates
+        // this preset, so the package below carries one preset made here and one from Anki.
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG });
+        await importApkg(await fixturePackage(), {
+            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        // The imported preset's JSON, kept as ankiRaw, still says to bury; the learner turns it off.
+        const imported = getAllDeckConfigs().find((entry) => entry.name === 'Imported Options')!;
+        expect(imported.buryInterdayLearningSiblings).toBe(true);
+        expect(imported.ankiRaw?.buryInterdayLearning).toBe(true);
+        saveDeckConfig({ ...imported, buryInterdayLearningSiblings: false });
+        // The preset made here has no Anki JSON to carry the key; the learner turns it on.
+        const madeHere = getAllDeckConfigs().find((entry) => entry.id === DEFAULT_DECK_CONFIG.id)!;
+        saveDeckConfig({ ...madeHere, buryInterdayLearningSiblings: true });
+
+        const artifact = await buildAnkiExport('apkg', 'Medicine', true);
+        const zip = await JSZip.loadAsync(artifact.bytes!);
+        const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+        const dconf = Object.values(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)) as any[];
+        reader.close();
+        expect(dconf.find((entry) => entry.name === 'Imported Options').buryInterdayLearning).toBe(false);
+        expect(dconf.find((entry) => entry.name === DEFAULT_DECK_CONFIG.name).buryInterdayLearning).toBe(true);
+
+        resetCollection();
+        await importApkg(artifact.bytes!, {
+            subject: 'medicine', topic: 'Imported', fileName: 'interday-burying.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        const reimported = getAllDeckConfigs();
+        expect(reimported.find((entry) => entry.name === 'Imported Options')?.buryInterdayLearningSiblings).toBe(false);
+        expect(reimported.find((entry) => entry.name === DEFAULT_DECK_CONFIG.name)?.buryInterdayLearningSiblings).toBe(true);
     });
 
     it('exports only cards from the exact deck ids selected in the deck tree', async () => {

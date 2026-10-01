@@ -337,13 +337,17 @@ function deckConfigMap(
             newGatherPriority: GATHER_ORDER_ORDINAL[normalizeNewCardGatherOrder(config.newCardGatherOrder)] ?? 0,
             newSortOrder: NEW_SORT_ORDER_ORDINAL[config.newCardSortOrder ?? 'template'] ?? 0,
             reviewOrder: exportedReviewOrder(config),
+            // Unlike new and review burying, which sit in `new` and `rev` below, Anki keeps this one
+            // at the top level with the other v3 scheduler options.
+            buryInterdayLearning: config.buryInterdayLearningSiblings === true,
             // Anki reads Easy Days only from `easyDaysPercentages`, so it must follow `...raw`: a
             // preset imported from Anki still carries the values it arrived with under that key.
             // `easyDays` stays for earlier builds of this app, which read only that key.
             easyDaysPercentages: easyDays,
             easyDays,
-            // FSRS, under Anki's schema11 names. The parameters are written to the FSRS-6 slot;
-            // an importer that only understands older generations falls back to its own defaults.
+            // FSRS, under Anki's schema11 names. The parameters are written to the FSRS-6 slot. An
+            // importer that only knows older generations reads `fsrsParams5` or `fsrsWeights`
+            // instead, which a preset made here lacks and an imported one keeps from its package.
             fsrsParams6: config.fsrsParams ?? [],
             desiredRetention: config.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION,
             sm2Retention: config.historicalRetention ?? FSRS_DEFAULT_HISTORICAL_RETENTION,

@@ -224,8 +224,10 @@ Package round-trip, backup-source export, archive-security, SQLite-security and 
 tests cover the rest; a stored snapshot can be exported without consulting or replacing the live
 collection, known file size is checked before reading, and every package import creates a recovery
 backup. An exported preset carries its Easy Days under Anki's `easyDaysPercentages` key, over any
-values it was imported with, and also as `easyDays` for earlier builds of this app
-(`lib/ankiPackageRoundtrip.test.ts`)
+values it was imported with, and also as `easyDays` for earlier builds of this app; its interday
+learning burying goes under Anki's top-level `buryInterdayLearning` key the same way, whether the
+preset was made here or imported (`lib/ankiPackageRoundtrip.test.ts`), and Anki 26.05 imports
+both kinds with the app's value (checked through `scripts/anki-oracle`)
 
 **Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release, and run
 the physical-device large-package smoke. Anki 26.05 rejects a whole exported package when a deck
