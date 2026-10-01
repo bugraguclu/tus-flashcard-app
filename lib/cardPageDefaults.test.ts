@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveThemeColors } from '../constants/theme';
-import { defaultCardTextCss } from './cardPageDefaults';
+import { defaultCardTextCss, nightModeCardCss } from './cardPageDefaults';
 
 /** WCAG relative luminance of a `#rrggbb` colour. */
 function relativeLuminance(hex: string): number {
@@ -28,5 +28,14 @@ describe('defaultCardTextCss', () => {
         // browser's black.
         const { colors } = resolveThemeColors(scheme, scheme);
         expect(contrastRatio(colors.textPrimary, colors.bgCard)).toBeGreaterThanOrEqual(4.5);
+    });
+});
+
+describe('nightModeCardCss', () => {
+    it('is Anki’s body.nightMode rule at the weight it has there, with the canvas left to the reviewer', () => {
+        // div.nightMode (0,1,1) outranks a stock `.card { color: black; background-color: white }`
+        // (0,1,0) on the card element, which carries `nightMode` only at night, and yields to a
+        // note type's own `.nightMode.card` (0,2,0).
+        expect(nightModeCardCss('#f1f6f3')).toBe('div.nightMode{background-color:transparent;color:#f1f6f3;}');
     });
 });

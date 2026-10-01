@@ -670,6 +670,14 @@
       "useFor": ["default search preset:\"name\" -is:suspended", "relearning steps counted within a day", "already optimal at four decimals", "pressing Optimize again aborts"]
     },
     {
+      "id": "anki-source-reviewer-css",
+      "priority": 2,
+      "platform": "desktop reviewer presentation",
+      "url": "https://github.com/ankitects/anki/blob/main/ts/reviewer/reviewer.scss",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["night-mode page colour and text override (body.nightMode)", "typed-answer comparison colours"]
+    },
+    {
       "id": "anki-source-webview-css",
       "priority": 3,
       "platform": "desktop card page defaults",
