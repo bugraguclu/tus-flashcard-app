@@ -487,6 +487,14 @@
       "useFor": ["retention values reset to 0.9 outside their band", "which decks a save recomputes and reschedules", "clearing FSRS data when FSRS is switched off"]
     },
     {
+      "id": "anki-source-deckconfig-schema11",
+      "priority": 3,
+      "platform": "cross-platform legacy preset JSON in .apkg and .colpkg",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/deckconfig/schema11.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["camelCase keys: Easy Days are read only from easyDaysPercentages", "unknown keys such as easyDays are kept in other and never read"]
+    },
+    {
       "id": "anki-source-retrievability-sql",
       "priority": 3,
       "platform": "cross-platform retrievability for search, sort and card info",

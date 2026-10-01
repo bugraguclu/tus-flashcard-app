@@ -320,6 +320,7 @@ function deckConfigMap(
         const rawReview = raw.rev && typeof raw.rev === 'object' ? raw.rev as Record<string, unknown> : {};
         const rawNew = raw.new && typeof raw.new === 'object' ? raw.new as Record<string, unknown> : {};
         const rawLapse = raw.lapse && typeof raw.lapse === 'object' ? raw.lapse as Record<string, unknown> : {};
+        const easyDays = config.easyDays ?? [1, 1, 1, 1, 1, 1, 1];
         map[String(config.id)] = {
             ...raw,
             id: config.id, name: config.name, mod: config.mod, usn: config.usn ?? -1, dyn: false,
@@ -336,7 +337,11 @@ function deckConfigMap(
             newGatherPriority: GATHER_ORDER_ORDINAL[normalizeNewCardGatherOrder(config.newCardGatherOrder)] ?? 0,
             newSortOrder: NEW_SORT_ORDER_ORDINAL[config.newCardSortOrder ?? 'template'] ?? 0,
             reviewOrder: exportedReviewOrder(config),
-            easyDays: config.easyDays ?? [1, 1, 1, 1, 1, 1, 1],
+            // Anki reads Easy Days only from `easyDaysPercentages`, so it must follow `...raw`: a
+            // preset imported from Anki still carries the values it arrived with under that key.
+            // `easyDays` stays for earlier builds of this app, which read only that key.
+            easyDaysPercentages: easyDays,
+            easyDays,
             // FSRS, under Anki's schema11 names. The parameters are written to the FSRS-6 slot;
             // an importer that only understands older generations falls back to its own defaults.
             fsrsParams6: config.fsrsParams ?? [],

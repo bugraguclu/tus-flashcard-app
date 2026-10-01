@@ -223,11 +223,14 @@ against that record, and the two formats against each other. The default format 
 Package round-trip, backup-source export, archive-security, SQLite-security and import integration
 tests cover the rest; a stored snapshot can be exported without consulting or replacing the live
 collection, known file size is checked before reading, and every package import creates a recovery
-backup
+backup. An exported preset carries its Easy Days under Anki's `easyDaysPercentages` key, over any
+values it was imported with, and also as `easyDays` for earlier builds of this app
+(`lib/ankiPackageRoundtrip.test.ts`)
 
 **Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release, and run
-the physical-device large-package smoke. Easy Days set in this app are exported as `easyDays`, a key
-Anki ignores; Anki reads `easyDaysPercentages`
+the physical-device large-package smoke. Anki 26.05 rejects a whole exported package when a deck
+lacks `lrnToday`, `revToday`, `newToday` or `timeToday`, and only decks imported from a schema-11
+package carry them
 
 ## `.colpkg` replacement
 
