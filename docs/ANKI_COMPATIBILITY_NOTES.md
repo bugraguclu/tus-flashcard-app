@@ -260,7 +260,7 @@ package carry them
 
 **Status:** Implemented
 
-**Evidence:** document UTI config and `importFile` tests; `.zip` is accepted as a package the way Anki's own file dialog does. The web build takes the same files by drag and drop onto the window or, installed, through the File Handling API, and hands each to the same `/import` workflow with its real filename (`components/WebAppIntegrations.tsx`)
+**Evidence:** document UTI config and `importFile` tests; `.zip` is accepted as a package the way Anki's own file dialog does. The handed-over file URL opens `/import` over the screen the learner was on, or over the start screen when the file launched the app, so "Tamamlandı" returns there: `app/+native-intent.tsx` stops Expo Router from also reading the URL as a screen address, which used to leave "Sayfa bulunamadı" beneath the import (`lib/nativeIntent.test.ts`). The web build takes the same files by drag and drop onto the window or, installed, through the File Handling API, and hands each to the same `/import` workflow with its real filename (`components/WebAppIntegrations.tsx`)
 
 **Next compatibility gate:** Verify once on a physical iPhone per release
 
@@ -284,7 +284,7 @@ package carry them
 
 **Status:** Implemented subset
 
-**Evidence:** persisted classic/redesigned reviewer opt-in; AnkiMobile-aligned, separately configurable question/answer 3×3 tap zones with assignable Add note action; interactive card-element pass-through; adjustable swipe sensitivity and edge-only vertical swipes; independent Flag/Tools surfaces; `lib/reviewerTouchControls.test.ts`, `lib/reviewerAddNote.test.ts`, `lib/reviewerSurface.test.ts`, storage round-trip, strict HTTPS/Shortcuts callback parsing and media-audit tests. The web build answers the same x-callback requests at `/x-callback-url?action=addnote|search&…` (a browser cannot own `tusankim:`); the query is turned back into the `tusankim://` URL and read by the same parser and route resolver (`externalAppUrlFromQuery`, `lib/externalActionRoute.ts`, `lib/externalLinking.test.ts`)
+**Evidence:** persisted classic/redesigned reviewer opt-in; AnkiMobile-aligned, separately configurable question/answer 3×3 tap zones with assignable Add note action; interactive card-element pass-through; adjustable swipe sensitivity and edge-only vertical swipes; independent Flag/Tools surfaces; `lib/reviewerTouchControls.test.ts`, `lib/reviewerAddNote.test.ts`, `lib/reviewerSurface.test.ts`, storage round-trip, strict HTTPS/Shortcuts callback parsing and media-audit tests. The web build answers the same x-callback requests at `/x-callback-url?action=addnote|search&…` (a browser cannot own `tusankim:`); the query is turned back into the `tusankim://` URL and read by the same parser and route resolver (`externalAppUrlFromQuery`, `lib/externalActionRoute.ts`, `lib/externalLinking.test.ts`). On iPhone a `tusankim://x-callback-url/<action>` request is opened only by `app/_layout.tsx`; the router ignores it, so no "Sayfa bulunamadı" page is left beneath the editor or browser, and an incomplete request is ignored (`lib/nativeIntent.test.ts`)
 
 **Next compatibility gate:** Add a native Share extension before broader parity claims
 

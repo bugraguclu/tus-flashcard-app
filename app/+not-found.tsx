@@ -21,7 +21,6 @@ export default function NotFoundScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
-                <Text style={styles.icon} aria-hidden>🧭</Text>
                 <Text style={styles.title} accessibilityRole="header">{l('Sayfa bulunamadı', 'Page not found')}</Text>
                 <Text style={styles.description}>
                     {l(
@@ -45,7 +44,6 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
-        icon: { fontSize: 56, marginBottom: Spacing.md },
         title: {
             fontSize: FontSize.xxl,
             fontWeight: '700',
