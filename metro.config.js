@@ -21,8 +21,11 @@ if (!config.resolver.assetExts.includes('tuspack')) {
 
 // Agent worktrees of this repository live under `.claude/worktrees`, each with its own
 // node_modules. Metro must neither watch nor resolve into them: a node_modules swap inside one
-// crashed this checkout's file watcher and took the dev server down.
-const WORKTREES = /[\\/]\.claude[\\/]worktrees[\\/].*/;
+// crashed this checkout's file watcher and took the dev server down. The pattern starts at this
+// checkout's own root, so a worktree, which itself sits under `.claude/worktrees`, still bundles
+// its own files while skipping any worktree nested inside it.
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const WORKTREES = new RegExp(`^${escapeRegExp(__dirname)}[\\\\/](?:.*[\\\\/])?\\.claude[\\\\/]worktrees[\\\\/].*`);
 const defaultBlockList = config.resolver.blockList;
 config.resolver.blockList = [
     ...(Array.isArray(defaultBlockList) ? defaultBlockList : defaultBlockList ? [defaultBlockList] : []),
