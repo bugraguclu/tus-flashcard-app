@@ -310,24 +310,41 @@ export default function StatsScreen() {
                     </View>
                 </View>
 
+                {/* The flame opens the Kronometre, whose sessions keep this streak going too. The
+                    week strip below keeps its own arrows and swipe. */}
                 <View style={styles.streakCard}>
-                    <View style={styles.streakHeader}>
+                    <TouchableOpacity
+                        style={styles.streakHeader}
+                        onPress={() => router.push('/stopwatch' as any)}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={l(
+                            `Günlük seri: ${streak.current} gün, en uzun ${streak.best} gün`,
+                            `Daily streak: ${streak.current} days, longest ${streak.best} days`,
+                        )}
+                        accessibilityHint={l('Kronometreyi açar', 'Opens the stopwatch')}
+                    >
                         <View>
-                            <Text style={styles.sectionTitle}>🔥 {l('Günlük seri', 'Daily Streak')}</Text>
+                            <Text style={styles.sectionTitle}>🔥 {l('Günlük seri', 'Daily Streak')} ›</Text>
                             <Text style={styles.cardEyebrow}>{l('Çalışma günlerinizi haftalık görün', 'See your study days by week')}</Text>
                         </View>
                         <View style={styles.bestBadge}>
                             <Text style={styles.bestBadgeLabel}>{l('En uzun', 'Longest')}</Text>
                             <Text style={styles.bestBadgeValue}>{l(`${streak.best} gün`, `${streak.best} days`)}</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.streakBody}>
-                        <View style={styles.streakInfo}>
+                        <TouchableOpacity
+                            style={styles.streakInfo}
+                            onPress={() => router.push('/stopwatch' as any)}
+                            activeOpacity={0.7}
+                            accessible={false}
+                        >
                             <View style={styles.streakRow}>
                                 <Text style={styles.streakNumber}>{streak.current}</Text>
                                 <Text style={styles.streakUnit}>{l('gün üst üste çalışma', streak.current === 1 ? 'consecutive study day' : 'consecutive study days')}</Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                         <View style={styles.streakStripWrap}>
                             <WeekStreakStrip
                                 rolloverHour={settings.dayRolloverHour}

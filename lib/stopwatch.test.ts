@@ -1,0 +1,216 @@
+import { describe, expect, it } from 'vitest';
+import {
+    DEFAULT_STOPWATCH_PREFS,
+    MAX_GOAL_MINUTES,
+    MAX_STUDY_PASS,
+    MIN_GOAL_MINUTES,
+    examDaysLeft,
+    finishStopwatch,
+    formatGoalClock,
+    formatGoalRemaining,
+    formatStopwatchClock,
+    formatStudyTotal,
+    goalProgress,
+    isValidStudySessionRecord,
+    nextStopwatchAlert,
+    normalizeStopwatchPrefs,
+    normalizeSubjectName,
+    parseRunningStopwatch,
+    pauseStopwatch,
+    resumeStopwatch,
+    startStopwatch,
+    stepBlockMinutes,
+    stepDailyGoal,
+    stopwatchElapsed,
+} from './stopwatch';
+
+const MINUTE = 60_000;
+const T0 = new Date('2026-10-03T14:00:00').getTime();
+
+describe('stopwatch state machine', () => {
+    it('counts study time from the start', () => {
+        const state = startStopwatch('Fizyoloji', 1, T0);
+        expect(stopwatchElapsed(state, T0 + 25 * MINUTE)).toEqual({ studyMs: 25 * MINUTE, breakMs: 0, phaseMs: 25 * MINUTE });
+    });
+
+    it('moves time into the break column while paused and back on resume', () => {
+        let state = startStopwatch('Fizyoloji', 1, T0);
+        state = pauseStopwatch(state, T0 + 50 * MINUTE);
+        expect(stopwatchElapsed(state, T0 + 60 * MINUTE)).toEqual({ studyMs: 50 * MINUTE, breakMs: 10 * MINUTE, phaseMs: 10 * MINUTE });
+        state = resumeStopwatch(state, T0 + 60 * MINUTE);
+        expect(stopwatchElapsed(state, T0 + 90 * MINUTE)).toEqual({ studyMs: 80 * MINUTE, breakMs: 10 * MINUTE, phaseMs: 30 * MINUTE });
+    });
+
+    it('ignores a second pause or resume in the same phase', () => {
+        const running = startStopwatch('Fizyoloji', 1, T0);
+        expect(resumeStopwatch(running, T0 + MINUTE)).toBe(running);
+        const paused = pauseStopwatch(running, T0 + MINUTE);
+        expect(pauseStopwatch(paused, T0 + 2 * MINUTE)).toBe(paused);
+    });
+
+    it('turns into a session whose parts fit inside its span', () => {
+        let state = startStopwatch('  Fizyoloji  ', 2, T0);
+        state = pauseStopwatch(state, T0 + 40 * MINUTE);
+        state = resumeStopwatch(state, T0 + 45 * MINUTE);
+        const session = finishStopwatch(state, T0 + 65 * MINUTE);
+        expect(session).toEqual({
+            subject: 'Fizyoloji',
+            pass: 2,
+            startMs: T0,
+            endMs: T0 + 65 * MINUTE,
+            studyMs: 60 * MINUTE,
+            breakMs: 5 * MINUTE,
+        });
+    });
+
+    it('never yields negative time or a session ending before its own time when the clock moves back', () => {
+        let state = startStopwatch('Anatomi', 1, T0);
+        state = pauseStopwatch(state, T0 + 30 * MINUTE);
+        // The clock is set back an hour while the break runs.
+        const elapsed = stopwatchElapsed(state, T0 - 30 * MINUTE);
+        expect(elapsed).toEqual({ studyMs: 30 * MINUTE, breakMs: 0, phaseMs: 0 });
+        const session = finishStopwatch(state, T0 - 30 * MINUTE);
+        expect(session.endMs).toBe(T0 + 30 * MINUTE);
+        expect(isValidStudySessionRecord({ ...session, id: 1, source: 'timer' })).toBe(true);
+    });
+
+    it('reads a stored stopwatch back and refuses anything malformed', () => {
+        const state = pauseStopwatch(startStopwatch('Patoloji', 3, T0), T0 + MINUTE);
+        expect(parseRunningStopwatch(JSON.stringify(state))).toEqual(state);
+        expect(parseRunningStopwatch(null)).toBeNull();
+        expect(parseRunningStopwatch('{not json')).toBeNull();
+        expect(parseRunningStopwatch(JSON.stringify({ ...state, subject: '   ' }))).toBeNull();
+        expect(parseRunningStopwatch(JSON.stringify({ ...state, phase: 'nap' }))).toBeNull();
+        expect(parseRunningStopwatch(JSON.stringify({ ...state, studyMs: 'a lot' }))).toBeNull();
+        expect(parseRunningStopwatch(JSON.stringify({ ...state, pass: 99 }))?.pass).toBe(MAX_STUDY_PASS);
+    });
+});
+
+describe('isValidStudySessionRecord', () => {
+    const valid = { id: 5, subject: 'Farmakoloji', pass: 1, startMs: T0, endMs: T0 + 70 * MINUTE, studyMs: 60 * MINUTE, breakMs: 10 * MINUTE, source: 'manual' };
+
+    it('accepts a well-formed session', () => {
+        expect(isValidStudySessionRecord(valid)).toBe(true);
+    });
+
+    it.each([
+        ['a time total longer than the span', { studyMs: 65 * MINUTE }],
+        ['an end before the start', { endMs: T0 - 1 }],
+        ['an unknown source', { source: 'cards' }],
+        ['an empty subject', { subject: '' }],
+        ['a pass of zero', { pass: 0 }],
+        ['a fractional id', { id: 1.5 }],
+        ['negative break time', { breakMs: -1 }],
+    ])('rejects %s', (_label, patch) => {
+        expect(isValidStudySessionRecord({ ...valid, ...patch })).toBe(false);
+    });
+});
+
+describe('preferences', () => {
+    it('fills every missing or broken field with its default', () => {
+        expect(normalizeStopwatchPrefs(null)).toEqual(DEFAULT_STOPWATCH_PREFS);
+        expect(normalizeStopwatchPrefs({ dailyGoalMinutes: 'x', examDate: '2027-02-30', plan: { subject: '' } })).toEqual(DEFAULT_STOPWATCH_PREFS);
+    });
+
+    it('keeps valid values and clamps the rest', () => {
+        expect(normalizeStopwatchPrefs({
+            dailyGoalMinutes: 99_999,
+            examDate: '2027-03-21',
+            focusMinutes: 0,
+            breakMinutes: 2,
+            alertsEnabled: false,
+            plan: { subject: ' Biyokimya ', pass: 4 },
+        })).toEqual({
+            dailyGoalMinutes: MAX_GOAL_MINUTES,
+            examDate: '2027-03-21',
+            focusMinutes: 0,
+            breakMinutes: 5,
+            alertsEnabled: false,
+            plan: { subject: 'Biyokimya', pass: 4 },
+        });
+    });
+
+    it('steps the daily goal by half an hour and snaps an odd goal onto the grid', () => {
+        expect(stepDailyGoal(480, 1)).toBe(510);
+        expect(stepDailyGoal(480, -1)).toBe(450);
+        expect(stepDailyGoal(475, 1)).toBe(480);
+        expect(stepDailyGoal(475, -1)).toBe(450);
+        expect(stepDailyGoal(MIN_GOAL_MINUTES, -1)).toBe(MIN_GOAL_MINUTES);
+        expect(stepDailyGoal(MAX_GOAL_MINUTES, 1)).toBe(MAX_GOAL_MINUTES);
+    });
+
+    it('steps a block length through "off" at the bottom', () => {
+        expect(stepBlockMinutes(50, 1, 180)).toBe(55);
+        expect(stepBlockMinutes(5, -1, 180)).toBe(0);
+        expect(stepBlockMinutes(0, -1, 180)).toBe(0);
+        expect(stepBlockMinutes(0, 1, 180)).toBe(5);
+        expect(stepBlockMinutes(180, 1, 180)).toBe(180);
+        expect(stepBlockMinutes(52, -1, 180)).toBe(50);
+    });
+
+    it('trims subject names', () => {
+        expect(normalizeSubjectName('  Kadın   Hastalıkları  ')).toBe('Kadın Hastalıkları');
+        expect(normalizeSubjectName(42)).toBe('');
+        expect(normalizeSubjectName('x'.repeat(200))).toHaveLength(80);
+    });
+});
+
+describe('block reminders', () => {
+    const prefs = { focusMinutes: 50, breakMinutes: 10 };
+
+    it('falls due a study block after the current study phase began', () => {
+        const state = startStopwatch('Anatomi', 1, T0);
+        expect(nextStopwatchAlert(state, prefs)).toEqual({ kind: 'focus', atMs: T0 + 50 * MINUTE });
+    });
+
+    it('falls due a break length after the break began', () => {
+        const state = pauseStopwatch(startStopwatch('Anatomi', 1, T0), T0 + 50 * MINUTE);
+        expect(nextStopwatchAlert(state, prefs)).toEqual({ kind: 'break', atMs: T0 + 60 * MINUTE });
+    });
+
+    it('is off for a phase whose length is zero', () => {
+        const state = startStopwatch('Anatomi', 1, T0);
+        expect(nextStopwatchAlert(state, { focusMinutes: 0, breakMinutes: 10 })).toBeNull();
+    });
+});
+
+describe('display', () => {
+    it('formats the goal and the stopwatch as clocks', () => {
+        expect(formatGoalClock(480)).toBe('08:00');
+        expect(formatGoalClock(90)).toBe('01:30');
+        expect(formatStopwatchClock(0)).toBe('00:00:00');
+        expect(formatStopwatchClock(3_723_400)).toBe('01:02:03');
+        expect(formatStopwatchClock(Number.NaN)).toBe('00:00:00');
+    });
+
+    it('writes totals in whole minutes', () => {
+        expect(formatStudyTotal(0, 'tr')).toBe('0 dk');
+        expect(formatStudyTotal(45 * MINUTE + 59_000, 'tr')).toBe('45 dk');
+        expect(formatStudyTotal(80 * MINUTE, 'tr')).toBe('1 sa 20 dk');
+        expect(formatStudyTotal(120 * MINUTE, 'en')).toBe('2 h');
+    });
+
+    it('rounds the time left up, so an unmet goal never reads as zero', () => {
+        expect(formatGoalRemaining(8 * 60 * MINUTE, 'tr')).toBe('8 saat');
+        expect(formatGoalRemaining(7.5 * 60 * MINUTE, 'tr')).toBe('7 sa 30 dk');
+        expect(formatGoalRemaining(10_000, 'tr')).toBe('1 dk');
+        expect(formatGoalRemaining(60 * MINUTE, 'en')).toBe('1 hour');
+        expect(formatGoalRemaining(150 * MINUTE, 'en')).toBe('2 h 30 min');
+    });
+
+    it('measures progress against the goal, capped at a full ring', () => {
+        expect(goalProgress(0, 480)).toBe(0);
+        expect(goalProgress(240 * MINUTE, 480)).toBe(0.5);
+        expect(goalProgress(600 * MINUTE, 480)).toBe(1);
+        expect(goalProgress(60 * MINUTE, 0)).toBe(0);
+    });
+
+    it('counts calendar days to the exam', () => {
+        const now = new Date('2026-10-03T23:30:00').getTime();
+        expect(examDaysLeft('2026-11-17', now)).toBe(45);
+        expect(examDaysLeft('2026-10-03', now)).toBe(0);
+        expect(examDaysLeft('2026-10-01', now)).toBe(-2);
+        expect(examDaysLeft(null, now)).toBeNull();
+        expect(examDaysLeft('2026-13-01', now)).toBeNull();
+    });
+});

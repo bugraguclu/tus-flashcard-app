@@ -1,11 +1,14 @@
-// Study calendar ("Çalışma Takvimi"): derives day totals and study sessions from the review log.
+// Study calendar ("Çalışma Takvimi"): day totals and study sessions from two sources — answers in
+// the review log, and the Kronometre's stopwatch and hand-entered sessions.
 //
-// The whole aggregation is a pure function of plain review rows so it can be unit tested without
-// a database. `fetchStudyReviewRows` below is the only part that touches SQL.
+// The whole aggregation is a pure function of plain rows so it can be unit tested without a
+// database. The fetch functions below are the only parts that touch SQL.
 
 import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState';
 import { getDB } from './db';
 import type { SupportedLocale } from './i18n';
+import type { StudySessionRecord, StudySessionSource } from './stopwatch';
+import { fetchStudySessionsBetween } from './stopwatchStore';
 
 const DAY_MS = 86_400_000;
 const MINUTE_MS = 60_000;
@@ -33,7 +36,8 @@ export interface StudyReviewRow {
 }
 
 /**
- * One study session: a run of answers for a single subject with no long idle gap.
+ * One study session: a run of answers for a single subject with no long idle gap, or a session the
+ * Kronometre recorded.
  *
  * Time accounting, chosen so the three figures are always consistent:
  * - `studyMs` ("Çalışma") is the sum of the answers' own durations — the active study time.
@@ -41,16 +45,19 @@ export interface StudyReviewRow {
  *   (`atMs - timeMs`) to the moment the last one was recorded, never shorter than `studyMs`.
  * - `breakMs` ("Mola") is the idle remainder inside that span, i.e. `spanMs - studyMs`.
  *
- * By construction `studyMs + breakMs === spanMs` and both parts are non-negative.
+ * By construction `studyMs + breakMs === spanMs` and both parts are non-negative. A Kronometre
+ * session counts what its stopwatch measured, and its span is the time between start and stop.
  */
 export interface StudySession {
     /** Stable list key. */
     key: string;
+    /** `cards` sessions are derived from answers; the others come from the Kronometre. */
+    source: 'cards' | StudySessionSource;
     /** Study day the session belongs to, respecting the collection's rollover hour. */
     dayNumber: number;
     /** Top-level deck name, e.g. `Mikrobiyoloji` — TusBuddy groups the timeline by subject. */
     subject: string;
-    /** Full deck name of the session's first answer; the "jump to this deck" target. */
+    /** Full deck name of the session's first answer; the "jump to this deck" target. Empty for a Kronometre session. */
     deckName: string;
     /** Start of the first answer. */
     startMs: number;
@@ -64,6 +71,10 @@ export interface StudySession {
     cardCount: number;
     /** 1-based index of this session among the subject's sessions that day ("N. Tekrar"). */
     repeatIndex: number;
+    /** A Kronometre session's pass through its subject ("N. Tekrar"); null for card sessions. */
+    pass: number | null;
+    /** The `study_sessions` row behind a Kronometre session; null for card sessions. */
+    recordId: number | null;
 }
 
 /** A day of the timeline: its sessions plus the day's total active study time. */
@@ -180,13 +191,53 @@ interface AggregateOptions {
     dayNumbers: Set<number>;
     /** Overridable for tests; defaults to `SESSION_GAP_MS`. */
     gapMs?: number;
+    /** Kronometre sessions in or around the window. */
+    timerSessions?: StudySessionRecord[];
+    /** Start of a stopwatch still running: answers from then on already count towards it. */
+    runningSinceMs?: number | null;
+}
+
+interface TimeSpan {
+    startMs: number;
+    endMs: number;
+}
+
+/** Sort spans and merge the ones that overlap, so a lookup can binary-search them. */
+function mergeSpans(spans: TimeSpan[]): TimeSpan[] {
+    const sorted = spans
+        .filter((span) => Number.isFinite(span.startMs) && span.endMs >= span.startMs)
+        .sort((a, b) => a.startMs - b.startMs);
+    const merged: TimeSpan[] = [];
+    for (const span of sorted) {
+        const last = merged[merged.length - 1];
+        if (last && span.startMs <= last.endMs) last.endMs = Math.max(last.endMs, span.endMs);
+        else merged.push({ ...span });
+    }
+    return merged;
+}
+
+function isInsideSpans(atMs: number, spans: TimeSpan[]): boolean {
+    let low = 0;
+    let high = spans.length - 1;
+    while (low <= high) {
+        const middle = (low + high) >> 1;
+        const span = spans[middle]!;
+        if (atMs < span.startMs) high = middle - 1;
+        else if (atMs > span.endMs) low = middle + 1;
+        else return true;
+    }
+    return false;
 }
 
 /**
- * Group reviews into per-subject sessions and per-day totals.
+ * Group reviews into per-subject sessions and per-day totals, then add the Kronometre's sessions.
  *
  * Rows may arrive in any order. Sessions are split whenever the idle gap between one answer and
  * the start of the next exceeds the threshold, and are numbered per subject per day.
+ *
+ * An answer given while a stopwatch was running is already part of that stopwatch's study time,
+ * so it is left out of the card sessions instead of being counted twice. The same holds for the
+ * span of a session entered by hand: the learner said what they did in that time.
  */
 export function aggregateStudyCalendar(
     rows: StudyReviewRow[],
@@ -194,11 +245,16 @@ export function aggregateStudyCalendar(
 ): StudyCalendarAggregate {
     const gapMs = options.gapMs ?? SESSION_GAP_MS;
     const { rolloverHour, dayNumbers } = options;
+    const timerSessions = options.timerSessions ?? [];
+    const runningSinceMs = options.runningSinceMs;
+    const coveredSpans = mergeSpans(timerSessions.map(({ startMs, endMs }) => ({ startMs, endMs })));
 
     // Bucket by study day + subject, so a session never spans a rollover boundary or two subjects.
     const buckets = new Map<string, { dayNumber: number; subject: string; rows: StudyReviewRow[] }>();
     for (const row of rows) {
         if (!Number.isFinite(row.atMs)) continue;
+        if (typeof runningSinceMs === 'number' && row.atMs >= runningSinceMs) continue;
+        if (isInsideSpans(row.atMs, coveredSpans)) continue;
         const dayNumber = localDayNumber(row.atMs, rolloverHour);
         if (!dayNumbers.has(dayNumber)) continue;
         const subject = subjectOfDeck(row.deckName);
@@ -229,6 +285,12 @@ export function aggregateStudyCalendar(
         runs.forEach((runRows, index) => {
             sessions.push(buildSession(runRows, bucket.dayNumber, bucket.subject, index + 1));
         });
+    }
+
+    for (const record of timerSessions) {
+        // A Kronometre session belongs to the study day it started on, as one answer does.
+        const dayNumber = localDayNumber(record.startMs, rolloverHour);
+        if (dayNumbers.has(dayNumber)) sessions.push(timerSession(record, dayNumber));
     }
 
     sessions.sort((a, b) => a.startMs - b.startMs);
@@ -276,6 +338,7 @@ function buildSession(
 
     return {
         key: `${dayNumber}:${subject}:${repeatIndex}:${first.atMs}`,
+        source: 'cards',
         dayNumber,
         subject,
         deckName: first.deckName,
@@ -287,7 +350,47 @@ function buildSession(
         reviewCount: rows.length,
         cardCount: cardIds.size,
         repeatIndex,
+        pass: null,
+        recordId: null,
     };
+}
+
+function timerSession(record: StudySessionRecord, dayNumber: number): StudySession {
+    return {
+        key: `timer:${record.id}`,
+        source: record.source,
+        dayNumber,
+        subject: record.subject,
+        deckName: '',
+        startMs: record.startMs,
+        endMs: record.endMs,
+        spanMs: record.endMs - record.startMs,
+        studyMs: record.studyMs,
+        breakMs: record.breakMs,
+        reviewCount: 0,
+        cardCount: 0,
+        repeatIndex: record.pass,
+        pass: record.pass,
+        recordId: record.id,
+    };
+}
+
+/**
+ * The Kronometre's "Son Çalışmalarınız": today and the days before it, newest day first, each
+ * with its sessions in the order they happened. Days without study are kept, so the timeline can
+ * say so instead of skipping them.
+ */
+export function recentStudyDays(
+    aggregate: StudyCalendarAggregate,
+    todayDayNumber: number,
+    dayCount: number,
+): { dayNumber: number; studyMs: number; sessions: StudySession[] }[] {
+    const byDay = new Map(aggregate.days.map((day) => [day.dayNumber, day]));
+    return Array.from({ length: Math.max(0, dayCount) }, (_, index) => {
+        const dayNumber = todayDayNumber - index;
+        const day = byDay.get(dayNumber);
+        return { dayNumber, studyMs: day?.studyMs ?? 0, sessions: day?.sessions ?? [] };
+    });
 }
 
 // --- Formatting ---
@@ -377,10 +480,38 @@ export function getStudyCalendarSnapshot(
     rolloverHour: number,
 ): StudyCalendarAggregate {
     const { startMs, endMs } = calendarQueryRangeMs(cells);
-    const rows = fetchStudyReviewRows(startMs, endMs);
-    return aggregateStudyCalendar(rows, {
+    return aggregateStudyCalendar(fetchStudyReviewRows(startMs, endMs), {
         rolloverHour,
         dayNumbers: new Set(cells.map((cell) => cell.dayNumber)),
+        timerSessions: fetchStudySessionsBetween(startMs, endMs),
+    });
+}
+
+/**
+ * The Kronometre's loader: today and the `dayCount - 1` days before it. Answers given since
+ * `runningSinceMs` are left to the stopwatch that is still running, whose time the screen adds
+ * itself, so today's total never counts them twice.
+ */
+export function getRecentStudySnapshot(
+    todayDayNumber: number,
+    dayCount: number,
+    rolloverHour: number,
+    runningSinceMs: number | null,
+): StudyCalendarAggregate {
+    const toLocalMidnight = (dayNumber: number) => {
+        const [year, month, day] = dayNumberToYmd(dayNumber).split('-').map(Number);
+        return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1).getTime();
+    };
+    const firstDay = todayDayNumber - Math.max(1, dayCount) + 1;
+    const startMs = toLocalMidnight(firstDay) - DAY_MS;
+    const endMs = toLocalMidnight(todayDayNumber) + 2 * DAY_MS;
+    const dayNumbers = new Set<number>();
+    for (let day = firstDay; day <= todayDayNumber; day += 1) dayNumbers.add(day);
+    return aggregateStudyCalendar(fetchStudyReviewRows(startMs, endMs), {
+        rolloverHour,
+        dayNumbers,
+        timerSessions: fetchStudySessionsBetween(startMs, endMs),
+        runningSinceMs,
     });
 }
 
@@ -436,6 +567,9 @@ const SUBJECT_GLYPHS: readonly (readonly [readonly string[], string])[] = [
     [['anatomi', 'anatomy'], '🦴'],
     [['immunoloji', 'immunolog'], '🛡️'],
     [['onkoloji', 'oncolog'], '🎗️'],
+    [['kucuk stajlar', 'minor rotations'], '🩹'],
+    [['soru cozumu', 'question practice'], '📝'],
+    [['deneme sinavi', 'mock exam', 'practice exam'], '🎯'],
 ];
 
 /**

@@ -49,4 +49,21 @@ describe('schema migrations', () => {
         expect(schemaVersion()).toBe(newest);
         expect(log).not.toHaveBeenCalled();
     });
+
+    it('creates the Kronometre table without moving the schema version, so older builds still open the collection', () => {
+        db.execSync('DROP TABLE study_sessions;');
+        runMigrations(db as never);
+
+        expect(schemaVersion()).toBe(newest);
+        db.runSync(
+            "INSERT INTO study_sessions (id, subject, startMs, endMs, studyMs) VALUES (1, 'Fizyoloji', 1000, 61000, 60000)",
+        );
+        expect(db.getFirstSync<{ pass: number; breakMs: number; source: string }>('SELECT pass, breakMs, source FROM study_sessions'))
+            .toEqual({ pass: 1, breakMs: 0, source: 'timer' });
+
+        // Opening the collection again leaves the table and its rows alone.
+        runMigrations(db as never);
+        expect(db.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM study_sessions')?.n).toBe(1);
+    });
 });
+

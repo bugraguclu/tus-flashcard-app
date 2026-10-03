@@ -1,6 +1,6 @@
 # Anki compatibility baseline
 
-Last reviewed: 2026-10-01
+Last reviewed: 2026-10-03
 
 TusAnkiM is an independent Anki alternative with local-first storage and iPhone as its sole
 release target; web is a local/CI regression target, also published as a browser preview, not a
@@ -49,7 +49,7 @@ When an Anki-facing capability changes, update its row here and its section ther
 | [CSV/TSV/TXT import/export](ANKI_COMPATIBILITY_NOTES.md#csvtsvtxt-importexport) | Implemented | `lib/importNotes.test.ts`, `lib/importLog.test.ts`, `lib/importDelimited.test.ts` … | Keep metadata-header fixtures; the mapping table draws at most 24 columns |
 | [Import screen and Import Log](ANKI_COMPATIBILITY_NOTES.md#import-screen-and-import-log) | Implemented | `lib/importLog.test.ts`, `lib/importFile.test.ts` | "Merge note types" is not offered: a schema-conflicting note type is imported as a separate copy instead, so no inert control is shown. |
 | [iOS Files “Open in” hand-off](ANKI_COMPATIBILITY_NOTES.md#ios-files-open-in-hand-off) | Implemented | document UTI config and `importFile` tests; `.zip` is accepted as a package the way Anki's own file dialog does. The web build takes the same files … | Verify once on a physical iPhone per release |
-| [Local automatic/manual backup and restore](ANKI_COMPATIBILITY_NOTES.md#local-automaticmanual-backup-and-restore) | Implemented with strict row validation | backup-validation, backup-source export, backup and storage round-trip tests; Share opens the canonical export workflow over the selected snapshot | Verify export options, Files share destination and plaintext warning per release |
+| [Local automatic/manual backup and restore](ANKI_COMPATIBILITY_NOTES.md#local-automaticmanual-backup-and-restore) | Implemented with strict row validation | backup-validation, backup-source export, backup and storage round-trip tests; Kronometre sessions travel as an optional table; Share opens the canonical export workflow over the selected snapshot | Verify export options, Files share destination and plaintext warning per release |
 | [Collection/database check](ANKI_COMPATIBILITY_NOTES.md#collectiondatabase-check) | Implemented subset | `lib/maintenance.test.ts`, `lib/maintenanceWorkflow.test.ts`, `lib/noteManager.searchIndex.test.ts` … | Anki additionally regenerates cards a note type's templates should produce and deletes notes whose note type is gone; |
 | [iPhone reviewer preferences and external automation](ANKI_COMPATIBILITY_NOTES.md#iphone-reviewer-preferences-and-external-automation) | Implemented subset | `lib/reviewerTouchControls.test.ts`, `lib/reviewerAddNote.test.ts`, `lib/reviewerSurface.test.ts` … | Add a native Share extension before broader parity claims |
 | [Reviewer keyboard shortcuts](ANKI_COMPATIBILITY_NOTES.md#reviewer-keyboard-shortcuts) | Implemented subset | `lib/hardwareKeyboard.test.ts` | Anki's other study keys (`e` edit, `=` bury note, `!` suspend note, `o` options) are not bound yet |

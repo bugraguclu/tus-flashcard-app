@@ -352,6 +352,30 @@ const migrations: Migration[] = [
     },
 ];
 
+/**
+ * Tables that a build predating them can safely ignore. They are created on every open rather
+ * than behind a schema version: a numbered migration would make every older build refuse the
+ * collection (see the version guard below), and nothing in these tables changes how an older
+ * build reads the rest of it. A table that does change that belongs in `migrations` instead.
+ *
+ * `study_sessions` holds the Kronometre's stopwatch and hand-entered sessions (`lib/stopwatch.ts`).
+ */
+function ensureAdditiveTables(db: DBHandle): void {
+    db.execSync(`
+        CREATE TABLE IF NOT EXISTS study_sessions (
+            id INTEGER PRIMARY KEY,
+            subject TEXT NOT NULL,
+            pass INTEGER NOT NULL DEFAULT 1,
+            startMs INTEGER NOT NULL,
+            endMs INTEGER NOT NULL,
+            studyMs INTEGER NOT NULL,
+            breakMs INTEGER NOT NULL DEFAULT 0,
+            source TEXT NOT NULL DEFAULT 'timer'
+        );
+        CREATE INDEX IF NOT EXISTS idx_study_sessions_startMs ON study_sessions(startMs);
+    `);
+}
+
 // ---------- Run Migrations ----------
 export function runMigrations(db: DBHandle): void {
     db.execSync(`
@@ -391,6 +415,8 @@ export function runMigrations(db: DBHandle): void {
             throw new Error(`SQLite migration v${migration.version} failed (${migration.description}): ${reason}`);
         }
     }
+
+    ensureAdditiveTables(db);
 }
 
 // ---------- Init DB ----------

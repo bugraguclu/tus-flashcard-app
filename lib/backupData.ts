@@ -15,6 +15,13 @@ import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
 import { canonicalBackupContainsCatalog, isProtectedCatalogGuid } from './catalogProtection';
 import { validateCanonicalBackupData } from './backupValidation';
+import { normalizeStopwatchPrefs, type StopwatchPrefs, type StudySessionRecord } from './stopwatch';
+import {
+    loadStopwatchPrefs,
+    readStudySessionsForBackup,
+    replaceStudySessions,
+    saveStopwatchPrefs,
+} from './stopwatchStore';
 import {
     DEFAULT_SETTINGS,
     KEYS,
@@ -49,6 +56,7 @@ export async function resetAllData(): Promise<void> {
             'graves',
             'cards_fts',
             'session_stats',
+            'study_sessions',
             'settings',
         ]) {
             db.execSync(`DELETE FROM ${table};`);
@@ -169,6 +177,19 @@ export async function exportAllData(): Promise<string> {
         // If DB is not ready, fallback to metadata-only export.
     }
 
+    // The Kronometre's sessions and preferences are optional parts of the same format, so a build
+    // that predates them still reads this backup, and a backup without them restores without
+    // touching the sessions already on the device. Reading them on their own keeps a failure here
+    // from costing the rest of the backup.
+    let studySessions: StudySessionRecord[] | undefined;
+    let stopwatchPrefs: StopwatchPrefs | undefined;
+    try {
+        studySessions = readStudySessionsForBackup();
+        stopwatchPrefs = loadStopwatchPrefs();
+    } catch (e) {
+        console.warn('[Storage] exportAllData study sessions failed:', e);
+    }
+
     return JSON.stringify({
         version: 6,
         schema_version: schemaVersion,
@@ -177,7 +198,8 @@ export async function exportAllData(): Promise<string> {
         settings,
         sessionStats,
         catalogProgress,
-        tables,
+        stopwatchPrefs,
+        tables: studySessions ? { ...tables, study_sessions: studySessions } : tables,
     });
 }
 
@@ -295,6 +317,12 @@ function importCanonicalTables(data: any): void {
             db.runSync('INSERT INTO session_stats (date, data) VALUES (?, ?)', row.date, row.data);
         }
 
+        // A backup made before the Kronometre has no sessions to give back; the ones on the device
+        // are then kept rather than wiped by a file that never knew about them.
+        if (Array.isArray(data.tables.study_sessions)) {
+            replaceStudySessions(data.tables.study_sessions as StudySessionRecord[]);
+        }
+
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -346,6 +374,11 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             return false;
         }
 
+        if (data.stopwatchPrefs !== undefined && (typeof data.stopwatchPrefs !== 'object' || data.stopwatchPrefs === null)) {
+            console.error('Import: stopwatchPrefs bir obje değil');
+            return false;
+        }
+
         if (isCanonicalImport(data)) {
             // Validate the complete container before touching settings or tables.
             // This keeps truncated/hand-edited files as a true no-op.
@@ -366,6 +399,9 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             }
             if (data.sessionStats) {
                 await saveSessionStats(data.sessionStats as SessionStats);
+            }
+            if (data.stopwatchPrefs) {
+                saveStopwatchPrefs(normalizeStopwatchPrefs(data.stopwatchPrefs));
             }
             // The backup deliberately omits the purchased pack; hand its scheduling state to the
             // installer, which re-applies it card by card the next time the pack is installed.

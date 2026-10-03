@@ -1,3 +1,6 @@
+import { isValidStudySessionRecord } from './stopwatch';
+
+/** Tables every canonical backup carries. `study_sessions` is optional and checked on its own. */
 export const CANONICAL_BACKUP_TABLES = [
     'note_types',
     'notes',
@@ -22,6 +25,8 @@ const TABLE_LIMITS: Record<(typeof CANONICAL_BACKUP_TABLES)[number], number> = {
     graves: 5_000_000,
     session_stats: 100_000,
 };
+/** Twenty sessions a day for over twenty years. */
+const STUDY_SESSION_LIMIT = 200_000;
 
 function isRow(value: unknown): value is Row {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -124,6 +129,16 @@ export function validateCanonicalBackupData(data: unknown): Validation {
     }
     if (!stats.every((row) => text(row.date, 32) && jsonObject(row.data, 2 * 1024 * 1024))) {
         return { valid: false, reason: 'invalid-row:session_stats' };
+    }
+
+    // Kronometre sessions came after this format: a backup made before them has no such table,
+    // and one that has it must hold nothing but well-formed sessions.
+    if (tables.study_sessions !== undefined) {
+        const sessions = tables.study_sessions;
+        if (!Array.isArray(sessions)) return { valid: false, reason: 'invalid-table:study_sessions' };
+        if (sessions.length > STUDY_SESSION_LIMIT) return { valid: false, reason: 'too-many-rows:study_sessions' };
+        if (!sessions.every(isRow) || !uniquePositiveIds(sessions, 'id')) return { valid: false, reason: 'invalid-id:study_sessions' };
+        if (!sessions.every(isValidStudySessionRecord)) return { valid: false, reason: 'invalid-row:study_sessions' };
     }
 
     const noteTypeIds = new Set(noteTypes.map((row) => Number(row.id)));

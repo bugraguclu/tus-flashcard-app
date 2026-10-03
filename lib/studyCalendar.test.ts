@@ -17,10 +17,13 @@ import {
     formatClockHhMm,
     formatDayTotalHhMm,
     formatSessionDuration,
+    getRecentStudySnapshot,
+    recentStudyDays,
     studySubjectGlyph,
     subjectOfDeck,
     type StudyReviewRow,
 } from './studyCalendar';
+import type { StudySessionRecord } from './stopwatch';
 
 const ROLLOVER = 4;
 const MINUTE = 60_000;
@@ -509,5 +512,121 @@ describe('studySubjectGlyph', () => {
     it('always has something to draw, even for an empty or blank subject', () => {
         expect(studySubjectGlyph('')).toBe('?');
         expect(studySubjectGlyph('   ')).toBe('?');
+    });
+});
+describe('Kronometre sessions', () => {
+    function timer(id: number, isoStart: string, studyMinutes: number, breakMinutes = 0, subject = 'Fizyoloji', pass = 1): StudySessionRecord {
+        const startMs = new Date(isoStart).getTime();
+        return {
+            id,
+            subject,
+            pass,
+            startMs,
+            endMs: startMs + (studyMinutes + breakMinutes) * MINUTE,
+            studyMs: studyMinutes * MINUTE,
+            breakMs: breakMinutes * MINUTE,
+            source: 'timer',
+        };
+    }
+
+    function aggregateWith(rows: StudyReviewRow[], timerSessions: StudySessionRecord[], runningSinceMs?: number) {
+        const dayNumbers = new Set([
+            ...rows.map((row) => localDayNumber(row.atMs, ROLLOVER)),
+            ...timerSessions.map((session) => localDayNumber(session.startMs, ROLLOVER)),
+        ]);
+        return aggregateStudyCalendar(rows, { rolloverHour: ROLLOVER, dayNumbers, timerSessions, runningSinceMs });
+    }
+
+    it('adds a stopwatch session to its day and the day total', () => {
+        const session = timer(7, '2026-10-03T10:00:00', 50, 10, 'Fizyoloji', 2);
+        const { days, totalsByDay } = aggregateWith([], [session]);
+        expect(days).toHaveLength(1);
+        expect(days[0]!.sessions[0]).toMatchObject({
+            key: 'timer:7',
+            source: 'timer',
+            subject: 'Fizyoloji',
+            studyMs: 50 * MINUTE,
+            breakMs: 10 * MINUTE,
+            spanMs: 60 * MINUTE,
+            pass: 2,
+            recordId: 7,
+        });
+        expect(totalsByDay.get(days[0]!.dayNumber)).toBe(50 * MINUTE);
+    });
+
+    it('does not count an answer twice when it was given while a stopwatch ran', () => {
+        const session = timer(1, '2026-10-03T10:00:00', 60);
+        const rows = [
+            review('2026-10-03T10:20:00', 30, 'TUS Kartları', 1),
+            review('2026-10-03T12:00:00', 30, 'TUS Kartları', 2),
+        ];
+        const { days, totalsByDay } = aggregateWith(rows, [session]);
+        const sessions = days[0]!.sessions;
+        expect(sessions.map((item) => item.source)).toEqual(['timer', 'cards']);
+        expect(sessions[1]!.reviewCount).toBe(1);
+        expect(totalsByDay.get(days[0]!.dayNumber)).toBe(60 * MINUTE + 30_000);
+    });
+
+    it('leaves answers given since a still-running stopwatch began to that stopwatch', () => {
+        const rows = [
+            review('2026-10-03T09:00:00', 20, 'TUS Kartları', 1),
+            review('2026-10-03T11:00:00', 20, 'TUS Kartları', 2),
+        ];
+        const { days } = aggregateWith(rows, [], new Date('2026-10-03T10:30:00').getTime());
+        expect(days[0]!.sessions).toHaveLength(1);
+        expect(days[0]!.sessions[0]!.reviewCount).toBe(1);
+    });
+
+    it('files a session that starts before the rollover under the previous study day', () => {
+        const late = timer(3, '2026-10-04T03:30:00', 20);
+        const { days } = aggregateWith([], [late]);
+        expect(days[0]!.ymd).toBe('2026-10-03');
+    });
+
+    it('lists the last days newest first, keeping the days without study', () => {
+        const today = localDayNumber(new Date('2026-10-03T12:00:00').getTime(), ROLLOVER);
+        const aggregateResult = aggregateWith([], [timer(9, '2026-10-02T10:00:00', 30)]);
+        const recent = recentStudyDays(aggregateResult, today, 3);
+        expect(recent.map((day) => day.dayNumber)).toEqual([today, today - 1, today - 2]);
+        expect(recent.map((day) => day.sessions.length)).toEqual([0, 1, 0]);
+        expect(recent[1]!.studyMs).toBe(30 * MINUTE);
+    });
+});
+
+describe('getRecentStudySnapshot', () => {
+    let SQL: Awaited<ReturnType<typeof initSqlJs>>;
+    let db: SyncDb;
+
+    beforeAll(async () => {
+        SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' });
+    });
+
+    beforeEach(() => {
+        dbHolder.db = createAppDb(SQL);
+        db = dbHolder.db;
+        db.runSync("INSERT INTO decks (id, name, data) VALUES (1, 'Anatomi', '{}')");
+        db.runSync("INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, \"left\", flags, data) VALUES (10, 1, 1, 0, 2, 2, 0, 1, 2500, 1, 0, 0, 0, '{}')");
+    });
+
+    afterEach(() => {
+        db.close();
+    });
+
+    it('reads cards and Kronometre sessions of the last days from the database', () => {
+        const now = Date.now();
+        const today = localDayNumber(now, ROLLOVER);
+        const startMs = now - 2 * 60 * MINUTE;
+        db.runSync(
+            'INSERT INTO study_sessions (id, subject, pass, startMs, endMs, studyMs, breakMs, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            1, 'Fizyoloji', 1, startMs, startMs + 30 * MINUTE, 30 * MINUTE, 0, 'manual',
+        );
+        // One answer inside the session, one after it.
+        for (const atMs of [startMs + 5 * MINUTE, startMs + 60 * MINUTE]) {
+            db.runSync('INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, 10, -1, 3, 1, 0, 2500, 15000, 1)', atMs);
+        }
+        const snapshot = getRecentStudySnapshot(today, 7, ROLLOVER, null);
+        const sessions = snapshot.days.flatMap((day) => day.sessions);
+        expect(sessions.map((session) => session.source).sort()).toEqual(['cards', 'manual']);
+        expect(sessions.find((session) => session.source === 'cards')!.reviewCount).toBe(1);
     });
 });

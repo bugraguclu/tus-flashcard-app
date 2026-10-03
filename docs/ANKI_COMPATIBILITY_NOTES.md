@@ -288,7 +288,7 @@ large-package smoke
 
 **Status:** Implemented with strict row validation
 
-**Evidence:** backup-validation, backup-source export, backup and storage round-trip tests; Share opens the canonical export workflow over the selected snapshot
+**Evidence:** backup-validation, backup-source export, backup and storage round-trip tests; Share opens the canonical export workflow over the selected snapshot. The Kronometre's sessions and preferences are optional parts of the same version-6 format (`tables.study_sessions`, `stopwatchPrefs`): a build that predates them still reads the backup, a backup without them restores without touching the sessions on the device, and a single malformed session rejects the whole file before anything changes (`lib/backupData.stopwatch.test.ts`, `lib/backupValidation.test.ts`). The `study_sessions` table is created outside the numbered migrations, so opening a collection with this build does not lock older builds out of it (`lib/db.migrations.test.ts`). None of it is part of an `.apkg`
 
 **Next compatibility gate:** Verify export options, Files share destination and plaintext warning per release
 

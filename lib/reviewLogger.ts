@@ -431,7 +431,7 @@ export function getReviewsAnsweredToday(rolloverHour: number = 4): number {
 }
 
 export interface StudyStreak {
-    /** Consecutive study days ending today (or yesterday, if today has no reviews yet). */
+    /** Consecutive study days ending today (or yesterday, if today has no study yet). */
     current: number;
     /** Whether today already counts toward the streak. */
     studiedToday: boolean;
@@ -439,16 +439,23 @@ export interface StudyStreak {
     best: number;
 }
 
-/** Daily streak computed from distinct study days in the review log. */
+/**
+ * Daily streak computed from distinct study days: a day counts when it has an answer in the review
+ * log or a Kronometre session, so time studied away from the cards keeps the streak alive too.
+ */
 export function getStudyStreak(rolloverHour: number = 4): StudyStreak {
     const db = getDB();
     const shiftSec = rolloverHour * 3600;
 
     // Same rollover-shifted local date as studyDaySql in ankiStats.ts, so the streak, the
-    // statistics charts and localDayNumber all agree on where a study day starts.
+    // statistics charts and localDayNumber all agree on where a study day starts. A Kronometre
+    // session belongs to the day it started on, as it does in the study calendar.
     const rows = db.getAllSync<{ d: string }>(
-        `SELECT DISTINCT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
-         FROM revlog WHERE ease != 0 ORDER BY d ASC`,
+        `SELECT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d FROM revlog WHERE ease != 0
+         UNION
+         SELECT date(startMs / 1000 - ?, 'unixepoch', 'localtime') AS d FROM study_sessions WHERE studyMs > 0
+         ORDER BY d ASC`,
+        shiftSec,
         shiftSec,
     );
 
@@ -480,10 +487,10 @@ export function getStudyStreak(rolloverHour: number = 4): StudyStreak {
 }
 
 /**
- * Distinct study days with at least one review inside [startDayNumber, endDayNumber],
- * as YYYY-MM-DD strings. Buckets reviews by the same rollover-shifted local date as
- * getStudyStreak and the statistics charts, so a 2 AM answer belongs to the previous
- * study day everywhere at once.
+ * Distinct study days with at least one review or Kronometre session inside
+ * [startDayNumber, endDayNumber], as YYYY-MM-DD strings. Buckets them by the same
+ * rollover-shifted local date as getStudyStreak and the statistics charts, so a 2 AM answer
+ * belongs to the previous study day everywhere at once.
  */
 export function getStudiedDaysBetween(
     startDayNumber: number,
@@ -498,8 +505,12 @@ export function getStudiedDaysBetween(
     const endMs = studyDayStartMsFromDayNumber(endDayNumber + 1, rolloverHour);
 
     const rows = db.getAllSync<{ d: string }>(
-        `SELECT DISTINCT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
-         FROM revlog WHERE id >= ? AND id < ? AND ease != 0`,
+        `SELECT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d
+         FROM revlog WHERE id >= ? AND id < ? AND ease != 0
+         UNION
+         SELECT date(startMs / 1000 - ?, 'unixepoch', 'localtime') AS d
+         FROM study_sessions WHERE startMs >= ? AND startMs < ? AND studyMs > 0`,
+        shiftSec, startMs, endMs,
         shiftSec, startMs, endMs,
     );
 

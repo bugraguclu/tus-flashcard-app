@@ -297,6 +297,14 @@ export function Sidebar(props: SidebarProps) {
 
                 <TouchableOpacity
                     style={styles.settingsBtn}
+                    onPress={() => navigate('/stopwatch')}
+                    {...webTitle(l('Kronometre', 'Stopwatch'))}
+                >
+                    <Text style={styles.settingsBtnText}>⏱️ {l('Kronometre', 'Stopwatch')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.settingsBtn}
                     onPress={() => navigate('/study-calendar')}
                     {...webTitle(l('Çalışma Takvimi', 'Study Calendar'))}
                 >
