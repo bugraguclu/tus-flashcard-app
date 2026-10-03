@@ -10,6 +10,29 @@ updates:
         dependency-type: production
       development-dependencies:
         dependency-type: development
+    # The Expo SDK pins these to one tested set (node_modules/expo/bundledNativeModules.json). They
+    # move together through `npx expo install --fix` or an SDK upgrade, never one at a time: a lone
+    # bump such as react-test-renderer 19.3 cannot even install beside the SDK's React 19.2.
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@react-native-async-storage/async-storage"
+      - dependency-name: "@react-native-community/datetimepicker"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-safe-area-context"
+      - dependency-name: "react-native-screens"
+      - dependency-name: "react-native-svg"
+      - dependency-name: "react-native-view-shot"
+      - dependency-name: "react-native-web"
+      - dependency-name: "react-native-webview"
+      # React's test renderer and types follow the React version above.
+      - dependency-name: "react-test-renderer"
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/react-test-renderer"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
