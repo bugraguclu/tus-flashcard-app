@@ -2515,8 +2515,12 @@ export default function StudyScreen() {
         ? normalizeReviewerToolbarPosition(settings.reviewerToolbarPosition)
         : 'top';
     const hasFixedReviewControls = Boolean(currentCard && (!showingAnswer || answerButtons));
-    const feedbackBottom = Math.max(insets.bottom, Spacing.md)
-        + (hasFixedReviewControls ? (isCompact ? 78 : 86) : 0)
+    // The answer bar's measured height already includes the home-indicator inset; the estimate
+    // only covers the first frame, before the bar has been laid out.
+    const answerBarClearance = hasFixedReviewControls
+        ? (answerBarHeight > 0 ? answerBarHeight : Math.max(insets.bottom, Spacing.md) + (isCompact ? 78 : 86))
+        : Math.max(insets.bottom, Spacing.md);
+    const feedbackBottom = answerBarClearance
         + (toolbarPosition === 'bottom' && settings.showStudyTopBar !== false ? 54 : 0);
     const reviewerToolbar = newStudyScreenEnabled && settings.showStudyTopBar !== false ? (
         <View
