@@ -227,6 +227,24 @@ describe('typed-answer (type:Field)', () => {
         expect(wrong).toContain('class="correct"');
     });
 
+    it('shows the accented answer for a type:nc card answered without accents', () => {
+        const ncNoteType: NoteType = {
+            ...typeAnswerNoteType,
+            templates: typeAnswerNoteType.templates.map((template) => ({
+                ...template,
+                qfmt: template.qfmt.split('{{type:').join('{{type:nc:'),
+                afmt: template.afmt.split('{{type:').join('{{type:nc:'),
+            })),
+        };
+        const note: Note = {
+            id: 1, guid: 'g', noteTypeId: 8, mod: 0, usn: -1, tags: [],
+            fields: ['Soru metni', 'şeker'], sfld: 'Soru metni', csum: 0, flags: 0,
+        };
+        const html = renderCardHtml(ncNoteType, note, 0, 'answer', { typedAnswer: 'seker' });
+        expect(html).toContain('<span class="typeGood">şeker</span>');
+        expect(html).not.toContain('class="typeBad"');
+    });
+
     it('getTypeAnswerField strips cloze and filter prefixes', () => {
         expect(getTypeAnswerField({ qfmt: '{{type:cloze:Text}}' })).toBe('Text');
         expect(getTypeAnswerField({ qfmt: '{{type:nc:Back}}' })).toBe('Back');
@@ -699,8 +717,8 @@ describe('renderTypeAnswerDiff', () => {
         // "ı" and "s" also occur later in the answer; pairing them with "dalları" and "spinalis"
         // would scatter green through text the learner never typed.
         expect(html).toContain(
-            '<span class="typed"><span class="typeGood">bulbus</span><span class="typeBad"> </span>'
-            + '<span class="typeGood">a vertebral</span><span class="typeBad">ıs</span></span>',
+            '<span class="typed"><span class="typeGood">bulbus</span><span class="typeMissed">--</span>'
+            + '<span class="typeGood"> a vertebral</span><span class="typeBad">ıs</span></span>',
         );
         const correctLine = html.slice(html.indexOf('<span class="correct">'));
         expect(correctLine.match(/class="typeGood"/g)).toHaveLength(2);
@@ -722,6 +740,31 @@ describe('renderTypeAnswerDiff', () => {
         const html = renderTypeAnswerDiff('🙂a', '🙂b');
         expect(html).toContain('<span class="typeGood">🙂</span><span class="typeBad">a</span>');
         expect(html).toContain('<span class="typeGood">🙂</span><span class="typeMissed">b</span>');
+    });
+
+    it('reads a line break in the expected answer as a space, as Anki does', () => {
+        expect(renderTypeAnswerDiff('a b', 'a\nb'))
+            .toBe('<code id="typeans" class="typeanswer"><span class="typeGood">a b</span></code>');
+    });
+
+    it('compares a precomposed and a decomposed letter as the same letter', () => {
+        expect(renderTypeAnswerDiff('\u015feker', 's\u0327eker'))
+            .toBe('<code id="typeans" class="typeanswer"><span class="typeGood">şeker</span></code>');
+    });
+
+    it('ignores accents under type:nc but shows the answer with them', () => {
+        expect(renderTypeAnswerDiff('seker', 'şeker', { ignoreCombining: true }))
+            .toBe('<code id="typeans" class="typeanswer"><span class="typeGood">şeker</span></code>');
+        const html = renderTypeAnswerDiff('sekr', 'şeker', { ignoreCombining: true });
+        expect(html).not.toContain('typeBad');
+        expect(html).toContain(
+            '<span class="correct"><span class="typeGood">şek</span>'
+            + '<span class="typeMissed">e</span><span class="typeGood">r</span></span>',
+        );
+    });
+
+    it('still counts accents without type:nc', () => {
+        expect(renderTypeAnswerDiff('seker', 'şeker')).toContain('<span class="typeBad">s</span>');
     });
 });
 
@@ -786,7 +829,7 @@ describe('Anki reversed note types', () => {
 describe('typeAnswerPlainText', () => {
     it('compares against the field text, never its markup', () => {
         expect(typeAnswerPlainText('bulbus---<div>a. vertebralis---</div><div>C1-3---</div>'))
-            .toBe('bulbus---\na. vertebralis---\nC1-3---');
+            .toBe('bulbus--- a. vertebralis--- C1-3---');
     });
 
     it('drops media and decodes entities', () => {

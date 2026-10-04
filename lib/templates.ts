@@ -482,10 +482,7 @@ function applyTemplateFilter(
             if (ctx.typedAnswer === undefined) {
                 return `<code id="typeans" class="typeanswer">${escapeHtml(plain)}</code>`;
             }
-            const fold = (text: string) => (name === 'type-nc'
-                ? text.normalize('NFKD').replace(COMBINING_MARKS, '')
-                : text);
-            return renderTypeAnswerDiff(fold(ctx.typedAnswer), fold(plain));
+            return renderTypeAnswerDiff(ctx.typedAnswer, plain, { ignoreCombining: name === 'type-nc' });
         }
         default:
             return value;
@@ -519,6 +516,11 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
         const segments = String(raw).split(':');
         const key = (segments.pop() ?? '').trim();
         const filters = segments.map((segment) => segment.trim()).filter(Boolean).reverse();
+        // `{{type:nc:Field}}` is one instruction, as in Anki's reviewer: `nc:` tells the type-in
+        // comparison to ignore accents. Applied as the stand-alone `nc` filter it would strip the
+        // accents from the expected answer instead, so the accented answer could never match.
+        const typeIndex = filters.indexOf('type');
+        if (typeIndex > 0 && filters[typeIndex - 1] === 'nc') filters.splice(typeIndex - 1, 2, 'type-nc');
 
         if (key === 'FrontSide') return ctx.omitFrontSide ? '' : (ctx.frontSide || '');
 
@@ -780,8 +782,9 @@ function withoutIncidentalRuns(runs: SharedRun[], typedLength: number, expectedL
 const MAX_OMISSION_MARKS = 3;
 
 /**
- * Plain-text projection of a field for the type-in-the-answer comparison. Block-level markup
- * becomes a line break, inline markup and media are dropped, matching what Anki diffs against.
+ * Plain-text projection of a field for the type-in-the-answer comparison. Block-level markup and
+ * line breaks become one space, as Anki's `strip_expected` does; inline markup and media are
+ * dropped, matching what Anki diffs against.
  */
 export function typeAnswerPlainText(value: string): string {
     return value
@@ -796,8 +799,7 @@ export function typeAnswerPlainText(value: string): string {
         .replace(/&quot;/gi, '"')
         .replace(/&#0?39;/g, "'")
         .replace(/[ \t]+/g, ' ')
-        .replace(/\s*\n\s*/g, '\n')
-        .replace(/\n{2,}/g, '\n')
+        .replace(/\s*\n\s*/g, ' ')
         .trim();
 }
 
@@ -828,6 +830,41 @@ class TypeAnswerLine {
     }
 }
 
+/** One combining mark (an accent, cedilla or dot) of the kind `{{type:nc:…}}` ignores. */
+const COMBINING_MARK = /^[\u0300-\u036f]$/;
+
+export interface TypeAnswerDiffOptions {
+    /**
+     * `{{type:nc:Field}}`: compare without combining marks, but show the expected answer with
+     * them, as Anki's non-combining comparison does.
+     */
+    ignoreCombining?: boolean;
+}
+
+/**
+ * The expected answer as display units and comparison keys of the same length. Normally both are
+ * its code points. When combining marks are ignored, each unit is a base character with the marks
+ * that follow it and its key is the base character alone, so a match found on the keys is shown
+ * with the accents the answer was written with.
+ */
+function expectedAnswerUnits(expected: string, ignoreCombining: boolean): { units: string[]; keys: string[] } {
+    if (!ignoreCombining) {
+        const chars = Array.from(expected);
+        return { units: chars, keys: chars };
+    }
+    const units: string[] = [];
+    const keys: string[] = [];
+    for (const char of Array.from(expected.normalize('NFKD'))) {
+        if (!COMBINING_MARK.test(char)) {
+            units.push(char);
+            keys.push(char);
+        } else if (units.length > 0) {
+            units[units.length - 1] += char;
+        }
+    }
+    return { units: units.map((unit) => unit.normalize('NFC')), keys };
+}
+
 /**
  * Anki's typed-answer comparison, in the markup its reviewer produces (rslib/src/typeanswer.rs):
  *
@@ -843,29 +880,37 @@ class TypeAnswerLine {
  * shared letter stranded inside a longer mistake is not counted as a match (see
  * `withoutIncidentalRuns`). The `typed` and `correct` wrappers are local additions for styling;
  * Anki's own classes carry the meaning.
+ * Both sides are prepared the way Anki prepares them: NFC, so a precomposed and a decomposed
+ * letter compare equal, and a line break in the expected answer reads as one space, because
+ * the single-line input cannot type one.
  * https://docs.ankiweb.net/templates/fields.html#checking-your-answer
  */
-export function renderTypeAnswerDiff(typed: string, correct: string): string {
-    const typedTrimmed = typed.trim();
-    const correctTrimmed = correct.trim();
+export function renderTypeAnswerDiff(typed: string, correct: string, options: TypeAnswerDiffOptions = {}): string {
+    const ignoreCombining = options.ignoreCombining === true;
+    const typedTrimmed = (ignoreCombining
+        ? typed.normalize('NFKD').replace(COMBINING_MARKS, '')
+        : typed.normalize('NFC')).trim();
+    const correctTrimmed = correct.normalize('NFC').replace(/\s*\n\s*/g, ' ').trim();
+    const expected = expectedAnswerUnits(correctTrimmed, ignoreCombining);
+    const correctDisplay = expected.units.join('');
 
     if (typedTrimmed.length === 0) {
-        return `<code id="typeans" class="typeanswer">${escapeHtml(correctTrimmed)}</code>`;
+        return `<code id="typeans" class="typeanswer">${escapeHtml(correctDisplay)}</code>`;
     }
-    if (typedTrimmed === correctTrimmed) {
-        return `<code id="typeans" class="typeanswer"><span class="typeGood">${escapeHtml(correctTrimmed)}</span></code>`;
+    if (typedTrimmed === expected.keys.join('')) {
+        return `<code id="typeans" class="typeanswer"><span class="typeGood">${escapeHtml(correctDisplay)}</span></code>`;
     }
 
     // Code points, so a character outside the BMP is never split into two halves.
     const typedChars = Array.from(typedTrimmed);
-    const correctChars = Array.from(correctTrimmed);
+    const correctChars = expected.keys;
     const typedLine = new TypeAnswerLine();
     const correctLine = new TypeAnswerLine();
     let typedIndex = 0;
     let correctIndex = 0;
     const closeGap = (typedEnd: number, correctEnd: number) => {
         const extra = typedChars.slice(typedIndex, typedEnd).join('');
-        const missing = correctChars.slice(correctIndex, correctEnd);
+        const missing = expected.units.slice(correctIndex, correctEnd);
         typedLine.push(extra, 'typeBad');
         // A pure omission leaves a visible hole in the typed line; a substitution already shows
         // what was typed instead.
@@ -878,7 +923,7 @@ export function renderTypeAnswerDiff(typed: string, correct: string): string {
     for (const run of runs) {
         closeGap(run.typed, run.expected);
         typedLine.push(typedChars.slice(run.typed, run.typed + run.length).join(''), 'typeGood');
-        correctLine.push(correctChars.slice(run.expected, run.expected + run.length).join(''), 'typeGood');
+        correctLine.push(expected.units.slice(run.expected, run.expected + run.length).join(''), 'typeGood');
         typedIndex = run.typed + run.length;
         correctIndex = run.expected + run.length;
     }

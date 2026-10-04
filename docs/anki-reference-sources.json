@@ -203,7 +203,7 @@
       "platform": "desktop and shared core",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/typeanswer.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["typed-answer comparison markup", "empty entry shows the expected answer only", "typed line, arrow and expected line", "omission markers"]
+      "useFor": ["typed-answer comparison markup", "empty entry shows the expected answer only", "typed line, arrow and expected line", "omission markers", "line breaks compared as spaces", "NFC on both sides", "type:nc keeps accents on display"]
     },
     {
       "id": "anki-manual-styling-scroll",
