@@ -14,6 +14,9 @@ import type { Subject } from '../lib/types';
 import type { DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
+import GearGlyph from './GearGlyph';
+import CardsGlyph from './CardsGlyph';
+import StatsGlyph from './StatsGlyph';
 
 export const SIDEBAR_WIDTH = 292;
 
@@ -282,11 +285,11 @@ export function Sidebar(props: SidebarProps) {
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
-                        <Text style={styles.actionIcon}>🗂️</Text>
+                        <CardsGlyph color={colors.textSecondary} size={16} />
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
-                        <Text style={styles.actionIcon}>📊</Text>
+                        <StatsGlyph color={colors.textSecondary} size={16} />
                         <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
                 </View>
@@ -304,7 +307,10 @@ export function Sidebar(props: SidebarProps) {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
-                    <Text style={styles.settingsBtnText}>⚙️ {t('tabs.settings')}</Text>
+                    <View style={styles.settingsBtnInner}>
+                        <GearGlyph color={colors.textSecondary} size={16} />
+                        <Text style={styles.settingsBtnText}>{t('tabs.settings')}</Text>
+                    </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -487,12 +493,13 @@ function createStyles(colors: ColorScheme) {
     actionBtn: {
         flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
         paddingVertical: 8,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: BorderRadius.sm,
-        gap: 2,
+        gap: 4,
     },
     actionIcon: { fontSize: 16 },
     actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
@@ -503,7 +510,14 @@ function createStyles(colors: ColorScheme) {
         borderColor: colors.border,
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: Spacing.sm,
+    },
+    settingsBtnInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
     },
     settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
     creditContainer: { alignItems: 'center', paddingVertical: 6 },

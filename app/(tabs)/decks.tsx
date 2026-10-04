@@ -61,10 +61,14 @@ import {
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel, formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
+import CardsGlyph from '../../components/CardsGlyph';
 import CustomStudyModal from '../../components/CustomStudyModal';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
+import GearGlyph from '../../components/GearGlyph';
+import InfoCircleGlyph from '../../components/InfoCircleGlyph';
 import LockGlyph from '../../components/LockGlyph';
+import StatsGlyph from '../../components/StatsGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -1711,11 +1715,22 @@ export default function DecksScreen() {
         };
         const showExcludedCardsInfo = () => {
             Keyboard.dismiss();
+            const count = getFilteredDeckExcludedCount([
+                filterSearch,
+                ...(filterSecondEnabled ? [filterSearch2] : []),
+            ]);
             alert(
-                l('Dahil edilmeyen kartlar', 'Excluded cards'),
                 l(
-                    'Bu kartlar aramayla eşleşiyor ancak askıya alınmış veya gömülmüş oldukları için filtrelenmiş desteye alınamıyor.',
-                    'These cards match the search, but cannot enter the filtered deck because they are suspended or buried.',
+                    count > 0 ? `${count} kart dahil edilemiyor` : 'Dahil edilmeyen kart yok',
+                    count > 0 ? `${count} cards are excluded` : 'No excluded cards',
+                ),
+                l(
+                    count > 0
+                        ? `${count} kart aramayla eşleşiyor ancak askıya alınmış, gömülmüş veya başka bir filtrelenmiş destede oldukları için desteye dahil edilemiyor.`
+                        : 'Bu arama kriterleriyle eşleşen tüm kartlar desteye dahil edilebilir. Askıya alınmış veya gömülmüş kart bulunmuyor.',
+                    count > 0
+                        ? `${count} cards match the search query, but cannot be added because they are suspended, buried, or in another filtered deck.`
+                        : 'All cards matching the search are eligible. No matching cards are suspended, buried, or in another filtered deck.',
                 ),
             );
         };
@@ -1762,7 +1777,10 @@ export default function DecksScreen() {
 
                 <ScrollView
                     style={styles.filteredDeckScroll}
-                    contentContainerStyle={styles.filteredDeckContent}
+                    contentContainerStyle={[
+                        styles.filteredDeckContent,
+                        { paddingBottom: Math.max(insets.bottom + Spacing.lg, 56) },
+                    ]}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                     automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
@@ -2026,11 +2044,12 @@ export default function DecksScreen() {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.filteredExcludedButton, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}
+                        style={styles.filteredExcludedButton}
                         onPress={showExcludedCardsInfo}
                         accessibilityRole="button"
+                        activeOpacity={0.6}
                     >
-                        <Text style={styles.filteredExcludedIcon}>ℹ</Text>
+                        <InfoCircleGlyph color={colors.textSecondary} size={15} />
                         <Text style={styles.filteredExcludedText}>
                             {l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}
                         </Text>
@@ -2294,21 +2313,18 @@ export default function DecksScreen() {
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/empty-cards')}
                         >
-                            <Text style={styles.overflowIcon}>🧹</Text>
                             <Text style={styles.overflowLabel}>{l('Boş kartlar', 'Empty Cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute(DATA_IMPORT_ROUTE)}
                         >
-                            <Text style={styles.overflowIcon}>📥</Text>
                             <Text style={styles.overflowLabel}>{t('root.import')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute(DATA_EXPORT_ROUTE)}
                         >
-                            <Text style={styles.overflowIcon}>📤</Text>
                             <Text style={styles.overflowLabel}>{l('Dışa aktar', 'Export')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -2317,7 +2333,6 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedek oluştur', 'Create backup')}
                         >
-                            <Text style={styles.overflowIcon}>🗄️</Text>
                             <Text style={styles.overflowLabel}>{l('Yedek oluştur', 'Create Backup')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -2326,7 +2341,6 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
                         >
-                            <Text style={styles.overflowIcon}>↩️</Text>
                             <Text style={styles.overflowLabel}>{l('Yedekten geri yükle', 'Restore from Backup')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -2554,7 +2568,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
                 >
-                    <Text style={styles.bottomBtnIcon}>🗂️</Text>
+                    <CardsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -2563,7 +2577,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
                 >
-                    <Text style={styles.bottomBtnIcon}>📊</Text>
+                    <StatsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('tabs.statistics')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -2572,7 +2586,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                 >
-                    <Text style={styles.bottomBtnIcon}>⚙️</Text>
+                    <GearGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('tabs.settings')}</Text>
                 </TouchableOpacity>
             </View>
@@ -2715,11 +2729,9 @@ function createStyles(colors: ColorScheme) {
     overflowRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: Spacing.sm,
-        paddingHorizontal: Spacing.md,
+        paddingHorizontal: Spacing.lg,
         minHeight: 48,
     },
-    overflowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
     overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
 
     columnHeaders: {
@@ -3088,7 +3100,7 @@ function createStyles(colors: ColorScheme) {
     },
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
     bottomBtnIcon: { fontSize: 20 },
-    bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 },
+    bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 4 },
 
     emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },
     emptyStateIcon: { fontSize: 36, color: colors.accent, marginBottom: Spacing.sm },
@@ -3359,26 +3371,20 @@ function createStyles(colors: ColorScheme) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 48,
-        paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.lg,
-        borderRadius: BorderRadius.lg,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-        marginTop: Spacing.lg,
-        marginBottom: Spacing.xl,
-        gap: Spacing.xs,
-        ...Shadows.sm,
-    },
-    filteredExcludedIcon: {
-        fontSize: FontSize.md,
-        color: colors.accent,
+        alignSelf: 'center',
+        minHeight: 40,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.transparent,
+        marginTop: Spacing.md,
+        marginBottom: Spacing.lg,
+        gap: 6,
     },
     filteredExcludedText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
+        color: colors.textSecondary,
+        fontSize: 13,
+        fontWeight: '500',
     },
     filteredOverlayLayer: {
         ...StyleSheet.absoluteFill,

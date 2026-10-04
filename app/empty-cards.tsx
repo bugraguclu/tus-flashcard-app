@@ -116,7 +116,6 @@ export default function EmptyCardsScreen() {
                     </View>
                 ) : entries.length === 0 ? (
                     <View style={styles.emptyBox}>
-                        <Text style={styles.emptyIcon}>✅</Text>
                         <Text style={styles.emptyText}>{l('Boş kart bulunamadı.', 'No empty cards found.')}</Text>
                     </View>
                 ) : (
@@ -162,8 +161,7 @@ function createStyles(colors: ColorScheme) {
         help: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 20 },
         loadingBox: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxl },
         emptyBox: { alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xxl },
-        emptyIcon: { fontSize: 32 },
-        emptyText: { fontSize: FontSize.md, color: colors.textSecondary },
+        emptyText: { fontSize: FontSize.lg, color: colors.textSecondary },
         secondaryBtn: {
             marginTop: Spacing.sm,
             paddingHorizontal: Spacing.lg,

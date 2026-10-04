@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../constants/theme';
 import {
     commitBoundedInteger,
@@ -101,8 +101,9 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
         },
     }), [format, max, min, onChange, value, wrap]);
 
-    const charCount = Math.max(draft.length, maxChars, minimumDigits, 2);
-    const inputWidth = Math.max(38, charCount * 16 + 10);
+    const webInputWidth = Platform.OS === 'web'
+        ? Math.max(16, (draft.length || 1) * 14 + 6)
+        : undefined;
     const textInputRef = useRef<TextInput>(null);
 
     return (
@@ -112,9 +113,9 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
                 style={[
                     styles.input,
                     {
-                        width: inputWidth,
                         textAlign: suffix ? 'right' : 'center',
                     },
+                    webInputWidth ? { width: webInputWidth } : undefined,
                 ]}
                 value={draft}
                 onFocus={() => {
@@ -162,6 +163,7 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
         input: {
             paddingHorizontal: 0,
             paddingVertical: 0,
+            minWidth: 16,
             fontSize: FontSize.xl,
             fontWeight: '800',
             fontVariant: ['tabular-nums'] as any,
