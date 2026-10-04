@@ -1,4 +1,5 @@
-// Anki-style deck overview: shown when a deck is tapped on the deck list. Today's
+// Anki-style deck overview, opened from a deck's ••• menu (tapping the deck itself starts study,
+// as in AnkiMobile), after custom study creates a session, and from the study calendar. Today's
 // counts, the deck description, buried-card count with a manual Unbury, and the
 // Study Now button that actually enters the queue.
 

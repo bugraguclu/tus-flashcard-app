@@ -381,7 +381,12 @@ export default function DecksScreen() {
         });
     }, [animateDeckTreeLayout, updateExpandedDecks]);
 
-    // Anki: clicking a deck opens its overview (Study Now / Unbury / description) first.
+    // AnkiMobile: tapping a deck switches straight to study mode. The overview (description,
+    // unbury, Study Now) stays one step away in the deck's ••• menu.
+    const handleStudyDeck = useCallback((deckName: string) => {
+        router.push({ pathname: '/', params: { deck: deckName } } as any);
+    }, [router]);
+
     const handleOpenOverview = useCallback((deckName: string) => {
         router.push(`/deck-overview?deck=${encodeURIComponent(deckName)}` as any);
     }, [router]);
@@ -1290,10 +1295,10 @@ export default function DecksScreen() {
 
                 <TouchableOpacity
                     style={styles.deckNameTouchable}
-                    onPress={() => handleOpenOverview(deck.name)}
+                    onPress={() => handleStudyDeck(deck.name)}
                     accessibilityRole="button"
-                    accessibilityLabel={l(`${displayName} destesini aç`, `Open ${displayName} deck`)}
-                    {...webTitle(l(`${displayName}: genel bakış`, `${displayName}: overview`))}
+                    accessibilityLabel={l(`${displayName} destesini çalış`, `Study ${displayName} deck`)}
+                    {...webTitle(l(`${displayName}: çalış`, `${displayName}: study`))}
                 >
                     <View style={styles.deckNameRow}>
                         <Text
@@ -1380,7 +1385,7 @@ export default function DecksScreen() {
         dragDropFeedback,
         draggingDeck,
         getDragResponder,
-        handleOpenOverview,
+        handleStudyDeck,
         isCompact,
         l,
         openMenu,
@@ -1452,6 +1457,10 @@ export default function DecksScreen() {
                     contentContainerStyle={styles.deckMenuContent}
                     showsVerticalScrollIndicator={false}
                 >
+                    <MenuAction
+                        label={l('Genel bakış', 'Overview')}
+                        onPress={() => openDeckMenuRoute(`/deck-overview?deck=${encodeURIComponent(deck.name)}`)}
+                    />
                     {!deck.isFiltered && (
                         <MenuAction
                             label={l('Ekle', 'Add')}
