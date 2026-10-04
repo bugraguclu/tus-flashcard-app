@@ -2432,8 +2432,8 @@ export default function StudyScreen() {
             accessibilityRole="button"
             accessibilityLabel={l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
         >
-            {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { fontSize: FontSize.xs * answerScale }]}>{time}</Text>}
-            <Text numberOfLines={1} style={[styles.btnLabel, { fontSize: (isCompact ? 14 : 16) * answerScale }]}>{label}</Text>
+            {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { fontSize: FontSize.sm * answerScale }]}>{time}</Text>}
+            <Text numberOfLines={1} style={[styles.btnLabel, { fontSize: (isCompact ? 15 : 16) * answerScale }]}>{label}</Text>
         </TouchableOpacity>
     );
     // Reserve the measured compact toolbar (and its optional palette) above the question. The
