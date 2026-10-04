@@ -16,6 +16,14 @@ Her ders kendi dosyasındadır: `<ders>.patch.json` (`kadin-dogum`, `kucuk-stajl
 `anatomi`, `deneme-ve-soru`). Dersler katalog sırasının sonundan başlanarak hazırlanır ve
 hazırlandıkça eklenir.
 
+## Durum
+
+<!-- status:start -->
+| Ders | Dosya | İncelenen not | Düzeltilen not | Kritik | Yüksek | Orta | Düşük | Doğrulama gerekli kalemi |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Küçük Stajlar | `kucuk-stajlar.patch.json` | 484 | 481 | 16 | 125 | 282 | 58 | 14 |
+<!-- status:end -->
+
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
 
 ```jsonc
@@ -27,7 +35,7 @@ hazırlandıkça eklenir.
   "noteType": "Cloze-AnKingMaster",
   "fieldNames": { "Text": "Metin", "Extra": "Ek bilgi (arka yüz)" },
   "applied": false,
-  "summary": { "reviewedNotes": 524, "changedNotes": 0, "notesBySeverity": {}, "itemsByCategory": {} },
+  "summary": { "reviewedNotes": 524, "changedNotes": 0, "notesBySeverity": {}, "itemsByCategory": {}, "secondReview": {} }, // secondReview: ikinci okumadaki onay/düzelt/geri al sayıları
   "notes": [
     {
       "order": 1,                       // Excel'deki "Sıra": kritikliğe, sonra konuya göre
@@ -46,7 +54,9 @@ hazırlandıkça eklenir.
       "editorNote": null
     }
   ],
-  "checkedUnchanged": [ { "noteId": 0, "topic": "…", "aiNote": "…" } ] // değişmeyen ama şüphesi araştırılan notlar
+  "checkedUnchanged": [ { "noteId": 0, "topic": "…", "aiNote": "…" } ], // değişmeyen ama şüphesi araştırılan notlar
+  "spelling": [ { "yazim": "…", "kural": "…" } ],       // dersin Yazım Birliği tablosu
+  "abbreviations": [ { "kisaltma": "…", "acilim": "…" } ] // derste açılan kişisel kısaltmalar
 }
 ```
 
