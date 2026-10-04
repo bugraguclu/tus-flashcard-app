@@ -1015,7 +1015,7 @@ export default function StudyScreen() {
 
                 if (!shouldContinue) {
                     setShowingAnswer(false);
-                    router.replace('/decks' as any);
+                    router.dismissTo('/decks' as any);
                     return;
                 }
 
@@ -1876,7 +1876,7 @@ export default function StudyScreen() {
         else if (action === 'replayAudio') replayAudio();
         else if (action === 'flag') openFlagMenu();
         else if (action === 'tools') openMoreMenu();
-        else if (action === 'decks') router.replace('/decks' as any);
+        else if (action === 'decks') router.dismissTo('/decks' as any);
     }, [
         currentCard,
         showingAnswer,
