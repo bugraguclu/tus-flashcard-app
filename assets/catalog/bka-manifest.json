@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "8aa5cab3881e79d4c397aabff85093cd099ca712fc40eecf788125dd310baa53",
+  "sha256": "afb479ff355f35f00451facdadc64a91314d529267bcc021938c04e5b0bd8426",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7739,7 +7739,7 @@
     "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 3332,
+    "ungroupedCards": 3218,
     "media": 49
   },
   "courses": [
@@ -8114,62 +8114,62 @@
       "topics": [
         {
           "name": "Genel Farmakoloji ve Toksikoloji",
-          "notes": 66,
-          "cards": 87,
+          "notes": 93,
+          "cards": 121,
           "deck": true
         },
         {
           "name": "Otonom Sinir Sistemi İlaçları",
-          "notes": 49,
-          "cards": 62,
+          "notes": 59,
+          "cards": 82,
           "deck": true
         },
         {
           "name": "Antimikrobiyal İlaçlar",
-          "notes": 32,
-          "cards": 41,
+          "notes": 55,
+          "cards": 68,
           "deck": true
         },
         {
           "name": "Kardiyovasküler İlaçlar",
           "notes": 44,
-          "cards": 54,
+          "cards": 49,
           "deck": true
         },
         {
           "name": "Santral Sinir Sistemi İlaçları",
-          "notes": 45,
-          "cards": 61,
+          "notes": 70,
+          "cards": 95,
           "deck": true
         },
         {
           "name": "Endokrin ve Metabolizma İlaçları",
-          "notes": 11,
-          "cards": 15,
+          "notes": 18,
+          "cards": 21,
           "deck": true
         },
         {
           "name": "Otakoidler ve Antiinflamatuar İlaçlar",
-          "notes": 21,
-          "cards": 34,
+          "notes": 26,
+          "cards": 40,
           "deck": true
         },
         {
           "name": "Antineoplastik İlaçlar",
-          "notes": 21,
-          "cards": 30,
+          "notes": 18,
+          "cards": 24,
           "deck": true
         },
         {
           "name": "Solunum ve Sindirim Sistemi İlaçları",
-          "notes": 8,
-          "cards": 9,
+          "notes": 7,
+          "cards": 7,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 372,
-          "cards": 434,
+          "notes": 279,
+          "cards": 320,
           "deck": false
         }
       ]
