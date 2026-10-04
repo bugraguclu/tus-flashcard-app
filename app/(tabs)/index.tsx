@@ -100,6 +100,7 @@ import {
 } from '../../lib/whiteboardSession';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import CatalogUnlockSheet from '../../components/CatalogUnlockSheet';
+import CustomStudyModal from '../../components/CustomStudyModal';
 import {
     answerStudyCard,
     getDeckTotalCardCount,
@@ -403,6 +404,7 @@ export default function StudyScreen() {
     // Tapping the header opens a deck picker (Anki's "Select deck"), switching what's being studied.
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [catalogUnlockVisible, setCatalogUnlockVisible] = useState(false);
+    const [customStudyOpen, setCustomStudyOpen] = useState(false);
 
     const [sessionStats, setSessionStats] = useState<SessionStats>({
         reviewed: 0,
@@ -443,6 +445,14 @@ export default function StudyScreen() {
             return null;
         }
     }, [selectedDeckName, collectionVersion]);
+    const buriedInDeck = useMemo(() => {
+        if (!emptyStateDeck) return 0;
+        try {
+            return getBuriedCountForDeck(emptyStateDeck.id);
+        } catch {
+            return 0;
+        }
+    }, [emptyStateDeck, collectionVersion]);
     const lastDeckIdRef = useRef<number | null>(null);
     const lastStudiedDeckNameRef = useRef<string | null>(null);
     useEffect(() => {
@@ -1678,6 +1688,16 @@ export default function StudyScreen() {
         rebuildFilteredDeck(emptyStateDeck.id);
         invalidateCollection();
     }, [emptyStateDeck, invalidateCollection]);
+    const handleUnburyDeck = useCallback(() => {
+        if (!emptyStateDeck) return;
+        unburyDeck(emptyStateDeck.id, settings.dayRolloverHour);
+        invalidateCollection();
+    }, [emptyStateDeck, settings.dayRolloverHour, invalidateCollection]);
+    // Anki opens a new custom session as the current deck; here the reviewer simply studies it.
+    const handleCustomStudySession = useCallback((sessionDeckName: string) => {
+        setCustomStudyOpen(false);
+        handlePickDeck(sessionDeckName);
+    }, [handlePickDeck]);
     const deckPickerItems = useMemo(() => {
         try {
             return getAllDecks()
@@ -2146,7 +2166,7 @@ export default function StudyScreen() {
      * whether the key was consumed.
      */
     const handleShortcutKey = useCallback((rawKey: string): boolean => {
-        if (toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) return false;
+        if (toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible || customStudyOpen) return false;
         const key = normalizeHardwareKey(rawKey);
 
         if (key === 'Escape') {
@@ -2195,6 +2215,7 @@ export default function StudyScreen() {
         flagMenuVisible,
         deckPickerVisible,
         catalogUnlockVisible,
+        customStudyOpen,
         settings.keyBindings,
         undoKeys,
         handleReturnToDecks,
@@ -2298,7 +2319,7 @@ export default function StudyScreen() {
     // physical-keyboard events. Real type-answer inputs take focus normally; after the answer is
     // revealed this capture regains focus so Anki's 1-4 grading shortcuts work again.
     useEffect(() => {
-        if (Platform.OS === 'web' || pathname !== '/' || toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible) {
+        if (Platform.OS === 'web' || pathname !== '/' || toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible || customStudyOpen) {
             nativeShortcutCaptureRef.current?.blur();
             return;
         }
@@ -2316,6 +2337,7 @@ export default function StudyScreen() {
         flagMenuVisible,
         deckPickerVisible,
         catalogUnlockVisible,
+        customStudyOpen,
         typeAnswerField,
         settings.focusTypeAnswer,
     ]);
@@ -3221,6 +3243,34 @@ export default function StudyScreen() {
                                     <Text style={styles.secondaryActionText}>⚙️ {l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
                                 </TouchableOpacity>
                             )}
+                            {emptyStateDeck && !emptyStateDeck.isFiltered ? (
+                                <TouchableOpacity
+                                    style={styles.secondaryActionBtn}
+                                    onPress={() => setCustomStudyOpen(true)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Özel çalışma oturumu oluştur', 'Create a custom study session')}
+                                >
+                                    <Text style={styles.secondaryActionText}>🎯 {l('Özel çalışma', 'Custom Study')}</Text>
+                                </TouchableOpacity>
+                            ) : null}
+                            {buriedInDeck > 0 ? (
+                                <TouchableOpacity
+                                    style={styles.secondaryActionBtn}
+                                    onPress={handleUnburyDeck}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l(
+                                        `${buriedInDeck} gömülü kartı şimdi aç`,
+                                        `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
+                                    )}
+                                >
+                                    <Text style={styles.secondaryActionText}>
+                                        💤 {l(
+                                            `${buriedInDeck} gömülü kartı şimdi aç`,
+                                            `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
+                                        )}
+                                    </Text>
+                                </TouchableOpacity>
+                            ) : null}
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={handleReturnToDecks}
@@ -3246,7 +3296,7 @@ export default function StudyScreen() {
 
             {answerBar}
 
-            {Platform.OS !== 'web' && pathname === '/' && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible && (
+            {Platform.OS !== 'web' && pathname === '/' && !toolsMenuVisible && !flagMenuVisible && !deckPickerVisible && !catalogUnlockVisible && !customStudyOpen && (
                 <TextInput
                     ref={nativeShortcutCaptureRef}
                     value=""
@@ -3363,6 +3413,16 @@ export default function StudyScreen() {
                     setSelectedDeckName(rootDeckName);
                 }}
             />
+            {customStudyOpen ? (
+                <CustomStudyModal
+                    visible={customStudyOpen}
+                    deck={emptyStateDeck}
+                    settings={settings}
+                    onClose={() => setCustomStudyOpen(false)}
+                    onChanged={invalidateCollection}
+                    onSessionCreated={handleCustomStudySession}
+                />
+            ) : null}
             <ProtectedContentShield state={screenGuardState} />
         </View>
     );
