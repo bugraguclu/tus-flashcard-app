@@ -214,6 +214,14 @@
       "useFor": ["unbury link when cards are buried", "custom study link for regular decks only"]
     },
     {
+      "id": "anki-source-overview",
+      "priority": 2,
+      "platform": "desktop deck overview",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/overview.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["bottom bar offers Rebuild and Empty for a filtered deck", "Custom Study for a regular deck", "Unbury when the deck has buried cards"]
+    },
+    {
       "id": "anki-manual-styling-scroll",
       "priority": 1,
       "platform": "cross-platform reviewer behavior",

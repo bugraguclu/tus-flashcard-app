@@ -2498,6 +2498,53 @@ export default function StudyScreen() {
         </TouchableOpacity>
     ) : null;
 
+    // Anki shows these around its congrats page (CongratsPage.svelte and the overview's bottom
+    // bar in qt/aqt/overview.py): Custom Study for a regular deck, Rebuild for a filtered one, and
+    // Unbury when the deck has buried cards. A filtered deck gathers its cards by search and
+    // usually holds none itself, so the empty-deck state (Add Card) skips it and a filtered deck
+    // that runs dry ends on the finished state with Rebuild.
+    const finishedDeckActions = emptyStateDeck ? (
+        <>
+            {emptyStateDeck.isFiltered ? (
+                <TouchableOpacity
+                    style={styles.secondaryActionBtn}
+                    onPress={handleRebuildFilteredDeck}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Filtreli desteyi yeniden oluştur', 'Rebuild the filtered deck')}
+                >
+                    <Text style={styles.secondaryActionText}>🔄 {l('Yeniden oluştur', 'Rebuild')}</Text>
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity
+                    style={styles.secondaryActionBtn}
+                    onPress={() => setCustomStudyOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Özel çalışma oturumu oluştur', 'Create a custom study session')}
+                >
+                    <Text style={styles.secondaryActionText}>🎯 {l('Özel çalışma', 'Custom Study')}</Text>
+                </TouchableOpacity>
+            )}
+            {buriedInDeck > 0 ? (
+                <TouchableOpacity
+                    style={styles.secondaryActionBtn}
+                    onPress={handleUnburyDeck}
+                    accessibilityRole="button"
+                    accessibilityLabel={l(
+                        `${buriedInDeck} gömülü kartı şimdi aç`,
+                        `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
+                    )}
+                >
+                    <Text style={styles.secondaryActionText}>
+                        💤 {l(
+                            `${buriedInDeck} gömülü kartı şimdi aç`,
+                            `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
+                        )}
+                    </Text>
+                </TouchableOpacity>
+            ) : null}
+        </>
+    ) : null;
+
     const plainFrame = settings.studyFrameStyle === 'plain';
     // Anki underlines the count of the queue the card on screen was drawn from.
     const currentQueueBucket = currentCard ? statusToQueueBucket(currentCard.state.status) : null;
@@ -3122,6 +3169,7 @@ export default function StudyScreen() {
                             >
                                 <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
                             </TouchableOpacity>
+                            {finishedDeckActions}
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={handleReturnToDecks}
@@ -3163,7 +3211,7 @@ export default function StudyScreen() {
                                 <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                         </View>
-                    ) : totalDeckCards === 0 ? (
+                    ) : totalDeckCards === 0 && !emptyStateDeck?.isFiltered ? (
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyTitle}>{l('Bu Deste Henüz Boş', 'This Deck is Empty')}</Text>
                             <Text style={styles.emptyDesc}>
@@ -3243,34 +3291,7 @@ export default function StudyScreen() {
                                     <Text style={styles.secondaryActionText}>⚙️ {l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
                                 </TouchableOpacity>
                             )}
-                            {emptyStateDeck && !emptyStateDeck.isFiltered ? (
-                                <TouchableOpacity
-                                    style={styles.secondaryActionBtn}
-                                    onPress={() => setCustomStudyOpen(true)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Özel çalışma oturumu oluştur', 'Create a custom study session')}
-                                >
-                                    <Text style={styles.secondaryActionText}>🎯 {l('Özel çalışma', 'Custom Study')}</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                            {buriedInDeck > 0 ? (
-                                <TouchableOpacity
-                                    style={styles.secondaryActionBtn}
-                                    onPress={handleUnburyDeck}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l(
-                                        `${buriedInDeck} gömülü kartı şimdi aç`,
-                                        `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
-                                    )}
-                                >
-                                    <Text style={styles.secondaryActionText}>
-                                        💤 {l(
-                                            `${buriedInDeck} gömülü kartı şimdi aç`,
-                                            `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
-                                        )}
-                                    </Text>
-                                </TouchableOpacity>
-                            ) : null}
+                            {finishedDeckActions}
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={handleReturnToDecks}
