@@ -66,11 +66,14 @@ import {
     createDeck,
     getAllDecks,
     getAvailableDeckName,
+    getBuriedCountForDeck,
     getDeck,
     getDeckByName,
     getDeckConfigForDeck,
+    rebuildFilteredDeck,
     restoreFilteredCard,
     setFilteredPreviewDue,
+    unburyDeck,
 } from '../../lib/deckManager';
 import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
@@ -430,6 +433,14 @@ export default function StudyScreen() {
             return getDeckTotalCardCount(selectedDeckName);
         } catch {
             return 0;
+        }
+    }, [selectedDeckName, collectionVersion]);
+    // The deck the empty and finished states act on: Rebuild, Unbury and Custom Study need it.
+    const emptyStateDeck = useMemo(() => {
+        try {
+            return selectedDeckName ? getDeckByName(selectedDeckName) ?? null : null;
+        } catch {
+            return null;
         }
     }, [selectedDeckName, collectionVersion]);
     const lastDeckIdRef = useRef<number | null>(null);
@@ -1662,6 +1673,11 @@ export default function StudyScreen() {
         setSelectedTopic(null);
         setActiveDeckName(name);
     }, [setSelectedDeckName, setSelectedSubject, setSelectedTopic, setActiveDeckName]);
+    const handleRebuildFilteredDeck = useCallback(() => {
+        if (!emptyStateDeck?.isFiltered) return;
+        rebuildFilteredDeck(emptyStateDeck.id);
+        invalidateCollection();
+    }, [emptyStateDeck, invalidateCollection]);
     const deckPickerItems = useMemo(() => {
         try {
             return getAllDecks()
@@ -3097,6 +3113,33 @@ export default function StudyScreen() {
                             <Text style={styles.emptySub}>
                                 {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
                             </Text>
+                        </View>
+                    ) : emptyStateDeck?.isFiltered && emptyStateDeck.filteredDeckEmpty ? (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyTitle}>{l('Filtreli deste boş', 'This Filtered Deck Is Empty')}</Text>
+                            <Text style={styles.emptyDesc}>
+                                {l(
+                                    'Kartlar ait oldukları destelere döndü. Deste, kayıtlı filtre kurallarıyla yeniden oluşturulabilir.',
+                                    'Its cards are back in their home decks. Rebuild it to gather cards again with its saved filter rules.',
+                                )}
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.primaryActionBtn}
+                                onPress={handleRebuildFilteredDeck}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Filtreli desteyi yeniden oluştur', 'Rebuild the filtered deck')}
+                            >
+                                <Text style={styles.primaryActionText}>{l('Yeniden oluştur', 'Rebuild')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.secondaryActionBtn}
+                                onPress={handleReturnToDecks}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
+                            >
+                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                            </TouchableOpacity>
                         </View>
                     ) : totalDeckCards === 0 ? (
                         <View style={styles.emptyState}>
