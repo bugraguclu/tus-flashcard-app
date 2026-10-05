@@ -26,12 +26,10 @@ hazırlandıkça eklenir.
 | Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | 563 | 25 | 169 | 318 | 51 | 27 |
 | Pediatri | `pediatri.patch.json` | 1169 | 1167 | 43 | 377 | 650 | 97 | 40 |
 | Dahiliye | `dahiliye.patch.json` | 995 | 995 | 30 | 287 | 607 | 71 | 20 |
+| Patoloji | `patoloji.patch.json` | 609 | 609 | 5 | 2 | 340 | 262 | 0 |
 <!-- status:end -->
 
-`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız
-tıbbi doğrulama, yazım birliği ve son okuma tamam); Pediatri'de yazım birliği adımı, Dahiliye'de
-bağımsız tıbbi doğrulama ve yazım birliği adımları henüz yapılmadı. Patoloji, Mikrobiyoloji,
-Biyokimya, FHE, Anatomi ve Deneme ve Soru dosyaları henüz yok.
+`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız tıbbi doğrulama, yazım birliği ve son okuma tamam); Kadın Doğum, Küçük Stajlar, Genel Cerrahi ve Patoloji tamamlandı; Pediatri'de yazım birliği adımı, Dahiliye'de bağımsız tıbbi doğrulama ve yazım birliği adımları henüz yapılmadı. Mikrobiyoloji, Biyokimya, FHE, Anatomi ve Deneme ve Soru dosyaları hazırlanacak.
 
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
