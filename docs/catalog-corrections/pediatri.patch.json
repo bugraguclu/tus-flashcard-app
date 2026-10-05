@@ -13,7 +13,7 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": false,
- "reviewStage": "edited+medically-verified (spelling pass pending)",
+ "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 1169,
   "changedNotes": 1166,
@@ -29,61 +29,61 @@
   "notesByTopic": {
    "Alerji ve İmmünoloji": 89,
    "Aşı ve Döküntülü Hastalıklar": 65,
-   "Beslenme ve Gelişme": 38,
-   "Endokrinoloji": 40,
    "Gastroenteroloji": 39,
    "Genel": 419,
-   "Genetik": 37,
    "Göğüs Hastalıkları": 36,
    "Hematoloji": 48,
    "Kardiyoloji": 66,
    "Metabolizma": 71,
    "Nefroloji": 34,
-   "Nöroloji": 41,
-   "Onkoloji": 30,
    "Romatoloji": 28,
-   "Yenidoğan": 86
+   "Yenidoğan": 86,
+   "Beslenme ve Gelişme": 38,
+   "Endokrinoloji": 40,
+   "Genetik": 37,
+   "Nöroloji": 41,
+   "Onkoloji": 30
   },
   "itemsByCategory": {
    "Tıbbi doğruluk": {
     "Kritik": 38,
     "Yüksek": 71
    },
-   "Güncellik": {
-    "Kritik": 6,
-    "Yüksek": 50,
-    "Orta": 37
-   },
-   "Eksik kritik bilgi": {
-    "Yüksek": 189
-   },
    "Soru netliği": {
     "Yüksek": 26,
     "Orta": 101
    },
-   "Doğrulama gerekli": {
-    "Yüksek": 40
+   "Kısaltma": {
+    "Orta": 882,
+    "Yüksek": 28
    },
-   "Yapısal": {
-    "Yüksek": 16,
-    "Orta": 3,
-    "Düşük": 7
+   "Biçim": {
+    "Düşük": 1090
+   },
+   "Güncellik": {
+    "Kritik": 6,
+    "Orta": 37,
+    "Yüksek": 50
    },
    "Terim/yazım": {
-    "Yüksek": 6,
     "Orta": 342,
-    "Düşük": 96
-   },
-   "Kısaltma": {
-    "Yüksek": 28,
-    "Orta": 882
+    "Düşük": 96,
+    "Yüksek": 6
    },
    "Dil bilgisi": {
     "Orta": 9,
     "Düşük": 156
    },
-   "Biçim": {
-    "Düşük": 1090
+   "Yapısal": {
+    "Yüksek": 16,
+    "Düşük": 7,
+    "Orta": 3
+   },
+   "Eksik kritik bilgi": {
+    "Yüksek": 189
+   },
+   "Doğrulama gerekli": {
+    "Yüksek": 40
    }
   },
   "secondReview": {
@@ -225,7 +225,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Bazı eski kaynaklarda aynı gün yapılmaz diye geçer; oral polio aşısı rotavirüs aşısının ilk dozuna yanıtı hafifçe azaltabilir ancak WHO iki aşının birbirinden önce, sonra ya da aynı gün verilebileceğini belirtir."
+     "after": "Bazı eski kaynaklarda aynı gün yapılmaz diye geçer; oral polio aşısı rotavirüs aşısının ilk dozuna yanıtı hafifçe azaltabilir ancak DSÖ iki aşının birbirinden önce, sonra ya da aynı gün verilebileceğini belirtir."
     }
    },
    "changes": [
@@ -307,7 +307,7 @@
    "fields": {
     "Text": {
      "before": "Ağır Ak (B Hc. Eks'de) yapılabilen Canlı Aşılar --&gt; {{c1::MMR}} ve {{c1::Su çiçeği&nbsp;}}<div><br></div><div>Hafif Ak Eks'de ---&gt; {{c2::Canlı İnf - Canlı tifo}} - MMR ve Su Çiçeği yapılabilir&nbsp;</div><div><br></div><div>T Hc. Yet'de ---&gt; {{c3::Tüm Canlı Aşılar}} KEND&nbsp;</div><div><br></div><div>Fagosit Fonk. Bzk'da ---&gt; canlı {{c4::Bakteri ( BCG - Canlı Tifo) }} aşıları Yapılamaz&nbsp; - Canlı virüs aşıları yapılır</div><div><br></div><div>Komp Eks'de --&gt; {{c5::Canlı Virüs aşıları}} dahil tüm aşılar yapılabilir&nbsp;&nbsp;</div>",
-     "after": "Ağır antikor (B hücre) eksikliğinde klasik bilgiye göre yapılabilen canlı aşılar → {{c1::MMR}} ve {{c1::su çiçeği}}<div><br></div><div>Hafif antikor eksikliğinde → {{c2::canlı influenza, canlı tifo}}, MMR ve su çiçeği aşıları yapılabilir</div><div><br></div><div>T hücre yetmezliğinde → {{c3::tüm canlı aşılar}} kontrendikedir</div><div><br></div><div>Fagosit fonksiyon bozukluğunda → canlı {{c4::bakteri (BCG, canlı tifo)}} aşıları yapılamaz; canlı virüs aşıları yapılır</div><div><br></div><div>Kompleman eksikliğinde → {{c5::canlı virüs aşıları}} dahil tüm aşılar yapılabilir</div>"
+     "after": "Ağır antikor (B hücre) eksikliğinde klasik bilgiye göre yapılabilen canlı aşılar → {{c1::MMR}} ve {{c1::su çiçeği}}<div><br></div><div>Hafif antikor eksikliğinde → {{c2::canlı influenza, canlı tifo}}, MMR ve su çiçeği aşıları yapılabilir</div><div><br></div><div>T hücre yetmezliğinde → {{c3::tüm canlı aşılar}} kontrendikedir</div><div><br></div><div>Fagosit fonksiyon bozukluğunda → canlı {{c4::bakteri (BCG, canlı tifo)}} aşıları yapılamaz; canlı virüs aşıları yapılır</div><div><br></div><div>Kompleman eksikliğinde → {{c5::canlı virüs aşıları}} dâhil tüm aşılar yapılabilir</div>"
     },
     "Extra": {
      "before": "",
@@ -1315,11 +1315,11 @@
    "fields": {
     "Text": {
      "before": "ARA Modifiye Jones Kriterleri - 2015<div><br></div><div>Yüksek Riskli Topluluklarda&nbsp;</div><div><br></div><div>Majör ---&gt; {{c1::Kardit / Artrit (<b>Monoartrit </b>/ <b>Poliartralji</b>) / Kore / Eritema Marg. / Subkutan Nodüller}}&nbsp;</div><div><br></div><div>Minör ---&gt; {{c2::<b>Monoartralji </b>/ <b>Sedim &gt;= 30</b> / Ateş &gt;= 38,5 / PR uzaması}}&nbsp;</div>",
-     "after": "Akut romatizmal ateş: modifiye Jones kriterleri (2015)<div><br></div><div>Orta ve yüksek riskli topluluklarda</div><div><br></div><div>Majör → {{c1::Kardit / artrit (<b>monoartrit </b>/ <b>poliartralji</b>) / kore / eritema marginatum / subkutan nodüller}}</div><div><br></div><div>Minör → {{c2::<b>Monoartralji </b>/ <b>sedimantasyon ≥30 mm/saat</b> ve/veya CRP ≥3 mg/dL / ateş ≥38 °C / PR uzaması}}</div>"
+     "after": "Akut romatizmal ateş: modifiye Jones kriterleri (2015)<div><br></div><div>Orta ve yüksek riskli topluluklarda</div><div><br></div><div>Majör → {{c1::Kardit / artrit (<b>monoartrit </b>/ <b>poliartralji</b>) / kore / eritema marginatum / subkutan nodüller}}</div><div><br></div><div>Minör → {{c2::<b>Monoartralji </b>/ <b>sedimantasyon ≥ 30 mm/saat</b> ve/veya CRP ≥ 3 mg/dL / ateş ≥ 38 °C / PR uzaması}}</div>"
     },
     "Extra": {
      "before": "düşük riskli topluluklarda major bulgu --&gt; Artrit olarak sadece Poliartrit kabul<div><br></div><div>Minör bulgu --&gt; sedim &gt; 60 / Poliartralji kabul edilir&nbsp;</div>",
-     "after": "Düşük riskli topluluklarda majör bulgu → artrit olarak yalnız poliartrit kabul edilir<div><br></div><div>Minör bulgu → poliartralji / ateş ≥38,5 °C / sedimantasyon ≥60 mm/saat ve/veya CRP ≥3 mg/dL / PR uzaması</div><div><br></div><div>Her iki grupta kardit klinik ve/veya subklinik (ekokardiyografik) olabilir; kardit majör ölçüt sayıldıysa PR uzaması minör ölçüt sayılmaz.</div>"
+     "after": "Düşük riskli topluluklarda majör bulgu → artrit olarak yalnız poliartrit kabul edilir<div><br></div><div>Minör bulgu → poliartralji / ateş ≥ 38,5 °C / sedimantasyon ≥ 60 mm/saat ve/veya CRP ≥ 3 mg/dL / PR uzaması</div><div><br></div><div>Her iki grupta kardit klinik ve/veya subklinik (ekokardiyografik) olabilir; kardit majör ölçüt sayıldıysa PR uzaması minör ölçüt sayılmaz.</div>"
     }
    },
    "changes": [
@@ -3184,7 +3184,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "ACIP'nin 2018 güncellemesine göre 12 aylıktan büyük herkese (40 yaş üstü dahil) temas sonrası aşı yapılır; 40 yaş üstünde HAIG risk değerlendirmesine göre aşıya eklenir."
+     "after": "ACIP'nin 2018 güncellemesine göre 12 aylıktan büyük herkese (40 yaş üstü dâhil) temas sonrası aşı yapılır; 40 yaş üstünde HAIG risk değerlendirmesine göre aşıya eklenir."
     }
    },
    "changes": [
@@ -3296,7 +3296,7 @@
    "fields": {
     "Text": {
      "before": "Asemp HIV (+) Hast'da ---&gt; {{c1::MMR ve Su çiçeği}} aşıları yapılabilir&nbsp;",
-     "after": "Asemptomatik HIV (+) hastada (CD4 ≥%15) → {{c1::MMR ve su çiçeği}} aşıları yapılabilir"
+     "after": "Asemptomatik HIV (+) hastada (CD4 ≥ %15) → {{c1::MMR ve su çiçeği}} aşıları yapılabilir"
     }
    },
    "changes": [
@@ -4729,11 +4729,11 @@
    "fields": {
     "Text": {
      "before": "Çölyak Kesin Tanı --&gt; {{c1::Bx + Tdv'ye Yanıt&nbsp;}}<div><br></div><div>Bx olmadan Diyet başlayabileceğin (3) ---&gt;&nbsp;</div><div><br></div><div>{{c1::Anti - TG2 (+) +&nbsp;</div><div>Anti EMA (+) +&nbsp;</div><div>HLA DQ2 (+)}} ---&gt;&nbsp;</div><div><br></div><div>Direkt diyet başla&nbsp;</div>",
-     "after": "Çölyak hastalığında kesin tanı → {{c1::biyopsi + tedaviye yanıt}}<div><br></div><div>Biyopsi yapılmadan diyete başlanabilmesi için gerekenler (3) →</div><div><br></div><div>{{c1::<div>anti-TG2 IgA normalin üst sınırının ≥10 katı +</div><div>anti-EMA (+) +</div><div>HLA-DQ2/DQ8 (+)</div>}} →</div><div><br></div><div>Doğrudan glutensiz diyete başlanır</div>"
+     "after": "Çölyak hastalığında kesin tanı → {{c1::biyopsi + tedaviye yanıt}}<div><br></div><div>Biyopsi yapılmadan diyete başlanabilmesi için gerekenler (3) →</div><div><br></div><div>{{c1::<div>anti-TG2 IgA normalin üst sınırının ≥ 10 katı +</div><div>anti-EMA (+) +</div><div>HLA-DQ2/DQ8 (+)</div>}} →</div><div><br></div><div>Doğrudan glutensiz diyete başlanır</div>"
     },
     "Extra": {
      "before": "",
-     "after": "ESPGHAN 2012 ölçütlerinde anti-EMA ikinci bir kan örneğinde bakılır. ESPGHAN 2020'de HLA tiplendirmesi ve belirti koşulu kaldırıldı: anti-TG2 IgA normalin üst sınırının ≥10 katı ve ikinci örnekte anti-EMA (+) olması biyopsisiz tanı için yeterlidir."
+     "after": "ESPGHAN 2012 ölçütlerinde anti-EMA ikinci bir kan örneğinde bakılır. ESPGHAN 2020'de HLA tiplendirmesi ve belirti koşulu kaldırıldı: anti-TG2 IgA normalin üst sınırının ≥ 10 katı ve ikinci örnekte anti-EMA (+) olması biyopsisiz tanı için yeterlidir."
     }
    },
    "changes": [
@@ -5049,7 +5049,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "ESPGHAN 2020'ye göre her yaşta ilk test total IgA ile birlikte anti-TG2 IgA'dır; DGP antikorları ilk test olarak önerilmez, IgG temelli testler (DGP IgG dahil) IgA eksikliğinde kullanılır."
+     "after": "ESPGHAN 2020'ye göre her yaşta ilk test total IgA ile birlikte anti-TG2 IgA'dır; DGP antikorları ilk test olarak önerilmez, IgG temelli testler (DGP IgG dâhil) IgA eksikliğinde kullanılır."
     }
    },
    "changes": [
@@ -8030,7 +8030,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel ADA önerisi: ilk lipid profili tanıdan kısa süre sonra (≥2 yaş) yapılır; LDL ≤100 mg/dL ise 9–11 yaşta tekrarlanır, ardından 3 yılda bir izlenir."
+     "after": "Güncel ADA önerisi: ilk lipid profili tanıdan kısa süre sonra (≥ 2 yaş) yapılır; LDL ≤ 100 mg/dL ise 9–11 yaşta tekrarlanır, ardından 3 yılda bir izlenir."
     }
    },
    "changes": [
@@ -8493,7 +8493,7 @@
     },
     "Extra": {
      "before": "Blast &lt; % 20",
-     "after": "Kemik iliğinde blast &lt;%20<div><br></div><div>Olguların çoğunda RAS yolağı mutasyonları vardır (en sık PTPN11).</div>"
+     "after": "Kemik iliğinde blast &lt; %20<div><br></div><div>Olguların çoğunda RAS yolağı mutasyonları vardır (en sık PTPN11).</div>"
     }
    },
    "changes": [
@@ -11476,7 +11476,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Yüksek risk: transkraniyal Doppler'de anormal (≥200 cm/sn) akım hızı."
+     "after": "Yüksek risk: transkraniyal Doppler'de anormal (≥ 200 cm/sn) akım hızı."
     }
    },
    "changes": [
@@ -11557,11 +11557,11 @@
    "fields": {
     "Text": {
      "before": "Polistemia Vera Tanı Kriterleri (Pediatri)&nbsp;<div><br></div><div>Major (2)&nbsp; ----&gt; {{c1::Hb /&nbsp; JAK2 Mut&nbsp;}}</div>",
-     "after": "Polisitemia vera tanı kriterleri (pediatri; klasik WHO 2008 ölçütleri)<div><br></div><div>Majör (2) → {{c1::Hb artışı / JAK2 mutasyonu}}</div>"
+     "after": "Polisitemia vera tanı kriterleri (pediatri; klasik DSÖ 2008 ölçütleri)<div><br></div><div>Majör (2) → {{c1::Hb artışı / JAK2 mutasyonu}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "WHO 2016 ve 2022 ölçütlerinde majör kriter sayısı 3'tür: Hb/Hct artışı, kemik iliği biyopsisinde panmiyelozis ve JAK2 mutasyonu; minör kriter düşük serum EPO düzeyidir. Çocuklarda JAK2 mutasyonu erişkinlere göre daha seyrektir."
+     "after": "DSÖ 2016 ve 2022 ölçütlerinde majör kriter sayısı 3'tür: Hb/Hct artışı, kemik iliği biyopsisinde panmiyelozis ve JAK2 mutasyonu; minör kriter düşük serum EPO düzeyidir. Çocuklarda JAK2 mutasyonu erişkinlere göre daha seyrektir."
     }
    },
    "changes": [
@@ -12190,7 +12190,7 @@
    "fields": {
     "Text": {
      "before": "ASD Cerrahi END ---&gt;&nbsp;<div>{{c1::Q<sub>p</sub> / Q<sub>s</sub> &gt;= 2}} ise&nbsp;</div>",
-     "after": "ASD kapatma (cerrahi veya transkateter) endikasyonu →<div>{{c1::Q<sub>p</sub>/Q<sub>s</sub> ≥2}} ise</div>"
+     "after": "ASD kapatma (cerrahi veya transkateter) endikasyonu →<div>{{c1::Q<sub>p</sub>/Q<sub>s</sub> ≥ 2}} ise</div>"
     },
     "Extra": {
      "before": "",
@@ -12994,7 +12994,7 @@
    "fields": {
     "Text": {
      "before": "Sülfit Ox eks ( Molibden kofaktör eks) ---&gt; {{c1::HipoÜrisemi}} yapar (&lt;3)&nbsp;",
-     "after": "Sülfit oksidaz eksikliği (molibden kofaktör eksikliğine bağlı) → {{c1::hipoürisemi}} yapar (&lt;3 mg/dl)"
+     "after": "Sülfit oksidaz eksikliği (molibden kofaktör eksikliğine bağlı) → {{c1::hipoürisemi}} yapar (&lt; 3 mg/dL)"
     },
     "Extra": {
      "before": "",
@@ -15423,7 +15423,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Genel olarak en önemli prognostik etkenler tanı yaşı (<18 ay iyi), evre, MYCN amplifikasyonu ve histolojidir."
+     "after": "Genel olarak en önemli prognostik etkenler tanı yaşı (&lt; 18 ay iyi), evre, MYCN amplifikasyonu ve histolojidir."
     }
    },
    "changes": [
@@ -15495,7 +15495,7 @@
    "fields": {
     "Text": {
      "before": "Nöroblastom evreleme&nbsp;<div><br></div><div>MS ---&gt; {{c1::&lt; 18}} ay + {{c1::Kemik}} Met YOK + L{{c1::1-2}} Tm&nbsp;</div>",
-     "after": "Nöroblastom evrelemesi (INRGSS)<div><br></div><div>MS → {{c1::&lt;18}} ay + {{c1::kemik}} metastazı yok + L{{c1::1–2}} tümör</div>"
+     "after": "Nöroblastom evrelemesi (INRGSS)<div><br></div><div>MS → {{c1::&lt; 18}} ay + {{c1::kemik}} metastazı yok + L{{c1::1–2}} tümör</div>"
     },
     "Extra": {
      "before": "",
@@ -15702,7 +15702,7 @@
    "fields": {
     "Text": {
      "before": "HepatoBlastom Riski ARTANLAR:<div><br></div><div>FAP</div><div><br></div><div>Bechwith Widemann</div><div><br></div><div>{{c1::<b><font color=\"#ff3b30\">Düşük Doğum Ağırlığı (LBW)</font></b>}}<br></div>",
-     "after": "Hepatoblastom riskini artıranlar:<div><br></div><div>FAP</div><div><br></div><div>Beckwith-Wiedemann sendromu</div><div><br></div><div>{{c1::<b><font color=\"#ff3b30\">Çok düşük doğum ağırlığı (&lt;1500 g)</font></b>}}</div>"
+     "after": "Hepatoblastom riskini artıranlar:<div><br></div><div>FAP</div><div><br></div><div>Beckwith-Wiedemann sendromu</div><div><br></div><div>{{c1::<b><font color=\"#ff3b30\">Çok düşük doğum ağırlığı (&lt; 1500 g)</font></b>}}</div>"
     }
    },
    "changes": [
@@ -15742,7 +15742,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "2016 EULAR/ACR/PRINTO sınıflama ölçütlerine göre tanı, sistemik JİA'lı ateşli hastada ferritin &gt;684 ng/mL ile trombosit, AST, trigliserid ve fibrinojenden en az ikisinin bozulmasına dayanır; kemik iliği bulgusu şart değildir."
+     "after": "2016 EULAR/ACR/PRINTO sınıflama ölçütlerine göre tanı, sistemik JİA'lı ateşli hastada ferritin &gt; 684 ng/mL ile trombosit, AST, trigliserid ve fibrinojenden en az ikisinin bozulmasına dayanır; kemik iliği bulgusu şart değildir."
     }
    },
    "changes": [
@@ -15864,7 +15864,7 @@
    "fields": {
     "Text": {
      "before": "Kawasaki Tanı Kriterleri&nbsp;<div><br></div><div>En az {{c1::5 Gün ATEŞ}} (Olmazsa OLMAZ)&nbsp;</div><div><br></div><div>en az 4'ü&nbsp;</div><div><br></div><div>&nbsp;Bilat nonpürülan {{c1::konjuktival}} konjesyon</div><div><br></div><div>oropfhx muzkopza değ'leri</div><div><br></div><div>el ayaklarda {{c1::ödem - dekuamasyon}}</div><div><br></div><div>genelde gövdede polimorfik ama {{c1::veziküler}} olmayan döküntü</div><div><br></div><div>&gt; 1.5 cm Tek taraflı {{c1::servikal LAP}}</div>",
-     "after": "Kawasaki hastalığı tanı kriterleri<div><br></div><div>En az {{c1::5 gün ateş}} (olmazsa olmaz)</div><div><br></div><div>Aşağıdakilerin en az 4'ü:</div><div><br></div><div>Bilateral nonpürülan {{c1::konjonktival}} konjesyon</div><div><br></div><div>Orofarenks mukozasında değişiklikler</div><div><br></div><div>El ve ayaklarda {{c1::ödem, deskuamasyon}}</div><div><br></div><div>Genellikle gövdede, polimorfik ama {{c1::veziküler}} olmayan döküntü</div><div><br></div><div>≥1,5 cm, tek taraflı {{c1::servikal lenfadenopati}}</div>"
+     "after": "Kawasaki hastalığı tanı kriterleri<div><br></div><div>En az {{c1::5 gün ateş}} (olmazsa olmaz)</div><div><br></div><div>Aşağıdakilerin en az 4'ü:</div><div><br></div><div>Bilateral nonpürülan {{c1::konjonktival}} konjesyon</div><div><br></div><div>Orofarenks mukozasında değişiklikler</div><div><br></div><div>El ve ayaklarda {{c1::ödem, deskuamasyon}}</div><div><br></div><div>Genellikle gövdede, polimorfik ama {{c1::veziküler}} olmayan döküntü</div><div><br></div><div>≥ 1,5 cm, tek taraflı {{c1::servikal lenfadenopati}}</div>"
     },
     "Extra": {
      "before": "",
@@ -15954,11 +15954,11 @@
    "fields": {
     "Text": {
      "before": "Kawasaki - Koroner Arter Tut Kriterleri&nbsp;<div><br></div><div>{{c1::Erkek}} cinsiyet&nbsp;</div><div>{{c1::&lt; 1}} yaş</div>",
-     "after": "Kawasaki hastalığında koroner arter tutulumu için başlıca risk faktörleri<div><br></div><div>{{c1::Erkek}} cinsiyet</div><div>{{c1::&lt;1}} yaş</div>"
+     "after": "Kawasaki hastalığında koroner arter tutulumu için başlıca risk faktörleri<div><br></div><div>{{c1::Erkek}} cinsiyet</div><div>{{c1::&lt; 1}} yaş</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Diğer risk faktörleri: &gt;8 yaş, uzamış ateş, tedavinin gecikmesi, IVIG direnci, hipoalbüminemi ve hiponatremi."
+     "after": "Diğer risk faktörleri: &gt; 8 yaş, uzamış ateş, tedavinin gecikmesi, IVIG direnci, hipoalbüminemi ve hiponatremi."
     }
    },
    "changes": [
@@ -16359,7 +16359,7 @@
    "fields": {
     "Text": {
      "before": "ROP Muayene zamanı&nbsp;<div><br></div><div>&lt; 28 hf ---&gt; {{c1::31. Hf}}&nbsp;</div><div>&gt;= 28 Hf --&gt; {{c1::4 Hf Sonra}}&nbsp;</div>",
-     "after": "ROP için ilk göz muayenesinin zamanı<div><br></div><div>&lt;28 hafta doğanlarda → postmenstrüel {{c1::31. hafta}}</div><div>≥28 hafta doğanlarda → doğumdan {{c1::4 hafta sonra}}</div>"
+     "after": "ROP için ilk göz muayenesinin zamanı<div><br></div><div>&lt; 28 hafta doğanlarda → postmenstrüel {{c1::31. hafta}}</div><div>≥ 28 hafta doğanlarda → doğumdan {{c1::4 hafta sonra}}</div>"
     }
    },
    "changes": [
@@ -16400,7 +16400,7 @@
    "fields": {
     "Text": {
      "before": "YD Res'u&nbsp;<div><br></div><div>Isıt Kurula Taktil uyaran ----&gt; HR &lt; 100 --&gt; {{c1::Ambula (PBV)}} ---&gt; HR &gt; 100 --&gt; Başarı&nbsp;</div><div><br></div><div>HR {{c2::60 -100}} --&gt; PBV devam</div><div><br></div><div>HR {{c3::&lt; 60}} ---&gt; Göğüs Komp'u ---&gt; HR {{c4::&lt; 60}} hala --&gt; {{c5::iv Adrenalin}}&nbsp;</div>",
-     "after": "Yenidoğan resüsitasyonu<div><br></div><div>Isıt, kurula, taktil uyar → apne/gasping veya kalp hızı &lt;100 → {{c1::ambu ile pozitif basınçlı ventilasyon (PBV)}} → kalp hızı &gt;100 → başarı</div><div><br></div><div>Kalp hızı {{c2::60–100}} → {{c1::PBV}}'ye devam</div><div><br></div><div>Kalp hızı {{c3::&lt;60}} → göğüs kompresyonu → kalp hızı hâlâ {{c4::&lt;60}} → {{c5::İV adrenalin}}</div>"
+     "after": "Yenidoğan resüsitasyonu<div><br></div><div>Isıt, kurula, taktil uyar → apne/gasping veya kalp hızı &lt; 100 → {{c1::ambu ile pozitif basınçlı ventilasyon (PBV)}} → kalp hızı &gt; 100 → başarı</div><div><br></div><div>Kalp hızı {{c2::60–100}} → {{c1::PBV}}'ye devam</div><div><br></div><div>Kalp hızı {{c3::&lt; 60}} → göğüs kompresyonu → kalp hızı hâlâ {{c4::&lt; 60}} → {{c5::İV adrenalin}}</div>"
     }
    },
    "changes": [
@@ -16487,7 +16487,7 @@
    "fields": {
     "Text": {
      "before": "Palivuzmab Pfx. END'ları (7)&nbsp;<div><br></div><div>{{c1::<div>&lt;29 Hf</div><div>&lt; 1000 g</div>}}<br></div><div>{{c2::<div>BPD Tanısı</div><div>Anlamlı Konj. KH</div><div>İmm. Yet</div><div>Solunum yolu konj. anomalisi</div><div>NöroMusk. hast&nbsp;</div>}}<br></div>",
-     "after": "Palivizumab profilaksisi endikasyonları (7)<div><br></div><div>{{c1::<div>&lt;29 hafta</div><div>&lt;1000 g</div>}}<br></div><div>{{c2::<div>BPD tanısı</div><div>Hemodinamik açıdan anlamlı konjenital kalp hastalığı</div><div>İmmün yetmezlik</div><div>Solunum yolunun konjenital anomalisi</div><div>Nöromüsküler hastalık</div>}}<br></div>"
+     "after": "Palivizumab profilaksisi endikasyonları (7)<div><br></div><div>{{c1::<div>&lt; 29 hafta</div><div>&lt; 1000 g</div>}}<br></div><div>{{c2::<div>BPD tanısı</div><div>Hemodinamik açıdan anlamlı konjenital kalp hastalığı</div><div>İmmün yetmezlik</div><div>Solunum yolunun konjenital anomalisi</div><div>Nöromüsküler hastalık</div>}}<br></div>"
     },
     "Extra": {
      "before": "Ekim - Kasım - Aralık - Ocak - Şubat 5 ay verilir&nbsp;",
@@ -16532,7 +16532,7 @@
    "fields": {
     "Text": {
      "before": "&gt;= 35. Hf YD'da Ağır HiperBil. RF'leri&nbsp;<div><br></div><div><b>Majör</b> ---&gt; Bil değeri {{c1::yüksek}} zonda / ilk {{c1::24}} saat / EndTidal {{c2::CO}}&nbsp;artış / {{c1::35-36. hf}} doğum(Late preterm) / Annenin önceki bebğinde {{c2::Fototerapi}} öyküsü / {{c2::Sefal}} Hematom / {{c2::Doğu asya}} köken&nbsp;</div><div><br></div><div><b>Minör</b> Risk --&gt; {{c3::37 - 38}}. hf doğum / Annenin önceki bebeğinde {{c3::Sarılık}} öyküsü / DAB annenin {{c4::Makrozomik}} bebeği / Maternal yas &gt;={{c4::25}} / {{c3::Erkek}} cinsiyet&nbsp;&nbsp;</div>",
-     "after": "≥35. haftada doğan yenidoğanda ağır hiperbilirubinemi risk faktörleri<div><br></div><div><b>Majör</b> → bilirubin değerinin {{c1::yüksek}} risk zonunda olması / ilk {{c1::24}} saatte sarılık / end-tidal {{c2::CO}} artışı / {{c1::35–36. hafta}} doğum (geç preterm) / annenin önceki bebeğinde {{c2::fototerapi}} öyküsü / {{c2::sefal}} hematom / {{c2::Doğu Asya}} kökeni / hemolitik hastalık (DAT pozitif kan grubu uyuşmazlığı, G6PD eksikliği) / yalnız anne sütüyle beslenme (yetersiz emme, aşırı kilo kaybı)</div><div><br></div><div><b>Minör</b> risk → {{c3::37–38}}. hafta doğum / annenin önceki bebeğinde {{c3::sarılık}} öyküsü / diyabetik annenin {{c4::makrozomik}} bebeği / maternal yaş ≥{{c4::25}} / {{c3::erkek}} cinsiyet</div>"
+     "after": "≥ 35. haftada doğan yenidoğanda ağır hiperbilirubinemi risk faktörleri<div><br></div><div><b>Majör</b> → bilirubin değerinin {{c1::yüksek}} risk zonunda olması / ilk {{c1::24}} saatte sarılık / end-tidal {{c2::CO}} artışı / {{c1::35–36. hafta}} doğum (geç preterm) / annenin önceki bebeğinde {{c2::fototerapi}} öyküsü / {{c2::sefal}} hematom / {{c2::Doğu Asya}} kökeni / hemolitik hastalık (DAT pozitif kan grubu uyuşmazlığı, G6PD eksikliği) / yalnız anne sütüyle beslenme (yetersiz emme, aşırı kilo kaybı)</div><div><br></div><div><b>Minör</b> risk → {{c3::37–38}}. hafta doğum / annenin önceki bebeğinde {{c3::sarılık}} öyküsü / diyabetik annenin {{c4::makrozomik}} bebeği / maternal yaş ≥{{c4::25}} / {{c3::erkek}} cinsiyet</div>"
     },
     "Extra": {
      "before": "",
@@ -16582,7 +16582,7 @@
    "fields": {
     "Text": {
      "before": "YD Kan Değişimi - Exchange Kriterleri&nbsp;<div><br></div><div><b>10 - 5 - 0,5</b></div><div><br></div><div>{{c2::Hb}} &lt; 10</div><div><br></div><div>{{c2::Kord bil}} &gt; 5&nbsp;</div><div><br></div><div>{{c2::Bil saatlik artış hızı}}&gt; 0,5</div><div><br></div><div>{{c2::Hidrops&nbsp;}}</div>",
-     "after": "İzoimmün hemolitik hastalıkta erken kan değişimi (exchange transfüzyon) kriterleri<div><br></div><div><b>10 - 5 - 0,5</b></div><div><br></div><div>{{c2::Hb}} &lt;10 g/dL</div><div><br></div><div>{{c2::Kord bilirubini}} &gt;5 mg/dL</div><div><br></div><div>{{c2::Bilirubinin saatlik artış hızı}} &gt;0,5 mg/dL</div><div><br></div><div>{{c2::Hidrops}}</div>"
+     "after": "İzoimmün hemolitik hastalıkta erken kan değişimi (exchange transfüzyon) kriterleri<div><br></div><div><b>10 - 5 - 0,5</b></div><div><br></div><div>{{c2::Hb}} &lt; 10 g/dL</div><div><br></div><div>{{c2::Kord bilirubini}} &gt; 5 mg/dL</div><div><br></div><div>{{c2::Bilirubinin saatlik artış hızı}} &gt; 0,5 mg/dL</div><div><br></div><div>{{c2::Hidrops}}</div>"
     }
    },
    "changes": [
@@ -17317,7 +17317,7 @@
    "fields": {
     "Text": {
      "before": "Astım Tanı&nbsp;<div><br></div><div>{{c2::FEV1}} &lt; %80 ve Bronkodil sonrası en az {{c1::%12'lik}} artış&nbsp;</div><div><br></div><div>Sabah - akşam {{c2::PEF}} değişkenliği {{c1::&gt;=20}}</div><div><br></div><div>{{c2::Egzersiz}} sonrası FEV1'de {{c1::&gt; %15}} kötüleşme&nbsp;</div>",
-     "after": "Astım tanısı<div><br></div><div>{{c2::FEV1}} &lt;%80 ve bronkodilatör sonrası en az {{c1::%12'lik}} artış</div><div><br></div><div>Sabah–akşam {{c2::PEF}} değişkenliği {{c1::≥%20}}</div><div><br></div><div>{{c2::Egzersiz}} sonrası FEV1'de {{c1::&gt;%15}} düşüş</div>"
+     "after": "Astım tanısı<div><br></div><div>{{c2::FEV1}} &lt; %80 ve bronkodilatör sonrası en az {{c1::%12'lik}} artış</div><div><br></div><div>Sabah–akşam {{c2::PEF}} değişkenliği {{c1::≥ %20}}</div><div><br></div><div>{{c2::Egzersiz}} sonrası FEV1'de {{c1::&gt; %15}} düşüş</div>"
     }
    },
    "changes": [
@@ -17382,7 +17382,7 @@
    "fields": {
     "Text": {
      "before": "Kontrol altına alınamayan ağır persistan astım ( &gt; 6 yaş) kullanılan Anti - IgE ak --&gt; {{c1::Omalizumab&nbsp;}}",
-     "after": "Kontrol altına alınamayan ağır persistan astımda (&gt;6 yaş) kullanılan anti-IgE antikor → {{c1::omalizumab}}"
+     "after": "Kontrol altına alınamayan ağır persistan astımda (&gt; 6 yaş) kullanılan anti-IgE antikor → {{c1::omalizumab}}"
     }
    },
    "changes": [
@@ -17417,7 +17417,7 @@
    "fields": {
     "Text": {
      "before": "Okul Öncesi yaş grubunda Astım riski Ölçütleri<div><br></div><div>Maj --&gt; {{c1::Anne - baba astım}} / doktor tarafından tanısı koyulmus {{c1::ATOPİK DERMATİT}} / {{c1::İnhalen}} allerjen duyarlılığı</div><div><br></div><div>Min ---&gt;&nbsp; doktor tarafından tanısı koyulmus {{c1::Allerjik Rinit}} / Soğuk algınlığı olmadan hışıltı / Eozinofili (&gt; %4) / {{c1::Gıda}} allerjen duyarlılığı</div>",
-     "after": "Okul öncesi yaş grubunda astım riski ölçütleri<div><br></div><div>Majör → {{c1::anne-baba astımı}} / doktor tarafından tanısı konmuş {{c1::atopik dermatit}} / {{c1::inhalen}} alerjen duyarlılığı</div><div><br></div><div>Minör → doktor tarafından tanısı konmuş {{c1::alerjik rinit}} / soğuk algınlığı olmadan hışıltı / eozinofili (&gt;%4) / {{c1::gıda}} alerjen duyarlılığı</div>"
+     "after": "Okul öncesi yaş grubunda astım riski ölçütleri<div><br></div><div>Majör → {{c1::anne-baba astımı}} / doktor tarafından tanısı konmuş {{c1::atopik dermatit}} / {{c1::inhalen}} alerjen duyarlılığı</div><div><br></div><div>Minör → doktor tarafından tanısı konmuş {{c1::alerjik rinit}} / soğuk algınlığı olmadan hışıltı / eozinofili (&gt; %4) / {{c1::gıda}} alerjen duyarlılığı</div>"
     },
     "Extra": {
      "before": "",
@@ -17556,7 +17556,7 @@
    "fields": {
     "Text": {
      "before": "Atopik Dermatit Tdv&nbsp;<div><br></div><div>topikal imm.modülatör --&gt; Kalsinörin inh'leri (&gt;2 yaş) ({{c1::Pimekrolimus}} - {{c1::Takrolimus}})</div><div><br></div><div>Sist. imm.modülatör ---&gt; Kalsinörin inh ({{c1::Siklosporin}})</div>",
-     "after": "Atopik dermatit tedavisi<div><br></div><div>Topikal immünmodülatör → kalsinörin inhibitörleri (&gt;2 yaş) ({{c1::pimekrolimus}}, {{c1::takrolimus}})</div><div><br></div><div>Sistemik immünmodülatör → kalsinörin inhibitörü ({{c1::siklosporin}})</div>"
+     "after": "Atopik dermatit tedavisi<div><br></div><div>Topikal immünmodülatör → kalsinörin inhibitörleri (&gt; 2 yaş) ({{c1::pimekrolimus}}, {{c1::takrolimus}})</div><div><br></div><div>Sistemik immünmodülatör → kalsinörin inhibitörü ({{c1::siklosporin}})</div>"
     },
     "Extra": {
      "before": "",
@@ -17980,7 +17980,7 @@
    "fields": {
     "Text": {
      "before": "&gt; 6 ay Tekr. SinoPulm. Enf geçiren çocuk<div><br></div><div>Lab: Total Ak N / IgA N / CH<sub>50</sub> N&nbsp;</div><div><br></div><div>ne olabilir ---&gt;&nbsp;</div><div><br></div><div>{{c1::IgG subgrup defekti}}</div><div><br></div><div>En sık alt tipi:<span style=\"color: var(--field-fg); background: var(--field-bg);\">&nbsp;{{c1::IgG2}}</span></div>\n",
-     "after": "&gt;6 ay tekrarlayan sinopulmoner enfeksiyon geçiren çocuk<div><br></div><div>Laboratuvar: total antikor normal / IgA normal / CH<sub>50</sub> normal</div><div><br></div><div>Olası tanı →</div><div><br></div><div>{{c1::IgG alt sınıf defekti}}</div><div><br></div><div>En sık alt tipi: {{c1::IgG2}}</div>"
+     "after": "&gt; 6 ay tekrarlayan sinopulmoner enfeksiyon geçiren çocuk<div><br></div><div>Laboratuvar: total antikor normal / IgA normal / CH<sub>50</sub> normal</div><div><br></div><div>Olası tanı →</div><div><br></div><div>{{c1::IgG alt sınıf defekti}}</div><div><br></div><div>En sık alt tipi: {{c1::IgG2}}</div>"
     }
    },
    "changes": [
@@ -19174,7 +19174,7 @@
    "fields": {
     "Text": {
      "before": "Aselüler Boğmaca Aşısında --&gt; EndoTxn {{c1::YOK&nbsp;}}<div><br></div><div>&gt; 7 yaş ---&gt; {{c1::Difteri Tetanoz(Td)}}&nbsp; yapılır&nbsp;&nbsp;</div>",
-     "after": "Aselüler boğmaca aşısında → endotoksin {{c1::yoktur}}<div><br></div><div>&gt;7 yaş → {{c1::difteri-tetanoz (Td)}} yapılır</div>"
+     "after": "Aselüler boğmaca aşısında → endotoksin {{c1::yoktur}}<div><br></div><div>&gt; 7 yaş → {{c1::difteri-tetanoz (Td)}} yapılır</div>"
     },
     "Extra": {
      "before": "",
@@ -20372,7 +20372,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel WHO yumuşak doku tümörleri sınıflamasında hemanjiyoperisitom, soliter fibröz tümör başlığı altında yer alır."
+     "after": "Güncel DSÖ yumuşak doku tümörleri sınıflamasında hemanjiyoperisitom, soliter fibröz tümör başlığı altında yer alır."
     }
    },
    "changes": [
@@ -30869,7 +30869,7 @@
    "fields": {
     "Text": {
      "before": "Diamond Blackfan Tanı Kriterleri (4)&nbsp;<div><br></div><div>Yaş {{c1::&lt; 12}} ay</div><div><br></div><div>{{c1::Makrositer}} Anemi</div><div><br></div><div>Retikülosito{{c1::peni}}</div><div><br></div><div>Kİ Eritroid prekürsörleri {{c1::AZALMIŞ}}</div>",
-     "after": "Diamond-Blackfan anemisi tanı kriterleri (4)<div><br></div><div>Yaş {{c1::&lt;12}} ay</div><div><br></div><div>{{c1::Makrositer}} anemi</div><div><br></div><div>Retikülosito{{c1::peni}}</div><div><br></div><div>Kemik iliğinde eritroid prekürsörler {{c1::azalmış}}</div>"
+     "after": "Diamond-Blackfan anemisi tanı kriterleri (4)<div><br></div><div>Yaş {{c1::&lt; 12}} ay</div><div><br></div><div>{{c1::Makrositer}} anemi</div><div><br></div><div>Retikülosito{{c1::peni}}</div><div><br></div><div>Kemik iliğinde eritroid prekürsörler {{c1::azalmış}}</div>"
     }
    },
    "changes": [
@@ -31377,7 +31377,7 @@
    "fields": {
     "Text": {
      "before": "Mentzer İndeksi ( {{c1::MCV / RBC}})&nbsp;<div><br></div><div>&gt; 13 --&gt; {{c1::DEA&nbsp;}}</div><div>&lt; 13 ---&gt; {{c1::Talasemi Min&nbsp;}}</div>",
-     "after": "Mentzer indeksi ({{c1::MCV / RBC}})<div><br></div><div>&gt;13 → {{c1::demir eksikliği anemisi}}</div><div>&lt;13 → {{c1::talasemi minör}}</div>"
+     "after": "Mentzer indeksi ({{c1::MCV / RBC}})<div><br></div><div>&gt; 13 → {{c1::demir eksikliği anemisi}}</div><div>&lt; 13 → {{c1::talasemi minör}}</div>"
     }
    },
    "changes": [
@@ -32077,7 +32077,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Kostal Çentiklenme}} --&gt; {{c2::Aort Koark}}. spesifik bulgusu (&gt; 5 yaş)",
-     "after": "{{c1::Kostal çentiklenme}} → {{c2::aort koarktasyonu}} için spesifik bulgu (&gt;5 yaş)"
+     "after": "{{c1::Kostal çentiklenme}} → {{c2::aort koarktasyonu}} için spesifik bulgu (&gt; 5 yaş)"
     }
    },
    "changes": [
@@ -32242,7 +32242,7 @@
    "fields": {
     "Text": {
      "before": "VSD Cerrahi END&nbsp;<div><br></div><div>{{c1::Geniş VSD ve KY bulguları / Büyüme geriliği}} medikal tdv ile kontrol altına alınamayan</div><div><br></div><div>6-12 ay arası {{c1::Pulm HT}} varsa</div><div><br></div><div>&gt; 2 yaş {{c1::Qp/Qs &gt; 2}} ise&nbsp;</div>",
-     "after": "VSD cerrahi endikasyonları<div><br></div><div>{{c1::Geniş VSD ve kalp yetmezliği bulguları / büyüme geriliği}} medikal tedavi ile kontrol altına alınamayan</div><div><br></div><div>6–12 ay arası {{c1::pulmoner hipertansiyon}} varsa</div><div><br></div><div>&gt;2 yaş {{c1::Qp/Qs &gt;2}} ise</div>"
+     "after": "VSD cerrahi endikasyonları<div><br></div><div>{{c1::Geniş VSD ve kalp yetmezliği bulguları / büyüme geriliği}} medikal tedavi ile kontrol altına alınamayan</div><div><br></div><div>6–12 ay arası {{c1::pulmoner hipertansiyon}} varsa</div><div><br></div><div>&gt; 2 yaş {{c1::Qp/Qs &gt; 2}} ise</div>"
     }
    },
    "changes": [
@@ -32881,7 +32881,7 @@
    "fields": {
     "Text": {
      "before": "Dijital intoks'da FAB Ak'u (Digibind) END'ları (6)<div><br></div><div>{{c1::<div>Hayatı tehdit eden aritmiler&nbsp;</div><div><br></div><div>Serum K &gt; 5-5,5</div><div><br></div><div>Mental durum bzk</div>}}<br></div><div><br></div><div>{{c2::<div>Renal Yet</div><div><br></div><div>Serum digoksin düzeyi &gt; 15 ng/ml</div><div><br></div><div>Çocuklarda &gt; 4 mg doz alımı&nbsp;</div>}}<br></div>",
-     "after": "Dijital intoksikasyonunda Fab antikoru (Digibind) endikasyonları (6)<div><br></div><div>{{c1::<div>Hayatı tehdit eden aritmiler</div><div><br></div><div>Serum K &gt;5–5,5 mEq/L</div><div><br></div><div>Mental durum bozukluğu</div>}}</div><div><br></div><div>{{c2::<div>Böbrek yetmezliği</div><div><br></div><div>Serum digoksin düzeyi &gt;15 ng/mL</div><div><br></div><div>Çocuklarda &gt;4 mg doz alımı</div>}}</div>"
+     "after": "Dijital intoksikasyonunda Fab antikoru (Digibind) endikasyonları (6)<div><br></div><div>{{c1::<div>Hayatı tehdit eden aritmiler</div><div><br></div><div>Serum K &gt; 5–5,5 mEq/L</div><div><br></div><div>Mental durum bozukluğu</div>}}</div><div><br></div><div>{{c2::<div>Böbrek yetmezliği</div><div><br></div><div>Serum digoksin düzeyi &gt; 15 ng/mL</div><div><br></div><div>Çocuklarda &gt; 4 mg doz alımı</div>}}</div>"
     }
    },
    "changes": [
@@ -33136,7 +33136,7 @@
    "fields": {
     "Text": {
      "before": "FKU hedef Phe ---&gt; {{c1::2 - 6}} mg/dl",
-     "after": "Fenilketonüride (FKU) hedef kan fenilalanin düzeyi → {{c1::2–6}} mg/dl"
+     "after": "Fenilketonüride (FKU) hedef kan fenilalanin düzeyi → {{c1::2–6}} mg/dL"
     }
    },
    "changes": [
@@ -35700,7 +35700,7 @@
    "fields": {
     "Text": {
      "before": "ÇÇ en sık maligniteler<div><br></div><div>1- {{c1::Lösemiler}}&nbsp;</div><div><br></div><div>2- {{c1::SSS tmleri&nbsp; ( en sık solid tm)&nbsp;}}</div><div><br></div><div>3- {{c2::Lenfomalar ( &gt; 15 yaş en sık)&nbsp;}}</div><div><br></div><div>4- {{c2::Nöroblastom (&lt; 1 yaş en sık)&nbsp;}}</div><div><br></div><div>5- {{c2::Wilms&nbsp;}}</div>",
-     "after": "Çocukluk çağında en sık görülen maligniteler<div><br></div><div>1- {{c1::Lösemiler}}</div><div><br></div><div>2- {{c1::SSS tümörleri (en sık solid tümör)}}</div><div><br></div><div>3- {{c2::Lenfomalar (&gt;15 yaşta en sık)}}</div><div><br></div><div>4- {{c2::Nöroblastom (&lt;1 yaşta en sık)}}</div><div><br></div><div>5- {{c2::Wilms tümörü}}</div>"
+     "after": "Çocukluk çağında en sık görülen maligniteler<div><br></div><div>1- {{c1::Lösemiler}}</div><div><br></div><div>2- {{c1::SSS tümörleri (en sık solid tümör)}}</div><div><br></div><div>3- {{c2::Lenfomalar (&gt; 15 yaşta en sık)}}</div><div><br></div><div>4- {{c2::Nöroblastom (&lt; 1 yaşta en sık)}}</div><div><br></div><div>5- {{c2::Wilms tümörü}}</div>"
     }
    },
    "changes": [
@@ -36844,7 +36844,7 @@
    "fields": {
     "Text": {
      "before": "APGAR <b>1</b> Puan'lar<div><div><br></div><div>A Cilt Rengi &nbsp;{{c1::gövde pembe / ext'ler mor}}</div><div><br></div><div>P Kalp hızı &nbsp; &nbsp; {{c1::&lt;100/dk}}&nbsp;</div><div><br></div><div>G Refleks Yanıt &nbsp;{{c1::Yüz Buruşturma}}</div><div>&nbsp;</div><div>A Tonus &nbsp;{{c1::Ext'ler hafif Flex}}&nbsp;</div><div><br></div><div>R Solunum &nbsp;{{c1::Düzensiz/Çene atma}}</div></div>",
-     "after": "APGAR <b>1</b> puanlar<div><div><br></div><div>A Cilt rengi: {{c1::gövde pembe / ekstremiteler mor}}</div><div><br></div><div>P Kalp hızı: {{c1::&lt;100/dk}}</div><div><br></div><div>G Refleks yanıt: {{c1::yüz buruşturma}}</div><div><br></div><div>A Tonus: {{c1::ekstremitelerde hafif fleksiyon}}</div><div><br></div><div>R Solunum: {{c1::düzensiz / çene atma}}</div></div>"
+     "after": "APGAR <b>1</b> puanlar<div><div><br></div><div>A Cilt rengi: {{c1::gövde pembe / ekstremiteler mor}}</div><div><br></div><div>P Kalp hızı: {{c1::&lt; 100/dk}}</div><div><br></div><div>G Refleks yanıt: {{c1::yüz buruşturma}}</div><div><br></div><div>A Tonus: {{c1::ekstremitelerde hafif fleksiyon}}</div><div><br></div><div>R Solunum: {{c1::düzensiz / çene atma}}</div></div>"
     }
    },
    "changes": [
@@ -37318,11 +37318,11 @@
    "fields": {
     "Text": {
      "before": "BPD Tanım: {{c1::&gt;= 28 gün O2 ihtiyacı devam etmesi}}",
-     "after": "BPD tanımı: {{c1::≥28 gün O2 ihtiyacının devam etmesi}}"
+     "after": "BPD tanımı: {{c1::≥ 28 gün O2 ihtiyacının devam etmesi}}"
     },
     "Extra": {
      "before": "",
-     "after": "Ağırlık derecesi, 32 haftadan küçük doğanlarda postmenstrüel 36. haftada, ≥32 haftalıklarda postnatal 56. günde gereken solunum desteğine göre belirlenir; güncel tanımlar 36. haftadaki solunum desteğini esas alır."
+     "after": "Ağırlık derecesi, 32 haftadan küçük doğanlarda postmenstrüel 36. haftada, ≥ 32 haftalıklarda postnatal 56. günde gereken solunum desteğine göre belirlenir; güncel tanımlar 36. haftadaki solunum desteğini esas alır."
     }
    },
    "changes": [
@@ -37361,7 +37361,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kolestaz kılavuzunda (NASPGHAN/ESPGHAN) direkt (konjuge) bilirubinin &gt;1 mg/dL olması anormal kabul edilir."
+     "after": "Güncel kolestaz kılavuzunda (NASPGHAN/ESPGHAN) direkt (konjuge) bilirubinin &gt; 1 mg/dL olması anormal kabul edilir."
     }
    },
    "changes": [
@@ -37441,7 +37441,7 @@
    "fields": {
     "Text": {
      "before": "Kernikterus Evreler<div><br></div><div>AKUT</div><div><br></div><div>Evre 1 --&gt; Zayıf emme - {{c1::Hipotoni&nbsp;}}</div><div>Evre 2 ---&gt; {{c1::Hipertoni}} - Ateş - Opustotonus</div><div>Evre3 ---&gt; {{c1::Hiper toni}}&nbsp;</div><div><br></div><div>KRONİK</div><div><br></div><div>&gt; 1 yaş (7) ---&gt;Kore - Ballismus - Tremor - &nbsp;{{c3::Yukarı }} bakış Paralzisi - {{c4::SN İşitme Kaybı }} - Dişte {{c3::Enamel Hipoplazisi}} - {{c4::Disartrik}} konuşma</div>\n\n\n",
-     "after": "Bilirubin ensefalopatisi (kernikterus) evreleri<div><br></div><div><b>Akut</b></div><div><br></div><div>Evre 1 → zayıf emme, {{c1::hipotoni}}</div><div>Evre 2 → {{c1::hipertoni}}, ateş, opistotonus</div><div>Evre 3 → {{c1::hipertoni}}</div><div><br></div><div><b>Kronik</b></div><div><br></div><div>&gt;1 yaş (7) → kore, ballismus, tremor, {{c3::yukarı}} bakış paralizisi, {{c4::sensörinöral işitme kaybı}}, dişte {{c3::enamel hipoplazisi}}, {{c4::dizartrik}} konuşma</div>"
+     "after": "Bilirubin ensefalopatisi (kernikterus) evreleri<div><br></div><div><b>Akut</b></div><div><br></div><div>Evre 1 → zayıf emme, {{c1::hipotoni}}</div><div>Evre 2 → {{c1::hipertoni}}, ateş, opistotonus</div><div>Evre 3 → {{c1::hipertoni}}</div><div><br></div><div><b>Kronik</b></div><div><br></div><div>&gt; 1 yaş (7) → kore, ballismus, tremor, {{c3::yukarı}} bakış paralizisi, {{c4::sensörinöral işitme kaybı}}, dişte {{c3::enamel hipoplazisi}}, {{c4::dizartrik}} konuşma</div>"
     }
    },
    "changes": [
@@ -38567,7 +38567,7 @@
    "fields": {
     "Text": {
      "before": "Ürtiker plakları &gt; 24 saat / basmakla solmuyor / kaşıntı yok / İyileşirken pigmentasyon bırakıyor&nbsp; ---&gt; {{c1::Ürtikeryal Vaskülit&nbsp;}}",
-     "after": "Ürtiker plakları &gt;24 saat / basmakla solmuyor / kaşıntı yok / iyileşirken pigmentasyon bırakıyor → {{c1::ürtikeryal vaskülit}}"
+     "after": "Ürtiker plakları &gt; 24 saat / basmakla solmuyor / kaşıntı yok / iyileşirken pigmentasyon bırakıyor → {{c1::ürtikeryal vaskülit}}"
     }
    },
    "changes": [
@@ -41204,5 +41204,269 @@
    "editorNote": null
   }
  ],
- "checkedUnchanged": []
+ "checkedUnchanged": [],
+ "spelling": [
+  {
+   "yazim": "evre I, evre II, evre III, evre IV; evre 1–4 (INSS nöroblastom); Wilms evre I–V; Hodgkin evre I–IV",
+   "kural": "Kanser evre grupları (AJCC/TNM, Ann Arbor, COG) Roma rakamı + büyük harfle yazılır; INSS nöroblastom evreleri (evre 1–4, 4S) ve tümör tipleri Arap rakamıyla kalır."
+  },
+  {
+   "yazim": "tiroit (tiroit bezi, konjenital hipotiroidi, hipertiroidi, Hashimoto tiroiditi, subakut tiroidit)",
+   "kural": "\"tiroid\" kullanılmaz; organ adı \"tiroit\", türevleri \"tiroidit\" ve \"hipotiroidi/hipertiroidi\" olarak standartlaştırılır."
+  },
+  {
+   "yazim": "&gt; 5, &lt; 8, ≥ 10, ≤ 300, &gt; %75, &lt; %10",
+   "kural": "Karşılaştırma işaretinden sonra bir boşluk bırakılır; \">5\", \"<%10\", \"≥10\" kullanılmaz. Cevabın kendisi olan işaret ({{c1::<}}) değişmez."
+  },
+  {
+   "yazim": "mL, mL/kg, mg/dL, mg/L, pg/mL, ng/mL, mEq/L; 3,4 mg/dL",
+   "kural": "\"ml\", \"mg/dl\", \"mg/l\" kullanılmaz; hacim simgesi büyük L ile yazılır, ondalık ayraç virgüldür (ör. 1,5 mg/dL)."
+  },
+  {
+   "yazim": "dâhil, hâlde, kâbus",
+   "kural": "TDK kuralına uygun düzeltme işareti korunur; \"dahil\", \"halde\" kullanılmaz."
+  },
+  {
+   "yazim": "DSÖ (DSÖ aşı takvimi, DSÖ 2022 sınıflaması)",
+   "kural": "Kart metninde \"WHO\" kullanılmaz; yerleşik Türkçe terim \"DSÖ\" kullanılır."
+  },
+  {
+   "yazim": "bronşiolit (akut bronşiolit)",
+   "kural": "\"bronşiyolit\" kullanılmaz; yerleşik Türkçe tıp ve pediatri standardı \"bronşiolit\"tir."
+  },
+  {
+   "yazim": "prematüre (prematüre bebek, prematüre retinopatisi); prematür (prematür telarş, prematür adrenarş)",
+   "kural": "Bebek ve genel klinik durumlarda \"prematüre\", puberte gelişim evrelerinde \"prematür\" kullanılır; \"prematürite\" korunur."
+  },
+  {
+   "yazim": "apendisit, apse (retrofaringeal apse, peritonsiller apse, beyin apsesi)",
+   "kural": "\"abse\" ve \"appendisit\" kullanılmaz; TDK ve tıp yazımı \"apse\" ve \"apendisit\"tir."
+  },
+  {
+   "yazim": "sedimantasyon (eritrosit sedimantasyon hızı, ESH)",
+   "kural": "\"sedimentasyon\" kullanılmaz."
+  },
+  {
+   "yazim": "fototerapi, kan değişimi (exchange transfüzyon)",
+   "kural": "Yenidoğan hiperbilirubinemisi tedavileri standart Türkçe adlarıyla yazılır."
+  },
+  {
+   "yazim": "lökosit (lökosit sayısı, lökositoz, lökopeni)",
+   "kural": "Kart metninde \"WBC\" ve \"BK\" kısaltmaları yerine açık Türkçe terim \"lökosit\" kullanılır."
+  },
+  {
+   "yazim": "kardiyomiyopati (hipertrofik kardiyomiyopati, dilate kardiyomiyopati)",
+   "kural": "\"kardiyomyopati\" kullanılmaz; Türkçe kaynaştırma harfi \"y\" ile yazılır."
+  },
+  {
+   "yazim": "miyokardit, perikardit",
+   "kural": "\"myokardit\" kullanılmaz; standart Türkçe tıp yazımı \"miyokardit\"tir."
+  },
+  {
+   "yazim": "duyarlı / duyarlılık, özgül / özgüllük (en duyarlı test, en özgül bulgu)",
+   "kural": "\"sensitif\" ve \"spesifik\" yerine yerleşik Türkçe karşılıklar tercih edilir; alerji test adı olan \"spesifik IgE\" korunur."
+  },
+  {
+   "yazim": "rotavirüs, sitomegalovirüs (CMV), respiratuvar sinsityal virüs (RSV)",
+   "kural": "Virüs adları standart Türkçe tıp yazımıyla verilir; metin içinde \"virüs\" kullanılır."
+  },
+  {
+   "yazim": "Hirschsprung hastalığı, Kawasaki hastalığı, Henoch-Schönlein purpurası (İgA vasküliti)",
+   "kural": "Eponimler doğru harflerle ve parantez içi güncel terminolojileriyle verilir."
+  },
+  {
+   "yazim": "patent duktus arteriyozus (PDA), duktus arteriyozus",
+   "kural": "\"duktus arteriosus\" yerine standart Türkçe tıp yazımı \"duktus arteriyozus\" kullanılır."
+  },
+  {
+   "yazim": "ventriküler septal defekt (VSD), atriyal septal defekt (ASD)",
+   "kural": "Konjenital kalp hastalıkları açık Türkçe ad ve standart kısaltmasıyla verilir."
+  },
+  {
+   "yazim": "nekrotizan enterokolit (NEK)",
+   "kural": "\"nekrotizan enterokolitis\" yerine yerleşik terim \"nekrotizan enterokolit\" kullanılır."
+  },
+  {
+   "yazim": "respiratuvar distres sendromu (RDS), geçici takipne (TTN)",
+   "kural": "Yenidoğan solunum patolojileri standart terminolojiyle verilir."
+  },
+  {
+   "yazim": "konjenital adrenal hiperplazi (KAH)",
+   "kural": "Tamlama standart Türkçe eklerle yazılır."
+  },
+  {
+   "yazim": "vezikoüreteral reflü (VÜR)",
+   "kural": "\"VUR\" yerine Türkçe standart kısaltma \"VÜR\" kullanılır."
+  },
+  {
+   "yazim": "kistik fibrozis",
+   "kural": "\"kistik fibroz\" yerine derste yerleşik olan tam eponim \"kistik fibrozis\" kullanılır."
+  },
+  {
+   "yazim": "Gram pozitif, Gram negatif",
+   "kural": "\"Gr (+)\", \"gram pozitif\" yerine standart \"Gram pozitif / Gram negatif\" yazımı kullanılır."
+  }
+ ],
+ "abbreviations": [
+  {
+   "kisaltma": "RDS",
+   "acilim": "respiratuvar distres sendromu (yenidoğan)"
+  },
+  {
+   "kisaltma": "TTN",
+   "acilim": "yenidoğanın geçici takipnesi"
+  },
+  {
+   "kisaltma": "NEK",
+   "acilim": "nekrotizan enterokolit"
+  },
+  {
+   "kisaltma": "PDA",
+   "acilim": "patent duktus arteriyozus"
+  },
+  {
+   "kisaltma": "VSD",
+   "acilim": "ventriküler septal defekt"
+  },
+  {
+   "kisaltma": "ASD",
+   "acilim": "atriyal septal defekt"
+  },
+  {
+   "kisaltma": "TOF",
+   "acilim": "Fallot tetralojisi"
+  },
+  {
+   "kisaltma": "BGA / TGA",
+   "acilim": "büyük arterlerin transpozisyonu"
+  },
+  {
+   "kisaltma": "VÜR",
+   "acilim": "vezikoüreteral reflü"
+  },
+  {
+   "kisaltma": "KF",
+   "acilim": "kistik fibrozis"
+  },
+  {
+   "kisaltma": "KAH",
+   "acilim": "konjenital adrenal hiperplazi"
+  },
+  {
+   "kisaltma": "FKU",
+   "acilim": "fenilketonüri"
+  },
+  {
+   "kisaltma": "SMA",
+   "acilim": "spinal musküler atrofi"
+  },
+  {
+   "kisaltma": "KİT",
+   "acilim": "kemik iliği transplantasyonu (kök hücre nakli)"
+  },
+  {
+   "kisaltma": "HSM",
+   "acilim": "hepatosplenomegali"
+  },
+  {
+   "kisaltma": "LAP",
+   "acilim": "lenfadenopati"
+  },
+  {
+   "kisaltma": "İYE",
+   "acilim": "idrar yolu enfeksiyonu"
+  },
+  {
+   "kisaltma": "ARA",
+   "acilim": "akut romatizmal ateş"
+  },
+  {
+   "kisaltma": "HÜS",
+   "acilim": "hemolitik üremik sendrom"
+  },
+  {
+   "kisaltma": "İTP",
+   "acilim": "immün trombositopeni (idiyopatik trombositopenik purpura)"
+  },
+  {
+   "kisaltma": "APGAR",
+   "acilim": "Apgar skoru"
+  },
+  {
+   "kisaltma": "ROP",
+   "acilim": "prematüre retinopatisi"
+  },
+  {
+   "kisaltma": "BPD",
+   "acilim": "bronkopulmoner displazi"
+  },
+  {
+   "kisaltma": "MAS",
+   "acilim": "mekonyum aspirasyon sendromu"
+  },
+  {
+   "kisaltma": "GÖR / GÖRF",
+   "acilim": "gastroözofageal reflü (hastalığı)"
+  },
+  {
+   "kisaltma": "DAB",
+   "acilim": "diyabetik anne bebeği"
+  },
+  {
+   "kisaltma": "İUGR",
+   "acilim": "intrauterin gelişme geriliği"
+  },
+  {
+   "kisaltma": "SGA / LGA",
+   "acilim": "gebelik haftasına göre küçük / büyük bebek"
+  },
+  {
+   "kisaltma": "SIDS",
+   "acilim": "ani bebek ölümü sendromu"
+  },
+  {
+   "kisaltma": "TORCH",
+   "acilim": "toksoplazma, rubella, sitomegalovirüs, herpes simpleks"
+  },
+  {
+   "kisaltma": "BK / WBC",
+   "acilim": "beyaz küre → lökosit (lökosit sayısı)"
+  },
+  {
+   "kisaltma": "PLT",
+   "acilim": "trombosit"
+  },
+  {
+   "kisaltma": "HBV, HCV, HIV",
+   "acilim": "hepatit B, hepatit C, insan immün yetmezlik virüsü"
+  },
+  {
+   "kisaltma": "MMR",
+   "acilim": "kızamık, kızamıkçık, kabakulak aşısı"
+  },
+  {
+   "kisaltma": "BCG",
+   "acilim": "verem (tüberküloz) aşısı"
+  },
+  {
+   "kisaltma": "KBY / ABY",
+   "acilim": "kronik böbrek yetmezliği / akut böbrek yetmezliği"
+  },
+  {
+   "kisaltma": "SVO",
+   "acilim": "serebrovasküler olay (inme)"
+  },
+  {
+   "kisaltma": "İVİG",
+   "acilim": "intravenöz immünoglobulin"
+  },
+  {
+   "kisaltma": "PPİ",
+   "acilim": "proton pompa inhibitörü"
+  },
+  {
+   "kisaltma": "SSS",
+   "acilim": "santral sinir sistemi"
+  }
+ ]
 }

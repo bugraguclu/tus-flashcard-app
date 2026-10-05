@@ -34,7 +34,7 @@ hazırlandıkça eklenir.
 | Anatomi | `anatomi.patch.json` | 381 | 381 | 2 | 3 | 130 | 246 | 0 |
 <!-- status:end -->
 
-`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız tıbbi doğrulama, yazım birliği ve son okuma tamam); Kadın Doğum, Küçük Stajlar, Genel Cerrahi, Patoloji, Mikrobiyoloji, Biyokimya, Deneme ve Soru, FHE ve Anatomi tamamlandı; Pediatri'de yazım birliği adımı, Dahiliye'de bağımsız tıbbi doğrulama ve yazım birliği adımları henüz yapılmadı. Tüm ders dosyaları tamamlandı.
+`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız tıbbi doğrulama, yazım birliği ve son okuma tamam). Katalogdaki 11 dersin tamamı (Kadın Doğum, Küçük Stajlar, Genel Cerrahi, Pediatri, Dahiliye, Patoloji, Mikrobiyoloji, Biyokimya, Deneme ve Soru, FHE ve Anatomi) tüm aşamalarıyla eksiksiz tamamlandı.
 
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)

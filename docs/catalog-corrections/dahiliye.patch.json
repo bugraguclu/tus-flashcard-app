@@ -13,7 +13,7 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": false,
- "reviewStage": "edited (second review pending)",
+ "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 995,
   "changedNotes": 993,
@@ -42,47 +42,47 @@
     "Kritik": 27,
     "Yüksek": 61
    },
+   "Kısaltma": {
+    "Yüksek": 17,
+    "Orta": 775
+   },
+   "Biçim": {
+    "Düşük": 952
+   },
    "Güncellik": {
-    "Kritik": 2,
+    "Orta": 46,
     "Yüksek": 59,
-    "Orta": 46
+    "Kritik": 2
+   },
+   "Terim/yazım": {
+    "Orta": 289,
+    "Yüksek": 6,
+    "Düşük": 14
    },
    "Eksik kritik bilgi": {
     "Yüksek": 131
-   },
-   "Soru netliği": {
-    "Yüksek": 21,
-    "Orta": 66
    },
    "Doğrulama gerekli": {
     "Kritik": 1,
     "Yüksek": 19
    },
-   "Yapısal": {
-    "Yüksek": 1,
-    "Orta": 3,
-    "Düşük": 3
-   },
-   "Terim/yazım": {
-    "Yüksek": 6,
-    "Orta": 289,
-    "Düşük": 14
-   },
-   "Kısaltma": {
-    "Yüksek": 17,
-    "Orta": 775
+   "Soru netliği": {
+    "Orta": 66,
+    "Yüksek": 21
    },
    "Dil bilgisi": {
-    "Orta": 18,
-    "Düşük": 44
+    "Düşük": 44,
+    "Orta": 18
    },
-   "Biçim": {
-    "Düşük": 952
+   "Yapısal": {
+    "Orta": 3,
+    "Yüksek": 1,
+    "Düşük": 3
    }
   },
   "secondReview": {
-   "onay": 122,
-   "düzelt": 16
+   "onay": 283,
+   "düzelt": 34
   }
  },
  "notes": [
@@ -838,7 +838,7 @@
    "fields": {
     "Text": {
      "before": "Hodgkin Prognoz Skoru&nbsp;<div><br></div><div>{{c1::HALLeEYS}}</div><div><br></div><div><br><div>H {{c1::Hb}} &lt; 10,5</div><div>A {{c1::Alb}} &lt;4</div><div>L {{c1::Lökosit}} &gt; 15 bin</div><div>Le {{c1::Lenfosit}} &lt; 6000</div><div>E {{c1::Erkek}}</div><div>Y {{c1::Yaş}} (&gt;45)</div><div>S {{c1::Stage 3-4}}&nbsp;</div><br></div>",
-     "after": "Hodgkin lenfoma uluslararası prognostik skoru (IPS)<div><br></div><div>{{c1::HALLeEYS}}</div><div><br></div><div><br><div>H {{c1::Hb}} &lt;10,5 g/dL</div><div>A {{c1::Alb}} &lt;4 g/dL</div><div>L {{c1::Lökosit}} ≥15.000/µL</div><div>Le {{c1::Lenfosit}} &lt;600/µL (veya lökositlerin %8'inden az)</div><div>E {{c1::Erkek}}</div><div>Y {{c1::Yaş}} (≥45)</div><div>S {{c1::Stage 4}} (evre IV)</div><br></div>"
+     "after": "Hodgkin lenfoma uluslararası prognostik skoru (IPS)<div><br></div><div>{{c1::HALLeEYS}}</div><div><br></div><div><br><div>H {{c1::Hb}} &lt; 10,5 g/dL</div><div>A {{c1::Alb}} &lt; 4 g/dL</div><div>L {{c1::Lökosit}} ≥ 15.000/µL</div><div>Le {{c1::Lenfosit}} &lt; 600/µL (veya lökositlerin %8'inden az)</div><div>E {{c1::Erkek}}</div><div>Y {{c1::Yaş}} (≥ 45)</div><div>S {{c1::Stage 4}} (evre IV)</div><br></div>"
     }
    },
    "changes": [
@@ -2040,11 +2040,11 @@
    "fields": {
     "Text": {
      "before": "DM Hast'da Tdv Hedefleri&nbsp;<div><br></div><div>HbA1C {{c1::&lt;7}}</div><div><br></div><div>PostPrandiel Glu {{c1::&lt;180}}</div><div><br></div><div>KB {{c2::&lt;140/90}}</div><div><br></div><div>LDL {{c2::&lt; 100}}<br></div><div><br></div><div>TG {{c1::&lt; 150&nbsp;}}</div>",
-     "after": "DM hastasında tedavi hedefleri<div><br></div><div>HbA1c {{c1::&lt;7}}%</div><div><br></div><div>Postprandiyal glukoz {{c1::&lt;180}} mg/dL</div><div><br></div><div>Kan basıncı {{c2::&lt;130/80}} mmHg</div><div><br></div><div>LDL {{c2::&lt;100}} mg/dL</div><div><br></div><div>TG {{c1::&lt;150}} mg/dL</div>"
+     "after": "DM hastasında tedavi hedefleri<div><br></div><div>HbA1c {{c1::&lt; 7}}%</div><div><br></div><div>Postprandiyal glukoz {{c1::&lt; 180}} mg/dL</div><div><br></div><div>Kan basıncı {{c2::&lt; 130/80}} mmHg</div><div><br></div><div>LDL {{c2::&lt; 100}} mg/dL</div><div><br></div><div>TG {{c1::&lt; 150}} mg/dL</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Eski kaynaklarda kan basıncı hedefi &lt;140/90 mmHg olarak geçer. LDL hedefi riske göre düşer: yüksek riskte &lt;70, aterosklerotik kardiyovasküler hastalıkta &lt;55 mg/dL."
+     "after": "Eski kaynaklarda kan basıncı hedefi &lt; 140/90 mmHg olarak geçer. LDL hedefi riske göre düşer: yüksek riskte &lt; 70, aterosklerotik kardiyovasküler hastalıkta &lt; 55 mg/dL."
     }
    },
    "changes": [
@@ -2151,7 +2151,7 @@
    "fields": {
     "Text": {
      "before": "Conn Send Tarama testi ---&gt; {{c1::Plazma Ald/Renin &gt; 30}}<div><br></div><div>Doğrulama Testleri (3)</div><div><br></div><div>{{c2::<div>Tuz İnfüzyon Testi</div><div>Kaptopril Testi</div><div>Fludrikortizon Testi&nbsp;</div>}}<br></div>",
-     "after": "Conn sendromu tarama testi → {{c1::plazma aldosteron/renin oranı &gt;30}}<div><br></div><div>Doğrulama testleri (3)</div><div><br></div><div>{{c2::<div>Tuz infüzyon testi</div><div>Kaptopril testi</div><div>Fludrokortizon testi</div>}}</div>"
+     "after": "Conn sendromu tarama testi → {{c1::plazma aldosteron/renin oranı &gt; 30}}<div><br></div><div>Doğrulama testleri (3)</div><div><br></div><div>{{c2::<div>Tuz infüzyon testi</div><div>Kaptopril testi</div><div>Fludrokortizon testi</div>}}</div>"
     },
     "Extra": {
      "before": "",
@@ -2444,11 +2444,11 @@
    "fields": {
     "Text": {
      "before": "Bariatrik Cerrahi END'ları&nbsp;<div><br></div><div>BKİ {{c1::&gt;= 40}}</div><div><br></div><div>BKİ {{c1::&gt;=35}}&nbsp; Obezite ilişkili: + {{c2::tip 2 DM / HT / Dislipidemi / OSAS&nbsp;}} (4)</div>",
-     "after": "Klasik (NIH) bariatrik cerrahi endikasyonları<div><br></div><div>BKİ {{c1::≥40}}</div><div><br></div><div>BKİ {{c1::≥35}} ve obeziteyle ilişkili hastalık: {{c2::tip 2 DM / HT / dislipidemi / OSAS}} (4)</div>"
+     "after": "Klasik (NIH) bariatrik cerrahi endikasyonları<div><br></div><div>BKİ {{c1::≥ 40}}</div><div><br></div><div>BKİ {{c1::≥ 35}} ve obeziteyle ilişkili hastalık: {{c2::tip 2 DM / HT / dislipidemi / OSAS}} (4)</div>"
     },
     "Extra": {
      "before": "",
-     "after": "2022 ASMBS/IFSO: BKİ ≥35 tek başına; metabolik hastalık varsa BKİ 30–34,9 da endikasyondur."
+     "after": "2022 ASMBS/IFSO: BKİ ≥ 35 tek başına; metabolik hastalık varsa BKİ 30–34,9 da endikasyondur."
     }
    },
    "changes": [
@@ -2484,7 +2484,7 @@
    "fields": {
     "Text": {
      "before": "Metabolik Sendrom Tanı Kriterleri<div><br></div><div>1- {{c1::Göbek cevresi}} (K: &gt; 80 cm / E: &gt; 94 cm)</div><div><br></div><div>2- {{c1::TG &gt;}} &nbsp;150</div><div><br></div><div>3- {{c1::HDL &lt; }} &nbsp;40</div><div><br></div><div>4- {{c1::HT}} &gt; 130/85</div><div><br></div><div>5- {{c1::AKŞ}} &gt; 100 veya {{c1::DM}}</div>",
-     "after": "Metabolik sendrom tanı kriterleri<div><br></div><div>1- {{c1::Bel çevresi}} (K: &gt;80 cm / E: &gt;94 cm)</div><div><br></div><div>2- {{c1::TG}} ≥150 mg/dL</div><div><br></div><div>3- {{c1::HDL}} E: &lt;40 / K: &lt;50 mg/dL</div><div><br></div><div>4- {{c1::Kan basıncı}} ≥130/85 mmHg</div><div><br></div><div>5- {{c1::Açlık kan şekeri}} ≥100 mg/dL veya {{c1::DM}}</div>"
+     "after": "Metabolik sendrom tanı kriterleri<div><br></div><div>1- {{c1::Bel çevresi}} (K: &gt; 80 cm / E: &gt; 94 cm)</div><div><br></div><div>2- {{c1::TG}} ≥ 150 mg/dL</div><div><br></div><div>3- {{c1::HDL}} E: &lt; 40 / K: &lt; 50 mg/dL</div><div><br></div><div>4- {{c1::Kan basıncı}} ≥ 130/85 mmHg</div><div><br></div><div>5- {{c1::Açlık kan şekeri}} ≥ 100 mg/dL veya {{c1::DM}}</div>"
     },
     "Extra": {
      "before": "",
@@ -2529,7 +2529,7 @@
    "fields": {
     "Text": {
      "before": "Subklinik Hipotiroidi --&gt;<div><br></div><div>TSH {{c1::Yüksek}}</div><div>T3-T4 {{c1::Normal}}</div><div><br></div><div>TSH:</div><div>{{c2::&gt;10}}: Tdv Ver</div><div>{{c2::&lt;10}}: <b>Semp</b> - <b>Anti TPO (+)</b> - <b>Gebe</b> ise : Tdv</div>",
-     "after": "Subklinik hipotiroidi<div><br></div><div>TSH {{c1::yüksek}}</div><div>T3-T4 {{c1::normal}}</div><div><br></div><div>TSH:</div><div>{{c2::&gt;10}}: tedavi verilir</div><div>{{c2::&lt;10}}: <b>semptomatik</b>, <b>anti-TPO pozitif</b> veya <b>gebe</b> ise tedavi verilir</div>"
+     "after": "Subklinik hipotiroidi<div><br></div><div>TSH {{c1::yüksek}}</div><div>T3-T4 {{c1::normal}}</div><div><br></div><div>TSH:</div><div>{{c2::&gt; 10}}: tedavi verilir</div><div>{{c2::&lt; 10}}: <b>semptomatik</b>, <b>anti-TPO pozitif</b> veya <b>gebe</b> ise tedavi verilir</div>"
     }
    },
    "changes": [
@@ -2569,7 +2569,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "2017 ATA: hedef, gebeliğe özgü TSH referans aralığının alt yarısıdır; bu aralık bilinmiyorsa &lt;2,5 mU/L."
+     "after": "2017 ATA: hedef, gebeliğe özgü TSH referans aralığının alt yarısıdır; bu aralık bilinmiyorsa &lt; 2,5 mU/L."
     }
    },
    "changes": [
@@ -3496,7 +3496,7 @@
    "fields": {
     "Text": {
      "before": "Mastositoz Tanı Kriterleri<div><br></div><div>Major ---&gt;&nbsp;</div><div><br></div><div>{{c1::Kİ}}'de {{c1::Multifokal Yoğun Mast Hc}}. İnfiltratları +&nbsp;</div><div><br></div><div>Bu agg'ların {{c2::Triptaz}} vb. boyalarla mast hc. olduğudan emin olunması +</div><div><br></div><div>{{c2::Sistemik Mastositoz}}</div>",
-     "after": "Mastositoz tanı kriterleri<div><br></div><div>Majör →</div><div><br></div><div>{{c1::Kemik iliği}}nde {{c1::multifokal yoğun mast hücresi}} infiltratları (agregatlarda ≥15 mast hücresi) +</div><div><br></div><div>Bu agregatların {{c2::triptaz}} vb. boyalarla mast hücresi olduğunun gösterilmesi</div><div><br></div><div>Majör + en az 1 minör kriter ya da en az 3 minör kriter → {{c2::sistemik mastositoz}}</div>"
+     "after": "Mastositoz tanı kriterleri<div><br></div><div>Majör →</div><div><br></div><div>{{c1::Kemik iliği}}nde {{c1::multifokal yoğun mast hücresi}} infiltratları (agregatlarda ≥ 15 mast hücresi) +</div><div><br></div><div>Bu agregatların {{c2::triptaz}} vb. boyalarla mast hücresi olduğunun gösterilmesi</div><div><br></div><div>Majör + en az 1 minör kriter ya da en az 3 minör kriter → {{c2::sistemik mastositoz}}</div>"
     }
    },
    "changes": [
@@ -5582,7 +5582,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlarda (EASL, AASLD) tercih edilen ilaç tenofovir disoproksil fumarattır."
+     "after": "Güncel kılavuzlarda (EASL, AASLD) tercih edilen ilaç tenofovir dizoproksil fumarattır."
     }
    },
    "changes": [
@@ -6747,7 +6747,7 @@
     },
     "Extra": {
      "before": "<b>PZA</b> ve Streptomisin KEND<div><br></div><div>PZA kullanılamadığı için tdv 9 ay</div>",
-     "after": "<b>Pirazinamid</b> klasik bilgiye göre verilmez (teratojenite verisi yetersiz); streptomisin kontrendikedir (fetal ototoksisite).<div><br></div><div>Pirazinamid kullanılmadığı için tedavi 9 ay sürer; WHO gebelikte pirazinamid içeren standart 6 aylık rejimi de kabul eder.</div>"
+     "after": "<b>Pirazinamid</b> klasik bilgiye göre verilmez (teratojenite verisi yetersiz); streptomisin kontrendikedir (fetal ototoksisite).<div><br></div><div>Pirazinamid kullanılmadığı için tedavi 9 ay sürer; DSÖ gebelikte pirazinamid içeren standart 6 aylık rejimi de kabul eder.</div>"
     }
    },
    "changes": [
@@ -6823,7 +6823,7 @@
    "fields": {
     "Text": {
      "before": "<b>Fibrotest'te</b> kullanılan Parametreler:<div><br></div><div>ALT</div><div>{{c1::GGT}}</div><div>Serum Bil</div><div>{{c1::Alfa-2 Makroglobulin}}</div><div>Haptoglobulin</div><div>{{c1::Apo A-1}}</div>",
-     "after": "<b>FibroTest'te</b> kullanılan parametreler:<div><br></div><div>ALT (ActiTest)</div><div>{{c1::GGT}}</div><div>Serum total bilirübin</div><div>{{c1::Alfa-2 makroglobulin}}</div><div>Haptoglobin</div><div>{{c1::Apo A1}}</div>"
+     "after": "<b>FibroTest'te</b> kullanılan parametreler:<div><br></div><div>ALT (ActiTest)</div><div>{{c1::GGT}}</div><div>Serum total bilirubin</div><div>{{c1::Alfa-2 makroglobulin}}</div><div>Haptoglobin</div><div>{{c1::Apo A1}}</div>"
     },
     "Extra": {
      "before": "",
@@ -7762,7 +7762,7 @@
     },
     "Extra": {
      "before": "80 50 30<div>Hafif /orta /ağır/ cok ağır&nbsp;</div>",
-     "after": "FEV1 (beklenenin %'si): ≥80 / 50–79 / 30–49 / &lt;30<div>Hafif / orta / ağır / çok ağır</div><div><br></div><div>Güncel GOLD'da tedavi seçimi semptom ve alevlenme öyküsüne dayanan ABE gruplarıyla yapılır.</div>"
+     "after": "FEV1 (beklenenin %'si): ≥ 80 / 50–79 / 30–49 / &lt; 30<div>Hafif / orta / ağır / çok ağır</div><div><br></div><div>Güncel GOLD'da tedavi seçimi semptom ve alevlenme öyküsüne dayanan ABE gruplarıyla yapılır.</div>"
     }
    },
    "changes": [
@@ -7882,7 +7882,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "En güçlü belirleyici önceki alevlenme öyküsüdür; son 1 yılda ≥2 orta alevlenme veya hastaneye yatış gerektiren ≥1 alevlenme yüksek risk kabul edilir."
+     "after": "En güçlü belirleyici önceki alevlenme öyküsüdür; son 1 yılda ≥ 2 orta alevlenme veya hastaneye yatış gerektiren ≥ 1 alevlenme yüksek risk kabul edilir."
     }
    },
    "changes": [
@@ -8636,7 +8636,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::KLL}} Tdv ALgoritması<div><br></div><div><b>17p del (-)</b></div><div><br></div><div>&gt; 70 yaş ---&gt; {{c1::Klorambusil - AntiCD20}}</div><div><br></div><div>&lt; 70 yaş ---&gt; {{c2::F-CR (Fludarabin - SFS - Rituksimab)}}&nbsp;</div><div><br></div><div>17 p del (+) ---&gt; {{c3::<b>İbrutinib&nbsp;</b>}} (po Bruton Tyr Kinaz inh)&nbsp;</div>",
-     "after": "{{c1::KLL}} tedavi algoritması (klasik)<div><br></div><div><b>17p delesyonu (-)</b></div><div><br></div><div>&gt;70 yaş → {{c1::klorambusil + anti-CD20}}</div><div><br></div><div>&lt;70 yaş → {{c2::FCR (fludarabin, siklofosfamid, rituksimab)}}</div><div><br></div><div>17p delesyonu (+) → {{c3::<b>İbrutinib</b>}} (oral Bruton tirozin kinaz inhibitörü)</div>"
+     "after": "{{c1::KLL}} tedavi algoritması (klasik)<div><br></div><div><b>17p delesyonu (-)</b></div><div><br></div><div>&gt; 70 yaş → {{c1::klorambusil + anti-CD20}}</div><div><br></div><div>&lt; 70 yaş → {{c2::FCR (fludarabin, siklofosfamid, rituksimab)}}</div><div><br></div><div>17p delesyonu (+) → {{c3::<b>İbrutinib</b>}} (oral Bruton tirozin kinaz inhibitörü)</div>"
     },
     "Extra": {
      "before": "",
@@ -8964,7 +8964,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "WHO'ya göre JAK2 mutasyonu ve düşük EPO ile birlikte Hb >18,5 g/dL (erkek) / >16,5 g/dL (kadın) olan hastalarda kemik iliği biyopsisi zorunlu değildir."
+     "after": "DSÖ'ya göre JAK2 mutasyonu ve düşük EPO ile birlikte Hb &gt; 18,5 g/dL (erkek) / &gt; 16,5 g/dL (kadın) olan hastalarda kemik iliği biyopsisi zorunlu değildir."
     }
    },
    "changes": [
@@ -9005,11 +9005,11 @@
    "fields": {
     "Text": {
      "before": "MM Tdv&nbsp;<div><br></div><div>&lt; 65 yaş ---&gt; KT + {{c1:: Otolog KİT}}</div><div><br></div><div>&gt; 65 yaş --&gt; KT (3)&nbsp; {{c2::(DMZ + Lenalidomid + Bortezomib)}}</div>",
-     "after": "Multipl miyelom tedavisi (klasik)<div><br></div><div>&lt;65 yaş → kemoterapi + {{c1::otolog kök hücre transplantasyonu}}</div><div><br></div><div>&gt;65 yaş → kemoterapi (3) {{c2::(deksametazon + lenalidomid + bortezomib)}}</div>"
+     "after": "Multipl miyelom tedavisi (klasik)<div><br></div><div>&lt; 65 yaş → kemoterapi + {{c1::otolog kök hücre transplantasyonu}}</div><div><br></div><div>&gt; 65 yaş → kemoterapi (3) {{c2::(deksametazon + lenalidomid + bortezomib)}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlarda nakil uygunluğu yaştan çok fiziksel uygunlukla belirlenir (genellikle ≤70 yaş); indüksiyonda daratumumab eklenen dörtlü rejimler (D-VRd) standarttır."
+     "after": "Güncel kılavuzlarda nakil uygunluğu yaştan çok fiziksel uygunlukla belirlenir (genellikle ≤ 70 yaş); indüksiyonda daratumumab eklenen dörtlü rejimler (D-VRd) standarttır."
     }
    },
    "changes": [
@@ -9215,7 +9215,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Laboratuvar pozitifliği en az 12 hafta arayla iki kez gösterilmelidir; gebelik ölçütüne tek açıklanamayan ≥10. hafta fetal ölüm, preeklampsi veya plasenta yetmezliğine bağlı <34. hafta erken doğum ya da ≥3 ardışık <10. hafta düşük de girer."
+     "after": "Laboratuvar pozitifliği en az 12 hafta arayla iki kez gösterilmelidir; gebelik ölçütüne tek açıklanamayan ≥ 10. hafta fetal ölüm, preeklampsi veya plasenta yetmezliğine bağlı &lt; 34. hafta erken doğum ya da ≥ 3 ardışık &lt; 10. hafta düşük de girer."
     }
    },
    "changes": [
@@ -9351,7 +9351,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Talasemi majörde etkisiz eritropoez nedeniyle retikülosit yanıtı anemiye göre yetersizdir (retikülosit indeksi <2,5); belirgin retikülositoz hemolitik bileşenin ağır bastığı HbH hastalığı ve talasemi intermediada görülür."
+     "after": "Talasemi majörde etkisiz eritropoez nedeniyle retikülosit yanıtı anemiye göre yetersizdir (retikülosit indeksi &lt; 2,5); belirgin retikülositoz hemolitik bileşenin ağır bastığı HbH hastalığı ve talasemi intermediada görülür."
     }
    },
    "changes": [
@@ -9454,11 +9454,11 @@
    "fields": {
     "Text": {
      "before": "KML;&nbsp;<b>Akselere faza</b> geçiş göstergesi:<div><br></div><div>{{c1::Bazofili Artışı (&gt;%20)}}</div><div><br></div>",
-     "after": "KML'de <b>akselere faza</b> geçiş göstergesi:<div><br></div><div>{{c1::Bazofili artışı (≥%20)}}</div>"
+     "after": "KML'de <b>akselere faza</b> geçiş göstergesi:<div><br></div><div>{{c1::Bazofili artışı (≥ %20)}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "WHO 2022 (5. baskı) sınıflaması akselere fazı kaldırmıştır; ICC 2022 ve ELN ölçütleri akselere fazı korur."
+     "after": "DSÖ 2022 (5. baskı) sınıflaması akselere fazı kaldırmıştır; ICC 2022 ve ELN ölçütleri akselere fazı korur."
     }
    },
    "changes": [
@@ -9602,7 +9602,7 @@
    "fields": {
     "Text": {
      "before": "KML Bcr-Abl Kazanılmış Mut'ların tamamına karşı etkili Tyr Kinaz İnh:<div><br></div><div>{{c1::Ponatinib}}</div>",
-     "after": "KML'de BCR-ABL1'in edinsel tek nokta mutasyonlarının (T315I dahil) tamamına karşı etkili tirozin kinaz inhibitörü:<div><br></div><div>{{c1::Ponatinib}}</div>"
+     "after": "KML'de BCR-ABL1'in edinsel tek nokta mutasyonlarının (T315I dâhil) tamamına karşı etkili tirozin kinaz inhibitörü:<div><br></div><div>{{c1::Ponatinib}}</div>"
     },
     "Extra": {
      "before": "",
@@ -9758,7 +9758,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel ELN risk sınıflamasında yüksek risk yalnız yaş &gt;60 ve/veya tromboz öyküsüyle tanımlanır; trombosit &gt;1,5 milyon/mm³ edinsel von Willebrand sendromuna bağlı kanama riski nedeniyle sitoredüktif tedavi gerekçesidir."
+     "after": "Güncel ELN risk sınıflamasında yüksek risk yalnız yaş &gt; 60 ve/veya tromboz öyküsüyle tanımlanır; trombosit &gt; 1,5 milyon/mm³ edinsel von Willebrand sendromuna bağlı kanama riski nedeniyle sitoredüktif tedavi gerekçesidir."
     }
    },
    "changes": [
@@ -11735,7 +11735,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Günümüzde Batılı ülkelerde erişkinde enfeksiyonla ilişkili GN'nin en sık nedeni stafilokok enfeksiyonlarıdır (endokardit dışı odaklar dahil)."
+     "after": "Günümüzde Batılı ülkelerde erişkinde enfeksiyonla ilişkili GN'nin en sık nedeni stafilokok enfeksiyonlarıdır (endokardit dışı odaklar dâhil)."
     }
    },
    "changes": [
@@ -11811,7 +11811,7 @@
    "fields": {
     "Text": {
      "before": "Kr. intersttisyel Nefrit ETYO (9)<div><br></div><div><div>{{c1::Analjezik}} nefropati&nbsp;</div><div>{{c2::Pb}}</div><div>Hi,per{{c1::ürisemi}}</div><div>Hiper{{c2::Ca}} - uzamış hipo{{c2::K}}</div><div>{{c3::Sjögren&nbsp;}}</div><div>{{c3::MM}}</div><div>{{c4::OHA}}</div><div>Kr. {{c4::PN}}</div><div>{{c4::VUR&nbsp;}}</div><br></div>",
-     "after": "Kronik interstisyel nefrit etiyolojisi (9)<div><br></div><div>{{c1::Analjezik}} nefropati</div><div>{{c2::Kurşun (Pb)}}</div><div>Hiper{{c1::ürisemi}}</div><div>Hiper{{c2::kalsemi}}, uzamış hipo{{c2::kalemi}}</div><div>{{c3::Sjögren sendromu}}</div><div>{{c3::Multipl miyelom}}</div><div>{{c4::Orak hücreli anemi}}</div><div>Kronik {{c4::piyelonefrit}}</div><div>{{c4::VUR}}</div>"
+     "after": "Kronik interstisyel nefrit etiyolojisi (9)<div><br></div><div>{{c1::Analjezik}} nefropati</div><div>{{c2::Kurşun (Pb)}}</div><div>Hiper{{c1::ürisemi}}</div><div>Hiper{{c2::kalsemi}}, uzamış hipo{{c2::kalemi}}</div><div>{{c3::Sjögren sendromu}}</div><div>{{c3::Multipl miyelom}}</div><div>{{c4::Orak hücreli anemi}}</div><div>Kronik {{c4::piyelonefrit}}</div><div>{{c4::vezikoüreteral reflü (VÜR)}}</div>"
     },
     "Extra": {
      "before": "ÖNEMLİ",
@@ -12529,7 +12529,7 @@
    "fields": {
     "Text": {
      "before": "<b>Genç</b> Hastada <b>PsödoGut</b> varsa&nbsp;<div>Sekonder Nedenleri Düşün:<div><br></div><div>{{c1::HiperPTH}}</div><div><br></div><div>{{c1::HipoTiroidi}}</div><div><br></div><div>HipoP</div><div><br></div><div>HipoMg</div><div><br></div><div>Hemakromatoz</div></div>",
-     "after": "<b>Genç</b> hastada <b>psödogut</b> varsa<div>sekonder nedenler araştırılır:<div><br></div><div>{{c1::Hiperparatiroidizm}}</div><div><br></div><div>{{c1::Hipotiroidi}}</div><div><br></div><div>Hipofosfatazya</div><div><br></div><div>Hipomagnezemi</div><div><br></div><div>Hemokromatoz</div></div>"
+     "after": "<b>Genç</b> hastada <b>psödogut</b> varsa<div>sekonder nedenler araştırılır:<div><br></div><div>{{c1::Hiperparatiroidizm}}</div><div><br></div><div>{{c1::Hipotiroidi}}</div><div><br></div><div>Hipofosfatazya</div><div><br></div><div>Hipomagnezemi</div><div><br></div><div>Hemokromatozis</div></div>"
     },
     "Extra": {
      "before": "Işık Mikroskop: Kare/Dikdörtgen Kristaller",
@@ -12958,7 +12958,7 @@
    "fields": {
     "Text": {
      "before": "PanHipoPitüiterizm&nbsp;<div><br></div><div>+ DI + HiperPRL + Susama davranış bzk ---&gt; {{c1::Hipotalamik&nbsp;}}</div><div><br></div><div>+ PRL dahil tüm ön hipofiz hormnonları düşük + DI YOK --&gt; {{c1::Hipofizer&nbsp;}}</div>",
-     "after": "Panhipopitüitarizm<div><br></div><div>+ diabetes insipidus + hiperprolaktinemi + susama davranışı bozukluğu → {{c1::Hipotalamik}}</div><div><br></div><div>+ PRL dahil tüm ön hipofiz hormonları düşük + diabetes insipidus yok → {{c1::Hipofizer}}</div>"
+     "after": "Panhipopitüitarizm<div><br></div><div>+ diabetes insipidus + hiperprolaktinemi + susama davranışı bozukluğu → {{c1::Hipotalamik}}</div><div><br></div><div>+ PRL dâhil tüm ön hipofiz hormonları düşük + diabetes insipidus yok → {{c1::Hipofizer}}</div>"
     }
    },
    "changes": [
@@ -13487,7 +13487,7 @@
    "fields": {
     "Text": {
      "before": "<b>&nbsp;Diabetes İnsipitus Algoritma</b><br><br>Poliüri - Noktüri --&gt; {{c1::24 Saatlik İdrar Volümü ve Osmalarite}} BAK<br><br>Volüm &gt; 40 ml/kg ve Osm &lt; 300mOSM/L --&gt; {{c1::Bazal ADH}} BAK<br><br>Volüm &lt; 40 ml/kg ve Osm &gt; 300mOSM/L --&gt; Ürolojiye Şut<br>----<br>Bazal ADH &gt; 1 pg/ml --&gt; {{c2::Nefrojenik DI}}<br><br>Bazal ADH &lt; 1 pg/ml --&gt; Beyin MR --&gt; <b>Hipofizde Parlak Nokta (Bright Spot)</b><br><br><div>Hipofizde Parlak Nokta (Bright Spot) <b>VAR</b> --&gt; {{c2::Primer Polidipsi}}<br><br>Hipofizde Parlak Nokta (Bright Spot) <b>YOK</b> --&gt; {{c2::Santral DI}}</div>",
-     "after": "<b>Diabetes insipidus algoritması</b><br><br>Poliüri, noktüri → {{c1::24 saatlik idrar volümü ve osmolalitesine}} bakılır<br><br>Volüm &gt; 40 ml/kg ve osmolalite &lt; 300 mOsm/L → {{c1::bazal ADH}} düzeyine bakılır<br><br>Volüm &lt; 40 ml/kg ve osmolalite &gt; 300 mOsm/L → ürolojik değerlendirme<br>----<br>Bazal ADH &gt; 1 pg/ml → {{c2::Nefrojenik diabetes insipidus}}<br><br>Bazal ADH &lt; 1 pg/ml → beyin MR → <b>hipofizde parlak nokta (bright spot)</b><br><br><div>Hipofizde parlak nokta <b>var</b> → {{c2::Primer polidipsi}}<br><br>Hipofizde parlak nokta <b>yok</b> → {{c2::Santral diabetes insipidus}}</div>"
+     "after": "<b>Diabetes insipidus algoritması</b><br><br>Poliüri, noktüri → {{c1::24 saatlik idrar volümü ve osmolalitesine}} bakılır<br><br>Volüm &gt; 40 mL/kg ve osmolalite &lt; 300 mOsm/L → {{c1::bazal ADH}} düzeyine bakılır<br><br>Volüm &lt; 40 mL/kg ve osmolalite &gt; 300 mOsm/L → ürolojik değerlendirme<br>----<br>Bazal ADH &gt; 1 pg/mL → {{c2::Nefrojenik diabetes insipidus}}<br><br>Bazal ADH &lt; 1 pg/mL → beyin MR → <b>hipofizde parlak nokta (bright spot)</b><br><br><div>Hipofizde parlak nokta <b>var</b> → {{c2::Primer polidipsi}}<br><br>Hipofizde parlak nokta <b>yok</b> → {{c2::Santral diabetes insipidus}}</div>"
     },
     "Extra": {
      "before": "SORU GELİR",
@@ -13566,7 +13566,7 @@
    "fields": {
     "Text": {
      "before": "Ötrioid Hast Send Patofiz&nbsp;<div><br></div><div><b>5</b><span style=\"font-size: 13.3333px;\"><sup><b>'&nbsp;</b></sup>Deiyodinaz&nbsp; Akt'si&nbsp;</span>{{c1::AZALIR }}<span style=\"font-size: 13.3333px;\">&nbsp;--&gt;&nbsp;</span>(T3 {{c1::AZALIR}})</div><div><span style=\"font-size: 13.3333px;\"><br></span></div><div><span style=\"font-size: 13.3333px;\"><b>5 </b>Deiyodinaz Akt'si&nbsp;</span>{{c1::ARTAR }}<span style=\"font-size: 13.3333px;\">&nbsp; ----&gt;&nbsp;</span>rT3 {{c1::ARTAR}}</div>",
-     "after": "Ötiroid hasta sendromu (nontiroidal hastalık sendromu) patofizyolojisi<div><br></div><div><b>5</b><span style=\"font-size: 13.3333px;\"><sup><b>'</b></sup> deiyodinaz aktivitesi </span>{{c1::azalır}}<span style=\"font-size: 13.3333px;\"> → </span>(T3 {{c1::azalır}})</div><div><span style=\"font-size: 13.3333px;\"><br></span></div><div><span style=\"font-size: 13.3333px;\"><b>5</b> deiyodinaz aktivitesi </span>{{c1::artar}}<span style=\"font-size: 13.3333px;\"> → </span>rT3 {{c1::artar}}</div>"
+     "after": "Ötiroid hasta sendromu (nontiroit hastalık sendromu) patofizyolojisi<div><br></div><div><b>5</b><span style=\"font-size: 13.3333px;\"><sup><b>'</b></sup> deiyodinaz aktivitesi </span>{{c1::azalır}}<span style=\"font-size: 13.3333px;\"> → </span>(T3 {{c1::azalır}})</div><div><span style=\"font-size: 13.3333px;\"><br></span></div><div><span style=\"font-size: 13.3333px;\"><b>5</b> deiyodinaz aktivitesi </span>{{c1::artar}}<span style=\"font-size: 13.3333px;\"> → </span>rT3 {{c1::artar}}</div>"
     }
    },
    "changes": [
@@ -14051,7 +14051,7 @@
    "fields": {
     "Text": {
      "before": "Addison tanısı ---&gt; {{c1::ACTH uyarı testi (Synacten testi - Cosyntropin testi)&nbsp;}}<div><br></div><div>{{c1::Cosyntropin}} Testi sonrası: Plazma&nbsp;&nbsp;{{c1::kortizol&nbsp;nmol/L}}&nbsp;&nbsp;&lt; 500&nbsp;--&gt; Yanıt yok ---&gt; adrenal yet var (primer / sekonder)&nbsp;</div>",
-     "after": "Addison tanısı → {{c1::ACTH uyarı testi (Synacthen testi, kosintropin testi)}}<div><br></div><div>{{c1::Kosintropin}} testi sonrası plazma {{c1::kortizolü}} &lt;500 nmol/L (18 µg/dL) → yanıt yok → adrenal yetmezlik var (primer/sekonder)</div>"
+     "after": "Addison tanısı → {{c1::ACTH uyarı testi (Synacthen testi, kosintropin testi)}}<div><br></div><div>{{c1::Kosintropin}} testi sonrası plazma {{c1::kortizolü}} &lt; 500 nmol/L (18 µg/dL) → yanıt yok → adrenal yetmezlik var (primer/sekonder)</div>"
     }
    },
    "changes": [
@@ -15031,7 +15031,7 @@
    "fields": {
     "Text": {
      "before": "<b>Hipoglisemiye İlk Yanıt:</b><div><br></div><div>1. KŞ {{c1::80-85}} altına düşünce ---&gt; {{c1::İnsülinde}} AZALMA (ÖNEMLİ)<br><br>2. {{c2::Glukagonda}} artma (65-70 altı)<br><br>3. {{c2::Epinefrinde}} artma (65-70 altı)<br><br>4. {{c2::Kortizol}} ve {{c2::GH}} artma (65-70 altı)<br><br>5. Semptomlar (50-55)<br><br>6. Bilinç değişikliği (&lt;50)</div>",
-     "after": "<b>Hipoglisemiye fizyolojik yanıt sırası (plazma glukoz eşikleri, mg/dL):</b><div><br></div><div>1. Plazma glukozu {{c1::80–85}} altına düşünce → {{c1::insülinde}} azalma<br><br>2. {{c2::Glukagonda}} artma (65–70 altı)<br><br>3. {{c2::Epinefrinde}} artma (65–70 altı)<br><br>4. {{c2::Kortizol}} ve {{c2::GH}} artma (65–70 altı)<br><br>5. Semptomlar (50–55)<br><br>6. Bilinç değişikliği (&lt;50)</div>"
+     "after": "<b>Hipoglisemiye fizyolojik yanıt sırası (plazma glukoz eşikleri, mg/dL):</b><div><br></div><div>1. Plazma glukozu {{c1::80–85}} altına düşünce → {{c1::insülinde}} azalma<br><br>2. {{c2::Glukagonda}} artma (65–70 altı)<br><br>3. {{c2::Epinefrinde}} artma (65–70 altı)<br><br>4. {{c2::Kortizol}} ve {{c2::GH}} artma (65–70 altı)<br><br>5. Semptomlar (50–55)<br><br>6. Bilinç değişikliği (&lt; 50)</div>"
     }
    },
    "changes": [
@@ -19727,7 +19727,7 @@
    "fields": {
     "Text": {
      "before": "Warfarin Toks<div><br></div><div>INR:</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::</span><span style=\"background: var(--field-bg);\"><font color=\"#ff3b30\">4.5 - 10</font></span><span style=\"color: var(--field-fg); background: var(--field-bg);\">}}</span>&nbsp;arası: Warfarin KES</div><div><br></div><div>&gt;&nbsp;{{c1::<font color=\"#ff3b30\">10</font>}}:&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">Warfarin KES + Düşük Doz oral Vit K</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">Tüm Yükseklikler + Ciddi Kanama:&nbsp;</span><span style=\"color: var(--field-fg);\">Warfarin KES + İV Vit K +&nbsp;</span>{{c2::4F-PCC}}</div>\n",
-     "after": "Warfarin toksisitesi<div><br></div><div>INR:</div><div><br></div><div>{{c1::<font color=\"#ff3b30\">4,5–10</font>}} arası: warfarin kesilir</div><div><br></div><div>&gt; {{c1::<font color=\"#ff3b30\">10</font>}}: warfarin kesilir + düşük doz oral K vitamini</div><div><br></div><div>Her INR yüksekliği + ciddi kanama: warfarin kesilir + İV K vitamini + {{c2::4F-PCC}}</div>"
+     "after": "Warfarin toksisitesi<div><br></div><div>INR:</div><div><br></div><div>{{c1::<font color=\"#ff3b30\"&gt; 4,5–10</font>}} arası: warfarin kesilir</div><div><br></div><div>&gt; {{c1::<font color=\"#ff3b30\"&gt; 10</font>}}: warfarin kesilir + düşük doz oral K vitamini</div><div><br></div><div>Her INR yüksekliği + ciddi kanama: warfarin kesilir + İV K vitamini + {{c2::4F-PCC}}</div>"
     },
     "Extra": {
      "before": "TDP --&gt; 4F-PCC bulunamıyorsa verilir. Artık 4F-PCC (Önemli)",
@@ -19766,7 +19766,7 @@
    "fields": {
     "Text": {
      "before": "MDS:<div><br></div><div><b>En Sık Mut:</b> {{c1::<font color=\"#ff3b30\">SF3B1</font>}} --&gt; RS artışı ile ilişkili--&gt;İyi Prognoz&nbsp;</div><div><br></div><div>En sık <b>Kromozomal Anomal</b>i: {{c1::<font color=\"#ff3b30\">5q del</font>}} --&gt; İzole ise İyi Prognoz</div><div><br></div><div><b>Trombositoz</b> ilişkili: {{c1::<font color=\"#ff3b30\">5q del</font>}} ve {{c1::<font color=\"#ff3b30\">JAK2</font>}}&nbsp;</div>",
-     "after": "MDS:<div><br></div><div><b>En sık mutasyon:</b> {{c1::<font color=\"#ff3b30\">SF3B1</font>}} → halkalı sideroblast artışı ile ilişkili → iyi prognoz</div><div><br></div><div>En sık <b>kromozomal anomali</b>: {{c1::<font color=\"#ff3b30\">5q delesyonu</font>}} → izole ise iyi prognoz</div><div><br></div><div><b>Trombositoz</b> ile ilişkili: {{c1::<font color=\"#ff3b30\">5q delesyonu</font>}} ve {{c1::<font color=\"#ff3b30\">JAK2</font>}}</div>"
+     "after": "MDS:<div><br></div><div><b>En sık mutasyon:</b> {{c1::<font color=\"#ff3b30\">SF3B1</font>}} → halkalı sideroblast artışı ile ilişkili → iyi prognoz</div><div><br></div><div>En sık <b>kromozomal anomali</b>: {{c1::<font color=\"#ff3b30\"&gt; 5q delesyonu</font>}} → izole ise iyi prognoz</div><div><br></div><div><b>Trombositoz</b> ile ilişkili: {{c1::<font color=\"#ff3b30\"&gt; 5q delesyonu</font>}} ve {{c1::<font color=\"#ff3b30\">JAK2</font>}}</div>"
     }
    },
    "changes": [
@@ -21769,7 +21769,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "WHO 2022 sınıflamasında SF3B1 mutasyonlu, düşük blastlı MDS (MDS-SF3B1) olarak ayrı alt tiptir."
+     "after": "DSÖ 2022 sınıflamasında SF3B1 mutasyonlu, düşük blastlı MDS (MDS-SF3B1) olarak ayrı alt tiptir."
     }
    },
    "changes": [
@@ -24439,7 +24439,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "RAEB (fazla blastlı refrakter anemi) WHO 2016'da \"fazla blastlı MDS\" (MDS-EB-1/EB-2), WHO 2022'de \"blast artışlı MDS\" (MDS-IB1/IB2) adını aldı."
+     "after": "RAEB (fazla blastlı refrakter anemi) DSÖ 2016'da \"fazla blastlı MDS\" (MDS-EB-1/EB-2), DSÖ 2022'de \"blast artışlı MDS\" (MDS-IB1/IB2) adını aldı."
     }
    },
    "changes": [
@@ -24474,7 +24474,7 @@
    "fields": {
     "Text": {
      "before": "Eirşkin ALL Kötü Prognoz&nbsp;<div><br></div><div>{{c1::&gt;60}} yaş /&nbsp;</div><div>t({{c1::9,22}}) /&nbsp;</div><div>{{c1::Minimal Rezidüel}} Hast&nbsp;<br></div>",
-     "after": "Erişkin ALL'de kötü prognoz<div><br></div><div>{{c1::&gt;60}} yaş</div><div>t({{c1::9;22}})</div><div>{{c1::Minimal rezidüel}} hastalık<br></div>"
+     "after": "Erişkin ALL'de kötü prognoz<div><br></div><div>{{c1::&gt; 60}} yaş</div><div>t({{c1::9;22}})</div><div>{{c1::Minimal rezidüel}} hastalık<br></div>"
     }
    },
    "changes": [
@@ -25003,7 +25003,7 @@
    "fields": {
     "Text": {
      "before": "Non Hodgkin Lenfoma (NHL) IPI Skoru (Prognoz)&nbsp;<div><br></div><div>{{c1::APLES}}</div><div><br></div><div><br><div>{{c1::A Age}} (Yaş &gt; 60)</div><div>{{c1::P Performans}} (ECOG)&nbsp;</div><div>{{c1::L LDH}}&nbsp;</div><div>{{c1::E ExtraNod tut}} (&gt;1)</div><div>{{c1::S Stage}} 3-4&nbsp;</div><br></div>",
-     "after": "Non-Hodgkin lenfoma (NHL) IPI skoru (prognoz)<div><br></div><div>{{c1::APLES}}</div><div><br></div><div><br><div>{{c1::A Age}} (yaş &gt;60)</div><div>{{c1::P Performans}} (ECOG ≥2)</div><div>{{c1::L LDH}} (yüksek)</div><div>{{c1::E Ekstranodal tutulum}} (&gt;1)</div><div>{{c1::S Stage}} III–IV</div><br></div>"
+     "after": "Non-Hodgkin lenfoma (NHL) IPI skoru (prognoz)<div><br></div><div>{{c1::APLES}}</div><div><br></div><div><br><div>{{c1::A Age}} (yaş &gt; 60)</div><div>{{c1::P Performans}} (ECOG ≥ 2)</div><div>{{c1::L LDH}} (yüksek)</div><div>{{c1::E Ekstranodal tutulum}} (&gt; 1)</div><div>{{c1::S Stage}} III–IV</div><br></div>"
     }
    },
    "changes": [
@@ -26570,11 +26570,11 @@
    "fields": {
     "Text": {
      "before": "Kronik KML --&gt; Akselere Faz geçiş göstergeleri:<div><br></div><div>Per Kan - Kİ <b>Blast</b> %{{c1::10-19}}</div><div>Per Kan <b>Bazofil</b> &gt; % {{c1::20}}<br><br>Persistan {{c2::tromb.peni}} (&lt;100 bin) veya persistan {{c2::trombositoz}} &gt; 1 milyon<br><br>WBC ve dalak boyutunda tedaviye yanıt vermeyen artış<br><br>Sitogenetik anomali ortaya çıkması</div>",
-     "after": "KML'de kronik fazdan akselere faza geçiş göstergeleri:<div><br></div><div>Periferik kanda veya kemik iliğinde <b>blast</b> %{{c1::10–19}}</div><div>Periferik kanda <b>bazofil</b> ≥ %{{c1::20}}<br><br>Persistan {{c2::trombositopeni}} (&lt;100.000/mm³) veya tedaviye yanıtsız persistan {{c2::trombositoz}} (&gt;1 milyon/mm³)<br><br>Lökosit sayısında ve dalak boyutunda tedaviye yanıt vermeyen artış<br><br>Sitogenetik anomali (klonal evrim) ortaya çıkması</div>"
+     "after": "KML'de kronik fazdan akselere faza geçiş göstergeleri:<div><br></div><div>Periferik kanda veya kemik iliğinde <b>blast</b> %{{c1::10–19}}</div><div>Periferik kanda <b>bazofil</b> ≥ %{{c1::20}}<br><br>Persistan {{c2::trombositopeni}} (&lt; 100.000/mm³) veya tedaviye yanıtsız persistan {{c2::trombositoz}} (&gt; 1 milyon/mm³)<br><br>Lökosit sayısında ve dalak boyutunda tedaviye yanıt vermeyen artış<br><br>Sitogenetik anomali (klonal evrim) ortaya çıkması</div>"
     },
     "Extra": {
      "before": "",
-     "after": "WHO 2022 (5. baskı) sınıflamasında akselere faz kaldırılmış, yerine yüksek riskli kronik faz özellikleri tanımlanmıştır; ICC 2022 akselere fazı korur."
+     "after": "DSÖ 2022 (5. baskı) sınıflamasında akselere faz kaldırılmış, yerine yüksek riskli kronik faz özellikleri tanımlanmıştır; ICC 2022 akselere fazı korur."
     }
    },
    "changes": [
@@ -33238,7 +33238,7 @@
    "fields": {
     "Text": {
      "before": "<b>Türkiye </b>dahil Akdeniz ve Ortadogu'da&nbsp;<div><br><div>en sık <b>HBV Genotipi</b>:<div><br></div><div>Genotip {{c1::D}}</div></div></div>",
-     "after": "<b>Türkiye</b> dahil Akdeniz ve Orta Doğu'da<div><br><div>en sık <b>HBV genotipi</b>:<div><br></div><div>Genotip {{c1::D}}</div></div></div>"
+     "after": "<b>Türkiye</b> dâhil Akdeniz ve Orta Doğu'da<div><br><div>en sık <b>HBV genotipi</b>:<div><br></div><div>Genotip {{c1::D}}</div></div></div>"
     }
    },
    "changes": [
@@ -34283,5 +34283,269 @@
    "editorNote": null
   }
  ],
- "checkedUnchanged": []
+ "checkedUnchanged": [],
+ "spelling": [
+  {
+   "yazim": "evre I, evre II, evre III, evre IV; evre IIIA, IIIB, IIIC; Rai evre 0–IV, Binet evre A–C, NYHA sınıf I–IV",
+   "kural": "Kanser evreleri (AJCC/TNM, Ann Arbor), KLL evreleri ve kalp yetmezliği sınıflamaları Roma rakamı + büyük harfle yazılır; grade, tip ve TNM T/N/M Arap rakamıyla kalır."
+  },
+  {
+   "yazim": "tiroit (tiroit bezi, paratiroit bezi, tiroidit, hipotiroidi, hipertiroidi, ötiroit)",
+   "kural": "\"tiroid\", \"ötiroid\", \"nontiroidal\" kullanılmaz; TDK ve dersler arası standart \"tiroit\" köküdür; hastalık adları \"tiroidit\", \"hipotiroidi\" biçimindedir."
+  },
+  {
+   "yazim": "&gt; 55, &lt; 8, ≥ 5 cm, ≤ 300, &gt; %75, &lt; %10",
+   "kural": "Karşılaştırma işaretinden sonra bir boşluk bırakılır; \">55\", \"<%10\", \"≥5\" kullanılmaz. Cevabın kendisi olan işaret ({{c1::<}}) değişmez."
+  },
+  {
+   "yazim": "mL, mL/dk, mL/kg, mg/dL, mg/L, pg/mL, ng/mL, mEq/L; 3,4 mg/dL",
+   "kural": "\"ml\", \"mg/dl\", \"mg/l\" kullanılmaz; litre büyük L ile yazılır, ondalık ayraç virgüldür (1,5 mg/dL)."
+  },
+  {
+   "yazim": "dâhil, hâlde, kâbus",
+   "kural": "TDK kuralına uygun düzeltme işareti korunur; \"dahil\" kullanılmaz."
+  },
+  {
+   "yazim": "DSÖ (DSÖ 2016, DSÖ 2022 sınıflaması)",
+   "kural": "Kart metninde \"WHO\" kullanılmaz; yerleşik Türkçe terim \"DSÖ\" kullanılır."
+  },
+  {
+   "yazim": "lökosit (lökosit sayısı, lökositoz, lökopeni)",
+   "kural": "Kart metninde \"WBC\" ve \"BK\" kısaltmaları kullanılmaz; açık Türkçe terim kullanılır."
+  },
+  {
+   "yazim": "bilirubin (total bilirubin, direkt bilirubin)",
+   "kural": "\"bilirübin\" kullanılmaz; standart tıp biyokimyası yazımı \"bilirubin\"dir."
+  },
+  {
+   "yazim": "kardiyomiyopati (hipertrofik kardiyomiyopati, dilate kardiyomiyopati, restriktif kardiyomiyopati)",
+   "kural": "\"kardiyomyopati\" kullanılmaz; kaynaştırma \"y\" ile yazılır."
+  },
+  {
+   "yazim": "miyokardit, miyokard infarktüsü (Mİ)",
+   "kural": "\"myokard\", \"myokardit\" kullanılmaz; Türkçe tıp standardı \"miyokard\"dır."
+  },
+  {
+   "yazim": "apse (akciğer apsesi, karaciğer apsesi)",
+   "kural": "\"abse\" kullanılmaz."
+  },
+  {
+   "yazim": "sedimantasyon (eritrosit sedimantasyon hızı, ESH)",
+   "kural": "\"sedimentasyon\" kullanılmaz."
+  },
+  {
+   "yazim": "duyarlı / duyarlılık, özgül / özgüllük (en duyarlı test, en özgül bulgu)",
+   "kural": "\"sensitif\", \"spesifik\" yerine yerleşik Türkçe terimler tercih edilir; standart laboratuvar test adları korunur."
+  },
+  {
+   "yazim": "PPİ, İV, İVİG, KKB, KBY, ABH",
+   "kural": "Türkçe kısaltmalar Türkçe büyük harflerle (noktasız İ ile) yazılır; \"PPI\", \"IV\" kullanılmaz."
+  },
+  {
+   "yazim": "tenofovir dizoproksil fumarat (TDF), tenofovir alafenamid (TAF)",
+   "kural": "\"disoproksil\", \"dipivoksil\" yerine standart farmakoloji adı \"dizoproksil\" kullanılır."
+  },
+  {
+   "yazim": "hiperparatiroidizm (primer, sekonder, tersiyer); hipoparatiroidi, hipotiroidi",
+   "kural": "\"primer hiperparatiroidi\" yerine \"hiperparatiroidizm\" kullanılır; hipo- formları -i ile kalır."
+  },
+  {
+   "yazim": "Crohn hastalığı, Hashimoto tiroiditi, Hodgkin lenfoma, Goodpasture sendromu",
+   "kural": "Eponimler doğru büyük harf ve Türkçe tamlama biçimleriyle yazılır."
+  },
+  {
+   "yazim": "t(9;22), t(15;17), t(8;21), t(11;14), t(14;18), inv(16)",
+   "kural": "Sitogenetik anomaliler standart parantez ve noktalı virgül formatıyla yazılır; \"t(9,22)\" kullanılmaz."
+  },
+  {
+   "yazim": "CD33, CD20, CD19, CD34, CD4, CD8",
+   "kural": "Kümeleşme belirteçlerinde (CD) harf ile numara arasında boşluk bırakılmaz (\"CD 20\" → \"CD20\")."
+  },
+  {
+   "yazim": "konstriktif perikardit",
+   "kural": "\"konstrüktif\" yerine \"konstriktif\" kullanılır."
+  },
+  {
+   "yazim": "noninvaziv, nonoligürik, nonfonksiyone",
+   "kural": "\"Non-\" ön eki bitişik yazılır; \"Non-invaziv\", \"Non-oligürik\" kullanılmaz."
+  },
+  {
+   "yazim": "vezikoüreteral reflü (VÜR)",
+   "kural": "\"VUR\" yerine Türkçe standart kısaltma \"VÜR\" kullanılır."
+  },
+  {
+   "yazim": "hipertansif acil durum, hipertansif ivedi durum",
+   "kural": "İngilizce \"hypertensive emergency/urgency\" karşılıkları doğru klinik terimleriyle yazılır."
+  },
+  {
+   "yazim": "arteriyel, venöz (pulmoner arteriyel hipertansiyon)",
+   "kural": "\"arteriyel\" kaynaştırma \"y\" ile yazılır; \"arteriel\" kullanılmaz."
+  },
+  {
+   "yazim": "Gram pozitif, Gram negatif",
+   "kural": "\"Gr (+)\", \"gram pozitif\" yerine standart \"Gram pozitif / Gram negatif\" yazımı kullanılır."
+  }
+ ],
+ "abbreviations": [
+  {
+   "kisaltma": "KBY / KBH",
+   "acilim": "kronik böbrek yetmezliği / kronik böbrek hastalığı"
+  },
+  {
+   "kisaltma": "ABY / ABH",
+   "acilim": "akut böbrek yetmezliği / akut böbrek hasarı"
+  },
+  {
+   "kisaltma": "KY / KKY",
+   "acilim": "kalp yetmezliği / konjestif kalp yetmezliği"
+  },
+  {
+   "kisaltma": "Mİ",
+   "acilim": "miyokard infarktüsü (STEMI / NSTEMI)"
+  },
+  {
+   "kisaltma": "KOAH",
+   "acilim": "kronik obstrüktif akciğer hastalığı"
+  },
+  {
+   "kisaltma": "SVO / TİA",
+   "acilim": "serebrovasküler olay / geçici iskemik atak"
+  },
+  {
+   "kisaltma": "AF",
+   "acilim": "atriyal fibrilasyon"
+  },
+  {
+   "kisaltma": "VT / VF",
+   "acilim": "ventriküler taşikardi / ventriküler fibrilasyon"
+  },
+  {
+   "kisaltma": "KKB",
+   "acilim": "kalsiyum kanal blokörü"
+  },
+  {
+   "kisaltma": "ACEİ / ARB",
+   "acilim": "anjiyotensin dönüştürücü enzim inhibitörü / anjiyotensin reseptör blokörü"
+  },
+  {
+   "kisaltma": "PPİ",
+   "acilim": "proton pompa inhibitörü"
+  },
+  {
+   "kisaltma": "KML / AML",
+   "acilim": "kronik miyeloid lösemi / akut miyeloid lösemi"
+  },
+  {
+   "kisaltma": "KLL / ALL",
+   "acilim": "kronik lenfositer lösemi / akut lenfoblastik lösemi"
+  },
+  {
+   "kisaltma": "MDS",
+   "acilim": "miyelodisplastik sendrom"
+  },
+  {
+   "kisaltma": "PNH",
+   "acilim": "paroksismal noktürnal hemoglobinüri"
+  },
+  {
+   "kisaltma": "İTP",
+   "acilim": "immün trombositopeni"
+  },
+  {
+   "kisaltma": "TTP",
+   "acilim": "trombotik trombositopenik purpura"
+  },
+  {
+   "kisaltma": "HÜS",
+   "acilim": "hemolitik üremik sendrom"
+  },
+  {
+   "kisaltma": "DİK",
+   "acilim": "dissemine intravasküler koagülasyon"
+  },
+  {
+   "kisaltma": "SDBK",
+   "acilim": "serum demir bağlama kapasitesi"
+  },
+  {
+   "kisaltma": "LAP",
+   "acilim": "lökosit alkalen fosfataz / lenfadenopati (bağlama göre)"
+  },
+  {
+   "kisaltma": "HSM",
+   "acilim": "hepatosplenomegali"
+  },
+  {
+   "kisaltma": "RA / SLE",
+   "acilim": "romatoid artrit / sistemik lupus eritematozus"
+  },
+  {
+   "kisaltma": "SpA",
+   "acilim": "spondiloartrit (ankilozan spondilit dâhil)"
+  },
+  {
+   "kisaltma": "FMF",
+   "acilim": "ailesel Akdeniz ateşi"
+  },
+  {
+   "kisaltma": "GİS",
+   "acilim": "gastrointestinal sistem"
+  },
+  {
+   "kisaltma": "ERCP / EUS",
+   "acilim": "endoskopik retrograd kolanjiyopankreatografi / endoskopik ultrasonografi"
+  },
+  {
+   "kisaltma": "SBE / İE",
+   "acilim": "subakut bakteriyel endokardit / infektif endokardit"
+  },
+  {
+   "kisaltma": "ARDS",
+   "acilim": "akut respiratuvar distres sendromu"
+  },
+  {
+   "kisaltma": "PPD / IGRA",
+   "acilim": "saflaştırılmış protein türevi / interferon gama salınım testi"
+  },
+  {
+   "kisaltma": "İNH",
+   "acilim": "izoniyazid (tüberküloz tedavisinde)"
+  },
+  {
+   "kisaltma": "BK / WBC",
+   "acilim": "beyaz küre → lökosit (lökosit sayısı)"
+  },
+  {
+   "kisaltma": "PLT",
+   "acilim": "trombosit"
+  },
+  {
+   "kisaltma": "HBV / HCV",
+   "acilim": "hepatit B virüsü / hepatit C virüsü"
+  },
+  {
+   "kisaltma": "EF",
+   "acilim": "sol ventrikül ejeksiyon fraksiyonu"
+  },
+  {
+   "kisaltma": "ICD / CRT",
+   "acilim": "implante edilebilir kardiyoverter defibrilatör / kardiyak resenkronizasyon tedavisi"
+  },
+  {
+   "kisaltma": "TAVI",
+   "acilim": "transkateter aort kapak implantasyonu"
+  },
+  {
+   "kisaltma": "FENa",
+   "acilim": "sodyumun fraksiyonel atılımı"
+  },
+  {
+   "kisaltma": "RTA",
+   "acilim": "renal tübüler asidoz"
+  },
+  {
+   "kisaltma": "SIADH",
+   "acilim": "uygunsuz antidiüretik hormon salınımı sendromu"
+  }
+ ]
 }
