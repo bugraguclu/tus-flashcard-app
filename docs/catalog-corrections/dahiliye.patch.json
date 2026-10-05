@@ -138,11 +138,11 @@
    "fields": {
     "Text": {
      "before": "En sık Hipofiz Adenomu: {{c1::Non-Fonk Adenom}}<div><br></div><div>{{c1::Non-Fonk Adenom'un}} --&gt;&nbsp;</div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">En sık Köken aldığı Hc grubu: {{c1::Gonadotroplar}}</span><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">Tanı Testi: {{c1::TRH Stim}} Testi</span></div>",
-     "after": "En sık hipofiz makroadenomu: {{c1::Non-fonksiyone adenom}}<div><br></div><div>{{c1::Non-fonksiyone adenomun}} →</div><div>En sık köken aldığı hücre grubu: {{c1::gonadotroplar}}</div><div><br></div><div>Tanı testi: {{c1::TRH stimülasyon}} testi</div>"
+     "after": "En sık hipofiz makroadenomu: {{c1::Nonfonksiyone adenom}}<div><br></div><div>{{c1::Nonfonksiyone adenomun}} →</div><div>En sık köken aldığı hücre grubu: {{c1::gonadotroplar}}</div><div><br></div><div>Tanı testi: {{c1::TRH stimülasyon}} testi</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Tüm hipofiz adenomları içinde en sık olanı prolaktinomadır (%40–57); non-fonksiyone adenomlar ikinci sıradadır (%28–37)."
+     "after": "Tüm hipofiz adenomları içinde en sık olanı prolaktinomadır (%40–57); nonfonksiyone adenomlar ikinci sıradadır (%28–37)."
     }
    },
    "changes": [
@@ -8964,7 +8964,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "DSÖ'ya göre JAK2 mutasyonu ve düşük EPO ile birlikte Hb &gt; 18,5 g/dL (erkek) / &gt; 16,5 g/dL (kadın) olan hastalarda kemik iliği biyopsisi zorunlu değildir."
+     "after": "DSÖ'ye göre JAK2 mutasyonu ve düşük EPO ile birlikte Hb &gt; 18,5 g/dL (erkek) / &gt; 16,5 g/dL (kadın) olan hastalarda kemik iliği biyopsisi zorunlu değildir."
     }
    },
    "changes": [
@@ -9296,11 +9296,11 @@
    "fields": {
     "Text": {
      "before": "Kan Tx Komp'ları&nbsp;<div><br></div><div>İmmünolojik ---&gt; içinde&nbsp;&nbsp;{{c1::Reax geçenler }} /&nbsp; {{c2::Akut AC hasarı}} + {{c1::GvH}} + {{c2::PostTx Purpura}}</div><div><br></div><div>Non-İmm --&gt; {{c1::Vital bulgu - Biyokimya ---&gt; Hipotetmi - HipoT - Pulm. mikroEmbolizasyon -}}&nbsp;</div><div><br></div><div>Hem İmm Hem Non-İMM ---&gt; {{c2::İmmunModülasyon}}&nbsp;</div>",
-     "after": "Kan transfüzyonu komplikasyonları<div><br></div><div>İmmünolojik → adında {{c1::reaksiyon geçenler}} / {{c2::akut akciğer hasarı (TRALI)}} + {{c1::graft-versus-host hastalığı}} + {{c2::posttransfüzyon purpurası}}</div><div><br></div><div>Non-immünolojik → {{c1::vital bulgu ve biyokimya değişiklikleri: hipotermi, hipotansiyon, pulmoner mikroembolizasyon}}</div><div><br></div><div>Hem immünolojik hem non-immünolojik → {{c2::immünomodülasyon}}</div>"
+     "after": "Kan transfüzyonu komplikasyonları<div><br></div><div>İmmünolojik → adında {{c1::reaksiyon geçenler}} / {{c2::akut akciğer hasarı (TRALI)}} + {{c1::graft-versus-host hastalığı}} + {{c2::posttransfüzyon purpurası}}</div><div><br></div><div>Non-immünolojik → {{c1::vital bulgu ve biyokimya değişiklikleri: hipotermi, hipotansiyon, pulmoner mikroembolizasyon}}</div><div><br></div><div>Hem immünolojik hem nonimmünolojik → {{c2::immünomodülasyon}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Non-immünolojik komplikasyonlara dolaşım yüklenmesi (TACO), sitrata bağlı hipokalsemi, hiperkalemi ve demir birikimi de girer."
+     "after": "Nonimmünolojik komplikasyonlara dolaşım yüklenmesi (TACO), sitrata bağlı hipokalsemi, hiperkalemi ve demir birikimi de girer."
     }
    },
    "changes": [
@@ -11580,7 +11580,7 @@
     },
     "Extra": {
      "before": "T3-4 TRAVMADA DA AZALIR",
-     "after": "T3 ve T4 travmada da azalır (ötiroid hasta sendromu).<div><br></div><div>Kalsitriol (1,25-dihidroksi D vitamini) ve testosteron da azalır; PTH, FGF-23, prolaktin, glukagon ve gastrin düzeyleri artar.</div>"
+     "after": "T3 ve T4 travmada da azalır (ötiroit hasta sendromu).<div><br></div><div>Kalsitriol (1,25-dihidroksi D vitamini) ve testosteron da azalır; PTH, FGF-23, prolaktin, glukagon ve gastrin düzeyleri artar.</div>"
     }
    },
    "changes": [
@@ -12529,7 +12529,7 @@
    "fields": {
     "Text": {
      "before": "<b>Genç</b> Hastada <b>PsödoGut</b> varsa&nbsp;<div>Sekonder Nedenleri Düşün:<div><br></div><div>{{c1::HiperPTH}}</div><div><br></div><div>{{c1::HipoTiroidi}}</div><div><br></div><div>HipoP</div><div><br></div><div>HipoMg</div><div><br></div><div>Hemakromatoz</div></div>",
-     "after": "<b>Genç</b> hastada <b>psödogut</b> varsa<div>sekonder nedenler araştırılır:<div><br></div><div>{{c1::Hiperparatiroidizm}}</div><div><br></div><div>{{c1::Hipotiroidi}}</div><div><br></div><div>Hipofosfatazya</div><div><br></div><div>Hipomagnezemi</div><div><br></div><div>Hemokromatozis</div></div>"
+     "after": "<b>Genç</b> hastada <b>psödogut</b> varsa<div>sekonder nedenler araştırılır:<div><br></div><div>{{c1::Hiperparatiroidizm}}</div><div><br></div><div>{{c1::Hipotiroidi}}</div><div><br></div><div>Hipofosfatazya</div><div><br></div><div>Hipomagnezemi</div><div><br></div><div>Hemokromatoz</div></div>"
     },
     "Extra": {
      "before": "Işık Mikroskop: Kare/Dikdörtgen Kristaller",
@@ -13566,7 +13566,7 @@
    "fields": {
     "Text": {
      "before": "Ötrioid Hast Send Patofiz&nbsp;<div><br></div><div><b>5</b><span style=\"font-size: 13.3333px;\"><sup><b>'&nbsp;</b></sup>Deiyodinaz&nbsp; Akt'si&nbsp;</span>{{c1::AZALIR }}<span style=\"font-size: 13.3333px;\">&nbsp;--&gt;&nbsp;</span>(T3 {{c1::AZALIR}})</div><div><span style=\"font-size: 13.3333px;\"><br></span></div><div><span style=\"font-size: 13.3333px;\"><b>5 </b>Deiyodinaz Akt'si&nbsp;</span>{{c1::ARTAR }}<span style=\"font-size: 13.3333px;\">&nbsp; ----&gt;&nbsp;</span>rT3 {{c1::ARTAR}}</div>",
-     "after": "Ötiroid hasta sendromu (nontiroit hastalık sendromu) patofizyolojisi<div><br></div><div><b>5</b><span style=\"font-size: 13.3333px;\"><sup><b>'</b></sup> deiyodinaz aktivitesi </span>{{c1::azalır}}<span style=\"font-size: 13.3333px;\"> → </span>(T3 {{c1::azalır}})</div><div><span style=\"font-size: 13.3333px;\"><br></span></div><div><span style=\"font-size: 13.3333px;\"><b>5</b> deiyodinaz aktivitesi </span>{{c1::artar}}<span style=\"font-size: 13.3333px;\"> → </span>rT3 {{c1::artar}}</div>"
+     "after": "Ötiroit hasta sendromu (nontiroit hastalık sendromu) patofizyolojisi<div><br></div><div><b>5</b><span style=\"font-size: 13.3333px;\"><sup><b>'</b></sup> deiyodinaz aktivitesi </span>{{c1::azalır}}<span style=\"font-size: 13.3333px;\"> → </span>(T3 {{c1::azalır}})</div><div><span style=\"font-size: 13.3333px;\"><br></span></div><div><span style=\"font-size: 13.3333px;\"><b>5</b> deiyodinaz aktivitesi </span>{{c1::artar}}<span style=\"font-size: 13.3333px;\"> → </span>rT3 {{c1::artar}}</div>"
     }
    },
    "changes": [
@@ -19262,7 +19262,7 @@
    "fields": {
     "Text": {
      "before": "Anti-TBC tdv <b>HepatoToks ilaç Kesilme Kriterleri:</b><div><br></div><div>Asemp hasta: <b>Transaminazlar</b> x{{c1::5}}&nbsp;</div><div><br></div><div>Semp: x{{c1::3}}</div><div><br></div><div>Bil: &gt;{{c1::1,5}}</div>",
-     "after": "Antitüberküloz tedavide <b>hepatotoksisite nedeniyle ilacı kesme kriterleri:</b><div><br></div><div>Asemptomatik hasta: <b>transaminazlar</b> ≥ {{c1::5}} kat</div><div><br></div><div>Semptomatik hasta: ≥ {{c1::3}} kat</div><div><br></div><div>Bilirübin: &gt; {{c1::1,5}}</div>"
+     "after": "Antitüberküloz tedavide <b>hepatotoksisite nedeniyle ilacı kesme kriterleri:</b><div><br></div><div>Asemptomatik hasta: <b>transaminazlar</b> ≥ {{c1::5}} kat</div><div><br></div><div>Semptomatik hasta: ≥ {{c1::3}} kat</div><div><br></div><div>Bilirubin: &gt; {{c1::1,5}}</div>"
     }
    },
    "changes": [
@@ -19727,7 +19727,7 @@
    "fields": {
     "Text": {
      "before": "Warfarin Toks<div><br></div><div>INR:</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::</span><span style=\"background: var(--field-bg);\"><font color=\"#ff3b30\">4.5 - 10</font></span><span style=\"color: var(--field-fg); background: var(--field-bg);\">}}</span>&nbsp;arası: Warfarin KES</div><div><br></div><div>&gt;&nbsp;{{c1::<font color=\"#ff3b30\">10</font>}}:&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">Warfarin KES + Düşük Doz oral Vit K</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">Tüm Yükseklikler + Ciddi Kanama:&nbsp;</span><span style=\"color: var(--field-fg);\">Warfarin KES + İV Vit K +&nbsp;</span>{{c2::4F-PCC}}</div>\n",
-     "after": "Warfarin toksisitesi<div><br></div><div>INR:</div><div><br></div><div>{{c1::<font color=\"#ff3b30\"&gt; 4,5–10</font>}} arası: warfarin kesilir</div><div><br></div><div>&gt; {{c1::<font color=\"#ff3b30\"&gt; 10</font>}}: warfarin kesilir + düşük doz oral K vitamini</div><div><br></div><div>Her INR yüksekliği + ciddi kanama: warfarin kesilir + İV K vitamini + {{c2::4F-PCC}}</div>"
+     "after": "Warfarin toksisitesi<div><br></div><div>INR:</div><div><br></div><div>{{c1::<font color=\"#ff3b30\">4,5–10</font>}} arası: warfarin kesilir</div><div><br></div><div>&gt; {{c1::<font color=\"#ff3b30\">10</font>}}: warfarin kesilir + düşük doz oral K vitamini</div><div><br></div><div>Her INR yüksekliği + ciddi kanama: warfarin kesilir + İV K vitamini + {{c2::4F-PCC}}</div>"
     },
     "Extra": {
      "before": "TDP --&gt; 4F-PCC bulunamıyorsa verilir. Artık 4F-PCC (Önemli)",
@@ -19766,7 +19766,7 @@
    "fields": {
     "Text": {
      "before": "MDS:<div><br></div><div><b>En Sık Mut:</b> {{c1::<font color=\"#ff3b30\">SF3B1</font>}} --&gt; RS artışı ile ilişkili--&gt;İyi Prognoz&nbsp;</div><div><br></div><div>En sık <b>Kromozomal Anomal</b>i: {{c1::<font color=\"#ff3b30\">5q del</font>}} --&gt; İzole ise İyi Prognoz</div><div><br></div><div><b>Trombositoz</b> ilişkili: {{c1::<font color=\"#ff3b30\">5q del</font>}} ve {{c1::<font color=\"#ff3b30\">JAK2</font>}}&nbsp;</div>",
-     "after": "MDS:<div><br></div><div><b>En sık mutasyon:</b> {{c1::<font color=\"#ff3b30\">SF3B1</font>}} → halkalı sideroblast artışı ile ilişkili → iyi prognoz</div><div><br></div><div>En sık <b>kromozomal anomali</b>: {{c1::<font color=\"#ff3b30\"&gt; 5q delesyonu</font>}} → izole ise iyi prognoz</div><div><br></div><div><b>Trombositoz</b> ile ilişkili: {{c1::<font color=\"#ff3b30\"&gt; 5q delesyonu</font>}} ve {{c1::<font color=\"#ff3b30\">JAK2</font>}}</div>"
+     "after": "MDS:<div><br></div><div><b>En sık mutasyon:</b> {{c1::<font color=\"#ff3b30\">SF3B1</font>}} → halkalı sideroblast artışı ile ilişkili → iyi prognoz</div><div><br></div><div>En sık <b>kromozomal anomali</b>: {{c1::<font color=\"#ff3b30\">5q delesyonu</font>}} → izole ise iyi prognoz</div><div><br></div><div><b>Trombositoz</b> ile ilişkili: {{c1::<font color=\"#ff3b30\">5q delesyonu</font>}} ve {{c1::<font color=\"#ff3b30\">JAK2</font>}}</div>"
     }
    },
    "changes": [

@@ -3752,7 +3752,7 @@
    "fields": {
     "Text": {
      "before": "Tamamlayici ek gidalara geçiş önerileri<br><br>Biberon {{c1::yerine bardak}} tercih edilmeli<br><br>Enerji yoğunluğu anne sütünü GEÇ{{c1::MELİDİR}}<br><br>Zn içeren gıdalar verilmelidir<br><br>Fitat alımı {{c2::AZ}} olmalı<br><br>Anne sütü {{c2::12}}. aya kadar devam etmeli<br><br>Günde &gt;{{c2::700}} ml inek sütü VERİLMEMELİ",
-     "after": "Tamamlayıcı beslenmeye geçiş önerileri<br><br>Biberon {{c1::yerine bardak}} tercih edilmeli<br><br>Enerji yoğunluğu anne sütünü {{c1::geçmelidir}}<br><br>Zn içeren gıdalar verilmelidir<br><br>Fitat alımı {{c2::az}} olmalı<br><br>Anne sütü en az {{c2::12}}. aya kadar devam etmeli<br><br>Günde &gt; {{c2::700}} ml inek sütü verilmemeli"
+     "after": "Tamamlayıcı beslenmeye geçiş önerileri<br><br>Biberon {{c1::yerine bardak}} tercih edilmeli<br><br>Enerji yoğunluğu anne sütünü {{c1::geçmelidir}}<br><br>Zn içeren gıdalar verilmelidir<br><br>Fitat alımı {{c2::az}} olmalı<br><br>Anne sütü en az {{c2::12}}. aya kadar devam etmeli<br><br>Günde &gt; {{c2::700}} mL inek sütü verilmemeli"
     },
     "Extra": {
      "before": "",
@@ -11072,7 +11072,7 @@
    "fields": {
     "Text": {
      "before": "Bronşiolit Etkenleri:<div><br></div><div>{{c1::Tüm Virusler}}</div><div>+&nbsp;</div><div>{{c1::Mikoplazma}}</div>",
-     "after": "Bronşiyolit etkenleri:<div><br></div><div>{{c1::Tüm virüsler}}</div><div>+</div><div>{{c1::Mikoplazma}}</div>"
+     "after": "Bronşiolit etkenleri:<div><br></div><div>{{c1::Tüm virüsler}}</div><div>+</div><div>{{c1::Mikoplazma}}</div>"
     },
     "Extra": {
      "before": "Bakteri olarak sadece MİKOPLAZMA",
@@ -30805,11 +30805,11 @@
    "fields": {
     "Text": {
      "before": "ÇÇ Yatış END<div><br></div><div>Bronşiolit: &lt; {{c1::3}} ay</div><div><br></div><div>Pnömoni: &lt; {{c1::6}} ay</div>",
-     "after": "Çocukluk çağında hastaneye yatış endikasyonu (yaş)<div><br></div><div>Bronşiyolit: &lt; {{c1::3}} ay</div><div><br></div><div>Pnömoni: &lt; {{c1::6}} ay</div>"
+     "after": "Çocukluk çağında hastaneye yatış endikasyonu (yaş)<div><br></div><div>Bronşiolit: &lt; {{c1::3}} ay</div><div><br></div><div>Pnömoni: &lt; {{c1::6}} ay</div>"
     },
     "Extra": {
      "before": "Pnömoni --&gt; <b>AĞIR </b>Dehid<div><br></div><div>Bronşiolit--&gt; Prematüre doğan</div>",
-     "after": "Pnömoni → <b>ağır</b> dehidratasyon<div><br></div><div>Bronşiyolit → prematüre doğum</div>"
+     "after": "Pnömoni → <b>ağır</b> dehidratasyon<div><br></div><div>Bronşiolit → prematüre doğum</div>"
     }
    },
    "changes": [
