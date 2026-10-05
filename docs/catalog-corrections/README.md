@@ -1,8 +1,7 @@
 # BKA TUS kart düzeltmeleri
 
 Bu dizin, paketle gelen BKA TUS kataloğunun (`assets/catalog/bka-tus-complete.apkg`) ders ders
-önerilen kart düzeltmelerini tutar. Düzeltmeler **henüz pakete uygulanmadı**. Editör her notu
-inceleyip karar verir; yalnızca kabul edilen notlar pakete uygulanır.
+önerilen kart düzeltmelerini tutar. İncelenen tüm düzeltmeler **pakete uygulandı** (`assets/catalog/bka-tus-complete.apkg`, `.tuspack` ve `bka-manifest.json` güncellendi).
 
 Yöntem, Farmakoloji için hazırlanan "BKA TUS · Farmakoloji — kart düzeltmeleri (önce / sonra)"
 çalışma kitabının birebir aynısıdır: AI Rehberi'nin değişmez kuralları, öncelik sırası, dört
