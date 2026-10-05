@@ -23,6 +23,7 @@ hazırlandıkça eklenir.
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Kadın Doğum | `kadin-dogum.patch.json` | 524 | 522 | 17 | 141 | 295 | 69 | 17 |
 | Küçük Stajlar | `kucuk-stajlar.patch.json` | 484 | 481 | 16 | 125 | 282 | 58 | 14 |
+| Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | 563 | 25 | 169 | 318 | 51 | 27 |
 <!-- status:end -->
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
