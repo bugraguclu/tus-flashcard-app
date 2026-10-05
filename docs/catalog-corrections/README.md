@@ -31,9 +31,10 @@ hazırlandıkça eklenir.
 | Biyokimya | `biyokimya.patch.json` | 484 | 484 | 4 | 22 | 458 | 0 | 0 |
 | Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | 745 | 11 | 86 | 629 | 19 | 0 |
 | FHE | `fhe.patch.json` | 510 | 510 | 2 | 8 | 132 | 368 | 0 |
+| Anatomi | `anatomi.patch.json` | 381 | 381 | 2 | 3 | 130 | 246 | 0 |
 <!-- status:end -->
 
-`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız tıbbi doğrulama, yazım birliği ve son okuma tamam); Kadın Doğum, Küçük Stajlar, Genel Cerrahi, Patoloji, Mikrobiyoloji, Biyokimya, Deneme ve Soru ve FHE tamamlandı; Pediatri'de yazım birliği adımı, Dahiliye'de bağımsız tıbbi doğrulama ve yazım birliği adımları henüz yapılmadı. Anatomi dosyası hazırlanacak.
+`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız tıbbi doğrulama, yazım birliği ve son okuma tamam); Kadın Doğum, Küçük Stajlar, Genel Cerrahi, Patoloji, Mikrobiyoloji, Biyokimya, Deneme ve Soru, FHE ve Anatomi tamamlandı; Pediatri'de yazım birliği adımı, Dahiliye'de bağımsız tıbbi doğrulama ve yazım birliği adımları henüz yapılmadı. Tüm ders dosyaları tamamlandı.
 
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
