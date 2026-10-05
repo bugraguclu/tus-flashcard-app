@@ -24,7 +24,15 @@ hazırlandıkça eklenir.
 | Kadın Doğum | `kadin-dogum.patch.json` | 524 | 522 | 17 | 141 | 295 | 69 | 17 |
 | Küçük Stajlar | `kucuk-stajlar.patch.json` | 484 | 481 | 16 | 125 | 282 | 58 | 14 |
 | Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | 563 | 25 | 169 | 318 | 51 | 27 |
+| Pediatri | `pediatri.patch.json` | 1169 | 1167 | 43 | 377 | 650 | 97 | 40 |
+| Dahiliye | `dahiliye.patch.json` | 995 | 995 | 30 | 287 | 607 | 71 | 20 |
 <!-- status:end -->
+
+`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız
+tıbbi doğrulama, yazım birliği ve son okuma tamam); Pediatri'de yazım birliği adımı, Dahiliye'de
+bağımsız tıbbi doğrulama ve yazım birliği adımları henüz yapılmadı. Patoloji, Mikrobiyoloji,
+Biyokimya, FHE, Anatomi ve Deneme ve Soru dosyaları henüz yok.
+
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
 
