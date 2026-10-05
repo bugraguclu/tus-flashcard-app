@@ -13,7 +13,7 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "redo-in-progress",
  "summary": {
   "reviewedNotes": 587,
   "changedNotes": 168,
@@ -17842,5 +17842,6 @@
    "kisaltma": "MMR",
    "acilim": "Kızamık-Kabakulak-Kızamıkçık aşısı"
   }
- ]
+ ],
+ "redone": []
 }

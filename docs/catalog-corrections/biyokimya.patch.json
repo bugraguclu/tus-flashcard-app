@@ -13,18 +13,18 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "redo-in-progress",
  "summary": {
   "reviewedNotes": 484,
   "changedNotes": 484,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 0,
-  "changeItems": 1010,
+  "changeItems": 1025,
   "notesBySeverity": {
-   "Kritik": 4,
-   "Yüksek": 22,
-   "Orta": 458,
-   "Düşük": 0
+   "Kritik": 7,
+   "Yüksek": 23,
+   "Orta": 451,
+   "Düşük": 3
   },
   "notesByTopic": {
    "Genel": 180,
@@ -35,31 +35,30 @@
    "Proteinler": 112
   },
   "itemsByCategory": {
-   "Biçim": {
-    "Düşük": 481
-   },
-   "Dil bilgisi": {
-    "Orta": 3,
-    "Düşük": 1
+   "Tıbbi doğruluk": {
+    "Kritik": 7,
+    "Yüksek": 3
    },
    "Eksik kritik bilgi": {
-    "Yüksek": 15
-   },
-   "Kısaltma": {
-    "Orta": 223
+    "Yüksek": 18
    },
    "Soru netliği": {
-    "Orta": 149,
-    "Yüksek": 1
+    "Yüksek": 2,
+    "Orta": 139
    },
    "Terim/yazım": {
-    "Orta": 125,
-    "Düşük": 2,
-    "Yüksek": 1
+    "Orta": 118,
+    "Düşük": 5
    },
-   "Tıbbi doğruluk": {
-    "Kritik": 4,
-    "Yüksek": 5
+   "Kısaltma": {
+    "Orta": 243
+   },
+   "Dil bilgisi": {
+    "Orta": 4,
+    "Düşük": 7
+   },
+   "Biçim": {
+    "Düşük": 479
    }
   },
   "secondReview": {
@@ -111,46 +110,42 @@
    "order": 1
   },
   {
+   "order": 2,
    "noteId": 1604153128897,
    "guid": "sR{b^&<LTG",
    "topic": "Karbonhidratlar",
    "severity": "Kritik",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Pentoz P Yolu&nbsp; Glikolizle bağlantısı&nbsp;<div><br></div><div>{{c1::Fru 6P}}</div><div>{{c1::Asetaldehit 3P}} üzerinden&nbsp;</div>",
-     "after": "Pentoz fosfat yolunun non-oksidatif kolunun glikoliz ile bağlantı noktaları olan ara ürünler:<div><br></div><div>• {{c1::Fruktoz 6-fosfat}}</div><div>• {{c1::Gliseraldehit 3-fosfat}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Transketolaz ve transaldolaz enzimleri pentozları glikolitik ara ürünler olan fruktoz 6-fosfat ve gliseraldehit 3-fosfata dönüştürür; kökteki 'asetaldehit 3P' hatalı bir terimdi."
+     "after": "Pentoz fosfat yolunun glikolizle bağlantısı<div><br></div><div>{{c1::Fruktoz 6-fosfat}}</div><div>{{c1::Gliseraldehit 3-fosfat}} üzerinden</div>"
     }
    },
    "changes": [
     {
      "severity": "Kritik",
      "category": "Tıbbi doğruluk",
-     "text": "Asetaldehit 3P → Gliseraldehit 3-fosfat",
-     "rationale": "Pentoz fosfat yolunun non-oksidatif kolunda glikolize bağlanan moleküller fruktoz 6-fosfat ve gliseraldehit 3-fosfattır; orijinal kökteki 'asetaldehit 3P' bariz bir tıbbi hatadır."
+     "text": "\"Asetaldehit 3P\" → \"Gliseraldehit 3-fosfat\"",
+     "rationale": "Pentoz fosfat yolunun oksidatif olmayan kolu glikolize fruktoz 6-fosfat ve gliseraldehit 3-fosfat üzerinden bağlanır; \"asetaldehit 3-fosfat\" bu yolda bulunmayan bir adlandırmadır."
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Fru 6P → Fruktoz 6-fosfat; Pentoz P Yolu → Pentoz fosfat yolu",
+     "text": "\"Pentoz P Yolu\" → \"Pentoz fosfat yolunun\"; \"Fru 6P\" → \"Fruktoz 6-fosfat\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli listeye dönüştürüldü",
+     "text": "&nbsp; temizlendi; \"Glikolizle\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Orijinal nottaki bariz tıbbi hata 'Asetaldehit 3P' yerine doğru biyokimyasal ara ürün 'Gliseraldehit 3-fosfat' yazıldı; 'Fru 6P' tam adıyla açıldı.\nNeden: Asetaldehit 3-fosfat adında bir metabolit yoktur; pentoz fosfat yolunun non-oksidatif enzimleri gliseraldehit 3-fosfat ve fruktoz 6-fosfat üretir.\nNasıl: [TD1, KS1, BÇ1, YP1] Tıbbi hata giderildi, glikolitik bağlantı korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry / Harper's Illustrated Biochemistry, The Pentose Phosphate Pathway of Glucose Oxidation.",
+   "aiNote": "Ne: Cevaptaki \"Asetaldehit 3P\" → \"Gliseraldehit 3-fosfat\" düzeltildi; \"Pentoz P Yolu\" ve \"Fru 6P\" açıldı.\nNeden: Transketolaz ve transaldolaz tepkimeleri glikolize fruktoz 6-fosfat ve gliseraldehit 3-fosfat verir; asetaldehit bu yolun ara ürünü değildir.\nNasıl: [TD1, KS1, YP1] Yalnız yanlış molekül adı değiştirildi; iki c1 boşluğu ve satır düzeni korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, pentoz fosfat yolu (oksidatif olmayan tepkimeler); Harper's Illustrated Biochemistry, pentoz fosfat yolu.",
    "decision": null,
-   "editorNote": null,
-   "order": 2
+   "editorNote": null
   },
   {
    "noteId": 1620818348180,
@@ -699,124 +694,118 @@
    "order": 15
   },
   {
+   "order": 16,
    "noteId": 1604151454632,
    "guid": "io/ljeU0w}",
    "topic": "Karbonhidratlar",
-   "severity": "Yüksek",
+   "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Komp 1 inh'leri<div><br></div><div>{{c1::Rotenon&nbsp;}}<div>{{c1::Amobarbital}} {{c1::Sekobarbital}}</div><div>{{c1::Plerisidin A}}</div></div>",
-     "after": "Elektron transport zincirinde Kompleks I (NADH dehidrojenaz) inhibitörleri:<div><br></div><div>• {{c1::Rotenon}}</div><div>• {{c1::Amobarbital}} ve {{c1::sekobarbital}}</div><div>• {{c1::Pierisidin A}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Kompleks I inhibitörleri elektronların Fe-S merkezlerinden koenzim Q'ya (ubikinon) transferini engeller."
+     "after": "Kompleks I inhibitörleri<div><br></div><div>{{c1::Rotenon}}<div>{{c1::Amobarbital}}, {{c1::sekobarbital}}</div><div>{{c1::Pierisidin A}}</div></div>"
     }
    },
    "changes": [
     {
-     "severity": "Yüksek",
-     "category": "Tıbbi doğruluk",
-     "text": "Plerisidin A → Pierisidin A",
-     "rationale": "Orijinal nottaki 'Plerisidin A' yazımı biyokimyasal literatürde yer almayan bir yazım hatası olup doğru bileşik adı Pierisidin A'dır."
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"Komp 1 inh'leri\" → \"Kompleks I inhibitörleri\"",
+     "rationale": ""
     },
     {
      "severity": "Orta",
-     "category": "Kısaltma",
-     "text": "Komp 1 inh'leri → Kompleks I inhibitörleri",
+     "category": "Terim/yazım",
+     "text": "\"Plerisidin A\" → \"Pierisidin A\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli listeye dönüştürüldü",
+     "text": "\"Amobarbital Sekobarbital\" → \"Amobarbital, sekobarbital\"; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Plerisidin A\" yazım hatası \"Pierisidin A\" olarak düzeltildi; \"Komp 1 inh'leri\" ifadesi tam yazıldı.\nNeden: Pierisidin A Streptomyces kökenli bir Kompleks I inhibitörüdür, orijinaldeki 'l' harfi yazım hatasıydı.\nNasıl: [TD1, KS1, BÇ1, YP1] Biyokimyasal literatürdeki doğru ad yazıldı, c1 numaraları korundu.\nKaynak: Harper's Illustrated Biochemistry / Lehninger, Inhibitors of the Respiratory Chain.",
+   "aiNote": "Ne: Başlık \"Kompleks I inhibitörleri\" olarak açıldı, \"Plerisidin A\" → \"Pierisidin A\" düzeltildi ve iki barbitürat virgülle ayrıldı.\nNeden: \"Komp 1 inh'leri\" kişisel kısaltmaydı; \"Plerisidin\" yazımı, İngilizce adı piericidin A olan antibiyotiğin harf hatalı biçimiydi.\nNasıl: [YZ2, KS1, TD3, BÇ1] Ad, İngilizce adın Türkçe okunuşuyla yazıldı; rotenonun, barbitüratların (amobarbital) ve pierisidin A'nın kompleks I'den ubikinona elektron aktarımını engellediği doğrulandı, liste ve c1 korundu.\nKaynak: Harper's Illustrated Biochemistry, solunum zinciri inhibitörleri; Lehninger Principles of Biochemistry, oksidatif fosforilasyonu etkileyen ajanlar tablosu.",
    "decision": null,
-   "editorNote": null,
-   "order": 16
+   "editorNote": null
   },
   {
+   "order": 17,
    "noteId": 1604151847449,
    "guid": "j|xuBi[.#?",
    "topic": "Karbonhidratlar",
-   "severity": "Yüksek",
+   "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Komp 5&nbsp;<div>F<sub>0</sub>&nbsp;inh --&gt; {{c1::Oligomisin Venturosidin}}</div><div>F<sub>1</sub>&nbsp;inh. --&gt; {{c1::Aurovertin&nbsp;}}</div>",
-     "after": "ATP sentaz (Kompleks V) inhibitörleri:<div>• F₀ alt birimi inhibitörleri: {{c1::Oligomisin ve venturisidin}}</div><div>• F₁ alt birimi inhibitörü: {{c1::Aurovertin}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Oligomisin F₀ proton kanalını tıkayarak protonların matrikse dönüşünü önler; elektron transportu ile fosforilasyon eşleşmesini bozar."
+     "after": "Kompleks V (ATP sentaz)<div>F<sub>0</sub> inhibitörleri → {{c1::oligomisin, venturisidin}}</div><div>F<sub>1</sub> inhibitörü → {{c1::aurovertin}}</div>"
     }
    },
    "changes": [
     {
-     "severity": "Yüksek",
+     "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Venturosidin → venturisidin; Komp 5 → ATP sentaz (Kompleks V)",
-     "rationale": "Orijinal metindeki 'Venturosidin' yazımı biyokimyasal literatürde 'venturisidin' (venturicidin) olarak geçen antibiyotiğin yazım hatasıdır."
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli düzenleme yapıldı",
+     "text": "\"Venturosidin\" → \"venturisidin\"",
      "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: \"Venturosidin\" yazımı \"venturisidin\" olarak düzeltildi, alt birim inhibitörleri kategorize edildi.\nNeden: Literatürle uyumlu doğru antibiyotik adı yazıldı.\nNasıl: [TD1, YZ1, BÇ1] F0 ve F1 inhibitörleri korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, ATP Synthase Inhibitors.",
-   "decision": null,
-   "editorNote": null,
-   "order": 17
-  },
-  {
-   "noteId": 1604153307336,
-   "guid": "p+a>#!)-jq",
-   "topic": "Karbonhidratlar",
-   "severity": "Yüksek",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Asit şeker sentezi - Pentoz P Yolu arası bağlantı ---&gt; {{c1::Ksiloz 5P}}",
-     "after": "Glukuronik asit (üronik asit) yolu ile pentoz fosfat yolu arasındaki bağlantıyı sağlayan ara ürün: {{c1::D-Ksilüloz 5-fosfat}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Üronik asit yolunda L-ksilüloz ksilitol üzerinden D-ksilüloza ve ksilüloz kinaz ile D-ksilüloz 5-fosfata dönüşerek pentoz fosfat yoluna akar."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Yüksek",
-     "category": "Tıbbi doğruluk",
-     "text": "Ksiloz 5P → D-Ksilüloz 5-fosfat",
-     "rationale": "Üronik asit yolu ile pentoz fosfat yolu arasındaki gerçek bağlantı molekülü ketopentoz olan D-ksilüloz 5-fosfattır (aldopentoz olan ksiloz 5P değil)."
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Asit şeker sentezi - Pentoz P Yolu → Glukuronik asit yolu ile pentoz fosfat yolu",
+     "text": "\"Komp 5\" → \"Kompleks V (ATP sentaz)\"; \"F0 inh\" → \"F0 inhibitörleri\"; \"F1 inh.\" → \"F1 inhibitörü\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok temizlendi",
+     "text": "İki cevap virgülle ayrıldı ve küçük harfle yazıldı; --&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Orijinaldeki 'Ksiloz 5P' ifadesi doğru biyokimyasal metabolit olan 'D-Ksilüloz 5-fosfat' olarak düzeltildi; yolak adları açıldı.\nNeden: Ksiloz aldopentozdur, pentoz fosfat yoluna giren ara ürün ise ketopentoz olan ksilüloz 5-fosfattır.\nNasıl: [TD1, KS1, YP1] Doğru molekül adı yazıldı, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, The Uronic Acid Pathway.",
+   "aiNote": "Ne: \"Venturosidin\" → \"venturisidin\" düzeltildi; \"Komp 5\" → \"Kompleks V (ATP sentaz)\" ve \"inh\" → \"inhibitörleri/inhibitörü\" açıldı.\nNeden: \"Venturosidin\" yazımı, İngilizce adı venturicidin olan antibiyotiğin harf hatalı biçimiydi; başlık ve satırlar kişisel kısaltmalarla yazılmıştı.\nNasıl: [YZ2, KS1, TD3, BÇ1] Oligomisin ve venturisidinin F0 kısmını, aurovertinin F1 kısmını inhibe ettiği doğrulandı; F0/F1 alt simgeleri ve c1 korundu.\nKaynak: Lehninger Principles of Biochemistry, oksidatif fosforilasyonu etkileyen ajanlar tablosu.",
    "decision": null,
-   "editorNote": null,
-   "order": 18
+   "editorNote": null
+  },
+  {
+   "order": 18,
+   "noteId": 1604153307336,
+   "guid": "p+a>#!)-jq",
+   "topic": "Karbonhidratlar",
+   "severity": "Kritik",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Asit şeker sentezi - Pentoz P Yolu arası bağlantı ---&gt; {{c1::Ksiloz 5P}}",
+     "after": "Asit şeker (üronik asit) yolu ile pentoz fosfat yolu arasındaki bağlantı → {{c1::ksilüloz 5-fosfat}}"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Kritik",
+     "category": "Tıbbi doğruluk",
+     "text": "\"Ksiloz 5P\" → \"ksilüloz 5-fosfat\"",
+     "rationale": "Üronik asit yolu L-ksilüloz, ksilitol ve D-ksilüloz üzerinden D-ksilüloz 5-fosfat oluşturarak pentoz fosfat yoluna bağlanır; ksiloz 5-fosfat (aldopentoz) bu bağlantının molekülü değildir."
+    },
+    {
+     "severity": "Orta",
+     "category": "Soru netliği",
+     "text": "\"Asit şeker sentezi - Pentoz P Yolu arası bağlantı\" → \"Asit şeker (üronik asit) yolu ile pentoz fosfat yolu arasındaki bağlantı\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "---&gt; → ile değiştirildi",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: Cevap \"Ksiloz 5P\" → \"ksilüloz 5-fosfat\" düzeltildi; kök \"Asit şeker (üronik asit) yolu ile pentoz fosfat yolu arasındaki bağlantı\" biçiminde yazıldı.\nNeden: Üronik asit yolunun son ürünü olan D-ksilüloz 5-fosfat pentoz fosfat yoluna girer; ksiloz bir aldopentozdur ve bu bağlantıda yer almaz.\nNasıl: [TD1, SN1, KS1] Benzer adlı iki pentozdan doğrusu cevaba yazıldı ve c1 korundu; \"asit şeker sentezi\" ifadesi üronik asit yolu olarak açıklandı, \"Pentoz P\" açıldı.\nKaynak: Harper's Illustrated Biochemistry, üronik asit yolu; Lippincott Illustrated Reviews: Biochemistry, üronik asit yolu.",
+   "decision": null,
+   "editorNote": null
   },
   {
    "noteId": 1629617428873,
@@ -7899,903 +7888,856 @@
    "order": 212
   },
   {
+   "order": 213,
    "noteId": 1604150952548,
    "guid": "etC=vPm([(",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Diyetle alınan kompleks bileşiklerin 2Clu Yüksek enerjili Ortak ara ürünü --&gt; {{c1::Ac CoA}}",
-     "after": "Diyetle alınan kompleks organik moleküllerin katabolizmasındaki 2 karbonlu, yüksek enerjili ortak ara ürün: {{c1::Asetil-KoA}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Karbonhidrat, lipid ve aminoasitlerin yıkımında ortak kavşak noktası asetil-KoA olup Krebs döngüsüne girerek nihai oksidasyona uğrar."
+     "after": "Diyetle alınan kompleks bileşiklerin 2 karbonlu, yüksek enerjili ortak ara ürünü → {{c1::asetil-KoA}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Ac CoA → Asetil-KoA; 2Clu → 2 karbonlu",
+     "text": "\"2Clu\" → \"2 karbonlu\"; \"Ac CoA\" → \"asetil-KoA\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; oku kaldırıldı, iki nokta konuldu",
+     "text": "\"Yüksek enerjili Ortak\" → \"yüksek enerjili ortak\"; --&gt; → ile değiştirildi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Ac CoA\" kısaltması \"Asetil-KoA\" olarak açıldı, \"2Clu\" ifadesi \"2 karbonlu\" yapıldı ve ok işareti yerine iki nokta kondu.\nNeden: Telgraf üslubundaki kişisel kısaltmalar standart terminolojiye uyarlandı.\nNasıl: [KS1, BÇ1, YP1] Karbonhidrat/lipid metabolizması ortak ara ürünü korundu, c1 numarası sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Overview of Metabolism.",
+   "aiNote": "Ne: \"2Clu\" → \"2 karbonlu\" ve \"Ac CoA\" → \"asetil-KoA\" açıldı; satır içindeki büyük harfler küçültüldü ve ASCII ok → ile değiştirildi.\nNeden: \"2Clu\" ve \"Ac CoA\" yazarın kişisel kısaltmalarıydı; \"Yüksek\" ve \"Ortak\" gereksiz büyük harfle yazılmıştı.\nNasıl: [KS1, YZ1, BÇ1] KoA bileşikleri kılavuzdaki \"-KoA\" biçimiyle yazıldı; cevap (asetil-KoA) ve c1 değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 213
+   "editorNote": null
   },
   {
+   "order": 214,
    "noteId": 1604151001963,
    "guid": "f?McK4,4<R",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "ATP de Adenin - Riboz arası bağ --&gt; {{c1::Beta N glikozidik bağ}}",
-     "after": "ATP'de adenin bazı ile riboz şekeri arasındaki bağ: {{c1::β-N-glikozidik bağ}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Nükleozidlerde pürin bazlarının N9 azotu, pirimidin bazlarının ise N1 azotu ribozun C1' karbonuna β-N-glikozidik bağ ile bağlanır."
+     "after": "ATP'de adenin ile riboz arasındaki bağ → {{c1::beta-N-glikozidik bağ}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Beta N glikozidik bağ → β-N-glikozidik bağ; ATP de → ATP'de",
+     "category": "Dil bilgisi",
+     "text": "\"ATP de Adenin - Riboz arası bağ\" → \"ATP'de adenin ile riboz arasındaki bağ\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; oku kaldırıldı, iki nokta konuldu",
+     "text": "\"Beta N glikozidik bağ\" → \"beta-N-glikozidik bağ\"; --&gt; → ile değiştirildi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"ATP de\" yazımı \"ATP'de\", \"Beta N glikozidik\" terimi \"β-N-glikozidik\" olarak düzeltildi.\nNeden: TDK kesme işareti ve standart biyokimyasal bağ adlandırması uygulandı.\nNasıl: [YZ1, DB1, YP1] Nükleozid bağı korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Nucleotides and Nucleic Acids.",
+   "aiNote": "Ne: \"ATP de Adenin - Riboz arası bağ\" → \"ATP'de adenin ile riboz arasındaki bağ\" yazıldı; cevap \"beta-N-glikozidik bağ\" biçimine getirildi.\nNeden: Kısaltmadan sonra gelen bulunma eki ayrı yazılmıştı ve \" - \" ayracı ilişkiyi belirsiz bırakıyordu; bağ adı tiresiz ve büyük harfliydi.\nNasıl: [DB1, BÇ1] Ek kesme işaretiyle bitiştirildi, Yunan harfi kılavuza göre \"beta-\" olarak yazıldı; cevabın anlamı ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 214
+   "editorNote": null
   },
   {
+   "order": 215,
    "noteId": 1604151030426,
    "guid": "A.YxmWQf9+",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "ATP Riboz 5. C'u - P arası --&gt; {{c1::Ester bağı (1 tane)&nbsp;}}",
-     "after": "ATP'de ribozun 5' karbonu ile ilk fosfat grubu (alfa-fosfat) arasındaki bağ: {{c1::Ester bağı (fosfoester bağı)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Riboz ile alfa-fosfat arasında 1 adet fosfoester bağı bulunur; fosfatlar arası bağlar ise yüksek enerjili asit anhidrit bağlarıdır."
+     "after": "ATP'de ribozun 5. karbonu ile fosfat arasındaki bağ → {{c1::ester bağı (1 tane)}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "ATP Riboz 5. C'u - P arası → ATP'de ribozun 5' karbonu ile ilk fosfat grubu arasındaki bağ",
+     "category": "Kısaltma",
+     "text": "\"C'u\" → \"karbonu\"; \"P\" → \"fosfat\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Dil bilgisi",
+     "text": "\"ATP Riboz 5. C'u - P arası\" → \"ATP'de ribozun 5. karbonu ile fosfat arasındaki bağ\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, (1 tane) açıklaması Extra'ya taşındı",
+     "text": "\"Ester\" küçük harfle yazıldı; --&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kök netleştirildi, &nbsp; artıkları temizlendi; fosfoester bağı adlandırması eklendi.\nNeden: Telgraf üslubu giderildi, soru netleştirildi.\nNasıl: [SN1, BÇ1, YP4] Ester bağı korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Bioenergetics: The Role of ATP.",
+   "aiNote": "Ne: Kök \"ATP'de ribozun 5. karbonu ile fosfat arasındaki bağ\" biçiminde yazıldı; \"C'u\" ve \"P\" açıldı, cevap (ester bağı, 1 tane) korundu.\nNeden: \"ATP Riboz 5. C'u - P arası\" kişisel kısaltmalarla yazılmış, telgraf üslubunda bir köktü.\nNasıl: [KS1, DB1, BÇ1] \"C\" karbon, \"P\" fosfat olarak bağlama göre açıldı; riboz ile alfa-fosfat arasındaki tek fosfoester bağını soran c1 cevabı değiştirilmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 215
+   "editorNote": null
   },
   {
+   "order": 216,
    "noteId": 1604151065083,
    "guid": "E1C?]?)imi",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "ATP'de&nbsp; P'lar arası bağ --&gt; {{c1::Yüksek enerjili P bağı (Asit anhidrit bağı - 2 tane)&nbsp;}}",
-     "after": "ATP molekülünde fosfat grupları arasındaki yüksek enerjili bağlar: {{c1::Asit anhidrit bağları (fosfoanhidrit bağları, 2 adet)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "ATP'de alfa-beta ve beta-gama fosfatları arasında 2 adet yüksek enerjili fosfoanhidrit bağı yer alır."
+     "after": "ATP'de fosfatlar arasındaki bağ → {{c1::yüksek enerjili fosfat bağı (asit anhidrit bağı, 2 tane)}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "P'lar arası bağ → fosfat grupları arasındaki yüksek enerjili bağlar",
+     "category": "Kısaltma",
+     "text": "\"P'lar\" → \"fosfatlar\"; \"P bağı\" → \"fosfat bağı\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"arası bağ\" → \"arasındaki bağ\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, tire ve parantez formatı düzenlendi",
+     "text": "Büyük harfler küçültüldü; parantez içindeki \" - \" → \", \"; --&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltma ve &nbsp; temizlendi, bağ tipi fosfoanhidrit olarak netleştirildi.\nNeden: Kişisel not dili profesyonel kart diline dönüştürüldü.\nNasıl: [SN1, YZ1, YP4] 2 adet asit anhidrit bağı korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Bioenergetics and Biochemical Reaction Types.",
+   "aiNote": "Ne: \"P'lar arası bağ\" → \"fosfatlar arasındaki bağ\" ve \"P bağı\" → \"fosfat bağı\" açıldı; parantez içi \"asit anhidrit bağı, 2 tane\" biçiminde yazıldı.\nNeden: \"P\" kısaltması kişiseldi; satırda &nbsp;, ASCII ok ve gereksiz büyük harfler vardı.\nNasıl: [KS1, DB1, BÇ1] Alfa-beta ve beta-gama fosfatları arasındaki iki fosfoanhidrit bağını anlatan cevap anlamca korundu; yalnız yazım ve ayraç düzeltildi.",
    "decision": null,
-   "editorNote": null,
-   "order": 216
+   "editorNote": null
   },
   {
+   "order": 217,
    "noteId": 1604151103142,
    "guid": "Jy8p(s}DUW",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "P içermeyen tek yüksek enerjili bileşik --&gt; {{c1::SAM&nbsp;}}",
-     "after": "Yapısında fosfat grubu içermeyen, yüksek enerjili sülfonyum bağı taşıyan bileşik: {{c1::S-adenozilmetiyonin (SAM)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "SAM, yapısındaki yüksek enerjili sülfonyum bağı sayesinde organizmadaki başlıca metil grubu vericisidir."
+     "after": "Fosfat içermeyen tek yüksek enerjili bileşik → {{c1::SAM}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "P içermeyen → fosfat grubu içermeyen; SAM → S-adenozilmetiyonin (SAM)",
+     "text": "\"P içermeyen\" → \"Fosfat içermeyen\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, profesyonel soru cümlesi kuruldu",
+     "text": "--&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: P ve SAM kısaltmaları açıldı, yüksek enerjili bağ tipi belirtildi.\nNeden: Standart terminoloji ve soru kökü netliği sağlandı.\nNasıl: [KS1, SN1, YP4] Yüksek enerjili bileşik özelliği korundu, c1 sabit tutuldu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, Amino Acid Metabolism.",
+   "aiNote": "Ne: \"P içermeyen\" → \"Fosfat içermeyen\" açıldı; ASCII ok ve &nbsp; düzeltildi, cevap SAM korundu.\nNeden: \"P\" kişisel kısaltmaydı; \"tek\" ifadesi ayrıca doğrulama gerektiriyordu.\nNasıl: [KS1, TD3, KS2] Harper's Illustrated Biochemistry kitabındaki yüksek enerjili bileşikler listesinde (nükleozid trifosfatlar, PEP, 1,3-bisfosfogliserat, kreatin fosfat, KoA ve ACP tiyoesterleri, aminoasil-tRNA, UDP-glukoz, PRPP, SAM) fosfat içermeyen tek bileşiğin SAM olduğu doğrulandı; SAM standart kısaltma olarak bırakıldı.\nKaynak: Harper's Illustrated Biochemistry, biyoenerjetik bölümü (yüksek enerjili bileşikler).",
    "decision": null,
-   "editorNote": null,
-   "order": 217
+   "editorNote": null
   },
   {
+   "order": 218,
    "noteId": 1604151157414,
    "guid": "H#l#^ZFGlC",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Tek Reax ile ADP ----&gt; ATP dönüşümü yapan moleküller (4)<div><br></div><div>{{c1::Suc CoA}}<div><div>{{c2::Kreatin P}}</div><div>{{c1::PEP}}</div></div><div>{{c2::1-3 biPG}}</div></div>",
-     "after": "Substrat düzeyinde fosforilasyon ile tek basamakta ADP'den ATP (veya GDP'den GTP) sentezleten yüksek enerjili bileşikler (4):<div><br></div><div>• {{c1::Süksinil-KoA}}</div><div>• {{c2::Kreatin fosfat}}</div><div>• {{c1::Fosfoenolpirüvat (PEP)}}</div><div>• {{c2::1,3-bisfosfogliserat (1,3-BPG)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Süksinil-KoA süksinat tiyokinaz ile GTP/ATP; kreatin fosfat kreatin kinaz ile ATP; PEP pirüvat kinaz ile ATP; 1,3-BPG ise fosfogliserat kinaz ile ATP üretir."
+     "after": "Tek reaksiyonla ADP → ATP dönüşümü yapan moleküller (4)<div><br></div><div>{{c1::Süksinil-KoA}}<div><div>{{c2::Kreatin fosfat}}</div><div>{{c1::PEP}}</div></div><div>{{c2::1,3-bisfosfogliserat}}</div></div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Suc CoA → Süksinil-KoA; Kreatin P → Kreatin fosfat; 1-3 biPG → 1,3-bisfosfogliserat",
-     "rationale": ""
-    },
-    {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Tek Reax ile ADP ----&gt; ATP dönüşümü yapan moleküller → Substrat düzeyinde fosforilasyon ile tek basamakta ADP'den ATP sentezleten yüksek enerjili bileşikler",
+     "text": "\"Tek Reax ile\" → \"Tek reaksiyonla\"; \"Suc CoA\" → \"Süksinil-KoA\"; \"Kreatin P\" → \"Kreatin fosfat\"; \"1-3 biPG\" → \"1,3-bisfosfogliserat\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve div artıkları maddeli listeye dönüştürüldü",
+     "text": "----&gt; → ile değiştirildi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kök substrat düzeyinde fosforilasyon olarak netleştirildi, kısaltmalar açıldı, maddeli liste yapıldı.\nNeden: Telgraf üslubu ve kişisel kısaltmalar standart terminolojiye uyarlandı.\nNasıl: [SN1, KS1, BÇ1, YP1] c1 (Süksinil-KoA, PEP) ve c2 (Kreatin fosfat, 1,3-BPG) dağılımı birebir korundu.\nKaynak: Harper's Illustrated Biochemistry, Glycolysis and the Citric Acid Cycle.",
+   "aiNote": "Ne: \"Reax\", \"Suc CoA\", \"Kreatin P\" ve \"1-3 biPG\" açıldı; ASCII ok → ile değiştirildi.\nNeden: Başlık ve cevaplar kişisel kısaltmalarla yazılmıştı; \"1-3\" konum yazımı standart değildi.\nNasıl: [KS1, YZ1, YP1] Konum numaraları \"1,3-bisfosfogliserat\" biçiminde yazıldı, PEP standart kısaltma olarak bırakıldı; c1/c2 dağılımı ve sayı (4) korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 218
+   "editorNote": null
   },
   {
+   "order": 219,
    "noteId": 1604151196970,
    "guid": "uJG48cH[=5",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Hidrit iyonu (1 proton 2 e) kabul eden --&gt; {{c1::NAD<sup>+</sup>}}",
-     "after": "Dehidrojenaz reaksiyonlarında hidrit iyonu (1 proton, 2 elektron [H⁻]) kabul eden koenzim: {{c1::NAD⁺}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "NAD⁺ ve NADP⁺ 1 hidrit iyonu (H⁻) alarak indirgenir (NADH + H⁺); FAD ise 2 hidrojen atomu (2 proton + 2 elektron) kabul eder."
+     "after": "Hidrit iyonu (1 proton, 2 elektron) kabul eden koenzim → {{c1::NAD<sup>+</sup>}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "NAD<sup>+</sup> → NAD⁺; 1 proton 2 e → 1 proton, 2 elektron",
+     "category": "Kısaltma",
+     "text": "\"2 e\" → \"2 elektron\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Soru netliği",
+     "text": "\"kabul eden\" → \"kabul eden koenzim\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; oku kaldırıldı, iki nokta konuldu",
+     "text": "\"1 proton 2 e\" arasına virgül kondu; --&gt; → ile değiştirildi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: NAD+ üst simgesi unicode formatına uyarlandı, hidrojen/elektron aktarımı parantez içinde açıklandı.\nNeden: Biyokimyasal terminoloji ve biçim kurallarına uyum sağlandı.\nNasıl: [YZ1, BÇ1, YP1] Hidrit iyonu kabul eden koenzim korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Bioenergetics and Redox Reactions.",
+   "aiNote": "Ne: \"2 e\" → \"2 elektron\" açıldı ve kök \"kabul eden koenzim\" diye tamamlandı.\nNeden: \"e\" kısaltması kişiseldi; kök, sorulanın bir koenzim olduğunu söylemiyordu.\nNasıl: [KS1, SN1, BÇ1] Cevap NAD+ ve üst simge biçimi korundu; kökte yalnız eksik ad eklendi.",
    "decision": null,
-   "editorNote": null,
-   "order": 219
+   "editorNote": null
   },
   {
+   "order": 220,
    "noteId": 1604151319026,
    "guid": "PruuL&6.@_",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "ETS&nbsp;<div>Komp 1 --&gt; {{c1::NADH'dan}}&nbsp;</div><div>Komp 2 --&gt; {{c1::Süksinattan}}&nbsp; &nbsp; e<sup>-</sup> alır</div>",
-     "after": "Elektron transport zincirinde (ETS):<div>• Kompleks I elektronları {{c1::NADH'den}} alır.</div><div>• Kompleks II elektronları {{c1::süksinattan (FADH₂)}} alır.</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Her iki solunum zinciri kompleksi de aldıkları elektronları lipidde çözünen koenzim Q'ya (ubikinon) aktarır."
+     "after": "Elektron transport zinciri<div>Kompleks I → {{c1::NADH'den}}</div><div>Kompleks II → {{c1::süksinattan}} elektron alır</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Komp 1 → Kompleks I; Komp 2 → Kompleks II; NADH'dan → NADH'den",
+     "category": "Kısaltma",
+     "text": "\"ETS\" → \"Elektron transport zinciri\"; \"Komp 1\" → \"Kompleks I\"; \"Komp 2\" → \"Kompleks II\"; \"e-\" → \"elektron\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"NADH'dan\" → \"NADH'den\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli listeye dönüştürüldü",
+     "text": "--&gt; → ile değiştirildi; &nbsp; temizlendi; \"Süksinattan\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Komp\" kısaltmaları \"Kompleks I/II\" olarak yazıldı, kesme eki \"NADH'den\" olarak düzeltildi, &nbsp; temizlendi.\nNeden: TDK ek uyumu ve standart ETS terminolojisi sağlandı.\nNasıl: [YZ1, DB1, YP1] c1 içindeki NADH ve süksinat korundu.\nKaynak: Harper's Illustrated Biochemistry, The Respiratory Chain and Oxidative Phosphorylation.",
+   "aiNote": "Ne: \"ETS\" → \"Elektron transport zinciri\", \"Komp 1/2\" → \"Kompleks I/II\" ve \"e-\" → \"elektron\" açıldı; \"NADH'dan\" → \"NADH'den\" düzeltildi.\nNeden: Başlık ve satırlar kişisel kısaltmalarla yazılmıştı; ek, kısaltmanın okunuşuna uymuyordu.\nNasıl: [KS1, DB1, BÇ1] Kompleksler kaynaklardaki gibi Roma rakamıyla yazıldı; ek, H harfinin okunuşuna (\"he\") göre seçildi, c1 cevapları anlamca korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 220
+   "editorNote": null
   },
   {
+   "order": 221,
    "noteId": 1604151419820,
    "guid": "yyZwS:{Q=y",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Koenzim Q'ya elektron verenler<div><br></div><div>{{c1::Komp 1}}<div>{{c1::Komp 2&nbsp;}}</div><div>{{c2::Açil CoA DH}}</div><div>{{c2::Gliserol 3P DH&nbsp;}}</div></div>",
-     "after": "Elektron transport zincirinde koenzim Q'ya (ubikinon) elektron veren enzim ve kompleksler:<div><br></div><div>• {{c1::Kompleks I (NADH dehidrojenaz)}}</div><div>• {{c1::Kompleks II (Süksinat dehidrojenaz)}}</div><div>• {{c2::Açil-KoA dehidrojenaz (ETF aracılığıyla)}}</div><div>• {{c2::Gliserol 3-fosfat dehidrojenaz (mitokondriyal)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Mitokondri iç zarındaki ubikinon havuzuna Kompleks I ve II'nin yanı sıra yağ asidi oksidasyonundaki açil-KoA dehidrojenaz ve gliserol fosfat mekiğindeki mitokondriyal enzim elektron sağlar."
+     "after": "Koenzim Q'ya elektron verenler<div><br></div><div>{{c1::Kompleks I}}<div>{{c1::Kompleks II}}</div><div>{{c2::Açil-KoA dehidrogenaz}}</div><div>{{c2::Gliserol 3-fosfat dehidrogenaz}}</div></div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Komp 1/2 → Kompleks I/II; Açil CoA DH → Açil-KoA dehidrojenaz; Gliserol 3P DH → Gliserol 3-fosfat dehidrojenaz",
+     "text": "\"Komp 1\" → \"Kompleks I\"; \"Komp 2\" → \"Kompleks II\"; \"Açil CoA DH\" → \"Açil-KoA dehidrogenaz\"; \"Gliserol 3P DH\" → \"Gliserol 3-fosfat dehidrogenaz\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli listeye dönüştürüldü",
+     "text": "&nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, enzim adları tam yazıldı, maddeli liste düzenlendi.\nNeden: Kişisel kısaltmalar standart terminolojiye dönüştürüldü.\nNasıl: [KS1, BÇ1, YP1] c1 (Kompleks I, II) ve c2 (Açil-KoA DH, Gliserol 3-P DH) dağılımı tam korundu.\nKaynak: Lehninger Principles of Biochemistry, Oxidative Phosphorylation.",
+   "aiNote": "Ne: \"Komp 1/2\", \"Açil CoA DH\" ve \"Gliserol 3P DH\" açılarak \"Kompleks I/II\", \"Açil-KoA dehidrogenaz\" ve \"Gliserol 3-fosfat dehidrogenaz\" yazıldı.\nNeden: Dört cevabın tamamı kişisel kısaltmalarla yazılmıştı.\nNasıl: [KS1, YZ1, YP1] \"DH\" dehidrogenaz, \"P\" fosfat olarak açıldı; liste sırası ve c1/c2 dağılımı değiştirilmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 221
+   "editorNote": null
   },
   {
+   "order": 222,
    "noteId": 1604151475860,
    "guid": "bt$x-/hpfM",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Komp 2 İnh.leri<div><br></div><div>{{c1::TTFA}}<div>{{c1::Karboksin}}</div></div>",
-     "after": "Elektron transport zincirinde Kompleks II (süksinat dehidrojenaz) inhibitörleri:<div><br></div><div>• {{c1::TTFA (tenoiltrifloroaseton)}}</div><div>• {{c1::Karboksin}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Malonat ise süksinat dehidrojenazın aktif bölgesine bağlanan klasik kompetitif inhibitörüdür."
+     "after": "Kompleks II inhibitörleri<div><br></div><div>{{c1::TTFA}}<div>{{c1::Karboksin}}</div></div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Komp 2 İnh.leri → Kompleks II inhibitörleri; TTFA açılımı eklendi",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "Maddeli liste formatına getirildi",
+     "text": "\"Komp 2 İnh.leri\" → \"Kompleks II inhibitörleri\"",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, TTFA'nın açılımı belirtildi, liste biçimlendirildi.\nNeden: Standart terminoloji sağlandı.\nNasıl: [KS1, BÇ1, YP1] c1 içindeki TTFA ve Karboksin korundu.\nKaynak: Harper's Illustrated Biochemistry, The Respiratory Chain.",
+   "aiNote": "Ne: Başlık \"Komp 2 İnh.leri\" → \"Kompleks II inhibitörleri\" olarak açıldı.\nNeden: Başlık kişisel kısaltmalarla ve ek, kesme işareti yerine nokta ile yazılmıştı.\nNasıl: [KS1, KS2, YP1] TTFA (tenoiltrifloroaseton) standart kısaltma olarak bırakıldı; cevaplar ve c1 değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 222
+   "editorNote": null
   },
   {
+   "order": 223,
    "noteId": 1604151497482,
    "guid": "y_()H1dr2;",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Komp 2 (Suc. DH) kompetitif inh --- &gt; {{c1::Malonat&nbsp;}}",
-     "after": "Kompleks II'nin (süksinat dehidrojenaz) yapısal benzerlik gösteren klasik kompetitif inhibitörü: {{c1::Malonat}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Malonat (3 karbonlu dikarboksilik asit), süksinata (4 karbonlu dikarboksilik asit) yapısal benzerliği nedeniyle süksinat dehidrojenazın aktif bölgesine yarışmalı olarak bağlanır."
+     "after": "Kompleks II (süksinat dehidrogenaz) kompetitif inhibitörü → {{c1::malonat}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Komp 2 (Suc. DH) kompetitif inh --- &gt; → Kompleks II'nin klasik kompetitif inhibitörü:",
+     "category": "Kısaltma",
+     "text": "\"Komp 2 (Suc. DH)\" → \"Kompleks II (süksinat dehidrogenaz)\"; \"kompetitif inh\" → \"kompetitif inhibitörü\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; ve ASCII ok temizlendi",
+     "text": "\"--- &gt;\" → ile değiştirildi; &nbsp; temizlendi; \"Malonat\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, soru cümlesi netleştirildi, &nbsp; temizlendi.\nNeden: Telgraf üslubu profesyonel soru köküne dönüştürüldü.\nNasıl: [SN1, KS1, YP4] Kompetitif inhibitör malonat korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, The Citric Acid Cycle.",
+   "aiNote": "Ne: \"Komp 2 (Suc. DH)\" → \"Kompleks II (süksinat dehidrogenaz)\" ve \"inh\" → \"inhibitörü\" açıldı.\nNeden: Kök kişisel kısaltmalarla yazılmıştı; satırda boşluklu ASCII ok ve &nbsp; vardı.\nNasıl: [KS1, BÇ1, YP1] \"Suc. DH\" bağlama göre süksinat dehidrogenaz olarak açıldı; cevap (malonat) ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 223
+   "editorNote": null
   },
   {
+   "order": 224,
    "noteId": 1604151513292,
    "guid": "BwZ}WW(~G{",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Komp 3 inh<div><br></div><div>{{c1::Dimerkaprol}}<div>{{c1::Antimisin A}}</div></div>",
-     "after": "Elektron transport zincirinde Kompleks III (sitokrom bc₁ kompleksi) inhibitörleri:<div><br></div><div>• {{c1::Dimerkaprol (BAL)}}</div><div>• {{c1::Antimisin A}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Kompleks III inhibitörleri elektronların sitokrom b'den sitokrom c₁'e geçişini bloke eder."
+     "after": "Kompleks III inhibitörleri<div><br></div><div>{{c1::Dimerkaprol}}<div>{{c1::Antimisin A}}</div></div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Komp 3 inh → Kompleks III (sitokrom bc₁ kompleksi) inhibitörleri",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "Maddeli liste yapıldı",
+     "text": "\"Komp 3 inh\" → \"Kompleks III inhibitörleri\"",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, kompleksin biyokimyasal adı (sitokrom bc₁) parantezde belirtildi.\nNeden: Terminoloji profesyonelleştirildi.\nNasıl: [KS1, BÇ1, YP1] Dimerkaprol ve Antimisin A korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Respiratory Chain Inhibitors.",
+   "aiNote": "Ne: Başlık \"Komp 3 inh\" → \"Kompleks III inhibitörleri\" olarak açıldı.\nNeden: Başlık kişisel kısaltmalarla yazılmıştı ve ne sorulduğu ancak yazarın bağlamıyla anlaşılıyordu.\nNasıl: [KS1, YP1] Yalnız başlık açıldı; dimerkaprol ve antimisin A cevapları ile c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 224
+   "editorNote": null
   },
   {
+   "order": 225,
    "noteId": 1604151540458,
    "guid": "N^G#i2Ik0F",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Komp 4 inh. (4)<div><br></div><div>{{c1::CN<div>CO</div><div>H<sub>2</sub>S</div><div>NaN<sub>3</sub></div>}}<br><div><br></div></div>",
-     "after": "Elektron transport zincirinde Kompleks IV (sitokrom c oksidaz) inhibitörleri (4):<div><br></div><div>• {{c1::Siyanür (CN⁻)}}</div><div>• {{c1::Karbonmonoksit (CO)}}</div><div>• {{c1::Hidrojen sülfür (H₂S)}}</div><div>• {{c1::Sodyum azid (NaN₃)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Bu inhibitörler sitokrom a3-CuB merkezinde moleküler oksijen bağlanma bölgesine bağlanarak elektronların oksijene aktarılmasını engeller."
+     "after": "Kompleks IV inhibitörleri (4)<div><br></div><div>{{c1::CN<div>CO</div><div>H<sub>2</sub>S</div><div>NaN<sub>3</sub></div>}}</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Komp 4 inh. → Kompleks IV inhibitörleri; formüllerin yanına kimyasal adlar eklendi",
+     "category": "Kısaltma",
+     "text": "\"Komp 4 inh.\" → \"Kompleks IV inhibitörleri\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "İç içe geçmiş div artıkları temizlendi, maddeli liste kuruldu",
+     "text": "Sondaki boş satırlar silindi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Bozuk div yapıları temizlendi, kimyasal formüllerin Türkçe adları parantezle açıklandı.\nNeden: Yapısal HTML bozukluğu giderildi ve didaktik netlik sağlandı.\nNasıl: [YP4, YZ1, BÇ1] 4 inhibitör korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Oxidative Phosphorylation.",
+   "aiNote": "Ne: Başlık \"Komp 4 inh.\" → \"Kompleks IV inhibitörleri\" olarak açıldı ve sondaki boş satırlar silindi.\nNeden: Başlık kişisel kısaltmalarla yazılmıştı; alanın sonunda boş satır artıkları vardı.\nNasıl: [KS1, YP4, YP1] Siyanür, CO, H2S ve azid cevabı, alt simgeler ve sayı (4) değiştirilmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 225
+   "editorNote": null
   },
   {
+   "order": 226,
    "noteId": 1604151763049,
    "guid": "Im~Im`2yPN",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Komp 2 transmemb protein {{c1::değil}}<br><div><br></div><div>Proton&nbsp; {{c1::pompalamaz&nbsp;}}</div>",
-     "after": "Elektron transport zincirinde Kompleks II (süksinat dehidrojenaz):<div>• Transmembran bir protein {{c1::değildir}} (mitokondri iç zarının matriks yüzüne tutunmuştur).</div><div>• Matriksten zarlar arası boşluğa proton {{c1::pompalamaz}}.</div>"
+     "after": "Kompleks II transmembran alt birimler {{c1::içerir}}<br><div><br></div><div>Proton {{c1::pompalamaz}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Kompleks I (4 H⁺), Kompleks III (4 H⁺) ve Kompleks IV (2 H⁺) proton pompalarken Kompleks II proton pompalamaz; bu nedenle FADH₂ oksidasyonundan daha az ATP üretilir."
+     "after": "SDHC ve SDHD alt birimleri iç mitokondri zarını geçer."
     }
    },
    "changes": [
     {
+     "severity": "Kritik",
+     "category": "Tıbbi doğruluk",
+     "text": "\"Komp 2 transmemb protein değil\" → \"Kompleks II transmembran alt birimler içerir\"; Extra'ya SDHC ve SDHD cümlesi eklendi",
+     "rationale": "Kompleks II, iki hidrofilik (SDHA, SDHB) ve iki transmembran alt birimden (SDHC, SDHD) oluşan integral bir zar kompleksidir; diğer komplekslerden ayırt edici özelliği yalnız proton pompalamamasıdır."
+    },
+    {
      "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Komp 2 transmemb protein değil / Proton pompalamaz → Kompleks II özellikleri maddelendi",
+     "category": "Kısaltma",
+     "text": "\"Komp 2\" → \"Kompleks II\"; \"transmemb\" → \"transmembran\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, dil bilgisi düzeltildi",
+     "text": "&nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: İki bağımsız önerme düzgün cümle yapısına kavuşturuldu, proton pompalama ve zar yerleşimi açıklandı.\nNeden: Telgraf üslubu ve &nbsp; temizlendi.\nNasıl: [SN1, DB1, YP4] c1 içindeki 'değildir' ve 'pompalamaz' korundu.\nKaynak: Harper's Illustrated Biochemistry, Respiratory Chain.",
+   "aiNote": "Ne: \"Komp 2 transmemb protein değil\" → \"Kompleks II transmembran alt birimler içerir\" düzeltildi ve Extra'ya SDHC ile SDHD'nin iç zarı geçtiği yazıldı; \"Proton pompalamaz\" cevabı korundu.\nNeden: Kompleks II'nin kristal yapısı, iki hidrofilik alt birimin zara iki transmembran proteinle (SDHC, SDHD) tutunduğunu gösterir; \"transmembran değil\" bilgisi yanlıştı.\nNasıl: [TD1, YP1, KS1] Yanlış ilk satır en küçük değişiklikle doğru ifadeye çevrildi ve aynı c1 numarasıyla sorulmaya devam etti; kompleks II'nin I, III ve IV'ten farkı olan proton pompalamaması değiştirilmedi.\nKaynak: Sun F ve ark. Crystal structure of mitochondrial respiratory membrane protein complex II. Cell 2005;121:1043–1057 (PubMed özeti); Lehninger Principles of Biochemistry, kompleks II (süksinat dehidrogenaz).",
    "decision": null,
-   "editorNote": null,
-   "order": 226
+   "editorNote": null
   },
   {
+   "order": 227,
    "noteId": 1604151872919,
    "guid": "pABj2fdfj.",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "İyonoforlar (2) ---&gt;&nbsp; &nbsp;{{c1::Valinomisin Nigerisin}}",
-     "after": "Mitokondri iç zarında iyon gradientini bozan mobil taşıyıcı iyonoforlar (2): {{c1::Valinomisin ve nijerisin}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Valinomisin K⁺ iyonoforudur; nijerisin ise K⁺/H⁺ antiporterı gibi davranarak proton gradientini tüketir."
+     "after": "Oksidatif fosforilasyonu etkileyen iyonofor örnekleri (2) → {{c1::valinomisin, nigerisin}}"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Nigerisin → nijerisin",
-     "rationale": ""
+     "severity": "Yüksek",
+     "category": "Eksik kritik bilgi",
+     "text": "\"İyonoforlar (2)\" → \"Oksidatif fosforilasyonu etkileyen iyonofor örnekleri (2)\"",
+     "rationale": "İyonoforlar iki üyeli kapalı bir grup değildir (gramisidin, monensin ve proton iyonoforu olarak davranan 2,4-dinitrofenol da vardır); sayı ancak örnek olarak verildiğinde doğrudur."
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "\"Valinomisin Nigerisin\" → \"valinomisin, nigerisin\"; ---&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kök netleştirildi, \"Nigerisin\" yazımı Türkçe \"nijerisin\" yapıldı.\nNeden: Türkçe terminoloji ve profesyonel soru kökü sağlandı.\nNasıl: [YZ2, SN1, YP4] İki iyonofor korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Ionophores and Uncouplers.",
+   "aiNote": "Ne: Başlık \"İyonoforlar (2)\" → \"Oksidatif fosforilasyonu etkileyen iyonofor örnekleri (2)\" yapıldı; iki cevap virgülle ayrıldı.\nNeden: \"(2)\" sayısı iyonoforların yalnız iki üyeden ibaret olduğunu düşündürüyordu; gramisidin, monensin ve proton iyonoforu gibi davranan 2,4-dinitrofenol da bu gruptadır.\nNasıl: [EK1, EK2, BÇ1] Yazarın iki üyesi ve c1 korunarak sayıya örnek niteleyicisi ve bağlam eklendi; valinomisinin K+, nigerisinin K+/H+ değişimiyle iç zarın iyon geçirgenliğini değiştirdiği doğrulandı.\nKaynak: Harper's Illustrated Biochemistry, solunum zinciri ve oksidatif fosforilasyon (iyonoforlar ve ayırıcılar); Lehninger Principles of Biochemistry, oksidatif fosforilasyonu etkileyen ajanlar tablosu.",
    "decision": null,
-   "editorNote": null,
-   "order": 227
+   "editorNote": null
   },
   {
+   "order": 228,
    "noteId": 1604151919835,
    "guid": "npUT5jD/q0",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Leber'in Heredditer Optik Nöropatisi: {{c1::Komp 1 (NADH DH) mtDNA&nbsp; }} gen mut",
-     "after": "Leber'in herediter optik nöropatisi (LHON) patogenezinde rol oynayan genetik defekt: {{c1::Kompleks I (NADH dehidrojenaz) mtDNA}} gen mutasyonudur."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Mitokondriyal kalıtım (maternal kalıtım) gösterir; genç erişkinlerde ani başlangıçlı ağrısız bilateral görme kaybı ile karakterizedir."
+     "after": "Leber herediter optik nöropatisi: {{c1::kompleks I (NADH dehidrogenaz) mtDNA}} genlerinde mutasyon"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Heredditer → herediter; Komp 1 → Kompleks I; gen mut → gen mutasyonudur",
+     "text": "\"Leber'in Heredditer Optik Nöropatisi\" → \"Leber herediter optik nöropatisi\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"Komp 1 (NADH DH) mtDNA … gen mut\" → \"kompleks I (NADH dehidrogenaz) mtDNA … genlerinde mutasyon\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, cümle tamamlandı",
+     "text": "&nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Heredditer\" yazım hatası ve \"Komp 1\" kısaltması düzeltildi, Extra'ya klinik ve kalıtım özellikleri eklendi.\nNeden: Yazım hatası ve kısaltma giderildi.\nNasıl: [YZ1, KS1, DB1] Mitokondriyal DNA Kompleks I mutasyonu korundu, c1 sabit tutuldu.\nKaynak: Harrison's Principles of Internal Medicine / Harper's Biochemistry, Mitochondrial Disorders.",
+   "aiNote": "Ne: Hastalık adı \"Leber herediter optik nöropatisi\" olarak düzeltildi; \"Komp 1 (NADH DH) mtDNA … gen mut\" → \"kompleks I (NADH dehidrogenaz) mtDNA … genlerinde mutasyon\" açıldı.\nNeden: Eponimde gereksiz iyelik eki ve \"Heredditer\" yazım hatası vardı; cevap ve kök kısaltmalarla yazılmıştı.\nNasıl: [YZ2, KS1, YP1] Eponim yalnız özel adı büyük harfle yazılarak düzeltildi; kompleks I alt birimlerini kodlayan mtDNA genlerindeki mutasyonu soran tek c1 boşluğu korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 228
+   "editorNote": null
   },
   {
+   "order": 229,
    "noteId": 1604151952319,
    "guid": "bZEQ:ZfPz0",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::Komp 2}} ---&gt; tamamen Nukleer DNA tarafından kodlanan ETS enzimi&nbsp;",
-     "after": "Tüm alt birimleri tamamen nükleer DNA tarafından kodlanan tek ETS kompleksi: {{c1::Kompleks II (süksinat dehidrojenaz)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Kompleks I, III, IV ve V hem nükleer hem de mitokondriyal DNA (mtDNA) tarafından kodlanan alt birimler içerirken, Kompleks II'nin tüm alt birimleri (4 polipeptid) nükleer genom tarafından kodlanır."
+     "after": "{{c1::Kompleks II}} → tamamen nükleer DNA tarafından kodlanan elektron transport zinciri kompleksi"
     }
    },
    "changes": [
     {
      "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"Komp 2\" → \"Kompleks II\"; \"ETS enzimi\" → \"elektron transport zinciri kompleksi\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Komp 2 → Kompleks II; Nukleer → nükleer; ETS enzimi → ETS kompleksi",
+     "text": "\"Nukleer\" → \"nükleer\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "---&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kök netleştirildi, \"Komp 2\" tam yazıldı, \"Nukleer\" şapkasız/düzeltilmiş yazıma getirildi.\nNeden: Terminoloji ve dil bilgisi standartlaştırıldı.\nNasıl: [SN1, YZ1, YP4] Kompleks II korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Mitochondrial Genes.",
+   "aiNote": "Ne: \"Komp 2\" → \"Kompleks II\", \"ETS enzimi\" → \"elektron transport zinciri kompleksi\" ve \"Nukleer\" → \"nükleer\" yazıldı.\nNeden: Cevap ve kök kişisel kısaltmalarla yazılmıştı; \"Nukleer\" yanlış yazılmıştı.\nNasıl: [KS1, YZ2, BÇ1] ETS bağlama göre elektron transport zinciri olarak açıldı; dört alt biriminin tamamı nükleer DNA'da kodlanan kompleks II cevabı ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 229
+   "editorNote": null
   },
   {
+   "order": 230,
    "noteId": 1604152059012,
    "guid": "y4.]F)&)68",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::Epimer}} --&gt; iki monosakkarit açık formülleri yazıldığında yalnızca 1 C atomu etrafında konfigurasyon farkı varkı gösteriyorsa",
-     "after": "İki monosakkaritin açık formülleri karşılaştırıldığında yalnızca tek bir asimetrik karbon atomu etrafındaki konfigürasyon farkı gösteren izomerlere verilen ad: {{c1::Epimer}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Örneğin D-glukoz ile D-galaktoz C4 epimeri; D-glukoz ile D-manoz ise C2 epimeridir."
+     "after": "{{c1::Epimer}} → açık formülleri yazıldığında yalnızca bir karbon atomu etrafındaki konfigürasyonla birbirinden ayrılan iki monosakkarit"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Dil bilgisi",
-     "text": "varkı gösteriyorsa → gösteren izomerlere verilen ad; 1 C atomu → tek bir asimetrik karbon atomu",
+     "text": "\"iki monosakkarit açık formülleri yazıldığında … farkı varkı gösteriyorsa\" → \"açık formülleri yazıldığında … birbirinden ayrılan iki monosakkarit\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"1 C atomu\" → \"bir karbon atomu\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Terim/yazım",
+     "text": "\"konfigurasyon\" → \"konfigürasyon\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok temizlendi, tanım cümlesi kuruldu",
+     "text": "--&gt; → ile değiştirildi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Orijinaldeki \"varkı gösteriyorsa\" düşüklüğü giderildi, epimer tanımı tam kimyasal ifadeyle yazıldı.\nNeden: Anlatım bozukluğu ve telgraf üslubu düzeltildi.\nNasıl: [DB1, SN1, YP4] Epimer kavramı korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Carbohydrates of Physiological Significance.",
+   "aiNote": "Ne: Bozuk koşul cümlesi (\"… konfigurasyon farkı varkı gösteriyorsa\") tanım ifadesine çevrildi; \"1 C atomu\" → \"bir karbon atomu\" açıldı.\nNeden: \"farkı varkı\" yazım ve dil bilgisi hatasıydı, cümle tamamlanmamıştı.\nNasıl: [DB1, KS1, YZ2] Tanımın içeriği (açık zincirde yalnız bir karbonda konfigürasyon farkı) aynen korundu; cevap ve c1 değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 230
+   "editorNote": null
   },
   {
+   "order": 231,
    "noteId": 1604152081677,
    "guid": "HIDx~k)6?F",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Düşük",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Glukoz ve Galaktoz birbirinin {{c1::C4 epimeri&nbsp;}}",
-     "after": "D-Glukoz ve D-galaktoz birbirinin {{c1::C4 epimeridir}}."
-    },
-    "Extra": {
-     "before": "",
-     "after": "D-Glukoz ile D-manoz ise C2 epimeridir; D-galaktoz ile D-manoz ise birbirinin epimeri değildir (iki farklı karbonda konfigürasyon farkı vardır)."
+     "after": "Glukoz ve galaktoz birbirinin {{c1::C4 epimeri}}"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Dil bilgisi",
-     "text": "C4 epimeri → C4 epimeridir; D- izomerleri eklendi",
-     "rationale": ""
-    },
-    {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi",
+     "text": "\"Galaktoz\" küçük harfle yazıldı; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Cümle yüklemi tamamlandı, &nbsp; temizlendi, Extra'ya C2 epimerliği ve diastereomer ilişkisi eklendi.\nNeden: Dil bilgisi eksikliği giderildi ve didaktik derinlik sağlandı.\nNasıl: [DB1, BÇ1, YP4] C4 epimerliği korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Monosaccharides and Disaccharides.",
+   "aiNote": "Ne: \"Galaktoz\" küçük harfle yazıldı ve cevaptaki &nbsp; silindi.\nNeden: Satır içinde cins isim büyük harfle başlıyordu; cevapta &nbsp; artığı vardı.\nNasıl: [BÇ1, YP4] Glukoz ile galaktozun birbirinin C4 epimeri olduğu bilgisi ve c1 aynen korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 231
+   "editorNote": null
   },
   {
+   "order": 232,
    "noteId": 1604152144232,
    "guid": "Cln{,enq#O",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "İndirgeyici olmayan şekerler (4)<br><div><br><div>{{c1::Sorbitol&nbsp;}}</div><div>{{c2::Galaktitol}}</div><div>{{c1::Sükroz}}</div><div>{{c2::Trehaloz}}</div><div><br></div></div>",
-     "after": "Serbest anomerik hidroksil grubu içermeyen indirgeyici olmayan şekerler (4):<div><br></div><div>• {{c1::Sorbitol (şeker alkolü)}}</div><div>• {{c2::Galaktitol (şeker alkolü)}}</div><div>• {{c1::Sükroz (glukoz α1→2 fruktoz)}}</div><div>• {{c2::Trehaloz (glukoz α1→1 glukoz)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Sükroz ve trehalozda iki anomerik karbon birbirine glikozidik bağla bağlı olduğundan serbest anomerik karbon kalmaz; sorbitol ve galaktitol ise poliol (şeker alkolü) olup karbonil grubu içermez."
+     "after": "İndirgeyici olmayan şeker örnekleri (4)<br><div><br><div>{{c1::Sorbitol}}</div><div>{{c2::Galaktitol}}</div><div>{{c1::Sükroz}}</div><div>{{c2::Trehaloz}}</div></div>"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "İndirgeyici olmayan şekerler → Serbest anomerik hidroksil grubu içermeyen indirgeyici olmayan şekerler",
-     "rationale": ""
+     "severity": "Yüksek",
+     "category": "Eksik kritik bilgi",
+     "text": "\"İndirgeyici olmayan şekerler (4)\" → \"İndirgeyici olmayan şeker örnekleri (4)\"",
+     "rationale": "Dört üye tam liste değildir; mannitol ve ksilitol gibi diğer şeker alkolleri, rafinoz ve glikozidler de indirgeyici değildir."
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli liste düzenlendi",
+     "text": "&nbsp; ve sondaki boş satır temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: İndirgeyici olmama nedeni açıklandı, şeker alkolleri ile disakkaritler parantez içinde belirtildi.\nNeden: Didaktik açıklık sağlandı.\nNasıl: [SN1, BÇ1, YP1] c1 (Sorbitol, Sükroz) ve c2 (Galaktitol, Trehaloz) dağılımı aynen korundu.\nKaynak: Harper's Illustrated Biochemistry, Carbohydrates.",
+   "aiNote": "Ne: Başlık \"İndirgeyici olmayan şekerler (4)\" → \"İndirgeyici olmayan şeker örnekleri (4)\" yapıldı; &nbsp; ve sondaki boş satır silindi.\nNeden: \"(4)\" sayısı listeyi kapalı bir küme gibi sunuyordu; oysa mannitol, ksilitol gibi şeker alkolleri ve rafinoz gibi oligosakkaritler de indirgeyici değildir.\nNasıl: [EK2, EK1, YP4] Yazarın dört üyesi ve c1/c2 dağılımı korunarak sayıya örnek niteleyicisi eklendi; sorbitol ve galaktitolün serbest karbonil grubu taşımayan şeker alkolleri, sükroz ve trehalozun anomerik karbonları birbirine bağlı disakkaritler olduğu doğrulandı.\nKaynak: Harper's Illustrated Biochemistry, karbonhidratlar (disakkaritler); Lippincott Illustrated Reviews: Biochemistry, karbonhidratların yapısı (indirgeyici şekerler).",
    "decision": null,
-   "editorNote": null,
-   "order": 232
+   "editorNote": null
   },
   {
+   "order": 233,
    "noteId": 1604152268349,
    "guid": "Q[^44{rmEg",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Kritik",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "GLUT 3 ---&gt; Km {{c1::düşük}} / Vmax {{c1::Düşük}}&nbsp;<div><br></div><div>GLUT 2 --&gt; Km {{c1::yüksek}} / Vmax {{c1::Yüksek&nbsp;}}</div>",
-     "after": "Glukoz taşıyıcılarının (GLUT) kinetik özellikleri:<div>• GLUT-3: Glukoza affinitesi yüksek, Km {{c1::düşük}} / Vmax {{c1::düşük}} (nöronal taşıyıcı)</div><div>• GLUT-2: Glukoza affinitesi düşük, Km {{c1::yüksek}} / Vmax {{c1::yüksek}} (karaciğer ve pankreas beta hücresi glukoz sensörü)</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Düşük Km yüksek affinite demektir; GLUT-3 bazal glukoz konsantrasyonlarında dahi doymuş olarak beyne sabit glukoz girişi sağlar."
+     "after": "GLUT3 → Km {{c1::düşük}} / Vmax {{c1::yüksek}}<div><br></div><div>GLUT2 → Km {{c1::yüksek}} / Vmax {{c1::yüksek}}</div>"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "GLUT 3 / GLUT 2 → GLUT-3 / GLUT-2; Düşük/Yüksek büyük harf standardı",
-     "rationale": ""
+     "severity": "Kritik",
+     "category": "Tıbbi doğruluk",
+     "text": "GLUT3 satırında \"Vmax Düşük\" → \"Vmax yüksek\"",
+     "rationale": "GLUT3 hem düşük Km'li (yüksek afiniteli) hem yüksek aktiviteli (yüksek turnover) bir glukoz taşıyıcısıdır; düşük Vmax, heksokinaz örüntüsünün GLUT3'e yanlış aktarılmasıydı (Maher ve ark., Biochem J 1996)."
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi, açıklayıcı doku etiketleri eklendi",
+     "text": "\"GLUT 3\", \"GLUT 2\" → \"GLUT3\", \"GLUT2\"; ---&gt; ve --&gt; → ile değiştirildi; &nbsp; temizlendi; \"Yüksek\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: GLUT yazımı tireli standarda getirildi, cloze içerisindeki büyük/küçük harf tutarsızlığı giderildi, doku rolleri belirtildi.\nNeden: Biyokimyasal yazım birliği ve didaktik netlik sağlandı.\nNasıl: [YZ1, BÇ1, YP1] Km ve Vmax cloze değerleri korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Glucose Transporters.",
+   "aiNote": "Ne: GLUT3 satırındaki \"Vmax düşük\" → \"Vmax yüksek\" düzeltildi; taşıyıcı adları \"GLUT3\" ve \"GLUT2\" biçiminde yazıldı.\nNeden: GLUT3 nöronlarda yüksek afiniteli ve yüksek aktiviteli glukoz taşıyıcısıdır; kart, heksokinaz–glukokinaz karşıtlığını GLUT3'e uygulayarak yanlış olarak düşük Vmax öğretiyordu.\nNasıl: [TD1, YP1, BÇ1] En küçük değişiklikle yalnız yanlış cevap değiştirildi; GLUT3'ün düşük Km'si ile GLUT2'nin yüksek Km ve yüksek Vmax değerleri korundu, dört boşluk c1 olarak kaldı.\nKaynak: Maher F, Davies-Hill TM, Simpson IA. Substrate specificity and kinetic parameters of GLUT3 in rat cerebellar granule neurons. Biochem J 1996;315:827–831 (PubMed özeti: yüksek görünür afiniteli, yüksek aktiviteli taşıyıcı).",
    "decision": null,
-   "editorNote": null,
-   "order": 233
+   "editorNote": null
   },
   {
+   "order": 234,
    "noteId": 1604152382549,
    "guid": "wYCS-[#1HK",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Heksokinaz ---&gt;&nbsp;<div><br></div><div><div>nerde : {{c1::Her yerde&nbsp;}}<div>Affinite {{c2::yüksek&nbsp;}}</div><div>Vmax {{c2::düşük&nbsp;}}</div></div><div>{{c1::Glu 6P}}<b>&nbsp;ile inh olur</b></div><br></div>",
-     "after": "Heksokinaz enzimi:<div>• Doku dağılımı: {{c1::Hemen hemen tüm dokularda}} bulunur.</div><div>• Glukoza affinitesi {{c2::yüksek}}, Km değeri düşüktür.</div><div>• Kapasitesi (Vmax) {{c2::düşüktür}}.</div><div>• Kendi ürünü olan {{c1::glukoz 6-fosfat}} ile allosterik olarak inhibe olur.</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Heksokinaz düşük kan glukoz düzeylerinde bile aktiftir ve dokuların bazal glukoz kullanımını garanti eder."
+     "after": "Heksokinaz<div><br></div><div><div>Nerede: {{c1::her yerde}}<div>Afinite {{c2::yüksek}}</div><div>Vmax {{c2::düşük}}</div></div><div>{{c1::Glukoz 6-fosfat}}<b> ile inhibe edilir</b></div></div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Glu 6P → glukoz 6-fosfat; inh olur → inhibe olur",
+     "text": "\"Glu 6P\" → \"Glukoz 6-fosfat\"; \"ile inh olur\" → \"ile inhibe edilir\"",
      "rationale": ""
     },
     {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "nerde : Her yerde → Doku dağılımı: Hemen hemen tüm dokularda bulunur",
+     "severity": "Düşük",
+     "category": "Terim/yazım",
+     "text": "\"Affinite\" → \"Afinite\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"nerde\" → \"Nerede\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; ve bold artıkları temizlendi, maddeli düzenleme yapıldı",
+     "text": "Başlıktaki ---&gt; kaldırıldı; &nbsp; ve sondaki boş satır temizlendi; \"Her yerde\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"nerde : Her yerde\" telgraf dili düzeltildi, \"Glu 6P\" açıldı, cümle yapıları tamamlandı.\nNeden: Kişisel not dili profesyonel kart diline dönüştürüldü.\nNasıl: [SN1, KS1, DB1, YP1] c1 (Doku, Glukoz 6-P) ve c2 (Affinite, Vmax) dağılımı aynen korundu.\nKaynak: Harper's Illustrated Biochemistry, Glycolysis.",
+   "aiNote": "Ne: \"Glu 6P\" → \"Glukoz 6-fosfat\", \"inh olur\" → \"inhibe edilir\", \"Affinite\" → \"Afinite\" ve \"nerde\" → \"Nerede\" yazıldı; başlıktaki ok ve boş satır artıkları silindi.\nNeden: Satırlar kişisel kısaltma, konuşma dili ve yazım hatası içeriyordu.\nNasıl: [KS1, YZ2, DB1, BÇ1] Ürün inhibisyonunu gösteren kalın vurgu ve c1/c2 dağılımı korundu; heksokinazın yaygın dağılımı, yüksek afinitesi ve düşük Vmax'ı değiştirilmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 234
+   "editorNote": null
   },
   {
+   "order": 235,
    "noteId": 1604152424441,
    "guid": "E&[rCX$2L_",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Glukokinaz&nbsp;<div><br></div><div><div>nerde: {{c1::KC ve Pank beta hc}}.de</div><div>Vmax {{c2::yüksek}}</div><div>Aff {{c2::düşük}}</div><div>{{c1::Fru 6P}} ile indirekt inh olur</div><br></div>",
-     "after": "Glukokinaz (Heksokinaz IV) enzimi:<div>• Doku dağılımı: {{c1::Karaciğer parankim hücreleri ve pankreas beta hücrelerinde}} bulunur.</div><div>• Kapasitesi (Vmax) {{c2::yüksektir}}.</div><div>• Glukoza affinitesi {{c2::düşük}}, Km değeri yüksektir.</div><div>• Düzenleyici protein (GKRP) aracılığıyla {{c1::fruktoz 6-fosfat}} ile nükleusa çekilerek indirekt inhibe olur.</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Fruktoz 1-fosfat ise glukokinazın regülatör proteinden ayrılarak sitozole geçmesini ve aktive olmasını sağlar."
+     "after": "Glukokinaz<div><br></div><div><div>Nerede: {{c1::karaciğer ve pankreas beta hücrelerinde}}</div><div>Vmax {{c2::yüksek}}</div><div>Afinite {{c2::düşük}}</div><div>{{c1::Fruktoz 6-fosfat}} ile dolaylı olarak inhibe edilir</div></div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "KC ve Pank beta hc.de → Karaciğer parankim hücreleri ve pankreas beta hücrelerinde; Fru 6P → fruktoz 6-fosfat",
+     "text": "\"KC ve Pank beta hc.de\" → \"karaciğer ve pankreas beta hücrelerinde\"; \"Aff\" → \"Afinite\"; \"Fru 6P\" → \"Fruktoz 6-fosfat\"; \"indirekt inh olur\" → \"dolaylı olarak inhibe edilir\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"nerde\" → \"Nerede\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, cümle yüklemleri tamamlandı",
+     "text": "&nbsp; ve sondaki boş satır temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"KC ve Pank beta hc.\" kısaltmaları tam açıldı, \"Fru 6P\" fruktoz 6-fosfat yapıldı, GKRP mekanizması açıklandı.\nNeden: Kişisel kısaltmalar standart terminolojiye dönüştürüldü.\nNasıl: [KS1, SN1, YP1] c1 (Doku, Fruktoz 6-P) ve c2 (Vmax, Affinite) dağılımı aynen korundu.\nKaynak: Lehninger Principles of Biochemistry, Regulation of Glycolysis and Gluconeogenesis.",
+   "aiNote": "Ne: \"KC ve Pank beta hc.de\", \"Aff\", \"Fru 6P\" ve \"indirekt inh olur\" açılarak \"karaciğer ve pankreas beta hücrelerinde\", \"Afinite\", \"Fruktoz 6-fosfat\" ve \"dolaylı olarak inhibe edilir\" yazıldı.\nNeden: Satırların çoğu kişisel kısaltmalarla yazılmıştı; bulunma eki cevabın dışında kalmıştı.\nNasıl: [KS1, DB1, YP1] Ek cevabın içine alındı; fruktoz 6-fosfatın glukokinaz düzenleyici protein aracılığıyla dolaylı inhibisyonu, yüksek Vmax ve düşük afinite bilgileri ile c1/c2 dağılımı korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 235
+   "editorNote": null
   },
   {
+   "order": 236,
    "noteId": 1604152499781,
    "guid": "EuJkC%Zcrg",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::Gliseraldehit 3P DH}} enzimiyle yüksek enerjili P bileşiği olan {{c2::1-3 biPG}}<b>&nbsp;</b>oluşur&nbsp;",
-     "after": "Glikolizde inorganik fosfat (Pi) kullanarak {{c1::gliseraldehit 3-fosfat dehidrojenaz}} enzimiyle yüksek enerjili bir anhidrit bileşiği olan {{c2::1,3-bisfosfogliserat (1,3-BPG)}} oluşur."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Bu basamak glikolizin tek oksidasyon basamağı olup NADH üretir; arsenat bu enzimi uncouple ederek ATP üretimini engeller."
+     "after": "{{c1::Gliseraldehit 3-fosfat dehidrogenaz}} enzimiyle yüksek enerjili fosfat bileşiği olan {{c2::1,3-bisfosfogliserat}} oluşur"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Gliseraldehit 3P DH → gliseraldehit 3-fosfat dehidrojenaz; 1-3 biPG → 1,3-bisfosfogliserat (1,3-BPG)",
+     "text": "\"Gliseraldehit 3P DH\" → \"Gliseraldehit 3-fosfat dehidrogenaz\"; \"P bileşiği\" → \"fosfat bileşiği\"; \"1-3 biPG\" → \"1,3-bisfosfogliserat\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; ve bold artıkları temizlendi",
+     "text": "İçi boş kalın etiket ve &nbsp; artıkları temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Enzim adı ve yüksek enerjili ürün kısaltmaları tam kimyasal adlarıyla açıldı; &nbsp; ve bold temizlendi.\nNeden: Telgraf üslubu standart biyokimya terminolojisine uyarlandı.\nNasıl: [KS1, BÇ1, YP1] c1 (enzim) ve c2 (ürün) ayrımı korundu.\nKaynak: Harper's Illustrated Biochemistry, Glycolysis and the Oxidation of Pyruvate.",
+   "aiNote": "Ne: \"Gliseraldehit 3P DH\", \"P bileşiği\" ve \"1-3 biPG\" açılarak \"Gliseraldehit 3-fosfat dehidrogenaz\", \"fosfat bileşiği\" ve \"1,3-bisfosfogliserat\" yazıldı.\nNeden: Enzim ve ürün adları kişisel kısaltmalarla yazılmıştı; yalnız boşluk içeren bir kalın etiket vardı.\nNasıl: [KS1, YZ1, YP4] Konum numaraları kılavuzdaki biçimle yazıldı; c1 (enzim) ve c2 (ürün) korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 236
+   "editorNote": null
   },
   {
+   "order": 237,
    "noteId": 1604152630128,
    "guid": "Q_dux2u9xG",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Fru 1-6 biP Feed Forward akt. ile {{c1::Pyr. Kinaz}}'ı aktive eder&nbsp;",
-     "after": "Glikolizde fruktoz 1,6-bisfosfat, ileri beslemeli aktivasyon (feed-forward) ile {{c1::pirüvat kinaz}} enzimini aktive eder."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Fosfofruktokinaz-1 basamağında üretilen fruktoz 1,6-bisfosfat, glikolitik akışı hızlandırmak için son basamaktaki pirüvat kinazı allosterik olarak uyarır."
+     "after": "Fruktoz 1,6-bisfosfat, ileri besleme mekanizmasıyla {{c1::pirüvat kinazı}} aktive eder"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Fru 1-6 biP → fruktoz 1,6-bisfosfat; Pyr. Kinaz → pirüvat kinaz; akt. → aktivasyon",
+     "text": "\"Fru 1-6 biP\" → \"Fruktoz 1,6-bisfosfat\"; \"Pyr. Kinaz'ı\" → \"pirüvat kinazı\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "\"Feed Forward akt. ile\" → \"ileri besleme mekanizmasıyla\"",
      "rationale": ""
     },
     {
@@ -8805,484 +8747,443 @@
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, feed-forward mekanizması Türkçe karşılığıyla metne işlendi.\nNeden: Kişisel kısaltmalar giderildi.\nNasıl: [KS1, SN1, YP1] Pirüvat kinaz aktivasyonu korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Glycolysis, Gluconeogenesis, and the Pentose Phosphate Pathway.",
+   "aiNote": "Ne: \"Fru 1-6 biP\" → \"Fruktoz 1,6-bisfosfat\", \"Feed Forward akt. ile\" → \"ileri besleme mekanizmasıyla\" ve \"Pyr. Kinaz'ı\" → \"pirüvat kinazı\" yazıldı.\nNeden: Kök kişisel kısaltmalar ve Türkçesi olan İngilizce bir terim içeriyordu; cins isimden sonra kesme işareti kullanılmıştı.\nNasıl: [KS1, YZ2, DB1] Ek kesme işareti olmadan cevabın içine alındı; fruktoz 1,6-bisfosfatın pirüvat kinazı ileri beslemeyle aktive etmesi bilgisi ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 237
+   "editorNote": null
   },
   {
+   "order": 238,
    "noteId": 1604152662337,
    "guid": "wHGf.:F9{m",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Alanin ----X {{c1::Pyr. Kinaz}} (inh. eder)&nbsp;",
-     "after": "Karaciğerde glukoneogenez substratı olan alanin, allosterik olarak {{c1::pirüvat kinaz}} enzimini inhibe eder."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Alanin yüksekliği aminoasit yıkımını ve glukoneogenez ihtiyacını gösterir; glikolizin son basamağını kapatıp pirüvatın glukoneogeneze yönelmesini sağlar."
+     "after": "Alanin, {{c1::pirüvat kinazı}} inhibe eder"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Pyr. Kinaz → pirüvat kinaz; inh. eder → inhibe eder",
+     "text": "\"Pyr. Kinaz\" → \"pirüvat kinazı\"; \"(inh. eder)\" → \"inhibe eder\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "----X shorthand ifadesi metne dönüştürüldü, &nbsp; temizlendi",
+     "text": "\"----X\" işareti sözcükle yazıldı; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"----X\" kişisel gösterimi metin cümlesine dönüştürüldü, kısaltmalar açıldı.\nNeden: Telgraf üslubu standart ders kitabı diline uyarlandı.\nNasıl: [SN1, KS1, YP4] Alanin ile pirüvat kinaz inhibisyonu korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Regulation of Glycolysis.",
+   "aiNote": "Ne: \"Alanin ----X Pyr. Kinaz (inh. eder)\" → \"Alanin, pirüvat kinazı inhibe eder\" yazıldı.\nNeden: İnhibisyon \"----X\" işaretiyle ve ayrıca parantez içinde kısaltmayla iki kez belirtilmişti.\nNasıl: [KS1, BÇ1, YP1] İnhibisyon işareti kılavuza göre \"inhibe eder\" sözcükleriyle yazıldı; cevap (pirüvat kinaz) ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 238
+   "editorNote": null
   },
   {
+   "order": 239,
    "noteId": 1604152690537,
    "guid": "vWt`)D9=O?",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Pyr ---&gt; {{c1::PEP}} olamaz&nbsp;",
-     "after": "Pirüvat kinaz reaksiyonu tek yönlü (irreversibl) olduğundan, pirüvat glikolizin tersine tek basamakta doğrudan {{c1::fosfoenolpirüvata (PEP)}} dönüşemez."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Glukoneogenezde bu engel pirüvat karboksilaz (mitokondride) ve PEP karboksikinaz (PEPCK) enzimleri ile 2 basamakta aşılır."
+     "after": "Pirüvat doğrudan {{c1::PEP}}'e dönüşemez"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Pyr ---&gt; PEP olamaz → Pirüvat kinaz irreversibl olduğu için pirüvat doğrudan PEP'e dönüşemez",
-     "rationale": ""
+     "severity": "Yüksek",
+     "category": "Eksik kritik bilgi",
+     "text": "\"Pyr ---&gt; PEP olamaz\" → \"Pirüvat doğrudan PEP'e dönüşemez\"",
+     "rationale": "Glukoneogenezde pirüvat, pirüvat karboksilaz ve PEP karboksikinaz basamaklarıyla PEP'e dönüşür; geri dönüşsüz olan pirüvat kinaz tepkimesidir ve \"doğrudan\" niteleyicisi olmadan ifade yanlıştır."
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Pyr → pirüvat; PEP → fosfoenolpirüvat",
+     "text": "\"Pyr\" → \"Pirüvat\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "---&gt; kaldırıldı; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kökün biyokimyasal mantığı (irreversibilite ve glukoneogenez baypası) tam cümleyle açıklandı, kısaltmalar açıldı.\nNeden: Telgraf üslubundaki not profesyonel kart diline dönüştürüldü.\nNasıl: [SN1, KS1, YP4] PEP hedefi korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Gluconeogenesis.",
+   "aiNote": "Ne: \"Pyr → PEP olamaz\" → \"Pirüvat doğrudan PEP'e dönüşemez\" yazıldı.\nNeden: Glukoneogenezde pirüvat oksaloasetat üzerinden PEP'e dönüştüğü için niteleyicisiz ifade yanlıştı; kartın kastettiği, pirüvat kinaz tepkimesinin geri dönüşsüz olmasıdır.\nNasıl: [EK1, KS1, BÇ1] Cevap (PEP) ve c1 korunarak yalnız \"doğrudan\" niteleyicisi eklendi; dönüşüm yolu Text'e açıklama olarak eklenmedi.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, glukoneogenez (pirüvat karboksilaz ve PEP karboksikinaz basamakları).",
    "decision": null,
-   "editorNote": null,
-   "order": 239
+   "editorNote": null
   },
   {
+   "order": 240,
    "noteId": 1604152806147,
    "guid": "nn=(S*7BEW",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "CoA'nın SH grubu --&gt; {{c1::Sistein&nbsp;&nbsp;}} aa'i",
-     "after": "Koenzim A'nın (KoA) reaktif tiyol (-SH) grubunu taşıyan fosfopantetein birimi {{c1::sistein}} aminoasidinden köken alır."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Koenzim A; adenozin 3',5'-difosfat, pantotenik asit (B₅ vitamini) ve sistein aminoasidinin dekarboksilasyonuyla oluşan beta-merkaptoetilamin gruplarından oluşur."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "CoA'nın SH grubu → Koenzim A'nın reaktif tiyol (-SH) grubu",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
-     "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: Kök koenzim A yapısındaki tiyol grubu ve köken aldığı aminoasit şeklinde netleştirildi; &nbsp; temizlendi.\nNeden: Telgraf dili ve kısaltmalar standart terminolojiye kavuşturuldu.\nNasıl: [SN1, BÇ1, YP1] Sistein aminoasidi korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Coenzymes and Water-Soluble Vitamins.",
-   "decision": null,
-   "editorNote": null,
-   "order": 240
-  },
-  {
-   "noteId": 1604152972622,
-   "guid": "tiypYzP[X<",
-   "topic": "Karbonhidratlar",
-   "severity": "Orta",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Glikojen çekirdeği --&gt; {{c1::Glikogenin}} proteini",
-     "after": "De novo glikojen sentezinde primer (başlatıcı çekirdek) görevi üstlenen protein: {{c1::Glikogenin}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Glikogenin oto-katalitik glikoziltransferaz aktivitesi ile kendi tirozin kalıntısına UDP-glukozdan ilk 8 glukoz birimini bağlar."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Glikojen çekirdeği → De novo glikojen sentezinde primer (çekirdek) görevi üstlenen protein:",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII ok temizlendi",
-     "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: Kök netleştirildi, glikogenin proteininin primer görevi açıkça ifade edildi.\nNeden: Telgraf üslubu profesyonel soru köküne çevrildi.\nNasıl: [SN1, BÇ1, YP1] Glikogenin korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Glycogen Metabolism.",
-   "decision": null,
-   "editorNote": null,
-   "order": 241
-  },
-  {
-   "noteId": 1604152992801,
-   "guid": "cWloT&W2A]",
-   "topic": "Karbonhidratlar",
-   "severity": "Orta",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Glikogenin proteininde şekerler --&gt; {{c1::Tyr}} aa'i üzerine eklenir&nbsp;",
-     "after": "Glikogenin proteininde başlatıcı glukoz birimleri proteindeki {{c1::tirozin (Tyr-194)}} aminoasidinin fenolik hidroksil grubu üzerine eklenir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Glikogenin UDP-glukozdaki glukozil birimini kendi Tyr-194 kalıntısının hidroksil grubuna O-glikozidik bağ ile bağlayarak glikojen sentezini başlatır."
+     "after": "Koenzim A'nın SH grubu {{c1::sistein}} amino asidinden gelir"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Tyr aa'i → tirozin (Tyr-194) aminoasidi",
+     "text": "\"CoA'nın\" → \"Koenzim A'nın\"; \"aa'i\" → \"amino asidinden gelir\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "--&gt; kaldırıldı; &nbsp; temizlendi; \"Sistein\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Tyr aa'i\" kısaltması tam adıyla açıldı, bağlanma bölgesi hidroksil grubu olarak açıklandı.\nNeden: Terminoloji standartlaştırıldı ve netleştirildi.\nNasıl: [KS1, SN1, YP4] Tirozin kalıntısı korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Metabolism of Glycogen.",
+   "aiNote": "Ne: \"CoA'nın SH grubu → Sistein aa'i\" → \"Koenzim A'nın SH grubu sistein amino asidinden gelir\" yazıldı.\nNeden: \"aa'i\" kişisel kısaltmaydı; ok ile kurulan ifade fiilsiz ve eksikti.\nNasıl: [KS1, DB1, BÇ1] Ok yerine fiil kullanılarak kök tam cümle yapıldı; cevap (sistein) ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 242
+   "editorNote": null
   },
   {
+   "order": 241,
+   "noteId": 1604152972622,
+   "guid": "tiypYzP[X<",
+   "topic": "Karbonhidratlar",
+   "severity": "Orta",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Glikojen çekirdeği --&gt; {{c1::Glikogenin}} proteini",
+     "after": "Glikojen çekirdeği → {{c1::glikojenin}} proteini"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "\"Glikogenin\" → \"glikojenin\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "--&gt; → ile değiştirildi",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: Cevap \"Glikogenin\" → \"glikojenin\" olarak yazıldı ve ASCII ok → ile değiştirildi.\nNeden: Protein adı, Türkçe \"glikojen\" yazımıyla uyumsuz biçimde \"g\" ile yazılmıştı.\nNasıl: [YZ1, BÇ1] Ad, dersin \"glikojen\" yazımıyla uyumlu Türkçe biçimde yazıldı; c1 korundu.",
+   "decision": null,
+   "editorNote": null
+  },
+  {
+   "order": 242,
+   "noteId": 1604152992801,
+   "guid": "cWloT&W2A]",
+   "topic": "Karbonhidratlar",
+   "severity": "Orta",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Glikogenin proteininde şekerler --&gt; {{c1::Tyr}} aa'i üzerine eklenir&nbsp;",
+     "after": "Glikojenin proteininde şekerler {{c1::Tyr}} amino asidi üzerine eklenir"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "\"Glikogenin\" → \"Glikojenin\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"aa'i\" → \"amino asidi\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "--&gt; kaldırıldı; &nbsp; temizlendi",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: \"Glikogenin\" → \"Glikojenin\" ve \"aa'i\" → \"amino asidi\" yazıldı; cümle içindeki ok kaldırıldı.\nNeden: Protein adı Türkçe yazımla uyumsuzdu ve \"aa\" kişisel kısaltmaydı.\nNasıl: [YZ1, KS1, KS2] Tyr üç harfli amino asit kodu olarak bırakıldı; cevap ve c1 korundu.",
+   "decision": null,
+   "editorNote": null
+  },
+  {
+   "order": 243,
    "noteId": 1604153034361,
    "guid": "mS)WQ?8LHF",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Glikojen Depo Hast. Tip 11 ---&gt; {{c1::Fanconi- Bickel&nbsp; }} Send",
-     "after": "Glikojen depo hastalığı tip XI (Tip 11): {{c1::Fanconi-Bickel sendromudur}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "GLUT-2 gen mutasyonu sonucu hepatorenal glikojen birikimi, proksimal renal tübüler disfonksiyon ve glukoz/galaktoz intoleransı görülür."
+     "after": "Glikojen depo hastalığı tip 11 → {{c1::Fanconi-Bickel}} sendromu"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Glikojen Depo Hast. Tip 11 → Glikojen depo hastalığı tip XI; Fanconi- Bickel Send → Fanconi-Bickel sendromudur",
+     "category": "Kısaltma",
+     "text": "\"Hast.\" → \"hastalığı\"; \"Send\" → \"sendromu\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "\"Depo\" ve \"Tip\" küçük harfle yazıldı; \"Fanconi- Bickel\" → \"Fanconi-Bickel\"; ---&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Hastalık adı tam yazıldı, \"Fanconi- Bickel Send\" yazımı kurallı Türkçe eponim biçimine getirildi.\nNeden: Kısaltma ve boşluk hatası düzeltildi.\nNasıl: [YZ1, KS1, YP4] Fanconi-Bickel sendromu korundu, c1 sabit tutuldu.\nKaynak: Nelson Textbook of Pediatrics / Harper's Biochemistry, Glycogen Storage Diseases.",
+   "aiNote": "Ne: \"Hast.\" → \"hastalığı\" ve \"Send\" → \"sendromu\" açıldı; eponimdeki boşluklu tire düzeltildi.\nNeden: Kök ve cevap kişisel kısaltmalarla yazılmıştı; \"Fanconi- Bickel\" yazımı hatalıydı.\nNasıl: [KS1, TD3, BÇ1] Fanconi-Bickel sendromunun (GLUT2 eksikliği) glikojen depo hastalığı tip 11 olarak sınıflandığı doğrulandı; tip numarası yazarın Arap rakamıyla bırakıldı, c1 korundu.\nKaynak: Al-Haggar M. Fanconi-Bickel syndrome as an example of marked allelic heterogeneity. World J Nephrol 2012;1:63–68.",
    "decision": null,
-   "editorNote": null,
-   "order": 243
+   "editorNote": null
   },
   {
+   "order": 244,
    "noteId": 1604153046475,
    "guid": "zH6A=[r!Pq",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Fanconi- Bickel Send --&gt; {{c1::GLUT - 2 }} Defekti&nbsp;",
-     "after": "Fanconi-Bickel sendromuna yol açan moleküler defekt: {{c1::GLUT-2 taşıyıcı protein}} defektidir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Karaciğer, böbrek, pankreas beta hücresi ve bağırsak bazolateral membranında bulunan GLUT-2 taşınma kusuru vardır."
+     "after": "Fanconi-Bickel sendromu → {{c1::GLUT2}} defekti"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Fanconi- Bickel Send → Fanconi-Bickel sendromu; GLUT - 2 → GLUT-2",
+     "category": "Kısaltma",
+     "text": "\"Send\" → \"sendromu\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "\"Fanconi- Bickel\" → \"Fanconi-Bickel\"; \"GLUT - 2\" → \"GLUT2\"; \"Defekti\" küçük harfle yazıldı; --&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Eponim yazımı düzeltildi, GLUT-2 standart tireli yazıma getirildi, defekt tam cümleyle bağlandı.\nNeden: Terminoloji ve dil bilgisi düzeltildi.\nNasıl: [YZ1, DB1, YP4] GLUT-2 defekti korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Glucose Transport Defects.",
+   "aiNote": "Ne: \"Send\" → \"sendromu\" açıldı, \"GLUT - 2\" → \"GLUT2\" ve \"Fanconi- Bickel\" → \"Fanconi-Bickel\" yazıldı.\nNeden: Kökte kişisel kısaltma, boşluklu tireler ve gereksiz büyük harf vardı.\nNasıl: [KS1, YZ1, BÇ1] Taşıyıcı adı dersin GLUT kartlarıyla aynı \"GLUT2\" biçiminde yazıldı; cevap ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 244
+   "editorNote": null
   },
   {
+   "order": 245,
    "noteId": 1604153218461,
    "guid": "N7D.YGN}r8",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::<b>CMP - NANA</b>}} --&gt; taşıyıcısı MonoFosfat olan tek nükleotit şeker&nbsp;",
-     "after": "Şeker taşıyıcısı nükleozid monofosfat olan tek aktif nükleotid şeker: {{c1::CMP-NANA (CMP-siyalik asit)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Diğer tüm nükleotid şekerler difosfat taşırken (UDP-glukoz, GDP-manoz), N-asetilnöraminik asit (NANA) nükleus içinde CTP ile birleşerek CMP-NANA oluşturur."
+     "after": "{{c1::<b>CMP-NANA</b>}} → taşıyıcı nükleotidi monofosfat olan tek nükleotid şeker"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "CMP - NANA → CMP-NANA; MonoFosfat → monofosfat",
+     "text": "\"nükleotit\" → \"nükleotid\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Soru netliği",
+     "text": "\"taşıyıcısı MonoFosfat olan\" → \"taşıyıcı nükleotidi monofosfat olan\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok, &nbsp; ve bold temizlendi",
+     "text": "\"CMP - NANA\" → \"CMP-NANA\"; --&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: CMP-NANA tireli yazıma getirildi, monofosfat küçük harfe çevrildi, kök profesyonel soru cümlesi yapıldı.\nNeden: Biyokimyasal yazım standardı ve soru netliği sağlandı.\nNasıl: [YZ1, SN1, YP4] CMP-NANA korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Complex Carbohydrates and Glycoproteins.",
+   "aiNote": "Ne: \"taşıyıcısı MonoFosfat olan tek nükleotit şeker\" → \"taşıyıcı nükleotidi monofosfat olan tek nükleotid şeker\" yazıldı; \"CMP - NANA\" → \"CMP-NANA\" düzeltildi.\nNeden: Kökte taşıyıcının bir nükleotid olduğu söylenmiyordu; \"MonoFosfat\" ve \"nükleotit\" yazımları hatalıydı.\nNasıl: [SN1, YZ1, TD3, YP3] CMP-NANA'nın insanda taşıyıcı nükleotidi monofosfat olan tek nükleotid şeker olduğu doğrulandı; cevaptaki kalın biçim ve c1 korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, glikoproteinler (N-asetilnöraminik asidin CMP-NANA olarak aktivasyonu).",
    "decision": null,
-   "editorNote": null,
-   "order": 245
+   "editorNote": null
   },
   {
+   "order": 246,
    "noteId": 1604153279936,
    "guid": "zw<6ErAsd!",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Düşük",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Amino şeker sentezinde -NH<sub>2</sub> grubu vericisi --&gt; {{c1::Glutamin&nbsp;}}",
-     "after": "Amino şeker (glukozamin 6-fosfat) sentezinde fruktoz 6-fosfata amino (-NH₂) grubu aktaran donör: {{c1::Glutamin}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Glukozamin 6-fosfat sentaz enzimi reaksiyonunda glutamin amido azotunu verir ve glutamata dönüşür."
+     "after": "Amino şeker sentezinde -NH<sub>2</sub> grubu vericisi → {{c1::glutamin}}"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Amino şeker sentezinde -NH2 grubu vericisi → Amino şeker sentezinde amino (-NH₂) grubu aktaran donör",
-     "rationale": ""
-    },
-    {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "--&gt; → ile değiştirildi; &nbsp; temizlendi; \"Glutamin\" küçük harfle yazıldı",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kök biyokimyasal reaksiyonu tarif edecek şekilde netleştirildi, &nbsp; temizlendi.\nNeden: Telgraf dili profesyonel soru köküne dönüştürüldü.\nNasıl: [SN1, BÇ1, YP4] Amino grubu vericisi glutamin korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Biosynthesis of Amino Sugars.",
+   "aiNote": "Ne: ASCII ok → ile değiştirildi, cevaptaki &nbsp; silindi ve cevap küçük harfle yazıldı.\nNeden: Satırda ASCII ok ve &nbsp; artığı vardı; satır içindeki cevap büyük harfle başlıyordu.\nNasıl: [BÇ1, YP4] Glutaminin amino şeker sentezinde amid azotu vericisi olduğu bilgisi, alt simge ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 246
+   "editorNote": null
   },
   {
+   "order": 247,
    "noteId": 1604153338234,
    "guid": "c]4k=PjeMo",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Hiyalüronidaz eks --&gt; {{c1::Natowicz Send&nbsp;}}",
-     "after": "Lizozomal hiyalüronidaz (HYAL1) enzim eksikliği sonucu gelişen mukopolisakkaridoz (MPS IX): {{c1::Natowicz sendromudur}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Nadir bir lizozomal depo hastalığı olup periartiküler yumuşak doku kitleleri, eklem ağrısı ve hafif iskelet anomalileri ile seyreder."
+     "after": "Hiyalüronidaz eksikliği → {{c1::Natowicz sendromu}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Hiyalüronidaz eks → Hiyalüronidaz enzim eksikliği; Natowicz Send → Natowicz sendromudur",
+     "category": "Kısaltma",
+     "text": "\"eks\" → \"eksikliği\"; \"Send\" → \"sendromu\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "--&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, hastalık tipi (MPS IX) belirtildi, &nbsp; temizlendi.\nNeden: Kişisel kısaltmalar standart klinik terminolojiye dönüştürüldü.\nNasıl: [YZ1, KS1, YP4] Natowicz sendromu korundu, c1 sabit tutuldu.\nKaynak: Nelson Textbook of Pediatrics, Mucopolysaccharidoses.",
+   "aiNote": "Ne: \"eks\" → \"eksikliği\" ve \"Send\" → \"sendromu\" açıldı; ASCII ok ve &nbsp; düzeltildi.\nNeden: Kök ve cevap kişisel kısaltmalar içeriyordu.\nNasıl: [KS1, BÇ1] Hiyalüronidaz eksikliğinin (MPS IX) eponimi olan Natowicz sendromu cevabı ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 247
+   "editorNote": null
   },
   {
+   "order": 248,
    "noteId": 1604153359699,
    "guid": "GG>vJ-rc8&",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Düşük",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Fruktoz --&gt; yapısal şeker {{c1::değildir&nbsp;}}",
-     "after": "Glikoprotein, glikolipid ve glikozaminoglikanların yapısına katılmayan monosakkarit: Fruktoz yapısal bir şeker {{c1::değildir}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Glukoz, galaktoz, manoz, fukoz ve siyalik asit hücresel yapı taşları olarak kullanılırken fruktoz yapısal polimerlere katılmaz, esasen enerji metabolizmasında yakıt olarak yıkılır."
+     "after": "Fruktoz yapısal şeker {{c1::değildir}}"
     }
    },
    "changes": [
     {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Fruktoz --&gt; yapısal şeker değildir → Monosakkarit özellikleri açıklandı",
-     "rationale": ""
-    },
-    {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "Cümle içindeki --&gt; kaldırıldı; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kök glikokonjugat yapısına katılmayan monosakkarit şeklinde netleştirildi; &nbsp; temizlendi.\nNeden: Telgraf üslubu didaktik soru köküne dönüştürüldü.\nNasıl: [SN1, BÇ1, YP4] 'Değildir' cloze içeriği korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Complex Carbohydrates.",
+   "aiNote": "Ne: \"Fruktoz → yapısal şeker değildir\" satırındaki ok kaldırılarak düz cümle yazıldı; &nbsp; silindi.\nNeden: Ok, özne ile yüklem arasına gereksiz yere girmişti; cevapta &nbsp; artığı vardı.\nNasıl: [BÇ1, YP4] Fruktozun glikoprotein, glikolipid ve proteoglikan yapısına girmediği bilgisi ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 248
+   "editorNote": null
   },
   {
+   "order": 249,
    "noteId": 1604153496425,
    "guid": "q=/s}XX$>x",
    "topic": "Karbonhidratlar",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Galaktozun aktifleştirlmesi --&gt; {{c1::UDP - Glukoz}}<div><br></div><div>{{c2::Gal 1P üridil transferaz}} enzimi<br></div>",
-     "after": "Galaktoz metabolizmasında galaktoz 1-fosfatın aktifleştirilmesi:<div>• UMP vericisi olan molekül: {{c1::UDP-glukoz}}</div><div>• Katalizleyen enzim: {{c2::Galaktoz 1-fosfat üridiltransferaz (GALT)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Galaktoz 1-fosfat + UDP-glukoz ↔ UDP-galaktoz + glukoz 1-fosfat reaksiyonu gerçekleşir."
+     "after": "Galaktozun aktifleştirilmesinde kullanılan nükleotid şeker → {{c1::UDP-glukoz}}<div><br></div><div>{{c2::Galaktoz 1-fosfat üridiltransferaz}} enzimi</div>"
     }
    },
    "changes": [
     {
+     "severity": "Yüksek",
+     "category": "Soru netliği",
+     "text": "\"Galaktozun aktifleştirlmesi --&gt; UDP - Glukoz\" → \"Galaktozun aktifleştirilmesinde kullanılan nükleotid şeker → UDP-glukoz\"",
+     "rationale": "Eski kök, galaktozun UDP-glukoza dönüştüğü biçiminde okunabiliyordu; oysa UDP-glukoz, galaktoz 1-fosfata UMP vererek aktif form olan UDP-galaktozu oluşturur."
+    },
+    {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "aktifleştirlmesi → aktifleştirilmesi; UDP - Glukoz → UDP-glukoz; Gal 1P üridil transferaz → Galaktoz 1-fosfat üridiltransferaz",
+     "category": "Kısaltma",
+     "text": "\"Gal 1P üridil transferaz\" → \"Galaktoz 1-fosfat üridiltransferaz\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve boş divler temizlendi",
+     "text": "\"UDP - Glukoz\" → \"UDP-glukoz\"; --&gt; → ile değiştirildi; sondaki boş satır silindi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Yazım hataları ve kısaltmalar düzeltildi, reaksiyon substrat ve enzim olarak maddelendi.\nNeden: Terminoloji ve dil bilgisi düzeltildi.\nNasıl: [YZ1, KS1, BÇ1, YP1] c1 (UDP-glukoz) ve c2 (GALT) dağılımı aynen korundu.\nKaynak: Lehninger Principles of Biochemistry, Galactose Metabolism.",
+   "aiNote": "Ne: Kök \"Galaktozun aktifleştirilmesinde kullanılan nükleotid şeker\" diye netleştirildi; \"Gal 1P üridil transferaz\" → \"Galaktoz 1-fosfat üridiltransferaz\" açıldı.\nNeden: \"Galaktozun aktifleştirlmesi → UDP-Glukoz\" ifadesi, aktif galaktozun UDP-glukoz olduğu biçiminde yanlış okunabiliyordu; aktif form UDP-galaktozdur.\nNasıl: [SN1, KS1, YP1] Cevaplar ve c1/c2 korunarak yalnız kök netleştirildi; c1 cevabına ipucu olmaması için kökte UDP-galaktoz yazılmadı.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, galaktoz metabolizması (UDP-galaktoz oluşumu).",
    "decision": null,
-   "editorNote": null,
-   "order": 249
+   "editorNote": null
   },
   {
+   "order": 250,
    "noteId": 1604153531315,
    "guid": "CT[<Loc!xe",
    "topic": "Karbonhidratlar",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Klasik galaktozemi --&gt; {{c1::Gal 1P ürüdiltransferaz}} enzim eks&nbsp;",
-     "after": "Klasik galaktozemiye (Tip 1 galaktozemi) yol açan enzim defekti: {{c1::Galaktoz 1-fosfat üridiltransferaz (GALT)}} enzim eksikliğidir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Otozomal resesif kalıtılır; süt alımı sonrası kusma, sarılık, hepatosplenomegali, katarakt, karaciğer yetmezliği ve E. coli sepsisine yatkınlık görülür."
+     "after": "Klasik galaktozemi → {{c1::galaktoz 1-fosfat üridiltransferaz}} eksikliği"
     }
    },
    "changes": [
     {
      "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"Gal 1P\" → \"galaktoz 1-fosfat\"; \"enzim eks\" → \"eksikliği\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Gal 1P ürüdiltransferaz → Galaktoz 1-fosfat üridiltransferaz; enzim eks → enzim eksikliğidir",
+     "text": "\"ürüdiltransferaz\" → \"üridiltransferaz\"",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
+     "text": "--&gt; → ile değiştirildi; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Enzim adı tam yazıldı, \"ürüdiltransferaz\" yazımı \"üridiltransferaz\" yapıldı, Extra'ya klinik tablo eklendi.\nNeden: Terminoloji ve yazım hataları giderildi.\nNasıl: [YZ1, KS1, YP4] GALT eksikliği korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry / Nelson Pediatrics, Inborn Errors of Carbohydrate Metabolism.",
+   "aiNote": "Ne: \"Gal 1P ürüdiltransferaz … enzim eks\" → \"galaktoz 1-fosfat üridiltransferaz eksikliği\" yazıldı.\nNeden: Enzim adı kısaltılmış ve \"ürüdil\" biçiminde yanlış yazılmıştı; \"eks\" kişisel kısaltmaydı.\nNasıl: [KS1, YZ1, BÇ1] Enzim adı önceki karttaki yazımla aynı tutuldu; cevap ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 250
+   "editorNote": null
   },
   {
    "noteId": 1607191554336,
@@ -9933,184 +9834,188 @@
    "order": 268
   },
   {
+   "order": 269,
    "noteId": 1604153620791,
    "guid": "cm7}gXXAac",
    "topic": "Lipitler",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Pankreatik Lipaz --&gt; Yağ asitlerini {{c1::1 ve 3.}} C'dan keser&nbsp;",
-     "after": "Pankreatik lipaz, trigliseridlerdeki ester bağlarını hidroliz ederek yağ asitlerini gliserolün {{c1::1. ve 3.}} karbonlarından koparır."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Sindirim sonucunda 2 adet serbest yağ asidi ve 1 adet 2-monoasilgliserol (2-MAG) açığa çıkar."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Pankreatik Lipaz --&gt; Yağ asitlerini 1 ve 3. C'dan keser → Pankreatik lipaz trigliseridlerin 1. ve 3. ester bağlarını hidroliz eder",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
-     "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: Kök trigliserid hidrolizini ve karbon pozisyonlarını açıkça belirtecek şekilde düzenlendi.\nNeden: Telgraf üslubu standart ders kitabı diline çevrildi.\nNasıl: [SN1, BÇ1, YP4] 1. ve 3. karbon pozisyonları korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Lipid Digestion and Absorption.",
-   "decision": null,
-   "editorNote": null,
-   "order": 269
-  },
-  {
-   "noteId": 1604153648178,
-   "guid": "iikYs33V4%",
-   "topic": "Lipitler",
-   "severity": "Orta",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Kolesterol Esterinde --&gt; Kolesterolün {{c1::3}}.C'da Yağ asidi var&nbsp;",
-     "after": "Kolesterol esterlerinde yağ asidi, serbest kolesterolün {{c1::C3 (3. karbon)}} hidroksil grubuna esterleşmiştir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Plazmada LCAT (lesitin-kolesterol açiltransferaz), hücre içinde ise ACAT (açil-KoA:kolesterol açiltransferaz) enzimi bu esterleşmeyi katalizler."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Kolesterol Esterinde --&gt; Kolesterolün 3.C'da Yağ asidi var → Kolesterol esterlerinde yağ asidi C3 hidroksiline esterleşmiştir",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
-     "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: Kök kimyasal esterleşme bölgesini tarif edecek şekilde düzenlendi, &nbsp; temizlendi.\nNeden: Kişisel not dili profesyonelleştirildi.\nNasıl: [SN1, BÇ1, YP4] 3. karbon konumu korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Cholesterol Biosynthesis.",
-   "decision": null,
-   "editorNote": null,
-   "order": 270
-  },
-  {
-   "noteId": 1604153693572,
-   "guid": "G})T}20d4/",
-   "topic": "Lipitler",
-   "severity": "Orta",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Pank lipaz'a&nbsp; --&gt; {{c1::Kolipaz&nbsp;}} yardımcı olur",
-     "after": "Safra tuzlarının oluşturduğu inhibitör etkiyi kırarak pankreatik lipazın lipid damlacığı yüzeyine tutunmasını sağlayan protein: {{c1::Kolipaz}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Kolipaz pankreastan prokolipaz olarak salgılanır ve duodenumda tripsin tarafından aktif kolipaza dönüştürülür."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Orta",
-     "category": "Soru netliği",
-     "text": "Pank lipaz'a --&gt; Kolipaz yardımcı olur → Pankreatik lipazın yüzeye tutunmasını sağlayan protein kolipazdır",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII ok ve &nbsp; temizlendi",
-     "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: \"Pank lipaz'a Kolipaz yardımcı olur\" ifadesi etki mekanizmasını (safra tuzu inhibisyonunu kırma) açıklayan soru köküne dönüştürüldü.\nNeden: Telgraf üslubu profesyonel soru köküne çevrildi.\nNasıl: [SN1, KS1, YP4] Kolipaz korundu, c1 sabit tutuldu.\nKaynak: Harper's Illustrated Biochemistry, Digestion and Absorption of Lipids.",
-   "decision": null,
-   "editorNote": null,
-   "order": 271
-  },
-  {
-   "noteId": 1604153764290,
-   "guid": "r2V#r5D0qr",
-   "topic": "Lipitler",
-   "severity": "Orta",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Tiyokinaz enzimi ({{c1::Yağ Açil CoA Sentetaz }} ) YA'lerini aktifleştirir&nbsp;",
-     "after": "Yağ asitlerinin beta-oksidasyona girebilmesi için ATP harcayarak aktive olmalarını sağlayan tiyokinaz enzimi: {{c1::Açil-KoA sentetaz}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Reaksiyonda 1 mol ATP, AMP ve inorganik pirofosfata (PPi) yıkılır; pirofosfataz etkisiyle 2 adet yüksek enerjili fosfat bağı eşdeğeri tüketilmiş olur."
-    }
-   },
-   "changes": [
-    {
-     "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Tiyokinaz enzimi (Yağ Açil CoA Sentetaz ) YA'lerini aktifleştirir → Tiyokinaz (açil-KoA sentetaz) yağ asitlerini aktifleştirir",
-     "rationale": ""
-    },
-    {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "&nbsp; temizlendi, parantez boşlukları düzeltildi",
-     "rationale": ""
-    }
-   ],
-   "aiNote": "Ne: Kısaltmalar açıldı, enzim adı standart biyokimya yazımına (\"açil-KoA sentetaz\") uyarlandı.\nNeden: Telgraf üslubu ve yazım hataları giderildi.\nNasıl: [YZ1, KS1, YP4] Tiyokinaz / açil-KoA sentetaz korundu, c1 sabit tutuldu.\nKaynak: Lehninger Principles of Biochemistry, Fatty Acid Oxidation.",
-   "decision": null,
-   "editorNote": null,
-   "order": 272
-  },
-  {
-   "noteId": 1604153801658,
-   "guid": "etX`5ar-qh",
-   "topic": "Lipitler",
-   "severity": "Orta",
-   "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
-   "fields": {
-    "Text": {
-     "before": "Tiokinaz enzimi bulunan yerler&nbsp;<div><br></div><div><div>{{c1::ER}}</div><div>{{c1::Peroksizom}}</div><div>{{c2::Mit}}. Dış zarı&nbsp;</div><div>{{c2::Mit}}. içinde&nbsp;</div><br></div>",
-     "after": "Farklı zincir uzunluklarındaki yağ asitlerini aktifleştiren tiyokinaz (açil-KoA sentetaz) izoenzimlerinin hücre içi yerleşimleri:<div><br></div><div>• {{c1::Endoplazmik retikulum zarı}}</div><div>• {{c1::Peroksizom zarı}}</div><div>• {{c2::Mitokondri}} dış zarı</div><div>• {{c2::Mitokondri}} matriksi</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Uzun zincirli yağ asitleri ER, peroksizom ve mitokondri dış zarında aktifleştirilirken; kısa ve orta zincirli yağ asitleri mitokondri matriksinde aktifleştirilebilir."
+     "after": "Pankreatik lipaz yağ asitlerini trigliseridin {{c1::1. ve 3.}} karbonundan keser"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "ER → Endoplazmik retikulum; Mit → Mitokondri; Tiokinaz → tiyokinaz",
+     "text": "\"C'dan\" → \"karbonundan\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Soru netliği",
+     "text": "Kök \"trigliseridin\" sözcüğüyle tamamlandı",
      "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "&nbsp; temizlendi, maddeli liste kuruldu",
+     "text": "\"Lipaz\" ve \"Yağ\" küçük harfle yazıldı; \"1 ve 3.\" → \"1. ve 3.\"; --&gt; kaldırıldı; &nbsp; temizlendi",
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Organel kısaltmaları açıldı, \"Tiokinaz\" yazımı \"tiyokinaz\" yapıldı, maddeli liste düzenlendi.\nNeden: Kısaltmalar standart terminolojiye kavuşturuldu.\nNasıl: [KS1, YZ1, BÇ1, YP1] c1 (ER, Peroksizom) ve c2 (Mitokondri) dağılımı korundu.\nKaynak: Harper's Illustrated Biochemistry, Oxidation of Fatty Acids.",
+   "aiNote": "Ne: \"C'dan\" → \"karbonundan\" açıldı, kökte karbonların trigliseride ait olduğu belirtildi ve sıra sayıları \"1. ve 3.\" biçiminde yazıldı.\nNeden: Kök, hangi molekülün 1. ve 3. karbonundan söz edildiğini söylemiyordu; \"C\" kısaltması kişiseldi.\nNasıl: [SN1, KS1, BÇ1] Pankreatik lipazın sn-1 ve sn-3 konumlarındaki yağ asitlerini ayırıp 2-monoaçilgliserol bırakması bilgisi ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 273
+   "editorNote": null
+  },
+  {
+   "order": 270,
+   "noteId": 1604153648178,
+   "guid": "iikYs33V4%",
+   "topic": "Lipitler",
+   "severity": "Orta",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Kolesterol Esterinde --&gt; Kolesterolün {{c1::3}}.C'da Yağ asidi var&nbsp;",
+     "after": "Kolesterol esterinde yağ asidi kolesterolün {{c1::3.}} karbonuna bağlıdır"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"C'da\" → \"karbonuna\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"Kolesterolün 3.C'da Yağ asidi var\" → \"yağ asidi kolesterolün 3. karbonuna bağlıdır\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Büyük harfler küçültüldü; --&gt; kaldırıldı; &nbsp; temizlendi; sıra sayısının noktası cevabın içine alındı",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: \"Kolesterolün 3.C'da Yağ asidi var\" → \"yağ asidi kolesterolün 3. karbonuna bağlıdır\" yazıldı.\nNeden: \"C\" kişisel kısaltmaydı; cümle ok ile bölünmüş ve gereksiz büyük harfler içeriyordu.\nNasıl: [KS1, DB1, BÇ1] Yağ asidinin kolesterolün 3-hidroksil grubuna esterleştiği bilgisi ve c1 cevabı (3.) korundu.",
+   "decision": null,
+   "editorNote": null
+  },
+  {
+   "order": 271,
+   "noteId": 1604153693572,
+   "guid": "G})T}20d4/",
+   "topic": "Lipitler",
+   "severity": "Orta",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Pank lipaz'a&nbsp; --&gt; {{c1::Kolipaz&nbsp;}} yardımcı olur",
+     "after": "Pankreatik lipaza {{c1::kolipaz}} yardımcı olur"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"Pank lipaz'a\" → \"Pankreatik lipaza\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "--&gt; kaldırıldı; &nbsp; temizlendi; \"Kolipaz\" küçük harfle yazıldı",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: \"Pank lipaz'a\" → \"Pankreatik lipaza\" açıldı; cümle içindeki ok ve &nbsp; kaldırıldı.\nNeden: \"Pank\" kişisel kısaltmaydı ve cins isimden sonra kesme işareti kullanılmıştı.\nNasıl: [KS1, DB1, BÇ1] Ek kesme işareti olmadan yazıldı; cevap (kolipaz) ve c1 korundu.",
+   "decision": null,
+   "editorNote": null
+  },
+  {
+   "order": 272,
+   "noteId": 1604153764290,
+   "guid": "r2V#r5D0qr",
+   "topic": "Lipitler",
+   "severity": "Orta",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Tiyokinaz enzimi ({{c1::Yağ Açil CoA Sentetaz }} ) YA'lerini aktifleştirir&nbsp;",
+     "after": "Tiyokinaz enzimi ({{c1::yağ açil-KoA sentetaz}}) yağ asitlerini aktifleştirir"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"YA'lerini\" → \"yağ asitlerini\"; \"Yağ Açil CoA Sentetaz\" → \"yağ açil-KoA sentetaz\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Parantez içindeki fazla boşluk ve &nbsp; temizlendi",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: \"YA'lerini\" → \"yağ asitlerini\" ve \"Yağ Açil CoA Sentetaz\" → \"yağ açil-KoA sentetaz\" yazıldı.\nNeden: \"YA\" kişisel kısaltmaydı; enzim adı Title Case ve \"CoA\" biçimindeydi.\nNasıl: [KS1, YZ1, BÇ1] ATP harcayan bir ligaz olduğu için \"sentetaz\" eki korundu; cevap ve c1 değişmedi.",
+   "decision": null,
+   "editorNote": null
+  },
+  {
+   "order": 273,
+   "noteId": 1604153801658,
+   "guid": "etX`5ar-qh",
+   "topic": "Lipitler",
+   "severity": "Orta",
+   "status": "changed",
+   "changedFields": "Metin",
+   "fields": {
+    "Text": {
+     "before": "Tiokinaz enzimi bulunan yerler&nbsp;<div><br></div><div><div>{{c1::ER}}</div><div>{{c1::Peroksizom}}</div><div>{{c2::Mit}}. Dış zarı&nbsp;</div><div>{{c2::Mit}}. içinde&nbsp;</div><br></div>",
+     "after": "Tiyokinaz enziminin bulunduğu yerler<div><br></div><div><div>{{c1::ER}}</div><div>{{c1::Peroksizom}}</div><div>{{c2::Mitokondri}} dış zarı</div><div>{{c2::Mitokondri}} matriksi</div></div>"
+    }
+   },
+   "changes": [
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "\"Mit. Dış zarı\" → \"Mitokondri dış zarı\"; \"Mit. içinde\" → \"Mitokondri matriksi\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Terim/yazım",
+     "text": "\"Tiokinaz\" → \"Tiyokinaz\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"enzimi bulunan yerler\" → \"enziminin bulunduğu yerler\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "&nbsp; ve sondaki boş satır temizlendi",
+     "rationale": ""
+    }
+   ],
+   "aiNote": "Ne: \"Mit.\" → \"Mitokondri\" açıldı ve \"Mit. içinde\" → \"Mitokondri matriksi\" yazıldı; \"Tiokinaz\" → \"Tiyokinaz\" ve \"enzimi bulunan\" → \"enziminin bulunduğu\" düzeltildi.\nNeden: \"Mit.\" mitokondri, mitoz ve mitral olarak okunabilen kişisel bir kısaltmaydı; enzim adı önceki kartta \"Tiyokinaz\" diye yazılmıştı.\nNasıl: [KS1, YZ1, KS2] Kısa ve orta zincirli yağ asitlerini aktifleştiren matriks izoenzimleri gözetilerek \"içinde\" matriks olarak adlandırıldı; ER standart kısaltma olarak bırakıldı, c1/c2 korundu.",
+   "decision": null,
+   "editorNote": null
   },
   {
    "noteId": 1604153927041,
@@ -18009,5 +17914,54 @@
    "kisaltma": "HbA1c",
    "acilim": "glikozillenmiş hemoglobin"
   }
+ ],
+ "redone": [
+  1604150952548,
+  1604151001963,
+  1604151030426,
+  1604151065083,
+  1604151103142,
+  1604151157414,
+  1604151196970,
+  1604151319026,
+  1604151419820,
+  1604151454632,
+  1604151475860,
+  1604151497482,
+  1604151513292,
+  1604151540458,
+  1604151763049,
+  1604151847449,
+  1604151872919,
+  1604151919835,
+  1604151952319,
+  1604152059012,
+  1604152081677,
+  1604152144232,
+  1604152268349,
+  1604152382549,
+  1604152424441,
+  1604152499781,
+  1604152630128,
+  1604152662337,
+  1604152690537,
+  1604152806147,
+  1604152972622,
+  1604152992801,
+  1604153034361,
+  1604153046475,
+  1604153128897,
+  1604153218461,
+  1604153279936,
+  1604153307336,
+  1604153338234,
+  1604153359699,
+  1604153496425,
+  1604153531315,
+  1604153620791,
+  1604153648178,
+  1604153693572,
+  1604153764290,
+  1604153801658
  ]
 }

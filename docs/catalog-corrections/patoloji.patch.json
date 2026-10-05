@@ -13,18 +13,18 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "redo-in-progress",
  "summary": {
   "reviewedNotes": 609,
-  "changedNotes": 347,
-  "htmlOnlyNotes": 262,
+  "changedNotes": 351,
+  "htmlOnlyNotes": 258,
   "unchangedNotes": 0,
-  "changeItems": 886,
+  "changeItems": 902,
   "notesBySeverity": {
-   "Kritik": 5,
-   "Yüksek": 2,
-   "Orta": 340,
-   "Düşük": 262
+   "Kritik": 6,
+   "Yüksek": 1,
+   "Orta": 343,
+   "Düşük": 259
   },
   "notesByTopic": {
    "Böbrek ve Üriner Sistem Patolojisi": 22,
@@ -40,21 +40,26 @@
    "Solunum Sistemi Patolojisi": 20
   },
   "itemsByCategory": {
-   "Biçim": {
-    "Düşük": 506
-   },
-   "Eksik kritik bilgi": {
+   "Tıbbi doğruluk": {
+    "Kritik": 6,
     "Yüksek": 1
    },
-   "Kısaltma": {
-    "Orta": 332
+   "Soru netliği": {
+    "Orta": 4
    },
    "Terim/yazım": {
-    "Orta": 41
+    "Orta": 41,
+    "Düşük": 2
    },
-   "Tıbbi doğruluk": {
-    "Kritik": 5,
-    "Yüksek": 1
+   "Kısaltma": {
+    "Orta": 337
+   },
+   "Dil bilgisi": {
+    "Orta": 3,
+    "Düşük": 2
+   },
+   "Biçim": {
+    "Düşük": 506
    }
   },
   "secondReview": {
@@ -259,74 +264,74 @@
    "order": 5
   },
   {
+   "order": 6,
    "noteId": 1604385529205,
    "guid": "BLFwW8//=`",
    "topic": "Genel",
-   "severity": "Yüksek",
+   "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<b>Nekroptozis</b> --&gt;&nbsp;<div><br></div><div>Kaspazlar {{c1::kullanılmaz}} --&gt;&nbsp;</div><div>{{c1::RIP 1-3}} kullanılır&nbsp;<div><br></div><div>{{c1::TNF Res}} ile uyarı başlar&nbsp;</div></div>",
-     "after": "<b>Nekroptozis:</b><div><br></div><div>Kaspazlar {{c1::kullanılmaz (kaspaz bağımsızdır)}} → {{c1::RIPK1 ve RIPK3 (nekrozom) ile MLKL}} kullanılır.<div><br></div><div>Uyarım sıklıkla {{c1::TNFR1 reseptörü}} ile başlar.</div></div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Nekroptozis programlı nekrozdur; kaspaz-8 inhibe edildiğinde RIPK1-RIPK3 nekrozomu MLKL'yi fosforiller ve hücre membranını delerek nekroza yol açar."
+     "after": "<b>Nekroptozis</b>:<div><br></div><div>Kaspazlar {{c1::kullanılmaz}}</div><div>{{c1::RIPK1 ve RIPK3}} kullanılır<div><br></div><div>{{c1::TNF reseptörü}} ile uyarı başlar</div></div>"
     }
    },
    "changes": [
     {
-     "severity": "Yüksek",
-     "category": "Tıbbi doğruluk",
-     "text": "RIP 1-3 → RIPK1 ve RIPK3 ile MLKL; kaspaz bağımsız mekanizma vurgulandı",
-     "rationale": "Nekroptozis kaspaz bağımsız programlı hücre ölümüdür. Efektör molekül RIPK3 tarafından fosforillenen MLKL'dir; kartta eksik olan MLKL eklendi."
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "RIP 1-3 → RIPK1 ve RIPK3",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "TNF Res → TNF reseptörü",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, &nbsp; temizlendi"
+     "text": "Başlıktaki --&gt; → \":\"; \"kullanılmaz --&gt;\" satır sonu oku kaldırıldı; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Nekroptozis efektörleri RIPK1-RIPK3 ve MLKL olarak güncellendi, kaspaz bağımsız olduğu belirtildi.\nNeden: RIP kısaltması eksikti ve patogenezin kilit efektörü olan MLKL yer almıyordu.\nNasıl: [TD1, YP1, BÇ1] c1 cloze kümesi korundu, mekanizma güncellendi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Nekroptozis.",
+   "aiNote": "Ne: \"RIP 1-3\" → \"RIPK1 ve RIPK3\" ve \"TNF Res\" → \"TNF reseptörü\" yazıldı; satır sonlarındaki oklar kaldırıldı.\nNeden: \"1-3\" yazımı RIPK2'yi de içeren bir aralık gibi okunabiliyordu, oysa nekroptozun kinazları RIPK1 ve RIPK3'tür; \"Res\" reseptör, rezistans veya direnç olarak okunabiliyordu.\nNasıl: [YZ2, KS1, BÇ1] Kinaz adları güncel adlandırmayla yazıldı; MLKL eklenmedi, çünkü kart onsuz da doğru ve cevaplanabilir; c1 cevapları ve kaspazdan bağımsızlık vurgusu korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 6
+   "editorNote": null
   },
   {
+   "order": 7,
    "noteId": 1604385552439,
    "guid": "clUoD3Q$8y",
    "topic": "Genel",
-   "severity": "Yüksek",
+   "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Piroptozis --&gt; Kaspaz&nbsp;{{c1:: 1}} akt&nbsp;",
-     "after": "Piroptozis: inflamazom aracılığıyla kaspaz-{{c1::1}} aktivasyonu ile gerçekleşir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Kaspaz-1 prokaspaz formundan aktive olarak pro-IL-1β ve pro-IL-18'i aktif sitokinlere keser; gazdermin D porları oluşturarak ateş ve lizise yol açar."
+     "after": "Piroptozis → kaspaz-{{c1::1}} aktivasyonu"
     }
    },
    "changes": [
     {
-     "severity": "Yüksek",
-     "category": "Eksik kritik bilgi",
-     "text": "İnflamazom aracılığıyla kaspaz-1 aktivasyonu eklendi",
-     "rationale": "Piroptozisin temel mekanizması inflamazom aktivasyonudur; eksik olan inflamazom ve sitokin salınımı bağlamı eklendi."
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "akt → aktivasyonu",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, akt → aktivasyonu, &nbsp; temizlendi"
+     "text": "--&gt; → →; Kaspaz 1 → kaspaz-1; cloze içindeki boşluk ve &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Piroptozisin inflamazom aracılığıyla kaspaz-1 aktivasyonu yaptığı tam cümle olarak yazıldı.\nNeden: Kartta yalnız \"Piroptozis --> Kaspaz 1 akt\" şeklinde telgraf üslubu mevcuttu.\nNasıl: [EK1, KS1, BÇ1, YP1] c1 cloze'u korunarak mekanizma açıklandı.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Piroptozis.",
+   "aiNote": "Ne: \"Kaspaz 1 akt\" → \"kaspaz-1 aktivasyonu\" yazıldı ve ASCII ok → ile değiştirildi.\nNeden: \"akt\" kişisel kısaltmaydı ve cloze cevabı boşluk ile &nbsp; artığı taşıyordu.\nNasıl: [TD3, KS1, BÇ1] Piroptozun inflamazom aracılı kaspaz-1 aktivasyonuyla gerçekleştiği doğrulandı; kart doğru ve cevaplanabilir olduğu için inflamazom bilgisi eklenmedi, c1 korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease (hücre ölümü: piroptoz ve inflamazom).",
    "decision": null,
-   "editorNote": null,
-   "order": 7
+   "editorNote": null
   },
   {
    "noteId": 1604559123991,
@@ -2260,84 +2265,83 @@
    "order": 66
   },
   {
+   "order": 67,
    "noteId": 1604384166475,
    "guid": "JtL{Cg;;gd",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Hipokside etklenen ilk sistem --&gt; {{c1::Aerobik Solunum&nbsp;}}<div>İlk organel --&gt; {{c1::Mit&nbsp;}}</div>",
-     "after": "Hipokside etkilenen ilk sistem: {{c1::aerobik solunum (oksidatif fosforilasyon)}}<div>İlk etkilenen organel: {{c1::mitokondri}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Oksijen azlığı mitokondride oksidatif fosforilasyonu durdurur; ATP azalır, glikoliz artar."
+     "after": "Hipokside etkilenen ilk sistem → {{c1::aerobik solunum}}<div>İlk etkilenen organel → {{c1::mitokondri}}</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "etklenen → etkilenen; Aerobik Solunum → aerobik solunum"
+     "category": "Kısaltma",
+     "text": "Mit → mitokondri",
+     "rationale": ""
     },
     {
      "severity": "Orta",
-     "category": "Kısaltma",
-     "text": "Mit → mitokondri"
+     "category": "Soru netliği",
+     "text": "\"İlk organel\" → \"İlk etkilenen organel\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Terim/yazım",
+     "text": "etklenen → etkilenen",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, iki nokta düzeni sağlandı, &nbsp; temizlendi"
+     "text": "Aerobik Solunum → aerobik solunum; --&gt; → →; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"etklenen\" yazımı \"etkilenen\", \"Aerobik Solunum\" → \"aerobik solunum\", \"Mit\" kısaltması \"mitokondri\" olarak düzeltildi; Extra'ya mekanizma eklendi.\nNeden: Yazarın kişisel kısaltması (\"Mit\"), yazım hatası ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Hücre hasarında hipoksinin ilk hedefi olan mitokondriyal aerobik solunum netleştirildi, iki c1 cloze'u korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Hücre Hasarı bölümü (mitokondri ve ATP tükenmesi).",
+   "aiNote": "Ne: \"Mit\" → \"mitokondri\" açıldı, \"etklenen\" yazım hatası düzeltildi ve ikinci satır \"İlk etkilenen organel\" olarak yazıldı; iki cevap (aerobik solunum, mitokondri) korundu.\nNeden: \"Mit\" kısaltması mitokondri, mitoz ve mitral olarak okunabiliyordu; \"İlk organel\" kökü neyin ilk olduğunu söylemiyordu.\nNasıl: [KS1, SN1, BÇ1] Kısaltma, hipoksinin ilk hedefinin mitokondrideki oksidatif fosforilasyon olmasına göre açıldı; c1 ve iki satırlık düzen korundu, büyük harfler cümle düzenine çevrildi.",
    "decision": null,
-   "editorNote": null,
-   "order": 67
+   "editorNote": null
   },
   {
+   "order": 68,
    "noteId": 1604384235054,
    "guid": "nre.rBAY11",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "En erken İr-Reversibl Değişiklik ---&gt; {{c1::Hc. memb'da parçalanma&nbsp;}}",
-     "after": "Hücre hasarında en erken irreversibl değişiklik: {{c1::hücre membran bütünlüğünün bozulması (parçalanması)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Plazma membran hasarı hücre ölümünün (nekroz) kesin eşiğidir; kalsiyum akışı ve enzim sızıntısı başlar."
+     "after": "En erken irreversibl değişiklik → {{c1::hücre membranında parçalanma}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "İr-Reversibl → irreversibl; Değişiklik → değişiklik"
-    },
-    {
-     "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Hc. memb'da parçalanma → hücre membran bütünlüğünün bozulması (parçalanması)"
+     "text": "Hc. memb'da → hücre membranında",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "---&gt; kaldırıldı, &nbsp; temizlendi"
+     "text": "İr-Reversibl Değişiklik → irreversibl değişiklik; ---&gt; → →; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"İr-Reversibl\" → \"irreversibl\", \"Hc. memb'da parçalanma\" → \"hücre membran bütünlüğünün bozulması (parçalanması)\" düzeltildi.\nNeden: Kişisel kısaltmalar ve ASCII ok vardı; tıbbi terim ders kitabı standartlarına getirildi.\nNasıl: [KS1, YZ1, BÇ1, YP1] Hücre ölümünün kesin morfolojik göstergesi olan membran parçalanması açıklandı, c1 korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, İrreversibl Hücre Hasarı.",
+   "aiNote": "Ne: \"Hc. memb'da parçalanma\" → \"hücre membranında parçalanma\" açıldı ve \"İr-Reversibl Değişiklik\" → \"irreversibl değişiklik\" yazıldı; cevap değişmedi.\nNeden: Kişisel kısaltmalar ve tireyle bölünmüş büyük harfli terim kartı özensiz gösteriyordu; \"en erken\" üstünlük ifadesi ayrıca denetlendi.\nNasıl: [TD3, KS1, BÇ1] Geri dönüşümsüz hasarı belirleyen iki olaydan birinin derin membran hasarı olduğu ve iskemik miyositte sarkolemma bütünlüğünün bozulmasının nekrozun saptanabilen en erken bulgusu olduğu doğrulandı; cevap korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease (hücre hasarı; miyokard enfarktüsü patogenezi); Hashmi S, Al-Salam S. Int J Clin Exp Pathol 2013 (iskemik miyositte sarkolemma hasarı ve erken distrofin kaybı).",
    "decision": null,
-   "editorNote": null,
-   "order": 68
+   "editorNote": null
   },
   {
+   "order": 69,
    "noteId": 1604384362733,
    "guid": "EMV:[[>p=",
    "topic": "Genel",
@@ -2347,211 +2351,235 @@
    "fields": {
     "Text": {
      "before": "İskemik Hasarda Hc. İçinde<div><br></div><div>Azalanlar ---&gt;&nbsp;</div><div><br></div><div>{{c1::ATP}} - {{c1::Glikojen}} - {{c1::Protein}} Sentezi - {{c1::K}} -<b>&nbsp;</b>{{c1::pH}}</div><div></div><div><br></div><div>Artanlar ---&gt;&nbsp;</div><div><br></div><div>{{c2::ADP}} - {{c2::P}} - {{c2::Na}} - Su - {{c2::Ca}} - Pürin Nükleozitler - {{c2::<b>Laktik asit</b>}}&nbsp;- {{c2::Yağ}}</div>",
-     "after": "İskemik hücre hasarında hücre içi değişiklikler:<div><br></div><div>Azalanlar:</div><div><br></div><div>{{c1::ATP}} - {{c1::glikojen}} - {{c1::protein sentezi}} - {{c1::K+}} - {{c1::hücre içi pH}}</div><div><br></div><div>Artanlar:</div><div><br></div><div>{{c2::ADP}} - {{c2::inorganik fosfat (Pi)}} - {{c2::Na+}} - su - {{c2::Ca2+}} - pürin nükleozitleri - {{c2::<b>laktik asit</b>}} - {{c2::trigliserit (yağ)}}</div>"
+     "after": "İskemik hasarda hücre içinde<div><br></div><div>Azalanlar:</div><div><br></div><div>{{c1::ATP}}, {{c1::glikojen}}, {{c1::protein}} sentezi, {{c1::K}}, {{c1::pH}}</div><div><br></div><div>Artanlar:</div><div><br></div><div>{{c2::ADP}}, {{c2::inorganik fosfat}}, {{c2::Na}}, su, {{c2::Ca}}, pürin nükleozidleri, {{c2::<b>laktik asit</b>}}, {{c2::yağ}}</div>"
     },
     "Extra": {
      "before": "Laktik asit artar --&gt; pH azalır&nbsp;",
-     "after": "Laktik asit artışı → hücre içi pH azalır (asidoz), nükleer kromatin kümeleşir."
+     "after": "Laktik asit artar → pH azalır."
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Hc. İçinde → hücre içi değişiklikler; K, Na, Ca, P iyon simgeleri düzenlendi"
+     "text": "Hc. → hücre; P → inorganik fosfat",
+     "rationale": ""
     },
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Protein Sentezi → protein sentezi; Pürin Nükleozitler → pürin nükleozitleri"
+     "text": "Pürin Nükleozitler → pürin nükleozidleri",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "---&gt; kaldırıldı, iki nokta konuldu, &nbsp; temizlendi"
+     "text": "Büyük harfler küçültüldü; \" - \" ayraçları \", \" yapıldı; \"Azalanlar ---&gt;\" ve \"Artanlar ---&gt;\" → \"Azalanlar:\" ve \"Artanlar:\"; Extra'da --&gt; → → ve sona nokta; &nbsp;, boş <b> ve boş <div> temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: İskemik hasar parametreleri iyon simgeleriyle netleştirildi, Extra'daki mekanizma açıklandı.\nNeden: Hc kısaltması, ASCII oklar ve gereksiz boşluklar mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] c1 ve c2 cloze kümeleri aynen korundu, iyon yükleri eklendi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, İskemik ve Hipoksik Hasar.",
+   "aiNote": "Ne: \"Hc.\" → \"hücre\" ve tek harfli \"P\" → \"inorganik fosfat\" açıldı, \"Pürin Nükleozitler\" → \"pürin nükleozidleri\" yazıldı; liste ayraçları virgüle, başlık okları iki noktaya çevrildi.\nNeden: \"P\" fosfor mu fosfat mı belli değildi; \"nükleozit\" yazımı katalogdaki tek yazıma uymuyordu ve kart kişisel not biçimindeydi.\nNasıl: [KS1, YZ1, BÇ1] \"P\", anaerobik glikolizde fosfat esterlerinin hidrolizinden biriken inorganik fosfat olarak açıldı; c1 ve c2 listeleri, kalın \"laktik asit\" ve Extra'daki laktik asit → pH ilişkisi korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 69
+   "editorNote": null
   },
   {
+   "order": 70,
    "noteId": 1604384534707,
    "guid": "s$^`.(#D9Z",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Antioksidanlar&nbsp;<div><br></div><div>Enzimler --&gt; {{c1::SOD}} - {{c1::Glutatyon PerOx}} - {{c2::Katalaz}} - {{c2::Glutatyon Red}}</div><div><br></div><div>Vit. ve diğerleri --&gt; Vit {{c3::E - A - C}} - {{c3::Se}} - {{c4::Fe/Cu}} taşıyan maddeler - {{c4::Cys&nbsp;}}</div>",
-     "after": "Antioksidan savunma sistemleri:<div><br></div><div>Enzimler: {{c1::süperoksit dismutaz (SOD)}} - {{c1::glutatyon peroksidaz}} - {{c2::katalaz}} - {{c2::glutatyon redüktaz}}</div><div><br></div><div>Vitaminler ve diğerleri: Vitamin {{c3::E, A ve C}} - {{c3::selenyum (Se)}} - {{c4::Fe ve Cu}} bağlayan/taşıyan proteinler (transferrin, ferritin, seruloplazmin) - {{c4::sistein (Cys)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Demir ve bakır serbest kaldığında Fenton reaksiyonuyla hidroksil radikali üretir; bu nedenle proteinlerle bağlı taşınırlar."
+     "after": "Antioksidanlar<div><br></div><div>Enzimler → {{c1::SOD}}, {{c1::glutatyon peroksidaz}}, {{c2::katalaz}}, {{c2::glutatyon redüktaz}}</div><div><br></div><div>Vitaminler ve diğerleri → vitamin {{c3::E, A, C}}, {{c3::Se}}, {{c4::Fe/Cu}} taşıyan proteinler, {{c4::sistein}}</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "SOD, Glutatyon PerOx, Glutatyon Red, Cys, Se, Vit açıldı"
+     "text": "Glutatyon PerOx → glutatyon peroksidaz; Glutatyon Red → glutatyon redüktaz; Vit. ve diğerleri → Vitaminler ve diğerleri; Vit → vitamin; Cys → sistein",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Soru netliği",
+     "text": "\"taşıyan maddeler\" → \"taşıyan proteinler\"",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, iki nokta düzeni sağlandı, &nbsp; temizlendi"
+     "text": "Büyük harfler küçültüldü; \" - \" ayraçları \", \" yapıldı; --&gt; → →; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Antioksidan enzimler ve vitaminler tam adlarıyla yazıldı, c4'teki metal bağlayıcı proteinler örneklendirildi.\nNeden: Kişisel kısaltmalar ve telgraf üslubu vardı.\nNasıl: [KS1, YZ1, BÇ1, YP1] c1, c2, c3, c4 cloze yapısı aynen korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Serbest Radikaller ve Antioksidanlar.",
+   "aiNote": "Ne: \"Glutatyon PerOx\", \"Glutatyon Red\", \"Vit\" ve \"Cys\" açıldı; \"Fe/Cu taşıyan maddeler\" → \"Fe/Cu taşıyan proteinler\" yazıldı.\nNeden: Kısaltmalar kişisel not dilindeydi; \"maddeler\" sözcüğü demir ve bakırı bağlayarak serbest radikal oluşumunu önleyen depo ve taşıma proteinlerini (transferrin, ferritin, seruloplazmin) belirsiz bırakıyordu.\nNasıl: [KS1, SN1, BÇ1] Enzim adları Türkçe yazımlarıyla açıldı; standart kısaltma SOD ve kimyasal sembol Se korundu, dört cloze numarası ve liste sırası değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 70
+   "editorNote": null
   },
   {
+   "order": 71,
    "noteId": 1604384743065,
    "guid": "Lc!P6yq0T3",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Apoptotik Cisim üzerinde --&gt; {{c1::Fosfsatidil Serin }}&nbsp; - {{c1::Trombospondin}} bulunur&nbsp;<div><br></div><div>Komp.'dan olan {{c2::C1q}} da apoptotik cisim tanınmasını sağlar&nbsp;</div><div><br></div><div>Apoptotik Cisim ---&gt; {{c2::Annexin 5}} boyanır&nbsp;<br></div>",
-     "after": "Apoptotik cisimlerin fagositozu için yüzey belirteçleri: {{c1::fosfatidilserin}} ve {{c1::trombospondin}} bulunur.<div><br></div><div>Kompleman sisteminden olan {{c2::C1q}} da apoptotik cismin tanınmasını sağlar.</div><div><br></div><div>Apoptotik cisimler laboratuvarda {{c2::annexin V}} ile boyanır.</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Fosfatidilserin normalde plazma membranının iç yaprağındadır; apoptozda dış yaprağa ters yüz olarak (flip-flop) makrofajlar için \"ye beni\" sinyali oluşturur."
+     "after": "Apoptotik cisim üzerinde {{c1::fosfatidilserin}} ve {{c1::trombospondin}} bulunur<div><br></div><div>Kompleman sistemine ait {{c2::C1q}} da apoptotik cismin tanınmasını sağlar</div><div><br></div><div>Apoptotik cisim {{c2::anneksin V}} ile boyanır</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Fosfsatidil Serin → fosfatidilserin; Annexin 5 → annexin V"
+     "text": "Fosfsatidil Serin → fosfatidilserin; Annexin 5 → anneksin V",
+     "rationale": ""
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Komp.'dan olan → kompleman sisteminden olan"
+     "text": "Komp.'dan olan → Kompleman sistemine ait",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Dil bilgisi",
+     "text": "\"apoptotik cisim tanınmasını\" → \"apoptotik cismin tanınmasını\"; \"Annexin 5 boyanır\" → \"anneksin V ile boyanır\"",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; ve ---&gt; kaldırıldı, &nbsp; temizlendi"
+     "text": "Büyük harfler küçültüldü; cümle içindeki --&gt; ve ---&gt; kaldırıldı; \" - \" → \" ve \"; &nbsp; ve satır sonu <br> temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Fosfsatidil Serin\" yazımı düzeltildi, \"Annexin 5\" standart Roma rakamı (\"annexin V\") yapıldı, fosfatidilserin mekanizması Extra'ya yazıldı.\nNeden: Yazım hatası ve gayriresmi terimler mevcuttu.\nNasıl: [YZ1, KS1, BÇ1, YP1] c1 ve c2 cloze kümeleri korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Apoptotik Hücrelerin Uzaklaştırılması.",
+   "aiNote": "Ne: \"Fosfsatidil Serin\" → \"fosfatidilserin\", \"Annexin 5\" → \"anneksin V\" ve \"Komp.'dan olan\" → \"Kompleman sistemine ait\" yazıldı; son satıra \"ile\" eklendi.\nNeden: Terimler hatalı yazılmıştı, \"Komp.\" kompleman ve komplikasyon olarak okunabiliyordu ve \"anneksin V boyanır\" ifadesi boyanan dokuyla boyayı karıştırıyordu.\nNasıl: [YZ2, KS1, DB1] Apoptotik hücrede dış yaprağa geçen fosfatidilserinin anneksin V ile gösterilmesine göre \"ile boyanır\" yazıldı; c1 ve c2 cevapları ile üç satırlık düzen korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 71
+   "editorNote": null
   },
   {
+   "order": 72,
    "noteId": 1604385430245,
    "guid": "I;wjD4]W]K",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Hepatosit - Pankreasta <b>İntrensek - Ekstrensek</b> Yolak'ı birbirine bağlayan Molekül --&gt; {{c1::BID&nbsp;}}",
-     "after": "Hepatosit ve pankreas hücrelerinde <b>intrinsik ve ekstrinsek</b> yolağı birbirine bağlayan molekül: {{c1::Bid (tBid)}}"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Ekstrinsek yolda kaspaz-8 Bid'i keserek trunkat Bid (tBid) oluşturur; tBid mitokondriye giderek Bax ve Bak'ı aktive eder ve intrinsik yolu tetikler."
+     "after": "Hepatositlerde ve pankreasta <b>intrinsik ve ekstrinsik</b> yolları birbirine bağlayan molekül → {{c1::Bid}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "İntrensek - Ekstrensek → intrinsik ve ekstrinsek; BID → Bid (tBid)"
+     "text": "İntrensek - Ekstrensek → intrinsik ve ekstrinsik; BID → Bid",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Dil bilgisi",
+     "text": "\"Hepatosit - Pankreasta\" → \"Hepatositlerde ve pankreasta\"; \"Yolak'ı\" → \"yolları\"",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, &nbsp; temizlendi"
+     "text": "Molekül → molekül; --&gt; → →; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: İntrinsik ve ekstrinsek yazımı düzeltildi, Bid proteininin tBid mekanizması Extra'da açıklandı.\nNeden: Yazım tutarsızlığı ve eksik mekanizma açıklaması vardı.\nNasıl: [YZ1, BÇ1, YP1] c1 cloze'u korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Apoptoz Yolaklarının Kesişimi.",
+   "aiNote": "Ne: \"İntrensek - Ekstrensek Yolak'ı\" → \"intrinsik ve ekstrinsik yolları\" ve \"Hepatosit - Pankreasta\" → \"Hepatositlerde ve pankreasta\" yazıldı; \"BID\" → \"Bid\" oldu.\nNeden: Terimler yanlış yazılmıştı, yaygın ada kesme işareti konmuştu ve tire iki dokuyu bir zincirin halkaları gibi gösteriyordu.\nNasıl: [YZ2, DB1, BÇ1] Protein adı intrinsik yol kartındaki \"Bid\" yazımıyla birleştirildi; kaspaz-8'in Bid'i keserek mitokondri yolunu devreye sokması öğretim noktası olarak korundu, kalın vurgu ve c1 değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 72
+   "editorNote": null
   },
   {
+   "order": 73,
    "noteId": 1604385591588,
    "guid": "Mm-.~U^[dF",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Otofaji --&gt; {{c1::Mikrotübül Assosiye Hafif Zincir 3 (LC-3)}} gerekir&nbsp;",
-     "after": "Otofaji: otofagozom oluşumu ve membran uzaması için {{c1::mikrotübülle ilişkili protein hafif zincir 3 (LC3 / LC3-II)}} gerekir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "LC3-I lipitlenerek LC3-II'ye dönüşür ve otofagozom membranına bağlanır; laboratuvarda otofaji aktivitesinin temel belirtecidir."
+     "after": "Otofaji için {{c1::mikrotübül ilişkili protein hafif zincir 3 (LC3)}} gerekir"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Assosiye → ilişkili; LC-3 → LC3 / LC3-II"
+     "text": "Mikrotübül Assosiye Hafif Zincir 3 (LC-3) → mikrotübül ilişkili protein hafif zincir 3 (LC3)",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"Otofaji --&gt; ... gerekir\" → \"Otofaji için ... gerekir\"",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, &nbsp; temizlendi"
+     "text": "&nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Otofaji belirteci LC3 tam Türkçe adıyla (\"mikrotübülle ilişkili protein hafif zincir 3\") yazıldı.\nNeden: İngilizce \"Assosiye\" kelimesi ve eksik biçimlendirme vardı.\nNasıl: [YZ1, BÇ1, YP1] c1 cloze'u korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Otofaji.",
+   "aiNote": "Ne: \"Mikrotübül Assosiye Hafif Zincir 3 (LC-3)\" → \"mikrotübül ilişkili protein hafif zincir 3 (LC3)\" yazıldı ve ok \"için\" ile değiştirildi.\nNeden: \"Assosiye\" Türkçe karşılığı olan yabancı bir sözcüktü, proteinin adında \"protein\" eksikti ve ok fiille biten cümleyi bölüyordu.\nNasıl: [YZ2, DB1, BÇ1] Ad, LC3'ün uluslararası adına (microtubule-associated protein light chain 3) göre Türkçeleştirildi; c1 cevabı ve LC3 kısaltması korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 73
+   "editorNote": null
   },
   {
+   "order": 74,
    "noteId": 1604385667973,
    "guid": "wiThSEys,U",
    "topic": "Genel",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Yağlı Değişiklik en sık(2) --&gt; {{c1::KC ve Kalp}}te&nbsp;",
-     "after": "Yağlı değişiklik (steatoz) en sık görüldüğü iki organ: {{c1::karaciğer ve kalp}}tir."
-    },
-    "Extra": {
-     "before": "",
-     "after": "Trigliserit birikimi en sık karaciğerde (alkol, obezite/DM), ikinci sıklıkla kalpte (hipoksiye bağlı kaplan postu / tigroid kalp) görülür."
+     "after": "Yağlı değişikliğin en sık görüldüğü organlar (2) → {{c1::karaciğer ve kalp}}"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "KC ve Kalp → karaciğer ve kalp"
+     "text": "KC → karaciğer",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Soru netliği",
+     "text": "\"Yağlı Değişiklik en sık(2) --&gt; ...te\" → \"Yağlı değişikliğin en sık görüldüğü organlar (2) →\"",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, &nbsp; temizlendi"
+     "text": "Kalp → kalp; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Steatozun en sık görüldüğü organlar kısaltmasız yazıldı, Extra'da kaplan postu kalp bilgisi verildi.\nNeden: \"KC\" kişisel kısaltması ve ASCII ok vardı.\nNasıl: [KS1, BÇ1, YP1] c1 cloze'u korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, İntrasellüler Birikimler (Steatoz).",
+   "aiNote": "Ne: \"KC\" → \"karaciğer\" açıldı ve kök \"Yağlı değişikliğin en sık görüldüğü organlar (2)\" olarak yazıldı; cevap karaciğer ve kalp olarak kaldı.\nNeden: \"KC\" kişisel kısaltmaydı; \"en sık(2) → ...te\" yapısında soru eksik kalıyor ve cloze dışındaki \"-te\" eki cevaba yapışık duruyordu.\nNasıl: [KS1, SN1, BÇ1] Yağlı değişikliğin yağ metabolizmasına katılan hepatosit ve miyokard hücrelerinde en sık görülmesine göre kök kuruldu; sayı (2) ve c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 74
+   "editorNote": null
   },
   {
+   "order": 75,
    "noteId": 1604386094368,
    "guid": "w6ub4*rAgU",
    "topic": "Genel",
@@ -2561,31 +2589,35 @@
    "fields": {
     "Text": {
      "before": "AA Met'dan Lipoksin görevleri (3)<div><br></div><div>{{c1::<div>Anti-inf</div><div>Kemotx inh</div><div>Nötrofil adezyonunu azaltır&nbsp;</div>}}<br></div><div><div><br></div><div><br></div></div>",
-     "after": "AA Met'dan Lipoksin görevleri (3)<div><br></div><div>{{c1::<div>Anti-inf</div><div>Kemotx inhibisyonu</div><div>Nötrofil adezyonunu azaltır </div>}}<br></div><div><div><br></div><div><br></div></div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Araşidonik asit metabolitlerinden lipoksinlerin görevleri (3)<div><br></div><div>{{c1::<div>Antiinflamatuvar etki</div><div>Kemotaksisi inhibe eder</div><div>Nötrofil adezyonunu azaltır</div>}}</div>"
     }
    },
    "changes": [
     {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "AA Met'dan → Araşidonik asit metabolitlerinden; Anti-inf → Antiinflamatuvar etki; Kemotx inh → Kemotaksisi inhibe eder",
+     "rationale": ""
     },
     {
      "severity": "Orta",
-     "category": "Kısaltma",
-     "text": "Kişisel kısaltmalar açıldı (inhibisyonu)"
+     "category": "Dil bilgisi",
+     "text": "\"Lipoksin görevleri\" → \"lipoksinlerin görevleri\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Sondaki boş satırlar, cloze sonrası <br> ve &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"AA Met'dan\", \"Anti-inf\" ve \"Kemotx inh\" açıldı; \"Lipoksin görevleri\" → \"lipoksinlerin görevleri\" yazıldı ve sondaki boş satırlar silindi.\nNeden: \"AA\" araşidonik asit, aplastik anemi veya amiloid A olarak, \"Met\" metabolit veya metabolizma olarak okunabiliyordu; kart kişisel not dilindeydi.\nNasıl: [KS1, DB1, YP4] Kısaltmalar lipoksinlerin araşidonik asidin lipoksijenaz ürünleri olmasına ve nötrofil kemotaksisini ve adezyonunu baskılamasına göre açıldı; üç maddelik liste, sayı (3) ve tek c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 75
+   "editorNote": null
   },
   {
+   "order": 76,
    "noteId": 1604386416721,
    "guid": "K@-9PXP_Pc",
    "topic": "Genel",
@@ -2595,31 +2627,35 @@
    "fields": {
     "Text": {
      "before": "Plazma Proteini Kökenli İnf. Mediatörler (3)<div><br></div><div>{{c1::<div>Koag. Sistem</div><div>Kinin sistemleri</div><div>Kompleman&nbsp;</div>}}<br></div>",
-     "after": "Plazma Proteini Kökenli İnf. Mediatörler (3)<div><br></div><div>{{c1::<div>koagülasyon. Sistem</div><div>Kinin sistemleri</div><div>Kompleman </div>}}<br></div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Plazma proteini kökenli inflamasyon mediatörleri (3)<div><br></div><div>{{c1::<div>Koagülasyon sistemi</div><div>Kinin sistemi</div><div>Kompleman sistemi</div>}}</div>"
     }
    },
    "changes": [
     {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
-    },
-    {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Kişisel kısaltmalar açıldı (koagülasyon)"
+     "text": "İnf. Mediatörler → inflamasyon mediatörleri; Koag. Sistem → Koagülasyon sistemi",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Dil bilgisi",
+     "text": "\"Kinin sistemleri\" ve \"Kompleman\" → \"Kinin sistemi\" ve \"Kompleman sistemi\"",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Büyük harfler küçültüldü; cloze sonrası <br> ve &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"İnf. Mediatörler\" → \"inflamasyon mediatörleri\" ve \"Koag. Sistem\" → \"Koagülasyon sistemi\" açıldı; üç madde \"sistemi\" ile aynı biçimde yazıldı.\nNeden: \"İnf.\" enfeksiyon, infarktüs veya inflamasyon olarak okunabiliyordu ve liste maddeleri farklı biçimlerdeydi.\nNasıl: [KS1, DB1, BÇ1] Kısaltma, plazma kaynaklı mediatörlerin kompleman, koagülasyon ve kinin sistemleri olmasına göre açıldı; sayı (3) ve tek c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 76
+   "editorNote": null
   },
   {
+   "order": 77,
    "noteId": 1604386731904,
    "guid": "M=F5`KOymv",
    "topic": "Genel",
@@ -2629,65 +2665,73 @@
    "fields": {
     "Text": {
      "before": "F12(Hageman Faktör) işlevleri<div><br></div><div>Kinin Sistemi {{c1::Kallikrein }} sentezi</div><div><br></div><div>Koag kaskadı</div><div><br></div><div>Fibrinolitik sistem --&gt; {{c1::Kallikrein -akt-&gt; Plazminojen }}&nbsp; --&gt; Plazmin</div><div><br></div><div>Komp Sistemi --&gt; {{c1::C3a-C5a&nbsp; }} oluşumu</div>",
-     "after": "F12(Hageman Faktör) işlevleri<div><br></div><div>Kinin Sistemi {{c1::Kallikrein }} sentezi</div><div><br></div><div>koagülasyon kaskadı</div><div><br></div><div>Fibrinolitik sistem → {{c1::Kallikrein -aktivasyonu → Plazminojen }} → Plazmin</div><div><br></div><div>kompleman Sistemi → {{c1::C3a-C5a }} oluşumu</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Faktör XII (Hageman faktörü) işlevleri<div><br></div><div>Kinin sistemi → {{c1::kallikrein}} oluşumu</div><div><br></div><div>Koagülasyon kaskadı</div><div><br></div><div>Fibrinolitik sistem → {{c1::kallikreinin plazminojeni aktive etmesi}} → plazmin</div><div><br></div><div>Kompleman sistemi → {{c1::C3a ve C5a}} oluşumu</div>"
     }
    },
    "changes": [
     {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "F12(Hageman Faktör) → Faktör XII (Hageman faktörü); Kallikrein sentezi → kallikrein oluşumu",
+     "rationale": ""
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Kişisel kısaltmalar açıldı (aktivasyonu, koagülasyon, kompleman)"
+     "text": "Koag → Koagülasyon; Komp → Kompleman; Kallikrein -akt-&gt; Plazminojen → kallikreinin plazminojeni aktive etmesi",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Büyük harfler küçültüldü; --&gt; → →; C3a-C5a → C3a ve C5a; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"F12(Hageman Faktör)\" → \"Faktör XII (Hageman faktörü)\" yazıldı, \"kallikrein sentezi\" → \"kallikrein oluşumu\" oldu ve \"-akt->\" ile kurulan zincir \"kallikreinin plazminojeni aktive etmesi\" olarak açıldı.\nNeden: Kallikrein sentezlenmez, aktive faktör XII'nin prekallikreini yıkmasıyla oluşur; \"-akt->\" hem kişisel kısaltma hem ASCII oktu.\nNasıl: [YZ2, KS1, BÇ1] Faktör XIIa'nın kinin, koagülasyon, fibrinolitik ve kompleman sistemlerindeki etkileri yazarın sırasıyla yazıldı; \"prekallikrein\" sözcüğü cevabı göstereceği için köke eklenmedi, tek c1 korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 77
+   "editorNote": null
   },
   {
+   "order": 78,
    "noteId": 1604387646219,
    "guid": "Fvv_>VPy(W",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Alternatif komp yolu akt'u --&gt; {{c1::Properdin&nbsp;}}",
-     "after": "Alternatif komp yolu aktivasyonu'u → {{c1::Properdin }}"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Alternatif kompleman yolunda C3 konvertazını stabilize eden protein → {{c1::properdin}}"
     }
    },
    "changes": [
     {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "\"yolu akt'u --&gt;\" → \"yolunda C3 konvertazını stabilize eden protein →\"",
+     "rationale": "Properdin alternatif yolu başlatan uyaran değildir; oluşmuş C3 konvertazını (C3bBb) stabilize eden pozitif düzenleyicidir. Yolu mikrobiyal yüzey molekülleri (LPS gibi) ve C3'ün kendiliğinden hidrolizi başlatır."
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Kişisel kısaltmalar açıldı (aktivasyonu)"
+     "text": "komp → kompleman",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Properdin → properdin; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: Kök \"Alternatif komp yolu akt'u\" → \"Alternatif kompleman yolunda C3 konvertazını stabilize eden protein\" olarak yazıldı; cevap (properdin) değişmedi.\nNeden: Kök properdini alternatif yolu başlatan (aktive eden) etken gibi gösteriyordu; oysa properdin oluşmuş C3bBb konvertazını stabilize ederek yolu güçlendirir.\nNasıl: [TD1, KS1, BÇ1] Cevap doğru olduğu için kök düzeltildi; properdinin işlevi en kısa doğru ifadeyle (C3 konvertazını stabilize etme) yazıldı, yolu başlatan uyaranlar karta eklenmedi.\nKaynak: Abbas, Lichtman, Pillai Cellular and Molecular Immunology (kompleman: alternatif yol ve properdin); Robbins & Cotran Pathologic Basis of Disease (inflamasyon: kompleman sistemi).",
    "decision": null,
-   "editorNote": null,
-   "order": 78
+   "editorNote": null
   },
   {
+   "order": 79,
    "noteId": 1604388645099,
    "guid": "iapqhE^VV}",
    "topic": "Genel",
@@ -2697,29 +2741,32 @@
    "fields": {
     "Text": {
      "before": "Tİp 4 Hipersens&nbsp;<div><br></div><div><div>{{c1::RA&nbsp;}}</div><div>{{c2::MS}}</div><div>Tip 1 {{c3::DM}}</div><div>{{c1::İnf. BH}}</div><div>{{c2::Psöriazis}}</div><div>{{c3::Kontakt Dermatit}}</div></div>",
-     "after": "Tİp 4 Hipersens <div><br></div><div><div>{{c1::RA }}</div><div>{{c2::MS}}</div><div>Tip 1 {{c3::DM}}</div><div>{{c1::İnf. BH}}</div><div>{{c2::psöriyazis}}</div><div>{{c3::Kontakt Dermatit}}</div></div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Tip 4 hipersensitivite reaksiyonuyla oluşan hastalıklar<div><br></div><div><div>{{c1::RA}}</div><div>{{c2::MS}}</div><div>Tip 1 {{c3::DM}}</div><div>{{c1::İnflamatuvar bağırsak hastalığı}}</div><div>{{c2::Psöriyazis}}</div><div>{{c3::Kontakt dermatit}}</div></div>"
     }
    },
    "changes": [
     {
-     "severity": "Düşük",
-     "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "Hipersens → hipersensitivite reaksiyonuyla oluşan hastalıklar; İnf. BH → İnflamatuvar bağırsak hastalığı",
+     "rationale": ""
     },
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Ders içi yazım birliği (psöriyazis)"
+     "text": "Psöriazis → Psöriyazis",
+     "rationale": ""
+    },
+    {
+     "severity": "Düşük",
+     "category": "Biçim",
+     "text": "Tİp → Tip; Kontakt Dermatit → Kontakt dermatit; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"Hipersens\" ve \"İnf. BH\" açıldı, \"Psöriazis\" → \"Psöriyazis\" yazıldı ve başlık \"Tip 4 hipersensitivite reaksiyonuyla oluşan hastalıklar\" oldu.\nNeden: \"İnf. BH\" kişisel bir kısaltmaydı ve \"İnf.\" başka anlamlara da gelebiliyordu; başlık listenin neyi saydığını söylemiyordu.\nNasıl: [KS1, YZ1, BÇ1] Başlık tip 2 kartıyla aynı kalıpta yazıldı; RA, MS ve DM standart kısaltma olarak korundu, üç cloze numarası değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 79
+   "editorNote": null
   },
   {
    "noteId": 1604389059651,
@@ -6691,160 +6738,156 @@
    "order": 200
   },
   {
+   "order": 201,
    "noteId": 1604385068256,
    "guid": "hw<Qc/GdKN",
    "topic": "Genel Patoloji",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Apoptoz İntrinsik Yol&nbsp;<div><br></div><div>Bad - Bid - Bim - {{c1::Puma&nbsp; }} - {{c1::Noxa}}</div><div>-</div><div>Bax ({{c2::p53}} bunu akt. / {{c2::Bcl-2}} bunu inh eder) - Bak</div><div>-</div><div>Mit. Memb. perm. {{c1::artar}}</div><div>-</div><div>{{c2::Sit. C}} Sit'a çıkar</div><div>-</div><div>{{c2::Sit C }} + {{c2::APAF}}</div><div>-</div><div>Kaspaz {{c1::<b>9</b>}} akt&nbsp;</div>",
-     "after": "Apoptoz intrinsik (mitokondriyal) yolak:<div><br></div><div>BH3-only proteinleri: Bad, Bid, Bim, {{c1::PUMA}} ve {{c1::NOXA}}</div><div>↓</div><div>Bax ve Bak aktivasyonu ({{c2::p53}} Bax'ı uyarır / {{c2::Bcl-2}} bunu inhibe eder)</div><div>↓</div><div>Mitokondri membran geçirgenliği {{c1::artar}}</div><div>↓</div><div>{{c2::Sitokrom c}} sitozole çıkar</div><div>↓</div><div>{{c2::Sitokrom c}} + {{c2::APAF-1}} (apoptozom oluşumu)</div><div>↓</div><div>Prokaspaz {{c1::<b>9</b>}} aktivasyonu</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "İntrinsik yolağın başlatıcı kaspazı kaspaz-9'dur; efektör kaspazlar ise kaspaz-3 ve kaspaz-6'dır."
+     "after": "Apoptozun intrinsik yolu<div><br></div><div>Bad, Bid, Bim, {{c1::Puma}}, {{c1::Noxa}}</div><div>↓</div><div>Bax ({{c2::p53}} aktive eder / {{c2::Bcl-2}} inhibe eder), Bak</div><div>↓</div><div>Mitokondri membran geçirgenliği {{c1::artar}}</div><div>↓</div><div>{{c2::Sitokrom c}} sitozole çıkar</div><div>↓</div><div>{{c2::Sitokrom c}} + {{c2::Apaf-1}}</div><div>↓</div><div>Kaspaz-{{c1::<b>9</b>}} aktive olur</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Puma, Noxa → PUMA, NOXA; Sit. C → Sitokrom c; APAF → APAF-1"
+     "category": "Kısaltma",
+     "text": "bunu akt. → aktive eder; bunu inh eder → inhibe eder; Mit. Memb. perm. → Mitokondri membran geçirgenliği; Sit. C ve Sit C → Sitokrom c; Sit'a → sitozole; akt → aktive olur",
+     "rationale": ""
     },
     {
      "severity": "Orta",
-     "category": "Kısaltma",
-     "text": "akt. → aktivasyonu; inh eder → inhibe eder; perm. → geçirgenliği"
+     "category": "Terim/yazım",
+     "text": "APAF → Apaf-1",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII tireler ok sembolüne dönüştürüldü, &nbsp; temizlendi"
+     "text": "Apoptoz İntrinsik Yol → Apoptozun intrinsik yolu; adımları ayıran \"-\" satırları ↓ yapıldı; \" - \" → \", \"; Kaspaz 9 → Kaspaz-9; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: İntrinsik apoptoz kaskadı tam protein adlarıyla (PUMA, NOXA, sitokrom c, APAF-1) yapılandırıldı.\nNeden: Kısaltmalar, küçük harfler ve tire dizilimi mevcuttu.\nNasıl: [YZ1, KS1, BÇ1, YP1] Kaskad basamakları ve c1-c2 cloze'ları korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, İntrinsik Apoptoz Yolağı.",
+   "aiNote": "Ne: Zincirdeki \"akt.\", \"inh\", \"Mit. Memb. perm.\", \"Sit. C\" ve \"Sit'a\" açıldı, \"APAF\" → \"Apaf-1\" yazıldı ve basamaklar arasındaki \"-\" satırları ↓ oku oldu.\nNeden: \"Sit\" hem sitokrom hem sitozol için kullanılmıştı; tek başına duran \"-\" satırları basamakların sırasını göstermiyordu.\nNasıl: [KS1, YZ2, BÇ1] Kısaltmalar intrinsik yolun sırasına göre açıldı (BH3 proteinleri, Bax ve Bak, mitokondri dış zarının geçirgenleşmesi, sitokrom c, apoptozom, kaspaz-9); c1 ve c2 cevapları, kalın 9 ve satır düzeni korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 201
+   "editorNote": null
   },
   {
+   "order": 202,
    "noteId": 1604385208095,
    "guid": "MtLpnZAe5[",
    "topic": "Genel Patoloji",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Apoptoz Ektrensek Yolak&nbsp;<div><br></div><div>{{c1::FasL }}&nbsp; - {{c1::FAS(CD-95)}} - {{c2::FADD}} akt. - Kaspaz {{c2::8}} akt</div>",
-     "after": "Apoptoz ekstrinsek (ölüm reseptörü) yolağı:<div><br></div><div>{{c1::FasL}} - {{c1::Fas (CD95)}} etkileşimi → {{c2::FADD}} aktivasyonu → Prokaspaz {{c2::8}} aktivasyonu</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Ekstrinsek yolağın başlatıcı kaspazı kaspaz-8 (ve kaspaz-10)'dur; FLIP proteini prokaspaz-8 aktivasyonunu inhibe eder."
+     "after": "Apoptozun ekstrinsik yolu<div><br></div><div>{{c1::FasL}} → {{c1::Fas (CD95)}} → {{c2::FADD}} aktivasyonu → kaspaz-{{c2::8}} aktivasyonu</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Terim/yazım",
-     "text": "Ektrensek → ekstrinsek; CD-95 → CD95"
+     "text": "Ektrensek Yolak → ekstrinsik yolu; FAS(CD-95) → Fas (CD95)",
+     "rationale": ""
     },
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "akt. → aktivasyonu"
+     "text": "akt. ve akt → aktivasyonu",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; yerine ok ve tire düzeni sağlandı, &nbsp; temizlendi"
+     "text": "Basamakları ayıran \" - \" → ile değiştirildi; Kaspaz 8 → kaspaz-8; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Ektrensek\" → \"ekstrinsek\" düzeltildi, FADD ve prokaspaz-8 kaskadı açıklandı.\nNeden: Yazım hatası ve kısaltmalar vardı.\nNasıl: [YZ1, KS1, BÇ1, YP1] c1 ve c2 cloze'ları aynen korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Ekstrinsek Apoptoz Yolağı.",
+   "aiNote": "Ne: \"Ektrensek Yolak\" → \"ekstrinsik yolu\" ve \"FAS(CD-95)\" → \"Fas (CD95)\" yazıldı, \"akt.\" açıldı ve basamaklar → ile bağlandı.\nNeden: \"Ektrensek\" yanlış yazılmıştı, CD numarası tireyle yazılmıştı ve \" - \" ayraçları basamakların sırasını göstermiyordu.\nNasıl: [YZ2, KS1, BÇ1] Ölüm reseptörü yolunun sırası (FasL, Fas, FADD, kaspaz-8) oklarla gösterildi; \"FasL\" büyük harfleri bir kodlama değil molekül adı olduğundan korundu, c1 ve c2 cevapları değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 202
+   "editorNote": null
   },
   {
+   "order": 203,
    "noteId": 1604385375549,
    "guid": "n^nj&;l&gj",
    "topic": "Genel Patoloji",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<div>Nekroz / Apoptoz Jel elektroforez bulguları:</div><div><br></div><div>&nbsp; {{c1::Kesintisiz&nbsp; &nbsp;}} / {{c1::Merdiven }} patern<br></div><div><br></div><div>İnf olan --&gt; {{c2::Nekroz}}</div><div><br></div><div>ATP kullanılan --&gt; {{c2::Apoptoz&nbsp;}}</div>",
-     "after": "<div>Nekroz ve apoptoz jel elektroforez bulguları:</div><div><br></div><div>Jelde DNA fragmentasyonu: {{c1::kesintisiz (smear / yayma)}} / {{c1::merdiven (ladder)}} paterni</div><div><br></div><div>İnflamasyona yol açan: {{c2::nekroz}}</div><div><br></div><div>ATP gerektiren: {{c2::apoptoz}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Apoptozda endonükleazlar DNA'yı nükleozomlar arası bölgelerden düzenli (180–200 baz çifti katları) kestiği için elektroforezde merdiven paterni oluşur."
+     "after": "<div>Nekroz / apoptoz DNA jel elektroforezi bulguları:</div><div><br></div><div>{{c1::Kesintisiz}} / {{c1::merdiven}} patern</div><div><br></div><div>İnflamasyon yapan → {{c2::nekroz}}</div><div><br></div><div>ATP kullanılan → {{c2::apoptoz}}</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
-     "category": "Terim/yazım",
-     "text": "Kesintisiz / Merdiven → kesintisiz (smear / yayma) / merdiven (ladder)"
+     "category": "Kısaltma",
+     "text": "İnf olan → İnflamasyon yapan",
+     "rationale": ""
     },
     {
      "severity": "Orta",
-     "category": "Kısaltma",
-     "text": "İnf olan → inflamasyona yol açan"
+     "category": "Soru netliği",
+     "text": "\"Jel elektroforez bulguları\" → \"DNA jel elektroforezi bulguları\"",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, iki nokta düzeni sağlandı, &nbsp; temizlendi"
+     "text": "Büyük harfler küçültüldü; --&gt; → →; &nbsp; ve satır sonu <br> temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Jel elektroforezi bulguları smear ve merdiven terimleriyle zenginleştirildi, inflamasyon ve ATP ilişkisi netleştirildi.\nNeden: Telgraf üslubu ve kısaltmalar mevcuttu.\nNasıl: [YZ1, KS1, BÇ1, YP1] c1 ve c2 cloze yapısı korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Nekroz ile Apoptoz Karşılaştırması.",
+   "aiNote": "Ne: \"İnf olan\" → \"İnflamasyon yapan\" açıldı ve başlık \"DNA jel elektroforezi bulguları\" olarak yazıldı; kesintisiz ve merdiven paterni cevapları korundu.\nNeden: \"İnf\" enfeksiyon, infarktüs veya inflamasyon olarak okunabiliyordu ve başlık elektroforezde incelenen materyalin DNA olduğunu söylemiyordu.\nNasıl: [KS1, SN1, BÇ1] Kısaltma, nekrozun inflamasyona yol açmasına göre açıldı; başlıktaki \"nekroz / apoptoz\" c1 için gerekli olduğundan ve c2 iki seçenekten hangisinin hangi özelliği taşıdığını sorduğundan korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 203
+   "editorNote": null
   },
   {
+   "order": 204,
    "noteId": 1604385737717,
    "guid": "P`-7x_;:hC",
    "topic": "Genel Patoloji",
    "severity": "Orta",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Fiz. Hipertrofi --&gt; {{c1::PI-3K/AKT}} yolağı<div><br></div><div>Pat. Hipertrofi --&gt; {{c1::GPCR&nbsp;}}</div>",
-     "after": "Miyokard hipertrofisi sinyal yolakları:<div><br></div><div>Fizyolojik hipertrofi: {{c1::PI3K/Akt}} yolağı</div><div><br></div><div>Patolojik hipertrofi: {{c1::G-proteini kenetli reseptörler (GPCR / PLC)}} yolağı</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": "Egzersiz ve gebelikteki fizyolojik hipertrofide PI3K/Akt baskındır; hipertansiyonda ise anjiyotensin II ve endotelin-1 ile GPCR/Gq yolağı aktive olur."
+     "after": "Fizyolojik hipertrofi → {{c1::PI3K/AKT}} yolağı<div><br></div><div>Patolojik hipertrofi → {{c1::GPCR}}</div>"
     }
    },
    "changes": [
     {
      "severity": "Orta",
      "category": "Kısaltma",
-     "text": "Fiz., Pat. → fizyolojik, patolojik"
+     "text": "Fiz. → Fizyolojik; Pat. → Patolojik",
+     "rationale": ""
     },
     {
-     "severity": "Orta",
+     "severity": "Düşük",
      "category": "Terim/yazım",
-     "text": "PI-3K/AKT → PI3K/Akt; GPCR tam açılımı eklendi"
+     "text": "PI-3K/AKT → PI3K/AKT",
+     "rationale": ""
     },
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "--&gt; kaldırıldı, iki nokta düzeni sağlandı, &nbsp; temizlendi"
+     "text": "Hipertrofi → hipertrofi; --&gt; → →; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Fizyolojik ve patolojik hipertrofi sinyal yolakları tam terimlerle yazıldı.\nNeden: Fiz. ve Pat. kısaltmaları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] İki c1 cloze'u korundu.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı, Hücresel Adaptasyonlar (Hipertrofi).",
+   "aiNote": "Ne: \"Fiz.\" → \"Fizyolojik\" ve \"Pat.\" → \"Patolojik\" açıldı, \"PI-3K/AKT\" → \"PI3K/AKT\" yazıldı.\nNeden: \"Fiz.\" ve \"Pat.\" kişisel kısaltmalardı; gen sembolünün içindeki tire standart yazıma uymuyordu.\nNasıl: [KS1, YZ1, BÇ1] Kısaltmalar fizyolojik (PI3K/AKT) ve patolojik (G proteinine kenetli reseptör sinyali) hipertrofi karşıtlığına göre açıldı; GPCR standart kısaltma olarak korundu, c1 değişmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 204
+   "editorNote": null
   },
   {
    "noteId": 1604390292097,
@@ -15260,62 +15303,62 @@
    "order": 476
   },
   {
+   "order": 477,
    "noteId": 1604388055957,
    "guid": "Pcy$y/NU:2",
    "topic": "Genel Patoloji",
-   "severity": "Düşük",
-   "status": "html_only",
+   "severity": "Orta",
+   "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Lökosit Hareketleri<div><br></div><div><b>Rolling</b> --&gt;{{c1::Selektinler}}&nbsp;&nbsp;</div><div><br></div><div>Endotel({{c1::E-selektin -&nbsp; CD34}})&nbsp;</div><div>Lökosit ({{c1::L-selektin - Sialyl Lewis}})</div><div><br></div><div><b>Adezyon</b> -&gt;{{c2::İntegrinler&nbsp;}}</div><div><br></div><div>Endotel ({{c2::ICAM - VCAM}}) -&nbsp;</div><div>Lökosit&nbsp; ( {{c2::LFA-1 Mac-1)}}</div><div><br></div><div><b>Diapedez</b> (Göç)</div><div><br></div><div>{{c1::PECAM-1 (CD-31)}}</div>",
-     "after": "Lökosit Hareketleri<div><br></div><div><b>Rolling</b> →{{c1::Selektinler}} </div><div><br></div><div>Endotel({{c1::E-selektin - CD34}}) </div><div>Lökosit ({{c1::L-selektin - Sialyl Lewis}})</div><div><br></div><div><b>Adezyon</b> →{{c2::İntegrinler }}</div><div><br></div><div>Endotel ({{c2::ICAM - VCAM}}) - </div><div>Lökosit ( {{c2::LFA-1 Mac-1)}}</div><div><br></div><div><b>Diapedez</b> (Göç)</div><div><br></div><div>{{c1::PECAM-1 (CD-31)}}</div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Lökosit hareketleri<div><br></div><div><b>Yuvarlanma</b> → {{c1::selektinler}}</div><div><br></div><div>Endotel ({{c1::E-selektin, CD34}})</div><div>Lökosit ({{c1::L-selektin, sialil Lewis X}})</div><div><br></div><div><b>Adezyon</b> → {{c2::integrinler}}</div><div><br></div><div>Endotel ({{c2::ICAM-1, VCAM-1}})</div><div>Lökosit ({{c2::LFA-1, Mac-1}})</div><div><br></div><div><b>Diapedez</b> (göç)</div><div><br></div><div>{{c1::PECAM-1 (CD31)}}</div>"
     }
    },
    "changes": [
     {
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "Rolling → Yuvarlanma; Sialyl Lewis → sialil Lewis X; ICAM - VCAM → ICAM-1, VCAM-1; CD-31 → CD31",
+     "rationale": ""
+    },
+    {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "text": "\"( {{c2::LFA-1 Mac-1)}}\" → \"({{c2::LFA-1, Mac-1}})\" parantez hatası düzeltildi; \" - \" → \", \"; satır sonundaki \" -\" silindi; -&gt; ve --&gt; → →; büyük harfler küçültüldü; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"Rolling\" → \"Yuvarlanma\", \"Sialyl Lewis\" → \"sialil Lewis X\" ve \"ICAM - VCAM\" → \"ICAM-1, VCAM-1\" yazıldı; cloze içinde kalan kapanış parantezi dışarı alındı.\nNeden: İngilizce terimin yerleşik Türkçe karşılığı vardı, selektin ligandının adı \"X\" olmadan eksikti ve cloze içindeki \")\" cevaba ait değildi.\nNasıl: [YZ2, BÇ1, YP4] Molekül adları uluslararası adlarıyla yazıldı; yuvarlanma ve diapedez c1'de, adezyon c2'de kaldı, kalın başlıklar korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 477
+   "editorNote": null
   },
   {
+   "order": 478,
    "noteId": 1604388113505,
    "guid": "PGu):5r$s0",
    "topic": "Genel Patoloji",
    "severity": "Düşük",
-   "status": "html_only",
+   "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Lökosit Adezyon defekti Tip 1 --&gt; {{c1::LFA-1}} defekti&nbsp;",
-     "after": "Lökosit Adezyon defekti Tip 1 → {{c1::LFA-1}} defekti"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Lökosit adezyon defekti tip 1 → {{c1::LFA-1}} defekti"
     }
    },
    "changes": [
     {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "text": "Lökosit Adezyon → Lökosit adezyon; Tip → tip; --&gt; → →; &nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: Büyük harfler küçültüldü, ASCII ok → ile değiştirildi ve &nbsp; silindi.\nNeden: Kart Title Case, ASCII ok ve &nbsp; artığı taşıyordu.\nNasıl: [BÇ1, YP4] Tıbbi içerik doğru olduğu için kök ve c1 cevabı (LFA-1) aynen korundu; LFA-1 ve Mac-1'in ortak beta-2 integrin zinciri dersin başka bir kartında işlendiği için eklenmedi.",
    "decision": null,
-   "editorNote": null,
-   "order": 478
+   "editorNote": null
   },
   {
    "noteId": 1604388883555,
@@ -17435,62 +17478,84 @@
    "order": 551
   },
   {
+   "order": 552,
    "noteId": 1604388301667,
    "guid": "A)PDwgd1]]",
    "topic": "Kardiyovasküler Patoloji",
-   "severity": "Düşük",
-   "status": "html_only",
+   "severity": "Orta",
+   "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Tİp 2 Hipersens olanlar&nbsp;<div><br></div><div><div>{{c1::OİHA}}</div><div>{{c2::İTP}}</div><div>{{c3::ANCA ilişkili}} Vaskülit</div><div>{{c1::ARA}}</div><div>{{c2::Goodpasture}}</div><div>{{c3::Pernisyöz}} Anemi</div><div>{{c4::MGravis}} --&gt; <b>disfonk</b></div><div>{{c4::Graves}} --&gt; <b>disfonk</b></div><div>{{c4::Pemfigus vulgaris}}</div><div></div><br></div>",
-     "after": "Tİp 2 Hipersens olanlar <div><br></div><div><div>{{c1::OİHA}}</div><div>{{c2::İTP}}</div><div>{{c3::ANCA ilişkili}} Vaskülit</div><div>{{c1::ARA}}</div><div>{{c2::Goodpasture}}</div><div>{{c3::Pernisyöz}} Anemi</div><div>{{c4::MGravis}} → <b>disfonk</b></div><div>{{c4::Graves}} → <b>disfonk</b></div><div>{{c4::Pemfigus vulgaris}}</div><div></div><br></div>"
-    },
-    "Extra": {
-     "before": "",
-     "after": ""
+     "after": "Tip 2 hipersensitivite reaksiyonuyla oluşan hastalıklar<div><br></div><div><div>{{c1::Otoimmün hemolitik anemi}}</div><div>{{c2::İTP}}</div><div>{{c3::ANCA ilişkili}} vaskülit</div><div>{{c1::Akut romatizmal ateş}}</div><div>{{c2::Goodpasture}} sendromu</div><div>{{c3::Pernisiyöz}} anemi</div><div>{{c4::Miyastenia gravis}} → <b>fonksiyon bozukluğu</b></div><div>{{c4::Graves}} hastalığı → <b>fonksiyon bozukluğu</b></div><div>{{c4::Pemfigus vulgaris}}</div></div>"
     }
    },
    "changes": [
     {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "Hipersens olanlar → hipersensitivite reaksiyonuyla oluşan hastalıklar; OİHA → Otoimmün hemolitik anemi; ARA → Akut romatizmal ateş; MGravis → Miyastenia gravis; disfonk → fonksiyon bozukluğu",
+     "rationale": ""
+    },
+    {
+     "severity": "Orta",
+     "category": "Terim/yazım",
+     "text": "Pernisyöz → Pernisiyöz; Goodpasture → Goodpasture sendromu; Graves → Graves hastalığı",
+     "rationale": ""
+    },
+    {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "text": "Tİp → Tip; Vaskülit ve Anemi → vaskülit ve anemi; --&gt; → →; &nbsp; ve sondaki boş satır temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"OİHA\", \"ARA\", \"MGravis\", \"disfonk\" ve \"Hipersens\" açıldı; \"Goodpasture\" ve \"Graves\" hastalık adlarıyla tamamlandı, \"Pernisyöz\" → \"Pernisiyöz\" yazıldı.\nNeden: Kısaltmalar kişisel nottu ve \"disfonk\", miyastenia gravis ile Graves hastalığında antikorun hücreyi yıkmadan reseptör işlevini bozduğunu açıkça söylemiyordu.\nNasıl: [KS1, YZ2, BÇ1] Liste antikor aracılı hastalık örnekleriyle denetlendi ve doğru bulundu; dört cloze numarası, satır sırası ve kalın vurgu korundu.",
    "decision": null,
-   "editorNote": null,
-   "order": 552
+   "editorNote": null
   },
   {
+   "order": 553,
    "noteId": 1604388346258,
    "guid": "O:)%Q1!jH7",
    "topic": "Kardiyovasküler Patoloji",
-   "severity": "Düşük",
-   "status": "html_only",
-   "changedFields": "Metin",
+   "severity": "Kritik",
+   "status": "changed",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Tip 3 Hipersens&nbsp;<div><br></div><div>{{c1::ANCA ilişkili vaskülitler }} harici diğer {{c1::vaskülitler&nbsp;}}</div>",
-     "after": "Tip 3 Hipersens <div><br></div><div>{{c1::ANCA ilişkili vaskülitler }} harici diğer {{c1::vaskülitler }}</div>"
+     "after": "Tip 3 hipersensitivite<div><br></div><div>{{c1::ANCA ilişkili vaskülitler}} dışındaki küçük damar {{c1::vaskülitleri}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": ""
+     "after": "Anti-GBM hastalığı tip 2'dir; dev hücreli arterit ve Takayasu arteriti T hücre aracılıdır."
     }
    },
    "changes": [
     {
+     "severity": "Kritik",
+     "category": "Tıbbi doğruluk",
+     "text": "\"ANCA ilişkili vaskülitler harici diğer vaskülitler\" → \"ANCA ilişkili vaskülitler dışındaki küçük damar vaskülitleri\"; Extra eklendi",
+     "rationale": "ANCA dışındaki vaskülitlerin hepsi immün kompleks aracılı değildir: dev hücreli arterit ve Takayasu arteriti T hücre aracılı granülomatöz vaskülitlerdir, anti-GBM hastalığı tip 2'dir. Chapel Hill 2012 sınıflamasında ANCA dışı küçük damar vaskülitleri immün kompleks vaskülitleri olarak gruplanır."
+    },
+    {
+     "severity": "Orta",
+     "category": "Kısaltma",
+     "text": "Hipersens → hipersensitivite",
+     "rationale": ""
+    },
+    {
      "severity": "Düşük",
      "category": "Biçim",
-     "text": "ASCII oklar (-->) kaldırıldı, iki nokta/ok düzeni sağlandı; &nbsp; temizlendi"
+     "text": "&nbsp; temizlendi",
+     "rationale": ""
     }
    ],
-   "aiNote": "Ne: Kart metnindeki kişisel kısaltmalar ve yazım biçimleri ders kitabı standartlarına getirildi.\nNeden: Öğrencinin telgraf üslubu, kısaltmaları ve ASCII okları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Karttaki cloze numaraları aynen korundu, terimler Türkçeleştirildi.\nKaynak: Robbins & Cotran Pathologic Basis of Disease 10. baskı.",
+   "aiNote": "Ne: \"ANCA ilişkili vaskülitler harici diğer vaskülitler\" → \"ANCA ilişkili vaskülitler dışındaki küçük damar vaskülitleri\" yazıldı ve istisnaları veren tek cümle Extra'ya eklendi.\nNeden: Kart ANCA dışındaki bütün vaskülitleri tip 3 sayıyordu; dev hücreli arterit ve Takayasu arteriti T hücre aracılıdır, anti-GBM hastalığı tip 2 hipersensitivitedir.\nNasıl: [TD1, YP1, KS1] İfadeyi doğru kılan en küçük değişiklik olarak kapsam küçük damar vaskülitleriyle sınırlandı; iki c1 cevabı korundu, Goodpasture sendromunu tip 2 sayan kartla çelişmemesi için anti-GBM istisnası Extra'da verildi.\nKaynak: Jennette JC ve ark. 2012 Revised International Chapel Hill Consensus Conference Nomenclature of Vasculitides, Arthritis Rheum 2013;65:1–11; Robbins & Cotran Pathologic Basis of Disease (vaskülitlerin immün mekanizmaları).",
    "decision": null,
-   "editorNote": null,
-   "order": 553
+   "editorNote": null
   },
   {
    "noteId": 1604599962102,
@@ -19381,5 +19446,30 @@
    "kisaltma": "ARA",
    "acilim": "akut romatizmal ateş"
   }
+ ],
+ "redone": [
+  1604384166475,
+  1604384235054,
+  1604384362733,
+  1604384534707,
+  1604384743065,
+  1604385068256,
+  1604385208095,
+  1604385375549,
+  1604385430245,
+  1604385529205,
+  1604385552439,
+  1604385591588,
+  1604385667973,
+  1604385737717,
+  1604386094368,
+  1604386416721,
+  1604386731904,
+  1604387646219,
+  1604388055957,
+  1604388113505,
+  1604388301667,
+  1604388346258,
+  1604388645099
  ]
 }

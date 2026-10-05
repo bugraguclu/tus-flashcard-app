@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "1c3eea7f09083cdfa0419a26088a9737bf8a5daefd26ff1b23c5adbde9b1dd4c",
+  "sha256": "e09c8e23566ea9b88e20487e7938b17b942b394025e3df51fdaec569ea53ddc5",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7739,7 +7739,7 @@
     "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 2671,
+    "ungroupedCards": 2673,
     "media": 49
   },
   "courses": [
@@ -8091,14 +8091,14 @@
         },
         {
           "name": "Genel Patoloji",
-          "notes": 76,
-          "cards": 108,
+          "notes": 74,
+          "cards": 106,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 219,
-          "cards": 242,
+          "notes": 221,
+          "cards": 244,
           "deck": false
         }
       ]

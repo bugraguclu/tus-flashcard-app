@@ -1,7 +1,8 @@
 # BKA TUS kart düzeltmeleri
 
 Bu dizin, paketle gelen BKA TUS kataloğunun (`assets/catalog/bka-tus-complete.apkg`) ders ders
-önerilen kart düzeltmelerini tutar. İncelenen tüm düzeltmeler **pakete uygulandı** (`assets/catalog/bka-tus-complete.apkg`, `.tuspack` ve `bka-manifest.json` güncellendi).
+önerilen kart düzeltmelerini tutar. Dosyalar `scripts/apply-all-catalog-patches.py` ile özgün pakete
+(`package.sha256`) uygulanır; ardından `.tuspack` ve `bka-manifest.json` yeniden üretilir.
 
 Yöntem, Farmakoloji için hazırlanan "BKA TUS · Farmakoloji — kart düzeltmeleri (önce / sonra)"
 çalışma kitabının birebir aynısıdır: AI Rehberi'nin değişmez kuralları, öncelik sırası, dört
@@ -18,22 +19,29 @@ hazırlandıkça eklenir.
 ## Durum
 
 <!-- status:start -->
-| Ders | Dosya | İncelenen not | Düzeltilen not | Kritik | Yüksek | Orta | Düşük | Doğrulama gerekli kalemi |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Kadın Doğum | `kadin-dogum.patch.json` | 524 | 522 | 17 | 141 | 295 | 69 | 17 |
-| Küçük Stajlar | `kucuk-stajlar.patch.json` | 484 | 481 | 16 | 125 | 282 | 58 | 14 |
-| Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | 563 | 25 | 169 | 318 | 51 | 27 |
-| Pediatri | `pediatri.patch.json` | 1169 | 1167 | 43 | 377 | 650 | 97 | 40 |
-| Dahiliye | `dahiliye.patch.json` | 995 | 995 | 30 | 287 | 607 | 71 | 20 |
-| Patoloji | `patoloji.patch.json` | 609 | 609 | 5 | 2 | 340 | 262 | 0 |
-| Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | 587 | 1 | 2 | 150 | 434 | 0 |
-| Biyokimya | `biyokimya.patch.json` | 484 | 484 | 4 | 22 | 458 | 0 | 0 |
-| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | 745 | 11 | 86 | 629 | 19 | 0 |
-| FHE | `fhe.patch.json` | 510 | 510 | 2 | 8 | 132 | 368 | 0 |
-| Anatomi | `anatomi.patch.json` | 381 | 381 | 2 | 3 | 130 | 246 | 0 |
+| Ders | Dosya | Not | Durum | Açık soru (`Doğrulama gerekli`) |
+| --- | --- | ---: | --- | ---: |
+| Kadın Doğum | `kadin-dogum.patch.json` | 524 | Tamam | 17 |
+| Küçük Stajlar | `kucuk-stajlar.patch.json` | 484 | Tamam | 14 |
+| Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | Tamam | 27 |
+| Pediatri | `pediatri.patch.json` | 1169 | Tamam | 40 |
+| Dahiliye | `dahiliye.patch.json` | 995 | Düzenleme tamam; Kritik/Yüksek kalemlerin bağımsız kontrolü yapılmadı | 20 |
+| Patoloji | `patoloji.patch.json` | 609 | Yeniden düzeltiliyor: 23 not yeni yöntemle bitti | — |
+| Biyokimya | `biyokimya.patch.json` | 484 | Yeniden düzeltiliyor: 47 not yeni yöntemle bitti | — |
+| Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Yeniden düzeltilecek | — |
+| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | Yeniden düzeltilecek | — |
+| FHE | `fhe.patch.json` | 510 | Yeniden düzeltilecek | — |
+| Anatomi | `anatomi.patch.json` | 381 | Yeniden düzeltilecek | — |
 <!-- status:end -->
 
-`reviewStage` alanı dosyanın hangi aşamada olduğunu söyler: `complete` (düzenleme, bağımsız tıbbi doğrulama, yazım birliği ve son okuma tamam). Katalogdaki 11 dersin tamamı (Kadın Doğum, Küçük Stajlar, Genel Cerrahi, Pediatri, Dahiliye, Patoloji, Mikrobiyoloji, Biyokimya, Deneme ve Soru, FHE ve Anatomi) tüm aşamalarıyla eksiksiz tamamlandı.
+`reviewStage` alanı dosyanın aşamasını söyler:
+
+- `complete`: düzenleme, bağımsız tıbbi kontrol, yazım birliği ve son okuma tamam. `Doğrulama
+  gerekli` kalemleri editör kararı bekler; bu kalemlerin kart içeriği değiştirilmedi.
+- `redo-in-progress`: dosyadaki düzeltmelerin çoğu otomatik bir çalıştırmadan gelir (ok ve boşluk
+  temizliği, sözlükle kısaltma açma ya da denetlenmemiş yeniden yazım) ve yayına uygun değildir.
+  Ders özgün karttan, Farmakoloji çalışma kitabının yöntemiyle yeniden düzeltilir. `redone` alanı,
+  yeni yöntemle bitmiş notların kimliklerini listeler.
 
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)

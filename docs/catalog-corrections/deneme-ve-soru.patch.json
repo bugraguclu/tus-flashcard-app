@@ -15,7 +15,7 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "redo-in-progress",
  "summary": {
   "reviewedNotes": 745,
   "changedNotes": 745,
@@ -28129,5 +28129,6 @@
    "kisaltma": "EMG, EEG",
    "acilim": "elektromiyografi, elektroansefalografi"
   }
- ]
+ ],
+ "redone": []
 }

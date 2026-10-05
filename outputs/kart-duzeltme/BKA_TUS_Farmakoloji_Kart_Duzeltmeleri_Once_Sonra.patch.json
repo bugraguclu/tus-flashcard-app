@@ -1077,7 +1077,7 @@
      "level": "Yüksek",
      "category": "Tıbbi doğruluk",
      "change": "Extra: \"Atropin --> Hist salınımı --> V. Dil\" → \"Yüksek dozda atropin → deride vazodilatasyon (atropin flush); mekanizması bilinmemektedir.\"",
-     "reason": "Katzung ve Katzung & Trevor'a göre toksik dozda görülen deri vazodilatasyonunun (atropin flush) mekanizması bilinmemektedir; histamin salınımı bu kaynaklarda neden olarak gösterilmez. Doz niteleyicisi etkinin terapötik dozda değil, yüksek dozda görüldüğünü belirtir."
+     "reason": "Katzung ve Katzung & Trevor'a göre toksik dozda görülen deri vazodilatasyonunun (atropin flush) mekanizması bilinmemektedir; histamin salınımı bu kaynaklarda neden olarak gösterilmez. Doz niteleyicisi etkinin esas olarak toksik dozlarda görüldüğünü belirtir; terapötik dozlarda yalnız ara sıra ortaya çıkar."
     },
     {
      "level": "Orta",
@@ -2083,7 +2083,7 @@
      "reason": ""
     }
    ],
-   "ainote": "Ne: c2 cevabındaki \"Önce Veziküler girer içerdeki NorAd'leri salar --> Sonra Vezikülü kapatır\" → \"Önce veziküllerdeki noradrenalini salar → sonra veziküler monoamin taşıyıcısını (VMAT) geri dönüşümsüz inhibe ederek depoları boşaltır\" yapıldı; \"Sebebi ?\" sorusu isim öbeğine çevrildi ve kısaltmalar açıldı.\nNeden: \"Vezikülü kapatır\" mekanizmayı belirsiz bırakıyor ve salınımın engellendiği biçiminde okunabiliyordu; rezerpinin asıl etkisi VMAT'ın geri dönüşümsüz inhibisyonuyla depoların boşalmasıdır.\nNasıl: [TD1, SN2, KS1, YP1] Yazarın \"önce salar, sonra ...\" iki basamaklı yapısı ile c1 ve c2 numaraları korundu; yalnız ikinci basamaktaki belirsiz fiil ders kitabındaki mekanizmayla değiştirildi ve VMAT kısaltması bir kez açık yazıldı.\nKaynak: Katzung, Basic & Clinical Pharmacology, 13. baskı, antihipertansif ilaçlar ve otonom farmakolojiye giriş bölümleri (rezerpin ve VMAT)."
+   "ainote": "Ne: c2 cevabındaki \"Önce Veziküler girer içerdeki NorAd'leri salar --> Sonra Vezikülü kapatır\" → \"Önce veziküllerdeki noradrenalini salar → sonra veziküler monoamin taşıyıcısını (VMAT) geri dönüşümsüz inhibe ederek depoları boşaltır\" yapıldı; \"Sebebi ?\" sorusu isim öbeğine çevrildi ve kısaltmalar açıldı.\nNeden: \"Veziküler girer\" rezerpini veziküle girip noradrenalini yerinden çıkaran dolaylı etkili sempatomimetiklere benzetiyor, \"vezikülü kapatır\" ise salınımın engellendiği biçiminde okunabiliyordu. Rezerpin VMAT'a bağlanıp onu geri dönüşümsüz inhibe ederek depoları boşaltır.\nNasıl: [TD1, SN2, KS1, YP1] Yazarın \"önce salar, sonra ...\" iki basamaklı yapısı ile c1 ve c2 numaraları korundu; birinci basamaktan \"veziküle girer\" çıkarıldı, ikinci basamaktaki belirsiz fiil ders kitabındaki mekanizmayla değiştirildi, VMAT bir kez açık yazıldı.\nKaynak: Katzung, Basic & Clinical Pharmacology, 13. baskı, antihipertansif ilaçlar ve otonom farmakolojiye giriş bölümleri (rezerpin ve VMAT)."
   },
   {
    "id": 1604666396597,
@@ -2161,13 +2161,13 @@
    "guid": "yj1e}WtG?C",
    "level": "Yüksek",
    "fields": {
-    "Text": "Peptid yapıdaki tek ACE inhibitörü → {{c1::teprotid (oral etkisiz, İV verilir)}} <b>(klinik kullanıma girmedi)</b>"
+    "Text": "Peptid yapıdaki tek ACE inhibitörü <b>(klinik kullanıma girmedi)</b> → {{c1::teprotid (oral etkisiz, İV verilir)}}"
    },
    "items": [
     {
      "level": "Yüksek",
      "category": "Güncellik",
-     "change": "\"(iv kullanılır)\" → \"(oral etkisiz, İV verilir)\"; kalın \"(klinik kullanıma girmedi)\" eklendi",
+     "change": "\"(iv kullanılır)\" → \"(oral etkisiz, İV verilir)\"; köke kalın \"(klinik kullanıma girmedi)\" eklendi",
      "reason": "Teprotid ilk ACE inhibitörü olan, yılan zehrinden elde edilmiş bir peptiddir; ağızdan etkisizdir, yalnız araştırmalarda parenteral verilmiş ve piyasaya çıkmamıştır. Kart onu kullanımda olan bir ilaç gibi sunuyordu."
     },
     {
@@ -2189,7 +2189,7 @@
      "reason": ""
     }
    ],
-   "ainote": "Ne: Cevaptaki \"(iv kullanılır)\" → \"(oral etkisiz, İV verilir)\" yapıldı ve satır sonuna kalın \"(klinik kullanıma girmedi)\" eklendi; \"ACE - i\" açıldı ve \"yapıda\" → \"yapıdaki\" oldu.\nNeden: Teprotid ağızdan etkisiz bir peptiddir ve yalnız araştırmalarda parenteral verilmiştir; hiç piyasaya çıkmadığı hâlde kart onu kullanılan bir ilaç gibi sunuyordu.\nNasıl: [GN1, EK1, YP1] TUS sorabileceği için ilaç karttan silinmedi; uygulama yolunun nedeni cevabın içinde, onay almadığı bilgisi cevabı ele vermeyecek biçimde cloze dışında kalın olarak verildi ve c1 numarası korundu.\nKaynak: Postgrad Med J 1981, teprotidle dönüştürücü enzim inhibisyonu sırasında hormonal ve kan basıncı değişiklikleri (teprotidin İV ve subkutan uygulanması)."
+   "ainote": "Ne: Cevaptaki \"(iv kullanılır)\" → \"(oral etkisiz, İV verilir)\" yapıldı ve köke kalın \"(klinik kullanıma girmedi)\" eklendi; \"ACE - i\" açıldı ve \"yapıda\" → \"yapıdaki\" oldu.\nNeden: Teprotid ağızdan etkisiz bir peptiddir ve yalnız araştırmalarda parenteral verilmiştir; hiç piyasaya çıkmadığı hâlde kart onu kullanılan bir ilaç gibi sunuyordu.\nNasıl: [GN1, EK1, YP1] TUS sorabileceği için ilaç karttan silinmedi; uygulama yolunun nedeni cevabın içinde, onay almadığı bilgisi ise cevabı ele vermeyecek ve cevaptaki parantezle art arda gelmeyecek biçimde kökte kalın olarak verildi; c1 numarası korundu.\nKaynak: Postgrad Med J 1981, teprotidle dönüştürücü enzim inhibisyonu sırasında hormonal ve kan basıncı değişiklikleri (teprotidin İV ve subkutan uygulanması)."
   },
   {
    "id": 1604674738850,
@@ -14299,7 +14299,7 @@
      "reason": ""
     }
    ],
-   "ainote": "Ne: Extra'daki \"Sistin Taşı tdv'si / Ca'lu taşlar artar\" → \"Sistin taşlarının tedavisinde kullanılır; kalsiyum fosfat taşı oluşumunu artırır.\" yapıldı; kökte \"KAİ\" → \"karbonik anhidraz inhibitörü\" ve \"tdv\" → \"tedavisinde\" açıldı.\nNeden: Extra telgraf üslubundaydı ve iki bilginin ilaçla ilişkisini kurmuyordu; \"Ca'lu taşlar\" ifadesi alkali idrarda oluşan taşın türünü belirtmiyordu.\nNasıl: [SN2, KS1, YZ2] İki ayrı bilgi iki yüklemli tek cümleye çevrildi; taş türü ders kitabındaki terimle (kalsiyum fosfat) adlandırıldı ve c1 cevabı korundu.\nKaynak: Katzung, Basic & Clinical Pharmacology, 13. baskı, diüretikler bölümü (idrar alkalinizasyonu ve böbrek taşları)."
+   "ainote": "Ne: Extra'daki \"Sistin Taşı tdv'si / Ca'lu taşlar artar\" → \"Sistin taşlarının tedavisinde kullanılır; kalsiyum fosfat taşı oluşumunu artırır.\" yapıldı; kökteki \"tdv'de\" → \"tedavisinde\", cevaptaki \"KAİ\" → \"karbonik anhidraz inhibitörü\" olarak açıldı.\nNeden: Extra telgraf üslubundaydı ve iki bilginin ilaçla ilişkisini kurmuyordu; \"Ca'lu taşlar\" ifadesi alkali idrarda oluşan taşın türünü belirtmiyordu.\nNasıl: [SN2, KS1, YZ2] İki ayrı bilgi iki yüklemli tek cümleye çevrildi; taş türü ders kitabındaki terimle (kalsiyum fosfat) adlandırıldı ve c1 cevabının içeriği değişmeden yalnız kısaltması açıldı.\nKaynak: Katzung, Basic & Clinical Pharmacology, 13. baskı, diüretikler bölümü (idrar alkalinizasyonu ve böbrek taşları)."
   },
   {
    "id": 1604668318973,
@@ -14364,13 +14364,7 @@
     {
      "level": "Orta",
      "category": "Soru netliği",
-     "change": "\"Tiazid diüretik YE --> Akut kolesistit ve Pankreatit yapan Diüretik\" → \"Yan etki olarak akut kolesistit ve pankreatit yapabilen diüretik → tiyazid diüretikleri\"",
-     "reason": ""
-    },
-    {
-     "level": "Orta",
-     "category": "Terim/yazım",
-     "change": "Tiazid → tiyazid",
+     "change": "\"Tiazid diüretik YE --> Akut kolesistit ve Pankreatit yapan diüretik\" → \"Yan etki olarak akut kolesistit ve pankreatit yapabilen diüretik → tiyazid diüretikleri\"",
      "reason": ""
     },
     {
@@ -14380,13 +14374,19 @@
      "reason": ""
     },
     {
+     "level": "Orta",
+     "category": "Terim/yazım",
+     "change": "Tiazid → tiyazid",
+     "reason": ""
+    },
+    {
      "level": "Düşük",
      "category": "Biçim",
      "change": "--> → →; büyük harfler; &nbsp; temizlendi",
      "reason": ""
     }
    ],
-   "ainote": "Ne: \"Tiazid diüretik YE --> Akut kolesistit ve Pankreatit yapan Diüretik\" → \"Yan etki olarak akut kolesistit ve pankreatit yapabilen diüretik → tiyazid diüretikleri\" yapıldı; cevap kökün sonuna alındı.\nNeden: Kart cevabı başa koyup tanımı sona bıraktığı için ters ve telgraf üsluplu bir cümle oluşturuyordu; iki yan etki seyrek görüldüğü için \"yapan\" kesinliği de fazlaydı.\nNasıl: [SN1, SN2, YZ1, YP1] Bilgi ve tek c1 cevabı korunarak cümle \"kök → cevap\" düzenine çevrildi; pankreatit ders kitabında, kolesistit ilişkisi vaka-kontrol çalışmasında tiyazidlerle bağlandığı için içerik değişmedi.\nKaynak: Katzung, Basic & Clinical Pharmacology, 13. baskı, diüretikler bölümü (akut nekrotizan pankreatit); NEJM 1980, \"Thiazides and acute cholecystitis\" (relatif risk 2,0)."
+   "ainote": "Ne: \"Tiazid diüretik YE --> Akut kolesistit ve Pankreatit yapan diüretik\" → \"Yan etki olarak akut kolesistit ve pankreatit yapabilen diüretik → tiyazid diüretikleri\" yapıldı; cevap kökün sonuna alındı.\nNeden: Kart cevabı başa koyup tanımı sona bıraktığı için ters ve telgraf üsluplu bir cümle oluşturuyordu; iki yan etki seyrek görüldüğü için \"yapan\" kesinliği de fazlaydı.\nNasıl: [SN1, SN2, YZ1, YP1] Bilgi ve tek c1 cevabı korunarak cümle \"kök → cevap\" düzenine çevrildi; pankreatit ders kitabında, kolesistit ilişkisi vaka-kontrol çalışmasında tiyazidlerle bağlandığı için içerik değişmedi.\nKaynak: Katzung, Basic & Clinical Pharmacology, 13. baskı, diüretikler bölümü (akut nekrotizan pankreatit); NEJM 1980, \"Thiazides and acute cholecystitis\" (relatif risk 2,0)."
   },
   {
    "id": 1604668466631,

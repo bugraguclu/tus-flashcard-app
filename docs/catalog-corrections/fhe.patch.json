@@ -13,7 +13,7 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "redo-in-progress",
  "summary": {
   "reviewedNotes": 510,
   "changedNotes": 510,
@@ -16279,5 +16279,6 @@
    "kisaltma": "GLUT",
    "acilim": "glukoz taşıyıcı proteinler (GLUT1-5)"
   }
- ]
+ ],
+ "redone": []
 }

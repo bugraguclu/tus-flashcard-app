@@ -13,7 +13,7 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "redo-in-progress",
  "summary": {
   "reviewedNotes": 381,
   "changedNotes": 381,
@@ -12277,5 +12277,6 @@
    "kisaltma": "BT, MRG",
    "acilim": "bilgisayarlı tomografi, manyetik rezonans görüntüleme"
   }
- ]
+ ],
+ "redone": []
 }
