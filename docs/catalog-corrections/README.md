@@ -21,6 +21,7 @@ hazırlandıkça eklenir.
 <!-- status:start -->
 | Ders | Dosya | İncelenen not | Düzeltilen not | Kritik | Yüksek | Orta | Düşük | Doğrulama gerekli kalemi |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Kadın Doğum | `kadin-dogum.patch.json` | 524 | 522 | 17 | 141 | 295 | 69 | 17 |
 | Küçük Stajlar | `kucuk-stajlar.patch.json` | 484 | 481 | 16 | 125 | 282 | 58 | 14 |
 <!-- status:end -->
 
