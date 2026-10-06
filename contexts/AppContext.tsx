@@ -37,6 +37,7 @@ export type StudyPosition = { subject: string; topic: string } | null;
 type SettingsContextValue = {
     settings: AppSettings;
     refreshSettings: () => void;
+    previewSettings: (settings: AppSettings) => void;
 };
 
 type CollectionContextValue = {
@@ -83,6 +84,7 @@ type CatalogContextValue = {
 const SettingsContext = createContext<SettingsContextValue>({
     settings: DEFAULT_SETTINGS,
     refreshSettings: () => { },
+    previewSettings: () => { },
 });
 const LanguagePreferenceContext = createContext<AppSettings['language']>(DEFAULT_SETTINGS.language);
 
@@ -140,6 +142,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const refreshSettings = useCallback(() => {
         setSettings(loadSettings());
+    }, []);
+
+    const previewSettings = useCallback((draft: AppSettings) => {
+        setSettings(draft);
     }, []);
 
     const markSchedulingStale = useCallback(() => {
@@ -224,7 +230,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const settingsValue = useMemo<SettingsContextValue>(() => ({
         settings,
         refreshSettings,
-    }), [settings, refreshSettings]);
+        previewSettings,
+    }), [settings, refreshSettings, previewSettings]);
 
     const collectionValue = useMemo<CollectionContextValue>(() => ({
         collectionVersion,

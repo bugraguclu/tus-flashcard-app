@@ -438,7 +438,7 @@ export default function SettingsScreen() {
     const router = useRouter();
     const { width } = useWindowDimensions();
     const isDesktopWeb = Platform.OS === 'web' && width >= 600;
-    const { refreshSettings: refreshData } = useAppSettings();
+    const { refreshSettings: refreshData, previewSettings } = useAppSettings();
     const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
     const { t, l } = useI18n();
@@ -540,6 +540,14 @@ export default function SettingsScreen() {
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         };
     }, []);
+
+    // Keep the whole app in sync with the draft, while device storage remains untouched until Save.
+    useEffect(() => {
+        if (!loading) previewSettings(settings);
+    }, [loading, previewSettings, settings]);
+
+    // A discarded draft must not remain active in screens that stay mounted behind Settings.
+    useEffect(() => () => refreshData(), [refreshData]);
 
     const showSavedState = useCallback(() => {
         setSaved(true);

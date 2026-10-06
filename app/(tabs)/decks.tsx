@@ -68,6 +68,7 @@ import LockGlyph from '../../components/LockGlyph';
 import CardsGlyph from '../../components/CardsGlyph';
 import StatsGlyph from '../../components/StatsGlyph';
 import GearGlyph from '../../components/GearGlyph';
+import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -2283,21 +2284,21 @@ export default function DecksScreen() {
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute('/empty-cards')}
                         >
-                            <Text style={styles.overflowIcon}>🧹</Text>
+                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="emptyCards" color={colors.textSecondary} /></View>
                             <Text style={styles.overflowLabel}>{l('Boş kartlar', 'Empty Cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute(DATA_IMPORT_ROUTE)}
                         >
-                            <Text style={styles.overflowIcon}>📥</Text>
+                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="import" color={colors.textSecondary} /></View>
                             <Text style={styles.overflowLabel}>{t('root.import')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.overflowRow}
                             onPress={() => openOverflowRoute(DATA_EXPORT_ROUTE)}
                         >
-                            <Text style={styles.overflowIcon}>📤</Text>
+                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="export" color={colors.textSecondary} /></View>
                             <Text style={styles.overflowLabel}>{l('Dışa aktar', 'Export')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -2306,7 +2307,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedek oluştur', 'Create backup')}
                         >
-                            <Text style={styles.overflowIcon}>🗄️</Text>
+                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="backup" color={colors.textSecondary} /></View>
                             <Text style={styles.overflowLabel}>{l('Yedek oluştur', 'Create Backup')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -2315,7 +2316,7 @@ export default function DecksScreen() {
                             accessibilityRole="button"
                             accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
                         >
-                            <Text style={styles.overflowIcon}>↩️</Text>
+                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="restore" color={colors.textSecondary} /></View>
                             <Text style={styles.overflowLabel}>{l('Yedekten geri yükle', 'Restore from Backup')}</Text>
                         </TouchableOpacity>
                     </View>
@@ -2704,7 +2705,7 @@ function createStyles(colors: ColorScheme) {
         paddingHorizontal: Spacing.md,
         minHeight: 48,
     },
-    overflowIcon: { fontSize: 16, width: 22, textAlign: 'center' },
+    overflowIcon: { width: 22, alignItems: 'center' },
     overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
 
     columnHeaders: {

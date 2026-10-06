@@ -532,7 +532,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     );
 }
 
-/** Applies the persisted system/light/dark preference to every theme-aware screen. */
+/** Applies the current system/light/dark preference to every theme-aware screen. */
 function ThemeGate({ children }: { children: React.ReactNode }) {
     const { settings } = useAppSettings();
     const activeMode = DARK_MODE_UI_ENABLED ? settings.themeMode : 'light';
