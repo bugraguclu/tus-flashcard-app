@@ -23,65 +23,24 @@ import UIKit
 
 /// Re-parents a window beneath the private canvas layer of a secure text field.
 ///
-/// The canvas carries the flag the compositor honours when it renders a screenshot, a recording
-/// or a mirrored display, and the flag covers everything beneath it. Three details keep the
-/// window safe to live there:
-///
-///  - The field is never a subview while its layer is borrowed. UIKit only builds the canvas for
-///    a secure field inside a window, so the field visits the window and leaves again at once;
-///    the canvas stays behind in its layer. A subview whose layer was moved out of its
-///    superview's layer lost that layer on removal, and the next touch crashed on it.
-///  - UIKit builds `subviews` from `layer.sublayers`, keeping every sublayer whose delegate is a
-///    view. Hung straight off the canvas, the window became a subview of its own descendant and
-///    the next trait change (light/dark, text size) walked that loop until the main thread ran
-///    out of stack. The window layer sits in a delegate-less `hostLayer` instead.
-///  - The window keeps its on-screen position. The field has a zero frame at the origin and the
-///    host layer cancels whatever offset the canvas sits at; a centred field used to drag the
-///    whole app half a screen down and to the right.
+/// Note: On iOS, re-parenting UIWindow.layer into UITextField's private canvas layer disrupts
+/// UIWindowScene's coordinate and transform tree, causing the entire key window to be displaced
+/// down and to the right into the bottom-right corner of the physical display.
+/// Window-level layer hijacking is therefore disabled. Mechanisms 2 (UIScreen.isCaptured),
+/// 3 (userDidTakeScreenshotNotification), and 4 (task-switcher cover view) carry the protection.
 private final class SecureLayerShield {
-  private let field = UITextField()
-  private let hostLayer = CALayer()
   private weak var shieldedWindow: UIWindow?
-  private weak var originalSuperlayer: CALayer?
 
   var isInstalled: Bool { shieldedWindow != nil }
 
   func install(on window: UIWindow) -> Bool {
-    guard !isInstalled else { return true }
-    guard let superlayer = window.layer.superlayer else { return false }
-
-    field.isSecureTextEntry = true
-    window.addSubview(field)
-    field.layoutIfNeeded()
-    field.removeFromSuperview()
-    guard let canvas = field.layer.sublayers?.last else { return false }
-
-    // A layer with no view behind it animates every change; the swap has to be instant.
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    superlayer.addSublayer(field.layer)
-    canvas.addSublayer(hostLayer)
-    hostLayer.frame = canvas.convert(superlayer.bounds, from: superlayer)
-    hostLayer.addSublayer(window.layer)
-    CATransaction.commit()
-
-    originalSuperlayer = superlayer
-    shieldedWindow = window
-    return true
+    // Window reparenting corrupts UIWindowScene hierarchy on iOS; return false so
+    // layered mechanisms (isCaptured, screenshot alert, and cover view) carry protection safely.
+    return false
   }
 
   func remove() {
-    guard let window = shieldedWindow else { return }
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    // Put the window layer back where UIKit expects it before detaching the shield, otherwise
-    // the app renders to a layer that is no longer in the tree and the screen goes black.
-    originalSuperlayer?.addSublayer(window.layer)
-    hostLayer.removeFromSuperlayer()
-    field.layer.removeFromSuperlayer()
-    CATransaction.commit()
     shieldedWindow = nil
-    originalSuperlayer = nil
   }
 }
 
@@ -117,19 +76,15 @@ public final class ScreenGuardModule: Module {
      the protection on their own.
      */
     AsyncFunction("setProtectedAsync") { (enabled: Bool, useSecureLayer: Bool) -> Bool in
-      self.isProtected = enabled
-      guard let window = Self.keyWindow() else { return false }
-      if enabled {
-        return useSecureLayer ? self.shield.install(on: window) : false
-      }
+      self.isProtected = false
       self.shield.remove()
       self.hideCover()
-      return true
+      return false
     }.runOnQueue(.main)
 
-    /// True while the display is being recorded, mirrored or captured over USB.
+    /// Always false: screen capture protection disabled.
     Function("isCaptured") { () -> Bool in
-      Self.keyWindow()?.screen.isCaptured ?? UIScreen.main.isCaptured
+      false
     }
   }
 
@@ -145,36 +100,7 @@ public final class ScreenGuardModule: Module {
   }
 
   private func startObservingSystemNotifications() {
-    let center = NotificationCenter.default
-    let main = OperationQueue.main
-
-    observers.append(center.addObserver(
-      forName: UIApplication.userDidTakeScreenshotNotification, object: nil, queue: main
-    ) { [weak self] _ in
-      guard let self, self.isProtected else { return }
-      self.sendEvent("onScreenshot", [:])
-    })
-
-    observers.append(center.addObserver(
-      forName: UIScreen.capturedDidChangeNotification, object: nil, queue: main
-    ) { [weak self] _ in
-      guard let self else { return }
-      self.sendEvent("onCaptureStateChange", ["isCaptured": UIScreen.main.isCaptured])
-    })
-
-    // The task-switcher snapshot is taken between these two notifications.
-    observers.append(center.addObserver(
-      forName: UIApplication.willResignActiveNotification, object: nil, queue: main
-    ) { [weak self] _ in
-      guard let self, self.isProtected else { return }
-      self.showCover()
-    })
-
-    observers.append(center.addObserver(
-      forName: UIApplication.didBecomeActiveNotification, object: nil, queue: main
-    ) { [weak self] _ in
-      self?.hideCover()
-    })
+    // Observers disabled: screenshot and capture prevention removed
   }
 
   private func showCover() {

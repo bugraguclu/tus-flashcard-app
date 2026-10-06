@@ -55,7 +55,6 @@ import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filte
 import CardWebView from '../../components/CardWebView';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
-import ProtectedContentShield from '../../components/ProtectedContentShield';
 import {
     DEFAULT_WHITEBOARD_PEN_COLOR,
     WhiteboardProvider,
@@ -76,6 +75,11 @@ import {
 } from '../../lib/whiteboardSession';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import CatalogUnlockSheet from '../../components/CatalogUnlockSheet';
+import ProtectedContentShield from '../../components/ProtectedContentShield';
+import GearGlyph from '../../components/GearGlyph';
+import FlameGlyph from '../../components/FlameGlyph';
+import FlagGlyph from '../../components/FlagGlyph';
+import StarGlyph from '../../components/StarGlyph';
 import {
     answerStudyCard,
     getDeckTotalCardCount,
@@ -104,7 +108,6 @@ import {
 import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
-import { useScreenGuard } from '../../hooks/useScreenGuard';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
 import { TimeboxTracker } from '../../lib/timebox';
@@ -1504,9 +1507,6 @@ export default function StudyScreen() {
         () => (renderPayload ? isCatalogCard(renderPayload.card) || isCatalogNote(renderPayload.note) : false),
         [renderPayload],
     );
-    // Paid catalog cards are shielded from screenshots, screen recording and the app switcher
-    // for exactly as long as one is on screen; the learner's own cards stay capturable.
-    const screenGuardState = useScreenGuard(isCurrentCardCatalog, 'reviewer');
     const hasSiblingCards = useMemo(
         () => (renderPayload ? getCardsForNote(renderPayload.note.id).length > 1 : false),
         [renderPayload],
@@ -2340,7 +2340,7 @@ export default function StudyScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Araçlar', 'Tools')}
                 >
-                    <Text style={styles.reviewerToolsGradeIcon}>⚙</Text>
+                    <GearGlyph color={colors.textSecondary} size={16} />
                     <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
                 </TouchableOpacity>
             ) : null}
@@ -2355,7 +2355,7 @@ export default function StudyScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Araçlar', 'Tools')}
                 >
-                    <Text style={styles.reviewerToolsGradeIcon}>⚙</Text>
+                    <GearGlyph color={colors.textSecondary} size={16} />
                     <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
                 </TouchableOpacity>
             ) : null}
@@ -2472,11 +2472,11 @@ export default function StudyScreen() {
                     accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
                     accessibilityState={{ disabled: !currentCard }}
                 >
-                    <Text style={[
-                        styles.toolbarActionIcon,
-                        currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
-                        !currentCard && { color: colors.textMuted },
-                    ]}>⚑</Text>
+                    <FlagGlyph
+                        color={currentFlag > 0 ? FLAG_COLORS[currentFlag].color : (!currentCard ? colors.textMuted : colors.textSecondary)}
+                        size={18}
+                        filled={currentFlag > 0}
+                    />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.toolbarIconButton}
@@ -2524,7 +2524,8 @@ export default function StudyScreen() {
                 <DownChevron color={colors.textMuted} />
                 {streak.current > 0 ? (
                     <View style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}>
-                        <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
+                        <FlameGlyph size={12} color="#f59e0b" />
+                        <Text style={styles.streakChipText}>{streak.current}</Text>
                     </View>
                 ) : null}
             </TouchableOpacity>
@@ -2552,11 +2553,11 @@ export default function StudyScreen() {
                     accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
                     accessibilityState={{ disabled: !currentCard }}
                 >
-                    <Text style={[
-                        styles.toolbarActionIcon,
-                        currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
-                        !currentCard && { color: colors.textMuted },
-                    ]}>⚑</Text>
+                    <FlagGlyph
+                        color={currentFlag > 0 ? FLAG_COLORS[currentFlag].color : (!currentCard ? colors.textMuted : colors.textSecondary)}
+                        size={18}
+                        filled={currentFlag > 0}
+                    />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.toolbarIconButton}
@@ -2659,7 +2660,8 @@ export default function StudyScreen() {
                                         style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
                                         accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
                                     >
-                                        <Text style={styles.streakChipText}>🔥 {streak.current}</Text>
+                                        <FlameGlyph size={12} color="#f59e0b" />
+                                        <Text style={styles.streakChipText}>{streak.current}</Text>
                                     </View>
                                 ) : null}
                             </View>
@@ -2677,14 +2679,12 @@ export default function StudyScreen() {
                                             currentFlag > 0 ? cardFlagName(locale, currentFlag) : '',
                                         ].filter(Boolean).join(', ')}
                                     >
-                                        <Text style={[styles.cardIndicator, styles.cardMarkIndicator, !currentNoteMarked && styles.cardIndicatorHidden]}>★</Text>
-                                        <Text
-                                            style={[
-                                                styles.cardIndicator,
-                                                currentFlag > 0 && { color: FLAG_COLORS[currentFlag].color },
-                                                currentFlag === 0 && styles.cardIndicatorHidden,
-                                            ]}
-                                        >⚑</Text>
+                                        {currentNoteMarked ? (
+                                            <StarGlyph color="#f59e0b" size={16} filled />
+                                        ) : null}
+                                        {currentFlag > 0 ? (
+                                            <FlagGlyph color={FLAG_COLORS[currentFlag].color} size={16} filled />
+                                        ) : null}
                                     </View>
                                 ) : null}
                                 {renderPayload ? (
@@ -2842,7 +2842,8 @@ export default function StudyScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
                                 >
-                                    <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
+                                    <GearGlyph color={colors.textSecondary} size={15} />
+                                    <Text style={styles.secondaryActionText}>{l('Limiti artır', 'Increase Limit')}</Text>
                                 </TouchableOpacity>
                             ) : (
                                 <TouchableOpacity
@@ -2851,7 +2852,8 @@ export default function StudyScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                                 >
-                                    <Text style={styles.secondaryActionText}>⚙️ {l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
+                                    <GearGlyph color={colors.textSecondary} size={15} />
+                                    <Text style={styles.secondaryActionText}>{l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
                                 </TouchableOpacity>
                             )}
                             {trialPurchaseAction}
@@ -2881,7 +2883,8 @@ export default function StudyScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
                             >
-                                <Text style={styles.secondaryActionText}>⚙️ {l('Limiti artır', 'Increase Limit')}</Text>
+                                <GearGlyph color={colors.textSecondary} size={15} />
+                                <Text style={styles.secondaryActionText}>{l('Limiti artır', 'Increase Limit')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
@@ -2974,7 +2977,8 @@ export default function StudyScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Deste seçeneklerinden tekrar limitini artır', 'Increase review limit in deck options')}
                                 >
-                                    <Text style={styles.secondaryActionText}>⚙️ {l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
+                                    <GearGlyph color={colors.textSecondary} size={15} />
+                                    <Text style={styles.secondaryActionText}>{l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
                                 </TouchableOpacity>
                             )}
                             <TouchableOpacity
@@ -3016,7 +3020,7 @@ export default function StudyScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Araçlar', 'Tools')}
                                 >
-                                    <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
+                                    <GearGlyph color={colors.textSecondary} size={20} />
                                 </TouchableOpacity>
                             ) : null}
                             <TouchableOpacity
@@ -3040,7 +3044,7 @@ export default function StudyScreen() {
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Araçlar', 'Tools')}
                                 >
-                                    <Text style={styles.reviewerToolsInlineIcon}>⚙</Text>
+                                    <GearGlyph color={colors.textSecondary} size={20} />
                                 </TouchableOpacity>
                             ) : null}
                         </View>
@@ -3076,7 +3080,7 @@ export default function StudyScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Araçlar', 'Tools')}
                 >
-                    <Text style={styles.toolsOverlayText}>⚙</Text>
+                    <GearGlyph color={colors.accent} size={22} />
                 </TouchableOpacity>
             ) : null}
 
@@ -3165,7 +3169,6 @@ export default function StudyScreen() {
                     setSelectedDeckName(rootDeckName);
                 }}
             />
-            <ProtectedContentShield state={screenGuardState} />
         </View>
     );
 }
@@ -3509,6 +3512,10 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     primaryActionText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white },
     secondaryActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.xs,
         marginTop: Spacing.md,
         backgroundColor: colors.bgInput,
         borderWidth: 1,

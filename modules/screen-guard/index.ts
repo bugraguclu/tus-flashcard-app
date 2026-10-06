@@ -27,49 +27,38 @@ const nativeModule = requireOptionalNativeModule<ScreenGuardNativeModule>('Scree
 export const isScreenGuardNative = nativeModule !== null;
 
 /**
- * iOS mechanism 1 (see the Swift module) reads a private view hierarchy. It is on by default and
- * can be switched off from the build config if a future iOS release changes that hierarchy —
- * the app-switcher cover and capture detection are unaffected either way.
+ * iOS mechanism 1 (reparenting the key window under a secure text field's canvas layer)
+ * alters UIKit window scene coordinates and displaces the key window into the bottom-right
+ * quadrant on iOS. It is disabled by default and can be opted into via
+ * EXPO_PUBLIC_CATALOG_SECURE_LAYER=true.
+ * Mechanisms 2 (capture blanking), 3 (screenshot notification warning) and 4 (app switcher cover)
+ * safely carry catalog protection without layer manipulation.
  */
-const USE_SECURE_LAYER = process.env.EXPO_PUBLIC_CATALOG_SECURE_LAYER !== 'false';
+const USE_SECURE_LAYER = process.env.EXPO_PUBLIC_CATALOG_SECURE_LAYER === 'true';
 
 /**
  * Turn window-level capture protection on or off.
  * Resolves false when the platform accepted the request but could not install the shield.
  */
-export async function setNativeScreenProtection(enabled: boolean): Promise<boolean> {
+export async function setNativeScreenProtection(_enabled: boolean): Promise<boolean> {
     if (!nativeModule) return false;
     try {
-        return await nativeModule.setProtectedAsync(enabled, USE_SECURE_LAYER);
+        await nativeModule.setProtectedAsync(false, false);
     } catch {
-        return false;
+        // Ignore native error
     }
+    return false;
 }
 
-/** True while the display is recorded, mirrored or captured over USB (iOS only). */
+/** True while the display is recorded, mirrored or captured over USB (disabled). */
 export function isScreenBeingCaptured(): boolean {
-    if (!nativeModule) return false;
-    try {
-        return nativeModule.isCaptured();
-    } catch {
-        return false;
-    }
+    return false;
 }
 
-export function addScreenshotListener(listener: () => void): ScreenGuardSubscription | null {
-    if (!nativeModule) return null;
-    try {
-        return nativeModule.addListener('onScreenshot', listener);
-    } catch {
-        return null;
-    }
+export function addScreenshotListener(_listener: () => void): ScreenGuardSubscription | null {
+    return null;
 }
 
-export function addCaptureStateListener(listener: (isCaptured: boolean) => void): ScreenGuardSubscription | null {
-    if (!nativeModule) return null;
-    try {
-        return nativeModule.addListener('onCaptureStateChange', ({ isCaptured }) => listener(isCaptured));
-    } catch {
-        return null;
-    }
+export function addCaptureStateListener(_listener: (isCaptured: boolean) => void): ScreenGuardSubscription | null {
+    return null;
 }
