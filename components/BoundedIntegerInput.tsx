@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../constants/theme';
 import {
     commitBoundedInteger,
@@ -101,8 +101,8 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
         },
     }), [format, max, min, onChange, value, wrap]);
 
-    const charCount = Math.max(draft.length, maxChars, minimumDigits, 2);
-    const inputWidth = Math.max(38, charCount * 16 + 10);
+    const charCount = Math.max(draft.length, minimumDigits, 1);
+    const inputWidth = Math.max(20, charCount * 13 + 6);
     const textInputRef = useRef<TextInput>(null);
 
     return (
@@ -113,7 +113,7 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
                     styles.input,
                     {
                         width: inputWidth,
-                        textAlign: suffix ? 'right' : 'center',
+                        textAlign: 'center',
                     },
                 ]}
                 value={draft}
@@ -167,6 +167,7 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             fontVariant: ['tabular-nums'] as any,
             color: colors.accent,
             flexShrink: 0,
+            ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : null),
         },
         suffix: {
             marginLeft: 3,
