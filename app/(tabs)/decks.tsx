@@ -2642,19 +2642,15 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.borderLight,
     },
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
-    headerActions: { flexDirection: 'row', gap: 8 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     headerBtn: {
-        paddingHorizontal: Spacing.md,
-        minHeight: 44,
-        minWidth: 44,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
+    headerBtnText: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textSecondary },
 
     // Keep the native-sized 44 pt touch target, but render a compact 15 pt `more_vert` glyph.
     headerMenuBtn: {
