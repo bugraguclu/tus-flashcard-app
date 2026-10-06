@@ -2370,11 +2370,11 @@ export default function DecksScreen() {
                 <View style={styles.columnHeaders}>
                     <Text style={styles.columnLabel}>{t('common.deck')}</Text>
                     <View style={styles.countsRow}>
-                        <Text style={[styles.columnCount, { color: colors.badgeNew }]}>{t('anki.new')}</Text>
-                        <Text style={[styles.columnCount, { color: colors.badgeLearn }]}>{t('anki.learn')}</Text>
-                        <Text style={[styles.columnCount, { color: colors.badgeReview }]}>{t('anki.review')}</Text>
+                        <Text style={[styles.columnCount, { color: colors.badgeNew }]} numberOfLines={1}>{t('anki.new')}</Text>
+                        <Text style={[styles.columnCount, { color: colors.badgeLearn }]} numberOfLines={1}>{t('anki.learn')}</Text>
+                        <Text style={[styles.columnCount, { color: colors.badgeReview }]} numberOfLines={1}>{t('anki.review')}</Text>
                     </View>
-                    <View style={{ width: 72 }} />
+                    <View style={styles.columnActionsSpacer} />
                 </View>
             )}
 
@@ -2710,7 +2710,8 @@ function createStyles(colors: ColorScheme) {
     columnHeaders: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
+        paddingLeft: Spacing.lg,
+        paddingRight: Spacing.sm,
         paddingVertical: 6,
         backgroundColor: colors.bgSecondary,
         borderBottomWidth: 1,
@@ -2724,7 +2725,8 @@ function createStyles(colors: ColorScheme) {
         letterSpacing: 0.5,
         textTransform: 'uppercase',
     },
-    columnCount: { fontSize: FontSize.xs, fontWeight: '700', width: 48, textAlign: 'center' },
+    columnCount: { fontSize: FontSize.xs, fontWeight: '700', width: 54, textAlign: 'center' },
+    columnActionsSpacer: { width: 88 },
 
     listWrap: { flex: 1, position: 'relative' },
     deckList: { flex: 1 },
@@ -2929,7 +2931,7 @@ function createStyles(colors: ColorScheme) {
     mobileCountText: { fontSize: 10, fontWeight: '700', fontVariant: ['tabular-nums'] },
 
     countsRow: { flexDirection: 'row', gap: 0 },
-    countBadge: { fontSize: FontSize.md, fontWeight: '700', width: 48, textAlign: 'center' },
+    countBadge: { fontSize: FontSize.md, fontWeight: '700', width: 54, textAlign: 'center' },
     countNew: { color: colors.badgeNew },
     countLearn: { color: colors.badgeLearn },
     countReview: { color: colors.badgeReview },
