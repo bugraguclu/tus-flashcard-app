@@ -43,6 +43,7 @@ import {
 import { setDbSetting } from '../lib/storage';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
+import HeaderBackIcon from '../components/HeaderBackIcon';
 import { alert } from '../lib/confirm';
 import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
 import { userFacingErrorMessage } from '../lib/userFacingError';
@@ -898,7 +899,7 @@ export default function BrowserScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Geri', 'Back')}
                 >
-                    <Text style={styles.backButtonText}>‹</Text>
+                    <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
                 <Text style={styles.screenTitle} numberOfLines={1}>{t('sidebar.myCards')}</Text>
                 <View style={styles.headerSpacer} />

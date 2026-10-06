@@ -17,7 +17,6 @@ export function createBrowserStyles(colors: ColorScheme) {
     screenTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
     headerSpacer: { width: 44 },
     backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
     scopeToolbar: {
         minHeight: 68,
         flexDirection: 'row',

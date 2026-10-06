@@ -41,6 +41,7 @@ import {
     setDeckDesiredRetention,
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
+import HeaderBackIcon from '../components/HeaderBackIcon';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
 import { normalizeNewCardGatherOrder } from '../lib/queueBuild';
@@ -1019,7 +1020,7 @@ export default function DeckOptionsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Deste genel bakışına dön', 'Back to deck overview')}
                 >
-                    <Text style={styles.backText}>‹</Text>
+                    <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
                 <View style={styles.headerTitleWrap}>
                     <Text style={styles.headerTitle} numberOfLines={1}>{l('Deste seçenekleri', 'Deck Options')}</Text>

@@ -27,6 +27,7 @@ import { useI18n } from '../hooks/useI18n';
 import { useRepeatPress } from '../hooks/useRepeatPress';
 import { commitBoundedInteger, sanitizeSignedIntegerDraft, stepBoundedIntegerDraft } from '../lib/boundedNumber';
 import { alert } from '../lib/confirm';
+import HeaderBackIcon from './HeaderBackIcon';
 import {
     CUSTOM_STUDY_CRAM_KINDS,
     CUSTOM_STUDY_MAX_TAGS,
@@ -494,7 +495,7 @@ export default function CustomStudyModal({
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Geri', 'Back')}
                             >
-                                <Text style={styles.backText}>‹</Text>
+                                <HeaderBackIcon color={colors.accent} size={22} />
                             </TouchableOpacity>
                         )}
                         <View style={styles.headerCopy}>
@@ -690,8 +691,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.border,
         },
-        backButton: { width: 34, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
-        backText: { fontSize: 30, lineHeight: 32, color: colors.accent },
+        backButton: { width: 34, height: 44, alignItems: 'center', justifyContent: 'center' },
         headerCopy: { flex: 1, paddingRight: Spacing.md },
         eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: colors.accent, marginBottom: 4 },
         title: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },

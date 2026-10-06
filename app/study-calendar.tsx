@@ -13,6 +13,7 @@ import Svg, { Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
+import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon';
 import {
     BorderRadius,
     FontSize,
@@ -344,7 +345,7 @@ export default function StudyCalendarScreen() {
                         ? l('Önceki ay', 'Previous month')
                         : l('Önceki hafta', 'Previous week')}
                 >
-                    <Text style={styles.stepButtonText}>‹</Text>
+                    <HeaderBackIcon color={colors.textPrimary} size={18} />
                 </TouchableOpacity>
                 <Text style={styles.rangeTitle} numberOfLines={1}>{rangeTitle}</Text>
                 <TouchableOpacity
@@ -356,7 +357,7 @@ export default function StudyCalendarScreen() {
                         ? l('Sonraki ay', 'Next month')
                         : l('Sonraki hafta', 'Next week')}
                 >
-                    <Text style={styles.stepButtonText}>›</Text>
+                    <HeaderForwardIcon color={colors.textPrimary} size={18} />
                 </TouchableOpacity>
                 <View style={styles.segmentTrack}>
                     {(['week', 'month'] as const).map((option) => {
@@ -540,8 +541,7 @@ function createStyles(colors: ColorScheme) {
             paddingBottom: Spacing.sm,
             gap: Spacing.xs,
         },
-        stepButton: { width: 26, alignItems: 'center', justifyContent: 'center' },
-        stepButtonText: { fontSize: FontSize.xxl, lineHeight: 26, fontWeight: '600', color: colors.textPrimary },
+        stepButton: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
         rangeTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
         segmentTrack: {
             marginLeft: 'auto',

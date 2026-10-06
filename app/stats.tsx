@@ -8,6 +8,7 @@ import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../con
 import WeekStreakStrip from '../components/WeekStreakStrip';
 import ClassicStatsBarChart from '../components/stats/ClassicStatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
+import HeaderBackIcon from '../components/HeaderBackIcon';
 import { ChartScrollLockProvider } from '../components/stats/ChartScrollLock';
 import ReviewsSection from '../components/stats/ReviewsSection';
 import HourlySection from '../components/stats/HourlySection';
@@ -236,7 +237,7 @@ export default function StatsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
                 >
-                    <Text style={styles.backButtonText}>‹</Text>
+                    <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
                 <Text style={styles.screenTitle} numberOfLines={1}>{t('common.statistics')}</Text>
                 <View style={styles.headerSpacer} />

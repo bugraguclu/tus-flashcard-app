@@ -66,6 +66,7 @@ import HandTapGlyph from '../components/HandTapGlyph';
 import AccessibilityGlyph from '../components/AccessibilityGlyph';
 import ArchiveBoxGlyph from '../components/ArchiveBoxGlyph';
 import InfoCircleGlyph from '../components/InfoCircleGlyph';
+import HeaderBackIcon from '../components/HeaderBackIcon';
 import {
     disableStudyNotifications,
     getStudyNotificationPermission,
@@ -1680,7 +1681,7 @@ export default function SettingsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={activeSection ? l('Ayarlara dön', 'Back to settings') : l('Geri dön', 'Go back')}
                 >
-                    <Text style={styles.backButtonText}>‹</Text>
+                    <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
                 <Text style={styles.screenTitle} numberOfLines={1}>
                     {activeCategory?.title ?? l('Ayarlar', 'Settings')}
@@ -2046,7 +2047,6 @@ function createStyles(colors: ColorScheme) {
         categoryArrow: { fontSize: 28, color: colors.textMuted, paddingLeft: Spacing.sm },
         emptySearch: { padding: Spacing.xxl, textAlign: 'center', color: colors.textMuted },
         backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-        backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
         group: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, ...Shadows.sm },
         groupTitleRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
         groupTitle: { flex: 1, fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },

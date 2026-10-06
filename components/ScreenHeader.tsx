@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FontSize, Spacing, useThemeColors } from '../constants/theme';
+import HeaderBackIcon from './HeaderBackIcon';
 
 interface ScreenHeaderProps {
     backAccessibilityLabel: string;
@@ -26,7 +27,7 @@ export default function ScreenHeader({ backAccessibilityLabel, onBack, title }: 
                 accessibilityRole="button"
                 accessibilityLabel={backAccessibilityLabel}
             >
-                <Text style={[styles.backText, { color: colors.accent }]}>‹</Text>
+                <HeaderBackIcon color={colors.accent} />
             </TouchableOpacity>
             <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
                 {title}
@@ -45,7 +46,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    backText: { fontSize: 40, lineHeight: 42, fontWeight: '300' },
     title: { flex: 1, fontSize: FontSize.xl, fontWeight: '800' },
     spacer: { width: 44 },
 });

@@ -10,6 +10,7 @@ import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { getStudiedDaysBetween } from '../lib/reviewLogger';
 import { useI18n } from '../hooks/useI18n';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
+import { HeaderBackIcon, HeaderForwardIcon } from './HeaderBackIcon';
 
 const DAY_MS = 86400000;
 
@@ -136,7 +137,7 @@ export default function WeekStreakStrip({
                     accessibilityLabel={l('Önceki hafta', 'Previous week')}
                     {...webTitle(l('Önceki hafta', 'Previous week'))}
                 >
-                    <Text style={styles.arrowText}>‹</Text>
+                    <HeaderBackIcon color={colors.textSecondary} size={20} />
                 </TouchableOpacity>
 
                 <Text style={styles.rangeText}>{formatWeekRange(monday, sunday, localeTag)}</Text>
@@ -149,7 +150,7 @@ export default function WeekStreakStrip({
                     accessibilityLabel={l('Sonraki hafta', 'Next week')}
                     {...webTitle(l('Sonraki hafta', 'Next week'))}
                 >
-                    <Text style={styles.arrowText}>›</Text>
+                    <HeaderForwardIcon color={colors.textSecondary} size={20} />
                 </TouchableOpacity>
             </View>
 
@@ -215,12 +216,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: BorderRadius.sm,
     },
     arrowBtnDisabled: { opacity: 0.25 },
-    arrowText: {
-        fontSize: 24,
-        lineHeight: 26,
-        color: colors.textSecondary,
-        fontWeight: '600',
-    },
     rangeText: {
         flexShrink: 1,
         textAlign: 'center',

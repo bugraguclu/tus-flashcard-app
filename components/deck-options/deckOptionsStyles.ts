@@ -15,7 +15,6 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
             borderBottomColor: colors.border,
         },
         headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-        backText: { fontSize: 34, lineHeight: 36, color: colors.accent },
         headerTitleWrap: { flex: 1, paddingHorizontal: Spacing.xs },
         headerTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
         headerSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },

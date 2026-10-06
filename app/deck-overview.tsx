@@ -29,6 +29,7 @@ import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
+import HeaderBackIcon from '../components/HeaderBackIcon';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
@@ -85,7 +86,7 @@ export default function DeckOverviewScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={t('tabs.backToDecks')}
                     >
-                        <Text style={styles.navButtonText}>‹</Text>
+                        <HeaderBackIcon color={colors.accent} />
                     </TouchableOpacity>
                     <Text style={styles.navTitle} numberOfLines={1}>
                         {deckName ? getDeckDisplayName(deckName) : l('Deste', 'Deck')}
@@ -156,7 +157,7 @@ export default function DeckOverviewScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={t('tabs.backToDecks')}
                 >
-                    <Text style={styles.navButtonText}>‹</Text>
+                    <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
                 <Text style={styles.navTitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
                 {!deck.isFiltered ? (
@@ -350,7 +351,6 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgPrimary,
         },
         navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-        navButtonText: { fontSize: 34, lineHeight: 36, color: colors.accent, fontWeight: '400' },
         navMoreText: { fontSize: 16, color: colors.textMuted, fontWeight: '800', letterSpacing: -1 },
         navTitle: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
         content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch', paddingBottom: Spacing.xxxl },

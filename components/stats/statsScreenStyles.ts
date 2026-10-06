@@ -24,7 +24,6 @@ export function createStatsScreenStyles(colors: ColorScheme, isCompact: boolean)
         gap: Spacing.md,
     },
     backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    backButtonText: { fontSize: 40, lineHeight: 42, color: colors.accent, fontWeight: '300' },
     selectorsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
     inlineLoadState: {
         minHeight: 88,

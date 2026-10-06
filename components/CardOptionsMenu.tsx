@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
+import HeaderBackIcon from './HeaderBackIcon';
 import { parseDueRange } from '../lib/schedulingIntervals';
 import type { ResetCardOptions } from '../lib/resetCards';
 
@@ -211,7 +212,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Önceki menüye dön', 'Back to previous menu')}
                             >
-                                <Text style={styles.backText}>‹</Text>
+                                <HeaderBackIcon color={colors.textPrimary} size={22} />
                             </TouchableOpacity>
                             <Text style={styles.sheetTitle} numberOfLines={1}>{sheetTitle}</Text>
                             <View style={styles.headerSpacer} />
@@ -615,7 +616,6 @@ function createStyles(colors: ColorScheme) {
             color: colors.textPrimary,
         },
         backBtn: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-        backText: { color: colors.textPrimary, fontSize: 34, lineHeight: 36, fontWeight: '300' },
         headerSpacer: { width: 46, height: 46 },
         sheetContent: { paddingVertical: 4, paddingBottom: 6 },
         row: {
