@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "e09c8e23566ea9b88e20487e7938b17b942b394025e3df51fdaec569ea53ddc5",
+  "sha256": "0e61e6115564b5bc4c1def3a4aa1412de3987f914008c01bade50cbb1d9c264c",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7739,7 +7739,7 @@
     "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 2673,
+    "ungroupedCards": 2612,
     "media": 49
   },
   "courses": [
@@ -7801,50 +7801,50 @@
         },
         {
           "name": "Baş ve Boyun",
-          "notes": 95,
-          "cards": 130,
+          "notes": 96,
+          "cards": 132,
           "deck": true
         },
         {
           "name": "Üst Ekstremite",
-          "notes": 35,
-          "cards": 41,
+          "notes": 39,
+          "cards": 45,
           "deck": true
         },
         {
           "name": "Alt Ekstremite",
-          "notes": 41,
-          "cards": 46,
+          "notes": 42,
+          "cards": 47,
           "deck": true
         },
         {
           "name": "Toraks",
-          "notes": 26,
+          "notes": 27,
           "cards": 34,
           "deck": true
         },
         {
           "name": "Abdomen",
-          "notes": 20,
-          "cards": 27,
+          "notes": 19,
+          "cards": 26,
           "deck": true
         },
         {
           "name": "Pelvis ve Perine",
-          "notes": 11,
-          "cards": 13,
+          "notes": 10,
+          "cards": 12,
           "deck": true
         },
         {
           "name": "Sırt ve Omurga",
-          "notes": 8,
-          "cards": 9,
+          "notes": 9,
+          "cards": 10,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 86,
-          "cards": 91,
+          "notes": 80,
+          "cards": 85,
           "deck": false
         }
       ]
@@ -7860,20 +7860,20 @@
       "topics": [
         {
           "name": "Embriyoloji",
-          "notes": 34,
-          "cards": 43,
+          "notes": 36,
+          "cards": 45,
           "deck": true
         },
         {
           "name": "Hücre ve Doku Histolojisi",
-          "notes": 58,
-          "cards": 61,
+          "notes": 61,
+          "cards": 65,
           "deck": true
         },
         {
           "name": "Kardiyovasküler Fizyoloji",
-          "notes": 33,
-          "cards": 38,
+          "notes": 37,
+          "cards": 43,
           "deck": true
         },
         {
@@ -7890,26 +7890,26 @@
         },
         {
           "name": "Sindirim Fizyolojisi",
-          "notes": 28,
-          "cards": 33,
+          "notes": 26,
+          "cards": 31,
           "deck": true
         },
         {
           "name": "Endokrin ve Üreme Fizyolojisi",
-          "notes": 26,
-          "cards": 39,
+          "notes": 29,
+          "cards": 42,
           "deck": true
         },
         {
           "name": "Kas ve Sinir Fizyolojisi",
-          "notes": 22,
-          "cards": 28,
+          "notes": 27,
+          "cards": 33,
           "deck": true
         },
         {
           "name": "Nörofizyoloji ve Duyular",
-          "notes": 34,
-          "cards": 49,
+          "notes": 35,
+          "cards": 50,
           "deck": true
         },
         {
@@ -7920,8 +7920,8 @@
         },
         {
           "name": "Genel",
-          "notes": 220,
-          "cards": 241,
+          "notes": 204,
+          "cards": 223,
           "deck": false
         }
       ]
@@ -8043,62 +8043,62 @@
         },
         {
           "name": "Nöropatoloji",
-          "notes": 31,
-          "cards": 37,
+          "notes": 35,
+          "cards": 41,
           "deck": true
         },
         {
           "name": "Böbrek ve Üriner Sistem Patolojisi",
-          "notes": 23,
-          "cards": 29,
+          "notes": 32,
+          "cards": 40,
           "deck": true
         },
         {
           "name": "Genital Sistem ve Meme Patolojisi",
-          "notes": 72,
-          "cards": 84,
+          "notes": 77,
+          "cards": 90,
           "deck": true
         },
         {
           "name": "Endokrin Patoloji",
-          "notes": 38,
-          "cards": 45,
+          "notes": 44,
+          "cards": 51,
           "deck": true
         },
         {
           "name": "Gastrointestinal ve Karaciğer Patolojisi",
-          "notes": 46,
-          "cards": 55,
+          "notes": 52,
+          "cards": 62,
           "deck": true
         },
         {
           "name": "Solunum Sistemi Patolojisi",
-          "notes": 21,
-          "cards": 25,
+          "notes": 22,
+          "cards": 24,
           "deck": true
         },
         {
           "name": "Kardiyovasküler Patoloji",
-          "notes": 14,
-          "cards": 20,
+          "notes": 17,
+          "cards": 21,
           "deck": true
         },
         {
           "name": "Kemik, Yumuşak Doku ve Deri Patolojisi",
-          "notes": 37,
-          "cards": 42,
+          "notes": 29,
+          "cards": 32,
           "deck": true
         },
         {
           "name": "Genel Patoloji",
-          "notes": 74,
-          "cards": 106,
+          "notes": 86,
+          "cards": 119,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 221,
-          "cards": 244,
+          "notes": 183,
+          "cards": 207,
           "deck": false
         }
       ]

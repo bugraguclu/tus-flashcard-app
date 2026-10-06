@@ -26,12 +26,12 @@ hazırlandıkça eklenir.
 | Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | Tamam | 27 |
 | Pediatri | `pediatri.patch.json` | 1169 | Tamam | 40 |
 | Dahiliye | `dahiliye.patch.json` | 995 | Düzenleme tamam; Kritik/Yüksek kalemlerin bağımsız kontrolü yapılmadı | 20 |
-| Patoloji | `patoloji.patch.json` | 609 | Yeniden düzeltiliyor: 23 not yeni yöntemle bitti | — |
-| Biyokimya | `biyokimya.patch.json` | 484 | Yeniden düzeltiliyor: 47 not yeni yöntemle bitti | — |
-| Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Yeniden düzeltilecek | — |
-| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | Yeniden düzeltilecek | — |
-| FHE | `fhe.patch.json` | 510 | Yeniden düzeltilecek | — |
-| Anatomi | `anatomi.patch.json` | 381 | Yeniden düzeltilecek | — |
+| Patoloji | `patoloji.patch.json` | 609 | Yeniden düzeltiliyor: 544 not yeni yöntemle bitti | — |
+| Biyokimya | `biyokimya.patch.json` | 484 | Yeniden düzeltiliyor: 140 not yeni yöntemle bitti | — |
+| Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Yeniden düzeltiliyor: 148 not yeni yöntemle bitti | — |
+| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | Yeniden düzeltiliyor: 133 not yeni yöntemle bitti | — |
+| FHE | `fhe.patch.json` | 510 | Yeniden düzeltiliyor: 146 not yeni yöntemle bitti | — |
+| Anatomi | `anatomi.patch.json` | 381 | Yeniden düzeltiliyor: 154 not yeni yöntemle bitti | — |
 <!-- status:end -->
 
 `reviewStage` alanı dosyanın aşamasını söyler:
