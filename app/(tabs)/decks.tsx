@@ -65,6 +65,9 @@ import CustomStudyModal from '../../components/CustomStudyModal';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
+import CardsGlyph from '../../components/CardsGlyph';
+import StatsGlyph from '../../components/StatsGlyph';
+import GearGlyph from '../../components/GearGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -2531,7 +2534,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
                 >
-                    <Text style={styles.bottomBtnIcon}>🗂️</Text>
+                    <CardsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -2540,7 +2543,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
                 >
-                    <Text style={styles.bottomBtnIcon}>📊</Text>
+                    <StatsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('tabs.statistics')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -2549,7 +2552,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                 >
-                    <Text style={styles.bottomBtnIcon}>⚙️</Text>
+                    <GearGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('tabs.settings')}</Text>
                 </TouchableOpacity>
             </View>

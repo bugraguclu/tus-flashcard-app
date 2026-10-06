@@ -15,6 +15,10 @@ import type { DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName } from '../lib/models';
 import { localizeTopicName } from '../lib/i18n';
 import { useI18n } from '../hooks/useI18n';
+import CardsGlyph from './CardsGlyph';
+import StatsGlyph from './StatsGlyph';
+import GearGlyph from './GearGlyph';
+import CalendarGlyph from './CalendarGlyph';
 
 export const SIDEBAR_WIDTH = 292;
 
@@ -286,11 +290,11 @@ export function Sidebar(props: SidebarProps) {
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
-                        <Text style={styles.actionIcon}>🗂️</Text>
+                        <CardsGlyph color={colors.textSecondary} size={18} />
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
-                        <Text style={styles.actionIcon}>📊</Text>
+                        <StatsGlyph color={colors.textSecondary} size={18} />
                         <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
                 </View>
@@ -300,15 +304,18 @@ export function Sidebar(props: SidebarProps) {
                     onPress={() => navigate('/study-calendar')}
                     {...webTitle(l('Çalışma Takvimi', 'Study Calendar'))}
                 >
-                    <Text style={styles.settingsBtnText}>🗓️ {l('Çalışma Takvimi', 'Study Calendar')}</Text>
+                    <CalendarGlyph color={colors.textSecondary} size={16} />
+                    <Text style={styles.settingsBtnText}>{l('Çalışma Takvimi', 'Study Calendar')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
-                    <Text style={styles.settingsBtnText}>🗃️ {t('tabs.decks')}</Text>
+                    <CardsGlyph color={colors.textSecondary} size={16} />
+                    <Text style={styles.settingsBtnText}>{t('tabs.decks')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
-                    <Text style={styles.settingsBtnText}>⚙️ {t('tabs.settings')}</Text>
+                    <GearGlyph color={colors.textSecondary} size={16} />
+                    <Text style={styles.settingsBtnText}>{t('tabs.settings')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -502,12 +509,15 @@ function createStyles(colors: ColorScheme) {
     actionIcon: { fontSize: 16 },
     actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
     settingsBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
         paddingVertical: 8,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: BorderRadius.sm,
-        alignItems: 'center',
         marginBottom: Spacing.sm,
     },
     settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
