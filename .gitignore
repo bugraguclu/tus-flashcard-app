@@ -31,7 +31,12 @@ yarn-error.*
 *.pem
 
 # local analysis scratch (large exports, inspection dumps)
-outputs/
+outputs/*
+!outputs/kart-duzeltme/
+outputs/kart-duzeltme/*
+!outputs/kart-duzeltme/*.patch.json
+!outputs/kart-duzeltme/*.xlsx
+!outputs/kart-duzeltme/HANDOFF.md
 
 # IDEs and local tooling
 .claude/

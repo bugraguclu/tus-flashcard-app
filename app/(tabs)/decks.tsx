@@ -65,6 +65,9 @@ import CustomStudyModal from '../../components/CustomStudyModal';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
+import CardsGlyph from '../../components/CardsGlyph';
+import StatsGlyph from '../../components/StatsGlyph';
+import GearGlyph from '../../components/GearGlyph';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -2540,7 +2543,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
                 >
-                    <Text style={styles.bottomBtnIcon}>🗂️</Text>
+                    <CardsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -2549,7 +2552,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
                 >
-                    <Text style={styles.bottomBtnIcon}>📊</Text>
+                    <StatsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('tabs.statistics')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -2558,7 +2561,7 @@ export default function DecksScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                 >
-                    <Text style={styles.bottomBtnIcon}>⚙️</Text>
+                    <GearGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('tabs.settings')}</Text>
                 </TouchableOpacity>
             </View>
@@ -2648,19 +2651,15 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.borderLight,
     },
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
-    headerActions: { flexDirection: 'row', gap: 8 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     headerBtn: {
-        paddingHorizontal: Spacing.md,
-        minHeight: 44,
-        minWidth: 44,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
+    headerBtnText: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textSecondary },
 
     // Keep the native-sized 44 pt touch target, but render a compact 15 pt `more_vert` glyph.
     headerMenuBtn: {

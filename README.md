@@ -52,7 +52,7 @@ own deck onto the window.
 The collection stays in the browser and is never uploaded, and the page's Content-Security-Policy
 allows no third-party origins. After the first visit the app starts without a network connection
 and can be installed to the home screen or dock. Reminders fire only while a tab is open, and
-Shortcuts and screenshot protection exist only on iPhone.
+Shortcuts exist only on iPhone.
 
 ## Features
 
@@ -117,9 +117,8 @@ Shortcuts and screenshot protection exist only on iPhone.
 - Card HTML from imported decks is treated as untrusted. Scripts, inline event handlers and
   `javascript:` URLs are stripped from fields and templates, and each card renders in an isolated
   WebView document whose Content-Security-Policy blocks scripts, network access and navigation.
-- Two local Expo modules written in Swift add per-deck Shortcuts and layered screenshot and
-  screen-recording protection for the card pack. The collection is encrypted at rest with
-  `NSFileProtectionComplete`.
+- A local Expo module written in Swift adds per-deck Shortcuts. The collection is encrypted
+  at rest with `NSFileProtectionComplete`.
 
 ## Tech stack
 
@@ -182,7 +181,7 @@ npm run ios       # the native app on the iOS Simulator
 npm run quality   # type check, tests and the iOS configuration check
 ```
 
-Most screens also run in Expo Go, but Files hand-off, Shortcuts and screenshot protection need a
+Most screens also run in Expo Go, but Files hand-off and Shortcuts need a
 development build.
 
 ## Security and privacy

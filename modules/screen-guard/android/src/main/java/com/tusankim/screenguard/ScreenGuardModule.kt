@@ -23,13 +23,9 @@ class ScreenGuardModule : Module() {
     AsyncFunction("setProtectedAsync") { enabled: Boolean, useSecureLayer: Boolean ->
       val activity = appContext.currentActivity ?: throw Exceptions.MissingActivity()
       activity.runOnUiThread {
-        if (enabled) {
-          activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        } else {
-          activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
       }
-      true
+      false
     }
 
     // FLAG_SECURE already blanks every capture route, so nothing has to be hidden reactively.

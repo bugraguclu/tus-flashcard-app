@@ -4,3 +4,4 @@
 package-lock.json
 assets/catalog/bka-manifest.json
 docs/archive/
+docs/catalog-corrections/*.json

@@ -60,8 +60,6 @@ import RichTextEditor, {
     type RichTextCommand,
 } from '../components/RichTextEditor';
 import { isCatalogCard, isCatalogDeck } from '../lib/catalogProtection';
-import { useScreenGuard } from '../hooks/useScreenGuard';
-import ProtectedContentShield from '../components/ProtectedContentShield';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
@@ -155,9 +153,6 @@ export default function EditorScreen() {
         if (!routeCardId) return false;
         return isCatalogCard(routeCardId);
     }, [routeCardId, dataVersion]);
-    // A catalog note opens read-only but still renders its full field HTML, so the editor is
-    // shielded from capture exactly like the reviewer is.
-    const screenGuardState = useScreenGuard(isCatalog, 'editor');
 
     const routeDeckId = useMemo(() => parseCardId(params.deckId), [params.deckId]);
     const routeNoteTypeId = useMemo(() => parseCardId(params.noteTypeId), [params.noteTypeId]);
@@ -1616,7 +1611,6 @@ export default function EditorScreen() {
                 l={l}
                 t={t}
             />
-            <ProtectedContentShield state={screenGuardState} />
         </View>
     );
 }

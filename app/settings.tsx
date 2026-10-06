@@ -13,6 +13,7 @@ import {
     TouchableWithoutFeedback,
     TouchableOpacity,
     View,
+    ActivityIndicator,
     useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,6 +58,14 @@ import type {
     StudyNotificationThreshold,
 } from '../lib/types';
 import BoundedIntegerInput, { type BoundedIntegerInputHandle } from '../components/BoundedIntegerInput';
+import GearGlyph from '../components/GearGlyph';
+import CardsGlyph from '../components/CardsGlyph';
+import BrainGlyph from '../components/BrainGlyph';
+import BellGlyph from '../components/BellGlyph';
+import HandTapGlyph from '../components/HandTapGlyph';
+import AccessibilityGlyph from '../components/AccessibilityGlyph';
+import ArchiveBoxGlyph from '../components/ArchiveBoxGlyph';
+import InfoCircleGlyph from '../components/InfoCircleGlyph';
 import {
     disableStudyNotifications,
     getStudyNotificationPermission,
@@ -93,10 +102,32 @@ type SectionId =
 
 type Category = {
     id: SectionId;
-    icon: string;
     title: string;
     summary: string;
 };
+
+function CategoryGlyph({ id, color }: { id: SectionId; color: string }) {
+    switch (id) {
+        case 'general':
+            return <GearGlyph color={color} size={22} />;
+        case 'newStudy':
+            return <CardsGlyph color={color} size={22} />;
+        case 'reviewing':
+            return <BrainGlyph color={color} size={22} />;
+        case 'notifications':
+            return <BellGlyph color={color} size={22} />;
+        case 'controls':
+            return <HandTapGlyph color={color} size={22} />;
+        case 'accessibility':
+            return <AccessibilityGlyph color={color} size={22} />;
+        case 'data':
+            return <ArchiveBoxGlyph color={color} size={22} />;
+        case 'about':
+            return <InfoCircleGlyph color={color} size={22} />;
+        default:
+            return <GearGlyph color={color} size={22} />;
+    }
+}
 
 const PRIVACY_URL = 'https://bugraguclu.github.io/tus-flashcard-app/privacy.html';
 const SUPPORT_URL = 'https://bugraguclu.github.io/tus-flashcard-app/support.html';
@@ -668,12 +699,11 @@ export default function SettingsScreen() {
     }, [isDesktopWeb, recordingField, settings.keyBindings]);
 
     const categories = useMemo<Category[]>(() => [
-        { id: 'general', icon: '⚙️', title: l('Genel', 'General'), summary: l('Dil • Tema • Düzenleme', 'Language • Theme • Editing') },
-        { id: 'newStudy', icon: '🃏', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
-        { id: 'reviewing', icon: '🧠', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
+        { id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Düzenleme', 'Language • Theme • Editing') },
+        { id: 'newStudy', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
+        { id: 'reviewing', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
         {
             id: 'notifications',
-            icon: '🔔',
             title: l('Bildirimler', 'Notifications'),
             summary: settings.studyNotificationsEnabled
                 ? `${notificationThresholdLabel(true, settings.studyNotificationThreshold)} · ${String(settings.studyNotificationHour ?? 9).padStart(2, '0')}:${String(settings.studyNotificationMinute ?? 0).padStart(2, '0')}`
@@ -681,15 +711,14 @@ export default function SettingsScreen() {
         },
         {
             id: 'controls',
-            icon: '☝️',
             title: l('Kontroller', 'Controls'),
             summary: isDesktopWeb
                 ? l('Hareketler • Klavye', 'Gestures • Keyboard')
                 : l('Kaydırma • Dokunma', 'Swipe • Touch'),
         },
-        { id: 'accessibility', icon: '♿️', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
-        { id: 'data', icon: '🗄️', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • Aktarım • Bakım', 'Backups • Transfer • Maintenance') },
-        { id: 'about', icon: 'ℹ️', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
+        { id: 'accessibility', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
+        { id: 'data', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • Aktarım • Bakım', 'Backups • Transfer • Maintenance') },
+        { id: 'about', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
     ], [isDesktopWeb, l, notificationThresholdOptions, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationThreshold, settings.studyNotificationsEnabled]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
@@ -1500,7 +1529,7 @@ export default function SettingsScreen() {
                                             : styles.overlayPreviewFloatingBtnRight,
                                     ]}
                                 >
-                                    <Text style={styles.overlayPreviewFloatingIcon}>⚙</Text>
+                                    <GearGlyph color="#ffffff" size={13} />
                                 </View>
                             </Pressable>
                             <Text style={styles.overlayPreviewCaption}>
@@ -1630,7 +1659,7 @@ export default function SettingsScreen() {
     };
 
     if (loading) {
-        return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.loadingIcon}>⚙️</Text></View></SafeAreaView>;
+        return <SafeAreaView style={styles.container}><View style={styles.loading}><ActivityIndicator size="large" color={colors.accent} /></View></SafeAreaView>;
     }
 
     return (
@@ -1693,7 +1722,9 @@ export default function SettingsScreen() {
                                     onPress={() => openSection(category.id)}
                                     accessibilityRole="button"
                                 >
-                                    <Text style={styles.categoryIcon}>{category.icon}</Text>
+                                    <View style={styles.categoryIconContainer}>
+                                        <CategoryGlyph id={category.id} color={colors.accent} />
+                                    </View>
                                     <View style={styles.categoryCopy}>
                                         <Text style={styles.categoryTitle}>{category.title}</Text>
                                         <Text style={styles.categorySummary}>{category.summary}</Text>
@@ -2000,6 +2031,7 @@ function createStyles(colors: ColorScheme) {
         categoryRow: { minHeight: 78, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
         categoryDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         categoryIcon: { width: 42, fontSize: 24, color: colors.textSecondary },
+        categoryIconContainer: { width: 38, alignItems: 'flex-start', justifyContent: 'center' },
         categoryCopy: { flex: 1, gap: 2 },
         categoryTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
         categorySummary: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 18 },

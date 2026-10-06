@@ -9,6 +9,7 @@ import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
 import { deleteNote, type CardDeckMoveSnapshot } from '../../lib/noteManager';
 import { setDbSetting } from '../../lib/storage';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
+import GearGlyph from '../../components/GearGlyph';
 import { alert, confirm } from '../../lib/confirm';
 import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
@@ -393,7 +394,9 @@ export function OverflowMenuModal({
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowOptions(true); }}>
-                        <Text style={styles.overflowItemIcon}>⚙</Text>
+                        <View style={{ width: 25, alignItems: 'center', justifyContent: 'center' }}>
+                            <GearGlyph color={styles.overflowItemIcon.color} size={18} />
+                        </View>
                         <Text style={styles.overflowItemText}>{l('Seçenekler', 'Options')}</Text>
                     </TouchableOpacity>
                     <View style={styles.overflowSeparator} />

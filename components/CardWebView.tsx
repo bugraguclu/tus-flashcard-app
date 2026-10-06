@@ -20,12 +20,6 @@ import {
     stableMeasuredHeight,
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
-import { isCatalogCard, isCatalogNote } from '../lib/catalogProtection';
-import {
-    PROTECTED_CONTENT_CSS,
-    PROTECTED_CONTENT_SCRIPT,
-    installProtectedContentGuards,
-} from '../lib/protectedContentCss';
 import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
 
 /**
@@ -262,7 +256,6 @@ export default function CardWebView({
     const audioActiveRef = useRef(onAudioActiveChange);
     audioActiveRef.current = onAudioActiveChange;
     const mediaBaseUrl = getMediaBaseUrl();
-    const isProtected = isCatalogCard(card) || isCatalogNote(note) || Boolean(noteType.catalogPack);
     const renderedHtml = renderCardHtml(noteType, note, card.ord, side, {
         deckName: deck?.name,
         clozeOrd: card.ord + 1,
@@ -330,7 +323,6 @@ export default function CardWebView({
             secondaryText: colors.textSecondary,
             mutedText: colors.textMuted,
         }) : ''}
-        ${isProtected ? PROTECTED_CONTENT_CSS : ''}
     </style>`;
     // Without a viewport tag WKWebView assumes a 980 px desktop page and scales the result down,
     // which renders every card at roughly 40% of its intended size on an iPhone.
@@ -406,8 +398,6 @@ export default function CardWebView({
         window.addEventListener('load', initSpeed);
         setTimeout(initSpeed, 200);
     })();`;
-    const protectScript = isProtected ? PROTECTED_CONTENT_SCRIPT : '';
-
     const openExternalLink = useCallback((rawUrl: string) => {
         const url = safeExternalCardUrl(rawUrl);
         if (!url) return;
@@ -654,11 +644,6 @@ export default function CardWebView({
                             wrap.appendChild(btn);
                         }
                     });
-                    if (isProtected) {
-                        // The sandbox refuses script inside the card, so the same lockdown the native
-                        // WebView injects is installed from the host page instead.
-                        installProtectedContentGuards(doc);
-                    }
                     if (scrollMode === 'intrinsic') {
                         setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));
                     }
@@ -694,7 +679,7 @@ export default function CardWebView({
             source={nativeSource}
             dataDetectorTypes="none"
             style={[styles.webView, { height: frameHeight }]}
-            injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}${protectScript}true;`}
+            injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}true;`}
             onMessage={(event) => {
                 const data = String(event.nativeEvent.data);
                 if (data.startsWith('AUDIO:')) {

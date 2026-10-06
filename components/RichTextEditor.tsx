@@ -9,7 +9,6 @@ import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
 import { sanitizeToolbarSnippet } from '../lib/customToolbar';
 import { stripPendingStyleMarkers } from '../lib/richTextCommands';
-import { PROTECTED_CONTENT_CSS } from '../lib/protectedContentCss';
 import {
     RICH_TEXT_EDITOR_CONFIG_ID,
     RICH_TEXT_EDITOR_SCRIPT,
@@ -147,9 +146,9 @@ function editorDocument(
     ${rtl ? 'text-align: right;' : ''}
     line-height: 1.45;
     overflow-wrap: anywhere;
-    -webkit-user-select: ${editable ? 'text' : 'none'};
-    user-select: ${editable ? 'text' : 'none'};
-    -webkit-touch-callout: ${editable ? 'default' : 'none'};
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
   }
   #editor:empty::before { content: attr(data-placeholder); color: ${colors.textMuted}; pointer-events: none; }
   #editor img, #editor video { max-width: 100%; height: auto; }
@@ -160,7 +159,6 @@ function editorDocument(
   .tus-audio-speed-btn:active { opacity: 0.7; }
   #editor hr { border: 0; border-top: 1px solid ${colors.border}; margin: 10px 0; }
   #editor ul, #editor ol { padding-left: 24px; }
-  ${editable ? '' : PROTECTED_CONTENT_CSS}
 </style>
 </head>
 <body>
@@ -582,7 +580,6 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                         ref={fallbackInputRef}
                         value={value}
                         editable={editable}
-                        contextMenuHidden={!editable}
                         selectTextOnFocus={editable}
                         onChangeText={onChange}
                         onFocus={() => {

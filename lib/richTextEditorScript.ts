@@ -1,4 +1,3 @@
-import { PROTECTED_CONTENT_SCRIPT } from './protectedContentCss';
 import { richTextBridgeScript } from './richTextCommands';
 import { cspHashSource } from './sha256';
 
@@ -43,7 +42,6 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   const editable = config.editable !== false;
   const minHeight = Number(config.minHeight) || 0;
   const editor = document.getElementById('editor');
-  if (!editable) ${PROTECTED_CONTENT_SCRIPT}
   // Selection and pending-format handling lives in lib/richTextCommands.ts so it can be
   // unit-tested against a fake DOM; see the WebKit notes there for why it is not inline.
   const bridge = createTusFormattingBridge(editor, document);

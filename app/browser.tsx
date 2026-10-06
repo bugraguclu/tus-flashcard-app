@@ -45,8 +45,6 @@ import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import { alert } from '../lib/confirm';
 import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
-import { useScreenGuard } from '../hooks/useScreenGuard';
-import ProtectedContentShield from '../components/ProtectedContentShield';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { expandSelectedCardsToNotes, toggleSelectedSuspend } from '../lib/browserSelection';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
@@ -663,14 +661,6 @@ export default function BrowserScreen() {
         () => selectedNoteIds.some((noteId) => isCatalogNote(noteId)),
         [selectedNoteIds],
     );
-    // Rows paint note text directly, so capture protection follows what is loaded on screen
-    // rather than what happens to be selected. The note objects are already in memory here, and
-    // checking them costs no database read.
-    const showsCatalogContent = useMemo(
-        () => [...noteById.values()].some((note) => isCatalogNote(note)),
-        [noteById],
-    );
-    const screenGuardState = useScreenGuard(showsCatalogContent, 'browser');
     const previewCard = previewIndex === null ? null : selectedCards[previewIndex] ?? null;
     const previewNote = previewCard ? noteById.get(previewCard.noteId) ?? null : null;
     const previewNoteType = previewNote ? noteTypes.find((type) => type.id === previewNote.noteTypeId) ?? null : null;
@@ -1364,8 +1354,6 @@ export default function BrowserScreen() {
                     return created.name;
                 }}
             />}
-
-            <ProtectedContentShield state={screenGuardState} />
         </SafeAreaView>
     );
 }
