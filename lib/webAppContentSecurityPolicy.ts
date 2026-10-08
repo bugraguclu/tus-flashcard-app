@@ -4,7 +4,7 @@ import { RICH_TEXT_EDITOR_SCRIPT_HASH } from './richTextEditorScript';
  * Content-Security-Policy for the web app's own page (`app/+html.tsx`).
  *
  * Inline script is allowed only by hash, and exactly two inline scripts exist: Expo Router's
- * hydration flag, and the rich text field script. The field runs in a srcdoc iframe, which
+ * hydration flag, and the rich text field script. The field runs in a blank iframe, which
  * inherits this policy, so its hash has to be named here as well as in the field's own policy.
  */
 

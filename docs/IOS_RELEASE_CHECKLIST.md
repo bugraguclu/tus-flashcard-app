@@ -91,6 +91,12 @@ web-facing changes there:
 - Reload the page on `/editor` or `/card-info`: the back arrow opens the deck list.
 - Study with the mouse: click the card, then press Space and 1–4; click the undo button, then press
   Space. The keys answer the reviewer every time rather than the control that was clicked.
+- Safari reviewer history: open TUS Kartları, reveal and grade at least six cards, then return
+  through the sidebar title, the reviewer back arrow, and browser Back on separate visits.
+  Card changes must not grow `history.length`; each return must reach `/decks`, never a blank
+  `about:srcdoc`. Repeat in the classic and redesigned reviewer. In the editor, enter both rich
+  fields and save immediately; after a theme change they must still be rich fields. The shared
+  frame lifecycle and its use by both surfaces are guarded by `lib/webHtmlFrame.test.ts`.
 - In a phone-width window, press Tab in the reviewer: focus starts on the visible header controls,
   never on the closed sidebar.
 - Open an address that does not exist (e.g. `/bir-sey-yok`): the themed "Sayfa bulunamadı" page

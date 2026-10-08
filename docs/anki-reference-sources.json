@@ -731,6 +731,20 @@
       "useFor": ["default search preset:\"name\" -is:suspended", "relearning steps counted within a day", "already optimal at four decimals", "pressing Optimize again aborts"]
     },
     {
+      "id": "html-standard-frame-navigation",
+      "priority": 3,
+      "platform": "web card and rich-text field surfaces",
+      "url": "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#navigate-an-iframe-or-frame",
+      "useFor": ["changing srcdoc navigates the child context", "iframe navigation history handling", "Safari about:srcdoc back-navigation regression"]
+    },
+    {
+      "id": "html-standard-document-open",
+      "priority": 3,
+      "platform": "web card and rich-text field surfaces",
+      "url": "https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#dom-document-open",
+      "useFor": ["replace a same-origin blank frame's HTML without a frame navigation", "reset document listeners when replacing a card side", "preserve sandbox and inherited CSP"]
+    },
+    {
       "id": "anki-source-webview-css",
       "priority": 3,
       "platform": "desktop card page defaults",

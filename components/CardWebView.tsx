@@ -21,6 +21,7 @@ import {
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
 import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
+import WebHtmlFrame from './WebHtmlFrame';
 
 /**
  * Anki's document classes. AnkiDroid ships `<html class="mobile android linux js">` and the
@@ -506,9 +507,9 @@ export default function CardWebView({
     if (Platform.OS === 'web') {
         const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:0;background:transparent;color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};${onCardSwipe ? 'touch-action:pan-y pinch-zoom;' : ''}}</style></head><body>${webHtml}</body></html>`;
         return (
-            <iframe
-                ref={iframeRef}
-                srcDoc={fullHtml}
+            <WebHtmlFrame
+                frameRef={iframeRef}
+                html={fullHtml}
                 sandbox="allow-same-origin"
                 onLoad={() => {
                     const doc = iframeRef.current?.contentDocument;

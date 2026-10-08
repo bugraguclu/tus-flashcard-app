@@ -7,7 +7,7 @@ import { cspHashSource } from './sha256';
  * It is a constant on purpose. The per-field values (the field HTML, the minimum height, whether
  * the field is editable, whether pasted pictures become PNGs, and on web the host page's origin)
  * travel in a JSON element the document carries, so the script text never changes and its hash
- * can be named in the web app's Content-Security-Policy. A srcdoc iframe inherits its parent
+ * can be named in the web app's Content-Security-Policy. The blank iframe inherits its parent
  * page's policy, and the production policy allows no inline script it cannot name by hash.
  */
 

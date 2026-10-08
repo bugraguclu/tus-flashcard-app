@@ -17,6 +17,7 @@ import {
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { editorFieldFontFamily } from '../lib/editorFieldStyle';
 import { sanitizeUntrustedHtml } from '../lib/templates';
+import WebHtmlFrame from './WebHtmlFrame';
 import {
     embeddedWebViewLayout,
     stableMeasuredHeight,
@@ -520,10 +521,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     return (
         <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
             {Platform.OS === 'web' ? (
-                <iframe
-                    ref={iframeRef}
+                <WebHtmlFrame
+                    frameRef={iframeRef}
                     title={placeholder}
-                    srcDoc={documentHtml}
+                    html={documentHtml}
                     // Scripts for the field document's own editor script (CSP allows only it), and
                     // same-origin so the host can call into it and resolve media from IndexedDB.
                     sandbox="allow-scripts allow-same-origin"
