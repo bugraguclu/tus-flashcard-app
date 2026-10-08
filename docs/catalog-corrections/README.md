@@ -26,22 +26,21 @@ hazırlandıkça eklenir.
 | Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | Tamam | 27 |
 | Pediatri | `pediatri.patch.json` | 1169 | Tamam | 40 |
 | Dahiliye | `dahiliye.patch.json` | 995 | Düzenleme tamam; Kritik/Yüksek kalemlerin bağımsız kontrolü yapılmadı | 20 |
-| Patoloji | `patoloji.patch.json` | 609 | Yeniden düzeltiliyor: 544 not yeni yöntemle bitti | — |
-| Biyokimya | `biyokimya.patch.json` | 484 | Yeniden düzeltiliyor: 140 not yeni yöntemle bitti | — |
-| Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Yeniden düzeltiliyor: 148 not yeni yöntemle bitti | — |
-| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | Yeniden düzeltiliyor: 133 not yeni yöntemle bitti | — |
-| FHE | `fhe.patch.json` | 510 | Yeniden düzeltiliyor: 146 not yeni yöntemle bitti | — |
-| Anatomi | `anatomi.patch.json` | 381 | Yeniden düzeltiliyor: 154 not yeni yöntemle bitti | — |
+| Patoloji | `patoloji.patch.json` | 609 | Tamam | — |
+| Biyokimya | `biyokimya.patch.json` | 484 | Tamam | — |
+| Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Tamam | — |
+| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | İkinci tur: 609 not tamam; 136 not önceki yayındaki hâliyle duruyor | — |
+| FHE | `fhe.patch.json` | 510 | Tamam | 1 |
+| Anatomi | `anatomi.patch.json` | 381 | Tamam | — |
 <!-- status:end -->
 
 `reviewStage` alanı dosyanın aşamasını söyler:
 
 - `complete`: düzenleme, bağımsız tıbbi kontrol, yazım birliği ve son okuma tamam. `Doğrulama
   gerekli` kalemleri editör kararı bekler; bu kalemlerin kart içeriği değiştirilmedi.
-- `redo-in-progress`: dosyadaki düzeltmelerin çoğu otomatik bir çalıştırmadan gelir (ok ve boşluk
-  temizliği, sözlükle kısaltma açma ya da denetlenmemiş yeniden yazım) ve yayına uygun değildir.
-  Ders özgün karttan, Farmakoloji çalışma kitabının yöntemiyle yeniden düzeltilir. `redone` alanı,
-  yeni yöntemle bitmiş notların kimliklerini listeler.
+- `redo-in-progress`: ikinci turu süren derste `redone` alanı yeni yöntemle tamamlanan notların
+  kimliklerini listeler. Bu notların ikinci tur çıktısı uygulanmıştır. Diğer notlar mevcut yayındaki
+  hâliyle bırakılmıştır; ikinci turu tamamlanana kadar yeniden düzeltme bekler.
 
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
