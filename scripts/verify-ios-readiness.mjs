@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hasLegalIdentityPlaceholders } from './legal-identity.mjs';
 
 const app = JSON.parse(fs.readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
 const eas = JSON.parse(fs.readFileSync(new URL('../eas.json', import.meta.url), 'utf8'));
@@ -132,17 +133,7 @@ if (productionPaymentRequired === 'false') {
 }
 
 const legalPages = [readProjectFile('docs/privacy.html'), readProjectFile('docs/app-store/metadata-tr.md')].join('\n');
-const legalPlaceholders = [
-    /\[YAYINCI YASAL ADI\]/,
-    /\[LEGAL PUBLISHER NAME\]/,
-    /\[AÇIK ADRES\]/,
-    /\[ADDRESS\]/,
-    /\[E-POSTA\]/,
-    /\[EMAIL\]/,
-    /\[APP STORE CONNECT HESAP SAHİBİNİN YASAL ADI\]/,
-];
-const unresolvedLegalPlaceholders = legalPlaceholders.filter((pattern) => pattern.test(legalPages));
-if (unresolvedLegalPlaceholders.length > 0) {
+if (hasLegalIdentityPlaceholders(legalPages)) {
     const message = 'App Store legal identity still contains publisher/address/contact placeholders';
     if (appStoreReleaseCheck) failures.push(message);
     else warnings.push(`${message}; run npm run verify:app-store before submission`);
