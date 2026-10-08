@@ -29,8 +29,8 @@ hazırlandıkça eklenir.
 | Patoloji | `patoloji.patch.json` | 609 | Tamam | — |
 | Biyokimya | `biyokimya.patch.json` | 484 | Tamam | — |
 | Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Tamam | — |
-| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | İkinci tur: 609 not tamam; 136 not önceki yayındaki hâliyle duruyor | — |
-| FHE | `fhe.patch.json` | 510 | Tamam | 1 |
+| Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | Tamam | — |
+| FHE | `fhe.patch.json` | 510 | Tamam | — |
 | Anatomi | `anatomi.patch.json` | 381 | Tamam | — |
 <!-- status:end -->
 
@@ -38,9 +38,8 @@ hazırlandıkça eklenir.
 
 - `complete`: düzenleme, bağımsız tıbbi kontrol, yazım birliği ve son okuma tamam. `Doğrulama
   gerekli` kalemleri editör kararı bekler; bu kalemlerin kart içeriği değiştirilmedi.
-- `redo-in-progress`: ikinci turu süren derste `redone` alanı yeni yöntemle tamamlanan notların
-  kimliklerini listeler. Bu notların ikinci tur çıktısı uygulanmıştır. Diğer notlar mevcut yayındaki
-  hâliyle bırakılmıştır; ikinci turu tamamlanana kadar yeniden düzeltme bekler.
+- `redo-in-progress`: ikinci tur kısmen tamamlandığında kullanılan geçici aşama. Bu yayındaki
+  tüm derslerin ikinci turu tamamlandı.
 
 
 ## Dosya biçimi (`tusankim.catalog-corrections/v1`)
@@ -81,8 +80,9 @@ hazırlandıkça eklenir.
 
 - `before`, paketteki alanın birebir değeridir. Bir düzeltme yalnız `before` paketteki değerle
   hâlâ aynıysa uygulanmalıdır; değilse not o arada değişmiştir ve yeniden incelenir.
-- Cloze numaraları hiçbir notta eklenmedi, silinmedi veya birleştirilmedi (YP1); kart kimlikleri
-  ve çalışma geçmişi korunur. Görseller, renkler ve kodlama harfleri korunmuştur (YP3).
+- Cloze numara kümeleri korunur (YP1). Yanlış tıbbi ifadeler kaldırıldığında bunlara bağlı
+  bazı cloze parçaları da gerekçesi belirtilerek çıkarılmıştır; kart kimlikleri ve çalışma
+  geçmişi korunur. Görseller, renkler ve kodlama harfleri korunmuştur (YP3).
 - `Doğrulama gerekli` kategorisindeki kalemlerde içerik değiştirilmedi; şüphe gerekçede yazılıdır
   ve editörün kararını bekler.
 

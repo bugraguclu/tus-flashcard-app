@@ -42,7 +42,7 @@
   "itemsByCategory": {
    "Tıbbi doğruluk": {
     "Kritik": 23,
-    "Yüksek": 33
+    "Yüksek": 34
    },
    "Güncellik": {
     "Yüksek": 1,
@@ -54,9 +54,6 @@
    "Soru netliği": {
     "Yüksek": 7,
     "Orta": 40
-   },
-   "Doğrulama gerekli": {
-    "Yüksek": 1
    },
    "Yapısal": {
     "Kritik": 4,
@@ -2737,15 +2734,15 @@
    "fields": {
     "Text": {
      "before": "Olfaktor Epitelde -&gt;&nbsp;<div>{{c1::Bowman}} Bezleri<div><br></div><div>Resp. Epitelde -&gt;&nbsp;</div><div>{{c1::Schaffer}} Bezleri var</div></div>",
-     "after": "Olfaktör epitelde →<div>{{c1::Bowman}} bezleri<div><br></div><div>Respiratuvar epitelde →</div><div>{{c1::Schaffer}} bezleri var</div></div>"
+     "after": "Olfaktör epitelde →<div>{{c1::Bowman}} bezleri<div><br></div><div>Respiratuvar bölgede →</div><div>{{c1::seromüköz}} bezler var</div></div>"
     }
    },
    "changes": [
     {
      "severity": "Yüksek",
-     "category": "Doğrulama gerekli",
-     "text": "\"{{c1::Schaffer}} Bezleri\" (içerik değişmedi)",
-     "rationale": "Burun respiratuvar mukozasındaki bezler Ross ve Junqueira'da seröz ve seromüköz bezler olarak anlatılır; \"Schaffer bezleri\" adı bu kaynaklarda ve yapılan aramada doğrulanamadı."
+     "category": "Tıbbi doğruluk",
+     "text": "\"{{c1::Schaffer}} Bezleri\" → \"{{c1::seromüköz}} bezler\"",
+     "rationale": "Burun respiratuvar bölgesinin bezleri seromüközdür; \"Schaffer bezleri\" adı güvenilir histoloji kaynaklarında doğrulanamadı."
     },
     {
      "severity": "Orta",
@@ -2760,7 +2757,7 @@
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: \"Resp.\" → \"Respiratuvar\" açıldı, \"Olfaktor\" → \"Olfaktör\" yazıldı ve oklar düzeltildi; \"Schaffer\" cevabı değiştirilmeden doğrulama için işaretlendi.\nNeden: Olfaktör epiteldeki Bowman bezleri doğrudur; respiratuvar bölge bezleri için verilen özel ad standart histoloji kaynaklarında bulunamadı.\nNasıl: [KS1, BÇ1, YP1] Kaynakla desteklenemeyen bir özel adı tahminle değiştirmek yerine cevap korundu ve Doğrulama gerekli olarak bildirildi; c1 ve satır düzeni aynı kaldı.\nKaynak: Ross & Pawlina, Histology, solunum sistemi (burun boşluğunun respiratuvar ve olfaktör bölgeleri).",
+   "aiNote": "Ne: Olfaktör bölgedeki Bowman bezleri korundu; respiratuvar bölgenin bezleri seromüköz olarak düzeltildi.\nNeden: \"Schaffer bezleri\" adı doğrulanamadı; solunum bölgesindeki bezler güvenilir kaynaklarda seromüköz bezlerdir.\nNasıl: [TD1, KS1, BÇ1] İki c1 ve dört satırlı karşılaştırma korundu; yanlış özel ad değiştirildi.\nKaynak: PubMed Central PMCID PMC3480721 (nazal olfaktör ve respiratuvar bölge bezleri); NCBI Bookshelf NBK10896 (Bowman bezleri).",
    "decision": null,
    "editorNote": null
   },
