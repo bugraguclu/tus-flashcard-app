@@ -88,12 +88,12 @@ import {
     CheckIcon,
     ChevronDownIcon,
     EyeIcon,
-    KeyboardDismissIcon,
     MoreIcon,
     PinIcon,
 } from '../components/editor/EditorIcons';
 import { buildEditorTools } from '../components/editor/editorTools';
 import { EditorFormattingToolbar } from '../components/editor/EditorFormattingToolbar';
+import { StandaloneKeyboardDoneBar } from '../components/editor/KeyboardDoneButton';
 import { EditorOverflowMenu } from '../components/editor/EditorOverflowMenu';
 import { EditorPreviewModal } from '../components/editor/EditorPreviewModal';
 import { CustomToolbarEditorModal, CustomToolbarHelpModal } from '../components/editor/CustomToolbarModals';
@@ -583,23 +583,6 @@ export default function EditorScreen() {
             return next;
         });
     };
-
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-    useEffect(() => {
-        const showSub = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-            () => setKeyboardVisible(true),
-        );
-        const hideSub = Keyboard.addListener(
-            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-            () => setKeyboardVisible(false),
-        );
-        return () => {
-            showSub.remove();
-            hideSub.remove();
-        };
-    }, []);
 
     const dismissEditorKeyboard = useCallback(() => {
         Keyboard.dismiss();
@@ -1346,7 +1329,6 @@ export default function EditorScreen() {
                     onCustomButtonPress={(button) => wrapEditorSelection(button.prefix, button.suffix)}
                     onCustomButtonLongPress={openEditToolbarButton}
                     onCreateCustomButton={openCreateToolbarButton}
-                    keyboardVisible={keyboardVisible}
                     onDismissKeyboard={dismissEditorKeyboard}
                     scrollable={editorPreferences.toolbarScrollable}
                     scrollRef={toolbarScrollRef}
@@ -1357,19 +1339,13 @@ export default function EditorScreen() {
                 />
             )}
 
-            {!isCatalog && !editorPreferences.toolbarVisible && keyboardVisible && (
-                <View style={styles.standaloneKeyboardDismissBar}>
-                    <TouchableOpacity
-                        style={styles.keyboardDismissButton}
-                        onPress={dismissEditorKeyboard}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Klavyeyi kapat', 'Dismiss keyboard')}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <KeyboardDismissIcon color={colors.accent} size={17} />
-                        <Text style={styles.keyboardDismissText}>{l('Kapat', 'Done')}</Text>
-                    </TouchableOpacity>
-                </View>
+            {!isCatalog && !editorPreferences.toolbarVisible && (
+                <StandaloneKeyboardDoneBar
+                    onPress={dismissEditorKeyboard}
+                    colors={colors}
+                    styles={styles}
+                    l={l}
+                />
             )}
             </KeyboardAvoidingView>
             <View style={[{ height: insets.bottom, backgroundColor: colors.bgCard }, { pointerEvents: 'none' }]} />
