@@ -10,7 +10,8 @@ import {
 } from '../../lib/editorToolbar';
 import { isEditorToolActive, isEditorToolDisabled, type EditorFormatState } from '../../lib/editorFormatState';
 import type { CustomToolbarButton } from '../../lib/customToolbar';
-import { AnkiToolbarIcon, KeyboardDismissIcon } from './EditorIcons';
+import { AnkiToolbarIcon } from './EditorIcons';
+import { ToolbarKeyboardDoneButton } from './KeyboardDoneButton';
 import type { FormattingTool } from './editorTools';
 import type { EditorI18n } from './types';
 import type { EditorStyles } from './editorStyles';
@@ -26,7 +27,6 @@ interface EditorFormattingToolbarProps {
     onCustomButtonPress: (button: CustomToolbarButton) => void;
     onCustomButtonLongPress: (button: CustomToolbarButton) => void;
     onCreateCustomButton: () => void;
-    keyboardVisible: boolean;
     onDismissKeyboard: () => void;
     scrollable: boolean;
     scrollRef: RefObject<ScrollView | null>;
@@ -48,7 +48,6 @@ export function EditorFormattingToolbar({
     onCustomButtonPress,
     onCustomButtonLongPress,
     onCreateCustomButton,
-    keyboardVisible,
     onDismissKeyboard,
     scrollable,
     scrollRef,
@@ -181,18 +180,12 @@ export function EditorFormattingToolbar({
                         );
                     })}
                 </View>
-                {keyboardVisible && (
-                    <TouchableOpacity
-                        style={styles.keyboardDismissButton}
-                        onPress={onDismissKeyboard}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Klavyeyi kapat', 'Dismiss keyboard')}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <KeyboardDismissIcon color={colors.accent} size={17} />
-                        <Text style={styles.keyboardDismissText}>{l('Kapat', 'Done')}</Text>
-                    </TouchableOpacity>
-                )}
+                <ToolbarKeyboardDoneButton
+                    onPress={onDismissKeyboard}
+                    colors={colors}
+                    styles={styles}
+                    l={l}
+                />
             </View>
             {scrollable ? (
                 <ScrollView
