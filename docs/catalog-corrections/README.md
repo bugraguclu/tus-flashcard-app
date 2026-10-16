@@ -18,6 +18,14 @@ hazırlandıkça eklenir.
 
 ## Durum
 
+9 Ekim son takipte **12 dersin tamamı** ön yüz sızıntıları ve soru–açıklama
+çelişkileri için tarandı; **141 not / 328 mevcut kart** düzeltildi. APKG,
+`.tuspack`, manifest ve her dersin güncel `after` alanları eşleşiyor.
+[Tüm dersler takip raporu](all-course-front-followup.md) ve
+[alan bazlı kayıt](all-course-front-followup.json) bu turun kapsamını kaydeder.
+Aşağıdaki önceki denetim sayıları güncel kalan hata sayısı değildir; bu takip
+önceki açık kaynak incelemelerinin tamamına onay vermez.
+
 <!-- status:start -->
 | Ders | Dosya | Not | Durum | Açık soru (`Doğrulama gerekli`) |
 | --- | --- | ---: | --- | ---: |
@@ -26,8 +34,8 @@ hazırlandıkça eklenir.
 | Genel Cerrahi | `genel-cerrahi.patch.json` | 564 | Tamam | 27 |
 | Pediatri | `pediatri.patch.json` | 1169 | Tamam | 40 |
 | Dahiliye | `dahiliye.patch.json` | 995 | Düzenleme tamam; Kritik/Yüksek kalemlerin bağımsız kontrolü yapılmadı | 20 |
-| Patoloji | `patoloji.patch.json` | 609 | Tamam | — |
-| Biyokimya | `biyokimya.patch.json` | 484 | Tamam | — |
+| Patoloji | `patoloji.patch.json` | 609 | Takip düzeltmeleri uygulandı; kaynak kapsam kontrolü bekliyor | Bkz. takip raporu |
+| Biyokimya | `biyokimya.patch.json` | 484 | Takip düzeltmeleri uygulandı; kaynak kapsam kontrolü bekliyor | Bkz. takip raporu |
 | Mikrobiyoloji | `mikrobiyoloji.patch.json` | 587 | Tamam | — |
 | Deneme ve Soru | `deneme-ve-soru.patch.json` | 745 | Tamam | — |
 | FHE | `fhe.patch.json` | 510 | Tamam | — |
@@ -38,6 +46,9 @@ hazırlandıkça eklenir.
 
 - `complete`: düzenleme, bağımsız tıbbi kontrol, yazım birliği ve son okuma tamam. `Doğrulama
   gerekli` kalemleri editör kararı bekler; bu kalemlerin kart içeriği değiştirilmedi.
+- `content-corrections-applied-source-review-pending`: takipteki somut kart düzeltmeleri pakete
+  uygulanmıştır; kaynağı hatalı denetim kararlarının tüm tıbbi iddialara göre yeniden kapanması
+  beklenir. Uygulanmış düzeltmeler geri alınmış değildir.
 - `redo-in-progress`: ikinci tur kısmen tamamlandığında kullanılan geçici aşama. Bu yayındaki
   tüm derslerin ikinci turu tamamlandı.
 
@@ -94,3 +105,17 @@ değişmemesi, `-->` oklarının ve yapıştırma artıklarının kalmaması, kr
 (AI Rehberi §5), Kritik ve Yüksek kalemlerde gerekçe ve her notta Ne / Neden / Nasıl biçiminde
 AI notu. Kritik ve Yüksek düzeyli düzeltmeler ayrıca düzenleyiciden bağımsız ikinci bir okumayla
 kaynaklara karşı denetlendi.
+
+Patoloji/Biyokimya takip düzeltmeleri ve kaynak onay sınırı: [9 Ekim 2026 raporu](gemini-followup.md).
+
+Son yayın kontrolündeki 11 odak notu ve iki ilişkili CVLM notu güncel pakette
+düzeltildi: [13 not / 21 kart yüzü takip kaydı](publish-front-followup.md).
+Alan bazlı önce/sonra, GUID, ordinal ve kaynak kanıtları
+[`publish-front-followup.json`](publish-front-followup.json) içindedir. Bu dosya
+yeni bir ders yaması değildir; mevcut ders yamalarının güncel `after` alanlarıyla
+birlikte son uygulamanın dar kapsamını kaydeder. Açık ders denetimleri ayrıca sürer.
+
+Ardından tüm derslere genişletilen takipte 141 not / 328 kart daha düzeltildi:
+[son rapor](all-course-front-followup.md). Farmakoloji çalışma kitabındaki güncel
+alanlar ve mevcut takip sekmelerinin ilgili kayıtları eşitlendi; önceki denetim
+metinleri tarihsel kanıt olarak korundu. `npm run quality`: 156 dosya / 1.659 test.

@@ -13,17 +13,17 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "content-corrections-applied-source-review-pending",
  "summary": {
   "reviewedNotes": 484,
   "changedNotes": 483,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 1,
-  "changeItems": 1096,
+  "changeItems": 1115,
   "notesBySeverity": {
-   "Kritik": 19,
-   "Yüksek": 56,
-   "Orta": 351,
+   "Kritik": 18,
+   "Yüksek": 68,
+   "Orta": 340,
    "Düşük": 57
   },
   "notesByTopic": {
@@ -35,39 +35,42 @@
    "Proteinler": 112
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 19,
+   "Biçim": {
+    "Düşük": 464
+   },
+   "Cevap görünürlüğü": {
+    "Yüksek": 15
+   },
+   "Dil bilgisi": {
+    "Orta": 11,
+    "Düşük": 17
+   },
+   "Eksik kritik bilgi": {
     "Yüksek": 23
    },
    "Güncellik": {
     "Yüksek": 4,
     "Orta": 1
    },
-   "Eksik kritik bilgi": {
-    "Yüksek": 23
+   "Kısaltma": {
+    "Orta": 322
    },
    "Soru netliği": {
     "Yüksek": 3,
     "Orta": 54
-   },
-   "Yapısal": {
-    "Kritik": 1,
-    "Yüksek": 7
    },
    "Terim/yazım": {
     "Yüksek": 1,
     "Orta": 138,
     "Düşük": 8
    },
-   "Kısaltma": {
-    "Orta": 322
+   "Tıbbi doğruluk": {
+    "Kritik": 19,
+    "Yüksek": 27
    },
-   "Dil bilgisi": {
-    "Orta": 11,
-    "Düşük": 17
-   },
-   "Biçim": {
-    "Düşük": 464
+   "Yapısal": {
+    "Kritik": 1,
+    "Yüksek": 7
    }
   },
   "secondReview": {}
@@ -696,13 +699,13 @@
    "noteId": 1620928956570,
    "guid": "vjr5._R&~U",
    "topic": "Nükleik Asitler",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<b>Mutasyon oluşma Mekanizmaları:</b><div><br></div><div><b>Nitröz Asit</b>: {{c1::DeAminasyon}} yapar&nbsp;</div><div>(Sitozin -&gt; Urasil / Adenin -&gt; HipoKsantin /&nbsp;</div><div>Guanin -&gt; Ksantin)</div><div><br></div><div><b>İntercalating Ajanlar (Akridin)</b>: {{c1::Çerçeve Kayması}} yapar</div><div><br></div><div><b>Alkilleyiciler</b>: {{c2::Guanin}} ile etkileşir</div><div><br></div><div><b>Hidroksilamin</b>: {{c2::Transversiyon}} (C -&gt; A)</div>",
-     "after": "<b>Mutasyon oluşma mekanizmaları:</b><div><br></div><div><b>Nitröz asit</b>: {{c1::deaminasyon}} yapar</div><div>(sitozin → urasil / adenin → hipoksantin /</div><div>guanin → ksantin)</div><div><br></div><div><b>İnterkalasyon yapan ajanlar (akridin)</b>: {{c1::çerçeve kayması}} yapar</div><div><br></div><div><b>Alkilleyiciler</b>: {{c2::guanin}} ile etkileşir</div><div><br></div><div><b>Hidroksilamin</b>: {{c2::transisyon}} (C → T)</div>"
+     "after": "<b>Mutasyon oluşma mekanizmaları:</b><div><br></div><div><b>Nitröz asit</b>: {{c1::deaminasyon}} yapar</div><div>(sitozin → urasil / adenin → hipoksantin /</div><div>{{c2::guanin}} → ksantin)</div><div><br></div><div><b>İnterkalasyon yapan ajanlar (akridin)</b>: {{c1::çerçeve kayması}} yapar</div><div><br></div><div><b>Alkilleyiciler</b>: {{c2::guanin}} ile etkileşir</div><div><br></div><div><b>Hidroksilamin</b>: {{c2::transisyon}} (C → T)</div>"
     }
    },
    "changes": [
@@ -723,11 +726,23 @@
      "category": "Biçim",
      "text": "-&gt; → →; \"DeAminasyon\", \"HipoKsantin\" ve diğer büyük harfler düzeltildi; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Hidroksilamin satırında cevap \"Transversiyon (C → A)\" → \"transisyon (C → T)\" yapıldı; İngilizce \"İntercalating Ajanlar\" Türkçe \"interkalasyon yapan ajanlar\" oldu.\nNeden: Hidroksilamin sitozini adeninle eşleşen N4-hidroksisitozine çevirir; sonuç pürin-pürin/pirimidin-pirimidin değişimi, yani transisyondur. Kart yanlış mutasyon tipini öğretiyordu.\nNasıl: [TD1, YP1, YZ2] c2 numarası ve satırın yeri korundu, yalnız mutasyon tipi ve parantezdeki baz değişimi düzeltildi; nitröz asit, akridin ve alkilleyici satırları doğru olduğundan yalnız biçimce temizlendi.\nKaynak: Lehninger Principles of Biochemistry, DNA hasarı ve mutajenler; Harper's Illustrated Biochemistry, mutasyon tipleri.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Hidroksilamin satırında cevap \"Transversiyon (C → A)\" → \"transisyon (C → T)\" yapıldı; İngilizce \"İntercalating Ajanlar\" Türkçe \"interkalasyon yapan ajanlar\" oldu.\nNeden: Hidroksilamin sitozini adeninle eşleşen N4-hidroksisitozine çevirir; sonuç pürin-pürin/pirimidin-pirimidin değişimi, yani transisyondur. Kart yanlış mutasyon tipini öğretiyordu.\nNasıl: [TD1, YP1, YZ2] c2 numarası ve satırın yeri korundu, yalnız mutasyon tipi ve parantezdeki baz değişimi düzeltildi; nitröz asit, akridin ve alkilleyici satırları doğru olduğundan yalnız biçimce temizlendi.\nKaynak: Lehninger Principles of Biochemistry, DNA hasarı ve mutajenler; Harper's Illustrated Biochemistry, mutasyon tipleri."
+    }
+   ]
   },
   {
    "order": 18,
@@ -968,7 +983,7 @@
    "fields": {
     "Text": {
      "before": "Kondroitin Sülfat: {{c1::GlcUA}} + {{c1::GalNAC}} / en bol GAG&nbsp;<div><br></div><div>Dermatan Sülfat: {{c1::IdUA}} + {{c1::GalNAC}}&nbsp;</div><div><br></div><div>Keratan Sülfat: {{c2::Gal}} + {{c2::GlcNAC}}</div><div><br></div><div>Heparin: {{c2::GlcUA}} + {{c2::GlcN}} / en çok sülfatlı&nbsp;</div><div><br></div><div>Heparan Sülfat: {{c3::GlcUA}} + {{c3::GlcN}} / BM'da LPL'yi bağlar</div><div><br></div><div>Hyaluronik Asit: {{c3::GlcUA}} + {{c3::GlcNAC}} / sülfat yok</div>",
-     "after": "Kondroitin sülfat: {{c1::GlcUA}} + {{c1::GalNAc}} / en bol glikozaminoglikan<div><br></div><div>Dermatan sülfat: {{c1::IdUA}} + {{c1::GalNAc}}</div><div><br></div><div>Keratan sülfat: {{c2::Gal}} + {{c2::GlcNAc}}</div><div><br></div><div>Heparin: {{c2::IdUA / GlcUA}} + {{c2::GlcN}} / en çok sülfatlı</div><div><br></div><div>Heparan sülfat: {{c3::GlcUA}} + {{c3::GlcN}} / kapiller endotelde LPL'yi bağlar</div><div><br></div><div>Hiyalüronik asit: {{c3::GlcUA}} + {{c3::GlcNAc}} / sülfat yok</div>"
+     "after": "Kondroitin sülfat: {{c3::{{c1::GlcUA}}::ilişkili yanıt arka yüzde}} + {{c1::GalNAc}} / en bol glikozaminoglikan<div><br></div><div>Dermatan sülfat: {{c1::IdUA}} + {{c1::GalNAc}}</div><div><br></div><div>Keratan sülfat: {{c2::Gal}} + {{c3::{{c2::GlcNAc}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Heparin: {{c1::{{c3::{{c2::IdUA / GlcUA}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} + {{c2::GlcN}} / en çok sülfatlı</div><div><br></div><div>Heparan sülfat: {{c1::{{c3::GlcUA}}::ilişkili yanıt arka yüzde}} + {{c3::GlcN}} / kapiller endotelde LPL'yi bağlar</div><div><br></div><div>Hiyalüronik asit: {{c1::{{c3::GlcUA}}::ilişkili yanıt arka yüzde}} + {{c2::{{c3::GlcNAc}}::ilişkili yanıt arka yüzde}} / sülfat yok</div>"
     }
    },
    "changes": [
@@ -995,11 +1010,23 @@
      "category": "Biçim",
      "text": "\"Sülfat\" sözcükleri küçük harfle yazıldı; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Heparin satırında \"GlcUA\" → \"IdUA / GlcUA\" ve heparan sülfat satırında \"BM'da\" → \"kapiller endotelde\" yapıldı; \"GalNAC/GlcNAC\" → \"GalNAc/GlcNAc\" ve \"Hyaluronik\" → \"Hiyalüronik\" yazıldı.\nNeden: Heparinin baskın üronik asidi iduronik asittir ve kart onu heparan sülfatla aynı gösteriyordu; LPL'nin bağlandığı yer kapiller endotelin yüzeyidir.\nNasıl: [TD1, YZ2, YP1] Altı satır, boş satırlar ve c1–c3 dağılımı korundu; heparin cevabına baskın üye IdUA önce gelecek biçimde eklendi, diğer satırların doğru eşleşmeleri değiştirilmedi.\nKaynak: Harper's Illustrated Biochemistry, glikozaminoglikanlar (heparinde L-iduronik asit); Lippincott Illustrated Reviews: Biochemistry, glikozaminoglikanlar ve lipoprotein lipaz.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Heparin satırında \"GlcUA\" → \"IdUA / GlcUA\" ve heparan sülfat satırında \"BM'da\" → \"kapiller endotelde\" yapıldı; \"GalNAC/GlcNAC\" → \"GalNAc/GlcNAc\" ve \"Hyaluronik\" → \"Hiyalüronik\" yazıldı.\nNeden: Heparinin baskın üronik asidi iduronik asittir ve kart onu heparan sülfatla aynı gösteriyordu; LPL'nin bağlandığı yer kapiller endotelin yüzeyidir.\nNasıl: [TD1, YZ2, YP1] Altı satır, boş satırlar ve c1–c3 dağılımı korundu; heparin cevabına baskın üye IdUA önce gelecek biçimde eklendi, diğer satırların doğru eşleşmeleri değiştirilmedi.\nKaynak: Harper's Illustrated Biochemistry, glikozaminoglikanlar (heparinde L-iduronik asit); Lippincott Illustrated Reviews: Biochemistry, glikozaminoglikanlar ve lipoprotein lipaz."
+    }
+   ]
   },
   {
    "order": 25,
@@ -1312,7 +1339,7 @@
    "topic": "Genel",
    "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin / Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Keton Sentezi:<div><br></div><div>2 Ac CoA --&gt; {{c1::AsetoAsetil- CoA}} ---<b>HMG CoA Sentaz</b>---&gt; {{c1::HMG CoA}} ---<b>HMG CoA Lyaz</b>---&gt; {{c1::AsetoAsetat}}</div>",
@@ -1320,7 +1347,7 @@
     },
     "Extra": {
      "before": "HMG Coa Lyaz sadece KC Mit'de&nbsp;",
-     "after": "HMG-KoA sentaz ve liyaz birlikte yalnız karaciğer mitokondrisinde bulunur."
+     "after": "Dolaşımdaki keton cisimlerinin başlıca üretim yeri karaciğer mitokondrisidir."
     }
    },
    "changes": [
@@ -1341,11 +1368,17 @@
      "category": "Biçim",
      "text": "\"---<b>...</b>---&gt;\" → \"→ <b>...</b> →\"; \"CoA\" → \"KoA\"; \"Lyaz\" → \"liyaz\"; CamelCase \"AsetoAsetil\", \"AsetoAsetat\" düzeltildi; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "Enzimlerin birlikte yalnız karaciğerde bulunması mutlak bir ifade; ekstrahepatik ketogenez deneysel olarak gösterilmiştir. Gemini bu mutlaklığı tamamen doğru diye onaylamış.",
+     "rationale": "Ana fizyolojik öğrenme hedefini koruyarak yalnız yerine dolaşımdaki ketonların başlıca üretim yerini belirt. Fare kolon verisinden insanlarda miktar veya klinik önem sonucu çıkarma. Kaynak: https://pubmed.ncbi.nlm.nih.gov/38372391/, https://pubmed.ncbi.nlm.nih.gov/34087430/"
     }
    ],
    "aiNote": "Ne: Extra \"HMG Coa Lyaz sadece KC Mit'de\" → \"HMG-KoA sentaz ve liyaz birlikte yalnız karaciğer mitokondrisinde bulunur.\" yapıldı; \"Ac CoA\", \"KC\" ve \"Mit\" açıldı, oklar \"→ enzim →\" biçimine getirildi.\nNeden: Liyaz tek başına karaciğere özgü değildir; ketojenezin yalnız karaciğerde olmasının nedeni iki enzimin orada birlikte bulunmasıdır. Kısaltmalar yazara özgüydü.\nNasıl: [TD1, KS1, YP1] Sentez basamakları, kalın enzim adları ve üç c1 korundu; Extra açıklama eklenmeden tek cümlede düzeltildi.\nKaynak: Harper's Illustrated Biochemistry, yağ asitlerinin oksidasyonu ve ketogenez (HMG-KoA sentaz ve liyaz karaciğer mitokondrisinde birlikte).",
    "decision": null,
-   "editorNote": null
+   "editorNote": "\nCodex 09.10.2026: Ana fizyolojik öğrenme hedefini koruyarak yalnız yerine dolaşımdaki ketonların başlıca üretim yerini belirt. Fare kolon verisinden insanlarda miktar veya klinik önem sonucu çıkarma."
   },
   {
    "order": 34,
@@ -1358,7 +1391,7 @@
    "fields": {
     "Text": {
      "before": "<b>IMP</b> Sentezi için {{c1::5}} mol ATP gerekir<div><br></div><div><b>UDP</b> Sentezi için: {{c1::3}} mol ATP {{c1::5}} tane Yüksek enerjili P bağı gerekir</div>",
-     "after": "<b>IMP</b> sentezi için {{c1::5}} mol ATP gerekir<div><br></div><div><b>UMP</b> sentezi için {{c1::3}} mol ATP, {{c1::5}} tane yüksek enerjili fosfat bağı gerekir</div>"
+     "after": "<b>IMP</b> sentezi için {{c1::5}} mol ATP gerekir<div><br></div><div><b>UMP</b> sentezi için {{c1::3}} mol ATP, {{c1::4}} tane yüksek enerjili fosfat bağı gerekir</div>"
     }
    },
    "changes": [
@@ -1379,11 +1412,17 @@
      "category": "Biçim",
      "text": "\"Sentezi\" → \"sentezi\"; \"Sentezi için:\" iki noktası kaldırıldı; \"3 mol ATP 5 tane\" arasına virgül kondu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "UMP satırındaki 3 ATP / 5 yüksek enerjili bağ birlikte yanlış. Gemini 3 ATP sayısını kontrol etmiş, 5 bağı atlamış.",
+     "rationale": "Riboz-5-fosfat başlangıcı ve PRPP üretimi dahil: CPS-II 2 ATP→2 ADP, PRPP 1 ATP→AMP; toplam 3 ATP molekülü ve 4 ATP eşdeğeri. Bağ sayısını 4 yap. IMP satırına bu bulgudan hareketle dokunma. Kaynak: https://reactome.org/content/detail/R-HSA-73577, https://reactome.org/content/detail/R-HSA-73580, https://reactome.org/content/detail/R-HSA-500753"
     }
    ],
    "aiNote": "Ne: \"UDP\" → \"UMP\" yapıldı, \"P bağı\" → \"fosfat bağı\" açıldı, büyük harfler ve noktalama düzeltildi; sayılar (5 ATP, 3 ATP, 5 bağ) korundu.\nNeden: 3 ATP ve 5 yüksek enerjili bağ, pirimidin yolunun UMP'ye kadar olan bölümünün maliyetidir; UDP'ye fosforilasyon bir ATP daha harcadığı için etiket sayıları yanlış ürüne bağlıyordu.\nNasıl: [TD1, KS1, BÇ1, YP1] Cevaplar doğru olduğundan en küçük düzeltme etikette yapıldı; kurstaki \"Sayısal değerler\" kartı (1628928200910) da aynı biçimde \"UMP\" olarak düzeltildi, c1 korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry ve Harper's Illustrated Biochemistry, pirimidin sentezi (karbamoil fosfat sentetaz II, PRPP sentetaz, orotat fosforiboziltransferaz, UMP kinaz).",
    "decision": null,
-   "editorNote": null
+   "editorNote": "\nCodex 09.10.2026: Riboz-5-fosfat başlangıcı ve PRPP üretimi dahil: CPS-II 2 ATP→2 ADP, PRPP 1 ATP→AMP; toplam 3 ATP molekülü ve 4 ATP eşdeğeri. Bağ sayısını 4 yap. IMP satırına bu bulgudan hareketle dokunma."
   },
   {
    "order": 35,
@@ -1514,7 +1553,7 @@
    "fields": {
     "Text": {
      "before": "Hc Prolif en iyi göstergesi:<div><br></div><div>{{c1::Putressin}} (Ornitin <b>Dekarboksilasyonu</b>)</div><div><br></div><div>-------&nbsp;</div><div><br></div><div>Tm Hc yıkımının en iyi göstergesi:</div><div><br></div><div>{{c1::Spermidin}} (Ornitin + <b>SAM</b>)</div>",
-     "after": "Hücre proliferasyonunun en iyi göstergesi:<div><br></div><div>{{c1::Putresin}} (ornitin <b>dekarboksilasyonu</b>)</div><div><br></div><div>-------</div><div><br></div><div>Tümör hücresi yıkımının en iyi göstergesi:</div><div><br></div><div>{{c1::Spermidin}} (putresin + dekarboksile <b>SAM</b>)</div>"
+     "after": "Hücre proliferasyonunun en iyi göstergesi:<div><br></div><div>{{c1::Putresin}} (ornitin <b>dekarboksilasyonu</b>)</div><div><br></div><div>-------</div><div><br></div><div>Tümör hücresi yıkımının en iyi göstergesi:</div><div><br></div><div>{{c1::Spermidin}} ({{c1::putresin}} + dekarboksile <b>SAM</b>)</div>"
     }
    },
    "changes": [
@@ -1541,11 +1580,23 @@
      "category": "Biçim",
      "text": "\"Dekarboksilasyonu\" küçük harfe çevrildi; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Spermidinin öncülleri \"(Ornitin + SAM)\" → \"(putresin + dekarboksile SAM)\" yapıldı; \"Hc Prolif\" ve \"Tm Hc\" açıldı, \"Putressin\" → \"Putresin\" yazıldı.\nNeden: Spermidin sentezinde propilamin vericisi dekarboksile SAM'dir ve alıcı putresindir; kart SAM'in ornitinle birleştiğini düşündürüyordu.\nNasıl: [TD1, KS1, YP1] Cevaplar, göstergeler ve ayırıcı çizgi korundu; yalnız parantezdeki öncül yazımı düzeltildi.\nKaynak: Harper's Illustrated Biochemistry, poliaminlerin biyosentezi; Lippincott Illustrated Reviews: Biochemistry, ornitin dekarboksilaz ve poliaminler.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Spermidinin öncülleri \"(Ornitin + SAM)\" → \"(putresin + dekarboksile SAM)\" yapıldı; \"Hc Prolif\" ve \"Tm Hc\" açıldı, \"Putressin\" → \"Putresin\" yazıldı.\nNeden: Spermidin sentezinde propilamin vericisi dekarboksile SAM'dir ve alıcı putresindir; kart SAM'in ornitinle birleştiğini düşündürüyordu.\nNasıl: [TD1, KS1, YP1] Cevaplar, göstergeler ve ayırıcı çizgi korundu; yalnız parantezdeki öncül yazımı düzeltildi.\nKaynak: Harper's Illustrated Biochemistry, poliaminlerin biyosentezi; Lippincott Illustrated Reviews: Biochemistry, ornitin dekarboksilaz ve poliaminler."
+    }
+   ]
   },
   {
    "order": 39,
@@ -1596,11 +1647,11 @@
    "topic": "Genel",
    "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin / Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>FlavoProtein Oksidazlar:</b><div><br></div><div>{{c1::Ksantin}} Oksidaz</div><div>{{c1::Aldehit}} DH</div><div>{{c1::L-Aa}} Oksidaz</div>",
-     "after": "<b>Flavoprotein oksidazlar:</b><div><br></div><div>{{c1::Ksantin}} oksidaz</div><div>{{c1::Aldehit}} dehidrogenaz</div><div>{{c1::L-amino asit}} oksidaz</div>"
+     "after": "<b>Flavoprotein oksidazlar:</b><div><br></div><div>{{c1::Ksantin}} oksidaz</div><div>{{c1::Aldehit}} oksidaz</div><div>{{c1::L-amino asit}} oksidaz</div>"
     },
     "Extra": {
      "before": "",
@@ -1625,11 +1676,17 @@
      "category": "Biçim",
      "text": "\"FlavoProtein Oksidazlar\" → \"Flavoprotein oksidazlar\"; \"Oksidaz\" → \"oksidaz\"",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "Ön yüzde flavoprotein oksidaz listesinde aldehit dehidrogenaz kalmış. Extra doğru enzimin aldehit oksidaz olduğunu söylüyor; bu ön yüzdeki yanlış adı düzeltmiyor.",
+     "rationale": "Aldehit satırındaki dehidrogenazı oksidaz olarak değiştir; mevcut cloze hedefi Aldehit korunur. Kaynak: https://www.uniprot.org/uniprotkb/P05091.html, https://www.uniprot.org/uniprotkb/Q06278/entry"
     }
    ],
    "aiNote": "Ne: \"DH\" ve \"L-Aa\" açıldı, CamelCase düzeltildi ve Extra'ya aldehit dehidrogenaz satırının FAD ve molibdenli aldehit oksidazı kastettiğini söyleyen tek cümle eklendi.\nNeden: Etanol metabolizmasındaki aldehit dehidrogenaz NAD+ kullanır ve flavoprotein değildir; kartın sınıflaması yalnız Harper'ın aynı adla verdiği FAD'lı molibdenli enzim için geçerlidir.\nNasıl: [TD2, KS1, YP1] Kaynakta geçen sınıflama ve c1 cevabı korundu, karışıklığı önleyen niteleyici arka yüze yazıldı; ksantin oksidaz ve L-amino asit oksidazın flavoprotein olduğu doğrulandı.\nKaynak: Harper's Illustrated Biochemistry, biyolojik oksidasyon bölümü (flavoprotein oksidazlar).",
    "decision": null,
-   "editorNote": null
+   "editorNote": "\nCodex 09.10.2026: Aldehit satırındaki dehidrogenazı oksidaz olarak değiştir; mevcut cloze hedefi Aldehit korunur."
   },
   {
    "order": 41,
@@ -1972,7 +2029,7 @@
    "fields": {
     "Text": {
      "before": "<b>MetalloEnzim - Kofaktörler:</b><br><br>{{c6::Selenyum}}:<br>{{c1::Glutatyon PerOx}}, Tioredoksin redüktaz, İyodotrionin Deiyodinaz, Selenofosfat Sentetaz<br><br>{{c6::Demir}}:<br>Hemoglobin, Myoglobin, Sitokromlar, {{c1::Katalaz}}, NO Sentetaz, Triptofan Pirolaz, Aromataz<br><br>{{c6::Bakır}}:<br>Sitokrom Oksidaz, {{c2::Dopamin Beta Hidroksilaz}}, Tirozinaz, {{c2::Lizil Oksidaz}}, Süperoksit Dismutaz ({{c2::Sitoplazmik}}), Monoamin Oksidaz<br><br>{{c6::Mangan}}:<br>İzositrat DH, Glutamin sentetaz, {{c3::Arjinaz}}, Pyr Karboksilaz, Fosfoenol Piruvat (PEP) Karboksikinaz, Süperoksit Dismutaz ({{c3::Mit}}), Galaktozil transferaz, Ribonükleotit redüktaz<br><br>{{c6::Çinko}}:<br>Karboksipeptidaz A-B, Karbonik Anhidraz, {{c4::Süperoksit Dismutaz}} (Sitoplazmik), Alkalen fosfataz, Adenozin deaminaz, Fosfolipaz C, Lösin aminopeptidaz, Alkol DH, {{c4::Matriks metalloproteinaz}}, {{c4::ALA dehidrataz}}, DNA polimeraz<br><br>{{c6::Molibden}}:<br>{{c5::Ksantin Oksidaz,}}, Sülfit oksidaz, Aldehit oksidaz<br><br>{{c6::Nikel}}:<br>{{c5::Üreaz}}",
-     "after": "<b>Metalloenzim - kofaktörler:</b><br><br>{{c6::Selenyum}}:<br>{{c1::Glutatyon peroksidaz}}, tiyoredoksin redüktaz, iyodotironin deiyodinaz, selenofosfat sentetaz<br><br>{{c6::Demir}}:<br>Hemoglobin, miyoglobin, sitokromlar, {{c1::katalaz}}, NO sentaz, triptofan pirolaz, aromataz, ribonükleotid redüktaz<br><br>{{c6::Bakır}}:<br>Sitokrom oksidaz, {{c2::dopamin beta-hidroksilaz}}, tirozinaz, {{c2::lizil oksidaz}}, süperoksit dismutaz ({{c2::sitoplazmik}}), amin oksidaz<br><br>{{c6::Mangan}}:<br>İzositrat dehidrogenaz, glutamin sentetaz, {{c3::arjinaz}}, pirüvat karboksilaz, fosfoenolpirüvat (PEP) karboksikinaz, süperoksit dismutaz ({{c3::mitokondriyal}}), galaktoziltransferaz<br><br>{{c6::Çinko}}:<br>Karboksipeptidaz A ve B, karbonik anhidraz, {{c4::süperoksit dismutaz}}, alkalen fosfataz, adenozin deaminaz, fosfolipaz C, lösin aminopeptidaz, alkol dehidrogenaz, {{c4::matriks metalloproteinaz}}, {{c4::ALA dehidrataz}}, DNA polimeraz<br><br>{{c6::Molibden}}:<br>{{c5::Ksantin oksidaz}}, sülfit oksidaz, aldehit oksidaz<br><br>{{c6::Nikel}}:<br>{{c5::Üreaz}}"
+     "after": "<b>Metalloenzim - kofaktörler:</b><br><br>{{c6::Selenyum}}:<br>{{c1::Glutatyon peroksidaz}}, tiyoredoksin redüktaz, iyodotironin deiyodinaz, selenofosfat sentetaz<br><br>{{c6::Demir}}:<br>Hemoglobin, miyoglobin, sitokromlar, {{c1::katalaz}}, NO sentaz, triptofan pirolaz, aromataz, ribonükleotid redüktaz<br><br>{{c6::Bakır}}:<br>Sitokrom oksidaz, {{c2::dopamin beta-hidroksilaz}}, tirozinaz, {{c2::lizil oksidaz}}, {{c4::süperoksit dismutaz}} ({{c2::sitoplazmik}}), amin oksidaz<br><br>{{c6::Mangan}}:<br>İzositrat dehidrogenaz, glutamin sentetaz, {{c3::arjinaz}}, pirüvat karboksilaz, fosfoenolpirüvat (PEP) karboksikinaz, {{c4::süperoksit dismutaz}} ({{c3::mitokondriyal}}), galaktoziltransferaz<br><br>{{c6::Çinko}}:<br>Karboksipeptidaz A ve B, karbonik anhidraz, {{c4::süperoksit dismutaz}}, alkalen fosfataz, adenozin deaminaz, fosfolipaz C, lösin aminopeptidaz, alkol dehidrogenaz, {{c4::matriks metalloproteinaz}}, {{c4::ALA dehidrataz}}, DNA polimeraz<br><br>{{c6::Molibden}}:<br>{{c5::Ksantin oksidaz}}, sülfit oksidaz, aldehit oksidaz<br><br>{{c6::Nikel}}:<br>{{c5::Üreaz}}"
     },
     "Extra": {
      "before": "ÖNEMLİ - Çıkmış",
@@ -2009,11 +2066,23 @@
      "category": "Biçim",
      "text": "\"Ksantin Oksidaz,}},\" içindeki fazla virgül silindi; Title Case düzeltildi; Extra'daki \"ÖNEMLİ - Çıkmış\" notu kaldırıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Bakır listesindeki \"Monoamin Oksidaz\" → \"amin oksidaz\" yapıldı ve Extra'ya MAO'nun FAD içerdiği yazıldı; ribonükleotid redüktaz manganden demire taşındı; çinko satırındaki c2 cevabını açığa veren \"(Sitoplazmik)\" kaldırıldı ve kısaltmalar açıldı.\nNeden: MAO bir flavoenzimdir, insan ribonükleotid redüktazı demir kullanır; kart iki enzimi yanlış metalle öğretiyordu. Çinko satırındaki \"sitoplazmik\" sözcüğü c2 kartında cevabı gösteriyordu.\nNasıl: [TD1, YP2, YP1, KS1] Satır düzeni, yedi metal başlığı ve c1–c6 numaraları korundu; yanlış iki üye en küçük değişiklikle düzeltildi, sitoplazmik SOD'un hem bakır hem çinko taşıdığı bilgisi bakır satırındaki c2'de kaldı. Kişisel işaret taşıyan Extra yalnız düzeltme cümlesini taşıyacak biçimde yeniden yazıldı.\nKaynak: Harper's Illustrated Biochemistry, metalloenzimler ve monoamin oksidaz; Lehninger Principles of Biochemistry, ribonükleotid redüktazın demir-tirozil radikal mekanizması.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Bakır listesindeki \"Monoamin Oksidaz\" → \"amin oksidaz\" yapıldı ve Extra'ya MAO'nun FAD içerdiği yazıldı; ribonükleotid redüktaz manganden demire taşındı; çinko satırındaki c2 cevabını açığa veren \"(Sitoplazmik)\" kaldırıldı ve kısaltmalar açıldı.\nNeden: MAO bir flavoenzimdir, insan ribonükleotid redüktazı demir kullanır; kart iki enzimi yanlış metalle öğretiyordu. Çinko satırındaki \"sitoplazmik\" sözcüğü c2 kartında cevabı gösteriyordu.\nNasıl: [TD1, YP2, YP1, KS1] Satır düzeni, yedi metal başlığı ve c1–c6 numaraları korundu; yanlış iki üye en küçük değişiklikle düzeltildi, sitoplazmik SOD'un hem bakır hem çinko taşıdığı bilgisi bakır satırındaki c2'de kaldı. Kişisel işaret taşıyan Extra yalnız düzeltme cümlesini taşıyacak biçimde yeniden yazıldı.\nKaynak: Harper's Illustrated Biochemistry, metalloenzimler ve monoamin oksidaz; Lehninger Principles of Biochemistry, ribonükleotid redüktazın demir-tirozil radikal mekanizması."
+    }
+   ]
   },
   {
    "order": 51,
@@ -3014,11 +3083,11 @@
    "topic": "Proteinler",
    "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin / Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Sayısal Değerler:<div><br></div><div>\n\n<b>IMP</b>&nbsp;Sentezi --&gt; {{c1::5}} &nbsp;ATP<div><br></div>\n<div>\n<b>UDP</b>&nbsp;Sentezi --&gt; {{c1::3}} ATP / {{c1::5}} YEPB (Yüksek Enerjili Fosfat Bağı)</div></div><div><br></div><div><b>Üre Siklusu</b> --&gt; {{c2::3}} ATP / {{c2::4}} YEPB</div><div><br></div><div><b>Mevalonat</b> Sentezi --&gt; {{c2::3}} ATP / {{c2::2}} NADPH</div><div><br></div><div><b>GGT Döngüsü</b> --&gt; {{c2::3}} ATP</div>",
-     "after": "Sayısal değerler:<div><br></div><div><b>IMP</b> sentezi → {{c1::5}} ATP<div><br></div><div><b>UMP</b> sentezi → {{c1::3}} ATP / {{c1::5}} YEPB (yüksek enerjili fosfat bağı)</div></div><div><br></div><div><b>Üre siklusu</b> → {{c2::3}} ATP / {{c2::4}} YEPB</div><div><br></div><div><b>Mevalonat</b> yolu (asetil-KoA → izopentenil pirofosfat) → {{c2::3}} ATP / {{c2::2}} NADPH</div><div><br></div><div><b>GGT döngüsü</b> → {{c2::3}} ATP</div>"
+     "after": "Sayısal değerler:<div><br></div><div><b>IMP</b> sentezi → {{c1::5}} ATP<div><br></div><div><b>UMP</b> sentezi → {{c1::3}} ATP / {{c1::4}} YEPB (yüksek enerjili fosfat bağı)</div></div><div><br></div><div><b>Üre siklusu</b> → {{c2::3}} ATP / {{c2::4}} YEPB</div><div><br></div><div><b>Mevalonat</b> yolu (asetil-KoA → izopentenil pirofosfat) → {{c2::3}} ATP / {{c2::2}} NADPH</div><div><br></div><div><b>GGT döngüsü</b> → {{c2::3}} ATP</div>"
     },
     "Extra": {
      "before": "YEPB --&gt; Yüksek Enerjili Fosfat Bağı",
@@ -3037,11 +3106,17 @@
      "category": "Biçim",
      "text": "\"--&gt;\" → \"→\"; büyük harfler düzeltildi; &nbsp; ve alan içindeki ham satır sonları temizlendi (boş satır sayısı bu ham satır sonlarından düştü)",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "UMP satırındaki 3 ATP / 5 yüksek enerjili bağ birlikte yanlış. Gemini 3 ATP sayısını kontrol etmiş, 5 bağı atlamış.",
+     "rationale": "Riboz-5-fosfat başlangıcı ve PRPP üretimi dahil: CPS-II 2 ATP→2 ADP, PRPP 1 ATP→AMP; toplam 3 ATP molekülü ve 4 ATP eşdeğeri. Bağ sayısını 4 yap. IMP satırına bu bulgudan hareketle dokunma. Kaynak: https://reactome.org/content/detail/R-HSA-73577, https://reactome.org/content/detail/R-HSA-73580, https://reactome.org/content/detail/R-HSA-500753"
     }
    ],
    "aiNote": "Ne: \"UDP Sentezi\" → \"UMP sentezi\" ve \"Mevalonat Sentezi\" → \"Mevalonat yolu (asetil-KoA → izopentenil pirofosfat)\" yapıldı; cevap sayılarının hiçbiri değişmedi.\nNeden: 3 ATP pirimidin yolunda UMP'ye kadar harcanan miktardır; mevalonat sentezinin kendisi yalnız 2 NADPH kullanır ve 3 ATP sonraki aktif izopren basamağına aittir, bu yüzden iki etiket sayıyı yanlış basamağa bağlıyordu.\nNasıl: [TD1, YP1] Cevaplar doğru olduğundan en küçük düzeltme etiketlerde yapıldı; IMP için 5 ATP, üre siklusu için 3 ATP / 4 yüksek enerjili bağ ve gama-glutamil döngüsü için 3 ATP doğrulanıp korundu, c1 ve c2 dağılımı aynı kaldı.\nKaynak: Harper's Illustrated Biochemistry, nükleotid metabolizması ve kolesterol sentezi bölümleri; Lippincott Illustrated Reviews: Biochemistry, kolesterol sentezi (HMG-KoA redüktaz, 2 NADPH).",
    "decision": null,
-   "editorNote": null
+   "editorNote": "\nCodex 09.10.2026: Riboz-5-fosfat başlangıcı ve PRPP üretimi dahil: CPS-II 2 ATP→2 ADP, PRPP 1 ATP→AMP; toplam 3 ATP molekülü ve 4 ATP eşdeğeri. Bağ sayısını 4 yap. IMP satırına bu bulgudan hareketle dokunma."
   },
   {
    "order": 76,
@@ -3390,13 +3465,13 @@
    "noteId": 1607193817282,
    "guid": "cjumEHKn0P",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c2::Süksinat}} ---{{c1::Suc DH}} ---&gt; {{c2::Fumarat}}",
-     "after": "{{c2::Süksinat}} (enzim: {{c1::süksinat dehidrogenaz}}) → {{c2::fumarat}}"
+     "after": "{{c2::Süksinat}} (enzim: {{c2::{{c1::süksinat dehidrogenaz}}::ilişkili yanıt arka yüzde}}) → {{c2::fumarat}}"
     }
    },
    "changes": [
@@ -3411,11 +3486,23 @@
      "category": "Biçim",
      "text": "Tireli ok \"(enzim: …) →\" biçiminde yazıldı; \"Fumarat\" küçük harfle yazıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Substrat yanıtı enzim alanında açık kalmıyor; enzim için mevcut c1 sorusu korunuyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Suc DH\" → \"süksinat dehidrogenaz\" açıldı ve tireli ok \"(enzim: …) →\" oldu.\nNeden: \"Suc\" ve \"DH\" kişisel kısaltmalardı.\nNasıl: [KS1, BÇ1, YP1] Tepkime doğru olduğundan c1 ve c2 sırası korundu.",
+   "aiNote": "Ne: Substrat yanıtı enzim alanında açık kalmıyor; enzim için mevcut c1 sorusu korunuyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Suc DH\" → \"süksinat dehidrogenaz\" açıldı ve tireli ok \"(enzim: …) →\" oldu.\nNeden: \"Suc\" ve \"DH\" kişisel kısaltmalardı.\nNasıl: [KS1, BÇ1, YP1] Tepkime doğru olduğundan c1 ve c2 sırası korundu."
+    }
+   ]
   },
   {
    "order": 87,
@@ -3736,13 +3823,13 @@
    "noteId": 1607255080918,
    "guid": "pC*sSo~;8}",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Hem ---- {{c1::Hem Oksijenaz}} ---&gt; {{c2::Biliverdin}} + {{c2::CO}} + {{c2::Fe2+}}&nbsp;<div><br></div><div>{{c2::Biliverdin}} ---{{c1::Biliverdin Reduktaz}} ---&gt; Bilirubin</div>",
-     "after": "Hem (enzim: {{c1::hem oksijenaz}}) → {{c2::biliverdin}} + {{c2::CO}} + {{c2::Fe2+}}<div><br></div><div>{{c2::Biliverdin}} (enzim: {{c1::biliverdin redüktaz}}) → bilirubin</div>"
+     "after": "Hem (enzim: {{c1::hem oksijenaz}}) → {{c2::biliverdin}} + {{c2::CO}} + {{c2::Fe2+}}<div><br></div><div>{{c2::Biliverdin}} (enzim: {{c2::{{c1::biliverdin redüktaz}}::ilişkili yanıt arka yüzde}}) → bilirubin</div>"
     }
    },
    "changes": [
@@ -3757,11 +3844,23 @@
      "category": "Biçim",
      "text": "Tireli oklar \"(enzim: …) →\" biçiminde yazıldı; satır içindeki büyük harfler küçültüldü; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Tireli oklar \"(enzim: …) →\" yazıldı, \"Reduktaz\" → \"redüktaz\" düzeltildi ve satır içindeki büyük harfler küçültüldü.\nNeden: Tireli oklar ve enzim adındaki yazım hatası ev stiline uymuyordu.\nNasıl: [YZ2, BÇ1, TD3] Hem oksijenazın hemi biliverdin, CO ve Fe2+'ya, biliverdin redüktazın biliverdini bilirubine çevirdiği doğru olduğundan iki satır ve c1/c2 korundu, arka yüz boş bırakıldı.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Tireli oklar \"(enzim: …) →\" yazıldı, \"Reduktaz\" → \"redüktaz\" düzeltildi ve satır içindeki büyük harfler küçültüldü.\nNeden: Tireli oklar ve enzim adındaki yazım hatası ev stiline uymuyordu.\nNasıl: [YZ2, BÇ1, TD3] Hem oksijenazın hemi biliverdin, CO ve Fe2+'ya, biliverdin redüktazın biliverdini bilirubine çevirdiği doğru olduğundan iki satır ve c1/c2 korundu, arka yüz boş bırakıldı."
+    }
+   ]
   },
   {
    "order": 97,
@@ -4222,13 +4321,13 @@
    "noteId": 1611005791572,
    "guid": "QCB5zF>U1y",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::Karbamoil P}} + {{c1::Ornitin}} --<b>OTC</b>--&gt; {{c1::Sitrülin}}<div><br></div><div>{{c1::Sitrülin}} + {{c2::Asp}} --<b>ArgSuc Sentetaz</b> --&gt; {{c2::ArgSuc}}</div><div><br></div><div>{{c2::ArgSuc}} --<b>ArgSuc Lyaz</b>--&gt; {{c3::Arg}} + {{c3::Fumarat}}</div><div><br></div><div>{{c3::Arg}} --<b>Arginaz</b> --&gt; {{c3::Üre}} + {{c3::Ornitin}}</div>",
-     "after": "{{c1::Karbamoil fosfat}} + {{c1::ornitin}} → <b>OTC</b> → {{c1::sitrülin}}<div><br></div><div>{{c1::Sitrülin}} + {{c2::Asp}} → <b>argininosüksinat sentetaz</b> → {{c2::argininosüksinat}}</div><div><br></div><div>{{c2::Argininosüksinat}} → <b>argininosüksinat liyaz</b> → {{c3::Arg}} + {{c3::fumarat}}</div><div><br></div><div>{{c3::Arg}} → <b>arjinaz</b> → {{c3::üre}} + {{c3::ornitin}}</div>"
+     "after": "{{c1::Karbamoil fosfat}} + {{c3::{{c1::ornitin}}::ilişkili yanıt arka yüzde}} → <b>OTC</b> → {{c1::sitrülin}}<div><br></div><div>{{c1::Sitrülin}} + {{c2::Asp}} → <b>{{c2::argininosüksinat}} sentetaz</b> → {{c2::argininosüksinat}}</div><div><br></div><div>{{c2::Argininosüksinat}} → <b>{{c2::argininosüksinat}} liyaz</b> → {{c3::Arg}} + {{c3::fumarat}}</div><div><br></div><div>{{c3::Arg}} → <b>arjinaz</b> → {{c3::üre}} + {{c1::{{c3::ornitin}}::ilişkili yanıt arka yüzde}}</div>"
     }
    },
    "changes": [
@@ -4249,24 +4348,36 @@
      "category": "Biçim",
      "text": "\"--OTC--&gt;\" gibi etiketli oklar \"→ <b>OTC</b> →\" biçimine çevrildi; büyük harfler düzeltildi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"ArgSuc\" → \"argininosüksinat\" ve \"Karbamoil P\" → \"Karbamoil fosfat\" açıldı, \"Lyaz\" → \"liyaz\", \"Arginaz\" → \"arjinaz\" yazıldı; enzim etiketli oklar \"→ enzim →\" biçimine getirildi.\nNeden: \"ArgSuc\" ve \"P\" yazara özgü kısaltmalardı; enzim adları ders genelindeki yazımdan farklıydı.\nNasıl: [KS1, YZ1, YP1] Üre döngüsünün dört basamağı doğru olduğundan korundu; kalın enzim adları, satır düzeni ve c1, c2, c3 dağılımı aynı kaldı.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"ArgSuc\" → \"argininosüksinat\" ve \"Karbamoil P\" → \"Karbamoil fosfat\" açıldı, \"Lyaz\" → \"liyaz\", \"Arginaz\" → \"arjinaz\" yazıldı; enzim etiketli oklar \"→ enzim →\" biçimine getirildi.\nNeden: \"ArgSuc\" ve \"P\" yazara özgü kısaltmalardı; enzim adları ders genelindeki yazımdan farklıydı.\nNasıl: [KS1, YZ1, YP1] Üre döngüsünün dört basamağı doğru olduğundan korundu; kalın enzim adları, satır düzeni ve c1, c2, c3 dağılımı aynı kaldı."
+    }
+   ]
   },
   {
    "order": 111,
    "noteId": 1611044283600,
    "guid": "oUyp01$~JY",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "\n\nPorfirin yan grupları:<div><br></div>\n<div>{{c1::Metil}} - {{c1::Vinil}} - {{c1::Propiyonat}} - {{c1::Asetat}}</div>\n<div><br></div>\n<div>\n<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Üro}}</span><b>porfirin</b>: Ac + Propiyonat</div>\n<div><br></div>\n<div>\n<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Kopro}}</span><b>porfirin</b>: Metil + Propiyonat</div>\n<div><br></div>\n<div>\n<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Proto}}</span><b>porfirin</b>: Metil + Vinil + Propiyonat</div>\n<div><br></div>\n<div>Suda en iyi çözünen: {{c2::Üroporfirin}}</div>\n<div><br></div>\n<div>En kötü çözünen: {{c2::Protoporfirin}}</div>",
-     "after": "Porfirin yan grupları:<div><br></div><div>{{c1::Metil}}, {{c1::vinil}}, {{c1::propiyonat}}, {{c1::asetat}}</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Üro}}</span><b>porfirin</b>: asetat + propiyonat</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Kopro}}</span><b>porfirin</b>: metil + propiyonat</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Proto}}</span><b>porfirin</b>: metil + vinil + propiyonat</div><div><br></div><div>Suda en iyi çözünen: {{c2::üroporfirin}}</div><div><br></div><div>En kötü çözünen: {{c2::protoporfirin}}</div>"
+     "after": "Porfirin yan grupları:<div><br></div><div>{{c1::Metil}}, {{c1::vinil}}, {{c1::propiyonat}}, {{c1::asetat}}</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Üro}}</span><b>porfirin</b>: {{c1::asetat}} + {{c1::propiyonat}}</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Kopro}}</span><b>porfirin</b>: {{c1::metil}} + {{c1::propiyonat}}</div><div><br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Proto}}</span><b>porfirin</b>: {{c1::metil}} + {{c1::vinil}} + {{c1::propiyonat}}</div><div><br></div><div>Suda en iyi çözünen: {{c2::üroporfirin}}</div><div><br></div><div>En kötü çözünen: {{c2::protoporfirin}}</div>"
     }
    },
    "changes": [
@@ -4281,11 +4392,23 @@
      "category": "Biçim",
      "text": "\" - \" ayraçları virgül yapıldı; yan grup adları satır içinde küçük harfe çevrildi; ham HTML'deki satır sonu karakterleri temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Ac + Propiyonat\" → \"asetat + propiyonat\" açıldı, ilk satırdaki tire ayraçları virgül oldu ve satır içi adlar küçük harfle yazıldı.\nNeden: \"Ac\" yazara özgü kısaltmaydı; porfirin yan grupları ve çözünürlük sıralaması doğruydu.\nNasıl: [KS1, BÇ1, YP3] Üroporfirinin en çok, protoporfirinin en az çözündüğü bilgisi, renk span'ları, kalın \"porfirin\" ekleri ve c1/c2 dağılımı korundu.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Ac + Propiyonat\" → \"asetat + propiyonat\" açıldı, ilk satırdaki tire ayraçları virgül oldu ve satır içi adlar küçük harfle yazıldı.\nNeden: \"Ac\" yazara özgü kısaltmaydı; porfirin yan grupları ve çözünürlük sıralaması doğruydu.\nNasıl: [KS1, BÇ1, YP3] Üroporfirinin en çok, protoporfirinin en az çözündüğü bilgisi, renk span'ları, kalın \"porfirin\" ekleri ve c1/c2 dağılımı korundu."
+    }
+   ]
   },
   {
    "order": 112,
@@ -4594,13 +4717,13 @@
    "noteId": 1611145345061,
    "guid": "K=?tgM*@v9",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Ksiluloz 5-P}} + {{c1::Riboz 5-P&nbsp;}}</span><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">---<b>TransKetolaz</b>--&gt;</span><br><div><br></div><div>{{c1::Seduloz 7-P}} + {{c1::GA 3-P}}&nbsp;</div><div><br></div><div>---<b>TransAldolaz</b>--&gt;</div><div><br></div><div>{{c2::Eritroz 4-P}} + {{c2::Fru 6-P}}</div><div><br></div><div><br></div><div>{{c2::Ksiluloz 5-P}} + {{c2::Eritroz 4-P&nbsp;}}</div><div><br></div><div>---<b>TransKetolaz</b>--&gt;</div><div><br></div><div>{{c3::Fru 6-P}} + {{c3::GliserAldehit 3-P}}</div><div><br></div><div><br></div></div>",
-     "after": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Ksiluloz 5-fosfat}} + {{c1::riboz 5-fosfat}}</span><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">→ <b>transketolaz</b> →</span><br><div><br></div><div>{{c1::Sedoheptuloz 7-fosfat}} + {{c1::gliseraldehit 3-fosfat}}</div><div><br></div><div>→ <b>transaldolaz</b> →</div><div><br></div><div>{{c2::Eritroz 4-fosfat}} + {{c2::fruktoz 6-fosfat}}</div><div><br></div><div><br></div><div>{{c2::Ksiluloz 5-fosfat}} + {{c2::eritroz 4-fosfat}}</div><div><br></div><div>→ <b>transketolaz</b> →</div><div><br></div><div>{{c3::Fruktoz 6-fosfat}} + {{c3::gliseraldehit 3-fosfat}}</div></div>"
+     "after": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::{{c1::Ksiluloz 5-fosfat}}::ilişkili yanıt arka yüzde}} + {{c1::riboz 5-fosfat}}</span><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">→ <b>transketolaz</b> →</span><br><div><br></div><div>{{c1::Sedoheptuloz 7-fosfat}} + {{c3::{{c1::gliseraldehit 3-fosfat}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>→ <b>transaldolaz</b> →</div><div><br></div><div>{{c2::Eritroz 4-fosfat}} + {{c3::{{c2::fruktoz 6-fosfat}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><br></div><div>{{c1::{{c2::Ksiluloz 5-fosfat}}::ilişkili yanıt arka yüzde}} + {{c2::eritroz 4-fosfat}}</div><div><br></div><div>→ <b>transketolaz</b> →</div><div><br></div><div>{{c2::{{c3::Fruktoz 6-fosfat}}::ilişkili yanıt arka yüzde}} + {{c1::{{c3::gliseraldehit 3-fosfat}}::ilişkili yanıt arka yüzde}}</div></div>"
     }
    },
    "changes": [
@@ -4621,11 +4744,23 @@
      "category": "Biçim",
      "text": "\"---<b>TransKetolaz</b>--&gt;\" → \"→ <b>transketolaz</b> →\"; CamelCase \"GliserAldehit\", \"TransAldolaz\" düzeltildi; sondaki iki boş satır ve &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Seduloz\" → \"Sedoheptuloz\" düzeltildi, \"GA 3-P\", \"Fru 6-P\" ve \"-P\" kısaltmaları açıldı; enzim etiketli oklar \"→ transketolaz →\" biçimine getirildi.\nNeden: Şekerin adı yanlış yazılmıştı; \"GA\" ve \"Fru\" yazara özgü kısaltmalardı. Pentoz fosfat yolunun oksidatif olmayan basamakları doğruydu.\nNasıl: [YZ2, KS1, YP3] Renk span'ları, kalın enzim adları, aradaki boş satırlar ve c1, c2, c3 dağılımı korundu; yalnız sondaki boş satırlar temizlendi.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Seduloz\" → \"Sedoheptuloz\" düzeltildi, \"GA 3-P\", \"Fru 6-P\" ve \"-P\" kısaltmaları açıldı; enzim etiketli oklar \"→ transketolaz →\" biçimine getirildi.\nNeden: Şekerin adı yanlış yazılmıştı; \"GA\" ve \"Fru\" yazara özgü kısaltmalardı. Pentoz fosfat yolunun oksidatif olmayan basamakları doğruydu.\nNasıl: [YZ2, KS1, YP3] Renk span'ları, kalın enzim adları, aradaki boş satırlar ve c1, c2, c3 dağılımı korundu; yalnız sondaki boş satırlar temizlendi."
+    }
+   ]
   },
   {
    "order": 122,
@@ -7430,13 +7565,13 @@
    "noteId": 1607277074299,
    "guid": "ow-IZ9([SN",
    "topic": "Hormon ve Vitaminler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c2::HomoCys}} ---- {{c1::Met Sentaz}} + {{c1::Metil}} Kobalamin---&gt; {{c2::Met}}<div><br></div><div>{{c2::Metil Malonil CoA}} --- {{c1::Metil Malonil CoA Mutaz}} + {{c1::DeoksiAdenozil}} Kobalamin ---&gt; {{c2::Suc CoA}}</div>",
-     "after": "{{c2::Homosistein}} (enzim: {{c1::metiyonin sentaz}} + {{c1::metil}}kobalamin) → {{c2::Met}}<div><br></div><div>{{c2::Metilmalonil-KoA}} (enzim: {{c1::metilmalonil-KoA mutaz}} + {{c1::deoksiadenozil}}kobalamin) → {{c2::süksinil-KoA}}</div>"
+     "after": "{{c2::Homosistein}} (enzim: {{c1::metiyonin sentaz}} + {{c1::metil}}kobalamin) → {{c2::Met}}<div><br></div><div>{{c2::Metilmalonil-KoA}} (enzim: {{c2::{{c1::metilmalonil-KoA mutaz}}::ilişkili yanıt arka yüzde}} + {{c1::deoksiadenozil}}kobalamin) → {{c2::süksinil-KoA}}</div>"
     }
    },
    "changes": [
@@ -7457,11 +7592,23 @@
      "category": "Biçim",
      "text": "Tireli oklar \"(enzim: …) →\" biçiminde yazıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"HomoCys\", \"Met Sentaz\" ve \"Suc CoA\" açıldı; \"Metil Malonil CoA\" → \"Metilmalonil-KoA\" ve kobalamin adları bitişik yazıldı, tireli oklar \"(enzim: …) →\" oldu.\nNeden: Kişisel kısaltmalar ve ayrı yazılmış bileşik adlar ev stiline uymuyordu; kart tıbben doğruydu.\nNasıl: [KS1, YZ1, TD3] Metiyonin sentazın metilkobalamin, metilmalonil-KoA mutazın deoksiadenozilkobalamin kullandığı doğru olduğundan c1/c2 dağılımı korundu; Met amino asit kodu olarak bırakıldı.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"HomoCys\", \"Met Sentaz\" ve \"Suc CoA\" açıldı; \"Metil Malonil CoA\" → \"Metilmalonil-KoA\" ve kobalamin adları bitişik yazıldı, tireli oklar \"(enzim: …) →\" oldu.\nNeden: Kişisel kısaltmalar ve ayrı yazılmış bileşik adlar ev stiline uymuyordu; kart tıbben doğruydu.\nNasıl: [KS1, YZ1, TD3] Metiyonin sentazın metilkobalamin, metilmalonil-KoA mutazın deoksiadenozilkobalamin kullandığı doğru olduğundan c1/c2 dağılımı korundu; Met amino asit kodu olarak bırakıldı."
+    }
+   ]
   },
   {
    "order": 207,
@@ -9438,13 +9585,13 @@
    "noteId": 1604154509944,
    "guid": "Rhg{@VN*fJ",
    "topic": "Lipitler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Propionil CoA ----{{c1::Propionil CoA Karboksilaz}}--&gt; {{c2::Metil Malonil CoA&nbsp;}}<div><br></div><div>{{c2::Metil Malonil CoA}} ----{{c1::Metil Malonil CoA Mutaz (B12)}}--&gt; {{c2::Suc CoA}}</div>",
-     "after": "Propiyonil-KoA → {{c1::propiyonil-KoA karboksilaz}} → {{c2::metilmalonil-KoA}}<div><br></div><div>{{c2::Metilmalonil-KoA}} → {{c1::metilmalonil-KoA mutaz (B12)}} → {{c2::süksinil-KoA}}</div>"
+     "after": "Propiyonil-KoA → {{c1::propiyonil-KoA karboksilaz}} → {{c2::metilmalonil-KoA}}<div><br></div><div>{{c2::Metilmalonil-KoA}} → {{c2::{{c1::metilmalonil-KoA mutaz (B12)}}::ilişkili yanıt arka yüzde}} → {{c2::süksinil-KoA}}</div>"
     }
    },
    "changes": [
@@ -9465,11 +9612,23 @@
      "category": "Biçim",
      "text": "Reaksiyon okları → ile değiştirildi; küçük harfler düzenlendi; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Propionil\" → \"Propiyonil\", \"Metil Malonil\" → \"metilmalonil\", \"Suc CoA\" → \"süksinil-KoA\" ve \"CoA\" → \"-KoA\" olarak düzeltildi; c1 ve c2 ordinalleri korundu.\nNeden: \"Suc\" kişisel kısaltmaydı; KoA bileşiklerinin yazımı ve enzim adlarındaki harf kullanımı düzensizdi.\nNasıl: [KS1, YZ1, BÇ1, YP1] Kılavuza uygun olarak -KoA eki ve Türkçe terimler uygulandı; c1 (enzimler) ve c2 (ara/son ürünler) dağılımı aynen korundu.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Propionil\" → \"Propiyonil\", \"Metil Malonil\" → \"metilmalonil\", \"Suc CoA\" → \"süksinil-KoA\" ve \"CoA\" → \"-KoA\" olarak düzeltildi; c1 ve c2 ordinalleri korundu.\nNeden: \"Suc\" kişisel kısaltmaydı; KoA bileşiklerinin yazımı ve enzim adlarındaki harf kullanımı düzensizdi.\nNasıl: [KS1, YZ1, BÇ1, YP1] Kılavuza uygun olarak -KoA eki ve Türkçe terimler uygulandı; c1 (enzimler) ve c2 (ara/son ürünler) dağılımı aynen korundu."
+    }
+   ]
   },
   {
    "order": 264,
@@ -12184,13 +12343,13 @@
    "noteId": 1604160406841,
    "guid": "A#Y[GGGNDk",
    "topic": "Proteinler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Kemik Yıkım (<b>OsteoKlastik</b>) Göstergeler&nbsp;<div><br></div><div>{{c1::Asit fosfataz&nbsp;}}<div>{{c2::Telopeptidaz}}</div><div>İdrar {{c3::OH-Pro}} / {{c3::OH-Lys}}&nbsp;</div><div>Glikozit {{c1::OH-Lys}}</div><div><b>C- Terminal / N- Terminal&nbsp;</b>{{c2::Telopeptid&nbsp;}}</div><div>{{c3::Piridinyum}}<b>&nbsp;Çapraz Bağları&nbsp;</b></div></div>",
-     "after": "Kemik yıkım (<b>osteoklastik</b>) göstergeleri:<div><br></div><div><div>{{c1::Asit fosfataz}}</div><div>{{c2::Telopeptidaz}}</div><div>İdrarda {{c3::hidroksiprolin}} / {{c3::hidroksilizin}}</div><div>Glikozil-{{c1::hidroksilizin}}</div><div><b>C-terminal ve N-terminal</b> {{c2::telopeptidler}}</div><div>{{c3::Piridinyum}} <b>çapraz bağları</b></div></div>"
+     "after": "Kemik yıkım (<b>osteoklastik</b>) göstergeleri:<div><br></div><div><div>{{c1::Asit fosfataz}}</div><div>{{c2::Telopeptidaz}}</div><div>İdrarda {{c3::hidroksiprolin}} / {{c1::{{c3::hidroksilizin}}::ilişkili yanıt arka yüzde}}</div><div>Glikozil-{{c3::{{c1::hidroksilizin}}::ilişkili yanıt arka yüzde}}</div><div><b>C-terminal ve N-terminal</b> {{c2::telopeptidler}}</div><div>{{c3::Piridinyum}} <b>çapraz bağları</b></div></div>"
     }
    },
    "changes": [
@@ -12205,11 +12364,23 @@
      "category": "Biçim",
      "text": "\"OsteoKlastik\" → \"osteoklastik\"; \"Çapraz Bağları\" → \"çapraz bağları\"; &nbsp; ve bozuk HTML temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"OH-Pro\" → \"hidroksiprolin\" ve \"OH-Lys\" → \"hidroksilizin\" açıldı, CamelCase kelimeler küçük harfe çevrildi; c1, c2, c3 boşlukları korundu.\nNeden: \"OH-Pro\" ve \"OH-Lys\" kişisel kısaltmalardı; \"OsteoKlastik\" ve \"Çapraz Bağları\" yazımı bozuktu.\nNasıl: [KS1, BÇ1, YP1, YP4] Osteoklastik kemik yıkım belirteçleri standartlaştırıldı; c1, c2, c3 dağılımı aynen korundu.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"OH-Pro\" → \"hidroksiprolin\" ve \"OH-Lys\" → \"hidroksilizin\" açıldı, CamelCase kelimeler küçük harfe çevrildi; c1, c2, c3 boşlukları korundu.\nNeden: \"OH-Pro\" ve \"OH-Lys\" kişisel kısaltmalardı; \"OsteoKlastik\" ve \"Çapraz Bağları\" yazımı bozuktu.\nNasıl: [KS1, BÇ1, YP1, YP4] Osteoklastik kemik yıkım belirteçleri standartlaştırıldı; c1, c2, c3 dağılımı aynen korundu."
+    }
+   ]
   },
   {
    "order": 344,
@@ -13168,13 +13339,13 @@
    "noteId": 1604233624607,
    "guid": "ucu^D)t|0k",
    "topic": "Proteinler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "His'den Sentezlenenler<div><br></div><div><div>{{c1::Histamin}}</div><div>{{c2::Homokarnozin}} (His + {{c1::GABA}})</div><div>{{c2::Karnozin}} (His + {{c1::beta Ala}})</div><div>{{c2::Anserin}} (Karnozin + {{c1::SAM}})</div><br></div>",
-     "after": "Histidinden sentezlenen bileşikler:<div><br></div><div><div>{{c1::Histamin}}</div><div>{{c2::Homokarnozin}} (His + {{c1::GABA}})</div><div>{{c2::Karnozin}} (His + {{c1::beta-alanin}})</div><div>{{c2::Anserin}} (karnozin + {{c1::SAM}})</div></div>"
+     "after": "Histidinden sentezlenen bileşikler:<div><br></div><div><div>{{c1::Histamin}}</div><div>{{c2::Homokarnozin}} (His + {{c1::GABA}})</div><div>{{c2::Karnozin}} (His + {{c1::beta-alanin}})</div><div>{{c2::Anserin}} ({{c2::karnozin}} + {{c1::SAM}})</div></div>"
     }
    },
    "changes": [
@@ -13189,24 +13360,36 @@
      "category": "Biçim",
      "text": "\"Sentezlenenler\" küçük harfe çevrildi; \"Karnozin\" parantez içinde küçültüldü; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"His'den\" → \"Histidinden\" ve \"beta Ala\" → \"beta-alanin\" açıldı; parantez içi büyük harfler düzenlendi; c1 ve c2 boşlukları korundu.\nNeden: \"His\" ve \"Ala\" kısaltmaydı; \"beta alanin\" yazımı kılavuz kuralına aykırıydı.\nNasıl: [KS1, YZ1, BÇ1, YP1] Kılavuzun beta-alanin tek yazım standardı uygulandı; c1 ve c2 dağılımı eksiksiz korundu.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"His'den\" → \"Histidinden\" ve \"beta Ala\" → \"beta-alanin\" açıldı; parantez içi büyük harfler düzenlendi; c1 ve c2 boşlukları korundu.\nNeden: \"His\" ve \"Ala\" kısaltmaydı; \"beta alanin\" yazımı kılavuz kuralına aykırıydı.\nNasıl: [KS1, YZ1, BÇ1, YP1] Kılavuzun beta-alanin tek yazım standardı uygulandı; c1 ve c2 dağılımı eksiksiz korundu."
+    }
+   ]
   },
   {
    "order": 373,
    "noteId": 1604233687488,
    "guid": "A4BA4/R_H!",
    "topic": "Proteinler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Arg Paketi<div><br></div><div><div><div>{{c1::NO}}</div><div>{{c2::Sitrülin}}</div><div>{{c3::Ornitin}}</div><div>{{c1::Üre}}</div><div>{{c2::Kreatin}}</div><div>{{c3::Putressin}} (Ornitin Dekarboksliaz)</div><div>{{c1::Spermin}} (Ornitin + SAM)</div><br></div><br></div>",
-     "after": "Arjininden sentezlenen bileşikler (7):<div><br></div><div><div>{{c1::NO}}</div><div>{{c2::Sitrülin}}</div><div>{{c3::Ornitin}}</div><div>{{c1::Üre}}</div><div>{{c2::Kreatin}}</div><div>{{c3::Putresin}} (ornitin dekarboksilaz)</div><div>{{c1::Spermin}} (ornitin + SAM)</div></div>"
+     "after": "Arjininden sentezlenen bileşikler (7):<div><br></div><div><div>{{c1::NO}}</div><div>{{c2::Sitrülin}}</div><div>{{c3::Ornitin}}</div><div>{{c1::Üre}}</div><div>{{c2::Kreatin}}</div><div>{{c3::Putresin}} ({{c3::ornitin}} dekarboksilaz)</div><div>{{c1::Spermin}} ({{c3::ornitin}} + SAM)</div></div>"
     }
    },
    "changes": [
@@ -13227,11 +13410,23 @@
      "category": "Biçim",
      "text": "Parantez içi küçük harfe çevrildi; &nbsp; ve gereksiz div etiketleri temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlık \"Arjininden sentezlenen bileşikler (7):\" olarak netleştirildi, \"Putressin\" ve \"Dekarboksliaz\" yazım hataları düzeltildi; c1, c2 ve c3 boşlukları korundu.\nNeden: \"Arg Paketi\" telgraf üslubundaydı; iki tıbbi terimde harf hatası vardı.\nNasıl: [SN1, YZ1, EK2, BÇ1, YP1] Arjinin metabolizması ürünleri standartlaştırıldı; c1, c2, c3 dağılımı aynen korundu.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"Arjininden sentezlenen bileşikler (7):\" olarak netleştirildi, \"Putressin\" ve \"Dekarboksliaz\" yazım hataları düzeltildi; c1, c2 ve c3 boşlukları korundu.\nNeden: \"Arg Paketi\" telgraf üslubundaydı; iki tıbbi terimde harf hatası vardı.\nNasıl: [SN1, YZ1, EK2, BÇ1, YP1] Arjinin metabolizması ürünleri standartlaştırıldı; c1, c2, c3 dağılımı aynen korundu."
+    }
+   ]
   },
   {
    "order": 374,
@@ -14036,13 +14231,13 @@
    "noteId": 1611146496747,
    "guid": "d/XB6WNA*h",
    "topic": "Proteinler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "MPS Enzimleri:<div><br></div><div><b>Tip 1 Hurler</b>: {{c1::<b>alfa L İduronidaz</b>}}&nbsp;</div><div>{{c3::Dermatan S}} ve {{c3::Heparan S}} birikir&nbsp;</div><div><br></div><div><b>Tip 2 Hunter</b>: {{c1::<b>İduronat Sülfataz</b>}}&nbsp;</div><div>{{c3::Dermatan S}} ve {{c3::Heparan S}} birikir</div><div><br></div><div><b>Tip 3 SanFlippo</b>: {{c2::<b>Heparan Sülfat N Sülfataz</b>}}</div><div><br></div><div><b>Tip 4 Morquio</b>: {{c2::<b>Galaktozamin 6- Sülftaz</b>}}</div><div>{{c4::Keratan S}} - {{c4::Kondroitin S}} birikir</div><div><br></div><div><b>Tip 6 Morateux Lamy</b>: {{c3::<b>Aril Sülfataz B</b>}}&nbsp;</div><div>{{c5::Dermatan S}} birikir</div>",
-     "after": "MPS'lerde eksik enzimler:<div><br></div><div><b>Tip 1 Hurler</b>: {{c1::<b>alfa-L-iduronidaz</b>}}</div><div>{{c3::Dermatan sülfat}} ve {{c3::heparan sülfat}} birikir</div><div><br></div><div><b>Tip 2 Hunter</b>: {{c1::<b>iduronat sülfataz</b>}}</div><div>{{c3::Dermatan sülfat}} ve {{c3::heparan sülfat}} birikir</div><div><br></div><div><b>Tip 3 Sanfilippo</b>: {{c2::<b>heparan sülfat N-sülfataz</b>}}</div><div><br></div><div><b>Tip 4 Morquio</b>: {{c2::<b>galaktozamin 6-sülfataz</b>}}</div><div>{{c4::Keratan sülfat}}, {{c4::kondroitin sülfat}} birikir</div><div><br></div><div><b>Tip 6 Maroteaux-Lamy</b>: {{c3::<b>arilsülfataz B</b>}}</div><div>{{c5::Dermatan sülfat}} birikir</div>"
+     "after": "MPS'lerde eksik enzimler:<div><br></div><div><b>Tip 1 Hurler</b>: {{c1::<b>alfa-L-iduronidaz</b>}}</div><div>{{c5::{{c3::Dermatan sülfat}}::ilişkili yanıt arka yüzde}} ve {{c3::heparan sülfat}} birikir</div><div><br></div><div><b>Tip 2 Hunter</b>: {{c1::<b>iduronat sülfataz</b>}}</div><div>{{c5::{{c3::Dermatan sülfat}}::ilişkili yanıt arka yüzde}} ve {{c3::heparan sülfat}} birikir</div><div><br></div><div><b>Tip 3 Sanfilippo</b>: {{c3::{{c2::<b>heparan sülfat N-sülfataz</b>}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>Tip 4 Morquio</b>: {{c2::<b>galaktozamin 6-sülfataz</b>}}</div><div>{{c4::Keratan sülfat}}, {{c4::kondroitin sülfat}} birikir</div><div><br></div><div><b>Tip 6 Maroteaux-Lamy</b>: {{c3::<b>arilsülfataz B</b>}}</div><div>{{c3::{{c5::Dermatan sülfat}}::ilişkili yanıt arka yüzde}} birikir</div>"
     }
    },
    "changes": [
@@ -14063,11 +14258,23 @@
      "category": "Biçim",
      "text": "Büyük harfler düzeltildi; \" - \" ayracı virgül yapıldı; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Eponimler \"Sanfilippo\" ve \"Maroteaux-Lamy\" olarak düzeltildi, \"Sülftaz\" → \"sülfataz\" yazıldı ve glikozaminoglikan adlarındaki \"S\" kısaltması \"sülfat\" olarak açıldı.\nNeden: Özel adlar ve enzim adı hatalı yazılmıştı; \"S\" kısaltması ve \"MPS Enzimleri\" başlığı enzimin eksik olduğunu söylemiyordu.\nNasıl: [YZ2, KS1, SN1, YP1] Beş tipin enzim ve biriken madde eşleşmeleri doğru olduğundan korundu; kalın enzim adları ve c1–c5 dağılımı aynı kaldı.",
+   "aiNote": "Ne: Aynı metabolit/enzim yanıtının başka basamak, reaksiyon parantezi veya kofaktör satırında açık kalması giderildi; tıbbi ilişkiler ve mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Eponimler \"Sanfilippo\" ve \"Maroteaux-Lamy\" olarak düzeltildi, \"Sülftaz\" → \"sülfataz\" yazıldı ve glikozaminoglikan adlarındaki \"S\" kısaltması \"sülfat\" olarak açıldı.\nNeden: Özel adlar ve enzim adı hatalı yazılmıştı; \"S\" kısaltması ve \"MPS Enzimleri\" başlığı enzimin eksik olduğunu söylemiyordu.\nNasıl: [YZ2, KS1, SN1, YP1] Beş tipin enzim ve biriken madde eşleşmeleri doğru olduğundan korundu; kalın enzim adları ve c1–c5 dağılımı aynı kaldı."
+    }
+   ]
   },
   {
    "order": 398,
@@ -16782,5 +16989,19 @@
    "kisaltma": "Hc",
    "acilim": "hücre"
   }
- ]
+ ],
+ "independentFollowup": {
+  "date": "2026-10-09",
+  "reference": "docs/catalog-corrections/gemini-followup.md",
+  "correctedNotes": [
+   "1611214067113",
+   "1628928200910",
+   "1629141532040",
+   "1611156046763"
+  ],
+  "sourceReview": "Yanlış kaynaklar geri çekildi; kayıt düzeltmesi tüm tıbbi içeriğe son onay değildir.",
+  "sourceReviewStage": "claim-scope-review-pending",
+  "sourceIdentityCorrections": 4,
+  "appliedPackageSha256": "5fadd886944365e6e67b6f1b99fd1d89b13f49e916eb7a63789e87312e9990b7"
+ }
 }

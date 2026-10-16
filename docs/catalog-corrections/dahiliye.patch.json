@@ -16,14 +16,14 @@
  "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 995,
-  "changedNotes": 993,
+  "changedNotes": 995,
   "htmlOnlyNotes": 2,
   "unchangedNotes": 0,
-  "changeItems": 2555,
+  "changeItems": 2582,
   "notesBySeverity": {
-   "Kritik": 30,
-   "Yüksek": 287,
-   "Orta": 607,
+   "Kritik": 31,
+   "Yüksek": 291,
+   "Orta": 602,
    "Düşük": 71
   },
   "notesByTopic": {
@@ -38,46 +38,53 @@
    "Romatoloji": 66
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 27,
-    "Yüksek": 61
-   },
-   "Kısaltma": {
-    "Yüksek": 17,
-    "Orta": 775
-   },
    "Biçim": {
     "Düşük": 952
    },
-   "Güncellik": {
-    "Orta": 46,
-    "Yüksek": 59,
-    "Kritik": 2
+   "Cevap görünürlüğü": {
+    "Yüksek": 8
    },
-   "Terim/yazım": {
-    "Orta": 289,
-    "Yüksek": 6,
-    "Düşük": 14
-   },
-   "Eksik kritik bilgi": {
-    "Yüksek": 131
+   "Dil bilgisi": {
+    "Orta": 18,
+    "Düşük": 44
    },
    "Doğrulama gerekli": {
     "Kritik": 1,
     "Yüksek": 19
    },
-   "Soru netliği": {
-    "Orta": 66,
-    "Yüksek": 21
+   "Eksik kritik bilgi": {
+    "Yüksek": 131
    },
-   "Dil bilgisi": {
-    "Düşük": 44,
-    "Orta": 18
+   "Güncellik": {
+    "Kritik": 2,
+    "Yüksek": 59,
+    "Orta": 46
+   },
+   "Kısaltma": {
+    "Yüksek": 17,
+    "Orta": 775
+   },
+   "Soru netliği": {
+    "Yüksek": 21,
+    "Orta": 66
+   },
+   "Terim/yazım": {
+    "Yüksek": 6,
+    "Orta": 289,
+    "Düşük": 14
+   },
+   "Tıbbi doğruluk": {
+    "Kritik": 29,
+    "Yüksek": 62
    },
    "Yapısal": {
-    "Orta": 3,
     "Yüksek": 1,
+    "Orta": 3,
     "Düşük": 3
+   },
+   "Ön/arka kapsam uyumu": {
+    "Kritik": 3,
+    "Yüksek": 13
    }
   },
   "secondReview": {
@@ -394,17 +401,17 @@
    "noteId": 1609835717411,
    "guid": "Hha;ucdZu6",
    "topic": "Genel",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "AC Kanseri tarama kriterleri:<div><br></div><div>{{c1::55-74}} yaş + &gt; {{c1::30}} paket yıl sigara öyküsü + halen sigara içmiyor ve son {{c1::15}} yıl içinde sigarayı bırakmış&nbsp;</div><div><br></div><div>veya</div><div><br></div><div>&gt; {{c2::50}} yaş + &gt; {{c2::20}} paket/yıl sigara öyküsü + ek bir RF</div>",
-     "after": "Akciğer kanseri tarama kriterleri:<div><br></div><div>{{c1::55–74}} yaş + ≥ {{c1::30}} paket-yıl sigara öyküsü + halen sigara içiyor ya da son {{c1::15}} yıl içinde sigarayı bırakmış</div><div><br></div><div>veya</div><div><br></div><div>≥ {{c2::50}} yaş + ≥ {{c2::20}} paket-yıl sigara öyküsü + ek bir risk faktörü</div>"
+     "after": "USPSTF 2021: akciğer kanseri taraması için uygun risk grubu:<br><br>{{c1::50–80}} yaş + ≥ {{c1::20}} paket-yıl sigara öyküsü + halen içen veya son {{c1::15}} yılda bırakmış kişi.<br><br>Tarama yöntemi ve sıklığı → {{c2::yıllık düşük doz toraks BT}}"
     },
     "Extra": {
      "before": "",
-     "after": "Klasik (NLST tabanlı) kriterlerdir. USPSTF 2021: 50–80 yaş, ≥ 20 paket-yıl, halen içen ya da son 15 yılda bırakmış kişilere yıllık düşük doz BT."
+     "after": "Tarama, 15 yıldır sigara içmeyenlerde veya beklenen yaşam süresini/küratif akciğer cerrahisi olanağını ciddi sınırlayan sağlık sorunu geliştiğinde sonlandırılır. Bu soru USPSTF 2021 önerisini sorar; eski NLST/NCCN risk grupları güncel kriterlerle birleştirilmez."
     }
    },
    "changes": [
@@ -429,11 +436,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\">\" → \"≥\"; \"paket yıl\" ve \"paket/yıl\" → \"paket-yıl\"; 55-74 → 55–74; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Eski NLST ve ek riskli kriter grupları tek güncel kuralmış gibi sunulmuyor; iki mevcut kart güncel risk grubu/yöntem hedeflerini koruyor.",
+     "rationale": "Kaynak: https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/lung-cancer-screening"
     }
    ],
-   "aiNote": "Ne: \"halen sigara içmiyor ve son 15 yıl içinde\" → \"halen sigara içiyor ya da son 15 yıl içinde\" düzeltildi; \"AC\" ve \"RF\" açıldı, eşikler \"≥\" ile yazıldı; Extra'ya USPSTF 2021 kriterleri eklendi.\nNeden: Kart halen sigara içenleri taramadan dışlıyordu; ayrıca güncel tarama kriterleri (50–80 yaş, ≥20 paket-yıl) kartta yoktu.\nNasıl: [TD1, TD2, KS1, YP1] TUS'un sorabileceği klasik sayılar (55–74, 30, 15; 50, 20) c1/c2 boşluklarında korundu, yalnız sigara durumu koşulu düzeltildi ve güncel kriterler Extra'da \"klasik\" çerçevesiyle verildi.\nKaynak: USPSTF, Lung Cancer: Screening önerisi (2021); NLST (National Lung Screening Trial) kriterleri.",
+   "aiNote": "Ne: Eski NLST ve ek riskli kriter grupları tek güncel kuralmış gibi sunulmuyor; iki mevcut kart güncel risk grubu/yöntem hedeflerini koruyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/lung-cancer-screening",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"halen sigara içmiyor ve son 15 yıl içinde\" → \"halen sigara içiyor ya da son 15 yıl içinde\" düzeltildi; \"AC\" ve \"RF\" açıldı, eşikler \"≥\" ile yazıldı; Extra'ya USPSTF 2021 kriterleri eklendi.\nNeden: Kart halen sigara içenleri taramadan dışlıyordu; ayrıca güncel tarama kriterleri (50–80 yaş, ≥20 paket-yıl) kartta yoktu.\nNasıl: [TD1, TD2, KS1, YP1] TUS'un sorabileceği klasik sayılar (55–74, 30, 15; 50, 20) c1/c2 boşluklarında korundu, yalnız sigara durumu koşulu düzeltildi ve güncel kriterler Extra'da \"klasik\" çerçevesiyle verildi.\nKaynak: USPSTF, Lung Cancer: Screening önerisi (2021); NLST (National Lung Screening Trial) kriterleri."
+    }
+   ]
   },
   {
    "order": 10,
@@ -936,11 +955,11 @@
    "fields": {
     "Text": {
      "before": "<b>ATRA alan AML-M3</b> Hast'da:<div><br></div><div>Yüksek Ateş + Ödem + Pleural Eff. + HipoT + Dispne + Hipoksi:</div><div><br></div><div>{{c1::LökoStaz}} Send</div><div><br></div><div>Tdv: {{c1::Antrasiklin}} + {{c1::GK}} EKLE</div>",
-     "after": "<b>ATRA alan AML-M3</b> hastasında:<div><br></div><div>Yüksek ateş + ödem + plevral efüzyon + hipotansiyon + dispne + hipoksi:</div><div><br></div><div>{{c1::Diferansiyasyon (retinoik asit)}} sendromu</div><div><br></div><div>Tedavi: {{c1::antrasiklin}} + {{c1::glukokortikoid (deksametazon)}} eklenir</div>"
+     "after": "<b>ATRA alan AML-M3</b> hastasında:<div><br></div><div>Yüksek ateş + ödem + plevral efüzyon + hipotansiyon + dispne + hipoksi:</div><div><br></div><div>{{c1::Diferansiyasyon (retinoik asit)}} sendromu</div><div><br></div><div>İlk tedavi: sendromdan şüphelenildiğinde hemen {{c1::IV deksametazon}} başlanır.</div><div><br></div><div>Belirgin lökosit artışında, kullanılan rejime ve artışın derecesine göre {{c1::sitoredüksiyon}} eklenebilir.</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Eski adıyla ATRA sendromu; ağır olguda ATRA geçici olarak kesilir. Lökostaz, hiperlökositozun ayrı bir komplikasyonudur."
+     "after": "Eski adıyla ATRA sendromu. ELN 2019: erken şüphede deksametazon 10 mg IV, günde iki kez; ağır sendromda ATRA/ATO geçici olarak kesilir. Tedavi sırasında belirgin lökosit artışında hidroksiüre, aşırı hiperlökositozda idarubisin (antrasiklin) veya gemtuzumab ozogamisin düşünülebilir. Antrasiklin her sendrom olgusunda zorunlu değildir. Lökostaz, hiperlökositozun ayrı bir komplikasyonudur."
     }
    },
    "changes": [
@@ -959,11 +978,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"EKLE\" → \"eklenir\"; büyük/küçük harf"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Tıbbi doğruluk",
+     "text": "Koşulsuz antrasiklin + steroid yerine erken IV deksametazon ve lökosit/rejim koşullu sitoredüksiyon öğretildi. Ağır olguda ATRA/ATO ara verme kapsamı korundu.",
+     "rationale": "Kaynak: https://www.leukemia-net.org/sites/leukemia-net/content/e58/e480/e7392/e7396/e11507/SanzMAetal2019_Blood.Managementofacutepromyelocyticleukemia-updatedrecommendationsfromanexpertpaneloftheEuropeanLeukemiaNet.pdf"
     }
    ],
-   "aiNote": "Ne: c1 cevabı \"LökoStaz Send\" → \"Diferansiyasyon (retinoik asit) sendromu\" yapıldı; \"GK\" → \"glukokortikoid (deksametazon)\" açıldı ve Extra'ya eski ad ile lökostaz ayrımı eklendi.\nNeden: ATRA alan APL hastasında ateş, ödem, plevral efüzyon, hipotansiyon ve hipoksi diferansiyasyon sendromudur; kart bunu lökostaz olarak öğretiyordu. Kısaltmalar yazarın kişisel notuydu.\nNasıl: [TD1, YP1, KS1] Klinik tablo ve tedavi satırı (antrasiklin + glukokortikoid) doğru olduğundan korundu, yalnız yanlış sendrom adı düzeltildi; üç c1 boşluğu aynı numarada kaldı.\nKaynak: Harrison's Principles of Internal Medicine, akut miyeloid lösemi bölümü (APL ve diferansiyasyon sendromu).",
+   "aiNote": "Ne: Koşulsuz antrasiklin + steroid yerine erken IV deksametazon ve lökosit/rejim koşullu sitoredüksiyon öğretildi. Ağır olguda ATRA/ATO ara verme kapsamı korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.leukemia-net.org/sites/leukemia-net/content/e58/e480/e7392/e7396/e11507/SanzMAetal2019_Blood.Managementofacutepromyelocyticleukemia-updatedrecommendationsfromanexpertpaneloftheEuropeanLeukemiaNet.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: c1 cevabı \"LökoStaz Send\" → \"Diferansiyasyon (retinoik asit) sendromu\" yapıldı; \"GK\" → \"glukokortikoid (deksametazon)\" açıldı ve Extra'ya eski ad ile lökostaz ayrımı eklendi.\nNeden: ATRA alan APL hastasında ateş, ödem, plevral efüzyon, hipotansiyon ve hipoksi diferansiyasyon sendromudur; kart bunu lökostaz olarak öğretiyordu. Kısaltmalar yazarın kişisel notuydu.\nNasıl: [TD1, YP1, KS1] Klinik tablo ve tedavi satırı (antrasiklin + glukokortikoid) doğru olduğundan korundu, yalnız yanlış sendrom adı düzeltildi; üç c1 boşluğu aynı numarada kaldı.\nKaynak: Harrison's Principles of Internal Medicine, akut miyeloid lösemi bölümü (APL ve diferansiyasyon sendromu)."
+    }
+   ]
   },
   {
    "order": 23,
@@ -976,7 +1007,7 @@
    "fields": {
     "Text": {
      "before": "STEMI Eşdeğerleri (3)<div><br></div><div>1) {{c1::Tek derivasyon --&gt; aVR ST yükselmesi}}</div><div>2) {{c1::Yeni gelişmiş LBB}}</div><div>3) {{c1::Yeni geilişmiş Pat. Q}}&nbsp;</div>",
-     "after": "STEMI eşdeğerleri (3)<div><br></div><div>1) {{c1::Yaygın ST çökmesiyle birlikte aVR'de (tek derivasyonda) ST yükselmesi}}</div><div>2) {{c1::Yeni gelişmiş sol dal bloğu}}</div><div>3) {{c1::İzole posterior Mİ (V1–V3'te ST çökmesi)}}</div>"
+     "after": "Acil koroner oklüzyon değerlendirmesi gerektiren seçilmiş EKG örüntüleri (ESC 2023; klinikle birlikte)<div><br></div><div>1) {{c1::Yaygın ST çökmesiyle birlikte aVR'de (tek derivasyonda) ST yükselmesi}}</div><div>2) {{c1::Süren miyokard iskemisini kuvvetle düşündüren belirti/bulgularla birlikte sol dal bloğu (yeni veya önceden bilinen)}}</div><div>3) {{c1::İzole posterior Mİ (V1–V3'te ST çökmesi)}}</div>"
     },
     "Extra": {
      "before": "",
@@ -1004,11 +1035,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"Tek derivasyon --> aVR ST yükselmesi\" → \"Yaygın ST çökmesiyle birlikte aVR'de (tek derivasyonda) ST yükselmesi\"; --> kaldırıldı; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Yeni LBBB tek başına STEMI eşdeğeri sayılmadı; süren iskemi koşulu soruya eklendi.",
+     "rationale": "Kaynak: https://academic.oup.com/eurheartj/article/44/38/3720/7243210"
     }
    ],
-   "aiNote": "Ne: Üçüncü üye \"Yeni gelişmiş Pat. Q\" → \"İzole posterior Mİ (V1–V3'te ST çökmesi)\" yapıldı, aVR satırına \"yaygın ST çökmesiyle birlikte\" eklendi, \"LBB\" açıldı ve Extra'ya \"Yeni patolojik Q dalgası STEMI eşdeğeri değildir; gelişmiş (oturmuş) enfarktüsün bulgusudur.\" ile sol dal bloğunun güncel ESC yaklaşımı yazıldı.\nNeden: Patolojik Q dalgası nekrozun geç bulgusudur, STEMI eşdeğeri değildir; kart yanlış bir üyeyi eşdeğer olarak öğretiyordu.\nNasıl: [TD1, EK2, TD2, YP1] Liste sayısı (3) ve tek c1 numarası korundu; yanlış üye güncel kaynaklarda en sık sayılan eşdeğerle (posterior Mİ) değiştirildi, eski üye Extra'da neden yanlış olduğuyla anıldı; TUS'un beklediği \"yeni gelişmiş sol dal bloğu\" cevabı korunup güncel niteleyici Extra'ya yazıldı (TD2).\nKaynak: ESC 2017 STEMI ve ESC 2023 akut koroner sendromlar kılavuzları (primer PKG gerektiren atipik EKG paternleri: sol dal bloğu, izole posterior Mİ, aVR'de ST yükselmesiyle yaygın ST çökmesi); Harrison's Principles of Internal Medicine, STEMI bölümü.",
+   "aiNote": "Ne: Yeni LBBB tek başına STEMI eşdeğeri sayılmadı; süren iskemi koşulu soruya eklendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://academic.oup.com/eurheartj/article/44/38/3720/7243210",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Üçüncü üye \"Yeni gelişmiş Pat. Q\" → \"İzole posterior Mİ (V1–V3'te ST çökmesi)\" yapıldı, aVR satırına \"yaygın ST çökmesiyle birlikte\" eklendi, \"LBB\" açıldı ve Extra'ya \"Yeni patolojik Q dalgası STEMI eşdeğeri değildir; gelişmiş (oturmuş) enfarktüsün bulgusudur.\" ile sol dal bloğunun güncel ESC yaklaşımı yazıldı.\nNeden: Patolojik Q dalgası nekrozun geç bulgusudur, STEMI eşdeğeri değildir; kart yanlış bir üyeyi eşdeğer olarak öğretiyordu.\nNasıl: [TD1, EK2, TD2, YP1] Liste sayısı (3) ve tek c1 numarası korundu; yanlış üye güncel kaynaklarda en sık sayılan eşdeğerle (posterior Mİ) değiştirildi, eski üye Extra'da neden yanlış olduğuyla anıldı; TUS'un beklediği \"yeni gelişmiş sol dal bloğu\" cevabı korunup güncel niteleyici Extra'ya yazıldı (TD2).\nKaynak: ESC 2017 STEMI ve ESC 2023 akut koroner sendromlar kılavuzları (primer PKG gerektiren atipik EKG paternleri: sol dal bloğu, izole posterior Mİ, aVR'de ST yükselmesiyle yaygın ST çökmesi); Harrison's Principles of Internal Medicine, STEMI bölümü."
+    }
+   ]
   },
   {
    "order": 24,
@@ -1218,17 +1261,17 @@
    "noteId": 1604849746678,
    "guid": "f_?)}!Cac/",
    "topic": "Nefroloji",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "DM Nefropati Tdv&nbsp;<div><br></div><div>HbA1C &lt; {{c1::7}}&nbsp;</div><div><br></div><div>HT kontrolü --&gt; {{c1::&lt; 1g/gün proteinüri}} --&gt; &lt; 140/90&nbsp; /&nbsp; {{c1::&gt; 1g proteinüri}} ---&gt; &gt; 130/80</div><div><br></div><div>MikroAlb Faz --&gt; {{c1::ACE - i / ARB}}&nbsp;</div><div><br></div><div>Protein kısıtlaması</div><div><br></div><div>Dislipidemi düzeltilmesi -&gt; {{c1::Statinler&nbsp;}}</div>",
-     "after": "Diyabetik nefropati tedavisi<div><br></div><div>HbA1c &lt; {{c1::7}}</div><div><br></div><div>KB kontrolü → {{c1::&lt; 1 g/gün proteinüri}} → &lt; 140/90 mmHg; {{c1::&gt; 1 g/gün proteinüri}} → &lt; 130/80 mmHg</div><div><br></div><div>Mikroalbüminüri evresi → {{c1::ACE inhibitörü/ARB}}</div><div><br></div><div>Protein kısıtlaması</div><div><br></div><div>Dislipideminin düzeltilmesi → {{c1::statinler}}</div>"
+     "after": "Diyabetik böbrek hastalığında seçilmiş tedavi/hedefler (bireyselleştirilir)<div><br></div><div>HbA1c &lt; {{c1::7}}</div><div><br></div><div>ADA 2026: güvenle ulaşılabiliyorsa KB {{c1::&lt;130/80}} mmHg; yüksek böbrek/kardiyovasküler riskte sistolik {{c1::&lt;120}} mmHg hedefi teşvik edilir</div><div><br></div><div>Mikroalbüminüri evresi → {{c1::ACE inhibitörü/ARB}}</div><div><br></div><div>Protein kısıtlaması</div><div><br></div><div>Dislipideminin düzeltilmesi → {{c1::statinler}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlar: KDIGO 2021 tolere edilirse sistolik KB &lt; 120 mmHg, ADA &lt; 130/80 mmHg önerir; albüminürik tip 2 DM'de ACE inhibitörü/ARB'ye eGFR ≥ 20 ise SGLT2 inhibitörü eklenir."
+     "after": "KB hedefi hasta, tolerans ve ölçüm yöntemine göre belirlenir. KDIGO 2021’de sistolik <120 mmHg hedefi tolere edilebilen, standardize ofis ölçümüne dayanır. Albüminürik tip 2 DM’de SGLT2 inhibitörü ve RAS blokajı uygunluk/eGFR/potasyumla değerlendirilir; kart seçilmiş tedavi hedeflerini sorar."
     }
    },
    "changes": [
@@ -1253,11 +1296,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "HbA1C → HbA1c; --> ve -> → →; \" / \" ayracı noktalı virgül; g → g/gün; mmHg eklendi; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Proteinüri 1 g/gün ile ayrılan eski KB eşikleri kaldırıldı; güncel kaynağın güvenli ulaşım ve yüksek risk koşulları eklendi.",
+     "rationale": "Kaynak: https://diabetesjournals.org/care/article-pdf/49/Supplement_1/S216/848870/dc26s010.pdf; https://kdigo.org/wp-content/uploads/2021/06/Tomson_Annals_Int_Med_062121-1.pdf"
     }
    ],
-   "aiNote": "Ne: \"> 1g proteinüri → > 130/80\" → \"> 1 g/gün proteinüri → < 130/80 mmHg\" düzeltildi; kısaltmalar açıldı; Extra'ya KDIGO 2021/ADA kan basıncı hedefi ve SGLT2 inhibitörü eklendi.\nNeden: Ters yazılmış eşitsizlik işareti kan basıncı hedefini yanlış öğretiyordu; kartta güncel KBH tedavisinin temel ilacı olan SGLT2 inhibitörü yoktu.\nNasıl: [TD1, TD2, KS1, YP1] Yazarın proteinüriye göre iki basamaklı klasik hedefi korunup yalnız işaret düzeltildi; güncel hedef ve ilaç cevabı değiştirmeden Extra'da tek cümleyle verildi; tek c1 numarası korundu.\nKaynak: KDIGO 2021 Clinical Practice Guideline for the Management of Blood Pressure in CKD; KDIGO 2022 Diabetes Management in CKD; ADA Standards of Care (kan basıncı ve KBH bölümleri).",
+   "aiNote": "Ne: Proteinüri 1 g/gün ile ayrılan eski KB eşikleri kaldırıldı; güncel kaynağın güvenli ulaşım ve yüksek risk koşulları eklendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://diabetesjournals.org/care/article-pdf/49/Supplement_1/S216/848870/dc26s010.pdf; https://kdigo.org/wp-content/uploads/2021/06/Tomson_Annals_Int_Med_062121-1.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"> 1g proteinüri → > 130/80\" → \"> 1 g/gün proteinüri → < 130/80 mmHg\" düzeltildi; kısaltmalar açıldı; Extra'ya KDIGO 2021/ADA kan basıncı hedefi ve SGLT2 inhibitörü eklendi.\nNeden: Ters yazılmış eşitsizlik işareti kan basıncı hedefini yanlış öğretiyordu; kartta güncel KBH tedavisinin temel ilacı olan SGLT2 inhibitörü yoktu.\nNasıl: [TD1, TD2, KS1, YP1] Yazarın proteinüriye göre iki basamaklı klasik hedefi korunup yalnız işaret düzeltildi; güncel hedef ve ilaç cevabı değiştirmeden Extra'da tek cümleyle verildi; tek c1 numarası korundu.\nKaynak: KDIGO 2021 Clinical Practice Guideline for the Management of Blood Pressure in CKD; KDIGO 2022 Diabetes Management in CKD; ADA Standards of Care (kan basıncı ve KBH bölümleri)."
+    }
+   ]
   },
   {
    "order": 30,
@@ -1560,17 +1615,17 @@
    "noteId": 1605009641509,
    "guid": "PEREPHys`c",
    "topic": "Endokrinoloji",
-   "severity": "Yüksek",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "MiksÖdem Koması hasta&nbsp;<div>&lt; {{c1::30}} C ise&nbsp;</div><div><br></div><div>Önce ISIT</div>",
-     "after": "Miksödem komasında vücut sıcaklığı<div>&lt; {{c1::30}} °C ise</div><div><br></div><div>Önce aktif ısıtma yapılır</div>"
+     "after": "Miksödem komasında hipoterminin destek tedavisi:<div><br></div><div>Önerilen genel yöntem {{c1::battaniyeyle pasif ısıtma}}.</div><div><br></div><div>Aktif periferik ısıtma, vazodilatasyonla {{c1::kardiyovasküler kollaps}} oluşturabileceği için kaçınılır.</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Daha yüksek sıcaklıkta battaniyeyle pasif ısıtma yeterlidir; dış ısıtma vazodilatasyonla kardiyovasküler kollapsa yol açabilir."
+     "after": "Pasif ısıtma ve aktif periferik ısıtma ayrılmalıdır. Periferik ısıtma uyarısı, özel çekirdek ısıtma yöntemlerinin tümü için mutlak yasak anlamına gelmez. Ağır hipotermide yöntem ve destek tedavisi yoğun bakımda klinik ve hemodinamik duruma göre değerlendirilir."
     }
    },
    "changes": [
@@ -1584,11 +1639,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "MiksÖdem Koması hasta → Miksödem komasında vücut sıcaklığı; C → °C; ISIT → aktif ısıtma; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Tıbbi doğruluk",
+     "text": "Yöntemsiz <30 °C ⇒ önce aktif ısıtma kuralı kaldırıldı; 2026 ortak konsensüsünün pasif ısıtma/aktif periferik ısıtmadan kaçınma ayrımı soru tarafına taşındı. c1 kartı korundu.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC13452032/"
     }
    ],
-   "aiNote": "Ne: Kök \"Miksödem komasında vücut sıcaklığı < 30 °C ise önce aktif ısıtma yapılır\" yapıldı; Extra'ya pasif ısıtma ve kollaps uyarısı eklendi.\nNeden: Kök neyin 30'dan düşük olduğunu ve birimi söylemiyordu; 30 °C üstünde dış ısıtmanın zararlı olabileceği uyarısı eksikti.\nNasıl: [EK3, SN1, YP1] Eşik değer (30) doğru olduğundan c1 korundu, hasta güvenliği için gereken uyarı Extra'ya tek cümleyle yazıldı.\nKaynak: Harrison's Principles of Internal Medicine, hipotiroidi bölümü (miksödem koması tedavisi).",
+   "aiNote": "Ne: Yöntemsiz <30 °C ⇒ önce aktif ısıtma kuralı kaldırıldı; 2026 ortak konsensüsünün pasif ısıtma/aktif periferik ısıtmadan kaçınma ayrımı soru tarafına taşındı. c1 kartı korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC13452032/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kök \"Miksödem komasında vücut sıcaklığı < 30 °C ise önce aktif ısıtma yapılır\" yapıldı; Extra'ya pasif ısıtma ve kollaps uyarısı eklendi.\nNeden: Kök neyin 30'dan düşük olduğunu ve birimi söylemiyordu; 30 °C üstünde dış ısıtmanın zararlı olabileceği uyarısı eksikti.\nNasıl: [EK3, SN1, YP1] Eşik değer (30) doğru olduğundan c1 korundu, hasta güvenliği için gereken uyarı Extra'ya tek cümleyle yazıldı.\nKaynak: Harrison's Principles of Internal Medicine, hipotiroidi bölümü (miksödem koması tedavisi)."
+    }
+   ]
   },
   {
    "order": 39,
@@ -1914,11 +1981,11 @@
    "fields": {
     "Text": {
      "before": "Metformin KEND durumlar (7)<div><br></div><div><div>{{c1::BY (GFR &lt; 45)}}****<br></div><div>Asidoz</div><div>Unstbil {{c2::KKY}}</div><div>{{c1::KC}} YET</div><div>Ciddi Hipoksi</div><div>iv {{c2::radyokontrast ilaç&nbsp;}}</div><div>{{c2::Cerrahi}} girişim</div><br></div>",
-     "after": "Metforminin kontrendike olduğu durumlar (7)<div><br></div><div><div>{{c1::Böbrek yetmezliği (eGFR &lt; 30)}}</div><div>Asidoz</div><div>Unstabil {{c2::konjestif kalp yetmezliği}}</div><div>{{c1::Karaciğer}} yetmezliği</div><div>Ciddi hipoksi</div><div>İV {{c2::radyokontrast ilaç}}</div><div>{{c2::Cerrahi}} girişim</div></div>"
+     "after": "Metformin: kontrendikasyon ile geçici ara verme ayrımı (ABD ürün etiketi)<br><br>Kontrendikasyon → {{c1::eGFR &lt;30 mL/dk/1,73 m² veya akut/kronik metabolik asidoz}}<br><br>Uygun risk koşullarında geçici ara verme → iyotlu {{c2::radyokontrast}} işlemi; besin/sıvı alımını kısıtlayan {{c2::cerrahi/prosedür}}<br><br>Kaçınılması gereken ek risk → belirgin {{c1::karaciğer}} hastalığı; akut hipoksik/hipoperfüzyonlu durumlar"
     },
     "Extra": {
      "before": "",
-     "after": "eGFR 30–45 arasında metformin yeni başlanmaz, kullanan hastada doz azaltılır."
+     "after": "Etikete göre eGFR 30–45 iken yeni başlanması önerilmez. İyotlu kontrastta eGFR 30–60, karaciğer hastalığı/alkolizm/KY öyküsü veya intraarteriyel uygulama varsa geçici kesilir; 48 saat sonra böbrek fonksiyonu yeniden değerlendirilir, stabilse başlanabilir. Kısıtlı oral alımlı cerrahide geçici kesme, bütün ameliyatları kalıcı kontrendikasyon saymak değildir."
     }
    },
    "changes": [
@@ -1942,11 +2009,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"****\" işareti ve sondaki gereksiz <br> kaldırıldı; iv → İV; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Kontrast ve cerrahi kalıcı kontrendikasyon listesi olmaktan çıkarıldı; risk koşullu geçici kesme ayrıldı.",
+     "rationale": "Kaynak: https://dailymed.nlm.nih.gov/dailymed/getFile.cfm?setid=c33e24e9-0441-6b94-e053-2a95a90a9c68&type=pdf"
     }
    ],
-   "aiNote": "Ne: \"BY (GFR < 45)\" → \"böbrek yetmezliği (eGFR < 30)\" yapıldı ve Extra'ya 30–45 arası için başlanmama/doz azaltma kuralı eklendi; KEND, KKY, KC YET açıldı, \"****\" kaldırıldı.\nNeden: Güncel etiket ve kılavuzlarda mutlak kontrendikasyon eşiği eGFR <30'dur; 45 eşiği yeni başlamama sınırıdır. Kart kişisel kısaltma ve işaret taşıyordu.\nNasıl: [TD2, KS1, SN2] Eski eşik artık savunulmadığından güncel eşik c1 içinde öğretildi, 30–45 aralığı Extra'da tek cümleyle verildi; yedi üyelik liste ve c1/c2 dağılımı korundu.\nKaynak: FDA metformin güvenlik bildirimi (2016, böbrek fonksiyonuna göre kullanım); ADA Standards of Care in Diabetes, farmakolojik tedavi bölümü.",
+   "aiNote": "Ne: Kontrast ve cerrahi kalıcı kontrendikasyon listesi olmaktan çıkarıldı; risk koşullu geçici kesme ayrıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://dailymed.nlm.nih.gov/dailymed/getFile.cfm?setid=c33e24e9-0441-6b94-e053-2a95a90a9c68&type=pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"BY (GFR < 45)\" → \"böbrek yetmezliği (eGFR < 30)\" yapıldı ve Extra'ya 30–45 arası için başlanmama/doz azaltma kuralı eklendi; KEND, KKY, KC YET açıldı, \"****\" kaldırıldı.\nNeden: Güncel etiket ve kılavuzlarda mutlak kontrendikasyon eşiği eGFR <30'dur; 45 eşiği yeni başlamama sınırıdır. Kart kişisel kısaltma ve işaret taşıyordu.\nNasıl: [TD2, KS1, SN2] Eski eşik artık savunulmadığından güncel eşik c1 içinde öğretildi, 30–45 aralığı Extra'da tek cümleyle verildi; yedi üyelik liste ve c1/c2 dağılımı korundu.\nKaynak: FDA metformin güvenlik bildirimi (2016, böbrek fonksiyonuna göre kullanım); ADA Standards of Care in Diabetes, farmakolojik tedavi bölümü."
+    }
+   ]
   },
   {
    "order": 48,
@@ -2040,11 +2119,11 @@
    "fields": {
     "Text": {
      "before": "DM Hast'da Tdv Hedefleri&nbsp;<div><br></div><div>HbA1C {{c1::&lt;7}}</div><div><br></div><div>PostPrandiel Glu {{c1::&lt;180}}</div><div><br></div><div>KB {{c2::&lt;140/90}}</div><div><br></div><div>LDL {{c2::&lt; 100}}<br></div><div><br></div><div>TG {{c1::&lt; 150&nbsp;}}</div>",
-     "after": "DM hastasında tedavi hedefleri<div><br></div><div>HbA1c {{c1::&lt; 7}}%</div><div><br></div><div>Postprandiyal glukoz {{c1::&lt; 180}} mg/dL</div><div><br></div><div>Kan basıncı {{c2::&lt; 130/80}} mmHg</div><div><br></div><div>LDL {{c2::&lt; 100}} mg/dL</div><div><br></div><div>TG {{c1::&lt; 150}} mg/dL</div>"
+     "after": "Gebe olmayan erişkin DM hastasında bireyselleştirilen hedef örnekleri (ADA 2026)<div><br></div><div>HbA1c {{c1::&lt; 7}}%</div><div><br></div><div>Postprandiyal glukoz {{c1::&lt; 180}} mg/dL</div><div><br></div><div>Güvenle ulaşılabiliyorsa kan basıncı {{c2::&lt; 130/80}} mmHg; yüksek kardiyovasküler/böbrek riskinde sistolik {{c2::&lt;120}} mmHg hedefi teşvik edilir</div><div><br></div><div>40–75 yaş + ek ASCVD risk faktörü: LDL {{c2::&lt;70}} mg/dL<br>ASCVD mevcut: LDL {{c2::&lt;55}} mg/dL</div><div><br></div><div>TG {{c1::&lt; 150}} mg/dL</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Eski kaynaklarda kan basıncı hedefi &lt; 140/90 mmHg olarak geçer. LDL hedefi riske göre düşer: yüksek riskte &lt; 70, aterosklerotik kardiyovasküler hastalıkta &lt; 55 mg/dL."
+     "after": "Glikoz ve HbA1c hedefleri hipoglisemi riski, komorbiditeler ve yaşam beklentisine göre bireyselleştirilir. Lipid hedefleri ilgili yaş/risk grubuna aittir; yüksek yoğunluklu statinle LDL’de başlangıca göre en az %50 azalma hedeflenir. KB hedefi güvenle ulaşılabilmesine bağlıdır."
     }
    },
    "changes": [
@@ -2063,11 +2142,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "HbA1C → HbA1c; birimler (%, mg/dL, mmHg) eklendi; < işaretinden sonraki boşluk; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "LDL için herkese tek 100 mg/dL hedefi kaldırıldı; ADA 2026 risk koşulları ve güvenli KB hedefi ön yüze eklendi.",
+     "rationale": "Kaynak: https://diabetesjournals.org/care/article-pdf/49/Supplement_1/S216/848870/dc26s010.pdf"
     }
    ],
-   "aiNote": "Ne: KB hedefi \"<140/90\" → \"<130/80 mmHg\" yapıldı, satırlara birim eklendi ve kısaltmalar açıldı; Extra'ya eski KB hedefi ile yüksek/çok yüksek riskte LDL hedefleri eklendi.\nNeden: Kart eski ADA kan basıncı hedefini öğretiyordu ve LDL hedefinin riske göre düştüğünü belirtmiyordu.\nNasıl: [TD2, EK1, KS1] Eski KB hedefi artık savunulmadığından güncel hedef c2 içinde öğretildi, eski biçim Extra'da anıldı; HbA1c, postprandiyal glukoz, LDL ve TG hedefleri doğru olduğu için korundu, c1/c2 dağılımı değişmedi.\nKaynak: ADA Standards of Care in Diabetes, kardiyovasküler hastalık ve risk yönetimi bölümü; ESC 2023 diyabetli hastalarda kardiyovasküler hastalık kılavuzu.",
+   "aiNote": "Ne: LDL için herkese tek 100 mg/dL hedefi kaldırıldı; ADA 2026 risk koşulları ve güvenli KB hedefi ön yüze eklendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://diabetesjournals.org/care/article-pdf/49/Supplement_1/S216/848870/dc26s010.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: KB hedefi \"<140/90\" → \"<130/80 mmHg\" yapıldı, satırlara birim eklendi ve kısaltmalar açıldı; Extra'ya eski KB hedefi ile yüksek/çok yüksek riskte LDL hedefleri eklendi.\nNeden: Kart eski ADA kan basıncı hedefini öğretiyordu ve LDL hedefinin riske göre düştüğünü belirtmiyordu.\nNasıl: [TD2, EK1, KS1] Eski KB hedefi artık savunulmadığından güncel hedef c2 içinde öğretildi, eski biçim Extra'da anıldı; HbA1c, postprandiyal glukoz, LDL ve TG hedefleri doğru olduğu için korundu, c1/c2 dağılımı değişmedi.\nKaynak: ADA Standards of Care in Diabetes, kardiyovasküler hastalık ve risk yönetimi bölümü; ESC 2023 diyabetli hastalarda kardiyovasküler hastalık kılavuzu."
+    }
+   ]
   },
   {
    "order": 51,
@@ -3087,7 +3178,7 @@
    "fields": {
     "Text": {
      "before": "Serum Alb - Assit Alb Gradient (SAAG)&nbsp;<div><br></div><div>&gt; 1.1 olanlar ---&gt; {{c1::SİROZ }} - {{c1::KY}} - {{c2::Kons. Perikardit}} - {{c2::Budd - Chiari}}</div><div><br></div><div>&lt; 1.1 olanlar (Portal HT dışı nedenler) -Eksuda karakterinde sıvı&nbsp; ---&gt; {{c3::Tbc}}&nbsp; &nbsp;- {{c3::Nef}}. Send</div><div><br></div><div>Assit total Proteini</div><div><br></div><div>&gt;2,5 --&gt; {{c4::KY}}&nbsp; - {{c4::Budd-Chiari}} - {{c4::Kons. Perikardit}}</div><div><br></div><div>&lt; 2,5 --&gt; {{c5::SİROZ }} - {{c5::Nef}}. Send</div>",
-     "after": "Serum-asit albümin gradiyenti (SAAG)<div><br></div><div>≥ 1,1 g/dL olanlar → {{c1::siroz}}, {{c1::KY}}, {{c2::konstriktif perikardit}}, {{c2::Budd-Chiari}}</div><div><br></div><div>&lt; 1,1 g/dL olanlar (portal hipertansiyon dışı nedenler) → {{c3::tüberküloz}}, {{c3::nefrotik}} sendrom</div><div><br></div><div>Asit total proteini</div><div><br></div><div>&gt; 2,5 g/dL → {{c4::KY}}, {{c4::Budd-Chiari}}, {{c4::konstriktif perikardit}}</div><div><br></div><div>&lt; 2,5 g/dL → {{c5::siroz}}, {{c5::nefrotik}} sendrom</div>"
+     "after": "Serum-asit albümin gradiyenti (SAAG)<div><br></div><div>≥ 1,1 g/dL olanlar → {{c5::{{c1::siroz}}::ilişkili yanıt arka yüzde}}, {{c4::{{c1::KY}}::ilişkili yanıt arka yüzde}}, {{c4::{{c2::konstriktif perikardit}}::ilişkili yanıt arka yüzde}}, {{c4::{{c2::Budd-Chiari}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>&lt; 1,1 g/dL olanlar (portal hipertansiyon dışı nedenler) → {{c3::tüberküloz}}, {{c5::{{c3::nefrotik}}::ilişkili yanıt arka yüzde}} sendrom</div><div><br></div><div>Asit total proteini</div><div><br></div><div>&gt; 2,5 g/dL → {{c1::{{c4::KY}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::Budd-Chiari}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::konstriktif perikardit}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>&lt; 2,5 g/dL → {{c1::{{c5::siroz}}::ilişkili yanıt arka yüzde}}, {{c3::{{c5::nefrotik}}::ilişkili yanıt arka yüzde}} sendrom</div>"
     },
     "Extra": {
      "before": "",
@@ -3115,11 +3206,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve --> → →; ondalık virgül ve g/dL birimi; SİROZ → siroz; \" - \" → \", \"; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Eksuda karakterinde sıvı\" ifadesi kaldırıldı, eşikler \"≥ 1,1 g/dL\" ve \"< 1,1 g/dL\" yazıldı, kısaltmalar açıldı; Extra'ya \"SAAG < 1,1 g/dL'nin diğer nedenleri: peritoneal karsinomatoz (en sık), pankreatik asit.\" eklendi.\nNeden: Nefrotik sendrom asiti transüdadır; kart onu eksuda gibi gösteriyordu ve kendi alt satırındaki düşük protein bilgisiyle çelişiyordu. SAAG düşük asitin en sık nedeni listede yoktu.\nNasıl: [TD1, EK1, KS1] Yanlış niteleme cevap dışında kaldırıldı, eşik standart biçimde yazıldı; c1–c5 cevapları doğru olduğundan korundu, eksik neden Extra'da verildi.\nKaynak: Harrison's Principles of Internal Medicine, abdominal şişlik ve asit bölümü.",
+   "aiNote": "Ne: Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Eksuda karakterinde sıvı\" ifadesi kaldırıldı, eşikler \"≥ 1,1 g/dL\" ve \"< 1,1 g/dL\" yazıldı, kısaltmalar açıldı; Extra'ya \"SAAG < 1,1 g/dL'nin diğer nedenleri: peritoneal karsinomatoz (en sık), pankreatik asit.\" eklendi.\nNeden: Nefrotik sendrom asiti transüdadır; kart onu eksuda gibi gösteriyordu ve kendi alt satırındaki düşük protein bilgisiyle çelişiyordu. SAAG düşük asitin en sık nedeni listede yoktu.\nNasıl: [TD1, EK1, KS1] Yanlış niteleme cevap dışında kaldırıldı, eşik standart biçimde yazıldı; c1–c5 cevapları doğru olduğundan korundu, eksik neden Extra'da verildi.\nKaynak: Harrison's Principles of Internal Medicine, abdominal şişlik ve asit bölümü."
+    }
+   ]
   },
   {
    "order": 77,
@@ -3204,7 +3307,7 @@
    "fields": {
     "Text": {
      "before": "<b>İlaca Bağlı KC Hasarı Paternleri</b><br><br><div><b>Kolestaz:</b> {{c2::OKS}} - KMP - Eritromisin - Amoks Klav<br><br><b>Makroveziküler Steatoz:</b> <b>Alkol</b> - {{c2::Amiodaron}} - KS - MXT<br><br><b>Mikroveziküler Steatoz: </b>{{c3::Tetrasiklin}} - {{c3::Valproik asit}} - Salisilat - Antiviral<br><br><b>Kronik Hepatit:</b> Metil DOPA - {{c2::İNH}} - Fenitoin - PTU - SFS<br><br></div><div><b>Fibrozis</b>: {{c1::MXT}} - Vit A</div><div><br></div><div><b>Granülom</b>: {{c1::Allopürinol}} - {{c1::Kinidin}} - Fenilbutazon - Fenitoin - Sülfonamid<br><br><b>Sentrilobüler (Zon 3) Nekroz:</b> {{c3::Asetaminofen}} - Karbontetraklorür<br><br><b>Ven trombozu</b>: {{c4::OKS}}<br><br><b>Venookluziv Hastalık</b>: {{c4::Antineoplastikler}}<br><br><b>Peliozis Hepatis:</b> {{c4::Anabolik Steroidler}}</div>",
-     "after": "<b>İlaca bağlı karaciğer hasarı örüntüleri</b><br><br><div><b>Kolestaz:</b> {{c2::Oral kontraseptifler}}, klorpromazin, eritromisin, amoksisilin-klavulanat<br><br><b>Makroveziküler steatoz:</b> <b>Alkol</b>, {{c2::amiodaron}}, kortikosteroid, {{c1::metotreksat}}<br><br><b>Mikroveziküler steatoz: </b>{{c3::Tetrasiklin}}, {{c3::valproik asit}}, salisilat, nükleozid analoğu antiviraller<br><br><b>Kronik hepatit:</b> Metildopa, {{c2::İNH}}, fenitoin, PTU, SFS<br><br></div><div><b>Fibrozis</b>: {{c1::Metotreksat}}, A vitamini</div><div><br></div><div><b>Granülom</b>: {{c1::Allopürinol}}, {{c1::kinidin}}, fenilbutazon, fenitoin, sülfonamid<br><br><b>Sentrilobüler (zon 3) nekroz:</b> {{c3::Asetaminofen}}, karbon tetraklorür<br><br><b>Ven trombozu</b>: {{c4::Oral kontraseptifler}}<br><br><b>Venookluziv hastalık (sinüzoidal obstrüksiyon sendromu)</b>: {{c4::Antineoplastikler}}<br><br><b>Peliozis hepatis:</b> {{c4::Anabolik steroidler}}</div>"
+     "after": "<b>İlaca bağlı karaciğer hasarı örüntüleri</b><br><br><div><b>Kolestaz:</b> {{c4::{{c2::Oral kontraseptifler}}::ilişkili yanıt arka yüzde}}, klorpromazin, eritromisin, amoksisilin-klavulanat<br><br><b>Makroveziküler steatoz:</b> <b>Alkol</b>, {{c2::amiodaron}}, kortikosteroid, {{c1::metotreksat}}<br><br><b>Mikroveziküler steatoz: </b>{{c3::Tetrasiklin}}, {{c3::valproik asit}}, salisilat, nükleozid analoğu antiviraller<br><br><b>Kronik hepatit:</b> Metildopa, {{c2::İNH}}, fenitoin, PTU, SFS<br><br></div><div><b>Fibrozis</b>: {{c1::Metotreksat}}, A vitamini</div><div><br></div><div><b>Granülom</b>: {{c1::Allopürinol}}, {{c1::kinidin}}, fenilbutazon, fenitoin, sülfonamid<br><br><b>Sentrilobüler (zon 3) nekroz:</b> {{c3::Asetaminofen}}, karbon tetraklorür<br><br><b>Ven trombozu</b>: {{c2::{{c4::Oral kontraseptifler}}::ilişkili yanıt arka yüzde}}<br><br><b>Venookluziv hastalık (sinüzoidal obstrüksiyon sendromu)</b>: {{c4::Antineoplastikler}}<br><br><b>Peliozis hepatis:</b> {{c4::Anabolik steroidler}}</div>"
     },
     "Extra": {
      "before": "Venookluziv hastalık önemli!! Çıkabilir",
@@ -3237,11 +3340,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Extra'daki \"Venookluziv hastalık önemli!! Çıkabilir\" notu kaldırıldı; \" - \" → \", \"; Metil DOPA → metildopa; büyük/küçük harf"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı (OKS, KMP, Amoks Klav, KS, MXT, Vit A), makroveziküler satırdaki metotreksat c1 içine alındı, \"Venookluziv hastalık\"a güncel adı eklendi ve Extra'daki kişisel not kaldırıldı; \"SFS\" doğrulama için işaretlendi.\nNeden: Kart kişisel kısaltmalarla doluydu, açık duran \"MXT\" c1'in fibrozis cevabını ele veriyordu ve Extra yalnız kişisel işaret taşıyordu. \"SFS\"nin bu satırdaki anlamı belirsizdi.\nNasıl: [YP2, KS1, GN2] Sızıntı, sözcük aynı numaralı boşluğa alınarak giderildi; diğer örüntü-ilaç eşleşmeleri ders kitabıyla örtüştüğü için c1–c4 dağılımı ve kalın başlıklar korundu, anlamı kesin olmayan kısaltma değiştirilmedi.\nKaynak: Harrison's Principles of Internal Medicine, toksik ve ilaca bağlı hepatit bölümü.",
+   "aiNote": "Ne: Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı (OKS, KMP, Amoks Klav, KS, MXT, Vit A), makroveziküler satırdaki metotreksat c1 içine alındı, \"Venookluziv hastalık\"a güncel adı eklendi ve Extra'daki kişisel not kaldırıldı; \"SFS\" doğrulama için işaretlendi.\nNeden: Kart kişisel kısaltmalarla doluydu, açık duran \"MXT\" c1'in fibrozis cevabını ele veriyordu ve Extra yalnız kişisel işaret taşıyordu. \"SFS\"nin bu satırdaki anlamı belirsizdi.\nNasıl: [YP2, KS1, GN2] Sızıntı, sözcük aynı numaralı boşluğa alınarak giderildi; diğer örüntü-ilaç eşleşmeleri ders kitabıyla örtüştüğü için c1–c4 dağılımı ve kalın başlıklar korundu, anlamı kesin olmayan kısaltma değiştirilmedi.\nKaynak: Harrison's Principles of Internal Medicine, toksik ve ilaca bağlı hepatit bölümü."
+    }
+   ]
   },
   {
    "order": 80,
@@ -3537,11 +3652,11 @@
    "fields": {
     "Text": {
      "before": "&gt; {{c1::45}} yaş&nbsp; + Dispeptik yakınmalar ---&gt; İkaz edici bulgu olsa da olmasa da ---&gt; ÜST GİS Endeoskopi Yap&nbsp;",
-     "after": "&gt; {{c1::45}} yaş + dispeptik yakınmalar → alarm bulgusu olsun ya da olmasın → üst GİS endoskopisi yapılır"
+     "after": "ACG/CAG 2017: dispepside üst GİS endoskopisi önerilen yaş grubu → ≥ {{c1::60}} yaş; mide kanseri riski yüksek kişilerde daha erken değerlendirme düşünülebilir"
     },
     "Extra": {
      "before": "",
-     "after": "Klasik TUS eşiği 45 yaştır; ACG/CAG 2017 kılavuzu eşiği 60 yaş olarak önerir, mide kanseri sıklığı yüksek bölgelerde daha düşük yaş eşiği kullanılabilir."
+     "after": "Bu eşik ACG/CAG 2017 kapsamındadır. Daha genç hastada alarm bulguları, aile öyküsü ve yüksek riskli coğrafi köken bireysel değerlendirilir; eski 45 yaş kuralı evrensel güncel eşik değildir."
     }
    },
    "changes": [
@@ -3560,11 +3675,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; ÜST GİS → üst GİS; \"Yap\" → \"yapılır\"; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "45 yaş genel hükmü yerine kaynak ve risk koşulu belirtilmiş endoskopi eşiği soruluyor.",
+     "rationale": "Kaynak: https://www.cag-acg.org/_Library/clinical_cpgs_position_papers/CAG_CPG_Dyspepsia_AJG_Aug2017.pdf"
     }
    ],
-   "aiNote": "Ne: Yazım ve büyük harfler düzeltildi (\"Endeoskopi Yap\" → \"endoskopisi yapılır\", \"İkaz edici bulgu\" → \"alarm bulgusu\"); Extra'ya kılavuzlardaki güncel yaş eşiği eklendi.\nNeden: Kart 45 yaşı evrensel eşik gibi veriyordu; güncel ACG/CAG kılavuzu 60 yaşı önerir.\nNasıl: [TD2, YZ2, BÇ1] TUS'un beklediği klasik cevap (45) c1'de korundu ve Extra'da \"klasik\" diye çerçevelendi, güncel eşik tek cümleyle verildi.\nKaynak: ACG/CAG Clinical Guideline: Management of Dyspepsia (2017).",
+   "aiNote": "Ne: 45 yaş genel hükmü yerine kaynak ve risk koşulu belirtilmiş endoskopi eşiği soruluyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.cag-acg.org/_Library/clinical_cpgs_position_papers/CAG_CPG_Dyspepsia_AJG_Aug2017.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Yazım ve büyük harfler düzeltildi (\"Endeoskopi Yap\" → \"endoskopisi yapılır\", \"İkaz edici bulgu\" → \"alarm bulgusu\"); Extra'ya kılavuzlardaki güncel yaş eşiği eklendi.\nNeden: Kart 45 yaşı evrensel eşik gibi veriyordu; güncel ACG/CAG kılavuzu 60 yaşı önerir.\nNasıl: [TD2, YZ2, BÇ1] TUS'un beklediği klasik cevap (45) c1'de korundu ve Extra'da \"klasik\" diye çerçevelendi, güncel eşik tek cümleyle verildi.\nKaynak: ACG/CAG Clinical Guideline: Management of Dyspepsia (2017)."
+    }
+   ]
   },
   {
    "order": 88,
@@ -4172,11 +4299,11 @@
    "fields": {
     "Text": {
      "before": "Yoğun Bakım yatışının ilk {{c1::5-7}} günü <b>Vent İliskili Pnö</b> Etkenleri:<div><br></div><div><b>Non-MDR</b> olanlar (H.inf - Pnömokok - MSSA)</div>",
-     "after": "Yoğun bakım yatışının ilk {{c1::5–7}} gününde <b>ventilatörle ilişkili pnömoni</b> etkenleri:<div><br></div><div><b>Çoklu ilaç direnci olmayan (non-MDR)</b> etkenler (H. influenzae, pnömokok, MSSA)</div>"
+     "after": "ATS/IDSA 2016: VAP için çoklu ilaç direnci (MDR) risk örnekleri:<br><br>Son {{c1::90}} günde İV antibiyotik kullanımı<br><br>VAP başlamadan önce ≥ {{c1::5}} gün hastanede yatış"
     },
     "Extra": {
      "before": "",
-     "after": "ATS/IDSA 2005 kılavuzunda erken başlangıçlı ventilatörle ilişkili pnömoni ilk 4 günde gelişendir; 2016 kılavuzu bu ayrımı bırakmıştır ve son 90 günde İV antibiyotik kullanımı ile pnömoni öncesi ≥ 5 gün hastanede yatış çoklu ilaç dirençli etken riskini artırır."
+     "after": "Yalnız erken başlangıçlı olduğu için VAP etkenlerinin non-MDR olduğu varsayılmaz. Şok, ARDS ve renal replasman gibi diğer riskler ve yerel antibiyogram da değerlendirilir. Eski erken/geç başlangıç ayrımı bu risk değerlendirmesinin yerini tutmaz."
     }
    },
    "changes": [
@@ -4195,11 +4322,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "5-7 → 5–7; \" - \" ayraçları virgül; büyük/küçük harf"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "İlk 5–7 günde non-MDR genellemesi kaldırıldı; süreler gerçek MDR risk koşullarına bağlandı.",
+     "rationale": "Kaynak: https://www.idsociety.org/practice-guideline/hap_vap/"
     }
    ],
-   "aiNote": "Ne: \"Vent İliskili Pnö\" → \"ventilatörle ilişkili pnömoni\", \"H.inf\" → \"H. influenzae\" açıldı, sayı aralığı 5–7 yazıldı ve Extra'ya ATS/IDSA 2005 erken başlangıç tanımı (ilk 4 gün) ve 2016 kılavuzundaki çoklu ilaç direnci risk etkenleri eklendi.\nNeden: Kartın 5–7 günlük sınırı klasik TUS bilgisidir, ATS/IDSA 2005 erken başlangıcı ilk 4 gün olarak tanımlamış, 2016 kılavuzu ise dirençli etken riskini gün sayısından çok risk etkenlerine bağlamıştır; kısaltmalar yazarın notuydu.\nNasıl: [TD2, KS1, YP1] TUS'un beklediği cevap (5–7) c1 içinde korundu, kılavuz bilgisi Extra'da tek cümleyle verildi; kalın vurgular yerinde bırakıldı.\nKaynak: ATS/IDSA hastane kökenli pnömoni kılavuzları (2005 ve 2016); Harrison's Principles of Internal Medicine, sağlık bakımıyla ilişkili pnömoni bölümü.",
+   "aiNote": "Ne: İlk 5–7 günde non-MDR genellemesi kaldırıldı; süreler gerçek MDR risk koşullarına bağlandı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.idsociety.org/practice-guideline/hap_vap/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Vent İliskili Pnö\" → \"ventilatörle ilişkili pnömoni\", \"H.inf\" → \"H. influenzae\" açıldı, sayı aralığı 5–7 yazıldı ve Extra'ya ATS/IDSA 2005 erken başlangıç tanımı (ilk 4 gün) ve 2016 kılavuzundaki çoklu ilaç direnci risk etkenleri eklendi.\nNeden: Kartın 5–7 günlük sınırı klasik TUS bilgisidir, ATS/IDSA 2005 erken başlangıcı ilk 4 gün olarak tanımlamış, 2016 kılavuzu ise dirençli etken riskini gün sayısından çok risk etkenlerine bağlamıştır; kısaltmalar yazarın notuydu.\nNasıl: [TD2, KS1, YP1] TUS'un beklediği cevap (5–7) c1 içinde korundu, kılavuz bilgisi Extra'da tek cümleyle verildi; kalın vurgular yerinde bırakıldı.\nKaynak: ATS/IDSA hastane kökenli pnömoni kılavuzları (2005 ve 2016); Harrison's Principles of Internal Medicine, sağlık bakımıyla ilişkili pnömoni bölümü."
+    }
+   ]
   },
   {
    "order": 104,
@@ -6239,7 +6378,7 @@
    "fields": {
     "Text": {
      "before": "<b>Pulm. LenfanjioLeioMyomatozis&nbsp;</b><div><br></div><div>Tdv:</div><div><br></div><div>{{c1::Sirolimus}}</div><div><br></div><div>Progesteron</div><div><br></div><div>GnRH Analogları</div>",
-     "after": "<b>Pulmoner lenfanjiyoleiomiyomatozis (LAM)</b><div><br></div><div>Tedavi:</div><div><br></div><div>{{c1::Sirolimus}}</div><div><br></div><div>Progesteron</div><div><br></div><div>GnRH analogları</div>"
+     "after": "<b>Pulmoner lenfanjiyoleiomiyomatozis (LAM)</b><div><br></div><div>ATS/JRS: akciğer fonksiyonu anormal/azalan LAM hastasında önerilen tedavi:</div><div><br></div><div>{{c1::Sirolimus}}</div><div><br></div><div>Önerilmeyen eski hormonal yaklaşımlar: progesteron</div><div><br></div><div>ve GnRH analogları</div>"
     },
     "Extra": {
      "before": "",
@@ -6267,11 +6406,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "&nbsp; temizlendi; büyük/küçük harf"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "LAM için hormonal ilaçlar önerilen tedavi listesinde görünmüyor; sirolimusun hasta kapsamı öne taşındı.",
+     "rationale": "Kaynak: https://www.thoracic.org/statements/resources/interstitial-lung-disease/lam-guideline.pdf"
     }
    ],
-   "aiNote": "Ne: \"Pulm. LenfanjioLeioMyomatozis\" → \"Pulmoner lenfanjiyoleiomiyomatozis (LAM)\" yazıldı; Extra'ya hormonal tedavilerin artık önerilmediği eklendi.\nNeden: Progesteron ve GnRH analogları eski deneysel seçeneklerdir; güncel kılavuz yalnız mTOR inhibitörünü (sirolimus) önerir. Terim karışık büyük harfle ve yanlış yazılmıştı.\nNasıl: [TD2, YZ2, YP1] TUS listeyi sorabileceği için cloze'suz hormonal satırlar silinmedi, güncel durum Extra'da tek cümleyle verildi; c1 (sirolimus) korundu.\nKaynak: ATS/JRS 2016 lenfanjiyoleiomiyomatozis tanı ve tedavi kılavuzu.",
+   "aiNote": "Ne: LAM için hormonal ilaçlar önerilen tedavi listesinde görünmüyor; sirolimusun hasta kapsamı öne taşındı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.thoracic.org/statements/resources/interstitial-lung-disease/lam-guideline.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Pulm. LenfanjioLeioMyomatozis\" → \"Pulmoner lenfanjiyoleiomiyomatozis (LAM)\" yazıldı; Extra'ya hormonal tedavilerin artık önerilmediği eklendi.\nNeden: Progesteron ve GnRH analogları eski deneysel seçeneklerdir; güncel kılavuz yalnız mTOR inhibitörünü (sirolimus) önerir. Terim karışık büyük harfle ve yanlış yazılmıştı.\nNasıl: [TD2, YZ2, YP1] TUS listeyi sorabileceği için cloze'suz hormonal satırlar silinmedi, güncel durum Extra'da tek cümleyle verildi; c1 (sirolimus) korundu.\nKaynak: ATS/JRS 2016 lenfanjiyoleiomiyomatozis tanı ve tedavi kılavuzu."
+    }
+   ]
   },
   {
    "order": 157,
@@ -6783,11 +6934,11 @@
    "fields": {
     "Text": {
      "before": "En sık Kalıtsal Trombofili:<div><br></div><div>1- {{c1::F8 Artışı&nbsp;}}</div><div>2- {{c1::FV Leiden}}</div>",
-     "after": "En sık kalıtsal trombofili:<div><br></div><div>1- {{c1::Faktör VIII artışı}}</div><div>2- {{c1::Faktör V Leiden}}</div>"
+     "after": "En sık kalıtsal trombofili → {{c1::Faktör V Leiden}}<br><br>Hem kalıtsal hem edinsel etkenlerle yükselebilen, trombozla ilişkili koagülasyon faktörü → {{c1::Faktör VIII}}"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kaynaklarda en sık kalıtsal (genetik) trombofili faktör V Leiden mutasyonudur, onu protrombin G20210A mutasyonu izler; yüksek faktör VIII düzeyi hem kalıtsal hem edinsel (inflamasyon) etkenlerle belirlenen sık bir risk faktörüdür."
+     "after": "Faktör V Leiden sıklığı popülasyonlar arasında değişir. Yüksek faktör VIII, tek bir kalıtsal mutasyonla eş anlamlı değildir; inflamasyon gibi edinsel nedenlerle de yükselebilir."
     }
    },
    "changes": [
@@ -6806,11 +6957,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"En sık Kalıtsal\" büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Faktör VIII yüksekliği kalıtsal trombofili sıralamasından ayrıldı; ön/arka V Leiden yanıtı tutarlı.",
+     "rationale": "Kaynak: https://medlineplus.gov/genetics/condition/factor-v-leiden-thrombophilia/"
     }
    ],
-   "aiNote": "Ne: \"F8 Artışı\" → \"Faktör VIII artışı\", \"FV Leiden\" → \"Faktör V Leiden\" açıldı ve Extra'ya faktör V Leiden ile protrombin G20210A'nın en sık genetik trombofililer olduğu, faktör VIII yüksekliğinin kalıtsal + edinsel bir risk faktörü olduğu eklendi.\nNeden: Kart faktör VIII artışını en sık kalıtsal trombofili diye birinci sırada veriyordu; güncel kaynaklar en sık genetik nedeni faktör V Leiden olarak tanımlar.\nNasıl: [TD2, EK1, KS1] Yazarın sıralaması TUS hazırlık kaynaklarındaki sürüm olabileceği için c1 içeriği ve sıra korundu; güncel tanım Extra'da tek cümleyle verildi.\nKaynak: GeneReviews, Factor V Leiden Thrombophilia (NBK1368); Harrison's Principles of Internal Medicine, tromboz ve trombofili bölümü.",
+   "aiNote": "Ne: Faktör VIII yüksekliği kalıtsal trombofili sıralamasından ayrıldı; ön/arka V Leiden yanıtı tutarlı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://medlineplus.gov/genetics/condition/factor-v-leiden-thrombophilia/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"F8 Artışı\" → \"Faktör VIII artışı\", \"FV Leiden\" → \"Faktör V Leiden\" açıldı ve Extra'ya faktör V Leiden ile protrombin G20210A'nın en sık genetik trombofililer olduğu, faktör VIII yüksekliğinin kalıtsal + edinsel bir risk faktörü olduğu eklendi.\nNeden: Kart faktör VIII artışını en sık kalıtsal trombofili diye birinci sırada veriyordu; güncel kaynaklar en sık genetik nedeni faktör V Leiden olarak tanımlar.\nNasıl: [TD2, EK1, KS1] Yazarın sıralaması TUS hazırlık kaynaklarındaki sürüm olabileceği için c1 içeriği ve sıra korundu; güncel tanım Extra'da tek cümleyle verildi.\nKaynak: GeneReviews, Factor V Leiden Thrombophilia (NBK1368); Harrison's Principles of Internal Medicine, tromboz ve trombofili bölümü."
+    }
+   ]
   },
   {
    "order": 170,
@@ -7068,7 +7231,7 @@
    "fields": {
     "Text": {
      "before": "BAL Sıvısı Özellikleri&nbsp;<div><br></div><div>Lenfositik --&gt; {{c1::Sarkoidoz}} - {{c1::Tbc&nbsp;}}</div><div><br></div><div>Nötrofilik ---&gt; {{c2::İdio. AC Fibrozis}}i - {{c2::ARDS}} - {{c2::Asbetozis}}</div><div><br></div><div>Eozinofilik --&gt; {{c3::Eoz. Pnö.}} - {{c3::Astım}} - {{c3::Churg St.}} - {{c3::Allerjik Bronkopulm. Aspergillozis}}</div><div><br></div><div>T4/T8 oranı ARTMIŞ ---&gt; {{c4::Sarkoidoz}}</div><div><br></div><div>T4/T8 oranı normal ---&gt; {{c4::Tbc&nbsp;}}</div><div><br></div><div>T4/T8 oranı AZALMIŞ ---&gt; {{c5::Hipersens. Pnö.}} - {{c5::HIV}} - {{c5::Silikozis}} - {{c5::BOP}}</div>",
-     "after": "BAL sıvısı özellikleri<div><br></div><div>Lenfositik → {{c1::sarkoidoz}}, {{c1::tüberküloz}}</div><div><br></div><div>Nötrofilik → {{c2::idiyopatik pulmoner fibrozis}}, {{c2::ARDS}}, {{c2::asbestozis}}</div><div><br></div><div>Eozinofilik → {{c3::eozinofilik pnömoni}}, {{c3::astım}}, {{c3::eozinofilik granülomatöz polianjiit (Churg-Strauss)}}, {{c3::alerjik bronkopulmoner aspergilloz}}</div><div><br></div><div>CD4/CD8 oranı <b>artmış</b> → {{c4::sarkoidoz}}</div><div><br></div><div>CD4/CD8 oranı normal → {{c4::tüberküloz}}</div><div><br></div><div>CD4/CD8 oranı <b>azalmış</b> → {{c5::hipersensitivite pnömonisi}}, {{c5::HIV}}, {{c5::silikozis}}, {{c5::organize pnömoni (BOOP)}}</div>"
+     "after": "BAL sıvısı özellikleri<div><br></div><div>Lenfositik → {{c4::{{c1::sarkoidoz}}::ilişkili yanıt arka yüzde}}, {{c4::{{c1::tüberküloz}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Nötrofilik → {{c2::idiyopatik pulmoner fibrozis}}, {{c2::ARDS}}, {{c2::asbestozis}}</div><div><br></div><div>Eozinofilik → {{c3::eozinofilik pnömoni}}, {{c3::astım}}, {{c3::eozinofilik granülomatöz polianjiit (Churg-Strauss)}}, {{c3::alerjik bronkopulmoner aspergilloz}}</div><div><br></div><div>CD4/CD8 oranı <b>artmış</b> → {{c1::{{c4::sarkoidoz}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>CD4/CD8 oranı normal → {{c1::{{c4::tüberküloz}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>CD4/CD8 oranı <b>azalmış</b> → {{c5::hipersensitivite pnömonisi}}, {{c5::HIV}}, {{c5::silikozis}}, {{c5::organize pnömoni (BOOP)}}</div>"
     },
     "Extra": {
      "before": "",
@@ -7101,11 +7264,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> ve ---> → →; \" - \" → virgül; ARTMIŞ/AZALMIŞ → kalın küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı (Tbc, Eoz. Pnö., Hipersens. Pnö., İdio. AC Fibrozis), \"Churg St.\" → \"eozinofilik granülomatöz polianjiit (Churg-Strauss)\", \"BOP\" → \"organize pnömoni (BOOP)\", \"T4/T8\" → \"CD4/CD8\" yapıldı; Extra'ya hipersensitivite pnömonisinin lenfositik BAL yaptığı eklendi.\nNeden: Lenfositik BAL'ın en tipik nedeni olan hipersensitivite pnömonisi o satırda yoktu; eski eponim ve adlar güncel adlarıyla verilmemişti.\nNasıl: [EK2, YP2, GN2] Eksik üye satıra eklenseydi c5 cevabını ele vereceği için Extra'ya yazıldı; c1–c5 dağılımı ve eponimler parantezde korundu.\nKaynak: Harrison, interstisyel akciğer hastalıkları ve bronkoskopi/BAL bölümü.",
+   "aiNote": "Ne: Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı (Tbc, Eoz. Pnö., Hipersens. Pnö., İdio. AC Fibrozis), \"Churg St.\" → \"eozinofilik granülomatöz polianjiit (Churg-Strauss)\", \"BOP\" → \"organize pnömoni (BOOP)\", \"T4/T8\" → \"CD4/CD8\" yapıldı; Extra'ya hipersensitivite pnömonisinin lenfositik BAL yaptığı eklendi.\nNeden: Lenfositik BAL'ın en tipik nedeni olan hipersensitivite pnömonisi o satırda yoktu; eski eponim ve adlar güncel adlarıyla verilmemişti.\nNasıl: [EK2, YP2, GN2] Eksik üye satıra eklenseydi c5 cevabını ele vereceği için Extra'ya yazıldı; c1–c5 dağılımı ve eponimler parantezde korundu.\nKaynak: Harrison, interstisyel akciğer hastalıkları ve bronkoskopi/BAL bölümü."
+    }
+   ]
   },
   {
    "order": 177,
@@ -7468,7 +7643,7 @@
    "fields": {
     "Text": {
      "before": "Pulm HT'da mort azaltan tdv'ler (2) --&gt; {{c1::Epoprostenol - Masitentan&nbsp;}}",
-     "after": "Pulmoner HT'de mortaliteyi azaltan tedaviler (2) → {{c1::epoprostenol, masitentan}}"
+     "after": "Pulmoner arteriyel hipertansiyon çalışmalarında sonlanımlar:<br><br>İV tedaviyle sağkalım yararı gösterilen örnek → {{c1::epoprostenol}}<br><br>SERAPHIN çalışmasında morbidite/mortalite <b>bileşik</b> sonlanımını azaltan → {{c1::masitentan}}"
     },
     "Extra": {
      "before": "",
@@ -7491,11 +7666,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; \" - \" → virgül; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Masitentan için bileşik sonlanım yararı tek başına mortalite yararı olarak sunulmuyor.",
+     "rationale": "Kaynak: https://www.nejm.org/doi/full/10.1056/NEJMoa1213917"
     }
    ],
-   "aiNote": "Ne: Kökteki kısaltmalar açıldı ve Extra'ya epoprostenolün tek başına sağkalım yararı ile masitentanın bileşik sonlanım yararı arasındaki fark eklendi.\nNeden: Masitentanın yararı morbidite-mortalite bileşik sonlanımındadır; kart onu epoprostenolle aynı mortalite yararına sahip gibi gösteriyordu.\nNasıl: [TD2, EK1, KS1] TUS'un beklediği iki üyeli cevap ve sayı (2) c1'de korundu, kanıt farkı Extra'da tek cümleyle verildi.\nKaynak: Harrison, pulmoner hipertansiyon bölümü; ESC/ERS pulmoner hipertansiyon kılavuzu.",
+   "aiNote": "Ne: Masitentan için bileşik sonlanım yararı tek başına mortalite yararı olarak sunulmuyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nejm.org/doi/full/10.1056/NEJMoa1213917",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kökteki kısaltmalar açıldı ve Extra'ya epoprostenolün tek başına sağkalım yararı ile masitentanın bileşik sonlanım yararı arasındaki fark eklendi.\nNeden: Masitentanın yararı morbidite-mortalite bileşik sonlanımındadır; kart onu epoprostenolle aynı mortalite yararına sahip gibi gösteriyordu.\nNasıl: [TD2, EK1, KS1] TUS'un beklediği iki üyeli cevap ve sayı (2) c1'de korundu, kanıt farkı Extra'da tek cümleyle verildi.\nKaynak: Harrison, pulmoner hipertansiyon bölümü; ESC/ERS pulmoner hipertansiyon kılavuzu."
+    }
+   ]
   },
   {
    "order": 187,
@@ -7580,11 +7767,11 @@
    "fields": {
     "Text": {
      "before": "CURB 65 skoru kararları&nbsp;<div><br></div><div>skor 0 --&gt; {{c1::evde tdv}}</div><div><br></div><div>Skor 1-2 ve {{c1::&gt; 65 yaş}} kriteri kısmen / tamamen skorun parçası değilse --&gt; {{c1::hast'ye yatır}}</div><div><br></div><div>Skor &gt; = 3&nbsp; --&gt; {{c1::yoğun bakım&nbsp;}}</div>",
-     "after": "CURB-65 skoruna göre kararlar<div><br></div><div>Skor 0 → {{c1::evde tedavi}}</div><div><br></div><div>Skor 1–2 ve skor yalnız {{c1::≥ 65 yaş}} kriterinden kaynaklanmıyorsa → {{c1::hastaneye yatır}}</div><div><br></div><div>Skor ≥ 3 → {{c1::yoğun bakım}}</div>"
+     "after": "Toplum kökenli pnömonide CURB-65, klinik değerlendirmeyle birlikte kullanılır:<br><br>0–1 → {{c1::düşük risk; uygunsa ayaktan tedavi}}<br><br>2 → {{c1::orta risk; hastanede değerlendirme/tedavi düşünülür}}<br><br>3–5 → {{c1::yüksek risk; hastanede tedavi, gerektiğinde yoğun bakım değerlendirmesi}}"
     },
     "Extra": {
      "before": "",
-     "after": "BTS'ye göre skor ≥ 3 ağır pnömonidir; hasta hastaneye yatırılır, özellikle skor 4–5'te yoğun bakım değerlendirilir."
+     "after": "Skor tek başına otomatik yoğun bakım yatış kararı değildir. Hemodinamik durum, oksijenasyon, ventilasyon ihtiyacı, komorbiditeler ve klinik yargı kararı belirler. NICE NG250 (2025) toplum kökenli erişkin pnömoni risk yaklaşımı."
     }
    },
    "changes": [
@@ -7609,11 +7796,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; \"> =\" → \"≥\"; 1-2 → 1–2; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Skor ≥3 için otomatik yoğun bakım cevabı kaldırıldı; orta risk ve klinik değerlendirme ayrıldı.",
+     "rationale": "Kaynak: https://www.nice.org.uk/guidance/ng250/chapter/Recommendations"
     }
    ],
-   "aiNote": "Ne: Belirsiz koşul cümlesi \"skor yalnız ≥ 65 yaş kriterinden kaynaklanmıyorsa\" olarak yeniden yazıldı, \"> 65\" → \"≥ 65\" ve kısaltmalar açıldı; Extra'ya skor ≥ 3'te yoğun bakımın özellikle 4–5 puanda değerlendirildiği eklendi.\nNeden: Kök hangi hastanın yatırılacağını açıkça söylemiyordu ve skor ≥ 3 her hastada yoğun bakım gerektirmez.\nNasıl: [SN1, EK1, TD2] TUS'un beklediği üç karar (evde tedavi, yatış, yoğun bakım) c1'de korundu; niteleyici Extra'da verildi.\nKaynak: BTS topluma kazanılmış pnömoni kılavuzu; Harrison, pnömoni bölümü (CURB-65).",
+   "aiNote": "Ne: Skor ≥3 için otomatik yoğun bakım cevabı kaldırıldı; orta risk ve klinik değerlendirme ayrıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nice.org.uk/guidance/ng250/chapter/Recommendations",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Belirsiz koşul cümlesi \"skor yalnız ≥ 65 yaş kriterinden kaynaklanmıyorsa\" olarak yeniden yazıldı, \"> 65\" → \"≥ 65\" ve kısaltmalar açıldı; Extra'ya skor ≥ 3'te yoğun bakımın özellikle 4–5 puanda değerlendirildiği eklendi.\nNeden: Kök hangi hastanın yatırılacağını açıkça söylemiyordu ve skor ≥ 3 her hastada yoğun bakım gerektirmez.\nNasıl: [SN1, EK1, TD2] TUS'un beklediği üç karar (evde tedavi, yatış, yoğun bakım) c1'de korundu; niteleyici Extra'da verildi.\nKaynak: BTS topluma kazanılmış pnömoni kılavuzu; Harrison, pnömoni bölümü (CURB-65)."
+    }
+   ]
   },
   {
    "order": 190,
@@ -8308,13 +8507,13 @@
    "noteId": 1604775065376,
    "guid": "F_v_=Guz=7",
    "topic": "Hematoloji",
-   "severity": "Yüksek",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "OHA Exchange Transfüzyon yapılan durumlar (3)<div><br></div><div><br></div><div>{{c1::<span style=\"color: var(--field-fg); background: var(--field-bg);\">SVO</span></div><div><b style=\"color: var(--field-fg);\">Splenik Sekestrasyon Krizi</b></div><div>Akut göğüs ağrısı Send}}<br></div>",
-     "after": "Orak hücreli anemide kan değişimi (exchange transfüzyon) yapılan durumlar (3)<div><br></div><div>{{c1::<div>SVO</div><div><b>Splenik sekestrasyon krizi</b></div><div>Akut göğüs sendromu</div>}}</div>"
+     "after": "Orak hücreli hastalıkta transfüzyon seçimi:<br><br>Akut inme veya ağır akut göğüs sendromunda düşünülen yöntem → {{c1::eritrosit değişimi (exchange transfüzyon)}}<br><br>Ağır anemiyle splenik sekestrasyonda başlangıç yaklaşımı → {{c1::dikkatli, küçük hacimli basit eritrosit transfüzyonu}}"
     },
     "Extra": {
      "before": "",
@@ -8343,11 +8542,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Yapıştırmadan kalan stil span'ı ve <b> içindeki renk stili kaldırıldı; cloze satırları tek <div> içine alındı; art arda boş satır silindi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Splenik sekestrasyon koşulsuz exchange listesinden ayrıldı; basit transfüzyonla tutarlı soru oluşturuldu.",
+     "rationale": "Kaynak: https://www.nhlbi.nih.gov/sites/default/files/publications/56-364NFULL.pdf"
     }
    ],
-   "aiNote": "Ne: \"OHA Exchange Transfüzyon\" → \"Orak hücreli anemide kan değişimi (exchange transfüzyon)\" ve \"Akut göğüs ağrısı Send\" → \"Akut göğüs sendromu\" yapıldı; Extra'ya splenik sekestrasyonda basit transfüzyonun esas olduğu eklendi.\nNeden: Splenik sekestrasyon krizinde güncel yaklaşım kan değişimi değil basit transfüzyondur; \"akut göğüs ağrısı sendromu\" hastalığın adı değildir, OHA yanlış okunabilecek bir kısaltmaydı ve alan yapıştırma artıkları taşıyordu.\nNasıl: [TD2, YP4, YP3] TUS'un beklediği üç üyeli liste, sayı (3) ve c1 korundu, güncel ayrım Extra'da tek cümleyle verildi; splenik sekestrasyonun kalın vurgusu bırakıldı, div'ler cloze içinde dengelendi.\nKaynak: NHLBI orak hücre hastalığı uzman paneli raporu (2014, transfüzyon önerileri); Harrison's Principles of Internal Medicine, orak hücreli anemi bölümü.",
+   "aiNote": "Ne: Splenik sekestrasyon koşulsuz exchange listesinden ayrıldı; basit transfüzyonla tutarlı soru oluşturuldu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nhlbi.nih.gov/sites/default/files/publications/56-364NFULL.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"OHA Exchange Transfüzyon\" → \"Orak hücreli anemide kan değişimi (exchange transfüzyon)\" ve \"Akut göğüs ağrısı Send\" → \"Akut göğüs sendromu\" yapıldı; Extra'ya splenik sekestrasyonda basit transfüzyonun esas olduğu eklendi.\nNeden: Splenik sekestrasyon krizinde güncel yaklaşım kan değişimi değil basit transfüzyondur; \"akut göğüs ağrısı sendromu\" hastalığın adı değildir, OHA yanlış okunabilecek bir kısaltmaydı ve alan yapıştırma artıkları taşıyordu.\nNasıl: [TD2, YP4, YP3] TUS'un beklediği üç üyeli liste, sayı (3) ve c1 korundu, güncel ayrım Extra'da tek cümleyle verildi; splenik sekestrasyonun kalın vurgusu bırakıldı, div'ler cloze içinde dengelendi.\nKaynak: NHLBI orak hücre hastalığı uzman paneli raporu (2014, transfüzyon önerileri); Harrison's Principles of Internal Medicine, orak hücreli anemi bölümü."
+    }
+   ]
   },
   {
    "order": 208,
@@ -8511,7 +8722,7 @@
    "fields": {
     "Text": {
      "before": "ALL Tdv&nbsp;<div><br></div><div>Remisyon İndüksiyon --&gt; {{c1::Hyper CVAD (SFS - Vinkirstin - Doksorubusin - DMZ)}} + Dönüşümlü {{c2::MXT}} + {{c2::Sitarabin}}</div><div><br></div><div>Konsoliadyon --&gt; Vinkristin / SFS</div><div><br></div><div>İdamer --&gt; MP (günlük) - MXT (Haftalık) - Vinkristin (Aylık)</div>",
-     "after": "ALL tedavisi<div><br></div><div>Remisyon indüksiyonu → {{c1::Hyper-CVAD (siklofosfamid, vinkristin, doksorubisin, deksametazon)}} + dönüşümlü {{c2::metotreksat}} + {{c2::sitarabin}}</div><div><br></div><div>Konsolidasyon → vinkristin / siklofosfamid</div><div><br></div><div>İdame → 6-MP (günlük), metotreksat (haftalık), vinkristin (aylık)</div>"
+     "after": "ALL tedavisi<div><br></div><div>Remisyon indüksiyonu → {{c1::Hyper-CVAD (siklofosfamid, vinkristin, doksorubisin, deksametazon)}} + dönüşümlü {{c2::metotreksat}} + {{c2::sitarabin}}</div><div><br></div><div>Konsolidasyon → vinkristin / siklofosfamid</div><div><br></div><div>İdame → 6-MP (günlük), {{c2::metotreksat}} (haftalık), vinkristin (aylık)</div>"
     },
     "Extra": {
      "before": "",
@@ -8539,11 +8750,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; Hyper CVAD → Hyper-CVAD; liste ayracı virgül; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar (SFS, DMZ, MXT, Tdv) açıldı, \"Vinkirstin\", \"Doksorubusin\", \"Konsoliadyon\", \"İdamer\" düzeltildi ve Extra'ya SSS profilaksisi ile Ph(+) ALL'de tirozin kinaz inhibitörü eklendi.\nNeden: Kart ALL tedavisinin temel bileşeni olan SSS profilaksisini içermiyordu; ilaç adlarında çok sayıda yazım hatası ve kişisel kısaltma vardı.\nNasıl: [EK3, KS1, YZ2] Hyper-CVAD ve POMP idame şeması doğru olduğundan c1/c2 cevapları korundu, eksik tedavi bileşeni Extra'da tek cümleyle verildi.\nKaynak: Harrison's Principles of Internal Medicine, akut lenfoblastik lösemi bölümü.",
+   "aiNote": "Ne: Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar (SFS, DMZ, MXT, Tdv) açıldı, \"Vinkirstin\", \"Doksorubusin\", \"Konsoliadyon\", \"İdamer\" düzeltildi ve Extra'ya SSS profilaksisi ile Ph(+) ALL'de tirozin kinaz inhibitörü eklendi.\nNeden: Kart ALL tedavisinin temel bileşeni olan SSS profilaksisini içermiyordu; ilaç adlarında çok sayıda yazım hatası ve kişisel kısaltma vardı.\nNasıl: [EK3, KS1, YZ2] Hyper-CVAD ve POMP idame şeması doğru olduğundan c1/c2 cevapları korundu, eksik tedavi bileşeni Extra'da tek cümleyle verildi.\nKaynak: Harrison's Principles of Internal Medicine, akut lenfoblastik lösemi bölümü."
+    }
+   ]
   },
   {
    "order": 213,
@@ -9165,17 +9388,17 @@
    "noteId": 1604839619628,
    "guid": "K!I=]Y5gjM",
    "topic": "Hematoloji",
-   "severity": "Yüksek",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Plazmeferez İlk tercih olan hast'lar (3) ---&gt; {{c1::atipik HÜS / TTP / Goodpasture&nbsp;}}",
-     "after": "Plazmaferezin ilk tercih olduğu hastalıklar (3) → {{c1::atipik HÜS, TTP, Goodpasture sendromu}}"
+     "after": "Plazma değişiminin temel tedavide yer aldığı hastalık örnekleri → {{c1::TTP ve anti-GBM (Goodpasture) hastalığı}}<br><br>Kompleman aracılı atipik HÜS için hedefe yönelik tedavi → {{c1::C5 inhibisyonu (ör. ekulizumab)}}"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel yaklaşımda atipik HÜS'te ilk tercih kompleman C5 inhibitörüdür (ekulizumab, ravulizumab); plazmaferez tanı netleşene kadar ve anti-faktör H antikorlu olgularda kullanılır."
+     "after": "Atipik HÜS, plazmaferezin koşulsuz ilk tercih olduğu bir hastalık gibi öğretilmez. C5 inhibitörü tedavisi tanı ve uygunluk değerlendirmesiyle planlanır; TTP dışlanana kadar veya seçilmiş anti-faktör H antikorlu olgularda plazma değişimi gerekebilir."
     }
    },
    "changes": [
@@ -9194,11 +9417,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; liste ayracı virgül; Goodpasture → Goodpasture sendromu; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Atipik HÜS için ön yüzdeki plazmaferez ilk tercih cevabı, arka açıklamayla uyumlu hedef tedaviye çevrildi.",
+     "rationale": "Kaynak: https://www.nice.org.uk/guidance/ta710/chapter/3-Committee-discussion"
     }
    ],
-   "aiNote": "Ne: \"Plazmeferez İlk tercih olan hast'lar\" → \"Plazmaferezin ilk tercih olduğu hastalıklar\" yapıldı, ayraçlar virgül oldu ve Extra'ya atipik HÜS'te C5 inhibitörlerinin ilk tercih olduğu eklendi.\nNeden: Atipik HÜS'te güncel ilk tercih kompleman C5 inhibitörüdür; kart plazmaferezi bu hastalığın ilk tercihi gibi sunuyordu. Yazım hatası ve kişisel kısaltma vardı.\nNasıl: [TD2, KS1, BÇ1] TUS'un üç üyeli klasik listesi ve sayı (3) korundu, güncel tedavi Extra'da tek cümleyle verildi; TTP ve anti-GBM hastalığında plazmaferezin ASFA kategori I olduğu doğru.\nKaynak: ASFA terapötik aferez kılavuzu (Journal of Clinical Apheresis); Harrison's Principles of Internal Medicine, trombotik mikroanjiyopatiler bölümü.",
+   "aiNote": "Ne: Atipik HÜS için ön yüzdeki plazmaferez ilk tercih cevabı, arka açıklamayla uyumlu hedef tedaviye çevrildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nice.org.uk/guidance/ta710/chapter/3-Committee-discussion",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Plazmeferez İlk tercih olan hast'lar\" → \"Plazmaferezin ilk tercih olduğu hastalıklar\" yapıldı, ayraçlar virgül oldu ve Extra'ya atipik HÜS'te C5 inhibitörlerinin ilk tercih olduğu eklendi.\nNeden: Atipik HÜS'te güncel ilk tercih kompleman C5 inhibitörüdür; kart plazmaferezi bu hastalığın ilk tercihi gibi sunuyordu. Yazım hatası ve kişisel kısaltma vardı.\nNasıl: [TD2, KS1, BÇ1] TUS'un üç üyeli klasik listesi ve sayı (3) korundu, güncel tedavi Extra'da tek cümleyle verildi; TTP ve anti-GBM hastalığında plazmaferezin ASFA kategori I olduğu doğru.\nKaynak: ASFA terapötik aferez kılavuzu (Journal of Clinical Apheresis); Harrison's Principles of Internal Medicine, trombotik mikroanjiyopatiler bölümü."
+    }
+   ]
   },
   {
    "order": 229,
@@ -9992,7 +10227,7 @@
    "fields": {
     "Text": {
      "before": "KY'de mort'i AZALTAN ilaçlar (8)<div><br></div><div><div>{{c1::ACE-i}}</div><div>{{c2::B-B}}</div><div>{{c3::ARB}}</div><div>{{c1::Sakubutril}}</div><div>{{c2::Spiromolakton}}</div><div>{{c3::İvabradin}} ??</div><div>{{c1::Hidralazin + İzosorbit Dinitrat&nbsp;}}</div><div>{{c2::Omega 3 YA&nbsp;}}</div></div>",
-     "after": "Düşük EF'li KY'de mortaliteyi azaltan ilaçlar (8)<div><br></div><div><div>{{c1::ACE inhibitörü}}</div><div>{{c2::Beta blokör}}</div><div>{{c3::ARB}}</div><div>{{c1::Sakubitril-valsartan}}</div><div>{{c2::Spironolakton}}</div><div>{{c3::İvabradin}} (KY nedenli ölüm ve hastaneye yatışı azaltır)</div><div>{{c1::Hidralazin + izosorbid dinitrat}}</div><div>{{c2::Omega-3 yağ asitleri}} (kanıt zayıf)</div></div>"
+     "after": "Düşük EF'li KY'de klinik sonlanım yararı olan ilaç örnekleri (AHA/ACC/HFSA 2022; yarar ve endikasyonlar aynı değildir)<div><br></div><div><div>{{c1::ACE inhibitörü}}</div><div>{{c1::SGLT2 inhibitörü}} (temel tedavi gruplarından)</div><div>{{c2::Beta blokör}}</div><div>{{c3::ARB}}</div><div>{{c1::Sakubitril-valsartan}}</div><div>{{c2::Spironolakton}}</div><div>{{c3::İvabradin}} (uygun hastada KY nedenli ölüm/hastaneye yatış bileşik sonlanımını azaltır)</div><div>{{c1::Hidralazin + izosorbid dinitrat}}</div><div>{{c2::Omega-3 yağ asitleri}} (kanıt zayıf)</div></div>"
     },
     "Extra": {
      "before": "",
@@ -10026,11 +10261,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"??\" kaldırıldı; AZALTAN → azaltan; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Eksiksiz mortalite listesi iddiası kaldırıldı; SGLT2 grubu ve ivabradinin seçilmiş hasta/bileşik sonlanım kapsamı öne taşındı.",
+     "rationale": "Kaynak: https://www.jacc.org/doi/10.1016/j.jacc.2021.12.012"
     }
    ],
-   "aiNote": "Ne: Kök \"Düşük EF'li KY'de mortaliteyi azaltan ilaçlar (8)\" yapıldı, \"İvabradin ??\" → \"İvabradin (KY nedenli ölüm ve hastaneye yatışı azaltır)\" ve omega-3'e \"(kanıt zayıf)\" eklendi; üç ilaç adı düzeltildi ve Extra'ya SGLT2 inhibitörleri ile kanıt düzeyleri yazıldı.\nNeden: Yazarın \"??\" ile işaretlediği ivabradin tüm nedenli mortaliteyi azaltmaz; mortalite yararı yalnız düşük EF'li KY'de geçerlidir ve güncel dört temel ilaçtan SGLT2 inhibitörleri listede yoktu.\nNasıl: [EK1, TD2, YP1] Sekiz üyeli liste ve c1/c2/c3 dağılımı TUS'un sorabileceği biçimde korundu; şüpheli üyeler silinmeden niteleyiciyle sınırlandı, güncel ilaç grubu sayıyı bozmamak için Extra'da verildi.\nKaynak: ESC 2021 akut ve kronik kalp yetmezliği kılavuzu; 2022 AHA/ACC/HFSA kalp yetmezliği kılavuzu (omega-3 IIb); SHIFT ve DAPA-HF çalışmaları.",
+   "aiNote": "Ne: Eksiksiz mortalite listesi iddiası kaldırıldı; SGLT2 grubu ve ivabradinin seçilmiş hasta/bileşik sonlanım kapsamı öne taşındı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.jacc.org/doi/10.1016/j.jacc.2021.12.012",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kök \"Düşük EF'li KY'de mortaliteyi azaltan ilaçlar (8)\" yapıldı, \"İvabradin ??\" → \"İvabradin (KY nedenli ölüm ve hastaneye yatışı azaltır)\" ve omega-3'e \"(kanıt zayıf)\" eklendi; üç ilaç adı düzeltildi ve Extra'ya SGLT2 inhibitörleri ile kanıt düzeyleri yazıldı.\nNeden: Yazarın \"??\" ile işaretlediği ivabradin tüm nedenli mortaliteyi azaltmaz; mortalite yararı yalnız düşük EF'li KY'de geçerlidir ve güncel dört temel ilaçtan SGLT2 inhibitörleri listede yoktu.\nNasıl: [EK1, TD2, YP1] Sekiz üyeli liste ve c1/c2/c3 dağılımı TUS'un sorabileceği biçimde korundu; şüpheli üyeler silinmeden niteleyiciyle sınırlandı, güncel ilaç grubu sayıyı bozmamak için Extra'da verildi.\nKaynak: ESC 2021 akut ve kronik kalp yetmezliği kılavuzu; 2022 AHA/ACC/HFSA kalp yetmezliği kılavuzu (omega-3 IIb); SHIFT ve DAPA-HF çalışmaları."
+    }
+   ]
   },
   {
    "order": 250,
@@ -10612,7 +10859,7 @@
    "fields": {
     "Text": {
      "before": "HOKMP Mut'lar<div><br></div><div>en sık --&gt; {{c1::beta Myozin Ağır zincir (MYH7)}}</div><div><br></div><div>2. sırada ---&gt; {{c2::Myozin bağlayıcı protein (MYBP3)}}</div><div><br></div><div>en ağır mut ----&gt; {{c1::Troponin T&nbsp;}}</div>",
-     "after": "Hipertrofik kardiyomiyopati mutasyonları<div><br></div><div>En sık → {{c1::beta-miyozin ağır zinciri (MYH7)}}</div><div><br></div><div>2. sırada → {{c2::miyozin bağlayıcı protein C (MYBPC3)}}</div><div><br></div><div>En ağır seyirli mutasyon → {{c1::troponin T}}</div>"
+     "after": "Hipertrofik kardiyomiyopatiyle ilişkili sarkomerik protein/gen örnekleri<div><br></div><div>Sık etkilenen miyozin proteini → {{c1::beta-miyozin ağır zinciri (MYH7)}}</div><div><br></div><div>Sık etkilenen miyozin bağlayıcı protein → {{c2::miyozin bağlayıcı protein C (MYBPC3)}}</div><div><br></div><div>Bir diğer sarkomerik protein → {{c1::troponin T}}</div>"
     },
     "Extra": {
      "before": "",
@@ -10646,11 +10893,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> ve ----> → →; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Popülasyona göre değişen gen sıklığı ve tüm varyantlara genellenen en ağır seyir sıralaması kaldırıldı.",
+     "rationale": "Kaynak: https://www.ncbi.nlm.nih.gov/books/NBK1768/?report=reader"
     }
    ],
-   "aiNote": "Ne: Gen simgesi \"MYBP3\" → \"MYBPC3\" ve protein adı \"miyozin bağlayıcı protein C\" olarak düzeltildi; başlık \"Hipertrofik kardiyomiyopati mutasyonları\" yapıldı, Extra'ya MYBPC3 ile MYH7'nin güncel sıklık bilgisi eklendi.\nNeden: Kartta var olmayan bir gen simgesi yazıyordu; ayrıca güncel serilerde MYBPC3 en az MYH7 kadar sık olduğu hâlde kart sıralamayı kesin bilgi gibi veriyordu.\nNasıl: [TD2, YZ1, KS1] TUS'un beklediği klasik sıralama (MYH7 en sık, MYBPC3 ikinci, troponin T en ağır seyirli) kökte korundu, güncel sıklık Extra'ya tek cümleyle yazıldı; c1/c2 dağılımı değişmedi.\nKaynak: Harrison's Principles of Internal Medicine, kardiyomiyopatiler bölümü (sarkomer gen mutasyonları).",
+   "aiNote": "Ne: Popülasyona göre değişen gen sıklığı ve tüm varyantlara genellenen en ağır seyir sıralaması kaldırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ncbi.nlm.nih.gov/books/NBK1768/?report=reader",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Gen simgesi \"MYBP3\" → \"MYBPC3\" ve protein adı \"miyozin bağlayıcı protein C\" olarak düzeltildi; başlık \"Hipertrofik kardiyomiyopati mutasyonları\" yapıldı, Extra'ya MYBPC3 ile MYH7'nin güncel sıklık bilgisi eklendi.\nNeden: Kartta var olmayan bir gen simgesi yazıyordu; ayrıca güncel serilerde MYBPC3 en az MYH7 kadar sık olduğu hâlde kart sıralamayı kesin bilgi gibi veriyordu.\nNasıl: [TD2, YZ1, KS1] TUS'un beklediği klasik sıralama (MYH7 en sık, MYBPC3 ikinci, troponin T en ağır seyirli) kökte korundu, güncel sıklık Extra'ya tek cümleyle yazıldı; c1/c2 dağılımı değişmedi.\nKaynak: Harrison's Principles of Internal Medicine, kardiyomiyopatiler bölümü (sarkomer gen mutasyonları)."
+    }
+   ]
   },
   {
    "order": 266,
@@ -12452,7 +12711,7 @@
    "fields": {
     "Text": {
      "before": "<b>Polimyozit</b> tanısında önemli:<br>- Subakut proksimal kas güçsüzlüğü<br>- Serum CK düzeyi artışı<br>- Kas biyopsilerinde {{c2::endomisyal}} inf. ve İnk Body My özellikleri olMAMAsı<br><br>Kas Bx:<div><br></div><div><i><b>MikroAnjiopati</b></i> + <b>Kas İskemi </b>--&gt; {{c1::DermatoM}}</div><div><br></div><div><b>T Hc Aracılı SitoToks</b> --&gt; {{c1::PoliM}} ve {{c1::İnk. Body My}}<br><br>{{c2::Polimiyozitte}} --&gt; Hem nekrotik hem nekrotik olmayan kas liflerinde lenfositik inflamasyon var<br>{{c2::Dermatomyozitte}} --&gt; Nekrotik olmayan kas liflerinde lenfositik inf. izlenmez.</div>",
-     "after": "<b>Polimiyozit</b> tanısında önemli:<br>- Subakut proksimal kas güçsüzlüğü<br>- Serum CK düzeyi artışı<br>- Kas biyopsisinde {{c2::endomisyal}} inflamasyon varlığı ve inklüzyon cisimciği miyoziti özelliklerinin <b>olmaması</b><br><br>Kas biyopsisi:<div><br></div><div><i><b>Mikroanjiyopati</b></i> + <b>kas iskemisi</b> → {{c1::Dermatomiyozit}}</div><div><br></div><div><b>T hücre aracılı sitotoksisite</b> → {{c1::Polimiyozit}} ve {{c1::inklüzyon cisimciği miyoziti}}<br><br>{{c2::Polimiyozitte}} → hem nekrotik hem nekrotik olmayan kas liflerinde lenfositik inflamasyon var<br>{{c2::Dermatomiyozitte}} → nekrotik olmayan kas liflerinde lenfositik inflamasyon izlenmez</div>"
+     "after": "İnflamatuvar miyopati için klinik tanı örüntüsü:<br>- Subakut proksimal kas güçsüzlüğü<br>- Serum CK düzeyi artışı<br>- Kas biyopsisinde {{c2::endomisyal}} inflamasyon varlığı ve {{c1::inklüzyon cisimciği miyoziti}} özelliklerinin <b>olmaması</b><br><br>Kas biyopsisi:<div><br></div><div><i><b>Mikroanjiyopati</b></i> + <b>kas iskemisi</b> → {{c2::{{c1::Dermatomiyozit}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>T hücre aracılı sitotoksisite</b> → {{c2::{{c1::Polimiyozit}}::ilişkili yanıt arka yüzde}} ve {{c1::inklüzyon cisimciği miyoziti}}<br><br>{{c1::{{c2::Polimiyozitte}}::ilişkili yanıt arka yüzde}} → hem nekrotik hem nekrotik olmayan kas liflerinde lenfositik inflamasyon var<br>{{c1::{{c2::Dermatomiyozitte}}::ilişkili yanıt arka yüzde}} → nekrotik olmayan kas liflerinde lenfositik inflamasyon izlenmez</div>"
     }
    },
    "changes": [
@@ -12476,11 +12735,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; \"olMAMAsı\" → kalın \"olmaması\"; \"Kas İskemi\" → \"kas iskemisi\"; büyük/küçük harf; sondaki nokta ile kalın etiket içindeki boşluk temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Miyozit tanı adlarının başlık, dışlama ve histoloji satırlarından okunması giderildi; klinik örüntü ile histoloji görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Tanı satırı \"kas biyopsisinde endomisyal inflamasyon varlığı ve inklüzyon cisimciği miyoziti özelliklerinin olmaması\" olarak netleştirildi; \"DermatoM\", \"PoliM\", \"İnk. Body My\", \"SitoToks\", \"Bx\" açıldı ve \"Polimyozit/Dermatomyozit\" tek yazıma getirildi.\nNeden: Özgün cümlede \"olMAMAsı\" hem endomisyal inflamasyona hem inklüzyon cisimciği özelliklerine bağlanıyordu; oysa polimiyozitte endomisyal inflamasyon tanı koydurucudur. Kart kişisel kısaltmalarla yazılmıştı.\nNasıl: [SN1, KS1, YZ1, YP1] Dermatomiyozitte mikroanjiyopati/kas iskemisi, polimiyozit ve inklüzyon cisimciği miyozitinde T hücre aracılı sitotoksisite doğru olduğundan c1 ve c2 cevapları korundu. Görünen hastalık adları (başlıktaki polimiyozit, c2 satırları) c1 sorularındaki mekanizma–hastalık eşleşmesini vermediği için yazarın düzeni bırakıldı.\nKaynak: Harrison's Principles of Internal Medicine, inflamatuvar miyopatiler bölümü (polimiyozit tanı ölçütleri).",
+   "aiNote": "Ne: Miyozit tanı adlarının başlık, dışlama ve histoloji satırlarından okunması giderildi; klinik örüntü ile histoloji görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Tanı satırı \"kas biyopsisinde endomisyal inflamasyon varlığı ve inklüzyon cisimciği miyoziti özelliklerinin olmaması\" olarak netleştirildi; \"DermatoM\", \"PoliM\", \"İnk. Body My\", \"SitoToks\", \"Bx\" açıldı ve \"Polimyozit/Dermatomyozit\" tek yazıma getirildi.\nNeden: Özgün cümlede \"olMAMAsı\" hem endomisyal inflamasyona hem inklüzyon cisimciği özelliklerine bağlanıyordu; oysa polimiyozitte endomisyal inflamasyon tanı koydurucudur. Kart kişisel kısaltmalarla yazılmıştı.\nNasıl: [SN1, KS1, YZ1, YP1] Dermatomiyozitte mikroanjiyopati/kas iskemisi, polimiyozit ve inklüzyon cisimciği miyozitinde T hücre aracılı sitotoksisite doğru olduğundan c1 ve c2 cevapları korundu. Görünen hastalık adları (başlıktaki polimiyozit, c2 satırları) c1 sorularındaki mekanizma–hastalık eşleşmesini vermediği için yazarın düzeni bırakıldı.\nKaynak: Harrison's Principles of Internal Medicine, inflamatuvar miyopatiler bölümü (polimiyozit tanı ölçütleri)."
+    }
+   ]
   },
   {
    "order": 313,
@@ -13481,13 +13752,13 @@
    "noteId": 1605009018525,
    "guid": "oqHI[/CR3V",
    "topic": "Endokrinoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>&nbsp;Diabetes İnsipitus Algoritma</b><br><br>Poliüri - Noktüri --&gt; {{c1::24 Saatlik İdrar Volümü ve Osmalarite}} BAK<br><br>Volüm &gt; 40 ml/kg ve Osm &lt; 300mOSM/L --&gt; {{c1::Bazal ADH}} BAK<br><br>Volüm &lt; 40 ml/kg ve Osm &gt; 300mOSM/L --&gt; Ürolojiye Şut<br>----<br>Bazal ADH &gt; 1 pg/ml --&gt; {{c2::Nefrojenik DI}}<br><br>Bazal ADH &lt; 1 pg/ml --&gt; Beyin MR --&gt; <b>Hipofizde Parlak Nokta (Bright Spot)</b><br><br><div>Hipofizde Parlak Nokta (Bright Spot) <b>VAR</b> --&gt; {{c2::Primer Polidipsi}}<br><br>Hipofizde Parlak Nokta (Bright Spot) <b>YOK</b> --&gt; {{c2::Santral DI}}</div>",
-     "after": "<b>Diabetes insipidus algoritması</b><br><br>Poliüri, noktüri → {{c1::24 saatlik idrar volümü ve osmolalitesine}} bakılır<br><br>Volüm &gt; 40 mL/kg ve osmolalite &lt; 300 mOsm/L → {{c1::bazal ADH}} düzeyine bakılır<br><br>Volüm &lt; 40 mL/kg ve osmolalite &gt; 300 mOsm/L → ürolojik değerlendirme<br>----<br>Bazal ADH &gt; 1 pg/mL → {{c2::Nefrojenik diabetes insipidus}}<br><br>Bazal ADH &lt; 1 pg/mL → beyin MR → <b>hipofizde parlak nokta (bright spot)</b><br><br><div>Hipofizde parlak nokta <b>var</b> → {{c2::Primer polidipsi}}<br><br>Hipofizde parlak nokta <b>yok</b> → {{c2::Santral diabetes insipidus}}</div>"
+     "after": "<b>Diabetes insipidus algoritması</b><br><br>Poliüri, noktüri → {{c1::24 saatlik idrar volümü ve osmolalitesine}} bakılır<br><br>Volüm &gt; 40 mL/kg ve osmolalite &lt; 300 mOsm/L → {{c1::bazal ADH}} düzeyine bakılır<br><br>Volüm &lt; 40 mL/kg ve osmolalite &gt; 300 mOsm/L → ürolojik değerlendirme<br>----<br>{{c1::Bazal ADH}} &gt; 1 pg/mL → {{c2::Nefrojenik diabetes insipidus}}<br><br>{{c1::Bazal ADH}} &lt; 1 pg/mL → beyin MR → <b>hipofizde parlak nokta (bright spot)</b><br><br><div>Hipofizde parlak nokta <b>var</b> → {{c2::Primer polidipsi}}<br><br>Hipofizde parlak nokta <b>yok</b> → {{c2::Santral diabetes insipidus}}</div>"
     },
     "Extra": {
      "before": "SORU GELİR",
@@ -13519,11 +13790,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; BAK → bakılır; 300mOSM/L → 300 mOsm/L; VAR/YOK → var/yok (kalın korundu); &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Algoritmanın sonraki eşik satırlarının sorulan test adını doğrudan vermesi kapatıldı; güncel kopeptin açıklaması korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlık \"Diabetes insipidus algoritması\" yapıldı, \"Osmalarite\" → \"osmolalite\", \"Ürolojiye Şut\" → \"ürolojik değerlendirme\" yazıldı ve DI kısaltmaları açıldı; Extra'daki \"SORU GELİR\" yerine kopeptin ve yeni adlandırma cümlesi kondu.\nNeden: Kart yazım hataları, argo (\"Şut\") ve kişisel işaret taşıyordu; güncel tanı aracı (kopeptin) ve 2022 ad değişikliği kartta yoktu.\nNasıl: [SN2, GN2, YP3] Harrison'daki bazal ADH ve parlak nokta algoritması doğru olduğundan basamaklar, eşikler, kalın vurgular ve c1/c2 dağılımı korundu; güncel bilgi cevabı değiştirmeden Extra'da verildi.\nKaynak: Harrison's Principles of Internal Medicine, diabetes insipidus bölümü; uluslararası endokrinoloji derneklerinin 2022 ortak ad değişikliği bildirisi.",
+   "aiNote": "Ne: Algoritmanın sonraki eşik satırlarının sorulan test adını doğrudan vermesi kapatıldı; güncel kopeptin açıklaması korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"Diabetes insipidus algoritması\" yapıldı, \"Osmalarite\" → \"osmolalite\", \"Ürolojiye Şut\" → \"ürolojik değerlendirme\" yazıldı ve DI kısaltmaları açıldı; Extra'daki \"SORU GELİR\" yerine kopeptin ve yeni adlandırma cümlesi kondu.\nNeden: Kart yazım hataları, argo (\"Şut\") ve kişisel işaret taşıyordu; güncel tanı aracı (kopeptin) ve 2022 ad değişikliği kartta yoktu.\nNasıl: [SN2, GN2, YP3] Harrison'daki bazal ADH ve parlak nokta algoritması doğru olduğundan basamaklar, eşikler, kalın vurgular ve c1/c2 dağılımı korundu; güncel bilgi cevabı değiştirmeden Extra'da verildi.\nKaynak: Harrison's Principles of Internal Medicine, diabetes insipidus bölümü; uluslararası endokrinoloji derneklerinin 2022 ortak ad değişikliği bildirisi."
+    }
+   ]
   },
   {
    "order": 343,
@@ -17796,13 +18079,13 @@
    "noteId": 1619038969739,
    "guid": "bK%}ctX:~k",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>MDS</b> Tdv Seçeneği Değerlendirmesi:<div>{{c1::IPSS}} Skorlama Sistemi:</div><div><br></div><div>{{c2::Karyotip}}</div><div><br></div><div>{{c2::Sitopeni}} sayısı</div><div><br></div><div>{{c2::Blast Yüzdesi}} bakılır&nbsp;</div><div><br></div><div>-----------------</div><div><br></div><div>{{c2::Karyotip}} <b>Kötü Prognoz:</b></div><div><br></div><div>{{c1::7}}. Kromozom Anomalileri</div><div><br></div><div>{{c1::Kompleks}} Karyotip</div>",
-     "after": "<b>MDS</b> tedavi seçeneğinin değerlendirilmesi:<div>{{c1::IPSS}} skorlama sistemi:</div><div><br></div><div>{{c2::Karyotip}}</div><div><br></div><div>{{c2::Sitopeni}} sayısı</div><div><br></div><div>{{c2::Blast yüzdesi}} bakılır</div><div><br></div><div>-----------------</div><div><br></div><div>{{c2::Karyotip}} açısından <b>kötü prognoz:</b></div><div><br></div><div>{{c1::7}}. kromozom anomalileri</div><div><br></div><div>{{c1::Kompleks}} karyotip</div>"
+     "after": "<b>MDS</b> tedavi seçeneğinin değerlendirilmesi:<div>{{c1::IPSS}} skorlama sistemi:</div><div><br></div><div>{{c2::Karyotip}}</div><div><br></div><div>{{c2::Sitopeni}} sayısı</div><div><br></div><div>{{c2::Blast yüzdesi}} bakılır</div><div><br></div><div>-----------------</div><div><br></div><div>{{c2::Karyotip}} açısından <b>kötü prognoz:</b></div><div><br></div><div>{{c1::7}}. kromozom anomalileri</div><div><br></div><div>{{c1::Kompleks}} {{c2::karyotip}}</div>"
     },
     "Extra": {
      "before": "",
@@ -17824,11 +18107,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Büyük/küçük harf; \"Karyotip Kötü Prognoz\" → \"Karyotip açısından kötü prognoz\"; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlık \"MDS tedavi seçeneğinin değerlendirilmesi\" yapıldı, büyük harfler küçültüldü ve Extra'ya IPSS-R ile IPSS-M'nin farkı eklendi.\nNeden: Kart özgün IPSS'yi doğru anlatıyordu, ancak güncel sistemlerde sitopeniler derinliğe göre puanlanıyor ve moleküler veriler ekleniyor.\nNasıl: [GN2, KS1, YP1] TUS'un sorduğu klasik IPSS bileşenleri (karyotip, sitopeni sayısı, blast yüzdesi) ve kötü karyotipler (7. kromozom, kompleks) doğru olduğundan c1/c2 korundu; güncel sistem Extra'da anıldı; yazarın ayraç satırı bırakıldı.",
+   "aiNote": "Ne: Tedavi, laboratuvar veya patoloji tablosunda diğer satırda açık kalan aynı yanıt gizlendi; mevcut ordinal hedefleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"MDS tedavi seçeneğinin değerlendirilmesi\" yapıldı, büyük harfler küçültüldü ve Extra'ya IPSS-R ile IPSS-M'nin farkı eklendi.\nNeden: Kart özgün IPSS'yi doğru anlatıyordu, ancak güncel sistemlerde sitopeniler derinliğe göre puanlanıyor ve moleküler veriler ekleniyor.\nNasıl: [GN2, KS1, YP1] TUS'un sorduğu klasik IPSS bileşenleri (karyotip, sitopeni sayısı, blast yüzdesi) ve kötü karyotipler (7. kromozom, kompleks) doğru olduğundan c1/c2 korundu; güncel sistem Extra'da anıldı; yazarın ayraç satırı bırakıldı."
+    }
+   ]
   },
   {
    "order": 475,
@@ -26030,13 +26325,13 @@
    "noteId": 1619078083597,
    "guid": "FDHVyX&zr(",
    "topic": "Hematoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "PVera Tdv'leri ile gelişim Riski <b>AZALMAYAN</b>:<div><br></div><div>{{c1::AML}}</div><div><br></div><div>{{c1::Primer Myelofibroz}}</div>",
-     "after": "Polisitemia vera tedavileri ile gelişim riski <b>azalmayan</b>:<div><br></div><div>{{c1::AML}}</div><div><br></div><div>{{c1::Primer miyelofibroz}}</div>"
+     "after": "Polisitemia veranın ilerleyebildiği hastalıklar:<div><br></div><div>{{c1::AML}}</div><div><br></div><div>{{c1::Post-PV (sekonder) miyelofibroz}}</div>"
     }
    },
    "changes": [
@@ -26054,11 +26349,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"AZALMAYAN\" → kalın \"azalmayan\"; \"Riski\" küçük harf"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "PV sonrası miyelofibroz doğru adlandırıldı; tüm tedavilere genellenen ilerleme riski hükmü kaldırıldı.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/pmid/35767897/"
     }
    ],
-   "aiNote": "Ne: \"PVera Tdv'leri ile gelişim Riski AZALMAYAN\" → \"Polisitemia vera tedavileri ile gelişim riski azalmayan\" ve \"Myelofibroz\" → \"miyelofibroz\" yapıldı.\nNeden: Kısaltmalar yazarın notuydu; içerik doğruydu.\nNasıl: [KS1, YZ1, YP1] Flebotomi ve sitoredüktif tedavilerin AML'ye ve miyelofibroza dönüşüm riskini azaltmadığı doğru olduğundan iki c1 ve kalın vurgu korundu.",
+   "aiNote": "Ne: PV sonrası miyelofibroz doğru adlandırıldı; tüm tedavilere genellenen ilerleme riski hükmü kaldırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/pmid/35767897/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"PVera Tdv'leri ile gelişim Riski AZALMAYAN\" → \"Polisitemia vera tedavileri ile gelişim riski azalmayan\" ve \"Myelofibroz\" → \"miyelofibroz\" yapıldı.\nNeden: Kısaltmalar yazarın notuydu; içerik doğruydu.\nNasıl: [KS1, YZ1, YP1] Flebotomi ve sitoredüktif tedavilerin AML'ye ve miyelofibroza dönüşüm riskini azaltmadığı doğru olduğundan iki c1 ve kalın vurgu korundu."
+    }
+   ]
   },
   {
    "order": 728,
@@ -30220,13 +30527,17 @@
    "noteId": 1604850094654,
    "guid": "j)]?+r);&.",
    "topic": "Nefroloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Gebelerde Böbrek Değ'leri&nbsp;<div><br></div><div>Total plazma hacmi {{c1::ARTAR}}&nbsp;</div><div><br></div><div>Per. Vask Direnç (TPR) {{c2::AZALIR}}</div><div><br></div><div>GFR %50 {{c1::ARTAR}}&nbsp;</div><div><br></div><div>BUN ve Cr {{c2::DÜŞER&nbsp;}}</div><div><br></div><div>Glu/Aa üri olabilir</div><div><br></div><div>Osm {{c1::düşer}}</div><div><br></div><div>Ürik Asit - HCO3 {{c2::Düşer&nbsp;}}</div><div><br></div><div>Takipneye bağlı --&gt; {{c1::Hafif Resp. Alkaloz}}&nbsp;</div>",
-     "after": "Gebelikte böbrek değişiklikleri<div><br></div><div>Total plazma hacmi {{c1::artar}}</div><div><br></div><div>Periferik vasküler direnç (TPR) {{c2::azalır}}</div><div><br></div><div>GFR %50 {{c1::artar}}</div><div><br></div><div>BUN ve kreatinin {{c2::düşer}}</div><div><br></div><div>Glukozüri/aminoasidüri olabilir</div><div><br></div><div>Plazma osmolalitesi {{c1::düşer}}</div><div><br></div><div>Ürik asit ve HCO3 {{c2::düşer}}</div><div><br></div><div>Takipneye bağlı → {{c1::hafif respiratuvar alkaloz}}</div>"
+     "after": "Gebelikte böbrek değişiklikleri<div><br></div><div>Total plazma hacmi {{c1::artar}}</div><div><br></div><div>Periferik vasküler direnç (TPR) {{c2::azalır}}</div><div><br></div><div>GFR %50 {{c1::artar}}</div><div><br></div><div>BUN ve kreatinin {{c2::düşer}}</div><div><br></div><div>Glukozüri/aminoasidüri olabilir</div><div><br></div><div>Plazma osmolalitesi {{c1::düşer}}</div><div><br></div><div>Ürik asit ve HCO3 {{c2::düşer}}</div><div><br></div><div>Progesteronun uyardığı ventilasyon (başlıca tidal volüm) artışına bağlı → {{c1::hafif respiratuvar alkaloz}}</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Fizyolojik respiratuvar alkalozun temel mekanizması tidal volüm ve alveoler ventilasyon artışıdır; takipne zorunlu değildir."
     }
    },
    "changes": [
@@ -30239,11 +30550,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Cevaplarda büyük harf (ARTAR, AZALIR, DÜŞER) küçültüldü; --> → →; \" - \" → \"ve\"; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "Takipne mekanizması progesteron/ventilasyon artışıyla düzeltildi; ilişkili 1604845306203 notuyla tutarlı hale getirildi. Diğer renal önermeler bu odak düzeltmeyle yeniden onaylanmış sayılmaz.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC4818213/; https://pubmed.ncbi.nlm.nih.gov/8063358/"
     }
    ],
-   "aiNote": "Ne: \"Gebelerde Böbrek Değ'leri\" → \"Gebelikte böbrek değişiklikleri\" yapıldı; \"Per. Vask\", \"Cr\", \"Glu/Aa üri\", \"Osm\", \"Resp.\" açıldı ve büyük harfli cevaplar küçültüldü.\nNeden: Kart kişisel kısaltmalar ve büyük harfle yazılmıştı; içerik doğruydu.\nNasıl: [KS1, BÇ1, YP1] Plazma hacmi ve GFR artışı, periferik direnç, BUN, kreatinin, osmolalite, ürik asit ve bikarbonat düşüşü ile hafif respiratuvar alkalozun gebelik fizyolojisiyle örtüştüğü için cevaplar ve c1/c2 dağılımı korundu; satırlar arasındaki boşluklar yazarın düzeni olarak bırakıldı.",
+   "aiNote": "Ne: Takipne mekanizması progesteron/ventilasyon artışıyla düzeltildi; ilişkili 1604845306203 notuyla tutarlı hale getirildi. Diğer renal önermeler bu odak düzeltmeyle yeniden onaylanmış sayılmaz.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC4818213/; https://pubmed.ncbi.nlm.nih.gov/8063358/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Gebelerde Böbrek Değ'leri\" → \"Gebelikte böbrek değişiklikleri\" yapıldı; \"Per. Vask\", \"Cr\", \"Glu/Aa üri\", \"Osm\", \"Resp.\" açıldı ve büyük harfli cevaplar küçültüldü.\nNeden: Kart kişisel kısaltmalar ve büyük harfle yazılmıştı; içerik doğruydu.\nNasıl: [KS1, BÇ1, YP1] Plazma hacmi ve GFR artışı, periferik direnç, BUN, kreatinin, osmolalite, ürik asit ve bikarbonat düşüşü ile hafif respiratuvar alkalozun gebelik fizyolojisiyle örtüştüğü için cevaplar ve c1/c2 dağılımı korundu; satırlar arasındaki boşluklar yazarın düzeni olarak bırakıldı."
+    }
+   ]
   },
   {
    "order": 857,
@@ -31514,13 +31837,13 @@
    "noteId": 1609794556266,
    "guid": "uR1dG:V+}v",
    "topic": "Romatoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Ankilozan Spondilit Tdv&nbsp;<div><br></div><div>İlk tercih: {{c1::NSAİD}}</div><div><br></div><div>NSAİD yanıtsız / 2. Tercih</div><div><br></div><div>Per. Eklem Tut YOK: {{c1::Anti-TNF}}</div><div>Per. Eklem Tut VAR: {{c1::Sulfasalazin}}</div>",
-     "after": "Ankilozan spondilit tedavisi<div><br></div><div>İlk tercih: {{c1::NSAİİ}}</div><div><br></div><div>NSAİİ'ye yanıtsızlıkta (ikinci basamak)</div><div><br></div><div>Periferik eklem tutulumu yok: {{c1::anti-TNF}}</div><div>Periferik eklem tutulumu var: {{c1::sülfasalazin}}</div>"
+     "after": "Ankilozan spondilit tedavisi<div><br></div><div>İlk tercih: {{c1::NSAİİ}}</div><div><br></div><div>İlk basamak ilaca yanıtsızlıkta (ikinci basamak)</div><div><br></div><div>Periferik eklem tutulumu yok: {{c1::anti-TNF}}</div><div>Periferik eklem tutulumu var: {{c1::sülfasalazin}}</div>"
     },
     "Extra": {
      "before": "",
@@ -31547,11 +31870,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"NSAİD yanıtsız / 2. Tercih\" → \"NSAİİ'ye yanıtsızlıkta (ikinci basamak)\"; YOK/VAR → yok/var; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "İlk tercih yanıtını doğrudan veren sonraki basamak kökü tarafsızlaştırıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Ankilozan Spondilit Tdv\" → \"Ankilozan spondilit tedavisi\", \"NSAİD\" → \"NSAİİ\", \"Per. Eklem Tut\" → \"periferik eklem tutulumu\", \"Sulfasalazin\" → \"sülfasalazin\" yapıldı; Extra'ya IL-17 ve JAK inhibitörleri eklendi.\nNeden: Kart kişisel kısaltmalar ve kurs dışı yazım taşıyordu; güncel ASAS-EULAR önerilerindeki TNF inhibitörü dışı biyolojik/hedefe yönelik seçenekler yoktu.\nNasıl: [KS1, YZ1, YP1] İlk tercih NSAİİ, periferik tutulumda sülfasalazin ve aksiyel hastalıkta anti-TNF basamağı doğru olduğundan üç c1 cevabı korundu; güncel alternatifler cevabı değiştirmeden Extra'ya yazıldı.\nKaynak: ASAS-EULAR aksiyel spondiloartrit yönetim önerileri (2022 güncellemesi).",
+   "aiNote": "Ne: İlk tercih yanıtını doğrudan veren sonraki basamak kökü tarafsızlaştırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Ankilozan Spondilit Tdv\" → \"Ankilozan spondilit tedavisi\", \"NSAİD\" → \"NSAİİ\", \"Per. Eklem Tut\" → \"periferik eklem tutulumu\", \"Sulfasalazin\" → \"sülfasalazin\" yapıldı; Extra'ya IL-17 ve JAK inhibitörleri eklendi.\nNeden: Kart kişisel kısaltmalar ve kurs dışı yazım taşıyordu; güncel ASAS-EULAR önerilerindeki TNF inhibitörü dışı biyolojik/hedefe yönelik seçenekler yoktu.\nNasıl: [KS1, YZ1, YP1] İlk tercih NSAİİ, periferik tutulumda sülfasalazin ve aksiyel hastalıkta anti-TNF basamağı doğru olduğundan üç c1 cevabı korundu; güncel alternatifler cevabı değiştirmeden Extra'ya yazıldı.\nKaynak: ASAS-EULAR aksiyel spondiloartrit yönetim önerileri (2022 güncellemesi)."
+    }
+   ]
   },
   {
    "order": 897,

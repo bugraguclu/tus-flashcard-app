@@ -16,15 +16,15 @@
  "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 1169,
-  "changedNotes": 1166,
+  "changedNotes": 1167,
   "htmlOnlyNotes": 1,
   "unchangedNotes": 2,
-  "changeItems": 3193,
+  "changeItems": 3208,
   "notesBySeverity": {
-   "Kritik": 43,
-   "Yüksek": 377,
-   "Orta": 650,
-   "Düşük": 97
+   "Kritik": 40,
+   "Yüksek": 387,
+   "Orta": 644,
+   "Düşük": 96
   },
   "notesByTopic": {
    "Alerji ve İmmünoloji": 89,
@@ -45,45 +45,48 @@
    "Onkoloji": 30
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 38,
-    "Yüksek": 71
-   },
-   "Soru netliği": {
-    "Yüksek": 26,
-    "Orta": 101
-   },
-   "Kısaltma": {
-    "Orta": 882,
-    "Yüksek": 28
-   },
    "Biçim": {
     "Düşük": 1090
    },
-   "Güncellik": {
-    "Kritik": 6,
-    "Orta": 37,
-    "Yüksek": 50
-   },
-   "Terim/yazım": {
-    "Orta": 342,
-    "Düşük": 96,
-    "Yüksek": 6
+   "Cevap görünürlüğü": {
+    "Yüksek": 15
    },
    "Dil bilgisi": {
     "Orta": 9,
     "Düşük": 156
    },
-   "Yapısal": {
-    "Yüksek": 16,
-    "Düşük": 7,
-    "Orta": 3
+   "Doğrulama gerekli": {
+    "Yüksek": 40
    },
    "Eksik kritik bilgi": {
     "Yüksek": 189
    },
-   "Doğrulama gerekli": {
-    "Yüksek": 40
+   "Güncellik": {
+    "Kritik": 6,
+    "Yüksek": 50,
+    "Orta": 37
+   },
+   "Kısaltma": {
+    "Yüksek": 28,
+    "Orta": 882
+   },
+   "Soru netliği": {
+    "Yüksek": 26,
+    "Orta": 101
+   },
+   "Terim/yazım": {
+    "Yüksek": 6,
+    "Orta": 342,
+    "Düşük": 96
+   },
+   "Tıbbi doğruluk": {
+    "Kritik": 38,
+    "Yüksek": 71
+   },
+   "Yapısal": {
+    "Yüksek": 16,
+    "Orta": 3,
+    "Düşük": 7
    }
   },
   "secondReview": {
@@ -255,13 +258,13 @@
    "noteId": 1605188154009,
    "guid": "Oi&JM[p66}",
    "topic": "Aşı ve Döküntülü Hastalıklar",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "AŞI TAKVİMİ&nbsp;<div><br></div><div>Hep B ---&gt; {{c1::0 - 1 - 6}} ay</div><div><br></div><div>BCG --&gt; {{c1::2}}. ay&nbsp;</div><div><br></div><div>DaPT - IPA - HiB (5'li Karma) ---&gt; {{c1::2 - 4 - 6 - 18.}}(R) ay&nbsp;</div><div><br></div><div>KPA ---&gt; {{c2::2 - 4 - 12}}.(R) ay&nbsp;</div><div><br></div><div>KKK ---&gt; {{c2::12. ay + 1. sınıf}} (R)&nbsp;</div><div><br></div><div>DaPT - IPA (4'lü Karma) ---&gt; {{c3::1. sınıf}}&nbsp;</div><div><br></div><div>OPA ---&gt;&nbsp; {{c3::6 - 18}} (R) . ay&nbsp;</div><div><br></div><div>Td /Erişkin Difteri - tetanoz) ---&gt; {{c4::8. sınıf&nbsp;}}</div><div><br></div><div>Hep A ---&gt; {{c4::18 - 24}}. ay&nbsp;</div><div><br></div><div>Su Çiçeği --&gt; {{c4::12 - 1. sınıf}}(R)&nbsp;</div>",
-     "after": "Aşı takvimi<div><br></div><div>Hepatit B → {{c1::doğumda; sonraki dozlar 6'lı karma içinde}}</div><div><br></div><div>BCG → {{c1::2}}. ay</div><div><br></div><div>DaBT-İPA-Hib-HepB (6'lı karma) → {{c1::2–4–6–18.}} ay (R)</div><div><br></div><div>KPA → {{c2::2–4–12.}} ay (R)</div><div><br></div><div>KKK → {{c2::12. ay + 48. ay}} (R)</div><div><br></div><div>DaBT-İPA (4'lü karma) → {{c3::48. ay}}</div><div><br></div><div>OPA → {{c3::6–18.}} ay (R)</div><div><br></div><div>Td (erişkin tip difteri-tetanoz) → {{c4::13 yaş (156. ay)}}</div><div><br></div><div>Hepatit A → {{c4::18–24.}} ay</div><div><br></div><div>Su çiçeği → {{c4::12. ay + 48. ay}} (R)</div>"
+     "after": "Aşı takvimi<div><br></div><div>Hepatit B → {{c1::doğumda; sonraki dozlar 6'lı karma içinde}}</div><div><br></div><div>BCG → {{c1::2}}. ay</div><div><br></div><div>DaBT-İPA-Hib-HepB (6'lı karma) → {{c1::2–4–6–18.}} ay (R)</div><div><br></div><div>KPA → {{c2::2–4–12.}} ay (R)</div><div><br></div><div>KKK → {{c3::{{c4::{{c2::12. ay + 48. ay}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} (R)</div><div><br></div><div>DaBT-İPA (4'lü karma) → {{c2::{{c4::{{c3::48. ay}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>OPA → {{c3::6–18.}} ay (R)</div><div><br></div><div>Td (erişkin tip difteri-tetanoz) → {{c4::13 yaş (156. ay)}}</div><div><br></div><div>Hepatit A → {{c4::18–24.}} ay</div><div><br></div><div>Su çiçeği → {{c2::{{c3::{{c4::12. ay + 48. ay}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} (R)</div>"
     },
     "Extra": {
      "before": "",
@@ -290,11 +293,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "AŞI TAKVİMİ → Aşı takvimi; Hep B/Hep A açıldı; ---> ve --> → →; sayı aralıkları uzun çizgiyle; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aşı tablosunda aynı doz zamanları kardeş sorularda gizleniyor; aşı şeması bu odakta değiştirilmedi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Hepatit B satırı \"doğumda; sonraki dozlar 6'lı karma içinde\", 5'li karma satırı \"DaBT-İPA-Hib-HepB (6'lı karma)\" yapıldı; KKK ve 4'lü karmanın \"1. sınıf\" dozları \"48. ay\", Td'nin \"8. sınıf\" dozu \"13 yaş (156. ay)\", su çiçeği \"12. ay + 48. ay\" oldu; Extra'ya değişiklik tarihleri ve eski takvim eklendi.\nNeden: Kart eski ulusal takvimi öğretiyordu: Temmuz 2020'de 1. ve 8. sınıf okul aşıları 48. aya ve 13 yaşa alındı, Nisan 2025'te 6'lı karmaya geçilip 1. ay hepatit B dozu kaldırıldı, Eylül 2026'da su çiçeği 2. dozu 48. aya eklendi.\nNasıl: [GN2, TD2, YP1] Satır düzeni ve c1–c4 numaraları korunarak yalnız cevap içerikleri resmî duyurularla doğrulanan güncel takvimle değiştirildi; TUS'un eski soru kalıbını tanıtmak için eski takvim Extra'da anıldı. BCG, KPA, OPA ve hepatit A satırları güncel takvimle örtüştüğü için değişmedi.\nKaynak: Sağlık Bakanlığı HSGM, \"Aşılama Takviminde Değişiklik Yapıldı\" (Haziran 2020); Sağlık Bakanlığı altı bileşenli karma aşı duyurusu (14 Nisan 2025, AA haberi); su çiçeği 2. doz uygulaması haberleri (Eylül 2026).",
+   "aiNote": "Ne: Aşı tablosunda aynı doz zamanları kardeş sorularda gizleniyor; aşı şeması bu odakta değiştirilmedi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Hepatit B satırı \"doğumda; sonraki dozlar 6'lı karma içinde\", 5'li karma satırı \"DaBT-İPA-Hib-HepB (6'lı karma)\" yapıldı; KKK ve 4'lü karmanın \"1. sınıf\" dozları \"48. ay\", Td'nin \"8. sınıf\" dozu \"13 yaş (156. ay)\", su çiçeği \"12. ay + 48. ay\" oldu; Extra'ya değişiklik tarihleri ve eski takvim eklendi.\nNeden: Kart eski ulusal takvimi öğretiyordu: Temmuz 2020'de 1. ve 8. sınıf okul aşıları 48. aya ve 13 yaşa alındı, Nisan 2025'te 6'lı karmaya geçilip 1. ay hepatit B dozu kaldırıldı, Eylül 2026'da su çiçeği 2. dozu 48. aya eklendi.\nNasıl: [GN2, TD2, YP1] Satır düzeni ve c1–c4 numaraları korunarak yalnız cevap içerikleri resmî duyurularla doğrulanan güncel takvimle değiştirildi; TUS'un eski soru kalıbını tanıtmak için eski takvim Extra'da anıldı. BCG, KPA, OPA ve hepatit A satırları güncel takvimle örtüştüğü için değişmedi.\nKaynak: Sağlık Bakanlığı HSGM, \"Aşılama Takviminde Değişiklik Yapıldı\" (Haziran 2020); Sağlık Bakanlığı altı bileşenli karma aşı duyurusu (14 Nisan 2025, AA haberi); su çiçeği 2. doz uygulaması haberleri (Eylül 2026)."
+    }
+   ]
   },
   {
    "order": 6,
@@ -1666,13 +1681,13 @@
    "noteId": 1605096246587,
    "guid": "b,,=0e{kvI",
    "topic": "Yenidoğan",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Neonatal {{c1::Otoimm}} Tromb.peni&nbsp; (NOİT)---&gt; {{c2::Anne ITP - Maternal Tromb.peni (+)}}<div><br></div><div>Neonatal {{c1::Alloimm.}} Tromb.peni (NAİT) ---&gt; Anne Tromb. sayısı {{c2::Normal}} - Anne {{c4::HPA1 Ak}} (-) Baba {{c4::HPA1 Ak (}}+) Bebek {{c4::HPA1}} Ak (+) ---&gt; {{c4::Anti - HPA 1 Ak}} --&gt; İKK Riski {{c4::YÜKSEK&nbsp;}}</div><div><br></div><div>NAİT en uygun tdv ---&gt; {{c5::HPA1 (-) birinden Tromb verilmesi}} ---&gt; {{c5::ANNEDEN}}&nbsp;</div><div><br></div>",
-     "after": "Neonatal {{c1::otoimmün}} trombositopeni (NOİT) → {{c2::annede İTP, maternal trombositopeni (+)}}<div><br></div><div>Neonatal {{c1::alloimmün}} trombositopeni (NAİT) → anne trombosit sayısı {{c2::normal}}; anne {{c4::HPA-1a antijeni}} (-), baba {{c4::HPA-1a antijeni}} (+), bebek {{c4::HPA-1a}} antijeni (+) → {{c4::anti-HPA-1a antikoru}} → intrakraniyal kanama riski {{c4::yüksek}}</div><div><br></div><div>NAİT'te en uygun tedavi → {{c5::HPA-1a (-) vericiden trombosit verilmesi}} → {{c5::anneden}}</div>"
+     "after": "Neonatal {{c1::otoimmün}} trombositopeni (NOİT) → {{c2::annede İTP, maternal trombositopeni (+)}}<div><br></div><div>Neonatal {{c1::alloimmün}} trombositopeni (NAİT) → anne trombosit sayısı {{c2::normal}}; anne {{c5::{{c4::HPA-1a antijeni}}::ilişkili yanıt arka yüzde}} (-), baba {{c5::{{c4::HPA-1a antijeni}}::ilişkili yanıt arka yüzde}} (+), bebek {{c5::{{c4::HPA-1a}}::ilişkili yanıt arka yüzde}} antijeni (+) → {{c5::{{c4::anti-HPA-1a antikoru}}::ilişkili yanıt arka yüzde}} → intrakraniyal kanama riski {{c4::yüksek}}</div><div><br></div><div>NAİT'te en uygun tedavi → {{c4::{{c5::HPA-1a (-) vericiden trombosit verilmesi}}::ilişkili yanıt arka yüzde}} → {{c5::anneden}}</div>"
     },
     "Extra": {
      "before": "",
@@ -1706,24 +1721,36 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve --> → →; cloze içinde açık kalan parantez düzeltildi (\"{{c4::HPA1 Ak (}}+)\"); YÜKSEK, ANNEDEN → küçük harf; ITP → İTP; &nbsp; ve sondaki boş satır temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: NAİT satırındaki \"Anne HPA1 Ak (-) Baba HPA1 Ak (+) Bebek HPA1 Ak (+)\" → \"anne HPA-1a antijeni (-), baba HPA-1a antijeni (+), bebek HPA-1a antijeni (+)\" yapıldı; Extra'ya anne trombositlerinin yıkanıp ışınlanarak verilmesi ve IVIG'li alternatif eklendi; kısaltmalar açıldı.\nNeden: Kart ebeveynlerde antijen yerine antikor tiplendiriyordu ve annede antikor olmadığını söyleyip ardından anti-HPA-1a antikoru oluştuğunu yazarak kendisiyle çelişiyordu; anneden trombosit verilmesinin güvenlik koşulu yoktu.\nNasıl: [TD1, EK3, YP1] Yalnız yanlış konumlanmış \"antikor\" sözcüğü üç yerde \"antijen\" yapıldı, anti-HPA-1a antikoru ve yüksek intrakraniyal kanama riski cevapları değişmedi; c1, c2, c4 ve c5 numaraları ile dağılımları korundu, cloze içine sızan parantez dışarı alındı.\nKaynak: Nelson Textbook of Pediatrics, yenidoğanda trombositopeni (alloimmün ve otoimmün trombositopeni) bölümü.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: NAİT satırındaki \"Anne HPA1 Ak (-) Baba HPA1 Ak (+) Bebek HPA1 Ak (+)\" → \"anne HPA-1a antijeni (-), baba HPA-1a antijeni (+), bebek HPA-1a antijeni (+)\" yapıldı; Extra'ya anne trombositlerinin yıkanıp ışınlanarak verilmesi ve IVIG'li alternatif eklendi; kısaltmalar açıldı.\nNeden: Kart ebeveynlerde antijen yerine antikor tiplendiriyordu ve annede antikor olmadığını söyleyip ardından anti-HPA-1a antikoru oluştuğunu yazarak kendisiyle çelişiyordu; anneden trombosit verilmesinin güvenlik koşulu yoktu.\nNasıl: [TD1, EK3, YP1] Yalnız yanlış konumlanmış \"antikor\" sözcüğü üç yerde \"antijen\" yapıldı, anti-HPA-1a antikoru ve yüksek intrakraniyal kanama riski cevapları değişmedi; c1, c2, c4 ve c5 numaraları ile dağılımları korundu, cloze içine sızan parantez dışarı alındı.\nKaynak: Nelson Textbook of Pediatrics, yenidoğanda trombositopeni (alloimmün ve otoimmün trombositopeni) bölümü."
+    }
+   ]
   },
   {
    "order": 40,
    "noteId": 1607513772155,
    "guid": "mvOuV8vHeC",
    "topic": "Yenidoğan",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Sigara:( SGA - Prematurite)<div><br></div><div>{{c1::SGA}} yapar</div><div><br></div><div>{{c1::Prematürite}} yapmaz</div>",
-     "after": "Annenin sigara içmesi (SGA – prematürite)<div><br></div><div>{{c1::SGA}} yapar (asıl etkisi)</div><div><br></div><div>{{c1::Prematürite}} riskini de artırır (daha zayıf ilişki)</div>"
+     "after": "Annenin sigara içmesi<div><br></div><div>{{c1::SGA}} yapar (asıl etkisi)</div><div><br></div><div>{{c1::Prematürite}} riskini de artırır (daha zayıf ilişki)</div>"
     },
     "Extra": {
      "before": "",
@@ -1741,11 +1768,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"Sigara:( SGA - Prematurite)\" → \"Annenin sigara içmesi (SGA – prematürite)\"; Prematurite → prematürite"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Sigaranın etkilerini cevap olarak yazan başlık parantezi kaldırıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Prematürite yapmaz\" → \"Prematürite riskini de artırır (daha zayıf ilişki)\", \"SGA yapar\" → \"SGA yapar (asıl etkisi)\" yapıldı; başlık \"Annenin sigara içmesi (SGA – prematürite)\" oldu ve Extra'ya eski ifade ile güncel kanıt eklendi.\nNeden: Sigaranın erken doğumla nedensel ilişkisi gösterilmiş olduğu hâlde kart prematürite yapmadığını öğretiyordu; sigaranın düşük doğum ağırlığına asıl katkısının büyüme kısıtlılığı olduğu bilgisi ise doğruydu.\nNasıl: [TD2, TD1, YP1] TUS'un sorduğu karşılaştırma (asıl etki SGA) korunup yanlış olumsuzluk güncel kanıtla düzeltildi; eski \"yapmaz\" biçimi Extra'da anıldı. İki c1 numarası ve kökteki seçenekler değişmedi.\nKaynak: The Health Consequences of Smoking—50 Years of Progress, ABD Surgeon General raporu, Reproductive Outcomes bölümü (NCBI Bookshelf NBK294307); Williams Obstetrics, gebelikte sigara.",
+   "aiNote": "Ne: Sigaranın etkilerini cevap olarak yazan başlık parantezi kaldırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Prematürite yapmaz\" → \"Prematürite riskini de artırır (daha zayıf ilişki)\", \"SGA yapar\" → \"SGA yapar (asıl etkisi)\" yapıldı; başlık \"Annenin sigara içmesi (SGA – prematürite)\" oldu ve Extra'ya eski ifade ile güncel kanıt eklendi.\nNeden: Sigaranın erken doğumla nedensel ilişkisi gösterilmiş olduğu hâlde kart prematürite yapmadığını öğretiyordu; sigaranın düşük doğum ağırlığına asıl katkısının büyüme kısıtlılığı olduğu bilgisi ise doğruydu.\nNasıl: [TD2, TD1, YP1] TUS'un sorduğu karşılaştırma (asıl etki SGA) korunup yanlış olumsuzluk güncel kanıtla düzeltildi; eski \"yapmaz\" biçimi Extra'da anıldı. İki c1 numarası ve kökteki seçenekler değişmedi.\nKaynak: The Health Consequences of Smoking—50 Years of Progress, ABD Surgeon General raporu, Reproductive Outcomes bölümü (NCBI Bookshelf NBK294307); Williams Obstetrics, gebelikte sigara."
+    }
+   ]
   },
   {
    "order": 41,
@@ -2795,7 +2834,7 @@
    "fields": {
     "Text": {
      "before": "İmm Yet Birliktelik:<br><br><b>Nötropeni</b> eşlik edenler:<br>- {{c2::Hiper IgM}} send<br>- {{c2::Wiscott Aldrich}} send<br>- {{c2::Kronik granülomatöz}} hast<br><br><b>Kemik Displazisi</b> eşlik edenler:<br>- {{c1::ADA}} eks.<br>- {{c1::Kıkırdak Saç Hipoplazisi}}<br><br><b>Eritrodermi</b> eşlik edenler:<br>- {{c3::Omenn}} send<br>- SCID<br>- GvHD<br><br><b>GH Eksikliği </b>eşlik eden&nbsp; <br>- {{c3::Bruton Agammaglobulinemisi}}<br><br><b>Oral Ülser </b>eşlik edenler:<br>- {{c4::Konj. nötropeni}}<br>- {{c4::Kr. Gran. Hast.}}<br>- SCID<br>",
-     "after": "İmmün yetmezliklere eşlik eden bulgular:<br><br><b>Nötropeni</b> eşlik edenler:<br>- {{c2::Hiper IgM}} sendromu<br>- {{c2::Wiskott-Aldrich}} sendromu<br>- {{c2::Kronik granülomatöz}} hastalık<br><br><b>Kemik displazisi</b> eşlik edenler:<br>- {{c1::ADA}} eksikliği<br>- {{c1::Kıkırdak-saç hipoplazisi}}<br><br><b>Eritrodermi</b> eşlik edenler:<br>- {{c3::Omenn}} sendromu<br>- SCID<br>- GvHD<br><br><b>GH eksikliği</b> eşlik eden:<br>- {{c3::Bruton agamaglobulinemisi}}<br><br><b>Oral ülser</b> eşlik edenler:<br>- {{c4::Konjenital nötropeni}}<br>- {{c4::Kronik granülomatöz hastalık}}<br>- SCID"
+     "after": "İmmün yetmezliklere eşlik eden bulgular:<br><br><b>Nötropeni</b> eşlik edenler:<br>- {{c2::Hiper IgM}} sendromu<br>- {{c2::Wiskott-Aldrich}} sendromu<br>- {{c4::{{c2::Kronik granülomatöz}}::ilişkili yanıt arka yüzde}} hastalık<br><br><b>Kemik displazisi</b> eşlik edenler:<br>- {{c1::ADA}} eksikliği<br>- {{c1::Kıkırdak-saç hipoplazisi}}<br><br><b>Eritrodermi</b> eşlik edenler:<br>- {{c3::Omenn}} sendromu<br>- SCID<br>- GvHD<br><br><b>GH eksikliği</b> eşlik eden:<br>- {{c3::Bruton agamaglobulinemisi}}<br><br><b>Oral ülser</b> eşlik edenler:<br>- {{c4::Konjenital nötropeni}}<br>- {{c2::{{c4::Kronik granülomatöz hastalık}}::ilişkili yanıt arka yüzde}}<br>- SCID"
     }
    },
    "changes": [
@@ -2819,11 +2858,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Başlık \"İmmün yetmezliklere eşlik eden bulgular\" yapıldı; büyük/küçük harf; sondaki <br> ve &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlık \"İmm Yet Birliktelik\" → \"İmmün yetmezliklere eşlik eden bulgular\" yapıldı; \"send\", \"hast\", \"eks.\", \"Konj.\", \"Kr. Gran. Hast.\" açıldı, \"Wiscott Aldrich\" → \"Wiskott-Aldrich\" düzeltildi; KGH'nin nötropeni listesindeki yeri için 'Doğrulama gerekli' kalemi eklendi.\nNeden: Kart kişisel kısaltmalı ve yazım hatalıydı; KGH bir nötrofil işlev bozukluğudur, nötropeni yapmaz.\nNasıl: [KS1, YZ2, YP3, YP1] Şüpheli üye kaynak görülmeden silinmedi; kalın alt başlıklar, satır düzeni ve c1–c4 dağılımı korundu. KGH c2 ve c4'te ayrı numaralarla yer aldığı için iki kart birbirinin cevabını gösteriyor; yeni numara açmadan giderilemediğinden yapı değiştirilmedi.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"İmm Yet Birliktelik\" → \"İmmün yetmezliklere eşlik eden bulgular\" yapıldı; \"send\", \"hast\", \"eks.\", \"Konj.\", \"Kr. Gran. Hast.\" açıldı, \"Wiscott Aldrich\" → \"Wiskott-Aldrich\" düzeltildi; KGH'nin nötropeni listesindeki yeri için 'Doğrulama gerekli' kalemi eklendi.\nNeden: Kart kişisel kısaltmalı ve yazım hatalıydı; KGH bir nötrofil işlev bozukluğudur, nötropeni yapmaz.\nNasıl: [KS1, YZ2, YP3, YP1] Şüpheli üye kaynak görülmeden silinmedi; kalın alt başlıklar, satır düzeni ve c1–c4 dağılımı korundu. KGH c2 ve c4'te ayrı numaralarla yer aldığı için iki kart birbirinin cevabını gösteriyor; yeni numara açmadan giderilemediğinden yapı değiştirilmedi."
+    }
+   ]
   },
   {
    "order": 68,
@@ -3640,7 +3691,7 @@
    "fields": {
     "Text": {
      "before": "Döküntülü Hast'lar:<br><br><b>Döküntü Süreleri:</b><br>Kızamık - {{c2::6}} gün<br>Su Çiçeği - {{c2::6}} gün<br>Rubella - {{c2::3}} gün<br>5. hastalık (Eritema enf.) - {{c3::3}} gün<br>Roseola infantum - {{c3::2}} gün<br><div><br></div><div><b>Orşit</b> Yapan Döküntülü Hastalıklar:<br>- {{c1::Kabakulak}}<br>- Koksaki<br>- {{c1::Su Çiçeği}}<br>- Rubella<br></div>",
-     "after": "Döküntülü hastalıklar:<br><br><b>Döküntü süreleri:</b><br>Kızamık - {{c2::6}} gün<br>Su çiçeği - {{c2::6}} gün<br>Rubella - {{c2::3}} gün<br>5. hastalık (eritema enfeksiyozum) - {{c3::3}} gün<br>Roseola infantum - {{c3::2}} gün<br><div><br></div><div><b>Orşit</b> yapan döküntülü hastalıklar:<br>- {{c1::Kabakulak}}<br>- Koksaki<br>- {{c1::Su çiçeği}}<br>- Rubella</div>"
+     "after": "Döküntülü hastalıklar:<br><br><b>Döküntü süreleri:</b><br>Kızamık - {{c2::6}} gün<br>{{c1::Su çiçeği}} - {{c2::6}} gün<br>Rubella - {{c2::3}} gün<br>5. hastalık (eritema enfeksiyozum) - {{c3::3}} gün<br>Roseola infantum - {{c3::2}} gün<br><div><br></div><div><b>Orşit</b> yapan döküntülü hastalıklar:<br>- {{c1::Kabakulak}}<br>- Koksaki<br>- {{c1::Su çiçeği}}<br>- Rubella</div>"
     }
    },
    "changes": [
@@ -3659,11 +3710,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "büyük/küçük harf (Süreleri, Su Çiçeği, Yapan); sondaki gereksiz <br> temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Döküntülü Hast'lar\" → \"Döküntülü hastalıklar\" ve \"Eritema enf.\" → \"eritema enfeksiyozum\" açıldı; 5. hastalığın 3 günlük döküntü süresi Doğrulama gerekli olarak işaretlendi.\nNeden: Kısaltmalar kişiseldi; eritema enfeksiyozumda döküntünün haftalarca dalgalanabilmesi 3 günlük süreyle çelişiyor ama kartın dayandığı tablo doğrulanamadı.\nNasıl: [KS1, BÇ1, YP1] Emin olunamayan süre değiştirilmedi, şüphe gerekçesiyle kaydedildi; diğer süreler ve orşit listesi korunarak c1–c3 dağılımı değişmedi.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Döküntülü Hast'lar\" → \"Döküntülü hastalıklar\" ve \"Eritema enf.\" → \"eritema enfeksiyozum\" açıldı; 5. hastalığın 3 günlük döküntü süresi Doğrulama gerekli olarak işaretlendi.\nNeden: Kısaltmalar kişiseldi; eritema enfeksiyozumda döküntünün haftalarca dalgalanabilmesi 3 günlük süreyle çelişiyor ama kartın dayandığı tablo doğrulanamadı.\nNasıl: [KS1, BÇ1, YP1] Emin olunamayan süre değiştirilmedi, şüphe gerekçesiyle kaydedildi; diğer süreler ve orşit listesi korunarak c1–c3 dağılımı değişmedi."
+    }
+   ]
   },
   {
    "order": 90,
@@ -5301,7 +5364,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Tiamine Yanıt Verem Megaloblastik Anemi Send (TRMA)}}&nbsp;<div><br></div><div>{{c2::Tiamin}} eks</div><div>{{c2::Megaloblastik}} anemi</div><div>{{c2::DM}}</div><div>{{c2::SNİK}}</div>",
-     "after": "{{c1::Tiamine yanıt veren megaloblastik anemi sendromu (TRMA)}}<div><br></div><div>{{c2::Tiamin}} taşıyıcı defekti (SLC19A2)</div><div>{{c2::Megaloblastik}} anemi</div><div>{{c2::DM}}</div><div>{{c2::Sensörinöral işitme kaybı}}</div>"
+     "after": "{{c2::{{c1::Tiamine yanıt veren megaloblastik anemi sendromu (TRMA)}}::ilişkili yanıt arka yüzde}}<div><br></div><div>{{c1::{{c2::Tiamin}}::ilişkili yanıt arka yüzde}} taşıyıcı defekti (SLC19A2)</div><div>{{c1::{{c2::Megaloblastik}}::ilişkili yanıt arka yüzde}} anemi</div><div>{{c2::DM}}</div><div>{{c2::Sensörinöral işitme kaybı}}</div>"
     }
    },
    "changes": [
@@ -5325,11 +5388,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Tiamin eks\" → \"Tiamin taşıyıcı defekti (SLC19A2)\" yapıldı; \"Verem\" yazım hatası ve \"SNİK\" kısaltması düzeltildi.\nNeden: TRMA'da sorun tiamin alımı değil, hücreye tiamin taşıyan SLC19A2 kodlu taşıyıcının bozukluğudur; serum tiamini normaldir.\nNasıl: [TD1, KS1, YZ2, YP1] c2 cevabı (tiamin) korunup cloze dışındaki niteleyici doğru mekanizmayla değiştirildi; megaloblastik anemi, DM ve sensörinöral işitme kaybı üçlüsü doğru olduğundan c1/c2 dağılımı değişmedi.\nKaynak: Nelson Textbook of Pediatrics, tiamin (B1 vitamini) bölümü.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Tiamin eks\" → \"Tiamin taşıyıcı defekti (SLC19A2)\" yapıldı; \"Verem\" yazım hatası ve \"SNİK\" kısaltması düzeltildi.\nNeden: TRMA'da sorun tiamin alımı değil, hücreye tiamin taşıyan SLC19A2 kodlu taşıyıcının bozukluğudur; serum tiamini normaldir.\nNasıl: [TD1, KS1, YZ2, YP1] c2 cevabı (tiamin) korunup cloze dışındaki niteleyici doğru mekanizmayla değiştirildi; megaloblastik anemi, DM ve sensörinöral işitme kaybı üçlüsü doğru olduğundan c1/c2 dağılımı değişmedi.\nKaynak: Nelson Textbook of Pediatrics, tiamin (B1 vitamini) bölümü."
+    }
+   ]
   },
   {
    "order": 131,
@@ -13248,7 +13323,7 @@
    "fields": {
     "Text": {
      "before": "MPS 1H( {{c1::Hurler}}) enzim ---&gt; {{c2::L - iduronidaz}} /&nbsp; Biriken --&gt; {{c2::Heparan + Dermatan Sülfat}}<div><br></div><div>MPS 1S ({{c1::Scheie}}) enzim ---&gt; {{c2::L - iduronidaz}} / Biriken ---&gt; {{c2::DS}} ---&gt; Boy Kısalığı {{c1::YOK}} + MR {{c1::YOK&nbsp;}}</div><div><div><br></div><div>MPS 2 ({{c3::Hunter}}) enzim ---&gt; {{c4::İduronat Sülfataz}}&nbsp; / Biriken --&gt; {{c4::Heparan + Drmatan Sülfat}}</div><div><br></div><div>MPS 3 ({{c3::Sanflippo}}) enzim ---&gt; en {{c4::sık}} ve en {{c4::ağır}} ---&gt; {{c4::HS}} birikir</div></div><div><br></div><div>MPS 4 ({{c5::Morquio}}) --&gt; {{c6::KS + KS}} birikir ---&gt; MR {{c6::YOK}} - en ağr {{c6::kemik}} bulguları + {{c6::Kornea}} mat + {{c6::kapak}} hast&nbsp;</div><div><br></div><div>MPS 6 ({{c5::Maroteaux - Lamy}}) ---&gt; {{c6::DS}} birikir ---&gt; MR {{c6::YOK&nbsp;}}</div><div><br></div><div>MPS 7 ({{c5::Sly}}) ---&gt; YD'da {{c6::Hidrops}} ----&gt; {{c6::HS + DS}} birikir</div>",
-     "after": "MPS 1H ({{c1::Hurler}}) enzim → {{c2::alfa-L-iduronidaz}} / biriken → {{c2::heparan + dermatan sülfat}}<div><br></div><div>MPS 1S ({{c1::Scheie}}) enzim → {{c2::alfa-L-iduronidaz}} / biriken → {{c2::dermatan + heparan sülfat}} → boy kısalığı {{c1::yok}} + mental retardasyon {{c1::yok}}</div><div><div><br></div><div>MPS 2 ({{c3::Hunter}}) enzim → {{c4::iduronat-2-sülfataz}} / biriken → {{c4::heparan + dermatan sülfat}}</div><div><br></div><div>MPS 3 ({{c3::Sanfilippo}}) → en {{c4::sık}} görülen ve MSS tutulumu en {{c4::ağır}} olan → {{c4::heparan sülfat}} birikir</div></div><div><br></div><div>MPS 4 ({{c5::Morquio}}) → {{c6::keratan sülfat + kondroitin-6-sülfat}} birikir → mental retardasyon {{c6::yok}}, en ağır {{c6::kemik}} bulguları + {{c6::kornea}} bulanıklığı + {{c6::kapak}} hastalığı</div><div><br></div><div>MPS 6 ({{c5::Maroteaux-Lamy}}) → {{c6::dermatan sülfat}} birikir → mental retardasyon {{c6::yok}}</div><div><br></div><div>MPS 7 ({{c5::Sly}}) → yenidoğanda {{c6::hidrops}} → {{c6::heparan + dermatan sülfat}} birikir</div>"
+     "after": "MPS 1H ({{c1::Hurler}}) enzim → {{c2::alfa-L-iduronidaz}} / biriken → {{c4::{{c6::{{c2::heparan + dermatan sülfat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}<div><br></div><div>MPS 1S ({{c1::Scheie}}) enzim → {{c2::alfa-L-iduronidaz}} / biriken → {{c4::{{c6::{{c2::dermatan + heparan sülfat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} → boy kısalığı {{c1::yok}} + mental retardasyon {{c1::yok}}</div><div><div><br></div><div>MPS 2 ({{c3::Hunter}}) enzim → {{c4::iduronat-2-sülfataz}} / biriken → {{c2::{{c6::{{c4::heparan + dermatan sülfat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>MPS 3 ({{c3::Sanfilippo}}) → en {{c4::sık}} görülen ve MSS tutulumu en {{c4::ağır}} olan → {{c2::{{c6::{{c4::heparan sülfat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} birikir</div></div><div><br></div><div>MPS 4 ({{c5::Morquio}}) → {{c6::keratan sülfat + kondroitin-6-sülfat}} birikir → mental retardasyon {{c6::yok}}, en ağır {{c6::kemik}} bulguları + {{c6::kornea}} bulanıklığı + {{c6::kapak}} hastalığı</div><div><br></div><div>MPS 6 ({{c5::Maroteaux-Lamy}}) → {{c2::{{c4::{{c6::dermatan sülfat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} birikir → mental retardasyon {{c6::yok}}</div><div><br></div><div>MPS 7 ({{c5::Sly}}) → yenidoğanda {{c6::hidrops}} → {{c2::{{c4::{{c6::heparan + dermatan sülfat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} birikir</div>"
     }
    },
    "changes": [
@@ -13284,11 +13359,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve --> → →; YOK → yok; büyük/küçük harf; parantez boşluğu; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Scheie satırında biriken madde \"DS\" → \"dermatan + heparan sülfat\"; Sanfilippo satırında \"enzim → en sık ve en ağır\" → \"en sık görülen ve MSS tutulumu en ağır olan\" yapıldı; \"MR\" → \"mental retardasyon\", \"KS + KS\" → \"keratan sülfat + kondroitin-6-sülfat\" açıldı, DS/HS kısaltmaları ve yazım hataları (Drmatan, Sanflippo, ağr) düzeltildi.\nNeden: Scheie, Hurler ile aynı enzimin eksikliğidir ve iki glikozaminoglikan da birikir; niteleyicisiz \"en ağır\" Sanfilippo'yu genelde en ağır tip sayılan Hurler'in yerine koyuyordu; \"MR\" manyetik rezonans olarak okunabiliyor, \"KS + KS\" iki farklı maddeyi aynı kısaltmayla veriyordu.\nNasıl: [TD1, EK1, KS1] Altı cloze numarası ve dağılımları korundu; düzeltmeler mevcut cloze içeriklerinin içinde yapıldı, enzim adı verilmeyen satırdaki boş \"enzim\" etiketi kaldırıldı.\nKaynak: Nelson Textbook of Pediatrics, mukopolisakkaridozlar bölümü (MPS tablosu).",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Scheie satırında biriken madde \"DS\" → \"dermatan + heparan sülfat\"; Sanfilippo satırında \"enzim → en sık ve en ağır\" → \"en sık görülen ve MSS tutulumu en ağır olan\" yapıldı; \"MR\" → \"mental retardasyon\", \"KS + KS\" → \"keratan sülfat + kondroitin-6-sülfat\" açıldı, DS/HS kısaltmaları ve yazım hataları (Drmatan, Sanflippo, ağr) düzeltildi.\nNeden: Scheie, Hurler ile aynı enzimin eksikliğidir ve iki glikozaminoglikan da birikir; niteleyicisiz \"en ağır\" Sanfilippo'yu genelde en ağır tip sayılan Hurler'in yerine koyuyordu; \"MR\" manyetik rezonans olarak okunabiliyor, \"KS + KS\" iki farklı maddeyi aynı kısaltmayla veriyordu.\nNasıl: [TD1, EK1, KS1] Altı cloze numarası ve dağılımları korundu; düzeltmeler mevcut cloze içeriklerinin içinde yapıldı, enzim adı verilmeyen satırdaki boş \"enzim\" etiketi kaldırıldı.\nKaynak: Nelson Textbook of Pediatrics, mukopolisakkaridozlar bölümü (MPS tablosu)."
+    }
+   ]
   },
   {
    "order": 331,
@@ -16400,7 +16487,7 @@
    "fields": {
     "Text": {
      "before": "YD Res'u&nbsp;<div><br></div><div>Isıt Kurula Taktil uyaran ----&gt; HR &lt; 100 --&gt; {{c1::Ambula (PBV)}} ---&gt; HR &gt; 100 --&gt; Başarı&nbsp;</div><div><br></div><div>HR {{c2::60 -100}} --&gt; PBV devam</div><div><br></div><div>HR {{c3::&lt; 60}} ---&gt; Göğüs Komp'u ---&gt; HR {{c4::&lt; 60}} hala --&gt; {{c5::iv Adrenalin}}&nbsp;</div>",
-     "after": "Yenidoğan resüsitasyonu<div><br></div><div>Isıt, kurula, taktil uyar → apne/gasping veya kalp hızı &lt; 100 → {{c1::ambu ile pozitif basınçlı ventilasyon (PBV)}} → kalp hızı &gt; 100 → başarı</div><div><br></div><div>Kalp hızı {{c2::60–100}} → {{c1::PBV}}'ye devam</div><div><br></div><div>Kalp hızı {{c3::&lt; 60}} → göğüs kompresyonu → kalp hızı hâlâ {{c4::&lt; 60}} → {{c5::İV adrenalin}}</div>"
+     "after": "Yenidoğan resüsitasyonu<div><br></div><div>Isıt, kurula, taktil uyar → apne/gasping veya kalp hızı &lt; 100 → {{c1::ambu ile pozitif basınçlı ventilasyon (PBV)}} → kalp hızı &gt; 100 → başarı</div><div><br></div><div>Kalp hızı {{c2::60–100}} → {{c1::PBV}}'ye devam</div><div><br></div><div>Kalp hızı {{c4::{{c3::&lt; 60}}::ilişkili yanıt arka yüzde}} → göğüs kompresyonu → kalp hızı hâlâ {{c3::{{c4::&lt; 60}}::ilişkili yanıt arka yüzde}} → {{c5::İV adrenalin}}</div>"
     }
    },
    "changes": [
@@ -16425,11 +16512,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---->, ---> ve --> → →; \"iv Adrenalin\" → \"İV adrenalin\"; \"60 -100\" → \"60–100\"; hala → hâlâ; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: PBV endikasyonuna \"apne/gasping veya\" eklendi, ikinci satırdaki açık \"PBV\" c1 boşluğuna alındı; \"Ambula (PBV)\" → \"ambu ile pozitif basınçlı ventilasyon (PBV)\", \"HR\" → \"kalp hızı\", \"Göğüs Komp'u\" → \"göğüs kompresyonu\", \"iv Adrenalin\" → \"İV adrenalin\" yapıldı.\nNeden: Kök PBV kararını yalnız kalp hızına bağlıyordu; ayrıca c2 satırındaki \"PBV\" sözcüğü c1 kartının cevabını ön yüzde gösteriyordu.\nNasıl: [EK1, YP2, YP1, KS1] Eksik endikasyon cloze dışına eklendi, sızıntı sözcüğün aynı numaralı boşluğa alınmasıyla giderildi; beş numaralı akış (PBV, 60–100'de PBV'ye devam, <60'ta kompresyon, sürerse İV adrenalin) doğru olduğundan c1–c5 dağılımı korundu.\nKaynak: AAP/AHA Yenidoğan Resüsitasyon Programı (NRP) algoritması.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: PBV endikasyonuna \"apne/gasping veya\" eklendi, ikinci satırdaki açık \"PBV\" c1 boşluğuna alındı; \"Ambula (PBV)\" → \"ambu ile pozitif basınçlı ventilasyon (PBV)\", \"HR\" → \"kalp hızı\", \"Göğüs Komp'u\" → \"göğüs kompresyonu\", \"iv Adrenalin\" → \"İV adrenalin\" yapıldı.\nNeden: Kök PBV kararını yalnız kalp hızına bağlıyordu; ayrıca c2 satırındaki \"PBV\" sözcüğü c1 kartının cevabını ön yüzde gösteriyordu.\nNasıl: [EK1, YP2, YP1, KS1] Eksik endikasyon cloze dışına eklendi, sızıntı sözcüğün aynı numaralı boşluğa alınmasıyla giderildi; beş numaralı akış (PBV, 60–100'de PBV'ye devam, <60'ta kompresyon, sürerse İV adrenalin) doğru olduğundan c1–c5 dağılımı korundu.\nKaynak: AAP/AHA Yenidoğan Resüsitasyon Programı (NRP) algoritması."
+    }
+   ]
   },
   {
    "order": 407,
@@ -18458,13 +18557,13 @@
    "noteId": 1607694516496,
    "guid": "IgE%!E*Ibw",
    "topic": "Alerji ve İmmünoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Tekr. {{c2::Staph}} Enf'ları +<div><br></div><div>Yüksek {{c2::IgE}} ve {{c2::Eozinofili}} +&nbsp;<div><br></div><div>All. Solunum yolu hast {{c1::YOK}}:<div><br></div><div>{{c1::OD Hiper IgE Send (Job)}}</div></div></div>",
-     "after": "Tekrarlayan {{c2::stafilokok}} enfeksiyonları +<div><br></div><div>Yüksek {{c2::IgE}} ve {{c2::eozinofili}} +<div><br></div><div>Alerjik solunum yolu hastalığı {{c1::yok}}:<div><br></div><div>{{c1::Otozomal dominant hiper IgE sendromu (Job)}}</div></div></div>"
+     "after": "Tekrarlayan {{c2::stafilokok}} enfeksiyonları +<div><br></div><div>Yüksek {{c2::IgE}} ve {{c2::eozinofili}} +<div><br></div><div>Alerjik solunum yolu hastalığı {{c1::yok}}:<div><br></div><div>{{c2::{{c1::Otozomal dominant hiper IgE sendromu (Job)}}::ilişkili yanıt arka yüzde}}</div></div></div>"
     }
    },
    "changes": [
@@ -18477,11 +18576,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "YOK → yok; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Tekr. Staph Enf'ları\", \"All. Solunum yolu hast\" ve \"OD Hiper IgE Send (Job)\" açıldı; \"YOK\" küçük harfe çevrildi.\nNeden: Kart kişisel kısaltmalarla yazılmıştı; içerik doğruydu.\nNasıl: [KS1, BÇ1, YP1] Stafilokok enfeksiyonu, yüksek IgE, eozinofili ve alerji yokluğuyla Job sendromu tablosu doğru olduğundan c1/c2 cevapları korundu; \"stafilokok\" yazımı 1605270384607 kartıyla aynı tutuldu.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Tekr. Staph Enf'ları\", \"All. Solunum yolu hast\" ve \"OD Hiper IgE Send (Job)\" açıldı; \"YOK\" küçük harfe çevrildi.\nNeden: Kart kişisel kısaltmalarla yazılmıştı; içerik doğruydu.\nNasıl: [KS1, BÇ1, YP1] Stafilokok enfeksiyonu, yüksek IgE, eozinofili ve alerji yokluğuyla Job sendromu tablosu doğru olduğundan c1/c2 cevapları korundu; \"stafilokok\" yazımı 1605270384607 kartıyla aynı tutuldu."
+    }
+   ]
   },
   {
    "order": 466,
@@ -20899,13 +21010,13 @@
    "noteId": 1605274396416,
    "guid": "G4)OqD}}9Q",
    "topic": "Endokrinoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "KAH&nbsp;<div><br></div><div>HT yapan Tipler ---&gt; {{c1::11 beta OH}} - {{c1::17 OH&nbsp;}}</div><div><br></div><div>Tuz Kaybı ---&gt; {{c2::3 beta OH DH}} - {{c2::21 OH}}&nbsp;</div><div><br></div><div>Her iki cinste Ambiguus genitalya ---&gt; {{c3::3 beta OH DH}}&nbsp;</div><div><br></div><div>Ald sentezi için ihtiyaç olmayan ---&gt;&nbsp; {{c1::17 OH}}</div><div><br></div><div>Kortizol sentezi için ihtiyaç olmayan --&gt; {{c2::18 OH}}&nbsp;</div>",
-     "after": "Konjenital adrenal hiperplazi<div><br></div><div>HT yapan tipler → {{c1::11-beta-hidroksilaz}}, {{c1::17-alfa-hidroksilaz}}</div><div><br></div><div>Tuz kaybı → {{c2::3-beta-hidroksisteroid dehidrogenaz}}, {{c2::21-hidroksilaz}}</div><div><br></div><div>Her iki cinste kuşkulu (ambiguus) genitalya → {{c3::3-beta-hidroksisteroid dehidrogenaz}}</div><div><br></div><div>Aldosteron sentezi için ihtiyaç olmayan → {{c1::17-alfa-hidroksilaz}}</div><div><br></div><div>Kortizol sentezi için ihtiyaç olmayan → {{c2::18-hidroksilaz}}</div>"
+     "after": "Konjenital adrenal hiperplazi<div><br></div><div>HT yapan tipler → {{c1::11-beta-hidroksilaz}}, {{c1::17-alfa-hidroksilaz}}</div><div><br></div><div>Tuz kaybı → {{c3::{{c2::3-beta-hidroksisteroid dehidrogenaz}}::ilişkili yanıt arka yüzde}}, {{c2::21-hidroksilaz}}</div><div><br></div><div>Her iki cinste kuşkulu (ambiguus) genitalya → {{c2::{{c3::3-beta-hidroksisteroid dehidrogenaz}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Aldosteron sentezi için ihtiyaç olmayan → {{c1::17-alfa-hidroksilaz}}</div><div><br></div><div>Kortizol sentezi için ihtiyaç olmayan → {{c2::18-hidroksilaz}}</div>"
     }
    },
    "changes": [
@@ -20918,11 +21029,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve --> → →; \" - \" → virgül; \"Ambiguus genitalya\" → \"kuşkulu (ambiguus) genitalya\"; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"KAH\" ve enzim kısaltmaları açıldı (ör. \"3 beta OH DH\" → \"3-beta-hidroksisteroid dehidrogenaz\", \"18 OH\" → \"18-hidroksilaz\"), \"Ald\" → \"Aldosteron\" yazıldı ve liste ayracı virgül oldu.\nNeden: Kart kişisel enzim kısaltmalarıyla yazılmıştı ve KAH destede koroner arter hastalığı kısaltmasıyla çakışıyordu; içerik doğruydu.\nNasıl: [KS1, YZ1, YP1] 11-beta ve 17-alfa-hidroksilaz eksikliğinde hipertansiyon, 3-beta-HSD ve 21-hidroksilazda tuz kaybı, 3-beta-HSD'de iki cinste kuşkulu genitalya bilgileri doğru olduğundan c1–c3 korundu. c2 ve c3 cevabı aynı enzim olduğundan biri sorulurken diğeri görünür; bu çapraz sızıntı numara birleştirmeden giderilemediği için (YP1) dağılım değiştirilmedi.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"KAH\" ve enzim kısaltmaları açıldı (ör. \"3 beta OH DH\" → \"3-beta-hidroksisteroid dehidrogenaz\", \"18 OH\" → \"18-hidroksilaz\"), \"Ald\" → \"Aldosteron\" yazıldı ve liste ayracı virgül oldu.\nNeden: Kart kişisel enzim kısaltmalarıyla yazılmıştı ve KAH destede koroner arter hastalığı kısaltmasıyla çakışıyordu; içerik doğruydu.\nNasıl: [KS1, YZ1, YP1] 11-beta ve 17-alfa-hidroksilaz eksikliğinde hipertansiyon, 3-beta-HSD ve 21-hidroksilazda tuz kaybı, 3-beta-HSD'de iki cinste kuşkulu genitalya bilgileri doğru olduğundan c1–c3 korundu. c2 ve c3 cevabı aynı enzim olduğundan biri sorulurken diğeri görünür; bu çapraz sızıntı numara birleştirmeden giderilemediği için (YP1) dağılım değiştirilmedi."
+    }
+   ]
   },
   {
    "order": 541,
@@ -23039,13 +23162,13 @@
    "noteId": 1610560954355,
    "guid": "v|I17&=$Zz",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Ambiguus Genitalya Yapan Enzim Defektleri<div><br></div><div><b>Kızlarda</b> AG:</div><div><br></div><div>{{c1::3 beta OH DH}}</div><div>{{c2::21 OH}}</div><div>{{c1::11 beta OH}}</div><div><br></div><div><b>Erkeklerde</b> AG:</div><div><br></div><div>{{c3::3 beta OH DH}}</div><div>{{c4::17 alfa OH}}</div><div>{{c3::20-22 Desmolaz}}</div>",
-     "after": "Ambigus genitalya yapan enzim defektleri<div><br></div><div><b>Kızlarda</b> ambigus genitalya:</div><div><br></div><div>{{c1::3-beta-hidroksisteroid dehidrogenaz}}</div><div>{{c2::21-hidroksilaz}}</div><div>{{c1::11-beta-hidroksilaz}}</div><div><br></div><div><b>Erkeklerde</b> ambigus genitalya:</div><div><br></div><div>{{c3::3-beta-hidroksisteroid dehidrogenaz}}</div><div>{{c4::17-alfa-hidroksilaz}}</div><div>{{c3::20,22-desmolaz}}</div>"
+     "after": "Ambigus genitalya yapan enzim defektleri<div><br></div><div><b>Kızlarda</b> ambigus genitalya:</div><div><br></div><div>{{c3::{{c1::3-beta-hidroksisteroid dehidrogenaz}}::ilişkili yanıt arka yüzde}}</div><div>{{c2::21-hidroksilaz}}</div><div>{{c1::11-beta-hidroksilaz}}</div><div><br></div><div><b>Erkeklerde</b> ambigus genitalya:</div><div><br></div><div>{{c1::{{c3::3-beta-hidroksisteroid dehidrogenaz}}::ilişkili yanıt arka yüzde}}</div><div>{{c4::17-alfa-hidroksilaz}}</div><div>{{c3::20,22-desmolaz}}</div>"
     }
    },
    "changes": [
@@ -23063,11 +23186,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "büyük/küçük harf (kalın \"Kızlarda\"/\"Erkeklerde\" korundu)"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"3 beta OH DH\", \"21 OH\", \"11 beta OH\", \"17 alfa OH\" enzim adları açık yazıldı, \"AG\" → \"ambigus genitalya\", \"20-22 Desmolaz\" → \"20,22-desmolaz\" yapıldı.\nNeden: Enzim adları ve \"AG\" yazarın kısaltmalarıydı; \"AG\" kısaltma sözlüğünde başka anlamlarda (aminoglikozid, anyon açığı) kullanılır.\nNasıl: [KS1, YZ1, YP1] Kızlarda virilizan (3-beta-HSD, 21- ve 11-beta-hidroksilaz), erkeklerde yetersiz virilizasyon yapan (3-beta-HSD, 17-alfa-hidroksilaz, 20,22-desmolaz) defektler doğru olduğundan liste ve c1–c4 dağılımı korundu; 3-beta-HSD iki cinsiyette de kuşkulu genitalya yaptığı için iki listede yer alır, numara birleştirmemek için bu tekrar bırakıldı.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"3 beta OH DH\", \"21 OH\", \"11 beta OH\", \"17 alfa OH\" enzim adları açık yazıldı, \"AG\" → \"ambigus genitalya\", \"20-22 Desmolaz\" → \"20,22-desmolaz\" yapıldı.\nNeden: Enzim adları ve \"AG\" yazarın kısaltmalarıydı; \"AG\" kısaltma sözlüğünde başka anlamlarda (aminoglikozid, anyon açığı) kullanılır.\nNasıl: [KS1, YZ1, YP1] Kızlarda virilizan (3-beta-HSD, 21- ve 11-beta-hidroksilaz), erkeklerde yetersiz virilizasyon yapan (3-beta-HSD, 17-alfa-hidroksilaz, 20,22-desmolaz) defektler doğru olduğundan liste ve c1–c4 dağılımı korundu; 3-beta-HSD iki cinsiyette de kuşkulu genitalya yaptığı için iki listede yer alır, numara birleştirmemek için bu tekrar bırakıldı."
+    }
+   ]
   },
   {
    "order": 607,
@@ -23917,13 +24052,13 @@
    "noteId": 1610887951234,
    "guid": "j`pXMG#Z@,",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<div><b><i>İnfant Lösemi</i></b></div><div><br></div><div>{{c1::Kız}} cinsiyette daha sık&nbsp;</div><div>En sık: {{c1::ALL}}</div><div><br></div>-<b>İnfant ALL&nbsp;</b><div><br></div><div>En sık Tip: {{c2::Pro - B (CALLA (-))}}ALL</div><div>En sık sitogenetik anomali: {{c2::11q23}}</div><div>En sık translokasyon: t({{c2::4:11}})</div><div><br></div><div>-<b>İnfant AML</b></div><div><br></div><div>En sık tip: M {{c3::4-5}}</div><div>\nEn sık sitogenetik anomali: {{c3::11q23}}&nbsp;<br></div><div>\nEn sık translokasyon: t({{c3::9:11}})<br></div><div><br></div><div><b><i><br></i></b></div><div><b><i>Konj. Lösemi</i></b></div><div><br></div><div>En sık: {{c4::AML}}</div><div>\nEn sık sitogenetik anomali: {{c4::11q23}}&nbsp;&nbsp;<br></div><div>t({{c4::8:16}}): Spontan Remisyon ihtimali yüksek&nbsp;</div>",
-     "after": "<div><b><i>İnfant lösemi</i></b></div><div><br></div><div>{{c1::Kız}} cinsiyette daha sık</div><div>En sık: {{c1::ALL}}</div><div><br></div>-<b>İnfant ALL</b><div><br></div><div>En sık tip: {{c2::pro-B (CALLA/CD10 negatif)}} ALL</div><div>En sık sitogenetik anomali: {{c2::11q23}}</div><div>En sık translokasyon: t({{c2::4;11}})</div><div><br></div><div>-<b>İnfant AML</b></div><div><br></div><div>En sık tip: M{{c3::4–5}}</div><div>En sık sitogenetik anomali: {{c3::11q23}}</div><div>En sık translokasyon: t({{c3::9;11}})</div><div><br></div><div><b><i>Konjenital lösemi</i></b></div><div><br></div><div>En sık: {{c4::AML}}</div><div>En sık sitogenetik anomali: {{c4::11q23}}</div><div>t({{c4::8;16}}): spontan remisyon olasılığı yüksek</div>"
+     "after": "<div><b><i>İnfant lösemi</i></b></div><div><br></div><div>{{c1::Kız}} cinsiyette daha sık</div><div>En sık: {{c1::ALL}}</div><div><br></div>-<b>İnfant ALL</b><div><br></div><div>En sık tip: {{c2::pro-B (CALLA/CD10 negatif)}} ALL</div><div>En sık sitogenetik anomali: {{c3::{{c4::{{c2::11q23}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div>En sık translokasyon: t({{c2::4;11}})</div><div><br></div><div>-<b>İnfant AML</b></div><div><br></div><div>En sık tip: M{{c3::4–5}}</div><div>En sık sitogenetik anomali: {{c2::{{c4::{{c3::11q23}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div>En sık translokasyon: t({{c3::9;11}})</div><div><br></div><div><b><i>Konjenital lösemi</i></b></div><div><br></div><div>En sık: {{c4::AML}}</div><div>En sık sitogenetik anomali: {{c2::{{c3::{{c4::11q23}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div>t({{c4::8;16}}): spontan remisyon olasılığı yüksek</div>"
     },
     "Extra": {
      "before": "İLK 100 için",
@@ -23940,11 +24075,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "t(4:11), t(9:11), t(8:16) → noktalı virgüllü gösterim; \"Pro - B (CALLA (-))\" → \"pro-B (CALLA/CD10 negatif)\"; 4-5 → 4–5; Extra'daki \"İLK 100 için\" notu kaldırıldı; alan içi satır sonları, art arda boş satır ve &nbsp; temizlendi; büyük/küçük harf"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Translokasyonlar \"t(4;11)\", \"t(9;11)\", \"t(8;16)\" biçiminde yazıldı, \"Pro - B (CALLA (-))\" → \"pro-B (CALLA/CD10 negatif)\", \"Konj. Lösemi\" → \"Konjenital lösemi\" yapıldı ve Extra'daki \"İLK 100 için\" notu kaldırıldı.\nNeden: Alan çıplak satır sonları, art arda boş satır ve &nbsp; taşıyordu; Extra yalnız yazarın kişisel işaretiydi; translokasyon gösterimi standart değildi.\nNasıl: [YP4, SN2, YP3] İnfant lösemide hafif kız üstünlüğü, ALL'nin daha sık olması, pro-B (CD10 negatif) ALL ile 11q23/KMT2A ve t(4;11), infant AML'de M4–M5 ile t(9;11), konjenital lösemide AML ve t(8;16) ile spontan remisyon bilgileri doğru olduğundan c1–c4 boşlukları içerik olarak korundu; kalın-italik başlıklar bırakıldı.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Translokasyonlar \"t(4;11)\", \"t(9;11)\", \"t(8;16)\" biçiminde yazıldı, \"Pro - B (CALLA (-))\" → \"pro-B (CALLA/CD10 negatif)\", \"Konj. Lösemi\" → \"Konjenital lösemi\" yapıldı ve Extra'daki \"İLK 100 için\" notu kaldırıldı.\nNeden: Alan çıplak satır sonları, art arda boş satır ve &nbsp; taşıyordu; Extra yalnız yazarın kişisel işaretiydi; translokasyon gösterimi standart değildi.\nNasıl: [YP4, SN2, YP3] İnfant lösemide hafif kız üstünlüğü, ALL'nin daha sık olması, pro-B (CD10 negatif) ALL ile 11q23/KMT2A ve t(4;11), infant AML'de M4–M5 ile t(9;11), konjenital lösemide AML ve t(8;16) ile spontan remisyon bilgileri doğru olduğundan c1–c4 boşlukları içerik olarak korundu; kalın-italik başlıklar bırakıldı."
+    }
+   ]
   },
   {
    "order": 634,
@@ -36494,13 +36641,13 @@
    "noteId": 1610693045595,
    "guid": "uoJ|0b@MVy",
    "topic": "Romatoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<div>Tdv:</div><div><br></div><b>OligoArtiküler JİA:</b><div>1- {{c1::NSAİD}} -&gt; 6-8 Hf Yanıtsız -&gt;</div><div><br></div><div>2- {{c1::İntraArt. KS}} -&gt; Yanıt Yok -&gt;</div><div><br></div><div>3- {{c1::MXT}}</div><div><br></div><div><b>PoliArt. JİA:</b></div><div>1- {{c2::MXT}} + {{c2::NSAİD}}</div><div><br></div><div>2- {{c2::Anti TNF ( Etanersept - Adalimumab - İnfliksimab)}}</div><div><br></div><div>2- {{c2::Abatasept}}</div><div><br></div><div><b>Sist. JİA:</b></div><div><br></div><div>1- {{c3::Kısa Süreli KS}}</div><div>+</div><div>{{c3::IL-1 İnh}} / {{c3::Tosiluzumab}}</div><div><br></div>",
-     "after": "<div>JİA tedavisi:</div><div><br></div><b>Oligoartiküler JİA:</b><div>1- {{c1::NSAİİ}} → 6–8 hafta yanıtsız →</div><div><br></div><div>2- {{c1::İntraartiküler kortikosteroid}} → yanıt yok →</div><div><br></div><div>3- {{c1::Metotreksat}}</div><div><br></div><div><b>Poliartiküler JİA:</b></div><div>1- {{c2::Metotreksat}} + {{c2::NSAİİ}}</div><div><br></div><div>2- {{c2::Anti-TNF (etanersept, adalimumab, infliksimab)}}</div><div><br></div><div>2- {{c2::Abatasept}}</div><div><br></div><div><b>Sistemik JİA:</b></div><div><br></div><div>1- {{c3::Kısa süreli kortikosteroid}}</div><div>+</div><div>{{c3::IL-1 inhibitörü}} / {{c3::tosilizumab}}</div>"
+     "after": "<div>JİA tedavisi:</div><div><br></div><b>Oligoartiküler JİA:</b><div>1- {{c2::{{c1::NSAİİ}}::ilişkili yanıt arka yüzde}} → 6–8 hafta yanıtsız →</div><div><br></div><div>2- {{c1::İntraartiküler kortikosteroid}} → yanıt yok →</div><div><br></div><div>3- {{c2::{{c1::Metotreksat}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>Poliartiküler JİA:</b></div><div>1- {{c1::{{c2::Metotreksat}}::ilişkili yanıt arka yüzde}} + {{c1::{{c2::NSAİİ}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>2- {{c2::Anti-TNF (etanersept, adalimumab, infliksimab)}}</div><div><br></div><div>2- {{c2::Abatasept}}</div><div><br></div><div><b>Sistemik JİA:</b></div><div><br></div><div>1- {{c3::Kısa süreli kortikosteroid}}</div><div>+</div><div>{{c3::IL-1 inhibitörü}} / {{c3::tosilizumab}}</div>"
     }
    },
    "changes": [
@@ -36523,11 +36670,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "-> → →; \"Anti TNF ( Etanersept - Adalimumab - İnfliksimab)\" → \"Anti-TNF (etanersept, adalimumab, infliksimab)\"; 6-8 → 6–8; büyük/küçük harf; sondaki boş satır temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlık \"JİA tedavisi\" yapıldı; \"Tosiluzumab\" → \"tosilizumab\", \"NSAİD\" → \"NSAİİ\" düzeltildi ve MXT, İntraArt. KS, IL-1 İnh gibi kısaltmalar açıldı.\nNeden: \"Tdv:\" başlığı kartın hangi hastalığın tedavisini sorduğunu söylemiyordu; ilaç adı yanlış yazılmış, kısaltmalar kişisel nottu.\nNasıl: [SN1, YZ2, KS1, YP1] Oligoartikülerde NSAİİ → intraartiküler kortikosteroid → metotreksat, poliartikülerde metotreksat + NSAİİ ardından biyolojik ajan, sistemik JİA'da kısa süreli kortikosteroid ile IL-1/IL-6 blokajı basamakları ders kitabıyla uyumlu olduğundan içerik ve c1–c3 dağılımı korundu; kalın alt başlıklar bırakıldı.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"JİA tedavisi\" yapıldı; \"Tosiluzumab\" → \"tosilizumab\", \"NSAİD\" → \"NSAİİ\" düzeltildi ve MXT, İntraArt. KS, IL-1 İnh gibi kısaltmalar açıldı.\nNeden: \"Tdv:\" başlığı kartın hangi hastalığın tedavisini sorduğunu söylemiyordu; ilaç adı yanlış yazılmış, kısaltmalar kişisel nottu.\nNasıl: [SN1, YZ2, KS1, YP1] Oligoartikülerde NSAİİ → intraartiküler kortikosteroid → metotreksat, poliartikülerde metotreksat + NSAİİ ardından biyolojik ajan, sistemik JİA'da kısa süreli kortikosteroid ile IL-1/IL-6 blokajı basamakları ders kitabıyla uyumlu olduğundan içerik ve c1–c3 dağılımı korundu; kalın alt başlıklar bırakıldı."
+    }
+   ]
   },
   {
    "order": 1012,
@@ -38063,13 +38222,13 @@
    "noteId": 1610881254542,
    "guid": "zB88~:?PoG",
    "topic": "Yenidoğan",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::Amegakaryositik Tromb.peni}}:<div><br></div><div>{{c2::MPL}} Gen Mut</div><div><br></div><div>Neonatal dönemde {{c2::Tromb.peni}} daha sonra {{c2::Pansitopeni}}</div><div><br></div><div>HbF {{c2::Yüksek}}&nbsp;</div><div><br></div><div>{{c1::Makro}}siter anemi</div><div><br></div><div>{{c1::İ}} Antijen (+)</div>",
-     "after": "{{c1::Konjenital amegakaryositik trombositopeni}}:<div><br></div><div>{{c2::MPL}} gen mutasyonu</div><div><br></div><div>Neonatal dönemde {{c2::trombositopeni}}, daha sonra {{c2::pansitopeni}}</div><div><br></div><div>HbF {{c2::yüksek}}</div><div><br></div><div>{{c1::Makro}}siter anemi</div><div><br></div><div>{{c1::i}} antijeni (+)</div>"
+     "after": "{{c2::{{c1::Konjenital amegakaryositik trombositopeni}}::ilişkili yanıt arka yüzde}}:<div><br></div><div>{{c2::MPL}} gen mutasyonu</div><div><br></div><div>Neonatal dönemde {{c1::{{c2::trombositopeni}}::ilişkili yanıt arka yüzde}}, daha sonra {{c2::pansitopeni}}</div><div><br></div><div>HbF {{c2::yüksek}}</div><div><br></div><div>{{c1::Makro}}siter anemi</div><div><br></div><div>{{c1::i}} antijeni (+)</div>"
     }
    },
    "changes": [
@@ -38087,11 +38246,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "büyük/küçük harf (Gen, Pansitopeni, Yüksek); &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Amegakaryositik Tromb.peni\" → \"Konjenital amegakaryositik trombositopeni\", \"Gen Mut\" → \"gen mutasyonu\" yapıldı ve Türkçe büyük \"İ\" ile yazılan antijen \"i antijeni\" olarak düzeltildi.\nNeden: Hastalığın adı eksik ve kısaltmalıydı; fetal i antijeninin büyük \"İ\" ile yazılması onu başka bir kan grubu antijeni (I) gibi okutabiliyordu.\nNasıl: [YZ1, KS1, YP1] MPL (trombopoetin reseptörü) mutasyonu, doğumda trombositopeni ve ilerleyen yaşta pansitopeni, stres eritropoezine bağlı makrositoz, HbF ve i antijeni artışı ders kitabıyla uyumlu olduğundan c1 ve c2 cevapları ile dağılımları korundu.",
+   "aiNote": "Ne: Pediatri algoritma/tablosunda başka bulgu veya ordinalden okunan aynı cevap gizlendi; mevcut kartlar ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Amegakaryositik Tromb.peni\" → \"Konjenital amegakaryositik trombositopeni\", \"Gen Mut\" → \"gen mutasyonu\" yapıldı ve Türkçe büyük \"İ\" ile yazılan antijen \"i antijeni\" olarak düzeltildi.\nNeden: Hastalığın adı eksik ve kısaltmalıydı; fetal i antijeninin büyük \"İ\" ile yazılması onu başka bir kan grubu antijeni (I) gibi okutabiliyordu.\nNasıl: [YZ1, KS1, YP1] MPL (trombopoetin reseptörü) mutasyonu, doğumda trombositopeni ve ilerleyen yaşta pansitopeni, stres eritropoezine bağlı makrositoz, HbF ve i antijeni artışı ders kitabıyla uyumlu olduğundan c1 ve c2 cevapları ile dağılımları korundu."
+    }
+   ]
   },
   {
    "order": 1057,
@@ -38916,13 +39087,13 @@
    "noteId": 1605103067325,
    "guid": "GKO`5~_a{B",
    "topic": "Beslenme ve Gelişme",
-   "severity": "Düşük",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "GELİŞME BASAMAKLARI&nbsp;<div><br></div><div>Başını Dik tutma + Annesin tanır gülümser ---&gt; {{c1::1-2 ay&nbsp;}}</div><div><br></div><div>Çıngırak Kavrar --&gt; {{c2::3,5 - 4 ay}}</div><div><br></div><div>Objeleri 180 derece takip --&gt; {{c3::2 ay}}&nbsp;</div><div><br></div><div>Destekli Oturma ---&gt; {{c4::4-6}} ay</div><div><br></div><div>Desteksiz Oturma --&gt; {{c4::5-7}} ay&nbsp;</div><div><br></div><div>Emekleme --&gt; {{c6::8}} ay</div><div><br></div><div>Başparmak - işaret parmak arasına yakalama --&gt; {{c6::8}} ay&nbsp;</div><div><br></div><div>Yürüme (ilk adım) --&gt; {{c9::1 yaş}}</div><div><br></div><div>İlk kelime --&gt; {{c9::1 yaş}}&nbsp;</div><div><br></div><div>Küpleri üst üste koyma --&gt; {{c11::15-18}} ay</div><div><br></div><div>Küpleri birbirine vurma ---&gt; {{c11::8}} ay</div><div><br></div><div><b>Babbıl</b>damak --&gt; {{c13::6}} ay</div><div><br></div><div>2 kelime cümle --&gt; {{c14::19}} ay</div><div><br></div><div>Tam cümle ---&gt; {{c14::2 yaş}}</div><div><br></div><div>İşaret ile TEK Komut alma --&gt; {{c16::7}} ay&nbsp;</div><div><br></div><div>İşaret almadan TEK komut --&gt; {{c16::10}} ay</div><div><br></div><div>2 aşamalı komut --&gt; {{c16::18-24}} ay</div><div><br></div><div>Organları tanımak --&gt; {{c19::18}} ay&nbsp;</div><div><br></div><div>Sayfayı çevirebilme --&gt; 1 yaş&nbsp;</div>",
-     "after": "Gelişme basamakları<div><br></div><div>Başını dik tutma + annesini tanıyıp gülümseme → {{c1::1–2 ay}}</div><div><br></div><div>Çıngırak kavrama → {{c2::3,5–4 ay}}</div><div><br></div><div>Objeleri 180 derece takip → {{c3::2 ay}}</div><div><br></div><div>Destekli oturma → {{c4::4–6}} ay</div><div><br></div><div>Desteksiz oturma → {{c4::5–7}} ay</div><div><br></div><div>Emekleme → {{c6::8}} ay</div><div><br></div><div>Başparmak ve işaret parmağı arasında yakalama → {{c6::8}} ay</div><div><br></div><div>Yürüme (ilk adım) → {{c9::1 yaş}}</div><div><br></div><div>İlk kelime → {{c9::1 yaş}}</div><div><br></div><div>Küpleri üst üste koyma → {{c11::15–18}} ay</div><div><br></div><div>Küpleri birbirine vurma → {{c11::8}} ay</div><div><br></div><div><b>Babbıl</b>damak → {{c13::6}} ay</div><div><br></div><div>2 kelimelik cümle → {{c14::19}} ay</div><div><br></div><div>Tam cümle → {{c14::2 yaş}}</div><div><br></div><div>İşaretle tek komut alma → {{c16::7}} ay</div><div><br></div><div>İşaret olmadan tek komut alma → {{c16::10}} ay</div><div><br></div><div>2 aşamalı komut → {{c16::18–24}} ay</div><div><br></div><div>Organları tanıma → {{c19::18}} ay</div><div><br></div><div>Sayfa çevirebilme → 1 yaş</div>"
+     "after": "Gelişme basamakları<div><br></div><div>Başını dik tutma + annesini tanıyıp gülümseme → {{c1::1–2 ay}}</div><div><br></div><div>Çıngırak kavrama → {{c2::3,5–4 ay}}</div><div><br></div><div>Objeleri 180 derece takip → {{c3::2 ay}}</div><div><br></div><div>Destekli oturma → {{c4::4–6}} ay</div><div><br></div><div>Desteksiz oturma → {{c4::5–7}} ay</div><div><br></div><div>Emekleme → {{c6::8}} ay</div><div><br></div><div>Başparmak ve işaret parmağı arasında yakalama → {{c6::8}} ay</div><div><br></div><div>Yürüme (ilk adım) → {{c9::1 yaş}}</div><div><br></div><div>İlk kelime → {{c9::1 yaş}}</div><div><br></div><div>Küpleri üst üste koyma → {{c11::15–18}} ay</div><div><br></div><div>Küpleri birbirine vurma → {{c11::8}} ay</div><div><br></div><div><b>Babbıl</b>damak → {{c13::6}} ay</div><div><br></div><div>2 kelimelik cümle → {{c14::19}} ay</div><div><br></div><div>Tam cümle → {{c14::2 yaş}}</div><div><br></div><div>İşaretle tek komut alma → {{c16::7}} ay</div><div><br></div><div>İşaret olmadan tek komut alma → {{c16::10}} ay</div><div><br></div><div>2 aşamalı komut → {{c16::18–24}} ay</div><div><br></div><div>Organları tanıma → {{c19::18}} ay</div><div><br></div><div>Sayfa çevirebilme → {{c9::1 yaş}}</div>"
     }
    },
    "changes": [
@@ -38935,11 +39106,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"GELİŞME BASAMAKLARI\" → \"Gelişme basamakları\"; TEK → tek; ---> ve --> → →; aralıklar uzun çizgiyle; &nbsp; temizlendi (kalın \"Babbıl\" korundu)"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Yürüme/ilk kelime sorusunun yanıtı sayfa çevirme satırından açık okunmuyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlık küçük harfe çevrildi, satırlar ad öbeği biçiminde eşitlendi (\"annesini tanıyıp gülümseme\", \"Çıngırak kavrama\", \"Organları tanıma\", \"2 kelimelik cümle\"), oklar ve aralıklar düzeltildi.\nNeden: Büyük harfli başlık, karışık fiil çekimleri ve ok biçimi ev stiline uymuyordu; içerik yazarın TUS kaynağındaki gelişme basamaklarıyla tutarlıydı.\nNasıl: [DB1, BÇ1, YP3, YP1] On bir cloze numarası (c1–c19 arasındaki boşluklu dizi) ve dağılımları olduğu gibi bırakıldı; kalın \"Babbıl\" vurgusu korundu, cevaplara dokunulmadı.",
+   "aiNote": "Ne: Yürüme/ilk kelime sorusunun yanıtı sayfa çevirme satırından açık okunmuyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık küçük harfe çevrildi, satırlar ad öbeği biçiminde eşitlendi (\"annesini tanıyıp gülümseme\", \"Çıngırak kavrama\", \"Organları tanıma\", \"2 kelimelik cümle\"), oklar ve aralıklar düzeltildi.\nNeden: Büyük harfli başlık, karışık fiil çekimleri ve ok biçimi ev stiline uymuyordu; içerik yazarın TUS kaynağındaki gelişme basamaklarıyla tutarlıydı.\nNasıl: [DB1, BÇ1, YP3, YP1] On bir cloze numarası (c1–c19 arasındaki boşluklu dizi) ve dağılımları olduğu gibi bırakıldı; kalın \"Babbıl\" vurgusu korundu, cevaplara dokunulmadı."
+    }
+   ]
   },
   {
    "order": 1085,

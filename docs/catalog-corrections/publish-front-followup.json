@@ -1,0 +1,323 @@
+{
+  "schema": "tusankim.catalog-followup/v1",
+  "date": "2026-10-09",
+  "applied": true,
+  "sourceSha256": "5fadd886944365e6e67b6f1b99fd1d89b13f49e916eb7a63789e87312e9990b7",
+  "scope": "Son yayın kontrolündeki 11 açık not ve iki ilişkili CVLM notu; odak iddia düzeltmesi, bütün katalog için tıbbi onay değildir.",
+  "notes": [
+    {
+      "course": "farmakoloji",
+      "noteId": 1624188510902,
+      "guid": "iuurG45<nj",
+      "ordinals": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "İrinotekan yanlış G2–M satırından S fazına taşındı; aynı tabloda etoposidin G1–S eşlemesi S/G2 olarak düzeltildi. c1–c4 ve diğer ilaçlar korundu.",
+      "sources": [
+        "https://www.cancer.gov/publications/dictionaries/cancer-drug/def/irinotecan-hydrochloride",
+        "https://www.cancer.gov/publications/dictionaries/cancer-drug/def/etoposide",
+        "https://pubmed.ncbi.nlm.nih.gov/7947097/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Kemoterapi ilaçlarının etki ettiği hücre siklusu dönemleri:<div><br></div><div><b>G1</b>: {{c3::L-asparaginaz}}</div><div><br></div><div><b>G1-S</b>: {{c3::etoposid}}</div><div><br></div><div><b>G2-M</b>: {{c1::bleomisin}}, {{c1::irinotekan}}<br><br><b>M</b>: {{c2::vinkristin}}, {{c2::vinblastin}}, {{c4::paklitaksel}}, {{c4::dosetaksel}}, eribulin, iksabepilon</div>",
+          "after": "Kemoterapi ilaçlarının etki ettiği hücre siklusu dönemleri:<div><br></div><div><b>G1</b>: {{c3::L-asparaginaz}}</div><div><br></div><div><b>S/G2</b>: {{c3::etoposid}}</div><div><br></div><div><b>S</b>: {{c1::irinotekan}}<br><br><b>G2-M</b>: {{c1::bleomisin}}<br><br><b>M</b>: {{c2::vinkristin}}, {{c2::vinblastin}}, {{c4::paklitaksel}}, {{c4::dosetaksel}}, eribulin, iksabepilon</div>"
+        },
+        "Extra": {
+          "before": "",
+          "after": "İrinotekan S fazına özgüdür; etoposid başlıca S ve G2 fazlarında etkilidir. İlaçların faz ağırlıkları tek bir geçiş noktasında etkili oldukları anlamına gelmez."
+        }
+      }
+    },
+    {
+      "course": "farmakoloji",
+      "noteId": 1604660192048,
+      "guid": "Od,L66hlgd",
+      "ordinals": [
+        1
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "Ortak CYP2C19 ve kesin etkinlik artışı cevabı yerine iki ilacın aktivasyon enzimleri ayrıldı; farmakokinetik ilişki klinik etkinlikle karıştırılmadı.",
+      "sources": [
+        "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1e6ff055-590c-41e6-9530-1fdf04cdbd02",
+        "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=de8b0b67-eb25-4684-83b5-7ad785314227"
+      ],
+      "fields": {
+        "Text": {
+          "before": "{{c1::CYP2C19}} → tamoksifen ve klopidogrel<div><br></div><div>Hızlı çalışırsa → etkinlikleri {{c1::artar}}</div>",
+          "after": "Ön ilaç aktivasyonu:<div><br></div><div>Tamoksifen: N-desmetiltamoksifen → endoksifen dönüşümündeki temel enzim {{c1::CYP2D6}}.</div><div><br></div><div>Klopidogrel: aktif metabolit oluşumunda başlıca enzim {{c1::CYP2C19}}; bu enzimin işlevi azaldığında antiplatelet etki {{c1::azalır}}.</div>"
+        },
+        "Extra": {
+          "before": "İkisi de ön ilaçtır. Tamoksifeni endoksifene çeviren başlıca enzim CYP2D6'dır.",
+          "after": "Tamoksifen metabolizmasına CYP2C19 dahil birden çok enzim katılır; endoksifen oluşumunda CYP2D6 temel rol oynar. Enzim aktivitesinden her iki ilaç için koşulsuz klinik etkinlik artışı çıkarılamaz. Tamoksifende metabolit düzeyi ile klinik sonlanım aynı ölçüt değildir."
+        }
+      }
+    },
+    {
+      "course": "farmakoloji",
+      "noteId": 1604674576990,
+      "guid": "v^;QA]d5`!",
+      "ordinals": [
+        1,
+        2
+      ],
+      "severity": "Yüksek",
+      "category": "Cevap görünürlüğü",
+      "reason": "İki görev c1/c2 iç içe gizlemeyle ayrıldı: aktif kartta yalnız ilgili soru gösterilir, diğer görev arka yüzde açılır. İlaç adları karşı satırdan okunmaz; doz kapsamı ABD etiketleriyle sınırlandı.",
+      "sources": [
+        "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=e43e5643-b258-469d-812a-887f913cfe71",
+        "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=52b27c75-9f5a-4816-bafd-dace9d7d2063"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Ön ilaç <b>olan</b> ARB'ler<div><br></div><div><div>{{c1::Kandesartan}}</div><div>{{c1::Olmesartan}}</div><div>{{c1::Azilsartan}}</div></div><div><br></div><div>-----------------</div><div><br></div><div>Karaciğer ve böbrek yetmezliğinde doz ayarlaması gerekmeyen ARB'ler →</div><div><br></div><div>{{c2::Olmesartan}}, {{c2::azilsartan}}<br></div>",
+          "after": "{{c2::<b>Ön ilaç formuyla kullanılan ARB'ler (üç örnek):</b><br><br>{{c1::Kandesartan sileksetil}}<br>{{c1::Olmesartan medoksomil}}<br>{{c1::Azilsartan medoksomil}}::ön ilaç listesi arka yüzde}}<br><br>{{c1::<b>ABD ürün bilgilerine göre böbrek yetmezliğinde ve hafif–orta karaciğer yetmezliğinde rutin başlangıç dozu ayarı gerektirmeyen iki ARB örneği:</b><br><br>{{c2::Olmesartan}}, {{c2::azilsartan}}::doz ayarı listesi arka yüzde}}"
+        },
+        "Extra": {
+          "before": "",
+          "after": "Başlangıç dozu bilgisi tüm ülkelerin ürün bilgilerine veya her klinik duruma genellenmez. Azilsartan ağır karaciğer yetmezliğinde çalışılmamıştır. Volüm kaybı ve böbrek fonksiyonunun izlenmesi ayrıca değerlendirilir."
+        }
+      }
+    },
+    {
+      "course": "patoloji",
+      "noteId": 1620369027703,
+      "guid": "As>gw$(]+x",
+      "ordinals": [
+        1
+      ],
+      "severity": "Yüksek",
+      "category": "Cevap görünürlüğü",
+      "reason": "Marjinal/post-germinal satırındaki tekrarlanan DLBCL cevabı da c1 içinde gizlendi. Lenfoma listesinin tıbbi içeriği değiştirilmedi.",
+      "sources": [],
+      "fields": {
+        "Text": {
+          "before": "Lenfomaların anatomik kaynakları:<div><br></div><div><b>Germinal merkez kaynaklı lenfomalar:</b></div><div>Folliküler lenfoma</div><div>{{c1::Burkitt lenfoma}}</div><div>{{c1::Diffüz büyük B hücreli lenfoma}}</div><div>{{c1::Hodgkin lenfoma}}</div><div><br></div><div><b>Marjinal zon veya post-germinal kaynaklı lenfomalar:</b></div><div>Marjinal zon lenfoması</div><div>Diffüz büyük B hücreli lenfoma</div><div>{{c1::Küçük lenfositik lenfoma / KLL}}</div>",
+          "after": "Lenfomaların anatomik kaynakları:<div><br></div><div><b>Germinal merkez kaynaklı lenfomalar:</b></div><div>Folliküler lenfoma</div><div>{{c1::Burkitt lenfoma}}</div><div>{{c1::Diffüz büyük B hücreli lenfoma}}</div><div>{{c1::Hodgkin lenfoma}}</div><div><br></div><div><b>Marjinal zon veya post-germinal kaynaklı lenfomalar:</b></div><div>Marjinal zon lenfoması</div><div>{{c1::Diffüz büyük B hücreli lenfoma}}</div><div>{{c1::Küçük lenfositik lenfoma / KLL}}</div>"
+        }
+      }
+    },
+    {
+      "course": "patoloji",
+      "noteId": 1625238469386,
+      "guid": "D6~]%}9GIB",
+      "ordinals": [
+        1
+      ],
+      "severity": "Yüksek",
+      "category": "Cevap görünürlüğü",
+      "reason": "Etken sorusunun başlık ve aortit parantezinde görünen sifiliz cevabı tarafsızlaştırıldı; c1 cevabı ve patolojik bulgular korundu.",
+      "sources": [],
+      "fields": {
+        "Text": {
+          "before": "<b>Tersiyer sifiliz</b> kardiyovasküler patolojisi:<div><br></div><div>- Aort kapak yetmezliği</div><div><br></div><div>- Çıkan aort boyunca <b>lineer kalsifikasyon</b> (sifilitik aortit)</div><div><br></div><div>Etken: {{c1::Sifiliz (Treponema pallidum)}}</div>",
+          "after": "Kardiyovasküler enfeksiyon patolojisi:<div><br></div><div>- Aort kapak yetmezliği</div><div><br></div><div>- Çıkan aort boyunca <b>lineer kalsifikasyon</b> (aortit)</div><div><br></div><div>Etken: {{c1::Sifiliz (Treponema pallidum)}}</div>"
+        }
+      }
+    },
+    {
+      "course": "dahiliye",
+      "noteId": 1622986369091,
+      "guid": "FuhA},$eV$",
+      "ordinals": [
+        1
+      ],
+      "severity": "Kritik",
+      "category": "Tıbbi doğruluk",
+      "reason": "Koşulsuz antrasiklin + steroid yerine erken IV deksametazon ve lökosit/rejim koşullu sitoredüksiyon öğretildi. Ağır olguda ATRA/ATO ara verme kapsamı korundu.",
+      "sources": [
+        "https://www.leukemia-net.org/sites/leukemia-net/content/e58/e480/e7392/e7396/e11507/SanzMAetal2019_Blood.Managementofacutepromyelocyticleukemia-updatedrecommendationsfromanexpertpaneloftheEuropeanLeukemiaNet.pdf"
+      ],
+      "fields": {
+        "Text": {
+          "before": "<b>ATRA alan AML-M3</b> hastasında:<div><br></div><div>Yüksek ateş + ödem + plevral efüzyon + hipotansiyon + dispne + hipoksi:</div><div><br></div><div>{{c1::Diferansiyasyon (retinoik asit)}} sendromu</div><div><br></div><div>Tedavi: {{c1::antrasiklin}} + {{c1::glukokortikoid (deksametazon)}} eklenir</div>",
+          "after": "<b>ATRA alan AML-M3</b> hastasında:<div><br></div><div>Yüksek ateş + ödem + plevral efüzyon + hipotansiyon + dispne + hipoksi:</div><div><br></div><div>{{c1::Diferansiyasyon (retinoik asit)}} sendromu</div><div><br></div><div>İlk tedavi: sendromdan şüphelenildiğinde hemen {{c1::IV deksametazon}} başlanır.</div><div><br></div><div>Belirgin lökosit artışında, kullanılan rejime ve artışın derecesine göre {{c1::sitoredüksiyon}} eklenebilir.</div>"
+        },
+        "Extra": {
+          "before": "Eski adıyla ATRA sendromu; ağır olguda ATRA geçici olarak kesilir. Lökostaz, hiperlökositozun ayrı bir komplikasyonudur.",
+          "after": "Eski adıyla ATRA sendromu. ELN 2019: erken şüphede deksametazon 10 mg IV, günde iki kez; ağır sendromda ATRA/ATO geçici olarak kesilir. Tedavi sırasında belirgin lökosit artışında hidroksiüre, aşırı hiperlökositozda idarubisin (antrasiklin) veya gemtuzumab ozogamisin düşünülebilir. Antrasiklin her sendrom olgusunda zorunlu değildir. Lökostaz, hiperlökositozun ayrı bir komplikasyonudur."
+        }
+      }
+    },
+    {
+      "course": "dahiliye",
+      "noteId": 1605009641509,
+      "guid": "PEREPHys`c",
+      "ordinals": [
+        1
+      ],
+      "severity": "Kritik",
+      "category": "Tıbbi doğruluk",
+      "reason": "Yöntemsiz <30 °C ⇒ önce aktif ısıtma kuralı kaldırıldı; 2026 ortak konsensüsünün pasif ısıtma/aktif periferik ısıtmadan kaçınma ayrımı soru tarafına taşındı. c1 kartı korundu.",
+      "sources": [
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC13452032/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Miksödem komasında vücut sıcaklığı<div>&lt; {{c1::30}} °C ise</div><div><br></div><div>Önce aktif ısıtma yapılır</div>",
+          "after": "Miksödem komasında hipoterminin destek tedavisi:<div><br></div><div>Önerilen genel yöntem {{c1::battaniyeyle pasif ısıtma}}.</div><div><br></div><div>Aktif periferik ısıtma, vazodilatasyonla {{c1::kardiyovasküler kollaps}} oluşturabileceği için kaçınılır.</div>"
+        },
+        "Extra": {
+          "before": "Daha yüksek sıcaklıkta battaniyeyle pasif ısıtma yeterlidir; dış ısıtma vazodilatasyonla kardiyovasküler kollapsa yol açabilir.",
+          "after": "Pasif ısıtma ve aktif periferik ısıtma ayrılmalıdır. Periferik ısıtma uyarısı, özel çekirdek ısıtma yöntemlerinin tümü için mutlak yasak anlamına gelmez. Ağır hipotermide yöntem ve destek tedavisi yoğun bakımda klinik ve hemodinamik duruma göre değerlendirilir."
+        }
+      }
+    },
+    {
+      "course": "dahiliye",
+      "noteId": 1604850094654,
+      "guid": "j)]?+r);&.",
+      "ordinals": [
+        1,
+        2
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "Takipne mekanizması progesteron/ventilasyon artışıyla düzeltildi; ilişkili 1604845306203 notuyla tutarlı hale getirildi. Diğer renal önermeler bu odak düzeltmeyle yeniden onaylanmış sayılmaz.",
+      "sources": [
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC4818213/",
+        "https://pubmed.ncbi.nlm.nih.gov/8063358/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Gebelikte böbrek değişiklikleri<div><br></div><div>Total plazma hacmi {{c1::artar}}</div><div><br></div><div>Periferik vasküler direnç (TPR) {{c2::azalır}}</div><div><br></div><div>GFR %50 {{c1::artar}}</div><div><br></div><div>BUN ve kreatinin {{c2::düşer}}</div><div><br></div><div>Glukozüri/aminoasidüri olabilir</div><div><br></div><div>Plazma osmolalitesi {{c1::düşer}}</div><div><br></div><div>Ürik asit ve HCO3 {{c2::düşer}}</div><div><br></div><div>Takipneye bağlı → {{c1::hafif respiratuvar alkaloz}}</div>",
+          "after": "Gebelikte böbrek değişiklikleri<div><br></div><div>Total plazma hacmi {{c1::artar}}</div><div><br></div><div>Periferik vasküler direnç (TPR) {{c2::azalır}}</div><div><br></div><div>GFR %50 {{c1::artar}}</div><div><br></div><div>BUN ve kreatinin {{c2::düşer}}</div><div><br></div><div>Glukozüri/aminoasidüri olabilir</div><div><br></div><div>Plazma osmolalitesi {{c1::düşer}}</div><div><br></div><div>Ürik asit ve HCO3 {{c2::düşer}}</div><div><br></div><div>Progesteronun uyardığı ventilasyon (başlıca tidal volüm) artışına bağlı → {{c1::hafif respiratuvar alkaloz}}</div>"
+        },
+        "Extra": {
+          "before": "",
+          "after": "Fizyolojik respiratuvar alkalozun temel mekanizması tidal volüm ve alveoler ventilasyon artışıdır; takipne zorunlu değildir."
+        }
+      }
+    },
+    {
+      "course": "fhe",
+      "noteId": 1618700546655,
+      "guid": "s((iZ_`GkB",
+      "ordinals": [
+        1
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "Ön yüzdeki tip V, insan term plasentası bazal membran bulgusuna uygun tip IV olarak düzeltildi; arka yüzle çelişki kapatıldı.",
+      "sources": [
+        "https://pubmed.ncbi.nlm.nih.gov/3731745/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Plasenta bazal membranı (klasik bilgi):<div><br></div><div>Tip {{c1::5}} kollajen</div>",
+          "after": "İnsan term plasentasında bazal membran kollajeni:<div><br></div><div>Tip {{c1::IV}} kollajen</div>"
+        },
+        "Extra": {
+          "before": "Bazal membranın ana kollajeni plasentada da tip IV'tür.",
+          "after": "İnsan term plasentasının bazal membranında tip IV kollajen ve laminin bulunur. Tip V kollajenin stromal matrikste bulunması, bazal membranın ana kollajenini tip V yapmaz."
+        }
+      }
+    },
+    {
+      "course": "fhe",
+      "noteId": 1604143049764,
+      "guid": "vJTUTg$Gp=",
+      "ordinals": [
+        1
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "Görece efor bağımsızlığı yerine ATS/ERS standardındaki FVC ve ekspiratuvar efor bağımlılığı soru tarafında açıklandı.",
+      "sources": [
+        "https://www.aarc.org/wp-content/uploads/2026/06/ers-ats-standardization-of-spirometry.pdf#page=13"
+      ],
+      "fields": {
+        "Text": {
+          "before": "FEF<sub>25–75</sub><div><br></div><div>Akciğer elastikiyetine {{c1::bağlı}}</div><div><br></div><div>Efora {{c1::görece bağımsızdır}}</div>",
+          "after": "FEF<sub>25–75</sub><div><br></div><div>Akciğerin elastik geri çekilmesine {{c1::bağlıdır}}.</div><div><br></div><div>Klinik ölçüm değeri, FVC ölçümünün geçerliliğine ve ekspiratuvar efora {{c1::güçlü biçimde bağımlıdır}}.</div>"
+        },
+        "Extra": {
+          "before": "",
+          "after": "ATS/ERS 2019 standardı, FEF25–75 yorumunda FVC ölçümünün geçerliliğini ve ekspiratuvar eforu dikkate almayı ister. Elastik geri çekilmenin fizyolojik rolü, klinik ölçümün efordan bağımsız olduğu anlamına gelmez."
+        }
+      }
+    },
+    {
+      "course": "fhe",
+      "noteId": 1604130656359,
+      "guid": "z=kC4)V:_*",
+      "ordinals": [
+        1,
+        2
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.",
+      "sources": [
+        "https://pubmed.ncbi.nlm.nih.gov/9331908/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Bulber vazomotor alanlar:<div>C1 (RVLM) → {{c1::vazokonstriktör}} alan</div><div>A2 (CVLM) → {{c2::vazodilatatör}} alan</div>",
+          "after": "Bulber vazomotor alanlar:<div>C1 (RVLM) → {{c1::vazokonstriktör}} alan</div><div>CVLM → {{c2::vazodilatatör}} alan</div>"
+        },
+        "Extra": {
+          "before": "",
+          "after": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır."
+        }
+      }
+    },
+    {
+      "course": "fhe",
+      "noteId": 1604130778095,
+      "guid": "uZ..=W$Zj1",
+      "ordinals": [
+        1,
+        2
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.",
+      "sources": [
+        "https://pubmed.ncbi.nlm.nih.gov/9331908/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>{{c1::glutamat}}</b> salınımı → {{c2::vazodilatatör alan (A2)}}",
+          "after": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>{{c1::glutamat}}</b> salınımı → {{c2::kaudal ventrolateral medulla (CVLM)}}"
+        },
+        "Extra": {
+          "before": "",
+          "after": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır."
+        }
+      }
+    },
+    {
+      "course": "fhe",
+      "noteId": 1604130826422,
+      "guid": "zZWy.YeKuy",
+      "ordinals": [
+        1,
+        2
+      ],
+      "severity": "Yüksek",
+      "category": "Tıbbi doğruluk",
+      "reason": "A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.",
+      "sources": [
+        "https://pubmed.ncbi.nlm.nih.gov/9331908/"
+      ],
+      "fields": {
+        "Text": {
+          "before": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>glutamat</b> → vazodilatatör alan (A2) → <b>{{c1::GABA}}</b> ile inhibe eder → {{c2::vazokonstriktör alan (C1)}}",
+          "after": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>glutamat</b> → kaudal ventrolateral medulla (CVLM) → <b>{{c1::GABA}}</b> ile inhibe eder → {{c2::vazokonstriktör alan (C1)}}"
+        },
+        "Extra": {
+          "before": "",
+          "after": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır."
+        }
+      }
+    }
+  ],
+  "resultSha256": "bd07fec0ea4465683c63d6265fc9d1bdd2053ab84a3edd74d5eed6f1bb069e74"
+}
