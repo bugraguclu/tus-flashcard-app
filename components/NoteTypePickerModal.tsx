@@ -131,10 +131,11 @@ export default function NoteTypePickerModal({
                         keyboardShouldPersistTaps="handled"
                         showsVerticalScrollIndicator={false}
                     >
-                        {availableNoteTypes.map((noteType) => {
+                        {availableNoteTypes.map((noteType, index) => {
                             const label = localizeNoteTypeName(locale, noteType.name);
                             const selected = selectedId === noteType.id;
                             const isCloze = noteType.kind === 'cloze';
+                            const isLast = index === availableNoteTypes.length - 1;
                             const fieldCount = noteType.fields.length;
                             const templateCount = noteType.templates.length;
                             const subtitle = l(
@@ -146,7 +147,7 @@ export default function NoteTypePickerModal({
                             return (
                                 <TouchableOpacity
                                     key={noteType.id}
-                                    style={[styles.row, selected && styles.rowActive]}
+                                    style={[styles.row, isLast && styles.rowLast, selected && styles.rowActive]}
                                     onPress={() => {
                                         onSelect(noteType.id);
                                         onClose();
@@ -253,6 +254,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
+        rowLast: { borderBottomWidth: 0 },
         rowActive: { backgroundColor: colors.accentLight },
         rowGlyph: {
             width: 40,
@@ -286,7 +288,7 @@ function createStyles(colors: ColorScheme) {
             gap: Spacing.sm,
             paddingHorizontal: Spacing.md,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
+            borderTopColor: colors.borderLight,
             backgroundColor: colors.bgCard,
         },
         footerButton: { minHeight: 54, justifyContent: 'center', paddingHorizontal: Spacing.sm },

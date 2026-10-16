@@ -289,7 +289,11 @@ export default function DeckPickerModal({
                         removeClippedSubviews={Platform.OS !== 'web'}
                         ListHeaderComponent={!query.trim() && allDecksLabel !== null ? (
                             <TouchableOpacity
-                                style={[styles.row, selectedDeckName === null && styles.rowActive]}
+                                style={[
+                                    styles.row,
+                                    rows.length === 0 && styles.rowLast,
+                                    selectedDeckName === null && styles.rowActive,
+                                ]}
                                 onPress={() => onSelect(null)}
                                 accessibilityRole="button"
                                 accessibilityState={{ selected: selectedDeckName === null }}
@@ -299,12 +303,21 @@ export default function DeckPickerModal({
                                 {selectedDeckName === null && <Text style={styles.check}>✓</Text>}
                             </TouchableOpacity>
                         ) : null}
-                        renderItem={({ item: { node, depth } }) => {
+                        renderItem={({ item: { node, depth }, index }) => {
                             const hasChildren = node.children.length > 0;
                             const isExpanded = searching || expanded.has(node.deck.name);
                             const active = selectedDeckName === node.deck.name;
+                            const isLast = index === rows.length - 1;
                             return (
-                                <View key={node.deck.id} style={[styles.row, active && styles.rowActive, { paddingLeft: Spacing.md + Math.min(depth, 8) * 20 }]}>
+                                <View
+                                    key={node.deck.id}
+                                    style={[
+                                        styles.row,
+                                        isLast && styles.rowLast,
+                                        active && styles.rowActive,
+                                        { paddingLeft: Spacing.md + Math.min(depth, 8) * 20 },
+                                    ]}
+                                >
                                     {hasChildren ? (
                                         <TouchableOpacity
                                             style={styles.disclosureButton}
@@ -402,6 +415,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
+        rowLast: { borderBottomWidth: 0 },
         rowActive: { backgroundColor: colors.accentLight },
         allIcon: { width: 38, color: colors.textMuted, fontSize: 19, textAlign: 'center' },
         disclosureButton: { width: 38, height: 54, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
@@ -422,7 +436,7 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
             paddingHorizontal: Spacing.xl,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
+            borderTopColor: colors.borderLight,
             backgroundColor: colors.bgCard,
         },
         cancelText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800' },

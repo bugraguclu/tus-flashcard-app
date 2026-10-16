@@ -351,9 +351,10 @@ export default function TagPickerModal({
                                     </Text>
                                 </View>
                             )}
-                            renderItem={({ item: tag }) => {
+                            renderItem={({ item: tag, index }) => {
                                 const selected = selectedKeys.has(tagKey(tag));
                                 const depth = Math.max(0, tag.split('::').length - 1);
+                                const isLast = index === filteredTags.length - 1;
                                 return (
                                     <TouchableOpacity
                                         key={tagKey(tag)}
@@ -361,6 +362,7 @@ export default function TagPickerModal({
                                             styles.tagRow,
                                             { paddingLeft: Spacing.md + Math.min(depth, 8) * 18 },
                                             selected && styles.tagRowSelected,
+                                            isLast && styles.tagRowLast,
                                         ]}
                                         onPress={() => toggleTag(tag)}
                                         accessibilityRole="checkbox"
@@ -608,6 +610,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomColor: colors.borderLight,
             backgroundColor: colors.bgCard,
         },
+        tagRowLast: { borderBottomWidth: 0 },
         tagRowSelected: {
             backgroundColor: colors.bgSecondary,
         },
@@ -637,7 +640,7 @@ function createStyles(colors: ColorScheme) {
             paddingVertical: Spacing.md,
             backgroundColor: colors.bgCard,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
+            borderTopColor: colors.borderLight,
             gap: Spacing.md,
         },
         selectionInfo: {
