@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     gradeForHardwareKey,
     isModifierOnlyKey,
+    keyBindingRecordingResult,
     matchesKeyBinding,
     matchesShowAnswerKey,
     typesCharacter,
@@ -16,6 +17,23 @@ const press = (overrides: Partial<KeyPress>): KeyPress => ({
     altKey: false,
     altGraph: false,
     ...overrides,
+});
+
+describe('key binding recording', () => {
+    it('keeps the same Space and named-key values as the reviewer', () => {
+        expect(keyBindingRecordingResult('Spacebar')).toEqual({ kind: 'bind', key: ' ' });
+        expect(keyBindingRecordingResult('Space')).toEqual({ kind: 'bind', key: ' ' });
+        expect(keyBindingRecordingResult('Enter')).toEqual({ kind: 'bind', key: 'Enter' });
+        expect(keyBindingRecordingResult('@')).toEqual({ kind: 'bind', key: '@' });
+    });
+
+    it('cancels Escape on either platform and ignores modifier or unfinished keys', () => {
+        expect(keyBindingRecordingResult('Esc')).toEqual({ kind: 'cancel' });
+        expect(keyBindingRecordingResult('Escape')).toEqual({ kind: 'cancel' });
+        for (const key of ['', 'Shift', 'AltGraph', 'Dead', 'Unidentified']) {
+            expect(keyBindingRecordingResult(key)).toEqual({ kind: 'ignore' });
+        }
+    });
 });
 
 describe('hardware keyboard bindings', () => {

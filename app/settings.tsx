@@ -14,7 +14,6 @@ import {
     TouchableOpacity,
     View,
     ActivityIndicator,
-    useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -28,13 +27,12 @@ import {
     type ColorScheme,
 } from '../constants/theme';
 import {
-    DEFAULT_KEY_BINDINGS,
     DEFAULT_SETTINGS,
     loadSettings,
     resetSettingsToDefaults,
     saveSettings,
 } from '../lib/storage';
-import { isModifierOnlyKey } from '../lib/hardwareKeyboard';
+import KeyboardSettingsSection from '../components/settings/KeyboardSettingsSection';
 import {
     checkDatabase,
     repairChangedRows,
@@ -69,10 +67,8 @@ import InfoCircleGlyph from '../components/InfoCircleGlyph';
 import HeaderBackIcon from '../components/HeaderBackIcon';
 import {
     disableStudyNotifications,
-    getStudyNotificationPermission,
     requestStudyNotificationPermission,
     studyNotificationsSupported,
-    type StudyNotificationPermissionState,
 } from '../lib/studyNotifications';
 import {
     normalizeStudyNotificationThreshold,
@@ -157,26 +153,9 @@ const DataManagementSettingsSection = React.memo(function DataManagementSettings
     return <>{render()}</>;
 });
 
-function formatKeyLabel(key: string): string {
-    if (key === ' ') return 'Space';
-    return key.length === 1 ? key.toUpperCase() : key;
-}
-
 function settingsMatch(actual: AppSettings, expected: AppSettings): boolean {
     return stableSnapshot(actual) === stableSnapshot(expected);
 }
-
-const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
-    { field: 'showAnswer', tr: 'Cevabı göster', en: 'Show answer' },
-    { field: 'again', tr: 'Tekrar', en: 'Answer again' },
-    { field: 'hard', tr: 'Zor', en: 'Answer hard' },
-    { field: 'good', tr: 'İyi', en: 'Answer good' },
-    { field: 'easy', tr: 'Kolay', en: 'Answer easy' },
-    { field: 'replayAudio', tr: 'Sesi yeniden oynat', en: 'Replay audio' },
-    { field: 'buryCard', tr: 'Kartı göm', en: 'Bury card' },
-    { field: 'suspendCard', tr: 'Kartı askıya al', en: 'Suspend card' },
-    { field: 'markNote', tr: 'Notu işaretle', en: 'Mark note' },
-];
 
 function Group({ title, description, onHelpPress, helpLabel, children, styles }: {
     title: string;
@@ -437,8 +416,6 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
 
 export default function SettingsScreen() {
     const router = useRouter();
-    const { width } = useWindowDimensions();
-    const isDesktopWeb = Platform.OS === 'web' && width >= 600;
     const { refreshSettings: refreshData, previewSettings } = useAppSettings();
     const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
@@ -451,19 +428,10 @@ export default function SettingsScreen() {
     const [saved, setSaved] = useState(false);
     const [activeSection, setActiveSection] = useState<SectionId | null>(null);
     const [search, setSearch] = useState('');
-    const [recordingField, setRecordingField] = useState<keyof KeyBindings | null>(null);
     const [controlsHelpVisible, setControlsHelpVisible] = useState(false);
     const [gesturePickerTarget, setGesturePickerTarget] = useState<GesturePickerTarget | null>(null);
     const [tapSide, setTapSide] = useState<TapSide>('question');
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
-    // A browser grants notifications per site and can revoke them at any time, so the web build
-    // reads the permission back instead of trusting the stored toggle.
-    const [webNotificationPermission, setWebNotificationPermission] = useState<StudyNotificationPermissionState | null>(null);
-    const refreshWebNotificationPermission = useCallback(() => {
-        if (Platform.OS !== 'web') return;
-        void getStudyNotificationPermission().then((permission) => setWebNotificationPermission(permission.state));
-    }, []);
-    useEffect(() => { refreshWebNotificationPermission(); }, [refreshWebNotificationPermission]);
     const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaveFailedRef = useRef(false);
@@ -564,6 +532,10 @@ export default function SettingsScreen() {
         setSettings((prev) => ({ ...prev, [key]: value }));
     }, []);
 
+    const handleKeyBindingsChange = useCallback((bindings: KeyBindings) => {
+        updateSetting('keyBindings', bindings);
+    }, [updateSetting]);
+
     const openSection = useCallback((section: SectionId) => {
         Keyboard.dismiss();
         setActiveSection(section);
@@ -629,7 +601,6 @@ export default function SettingsScreen() {
 
         try {
             const permission = await requestStudyNotificationPermission();
-            refreshWebNotificationPermission();
             if (permission.state !== 'granted' && permission.state !== 'limited') {
                 updateSettings({
                     studyNotificationsEnabled: false,
@@ -686,27 +657,6 @@ export default function SettingsScreen() {
         await handleStudyNotificationsToggle(true, value);
     };
 
-    useEffect(() => {
-        if (!isDesktopWeb || typeof window === 'undefined' || !recordingField) return;
-        const onKeyDown = (event: KeyboardEvent) => {
-            // A modifier pressed on its own is the start of a key, not a binding: AltGr or Option
-            // is how a Turkish keyboard types @, so the character that follows is what is kept.
-            if (isModifierOnlyKey(event.key)) return;
-            // Heard ahead of the focused "change" button, so Enter can be recorded too.
-            event.preventDefault();
-            event.stopPropagation();
-            if (event.key === 'Escape') {
-                setRecordingField(null);
-                return;
-            }
-            updateSetting('keyBindings', { ...settings.keyBindings, [recordingField]: event.key });
-            setRecordingField(null);
-        };
-        window.addEventListener('keydown', onKeyDown, true);
-        return () => window.removeEventListener('keydown', onKeyDown, true);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isDesktopWeb, recordingField, settings.keyBindings]);
-
     // The secondary line lists only the headings found on each page, so it stays a plain table of
     // contents: no live values, no descriptive copy. Keep it in step with the page's Group titles.
     const categories = useMemo<Category[]>(() => [
@@ -714,7 +664,7 @@ export default function SettingsScreen() {
         { id: 'newStudy', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
         { id: 'reviewing', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Gelişmiş', 'Scheduling • Advanced') },
         { id: 'notifications', title: l('Bildirimler', 'Notifications'), summary: l('Hatırlatma saati', 'Reminder time') },
-        { id: 'controls', title: l('Kontroller', 'Controls'), summary: l('Dokunma ve kaydırma • Ekran kontrolü', 'Taps and swipes • On-screen control') },
+        { id: 'controls', title: l('Kontroller', 'Controls'), summary: l('Dokunma ve kaydırma • Ekran kontrolü • Klavye', 'Taps and swipes • On-screen control • Keyboard') },
         { id: 'accessibility', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart • Yanıt düğmeleri • Kart tarayıcısı', 'Card • Answer buttons • Card browser') },
         { id: 'data', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • İçe ve dışa aktar • Bakım', 'Backup • Import and export • Maintenance') },
         { id: 'about', title: l('Hakkında', 'About'), summary: l('Gizlilik politikası • Destek', 'Privacy Policy • Support') },
@@ -1261,33 +1211,12 @@ export default function SettingsScreen() {
                 </View>
                 <Text style={styles.appearanceValueArrow}>›</Text>
             </TouchableOpacity>
-            {settings.studyNotificationsEnabled && Platform.OS === 'web' ? (
-                <View style={styles.preferenceBlock}>
-                    <Text style={styles.preferenceSummary}>
-                        {l(
-                            'Tarayıcıda hatırlatmalar TusAnkiM bir sekmede açıkken gönderilir; sekme kapalıyken gelmez.',
-                            'In a browser, reminders arrive while TusAnkiM is open in a tab; they cannot arrive while it is closed.',
-                        )}
-                    </Text>
-                    {webNotificationPermission && webNotificationPermission !== 'granted' ? (
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => { void handleStudyNotificationsToggle(true); }}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.actionButtonText}>
-                                {webNotificationPermission === 'denied'
-                                    ? l('Bildirim izni reddedildi · Nasıl açılır?', 'Notifications blocked · How to allow')
-                                    : l('Tarayıcı bildirim iznini ver', 'Allow browser notifications')}
-                            </Text>
-                        </TouchableOpacity>
-                    ) : null}
-                </View>
-            ) : null}
             {settings.studyNotificationsEnabled && studyNotificationsSupported() ? (
-                <View style={styles.preferenceBlock}>
-                    <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
-                    <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte zamanı gelmiş kartlar kontrol edilir.', 'The reminder checks for due cards at this local time each day.')}</Text>
+                <View style={styles.preferenceRow}>
+                    <View style={styles.preferenceCopy}>
+                        <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
+                        <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte zamanı gelmiş kartlar kontrol edilir.', 'The reminder checks for due cards at this local time each day.')}</Text>
+                    </View>
                     <View style={styles.notificationTimeRow}>
                         <BoundedIntegerInput
                             value={settings.studyNotificationHour ?? 9}
@@ -1297,6 +1226,7 @@ export default function SettingsScreen() {
                             minimumDigits={2}
                             onChange={(value) => updateSetting('studyNotificationHour', value)}
                             accessibilityLabel={l('Hatırlatma saati, saat', 'Reminder hour')}
+                            style={styles.notificationTimeInput}
                         />
                         <Text style={styles.timeSeparator}>:</Text>
                         <BoundedIntegerInput
@@ -1307,6 +1237,7 @@ export default function SettingsScreen() {
                             minimumDigits={2}
                             onChange={(value) => updateSetting('studyNotificationMinute', value)}
                             accessibilityLabel={l('Hatırlatma saati, dakika', 'Reminder minute')}
+                            style={styles.notificationTimeInput}
                         />
                     </View>
                 </View>
@@ -1540,28 +1471,9 @@ export default function SettingsScreen() {
                     </View>
                 ) : null}
             </Group>
-            {isDesktopWeb ? (
-                <Group title={l('Klavye', 'Keyboard')} description={l('Bir satırda Değiştir’e basın, ardından fiziksel klavyedeki yeni tuşa basın.', 'Choose Change on a row, then press the new key on the physical keyboard.')} styles={styles}>
-                    {KEY_ROWS.map((row) => (
-                        <View key={row.field} style={styles.keyRow}>
-                            <Text style={styles.keyLabel}>{l(row.tr, row.en)}</Text>
-                            <View style={styles.keyActions}>
-                                <View style={styles.keyChip}><Text style={styles.keyChipText}>{recordingField === row.field ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(settings.keyBindings[row.field])}</Text></View>
-                                <TouchableOpacity style={styles.smallButton} onPress={() => setRecordingField(recordingField === row.field ? null : row.field)}>
-                                    <Text style={styles.smallButtonText}>{recordingField === row.field ? l('İptal', 'Cancel') : l('Değiştir', 'Change')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ))}
-                    {JSON.stringify(settings.keyBindings) !== JSON.stringify(DEFAULT_KEY_BINDINGS) ? (
-                        <TouchableOpacity style={styles.actionButton} onPress={() => updateSetting('keyBindings', DEFAULT_KEY_BINDINGS)}>
-                            <Text style={styles.actionButtonText}>{l('Kısayolları sıfırla', 'Reset shortcuts')}</Text>
-                        </TouchableOpacity>
-                    ) : null}
-                </Group>
-            ) : null}
+            <KeyboardSettingsSection bindings={settings.keyBindings} onChange={handleKeyBindingsChange} />
         </>
-    ), [gestureActionLabel, isDesktopWeb, l, recordingField, settings, styles, tapSide, updateSetting, updateSettings]);
+    ), [gestureActionLabel, handleKeyBindingsChange, l, settings, styles, tapSide, updateSetting, updateSettings]);
 
     const renderAccessibility = () => (
         <>
@@ -2265,7 +2177,8 @@ function createStyles(colors: ColorScheme) {
         swipeSliderTrack: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.border, overflow: 'visible' },
         swipeSliderFill: { height: 6, borderRadius: BorderRadius.full, backgroundColor: colors.accent },
         swipeSliderThumb: { position: 'absolute', top: -7, width: 20, height: 20, marginLeft: -10, borderRadius: 10, borderWidth: 2, borderColor: colors.bgCard, backgroundColor: colors.accent, ...Shadows.sm },
-        notificationTimeRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginTop: Spacing.sm, gap: Spacing.xs },
+        notificationTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, gap: Spacing.xs },
+        notificationTimeInput: { minWidth: 56 },
         timeSeparator: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
         outlineButton: { minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         outlineButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
@@ -2281,14 +2194,7 @@ function createStyles(colors: ColorScheme) {
         gesturePickerHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center' },
         gesturePickerClose: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
         gesturePickerCloseText: { fontSize: 30, lineHeight: 32, color: colors.textMuted, fontWeight: '300' },
-        actionButton: { minHeight: 48, marginTop: Spacing.sm, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md },
-        actionButtonText: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '600', textAlign: 'center' },
         dangerText: { color: colors.btnAgain },
-        keyRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, gap: Spacing.sm },
-        keyLabel: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },
-        keyActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        keyChip: { minWidth: 54, minHeight: 32, paddingHorizontal: Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, backgroundColor: colors.accentLight },
-        keyChipText: { fontSize: FontSize.sm, color: colors.accent, fontWeight: '800' },
         smallButton: { minHeight: 36, paddingHorizontal: Spacing.sm, justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border },
         smallButtonText: { fontSize: FontSize.xs, color: colors.textSecondary, fontWeight: '700' },
         linkRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },

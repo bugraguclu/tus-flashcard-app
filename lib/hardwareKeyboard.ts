@@ -40,6 +40,17 @@ export function isModifierOnlyKey(key: string): boolean {
     return MODIFIER_ONLY_KEYS.has(key);
 }
 
+/** Recording uses the same literal keys as reviewing; Escape cancels instead of rebinding. */
+export function keyBindingRecordingResult(key: string):
+    | { kind: 'ignore' }
+    | { kind: 'cancel' }
+    | { kind: 'bind'; key: string } {
+    const normalized = normalizeHardwareKey(key);
+    if (!normalized || isModifierOnlyKey(normalized)) return { kind: 'ignore' };
+    if (normalized === 'Escape') return { kind: 'cancel' };
+    return { kind: 'bind', key: normalized };
+}
+
 export interface KeyPress {
     key: string;
     ctrlKey: boolean;
