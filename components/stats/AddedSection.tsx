@@ -41,7 +41,6 @@ export default function AddedSection({ addedDays, firstDay, lastDay, rangeTitle,
     return (
         <StatsCard
             title={l('Eklenenler', 'Added')}
-            subtitle={l('Seçilen dönemde oluşturduğunuz ya da içe aktardığınız yeni kartlar.', 'New cards you created or imported in the selected period.')}
         >
             <StatsBarChart
                 points={points}

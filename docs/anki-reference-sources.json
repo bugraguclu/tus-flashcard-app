@@ -91,8 +91,8 @@
       "id": "anki-manual-statistics",
       "priority": 1,
       "platform": "cross-platform statistics behavior",
-      "url": "https://docs.ankiweb.net/stats.html",
-      "useFor": ["statistics time periods", "today summary", "future due", "reviews", "review time", "card counts", "review intervals", "answer buttons", "true retention"]
+      "url": "https://docs.ankiweb.net/manual/stats",
+      "useFor": ["statistics time periods", "today summary", "future due", "reviews", "review time", "card counts", "review intervals", "answer buttons", "true retention", "statistics explanations and scope caveats"]
     },
     {
       "id": "ankimobile-manual",

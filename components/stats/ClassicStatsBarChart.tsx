@@ -3,6 +3,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, type GestureRespo
 import Svg, { Circle, G, Line, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 import { FontSize, Spacing, dropShadow, type ColorScheme } from '../../constants/theme';
 import type { StatsSeriesPoint } from '../../lib/ankiStats';
+import { chartPressPoint } from '../../lib/chartPressPoint';
 import { axisTicks, barGeometry, compactAxisValue, labelIndexes, tooltipPlacement } from '../../lib/chartAxis';
 
 export interface StatsChartSeries {
@@ -43,7 +44,7 @@ type Props = {
     todayLabel?: string;
     /** A concise VoiceOver summary of what the chart measures. */
     accessibilityLabel?: string;
-    /** Visible instruction below non-empty charts. */
+    /** VoiceOver interaction hint; visible guidance lives in the Statistics Info sheet. */
     interactionHint?: string;
     /** Secondary guidance shown with an empty state. */
     emptyHint?: string;
@@ -149,9 +150,15 @@ export default function ClassicStatsBarChart({
 
     const pickIndex = (event: GestureResponderEvent) => {
         if (points.length === 0 || step <= 0) return;
-        const x = event.nativeEvent.locationX - plotLeft;
-        const index = Math.floor(x / step);
-        setTouchY(event.nativeEvent.locationY);
+        // RN Web supplies a MouseEvent for onPress. Measure from the Pressable, not the
+        // child SVG bar that happened to receive the click.
+        const target = event.currentTarget as unknown as {
+            getBoundingClientRect?: () => { left: number; top: number };
+        };
+        const point = chartPressPoint(event.nativeEvent, target.getBoundingClientRect?.());
+        if (!point) return;
+        const index = Math.floor((point.x - plotLeft) / step);
+        setTouchY(point.y);
         if (index < 0 || index >= points.length) {
             setActiveIndex(null);
             return;
@@ -203,12 +210,12 @@ export default function ClassicStatsBarChart({
                 {width > 0 && hasData ? (
                     <Svg width={width} height={height}>
                         {valueAxisLabel && (
-                            <SvgText x={plotLeft} y={11} fill={colors.textMuted} fontSize={9} fontWeight="600">
+                            <SvgText x={plotLeft} y={11} fill={colors.textSecondary} fontSize={9} fontWeight="600">
                                 {valueAxisLabel}
                             </SvgText>
                         )}
                         {cumulative && cumulativeAxisLabel && (
-                            <SvgText x={plotRight} y={11} fill={colors.textMuted} fontSize={9} fontWeight="600" textAnchor="end">
+                            <SvgText x={plotRight} y={11} fill={colors.textSecondary} fontSize={9} fontWeight="600" textAnchor="end">
                                 {cumulativeAxisLabel}
                             </SvgText>
                         )}
@@ -228,7 +235,7 @@ export default function ClassicStatsBarChart({
                                     <SvgText
                                         x={plotLeft - 6}
                                         y={y + 3.5}
-                                        fill={colors.textMuted}
+                                        fill={colors.textSecondary}
                                         fontSize={9}
                                         textAnchor="end"
                                     >
@@ -246,7 +253,7 @@ export default function ClassicStatsBarChart({
                                     x2={plotLeft + todayIndex * step}
                                     y1={PLOT_TOP - 3}
                                     y2={plotBottom}
-                                    stroke={colors.textMuted}
+                                    stroke={colors.textSecondary}
                                     strokeWidth={1}
                                     strokeDasharray="3 3"
                                 />
@@ -254,7 +261,7 @@ export default function ClassicStatsBarChart({
                                     <SvgText
                                         x={Math.min(plotLeft + todayIndex * step + 4, plotRight - 4)}
                                         y={PLOT_TOP - 8}
-                                        fill={colors.textMuted}
+                                        fill={colors.textSecondary}
                                         fontSize={9}
                                         textAnchor={plotLeft + todayIndex * step > plotRight - 46 ? 'end' : 'start'}
                                     >
@@ -316,7 +323,7 @@ export default function ClassicStatsBarChart({
                             <>
                                 <Polygon
                                     points={cumulativeArea}
-                                    fill={colors.textMuted}
+                                    fill={colors.textSecondary}
                                     opacity={0.08}
                                 />
                                 <Polyline
@@ -331,7 +338,7 @@ export default function ClassicStatsBarChart({
                                         key={`cum-${tick}`}
                                         x={plotRight + 6}
                                         y={plotBottom - (tick / cumulativeAxis.top) * plotHeight + 3.5}
-                                        fill={colors.textMuted}
+                                        fill={colors.textSecondary}
                                         fontSize={9}
                                         textAnchor="start"
                                     >
@@ -367,7 +374,7 @@ export default function ClassicStatsBarChart({
                                     <SvgText
                                         x={clamped}
                                         y={plotBottom + 13}
-                                        fill={colors.textMuted}
+                                        fill={colors.textSecondary}
                                         fontSize={9}
                                         textAnchor="middle"
                                     >
@@ -384,8 +391,7 @@ export default function ClassicStatsBarChart({
                             <View style={[styles.emptyBar, { backgroundColor: colors.borderLight, height: 24 }]} />
                             <View style={[styles.emptyBar, { backgroundColor: colors.borderLight, height: 17 }]} />
                         </View>
-                        <Text style={[styles.emptyText, { color: colors.textMuted }]}>{emptyLabel}</Text>
-                        {emptyHint && <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{emptyHint}</Text>}
+                        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{emptyLabel}</Text>
                     </View>
                 )}
 
@@ -462,9 +468,6 @@ export default function ClassicStatsBarChart({
                     </View>
                 )}
             </View>
-            {hasData && interactionHint && (
-                <Text style={[styles.interactionHint, { color: colors.textMuted }]}>{interactionHint}</Text>
-            )}
         </View>
     );
 }
@@ -491,11 +494,9 @@ const styles = StyleSheet.create({
     emptyGlyph: { height: 34, flexDirection: 'row', alignItems: 'flex-end', gap: 3, padding: 4, borderBottomWidth: 1, marginBottom: Spacing.sm },
     emptyBar: { width: 7, borderTopLeftRadius: 2, borderTopRightRadius: 2 },
     emptyText: { fontSize: FontSize.sm, lineHeight: 18, fontWeight: '700', textAlign: 'center' },
-    emptyHint: { fontSize: FontSize.xs, lineHeight: 16, textAlign: 'center', marginTop: 3 },
     legend: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, marginTop: Spacing.sm },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     legendDot: { width: 9, height: 9, borderRadius: 2 },
     legendLine: { width: 12, height: 2, borderRadius: 1 },
     legendText: { fontSize: FontSize.xs },
-    interactionHint: { fontSize: FontSize.xs, lineHeight: 16, marginTop: Spacing.xs },
 });

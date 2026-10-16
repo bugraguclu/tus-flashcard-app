@@ -81,9 +81,6 @@ export default function ReviewsSection({ reviewDays, firstDay, lastDay, rangeTit
     return (
         <StatsCard
             title={l('Tekrarlar', 'Reviews')}
-            subtitle={asTime
-                ? l('Kart türüne göre çalışmaya ayırdığınız süre.', 'Time spent studying, by card type.')
-                : l('Kart türüne göre verdiğiniz cevaplar.', 'Answers given, by card type.')}
             controls={(
                 <StatsSegmented
                     options={[

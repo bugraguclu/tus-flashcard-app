@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 
 export interface StatTile {
     key: string;
@@ -63,12 +63,9 @@ function createStyles(colors: ColorScheme) {
             minHeight: 64,
             justifyContent: 'flex-start',
             paddingVertical: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.bgSecondary,
         },
         value: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
-        label: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 14, marginTop: 2 },
+        label: { color: colors.textPrimary, fontSize: FontSize.sm, lineHeight: 18, marginTop: 2 },
         detail: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', marginTop: 3 },
     });
 }

@@ -59,19 +59,22 @@ interface WeekStreakStripProps {
     dataVersion: number;
     /** Already read with the parent Statistics snapshot; avoids a second current-week query. */
     initialWeekStudiedDays?: ReadonlySet<string>;
+    /** Use full-contrast labels in the plain Statistics layout. */
+    highContrast?: boolean;
 }
 
 export default function WeekStreakStrip({
     rolloverHour,
     dataVersion,
     initialWeekStudiedDays,
+    highContrast = false,
 }: WeekStreakStripProps) {
     const { l, localeTag } = useI18n();
     const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
     const { width } = useWindowDimensions();
     const isCompact = width < 430;
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
+    const styles = useMemo(() => createStyles(colors, isCompact, highContrast), [colors, isCompact, highContrast]);
 
     // 0 = current week, 1 = one week back, and so on.
     const [weeksBack, setWeeksBack] = useState(0);
@@ -167,7 +170,7 @@ export default function WeekStreakStrip({
                                     styles.dayBox,
                                     studied && styles.dayBoxStudied,
                                     day.isToday && !studied && styles.dayBoxToday,
-                                    day.isFuture && styles.dayBoxFuture,
+                                    day.isFuture && !highContrast && styles.dayBoxFuture,
                                 ]}
                                 {...webTitle(
                                     day.isToday
@@ -198,7 +201,7 @@ export default function WeekStreakStrip({
     );
 }
 
-function createStyles(colors: ColorScheme, isCompact: boolean) {
+function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boolean) {
     return StyleSheet.create({
     container: { width: '100%' },
     headerRow: {
@@ -221,7 +224,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         textAlign: 'center',
         fontSize: isCompact ? FontSize.sm : FontSize.lg,
         fontWeight: '700',
-        color: colors.textSecondary,
+        color: highContrast ? colors.textPrimary : colors.textSecondary,
     },
     daysRow: {
         flexDirection: 'row',
@@ -236,10 +239,10 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     dayLabel: {
         fontSize: FontSize.xs,
         fontWeight: '600',
-        color: colors.textMuted,
+        color: highContrast ? colors.textPrimary : colors.textMuted,
         textTransform: 'uppercase',
     },
-    dayLabelToday: { color: colors.streak, fontWeight: '700' },
+    dayLabelToday: { color: highContrast ? colors.textPrimary : colors.streak, fontWeight: '700' },
     dayBox: {
         width: isCompact ? 32 : 36,
         height: isCompact ? 32 : 36,
@@ -259,9 +262,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.streakBg,
     },
     dayBoxFuture: { opacity: 0.45 },
-    dayDate: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '800' },
+    dayDate: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '800' },
     dayDateStudied: { color: colors.white },
-    dayDateFuture: { color: colors.textMuted },
+    dayDateFuture: { color: highContrast ? colors.textPrimary : colors.textMuted },
     studiedDot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.white },
     });
 }

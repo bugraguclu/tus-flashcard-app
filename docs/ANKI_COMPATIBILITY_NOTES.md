@@ -342,6 +342,8 @@ large-package smoke
 
 **Evidence:** Anki-aligned 12-month default; Today, Future Due, Reviews/Review Time, Answer Buttons, Hourly Breakdown, Review Intervals, Card Counts and Added views, and per-deck progress split by card type. Reviews, Hourly Breakdown and Added read per-day and per-hour aggregates (`lib/ankiStats.ts`) and bucket them into calendar days, weeks and months (`lib/statsSeries.ts`); Hourly Breakdown leaves filtered-deck answers out, as Anki does. A bar of the Added graph opens the card browser on the cards added on its days with the `added:N -added:M` search Anki's graph links to, in the deck those cards share or else in the screen's scope; `lib/statsSeries.test.ts` checks that the search finds exactly the cards the bar counted. Pinned chart readouts, accessible summaries, stats presentation/axis/review logger tests
 
+**Presentation:** Statistics uses a plain surface with section dividers and full-contrast metric labels. Repeated descriptions and interaction instructions are available from the header’s Info sheet, including the period-independent Today/Card Counts semantics and the Review Intervals upper bound. Chart values, default period, scope filtering and calculations are unchanged. Classic chart readouts handle browser MouseEvent coordinates as well as native touch coordinates (`lib/chartPressPoint.test.ts`); a browser click no longer produces a NaN bucket. The named [Statistics simplicity smoke](STATS_UI_VERIFICATION.md) records visual and interaction checks.
+
 **Next compatibility gate:** Add Calendar, True Retention and FSRS-specific views with reference fixtures before a full-parity claim; the other graphs do not yet open the browser searches Anki's do
 
 ## AnkiWeb synchronization

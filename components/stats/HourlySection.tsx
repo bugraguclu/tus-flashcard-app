@@ -37,10 +37,6 @@ export default function HourlySection({ hours, rangeTitle }: { hours: readonly H
     return (
         <StatsCard
             title={l('Saatlik dağılım', 'Hourly Breakdown')}
-            subtitle={l(
-                'Günün hangi saatinde kaç cevap verdiğiniz ve o saatte ne kadarını bildiğiniz.',
-                'How many answers you gave at each hour of the day, and how many of them you got right.',
-            )}
         >
             <StatsBarChart
                 points={points}

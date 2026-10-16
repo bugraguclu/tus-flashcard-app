@@ -37,6 +37,7 @@ import {
 } from '../lib/statsPresentation';
 import { createStatsScreenStyles } from '../components/stats/statsScreenStyles';
 import StatsRangePicker from '../components/stats/StatsRangePicker';
+import StatsHelpSheet from '../components/stats/StatsHelpSheet';
 
 export default function StatsScreen() {
     const { t, l, locale, localeTag } = useI18n();
@@ -56,6 +57,7 @@ export default function StatsScreen() {
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [rangePickerVisible, setRangePickerVisible] = useState(false);
+    const [helpVisible, setHelpVisible] = useState(false);
     const [rangeKey, setRangeKey] = useState<StatsRangeKey>('year');
     // Anki's "backlog" checkbox on Future Due, on by default there (BoolKey::FutureDueShowBacklog).
     const [showBacklog, setShowBacklog] = useState(true);
@@ -240,7 +242,15 @@ export default function StatsScreen() {
                     <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
                 <Text style={styles.screenTitle} numberOfLines={1}>{t('common.statistics')}</Text>
-                <View style={styles.headerSpacer} />
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => setHelpVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('İstatistikler hakkında', 'About statistics')}
+                    accessibilityState={{ expanded: helpVisible }}
+                >
+                    <Text style={styles.helpButtonText}>{l('Bilgi', 'Info')}</Text>
+                </TouchableOpacity>
             </View>
             <ChartScrollLockProvider value={setScrollLocked}>
             <ScrollView
@@ -286,10 +296,8 @@ export default function StatsScreen() {
                 <View style={styles.todayCard}>
                     <View style={styles.cardHeaderRow}>
                         <View>
-                            <Text style={styles.sectionTitle}>{l('Bugünün özeti', 'Today')}</Text>
-                            <Text style={styles.cardEyebrow}>{l('Zaman aralığından bağımsız', 'Independent of time range')}</Text>
+                            <Text style={styles.sectionTitle} accessibilityRole="header">{l('Bugün', 'Today')}</Text>
                         </View>
-                        <View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveBadgeText}>{l('Bugün', 'Today')}</Text></View>
                     </View>
                     <View style={styles.todayGrid}>
                         <View style={styles.todayStat}>
@@ -297,7 +305,7 @@ export default function StatsScreen() {
                             <Text style={styles.todayLabel}>{l('Yanıtlanan', 'Reviews')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={[styles.todayNumber, { color: colors.btnGood }]}>{todayStats.reviewed > 0 ? percentValue(accuracy) : '—'}</Text>
+                            <Text style={styles.todayNumber}>{todayStats.reviewed > 0 ? percentValue(accuracy) : '—'}</Text>
                             <Text style={styles.todayLabel}>{l('Doğruluk', 'Accuracy')}</Text>
                         </View>
                         <View style={styles.todayStat}>
@@ -305,7 +313,7 @@ export default function StatsScreen() {
                             <Text style={styles.todayLabel}>{l('Çalışma süresi', 'Study time')}</Text>
                         </View>
                         <View style={styles.todayStat}>
-                            <Text style={[styles.todayNumber, { color: colors.badgeNew }]}>{countValue(todayStats.newCardsIntroduced)}</Text>
+                            <Text style={styles.todayNumber}>{countValue(todayStats.newCardsIntroduced)}</Text>
                             <Text style={styles.todayLabel}>{l('Yeni kart', 'New Cards')}</Text>
                         </View>
                     </View>
@@ -314,19 +322,17 @@ export default function StatsScreen() {
                 <View style={styles.streakCard}>
                     <View style={styles.streakHeader}>
                         <View>
-                            <Text style={styles.sectionTitle}>🔥 {l('Günlük seri', 'Daily Streak')}</Text>
-                            <Text style={styles.cardEyebrow}>{l('Çalışma günlerinizi haftalık görün', 'See your study days by week')}</Text>
+                            <Text style={styles.sectionTitle} accessibilityRole="header">{l('Çalışma serisi', 'Study streak')}</Text>
                         </View>
                         <View style={styles.bestBadge}>
-                            <Text style={styles.bestBadgeLabel}>{l('En uzun', 'Longest')}</Text>
-                            <Text style={styles.bestBadgeValue}>{l(`${streak.best} gün`, `${streak.best} days`)}</Text>
+                            <Text style={styles.bestBadgeLabel}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>
                         </View>
                     </View>
                     <View style={styles.streakBody}>
                         <View style={styles.streakInfo}>
                             <View style={styles.streakRow}>
                                 <Text style={styles.streakNumber}>{streak.current}</Text>
-                                <Text style={styles.streakUnit}>{l('gün üst üste çalışma', streak.current === 1 ? 'consecutive study day' : 'consecutive study days')}</Text>
+                                <Text style={styles.streakUnit}>{l('gün', streak.current === 1 ? 'day' : 'days')}</Text>
                             </View>
                         </View>
                         <View style={styles.streakStripWrap}>
@@ -334,14 +340,14 @@ export default function StatsScreen() {
                                 rolloverHour={settings.dayRolloverHour}
                                 dataVersion={dataVersion + schedulingRevision}
                                 initialWeekStudiedDays={statsSnapshot.currentWeekStudiedDays}
+                                highContrast
                             />
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.ankiCard}>
-                    <Text style={styles.chartTitle}>{l('Gelecek vadeler', 'Future Due')}</Text>
-                    <Text style={styles.chartSubtitle}>{l('Yeni kart öğrenmediğiniz ve kart unutmadığınız varsayımıyla, vade tarihine göre beklenen tekrar kartları.', 'Expected review cards by due date, assuming you learn no new cards and forget none.')}</Text>
+                    <Text style={styles.chartTitle} accessibilityRole="header">{l('Gelecek vadeler', 'Future Due')}</Text>
                     <View style={styles.chartToggleRow}>
                         {([
                             { key: false, label: l('Bugünden itibaren', 'From today') },
@@ -393,7 +399,7 @@ export default function StatsScreen() {
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.dueTomorrow)}</Text><Text style={styles.metricLabel}>{l('Yarın', 'Tomorrow')}</Text></View>
                         {showBacklog && (
                             <View style={styles.metricItem}>
-                                <Text style={[styles.metricValue, { color: colors.btnAgain }]}>{countValue(ankiStats.futureDueBacklogTotal)}</Text>
+                                <Text style={styles.metricValue}>{countValue(ankiStats.futureDueBacklogTotal)}</Text>
                                 <Text style={styles.metricLabel}>{l('Geciken', 'Backlog')}</Text>
                             </View>
                         )}
@@ -408,8 +414,7 @@ export default function StatsScreen() {
                 />
 
                 <View style={styles.ankiCard}>
-                    <Text style={styles.chartTitle}>{l('Cevap düğmeleri', 'Answer Buttons')}</Text>
-                    <Text style={styles.chartSubtitle}>{l('Seçilen dönemde Tekrar, Zor, İyi ve Kolay yanıtlarının kart türlerine göre dağılımı.', 'Again, Hard, Good, and Easy answers in the selected period, split by card type.')}</Text>
+                    <Text style={styles.chartTitle} accessibilityRole="header">{l('Cevap düğmeleri', 'Answer Buttons')}</Text>
                     <ClassicStatsBarChart
                         points={answerButtonPoints}
                         series={[
@@ -431,12 +436,11 @@ export default function StatsScreen() {
                         interactionHint={chartInteractionHint}
                     />
                     <View style={styles.buttonCountGrid}>
-                        {answerButtonPoints.map((point, index) => {
+                        {answerButtonPoints.map((point) => {
                             const total = point.values.reduce((sum, value) => sum + value, 0);
-                            const valueColor = [colors.btnAgain, colors.btnHard, colors.btnGood, colors.btnEasy][index];
                             return (
                                 <View key={point.label} style={styles.buttonCountItem}>
-                                    <Text style={[styles.buttonCountValue, { color: valueColor }]}>{countValue(total)}</Text>
+                                    <Text style={styles.buttonCountValue}>{countValue(total)}</Text>
                                     <Text style={styles.buttonCountLabel}>{point.label}</Text>
                                 </View>
                             );
@@ -459,8 +463,7 @@ export default function StatsScreen() {
                 <HourlySection hours={statsSnapshot.hours} rangeTitle={rangeTitle} />
 
                 <View style={styles.ankiCard}>
-                    <Text style={styles.chartTitle}>{l('Tekrar aralıkları', 'Review Intervals')}</Text>
-                    <Text style={styles.chartSubtitle}>{l('Tekrar kartlarının mevcut aralık dağılımı. Zaman aralığı, grafikte gösterilecek en uzun aralığı sınırlar.', 'Current interval distribution of review cards. The selected time range limits the longest interval shown.')}</Text>
+                    <Text style={styles.chartTitle} accessibilityRole="header">{l('Tekrar aralıkları', 'Review Intervals')}</Text>
                     <ClassicStatsBarChart
                         points={ankiStats.intervals}
                         series={[{ label: l('Kartlar', 'Cards'), color: colors.accent }]}
@@ -488,8 +491,7 @@ export default function StatsScreen() {
                 </View>
 
                 <View style={styles.overviewCard}>
-                    <Text style={styles.chartTitle}>{l('Kart sayıları', 'Card Counts')}</Text>
-                    <Text style={styles.chartSubtitle}>{l('Seçili deste veya koleksiyonun güncel kart türü dağılımı; zaman aralığı bu grafiği değiştirmez.', 'Current card-type composition of the selected deck or collection; the time range does not affect this chart.')}</Text>
+                    <Text style={styles.chartTitle} accessibilityRole="header">{l('Kart sayıları', 'Card Counts')}</Text>
                     <View
                         style={styles.overviewBar}
                         accessible
@@ -579,6 +581,8 @@ export default function StatsScreen() {
                     return created.name;
                 }}
             />}
+
+            <StatsHelpSheet visible={helpVisible} onClose={() => setHelpVisible(false)} />
 
             <StatsRangePicker
                 rangePickerVisible={rangePickerVisible}

@@ -85,7 +85,7 @@ export default function StatsRateStrip({
                                         stroke={colors.borderLight}
                                         strokeWidth={0.75}
                                     />
-                                    <SvgText x={plotLeft - 6} y={yFor(tick) + 3.5} fill={colors.textMuted} fontSize={10} textAnchor="end">
+                                    <SvgText x={plotLeft - 6} y={yFor(tick) + 3.5} fill={colors.textSecondary} fontSize={10} textAnchor="end">
                                         {formatRate(tick)}
                                     </SvgText>
                                 </G>
@@ -96,7 +96,7 @@ export default function StatsRateStrip({
                                     x2={geometry.centreForIndex(selectedIndex)}
                                     y1={TOP}
                                     y2={BOTTOM}
-                                    stroke={colors.textMuted}
+                                    stroke={colors.textSecondary}
                                     strokeWidth={1}
                                     opacity={0.5}
                                 />

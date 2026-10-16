@@ -201,9 +201,9 @@ export default function StatsBarChart({
                     </Text>
                     <Text style={styles.captionValue} numberOfLines={1} maxFontSizeMultiplier={1.3}>{caption.value}</Text>
                 </View>
-                <Text style={styles.captionNote} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-                    {(hasData && caption.note) || ' '}
-                </Text>
+                {hasData && selected !== null && caption.note ? (
+                    <Text style={styles.captionNote} maxFontSizeMultiplier={1.3}>{caption.note}</Text>
+                ) : null}
             </View>
 
             <View
@@ -213,7 +213,7 @@ export default function StatsBarChart({
                 accessible
                 accessibilityRole="adjustable"
                 accessibilityLabel={accessibilityLabel}
-                accessibilityHint={onPressBar && hasData ? pressHint : undefined}
+                accessibilityHint={hasData ? (onPressBar ? pressHint : summary.note) : emptyHint}
                 accessibilityValue={{ text: spokenSelection ?? (hasData ? summary.value : emptyTitle) }}
                 accessibilityActions={hasData
                     ? [{ name: 'increment' }, { name: 'decrement' }, ...(onPressBar ? [{ name: 'activate' }] : [])]
@@ -238,7 +238,7 @@ export default function StatsBarChart({
                                         <SvgText
                                             x={plotLeft - 6}
                                             y={y + 3.5}
-                                            fill={colors.textMuted}
+                                            fill={colors.textSecondary}
                                             fontSize={10}
                                             textAnchor="end"
                                         >
@@ -266,14 +266,14 @@ export default function StatsBarChart({
                                         x2={plotLeft + marker.index * geometry.step}
                                         y1={PLOT_TOP}
                                         y2={plotBottom}
-                                        stroke={colors.textMuted}
+                                        stroke={colors.textSecondary}
                                         strokeWidth={1}
                                         strokeDasharray="3 3"
                                     />
                                     <SvgText
                                         x={plotLeft + marker.index * geometry.step + 4}
                                         y={PLOT_TOP + 9}
-                                        fill={colors.textMuted}
+                                        fill={colors.textSecondary}
                                         fontSize={10}
                                         fontWeight="600"
                                     >
@@ -326,7 +326,7 @@ export default function StatsBarChart({
                                         key={`tick-${index}`}
                                         x={x}
                                         y={plotBottom + 14}
-                                        fill={selected === index ? colors.textPrimary : colors.textMuted}
+                                        fill={selected === index ? colors.textPrimary : colors.textSecondary}
                                         fontSize={10}
                                         fontWeight={selected === index ? '700' : '400'}
                                         textAnchor="middle"
@@ -345,7 +345,6 @@ export default function StatsBarChart({
                             ))}
                         </View>
                         <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-                        {emptyHint ? <Text style={styles.emptyHint}>{emptyHint}</Text> : null}
                     </View>
                 ) : null}
             </View>
@@ -376,7 +375,7 @@ function createStyles(colors: ColorScheme) {
         captionTitle: { flex: 1, color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
         captionTitleActive: { color: colors.textPrimary, fontWeight: '700' },
         captionValue: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
-        captionNote: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 15, marginTop: 1 },
+        captionNote: { color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 18, marginTop: 1 },
         empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
         emptyGlyph: {
             height: 30,
@@ -390,7 +389,6 @@ function createStyles(colors: ColorScheme) {
         },
         emptyBar: { width: 8, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: colors.borderLight },
         emptyTitle: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '700', textAlign: 'center' },
-        emptyHint: { color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16, textAlign: 'center', marginTop: 3 },
         legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: Spacing.md, rowGap: 6, marginTop: Spacing.sm },
         legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
         legendSwatch: { width: 10, height: 10, borderRadius: 3 },

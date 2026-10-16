@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { StatsDeckProgress } from '../../lib/screenSnapshots';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -73,20 +73,17 @@ function createStyles(colors: ColorScheme) {
         heading: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800', marginTop: Spacing.sm },
         row: {
             gap: 7,
-            padding: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-            ...Shadows.sm,
+            paddingVertical: Spacing.md,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
         },
         pressed: { opacity: 0.7 },
         rowHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         name: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
         pct: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
-        chevron: { color: colors.textMuted, fontSize: 22, lineHeight: 22 },
+        chevron: { color: colors.textSecondary, fontSize: 22, lineHeight: 22 },
         bar: { flexDirection: 'row', height: 8, gap: 2, borderRadius: BorderRadius.full, overflow: 'hidden' },
         segment: { flexBasis: 0, minWidth: 2, height: '100%' },
-        detail: { color: colors.textMuted, fontSize: FontSize.xs },
+        detail: { color: colors.textSecondary, fontSize: FontSize.sm },
     });
 }
