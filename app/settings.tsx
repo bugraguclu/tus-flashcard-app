@@ -707,28 +707,18 @@ export default function SettingsScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDesktopWeb, recordingField, settings.keyBindings]);
 
+    // The secondary line lists only the headings found on each page, so it stays a plain table of
+    // contents: no live values, no descriptive copy. Keep it in step with the page's Group titles.
     const categories = useMemo<Category[]>(() => [
         { id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Düzenleme', 'Language • Theme • Editing') },
         { id: 'newStudy', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
-        { id: 'reviewing', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Ekranı açık tut', 'Scheduling • Keep screen on') },
-        {
-            id: 'notifications',
-            title: l('Bildirimler', 'Notifications'),
-            summary: settings.studyNotificationsEnabled
-                ? `${notificationThresholdLabel(true, settings.studyNotificationThreshold)} · ${String(settings.studyNotificationHour ?? 9).padStart(2, '0')}:${String(settings.studyNotificationMinute ?? 0).padStart(2, '0')}`
-                : l('Kapalı', 'Off'),
-        },
-        {
-            id: 'controls',
-            title: l('Kontroller', 'Controls'),
-            summary: isDesktopWeb
-                ? l('Hareketler • Klavye', 'Gestures • Keyboard')
-                : l('Kaydırma • Dokunma', 'Swipe • Touch'),
-        },
-        { id: 'accessibility', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart yakınlaştırma • Yanıt düğmesi boyutu', 'Card zoom • Answer button size') },
-        { id: 'data', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • Aktarım • Bakım', 'Backups • Transfer • Maintenance') },
-        { id: 'about', title: l('Hakkında', 'About'), summary: `TusAnkiM ${Constants.expoConfig?.version ?? '1.0.0'}` },
-    ], [isDesktopWeb, l, notificationThresholdOptions, settings.studyNotificationHour, settings.studyNotificationMinute, settings.studyNotificationThreshold, settings.studyNotificationsEnabled]);
+        { id: 'reviewing', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Gelişmiş', 'Scheduling • Advanced') },
+        { id: 'notifications', title: l('Bildirimler', 'Notifications'), summary: l('Hatırlatma saati', 'Reminder time') },
+        { id: 'controls', title: l('Kontroller', 'Controls'), summary: l('Dokunma ve kaydırma • Ekran kontrolü', 'Taps and swipes • On-screen control') },
+        { id: 'accessibility', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart • Yanıt düğmeleri • Kart tarayıcısı', 'Card • Answer buttons • Card browser') },
+        { id: 'data', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • İçe ve dışa aktar • Bakım', 'Backup • Import and export • Maintenance') },
+        { id: 'about', title: l('Hakkında', 'About'), summary: l('Gizlilik politikası • Destek', 'Privacy Policy • Support') },
+    ], [l]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
     const filteredCategories = categories.filter((item) => `${item.title} ${item.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
@@ -1727,18 +1717,22 @@ export default function SettingsScreen() {
                             {filteredCategories.map((category, index) => (
                                 <TouchableOpacity
                                     key={category.id}
-                                    style={[styles.categoryRow, index > 0 && styles.categoryDivider]}
+                                    style={styles.categoryRow}
                                     onPress={() => openSection(category.id)}
                                     accessibilityRole="button"
+                                    accessibilityLabel={category.title}
+                                    accessibilityHint={category.summary}
                                 >
                                     <View style={styles.categoryIconContainer}>
                                         <CategoryGlyph id={category.id} color={colors.accent} />
                                     </View>
-                                    <View style={styles.categoryCopy}>
-                                        <Text style={styles.categoryTitle}>{category.title}</Text>
-                                        <Text style={styles.categorySummary}>{category.summary}</Text>
+                                    <View style={[styles.categoryBody, index > 0 && styles.categoryDivider]}>
+                                        <View style={styles.categoryCopy}>
+                                            <Text style={styles.categoryTitle} numberOfLines={1}>{category.title}</Text>
+                                            <Text style={styles.categorySummary} numberOfLines={1}>{category.summary}</Text>
+                                        </View>
+                                        <Text style={styles.categoryArrow}>›</Text>
                                     </View>
-                                    <Text style={styles.categoryArrow}>›</Text>
                                 </TouchableOpacity>
                             ))}
                             {filteredCategories.length === 0 ? <Text style={styles.emptySearch}>{l('Eşleşen ayar bulunamadı.', 'No matching settings found.')}</Text> : null}
@@ -2037,14 +2031,15 @@ function createStyles(colors: ColorScheme) {
         searchIcon: { fontSize: 25, color: colors.textSecondary, marginRight: Spacing.sm, transform: [{ rotate: '-20deg' }] },
         searchInput: { flex: 1, fontSize: FontSize.lg, color: colors.textPrimary, paddingVertical: 0 },
         categoryList: { backgroundColor: colors.bgCard, borderRadius: BorderRadius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', ...Shadows.sm },
-        categoryRow: { minHeight: 78, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+        categoryRow: { flexDirection: 'row', alignItems: 'stretch', paddingLeft: Spacing.lg },
+        categoryBody: { flex: 1, minHeight: 62, flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm + 2, paddingRight: Spacing.md },
         categoryDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         categoryIcon: { width: 42, fontSize: 24, color: colors.textSecondary },
-        categoryIconContainer: { width: 38, alignItems: 'flex-start', justifyContent: 'center' },
+        categoryIconContainer: { width: 36, alignItems: 'flex-start', justifyContent: 'center' },
         categoryCopy: { flex: 1, gap: 2 },
-        categoryTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        categorySummary: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 18 },
-        categoryArrow: { fontSize: 28, color: colors.textMuted, paddingLeft: Spacing.sm },
+        categoryTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
+        categorySummary: { fontSize: FontSize.sm + 1, color: colors.textMuted, lineHeight: 18 },
+        categoryArrow: { fontSize: 22, color: colors.textMuted, opacity: 0.6, paddingLeft: Spacing.sm },
         emptySearch: { padding: Spacing.xxl, textAlign: 'center', color: colors.textMuted },
         backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
         group: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, ...Shadows.sm },
