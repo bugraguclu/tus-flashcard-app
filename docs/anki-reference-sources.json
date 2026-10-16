@@ -4,11 +4,18 @@
   "product": "TusAnkiM",
   "sources": [
     {
+      "id": "react-native-textinput-key-recording",
+      "priority": 3,
+      "platform": "iPhone hardware keyboard input",
+      "url": "https://reactnative.dev/docs/textinput#onkeypress",
+      "useFor": ["native key event names", "showSoftInputOnFocus for hardware-key recording", "focus and blur lifecycle"]
+    },
+    {
       "id": "anki-manual",
       "priority": 1,
       "platform": "cross-platform behavior",
       "url": "https://docs.ankiweb.net/intro.html",
-      "useFor": ["studying", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
+      "useFor": ["studying", "reviewer keyboard shortcuts", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
     },
     {
       "id": "anki-manual-empty-cards",
