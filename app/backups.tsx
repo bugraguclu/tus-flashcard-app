@@ -198,7 +198,7 @@ export default function BackupsScreen() {
                     onPress={handleBackupNow}
                     disabled={busy}
                 >
-                    <Text style={styles.primaryBtnText}>💾 {l('Şimdi yedekle', 'Back Up Now')}</Text>
+                    <Text style={styles.primaryBtnText}>{l('Şimdi yedekle', 'Back Up Now')}</Text>
                 </TouchableOpacity>
 
                 {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}

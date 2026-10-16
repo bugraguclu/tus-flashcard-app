@@ -223,7 +223,7 @@ export default function NoteTypeScreen() {
                 </View>
 
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                    <Text style={styles.saveBtnText}>💾 {t('common.save')}</Text>
+                    <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => goBackOr(router, '/note-types')}>
                     <Text style={styles.cancelBtnText}>{t('common.close')}</Text>
