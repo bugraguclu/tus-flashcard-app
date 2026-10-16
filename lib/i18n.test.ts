@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    cardFlagName,
     localeTag,
     localizeCardTemplateName,
     localizeFieldName,
@@ -63,5 +64,20 @@ describe('app locale resolution', () => {
         expect(localizeTopicName('tr', 'General')).toBe('Genel');
         expect(localizeTopicName('tr', 'Kardiyoloji')).toBe('Kardiyoloji');
         expect(localizeTopicName('en', 'General')).toBe('General');
+    });
+
+    it('localizes card flag names with full flag terminology', () => {
+        expect(cardFlagName('tr', 0)).toBe('Bayrak yok');
+        expect(cardFlagName('tr', 1)).toBe('Kırmızı bayrak');
+        expect(cardFlagName('tr', 2)).toBe('Turuncu bayrak');
+        expect(cardFlagName('tr', 3)).toBe('Yeşil bayrak');
+        expect(cardFlagName('tr', 4)).toBe('Mavi bayrak');
+        expect(cardFlagName('tr', 5)).toBe('Pembe bayrak');
+        expect(cardFlagName('tr', 6)).toBe('Turkuaz bayrak');
+        expect(cardFlagName('tr', 7)).toBe('Mor bayrak');
+
+        expect(cardFlagName('en', 0)).toBe('No flag');
+        expect(cardFlagName('en', 1)).toBe('Red flag');
+        expect(cardFlagName('en', 7)).toBe('Purple flag');
     });
 });

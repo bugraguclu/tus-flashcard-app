@@ -1,9 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import type { ColorScheme } from '../../constants/theme';
+import { useThemeColors, type ColorScheme } from '../../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import type { BrowserTableMode } from '../../lib/studyRepository';
 import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
+import FlagGlyph from '../../components/FlagGlyph';
 import { alert } from '../../lib/confirm';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
@@ -57,6 +58,7 @@ export function FilterChips({
     t,
     tagFilters,
 }: FilterChipsProps) {
+    const colors = useThemeColors();
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
             <TouchableOpacity
@@ -104,7 +106,7 @@ export function FilterChips({
                             accessibilityRole="button"
                             accessibilityLabel={l('Bayrak yok filtresini kaldır', 'Remove no flag filter')}
                         >
-                            <View style={[styles.filterFlagDot, styles.filterFlagDotEmpty]} />
+                            <FlagGlyph color={colors.textMuted} size={14} filled={false} />
                             <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
                                 {l('Bayrak yok', 'No flag')} ×
                             </Text>
@@ -117,12 +119,12 @@ export function FilterChips({
                             accessibilityRole="button"
                             accessibilityLabel={
                                 coloredFlagFilters.length === 1
-                                    ? l(`${cardFlagName(locale, coloredFlagFilters[0])} bayrak filtresini kaldır`, `Remove ${cardFlagName(locale, coloredFlagFilters[0])} flag filter`)
+                                    ? l(`${cardFlagName(locale, coloredFlagFilters[0])} filtresini kaldır`, `Remove ${cardFlagName(locale, coloredFlagFilters[0])} filter`)
                                     : l('Bayrak filtresini kaldır', 'Remove flag filter')
                             }
                         >
                             {coloredFlagFilters.length === 1 && (
-                                <View style={[styles.filterFlagDot, { backgroundColor: FLAG_COLORS[coloredFlagFilters[0]].color }]} />
+                                <FlagGlyph color={FLAG_COLORS[coloredFlagFilters[0]].color} size={14} filled />
                             )}
                             <Text style={[styles.filterChipText, styles.filterChipTextActive]}>
                                 {coloredFlagFilters.length === 1

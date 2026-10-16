@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
+import FlagGlyph from './FlagGlyph';
 import { useI18n } from '../hooks/useI18n';
 import { cardFlagName } from '../lib/i18n';
 
@@ -65,7 +66,13 @@ export default function ReviewerFlagMenu({
                                     accessibilityLabel={label}
                                     accessibilityState={{ selected }}
                                 >
-                                    <View style={[styles.swatch, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
+                                    <View style={styles.swatch}>
+                                        <FlagGlyph
+                                            color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                            size={18}
+                                            filled={flag !== 0}
+                                        />
+                                    </View>
                                     <Text style={styles.label}>{label}</Text>
                                     {selected ? <Text style={styles.check}>✓</Text> : null}
                                 </TouchableOpacity>
@@ -107,7 +114,7 @@ function createStyles(colors: ColorScheme) {
             paddingVertical: 7,
         },
         rowSelected: { backgroundColor: colors.accentLight },
-        swatch: { width: 20, height: 20, borderRadius: 3, borderWidth: 1, borderColor: colors.border, marginRight: 14 },
+        swatch: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
         label: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, lineHeight: 20 },
         check: { color: colors.accent, fontSize: 20, fontWeight: '800' },
     });

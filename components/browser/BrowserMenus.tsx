@@ -10,6 +10,7 @@ import { deleteNote, type CardDeckMoveSnapshot } from '../../lib/noteManager';
 import { setDbSetting } from '../../lib/storage';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import GearGlyph from '../../components/GearGlyph';
+import FlagGlyph from '../../components/FlagGlyph';
 import { alert, confirm } from '../../lib/confirm';
 import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
@@ -309,9 +310,15 @@ export function OverflowMenuModal({
                             Counting it made "no flag + red" read as two flags. */}
                         {flagFilters.length !== ALL_CARD_FLAGS.length && (
                             <>
-                                {hasNoFlagFilter && <View style={[styles.menuFlagDot, styles.menuFlagDotEmpty]} />}
+                                {hasNoFlagFilter && (
+                                    <View style={styles.flagIconContainer}>
+                                        <FlagGlyph color={colors.textMuted} size={14} filled={false} />
+                                    </View>
+                                )}
                                 {coloredFlagFilters.length === 1 && (
-                                    <View style={[styles.menuFlagDot, { backgroundColor: FLAG_COLORS[coloredFlagFilters[0]].color }]} />
+                                    <View style={styles.flagIconContainer}>
+                                        <FlagGlyph color={FLAG_COLORS[coloredFlagFilters[0]].color} size={14} filled />
+                                    </View>
                                 )}
                                 {coloredFlagFilters.length > 1 && (
                                     <Text style={styles.overflowBadge}>{coloredFlagFilters.length}</Text>
@@ -328,7 +335,7 @@ export function OverflowMenuModal({
                                 accessibilityRole="checkbox"
                                 accessibilityState={{ checked: flagFilters.length === ALL_CARD_FLAGS.length }}
                             >
-                                <View style={styles.flagDotPlaceholder} />
+                                <View style={styles.flagIconContainer} />
                                 <Text style={[styles.overflowFlagText, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagTextActive]}>
                                     {l('Tümünü seç', 'Select all')}
                                 </Text>
@@ -353,11 +360,17 @@ export function OverflowMenuModal({
                                         onPress={() => toggleFlagFilter(flag)}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: selected }}
-                                        accessibilityLabel={flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
+                                        accessibilityLabel={cardFlagName(locale, flag)}
                                     >
-                                        <View style={[styles.flagDot, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
+                                        <View style={styles.flagIconContainer}>
+                                            <FlagGlyph
+                                                color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                                size={18}
+                                                filled={flag !== 0}
+                                            />
+                                        </View>
                                         <Text style={[styles.overflowFlagText, selected && styles.overflowFlagTextActive]}>
-                                            {flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
+                                            {cardFlagName(locale, flag)}
                                         </Text>
                                         <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
                                             {selected && <Text style={styles.checkboxTick}>✓</Text>}
@@ -504,9 +517,15 @@ export function FlagPickerModal({
                     <Text style={styles.modalTitle}>{tableMode === 'notes' ? l('Seçili notların kartlarını bayrakla', 'Flag Cards of Selected Notes') : l('Seçili kartları bayrakla', 'Flag Selected Cards')}</Text>
                     {ALL_CARD_FLAGS.map((flag) => (
                         <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)}>
-                            <View style={[styles.flagDot, { backgroundColor: flag === 0 ? colors.bgCard : FLAG_COLORS[flag].color }]} />
+                            <View style={styles.flagIconContainer}>
+                                <FlagGlyph
+                                    color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                    size={18}
+                                    filled={flag !== 0}
+                                />
+                            </View>
                             <Text style={styles.pickerRowText}>
-                                {flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
+                                {cardFlagName(locale, flag)}
                             </Text>
                         </TouchableOpacity>
                     ))}

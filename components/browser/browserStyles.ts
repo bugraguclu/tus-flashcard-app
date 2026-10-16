@@ -38,6 +38,17 @@ export function createBrowserStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.sm,
     },
     addCardBtnText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
+    searchButton: {
+        width: 38,
+        height: 38,
+        flexShrink: 0,
+        borderRadius: BorderRadius.full,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    searchButtonActive: {
+        backgroundColor: colors.accentLight,
+    },
     moreButton: {
         width: 40,
         height: 40,
@@ -372,6 +383,12 @@ export function createBrowserStyles(colors: ColorScheme) {
         borderWidth: 1.5,
         borderColor: colors.textSecondary,
         backgroundColor: 'transparent',
+    },
+    flagIconContainer: {
+        width: 18,
+        height: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     flagDotPlaceholder: { width: 18, height: 18 },
     overflowFlagPanel: {

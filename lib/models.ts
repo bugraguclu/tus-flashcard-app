@@ -450,13 +450,13 @@ export interface Tag {
 
 export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
     0: { name: 'Bayrak Yok', color: 'transparent' },
-    1: { name: 'Kırmızı', color: '#ff4444' },
-    2: { name: 'Turuncu', color: '#ff8800' },
-    3: { name: 'Yeşil', color: '#44bb44' },
-    4: { name: 'Mavi', color: '#4488ff' },
-    5: { name: 'Pembe', color: '#ff44aa' },
-    6: { name: 'Turkuaz', color: '#44cccc' },
-    7: { name: 'Mor', color: '#8844ff' },
+    1: { name: 'Kırmızı Bayrak', color: '#ff4444' },
+    2: { name: 'Turuncu Bayrak', color: '#ff8800' },
+    3: { name: 'Yeşil Bayrak', color: '#44bb44' },
+    4: { name: 'Mavi Bayrak', color: '#4488ff' },
+    5: { name: 'Pembe Bayrak', color: '#ff44aa' },
+    6: { name: 'Turkuaz Bayrak', color: '#44cccc' },
+    7: { name: 'Mor Bayrak', color: '#8844ff' },
 };
 
 // A first launch opens on one empty deck, the way Anki does. The demo curriculum these ids used

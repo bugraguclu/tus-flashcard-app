@@ -479,7 +479,7 @@ export function reviewerOpName(locale: SupportedLocale, op: ReviewerOpName): str
 
 export function cardFlagName(locale: SupportedLocale, flag: number): string {
     const labels = locale === 'tr'
-        ? ['Bayrak Yok', 'Kırmızı', 'Turuncu', 'Yeşil', 'Mavi', 'Pembe', 'Turkuaz', 'Mor']
-        : ['No Flag', 'Red', 'Orange', 'Green', 'Blue', 'Pink', 'Turquoise', 'Purple'];
+        ? ['Bayrak yok', 'Kırmızı bayrak', 'Turuncu bayrak', 'Yeşil bayrak', 'Mavi bayrak', 'Pembe bayrak', 'Turkuaz bayrak', 'Mor bayrak']
+        : ['No flag', 'Red flag', 'Orange flag', 'Green flag', 'Blue flag', 'Pink flag', 'Turquoise flag', 'Purple flag'];
     return labels[flag] ?? labels[0];
 }
