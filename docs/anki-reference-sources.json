@@ -43,7 +43,7 @@
       "priority": 1,
       "platform": "cross-platform note/card semantics",
       "url": "https://docs.ankiweb.net/editing.html",
-      "useFor": ["adding notes", "generated cards", "note fields", "editing notes"]
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments"]
     },
     {
       "id": "anki-manual-collection-packages",
@@ -120,7 +120,7 @@
       "priority": 1,
       "platform": "iOS and iPadOS note/card editing",
       "url": "https://docs.ankimobile.net/editing.html",
-      "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study"]
+      "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study", "iPhone note-field editing and formatting controls"]
     },
     {
       "id": "ankimobile-deck-list",

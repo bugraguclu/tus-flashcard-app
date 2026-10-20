@@ -187,6 +187,8 @@ export interface Note {
     /** Catalog navigation metadata. Source Anki tags remain untouched. */
     catalogSubject?: string;
     catalogTopic?: string;
+    /** Learner-edited fields survive a bundled catalog package refresh. */
+    catalogFieldsEdited?: boolean;
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
 }

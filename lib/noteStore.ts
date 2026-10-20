@@ -21,6 +21,7 @@ import {
     assertCatalogNoteMutable,
     assertCatalogNoteNotDeletable,
     isCatalogCard,
+    isCatalogNote,
     PaidCatalogProtectionError,
 } from './catalogProtection';
 
@@ -56,6 +57,10 @@ export function saveNote(note: Note): void {
         try {
             const parsed = JSON.parse(existing.data) as Note;
             assertCatalogNoteContentMutable(note, parsed);
+            if (isCatalogNote(parsed) && (parsed.catalogFieldsEdited
+                || JSON.stringify(note.fields) !== JSON.stringify(parsed.fields))) {
+                note.catalogFieldsEdited = true;
+            }
             markSourcePackageDirty(parsed.sourcePackageId);
         } catch (e) {
             if (e instanceof PaidCatalogProtectionError) throw e;
@@ -681,9 +686,8 @@ export function deleteAnkiCardOnly(cardId: number): void {
 /** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
 export function deleteAnkiCardsOnly(cardIds: number[]): void {
     if (cardIds.length === 0) return;
-    if (cardIds.some(isCatalogCard)) {
-        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez.');
-    }
+    // Editing cloze fields can remove a generated sibling after the catalog is unlocked.
+    for (const cardId of cardIds) assertCatalogCardMutable(cardId);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {

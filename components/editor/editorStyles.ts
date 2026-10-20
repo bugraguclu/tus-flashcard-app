@@ -531,26 +531,6 @@ export function createEditorStyles(colors: ColorScheme) {
         color: colors.textSecondary,
         lineHeight: 16,
     },
-    catalogProtectedBanner: {
-        backgroundColor: colors.accentLight ?? 'rgba(10, 132, 255, 0.08)',
-        borderWidth: 1,
-        borderColor: colors.accent,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
-        marginTop: Spacing.sm,
-        marginBottom: Spacing.sm,
-        gap: 6,
-    },
-    catalogProtectedBadge: {
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-        color: colors.accent,
-    },
-    catalogProtectedDescription: {
-        fontSize: FontSize.xs,
-        color: colors.textSecondary,
-        lineHeight: 18,
-    },
     });
 }
 

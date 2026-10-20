@@ -59,7 +59,7 @@ import RichTextEditor, {
     type RichTextEditorHandle,
     type RichTextCommand,
 } from '../components/RichTextEditor';
-import { isCatalogCard, isCatalogDeck } from '../lib/catalogProtection';
+import { isCatalogCard, isCatalogDeck, isPaidCatalogUnlocked } from '../lib/catalogProtection';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
@@ -153,6 +153,8 @@ export default function EditorScreen() {
         if (!routeCardId) return false;
         return isCatalogCard(routeCardId);
     }, [routeCardId, dataVersion]);
+
+    const isContentReadOnly = isCatalog && !isPaidCatalogUnlocked();
 
     const routeDeckId = useMemo(() => parseCardId(params.deckId), [params.deckId]);
     const routeNoteTypeId = useMemo(() => parseCardId(params.noteTypeId), [params.noteTypeId]);
@@ -814,9 +816,7 @@ export default function EditorScreen() {
     };
 
     /**
-     * A catalog note's fields, note type and deck are all locked, so the only thing that can be
-     * dirty on this screen is the tag list. It is written through `setNoteTagsByCardId`, which
-     * touches tags and nothing else, instead of the full save path that refuses a protected note.
+     * Trial notes keep the narrow tag-only path. Purchased notes use the normal field save.
      */
     const handleSaveCatalogTags = () => {
         if (!routeCardId) return;
@@ -852,7 +852,7 @@ export default function EditorScreen() {
     };
 
     const handleSave = () => {
-        if (isCatalog) {
+        if (isContentReadOnly) {
             handleSaveCatalogTags();
             return;
         }
@@ -1048,13 +1048,12 @@ export default function EditorScreen() {
                     {isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
                 </Text>
                 <View style={styles.headerSpacer} />
-                {/* On a catalog note only the tags can be dirty, so the button appears once they are. */}
-                {(!isCatalog || isDirty) && (
+                {(!isContentReadOnly || isDirty) && (
                     <TouchableOpacity
                         style={styles.headerAction}
                         onPress={handleSave}
                         accessibilityRole="button"
-                        accessibilityLabel={isCatalog
+                        accessibilityLabel={isContentReadOnly
                             ? l('Etiketleri kaydet', 'Save tags')
                             : isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
                     >
@@ -1146,20 +1145,6 @@ export default function EditorScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {isCatalog && (
-                    <View style={styles.catalogProtectedBanner} accessibilityRole="summary">
-                        <Text style={styles.catalogProtectedBadge}>
-                            {l('🔒 Dahili TUS Kartı (İçerik Korumalıdır)', '🔒 Built-in TUS Card (Content Protected)')}
-                        </Text>
-                        <Text style={styles.catalogProtectedDescription}>
-                            {l(
-                                'TUS ders notları telif hakkı ile korunmaktadır. Kart içeriği değiştirilemez; ancak kendi etiketlerinizi ve bayraklarınızı ekleyebilirsiniz.',
-                                'TUS study notes are copyrighted. Card content cannot be modified; however, you can still add your personal tags and flags.',
-                            )}
-                        </Text>
-                    </View>
-                )}
-
                 {fieldsToRender.map((field, index) => {
                     const localizedName = localizeFieldName(locale, field.name);
                     const isPinned = pinnedFields.has(field.ord);
@@ -1176,7 +1161,7 @@ export default function EditorScreen() {
                         <React.Fragment key={`${selectedNoteType?.id ?? cardTypeId}-field-${field.ord}-${index}`}>
                             <View style={styles.fieldLabelRow}>
                                 <Text style={styles.fieldName}>{localizedName}</Text>
-                                {!isCatalog && (
+                                {!isContentReadOnly && (
                                     <View style={styles.fieldActions}>
                                         <TouchableOpacity
                                             style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
@@ -1201,10 +1186,10 @@ export default function EditorScreen() {
                                     fieldEditorRefs.current[index] = el;
                                 }}
                                 value={fieldValues[index] || ''}
-                                editable={!isCatalog}
+                                editable={!isContentReadOnly}
                                 onChange={(val) => handleFieldChange(index, val)}
                                 onFocus={() => {
-                                    if (isCatalog) return;
+                                    if (isContentReadOnly) return;
                                     setActiveFieldIndex(index);
                                     // The toolbar now belongs to this field, so it is blanked until this field's
                                     // own document answers instead of showing the previous field's state.
@@ -1311,7 +1296,7 @@ export default function EditorScreen() {
                 />
             </ScrollView>
 
-            {!isCatalog && editorPreferences.toolbarVisible && (
+            {!isContentReadOnly && editorPreferences.toolbarVisible && (
                 <EditorFormattingToolbar
                     toolbarTab={toolbarTab}
                     onSelectTab={setToolbarTab}
@@ -1339,7 +1324,7 @@ export default function EditorScreen() {
                 />
             )}
 
-            {!isCatalog && !editorPreferences.toolbarVisible && (
+            {!isContentReadOnly && !editorPreferences.toolbarVisible && (
                 <StandaloneKeyboardDoneBar
                     onPress={dismissEditorKeyboard}
                     colors={colors}
@@ -1354,6 +1339,7 @@ export default function EditorScreen() {
                 <EditorOverflowMenu
                     topInset={insets.top}
                     isCatalog={isCatalog}
+                    contentReadOnly={isContentReadOnly}
                     isEditing={isEditing}
                     preferences={editorPreferences}
                     onUpdatePreferences={updateEditorPreferences}

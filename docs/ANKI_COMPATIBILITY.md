@@ -58,7 +58,7 @@ When an Anki-facing capability changes, update its row here and its section ther
 | [Statistics and card info](ANKI_COMPATIBILITY_NOTES.md#statistics-and-card-info) | Implemented subset | `lib/statsSeries.test.ts`, `lib/chartPressPoint.test.ts`; [Statistics simplicity smoke](STATS_UI_VERIFICATION.md) | Add Calendar, True Retention and FSRS-specific views with reference fixtures before a full-parity claim; |
 | [AnkiWeb synchronization](ANKI_COMPATIBILITY_NOTES.md#ankiweb-synchronization) | Not implemented | Local-only architecture | Requires a documented protocol/backend, conflict model, encryption and recovery plan |
 | [Profiles](ANKI_COMPATIBILITY_NOTES.md#profiles) | Not implemented | Single local collection; no inert profile toggle is exposed | Design isolation, migration, backup and recovery before UI |
-| [Shared-deck marketplace](ANKI_COMPATIBILITY_NOTES.md#shared-deck-marketplace) | Product-specific catalog only | `lib/catalogProtection.test.ts`, `lib/noteManager.catalogTags.test.ts` | Do not present it as AnkiWeb shared decks |
+| [Shared-deck marketplace](ANKI_COMPATIBILITY_NOTES.md#shared-deck-marketplace) | Product-specific catalog; purchased note fields editable | `lib/catalogEditing.test.ts`, `lib/catalogEditorMenu.test.ts`, `lib/bkaCatalog.install.test.ts`, catalog protection/tag tests | Do not present it as AnkiWeb shared decks |
 | [Image Occlusion note authoring](ANKI_COMPATIBILITY_NOTES.md#image-occlusion-note-authoring) | Not implemented | — | Add a native/offline editor and package fixtures |
 
 ## Priority roadmap
