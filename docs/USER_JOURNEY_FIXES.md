@@ -17,6 +17,11 @@ from the deployed `master`; unrelated local UI and catalog work is excluded.
 
 No schema, persisted units, review scheduling, package contents or catalog assets change.
 
+The CI advisory gate also found the existing Vite 8.1.5 affected by
+[GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm). The Vite 8.1
+patch line is pinned to the fixed 8.1.6 release and the lockfile is refreshed; the advisory gate
+and its exception policy are unchanged.
+
 ## Deterministic coverage
 
 `lib/webDb.test.ts` adds four regressions: awaiting the durable commit, saving an edit made during
