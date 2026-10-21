@@ -57,7 +57,7 @@
       "priority": 1,
       "platform": "cross-platform deck-option behavior",
       "url": "https://docs.ankiweb.net/deck-options.html",
-      "useFor": ["presets", "rename current preset", "separate subdeck presets", "save to all subdecks", "daily limits", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
+      "useFor": ["presets", "rename current preset", "separate subdeck presets", "save to all subdecks", "daily limits", "deliberate TusAnkiM divergence: uncapped daily new cards with preserved package limit metadata", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
     },
     {
       "id": "anki-manual-preferences",

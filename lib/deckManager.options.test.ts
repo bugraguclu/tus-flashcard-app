@@ -411,7 +411,7 @@ describe('Anki daily-limit scopes', () => {
 });
 
 describe('deck tree counts', () => {
-    it('caps an aggregated parent row by the parent daily limits', () => {
+    it('caps parent reviews while keeping every new card available', () => {
         const parent = createDeck('TUS');
         const child = createDeck('TUS::Dahiliye');
         const tree = buildDeckTree([parent, child], new Map([
@@ -420,16 +420,15 @@ describe('deck tree counts', () => {
         ]), rolloverHour);
 
         expect(tree[0]).toMatchObject({
-            newCount: DEFAULT_DECK_CONFIG.newPerDay,
+            newCount: 70,
             learnCount: 3,
             reviewCount: DEFAULT_DECK_CONFIG.maxReviewsPerDay,
             totalCards: 573,
         });
     });
 
-    it('shows what today\'s limits still allow, not the full daily allowance again', () => {
-        // Anki subtracts each deck's newToday/revToday from its limits, so a learner who already
-        // used the allowance sees the remainder rather than a badge that refills on every rebuild.
+    it('subtracts answered reviews while leaving all remaining new cards available', () => {
+        // Reviews spend the daily allowance; new cards remain uncapped after being introduced.
         const parent = createDeck('TUS');
         const child = createDeck('TUS::Dahiliye');
         saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 90, name: 'Sınırlı', newPerDay: 5, maxReviewsPerDay: 10 });
@@ -465,10 +464,10 @@ describe('deck tree counts', () => {
             [child.id, { new: 40, learn: 0, review: 40, total: 80 }],
         ]), rolloverHour);
 
-        // The child spent one new card and one review of its own allowance; the parent's
-        // allowance is spent by everything below it.
-        expect(tree[0].children[0]).toMatchObject({ newCount: 4, reviewCount: 9 });
-        expect(tree[0]).toMatchObject({ newCount: 4, reviewCount: 9 });
+        // The child's review spends its own and its parent's review allowance.
+        // Introducing new cards does not shrink the remaining new count.
+        expect(tree[0].children[0]).toMatchObject({ newCount: 40, reviewCount: 9 });
+        expect(tree[0]).toMatchObject({ newCount: 40, reviewCount: 9 });
     });
 
     it('persists the disclosure state used by the mobile deck tree', () => {
@@ -571,9 +570,8 @@ describe('today-only limit boost', () => {
         expect(getDeckTodayBoost(parent.id, rolloverHour)).toEqual({ extraNew: 0, extraReview: 0 });
     });
 
-    it('shows the extra cards in the deck list the custom study dialog was opened from', () => {
-        // The deck row is where a learner checks that "increase today's new card limit" worked,
-        // so the tree's own cap has to see the boost too.
+    it('keeps all new cards visible before and after a legacy new-card boost', () => {
+        // Stored boosts remain valid interchange metadata, but do not cap the new-card count.
         const parent = createDeck('Tıp');
         const child = createDeck('Tıp::Anatomi');
         setDeckLimits(parent.id, 20, 200);
@@ -581,13 +579,13 @@ describe('today-only limit boost', () => {
         const counts = new Map([[child.id, { new: 500, learn: 0, review: 0, total: 500 }]]);
 
         const before = buildDeckTree([parent, child], counts, rolloverHour)[0];
-        expect(before.newCount).toBe(20);
+        expect(before.newCount).toBe(500);
 
         extendDeckTodayLimits(child.id, 20, 0, rolloverHour, { includeParents: true });
 
         const after = buildDeckTree([parent, child], counts, rolloverHour)[0];
-        expect(after.newCount).toBe(40);
-        expect(after.children[0].newCount).toBe(40);
+        expect(after.newCount).toBe(500);
+        expect(after.children[0].newCount).toBe(500);
     });
 
     it('expires when the stored day no longer matches', () => {

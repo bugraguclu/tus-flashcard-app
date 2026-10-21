@@ -428,8 +428,6 @@ export default function StudyScreen() {
     const [nextLearningDue, setNextLearningDue] = useState<number | null>(null);
     const [countdown, setCountdown] = useState('');
     const [queueStats, setQueueStats] = useState<QueueStats>({ newCount: 0, learningCount: 0, reviewCount: 0 });
-    const [dailyNewLimitReached, setDailyNewLimitReached] = useState(false);
-    const [heldBackNewCount, setHeldBackNewCount] = useState(0);
     const [heldBackReviewCount, setHeldBackReviewCount] = useState(0);
     const [upcomingCardsCount, setUpcomingCardsCount] = useState(0);
     const totalDeckCards = useMemo(() => {
@@ -628,7 +626,7 @@ export default function StudyScreen() {
         const deck = getDeckByName(selectedDeckName);
         if (!deck) return settings;
         if (deck.isFiltered) {
-            return { ...settings, dailyNewLimit: 9999, dailyReviewLimit: 9999 };
+            return { ...settings, dailyReviewLimit: 9999 };
         }
         return resolveSettingsFromConfig(getDeckConfigForDeck(deck.id, settings.dayRolloverHour), settings);
     }, [selectedDeckName, settings, collectionVersion]);
@@ -698,8 +696,6 @@ export default function StudyScreen() {
 
         setNextLearningDue(result.nextLearningDue);
         setQueueStats(result.stats);
-        setDailyNewLimitReached(result.dailyNewLimitReached);
-        setHeldBackNewCount(result.heldBackNewCount);
         setHeldBackReviewCount(result.heldBackReviewCount);
         setUpcomingCardsCount(result.upcomingCardsCount);
 
@@ -3103,14 +3099,6 @@ export default function StudyScreen() {
                                 )}
                                 {l(' İsterseniz beklemeden devam edebilirsiniz.', ' You can also continue without waiting.')}
                             </Text>
-                            {dailyNewLimitReached && heldBackNewCount > 0 && (
-                                <Text style={styles.emptyInfo}>
-                                    {l(
-                                        `📋 Günlük yeni kart limiti doldu — ${heldBackNewCount} yeni kart sırada ve süre dolunca gösterilecek.`,
-                                        `📋 The daily new card limit was reached — ${heldBackNewCount} new cards are queued and will appear when time is up.`,
-                                    )}
-                                </Text>
-                            )}
                             <TouchableOpacity
                                 style={styles.primaryActionBtn}
                                 onPress={handleStudyAhead}
@@ -3120,66 +3108,14 @@ export default function StudyScreen() {
                             >
                                 <Text style={styles.primaryActionText}>⚡ {l('Beklemeden çalış', 'Study Now')}</Text>
                             </TouchableOpacity>
-                            {dailyNewLimitReached ? (
-                                <TouchableOpacity
-                                    style={styles.secondaryActionBtn}
-                                    onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
-                                >
-                                    <GearGlyph color={colors.textSecondary} size={15} />
-                                    <Text style={styles.secondaryActionText}>{l('Limiti artır', 'Increase Limit')}</Text>
-                                </TouchableOpacity>
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.secondaryActionBtn}
-                                    onPress={() => router.push('/settings')}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Ayarları aç', 'Open settings')}
-                                >
-                                    <GearGlyph color={colors.textSecondary} size={15} />
-                                    <Text style={styles.secondaryActionText}>{l('Limit ve bekleme ayarları', 'Limits and learn-ahead settings')}</Text>
-                                </TouchableOpacity>
-                            )}
-                            {trialPurchaseAction}
-                            <Text style={styles.emptySub}>
-                                {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
-                            </Text>
-                        </View>
-                    ) : dailyNewLimitReached ? (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyIcon}>⏳</Text>
-                            <Text style={styles.emptyTitle}>{l('Günlük yeni kart limiti doldu', 'Daily New Card Limit Reached')}</Text>
-                            {countdown ? <Text style={styles.countdownText}>{countdown}</Text> : null}
-                            <Text style={styles.emptyDesc}>
-                                {l(
-                                    `Bugün ${sessionStats.newCardsToday || 0} yeni kart öğrendiniz.`,
-                                    `You learned ${sessionStats.newCardsToday || 0} new ${(sessionStats.newCardsToday || 0) === 1 ? 'card' : 'cards'} today.`,
-                                )}
-                                {upcomingCardsCount > 0 ? l(
-                                    ` ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
-                                    ` ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
-                                ) : ''}
-                                {l(' Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.', ' To continue, increase the limit in Deck Options.')}
-                            </Text>
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
-                                onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=newLimit&scope=deck` as any)}
+                                onPress={() => router.push('/settings')}
                                 accessibilityRole="button"
-                                accessibilityLabel={l('Deste seçeneklerinden limiti artır', 'Increase the limit in deck options')}
+                                accessibilityLabel={l('Ayarları aç', 'Open settings')}
                             >
                                 <GearGlyph color={colors.textSecondary} size={15} />
-                                <Text style={styles.secondaryActionText}>{l('Limiti artır', 'Increase Limit')}</Text>
-                            </TouchableOpacity>
-                            {finishedDeckActions}
-                            <TouchableOpacity
-                                style={styles.secondaryActionBtn}
-                                onPress={handleReturnToDecks}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
-                            >
-                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                                <Text style={styles.secondaryActionText}>{l('Bekleme ayarları', 'Learn-ahead settings')}</Text>
                             </TouchableOpacity>
                             {trialPurchaseAction}
                             <Text style={styles.emptySub}>

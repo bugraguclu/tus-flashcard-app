@@ -37,8 +37,8 @@ import {
 } from './studyCardRows';
 
 /**
- * Today's study queue for a deck scope: limits, gather and sort orders, burying and learn-ahead,
- * as Anki's V3 scheduler builds it.
+ * Today's study queue: review limits, gather/sort orders, burying and learn-ahead.
+ * New cards have no daily cap in TusAnkiM; imported limit metadata stays intact for export.
  */
 
 export interface QueueStats {
@@ -53,8 +53,9 @@ export interface StudyQueueResult {
     allSessionCards?: StudyCard[];
     stats: QueueStats;
     nextLearningDue: number | null;
+    /** Legacy result field: always false, since new cards have no daily cap. */
     dailyNewLimitReached: boolean;
-    /** New cards in scope that daily limits kept out of today's queue. */
+    /** Legacy result field: always zero, since new cards have no daily cap. */
     heldBackNewCount: number;
     /** Due reviews in scope that the daily review limit kept out of today's queue. */
     heldBackReviewCount: number;
@@ -67,6 +68,7 @@ export interface StudyQueueParams {
     selectedSubject?: string | null;
     selectedTopic?: string | null;
     selectedDeckName?: string | null;
+    /** Retained for callers; new-card usage no longer restricts the queue. */
     newCardsStudiedToday?: number;
     /**
      * Reviews already answered today in this scope. Anki subtracts them from "Maximum
@@ -226,8 +228,6 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         }
     }
 
-    const availableNewLimit = Math.max(0, params.settings.dailyNewLimit - (params.newCardsStudiedToday ?? 0));
-
     // Anki: "When this limit is reached, Anki will not show any more review cards for the day,
     // even if there are more waiting." Answered reviews leave the due queue on their own, so
     // without subtracting them the cap would silently refill on every rebuild.
@@ -304,7 +304,6 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     );
 
     const reviewFetchLimit = reviewLimit > 0 ? Math.max(reviewLimit * 4, reviewLimit + 100) : 0;
-    const newFetchLimit = availableNewLimit > 0 ? Math.max(availableNewLimit * 4, availableNewLimit + 100) : 0;
 
     const reviewRows = reviewFetchLimit > 0
         ? loadRowsByQueue(
@@ -319,18 +318,16 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         )
         : [];
 
-    const newRows = newFetchLimit > 0
-        ? loadRowsByQueue(
-            'c.queue = 0',
-            [],
-            params.selectedSubject,
-            params.selectedTopic,
-            params.selectedDeckName,
-            newRowOrderSql(params.settings),
-            false,
-            newFetchLimit,
-        )
-        : [];
+    // No numeric stand-in for infinity: all eligible new cards remain available, including
+    // collections whose saved preset, deck or today-only metadata still says 20 (or zero).
+    const newRows = loadRowsByQueue(
+        'c.queue = 0',
+        [],
+        params.selectedSubject,
+        params.selectedTopic,
+        params.selectedDeckName,
+        newRowOrderSql(params.settings),
+    );
 
     const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs, { settingsCache });
     const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
@@ -402,15 +399,6 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const usedForDeckKey = (key: string): DailyLimitUsage =>
         usageByDeckKey.get(key) ?? { newIntroduced: 0, reviewsAnswered: 0 };
 
-    const newLimitByKey = new Map<string, number>();
-    const newLimitForDeckKey = (key: string): number => {
-        let limit = newLimitByKey.get(key);
-        if (limit === undefined) {
-            limit = Math.max(0, settingsForDeckKey(key).dailyNewLimit - usedForDeckKey(key).newIntroduced);
-            newLimitByKey.set(key, limit);
-        }
-        return limit;
-    };
     const reviewLimitByKey = new Map<string, number>();
     const reviewLimitForDeckKey = (key: string): number => {
         let limit = reviewLimitByKey.get(key);
@@ -448,54 +436,9 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
     }
 
-    // Anki's collection-wide "new cards ignore review limit". With it off, the review cap covers
-    // the whole day: every review already taken shrinks the room left for new cards, so a large
-    // backlog stops the app from also piling new material on top. Reviews are selected first
-    // (above) precisely so their final count is known here.
-    const newCardsShareReviewLimit = params.settings.newCardsIgnoreReviewLimit === false;
-    const reviewsTakenByKey = new Map<string, number>();
-    if (newCardsShareReviewLimit) {
-        for (const card of reviewCardsForQueue) {
-            for (const key of deckKeysForCard(card)) {
-                reviewsTakenByKey.set(key, (reviewsTakenByKey.get(key) ?? 0) + 1);
-            }
-        }
-    }
-    const effectiveNewLimit = newCardsShareReviewLimit
-        ? Math.min(availableNewLimit, Math.max(0, reviewLimit - reviewCardsForQueue.length))
-        : availableNewLimit;
-    const newLimitForDeckKeyCapped = newCardsShareReviewLimit
-        ? (key: string): number => Math.min(
-            newLimitForDeckKey(key),
-            Math.max(0, reviewLimitForDeckKey(key) - (reviewsTakenByKey.get(key) ?? 0)),
-        )
-        : newLimitForDeckKey;
-
-    let newCardsForQueue = applyHierarchicalLimit(newCards, effectiveNewLimit, deckKeysForCard, newLimitForDeckKeyCapped);
-
-    if (newCardsForQueue.length < Math.min(effectiveNewLimit, newCount) && newRows.length < newCount) {
-        newCards = applyNewCardOrder(
-            toStudyCards(
-                loadRowsByQueue(
-                    'c.queue = 0',
-                    [],
-                    params.selectedSubject,
-                    params.selectedTopic,
-                    params.selectedDeckName,
-                    newRowOrderSql(params.settings),
-                    false,
-                ),
-                params.settings,
-                nowMs,
-                { settingsCache },
-            ),
-            params.settings,
-            daySeed,
-            newCount,
-        );
-
-        newCardsForQueue = applyHierarchicalLimit(newCards, effectiveNewLimit, deckKeysForCard, newLimitForDeckKeyCapped);
-    }
+    // Review caps cannot reintroduce a cap on new cards, even in older collections that
+    // stored newCardsIgnoreReviewLimit=false. Burying and scope filtering still apply.
+    const newCardsForQueue = newCards;
 
     // Anki serving order (rslib scheduler/queue/mod.rs `iter`): intraday learning cards whose
     // timer has expired lead, then the main queue, and intraday learning cards still inside the
@@ -536,7 +479,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // limit in Anki, so that count stays raw.
     const servableNewCount = newCardsForQueue.length;
     const servableReviewCount = reviewCardsForQueue.length;
-    const heldBackNewCount = Math.max(0, newCount - servableNewCount);
+    const heldBackNewCount = 0;
     const heldBackReviewCount = Math.max(0, reviewCount - servableReviewCount);
 
     let upcomingCardsCount = 0;
@@ -551,22 +494,19 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             params.selectedDeckName,
         );
 
-        let tomorrowNewLimit = params.settings.dailyNewLimit ?? 20;
         let tomorrowReviewLimit = params.settings.dailyReviewLimit ?? 200;
         if (params.selectedDeckName) {
             const deck = getDeckByName(params.selectedDeckName);
             if (deck) {
                 const config = getDeckConfigForDeck(deck.id, params.settings.dayRolloverHour);
                 const resolved = resolveSettingsFromConfig(config, params.settings);
-                tomorrowNewLimit = resolved.dailyNewLimit;
                 tomorrowReviewLimit = resolved.dailyReviewLimit;
             }
         }
 
-        const tomorrowServableNew = tomorrowNewLimit > 0 ? Math.min(heldBackNewCount, tomorrowNewLimit) : heldBackNewCount;
         const tomorrowTotalReviews = heldBackReviewCount + reviewsDueTomorrow;
         const tomorrowServableReviews = tomorrowReviewLimit > 0 ? Math.min(tomorrowTotalReviews, tomorrowReviewLimit) : tomorrowTotalReviews;
-        upcomingCardsCount = tomorrowServableNew + tomorrowServableReviews;
+        upcomingCardsCount = tomorrowServableReviews;
     }
 
     return {
@@ -577,8 +517,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             reviewCount: servableReviewCount,
         },
         nextLearningDue,
-        // Reached when new cards exist in scope but none survived the global/per-deck limits.
-        dailyNewLimitReached: newCount > 0 && servableNewCount === 0,
+        dailyNewLimitReached: false,
         heldBackNewCount,
         heldBackReviewCount,
         upcomingCardsCount,

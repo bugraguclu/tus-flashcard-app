@@ -105,13 +105,13 @@ export function buildOptionHelp(l: Localize) {
         dailyLimits: {
             title: l('Günlük limitler nasıl uygulanır?', 'How daily limits are applied'),
             summary: l(
-                'Bu bölüm, bir çalışma gününde kuyruğa alınabilecek yeni ve tekrar kartlarının üst sınırını belirler.',
-                'This section sets the maximum number of new and review cards that can enter a study day.',
+                'Yeni kartlarda günlük sınır yoktur. Bu bölüm yalnızca günlük tekrar kartı sınırını belirler.',
+                'New cards have no daily limit. This section controls only the daily review limit.',
             ),
             points: [
                 l('Ayar grubu, tüm bağlı destelerin temel değeridir. “Bu deste” kalıcı bir deste istisnası, “Yalnızca bugün” ise bir sonraki çalışma gününde sıfırlanan geçici istisnadır.', 'The preset is the base value for every linked deck. “This deck” is a permanent deck override; “Today only” resets on the next study day.'),
-                l('“Yeni kartlar tekrar limitini yok saysın” kapalıyken tekrar sınırı günün toplam yükünü de sınırlar. Açıkken yeni kartlar, tekrar sınırı dolsa bile gösterilebilir.', 'When “New cards ignore review limit” is off, the review cap also limits the day’s total workload. When on, new cards can still appear after the review cap is reached.'),
-                l('“Limitler en üst desteden başlasın” açıkken bir alt desteyi doğrudan çalışsanız bile üst destelerin sınırları uygulanır.', 'When “Limits start from top” is on, parent-deck limits still apply when you study a subdeck directly.'),
+                l('Yeni kartlar, tekrar limiti dolduğunda da çalışılabilir.', 'New cards remain available after the review limit is reached.'),
+                l('“Limitler en üst desteden başlasın” açıkken bir alt desteyi doğrudan çalışsanız bile üst destelerin tekrar sınırları uygulanır.', 'When “Limits start from top” is on, parent-deck review limits still apply when you study a subdeck directly.'),
             ],
             note: l('Gün sınırını aşmış öğrenme kartları tekrar limitine dahildir. Limitler bekleyen kartları silmez; yalnızca bugün gösterilecek miktarı sınırlar.', 'Interday learning cards count toward the review limit. Limits do not delete waiting cards; they only cap what is shown today.'),
             ...helpChrome,

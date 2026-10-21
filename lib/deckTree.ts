@@ -138,13 +138,10 @@ export function buildDeckTree(
             }
         }
 
-        // When the parent is selected, its own limits cap the total drawn from all children.
-        // This keeps the deck-list number aligned with the overview/study queue instead of
-        // advertising the uncapped sum of every subdeck. The cap is what today's limits still
-        // allow: Anki does not hand out a deck's full allowance twice in one day.
+        // Review counts reflect the parent's remaining daily allowance across its children.
+        // New cards stay uncapped, matching the overview and study queue.
         if (!node.deck.isFiltered) {
             const config = getDeckConfigForDeck(node.deck.id, rolloverHour);
-            node.newCount = Math.min(node.newCount, Math.max(0, config.newPerDay - used.newIntroduced));
             node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay - used.reviewsAnswered));
         }
     }

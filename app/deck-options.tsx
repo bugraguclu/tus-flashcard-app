@@ -130,16 +130,10 @@ export default function DeckOptionsScreen() {
     );
 
     const focusField = typeof params.focus === 'string' ? params.focus : null;
-    const newLimitInputRef = useRef<TextInput>(null);
     const reviewLimitInputRef = useRef<TextInput>(null);
 
     useEffect(() => {
-        if (focusField === 'newLimit') {
-            const timer = setTimeout(() => {
-                newLimitInputRef.current?.focus();
-            }, 150);
-            return () => clearTimeout(timer);
-        } else if (focusField === 'reviewLimit') {
+        if (focusField === 'reviewLimit') {
             const timer = setTimeout(() => {
                 reviewLimitInputRef.current?.focus();
             }, 150);
@@ -177,7 +171,6 @@ export default function DeckOptionsScreen() {
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameText, setRenameText] = useState('');
     const initialScope = (params.scope === 'deck' || params.scope === 'today') ? params.scope : 'preset';
-    const [newLimitScope, setNewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
     const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
     // Anki opens desired retention on "This deck" when the deck carries its own value.
     const [retentionScope, setRetentionScope] = useState<'preset' | 'deck'>(
@@ -186,7 +179,6 @@ export default function DeckOptionsScreen() {
 
     useEffect(() => {
         if (params.scope === 'deck' || params.scope === 'today') {
-            setNewLimitScope(params.scope);
             setReviewLimitScope(params.scope);
         }
     }, [params.scope]);
@@ -440,11 +432,12 @@ export default function DeckOptionsScreen() {
         // every keystroke, and a stable object is also what keeps the advice below memoized.
         const stored = initialConfig;
 
-        integer('newPerDay', 0, 9999);
+        // New-card limits are interchange metadata, not editable study restrictions.
+        integers.newPerDay = stored.newPerDay;
         integer('maxReviewsPerDay', 0, 9999);
-        integer('deckNewLimit', 0, 9999, true);
+        integers.deckNewLimit = deck?.newLimit;
         integer('deckReviewLimit', 0, 9999, true);
-        integer('todayNewLimit', 0, 9999, true);
+        integers.todayNewLimit = todayLimits.newLimit;
         integer('todayReviewLimit', 0, 9999, true);
         integer('leechThreshold', 1, 9999);
         integer('maxAnswerSecs', 1, 7200);
@@ -618,7 +611,6 @@ export default function DeckOptionsScreen() {
             learningSteps: validation.learningSteps,
             relearningSteps: validation.relearningSteps,
             insertionOrder: form.insertionOrder,
-            newPerDay: validation.integers.newPerDay,
             reviewsPerDay: validation.integers.maxReviewsPerDay,
             graduatingIvl: validation.integers.graduatingIvl,
             easyIvl: validation.integers.easyIvl,
@@ -965,17 +957,6 @@ export default function DeckOptionsScreen() {
         today: l('Yalnızca bugün', 'Today only'),
     };
     const optionHelp = buildOptionHelp(l);
-    const scopedNewValue = newLimitScope === 'preset'
-        ? form.newPerDay
-        : newLimitScope === 'deck'
-            ? form.deckNewLimit
-            : form.todayNewLimit;
-    const scopedNewPlaceholder = newLimitScope === 'preset'
-        ? '20'
-        : newLimitScope === 'deck'
-            ? (form.newPerDay.trim() || '20')
-            : (form.deckNewLimit.trim() || form.newPerDay.trim() || '20');
-
     const scopedReviewValue = reviewLimitScope === 'preset'
         ? form.maxReviewsPerDay
         : reviewLimitScope === 'deck'
@@ -987,7 +968,6 @@ export default function DeckOptionsScreen() {
             ? (form.maxReviewsPerDay.trim() || '200')
             : (form.deckReviewLimit.trim() || form.maxReviewsPerDay.trim() || '200');
 
-    const setScopedNewValue = (value: string) => set(newLimitScope === 'preset' ? 'newPerDay' : newLimitScope === 'deck' ? 'deckNewLimit' : 'todayNewLimit', value);
     const setScopedReviewValue = (value: string) => set(reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit', value);
     const saveDisabled = saveState === 'saving' || !isDirty;
     const saveLabel = saveState === 'saving'
@@ -1110,15 +1090,9 @@ export default function DeckOptionsScreen() {
                 </View>
 
                 <OptionCard wide={useTwoColumns} title={l('Günlük limitler', 'Daily Limits')} styles={styles} help={optionHelp.dailyLimits}>
-                    <LimitTabs value={newLimitScope} onChange={setNewLimitScope} styles={styles} labels={limitLabels} />
-                    <Field
-                        field={newLimitScope === 'preset' ? 'newPerDay' : newLimitScope === 'deck' ? 'deckNewLimit' : 'todayNewLimit'}
-                        label={l('Günlük yeni kart', 'New cards/day')}
-                        value={scopedNewValue}
-                        placeholder={scopedNewPlaceholder}
-                        onChange={setScopedNewValue}
-                        inputRef={newLimitInputRef}
-                    />
+                    <Text style={styles.settingHint}>
+                        {l('Yeni kartlar için günlük sınır yoktur.', 'New cards have no daily limit.')}
+                    </Text>
                     <LimitTabs value={reviewLimitScope} onChange={setReviewLimitScope} styles={styles} labels={limitLabels} />
                     <Field
                         field={reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit'}
@@ -1129,12 +1103,6 @@ export default function DeckOptionsScreen() {
                         inputRef={reviewLimitInputRef}
                     />
                     <FieldAdvice field="maxReviewsPerDay" />
-                    <SwitchRow
-                        label={l('Yeni kartlar tekrar limitini yok saysın', 'New cards ignore review limit')}
-                        value={form.newCardsIgnoreReviewLimit}
-                        onChange={(value) => set('newCardsIgnoreReviewLimit', value)}
-                        hint={l('Tüm ayar grupları için geçerlidir.', 'Applies to all presets.')}
-                    />
                     <SwitchRow
                         label={l('Limitler en üst desteden başlasın', 'Limits start from top')}
                         value={form.limitsStartFromTop}

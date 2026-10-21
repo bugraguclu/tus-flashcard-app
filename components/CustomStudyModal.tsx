@@ -1,6 +1,6 @@
 /**
- * Anki's Custom Study dialog (qt/aqt/customstudy.py): six mutually exclusive options driving one
- * spinner, and the Selective Study tag chooser (qt/aqt/taglimit.py) its "study by card state or
+ * Custom Study follows Anki's dialog (qt/aqt/customstudy.py), with five options driving one
+ * spinner (new cards have no daily cap), and the Selective Study tag chooser (qt/aqt/taglimit.py) its "study by card state or
  * tag" option opens. What each option searches for, how it orders the session and whether it
  * reschedules lives in lib/customStudy.ts.
  *
@@ -66,7 +66,6 @@ interface CustomStudyModalProps {
 }
 
 const OPTIONS: readonly CustomStudyOption[] = [
-    'newLimit',
     'reviewLimit',
     'forgot',
     'ahead',
@@ -144,7 +143,7 @@ export default function CustomStudyModal({
     const styles = useMemo(() => createStyles(colors), [colors]);
     const insets = useSafeAreaInsets();
 
-    const [option, setOption] = useState<CustomStudyOption>('newLimit');
+    const [option, setOption] = useState<CustomStudyOption>('reviewLimit');
     const [valueDraft, setValueDraft] = useState('0');
     const [cramKind, setCramKind] = useState<CustomStudyCramKind>('new');
     const [defaults, setDefaults] = useState<CustomStudyDefaults>(EMPTY_CUSTOM_STUDY_DEFAULTS);
@@ -173,8 +172,8 @@ export default function CustomStudyModal({
         setRequireTags(selection.requireTags);
         setChoosingTags(false);
         setCramKind('new');
-        setOption('newLimit');
-        setValueDraft(String(customStudyValueBounds('newLimit', deckDefaults).initial));
+        setOption('reviewLimit');
+        setValueDraft(String(customStudyValueBounds('reviewLimit', deckDefaults).initial));
         // Availability and tags are a snapshot of the moment the dialog opens, exactly as Anki
         // fetches them once before showing the window.
     }, [visible, deck?.id]);

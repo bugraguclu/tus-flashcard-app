@@ -315,6 +315,7 @@ export interface AppSettings {
     /** Local clock time used by the daily review reminder. */
     studyNotificationHour?: number;
     studyNotificationMinute?: number;
+    /** Preserved Anki interchange metadata; TusAnkiM does not cap daily new cards. */
     dailyNewLimit: number;
     dailyReviewLimit: number;
     /** Minutes between learning steps for new cards. */
@@ -367,8 +368,7 @@ export interface AppSettings {
     waitForAudio?: boolean;
     answerAction?: AutoAdvanceAnswerAction;
     /**
-     * Anki Daily Limits, collection-wide: when false, new cards also consume the review limit,
-     * so a day's total workload never exceeds the review cap.
+     * Preserved Anki collection metadata. New cards always ignore review caps in TusAnkiM.
      */
     newCardsIgnoreReviewLimit?: boolean;
     /**
