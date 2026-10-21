@@ -2448,45 +2448,45 @@ export default function DecksScreen() {
             <View style={styles.fabWrap}>
                 {showAddMenu && (
                     <View style={styles.fabActions}>
-                        <View style={styles.fabActionRow}>
+                        <TouchableOpacity
+                            style={styles.fabActionRow}
+                            onPress={() => openCreateFilteredDeck()}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
+                        >
                             <View style={styles.fabActionLabel}>
                                 <Text style={styles.fabActionLabelText}>{l('Filtrelenmiş deste oluştur', 'Create filtered deck')}</Text>
                             </View>
-                            <TouchableOpacity
-                                style={styles.fabActionButton}
-                                onPress={() => openCreateFilteredDeck()}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
-                            >
+                            <View style={styles.fabActionButton}>
                                 <Text style={styles.fabActionIcon}>⧉</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.fabActionRow}>
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.fabActionRow}
+                            onPress={openCreateDeck}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Deste oluştur', 'Create deck')}
+                        >
                             <View style={styles.fabActionLabel}>
                                 <Text style={styles.fabActionLabelText}>{l('Deste oluştur', 'Create deck')}</Text>
                             </View>
-                            <TouchableOpacity
-                                style={styles.fabActionButton}
-                                onPress={openCreateDeck}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Deste oluştur', 'Create deck')}
-                            >
+                            <View style={styles.fabActionButton}>
                                 <Text style={styles.fabActionIcon}>▤</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.fabActionRow}>
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.fabActionRow}
+                            onPress={openAddCard}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Kart ekle', 'Add note')}
+                        >
                             <View style={styles.fabActionLabel}>
                                 <Text style={styles.fabActionLabelText}>{l('Kart ekle', 'Add note')}</Text>
                             </View>
-                            <TouchableOpacity
-                                style={styles.fabActionButton}
-                                onPress={openAddCard}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Kart ekle', 'Add note')}
-                            >
+                            <View style={styles.fabActionButton}>
                                 <Text style={styles.fabActionIcon}>✎</Text>
-                            </TouchableOpacity>
-                        </View>
+                            </View>
+                        </TouchableOpacity>
                     </View>
                 )}
                 <TouchableOpacity
