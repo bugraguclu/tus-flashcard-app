@@ -128,7 +128,7 @@ export function RepositionModal({
                     <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
                     <Text style={styles.fieldLabel}>{l('Adım', 'Step')}</Text>
                     <TextInput style={styles.dialogInput} value={repositionStep} onChangeText={(value) => setRepositionStep(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
-                    <TouchableOpacity style={styles.checkboxRow} onPress={() => setRepositionShiftExisting((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: repositionShiftExisting }}>
+                    <TouchableOpacity style={styles.checkboxRow} onPress={() => setRepositionShiftExisting((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: repositionShiftExisting }} aria-checked={repositionShiftExisting}>
                         <View style={[styles.checkbox, repositionShiftExisting && styles.checkboxChecked]}>{repositionShiftExisting ? <Text style={styles.checkboxTick}>✓</Text> : null}</View>
                         <Text style={styles.checkboxLabel}>{l('Mevcut kartların konumunu kaydır', 'Shift position of existing cards')}</Text>
                     </TouchableOpacity>
@@ -193,7 +193,7 @@ export function ResetCardsModal({
                     {rows.map(({ key, label }) => {
                         const checked = options?.[key] ?? false;
                         return (
-                            <TouchableOpacity key={key} style={styles.checkboxRow} onPress={() => toggle(key)} accessibilityRole="checkbox" accessibilityState={{ checked }}>
+                            <TouchableOpacity key={key} style={styles.checkboxRow} onPress={() => toggle(key)} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
                                 <View style={[styles.checkbox, checked && styles.checkboxChecked]}>{checked ? <Text style={styles.checkboxTick}>✓</Text> : null}</View>
                                 <Text style={styles.checkboxLabel}>{label}</Text>
                             </TouchableOpacity>

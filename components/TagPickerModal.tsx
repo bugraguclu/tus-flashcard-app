@@ -225,6 +225,7 @@ export default function TagPickerModal({
                             onPress={toggleAllVisible}
                             accessibilityRole="checkbox"
                             accessibilityState={{ checked: allVisibleSelected }}
+                            aria-checked={allVisibleSelected}
                             accessibilityLabel={allVisibleSelected
                                 ? l('Görünen etiketlerin seçimini kaldır', 'Deselect all visible tags')
                                 : l('Görünen etiketlerin tümünü seç', 'Select all visible tags')}
@@ -367,6 +368,7 @@ export default function TagPickerModal({
                                         onPress={() => toggleTag(tag)}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: selected }}
+                                        aria-checked={selected}
                                         accessibilityLabel={tag.replaceAll('::', ' › ')}
                                     >
                                         <Text style={[styles.tagText, selected && styles.tagTextSelected]} numberOfLines={2}>

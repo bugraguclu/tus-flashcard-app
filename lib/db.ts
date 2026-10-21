@@ -46,6 +46,13 @@ export async function initWebDb(): Promise<void> {
     _db = await initWebDatabase();
 }
 
+/** Native writes commit synchronously; web Save actions must also await IndexedDB. */
+export async function flushDatabaseWrites(): Promise<void> {
+    if (Platform.OS !== 'web') return;
+    const { flushWebDatabase } = require('./webDb') as typeof import('./webDb');
+    await flushWebDatabase();
+}
+
 /** Whether this client persists changes. Always true on native; on web only the elected writer tab does. */
 export function isPrimaryTab(): boolean {
     if (Platform.OS !== 'web') return true;

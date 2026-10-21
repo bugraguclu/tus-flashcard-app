@@ -70,6 +70,12 @@ schema changed.
 
 ## Web regression target
 
+For Settings persistence, change language, Save, and reload immediately after the success
+indicator: the saved language must survive. Also inject an IndexedDB write failure in an isolated
+test profile: Save must show a recoverable error, never success. For browser selection controls,
+inspect checked/unchecked/mixed states in the web accessibility tree and confirm the search
+result count for zero, one and multiple matching rows in Cards and Notes modes.
+
 `npm run web` serves the same screens from Metro; `npm run build:web` is the production bundle CI
 builds, with the strict Content-Security-Policy and the service worker. `vercel.json` publishes the
 same bundle from `master` as the public browser preview, so a push to `master` changes what

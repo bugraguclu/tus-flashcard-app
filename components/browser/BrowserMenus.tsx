@@ -333,7 +333,8 @@ export function OverflowMenuModal({
                                 style={[styles.overflowFlagRow, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagRowActive]}
                                 onPress={toggleAllFlagFilters}
                                 accessibilityRole="checkbox"
-                                accessibilityState={{ checked: flagFilters.length === ALL_CARD_FLAGS.length }}
+                                accessibilityState={{ checked: flagFilters.length === ALL_CARD_FLAGS.length ? true : flagFilters.length > 0 ? 'mixed' : false }}
+                                aria-checked={flagFilters.length === ALL_CARD_FLAGS.length ? true : flagFilters.length > 0 ? 'mixed' : false}
                             >
                                 <View style={styles.flagIconContainer} />
                                 <Text style={[styles.overflowFlagText, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagTextActive]}>
@@ -360,6 +361,7 @@ export function OverflowMenuModal({
                                         onPress={() => toggleFlagFilter(flag)}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: selected }}
+                                        aria-checked={selected}
                                         accessibilityLabel={cardFlagName(locale, flag)}
                                     >
                                         <View style={styles.flagIconContainer}>
@@ -577,6 +579,7 @@ export function BrowserOptionsModal({
                             onPress={() => updateTableMode('cards')}
                             accessibilityRole="radio"
                             accessibilityState={{ checked: tableMode === 'cards' }}
+                            aria-checked={tableMode === 'cards'}
                         >
                             <Text style={[styles.directionText, tableMode === 'cards' && styles.directionTextActive]}>{l('Kartlar', 'Cards')}</Text>
                         </TouchableOpacity>
@@ -585,6 +588,7 @@ export function BrowserOptionsModal({
                             onPress={() => updateTableMode('notes')}
                             accessibilityRole="radio"
                             accessibilityState={{ checked: tableMode === 'notes' }}
+                            aria-checked={tableMode === 'notes'}
                         >
                             <Text style={[styles.directionText, tableMode === 'notes' && styles.directionTextActive]}>{l('Notlar', 'Notes')}</Text>
                         </TouchableOpacity>

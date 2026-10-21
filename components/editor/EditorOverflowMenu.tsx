@@ -72,6 +72,7 @@ export function EditorOverflowMenu({
                     onPress={() => onUpdatePreferences({ capitalizeSentences: !preferences.capitalizeSentences })}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: preferences.capitalizeSentences }}
+                    aria-checked={preferences.capitalizeSentences}
                 >
                     <Text style={styles.overflowItemText}>{l('Cümleleri büyük harfle başlat', 'Capitalize sentences')}</Text>
                     <View style={[styles.overflowCheckbox, preferences.capitalizeSentences && styles.overflowCheckboxChecked]}>
@@ -84,6 +85,7 @@ export function EditorOverflowMenu({
                         onPress={() => onUpdatePreferences({ toolbarVisible: !preferences.toolbarVisible })}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: preferences.toolbarVisible }}
+                        aria-checked={preferences.toolbarVisible}
                     >
                         <Text style={styles.overflowItemText}>{l('Araç çubuğunu göster', 'Show toolbar')}</Text>
                         <View style={[styles.overflowCheckbox, preferences.toolbarVisible && styles.overflowCheckboxChecked]}>
@@ -98,6 +100,7 @@ export function EditorOverflowMenu({
                         onPress={() => onUpdatePreferences({ toolbarScrollable: !preferences.toolbarScrollable })}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: preferences.toolbarScrollable, disabled: !preferences.toolbarVisible }}
+                        aria-checked={preferences.toolbarScrollable}
                     >
                         <Text style={styles.overflowItemText}>{l('Araç çubuğunu kaydır', 'Scroll toolbar')}</Text>
                         <View style={[styles.overflowCheckbox, preferences.toolbarScrollable && styles.overflowCheckboxChecked]}>

@@ -30,7 +30,7 @@ import {
     DEFAULT_SETTINGS,
     loadSettings,
     resetSettingsToDefaults,
-    saveSettings,
+    saveSettingsDurably,
 } from '../lib/storage';
 import KeyboardSettingsSection from '../components/settings/KeyboardSettingsSection';
 import {
@@ -258,6 +258,7 @@ function ToggleRow({ label, summary, value, onChange, divider = true, styles }: 
             activeOpacity={0.7}
             accessibilityRole="switch"
             accessibilityState={{ checked: value }}
+            aria-checked={value}
         >
             <View style={styles.preferenceCopy}>
                 <Text style={styles.preferenceLabel}>{label}</Text>
@@ -289,6 +290,7 @@ function ChoiceRow<T extends string>({ label, summary, value, options, onChange,
                         onPress={() => onChange(option.value)}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: value === option.value }}
+                        aria-checked={value === option.value}
                     >
                         <Text style={[styles.choiceText, value === option.value && styles.choiceTextActive]}>{option.label}</Text>
                     </TouchableOpacity>
@@ -426,6 +428,7 @@ export default function SettingsScreen() {
     const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saved, setSaved] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [activeSection, setActiveSection] = useState<SectionId | null>(null);
     const [search, setSearch] = useState('');
     const [controlsHelpVisible, setControlsHelpVisible] = useState(false);
@@ -546,21 +549,25 @@ export default function SettingsScreen() {
         sectionScrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [activeSection]);
 
-    const handleSaveSettings = useCallback(() => {
+    const handleSaveSettings = useCallback(async () => {
+        if (saving) return;
         Keyboard.dismiss();
         const current = settingsRef.current;
-        const result = saveSettings(current);
+        setSaving(true);
+        const result = await saveSettingsDurably(current);
+        setSaving(false);
         const persisted = loadSettings();
         if (!result.ok || !settingsMatch(persisted, result.settings)) {
             lastSaveFailedRef.current = true;
             setSaved(false);
             alert(
                 l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
-                l('Değişiklik cihaz depolamasına yazılamadı. Önceki ayarlar korunuyor.', 'The change could not be written to device storage. Your previous settings are preserved.'),
+                l('Değişiklik cihaz depolamasına kaydedilemedi. Lütfen yeniden deneyin.', 'The change could not be saved to device storage. Please try again.'),
             );
             return;
         }
-        setSettings(persisted);
+        // Preserve edits made while the durable write was pending.
+        setSettings((draft) => settingsMatch(draft, current) ? persisted : draft);
         setSavedSnapshot(stableSnapshot(persisted));
         refreshData();
         lastSaveFailedRef.current = false;
@@ -577,7 +584,7 @@ export default function SettingsScreen() {
         } catch { /* ignore parse error */ }
 
         showSavedState();
-    }, [l, markSchedulingStale, refreshData, savedSnapshot, showSavedState]);
+    }, [l, markSchedulingStale, refreshData, savedSnapshot, saving, showSavedState]);
 
     const handleStudyNotificationsToggle = async (
         enabled: boolean,
@@ -987,6 +994,7 @@ export default function SettingsScreen() {
                                 onPress={() => updateSetting('language', option.value)}
                                 accessibilityRole="radio"
                                 accessibilityState={{ checked: selected }}
+                                aria-checked={selected}
                             >
                                 <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
                             </TouchableOpacity>
@@ -1009,6 +1017,7 @@ export default function SettingsScreen() {
                                 onPress={() => updateSetting('themeMode', option.value)}
                                 accessibilityRole="radio"
                                 accessibilityState={{ checked: selected }}
+                                aria-checked={selected}
                             >
                                 <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
                             </TouchableOpacity>
@@ -1403,6 +1412,7 @@ export default function SettingsScreen() {
                                 onPress={() => updateSetting('toolsOverlayPosition', 'left')}
                                 accessibilityRole="radio"
                                 accessibilityState={{ checked: settings.toolsOverlayPosition === 'left' }}
+                                aria-checked={settings.toolsOverlayPosition === 'left'}
                             >
                                 <Text style={[
                                     styles.overlayPositionButtonText,
@@ -1419,6 +1429,7 @@ export default function SettingsScreen() {
                                 onPress={() => updateSetting('toolsOverlayPosition', 'right')}
                                 accessibilityRole="radio"
                                 accessibilityState={{ checked: (settings.toolsOverlayPosition ?? 'right') === 'right' }}
+                                aria-checked={(settings.toolsOverlayPosition ?? 'right') === 'right'}
                             >
                                 <Text style={[
                                     styles.overlayPositionButtonText,
@@ -1596,7 +1607,8 @@ export default function SettingsScreen() {
                             !isDirty && !showSaved && styles.headerSaveButtonDisabled,
                         ]}
                         onPress={handleSaveSettings}
-                        disabled={!isDirty && !showSaved}
+                        disabled={saving || (!isDirty && !showSaved)}
+                        aria-busy={saving}
                         accessibilityRole="button"
                         accessibilityLabel={showSaved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
                     >
@@ -1846,6 +1858,7 @@ export default function SettingsScreen() {
                                         }}
                                         accessibilityRole="radio"
                                         accessibilityState={{ checked: selected }}
+                                        aria-checked={selected}
                                     >
                                         <Text style={[styles.themeModalOptionText, selected && styles.themeModalOptionTextActive]}>{option.label}</Text>
                                         {selected ? <Text style={styles.themeModalCheck}>✓</Text> : null}
@@ -1889,6 +1902,7 @@ export default function SettingsScreen() {
                                         onPress={() => { void handleStudyNotificationPolicySelect(option.value); }}
                                         accessibilityRole="radio"
                                         accessibilityState={{ checked: selected }}
+                                        aria-checked={selected}
                                     >
                                         <Text style={[styles.themeModalOptionText, selected && styles.themeModalOptionTextActive]}>{option.label}</Text>
                                         {selected ? <Text style={styles.themeModalCheck}>✓</Text> : null}

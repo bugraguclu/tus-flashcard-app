@@ -206,6 +206,7 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 
 vi.mock('./db', () => ({
     getDB: () => fakeDb,
+    flushDatabaseWrites: vi.fn(async () => {}),
     initDB: vi.fn(),
     dbIndexAllCards: vi.fn(),
     dbGetSchemaVersion: () => 6,
@@ -253,9 +254,11 @@ import {
     saveCollectionDeckOptions,
     saveSessionStats,
     saveSettings,
+    saveSettingsDurably,
     resetAllData,
 } from './storage';
 import { saveDeckConfig } from './deckManager';
+import { flushDatabaseWrites } from './db';
 import { CATALOG_PACK_ID, CATALOG_PROGRESS_KEY } from './catalogRows';
 
 describe('storage import/export canonical round-trip', () => {
@@ -274,6 +277,7 @@ describe('storage import/export canonical round-trip', () => {
         dbState.failOnExec = null;
         dbState.transactionSnapshot = null;
         vi.mocked(saveDeckConfig).mockReset();
+        vi.mocked(flushDatabaseWrites).mockReset().mockResolvedValue();
 
         dbState.note_types.push({ id: 1, name: 'Basic', data: '{}', updated_at: 0, usn: -1, tombstone: 0 });
         dbState.notes.push({ id: 10, noteTypeId: 1, sfld: 'Q', csum: 1, tags: 'anatomi', data: '{}', updated_at: 0, usn: -1, tombstone: 0 });
@@ -326,6 +330,45 @@ describe('storage import/export canonical round-trip', () => {
     it('defaults to Turkish when settings have not been configured', () => {
         expect(DEFAULT_SETTINGS.language).toBe('tr');
         expect(loadSettings().language).toBe('tr');
+    });
+
+    it('restores the previous settings in memory when the durable web save fails', async () => {
+        saveSettings({ ...DEFAULT_SETTINGS, language: 'tr' });
+        const before = new Map(dbState.settings);
+        vi.mocked(flushDatabaseWrites).mockRejectedValueOnce(new Error('quota exceeded'));
+
+        const result = await saveSettingsDurably({ ...DEFAULT_SETTINGS, language: 'en' });
+
+        expect(result).toMatchObject({ ok: false });
+        expect(dbState.settings).toEqual(before);
+        expect(loadSettings().language).toBe('tr');
+        expect(dbState.notes).toHaveLength(1);
+    });
+
+    it('does not acknowledge a settings save before its durable write settles', async () => {
+        let finish!: () => void;
+        vi.mocked(flushDatabaseWrites).mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
+        let completed = false;
+        const saving = saveSettingsDurably({ ...DEFAULT_SETTINGS, language: 'en' }).then((result) => {
+            completed = true;
+            return result;
+        });
+        await Promise.resolve();
+        expect(completed).toBe(false);
+        finish();
+        expect(await saving).toMatchObject({ ok: true });
+    });
+
+    it('does not roll back a newer settings write when an older durable save fails', async () => {
+        let fail!: (error: Error) => void;
+        vi.mocked(flushDatabaseWrites).mockReturnValueOnce(new Promise<void>((_resolve, reject) => { fail = reject; }));
+        const pending = saveSettingsDurably({ ...DEFAULT_SETTINGS, language: 'en' });
+        saveSettings({ ...DEFAULT_SETTINGS, language: 'system' });
+
+        fail(new Error('quota exceeded'));
+
+        expect(await pending).toMatchObject({ ok: false });
+        expect(loadSettings().language).toBe('system');
     });
 
     it('rolls settings metadata back and reports failure when deck-config persistence fails', () => {

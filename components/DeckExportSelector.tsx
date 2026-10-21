@@ -93,6 +93,7 @@ export default function DeckExportSelector({
                         onPress={() => toggleBranch(node)}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: accessibilityChecked }}
+                        aria-checked={accessibilityChecked}
                         accessibilityLabel={l(
                             `${getDeckDisplayName(node.deck.name)} destesini dışa aktar`,
                             `Export ${getDeckDisplayName(node.deck.name)} deck`,

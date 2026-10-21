@@ -119,6 +119,7 @@ export function BrowserCardRow({
             accessibilityRole={selectionMode ? 'checkbox' : Platform.OS === 'web' ? undefined : 'button'}
             focusable={Platform.OS === 'web' ? true : undefined}
             accessibilityState={selectionMode ? { checked: isSelected } : undefined}
+            aria-checked={selectionMode ? isSelected : undefined}
         >
             <View style={styles.cardItemHeader}>
                 {selectionMode && (

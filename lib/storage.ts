@@ -19,6 +19,7 @@ export {
     loadSettings,
     resetSettingsToDefaults,
     saveSettings,
+    saveSettingsDurably,
 } from './settingsStore';
 export type {
     SaveSettingsResult,
