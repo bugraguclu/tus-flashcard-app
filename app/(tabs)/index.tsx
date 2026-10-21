@@ -163,7 +163,7 @@ import {
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
-import { coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
+import { advanceQueueAfterAnswer, coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
 import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
 import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from '../../lib/reviewerSurface';
 import { ReviewerTtsLifecycle } from '../../lib/reviewerTtsLifecycle';
@@ -501,6 +501,7 @@ export default function StudyScreen() {
     }, []);
     const sessionStatsRef = useRef(sessionStats);
     const currentCardRef = useRef<StudyCard | null>(null);
+    const queueRef = useRef<StudyCard[]>([]);
     const previousDeckScopeRef = useRef<string | null>(selectedDeckName);
     const answersSinceRefreshRef = useRef(0);
     const scheduledRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -540,6 +541,10 @@ export default function StudyScreen() {
     useEffect(() => {
         currentCardRef.current = currentCard;
     }, [currentCard]);
+
+    useEffect(() => {
+        queueRef.current = queue;
+    }, [queue]);
 
     // A local deck switch replaces the queue exactly as the old route remount did. Do not carry
     // an exposed answer, whiteboard stroke or undo history into a different deck.
@@ -1043,7 +1048,6 @@ export default function StudyScreen() {
 
             // Incremental queue update: pop current card, optionally reinsert if still due now.
             const nowMs = Date.now();
-            let queueBecameEmpty = false;
 
             // A study-ahead id is a one-shot pass: once this card has been answered it must
             // earn its way back onto the queue through its own (possibly still-running) timer,
@@ -1052,46 +1056,36 @@ export default function StudyScreen() {
                 prev.includes(currentCard.cardId) ? prev.filter((id) => id !== currentCard.cardId) : prev
             ));
 
-            setQueue((prevQueue) => {
-                const withoutCurrent = prevQueue.filter((card) => card.cardId !== currentCard.cardId);
-                // Preview (Anki): a button with a delay brings the card back only once that delay
-                // has run, so the card waits on the deck's preview schedule instead of re-entering the
-                // queue now. A zero delay — always the case for Easy — retires it from the session.
-                const shouldReinsert = previewMode
-                    ? false
-                    : isCardDueNow(result.updatedCard, nowMs);
-                const nextQueue = shouldReinsert ? [...withoutCurrent, result.updatedCard] : withoutCurrent;
-
-                setCurrentCard(nextQueue[0] ?? null);
-
-                const futureLearningDue = nextQueue
-                    .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
-                    .map((card) => card.state.dueTime)
-                    .filter((value): value is number => Boolean(value));
-
-                if (result.updatedCard.state.status === 'learning' && result.updatedCard.state.dueTime > nowMs) {
-                    futureLearningDue.push(result.updatedCard.state.dueTime);
-                }
-
-                // Preview answers leave the card's schedule alone, so the waiting card would be
-                // invisible to the check above; its delay has to drive the rebuild timer directly.
-                if (previewRequeueAt !== null) {
-                    futureLearningDue.push(previewRequeueAt);
-                }
-
-                // Only update nextLearningDue if we found future learning cards in memory.
-                // When empty, defer to buildQueue which queries the full DB for any learning cards
-                // from earlier answers that are no longer in the in-memory queue.
-                if (futureLearningDue.length > 0) {
-                    setNextLearningDue(Math.min(...futureLearningDue));
-                }
-
-                if (nextQueue.length === 0) {
-                    queueBecameEmpty = true;
-                }
-
-                return nextQueue;
+            // Computed outside a state updater: a setter called from inside one runs during the
+            // next render, after (and over) whatever the immediate rebuild below just chose.
+            // Preview (Anki): a button with a delay brings the card back only once that delay
+            // has run, so the card waits on the deck's preview schedule instead of re-entering the
+            // queue now. A zero delay — always the case for Easy — retires it from the session.
+            const step = advanceQueueAfterAnswer({
+                // The ref, not this render's value: the Timebox dialog above awaits, and a
+                // background rebuild may have replaced the queue meanwhile.
+                queue: queueRef.current,
+                answeredCardId: currentCard.cardId,
+                updatedCard: result.updatedCard,
+                nowMs,
+                today: todayLocalYMD(new Date(nowMs), settings.dayRolloverHour),
+                learnAheadMs: Math.max(0, settings.learnAheadMinutes || 0) * 60_000,
+                preview: previewMode,
             });
+            setQueue(step.queue);
+            setCurrentCard(step.currentCard);
+
+            // Preview answers leave the card's schedule alone, so the waiting card would be
+            // invisible to the in-memory check; its delay has to drive the rebuild timer directly.
+            const futureLearningDue = [step.nextLearningDue, previewRequeueAt]
+                .filter((value): value is number => value !== null);
+            // Only update nextLearningDue if we found future learning cards in memory.
+            // When empty, defer to buildQueue which queries the full DB for any learning cards
+            // from earlier answers that are no longer in the in-memory queue.
+            if (futureLearningDue.length > 0) {
+                setNextLearningDue(Math.min(...futureLearningDue));
+            }
+            const queueBecameEmpty = step.queue.length === 0;
 
             setQueueStats((prev) => {
                 const next = { ...prev };
