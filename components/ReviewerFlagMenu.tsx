@@ -65,6 +65,7 @@ export default function ReviewerFlagMenu({
                                     accessibilityRole="radio"
                                     accessibilityLabel={label}
                                     accessibilityState={{ selected }}
+                                    aria-checked={selected}
                                 >
                                     <View style={styles.swatch}>
                                         <FlagGlyph

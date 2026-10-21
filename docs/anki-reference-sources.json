@@ -162,7 +162,14 @@
       "priority": 1,
       "platform": "cross-platform browser behavior",
       "url": "https://docs.ankiweb.net/browsing.html#table-modes",
-      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "Notes-mode row aggregation and first-card semantics", "flag filtering"]
+      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search"]
+    },
+    {
+      "id": "w3c-aria-checkbox-state",
+      "priority": 3,
+      "platform": "web accessibility",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/",
+      "useFor": ["checked and unchecked checkbox states", "mixed state for partially selected groups"]
     },
     {
       "id": "anki-source",

@@ -194,6 +194,7 @@ export function EditorControls({
                                     onPress={() => setEraserMode(option.id)}
                                     accessibilityRole="radio"
                                     accessibilityState={{ selected: isSelected }}
+                                    aria-checked={isSelected}
                                     accessibilityLabel={option.id === 'partial'
                                         ? l('Kısmi silgi: sadece dokunduğun yeri siler', 'Partial eraser: rubs out only what you touch')
                                         : l('Tam silgi: dokunduğun çizimin tamamını siler', 'Whole eraser: removes the entire annotation')}

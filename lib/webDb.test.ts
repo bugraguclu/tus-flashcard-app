@@ -8,7 +8,14 @@ function createFakeIndexedDb(initial: Map<string, unknown> = new Map()) {
     const records = initial;
     let storeCreated = initial.size > 0;
     // `puts` counts writes as they are started, `writes` as they commit on a later tick.
-    const state = { failReads: null as Error | null, writes: 0, puts: 0 };
+    const state = {
+        failReads: null as Error | null,
+        failWrites: null as Error | null,
+        holdWrites: false,
+        pendingWrites: [] as (() => void)[],
+        writes: 0,
+        puts: 0,
+    };
 
     const database = {
         objectStoreNames: { contains: () => storeCreated },
@@ -32,11 +39,18 @@ function createFakeIndexedDb(initial: Map<string, unknown> = new Map()) {
                 },
                 put: (value: unknown, key: string) => {
                     state.puts += 1;
-                    setTimeout(() => {
+                    const commit = () => {
+                        if (state.failWrites) {
+                            tx.error = state.failWrites;
+                            tx.onabort?.();
+                            return;
+                        }
                         records.set(key, value);
                         state.writes += 1;
                         tx.oncomplete?.();
-                    });
+                    };
+                    if (state.holdWrites) state.pendingWrites.push(commit);
+                    else setTimeout(commit);
                 },
             });
             return tx;
@@ -194,6 +208,76 @@ describe('web database start-up', () => {
 
         await expect(webDb.initWebDatabase()).resolves.toBeDefined();
         expect(webDb.isPrimaryTab()).toBe(true);
+    });
+});
+
+describe('explicit durable saves', () => {
+    it('waits for the IndexedDB commit before reporting a save as complete', async () => {
+        const idb = createFakeIndexedDb();
+        const { webDb } = await loadWebDb({ indexedDB: idb.indexedDB, locks: createFakeLocks().locks });
+        const db = await webDb.initWebDatabase();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        idb.state.holdWrites = true;
+        db.execSync('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)');
+        db.runSync('INSERT INTO settings VALUES (?, ?)', 'language', 'tr');
+        let completed = false;
+
+        const save = webDb.flushWebDatabase().then(() => { completed = true; });
+        await settle();
+        expect(completed).toBe(false);
+        expect(idb.state.writes).toBe(0);
+        idb.state.pendingWrites.shift()!();
+        await save;
+
+        const restored = await webDb.openSqlJsReader(idb.records.get('collection') as Uint8Array);
+        expect(restored.getFirstSync<{ value: string }>('SELECT value FROM settings')?.value).toBe('tr');
+        restored.close();
+    });
+
+    it('includes a newer edit when an earlier save is still committing', async () => {
+        const idb = createFakeIndexedDb();
+        const { webDb } = await loadWebDb({ indexedDB: idb.indexedDB, locks: createFakeLocks().locks });
+        const db = await webDb.initWebDatabase();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        idb.state.holdWrites = true;
+        db.execSync("CREATE TABLE settings (value TEXT); INSERT INTO settings VALUES ('en')");
+        const first = webDb.flushWebDatabase();
+        await settle();
+        db.runSync('UPDATE settings SET value = ?', 'tr');
+        let completed = false;
+        const latest = webDb.flushWebDatabase().then(() => { completed = true; });
+
+        idb.state.pendingWrites.shift()!();
+        await settle();
+        expect(completed).toBe(false);
+        idb.state.pendingWrites.shift()!();
+        await Promise.all([first, latest]);
+
+        const restored = await webDb.openSqlJsReader(idb.records.get('collection') as Uint8Array);
+        expect(restored.getFirstSync<{ value: string }>('SELECT value FROM settings')?.value).toBe('tr');
+        restored.close();
+    });
+
+    it('rejects a failed commit instead of acknowledging success', async () => {
+        const idb = createFakeIndexedDb();
+        const { webDb } = await loadWebDb({ indexedDB: idb.indexedDB, locks: createFakeLocks().locks });
+        const db = await webDb.initWebDatabase();
+        db.execSync('CREATE TABLE settings (value TEXT)');
+        idb.state.failWrites = new Error('Storage quota exceeded');
+
+        await expect(webDb.flushWebDatabase()).rejects.toThrow('Storage quota exceeded');
+        expect(idb.records.has('collection')).toBe(false);
+    });
+
+    it('does not acknowledge a save from a read-only tab', async () => {
+        const { locks, holdInAnotherTab } = createFakeLocks();
+        holdInAnotherTab();
+        const idb = createFakeIndexedDb();
+        const { webDb } = await loadWebDb({ indexedDB: idb.indexedDB, locks });
+        await webDb.initWebDatabase();
+
+        await expect(webDb.flushWebDatabase()).rejects.toThrow(/read.only/i);
+        expect(idb.state.puts).toBe(0);
     });
 });
 

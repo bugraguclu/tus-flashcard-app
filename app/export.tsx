@@ -257,7 +257,7 @@ export default function ExportScreen() {
                 {packageFormat ? (
                     <View style={styles.includeBlock}>
                         <Text style={styles.label}>{l('Dahil et:', 'Include:')}</Text>
-                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeMedia((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeMedia }}>
+                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeMedia((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeMedia }} aria-checked={includeMedia}>
                             <View style={[styles.checkbox, includeMedia && styles.checkboxChecked]}>
                                 {includeMedia ? <Text style={styles.checkmark}>✓</Text> : null}
                             </View>
@@ -271,7 +271,7 @@ export default function ExportScreen() {
                         ) : null}
                         {format === 'apkg' ? (
                             <>
-                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeScheduling((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeScheduling }}>
+                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeScheduling((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeScheduling }} aria-checked={includeScheduling}>
                                     <View style={[styles.checkbox, includeScheduling && styles.checkboxChecked]}>
                                         {includeScheduling ? <Text style={styles.checkmark}>✓</Text> : null}
                                     </View>
@@ -280,7 +280,7 @@ export default function ExportScreen() {
                                         <Text style={styles.optionHint}>{l('Kapalıysa kartlar yeni duruma döner; geçmiş, bayraklar, “marked” ve “leech” etiketleri temizlenir.', 'When off, cards are reset to New; history, flags, and “marked” and “leech” tags are removed.')}</Text>
                                     </View>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeDeckConfigs((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeDeckConfigs }}>
+                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeDeckConfigs((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeDeckConfigs }} aria-checked={includeDeckConfigs}>
                                     <View style={[styles.checkbox, includeDeckConfigs && styles.checkboxChecked]}>
                                         {includeDeckConfigs ? <Text style={styles.checkmark}>✓</Text> : null}
                                     </View>
@@ -294,7 +294,7 @@ export default function ExportScreen() {
                 ) : (
                     <View style={styles.includeBlock}>
                         <Text style={styles.label}>{l('Dahil et:', 'Include:')}</Text>
-                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeHtml((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeHtml }}>
+                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeHtml((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeHtml }} aria-checked={includeHtml}>
                             <View style={[styles.checkbox, includeHtml && styles.checkboxChecked]}>{includeHtml ? <Text style={styles.checkmark}>✓</Text> : null}</View>
                             <Text style={styles.checkboxText}>{l('HTML ve medya referanslarını dahil et', 'Include HTML and media references')}</Text>
                         </TouchableOpacity>
@@ -306,7 +306,7 @@ export default function ExportScreen() {
                                     [includeNotetype, setIncludeNotetype, l('Not türü adını dahil et', 'Include note type name')],
                                     [includeGuid, setIncludeGuid, l('Benzersiz kimliği dahil et', 'Include unique identifier')],
                                 ] as const).map(([checked, setter, label]) => (
-                                    <TouchableOpacity key={label} style={styles.checkboxRow} onPress={() => setter(!checked)} accessibilityRole="checkbox" accessibilityState={{ checked }}>
+                                    <TouchableOpacity key={label} style={styles.checkboxRow} onPress={() => setter(!checked)} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
                                         <View style={[styles.checkbox, checked && styles.checkboxChecked]}>{checked ? <Text style={styles.checkmark}>✓</Text> : null}</View>
                                         <Text style={styles.checkboxText}>{label}</Text>
                                     </TouchableOpacity>

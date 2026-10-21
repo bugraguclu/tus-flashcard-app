@@ -423,6 +423,7 @@ export default function CustomStudyModal({
                         disabled={disabled}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: active, disabled }}
+                        aria-checked={active}
                         accessibilityLabel={`${accessibilityPrefix}: ${tagDisplayName(tag)}`}
                     >
                         <View style={[styles.checkbox, active && styles.checkboxActive]}>
@@ -532,6 +533,7 @@ export default function CustomStudyModal({
                                                 onPress={() => setRequireTags((previous) => !previous)}
                                                 accessibilityRole="checkbox"
                                                 accessibilityState={{ checked: requireTags }}
+                                                aria-checked={requireTags}
                                                 accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
                                             >
                                                 {requireTags && <Text style={styles.checkboxMark}>✓</Text>}
@@ -561,6 +563,7 @@ export default function CustomStudyModal({
                                             onPress={() => chooseOption(candidate)}
                                             accessibilityRole="radio"
                                             accessibilityState={{ selected: option === candidate }}
+                                            aria-checked={option === candidate}
                                         >
                                             <View style={[styles.radio, option === candidate && styles.radioActive]}>
                                                 {option === candidate && <View style={styles.radioDot} />}
@@ -620,6 +623,7 @@ export default function CustomStudyModal({
                                                     onPress={() => setCramKind(kind)}
                                                     accessibilityRole="radio"
                                                     accessibilityState={{ selected: cramKind === kind }}
+                                                    aria-checked={cramKind === kind}
                                                 >
                                                     <Text style={[styles.listText, cramKind === kind && styles.listTextActive]}>
                                                         {cramKindLabel(kind)}

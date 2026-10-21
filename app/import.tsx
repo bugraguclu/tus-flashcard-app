@@ -581,6 +581,7 @@ export default function ImportScreen() {
             onPress={onToggle}
             accessibilityRole="checkbox"
             accessibilityState={{ checked }}
+            aria-checked={checked}
             accessibilityLabel={label}
         >
             <View style={styles.toggleCopy}>

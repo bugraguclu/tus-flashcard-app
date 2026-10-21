@@ -41,6 +41,7 @@ export function EditorFontSizeModal({ visible, currentSize, onChoose, onClose, s
                             onPress={() => onChoose(size)}
                             accessibilityRole="radio"
                             accessibilityState={{ selected: currentSize === size }}
+                            aria-checked={currentSize === size}
                         >
                             <Text style={[styles.fontSizeSample, { fontSize: size }]}>{size}</Text>
                             {currentSize === size && <Text style={styles.pickerCheck}>✓</Text>}

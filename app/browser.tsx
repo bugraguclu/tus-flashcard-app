@@ -276,7 +276,6 @@ export default function BrowserScreen() {
     const noteTypes = browserSnapshot?.scope.noteTypes ?? [];
     const browserDbQuery = browserSnapshot?.query ?? browserQueryOptions;
     const activeSearchRowIds = browserSnapshot?.searchRowIds ?? null;
-    const scopeCardCount = browserSnapshot?.scopeCardCount ?? 0;
     const scopeHasCards = browserSnapshot?.scopeHasCards ?? false;
     const visibleAllCards = allCards;
     const deckById = useMemo(() => new Map(allDecks.map((deck) => [deck.id, deck])), [allDecks]);
@@ -836,7 +835,7 @@ export default function BrowserScreen() {
     const hasResultFilter = Boolean(searchQuery.trim()) || !allFilterActive;
     // Loaded-page progress is an implementation detail. Keep the toolbar stable and show only
     // the total number of cards in the current scope/filter, including while search is scanning.
-    const scopeCountText = loading ? '…' : String(scopeCardCount);
+    const scopeCountText = loading ? '…' : String(browserSnapshot?.totalCardCount ?? 0);
 
     const clearBrowserFilters = useCallback(() => {
         setMarkedOnly(false);

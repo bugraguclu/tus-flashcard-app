@@ -14,7 +14,7 @@ import type {
     Card,
 } from './types';
 import { todayLocalYMD } from './scheduler';
-import { getDB } from './db';
+import { flushDatabaseWrites, getDB } from './db';
 import { getDbSetting, setDbSetting } from './dbSettings';
 import { getDeckConfig, saveDeckConfig } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
@@ -49,6 +49,7 @@ const DB_SETTINGS_KEYS = {
 };
 
 let legacySessionStatsMigrationPromise: Promise<void> | null = null;
+let settingsWriteGeneration = 0;
 
 // Legacy per-card state keys used by old builds.
 const CARD_STATE_PREFIX = 'tus_cs:';
@@ -614,6 +615,7 @@ export function saveCollectionDeckOptions(options: Pick<AppSettings,
     const current = loadSettings();
     const validated = validateSettings({ ...current, ...options } as unknown as Record<string, unknown>);
     persistAppSettingsMeta(validated);
+    settingsWriteGeneration += 1;
 }
 
 // --- Settings (source of truth: SQLite deck config + SQLite settings metadata) ---
@@ -633,6 +635,25 @@ export type SaveSettingsResult =
     | { ok: true; settings: AppSettings }
     | { ok: false; error: unknown };
 
+/** UI saves wait for the web snapshot as well as the SQLite transaction. */
+export async function saveSettingsDurably(settings: AppSettings): Promise<SaveSettingsResult> {
+    const previous = loadSettings();
+    const result = saveSettings(settings);
+    if (!result.ok) return result;
+    const savedGeneration = settingsWriteGeneration;
+    try {
+        await flushDatabaseWrites();
+        return result;
+    } catch (error) {
+        // A later ordinary DB write must not persist a change whose explicit Save failed.
+        // Leave a newer settings save alone if one happened while this commit was pending.
+        if (settingsWriteGeneration === savedGeneration) {
+            saveSettings(previous);
+        }
+        return { ok: false, error };
+    }
+}
+
 export function saveSettings(settings: AppSettings): SaveSettingsResult {
     const db = getDB();
     let transactionStarted = false;
@@ -643,6 +664,7 @@ export function saveSettings(settings: AppSettings): SaveSettingsResult {
         syncDefaultDeckConfig(validated);
         persistAppSettingsMeta(validated);
         db.execSync('COMMIT;');
+        settingsWriteGeneration += 1;
         return { ok: true, settings: validated };
     } catch (e) {
         console.error('Settings kayıt hatası:', e);
