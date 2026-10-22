@@ -1,3 +1,4 @@
+import { deleteCardRows } from './noteDeletion';
 /**
  * Collection maintenance, in ascending order of consequence:
  *
@@ -522,9 +523,7 @@ export function repairDatabase(): DatabaseRepairResult {
                 result.protectedRowsKept += 1;
                 continue;
             }
-            db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(card.id));
-            db.runSync('DELETE FROM anki_cards WHERE id = ?', card.id);
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', card.id);
+            deleteCardRows([card.id]);
             result.orphanCardsDeleted += 1;
         }
 

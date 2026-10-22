@@ -1,5 +1,5 @@
 import { normalizeDeckName, deckNameKey } from './deckNames';
-import { captureDeletion, type DeletionUndo } from './noteDeletion';
+import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
     DEFAULT_DECK_CONFIG,
     getDeckDisplayName,
@@ -222,14 +222,7 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
         const cardIds = cardRows.map((row) => row.id);
         const noteIds = [...new Set(cardRows.map((row) => row.noteId))];
 
-        if (cardIds.length > 0) {
-            const placeholders = sqlPlaceholders(cardIds.length);
-            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
-            db.runSync(`DELETE FROM anki_cards WHERE id IN (${placeholders})`, ...cardIds);
-            for (const cardId of cardIds) {
-                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
-            }
-        }
+        deleteCardRows(cardIds);
 
         // A note is deleted only once it has no cards left in any other deck.
         for (const noteId of noteIds) {

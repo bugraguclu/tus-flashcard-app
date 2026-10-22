@@ -862,6 +862,16 @@
         "remap learning and relearning counters without reinterpreting due units"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
+    },
+    {
+      "id": "anki-ai1-central-card-deletion",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/stats.html",
+      "useFor": [
+        "one transactional card-row deletion primitive",
+        "retain deleted-card history and record only real deleted IDs"
+      ]
     }
   ],
   "requiredDocs": [

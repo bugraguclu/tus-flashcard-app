@@ -43,3 +43,19 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
         } };
     };
 }
+
+/** The only ordinary card-row removal path. Caller owns the enclosing transaction and
+ * catalog/confirmation checks. Review history deliberately has no deletion here.
+ */
+export function deleteCardRows(cardIds: number[]): number {
+    const db = getDB();
+    let deleted = 0;
+    for (const id of new Set(cardIds)) {
+        if (!db.getFirstSync('SELECT id FROM anki_cards WHERE id = ?', id)) continue;
+        db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(id));
+        db.runSync('DELETE FROM anki_cards WHERE id = ?', id);
+        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', id);
+        deleted++;
+    }
+    return deleted;
+}

@@ -1,5 +1,5 @@
 import { checksumFieldText } from './noteChecksum';
-import { captureDeletion, type DeletionUndo } from './noteDeletion';
+import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
     generateGuid,
     checksumField,
@@ -96,18 +96,9 @@ export function deleteNote(id: number): DeletionUndo {
         const cardRows = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id);
         const cardIds = cardRows.map((row) => row.id);
 
-        if (cardIds.length > 0) {
-            const placeholders = cardIds.map(() => '?').join(', ');
-            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
-        }
-
-        db.runSync('DELETE FROM anki_cards WHERE noteId = ?', id);
+        deleteCardRows(cardIds);
         db.runSync('DELETE FROM notes WHERE id = ?', id);
 
-        // Tombstones so the deletion can propagate on the next sync (grave types: 0=card, 1=note).
-        for (const cardId of cardIds) {
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
-        }
         db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', id);
 
         db.execSync('COMMIT;');
@@ -714,11 +705,7 @@ export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?
                 if (siblings.length && siblings.every(c => selected.has(c.id))) selected.delete(siblings[0].id);
             }
         }
-        for (const cardId of selected) {
-            db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
-            db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
-        }
+        deleteCardRows([...selected]);
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');

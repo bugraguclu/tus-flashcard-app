@@ -233,6 +233,8 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## Empty Cards maintenance
 
+All ordinary card removals (note, deck, confirmed type conversion, Empty Cards and orphan-card repair) now share `deleteCardRows` in `lib/noteDeletion.ts`. It writes card graves and removes search rows while retaining revlog. Nonexistent IDs do not create phantom deletion records.
+
 Keep Notes defaults to on: if every card of a note is selected, the lowest-ordinal card remains. Turning the switch off allows card-only deletion while retaining note text and revlog. Database repair recreates card 1 for readable cardless notes rather than deleting their text (`lib/maintenance.test.ts`).
 
 **Status:** Implemented subset

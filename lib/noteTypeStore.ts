@@ -1,3 +1,4 @@
+import { deleteCardRows } from './noteDeletion';
 import { mapNoteTypeFields, mapNoteTypeCardOrd, NoteTypeChangeConfirmationRequired } from './noteTypeChange';
 import {
     checksumField,
@@ -126,9 +127,7 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number, opt
             const keptOrds = new Set<number>();
             for (const { card, ord } of mapped) {
                 if (ord === null) {
-                    db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(card.id));
-                    db.runSync('DELETE FROM anki_cards WHERE id = ?', card.id);
-                    db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', card.id);
+                    deleteCardRows([card.id]);
                 } else {
                     keptOrds.add(ord);
                     saveAnkiCard({ ...card, ord, mod: Math.floor(Date.now() / 1000), usn: -1 });
