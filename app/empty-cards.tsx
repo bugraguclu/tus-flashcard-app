@@ -6,6 +6,7 @@ import {
     ScrollView,
     StyleSheet,
     ActivityIndicator,
+    Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -30,6 +31,7 @@ export default function EmptyCardsScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     const [entries, setEntries] = useState<EmptyCardEntry[] | null>(null);
+    const [preserveNotes, setPreserveNotes] = useState(true);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(false);
 
@@ -53,12 +55,12 @@ export default function EmptyCardsScreen() {
     const deleteOne = (entry: EmptyCardEntry) => {
         confirm(
             l('Boş kartı sil', 'Delete Empty Card'),
-            l('Bu kart silinecek. Not ve diğer kartlar korunur.', 'This card will be deleted. The note and other cards stay intact.'),
+            l('Boş kart silinir. Notları koru açıksa son kart kalır; diğer kartlar ve tekrar geçmişi korunur.', 'The empty card is deleted. With Keep Notes on, its last card stays; other cards and review history are preserved.'),
             () => {
                 try {
-                    deleteAnkiCardOnly(entry.cardId);
+                    deleteAnkiCardOnly(entry.cardId, { preserveNotes });
                     bumpDataVersion();
-                    setEntries((prev) => (prev ? prev.filter((e) => e.cardId !== entry.cardId) : prev));
+                    scan();
                 } catch (e) {
                     console.warn('[EmptyCards] delete failed:', e);
                     alert(t('common.error'), l('Kart silinemedi.', 'Could not delete the card.'));
@@ -72,13 +74,13 @@ export default function EmptyCardsScreen() {
         if (!entries || entries.length === 0) return;
         confirm(
             l('Boş kartları sil', 'Delete Empty Cards'),
-            l(`${entries.length} boş kart kalıcı olarak silinecek. Notların kendisi ve diğer geçerli kartları etkilenmeyecek.`, `${entries.length} empty cards will be permanently deleted. Their notes and other valid cards will not be affected.`),
+            l(`${entries.length} boş kart işlenecek. Notları koru açıksa not başına en az bir kart kalır; tekrar geçmişi korunur.`, `${entries.length} empty cards will be processed. Keep Notes leaves at least one card per note; review history is preserved.`),
             () => {
                 setBusy(true);
                 try {
-                    deleteAnkiCardsOnly(entries.map((entry) => entry.cardId));
+                    deleteAnkiCardsOnly(entries.map((entry) => entry.cardId), { preserveNotes });
                     bumpDataVersion();
-                    setEntries([]);
+                    scan();
                 } catch (e) {
                     console.warn('[EmptyCards] bulk delete failed:', e);
                     alert(t('common.error'), l('Kartlar silinemedi.', 'Could not delete the cards.'));
@@ -121,6 +123,10 @@ export default function EmptyCardsScreen() {
                     </View>
                 ) : (
                     <>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text style={styles.help}>{l('Geçerli kartı olmayan notları koru', 'Keep notes with no valid cards')}</Text>
+                            <Switch value={preserveNotes} onValueChange={setPreserveNotes} accessibilityLabel={l('Notları koru', 'Keep notes')} />
+                        </View>
                         <TouchableOpacity
                             style={[styles.deleteAllBtn, busy && styles.btnDisabled]}
                             onPress={deleteAll}

@@ -22,7 +22,7 @@ describe('deletion retains history and offers conflict-safe undo', () => {
     it.each(['note', 'card', 'deck'])('preserves revlog when deleting a %s', (kind) => {
         const { deck, note, card } = fixture();
         if (kind === 'note') deleteNote(note.id);
-        if (kind === 'card') deleteAnkiCardOnly(card.id);
+        if (kind === 'card') deleteAnkiCardOnly(card.id, { preserveNotes: false });
         if (kind === 'deck') deleteDeck(deck.id);
         expect(db.getAllSync('SELECT * FROM revlog')).toHaveLength(1);
     });

@@ -8,7 +8,7 @@ import {
     type AnkiCard,
     type CardFlag,
 } from './models';
-import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
+import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { updateAnkiCardData } from './fsrsCardData';
 import { buildFtsPrefixQuery, getDB } from './db';
@@ -154,8 +154,8 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
 
     if (noteType.kind === 'cloze') {
         // One card per cloze number, over the field the template actually clozes.
-        const text = note.fields[clozeFieldIndex(noteType)] || '';
-        const clozeNumbers = extractClozeNumbers(text);
+        const numbers = clozeNumbersForNote(noteType, note);
+        const clozeNumbers = numbers.length ? numbers : [1];
 
         for (const clozeNum of clozeNumbers) {
             const card = createCardForNote(note, deckId, clozeNum - 1);
@@ -683,20 +683,27 @@ export function findDuplicateNote(
  * deleteTusCardByCardId, which deletes the whole note. For orphaned cards found by
  * findEmptyCards(), where the note (and its other cards) may still be perfectly valid.
  */
-export function deleteAnkiCardOnly(cardId: number): void {
-    deleteAnkiCardsOnly([cardId]);
+export function deleteAnkiCardOnly(cardId: number, options?: { preserveNotes?: boolean }): void {
+    deleteAnkiCardsOnly([cardId], options);
 }
 
 /** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
-export function deleteAnkiCardsOnly(cardIds: number[]): void {
+export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?: boolean } = {}): void {
     if (cardIds.length === 0) return;
     // Editing cloze fields can remove a generated sibling after the catalog is unlocked.
     for (const cardId of cardIds) assertCatalogCardMutable(cardId);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
-        const uniqueIds = [...new Set(cardIds)];
-        for (const cardId of uniqueIds) {
+        const selected = new Set(cardIds);
+        if (options.preserveNotes !== false) {
+            const noteIds = new Set(cardIds.map(id => getAnkiCard(id)?.noteId).filter((id): id is number => id !== undefined));
+            for (const noteId of noteIds) {
+                const siblings = getCardsForNote(noteId).sort((a, b) => a.ord - b.ord || a.id - b.id);
+                if (siblings.length && siblings.every(c => selected.has(c.id))) selected.delete(siblings[0].id);
+            }
+        }
+        for (const cardId of selected) {
             db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
             db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);

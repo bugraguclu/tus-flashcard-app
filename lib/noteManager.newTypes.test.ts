@@ -92,7 +92,7 @@ describe('createTusCard: Anki reversed note types', () => {
         expect(cards).toHaveLength(2);
     });
 
-    it('adds and removes the optional reverse card when the field changes', () => {
+    it('adds optional reverse cards and leaves empty ones for Empty Cards', () => {
         const { note, card } = createTusCard({
             question: 'Soru metni', answer: 'Cevap metni', deckId: 1, noteTypeId: 7,
         });
@@ -106,7 +106,7 @@ describe('createTusCard: Anki reversed note types', () => {
         updateTusCardByCardId(card.id, {
             question: 'Soru metni', answer: 'Cevap metni', deckId: 1, reverseAnswer: '',
         });
-        expect(getCardsForNote(note.id)).toHaveLength(1);
+        expect(getCardsForNote(note.id)).toHaveLength(2);
     });
 });
 

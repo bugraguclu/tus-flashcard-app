@@ -344,15 +344,16 @@ describe('collection maintenance (real SQLite)', () => {
             expect(ids('notes')).toEqual([100]);
         });
 
-        it('deletes a note that has no cards left', () => {
+        it('regenerates card 1 without deleting the text of a cardless note', () => {
             addDeck(1, 'Mikrobiyoloji');
             addNote(100);
             addCard(10, 100, 1);
             addNote(101);
 
-            expect(repairDatabase()).toMatchObject({ orphanNotesDeleted: 1 });
-            expect(ids('notes')).toEqual([100]);
-            expect(graves()).toEqual([{ oid: 101, type: 1 }]);
+            expect(repairDatabase()).toMatchObject({ orphanNotesRecovered: 1, orphanNotesDeleted: 0 });
+            expect(ids('notes')).toEqual([100, 101]);
+            expect(db.getAllSync('SELECT * FROM anki_cards WHERE noteId = 101')).toHaveLength(1);
+            expect(graves()).toEqual([]);
         });
 
         it('rescues a card whose deck is gone into the recovery deck', () => {

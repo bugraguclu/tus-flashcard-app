@@ -6,7 +6,7 @@ import {
     type Note,
     type AnkiCard,
 } from './models';
-import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
+import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { getDB } from './db';
 import { TUS_CARDS } from './data';
 import { resolveSubjectDeckId } from './subjects';
@@ -15,7 +15,6 @@ import { getNoteType } from './noteTypeStore';
 import {
     createCardForNote,
     createNote,
-    deleteAnkiCardOnly,
     deleteNote,
     getAnkiCard,
     getCardsForNote,
@@ -250,11 +249,10 @@ export function updateTusCardByCardId(
     const destinationDeckId = input.deckId
         ?? (input.subject ? resolveSubjectDeckId(input.subject) : card.deckId);
 
-    // Optional reverse and Cloze fields can add/remove generated cards. Keep existing cards'
-    // scheduling by ordinal, create only missing ordinals, and delete only now-invalid siblings.
+    // Edits add missing ordinals and preserve every existing card and its scheduling.
     if (noteType) {
         const requiredOrds = noteType.kind === 'cloze'
-            ? extractClozeNumbers(fields[clozeFieldIndex(noteType)] || '').map((number) => number - 1)
+            ? clozeNumbersForNote(noteType, note).map((number) => number - 1)
             : noteType.templates
                 .filter((template) => shouldGenerateCard(noteType, note, template.ord))
                 .map((template) => template.ord);
@@ -263,9 +261,7 @@ export function updateTusCardByCardId(
         for (const ord of requiredOrds) {
             if (!existingByOrd.has(ord)) createCardForNote(note, destinationDeckId, ord);
         }
-        for (const [ord, sibling] of existingByOrd) {
-            if (!requiredOrds.includes(ord)) deleteAnkiCardOnly(sibling.id);
-        }
+        // Empty siblings remain until the learner explicitly runs Empty Cards.
     }
 
     // Fields belong to the note; deck placement belongs to each generated card. An unchanged

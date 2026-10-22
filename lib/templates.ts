@@ -634,6 +634,22 @@ export function renderCardHtml(
     return wrapInCardHtml(answerHtml, noteType.css, 'answer', shell, templateCss.join('\n'));
 }
 
+/** All cloze-bearing fields participate, including multi-field AnKing-style note types. */
+export function clozeNumbersForNote(noteType: NoteType, note: Note): number[] {
+    const names = new Set<string>();
+    for (const template of noteType.templates) {
+        for (const match of template.qfmt.matchAll(/\{\{([^{}]+)\}\}/g)) {
+            const parts = match[1].split(':').map(s => s.trim());
+            if (parts.slice(0, -1).some(p => p === 'cloze' || p === 'cloze-only')) names.add(parts[parts.length - 1]);
+        }
+    }
+    const numbers = new Set<number>();
+    noteType.fields.forEach((field, index) => {
+        if (names.has(field.name)) for (const n of extractClozeNumbers(note.fields[index] ?? '')) numbers.add(n);
+    });
+    return [...numbers].sort((a, b) => a - b);
+}
+
 /** Check if a standard template should generate a card (first field reference non-empty) */
 export function shouldGenerateCard(
     noteType: NoteType,
@@ -642,8 +658,7 @@ export function shouldGenerateCard(
 ): boolean {
     if (noteType.kind === 'cloze') {
         // Cloze: check if the cloze number exists in the text
-        const text = note.fields[clozeFieldIndex(noteType)] || '';
-        const numbers = extractClozeNumbers(text);
+        const numbers = clozeNumbersForNote(noteType, note);
         return numbers.includes(templateOrd + 1);
     }
 
@@ -666,8 +681,7 @@ export function shouldGenerateCard(
 /** Count how many cards a note should generate */
 export function countCardsForNote(noteType: NoteType, note: Note): number {
     if (noteType.kind === 'cloze') {
-        const text = note.fields[clozeFieldIndex(noteType)] || '';
-        return extractClozeNumbers(text).length || 1;
+        return clozeNumbersForNote(noteType, note).length || 1;
     }
     return noteType.templates.filter((_, i) => shouldGenerateCard(noteType, note, i)).length;
 }

@@ -775,6 +775,28 @@
         "retain deleted-card revlog in lifetime collection statistics",
         "transactional deletion and conflict-safe local undo"
       ]
+    },
+    {
+      "id": "anki-ai1-card-generation",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "editing adds cards without automatic deletion",
+        "multi-field cloze ordinals and preserving cardless notes",
+        "explicit confirmation before removing unmapped card templates"
+      ]
+    },
+    {
+      "id": "anki-ai1-empty-card-preservation",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "explicit empty-card deletion",
+        "default preservation of the last card",
+        "regenerate first card instead of deleting a cardless note"
+      ]
     }
   ],
   "requiredDocs": [
