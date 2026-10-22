@@ -162,6 +162,8 @@ Deletion keeps lifetime review history. Note/editor and deck-list deletion retur
 
 ## Note types, conditional templates, cloze, typed answer
 
+P1 template fixes: renaming/removing a field rewrites its replacement/filter/conditional references on both sides; generation checks populated original fields instead of template literals or filtered display output, includes Tags and treats editor div/br blanks as empty. Typed comparisons are rendered through FrontSide when the answer template has no separate type marker; `type:cloze` contributes only an input and never a duplicate sentence (`lib/noteTemplates.parity.test.ts`). The earlier inline-cloze input placement was corrected to match this contract; iPhone typed-answer smoke must use a separate cloze replacement plus the type marker.
+
 Field edits only add missing card ordinals; empty siblings retain IDs, decks, scheduling and history until Empty Cards. Cloze generation and the empty-card scan use the union of template-referenced cloze fields, with a first-card fallback for a deletion-free cloze note. Type changes reserve exact field-name matches before assigning unused fields and map existing cards by template name. Unmapped cards require `allowCardDeletion: true`; the browser must present that explicit confirmation (`lib/noteCardGeneration.safety.test.ts`). SAB-7 was already fixed in the baseline and remains covered by the sibling-deck tests.
 
 **Status:** Implemented

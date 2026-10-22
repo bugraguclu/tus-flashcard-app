@@ -817,6 +817,18 @@
         "normalized hierarchy component names",
         "case-insensitive creation lookup and case-exact legacy subtree mutation"
       ]
+    },
+    {
+      "id": "anki-ai1-template-rules",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "field-name reference updates",
+        "field-based generation ignoring literal content",
+        "conditional div/br blanks",
+        "typed comparison in FrontSide and a single type:cloze input"
+      ]
     }
   ],
   "requiredDocs": [

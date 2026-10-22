@@ -33,11 +33,28 @@ export function setCss(nt: NoteType, css: string): NoteType {
     return touch(nt, { css });
 }
 
+/** SAB-1: field edits update references on both template sides. */
+function rewriteFieldReferences(nt: NoteType, from: string, to: string | null): NoteType['templates'] {
+    const rewrite = (source: string) => source.replace(/\{\{([^{}]+)\}\}/g, (token, body: string) => {
+        const trimmed = body.trim();
+        if (['#', '^', '/'].includes(trimmed[0])) {
+            if (trimmed.slice(1).trim() !== from) return token;
+            return to === null ? '' : `{{${trimmed[0]}${to}}}`;
+        }
+        const parts = trimmed.split(':');
+        if (parts[parts.length - 1].trim() !== from) return token;
+        if (to === null) return '';
+        parts[parts.length - 1] = to;
+        return `{{${parts.join(':')}}}`;
+    });
+    return nt.templates.map(t => ({ ...t, qfmt: rewrite(t.qfmt), afmt: rewrite(t.afmt) }));
+}
+
 export function renameField(nt: NoteType, ord: number, name: string): NoteType {
     const trimmed = name.trim();
     if (!trimmed) return nt;
     const fields = nt.fields.map((f) => (f.ord === ord ? { ...f, name: trimmed } : f));
-    return touch(nt, { fields });
+    return touch(nt, { fields, templates: rewriteFieldReferences(nt, nt.fields[ord].name, trimmed) });
 }
 
 export function setSortField(nt: NoteType, ord: number): NoteType {
@@ -84,7 +101,7 @@ export function removeField(nt: NoteType, ord: number): FieldEdit {
     else if (sortFieldIdx > ord) sortFieldIdx -= 1;
 
     return {
-        noteType: touch(nt, { fields: reindex(nt.fields.filter((f) => f.ord !== ord)), sortFieldIdx }),
+        noteType: touch(nt, { fields: reindex(nt.fields.filter((f) => f.ord !== ord)), templates: rewriteFieldReferences(nt, nt.fields[ord].name, null), sortFieldIdx }),
         migrate: (values) => values.filter((_, i) => i !== ord),
     };
 }

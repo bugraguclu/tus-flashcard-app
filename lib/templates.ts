@@ -257,6 +257,8 @@ export interface RenderContext {
     typeAnswerInput?: { token: string; placeholder: string };
     /** Internal guard: Anki supports one typed-answer input per rendered card. */
     typeAnswerInputRendered?: boolean;
+    /** SAB-4: replace the question typed marker inside answer-side FrontSide. */
+    typeAnswerOnFrontSide?: boolean;
     /** Render {{FrontSide}} as empty (and drop the <hr id=answer> separator). For layouts
      *  that keep the question visible in its own panel, so the back shows only the answer.
      *  frontSide must still be set — cloze rendering uses it to detect the answer side. */
@@ -268,7 +270,7 @@ type ConditionalNode =
     | { kind: 'section'; field: string; inverted: boolean; children: ConditionalNode[] };
 
 function parseConditionalNodes(template: string): ConditionalNode[] {
-    const tokenRegex = /\{\{([#^\/])([^{}]+?)\}\}/g;
+    const tokenRegex = /\{\{\s*([#^\/])([^{}]+?)\s*\}\}/g;
     const root: { kind: 'section'; field: string; inverted: boolean; children: ConditionalNode[] } = {
         kind: 'section',
         field: '__root__',
@@ -322,6 +324,11 @@ function parseConditionalNodes(template: string): ConditionalNode[] {
     return root.children;
 }
 
+/** The editor's blank div/br wrappers are empty; other original field HTML still counts. */
+function isAnkiFieldEmpty(value: string): boolean {
+    return value.replace(/<\/?div\b[^>]*>|<br\s*\/?>/gi, '').trim() === '';
+}
+
 function renderConditionalNodes(nodes: ConditionalNode[], fields: Record<string, string>): string {
     let out = '';
 
@@ -331,8 +338,8 @@ function renderConditionalNodes(nodes: ConditionalNode[], fields: Record<string,
             continue;
         }
 
-        const value = (fields[node.field] || '').trim();
-        const shouldRender = node.inverted ? !value : Boolean(value);
+        const empty = isAnkiFieldEmpty(fields[node.field] || '');
+        const shouldRender = node.inverted ? empty : !empty;
         if (shouldRender) {
             out += renderConditionalNodes(node.children, fields);
         }
@@ -457,7 +464,7 @@ function applyTemplateFilter(
                 return plain ? `[type:${escapeHtml(plain)}]` : '';
             }
 
-            if (isQuestionSide) {
+            if (isQuestionSide && !ctx.typeAnswerOnFrontSide) {
                 if (ctx.typeAnswerInput && !ctx.typeAnswerInputRendered) {
                     ctx.typeAnswerInputRendered = true;
                     const token = escapeHtml(ctx.typeAnswerInput.token);
@@ -466,15 +473,7 @@ function applyTemplateFilter(
                         + ` data-tus-type-answer-token="${token}" maxlength="${MAX_TYPE_ANSWER_CHARS}"`
                         + ` placeholder="${placeholder}" aria-label="${placeholder}"`
                         + ' autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">';
-                    if (isCloze && /<span\b[^>]*\bclass=["']cloze["'][^>]*>/i.test(value)) {
-                        return value.replace(/<span\b[^>]*\bclass=["']cloze["'][^>]*>[\s\S]*?<\/span>/i, inputHtml);
-                    }
                     return inputHtml;
-                }
-                if (isCloze) {
-                    return /<span\b[^>]*\bclass=["']cloze["'][^>]*>/i.test(value)
-                        ? value
-                        : renderClozeChildren(parseClozeNodes(rawFieldText), targetClozeOrd, 'question');
                 }
                 return '';
             }
@@ -626,7 +625,12 @@ export function renderCardHtml(
     const answerCtx: RenderContext = {
         ...questionCtx,
         side: 'answer',
-        frontSide: questionHtml,
+        frontSide: renderSide(template.qfmt, {
+            ...questionCtx,
+            typeAnswerInput: undefined,
+            typeAnswerOnFrontSide: !/\{\{\s*type(?::|-)/.test(template.afmt),
+            typedAnswer: options?.typedAnswer,
+        }),
         typedAnswer: options?.typedAnswer,
         omitFrontSide: options?.omitFrontSide,
     };
@@ -662,20 +666,17 @@ export function shouldGenerateCard(
         return numbers.includes(templateOrd + 1);
     }
 
-    // Standard: Anki generates a card only when the rendered question has content. Rendering
-    // first is important for conditional templates such as {{#Add Reverse}}...{{/Add Reverse}}.
-    const template = noteType.templates[templateOrd];
+    // SAB-2: only populated field replacements count, before applying display filters.
+    // Static template text/media and generated special fields cannot make an empty card valid.
+    const template = noteType.templates.find(t => t.ord === templateOrd);
     if (!template) return false;
-    const fields: Record<string, string> = {};
+    const fields: Record<string, string> = { Tags: note.tags.join(' ') };
     noteType.fields.forEach((field, index) => { fields[field.name] = note.fields[index] || ''; });
-    const rendered = renderTemplate(template.qfmt, { fields, side: 'question', generating: true });
-    if (/<(?:img|audio|video|object|svg)\b/i.test(rendered)) return true;
-    return rendered
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/<br\s*\/?>/gi, '')
-        .replace(/<[^>]+>/g, '')
-        .replace(/&nbsp;|&#160;/gi, ' ')
-        .trim().length > 0;
+    const active = renderConditionalNodes(parseConditionalNodes(template.qfmt), fields);
+    return [...active.matchAll(/\{\{([^{}]+?)\}\}/g)].some(match => {
+        const name = match[1].split(':').pop()!.trim();
+        return !isAnkiFieldEmpty(fields[name] ?? '');
+    });
 }
 
 /** Count how many cards a note should generate */
