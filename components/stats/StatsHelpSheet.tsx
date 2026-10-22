@@ -26,12 +26,12 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
             'Answer counts and accuracy by hour of day.',
         )],
         [l('Aralıklar ve kart sayıları', 'Intervals and card counts'), l(
-            'İkisi de güncel kart durumunu gösterir. Seçilen dönem, tekrar aralıklarının yalnızca üst sınırını belirler; kart sayılarını değiştirmez.',
-            'Both show current card state. The period only limits the longest review interval shown; it does not change card counts.',
+            'İkisi de güncel kart durumunu gösterir. Seçilen dönem, tekrar aralıklarının yalnızca üst sınırını belirler (daha uzun aralıktaki kartlar grafiğin altında sayılır); kart sayılarını değiştirmez.',
+            'Both show current card state. The period only caps the review intervals drawn (cards with longer intervals are counted under the chart); it does not change card counts.',
         )],
         [l('Grafikleri kullanma', 'Using charts'), l(
-            'Ayrıntı için sütuna dokunun; kapatmak için yeniden dokunun. Tekrarlar ve Saatlik dağılım üzerinde yana kaydırarak değerleri gezebilirsiniz. Eklenenler sütununa dokunmak o kartları açar.',
-            'Tap a bar for details and again to dismiss. Slide across Reviews and Hourly Breakdown to inspect values. Tap an Added bar to open its cards.',
+            'Ayrıntı için sütuna dokunun; kapatmak için yeniden dokunun. Grafiğin üzerinde parmağınızı yana kaydırarak değerleri gezebilirsiniz. Eklenenler sütununa dokunmak o kartları açar.',
+            'Tap a bar for details and again to dismiss. Slide across a chart to inspect values. Tap an Added bar to open its cards.',
         )],
     ];
     return (

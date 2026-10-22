@@ -22,6 +22,8 @@ export interface StatsDateRange {
 
 export interface StatsSeriesPoint {
     label: string;
+    /** The readout text: the bucket's full date, or its first and last day. */
+    detail: string;
     values: number[];
 }
 
@@ -56,7 +58,9 @@ export interface AnkiStatsSnapshot {
     dueTomorrow: number;
     dailyLoad: number;
     answerButtons: AnswerButtonPoint[];
-    intervals: StatsSeriesPoint[];
+    intervals: IntervalBucket[];
+    /** Review cards with a longer interval than the period, left off the intervals chart. */
+    intervalsBeyondRange: number;
     averageInterval: number;
     longestInterval: number;
     cardCounts: CardCountStats;
@@ -266,8 +270,13 @@ function getFutureDue(
         const values = [row?.young ?? 0, row?.mature ?? 0];
         const dayOffset = firstDay + bucket * chunk;
         const date = parseYmd(dayNumberToYmd(today + dayOffset, rolloverHour));
+        const label = date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' });
+        const end = parseYmd(dayNumberToYmd(today + dayOffset + chunk - 1, rolloverHour));
         return {
-            label: date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' }),
+            label,
+            detail: chunk === 1
+                ? date.toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long' })
+                : `${label} – ${end.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })}`,
             values,
         };
     });
@@ -324,38 +333,56 @@ function getAnswerButtons(deckName: string | null, range: StatsDateRange, scoped
     return result;
 }
 
-function getIntervals(deckName: string | null, range: StatsDateRange, localeTag: string, scopedCardIds?: number[]) {
+/** Review cards whose interval is `firstIvl`…`lastIvl` days, inclusive. */
+export interface IntervalBucket {
+    firstIvl: number;
+    lastIvl: number;
+    count: number;
+}
+
+/** Most bars the Review Intervals chart draws when the period sets no cap. */
+const MAX_INTERVAL_BUCKETS = 24;
+
+/**
+ * Review cards by interval, on a continuous axis from one day up: a span with no cards still gets
+ * its (empty) bar, so bar distance means interval distance. A dated period caps the axis at its
+ * length; the cards past the cap are counted rather than silently dropped.
+ */
+function getIntervals(deckName: string | null, range: StatsDateRange, scopedCardIds?: number[]) {
     const db = getDB();
     const deck = deckClause(deckName, 'c', scopedCardIds);
     const limit = range.spanDays === null ? null : Math.max(1, range.spanDays);
-    const maxClause = limit === null ? '' : 'AND c.ivl <= ?';
-    const params = limit === null ? deck.params : [limit, ...deck.params];
     const rows = db.getAllSync<{ ivl: number; count: number }>(
-        `SELECT c.ivl AS ivl, COUNT(*) AS count
+        `SELECT MAX(1, c.ivl) AS ivl, COUNT(*) AS count
          FROM anki_cards c ${deck.join}
-         WHERE c.queue = 2 ${maxClause} ${deck.where}
-         GROUP BY c.ivl ORDER BY c.ivl`,
-        ...params,
+         WHERE c.queue = 2 ${deck.where}
+         GROUP BY 1 ORDER BY 1`,
+        ...deck.params,
     );
     const summary = db.getFirstSync<{ average: number; longest: number }>(
         `SELECT COALESCE(AVG(c.ivl), 0) AS average, COALESCE(MAX(c.ivl), 0) AS longest
          FROM anki_cards c ${deck.join} WHERE c.queue = 2 ${deck.where}`,
         ...deck.params,
     );
-    const chunk = limit === null ? Math.max(1, Math.ceil((summary?.longest ?? 1) / 24)) : limit <= 35 ? 1 : limit <= 180 ? 7 : 14;
-    const grouped = new Map<number, number>();
-    for (const row of rows) {
-        const bucket = Math.floor(row.ivl / chunk) * chunk;
-        grouped.set(bucket, (grouped.get(bucket) ?? 0) + row.count);
+    const shown = rows.filter((row) => limit === null || row.ivl <= limit);
+    const beyond = rows.reduce((sum, row) => sum + (limit !== null && row.ivl > limit ? toNumber(row.count) : 0), 0);
+    const maxShown = shown.length > 0 ? toNumber(shown[shown.length - 1].ivl) : 0;
+    const chunk = limit === null
+        ? Math.max(1, Math.ceil(maxShown / MAX_INTERVAL_BUCKETS))
+        : limit <= 35 ? 1 : limit <= 180 ? 7 : 14;
+    const buckets: IntervalBucket[] = Array.from(
+        { length: maxShown > 0 ? Math.floor((maxShown - 1) / chunk) + 1 : 0 },
+        (_, index) => ({ firstIvl: index * chunk + 1, lastIvl: (index + 1) * chunk, count: 0 }),
+    );
+    for (const row of shown) {
+        buckets[Math.floor((toNumber(row.ivl) - 1) / chunk)].count += toNumber(row.count);
     }
-    const points = [...grouped].map(([bucket, count]) => {
-        return {
-            label: chunk === 1 ? `${bucket}g` : `${bucket}–${bucket + chunk - 1}g`,
-            values: [count],
-        };
-    });
-    void localeTag;
-    return { points, average: summary?.average ?? 0, longest: summary?.longest ?? 0 };
+    return {
+        buckets,
+        beyond,
+        average: toNumber(summary?.average),
+        longest: toNumber(summary?.longest),
+    };
 }
 
 function getCardCounts(deckName: string | null, scopedCardIds?: number[]): CardCountStats {
@@ -390,7 +417,7 @@ export function getAnkiStatsSnapshot(
         deckName, range, rolloverHour, localeTag, scopedCardIds, true,
     );
     const future = options?.includeBacklog ? futureWithBacklog : futureWithoutBacklog;
-    const intervals = getIntervals(deckName, range, localeTag, scopedCardIds);
+    const intervals = getIntervals(deckName, range, scopedCardIds);
     return {
         futureDue: future.points,
         futureDueTotal: future.total,
@@ -403,7 +430,8 @@ export function getAnkiStatsSnapshot(
         dueTomorrow: futureWithBacklog.dueTomorrow,
         dailyLoad: futureWithBacklog.dailyLoad,
         answerButtons: getAnswerButtons(deckName, range, scopedCardIds),
-        intervals: intervals.points,
+        intervals: intervals.buckets,
+        intervalsBeyondRange: intervals.beyond,
         averageInterval: intervals.average,
         longestInterval: intervals.longest,
         cardCounts: getCardCounts(deckName, scopedCardIds),
