@@ -68,7 +68,7 @@ import { commitCollectionWrite } from '../lib/collectionWrite';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { useI18n } from '../hooks/useI18n';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
-import { clozeFieldIndex, countCardsForNote, sanitizeUntrustedHtml } from '../lib/templates';
+import { clozeFieldIndex, countCardsForNote } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
@@ -870,8 +870,8 @@ export default function EditorScreen() {
         const latestFields = fieldValuesRef.current;
         const savedDraft = draftFromFields(latestFields);
         const currentFields = selectedNoteType
-            ? selectedNoteType.fields.map((_, i) => (latestFields[i] || '').trim())
-            : latestFields.map((f) => f.trim());
+            ? selectedNoteType.fields.map((_, i) => latestFields[i] || '')
+            : [...latestFields];
 
         const mockNote: Note = {
             id: 0,
@@ -1490,8 +1490,7 @@ export default function EditorScreen() {
                 value={htmlEditorValue}
                 onChangeValue={setHtmlEditorValue}
                 onSave={() => {
-                    const sanitized = sanitizeUntrustedHtml(htmlEditorValue);
-                    handleFieldChange(activeFieldIndex, sanitized);
+                    handleFieldChange(activeFieldIndex, htmlEditorValue);
                     setShowHtmlEditor(false);
                 }}
                 onClose={() => setShowHtmlEditor(false)}

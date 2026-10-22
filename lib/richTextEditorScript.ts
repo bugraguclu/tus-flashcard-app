@@ -1,3 +1,4 @@
+import { restoreEditorSource, type PreservedEditorSource } from './richTextEditorContent';
 import { richTextBridgeScript } from './richTextCommands';
 import { cspHashSource } from './sha256';
 
@@ -16,6 +17,7 @@ export const RICH_TEXT_EDITOR_CONFIG_ID = 'tus-editor-config';
 
 export interface RichTextEditorDocumentConfig {
     html: string;
+    preserved?: PreservedEditorSource;
     minHeight: number;
     editable: boolean;
     pasteImagesAsPng: boolean;
@@ -39,6 +41,8 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
 (function () {
   const configElement = document.getElementById('${RICH_TEXT_EDITOR_CONFIG_ID}');
   const config = JSON.parse((configElement && configElement.textContent) || '{}');
+  const restoreSource = ${restoreEditorSource.toString()};
+  let preserved = config.preserved || {};
   const editable = config.editable !== false;
   const minHeight = Number(config.minHeight) || 0;
   const editor = document.getElementById('editor');
@@ -76,7 +80,7 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
       resolved[k].setAttribute('src', resolved[k].getAttribute('data-tus-src') || '');
       resolved[k].removeAttribute('data-tus-src');
     }
-    return temp.innerHTML;
+    return restoreSource(temp.innerHTML, preserved);
   }
 
   function initAudioControls() {
@@ -215,6 +219,10 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   window.__tusEditorInsertHtml = function (html) {
     restoreSelection();
     let processedHtml = html;
+    if (html && typeof html === 'object') {
+      Object.assign(preserved, html.preserved || {});
+      processedHtml = html.html;
+    }
     if (typeof html === 'string') {
       processedHtml = html.replace(/\\[sound:([^\\]]+)\\]/gi, function (_, fn) {
         return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
@@ -281,8 +289,14 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   };
 
   window.__tusEditorSetHtml = function (html) {
-    if (cleanForExport(editor.innerHTML) === html) return;
-    editor.innerHTML = html;
+    if (html && typeof html === 'object') {
+      if (cleanForExport(editor.innerHTML) === html.original) return;
+      preserved = html.preserved || {};
+      editor.innerHTML = html.html;
+    } else {
+      if (cleanForExport(editor.innerHTML) === html) return;
+      editor.innerHTML = html;
+    }
     initAudioControls();
     bridge.clearSavedRange();
     reportHeight();

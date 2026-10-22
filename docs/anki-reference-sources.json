@@ -797,6 +797,16 @@
         "default preservation of the last card",
         "regenerate first card instead of deleting a cardless note"
       ]
+    },
+    {
+      "id": "anki-ai1-editor-source",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/editing.html#html-editing",
+      "useFor": [
+        "source HTML is stored independently of the safe editor view",
+        "preserve bracketed sound markers and imported links/math/styles"
+      ]
     }
   ],
   "requiredDocs": [
