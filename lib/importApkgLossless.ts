@@ -786,6 +786,11 @@ export function importAnkiReaderLossless(
             const modelRaw = meta.models[String(sourceMid)] ?? Object.values(meta.models).find((model) => numberValue(model.id) === sourceMid);
             const existing = !options.allowDuplicates && guid ? existingNotesByGuid.get(guid) : undefined;
             if (existing) {
+                // A schema conflict must not attach incoming ordinals to the old note type.
+                if (existing.note.noteTypeId !== targetMid) {
+                    duplicates++;
+                    continue;
+                }
                 noteIdMap.set(sourceId, existing.id);
                 const incomingMod = numberValue(row.mod);
                 const shouldUpdate = existing.note.noteTypeId === targetMid && (
@@ -922,6 +927,9 @@ export function importAnkiReaderLossless(
             );
             progressReviews++;
         }
+        const indexNotes = new Map([...existingNotesByGuid.values()].map(({ note }) => [note.id, note]));
+        for (const [id, note] of importedNotes) indexNotes.set(id, note);
+        const indexed = importedCards.map((card) => searchIndexCardFromNote(indexNotes.get(card.noteId)!, card.id));
         db.execSync('COMMIT;');
 
         return {
@@ -938,7 +946,7 @@ export function importAnkiReaderLossless(
             progressReviews,
             mediaImported: 0,
             mediaSkipped: 0,
-            indexed: importedCards.map((card) => searchIndexCardFromNote(importedNotes.get(card.noteId)!, card.id)),
+            indexed,
         };
     } catch (error) {
         db.execSync('ROLLBACK;');

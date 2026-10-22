@@ -765,6 +765,17 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/data/web/css/webview.scss",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default page text colour that follows the theme (body color: var(--fg))", "a note type's own colour rules outranking that default"]
+    },
+    {
+      "id": "anki-ai3-transfer-safety",
+      "priority": 1,
+      "platform": "cross-platform interchange semantics",
+      "url": "https://docs.ankiweb.net/importing/packaged-decks.html",
+      "useFor": [
+        "GUID update conflicts skip incoming cards",
+        "duplicate re-import repairs missing media",
+        "negative review-day offsets and inactive learning due units; lib/ankiTransferSafety.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

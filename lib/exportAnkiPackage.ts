@@ -405,7 +405,7 @@ function ankiDue(card: AnkiCard, collectionDay: number): number {
     if (card.queue === 1 || (card.queue < 0 && (card.type === 1 || card.type === 3) && card.due >= 1_000_000_000)) {
         return Math.floor(card.due / 1000);
     }
-    if (card.queue === 2 || card.queue === 3 || card.type === 2 || card.type === 3) return Math.max(0, card.due - collectionDay);
+    if (card.queue === 2 || card.queue === 3 || card.type === 2 || card.type === 3 || card.type === 1) return card.due - collectionDay;
     return card.due;
 }
 
@@ -446,7 +446,8 @@ function returnCardsToHomeDeck(cards: AnkiCard[], decks: Deck[]): AnkiCard[] {
 
 function ankiOriginalDue(card: AnkiCard, collectionDay: number): number {
     if (!card.odue) return 0;
-    return card.type === 2 || card.type === 3 ? Math.max(0, card.odue - collectionDay) : card.odue;
+    if ((card.type === 1 || card.type === 3) && card.odue >= 1_000_000_000) return Math.floor(card.odue / 1000);
+    return card.type === 1 || card.type === 2 || card.type === 3 ? card.odue - collectionDay : card.odue;
 }
 
 function collectionCreationSeconds(collectionDay: number, rolloverHour: number): number {

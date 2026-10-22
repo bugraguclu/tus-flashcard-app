@@ -225,6 +225,8 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## `.apkg` import/export with media and scheduling
 
+Package update regressions (`lib/ankiTransferSafety.test.ts`) cover unchanged GUID matches with missing cards, schema conflicts, media repair on a duplicate import, and indexing before COMMIT. Scheduled exports preserve negative day offsets and both active and inactive learning-card due units.
+
 **Status:** Implemented subset with bounded archive and SQLite validation
 
 **Evidence:** `lib/importApkg.ankiExport.test.ts` imports one collection as Anki 26.05 exported it
@@ -287,6 +289,8 @@ large-package smoke
 **Next compatibility gate:** Add real-device large-package smoke
 
 ## CSV/TSV/TXT import/export
+
+Updates preserve unmapped fields and existing tags when no tag column was supplied; an explicitly mapped empty cell clears that field or tag set. Preview and write use the same merge rules. Text exports quote `#` so comment-like GUIDs and first fields survive re-import (`lib/ankiTransferSafety.test.ts`).
 
 **Status:** Implemented; Anki's own option set (separator with override, Allow HTML in fields, note type, deck, Existing notes, Match scope, Tag all notes, Tag updated notes, per-column field mapping) and its per-note outcome buckets. Fields are escaped exactly as Anki's importer does when HTML is off (minimal entity set plus newline → `<br>`), an unchanged match is reported as "already present" instead of being rewritten, a `#notetype column` naming an unknown type skips the row rather than filing it elsewhere, and a plain-text export with HTML excluded reduces fields to text so the `#html:false` header it writes is true. Update preview/confirmation and backup protect matching notes, and deck directives share the note-write transaction
 

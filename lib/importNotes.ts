@@ -166,6 +166,14 @@ function fieldsForRow(row: string[], noteType: NoteType, fieldColumns?: number[]
     return fields;
 }
 
+/** Unmapped fields are absent input; a mapped empty cell is an explicit replacement. */
+function mergeExistingRow(existing: Note, fields: string[], tags: string[], fieldColumns: number[] | undefined, replaceTags: boolean): void {
+    for (let index = 0; index < fields.length; index++) {
+        if (fieldColumns && !(fieldColumns[index] >= 0)) fields[index] = existing.fields[index] ?? '';
+    }
+    if (!replaceTags) tags.splice(0, tags.length, ...uniqueTags([...(existing.tags ?? []), ...tags]));
+}
+
 /** Writes rows while the caller owns the active transaction. */
 function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts {
     const {
@@ -242,6 +250,7 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
+            mergeExistingRow(existing, fields, finalTags, fieldColumns, Boolean(tagsColumn || rowTags));
             if (sameFieldsAndTags(existing, fields, finalTags)) {
                 // An unchanged match is "already present" in Anki's log, not an update: rewriting
                 // it would bump `mod` and make a re-import look like it changed the collection.
@@ -482,6 +491,7 @@ function previewPreparedRows(
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
+            mergeExistingRow(existing, fields, finalTags, prepared.fieldColumns, Boolean(prepared.tagsColumn));
             if (sameFieldsAndTags(existing, fields, finalTags)) {
                 counts.duplicates++;
                 log.record('duplicate', fields, existing.id);

@@ -13,7 +13,7 @@ import { isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './cata
 function escapeField(value: string): string {
     // Anki's text exporter uses real CSV quoting, even though the separator is a tab.
     // This preserves embedded tabs, quotes and multiline fields byte-for-byte on import.
-    return /[\t\r\n"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+    return /[#\t\r\n"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
 /**
