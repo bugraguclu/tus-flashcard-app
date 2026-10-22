@@ -7,7 +7,7 @@ import { withFsrsInputs } from './fsrsCardInputs';
 import { getAnkiCard, MARKED_TAG } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
-import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
+import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import { buildFilteredSearchClause, escapeLikePattern } from './studySearchSql';
 import { reservedFilteredCardIds } from './filteredDeckMembership';
 
@@ -411,7 +411,7 @@ export function toStudyCards(
     options: { includeRawCard?: boolean; includeRawNote?: boolean; settingsCache?: Map<number, AppSettings> } = {},
 ): StudyCard[] {
     const settingsCache = options.settingsCache ?? new Map<number, AppSettings>();
-    const catalogUnlocked = isPaidCatalogUnlocked();
+    const catalogUnlocked = isCatalogStudyAvailable();
     const noteCache = new Map<number, Note>();
     const noteTypeCache = new Map<number, NoteType | null>();
 

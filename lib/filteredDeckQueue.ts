@@ -7,7 +7,7 @@ import { getDeckByName } from './deckStore';
 import { filteredDeckMemberIds } from './filteredDeckMembership';
 import { gatherFilteredTermCardIds } from './filteredDeckGather';
 export { gatherFilteredTermCardIds } from './filteredDeckGather';
-import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
+import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import type { StudyQueueResult } from './studyQueue';
 import { loadRowsByQueue, toStudyCards, type QueueCardRow } from './studyCardRows';
 import { buildFilteredSearchClause } from './studySearchSql';
@@ -188,7 +188,7 @@ export function getFilteredDeckCountCards(
     const deckById = new Map(activeDecks.map((deck) => [deck.id, deck]));
     const seenByFilteredDeck = new Map<number, Set<number>>();
     const claimedCardIds = new Set<number>();
-    const catalogUnlocked = isPaidCatalogUnlocked();
+    const catalogUnlocked = isCatalogStudyAvailable();
 
     for (const row of rows) {
         const deck = deckById.get(row.filteredDeckId);

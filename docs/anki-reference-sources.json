@@ -824,6 +824,16 @@
         "manual replay question then answer; skip question; automatic answer excludes FrontSide audio",
         "auto advance yields to reviewer focus and modal interaction; reviewerAudio.test.ts and reviewerTimers.test.ts"
       ]
+    },
+    {
+      "id": "tus-ai2-catalog-student-state",
+      "priority": 1,
+      "platform": "local catalog product policy",
+      "url": "https://docs.ankiweb.net/studying.html",
+      "useFor": [
+        "study progress separated from catalog content ownership; trial existing-card scheduling only",
+        "ai2CatalogStudy.test.ts verifies study and rejects content/identity/new-card mutation"
+      ]
     }
   ],
   "requiredDocs": [
