@@ -41,3 +41,10 @@ it.each(['%', '+'])('never expands punctuation %s to all cards', (query) => {
     expect(getBrowserRowIdsMatchingText({}, query)).toEqual([]);
     expect(sqlSearch(query)).toEqual([]);
 });
+it('keeps every stored field searchable even when the note-type field list is incomplete', () => {
+    const row = h.db.getFirstSync('SELECT data FROM note_types WHERE id = 1');
+    const type = JSON.parse(row.data); type.fields = [];
+    h.db.runSync('UPDATE note_types SET data = ? WHERE id = 1', JSON.stringify(type));
+    expect(getBrowserRowIdsMatchingText({}, 'fourth-field')).toEqual([11]);
+    expect(sqlSearch('fourth-field')).toEqual([11]);
+});

@@ -38,7 +38,7 @@ export function matchingCollectionCardIds(query: string): number[] {
         if (!parsed.has(row.noteId)) {
             try {
                 const note = JSON.parse(row.noteData) as Note; const type = JSON.parse(row.typeData) as NoteType;
-                parsed.set(row.noteId, { note, type, fields: Object.fromEntries(type.fields.map((field, i) => [field.name, note.fields[i] ?? ''])) });
+                parsed.set(row.noteId, { note, type, fields: Object.fromEntries(note.fields.map((value, i) => [type.fields[i]?.name ?? `__field_${i}`, value])) });
             } catch { parsed.set(row.noteId, null); }
         }
         const payload = parsed.get(row.noteId); if (!payload) continue;

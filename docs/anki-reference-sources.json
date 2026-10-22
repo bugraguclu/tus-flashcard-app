@@ -795,7 +795,7 @@
       "url": "https://docs.ankiweb.net/searching.html",
       "useFor": [
         "one evaluator for browser and filtered searches",
-        "all-field substring search without metadata",
+        "all-field substring search without metadata, including incomplete note-type field lists",
         "Unicode names, explicit nc accent folding and invalid-query errors; lib/searchParitySafety.test.ts"
       ]
     },
