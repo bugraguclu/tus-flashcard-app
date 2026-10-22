@@ -1,0 +1,20 @@
+{
+  "unique_question_records": 200,
+  "TTBT_complete_1_to_100": true,
+  "KTBT_complete_1_to_100": true,
+  "exact_complete_stems_in_catalog": 0,
+  "all_note_ids_and_card_memberships_verified": true,
+  "all_our_evidence_excerpts_literal_verified": true,
+  "our_counts": {
+    "related": 132,
+    "indirect": 10,
+    "no_evidence": 15,
+    "direct": 43
+  },
+  "our_supported": 53,
+  "site_badges_match_published_161_20_19": true,
+  "official_open_question_answers_cross_checked": 20,
+  "source_missing_image": "temel-65",
+  "catalog_sha256": "7428ba681ef026f805ac73796798054f2da82150a7b12c8b51017b2bfd7865a9",
+  "semantic_limit": "Independent expert medical truth and pre-exam publication history not verified."
+}
