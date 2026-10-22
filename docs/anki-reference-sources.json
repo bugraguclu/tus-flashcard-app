@@ -841,6 +841,16 @@
         "read old local checksums without rewriting content"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
+    },
+    {
+      "id": "anki-ai1-editor-type-memory",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/editing.html",
+      "useFor": [
+        "last successful Add note type per deck and collection",
+        "fallback when a remembered note type is no longer available"
+      ]
     }
   ],
   "requiredDocs": [

@@ -1,3 +1,4 @@
+import { getEditorNoteType, rememberEditorNoteType } from '../lib/editorNoteTypeMemory';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
@@ -252,7 +253,7 @@ export default function EditorScreen() {
         };
     });
     const [formatState, setFormatState] = useState<EditorFormatState>(EMPTY_EDITOR_FORMAT_STATE);
-    const [cardTypeId, setCardTypeId] = useState(() => routeNoteTypeId ?? 1);
+    const [cardTypeId, setCardTypeId] = useState(() => routeNoteTypeId ?? getEditorNoteType(targetDeckId, getAllNoteTypes().filter(nt => !isLegacyTusNoteType(nt)).map(nt => nt.id)));
 
     const selectedNoteType = useMemo(
         () => getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId) ?? null,
@@ -944,6 +945,7 @@ export default function EditorScreen() {
                         dbUpsertFtsCard(searchIndexCardFromNote(result.note, generatedCard.id));
                     }
                     persistStickyFieldValues();
+                    rememberEditorNoteType(targetDeck.id, cardTypeId);
                     return result;
                 }, (result) => { deleteTusCardByCardId(result.card.id); });
                 resetDraftBaseline(savedDraft);

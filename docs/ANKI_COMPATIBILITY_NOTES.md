@@ -162,6 +162,8 @@ Deletion keeps lifetime review history. Note/editor and deck-list deletion retur
 
 ## Note types, conditional templates, cloze, typed answer
 
+The Add screen remembers the last successfully added note type per destination deck, falling back to the collection last-used type and then Basic when unavailable. Route-specified types still establish the entry scope; failed/abandoned additions do not select a new default (`lib/editorNoteTypeMemory.test.ts`).
+
 Duplicate detection now uses an unsigned SHA1 prefix over the HTML-free, NFC-normalized first field, including media filenames, and compares normalized text after the checksum lookup. A read-only fallback recognizes older local FNV rows without a destructive migration (`lib/noteChecksum.test.ts`, real SQLite imported/legacy fixture). Common named and numeric HTML entities are decoded; the full HTML5 named-entity table remains a compatibility gate.
 
 P1 template fixes: renaming/removing a field rewrites its replacement/filter/conditional references on both sides; generation checks populated original fields instead of template literals or filtered display output, includes Tags and treats editor div/br blanks as empty. Typed comparisons are rendered through FrontSide when the answer template has no separate type marker; `type:cloze` contributes only an input and never a duplicate sentence (`lib/noteTemplates.parity.test.ts`). The earlier inline-cloze input placement was corrected to match this contract; iPhone typed-answer smoke must use a separate cloze replacement plus the type marker.
