@@ -260,7 +260,7 @@ export function getCardsForDeck(deckId: number): AnkiCard[] {
     return rows.map(r => JSON.parse(r.data));
 }
 
-export function saveAnkiCard(card: AnkiCard): void {
+export function saveAnkiCard(card: AnkiCard, options: { replaceData?: boolean } = {}): void {
     assertCatalogCardMutable(card);
     const db = getDB();
     const nowMs = Date.now();
@@ -304,9 +304,10 @@ export function saveAnkiCard(card: AnkiCard): void {
         }
     }
 
-    // Preserve any forward-compat keys the stored blob may carry that aren't on AnkiCard.
+    // Ordinary edits preserve forward-compat keys. A complete undo snapshot must also remove
+    // optional scheduling data introduced by the rejected/undone answer (such as lrt and pos).
     let serializedData = JSON.stringify(card);
-    if (existing?.data) {
+    if (existing?.data && !options.replaceData) {
         try {
             const existingParsed = JSON.parse(existing.data) as Record<string, unknown>;
             serializedData = JSON.stringify({ ...existingParsed, ...card });

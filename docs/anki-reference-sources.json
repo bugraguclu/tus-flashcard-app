@@ -43,7 +43,7 @@
       "priority": 1,
       "platform": "cross-platform note/card semantics",
       "url": "https://docs.ankiweb.net/editing.html",
-      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments"]
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "shared note fields versus independent sibling card deck placement"]
     },
     {
       "id": "anki-manual-collection-packages",
@@ -736,6 +736,13 @@
       "url": "https://github.com/ankitects/anki/blob/main/ts/routes/deck-options/FsrsOptions.svelte",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default search preset:\"name\" -is:suspended", "relearning steps counted within a day", "already optimal at four decimals", "pressing Optimize again aborts"]
+    },
+    {
+      "id": "indexeddb-transaction-completion",
+      "priority": 3,
+      "platform": "web collection persistence",
+      "url": "https://w3c.github.io/IndexedDB/#transaction-lifetime",
+      "useFor": ["wait for transaction completion before acknowledging a durable save", "propagate aborted writes", "keep reviewer, editor and import completion behind the commit"]
     },
     {
       "id": "html-standard-frame-navigation",

@@ -118,7 +118,9 @@ import {
     type AnswerSideEffects,
     type ResetCardOptions,
 } from '../../lib/studyRepository';
-import { loadBalancerForCard } from '../../lib/loadBalancerSession';
+import { loadBalancerForCard, rebuildLoadBalancer } from '../../lib/loadBalancerSession';
+import { commitCollectionWrite } from '../../lib/collectionWrite';
+import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { useI18n } from '../../hooks/useI18n';
 import { cardFlagName, formatCount, localizeTopicName, reviewerOpName } from '../../lib/i18n';
 import { alert, choose } from '../../lib/confirm';
@@ -937,18 +939,37 @@ export default function StudyScreen() {
             const previewDeck = previewMode && activeFilteredDeck?.isFiltered ? activeFilteredDeck : null;
             let result;
             try {
-                result = answerStudyCard(currentCard.cardId, grade, settings, elapsed, previewDeck
-                    ? { preview: { delays: previewDeck.previewDelays } }
-                    : {});
+                const previousPreviewDue = previewDeck?.filteredPreviewDue?.[String(currentCard.cardId)] ?? null;
+                result = await commitCollectionWrite(() => {
+                    const answered = answerStudyCard(currentCard.cardId, grade, settings, elapsed, previewDeck
+                        ? { preview: { delays: previewDeck.previewDelays } }
+                        : {});
+                    if (previewDeck) {
+                        setFilteredPreviewDue(previewDeck.id, currentCard.cardId, answered.previewDueMs ?? null);
+                        if (answered.previewDueMs == null) completeFilteredCard(previewDeck.id, currentCard.cardId);
+                    } else if (activeFilteredDeck?.isFiltered && answered.updatedCard.state.status !== 'learning') {
+                        completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
+                    }
+                    return answered;
+                }, (answered) => {
+                    undoAnswer(answered.previousAnkiCard, answered.reviewLogId, answered.sideEffects);
+                    rebuildLoadBalancer(settings.dayRolloverHour);
+                    if (activeFilteredDeck?.isFiltered) restoreFilteredCard(activeFilteredDeck.id, currentCard.cardId);
+                    if (previewDeck) setFilteredPreviewDue(previewDeck.id, currentCard.cardId, previousPreviewDue);
+                });
             } catch (e) {
                 // The card can vanish under us when the collection is replaced (backup restore,
                 // import) while this screen holds a stale queue. Resync instead of crashing;
                 // the undo stack refers to the old collection, so it must go too.
                 console.warn('[Study] answer failed, rebuilding queue:', e);
-                setUndoStack([]);
-                setRedoStack([]);
-                setShowingAnswer(false);
-                buildQueue();
+                if (!getAnkiCard(currentCard.cardId)) {
+                    setUndoStack([]);
+                    setRedoStack([]);
+                    setShowingAnswer(false);
+                    buildQueue();
+                }
+                alert(l('Kayıt başarısız', 'Save failed'), userFacingErrorMessage(e,
+                    l('Yanıt kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save the answer. Please try again.')));
                 return;
             }
 
@@ -959,9 +980,7 @@ export default function StudyScreen() {
                 // answer finished its preview, as Anki's preview-repeat queue does.
                 const previousDueMs = previewDeck.filteredPreviewDue?.[String(currentCard.cardId)] ?? null;
                 previewRequeueAt = result.previewDueMs ?? null;
-                setFilteredPreviewDue(previewDeck.id, currentCard.cardId, previewRequeueAt);
                 const finished = previewRequeueAt === null;
-                if (finished) completeFilteredCard(previewDeck.id, currentCard.cardId);
 
                 setRedoStack([]);
                 setUndoStack((prev) => [
@@ -985,10 +1004,6 @@ export default function StudyScreen() {
                 const completesFilteredCard = Boolean(activeFilteredDeck?.isFiltered && (
                     result.updatedCard.state.status !== 'learning'
                 ));
-                if (completesFilteredCard && activeFilteredDeck) {
-                    completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
-                }
-
                 // Normal reviews commit to undo stack and revlog.
                 setRedoStack([]);
                 setUndoStack((prev) => [
@@ -1207,27 +1222,27 @@ export default function StudyScreen() {
                 return;
             }
 
-            setUndoStack((prev) => prev.slice(0, -1));
-            setRedoStack((prev) => [...prev.slice(-29), undo]);
-
             // One transaction takes back the card, its review-log row, the siblings this answer
             // buried and any leech tag it added — Anki's single "Undo Answer Card" operation.
-            undoAnswer(undo.previousSnapshot, undo.reviewLogId, undo.sideEffects);
-            if (undo.filteredDeckId) {
-                restoreFilteredCard(undo.filteredDeckId, undo.cardId);
-            }
-            if (undo.preview) {
-                setFilteredPreviewDue(undo.preview.deckId, undo.cardId, undo.preview.previousDueMs);
-            }
+            await commitCollectionWrite(() => {
+                undoAnswer(undo.previousSnapshot, undo.reviewLogId, undo.sideEffects);
+                if (undo.filteredDeckId) restoreFilteredCard(undo.filteredDeckId, undo.cardId);
+                if (undo.preview) setFilteredPreviewDue(undo.preview.deckId, undo.cardId, undo.preview.previousDueMs);
+            });
+            setUndoStack((prev) => prev.slice(0, -1));
+            setRedoStack((prev) => [...prev.slice(-29), undo]);
 
             // Deleting the revlog row already reverted the day's numbers; re-read them.
             const restoredStats = refreshSessionStats();
             markSchedulingStale();
             buildQueue(restoredStats.newCardsToday);
+        } catch (error) {
+            alert(l('Kayıt başarısız', 'Save failed'), userFacingErrorMessage(error,
+                l('Geri alma kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save undo. Please try again.')));
         } finally {
             isMutatingRef.current = false;
         }
-    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp]);
+    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, l]);
 
     const redoLast = useCallback(async () => {
         if (redoStack.length === 0 || isMutatingRef.current) return;
@@ -1250,15 +1265,19 @@ export default function StudyScreen() {
                 return;
             }
 
-            const result = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, redo.preview
-                ? { preview: { delays: redo.preview.delays } }
-                : {});
-            if (redo.preview) {
-                setFilteredPreviewDue(redo.preview.deckId, redo.cardId, result.previewDueMs ?? null);
-            }
-            if (redo.filteredDeckId) {
-                completeFilteredCard(redo.filteredDeckId, redo.cardId);
-            }
+            const result = await commitCollectionWrite(() => {
+                const answered = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, redo.preview
+                    ? { preview: { delays: redo.preview.delays } }
+                    : {});
+                if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, answered.previewDueMs ?? null);
+                if (redo.filteredDeckId) completeFilteredCard(redo.filteredDeckId, redo.cardId);
+                return answered;
+            }, (answered) => {
+                undoAnswer(answered.previousAnkiCard, answered.reviewLogId, answered.sideEffects);
+                rebuildLoadBalancer(settings.dayRolloverHour);
+                if (redo.filteredDeckId) restoreFilteredCard(redo.filteredDeckId, redo.cardId);
+                if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, redo.preview.previousDueMs);
+            });
 
             setRedoStack((prev) => prev.slice(0, -1));
             setUndoStack((prev) => [
@@ -1281,10 +1300,13 @@ export default function StudyScreen() {
             const restoredStats = refreshSessionStats();
             markSchedulingStale();
             buildQueue(restoredStats.newCardsToday);
+        } catch (error) {
+            alert(l('Kayıt başarısız', 'Save failed'), userFacingErrorMessage(error,
+                l('Yineleme kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save redo. Please try again.')));
         } finally {
             isMutatingRef.current = false;
         }
-    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp]);
+    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, l]);
 
     /**
      * Run a reviewer action as an undoable operation, the way Anki runs every one of them.

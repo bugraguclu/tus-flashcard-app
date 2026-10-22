@@ -12,7 +12,7 @@ export interface SyncDb {
     close(): void;
 }
 
-const SCHEMA = `
+export const APP_TEST_SCHEMA = `
 CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
 CREATE TABLE session_stats (date TEXT PRIMARY KEY, data TEXT);
 CREATE TABLE note_types (id INTEGER PRIMARY KEY, name TEXT, data TEXT, updated_at INTEGER, usn INTEGER, tombstone INTEGER DEFAULT 0);
@@ -32,7 +32,7 @@ CREATE TABLE cards_fts (card_id TEXT);
 
 export function createAppDb(SQL: SqlJsStatic): SyncDb {
     const db: Database = new SQL.Database();
-    db.exec(SCHEMA);
+    db.exec(APP_TEST_SCHEMA);
 
     // Same param-binding shape as the production web wrapper (lib/webDb.ts).
     const bind = (params: any[]) => (params.length > 0 ? params : undefined);

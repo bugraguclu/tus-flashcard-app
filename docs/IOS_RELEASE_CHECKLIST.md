@@ -70,6 +70,17 @@ schema changed.
 
 ## Web regression target
 
+For collection persistence, use an isolated profile and reload immediately after each visible
+completion: a graded card must retain its review-log row and repetitions; a text and a package
+import must retain their notes. Delay IndexedDB commits and verify the reviewer stays on the
+answer and the editor/importer withhold success until commit. Inject a write failure: no note
+success or Import Log may appear, a failed answer must remain retryable without a duplicate
+review, and a new-note retry must create only one note. Open a second tab sharing the profile:
+saving a note must report the read-only restriction before changing the collection. Place two
+siblings in different decks, edit only the answer, save and reload: their decks must remain
+separate. The named smoke and remaining native checks are recorded in
+[PERSISTENCE_FIXES.md](PERSISTENCE_FIXES.md).
+
 `npm run web` serves the same screens from Metro; `npm run build:web` is the production bundle CI
 builds, with the strict Content-Security-Policy and the service worker. `vercel.json` publishes the
 same bundle from `master` as the public browser preview, so a push to `master` changes what

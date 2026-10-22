@@ -268,14 +268,17 @@ export function updateTusCardByCardId(
         }
     }
 
-    for (const sibling of getCardsForNote(note.id)) {
-        sibling.deckId = destinationDeckId;
-        sibling.mod = Math.floor(Date.now() / 1000);
-        sibling.usn = -1;
-        saveAnkiCard(sibling);
+    // Fields belong to the note; deck placement belongs to each generated card. An unchanged
+    // picker value is not a request to gather siblings that may live in other decks.
+    if (destinationDeckId !== card.deckId && getAnkiCard(cardId)) {
+        saveAnkiCard({
+            ...card,
+            deckId: destinationDeckId,
+            mod: Math.floor(Date.now() / 1000),
+            usn: -1,
+        });
     }
     const updatedCard = getAnkiCard(cardId) ?? getCardsForNote(note.id)[0] ?? card;
-    updatedCard.deckId = destinationDeckId;
 
     return { note, card: updatedCard };
 }

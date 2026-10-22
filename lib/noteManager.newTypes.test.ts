@@ -110,6 +110,27 @@ describe('createTusCard: Anki reversed note types', () => {
     });
 });
 
+describe('editing siblings in different decks', () => {
+    it.each([undefined, 1])('preserves sibling decks and scheduling on an answer-only edit (deck %s)', (deckId) => {
+        const { note, cards } = createTusCard({ question: 'Front', answer: 'Back', deckId: 1, noteTypeId: 2 });
+        const reverse = { ...cards[1], deckId: 2, type: 2 as const, queue: 2 as const, due: 100, ivl: 20, reps: 7 };
+        saveAnkiCard(reverse);
+        const before = getCardsForNote(note.id);
+
+        updateTusCardByCardId(cards[0].id, { question: 'Front', answer: 'Changed', deckId });
+
+        expect(getNote(note.id)?.fields).toEqual(['Front', 'Changed']);
+        expect(getCardsForNote(note.id)).toEqual(before);
+    });
+
+    it('moves only the selected card when a different destination is chosen', () => {
+        const { note, cards } = createTusCard({ question: 'Front', answer: 'Back', deckId: 1, noteTypeId: 2 });
+        saveAnkiCard({ ...cards[1], deckId: 2 });
+        updateTusCardByCardId(cards[0].id, { question: 'Front', answer: 'Changed', deckId: 3 });
+        expect(getCardsForNote(note.id).map((card) => card.deckId)).toEqual([3, 2]);
+    });
+});
+
 describe('createTusCard: type-answer note type (id 8)', () => {
     it('creates exactly one card', () => {
         const { cards } = createTusCard({

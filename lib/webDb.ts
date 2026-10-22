@@ -36,7 +36,7 @@ const LEGACY_STORAGE_KEY = 'tus_flashcard_sqljs_db';
 let _sqlDb: SqlJsDatabase | null = null;
 let _initPromise: Promise<WebSQLiteDatabase> | null = null;
 let _saveTimer: ReturnType<typeof setTimeout> | null = null;
-let _saveInFlight = false;
+let _saveInFlight: Promise<void> | null = null;
 let _saveDirty = false;
 
 // Writer election: only the elected tab persists, so tabs can't clobber each
@@ -137,30 +137,46 @@ function idbSave(bytes: Uint8Array): Promise<void> {
  * Export the in-memory database and write it to IndexedDB, coalescing overlapping
  * saves so a burst of writes queues at most one extra save and the newest state wins.
  */
-async function persistToIdb(): Promise<void> {
-    if (!_sqlDb || !_isPrimary) return;
+function persistToIdb(): Promise<void> {
+    if (!_sqlDb || !_isPrimary) return Promise.resolve();
     if (_saveInFlight) {
         _saveDirty = true;
-        return;
+        return _saveInFlight;
     }
-    _saveInFlight = true;
-    try {
-        await idbSave(_sqlDb.export());
-    } catch (e) {
-        console.warn('[WebDB] Failed to persist database to IndexedDB:', e);
-    } finally {
-        _saveInFlight = false;
-        if (_saveDirty) {
-            _saveDirty = false;
-            void persistToIdb();
+    _saveInFlight = (async () => {
+        try {
+            do {
+                _saveDirty = false;
+                await idbSave(_sqlDb!.export());
+            } while (_saveDirty);
+        } finally {
+            _saveInFlight = null;
         }
+    })();
+    return _saveInFlight;
+}
+
+function persistInBackground(): void {
+    void persistToIdb().catch((error) => {
+        console.warn('[WebDB] Failed to persist database to IndexedDB:', error);
+    });
+}
+
+/** Explicit Save actions acknowledge success only after the durable snapshot commits. */
+export async function flushWebDatabase(): Promise<void> {
+    if (!_sqlDb) throw new Error('Web database not initialized.');
+    if (!_isPrimary) throw new Error('Cannot save in a read-only tab.');
+    if (_saveTimer) {
+        clearTimeout(_saveTimer);
+        _saveTimer = null;
     }
+    await persistToIdb();
 }
 
 /** Debounce a snapshot save after a write. */
 function schedulePersist(): void {
     if (_saveTimer) clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => void persistToIdb(), SAVE_DEBOUNCE_MS);
+    _saveTimer = setTimeout(persistInBackground, SAVE_DEBOUNCE_MS);
 }
 
 /** Cancel the debounce and flush immediately (best-effort on page hide / unload). */
@@ -177,13 +193,15 @@ function flushPersist(): void {
         try {
             void writeSnapshot(_idbConnection, _sqlDb.export(), false)
                 .catch((e) => console.warn('[WebDB] Failed to persist database to IndexedDB:', e));
-            _saveDirty = false;
+            // A pending explicit flush must still wait for a snapshot containing the latest
+            // edits. The independent pagehide write must not clear its queued-save barrier.
+            _saveDirty = Boolean(_saveInFlight);
             return;
         } catch {
             _idbConnection = null;
         }
     }
-    void persistToIdb();
+    persistInBackground();
 }
 
 /**

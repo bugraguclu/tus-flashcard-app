@@ -18,6 +18,13 @@ one for the area you are changing.
 
 **Evidence:** opt-in redesigned reviewer with a preserved classic fallback, compact toolbar/footer, directional feedback, `lib/reviewerPresentation.test.ts`, review logger and repository tests
 
+Web answers, undo and redo wait for the IndexedDB snapshot before publishing completion or
+advancing the queue. Failed answer persistence restores the card (including optional `ankiData`),
+revlog, buried siblings and filtered-build bookkeeping so retry cannot count the answer twice.
+`lib/webDb.test.ts` exercises the real scheduler against the acknowledged stored bytes;
+`lib/collectionWrite.test.ts` covers pending/error acknowledgement and rejection before mutation
+in a read-only tab.
+
 **Next compatibility gate:** iPhone smoke in both classic and redesigned modes on each reviewer change
 
 ## Daily limits, learning steps, lapses, leeches, burying
@@ -155,6 +162,13 @@ retention/true-retention graphs and the FSRS simulator
 
 **Evidence:** AnkiMobile-aligned rich text editing toolbar grouped into Home/Styles/Insert tabs (Anki's own inline formats, lists, four paragraph alignments and indent/outdent as in `ts/routes/editor/editor-toolbar`; plus local additions Anki's editor does not have — block styles, quote, code block, table, validated http/https/mailto link, callout and font size — with MathJax and a raw HTML source editor), whose insertions are pinned by `lib/editorToolbar.test.ts` to pass the field sanitizer unchanged, note-type template aware card generation validation (a note saves whenever any template would generate a card, so an empty front is allowed when the reversed card generates — a deliberate divergence: Anki's `note_fields_check` tests only whether the first field is blank and refuses the note either way), native or template-positioned `#typeans` input, optional focus, token-bound/bounded WebView bridge, template, bridge, settings round-trip and note manager tests; dynamic note-type picker exposing all collection note types with field/template counts and `/note-types` management shortcut; dynamic multi-field editor rendering arbitrary N-fields with per-field sticky pinning (`lib/editorStickyFields.ts`), individual media attachment, localized labels, and the note type's own per-field font, size and right-to-left flag — the three values an imported collection carries on every field. A size or a family that a collection built elsewhere leaves unset, or writes outside anything a phone should render, falls back to the editor's own preference rather than being applied literally, and a family name is reduced to the characters a CSS family can hold before it is written into the field's stylesheet (`lib/editorFieldStyle.ts`, `lib/editorFieldStyle.test.ts`). The cloze button sits on the tab the toolbar opens on, which is the tab the save-time error tells the learner to look at, and adding a note offers to stay on the screen for the next one as Anki's Add dialog does — the pinned fields keep their values, the deck, note type and tags stay chosen. Real-time first-field duplicate detection (`findDuplicateNote`) matching AnkiMobile non-blocking warning badge with target deck reporting (`lib/editorDynamicFields.test.ts`)
 
+Editing fields updates the shared note while preserving each existing card's deck and scheduling.
+Choosing a different destination moves the selected card; newly generated cards use that
+destination. `lib/noteManager.newTypes.test.ts` covers siblings stored in different decks.
+Editor success, draft-baseline reset and external callbacks follow durable storage completion;
+a read-only tab is rejected before note/tag mutation. A failed new-note flush removes its
+unacknowledged rows so retry creates one note.
+
 **Next compatibility gate:** Validate more add-on filters and complex templates
 
 ## HTML, images, audio, video, TTS
@@ -285,6 +299,12 @@ large-package smoke
 **Status:** Implemented
 
 **Evidence:** `/import` is file-first like Anki's: the extension chooses the importer and the option list that follows, and every import ends on an Import Log that files each note into Anki's own buckets (added, updated, already present, first field matched, note type changed, note type missing, deck missing, empty first field) with an expandable sample per bucket. Package imports add Anki's learning-progress, deck-preset and update-notes/update-note-types choices. `lib/importLog.test.ts`, `lib/importFile.test.ts`
+
+The Import Log is displayed only after all package/text import steps, indexing and any collection
+replacement reconciliation have reached durable storage. Storage errors remain recoverable errors
+on the import screen; read-only tabs cannot start the operation. `lib/webDb.test.ts` verifies that
+a text import exists in the acknowledged snapshot, and `lib/collectionWrite.test.ts` verifies the
+async operation/commit boundary shared by both formats.
 
 **Next compatibility gate:** "Merge note types" is not offered: a schema-conflicting note type is imported as a separate copy instead, so no inert control is shown. Re-importing the same package does not pile up copies of it — a note type is looked up by source package plus source id, so the second import resolves to the one the first created; it is a different export of the same deck that produces a second note type, which is what Anki's non-merge mode does too. Add an iPhone smoke test for the mapping table and the log
 
