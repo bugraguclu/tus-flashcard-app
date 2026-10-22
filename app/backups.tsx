@@ -1,3 +1,4 @@
+import { applyPendingCatalogLearnerData } from '../lib/backupCatalogLearnerData';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
@@ -63,6 +64,7 @@ export default function BackupsScreen() {
         setLoading(true);
         setLoadError(false);
         try {
+            applyPendingCatalogLearnerData();
             setBackups(await listBackups());
         } catch (e) {
             console.warn('[Backups] list failed:', e);
@@ -134,6 +136,7 @@ export default function BackupsScreen() {
                         await reload();
                         if (result.ok) {
                             await refreshCatalogAccess();
+                            applyPendingCatalogLearnerData();
                             refreshData();
                             bumpDataVersion();
                             alert(t('common.completed'), l('Yedek geri yüklendi.', 'Backup restored.'));
@@ -142,7 +145,7 @@ export default function BackupsScreen() {
                         }
                     } catch (e) {
                         console.warn('[Backups] restore failed:', e);
-                        alert(t('common.error'), l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
+                        alert(t('common.error'), e instanceof Error && e.message.includes('recovery-only') ? l('Bu kurtarma kopyası hasarlı satırlar içerir. Paylaş ile ham dosyayı dışa aktarın; doğrudan geri yüklenemez.', 'This recovery copy contains damaged rows. Use Share to export its raw file; it cannot be restored directly.') : l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
                     }
                 }),
             { destructive: true },

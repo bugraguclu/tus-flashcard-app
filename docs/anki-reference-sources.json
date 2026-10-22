@@ -776,6 +776,17 @@
         "duplicate re-import repairs missing media",
         "negative review-day offsets and inactive learning due units; lib/ankiTransferSafety.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai3-backup-safety",
+      "priority": 1,
+      "platform": "cross-platform backup behavior",
+      "url": "https://docs.ankiweb.net/backups.html",
+      "useFor": [
+        "30-minute backup default",
+        "today/yesterday and daily/weekly/monthly retention",
+        "learner metadata recovery without protected catalog fields; lib/backupSafety.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

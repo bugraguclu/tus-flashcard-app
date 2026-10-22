@@ -1,3 +1,5 @@
+import { CATALOG_LEARNER_DATA_KEY, emptyCatalogLearnerData } from './backupCatalogLearnerData';
+import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, Card } from './types';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
@@ -84,9 +86,7 @@ export async function resetAllData(): Promise<void> {
 }
 
 // --- Export / Import ---
-const MAX_IMPORT_SIZE = 50 * 1024 * 1024;
-
- // 50 MB limit
+const MAX_IMPORT_SIZE = 512 * 1024 * 1024;
 
 /** Sanitize imported object to prevent prototype pollution */
 function sanitizeObject<T>(obj: T): T {
@@ -113,7 +113,8 @@ export async function exportAllData(): Promise<string> {
     const sessionStats = await loadSessionStats();
 
     let schemaVersion = 0;
-    let catalogProgress: CatalogProgress = {};
+    const catalogProgress: CatalogProgress = {};
+    const catalogLearnerData = emptyCatalogLearnerData();
     let tables = {
         note_types: [] as any[],
         notes: [] as any[],
@@ -133,12 +134,15 @@ export async function exportAllData(): Promise<string> {
         const notes = db.getAllSync<any>('SELECT * FROM notes ORDER BY id').filter((row) => {
             if (isCatalogPackRow(row.data)) {
                 catalogNoteIds.add(Number(row.id));
+                const note = JSON.parse(row.data);
+                catalogLearnerData.notes[note.guid || String(row.id)] = note.tags ?? [];
                 return false;
             }
             try {
                 const note = JSON.parse(row.data);
                 if (isProtectedCatalogGuid(note?.guid)) {
                     catalogNoteIds.add(Number(row.id));
+                    catalogLearnerData.notes[note.guid || String(row.id)] = note.tags ?? [];
                     return false;
                 }
             } catch { /* malformed rows handled elsewhere */ }
@@ -149,6 +153,7 @@ export async function exportAllData(): Promise<string> {
             try {
                 const card = JSON.parse(row.data);
                 if (hasStudyProgress(card)) catalogProgress[String(row.id)] = encodeCatalogProgress(card);
+                if (typeof card.ankiData === 'string') catalogLearnerData.cards[String(row.id)] = card.ankiData;
             } catch { /* an unreadable row simply carries no progress worth restoring */ }
             return false;
         });
@@ -166,10 +171,12 @@ export async function exportAllData(): Promise<string> {
         };
     } catch (e) {
         console.warn('[Storage] exportAllData DB access failed:', e);
-        // If DB is not ready, fallback to metadata-only export.
+        throw e;
     }
 
+    const validation = validateCanonicalBackupData({ canonical: true, tables });
     return JSON.stringify({
+        ...(!validation.valid ? { recoveryOnly: true, recoveryReason: validation.reason } : {}),
         version: 6,
         schema_version: schemaVersion,
         exportDate: new Date().toISOString(),
@@ -177,6 +184,7 @@ export async function exportAllData(): Promise<string> {
         settings,
         sessionStats,
         catalogProgress,
+        catalogLearnerData,
         tables,
     });
 }
@@ -329,7 +337,7 @@ function hasValidCanonicalTableShape(data: any): boolean {
 export async function importAllData(jsonString: string): Promise<boolean> {
     try {
         if (jsonString.length > MAX_IMPORT_SIZE) {
-            console.error(`Import: Dosya çok büyük (${(jsonString.length / 1024 / 1024).toFixed(1)} MB > 50 MB limit)`);
+            console.error(`Import: Dosya çok büyük (${(jsonString.length / 1024 / 1024).toFixed(1)} MB > 512 MiB limit)`);
             return false;
         }
 
@@ -349,6 +357,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
         if (isCanonicalImport(data)) {
             // Validate the complete container before touching settings or tables.
             // This keeps truncated/hand-edited files as a true no-op.
+            if (data.recoveryOnly === true) return false;
             const validation = validateCanonicalBackupData(data);
             if (!validation.valid || !hasValidCanonicalTableShape(data)) {
                 console.error(`Import: Geçersiz canonical yedek (${validation.valid ? 'shape' : validation.reason})`);
@@ -359,6 +368,15 @@ export async function importAllData(jsonString: string): Promise<boolean> {
                 return false;
             }
 
+            if (Number.isInteger(data.schema_version) && data.schema_version <= 9) {
+                for (const row of data.tables.decks) {
+                    const deck = JSON.parse(row.data);
+                    if (deck.isFiltered === true) {
+                        for (const key of ['searchOrder', 'searchOrder2']) if (deck[key] != null) deck[key] = ankiFilteredOrderFromLegacy(deck[key]);
+                        row.data = JSON.stringify(deck);
+                    }
+                }
+            }
             importCanonicalTables(data);
             if (data.settings) {
                 data.settings = validateSettings(data.settings);
@@ -377,6 +395,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             // Always replace the pending progress map; otherwise an empty/older
             // backup could inherit progress left over from the collection it replaced.
             setDbSetting(CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
+            setDbSetting(CATALOG_LEARNER_DATA_KEY, JSON.stringify(data.catalogLearnerData ?? emptyCatalogLearnerData()));
             await clearLegacyCardStates();
             await saveCustomCards([]);
             return true;

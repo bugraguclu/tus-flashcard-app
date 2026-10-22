@@ -2,9 +2,9 @@
  * Automatic collection backups.
  *
  * A full-collection JSON snapshot (exportAllData, the canonical v6 format) is
- * written at most once a week. Startup and every app foreground may call
- * runAutoBackupIfDue() safely; a timestamp guard prevents duplicate work. The newest seven
- * collection snapshots are retained. Every restore first snapshots the current state, so a
+ * written every configured interval (30 minutes by default). Startup and every app foreground may call
+ * runAutoBackupIfDue() safely; a timestamp guard prevents duplicate work. Today/yesterday plus daily, weekly and monthly
+ * restore points are retained. Every restore first snapshots the current state, so a
  * restore is itself undoable.
  *
  * The snapshot reads every table in one synchronous pass, so *when* it runs matters as much
@@ -22,6 +22,8 @@ import { isPrimaryTab } from './db';
 import { getLegacyFileSystem } from './files';
 import { translateActive } from './i18n';
 import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting } from './storage';
+import { canonicalBackupContainsCatalog } from './catalogProtection';
+import { normalizeBackupPolicy, retainedBackupNames } from './backupPolicy';
 import { validateCanonicalBackupData } from './backupValidation';
 
 const DAILY_PREFIX = 'tus-backup-';
@@ -29,13 +31,13 @@ const CUSTOM_PREFIX = 'tus-backup-custom-';
 const PRE_RESTORE_PREFIX = 'tus-prerestore-';
 const KEEP_PRE_RESTORE = 3;
 const GUARD_KEY = 'tus_last_auto_backup_at';
-const WEEKLY_INTERVAL_MINUTES = 7 * 24 * 60;
-const KEEP_COLLECTION_BACKUPS = 7;
+
+
 
 // Accept old once-per-day filenames as well as the interval-aware timestamp form.
 const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6}(?:\d{3})?)?\.json$/;
 const PRE_RESTORE_NAME_RE = /^tus-prerestore-\d+\.json$/;
-const MAX_BACKUP_SIZE = 50 * 1024 * 1024;
+const MAX_BACKUP_SIZE = 512 * 1024 * 1024;
 const MAX_SUPPORTED_BACKUP_VERSION = 6;
 const MAX_MANUAL_BACKUP_NAME_LENGTH = 120;
 const FORBIDDEN_BACKUP_NAME_CHARS = /[<>:"/\\|?*\u0000-\u001F]/u;
@@ -154,6 +156,8 @@ export function validateBackupContents(contents: string): { valid: true } | { va
         }
 
         if (data.canonical === true) {
+            if (data.recoveryOnly === true) return { valid: false, reason: 'recovery-only' };
+            if (canonicalBackupContainsCatalog(data)) return { valid: false, reason: 'protected-catalog' };
             return validateCanonicalBackupData(data);
         }
 
@@ -168,7 +172,12 @@ export function validateBackupContents(contents: string): { valid: true } | { va
     }
 }
 
-function assertValidBackupContents(contents: string): void {
+function assertValidBackupContents(contents: string, allowRecovery = false): void {
+    if (allowRecovery) {
+        const data = JSON.parse(contents);
+        if (data.recoveryOnly === true && data.canonical === true && data.version === 6
+            && data.tables && ['notes', 'anki_cards', 'note_types', 'decks', 'deck_configs', 'revlog', 'graves', 'session_stats'].every(key => Array.isArray(data.tables[key]))) return;
+    }
     const result = validateBackupContents(contents);
     if (!result.valid) throw new Error(`Invalid backup contents: ${result.reason}`);
 }
@@ -261,7 +270,7 @@ interface ResolvedDeps {
     isWriter: () => boolean;
     autoBackupEnabled: () => boolean;
     intervalMinutes: () => number;
-    maxCopies: () => number;
+    maxCopies?: () => number;
 }
 
 function resolveDeps(deps: BackupDeps): ResolvedDeps {
@@ -275,8 +284,8 @@ function resolveDeps(deps: BackupDeps): ResolvedDeps {
         rolloverHour: deps.rolloverHour ?? (() => loadSettings().dayRolloverHour),
         isWriter: deps.isWriter ?? (() => Platform.OS !== 'web' || isPrimaryTab()),
         autoBackupEnabled: deps.autoBackupEnabled ?? (() => loadSettings().autoBackupEnabled !== false),
-        intervalMinutes: deps.intervalMinutes ?? (() => WEEKLY_INTERVAL_MINUTES),
-        maxCopies: deps.maxCopies ?? (() => KEEP_COLLECTION_BACKUPS),
+        intervalMinutes: deps.intervalMinutes ?? (() => normalizeBackupPolicy(loadSettings()).backupIntervalMinutes),
+        maxCopies: deps.maxCopies,
     };
 }
 
@@ -287,12 +296,13 @@ function snapshotTime(info: BackupInfo): number {
 }
 
 /** Keep the newest collection snapshots and rotate pre-restore safety copies separately. */
-async function pruneBackups(store: BackupStore, maxCopies: number): Promise<void> {
+async function pruneBackups(store: BackupStore, maxCopies: number | undefined, now: Date): Promise<void> {
     const all = await store.list();
     const snapshots = all
         .filter((b) => DAILY_NAME_RE.test(b.name))
         .sort((a, b) => snapshotTime(b) - snapshotTime(a) || b.name.localeCompare(a.name));
-    const overflow = snapshots.slice(Math.max(0, maxCopies));
+    const retained = maxCopies === undefined ? retainedBackupNames(snapshots.map(info => ({ ...info, createdAt: snapshotTime(info) })), now, normalizeBackupPolicy(loadSettings())) : null;
+    const overflow = retained ? snapshots.filter(info => !retained.has(info.name)) : snapshots.slice(Math.max(0, maxCopies!));
     const preRestore = all
         .filter((b) => PRE_RESTORE_NAME_RE.test(b.name))
         .sort((a, b) => parseTimestamp(b.name) - parseTimestamp(a.name))
@@ -328,13 +338,13 @@ export async function createBackupNow(
     }
 
     const json = await d.exportData();
-    assertValidBackupContents(json);
+    assertValidBackupContents(json, true);
     await d.store.write(fileName, json);
     // Mark the time only after the write succeeds, so a failure retries next launch.
     d.setLastBackupAt(String(now.getTime()));
 
     try {
-        await pruneBackups(d.store, d.maxCopies());
+        await pruneBackups(d.store, d.maxCopies?.(), d.now());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }
@@ -373,7 +383,7 @@ export function runAutoBackupIfDue(
 
         if (options.prune !== false) {
             try {
-                await pruneBackups(d.store, d.maxCopies());
+                await pruneBackups(d.store, d.maxCopies?.(), d.now());
             } catch (error) {
                 console.warn('[Backup] startup prune failed:', error);
             }
@@ -443,7 +453,7 @@ export async function importBackupContents(
     if (!d.isWriter()) throw new Error(translateActive('root.readOnlyTabAction'));
 
     const currentContents = await d.exportData();
-    assertValidBackupContents(currentContents);
+    assertValidBackupContents(currentContents, true);
     const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
     await d.store.write(preRestoreName, currentContents);
 
@@ -460,7 +470,7 @@ export async function importBackupContents(
     }
 
     try {
-        await pruneBackups(d.store, d.maxCopies());
+        await pruneBackups(d.store, d.maxCopies?.(), d.now());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }

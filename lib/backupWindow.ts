@@ -7,7 +7,7 @@
  * the work cannot be broken up, the only way to keep it off an interactive frame budget is to
  * choose *when* it happens — never while the learner is answering cards.
  *
- * Study surfaces mark themselves busy while they hold focus; the scheduler holds the weekly
+ * Study surfaces mark themselves busy while they hold focus; the scheduler holds the due
  * snapshot until a quiet window opens (the app leaves the foreground, or the reviewer closes).
  */
 
