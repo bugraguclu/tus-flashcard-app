@@ -353,6 +353,9 @@ export const EMPTY_DAILY_LIMIT_USAGE: DailyLimitUsage = { newIntroduced: 0, revi
  * the move. Two grouped queries cover the whole collection, so callers can build a deck tree
  * without a query per node.
  */
+export const INTERDAY_REVIEW_USAGE_PREFIX = 'interday_review_usage:';
+const REVIEW_LIMIT_ANSWER = `(r.type = 1 OR EXISTS (SELECT 1 FROM settings usage WHERE usage.key = 'interday_review_usage:' || r.id))`;
+
 export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, DailyLimitUsage> {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
@@ -381,7 +384,7 @@ export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, 
             `SELECT c.deckId AS deckId, COUNT(*) AS cnt
              FROM revlog r
              JOIN anki_cards c ON c.id = r.cardId
-             WHERE r.id >= ? AND r.type = 1
+             WHERE r.id >= ? AND ${REVIEW_LIMIT_ANSWER}
              GROUP BY c.deckId`,
             startMs,
         )) entryFor(Number(row.deckId)).reviewsAnswered = Number(row.cnt) || 0;
@@ -410,7 +413,7 @@ export function getReviewsAnsweredTodayInDeck(deckName: string, rolloverHour: nu
          FROM revlog r
          JOIN anki_cards c ON c.id = r.cardId
          JOIN decks d ON d.id = c.deckId
-         WHERE r.id >= ? AND r.type = 1 AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+         WHERE r.id >= ? AND ${REVIEW_LIMIT_ANSWER} AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
         startMs,
         deckName,
         escapedPrefix,
@@ -424,7 +427,7 @@ export function getReviewsAnsweredToday(rolloverHour: number = 4): number {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
     const row = db.getFirstSync<{ cnt: number }>(
-        'SELECT COUNT(*) AS cnt FROM revlog WHERE id >= ? AND type = 1',
+        `SELECT COUNT(*) AS cnt FROM revlog r WHERE r.id >= ? AND ${REVIEW_LIMIT_ANSWER}`,
         startMs,
     );
     return row?.cnt ?? 0;
@@ -530,6 +533,7 @@ export function restoreReviewLog(entry: ReviewLog): void {
 
 export function deleteReviewById(reviewId: number): void {
     const db = getDB();
+    db.runSync('DELETE FROM settings WHERE key = ?', `${INTERDAY_REVIEW_USAGE_PREFIX}${reviewId}`);
     db.runSync('DELETE FROM revlog WHERE id = ?', reviewId);
 }
 

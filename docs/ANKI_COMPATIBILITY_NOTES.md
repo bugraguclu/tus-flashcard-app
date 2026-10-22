@@ -35,17 +35,21 @@ Undo applies only the operation delta to existing rows, preserving later note fi
 
 ## Daily limits, learning steps, lapses, leeches, burying
 
-**Status:** Implemented
+**Status:** Implemented with uncapped new cards (product policy)
 
 **Evidence:** deck options, Anki-style step parser, collection-limit and queue tests. The screen also reproduces Anki's advice rather than inventing rules of its own: a review limit that cannot absorb the new cards, a learning step that outlives the interval it graduates to, Good graduating past Easy, a relearning step longer than the minimum interval, a maximum interval under half a year, an answer cap above ten minutes, an easy-days row with no normal day left, and steps of a day or more once FSRS is scheduling. Each is a warning printed under its own field and never a refusal to save, which is the line Anki draws (`lib/deckOptionsRules.ts`, `lib/deckOptionsRules.test.ts`). "Limits start from top" starts off, as Anki's `apply_all_parent_limits` does: an unconfigured collection reads a subdeck's allowance from the subdeck the learner opened rather than squeezing it again through every ancestor, and a collection that had already turned the switch on keeps it (`lib/studyRepository.scope.test.ts`)
 
-**Next compatibility gate:** Preserve selected-deck/subdeck semantics. "New cards ignore review limit" is deliberately left on where Anki defaults it off, so the two allowances stay separate unless a learner asks otherwise
+New cards have no daily cap (product decision 2026-10-21); imported new limits remain metadata. Intraday counts stop at now plus learn-ahead. Interday learning consumes the global and hierarchical review limit before reviews; answered interday cards leave local per-revlog settings markers so the allowance does not refill after restart, and undo deletes its marker. Queue building only suppresses siblings in memory after limits, using the earlier sibling's preset; answers persist burying (`lib/ai2Queue.test.ts`).
+
+**Next compatibility gate:** Keep deck-list/raw-count accounting aligned with the study queue; deckTree/deckStore are owned by AI-1. Local interday usage markers need inclusion in full backup/restore (AI-3); they do not alter portable revlog kinds.
 
 ## Display/gather/sort order and learn-ahead
 
-**Status:** Implemented
+**Status:** Implemented with bounded new-card window
 
 **Evidence:** six gather orders, five new-card sort orders, interday/review ordering and queue tests. All thirteen of Anki's review orders are offered, including the two retrievability orders, which appear only while FSRS is on because only then does a card carry the memory state they read (`reviewSortOrderChoices`). The scheduler decides what three of them mean, as `review_order_sql(order, timing, fsrs)` does: with FSRS on the two ease orders sort by difficulty in the opposite direction — and are relabelled for it — while relative overdueness is measured against retrievability, `-(R^(-1/decay) - 1) / (DR^(-1/decay) - 1)`, falling back to the interval measure for a card FSRS has never scheduled. A card with no memory state stands where SQLite's NULL would (`lib/queueBuild.test.ts`). A preset left on a retrievability order moves to relative overdueness if FSRS is switched off, and the ordinals still round-trip through `.apkg` (`lib/exportReviewOrder.test.ts`)
+
+New-card loading uses a 200-card replenished working window and SQL LIMIT, with one cached note-type read per type rather than one JSON payload per row. Deck gathering visits the parent then alphabetic subdecks. Sorting by template applies within the working window so later card types are not held behind the entire uncapped backlog. Mix uses a fixed 1:1 review/new cadence regardless of new-card total. These are explicit product differences from Anki's finite daily-new gather (`lib/ai2Queue.test.ts`).
 
 **Next compatibility gate:** Keep the queue's meaning and the dropdown's label in step whenever either changes
 

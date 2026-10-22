@@ -255,7 +255,7 @@ describe('limits start from top', () => {
         expect(queue.stats.newCount).toBe(3);
     });
 
-    it('lets the parent cap the subdeck once the switch is on', () => {
+    it('preserves uncapped new cards even when parent limits start from top', () => {
         seedSubdeckWithStricterParent();
 
         const queue = getStudyQueue({
@@ -263,7 +263,7 @@ describe('limits start from top', () => {
             selectedDeckName: 'Python::Temeller',
         });
 
-        expect(queue.stats.newCount).toBe(1);
+        expect(queue.stats.newCount).toBe(3);
     });
 
     it('reads an unconfigured collection as having the switch off', () => {
@@ -672,7 +672,7 @@ describe('deck-list filtered count snapshot', () => {
 });
 
 describe('new-card gathering order', () => {
-    it('serves new cards topic by topic in the course order, not raw position order', () => {
+    it('serves cards in physical deck order and position inside the deck', () => {
         // Position order would be 1005 (Hata Ayıklama), 1010 (random), 1020 (Modüller);
         // the course defines Modüller → random → Hata Ayıklama.
         saveNote(makeNote(105, ['araclar', 'Hata-Ayıklama'], [
@@ -683,7 +683,7 @@ describe('new-card gathering order', () => {
         saveAnkiCard(makeCard(1005, 105, 7));
 
         const queue = getStudyQueue({ settings, selectedSubject: 'araclar' });
-        expect(queue.cards.map((card) => card.cardId)).toEqual([1020, 1010, 1005]);
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1005, 1010, 1020]);
     });
 
     it('walks positions in either direction, and takes the right end when the fetch is capped', () => {
@@ -702,7 +702,7 @@ describe('new-card gathering order', () => {
         const cappedDescending = getStudyQueue({
             settings: { ...settings, newCardGatherOrder: 'descendingPosition', dailyNewLimit: 1 },
         });
-        expect(cappedDescending.cards.map((card) => card.cardId)).toEqual([1030]);
+        expect(cappedDescending.cards.map((card) => card.cardId)).toEqual([1030, 1020, 1010]);
     });
 
     it('keeps a note\'s siblings together when notes are gathered at random', () => {
@@ -781,39 +781,23 @@ function servedReviewIds(result: { cards: { cardId: number; state: { status: str
 }
 
 describe('queue counters and daily limits', () => {
-    it('counts an intraday learning card due later today in learningCount', () => {
+    it('excludes intraday learning beyond the learn-ahead window from learningCount', () => {
         const dueMs = Date.now() + 10 * 60_000;
         saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001 }));
 
         const result = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
-        expect(result.stats.learningCount).toBe(1);
+        expect(result.stats.learningCount).toBe(0);
         // Still not served: the step timer has not expired and learn-ahead is 0.
         expect(result.cards).toHaveLength(0);
         expect(result.nextLearningDue).toBe(dueMs);
     });
 
-    it('caps the reported new count at the daily limit and reports held-back cards', () => {
-        const limited: AppSettings = { ...settings, dailyNewLimit: 1 };
-        saveDeckConfig({ ...deckConfig, newPerDay: 1 });
-
-        const first = getStudyQueue({ settings: limited });
-        expect(first.stats.newCount).toBe(1);
-        expect(first.heldBackNewCount).toBe(2);
-        expect(first.dailyNewLimitReached).toBe(false);
-
-        const exhausted = getStudyQueue({ settings: limited, newCardsStudiedToday: 1 });
-        expect(exhausted.stats.newCount).toBe(0);
-        expect(exhausted.heldBackNewCount).toBe(3);
-        expect(exhausted.dailyNewLimitReached).toBe(true);
-    });
-
-    it('reports the limit as reached when per-deck limits block all new cards', () => {
-        // Global limit generous, deck limit zero: previous logic missed this case.
+    it('keeps new cards available regardless of imported daily allowance or answers today', () => {
         saveDeckConfig({ ...deckConfig, newPerDay: 0 });
-
-        const result = getStudyQueue({ settings });
-        expect(result.stats.newCount).toBe(0);
-        expect(result.dailyNewLimitReached).toBe(true);
+        const result = getStudyQueue({ settings: { ...settings, dailyNewLimit: 1 }, newCardsStudiedToday: 100 });
+        expect(result.stats.newCount).toBe(3);
+        expect(result.heldBackNewCount).toBe(0);
+        expect(result.dailyNewLimitReached).toBe(false);
     });
 
     it('stops serving reviews once today\'s review limit is spent', () => {
@@ -879,17 +863,13 @@ describe('queue counters and daily limits', () => {
         expect(spent.heldBackReviewCount).toBe(1);
     });
 
-    it('computes upcomingCardsCount for rollover when daily limit is reached', () => {
+    it('does not defer available new cards to tomorrow', () => {
         saveDeckConfig({ ...deckConfig, newPerDay: 2 });
-        const limited: AppSettings = { ...settings, dailyNewLimit: 2 };
-
-        // 3 new cards in deck. Today 2 are studied, 1 is held back.
-        const exhausted = getStudyQueue({ settings: limited, newCardsStudiedToday: 2 });
-        expect(exhausted.stats.newCount).toBe(0);
-        expect(exhausted.heldBackNewCount).toBe(3);
-        expect(exhausted.dailyNewLimitReached).toBe(true);
-        // Tomorrow at rollover, up to newPerDay (2) will be served from the 3 held back.
-        expect(exhausted.upcomingCardsCount).toBe(2);
+        const result = getStudyQueue({ settings: { ...settings, dailyNewLimit: 2 }, newCardsStudiedToday: 2 });
+        expect(result.stats.newCount).toBe(3);
+        expect(result.heldBackNewCount).toBe(0);
+        expect(result.dailyNewLimitReached).toBe(false);
+        expect(result.upcomingCardsCount).toBe(0);
     });
 
     it('computes upcomingCardsCount when reviews are scheduled for tomorrow', () => {

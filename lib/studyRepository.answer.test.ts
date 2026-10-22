@@ -258,7 +258,7 @@ describe('answerStudyCard', () => {
             lastReview: Date.now() - 2 * 86400000,
         });
 
-        answerStudyCard(30, 3, settings, 900);
+        answerStudyCard(30, 3, settings, 900, { filtered: true });
         const updated = shared.cards.get(30)!;
 
         // Anki's early-review Good is max(elapsed x ease, scheduled) — rslib review.rs
@@ -278,7 +278,7 @@ describe('answerStudyCard', () => {
             lastReview: 0,
         });
 
-        answerStudyCard(31, 3, settings, 900);
+        answerStudyCard(31, 3, settings, 900, { filtered: true });
         const updated = shared.cards.get(31)!;
 
         // 8 days elapsed x 2.5 = 20, which ties the scheduled interval — an on-time answer would
@@ -369,7 +369,7 @@ describe('answerStudyCard', () => {
     it('logs a review answered before its due day as a filtered review', () => {
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
         shared.cards.set(23, { ...baseCard(23, 1, 2, 2), due: today + 4, ivl: 10 });
-        answerStudyCard(23, 3, settings, 800);
+        answerStudyCard(23, 3, settings, 800, { filtered: true });
         expect(shared.lastRevlogType).toBe(3);
 
         shared.cards.set(24, { ...baseCard(24, 1, 2, 2), due: today, ivl: 10 });

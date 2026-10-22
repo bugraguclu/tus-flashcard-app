@@ -29,7 +29,7 @@ import {
     saveNote,
 } from './noteManager';
 import { getDeckConfigForDeck } from './deckManager';
-import { deleteReviewById, logReview, revlogFactorForAnswer } from './reviewLogger';
+import { deleteReviewById, logReview, revlogFactorForAnswer, INTERDAY_REVIEW_USAGE_PREFIX } from './reviewLogger';
 import { makeStudyCard, resolveSettingsForDeck } from './studyCardRows';
 
 /**
@@ -352,6 +352,11 @@ export function answerStudyCard(
             deckConfig.maxAnswerSecs,
         );
         reviewLogId = reviewLog.id;
+        if (currentAnkiCard.queue === 3) {
+            // The revlog kind cannot distinguish interday from intraday learning. Keep a
+            // local counter marker without changing Anki's portable history columns.
+            db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', `${INTERDAY_REVIEW_USAGE_PREFIX}${reviewLogId}`, '1');
+        }
 
         sideEffects.buriedSiblings = applySiblingBuryPolicy(currentAnkiCard, deckConfig);
 

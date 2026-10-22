@@ -13,20 +13,11 @@ export function interleaveNewWithReviews(reviewCards: StudyCard[], newCards: Stu
     if (reviewCards.length === 0) return newCards;
 
     const result: StudyCard[] = [];
-    const step = reviewCards.length / newCards.length;
-    let nextNewAt = step;
-    let newIndex = 0;
-
-    for (let reviewIndex = 0; reviewIndex < reviewCards.length; reviewIndex++) {
-        result.push(reviewCards[reviewIndex]);
-        while (newIndex < newCards.length && reviewIndex + 1 >= nextNewAt) {
-            result.push(newCards[newIndex++]);
-            nextNewAt += step;
-        }
-    }
-
-    while (newIndex < newCards.length) {
-        result.push(newCards[newIndex++]);
+    // Product policy has no daily new cap: use a fixed 1:1 cadence so the size of the
+    // unseen new backlog cannot push due reviews out of the working queue.
+    for (let index = 0; index < Math.max(reviewCards.length, newCards.length); index++) {
+        if (index < reviewCards.length) result.push(reviewCards[index]);
+        if (index < newCards.length) result.push(newCards[index]);
     }
 
     return result;
@@ -99,7 +90,14 @@ export function mixInterdayLearning(
     if (interdayLearningCards.length === 0) return reviewCards;
     if (mix === 'before') return [...interdayLearningCards, ...reviewCards];
     if (mix === 'after') return [...reviewCards, ...interdayLearningCards];
-    return interleaveNewWithReviews(reviewCards, interdayLearningCards);
+    const result: StudyCard[] = [];
+    let next = 0;
+    for (let index = 0; index < reviewCards.length; index++) {
+        result.push(reviewCards[index]);
+        const target = Math.floor((index + 1) * interdayLearningCards.length / reviewCards.length);
+        while (next < target) result.push(interdayLearningCards[next++]);
+    }
+    return [...result, ...interdayLearningCards.slice(next)];
 }
 
 /** Stable 32-bit hash of a string, used for deterministic per-day ordering. */
@@ -335,10 +333,11 @@ export function buryBuildTimeSiblings(
     configForDeck: (deckId: number) => DeckConfig,
     bury: (cardId: number) => void,
 ): { learning: StudyCard[]; reviews: StudyCard[]; news: StudyCard[] } {
-    const seenNotes = new Set<number>();
+    const seenNotes = new Map<number, StudyCard>();
 
     const shouldBury = (card: StudyCard): boolean => {
-        const config = configForDeck(card.deckId);
+        const first = seenNotes.get(card.noteId)!;
+        const config = configForDeck(first.deckId);
         switch (card.state.status) {
             case 'new': return config.buryNewSiblings;
             case 'review': return config.buryReviewSiblings;
@@ -352,10 +351,10 @@ export function buryBuildTimeSiblings(
         const kept: StudyCard[] = [];
         for (const card of pool) {
             if (!seenNotes.has(card.noteId)) {
-                seenNotes.add(card.noteId);
+                seenNotes.set(card.noteId, card);
                 kept.push(card);
             } else if (shouldBury(card)) {
-                bury(card.cardId); // sibling bury (-2), auto-unburied at rollover
+                // Suppress in memory only. Answering persists scheduler burying.
             } else {
                 kept.push(card);
             }

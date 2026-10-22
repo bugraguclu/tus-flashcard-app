@@ -804,6 +804,16 @@
         "zero-elapsed early review only in filtered contexts; due-based elapsed days",
         "answer labels use the same deterministic fuzz and load balancer as scheduling; ai2Scheduling.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai2-queue-limits-and-bury",
+      "priority": 1,
+      "platform": "cross-platform study queue",
+      "url": "https://docs.ankiweb.net/deck-options.html",
+      "useFor": [
+        "interday learning shares review limits; learn-ahead counts; alphabetic deck gathering; in-memory sibling suppression",
+        "documented product divergence: unlimited new cards, 200-card gather window, fixed 1:1 new/review mix; ai2Queue.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

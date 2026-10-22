@@ -269,7 +269,7 @@ export function loadRowsByQueue(
             c.flags AS flags,
             ${cardDataSelect} AS cardData,
             n.data AS noteData,
-            nt.data AS noteTypeData
+            NULL AS noteTypeData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          JOIN note_types nt ON nt.id = n.noteTypeId
@@ -427,7 +427,8 @@ export function toStudyCards(
             if (!catalogUnlocked && isCatalogNote(note)) return acc;
             let noteType = noteTypeCache.get(note.noteTypeId);
             if (noteType === undefined) {
-                noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
+                const rawType = row.noteTypeData ?? getDB().getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', note.noteTypeId)?.data;
+                noteType = rawType ? JSON.parse(rawType) as NoteType : null;
                 noteTypeCache.set(note.noteTypeId, noteType);
             }
 
