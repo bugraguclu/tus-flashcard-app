@@ -794,6 +794,16 @@
         "fixed build membership, reservations, Empty/Rebuild, second-term exclusions; ai2Filtered.test.ts",
         "documented local virtual membership divergence from did/odid/odue movement"
       ]
+    },
+    {
+      "id": "anki-ai2-classic-early-and-labels",
+      "priority": 1,
+      "platform": "cross-platform classic scheduling",
+      "url": "https://docs.ankiweb.net/filtered-decks.html#reviewing-ahead",
+      "useFor": [
+        "zero-elapsed early review only in filtered contexts; due-based elapsed days",
+        "answer labels use the same deterministic fuzz and load balancer as scheduling; ai2Scheduling.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

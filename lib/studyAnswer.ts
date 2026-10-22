@@ -15,7 +15,7 @@ import { previewDelaySecondsForGrade } from './filteredDeckOptions';
 import { recordedDecayFor } from './fsrsScheduler';
 import { withFsrsInputs } from './fsrsCardInputs';
 import { loadBalancerForCard, recordLoadBalancedAnswer } from './loadBalancerSession';
-import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
+import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD, withClassicReviewContext } from './scheduler';
 import { learningDelayAsDays, learningIntervalWithFuzz, learningStepSecs } from './schedulingIntervals';
 import {
     buryCard,
@@ -205,10 +205,11 @@ function answerRevlogFields(
     today: number,
     secsUntilRollover: number,
     ivl: number,
+    filtered: boolean,
 ): { type: 0 | 1 | 2 | 3; ivl: number; lastIvl: number; factor: number } {
     let type: 0 | 1 | 2 | 3 = 0;
     if (before.type === 3) type = 2;
-    else if (before.type === 2) type = (before.odid ? before.odue : before.due) > today ? 3 : 1;
+    else if (before.type === 2) type = filtered && (before.odid ? before.odue : before.due) > today ? 3 : 1;
 
     let lastIvl = 0;
     if (before.type === 2) {
@@ -232,7 +233,7 @@ export function answerStudyCard(
     grade: Grade,
     settings: AppSettings,
     answerTimeMs: number,
-    options: { preview?: PreviewAnswerOptions } = {},
+    options: { preview?: PreviewAnswerOptions; filtered?: boolean } = {},
 ): ReviewResult {
     const nowMs = Date.now();
 
@@ -246,7 +247,7 @@ export function answerStudyCard(
         throw new Error(`Note not found for card: ${cardId}`);
     }
 
-    const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings);
+    const cardSettings = resolveSettingsForDeck(currentAnkiCard.odid || currentAnkiCard.deckId, settings);
     const rolloverHour = cardSettings.dayRolloverHour;
     const currentState = withFsrsInputs(
         ankiCardToCardState(currentAnkiCard, cardSettings, nowMs),
@@ -265,7 +266,7 @@ export function answerStudyCard(
 
     const scheduler = schedulerForSettings(cardSettings);
     const balancer = loadBalancerForCard(currentAnkiCard, rolloverHour, nowMs);
-    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs, { balancer });
+    const scheduleResult = scheduler.schedule(withClassicReviewContext(currentState, Boolean(options.filtered || currentAnkiCard.odid)), grade, cardSettings, nowMs, { balancer });
 
     const nowSecs = Math.floor(nowMs / 1000);
     const today = localDayNumber(nowMs, rolloverHour);
@@ -327,6 +328,7 @@ export function answerStudyCard(
         today,
         secsUntilRollover,
         scheduleResult.isLearning ? (learningDays ?? -learningSecs) : updatedAnkiCard.ivl,
+        Boolean(options.filtered || currentAnkiCard.odid),
     );
 
     const db = getDB();

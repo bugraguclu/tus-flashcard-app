@@ -12,6 +12,8 @@ one for the area you are changing.
 
 Grade Now clears suspend/bury flags before encoding every scheduling column. Unsuspend/unbury preserves day-number due values in queue 3, including overdue learning cards (`lib/ai2Safety.test.ts`).
 
+Classic review elapsed days come from interval minus days until due, independent of manual/review-log timestamps. Only a filtered context uses early-review formulas, including zero elapsed days. Day labels call the exact scheduling path with the same card-ID/repetition fuzz seed and balancer (`lib/ai2Scheduling.test.ts`).
+
 **Next compatibility gate:** Keep golden interval/rollover tests
 
 ## Answer buttons, next times, counts, undo

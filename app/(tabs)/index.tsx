@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
-import { schedulerForSettings, todayLocalYMD } from '../../lib/scheduler';
+import { schedulerForSettings, withClassicReviewContext, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
 import {
@@ -943,7 +943,7 @@ export default function StudyScreen() {
                 result = await commitCollectionWrite(() => {
                     const answered = answerStudyCard(currentCard.cardId, grade, settings, elapsed, previewDeck
                         ? { preview: { delays: previewDeck.previewDelays } }
-                        : {});
+                        : { filtered: Boolean(activeFilteredDeck?.isFiltered) });
                     if (previewDeck) {
                         setFilteredPreviewDue(previewDeck.id, currentCard.cardId, answered.previewDueMs ?? null);
                         if (answered.previewDueMs == null) completeFilteredCard(previewDeck.id, currentCard.cardId);
@@ -1566,7 +1566,7 @@ export default function StudyScreen() {
             deckId: currentCard.deckId,
             odid: currentCard.rawCard?.odid ?? 0,
         }, cardSettings.dayRolloverHour, nowMs);
-        return scheduler.previewIntervals(currentCard.state, cardSettings, nowMs, { balancer });
+        return scheduler.previewIntervals(withClassicReviewContext(currentCard.state, Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)), cardSettings, nowMs, { balancer });
     }, [currentCard, settings, previewMode, selectedDeckName]);
 
     const renderPayload = useMemo(() => {

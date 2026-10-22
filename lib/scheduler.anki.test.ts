@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getScheduler, formatMinutes, formatDays } from './scheduler';
+import { getScheduler, formatMinutes, formatDays, withClassicReviewContext } from './scheduler';
 import type { AppSettings, CardState, Grade } from './types';
 
 const defaultSettings: AppSettings = {
@@ -214,7 +214,7 @@ describe('ANKI_V3 scheduler', () => {
         const card = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: lastReview,
+            lastReviewedAtMs: lastReview, dueDate: '2026-03-07',
             cardId: 999,
         });
 
@@ -223,7 +223,7 @@ describe('ANKI_V3 scheduler', () => {
         const onTimeCard = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: onTimeLastReview,
+            lastReviewedAtMs: onTimeLastReview, dueDate: '2026-03-12',
             cardId: 999,
         });
 
@@ -241,7 +241,7 @@ describe('ANKI_V3 scheduler', () => {
         const earlyCard = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 5 * 86400000,
+            lastReviewedAtMs: now - 5 * 86400000, dueDate: '2026-03-17',
             cardId: 500,
         });
 
@@ -249,11 +249,11 @@ describe('ANKI_V3 scheduler', () => {
         const onTimeCard = makeReviewCard({
             interval: 10,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 10 * 86400000,
+            lastReviewedAtMs: now - 10 * 86400000, dueDate: '2026-03-12',
             cardId: 500,
         });
 
-        const earlyGood = engine.schedule(earlyCard, 3 as Grade, defaultSettings, now);
+        const earlyGood = engine.schedule(withClassicReviewContext(earlyCard, true), 3 as Grade, defaultSettings, now);
         const onTimeGood = engine.schedule(onTimeCard, 3 as Grade, defaultSettings, now);
 
         // Early review should produce a shorter interval than on-time
@@ -265,13 +265,13 @@ describe('ANKI_V3 scheduler', () => {
         const card = makeReviewCard({
             interval: 20,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 7 * 86400000, // 13 days early
+            lastReviewedAtMs: now - 7 * 86400000, dueDate: '2026-03-25', // 13 days early
             cardId: 600,
         });
 
-        const hard = engine.schedule(card, 2 as Grade, defaultSettings, now).interval;
-        const good = engine.schedule(card, 3 as Grade, defaultSettings, now).interval;
-        const easy = engine.schedule(card, 4 as Grade, defaultSettings, now).interval;
+        const hard = engine.schedule(withClassicReviewContext(card, true), 2 as Grade, defaultSettings, now).interval;
+        const good = engine.schedule(withClassicReviewContext(card, true), 3 as Grade, defaultSettings, now).interval;
+        const easy = engine.schedule(withClassicReviewContext(card, true), 4 as Grade, defaultSettings, now).interval;
 
         expect(hard).toBeGreaterThan(0);
         expect(good).toBeGreaterThanOrEqual(hard);
@@ -283,12 +283,12 @@ describe('ANKI_V3 scheduler', () => {
         const card = makeReviewCard({
             interval: 20,
             easeFactor: 2.5,
-            lastReviewedAtMs: now - 8 * 86400000, // 12 days early
+            lastReviewedAtMs: now - 8 * 86400000, dueDate: '2026-03-24', // 12 days early
             cardId: 700,
         });
 
-        const good = engine.schedule(card, 3 as Grade, defaultSettings, now).interval;
-        const easy = engine.schedule(card, 4 as Grade, defaultSettings, now).interval;
+        const good = engine.schedule(withClassicReviewContext(card, true), 3 as Grade, defaultSettings, now).interval;
+        const easy = engine.schedule(withClassicReviewContext(card, true), 4 as Grade, defaultSettings, now).interval;
 
         // Easy should be larger than good, but the bonus is reduced
         // reducedBonus = 1.3 - (1.3 - 1.0) / 2 = 1.15 (vs full 1.3)
@@ -341,12 +341,12 @@ describe('ANKI_V3 scheduler', () => {
         expect(result.stateUpdates.easeFactor).toBe(1.3);
     });
 
-    it('tracks elapsedDays from previous review at answer time', () => {
+    it('tracks elapsedDays from the due day and interval in filtered review', () => {
         const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
         const lastReview = now - 3 * 86400000;
-        const card = makeReviewCard({ lastReviewedAtMs: lastReview, cardId: 333 });
+        const card = makeReviewCard({ lastReviewedAtMs: lastReview, cardId: 333, dueDate: '2026-03-19' });
 
-        const result = engine.schedule(card, 3 as Grade, defaultSettings, now);
+        const result = engine.schedule(withClassicReviewContext(card, true), 3 as Grade, defaultSettings, now);
         expect(result.stateUpdates.elapsedDays).toBe(3);
     });
 
@@ -370,7 +370,7 @@ describe('ANKI_V3 scheduler', () => {
         expect(preview.hard).toBe('10dk');
         expect(preview.again).toBe('1dk');
         expect(preview.good).toBe('1 gün');
-        expect(preview.easy).toBe('4 gün');
+        expect(preview.easy).toBe(formatDays(engine.schedule(card, 4, defaultSettings).interval));
 
         // Also verify the actual scheduling gives 10min, not 15min
         const result = engine.schedule(card, 2 as Grade, defaultSettings);
@@ -384,7 +384,7 @@ describe('ANKI_V3 scheduler', () => {
         expect(preview.hard).toBe('6dk');
         expect(preview.again).toBe('1dk');
         expect(preview.good).toBe('10dk');
-        expect(preview.easy).toBe('4 gün');
+        expect(preview.easy).toBe(formatDays(engine.schedule(card, 4, defaultSettings).interval));
     });
 
     it('Hard at first learning step uses 150% when no next step exists (Anki v3)', () => {
