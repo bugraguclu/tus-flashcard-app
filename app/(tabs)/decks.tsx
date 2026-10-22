@@ -396,11 +396,11 @@ export default function DecksScreen() {
     }, [router]);
 
     const handleAddDeck = () => {
-        const name = normalizeDeckLeafInput(newDeckName);
+        const name = newDeckName.trim();
         if (!name) return;
 
         try {
-            createDeck(getAvailableDeckName(name));
+            createDeck(name);
             setNewDeckName('');
             setShowAddDeck(false);
             refresh();

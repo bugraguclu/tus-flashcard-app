@@ -122,6 +122,8 @@ retention/true-retention graphs and the FSRS simulator
 
 ## Hierarchical decks and presets
 
+Deck creation trims and NFC-normalizes every `::` component (empty components become `blank`) and resolves case variants to the existing deck, including Unicode lowercase matching. Deletion, rename and unbury select legacy descendants using SQLite `instr` with the exact stored prefix, so case-colliding legacy trees and literal `%`/`_` names cannot be mixed (`lib/deckNames.safety.test.ts`). The Decks create flow accepts hierarchy paths. Query consumers outside `deckStore` still require the same exact-prefix treatment when legacy case collisions exist.
+
 Deletion keeps lifetime review history. Note/editor and deck-list deletion return a one-shot Undo action with the affected card count; restoration refuses to overwrite intervening edits (`lib/noteDeletion.test.ts`). Undo currently lives only while the deletion result is held by the caller, not across app restarts.
 
 **Status:** Implemented

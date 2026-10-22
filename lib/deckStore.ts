@@ -1,3 +1,4 @@
+import { normalizeDeckName, deckNameKey } from './deckNames';
 import { captureDeletion, type DeletionUndo } from './noteDeletion';
 import {
     DEFAULT_DECK_CONFIG,
@@ -26,11 +27,6 @@ import {
  * per-deck counts and burying that go with them.
  */
 
-/** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
-function escapeLikePattern(value: string): string {
-    return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-}
-
 function sqlPlaceholders(count: number): string {
     return Array.from({ length: count }, () => '?').join(', ');
 }
@@ -53,8 +49,23 @@ export function getDeck(id: number): Deck | null {
 
 export function getDeckByName(name: string): Deck | null {
     const db = getDB();
-    const row = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', name);
+    const normalized = normalizeDeckName(name);
+    const exact = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', normalized);
+    if (exact) return JSON.parse(exact.data);
+    const key = deckNameKey(normalized);
+    const row = db.getAllSync<{ name: string; data: string }>('SELECT name, data FROM decks ORDER BY id')
+        .find(entry => deckNameKey(entry.name) === key);
     return row ? JSON.parse(row.data) : null;
+}
+
+function canonicalDeckPath(name: string): string {
+    const parts = normalizeDeckName(name).split('::');
+    let path = '';
+    for (const part of parts) {
+        const candidate = path ? `${path}::${part}` : part;
+        path = getDeckByName(candidate)?.name ?? candidate;
+    }
+    return path;
 }
 
 function deckNameWithNumericSuffix(name: string, suffix: number): string {
@@ -66,6 +77,7 @@ function deckNameWithNumericSuffix(name: string, suffix: number): string {
 
 /** Return the requested deck path, or the first free PC-style `(n)` variant of its leaf name. */
 export function getAvailableDeckName(name: string): string {
+    name = canonicalDeckPath(name);
     if (!getDeckByName(name)) return name;
 
     let suffix = 1;
@@ -113,6 +125,8 @@ export function getAvailableDeckSubtreeName(deckId: number, desiredName: string)
 
 export function saveDeck(deck: Deck): void {
     assertCatalogDeckMutable(deck);
+    const collision = getDeckByName(deck.name);
+    if (collision && collision.id !== deck.id) throw new Error(`A deck named "${deck.name}" already exists.`);
     const db = getDB();
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', deck.id);
     if (existing?.data) {
@@ -195,9 +209,9 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
 
         // The deck itself plus every subdeck (matched by the "name::" prefix).
         const deckRows = db.getAllSync<{ id: number }>(
-            "SELECT id FROM decks WHERE id = ? OR name LIKE ? ESCAPE '\\'",
+            "SELECT id FROM decks WHERE id = ? OR instr(name, ?) = 1",
             id,
-            `${escapeLikePattern(`${deck.name}::`)}%`,
+            `${deck.name}::`,
         );
         const deckIds = deckRows.map((row) => row.id);
 
@@ -274,6 +288,7 @@ function returnFilteredCardsHome(filteredDeckId: number): void {
 }
 
 export function renameDeck(id: number, newName: string): void {
+    newName = normalizeDeckName(newName);
     assertCatalogDeckNotRenamable(id);
     const db = getDB();
     const deck = getDeck(id);
@@ -293,9 +308,9 @@ export function renameDeck(id: number, newName: string): void {
     const subtree = db.getAllSync<{ id: number; name: string }>(
         `SELECT id, name
          FROM decks
-         WHERE id = ? OR name LIKE ? ESCAPE '\\'`,
+         WHERE id = ? OR instr(name, ?) = 1`,
         id,
-        `${escapeLikePattern(oldPrefix)}%`,
+        oldPrefix,
     );
     const subtreeIds = new Set(subtree.map((row) => row.id));
     for (const row of subtree) {
@@ -337,10 +352,10 @@ export function renameDeck(id: number, newName: string): void {
         const rows = db.getAllSync<{ id: number; name: string; data: string }>(
             `SELECT id, name, data
              FROM decks
-             WHERE id = ? OR name LIKE ? ESCAPE '\\'
+             WHERE id = ? OR instr(name, ?) = 1
              ORDER BY LENGTH(name) ASC`,
             id,
-            `${escapeLikePattern(oldPrefix)}%`,
+            oldPrefix,
         );
 
         for (const row of rows) {
@@ -373,6 +388,7 @@ export function renameDeck(id: number, newName: string): void {
 }
 
 export function createDeck(name: string, configId?: number): Deck {
+    name = canonicalDeckPath(name);
     // Deck names are unique in Anki: return the existing deck instead of creating a duplicate.
     const existing = getDeckByName(name);
     if (existing) return existing;
@@ -557,9 +573,9 @@ export function getBuriedCountForDeck(deckId: number): number {
         `SELECT COUNT(*) AS cnt
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.instr(name, ?) = 1)`,
         deck.name,
-        `${escapeLikePattern(deck.name)}::%`,
+        `${deck.name}::`,
     );
     return row?.cnt ?? 0;
 }
@@ -574,9 +590,9 @@ export function unburyDeck(deckId: number, rolloverHour: number = 4): number {
         `SELECT c.data AS data
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.instr(name, ?) = 1)`,
         deck.name,
-        `${escapeLikePattern(deck.name)}::%`,
+        `${deck.name}::`,
     );
     if (rows.length === 0) return 0;
 
