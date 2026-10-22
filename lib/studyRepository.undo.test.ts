@@ -272,7 +272,7 @@ describe('undoAnswer', () => {
 
         expect(shared.cards.get(11)?.queue).toBe(0);
         expect(shared.cards.get(12)?.queue).toBe(3);
-        expect(shared.cards.get(10)).toEqual(result.previousAnkiCard);
+        expect(shared.cards.get(10)).toEqual({ ...result.previousAnkiCard, ankiData: undefined, mod: Math.floor(Date.now() / 1000), usn: -1 });
         // Reverting is still a local change, so the restored siblings stay marked for sync.
         expect(shared.cards.get(11)?.usn).toBe(-1);
         expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'COMMIT;']);
@@ -385,7 +385,7 @@ describe('undoAnswer', () => {
         shared.txLog = [];
         undoAnswer(result.previousAnkiCard, result.reviewLogId, result.sideEffects);
 
-        expect(shared.cards.get(10)).toEqual(result.previousAnkiCard);
+        expect(shared.cards.get(10)).toEqual({ ...result.previousAnkiCard, ankiData: undefined, mod: Math.floor(Date.now() / 1000), usn: -1 });
         expect(deleteReviewById).toHaveBeenCalledWith(result.reviewLogId);
         expect(shared.txLog).toEqual(['BEGIN TRANSACTION;', 'COMMIT;']);
     });

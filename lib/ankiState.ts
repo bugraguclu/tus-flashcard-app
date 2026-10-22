@@ -397,10 +397,9 @@ export function restoreQueueFromType(
     if (card.type === 2) return 2;
 
     if (card.type === 1 || card.type === 3) {
-        const today = localDayNumber(nowMs, rolloverHour);
         // A small `due` is a day number (interday); a large one is a ms timestamp (intraday).
         const looksLikeDayNumber = card.due > 0 && card.due < 1000000;
-        if (looksLikeDayNumber && card.due > today) {
+        if (looksLikeDayNumber) {
             return 3;
         }
         return 1;

@@ -82,6 +82,8 @@ describe('applyReviewerOpState', () => {
         const after: ReviewerOpState = { cards: [card({ queue: -3 })], notes: [], reviewLogs: [] };
         const { written, writers } = recorder();
 
+        after.cards.forEach((row) => harness.cards.set(row.id, row));
+        after.notes.forEach((row) => harness.notes.set(row.id, row));
         applyReviewerOpState(before, after, writers);
 
         expect(written.cards).toEqual([card({ queue: 2 })]);
@@ -94,6 +96,8 @@ describe('applyReviewerOpState', () => {
         const after: ReviewerOpState = { cards: [card({ type: 0, queue: 0 })], notes: [], reviewLogs: [reviewLog()] };
         const { written, writers } = recorder();
 
+        after.cards.forEach((row) => harness.cards.set(row.id, row));
+        after.notes.forEach((row) => harness.notes.set(row.id, row));
         applyReviewerOpState(before, after, writers);
 
         // Forget writes the reset marker FSRS keys off; undoing the Forget has to take it back
@@ -127,6 +131,8 @@ describe('applyReviewerOpState', () => {
         const after: ReviewerOpState = { cards: [], notes: [note({ tags: ['marked', 'hard'] })], reviewLogs: [] };
         const { written, writers } = recorder();
 
+        after.cards.forEach((row) => harness.cards.set(row.id, row));
+        after.notes.forEach((row) => harness.notes.set(row.id, row));
         applyReviewerOpState(before, after, writers);
 
         expect(written.notes).toEqual([note({ tags: ['marked'] })]);

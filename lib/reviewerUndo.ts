@@ -77,31 +77,50 @@ export function captureReviewerOpState(
     };
 }
 
-/**
- * Move the collection from `from` to `to`.
- *
- * Card and note rows are restored wholesale, so a field the action did not touch is written back
- * to the same value it already had. Revlog rows are append-only history, so they are reconciled
- * rather than overwritten: a row the other side has and this one does not is deleted, and one
- * this side has and the other does not is put back under its original id.
- */
+/** Restore only this operation's delta onto rows that still exist. */
 export function applyReviewerOpState(
     to: ReviewerOpState,
     from: ReviewerOpState,
     writers: ReviewerOpWriters,
 ): void {
-    for (const card of to.cards) writers.saveCard(card);
-    for (const note of to.notes) writers.saveNote(note);
-
+    for (const target of to.cards) {
+        const current = getAnkiCard(target.id);
+        const previous = from.cards.find((row) => row.id === target.id);
+        if (!current || !previous || current.noteId !== target.noteId) continue;
+        writers.saveCard(mergeOperationDelta(current, target, previous));
+    }
+    for (const target of to.notes) {
+        const current = getNote(target.id);
+        const previous = from.notes.find((row) => row.id === target.id);
+        if (!current || !previous) continue;
+        const merged = mergeOperationDelta(current, target, previous);
+        // Tags are a set: undo only the additions/removals made by this operation.
+        merged.tags = current.tags.filter((tag) => !previous.tags.includes(tag) || target.tags.includes(tag));
+        for (const tag of target.tags) {
+            if (!previous.tags.includes(tag) && !merged.tags.includes(tag)) merged.tags.push(tag);
+        }
+        writers.saveNote(merged);
+    }
     const kept = new Set(to.reviewLogs.map((log) => log.id));
     for (const log of from.reviewLogs) {
         if (!kept.has(log.id)) writers.deleteReviewLog(log.id);
     }
-
     const present = new Set(from.reviewLogs.map((log) => log.id));
     for (const log of to.reviewLogs) {
         if (!present.has(log.id)) writers.insertReviewLog(log);
     }
+}
+
+function mergeOperationDelta<T extends object>(current: T, target: T, previous: T): T {
+    const merged = { ...current };
+    for (const key of Object.keys(target) as Array<keyof T>) {
+        if (key === 'id' || key === 'mod' || key === 'usn') continue;
+        if (JSON.stringify(target[key]) !== JSON.stringify(previous[key])
+            && JSON.stringify(current[key]) === JSON.stringify(previous[key])) {
+            merged[key] = target[key];
+        }
+    }
+    return merged;
 }
 
 /**

@@ -10,6 +10,8 @@ one for the area you are changing.
 
 **Evidence:** `lib/scheduler.ts`, scheduler and repository tests
 
+Grade Now clears suspend/bury flags before encoding every scheduling column. Unsuspend/unbury preserves day-number due values in queue 3, including overdue learning cards (`lib/ai2Safety.test.ts`).
+
 **Next compatibility gate:** Keep golden interval/rollover tests
 
 ## Answer buttons, next times, counts, undo
@@ -24,6 +26,8 @@ revlog, buried siblings and filtered-build bookkeeping so retry cannot count the
 `lib/webDb.test.ts` exercises the real scheduler against the acknowledged stored bytes;
 `lib/collectionWrite.test.ts` covers pending/error acknowledgement and rejection before mutation
 in a read-only tab.
+
+Undo applies only the operation delta to existing rows, preserving later note fields, unrelated tags, deck and flag edits; deleted cards are never recreated. Answer undo restores scheduling and known scheduler data while preserving opaque card data. This is a reviewer-local stack, not Anki's collection-wide undo stack (`lib/ai2Safety.test.ts`).
 
 **Next compatibility gate:** iPhone smoke in both classic and redesigned modes on each reviewer change
 

@@ -152,13 +152,27 @@ function removeAddedLeechTag(noteId: number): void {
  * single operation, so all of it commits or none of it does.
  */
 export function undoAnswer(snapshot: AnkiCard, reviewLogId: number, sideEffects?: AnswerSideEffects): void {
+    const current = getAnkiCard(snapshot.id);
+    if (!current || current.noteId !== snapshot.noteId) return;
+    const restored = { ...current };
+    // Answer undo owns scheduling, never the note, deck, flag or template ordinal.
+    for (const key of ['type', 'queue', 'due', 'ivl', 'factor', 'reps', 'lapses', 'left', 'lastReview'] as const) {
+        Object.assign(restored, { [key]: snapshot[key] });
+    }
+    const oldData = parseAnkiCardData(snapshot.ankiData);
+    restored.ankiData = updateAnkiCardData(current.ankiData, {
+        stability: oldData.stability ?? null, difficulty: oldData.difficulty ?? null,
+        desiredRetention: oldData.desiredRetention ?? null, decay: oldData.decay ?? null,
+        lastReviewTimeSecs: oldData.lastReviewTimeSecs ?? null,
+        originalPosition: oldData.originalPosition ?? null,
+    });
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
 
     try {
         // Restoring the snapshot already un-suspends a card the leech action suspended, because
         // the snapshot carries the queue the card had before this answer.
-        saveAnkiCard(snapshot, { replaceData: true });
+        saveAnkiCard(restored, { replaceData: true });
         deleteReviewById(reviewLogId);
         restoreBuriedSiblings(sideEffects?.buriedSiblings ?? []);
         if (sideEffects?.leechTaggedNoteId !== undefined) {
@@ -281,6 +295,8 @@ export function answerStudyCard(
     const nextState: CardState = {
         ...currentState,
         ...scheduleResult.stateUpdates,
+        suspended: false,
+        buried: false,
         // Anki counts every answer, learning steps included.
         repetition: (currentState.repetition || 0) + 1,
         // With FSRS off, an answer leaves no memory state or desired retention behind, as in Anki.

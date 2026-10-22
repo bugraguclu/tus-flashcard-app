@@ -428,6 +428,7 @@ describe('undoAnswer', () => {
 
     it('rolls back without deleting review history when the card cannot be restored', () => {
         shared.throwOnSave = true;
+        shared.cards.set(10, baseCard(10, 1, 2, 2));
 
         expect(() => undoAnswer(baseCard(10, 1, 2, 2), 1234)).toThrow('save failed');
         expect(deleteReviewById).not.toHaveBeenCalled();

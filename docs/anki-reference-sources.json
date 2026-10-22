@@ -765,6 +765,16 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/data/web/css/webview.scss",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default page text colour that follows the theme (body color: var(--fg))", "a note type's own colour rules outranking that default"]
+    },
+    {
+      "id": "anki-ai2-undo-and-day-learning",
+      "priority": 1,
+      "platform": "cross-platform reviewer and scheduling",
+      "url": "https://docs.ankiweb.net/studying.html#undo",
+      "useFor": [
+        "reviewer operation delta undo without resurrecting deleted rows; ai2Safety.test.ts",
+        "deck-options day boundaries: interday due stays a day number; Grade Now resumes scheduling"
+      ]
     }
   ],
   "requiredDocs": [
