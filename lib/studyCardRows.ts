@@ -9,6 +9,7 @@ import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
 import { buildFilteredSearchClause, escapeLikePattern } from './studySearchSql';
+import { reservedFilteredCardIds } from './filteredDeckMembership';
 
 /**
  * Loading study cards: the queue rows read from the collection, the note payload each row
@@ -174,9 +175,17 @@ export function buildScopeClause(
     selectedSubject?: string | null,
     selectedTopic?: string | null,
     selectedDeckName?: string | null,
+    excludeReservations: boolean = true,
 ): { sql: string; params: Array<string | number> } {
     const clauses: string[] = [];
     const params: Array<string | number> = [];
+    // Ordinary study excludes fixed filtered reservations. Browser searches keep their own scope.
+    const reserved = excludeReservations ? reservedFilteredCardIds() : [];
+    if (reserved.length) {
+        clauses.push(`c.id NOT IN (${reserved.map(() => '?').join(',')})`);
+        params.push(...reserved);
+    }
+
 
     if (selectedDeckName) {
         const selectedDeck = getDeckByName(selectedDeckName);
@@ -234,9 +243,10 @@ export function loadRowsByQueue(
     orderBy: string = 'c.id ASC',
     includeCardBlob: boolean = true,
     limit?: number,
+    excludeReservations: boolean = true,
 ): QueueCardRow[] {
     const db = getDB();
-    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName, excludeReservations);
     const cardDataSelect = includeCardBlob ? 'c.data' : 'NULL';
     const hasLimit = Number.isFinite(limit) && (limit as number) > 0;
     const limitSql = hasLimit ? ' LIMIT ?' : '';

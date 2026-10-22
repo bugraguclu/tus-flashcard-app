@@ -784,6 +784,16 @@
       "useFor": [
         "quoted key:value terms, wildcard decks, note/card/field/nid/introduced searches; ai2FilteredSearch.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai2-filter-membership",
+      "priority": 1,
+      "platform": "cross-platform filtered deck lifecycle",
+      "url": "https://docs.ankiweb.net/filtered-decks.html#home-decks",
+      "useFor": [
+        "fixed build membership, reservations, Empty/Rebuild, second-term exclusions; ai2Filtered.test.ts",
+        "documented local virtual membership divergence from did/odid/odue movement"
+      ]
     }
   ],
   "requiredDocs": [

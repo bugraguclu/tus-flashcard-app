@@ -25,6 +25,7 @@ import {
 } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { buildFilteredDeckQueue } from './filteredDeckQueue';
+import { filteredDeckMemberIds } from './filteredDeckMembership';
 import { rebuildLoadBalancer } from './loadBalancerSession';
 import {
     buildScopeClause,
@@ -217,6 +218,10 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const settingsCache = new Map<number, AppSettings>();
     // Anki builds its load balancer together with the study queue, from the counts of that moment.
     rebuildLoadBalancer(params.settings.dayRolloverHour, nowMs);
+
+    for (const deck of getAllDecks()) {
+        if (deck.isFiltered) filteredDeckMemberIds(deck, params.settings, nowMs);
+    }
 
     // Filtered decks bypass the daily queue entirely: their saved search IS the session.
     if (params.selectedDeckName) {
