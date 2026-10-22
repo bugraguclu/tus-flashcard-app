@@ -138,6 +138,8 @@ first two fixes change vectors the 26.05 fixtures pin.
 
 **Evidence:** validated/atomic Deck Options save flow, searchable deck picker, explicit deck-vs-preset labels, preset rename scoped to the selected config, hierarchical deck rename with subtree/collision protection, deck manager, deck-options form and deck-navigation tests. Which settings the screen shows follows the scheduler in use, as Anki's `{#if !$fsrs}` gates do: the ease multipliers, graduating and easy intervals and the lapse minimum are hidden while FSRS is on, and the FSRS inputs while it is off. A hidden field keeps its stored value through a save and can never report an error, because an error the learner cannot see is one they cannot fix (`isDeckOptionFieldVisible`)
 
+**Layout smoke (2026-10-16):** Decks shares the name/new/learning/review columns between phone and web, with common header/count widths and bounded compact indentation. The named production-web and iPhone-simulator checks, screenshots and physical-device limits are recorded in [Mobile layout review](ui-layout-review/README.md). This is product-specific presentation; deck hierarchy, count calculation and scheduling semantics are unchanged.
+
 **Next compatibility gate:** Continue parent/subdeck limit tests
 
 ## Per-deck shortcuts
@@ -349,6 +351,8 @@ async operation/commit boundary shared by both formats.
 **Status:** Implemented subset
 
 **Evidence:** tapping a deck in the deck list switches straight to study mode as AnkiMobile does, with the deck overview kept in the deck's ••• menu, and the reviewer's back button pops back to that list instead of stacking a second one, while the overview's Study Now closes the overview and opens study over the same list; persisted classic/redesigned reviewer opt-in; AnkiMobile-aligned, separately configurable question/answer 3×3 tap zones with assignable Add note action; interactive card-element pass-through; adjustable swipe sensitivity and edge-only vertical swipes; independent Flag/Tools surfaces; `lib/reviewerTouchControls.test.ts`, `lib/reviewerAddNote.test.ts`, `lib/reviewerSurface.test.ts`, storage round-trip, strict HTTPS/Shortcuts callback parsing and media-audit tests. The web build answers the same x-callback requests at `/x-callback-url?action=addnote|search&…` (a browser cannot own `tusankim:`); the query is turned back into the `tusankim://` URL and read by the same parser and route resolver (`externalAppUrlFromQuery`, `lib/externalActionRoute.ts`, `lib/externalLinking.test.ts`). On iPhone a `tusankim://x-callback-url/<action>` request is opened only by `app/_layout.tsx`; the router ignores it, so no "Sayfa bulunamadı" page is left beneath the editor or browser, and an incomplete request is ignored (`lib/nativeIntent.test.ts`)
+
+**Toolbar smoke (2026-10-16):** On the redesigned phone reviewer, an enabled deck title remains above the remaining counts and an enabled remaining-time estimate stays visible; disabling either preference still hides it. Compact toolbar actions can wrap. The [named layout checks](ui-layout-review/README.md) cover production-web widths, picker interaction, classic/redesigned reveal/grade/undo and simulator themes/text size. Physical-iPhone gestures and VoiceOver remain release gates.
 
 **Next compatibility gate:** Add a native Share extension before broader parity claims
 

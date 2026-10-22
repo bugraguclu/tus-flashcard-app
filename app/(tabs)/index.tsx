@@ -77,6 +77,7 @@ import {
 } from '../../lib/deckManager';
 import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
+import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import {
@@ -2649,19 +2650,16 @@ export default function StudyScreen() {
                 <ReviewerBackIcon color={colors.textSecondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-                style={styles.toolbarScopeButton}
+            <ReviewerDeckScope
+                compact={isCompact}
+                title={settings.showDeckTitle !== false ? reviewerDeckTitle : null}
                 onPress={openDeckPicker}
-                accessibilityRole="button"
                 accessibilityLabel={l(
                     `Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`,
                     `Select deck. Current scope: ${reviewerDeckTitle}`,
                 )}
-                {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
+                tooltip={l('Çalışılacak desteyi seç', 'Choose which deck to study')}
             >
-                {settings.showDeckTitle !== false && (!isCompact || !currentCard) ? (
-                    <Text style={styles.toolbarDeckTitle} numberOfLines={1}>{reviewerDeckTitle}</Text>
-                ) : null}
                 {currentCard && settings.showRemainingCount ? (
                     <View style={styles.queueCounts} accessibilityLabel={queueCountsLabel}>
                         <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
@@ -2672,7 +2670,7 @@ export default function StudyScreen() {
                     <Text style={styles.toolbarDeckFallback}>▦</Text>
                 ) : null}
                 <DownChevron color={colors.textMuted} />
-            </TouchableOpacity>
+            </ReviewerDeckScope>
 
             <View style={styles.toolbarStatusItems}>
                 {autoAdvanceReminder ? (
@@ -2689,7 +2687,7 @@ export default function StudyScreen() {
                         )}
                     >{formatStopwatch(answerSeconds)}</Text>
                 ) : null}
-                {remainingMinutes !== null && !isCompact ? (
+                {remainingMinutes !== null ? (
                     <Text
                         style={styles.remainingTime}
                         accessibilityLabel={l(
@@ -3495,6 +3493,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
 
     reviewerToolbar: {
         flexDirection: 'row',
+        flexWrap: isCompact ? 'wrap' : 'nowrap',
         alignItems: 'center',
         minHeight: 54,
         paddingHorizontal: isCompact ? Spacing.xs : Spacing.lg,
@@ -3516,20 +3515,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
     toolbarIconButton: { width: 42, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     toolbarIconButtonDisabled: { opacity: 0.34 },
-    toolbarScopeButton: {
-        flex: 1,
-        minWidth: 56,
-        minHeight: 44,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: isCompact ? 'center' : 'flex-start',
-        gap: isCompact ? 7 : 10,
-        paddingHorizontal: isCompact ? Spacing.xs : Spacing.sm,
-    },
-    toolbarDeckTitle: { minWidth: 0, maxWidth: 220, flexShrink: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary },
     toolbarDeckFallback: { fontSize: 19, color: colors.textMuted },
-    toolbarStatusItems: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-    toolbarActions: { flexDirection: 'row', alignItems: 'center' },
+    toolbarStatusItems: { flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'flex-end' : 'center', gap: isCompact ? 2 : 7 },
+    toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
     toolbarActionIcon: { fontSize: 23, lineHeight: 25, color: colors.textSecondary },
 
     streakChip: {

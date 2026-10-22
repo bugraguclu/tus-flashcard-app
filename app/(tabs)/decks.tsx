@@ -69,13 +69,13 @@ import CardsGlyph from '../../components/CardsGlyph';
 import StatsGlyph from '../../components/StatsGlyph';
 import GearGlyph from '../../components/GearGlyph';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
+import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
     BKA_CATALOG_DEFAULT_ROOT_DECK,
     BKA_CATALOG_PACK,
-    BKA_CATALOG_ROOT_DECK_ID,
     getBkaCatalogTier,
 } from '../../lib/bkaCatalog';
 import { requestDeckShortcut } from '../../modules/deck-shortcuts';
@@ -159,25 +159,13 @@ function remapExpandedDeckPaths(
 
 const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
     row,
-    compact,
-    isGroupEnd,
-    styles,
     renderRow,
 }: {
     row: DeckListRowModel;
-    compact: boolean;
-    isGroupEnd: boolean;
-    styles: ReturnType<typeof createStyles>;
     renderRow: (node: DeckTreeNode, isExpanded: boolean) => React.ReactElement;
 }) {
     return (
-        <View
-            style={compact
-                ? row.isRoot
-                    ? isGroupEnd ? styles.deckGroupCard : styles.deckGroupCardHead
-                    : isGroupEnd ? styles.deckGroupCardFoot : styles.deckGroupCardBody
-                : undefined}
-        >
+        <View>
             {renderRow(row.node, row.isExpanded)}
         </View>
     );
@@ -1222,16 +1210,15 @@ export default function DecksScreen() {
         const isDropBefore = rowDropTarget?.placement === 'before';
         const isDropAfter = rowDropTarget?.placement === 'after';
         const rowDropFeedback = rowDropTarget ? dragDropFeedback : null;
-        const isTrialCatalogDeck = catalogTier === 'trial' && deck.catalogPack === BKA_CATALOG_PACK;
-        const isTrialCatalogRoot = isTrialCatalogDeck && deck.id === BKA_CATALOG_ROOT_DECK_ID;
         const dragResponder = !deck.isFiltered && !isCatalogDeck(deck)
             ? getDragResponder(node)
             : null;
         const maxIndentDepth = isCompact ? 4 : 10;
         const visualDepth = Math.min(node.depth, maxIndentDepth);
-        const isChild = node.depth > 0;
         // FlatList rows are siblings, so retain the former nested hierarchy with bounded padding.
-        const contentIndent = 8 + visualDepth * 24;
+        // Keep the name usable on narrow phones even for deeply nested decks.
+        const indentStep = isCompact ? Math.min(16, Math.max(4, (width - 300) / 4)) : 24;
+        const contentIndent = 8 + visualDepth * indentStep;
 
         return (
             <View
@@ -1251,8 +1238,6 @@ export default function DecksScreen() {
                 }}
                 style={[
                     styles.deckRow,
-                    isCompact && styles.deckRowCompact,
-                    isCompact && isChild && styles.deckRowCompactChild,
                     { paddingLeft: contentIndent },
                     isDragging && styles.deckRowDragging,
                     isInsideDropTarget && styles.deckRowDropTarget,
@@ -1315,39 +1300,13 @@ export default function DecksScreen() {
                             {displayName}
                         </Text>
                     </View>
-                    {isCompact && (
-                        <>
-                            <Text
-                                style={styles.deckMeta}
-                                numberOfLines={isTrialCatalogRoot ? 2 : 1}
-                            >
-                                {l(`${formatCount(node.totalCards, 'tr')} kart`, `${formatCount(node.totalCards, 'en')} cards`)}{hasChildren ? l(` · ${node.children.length} alt deste`, ` · ${node.children.length} subdecks`) : ''}
-                                {isTrialCatalogRoot ? l(' · her alt başlıktan en iyi 30 ücretsiz soru', ' · best 30 free questions from every subtopic') : ''}
-                                {deck.isFiltered ? (deck.filteredDeckEmpty ? l(' · boşaltıldı', ' · emptied') : l(' · filtreli', ' · filtered')) : ''}
-                                {node.depth > maxIndentDepth ? l(` · ${node.depth + 1}. seviye`, ` · level ${node.depth + 1}`) : ''}
-                            </Text>
-                            <View style={styles.mobileCountsRow}>
-                                <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeNewBg }]}>
-                                    <Text style={[styles.mobileCountText, { color: colors.badgeNew }]}>{t('anki.new')} {node.newCount}</Text>
-                                </View>
-                                <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeLearnBg }]}>
-                                    <Text style={[styles.mobileCountText, { color: colors.badgeLearn }]}>{t('anki.learn')} {node.learnCount}</Text>
-                                </View>
-                                <View style={[styles.mobileCountPill, { backgroundColor: colors.badgeReviewBg }]}>
-                                    <Text style={[styles.mobileCountText, { color: colors.badgeReview }]}>{t('anki.review')} {node.reviewCount}</Text>
-                                </View>
-                            </View>
-                        </>
-                    )}
                 </TouchableOpacity>
 
-                {!isCompact && (
-                    <View style={styles.countsRow}>
-                        <Text style={[styles.countBadge, styles.countNew]}>{node.newCount}</Text>
-                        <Text style={[styles.countBadge, styles.countLearn]}>{node.learnCount}</Text>
-                        <Text style={[styles.countBadge, styles.countReview]}>{node.reviewCount}</Text>
-                    </View>
-                )}
+                <DeckListCounts
+                    newCount={node.newCount}
+                    learnCount={node.learnCount}
+                    reviewCount={node.reviewCount}
+                />
 
                 {dragResponder && (
                     <View
@@ -1383,7 +1342,6 @@ export default function DecksScreen() {
             </View>
         );
     }, [
-        catalogTier,
         colors,
         decodedDropTarget,
         dragDropFeedback,
@@ -1394,8 +1352,8 @@ export default function DecksScreen() {
         l,
         openMenu,
         styles,
-        t,
         toggleExpand,
+        width,
     ]);
 
     /**
@@ -2206,15 +2164,12 @@ export default function DecksScreen() {
 
     const isFilteredDeckModal = modal?.kind === 'filter' || modal?.kind === 'create-filter';
     const isCenteredDeckDialog = modal?.kind === 'create-subdeck' || modal?.kind === 'rename';
-    const renderVirtualizedRow = useCallback(({ item, index }: { item: DeckListRowModel; index: number }) => (
+    const renderVirtualizedRow = useCallback(({ item }: { item: DeckListRowModel }) => (
         <VirtualizedDeckRow
             row={item}
-            compact={isCompact}
-            isGroupEnd={index === visibleRows.length - 1 || visibleRows[index + 1].isRoot}
-            styles={styles}
             renderRow={renderDeckRow}
         />
-    ), [isCompact, renderDeckRow, styles, visibleRows]);
+    ), [renderDeckRow]);
     const deckRowKey = useCallback((item: DeckListRowModel) => item.key, []);
     const deckListHeader = useMemo(
         () => fullCatalogPresent ? null : renderLockedCatalogCard(),
@@ -2239,16 +2194,14 @@ export default function DecksScreen() {
             <View style={styles.header}>
                 <Text style={styles.title}>{t('tabs.decks')}</Text>
                 <View style={styles.headerActions}>
-                    {isDesktopWeb && (
-                        <TouchableOpacity
-                            style={styles.headerBtn}
-                            onPress={refresh}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Desteleri yenile', 'Refresh decks')}
-                        >
-                            <Text style={styles.headerBtnText}>↻</Text>
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                        style={styles.headerBtn}
+                        onPress={refresh}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Desteleri yenile', 'Refresh decks')}
+                    >
+                        <Text style={styles.headerBtnText}>↻</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.headerMenuBtn}
                         onPress={() => setShowOverflowMenu(true)}
@@ -2367,17 +2320,7 @@ export default function DecksScreen() {
                 </KeyboardAvoidingView>
             </Modal>
 
-            {!isCompact && (
-                <View style={styles.columnHeaders}>
-                    <Text style={styles.columnLabel}>{t('common.deck')}</Text>
-                    <View style={styles.countsRow}>
-                        <Text style={[styles.columnCount, { color: colors.badgeNew }]} numberOfLines={1}>{t('anki.new')}</Text>
-                        <Text style={[styles.columnCount, { color: colors.badgeLearn }]} numberOfLines={1}>{t('anki.learn')}</Text>
-                        <Text style={[styles.columnCount, { color: colors.badgeReview }]} numberOfLines={1}>{t('anki.review')}</Text>
-                    </View>
-                    <View style={styles.columnActionsSpacer} />
-                </View>
-            )}
+            <DeckListColumnHeaders />
 
             <View
                 style={styles.listWrap}
@@ -2407,7 +2350,6 @@ export default function DecksScreen() {
                     onContentSizeChange={(_width, height) => {
                         listContentHeightRef.current = height;
                     }}
-                    contentContainerStyle={isCompact ? styles.deckListContentCompact : undefined}
                     initialNumToRender={isCompact ? 12 : 20}
                     maxToRenderPerBatch={isCompact ? 10 : 16}
                     windowSize={7}
@@ -2708,35 +2650,8 @@ function createStyles(colors: ColorScheme) {
     overflowIcon: { width: 22, alignItems: 'center' },
     overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
 
-    columnHeaders: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingLeft: Spacing.lg,
-        paddingRight: Spacing.sm,
-        paddingVertical: 6,
-        backgroundColor: colors.bgSecondary,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    columnLabel: {
-        flex: 1,
-        fontSize: FontSize.xs,
-        fontWeight: '600',
-        color: colors.textMuted,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-    },
-    columnCount: { fontSize: FontSize.xs, fontWeight: '700', width: 54, textAlign: 'center' },
-    columnActionsSpacer: { width: 88 },
-
     listWrap: { flex: 1, position: 'relative' },
     deckList: { flex: 1 },
-    deckListContentCompact: {
-        paddingHorizontal: Spacing.md,
-        paddingTop: Spacing.xs,
-        paddingBottom: Spacing.sm,
-    },
-
     deckRow: {
         position: 'relative',
         flexDirection: 'row',
@@ -2759,67 +2674,9 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.md,
         backgroundColor: colors.accentLight,
     },
-    deckNameRow: { flexDirection: 'row', alignItems: 'center' },
+    deckNameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
     deckNameLock: { marginRight: 6, opacity: 0.75 },
     deckNameLocked: { color: colors.textSecondary },
-    deckRowCompact: {
-        minHeight: 76,
-        paddingVertical: 7,
-        paddingRight: 4,
-        borderBottomWidth: 0,
-    },
-    deckRowCompactChild: {
-        minHeight: 70,
-    },
-    // FlatList rows are siblings, so a top-level deck and the descendants expanded under it are
-    // drawn as one card in three pieces: the root row opens it, child rows continue the same
-    // surface, and the last row of the group closes it. A collapsed root is the whole card.
-    deckGroupCard: {
-        position: 'relative',
-        marginTop: Spacing.sm,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        overflow: 'visible',
-        ...Shadows.sm,
-    },
-    deckGroupCardHead: {
-        position: 'relative',
-        marginTop: Spacing.sm,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderBottomWidth: 0,
-        borderColor: colors.border,
-        borderTopLeftRadius: BorderRadius.md,
-        borderTopRightRadius: BorderRadius.md,
-        overflow: 'visible',
-        // The rows below are opaque and paint after this one, so the card's own shadow only
-        // escapes at its sides and top instead of banding across the seam.
-        ...Shadows.sm,
-    },
-    // Child rows carry the card's side walls only; their top hairline is the row separator.
-    deckGroupCardBody: {
-        position: 'relative',
-        backgroundColor: colors.bgCard,
-        borderLeftWidth: 1,
-        borderRightWidth: 1,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-        borderTopColor: colors.borderLight,
-    },
-    deckGroupCardFoot: {
-        position: 'relative',
-        backgroundColor: colors.bgCard,
-        borderLeftWidth: 1,
-        borderRightWidth: 1,
-        borderBottomWidth: 1,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-        borderTopColor: colors.borderLight,
-        borderBottomLeftRadius: BorderRadius.md,
-        borderBottomRightRadius: BorderRadius.md,
-    },
     lockedDeckCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2923,20 +2780,9 @@ function createStyles(colors: ColorScheme) {
     },
     expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     expandDot: { fontSize: 10, color: colors.border },
-    deckNameTouchable: { flex: 1, marginLeft: 2, minHeight: 44, justifyContent: 'center' },
-    deckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+    deckNameTouchable: { flex: 1, minWidth: 0, marginLeft: 2, minHeight: 44, justifyContent: 'center' },
+    deckName: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
     deckNameFiltered: { color: colors.badgeNew, fontStyle: 'italic' },
-    deckMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-    mobileCountsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 7 },
-    mobileCountPill: { borderRadius: BorderRadius.full, paddingHorizontal: 7, paddingVertical: 3 },
-    mobileCountText: { fontSize: 10, fontWeight: '700', fontVariant: ['tabular-nums'] },
-
-    countsRow: { flexDirection: 'row', gap: 0 },
-    countBadge: { fontSize: FontSize.md, fontWeight: '700', width: 54, textAlign: 'center' },
-    countNew: { color: colors.badgeNew },
-    countLearn: { color: colors.badgeLearn },
-    countReview: { color: colors.badgeReview },
-
     dragHandle: {
         width: 44,
         height: 44,

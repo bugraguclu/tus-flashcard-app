@@ -127,14 +127,14 @@
       "priority": 1,
       "platform": "iOS and iPadOS deck list",
       "url": "https://docs.ankimobile.net/deck-list.html",
-      "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target"]
+      "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target", "deck count categories; TusAnkiM column layout is product-specific"]
     },
     {
       "id": "ankimobile-study-screen",
       "priority": 1,
       "platform": "iOS and iPadOS reviewer layout",
       "url": "https://docs.ankimobile.net/study-screen.html",
-      "useFor": ["remaining counts at the bottom of the study screen", "answer buttons in the bottom area", "next times above the answer buttons", "tap anywhere to show the answer"]
+      "useFor": ["remaining counts at the bottom of the study screen", "count visibility; TusAnkiM title/time toolbar layout is product-specific", "answer buttons in the bottom area", "next times above the answer buttons", "tap anywhere to show the answer"]
     },
     {
       "id": "ankimobile-preferences",
