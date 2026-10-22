@@ -50,7 +50,7 @@ import {
     type DeckTreeNode,
 } from '../../lib/deckManager';
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
-import { alert, confirm } from '../../lib/confirm';
+import { alert, confirm, choose } from '../../lib/confirm';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../../lib/studyRepository';
 import {
     useAppSettings,
@@ -835,12 +835,17 @@ export default function DecksScreen() {
             l('Desteyi sil', 'Delete Deck'),
             deck.isFiltered
                 ? l(`"${getDeckDisplayName(deck.name)}" silinecek; kartlar ait oldukları destelere dönecek.`, `"${getDeckDisplayName(deck.name)}" will be deleted; its cards will return to their original decks.`)
-                : l(`"${getDeckDisplayName(deck.name)}" tüm alt desteleri ve içindeki kartlarla birlikte silinecek. Bu işlem geri alınamaz.`, `"${getDeckDisplayName(deck.name)}" and all of its subdecks and cards will be deleted. This cannot be undone.`),
+                : l(`"${getDeckDisplayName(deck.name)}" tüm alt desteleri ve içindeki kartlarla birlikte silinecek. Silme sonrasında geri alabilirsiniz.`, `"${getDeckDisplayName(deck.name)}" and all of its subdecks and cards will be deleted. You can undo after deletion.`),
             () => {
                 try {
-                    deleteDeck(deck.id);
+                    const deletion = deleteDeck(deck.id);
                     setModal(null);
                     refresh();
+                    if (deletion) void choose(l('Deste silindi', 'Deck deleted'), l(`${deletion.cardCount} kart etkilendi.`, `${deletion.cardCount} cards affected.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
+                        if (!undo) return;
+                        try { deletion.undo(); refresh(); }
+                        catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
+                    });
                 } catch (e) {
                     console.warn('[Decks] delete failed:', e);
                     alert(t('common.error'), l('Deste silinemedi.', 'Could not delete the deck.'));

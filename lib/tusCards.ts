@@ -283,8 +283,8 @@ export function updateTusCardByCardId(
     return { note, card: updatedCard };
 }
 
-export function deleteTusCardByCardId(cardId: number): void {
+export function deleteTusCardByCardId(cardId: number) {
     const card = getAnkiCard(cardId);
     if (!card) return;
-    deleteNote(card.noteId);
+    return deleteNote(card.noteId);
 }

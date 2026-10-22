@@ -1,3 +1,4 @@
+import { captureDeletion, type DeletionUndo } from './noteDeletion';
 import {
     DEFAULT_DECK_CONFIG,
     getDeckDisplayName,
@@ -171,13 +172,16 @@ export function initializeDeckDisclosureDefaults(): void {
  * note left with no cards). Everything runs in one transaction and writes sync tombstones
  * (grave types: 0=card, 1=note, 2=deck).
  */
-export function deleteDeck(id: number): void {
+export function deleteDeck(id: number): DeletionUndo | undefined {
     assertCatalogDeckNotDeletable(id);
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
     assertCatalogDeckMutable(deck);
 
+    const affectedDecks = getAllDecks().filter(d => d.id === id || (!deck.isFiltered && d.name.startsWith(`${deck.name}::`))).map(d => d.id);
+    const affectedCards = db.getAllSync<{ id: number; noteId: number }>(`SELECT id, noteId FROM anki_cards WHERE deckId IN (${sqlPlaceholders(affectedDecks.length)})`, ...affectedDecks);
+    const finishDeletion = captureDeletion({ deckIds: affectedDecks, cardIds: affectedCards.map(c => c.id), noteIds: [...new Set(affectedCards.map(c => c.noteId))] });
     db.execSync('BEGIN TRANSACTION;');
     try {
         if (deck.isFiltered) {
@@ -186,7 +190,7 @@ export function deleteDeck(id: number): void {
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
             db.execSync('COMMIT;');
             forgetWhiteboards([id]);
-            return;
+            return finishDeletion();
         }
 
         // The deck itself plus every subdeck (matched by the "name::" prefix).
@@ -206,7 +210,6 @@ export function deleteDeck(id: number): void {
 
         if (cardIds.length > 0) {
             const placeholders = sqlPlaceholders(cardIds.length);
-            db.runSync(`DELETE FROM revlog WHERE cardId IN (${placeholders})`, ...cardIds);
             db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
             db.runSync(`DELETE FROM anki_cards WHERE id IN (${placeholders})`, ...cardIds);
             for (const cardId of cardIds) {
@@ -233,6 +236,7 @@ export function deleteDeck(id: number): void {
 
         db.execSync('COMMIT;');
         forgetWhiteboards(deckIds);
+        return finishDeletion();
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;

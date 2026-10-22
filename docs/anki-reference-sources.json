@@ -765,6 +765,16 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/data/web/css/webview.scss",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default page text colour that follows the theme (body color: var(--fg))", "a note type's own colour rules outranking that default"]
+    },
+    {
+      "id": "anki-ai1-deletion-history",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/stats.html",
+      "useFor": [
+        "retain deleted-card revlog in lifetime collection statistics",
+        "transactional deletion and conflict-safe local undo"
+      ]
     }
   ],
   "requiredDocs": [

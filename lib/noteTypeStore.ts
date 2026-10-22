@@ -140,7 +140,6 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
                 }
             });
             for (const surplus of existingCards.slice(requiredOrds.length)) {
-                db.runSync('DELETE FROM revlog WHERE cardId = ?', surplus.id);
                 db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(surplus.id));
                 db.runSync('DELETE FROM anki_cards WHERE id = ?', surplus.id);
                 db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', surplus.id);

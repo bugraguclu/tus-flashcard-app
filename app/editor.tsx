@@ -945,7 +945,7 @@ export default function EditorScreen() {
                     }
                     persistStickyFieldValues();
                     return result;
-                }, (result) => deleteTusCardByCardId(result.card.id));
+                }, (result) => { deleteTusCardByCardId(result.card.id); });
                 resetDraftBaseline(savedDraft);
                 setSavedNoteId(created.note.id);
                 bumpDataVersion();
@@ -1002,21 +1002,25 @@ export default function EditorScreen() {
             l('Notu sil', 'Delete Note'),
             siblingCount > 1
                 ? l(
-                    `Bu not ve ondan üretilen ${siblingCount} kart silinsin mi? Bu işlem geri alınamaz.`,
-                    `Delete this note and the ${siblingCount} cards it generates? This cannot be undone.`,
+                    `Bu not ve ondan üretilen ${siblingCount} kart silinsin mi? Silme sonrasında geri alabilirsiniz.`,
+                    `Delete this note and the ${siblingCount} cards it generates? You can undo after deletion.`,
                 )
                 : l(
-                    'Bu not silinsin mi? Bu işlem geri alınamaz.',
-                    'Delete this note? This cannot be undone.',
+                    'Bu not silinsin mi? Silme sonrasında geri alabilirsiniz.',
+                    'Delete this note? You can undo after deletion.',
                 ),
             () => {
                 try {
-                    deleteTusCardByCardId(routeCardId);
+                    const deletion = deleteTusCardByCardId(routeCardId);
                     // The note is gone, so the unsaved-changes guard must not stop the screen from
                     // closing over a draft that no longer has anything to be saved into.
                     resetDraftBaseline(draftFromFields(fieldValuesRef.current));
                     bumpDataVersion();
-                    alert(l('Silindi', 'Deleted'), l('Not silindi.', 'Note deleted.'), () => goBackOr(router));
+                    void choose(l('Silindi', 'Deleted'), l(`${deletion?.cardCount ?? siblingCount} kart silindi.`, `${deletion?.cardCount ?? siblingCount} cards deleted.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
+                        if (!undo) { goBackOr(router); return; }
+                        try { deletion?.undo(); bumpDataVersion(); }
+                        catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
+                    });
                 } catch (e) {
                     console.warn('[Editor] delete failed:', e);
                     alert(t('common.error'), l('Not silinemedi.', 'Could not delete the note.'));

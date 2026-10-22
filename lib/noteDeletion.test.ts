@@ -1,0 +1,54 @@
+// Independent behavior tests: https://docs.ankiweb.net/stats.html (deleted-note history).
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import initSqlJs from 'sql.js';
+import { createAppDb, type SyncDb } from '../test/sqljsHarness';
+const holder = vi.hoisted(() => ({ db: null as any }));
+vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
+import { BUILTIN_NOTE_TYPES } from './models';
+import { createNote, deleteNote, deleteAnkiCardOnly, getNote, getCardsForNote } from './noteStore';
+import { createDeck, deleteDeck, getDeck } from './deckStore';
+let SQL: Awaited<ReturnType<typeof initSqlJs>>;
+let db: SyncDb;
+beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
+beforeEach(() => { db = createAppDb(SQL); holder.db = db; });
+afterEach(() => db.close());
+function fixture() {
+    const deck = createDeck('History');
+    const { note, cards } = createNote(BUILTIN_NOTE_TYPES[0], ['Front', 'Back'], deck.id);
+    db.runSync('INSERT INTO revlog (id, cardId) VALUES (?, ?)', 123, cards[0].id);
+    return { deck, note, card: cards[0] };
+}
+describe('deletion retains history and offers conflict-safe undo', () => {
+    it.each(['note', 'card', 'deck'])('preserves revlog when deleting a %s', (kind) => {
+        const { deck, note, card } = fixture();
+        if (kind === 'note') deleteNote(note.id);
+        if (kind === 'card') deleteAnkiCardOnly(card.id);
+        if (kind === 'deck') deleteDeck(deck.id);
+        expect(db.getAllSync('SELECT * FROM revlog')).toHaveLength(1);
+    });
+    it('restores note, cards and graves on undo', () => {
+        const { note, card } = fixture();
+        const result = deleteNote(note.id);
+        expect(getNote(note.id)).toBeNull();
+        result!.undo();
+        expect(getNote(note.id)).toEqual(note);
+        expect(getCardsForNote(note.id)[0]).toEqual(card);
+        expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
+        expect(() => result!.undo()).toThrow();
+    });
+    it('restores a deleted subtree without changing unrelated notes', () => {
+        const { deck, note } = fixture();
+        const child = createDeck('History::Child');
+        const result = deleteDeck(deck.id);
+        result!.undo();
+        expect(getDeck(child.id)?.name).toBe(child.name);
+        expect(getNote(note.id)).toEqual(note);
+    });
+    it('refuses undo if an affected id was reused', () => {
+        const { note } = fixture();
+        const result = deleteNote(note.id);
+        db.runSync('INSERT INTO notes (id, data) VALUES (?, ?)', note.id, '{}');
+        expect(() => result!.undo()).toThrow();
+        expect(db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id)?.data).toBe('{}');
+    });
+});

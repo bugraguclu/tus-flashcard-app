@@ -1,3 +1,4 @@
+import { captureDeletion, type DeletionUndo } from './noteDeletion';
 import {
     generateGuid,
     checksumField,
@@ -83,10 +84,12 @@ export function saveNote(note: Note): void {
     );
 }
 
-export function deleteNote(id: number): void {
+export function deleteNote(id: number): DeletionUndo {
     assertCatalogNoteNotDeletable(id);
     assertCatalogNoteMutable(id);
     const db = getDB();
+    const ids = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id).map(row => row.id);
+    const finishDeletion = captureDeletion({ noteIds: [id], cardIds: ids });
     db.execSync('BEGIN TRANSACTION;');
     try {
         const cardRows = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id);
@@ -94,7 +97,6 @@ export function deleteNote(id: number): void {
 
         if (cardIds.length > 0) {
             const placeholders = cardIds.map(() => '?').join(', ');
-            db.runSync(`DELETE FROM revlog WHERE cardId IN (${placeholders})`, ...cardIds);
             db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
         }
 
@@ -108,6 +110,7 @@ export function deleteNote(id: number): void {
         db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', id);
 
         db.execSync('COMMIT;');
+        return finishDeletion();
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
@@ -694,7 +697,6 @@ export function deleteAnkiCardsOnly(cardIds: number[]): void {
     try {
         const uniqueIds = [...new Set(cardIds)];
         for (const cardId of uniqueIds) {
-            db.runSync('DELETE FROM revlog WHERE cardId = ?', cardId);
             db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
             db.runSync('DELETE FROM anki_cards WHERE id = ?', cardId);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);

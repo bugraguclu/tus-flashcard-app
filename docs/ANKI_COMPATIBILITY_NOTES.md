@@ -122,6 +122,8 @@ retention/true-retention graphs and the FSRS simulator
 
 ## Hierarchical decks and presets
 
+Deletion keeps lifetime review history. Note/editor and deck-list deletion return a one-shot Undo action with the affected card count; restoration refuses to overwrite intervening edits (`lib/noteDeletion.test.ts`). Undo currently lives only while the deletion result is held by the caller, not across app restarts.
+
 **Status:** Implemented
 
 **Evidence:** validated/atomic Deck Options save flow, searchable deck picker, explicit deck-vs-preset labels, preset rename scoped to the selected config, hierarchical deck rename with subtree/collision protection, deck manager, deck-options form and deck-navigation tests. Which settings the screen shows follows the scheduler in use, as Anki's `{#if !$fsrs}` gates do: the ease multipliers, graduating and easy intervals and the lapse minimum are hidden while FSRS is on, and the FSRS inputs while it is off. A hidden field keeps its stored value through a save and can never report an error, because an error the learner cannot see is one they cannot fix (`isDeckOptionFieldVisible`)
