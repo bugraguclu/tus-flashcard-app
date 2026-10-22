@@ -136,10 +136,9 @@ describe('Dynamic multi-field editor integration', () => {
         expect(dup?.firstField).toBe('Hipertansiyon patogenezi');
         expect(dup?.deckName).toBe('Patoloji');
 
-        // Whitespace trimmed matching
+        // Anki hashes the normalized source field without trimming significant outer spaces.
         const dupWithSpaces = findDuplicateNote(500, '   Hipertansiyon patogenezi   ');
-        expect(dupWithSpaces).not.toBeNull();
-        expect(dupWithSpaces?.noteId).toBe(dup?.noteId);
+        expect(dupWithSpaces).toBeNull();
 
         // Different note type should not match
         expect(findDuplicateNote(1, 'Hipertansiyon patogenezi')).toBeNull();

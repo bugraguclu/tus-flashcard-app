@@ -5,7 +5,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
 import { BUILTIN_NOTE_TYPES } from './models';
-import { createNote, deleteNote, deleteAnkiCardOnly, deleteAnkiCardsOnly, getNote, getCardsForNote, saveNote, saveAnkiCard } from './noteStore';
+import { createNote, deleteNote, deleteAnkiCardOnly, deleteAnkiCardsOnly, getNote, getCardsForNote, saveNote, saveAnkiCard, findDuplicateNote } from './noteStore';
 import { createDeck, deleteDeck, getDeck } from './deckStore';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -69,4 +69,14 @@ describe('non-destructive card generation', () => {
   expect(getCardsForNote(note.id)).toHaveLength(1);
   expect(db.getAllSync('SELECT * FROM revlog')).toHaveLength(1);
  });
+});
+
+// https://docs.ankiweb.net/editing.html#duplicate-check
+it('detects imported SHA1 checksums and legacy local notes through equivalent first-field HTML', () => {
+ const { note } = noteOf(builtin(1), ['Digoksin', 'Back']);
+ db.runSync('UPDATE notes SET csum = ? WHERE id = ?', 898989217, note.id);
+ expect(findDuplicateNote(1, '<b>Digoksin</b>')?.noteId).toBe(note.id);
+ const legacy = noteOf(builtin(1), ['<b>kalp</b>', 'Back']);
+ db.runSync('UPDATE notes SET csum = ? WHERE id = ?', 42, legacy.note.id);
+ expect(findDuplicateNote(1, 'kalp')?.noteId).toBe(legacy.note.id);
 });

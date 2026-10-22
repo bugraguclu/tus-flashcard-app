@@ -829,6 +829,18 @@
         "conditional div/br blanks",
         "typed comparison in FrontSide and a single type:cloze input"
       ]
+    },
+    {
+      "id": "anki-ai1-note-checksum",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/notes/mod.rs",
+      "useFor": [
+        "unsigned SHA1 first-four-byte checksum",
+        "normalized first field duplicate warning",
+        "read old local checksums without rewriting content"
+      ],
+      "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     }
   ],
   "requiredDocs": [

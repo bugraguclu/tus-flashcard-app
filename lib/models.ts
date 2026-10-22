@@ -498,15 +498,7 @@ export function generateGuid(): string {
     return result;
 }
 
-export function checksumField(field: string): number {
-    let hash = 0x811c9dc5; // FNV offset basis
-    const str = field.trim();
-    for (let i = 0; i < str.length; i++) {
-        hash ^= str.charCodeAt(i);
-        hash = Math.imul(hash, 0x01000193); // FNV prime
-    }
-    return Math.abs(hash | 0);
-}
+export { ankiFieldChecksum as checksumField } from './noteChecksum';
 
 /** Parse a deck hierarchy: "A::B::C" -> ["A", "A::B", "A::B::C"]. */
 export function getDeckAncestors(name: string): string[] {

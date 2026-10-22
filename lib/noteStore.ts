@@ -1,3 +1,4 @@
+import { checksumFieldText } from './noteChecksum';
 import { captureDeletion, type DeletionUndo } from './noteDeletion';
 import {
     generateGuid,
@@ -642,11 +643,11 @@ export function findDuplicateNote(
     firstFieldValue: string,
     excludeNoteId?: number,
 ): DuplicateNoteResult | null {
-    const target = firstFieldValue.trim();
-    if (!target) return null;
+    const target = checksumFieldText(firstFieldValue);
+    if (!target.trim()) return null;
 
     const db = getDB();
-    const csum = checksumField(target);
+    const csum = checksumField(firstFieldValue);
 
     const rows = db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
         `SELECT n.id AS noteId, c.id AS cardId, d.name AS deckName, n.data AS noteData
@@ -658,11 +659,21 @@ export function findDuplicateNote(
         ...(excludeNoteId ? [csum, noteTypeId, excludeNoteId] : [csum, noteTypeId]),
     );
 
-    for (const row of rows) {
+    // Old local collections used FNV checksums. Read fallback rows without rewriting a collection
+    // during a read-only duplicate check; new/imported SHA1 rows keep the indexed fast path.
+    const fallback = () => db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
+        `SELECT n.id AS noteId, c.id AS cardId, d.name AS deckName, n.data AS noteData
+         FROM notes n LEFT JOIN anki_cards c ON c.noteId = n.id AND c.ord = 0
+         LEFT JOIN decks d ON d.id = c.deckId
+         WHERE n.noteTypeId = ? AND n.csum != ? ${excludeNoteId ? 'AND n.id != ?' : ''}`,
+        ...(excludeNoteId ? [noteTypeId, csum, excludeNoteId] : [noteTypeId, csum]),
+    );
+    function* candidates() { yield* rows; yield* fallback(); }
+    for (const row of candidates()) {
         try {
             const parsed = JSON.parse(row.noteData) as { fields?: string[] };
             const field0 = parsed.fields?.[0];
-            if (typeof field0 === 'string' && field0.trim() === target) {
+            if (typeof field0 === 'string' && checksumFieldText(field0) === target) {
                 return {
                     noteId: row.noteId,
                     cardId: row.cardId,
