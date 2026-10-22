@@ -775,6 +775,15 @@
         "reviewer operation delta undo without resurrecting deleted rows; ai2Safety.test.ts",
         "deck-options day boundaries: interday due stays a day number; Grade Now resumes scheduling"
       ]
+    },
+    {
+      "id": "anki-ai2-filter-search",
+      "priority": 1,
+      "platform": "cross-platform filtered search",
+      "url": "https://docs.ankiweb.net/searching.html",
+      "useFor": [
+        "quoted key:value terms, wildcard decks, note/card/field/nid/introduced searches; ai2FilteredSearch.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

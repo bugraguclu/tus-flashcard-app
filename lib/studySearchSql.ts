@@ -70,6 +70,31 @@ interface SearchFragment {
  */
 export function clauseForSearchTerm(term: string): SearchFragment | null {
     const unquote = unquoteSearchValue;
+    // Anki permits quoting the whole key:value token, including a deck with spaces.
+    if (term.startsWith('"') && term.endsWith('"')) term = unquote(term);
+    const wildcard = (value: string) => escapeLikePattern(value).replace(/\*/g, '%');
+    if (term.startsWith('nid:')) {
+        const ids = unquote(term.slice(4)).split(',').map(Number);
+        return ids.length && ids.every(Number.isSafeInteger)
+            ? { sql: `n.id IN (${ids.map(() => '?').join(',')})`, params: ids }
+            : { sql: '0', params: [] };
+    }
+    if (term.startsWith('note:')) {
+        return { sql: "nt.name LIKE ? ESCAPE '\\'", params: [wildcard(unquote(term.slice(5)))] };
+    }
+    if (term.startsWith('card:')) {
+        const value = unquote(term.slice(5));
+        return /^\d+$/.test(value)
+            ? { sql: 'c.ord = ?', params: [Number(value) - 1] }
+            : { sql: "EXISTS (SELECT 1 FROM json_each(nt.data, '$.templates') t WHERE json_extract(t.value, '$.ord') = c.ord AND json_extract(t.value, '$.name') LIKE ? ESCAPE '\\')", params: [wildcard(value)] };
+    }
+    if (term.startsWith('introduced:')) {
+        const days = Number(unquote(term.slice(11)));
+        if (!Number.isFinite(days) || days < 0) return { sql: '0', params: [] };
+        const cutoff = nextRolloverMs(Date.now(), collectionSearchSettings().rolloverHour) - Math.max(1, Math.floor(days)) * 86400000;
+        return { sql: 'c.id IN (SELECT cardId FROM revlog WHERE ease > 0 AND type != 3 GROUP BY cardId HAVING MIN(id) >= ?)', params: [cutoff] };
+    }
+
 
     if (term.startsWith('tag:')) {
         const tag = unquote(term.slice(4));
@@ -91,8 +116,8 @@ export function clauseForSearchTerm(term: string): SearchFragment | null {
         const deckName = unquote(term.slice(5));
         if (!deckName) return null;
         return {
-            sql: "(d.name = ? OR d.name LIKE ? ESCAPE '\\')",
-            params: [deckName, `${escapeLikePattern(deckName)}::%`],
+            sql: "(d.name LIKE ? ESCAPE '\\' OR d.name LIKE ? ESCAPE '\\')",
+            params: [wildcard(deckName), `${wildcard(deckName)}::%`],
         };
     }
 
@@ -263,6 +288,14 @@ export function clauseForSearchTerm(term: string): SearchFragment | null {
 
         const column = { ivl: 'c.ivl', reps: 'c.reps', lapses: 'c.lapses' }[key]!;
         return { sql: `${column} ${op} ?`, params: [Math.trunc(value)] };
+    }
+
+    const field = term.match(/^([^:]+):([\s\S]*)$/);
+    if (field) {
+        return {
+            sql: "EXISTS (SELECT 1 FROM json_each(nt.data, '$.fields') f JOIN json_each(n.data, '$.fields') v ON v.key = f.key WHERE json_extract(f.value, '$.name') LIKE ? ESCAPE '\\' AND v.value LIKE ? ESCAPE '\\')",
+            params: [wildcard(unquote(field[1])), `%${wildcard(unquote(field[2]))}%`],
+        };
     }
 
     const escaped = escapeLikePattern(unquote(term));
