@@ -787,6 +787,17 @@
         "today/yesterday and daily/weekly/monthly retention",
         "learner metadata recovery without protected catalog fields; lib/backupSafety.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai3-shared-search",
+      "priority": 1,
+      "platform": "cross-platform browser and filtered search",
+      "url": "https://docs.ankiweb.net/searching.html",
+      "useFor": [
+        "one evaluator for browser and filtered searches",
+        "all-field substring search without metadata",
+        "Unicode names, explicit nc accent folding and invalid-query errors; lib/searchParitySafety.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

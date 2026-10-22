@@ -258,8 +258,8 @@ describe('BKA catalog installation', () => {
         expect(getBrowserCardCount({ deckIds: [LEARNER.deckId] })).toBe(1);
         expect(getBrowserCards(DEFAULT_SETTINGS, { limit: 200, deckIds: [LEARNER.deckId] })[0]?.cardId)
             .toBe(LEARNER.cardId);
-        expect(getBrowserCardIdsMatchingText({}, 'kendi cevabim')).toContain(LEARNER.cardId);
-        expect(getBrowserCardIdsMatchingText({}, 'kendi dest')).toContain(LEARNER.cardId);
+        expect(getBrowserCardIdsMatchingText({}, 'kendi cevabım')).toContain(LEARNER.cardId);
+        expect(getBrowserCardIdsMatchingText({}, 'deck:"Kendi Destem"')).toContain(LEARNER.cardId);
         expect(getBrowserCardIdsMatchingText({ deckIds: [LEARNER.deckId] }, 'kendi sorum'))
             .toEqual([LEARNER.cardId]);
         expect(browserLoadMs).toBeLessThan(1_000);

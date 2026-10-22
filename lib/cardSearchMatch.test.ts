@@ -66,9 +66,9 @@ describe('terms the context cannot answer', () => {
         expect(matches('prop:s>5', card({ memoryState: { stability: 9, difficulty: 5 } }))).toBe(true);
     });
 
-    it('let an empty or invalid term narrow nothing, negated or not', () => {
-        expect(matches('-deck:', card())).toBe(true);
-        expect(matches('-flag:9', card())).toBe(true);
-        expect(matches('flag:9', card())).toBe(true);
+    it('rejects an empty or invalid term, including under negation', () => {
+        expect(() => matches('-deck:', card())).toThrow();
+        expect(() => matches('-flag:9', card())).toThrow();
+        expect(() => matches('flag:9', card())).toThrow();
     });
 });

@@ -209,11 +209,13 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## Browser, card/note table modes, tags, flags, marks, suspend/bury, reposition
 
+`lib/collectionCardSearch.ts` is the shared evaluator for browser and filtered SQL searches; exported SQL helper signatures remain unchanged. Plain terms search substrings in every note field, excluding tags/deck names/serialized metadata; ASCII case folding is default and `nc:` opts into accent folding. Unicode hierarchical tag/deck names are compared in JS, including tag-picker filters on SQLite without ICU. Invalid structured terms, regexes, quotes and groups throw `SearchSyntaxError`; the browser shows an error and clears stale cards/selection. `lib/searchParitySafety.test.ts` compares both consumers. The evaluator currently scans collection rows and materializes matching IDs using `json_each(?)`; indexed/streaming evaluation for very large collections is a remaining performance gate.
+
 **Status:** Implemented subset
 
 **Evidence:** In-place searchable deck scope picker with inline create-and-select, scoped tag and multi-flag filters, optional safe audio-filename projection, Notes-mode first-card and aggregate-row semantics, browser/search/table-mode/selection tests. A row out of the queue is tinted rather than faded, as Anki does it: suspended rows take a warm tint and buried rows a neutral one, the text keeps its full contrast, and a selected row still reads as selected because the selection style is applied last. The page already on screen is re-checked with a lighter context than the database search had, so a term that context cannot read (`added:`, `edited:`, `rated:`, `note:`, FSRS `prop:`) is left undecided and stays so under `-`: a negated term no longer empties a page the database search filled (`lib/cardSearchMatch.test.ts`)
 
-**Next compatibility gate:** Expand full Anki search grammar and flag naming. Notes mode shows no suspend or bury tint, and should not grow one: upstream decides row colour in `rslib/src/browser_table.rs` `get_row_color`, which in notes mode returns only Marked or Default and reads a card's queue solely in cards mode. Adding a tint there would be a divergence, not a fix
+**Next compatibility gate:** Expand remaining Anki search grammar and flag naming; profile the shared evaluator on large iPhone collections. Notes mode shows no suspend or bury tint, and should not grow one: upstream decides row colour in `rslib/src/browser_table.rs` `get_row_color`, which in notes mode returns only Marked or Default and reads a card's queue solely in cards mode. Adding a tint there would be a divergence, not a fix
 
 ## Empty Cards maintenance
 

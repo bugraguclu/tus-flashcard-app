@@ -1,20 +1,18 @@
 // Anki search terms evaluated against a card the app has already loaded.
 //
-// The card browser searches over rendered text with Turkish/ASCII folding (lib/searchText), which
-// SQL LIKE cannot reproduce, so the browser evaluates the whole query in JS instead of translating
-// it. The grammar is shared with the filtered-deck builder (lib/searchQuery.ts); only the term
-// evaluation lives here.
+// Every collection search uses this term evaluator. The SQL adapter materializes its ID set,
+// so browser and filtered searches agree without SQLite ICU or platform-specific functions.
 
 import { fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview, type FsrsMemoryState } from './fsrs';
-import { matchesSearch, normalizeSearchText } from './searchText';
-import { foldSearchNode, isQuotedTerm, parseSearchQuery, unquoteSearchValue } from './searchQuery';
+import { normalizeSearchText } from './searchText';
+import { foldSearchNode, isQuotedTerm, parseSearchQuery, SearchSyntaxError, unquoteSearchValue } from './searchQuery';
 
 /** Everything a search term may ask about one card. */
 export interface CardSearchContext {
     cardId: number;
     noteId: number;
     deckName: string;
-    /** Rendered question/answer plus topic — what a bare search word matches. */
+    /** Plain field text fallback for a partial card context. */
     text: string;
     tags: string[];
     templateOrd: number;
@@ -68,6 +66,7 @@ type TermTest = (card: CardSearchContext) => Verdict;
 type Predicate = (card: CardSearchContext) => boolean;
 
 const UNKNOWN: TermTest = () => undefined;
+function invalidTerm(term: string): never { throw new SearchSyntaxError(term); }
 
 const DAY_MS = 86_400_000;
 
@@ -81,7 +80,7 @@ function escapeRegExp(value: string): string {
  * is not defeated by markup or by an ASCII keyboard.
  */
 function foldKey(value: string): string {
-    return normalizeSearchText(value);
+    return value.normalize('NFC').toLocaleLowerCase('tr');
 }
 
 /** Anki's `*` wildcard, compiled once per term. Without a `*` the comparison is a plain equality. */
@@ -122,21 +121,18 @@ function noteText(card: CardSearchContext): string {
  * Everything a bare word searches: the rendered card, its tags and its deck. Anki's browser also
  * searches collection metadata, and the app's existing search box has always included these.
  */
-function searchableText(card: CardSearchContext): string {
-    return `${card.text} ${card.tags.join(' ')} ${card.deckName}`;
+/** Field contents only; metadata, deck names and tags have their own search terms. */
+function fieldText(value: string, noCombining = false): string {
+    let text = value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#0?39;/g, "'");
+    if (noCombining) text = text.normalize('NFD').replace(/\p{M}/gu, '');
+    return text.replace(/[A-Z]/g, ch => ch.toLowerCase());
 }
-
-function textPredicate(term: string): TermTest {
+function textPredicate(term: string, noCombining = false): TermTest {
     const value = unquoteSearchValue(term);
-    if (!value) return UNKNOWN;
-
-    // A quoted phrase is matched as a phrase; bare words keep the app's per-word prefix search,
-    // which behaves like Anki's implicit `word*`.
-    if (isQuotedTerm(term) && /\s/.test(value)) {
-        const phrase = normalizeSearchText(value);
-        return (card) => normalizeSearchText(searchableText(card)).includes(phrase);
-    }
-    return (card) => matchesSearch(searchableText(card), value);
+    if (!value) throw new SearchSyntaxError('empty text term');
+    const pattern = fieldText(value, noCombining);
+    const regex = new RegExp(pattern.split('*').map(part => part.split('_').map(escapeRegExp).join('.')).join('.*'), 's');
+    return card => (card.fields ? Object.values(card.fields) : [card.text]).some(field => regex.test(fieldText(field, noCombining)));
 }
 
 function statePredicate(state: string, options: CardMatcherOptions): TermTest | null {
@@ -237,8 +233,8 @@ function dayWindowPredicate(
     read: (card: CardSearchContext) => number | undefined,
 ): TermTest | null {
     const days = Number(rawDays);
-    if (!Number.isFinite(days) || days <= 0) return null;
-    const cutoff = options.dayCutoffMs - (Math.floor(days) - 1) * DAY_MS;
+    if (!Number.isInteger(days) || days < 0) return null;
+    const cutoff = options.dayCutoffMs - (Math.max(1, days) - 1) * DAY_MS;
     return (card) => {
         const stamp = read(card);
         return stamp === undefined ? undefined : stamp >= cutoff;
@@ -246,38 +242,40 @@ function dayWindowPredicate(
 }
 
 function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
+    if (isQuotedTerm(term) && term.includes(':')) term = unquoteSearchValue(term);
     const separator = term.indexOf(':');
-    if (separator <= 0 || isQuotedTerm(term)) return textPredicate(term);
+    if (separator <= 0) return textPredicate(term);
 
     const prefix = term.slice(0, separator).toLowerCase();
     const body = unquoteSearchValue(term.slice(separator + 1));
 
     switch (prefix) {
         case 'deck': {
-            if (!body) return UNKNOWN;
+            if (!body) throw new SearchSyntaxError('empty search value');
             const matches = hierarchicalMatcher(body);
             return (card) => matches(card.deckName);
         }
         case 'tag': {
-            if (!body) return UNKNOWN;
+            if (!body) throw new SearchSyntaxError('empty search value');
             if (body === 'none') return (card) => card.tags.length === 0;
             const matches = hierarchicalMatcher(body);
             return (card) => card.tags.some(matches);
         }
         case 'is':
-            return statePredicate(body.toLowerCase(), options) ?? UNKNOWN;
+            return statePredicate(body.toLowerCase(), options) ?? invalidTerm(term);
         case 'flag': {
             const value = Number(body);
-            if (!Number.isInteger(value) || value < 0 || value > 7) return UNKNOWN;
+            if (!/^\d$/.test(body) || value < 0 || value > 7) return invalidTerm(term);
             return (card) => (card.flags & 7) === value;
         }
         case 'prop':
-            return propPredicate(body, options) ?? UNKNOWN;
+            return propPredicate(body, options) ?? invalidTerm(term);
         case 'rated': {
             const [rawDays, rawEase] = body.split(':');
             const days = Number(rawDays);
-            if (!Number.isFinite(days) || days <= 0) return UNKNOWN;
+            if (!Number.isInteger(days) || days <= 0 || body.split(':').length > 2) return invalidTerm(term);
             const ease = rawEase === undefined ? null : Number(rawEase);
+            if (ease !== null && (!Number.isInteger(ease) || ease < 1 || ease > 4)) return invalidTerm(term);
             const lookup = options.ratedWithin;
             if (!lookup) return UNKNOWN;
             return (card) => lookup(card.cardId, Math.floor(days), ease);
@@ -285,20 +283,21 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
         case 'introduced': {
             const days = Number(body);
             const lookup = options.introducedWithin;
-            if (!lookup || !Number.isFinite(days) || days <= 0) return UNKNOWN;
+            if (!Number.isInteger(days) || days <= 0) return invalidTerm(term);
+            if (!lookup) return UNKNOWN;
             return (card) => lookup(card.cardId, Math.floor(days));
         }
         case 'added':
-            return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? UNKNOWN;
+            return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? invalidTerm(term);
         case 'edited':
-            return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? UNKNOWN;
+            return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? invalidTerm(term);
         case 'note': {
-            if (!body) return UNKNOWN;
+            if (!body) throw new SearchSyntaxError('empty search value');
             const matches = wildcardMatcher(body);
             return (card) => (card.noteTypeName === undefined ? undefined : matches(card.noteTypeName));
         }
         case 'card': {
-            if (!body) return UNKNOWN;
+            if (!body) throw new SearchSyntaxError('empty search value');
             // Anki accepts a template name or its 1-based number.
             const ordinal = Number(body);
             if (Number.isInteger(ordinal) && ordinal > 0) return (card) => card.templateOrd === ordinal - 1;
@@ -318,7 +317,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
             try {
                 regex = new RegExp(body, 'i');
             } catch {
-                return UNKNOWN; // A half-typed pattern narrows nothing instead of throwing.
+                return invalidTerm(term);
             }
             return (card) => regex.test(noteText(card));
         }
@@ -326,24 +325,24 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
             // Whole word rather than the prefix match a bare word gets.
             const word = normalizeSearchText(body);
             if (!word) return UNKNOWN;
-            return (card) => normalizeSearchText(searchableText(card))
+            return (card) => normalizeSearchText(noteText(card))
                 .split(/[^\p{L}\p{N}]+/u)
                 .some((candidate) => candidate === word);
         }
         case 'nc':
             // "No combining characters": this app folds diacritics in every search already.
-            return textPredicate(body);
+            return textPredicate(body, true);
         default: {
             // `Front:dog` searches one field by name; anything else is ordinary text, because a
             // search box should not swallow a colon the learner meant literally.
             const fieldKey = foldKey(term.slice(0, separator));
-            const matches = wildcardMatcher(body);
+            const test = textPredicate(term.slice(separator + 1));
             return (card) => {
                 if (!card.fields) return undefined;
                 const entry = Object.entries(card.fields)
                     .find(([name]) => foldKey(name) === fieldKey);
-                if (!entry) return matchesSearch(searchableText(card), unquoteSearchValue(term));
-                return matches(entry[1]);
+                if (!entry) return false;
+                return test({ ...card, fields: { field: entry[1] } });
             };
         }
     }

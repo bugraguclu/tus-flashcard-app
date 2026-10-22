@@ -53,11 +53,9 @@ describe('parsing', () => {
         expect(show('a AND b OR c')).toBe('((a AND b) OR c)');
     });
 
-    it('treats an unbalanced query as everything typed so far', () => {
-        // A search box is read while it is being typed; half a group should narrow results
-        // rather than throw the query away.
-        expect(show('a (b or c')).toBe('(a AND (b OR c))');
-        expect(show('a )')).toBe('a');
+    it('rejects unbalanced queries so incomplete input cannot select an unintended scope', () => {
+        expect(() => show('a (b or c')).toThrow();
+        expect(() => show('a )')).toThrow();
     });
 
     it('returns null for an empty search', () => {
