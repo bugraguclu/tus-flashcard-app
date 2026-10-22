@@ -148,7 +148,7 @@ describe('apkg glue (real sql.js + jszip)', () => {
         ]);
     });
 
-    it('does not store active document/code media from an untrusted package', async () => {
+    it('preserves media bytes of every extension while renderer security controls execution', async () => {
         media.saved.length = 0;
         const zip = new JSZip();
         zip.file('media', JSON.stringify({
@@ -163,7 +163,7 @@ describe('apkg glue (real sql.js + jszip)', () => {
         zip.file('3', new Uint8Array([4]));
 
         const counts = await importMediaFromZip(zip);
-        expect(counts).toEqual({ imported: 1, skipped: 3, filenames: ['safe.png'] });
-        expect(media.saved).toEqual([{ filename: 'safe.png', size: 1 }]);
+        expect(counts).toEqual({ imported: 4, skipped: 0, filenames: ['safe.png', 'active.svg', 'page.html', 'code.js'] });
+        expect(media.saved.map(entry => entry.filename)).toEqual(counts.filenames);
     });
 });

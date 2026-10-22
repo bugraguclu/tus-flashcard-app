@@ -13,18 +13,19 @@ vi.mock('./mediaStore', () => ({
     readMediaBytes: async (name: string) => h.media.get(name) ?? null,
 }));
 import { buildAnkiExport, type ExportCollectionSource } from './exportAnkiPackage';
-import { importApkg } from './importApkg';
+import { importApkg, importMediaFromZip } from './importApkg';
 import { openSqlJsReader } from './webDb';
 import { BUILTIN_NOTE_TYPES, DEFAULT_DECK_CONFIG, checksumField, type AnkiCard } from './models';
-import { getAllNotes, getAllAnkiCards } from './noteManager';
+import { getAllNotes, getAllAnkiCards, getAllNoteTypes } from './noteManager';
 import { importDelimitedNotes, previewDelimitedNotes } from './importNotes';
 import { parseDelimited } from './importDelimited';
+import { getAllDeckConfigs, getAllDecks, saveDeck, saveDeckConfig } from './deckManager';
 import { localDayNumber } from './ankiState';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
 beforeEach(() => { h.db = createAppDb(SQL); h.media.clear(); Platform.OS = 'web'; });
 function source(): ExportCollectionSource {
-    const nt = { ...BUILTIN_NOTE_TYPES[0], id: 700, name: 'Transfer', fields: [...BUILTIN_NOTE_TYPES[0].fields, { name: 'Extra', ord: 2, sticky: false, rtl: false }] };
+    const nt = { ...structuredClone(BUILTIN_NOTE_TYPES[0]), id: 700, name: 'Transfer', fields: [...BUILTIN_NOTE_TYPES[0].fields, { name: 'Extra', ord: 2, sticky: false, rtl: false }] };
     return {
         notes: [{ id: 701, guid: 'transfer-guid', noteTypeId: nt.id, mod: 100, usn: -1, fields: ['Heart', '<img src="heart.png">', 'Keep me'], tags: ['important'], sfld: 'Heart', csum: checksumField('Heart'), flags: 0 }],
         cards: [{ id: 702, noteId: 701, deckId: 703, ord: 0, mod: 100, usn: -1, type: 0, queue: 0, due: 1, ivl: 0, factor: 0, reps: 0, lapses: 0, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0 }],
@@ -103,5 +104,71 @@ describe('text update and export safety', () => {
         const rows = parseDelimited(artifact.text!).rows;
         expect(rows).toHaveLength(1);
         expect(rows[0][0]).toBe(includeGuid ? '#stable' : '#1 question');
+    });
+});
+
+describe('package author update identities and presets', () => {
+    it('matches a renamed note type by stable id and updates the existing GUID', async () => {
+        await importApkg(await pkg(), options);
+        const update = source(); update.noteTypes[0].name = 'Transfer v2'; update.noteTypes[0].mod = 200;
+        update.notes[0].mod = 200; update.notes[0].fields[1] = 'Updated';
+        expect(await importApkg(await pkg(update), options)).toMatchObject({ updated: 1 });
+        expect(h.db.getFirstSync('SELECT COUNT(*) AS count FROM note_types').count).toBe(1);
+        expect(getAllNotes()[0].fields[1]).toBe('Updated');
+    });
+    it('reuses a schema-conflict copy across different author packages', async () => {
+        await importApkg(await pkg(), options);
+        const update = source(); update.noteTypes[0].fields.push({ name: 'Fourth', ord: 3, sticky: false, rtl: false });
+        update.notes[0].fields.push('Fourth');
+        expect(await importApkg(await pkg(update), options)).toMatchObject({ conflicting: 1, cardsImported: 0 });
+        update.noteTypes[0].mod = 300; update.notes[0].mod = 300;
+        await importApkg(await pkg(update), options);
+        update.noteTypes[0].mod = 400; update.notes[0].mod = 400;
+        await importApkg(await pkg(update), options);
+        expect(h.db.getFirstSync('SELECT COUNT(*) AS count FROM note_types').count).toBe(2);
+    });
+    it('uses stable field/template ids for harmless renames', async () => {
+        const data = source(); data.noteTypes[0].ankiRaw = { flds: data.noteTypes[0].fields.map((_, i) => ({ id: 900 + i })), tmpls: [{ id: 990 }] };
+        await importApkg(await pkg(data), options);
+        data.noteTypes[0].fields[0].name = 'Renamed'; data.noteTypes[0].templates[0].name = 'Renamed card'; data.noteTypes[0].mod = 200; data.notes[0].mod = 200;
+        expect(await importApkg(await pkg(data), options)).toMatchObject({ updated: 1 });
+        expect(h.db.getFirstSync('SELECT COUNT(*) AS count FROM note_types').count).toBe(1);
+    });
+    it.each([true, false])('preserves local preset and deck overrides during a Default-preset update (import presets: %s)', async (withDeckConfigs) => {
+        await importApkg(await pkg(), options);
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 77, name: 'Local' });
+        saveDeck({ ...getAllDecks().find(deck => deck.id === 703)!, configId: 77, reviewLimit: 33, sortOrder: 5 });
+        const count = getAllDeckConfigs().length;
+        const update = source(); update.notes[0].mod = 200; update.decks[0].mod = Math.floor(Date.now() / 1000) + 1000;
+        await importApkg(await pkg(update), { ...options, withDeckConfigs });
+        expect(getAllDecks().find(deck => deck.id === 703)).toMatchObject({ configId: 77, reviewLimit: 33, sortOrder: 5 });
+        expect(getAllDeckConfigs()).toHaveLength(count);
+    });
+    it('round-trips zero and positive deck limit overrides', async () => {
+        const data = source(); data.decks[0].newLimit = 0; data.decks[0].reviewLimit = 33;
+        await importApkg(await pkg(data), options);
+        expect(getAllDecks().find(deck => deck.id === 703)).toMatchObject({ newLimit: 0, reviewLimit: 33 });
+    });
+});
+describe('text picker priority and HTML detection', () => {
+    it('uses explicit picker choices over global file defaults', async () => {
+        const data = source(); await importApkg(await pkg(data), options);
+        const other = { ...data.noteTypes[0], id: 800, name: 'Header' };
+        h.db.runSync('INSERT INTO note_types (id, name, data) VALUES (?, ?, ?)', other.id, other.name, JSON.stringify(other));
+        importDelimitedNotes('#deck:Header Deck\n#notetype:Header\nNew\tAnswer', { noteType: data.noteTypes[0], deckId: 703 });
+        expect(getAllNotes().find(note => note.fields[0] === 'New')!.noteTypeId).toBe(700);
+        expect(getAllDecks().some(deck => deck.name === 'Header Deck')).toBe(false);
+    });
+    it('detects HTML when neither a header nor the caller selected its mode', async () => {
+        const data = source(); await importApkg(await pkg(data), options);
+        importDelimitedNotes('HTML note\t<b>Bold</b>', { noteType: data.noteTypes[0], deckId: 703 });
+        expect(getAllNotes().find(note => note.fields[0] === 'HTML note')!.fields[1]).toBe('<b>Bold</b>');
+    });
+    it('retains SVG and document/code media bytes without making them trusted executable content', async () => {
+        const zip = new JSZip(); const names = ['mask.svg', 'document.xml', 'script.js', 'page.html'];
+        zip.file('media', JSON.stringify(Object.fromEntries(names.map((name, i) => [i, name]))));
+        names.forEach((_, i) => zip.file(String(i), `original bytes ${i}`));
+        expect(await importMediaFromZip(zip)).toMatchObject({ imported: 4, skipped: 0 });
+        expect(new TextDecoder().decode(h.media.get('mask.svg'))).toBe('original bytes 0');
     });
 });

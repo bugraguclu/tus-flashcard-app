@@ -798,6 +798,18 @@
         "all-field substring search without metadata",
         "Unicode names, explicit nc accent folding and invalid-query errors; lib/searchParitySafety.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai3-update-schema",
+      "priority": 3,
+      "platform": "cross-platform package metadata formats",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/notetypes.proto",
+      "useFor": [
+        "stable field/template ids and original_id on imported schema copies",
+        "proto fields: field id 9, template id 8, note type original_id 10",
+        "legacy and modern optional deck limits; https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
+        "media preservation independent of renderer execution; lib/ankiTransferSafety.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

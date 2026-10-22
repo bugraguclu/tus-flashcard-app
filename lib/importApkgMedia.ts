@@ -88,10 +88,8 @@ export async function importMediaFromZip(
             }
             totalBytes += bytes.length;
             const originalName = sanitizeMediaFilename(filename);
-            if (!isSafePassiveMediaFilename(originalName)) {
-                counts.skipped++;
-                continue;
-            }
+            // Preserve archive bytes. Card CSP, HTML sanitization and navigation checks decide
+            // which formats can execute or be opened; an extension is not a storage filter.
             let targetName = originalName;
             if (resolveConflicts) {
                 const existing = await readMediaBytes(targetName);
@@ -114,11 +112,6 @@ export async function importMediaFromZip(
     }
 
     return resolveConflicts ? { ...counts, renames } : counts;
-}
-
-/** Active document/code formats are not needed for passive card media. */
-function isSafePassiveMediaFilename(filename: string): boolean {
-    return !/\.(?:html?|xhtml|svg|xml|mjs|cjs|js|wasm)$/i.test(filename);
 }
 
 function sameBytes(left: Uint8Array, right: Uint8Array): boolean {

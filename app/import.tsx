@@ -33,7 +33,7 @@ import { importApkg, MAX_APKG_BYTES } from '../lib/importApkg';
 import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
-import { parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
+import { delimitedContainsHtml, parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
 import { dbUpsertFtsCard, readOnlyTabMessage } from '../lib/db';
 import { commitCollectionWrite } from '../lib/collectionWrite';
 import { useI18n } from '../hooks/useI18n';
@@ -245,7 +245,7 @@ export default function ImportScreen() {
         const guess = parseDelimited(text, guessOptions);
         setGuessedSeparator(guess.delimiter);
         setSeparator(type === 'tsv' ? '\t' : null);
-        setAllowHtml(guess.metadata.html ?? false);
+        setAllowHtml(guess.metadata.html ?? delimitedContainsHtml(guess.rows));
         if (guess.metadata.notetype) {
             const wanted = guess.metadata.notetype.trim().toLocaleLowerCase();
             const found = getAllNoteTypes().find((type_) => type_.name.trim().toLocaleLowerCase() === wanted);
@@ -384,7 +384,8 @@ export default function ImportScreen() {
                             {
                                 added: result.added,
                                 updated: result.updated ?? 0,
-                                duplicate: result.duplicates,
+                                duplicate: result.duplicates - (result.conflicting ?? 0),
+                                conflicting: result.conflicting ?? 0,
                                 emptyFirstField: result.emptyRows,
                             },
                             result.totalNotes,

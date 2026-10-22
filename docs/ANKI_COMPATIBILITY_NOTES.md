@@ -227,6 +227,8 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## `.apkg` import/export with media and scheduling
 
+Author updates match note types by stable id; stable field/template ids distinguish a rename from a schema change. Duplicated schemas retain `originalId` and are reused across author packages. Conflicting GUID notes and all their incoming cards are skipped and logged separately. Equal imported presets are reused; an updated deck using source preset 1, or an import without presets, keeps its local preset and limit overrides. Per-deck new/review overrides, including zero, are read from legacy JSON and modern optional proto fields and written back into packages. All media extensions are preserved as bytes, including SVG image masks; renderer CSP/sanitization and navigation restrictions continue to control execution and opening. `lib/ankiTransferSafety.test.ts`, Anki fixture imports and card-content security tests cover these paths.
+
 Package update regressions (`lib/ankiTransferSafety.test.ts`) cover unchanged GUID matches with missing cards, schema conflicts, media repair on a duplicate import, and indexing before COMMIT. Scheduled exports preserve negative day offsets and both active and inactive learning-card due units.
 
 **Status:** Implemented subset with bounded archive and SQLite validation
@@ -292,6 +294,8 @@ large-package smoke
 
 ## CSV/TSV/TXT import/export
 
+Explicit picker note-type/deck choices take precedence over global file headers; `useFileDefaults` opts a non-UI caller into header defaults. Per-row metadata columns remain supported. The initial Allow HTML choice detects tags in the first 25 preview rows unless a header or caller overrides it (`lib/ankiTransferSafety.test.ts`).
+
 Updates preserve unmapped fields and existing tags when no tag column was supplied; an explicitly mapped empty cell clears that field or tag set. Preview and write use the same merge rules. Text exports quote `#` so comment-like GUIDs and first fields survive re-import (`lib/ankiTransferSafety.test.ts`).
 
 **Status:** Implemented; Anki's own option set (separator with override, Allow HTML in fields, note type, deck, Existing notes, Match scope, Tag all notes, Tag updated notes, per-column field mapping) and its per-note outcome buckets. Fields are escaped exactly as Anki's importer does when HTML is off (minimal entity set plus newline → `<br>`), an unchanged match is reported as "already present" instead of being rewritten, a `#notetype column` naming an unknown type skips the row rather than filing it elsewhere, and a plain-text export with HTML excluded reduces fields to text so the `#html:false` header it writes is true. Update preview/confirmation and backup protect matching notes, and deck directives share the note-write transaction
@@ -312,7 +316,7 @@ on the import screen; read-only tabs cannot start the operation. `lib/webDb.test
 a text import exists in the acknowledged snapshot, and `lib/collectionWrite.test.ts` verifies the
 async operation/commit boundary shared by both formats.
 
-**Next compatibility gate:** "Merge note types" is not offered: a schema-conflicting note type is imported as a separate copy instead, so no inert control is shown. Re-importing the same package does not pile up copies of it — a note type is looked up by source package plus source id, so the second import resolves to the one the first created; it is a different export of the same deck that produces a second note type, which is what Anki's non-merge mode does too. Add an iPhone smoke test for the mapping table and the log
+**Next compatibility gate:** "Merge note types" is not offered: schema conflicts create a reusable `originalId` copy. Existing conflicting GUID notes are skipped and reported as conflicts; new compatible notes can use that copy. Add an iPhone smoke test for the mapping table and the log.
 
 ## iOS Files “Open in” hand-off
 

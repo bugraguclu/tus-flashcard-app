@@ -8,7 +8,7 @@
 import { getDB } from './db';
 import { checksumField, type Note, type NoteType } from './models';
 import { createNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
-import { parseDelimited } from './importDelimited';
+import { delimitedContainsHtml, parseDelimited } from './importDelimited';
 import { createDeck, getAllDecks } from './deckManager';
 import { assertNoProtectedCatalogGuids } from './catalogProtection';
 import { ImportLogBuilder, type ImportLog } from './importLog';
@@ -52,6 +52,8 @@ export interface ImportOptions {
     /** Anki defaults to updating a same-first-field note in place. */
     duplicateResolution?: DuplicateResolution;
     matchScope?: MatchScope;
+    /** Resolve global #deck/#notetype headers only when no picker choice was made. */
+    useFileDefaults?: boolean;
     /** Overrides the file's #html header. */
     isHtml?: boolean;
     /** Backward-compatible alias for duplicateResolution='duplicate'. */
@@ -351,7 +353,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
     // A `#notetype:` header only preselects the picker in Anki's import screen, so an unknown name
     // falls back to whatever the learner chose there. A `#notetype column` names a type per row,
     // and Anki skips a row naming one the collection lacks instead of guessing another type.
-    const globalNoteType = findNoteType(parsed.metadata.notetype) ?? options.noteType;
+    const globalNoteType = options.useFileDefaults ? findNoteType(parsed.metadata.notetype) ?? options.noteType : options.noteType;
     const rowNoteTypes = notetypeColumn
         ? parsed.rows.map((row) => {
             const raw = row[notetypeColumn - 1]?.trim();
@@ -370,7 +372,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
 
     // Fields are rendered as HTML by the reviewer. Escape literal markup when Anki's
     // "Allow HTML" setting/header is off, so '<b>' remains visible text.
-    const isHtml = options.isHtml ?? parsed.metadata.html ?? false;
+    const isHtml = options.isHtml ?? parsed.metadata.html ?? delimitedContainsHtml(parsed.rows);
     const specialColumns = new Set([guidColumn, tagsColumn, deckColumn, notetypeColumn]
         .filter((column): column is number => Boolean(column))
         .map((column) => column - 1));
@@ -382,7 +384,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
         rows,
         delimiter: parsed.delimiter,
         totalRows: parsed.rows.length,
-        metadata: parsed.metadata,
+        metadata: { ...parsed.metadata, deck: options.useFileDefaults ? parsed.metadata.deck : undefined },
         noteType: globalNoteType,
         rowNoteTypes,
         fieldColumns,
