@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FontSize, type ColorScheme } from '../../constants/theme';
+import { FontSize, useIsDarkTheme, type ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings, Subject } from '../../lib/types';
 import { FLAG_COLORS, type CardFlag, type Deck, type NoteType } from '../../lib/models';
 import type { BrowserTableMode } from '../../lib/studyRepository';
@@ -11,6 +11,7 @@ import { expandSelectedCardsToNotes, toggleSelectedSuspend } from '../../lib/bro
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import { formatLastReview, formatNextDue } from './browserHelpers';
+import PencilGlyph from '../PencilGlyph';
 
 interface BrowserCardRowProps {
     item: StudyCard;
@@ -66,6 +67,7 @@ export function BrowserCardRow({
     toggleCardSelection,
     toggleSuspend,
 }: BrowserCardRowProps) {
+    const isDark = useIsDarkTheme();
     const isExpanded = expandedCard === item.cardId;
     const isSelected = selectedCardIds.has(item.cardId);
     const sub = subject(item.subject);
@@ -187,7 +189,7 @@ export function BrowserCardRow({
                             accessibilityRole="button"
                             accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                         >
-                            <Text style={[styles.editBtnText]}>✏️</Text>
+                            <PencilGlyph color={isDark ? '#c2c2c2' : '#555555'} size={18} />
                         </TouchableOpacity>
                     )}
                     {item.noteMarked && (

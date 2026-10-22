@@ -187,12 +187,9 @@ export function createBrowserStyles(colors: ColorScheme) {
     editBtn: {
         width: 24,
         height: 24,
-        borderRadius: 4,
-        backgroundColor: colors.bgInput,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    editBtnText: { fontSize: 12 },
     suspendedIcon: { fontSize: 14 },
     flagIcon: { fontSize: 14 },
 
