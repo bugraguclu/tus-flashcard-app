@@ -521,3 +521,263 @@ adım uygulanıyor:
 kümede aynı. Koleksiyon yolunda öğe sayısı ve Anki'nin log loss'u birebir. Web sürümünde Anki'den
 dışa aktarılmış 400 kartlık bir paket içe aktarılıp "Optimize et"e basıldı. Çıkan 21 parametre
 Anki'nin sonucuyla gösterilen 6 ondalıkta aynı.
+
+---
+
+# Beşinci geçiş — 22 Ekim 2026: güncel Anki 26.09.3'e karşı
+
+İlk dört geçiş Anki 26.05'e (fsrs-rs 5.2.0) karşı ölçüldü. Uygulama o sürümle hâlâ birebir:
+`lib/fsrs*`, `lib/scheduler*`, `lib/loadBalancer*` ve `lib/ankiRandom*` altındaki 9 dosyanın 124
+testi bu dalda geçiyor. Ancak güncel Anki **26.09.3** (23 Eylül 2026). Arada 26.08 (1 Ağustos) ve
+26.09 (14 Eylül) çıktı. Anki önce fsrs-rs 6.6.1'e, sonra 6.6.2'ye geçti ve FSRS davranışını birkaç
+yerde değiştirdi. Bu geçiş o farkı çıkarıyor.
+
+**Yöntem.** `ankitects/anki` deposunda `26.05..26.09.3`, `open-spaced-repetition/fsrs-rs`
+deposunda `v5.2.0..v6.6.2` farkı satır satır okundu: zamanlama, depolama, içe/dışa aktarma ve kart
+bilgisi kodu. Ardından uygulamanın kendi fonksiyonları iki referansla çalıştırıldı: fsrs-rs
+6.6.2'nin birim testlerindeki değerler ve Anki 26.09.3'ün yeni testlerindeki iddialar. Bunun için
+repoya eklenmeyen geçici bir prob testi kullanıldı. Anki kodu kopyalanmadı.
+
+**Eksik kalan:** bilgisayardaki Anki.app hâlâ 26.05. Bu yüzden `scripts/anki-oracle/` 26.09.3'e
+karşı çalıştırılmadı. Aşağıdaki sayılar okunan kaynaktan ve upstream'in kendi test değerlerinden
+geliyor, Anki 26.09.3'ün çalışan kopyasından değil.
+
+## Kısa sonuç
+
+**Uygulama güncel Anki ile birebir aynı çalışmıyor.** Çekirdek FSRS-6 formülleri fsrs-rs 6.6.2'nin
+yedi test vektörünün altısında f32 düzeyinde aynı. Ayrılan tek formül aynı gün verilen "Zor"
+cevabı. Bunun dışında Anki 26.08–26.09.3'te gelen davranış değişikliklerinin hiçbiri uygulamada
+yok. Önem sırasıyla 11 fark:
+
+| # | Önem | Konu | Anki 26.09.3 | Uygulama | Dosya |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **Yüksek** | Aynı gün "Zor" | Stabiliteyi düşürmez (`rating >= 2` tabanı) | Düşürür: S × 0.43–0.74 | `lib/fsrs.ts:378-387`, `lib/fsrsTraining.ts:189` |
+| 2 | **Orta** | Fuzz tabanı | Büyümeyen aralıkta önceki aralık pencere içindeyse korunur | Korunmaz; yeniden planlamada aralık ayrıca kesiliyor | `lib/fsrsScheduler.ts:268-272`, `lib/fsrsMaintenance.ts:339-340` |
+| 3 | **Orta** | Son tarihi ayarla | Koleksiyonun FSRS anahtarına bakar; yeni ve `ivl = 0` kart 0'da kalır | Kartın hafıza durumuna bakar; yeni karta gün sayısı yazar | `lib/browserSelection.ts:130`, `lib/schedulingIntervals.ts:273-296` |
+| 4 | **Orta** | Optimize et | fsrs-rs 6.6.2 eğitimi, 8 tur, kart bazlı gruplar | 26.05'in eğitimi, 5 tur | `lib/fsrsTraining.ts:37-41` |
+| 5 | Düşük–orta | Desteyi değiştir | Hafıza durumu hemen yeniden hesaplanır | Silinir, ilk cevapta türetilir | `lib/noteStore.ts:407-450` |
+| 6 | Düşük–orta | Veritabanı kontrolü | Bozuk `lrt`'yi revlog'dan onarır | `lrt`'ye bakmaz | `lib/maintenance.ts` |
+| 7 | Düşük | "Şu tarihten önceki tekrarları yok say" | Gelecek tarih bugüne çekilir | Gelecek tarih kabul edilir | `app/deck-options.tsx:504-507, 551, 699` |
+| 8 | Düşük | Zamanlamasız dışa aktarma | Yalnızca parametre listeleri silinir | DR, geçmiş hatırlama ve tarih de silinir | `lib/exportAnkiPackage.ts:372-378` |
+| 9 | Düşük | Kart bilgisi | Eksik durumu hesaplar; FSRS'te Kolaylık gizli | Yalnızca saklı durum; Kolaylık hep görünür | `app/card-info.tsx:86-95, 241, 258` |
+| 10 | Düşük | Filtreli deste sıraları | FSRS kapalıyken hatırlanabilirlik sıraları gizli | Hep 11 sıra | `lib/filteredDeckOptions.ts:25` |
+| 11 | Çok düşük | f32 işlem sırası | 6.6.2'nin skaler sırası | 5.2.0'ın Burn sırası | `lib/fsrs.ts:248-250, 389-393` |
+
+## 1. Aynı gün "Zor" stabiliteyi düşürüyor — yüksek
+
+- **Anki 26.09.3:** fsrs-rs 6.6.2'nin `stability_short_term`'ü aynı gün çarpanını `rating >= 2` için
+  1'e tabanlıyor. Zor, İyi ve Kolay stabiliteyi düşüremez, yalnızca Tekrar düşürür. Kural fsrs-rs
+  [#376](https://github.com/open-spaced-repetition/fsrs-rs/pull/376) ile Kasım 2025'te geldi.
+  26.05'in kullandığı 5.2.0'da yoktu, Anki'ye 26.08 ile girdi
+  ([#4956](https://github.com/ankitects/anki/pull/4956)).
+- **Uygulama:** `lib/fsrs.ts:378-387` tabanı `rating >= 3` için uyguluyor. Bu, üçüncü geçişin
+  1. maddesinde 26.05'e uymak için yapılmıştı. Optimizer'ın ileri hesabında da aynı kural var:
+  `lib/fsrsTraining.ts:189`.
+- **Ölçüm:** fsrs-rs 6.6.2'nin `test_next_stability` vektörü `stability_short_term(S = 5)` için
+  `[1.596818, 5.0, 5.0, 8.12961]` istiyor. Uygulama Zor için `2.7470093` veriyor. Varsayılan
+  parametrelerle 20 000 rastgele durumda (S 0.05–200) aynı gün Zor sonrası S her durumda Anki'den
+  düşük. Oran en az 0.431, ortanca 0.567, en çok 0.744. %90 hedefte tam gün aralık 11 800 durumda
+  farklı.
+- **Kullanıcıya yansıyan örnekler** (1m 10m öğrenme adımı, 10m yeniden öğrenme adımı, varsayılan
+  parametreler, %90 hedef):
+  - Yeni kart, aynı gün İyi → Zor → İyi. Uygulamada S 2.3065 → 1.3334 → 1.3747 olur ve kart
+    **1 günde** mezun olur. Anki 26.09.3'te S 2.3065'te kalır ve kart **2 günde** mezun olur.
+  - Unutulmuş kart (S = 3), yeniden öğrenmede Zor → İyi. Uygulamada S 3 → 1.705 → 1.729 olur ve
+    kart 2 güne gider. Anki'de S 3'te kalır ve aralık fuzz'dan önce 3 gündür (pencere 2–4).
+- **Etki alanı:** her aynı gün Zor cevabı (öğrenme ve yeniden öğrenme adımları, aynı gün
+  tekrarlar). Ayrıca revlog'dan yeniden hesaplanan hafıza durumları (ön ayar kaydı, deste
+  değişimi) ve "Optimize et".
+
+## 2. Fuzz, büyümeyen bir aralığı geri çekebiliyor — orta
+
+- **Anki 26.09.3:** `minimum_review_fuzz_interval` 26.08 ile geldi
+  ([#4826](https://github.com/ankitects/anki/pull/4826)). Taban üç durumda belirleniyor. Yeni
+  aralık yuvarlanınca öncekinden büyükse taban `önceki + 1` olur. Büyümemişse ama önceki aralık
+  yeni aralığın fuzz penceresinin üst sınırını aşmıyorsa taban `önceki` olur; fuzz aralığı geri
+  çekemez. Aralık gerçekten küçüldüyse taban 0'dır. Kural hem cevapta (Zor, İyi, Kolay) hem de
+  "değişince yeniden planla"da kullanılıyor.
+- **Uygulama:** cevapta `lib/fsrsScheduler.ts:268-272` yalnızca "büyüdüyse önceki + 1, değilse
+  0" diyor. Yeniden planlamada `lib/fsrsMaintenance.ts:339-340` aynı kuralı aralığı yuvarlamadan
+  **keserek** uyguluyor.
+- **Ölçüm:** Anki'nin kendi testi `(2.7269483, önceki 4) → 4`, `(2.7269483, 5) → 0` ve
+  `(4.591988, 4) → 5` istiyor. Uygulama cevapta 0, 0, 5; yeniden planlamada 0, 0, 0 veriyor. Uçtan
+  uca deneme: aralığı 4 gün olan ve Zor için FSRS aralığı 3.36 gün çıkan bir tekrar kartı 2 000
+  farklı kart kimliğiyle cevaplandı. Uygulama 2, 3 ve 4 günü yaklaşık eşit sıklıkla verdi. Anki
+  4 ya da 5 gün verir. Uygulama 1 329 kartta aralığı öncekinin altına çekti.
+- **Ne zaman görülür:** Zor'un (bazen İyi'nin) aralığı pek büyümediğinde. Örneğin önceki aralık
+  yukarı fuzz'lanmışsa, kart erken tekrarlanmışsa ya da hedef hatırlama veya parametreler
+  değiştiyse.
+
+## 3. Son tarihi ayarla FSRS altında 26.05 kuralıyla çalışıyor — orta
+
+- **Anki 26.09.3:** kural artık kartın hafıza durumuna değil, koleksiyonun FSRS anahtarına bakıyor
+  ([#4792](https://github.com/ankitects/anki/pull/4792), 26.08). FSRS açıkken yeni kart ve
+  aralığı 0 olan kart (öğrenmedeki kart dâhil) `ivl = 0`'da kalır. Diğer kartlar `lrt`'den geçen
+  gün + istenen gün alır; `lrt` yoksa aralık tarih farkı kadar kayar. FSRS kapalıyken SM-2 kuralı
+  geçerlidir.
+- **Uygulama:** `lib/browserSelection.ts:130` kararı `memory !== null` ile veriyor, bu 26.05'in
+  kuralı. "Yeni kart veya `ivl = 0` → 0" dalı yok (`lib/schedulingIntervals.ts:273-296`). Okuyucu
+  menüsü (`app/(tabs)/index.tsx:1358`) ve tarayıcı (`components/browser/BrowserDialogs.tsx:266`)
+  aynı yoldan geçiyor.
+- **Ölçüm** ("3" girildiğinde):
+  - FSRS açık, yeni kart: uygulama `ivl` 3, Anki 0.
+  - Hafızası olan öğrenme kartı (`ivl` 0, `lrt` 1 gün önce): uygulama 4, Anki 0.
+  - Hafızası olmayan tekrar kartı (`ivl` 7, `lrt` 10 gün önce, FSRS açık): uygulama 7, Anki 13.
+  - Ters durum da var: FSRS kapalıyken kartta hafıza durumu kalmışsa uygulama FSRS kuralını
+    uyguluyor.
+- **Sonraki cevaba etkisi:** Anki'de `ivl = 0`'da kalan yeni kartın ilk gerçek cevabı başlangıç
+  parametrelerinden başlar. Kullanılabilir revlog yoksa ve aralık 0 ise `set_memory_state` hafıza
+  durumu üretmez. Uygulamada ise `ivl = 3` yazılan kart cevaplanırken hiç kazanmadığı bu 3 günlük
+  aralıktan SM-2 tahminiyle (S ≈ 3) başlatılıyor (`lib/fsrsScheduler.ts:118-128`).
+
+## 4. "Optimize et" 26.05'in eğitimini çalıştırıyor — orta
+
+- **Anki 26.09.3:** `compute_params`, fsrs-rs 6.6.2'nin `compute_parameters`'ını kart
+  kimlikleriyle ve `num_epochs: 8` ile çağırıyor (`rslib/src/scheduler/fsrs/params.rs`). fsrs-rs
+  6.x eğitimi baştan yazdı:
+  - Burn kalktı, türevler analitik.
+  - Her kartın öğeleri tek bir pencere dizisinde toplanıyor; gruplar en çok 512 tahminlik.
+  - 256 tekrardan uzun öğeler atılıyor (5.2.0'da 64).
+  - Gruplar rand 0.10'un `StdRng`'siyle (tohum 2023) karıştırılıyor.
+  - Turlar arası doğrulama yok, son turun parametreleri alınıyor.
+  - İleri hesapta aynı gün Zor tabanı var (madde 1).
+- **Uygulama:** `lib/fsrsTraining.ts` 26.05'in yolunu taşıyor: 5 tur, en çok 64 tekrar
+  (`:37-41`), Burn 0.17.1 Adam'ı, en iyi turun seçimi ve `rating >= 3` (`:189`). 26.05'e karşı
+  sonuç 5·10⁻⁷ içinde.
+- **Sonuç:** aynı geçmiş için "Optimize et" Anki 26.09.3'ten farklı parametreler üretir. Farkın
+  büyüklüğü ölçülemedi, çünkü yerelde 26.09.3 yok.
+
+## 5. Desteyi değiştirmek hafıza durumunu yeniden hesaplamıyor — düşük–orta
+
+- **Anki 26.09.3:** FSRS açıkken "Desteyi değiştir" kartların FSRS verisini siliyor. Hemen ardından
+  hedef destedeki (alt desteler hariç) hafızasız kartların durumunu hedef ön ayarın parametreleri,
+  DR'si ve decay'iyle revlog'dan yeniden hesaplıyor, kartları yeniden planlamadan
+  ([#5339](https://github.com/ankitects/anki/pull/5339),
+  [#5500](https://github.com/ankitects/anki/pull/5500)).
+- **Uygulama:** `lib/noteStore.ts:407-450` veriyi siliyor ama yeniden hesaplamıyor. Durum, kart bir
+  sonraki kez cevaplanınca türetiliyor.
+- **Etki:** cevabın sonucu iki tarafta da aynı, çünkü ikisi de durumu revlog'dan türetiyor. Ama
+  taşımayla sonraki cevap arasında fark var. Kart bilgisi FSRS durumunu göstermiyor. `prop:s`,
+  `prop:d` ve `prop:r` aramaları, hatırlanabilirlik sıralaması ve filtreli deste sıraları kartı
+  durumsuz sayıyor.
+
+## 6. Veritabanı kontrolü `lrt`'yi onarmıyor — düşük–orta
+
+- **Anki 26.09.3:** "Veritabanını kontrol et" her yeni olmayan kartın `lrt`'sini revlog'daki son
+  zamanlamayı etkileyen cevabın zamanına eşitliyor. Yanlış değeri düzeltiyor; son sıfırlamadan sonra
+  cevap yoksa değeri siliyor ([#4648](https://github.com/ankitects/anki/pull/4648), 26.08).
+- **Uygulama:** `lib/maintenance.ts` içindeki `checkDatabase` ve `repairDatabase` `lrt`'ye bakmıyor.
+- **Etki:** FSRS geçen gün sayısını `lrt`'den okur. Bozuk bir `lrt` (eski sürüm, içe aktarma, elle
+  düzenleme) yanlış aralık ve hatırlanabilirlik verir. Anki bunu artık onarabiliyor, uygulama
+  onaramıyor.
+
+## 7. Gelecek tarihli "şu tarihten önceki tekrarları yok say" — düşük
+
+- **Anki 26.09.3:** kaydederken gelecekteki tarih bugüne çekiliyor, tarih seçicinin üst sınırı da
+  bugün ([#5294](https://github.com/ankitects/anki/pull/5294), 26.09).
+- **Uygulama:** `app/deck-options.tsx:504-507` yalnızca biçimi denetliyor. Prob testinde
+  `parseFsrsCutoffDate('2099-01-01')` kabul edildi; `:551` ve `:699` değeri olduğu gibi kaydediyor.
+- **Etki:** gelecekteki bir tarih bütün geçmişi yok sayar. "Optimize et" ve yeniden hesaplama boş
+  geçmişle çalışır.
+
+## 8. Zamanlamasız dışa aktarma fazlasını siliyor — düşük
+
+- **Anki 26.09.3:** zamanlamasız dışa aktarmada ön ayarlardan yalnızca FSRS parametre listeleri
+  (4, 5 ve 6) siliniyor. Hedef hatırlama, geçmiş hatırlama ve yok sayma tarihi kalıyor
+  ([#4721](https://github.com/ankitects/anki/pull/4721), 26.08).
+- **Uygulama:** `lib/exportAnkiPackage.ts:372-378` bunları da siliyor. Paketi açan taraf %90
+  varsayılanını alıyor. Koddaki "Anki removes them" yorumu Anki'nin davranışını olduğundan geniş
+  anlatıyor.
+
+## 9. Kart bilgisi — düşük
+
+- **Anki 26.09.3:** FSRS açıksa ve kart cevaplanmış ama hafıza durumu yoksa, kart bilgisi durumu
+  revlog'dan hesaplayıp gösteriyor; karta yazmıyor
+  ([#5326](https://github.com/ankitects/anki/pull/5326),
+  [#5648](https://github.com/ankitects/anki/pull/5648)). Hafıza durumu varsa Kolaylık yerine
+  Stabilite, Zorluk ve Hatırlanabilirlik gösteriliyor. Kolaylık yalnızca FSRS kapalıyken görünüyor
+  ([#5277](https://github.com/ankitects/anki/pull/5277)). Hatırlanabilirlik tam yüzde.
+- **Uygulama:** `app/card-info.tsx:86-95` yalnızca kartta saklı durumu gösteriyor. `:241`
+  Kolaylık'ı her zaman gösteriyor. `:258` hatırlanabilirliği bir ondalıkla yazıyor.
+
+## 10. Filtreli deste sıraları FSRS kapalıyken — düşük
+
+- **Anki 26.09.3:** FSRS kapalıyken "Hatırlanabilirlik artan" ve "Hatırlanabilirlik azalan"
+  sıraları filtreli deste penceresinde gizli
+  ([#5407](https://github.com/ankitects/anki/pull/5407), 26.09).
+- **Uygulama:** `lib/filteredDeckOptions.ts:25` (`FILTERED_DECK_ORDER_UI`) 11 sıranın hepsini her
+  zaman listeliyor (`components/FilteredDeckOptionsModal.tsx:518`).
+
+## 11. f32 işlem sırası — çok düşük
+
+- **Anki 26.09.3:** fsrs-rs 6.6.2'nin skaler modeli doğrusal sönümlemeyi `((10 − D) · ΔD) / 9`,
+  eğri katsayısını `exp(ln 0.9 / −w20) − 1` olarak hesaplıyor.
+- **Uygulama:** 5.2.0'ın sırasını izliyor: `(10 − D) · (ΔD / 9)` ve `exp((1 / −w20) · ln 0.9) − 1`
+  (`lib/fsrs.ts:248-250`, `:389-393`).
+- **Ölçüm:** varsayılan parametrelerle 400 000 rastgele cevapta D'nin son biti %7.88 oranında
+  farklı. S ve tam gün aralık hiçbirinde farklı değil. Kart verisi D'yi 3 ondalığa yuvarladığı için
+  fark pratikte görünmez.
+
+## Değişmediği doğrulananlar
+
+- 26.05 ile 26.09.3 arasında şu davranışlar değişmedi: öğrenme ve yeniden öğrenme durum makinesi,
+  `with_review_fuzz` ve `constrained_fuzz_bounds`, yük dengeleyici (yalnızca yeniden düzenleme),
+  `reviews_for_fsrs` seçimi, `get_last_revlog_info`, `memory_state_from_sm2`,
+  `current_retrievability` ve parametre kırpma tablosu.
+- fsrs-rs 6.6.2'nin `test_memory_state` (iki değişken), `test_next_states`, `test_next_interval`,
+  `test_memory_from_sm2` ve `test_next_difficulty` vektörlerini uygulama f32 düzeyinde aynen
+  üretiyor.
+- Anki 26.08'den beri Rust 1.97.1 ile derleniyor (26.05: 1.92). Arada `library/core/src/slice/sort`
+  altındaki değişiklikler yalnızca yeniden düzenleme. `lib/rustSortUnstable.ts`'in taşıdığı ipnsort
+  aynı kaldı.
+
+## Hâlâ açık olan eski farklar
+
+Dördüncü geçişte belgelendi, değişmedi:
+
+- Platformun exp/pow'u yüzünden S/D'nin son bitleri (~%1).
+- Filtreli destenin "vade" ve "göreli gecikme" sıralarında yeni kartın pozisyonu 1970'ten gün
+  olarak okunuyor; Anki koleksiyonun kuruluşundan sayıyor.
+- "Kartı sıfırla"da geri konacak pozisyonu olmayan kart en yüksek yeni pozisyonun bir fazlasını
+  alıyor; Anki ayrı bir `nextPos` sayacı tutuyor.
+- Filtreli destenin SQL `prop:r`'si 64-bit karşılaştırıyor.
+
+## Bilinçli ürün farkı
+
+- **Günlük yeni kart sınırı yok** (21 Ekim 2026, `04f55a0`). Anki "Yeni kart/gün" sınırını uygular.
+  Bu FSRS aralıklarını etkilemez, ama günlük iş yükü ve kuyruk Anki'den farklı olur. "Birebir
+  aynı" iddiasının dışında tutulmalı.
+
+## Anki'de olup uygulamada olmayan FSRS özellikleri
+
+- Değerlendir (log loss ve RMSE), sağlık kontrolü, FSRS simülatörü ve iş yükü grafiği, en düşük
+  önerilen hedef hatırlama hesabı.
+- İstatistiklerde True Retention tablosu ile stabilite, zorluk ve hatırlanabilirlik dağılımları.
+
+## Önerilen sıra
+
+1. Bilgisayardaki Anki'yi 26.09.3'e yükseltip `scripts/anki-oracle/` ile yeni fixture üretmek
+   (`test/fixtures/anki-26.09-fsrs.json`). 1. ve 2. maddeyi düzeltmek 26.05 fixture'larının bir
+   kısmını bozacak, bu yüzden önce yeni referans gerekiyor.
+2. Madde 1: `lib/fsrs.ts` ve `lib/fsrsTraining.ts` içinde tabanı `rating >= 2` yapmak.
+3. Madde 2: cevap ve yeniden planlama için ortak bir `minimumReviewFuzzInterval` yardımcı
+   fonksiyonu.
+4. Madde 3: `setDueDateInterval`'a hafıza durumu yerine `settings.fsrsEnabled` vermek ve
+   "yeni kart veya `ivl = 0` → 0" dalını eklemek.
+5. Madde 4: optimizer'ı fsrs-rs 6.6.2'nin eğitimine taşımak ve yeni fixture ile ölçmek.
+6. Madde 5–10, ardından madde 11.
+
+## Çalıştırılan doğrulama
+
+```
+npx vitest run lib/fsrs lib/scheduler lib/loadBalancer lib/ankiRandom
+  → 9 dosya, 124 test geçti (26.05 fixture'larına karşı)
+geçici prob testi (repoya eklenmedi)
+  → fsrs-rs 6.6.2 vektörleri: 7'nin 6'sı f32 düzeyinde aynı; aynı gün Zor farklı
+  → Anki 26.09.3 iddiaları: fuzz tabanında 3'ün 2'si, Son tarihi ayarla'da 3'ün 3'ü,
+    gelecek tarih kırpmasında 1'in 1'i farklı
+npm run quality
+  → tsc temiz; 158 dosya, 1 659 test geçti; iOS yapılandırması ve kaynak kaydı doğrulandı
+```
+
+Çalıştırılmayan: Anki 26.09.3'ün kendisi (yerelde 26.05 kurulu).

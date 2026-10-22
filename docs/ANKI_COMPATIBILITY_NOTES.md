@@ -120,6 +120,18 @@ are not correctly rounded (intervals never differed in the recorded vectors); a 
 for a card within about a second of the threshold. Still to add:
 retention/true-retention graphs and the FSRS simulator
 
+Against the current release, Anki 26.09.3 (fsrs-rs 6.6.2), the app has not been re-measured and
+is known to differ (fifth pass in `docs/AUDIT_FSRS_ANKI_PARITY.md`, read from source on
+2026-10-22): a same-day Hard no longer lowers stability; review fuzz keeps the previous interval
+when it is still inside the new fuzz window, also when rescheduling; Set Due Date follows the
+collection FSRS switch and leaves new and `ivl = 0` cards at 0; "Optimize" trains with fsrs-rs
+6.6.2's procedure (8 epochs, per-card batches); Change Deck recomputes memory states; Check
+Database repairs `lrt`; a future ignore-before date is clamped to today; an export without
+scheduling keeps the retention values; card info computes a missing state and hides ease under
+FSRS; and the retrievability filtered-deck orders are hidden while FSRS is off. Re-recording the
+fixtures with Anki 26.09.3 through `scripts/anki-oracle/` comes before fixing these, because the
+first two fixes change vectors the 26.05 fixtures pin.
+
 ## Hierarchical decks and presets
 
 **Status:** Implemented
