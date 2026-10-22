@@ -814,6 +814,16 @@
         "interday learning shares review limits; learn-ahead counts; alphabetic deck gathering; in-memory sibling suppression",
         "documented product divergence: unlimited new cards, 200-card gather window, fixed 1:1 new/review mix; ai2Queue.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai2-reviewer-audio-and-focus",
+      "priority": 1,
+      "platform": "iPhone reviewer audio and auto advance",
+      "url": "https://docs.ankiweb.net/deck-options.html#audio",
+      "useFor": [
+        "manual replay question then answer; skip question; automatic answer excludes FrontSide audio",
+        "auto advance yields to reviewer focus and modal interaction; reviewerAudio.test.ts and reviewerTimers.test.ts"
+      ]
     }
   ],
   "requiredDocs": [

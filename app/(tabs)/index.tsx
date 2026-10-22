@@ -77,6 +77,7 @@ import {
 } from '../../lib/deckManager';
 import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
+import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import {
@@ -515,6 +516,10 @@ export default function StudyScreen() {
     const appIsActiveRef = useRef(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
     const [appForegrounded, setAppForegrounded] = useState(appIsActiveRef.current);
     const [reviewerFocused, setReviewerFocused] = useState(false);
+    const autoAdvanceInteractionRef = useRef({ focused: false, foregrounded: appForegrounded, surfaceOpen: false });
+    autoAdvanceInteractionRef.current = { focused: reviewerFocused, foregrounded: appForegrounded,
+        surfaceOpen: toolsMenuVisible || flagMenuVisible || deckPickerVisible || catalogUnlockVisible || customStudyOpen };
+    const autoAdvanceBlocked = !reviewerFocused || !appForegrounded || autoAdvanceInteractionRef.current.surfaceOpen || whiteboardActive;
     const answerTimerRef = useRef(new ActiveElapsedTimer(Date.now(), appIsActiveRef.current));
     const timeboxTrackerRef = useRef(new TimeboxTracker(Date.now()));
     // Auto Advance measures each SIDE, not the whole card, so it needs its own clock.
@@ -590,7 +595,7 @@ export default function StudyScreen() {
             appIsActiveRef.current = active;
             setAppForegrounded(active);
             answerTimerRef.current.setActive(active, now);
-            autoAdvanceTimerRef.current.setActive(active && !whiteboardActiveRef.current, now);
+            autoAdvanceTimerRef.current.setActive(active && !whiteboardActiveRef.current && autoAdvanceInteractionRef.current.focused && !autoAdvanceInteractionRef.current.surfaceOpen, now);
         });
         return () => subscription.remove();
     }, []);
@@ -794,6 +799,7 @@ export default function StudyScreen() {
             ? getDeckConfigForDeck(currentCard.deckId, settings.dayRolloverHour)
             : DEFAULT_DECK_CONFIG;
         return {
+            autoPlayAudio: settings.autoPlayAudio && config.autoPlayAudio !== false,
             showTimer: config.showTimer === true,
             maxAnswerSecs: config.maxAnswerSecs,
             stopTimerOnAnswer: config.stopTimerOnAnswer === true,
@@ -806,7 +812,7 @@ export default function StudyScreen() {
             audioPlaybackRate: config.audioPlaybackRate ?? settings.audioPlaybackRate ?? 1.0,
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentCard?.deckId, settings.dayRolloverHour, settings.audioPlaybackRate, collectionVersion]);
+    }, [currentCard?.deckId, settings.dayRolloverHour, settings.audioPlaybackRate, settings.autoPlayAudio, collectionVersion]);
 
     // The on-screen timer counts the same foreground-only time the review log records, and stops
     // at the deck's maximum answer seconds, exactly as the manual describes. "Stop timer on
@@ -1485,12 +1491,12 @@ export default function StudyScreen() {
     // rather than reset, so the dwell resumes where it stopped once drawing mode is closed. The
     // per-card review stopwatch keeps running — Anki measures answering by wall clock.
     useEffect(() => {
-        autoAdvanceTimerRef.current.setActive(appIsActiveRef.current && !whiteboardActive, Date.now());
-    }, [whiteboardActive]);
+        autoAdvanceTimerRef.current.setActive(!autoAdvanceBlocked, Date.now());
+    }, [autoAdvanceBlocked]);
 
     useEffect(() => {
-        if (!settings.autoAdvance || !currentCard || autoAdvanceSeconds <= 0) return;
-        autoAdvanceTimerRef.current.reset(Date.now(), appIsActiveRef.current && !whiteboardActiveRef.current);
+        if (!settings.autoAdvance || !currentCard || autoAdvanceSeconds <= 0 || autoAdvanceBlocked) return;
+        autoAdvanceTimerRef.current.reset(Date.now(), !autoAdvanceBlocked);
         const targetMs = autoAdvanceSeconds * 1000;
         const timer = setInterval(() => {
             // The dwell timer and audio run in parallel. If audio outlasts the configured dwell,
@@ -1502,6 +1508,7 @@ export default function StudyScreen() {
                 cardDeckOptions.waitForAudio,
                 anyAudioActive(),
                 whiteboardActiveRef.current,
+                autoAdvanceInteractionRef.current,
             )) return;
             if (!showingAnswer) {
                 if (cardDeckOptions.questionAction === 'showReminder') {
@@ -1519,6 +1526,7 @@ export default function StudyScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         settings.autoAdvance,
+        autoAdvanceBlocked,
         currentCard?.cardId,
         showingAnswer,
         autoAdvanceSeconds,
@@ -1660,18 +1668,9 @@ export default function StudyScreen() {
         || answerAudioActiveRef.current
         || ttsActiveRef.current;
 
-    // Which frame a replay signal is aimed at. 'auto' is the normal rule (the visible side);
-    // the explicit values drive Anki's replay-question-then-answer chain.
-    const [replayTarget, setReplayTarget] = useState<'auto' | 'question' | 'answer'>('auto');
-    const replayChainRef = useRef(false);
+    const [audioPlaybackScope, setAudioPlaybackScope] = useState<ReviewerPlaybackScope>('question');
     const handleQuestionAudioActive = useCallback((active: boolean) => {
         questionAudioActiveRef.current = active;
-        // The question's sounds have finished — hand the chain over to the answer's own frame.
-        if (!active && replayChainRef.current) {
-            replayChainRef.current = false;
-            setReplayTarget('answer');
-            setAudioSignal((value) => value + 1);
-        }
     }, []);
     const handleAnswerAudioActive = useCallback((active: boolean) => {
         answerAudioActiveRef.current = active;
@@ -1825,6 +1824,8 @@ export default function StudyScreen() {
             buildQueue();
         }
         return () => {
+            autoAdvanceInteractionRef.current.focused = false;
+            autoAdvanceTimerRef.current.setActive(false, Date.now());
             setReviewerFocused(false);
             ttsLifecycleRef.current?.setFocused(false);
         };
@@ -1861,14 +1862,7 @@ export default function StudyScreen() {
         if (!next) stopSpeech();
     }, [stopSpeech, voicePlaybackEnabled]);
     const replayAudio = useCallback(() => {
-        // Anki's `replayq`: replaying on the answer side normally plays the question's sounds
-        // first and the answer's afterwards. "Skip question when replaying answer" turns that
-        // off, and so does a back that carries no sound of its own — there is nothing to chain to.
-        const chainQuestionFirst = showingAnswer
-            && !cardDeckOptions.skipQuestionWhenReplayingAnswer
-            && answerSideHasAudio;
-        replayChainRef.current = chainQuestionFirst;
-        setReplayTarget(chainQuestionFirst ? 'question' : 'auto');
+        setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, cardDeckOptions.skipQuestionWhenReplayingAnswer, false));
         setAudioSignal((value) => value + 1);
         // Built-in {{tts}} regions are AV tags in Anki, so R / Replay Audio must replay them even
         // when whole-card text reading is off. Whole-card fallback is replayed only when enabled.
@@ -2085,7 +2079,7 @@ export default function StudyScreen() {
     useEffect(() => {
         const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
         const shouldReadWholeCard = voicePlaybackEnabled;
-        const shouldAutoPlayExplicitTts = scopeSettings.autoPlayAudio && sideHasExplicitTts;
+        const shouldAutoPlayExplicitTts = cardDeckOptions.autoPlayAudio && sideHasExplicitTts;
         if (!reviewerFocused || !appForegrounded || (!shouldReadWholeCard && !shouldAutoPlayExplicitTts)) return;
         const timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
         return () => {
@@ -2096,7 +2090,7 @@ export default function StudyScreen() {
         voicePlaybackEnabled,
         reviewerFocused,
         appForegrounded,
-        scopeSettings.autoPlayAudio,
+        cardDeckOptions.autoPlayAudio,
         showingAnswer,
         currentCard?.cardId,
         explicitTtsSides,
@@ -2105,6 +2099,10 @@ export default function StudyScreen() {
     ]);
 
     useEffect(() => stopSpeech, [stopSpeech]);
+    useEffect(() => {
+        if (!reviewerFocused || !appForegrounded) setPauseSignal((value) => value + 1);
+    }, [reviewerFocused, appForegrounded]);
+
 
     // A stale signal must not leak into the next side/card: without this reset, the answer
     // WebView would mount with a nonzero signal (from an earlier R press) and play unasked.
@@ -2112,8 +2110,7 @@ export default function StudyScreen() {
     // also stops whatever is still playing (the question WebView persists across cards).
     useEffect(() => {
         setAudioSignal(0);
-        replayChainRef.current = false;
-        setReplayTarget('auto');
+        setAudioPlaybackScope(showingAnswer ? 'answer' : 'question');
         questionAudioActiveRef.current = false;
         answerAudioActiveRef.current = false;
         if (settings.interruptAudioOnAnswer) {
@@ -2123,13 +2120,16 @@ export default function StudyScreen() {
     }, [currentCard?.cardId, showingAnswer, settings.interruptAudioOnAnswer, stopSpeech]);
 
     useEffect(() => {
-        if (!scopeSettings.autoPlayAudio || !cardHasAudio) return;
+        if (!reviewerFocused || !appForegrounded || !cardDeckOptions.autoPlayAudio || !cardHasAudio) return;
         // Anki: flipping to the answer auto-plays only the answer side's own sounds.
         if (showingAnswer && !answerSideHasAudio) return;
         // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously).
-        const timer = setTimeout(() => setAudioSignal((value) => value + 1), 450);
+        const timer = setTimeout(() => {
+            setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, false, true));
+            setAudioSignal((value) => value + 1);
+        }, 450);
         return () => clearTimeout(timer);
-    }, [currentCard?.cardId, showingAnswer, scopeSettings.autoPlayAudio, cardHasAudio, answerSideHasAudio]);
+    }, [currentCard?.cardId, showingAnswer, reviewerFocused, appForegrounded, cardDeckOptions.autoPlayAudio, cardHasAudio, answerSideHasAudio]);
 
     // Deck description (Anki shows it on the deck's study screen).
     const deckDescription = useMemo(() => {
@@ -3046,11 +3046,8 @@ export default function StudyScreen() {
                                         deck={renderPayload.deck}
                                         side={showingAnswer ? 'answer' : 'question'}
                                         typedAnswer={showingAnswer && typeAnswerField ? typedAnswer : undefined}
-                                        playAudioSignal={
-                                            showingAnswer
-                                                ? (replayTarget === 'answer' || (replayTarget === 'auto' && answerSideHasAudio) ? audioSignal : undefined)
-                                                : (replayTarget === 'question' || replayTarget === 'auto' ? audioSignal : undefined)
-                                        }
+                                        playAudioSignal={audioSignal}
+                                        audioPlaybackScope={audioPlaybackScope}
                                         pauseAudioSignal={pauseSignal}
                                         onAudioActiveChange={showingAnswer ? handleAnswerAudioActive : handleQuestionAudioActive}
                                         cardZoomPercent={settings.cardZoomPercent}
