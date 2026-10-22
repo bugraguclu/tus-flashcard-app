@@ -851,6 +851,17 @@
         "last successful Add note type per deck and collection",
         "fallback when a remembered note type is no longer available"
       ]
+    },
+    {
+      "id": "anki-ai1-preset-steps",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/card/mod.rs",
+      "useFor": [
+        "preserve last passed delay when preset learning steps change",
+        "remap learning and relearning counters without reinterpreting due units"
+      ],
+      "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     }
   ],
   "requiredDocs": [
