@@ -141,7 +141,7 @@ export default function BackupsScreen() {
                             bumpDataVersion();
                             alert(t('common.completed'), l('Yedek geri yüklendi.', 'Backup restored.'));
                         } else {
-                            alert(t('common.error'), l('Yedek geri yüklenemedi. Mevcut veriler değişmedi.', 'Could not restore the backup. Existing data was not changed.'));
+                            alert(t('common.error'), l('Yedek geri yüklenemedi. İşlem öncesi güvenlik kopyası korundu.', 'Could not restore the backup. The safety copy from before the operation was retained.'));
                         }
                     } catch (e) {
                         console.warn('[Backups] restore failed:', e);

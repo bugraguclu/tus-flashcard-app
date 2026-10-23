@@ -108,3 +108,9 @@ it('rolls canonical restore back when catalog-progress persistence fails', async
     expect(await importAllData(JSON.stringify(data))).toBe(false);
     expect(h.db.getFirstSync('SELECT data FROM notes WHERE id = 999')).not.toBeNull();
 });
+it('does not rewrite the live canonical collection after a rejected restore', async () => {
+    const json = await exportAllData(); const importData = vi.fn(async () => false);
+    const result = await importBackupContents(json, { store: store().api, exportData: async () => json, importData, isWriter: () => true });
+    expect(result.ok).toBe(false); expect(result.preRestoreName).not.toBeNull();
+    expect(importData).toHaveBeenCalledTimes(1);
+});

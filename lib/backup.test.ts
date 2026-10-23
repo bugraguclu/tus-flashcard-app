@@ -299,7 +299,7 @@ describe('restoreBackup', () => {
 
         expect(result.ok).toBe(false);
         expect(h.files.has(result.preRestoreName!)).toBe(true);
-        expect(h.imports).toHaveLength(2);
+        expect(h.imports).toHaveLength(1);
     });
 
     it('refuses to restore in a web tab that cannot save, touching nothing', async () => {

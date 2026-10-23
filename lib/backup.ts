@@ -458,10 +458,10 @@ export async function importBackupContents(
     await d.store.write(preRestoreName, currentContents);
 
     const ok = await d.importData(contents);
-    if (!ok) {
-        // importAllData is designed to be transactional, but legacy imports and
-        // future migrations may touch more than SQLite. Reapply the known-good
-        // snapshot so a failed attempt cannot leave mixed settings or progress.
+    if (!ok && JSON.parse(contents).canonical !== true) {
+        // Canonical table/progress writes own their transaction. Re-importing a live snapshot
+        // after rejection would itself delete/reinstall catalog rows. Only legacy imports need
+        // an automatic compensating restore because they can mutate before returning false.
         try {
             await d.importData(currentContents);
         } catch (error) {

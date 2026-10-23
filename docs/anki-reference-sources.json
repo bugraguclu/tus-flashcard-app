@@ -785,7 +785,7 @@
       "useFor": [
         "30-minute backup default",
         "today/yesterday and daily/weekly/monthly retention",
-        "learner metadata and pending-overlay recovery without protected catalog fields, atomically persisted during restore; lib/backupSafety.test.ts"
+        "learner metadata and pending-overlay recovery without protected catalog fields, atomically persisted during restore; canonical rejection does not rewrite live data; lib/backupSafety.test.ts"
       ]
     },
     {
