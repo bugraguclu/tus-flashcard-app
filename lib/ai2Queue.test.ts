@@ -52,7 +52,7 @@ describe('AI-2 bounded unlimited study queue', () => {
         saveAnkiCard({ ...getAnkiCard(1010)!, type: 1, queue: 3, due: today, left: 1 });
         saveAnkiCard({ ...getAnkiCard(1020)!, type: 2, queue: 2, due: today, ivl: 5 });
         saveAnkiCard({ ...getAnkiCard(1030)!, type: 2, queue: 2, due: today, ivl: 5 });
-        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2 } });
+        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2 }, selectedDeckName: 'Python' });
         expect(queue.stats.learningCount + queue.stats.reviewCount).toBe(2);
     });
     it('counts only learning inside learn-ahead, not hours later', () => {
@@ -88,7 +88,7 @@ describe('AI-2 bounded unlimited study queue', () => {
         saveAnkiCard({ ...getAnkiCard(1010)!, type: 2, queue: 2, due: today - 2, ivl: 10 });
         saveAnkiCard(makeCard(1011, 101, 7, { ord: 1, type: 2, queue: 2, due: today - 2, ivl: 10 }));
         saveAnkiCard({ ...getAnkiCard(1020)!, type: 2, queue: 2, due: today, ivl: 10 });
-        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2 } });
+        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2 }, selectedDeckName: 'Python' });
         expect(queue.stats.reviewCount).toBe(2);
         expect(queue.cards.filter((card) => card.state.status === 'review').map((card) => card.noteId).sort()).toEqual([101, 102]);
     });
@@ -100,7 +100,7 @@ describe('AI-2 bounded unlimited study queue', () => {
         }
         saveAnkiCard({ ...getAnkiCard(1010)!, type: 2, queue: 2, due: today, ivl: 1 });
         saveAnkiCard({ ...getAnkiCard(1020)!, type: 2, queue: 2, due: today, ivl: 1 });
-        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2, reviewSortOrder: 'intervalsAsc' } });
+        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2, reviewSortOrder: 'intervalsAsc' }, selectedDeckName: 'Python' });
         expect(queue.cards.filter((card) => card.state.status === 'review').map((card) => card.state.interval)).toEqual([1, 1]);
     });
 

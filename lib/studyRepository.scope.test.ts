@@ -27,7 +27,7 @@ import {
     getStudyQueue,
     getWaitingLearningCardIds,
 } from './studyRepository';
-import { saveNote, saveAnkiCard } from './noteManager';
+import { getAnkiCard, saveNote, saveAnkiCard } from './noteManager';
 import {
     buildDeckTree,
     getAllDecks,
@@ -319,19 +319,27 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         expect(queue.cards.map((card) => card.cardId)).not.toContain(1010);
     });
 
-    it('counts a filtered learning card but waits for its step timer before serving it', () => {
+    it('deals a gathered learning card at once, and waits for its step once answered in the build', () => {
+        // Anki moves a learning card into a filtered deck with its due replaced by the gather
+        // position, so the build shows it straight away (FLT-7).
         const dueMs = Date.now() + 10 * 60_000;
-        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001 }));
+        const buildAt = Date.now();
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001, lastReview: buildAt - 3_600_000 }));
         saveDeck({
             id: 98, name: 'Oturum', configId: 1, mod: 0, usn: 0,
             description: '', collapsed: false, isFiltered: true,
-            searchQuery: 'deck:"Python::Modüller & Hata Ayıklama"', filteredBuildAt: Date.now(),
+            searchQuery: 'deck:"Python::Modüller & Hata Ayıklama"', filteredBuildAt: buildAt,
         });
 
         const queue = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
-        expect(queue.cards.map((card) => card.cardId)).toEqual([1020]);
+        expect(queue.cards.map((card) => card.cardId).sort()).toEqual([1010, 1020]);
         expect(queue.stats.learningCount).toBe(1);
-        expect(queue.nextLearningDue).toBe(dueMs);
+
+        // Answered inside the build, the same card obeys its step timer.
+        saveAnkiCard({ ...getAnkiCard(1010)!, lastReview: buildAt + 2000 });
+        const answered = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
+        expect(answered.cards.map((card) => card.cardId)).toEqual([1020]);
+        expect(answered.nextLearningDue).toBe(dueMs);
     });
 
     it('holds a previewed card back until its delay has run, then shows it first', () => {
@@ -349,7 +357,10 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         const waiting = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
         // Due order: a new card's position sorts ahead of any learning card's clock time.
         expect(waiting.cards.map((card) => card.cardId)).toEqual([1030, 1010]);
-        expect(waiting.stats.learningCount).toBe(2);
+        // Only the card waiting out its preview delay counts as learning; a preview deck counts
+        // the rest of what it holds as review, like Anki's preview queue.
+        expect(waiting.stats.learningCount).toBe(1);
+        expect(waiting.stats.reviewCount).toBe(2);
         expect(waiting.nextLearningDue).toBe(nowMs + 60_000);
 
         previewDeck({ 1030: nowMs - 1000, 1020: nowMs - 5000 });
@@ -434,7 +445,8 @@ describe('deck-list filtered count snapshot', () => {
         const { counts } = getDeckListSnapshot(settings, nowMs);
         // Both of deck 7's new cards belong to the session, so neither is left at home.
         expect(counts.get(7)).toMatchObject({ new: 0, learn: 0, total: 0 });
-        expect(counts.get(98)).toMatchObject({ new: 2, learn: 1, review: 0, total: 3 });
+        // In a preview deck the waiting card counts as learning and the rest as review.
+        expect(counts.get(98)).toMatchObject({ new: 0, learn: 1, review: 2, total: 3 });
     });
 
     it('keeps all new cards in subdeck totals despite legacy parent limits', () => {

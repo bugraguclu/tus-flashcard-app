@@ -17,7 +17,7 @@ import type {
 import { todayLocalYMD } from './scheduler';
 import { flushDatabaseWrites, getDB } from './db';
 import { getDbSetting, setDbSetting } from './dbSettings';
-import { getDeckConfig, saveDeckConfig } from './deckManager';
+import { getDeckConfig, saveDeckConfig } from './deckPresets';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { normalizeNewCardGatherOrder } from './queueBuild';
 import { normalizeReviewerToolbarPosition } from './reviewerPresentation';

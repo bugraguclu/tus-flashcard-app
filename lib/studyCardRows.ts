@@ -197,8 +197,10 @@ export function buildScopeClause(
             clauses.push(...filtered.clauses);
             params.push(...filtered.params);
         } else {
-            clauses.push("(d.name = ? OR d.name LIKE ? ESCAPE '\\')");
-            params.push(selectedDeckName, `${escapeLikePattern(selectedDeckName)}::%`);
+            // Exact, case-sensitive subtree match: LIKE folds ASCII case, so "Bio" would also
+            // have taken a legacy "bio::Cells" subtree.
+            clauses.push('(d.name = ? OR instr(d.name, ?) = 1)');
+            params.push(selectedDeckName, `${selectedDeckName}::`);
         }
     } else {
         if (selectedSubject) {
@@ -207,8 +209,8 @@ export function buildScopeClause(
             if (homeDeck) {
                 // Courses own a physical deck. Scope by that deck tree so imported Anki tags stay
                 // unchanged instead of injecting an app-only subject tag into every note.
-                clauses.push("(c.deckId = ? OR d.name LIKE ? ESCAPE '\\')");
-                params.push(homeDeckId, `${escapeLikePattern(homeDeck.name)}::%`);
+                clauses.push('(c.deckId = ? OR instr(d.name, ?) = 1)');
+                params.push(homeDeckId, `${homeDeck.name}::`);
             } else {
                 // Legacy/unknown subjects fall back to a whole-tag match.
                 clauses.push("(' ' || TRIM(n.tags) || ' ') LIKE ? ESCAPE '\\'");
@@ -426,7 +428,9 @@ export function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?
         return cache.get(deckId)!;
     }
 
-    const config = getDeckConfigForDeck(deckId);
+    // Today-only limits are stamped with the study day, so they must be read with the
+    // collection's own rollover hour rather than the 4 AM default.
+    const config = getDeckConfigForDeck(deckId, base.dayRolloverHour);
     const resolved = resolveSettingsFromConfig(config, base);
     // Anki's `effective_desired_retention`: the deck's own target wins over its preset's.
     const deckRetention = getDeck(deckId)?.desiredRetention;

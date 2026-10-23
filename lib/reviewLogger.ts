@@ -10,7 +10,8 @@ import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState
 
 const HOUR_MS = 3600000;
 
-function startOfStudyDayMs(atMs: number, rolloverHour: number): number {
+/** Epoch ms at which the study day containing `atMs` began. */
+export function startOfStudyDayMs(atMs: number, rolloverHour: number): number {
     const shifted = new Date(atMs - rolloverHour * HOUR_MS);
     return new Date(
         shifted.getFullYear(),
@@ -225,7 +226,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
     }
 
     if (deckName) {
-        const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;
+        const subtreePrefix = `${deckName}::`;
 
         const totals = db.getFirstSync<{ reviewed: number; failed: number; timeMs: number }>(
             `SELECT COUNT(*) AS reviewed,
@@ -234,8 +235,8 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
              FROM revlog r
              JOIN anki_cards c ON c.id = r.cardId
              JOIN decks d ON d.id = c.deckId
-             WHERE r.id >= ? AND r.ease != 0 AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
-            startMs, deckName, escapedPrefix,
+             WHERE r.id >= ? AND r.ease != 0 AND (d.name = ? OR instr(d.name, ?) = 1)`,
+            startMs, deckName, subtreePrefix,
         );
 
         const reviewed = totals?.reviewed ?? 0;
@@ -285,7 +286,7 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
 export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour: number = 4): number {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
-    const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;
+    const subtreePrefix = `${deckName}::`;
 
     const row = db.getFirstSync<{ cnt: number }>(
         `SELECT COUNT(*) AS cnt
@@ -294,12 +295,12 @@ export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour:
             FROM revlog r
             JOIN anki_cards c ON c.id = r.cardId
             JOIN decks d ON d.id = c.deckId
-            WHERE r.ease != 0 AND NOT (r.type = 3 AND r.factor = 0) AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')
+            WHERE r.ease != 0 AND NOT (r.type = 3 AND r.factor = 0) AND (d.name = ? OR instr(d.name, ?) = 1)
             GROUP BY r.cardId
          )
          WHERE firstReview >= ?`,
         deckName,
-        escapedPrefix,
+        subtreePrefix,
         startMs,
     );
 
@@ -406,17 +407,17 @@ export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, 
 export function getReviewsAnsweredTodayInDeck(deckName: string, rolloverHour: number = 4): number {
     const db = getDB();
     const startMs = startOfStudyDayMs(Date.now(), rolloverHour);
-    const escapedPrefix = `${deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`)}::%`;
+    const subtreePrefix = `${deckName}::`;
 
     const row = db.getFirstSync<{ cnt: number }>(
         `SELECT COUNT(*) AS cnt
          FROM revlog r
          JOIN anki_cards c ON c.id = r.cardId
          JOIN decks d ON d.id = c.deckId
-         WHERE r.id >= ? AND ${REVIEW_LIMIT_ANSWER} AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+         WHERE r.id >= ? AND ${REVIEW_LIMIT_ANSWER} AND (d.name = ? OR instr(d.name, ?) = 1)`,
         startMs,
         deckName,
-        escapedPrefix,
+        subtreePrefix,
     );
 
     return row?.cnt ?? 0;

@@ -7,16 +7,17 @@ import { todayLocalYMD } from './scheduler';
 import { decksInDisplayOrder, getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
     buryBuildTimeSiblings,
+    dayShuffleRank,
     interleaveNewWithReviews,
     mixInterdayLearning,
     normalizeNewCardGatherOrder,
     shuffleNewCardsByNote,
+    shuffleNewCardsStable,
     sortNewCards,
     sortReviewCards,
     splitIntradayLearning,
 } from './queueBuild';
 import {
-    getReviewsAnsweredToday,
     getReviewsAnsweredTodayInDeck,
     getTodayLimitUsageByDeck,
     type DailyLimitUsage,
@@ -69,7 +70,10 @@ export interface StudyQueueParams {
     selectedSubject?: string | null;
     selectedTopic?: string | null;
     selectedDeckName?: string | null;
-    /** Retained for callers; new-card usage no longer restricts the queue. */
+    /**
+     * New cards introduced today in this scope. It never caps new cards; with "show new cards
+     * before reviews" it only decides when the day's first window of new cards has been served.
+     */
     newCardsStudiedToday?: number;
     /**
      * Reviews already answered today in this scope. Anki subtracts them from "Maximum
@@ -86,23 +90,10 @@ export interface StudyQueueParams {
     extraLearningCardIds?: number[];
 }
 
-function deterministicShuffle<T>(items: T[], seedKey: string): T[] {
-    const result = [...items];
-    let seed = 0;
-    for (let i = 0; i < seedKey.length; i++) {
-        seed = ((seed << 5) - seed + seedKey.charCodeAt(i)) | 0;
-    }
-
-    for (let i = result.length - 1; i > 0; i--) {
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        const j = seed % (i + 1);
-        [result[i], result[j]] = [result[j], result[i]];
-    }
-
-    return result;
-}
-
 const UNRANKED = Number.MAX_SAFE_INTEGER;
+
+/** New cards read per queue build: a replenished working window, never a daily new-card cap. */
+export const NEW_CARD_WINDOW = 200;
 
 /**
  * Where each deck stands in the deck list — siblings by the learner's own order (alphabetical in a
@@ -153,31 +144,31 @@ function sortNewCardsByDeckOrder(cards: StudyCard[], deckRank: ReadonlyMap<numbe
  * Anki v3 "new card gather order" (proto NewCardGatherPriority): which cards are collected and in
  * what order they arrive. The two position orders are already satisfied by the SQL the rows were
  * loaded with (`newRowOrderSql`), so they only have to leave the list alone.
+ *
+ * Every shuffle is keyed by the study day alone. Seeding it with anything that moves during the
+ * day (the remaining new count, say) reshuffled the whole window after each answer.
  */
 function gatherNewCards(
     cards: StudyCard[],
     settings: AppSettings,
     daySeed: string,
-    newCount: number,
     deckRank: ReadonlyMap<number, number>,
 ): StudyCard[] {
-    const seed = `${daySeed}-${newCount}`;
-
     switch (normalizeNewCardGatherOrder(settings.newCardGatherOrder)) {
         case 'ascendingPosition':
         case 'descendingPosition':
             return cards;
         case 'randomCards':
-            return deterministicShuffle(cards, seed);
+            return shuffleNewCardsStable(cards, daySeed);
         case 'randomNotes':
-            return shuffleNewCardsByNote(cards, seed);
+            return shuffleNewCardsByNote(cards, daySeed);
         case 'deckThenRandomNotes':
             // Deck by deck as usual, but the notes inside a deck arrive in a shuffled order.
-            return sortNewCardsByDeckOrder(shuffleNewCardsByNote(cards, seed), deckRank);
+            return sortNewCardsByDeckOrder(shuffleNewCardsByNote(cards, daySeed), deckRank);
         case 'deck':
         default: {
             const base = settings.newCardOrder === 'random'
-                ? deterministicShuffle(cards, seed)
+                ? shuffleNewCardsStable(cards, daySeed)
                 : cards;
             return sortNewCardsByDeckOrder(base, deckRank);
         }
@@ -192,8 +183,53 @@ function gatherNewCards(
 function newRowOrderSql(settings: AppSettings): string {
     const order = normalizeNewCardGatherOrder(settings.newCardGatherOrder);
     if (order === 'descendingPosition') return 'c.due DESC, c.id DESC';
-    if (order === 'randomCards' || order === 'randomNotes') return 'RANDOM()';
     return 'c.due ASC, c.id ASC';
+}
+
+/**
+ * The new-card window for the two random gathers: the first cards of the day's stable shuffle.
+ * SQLite's RANDOM() picked a different window on every rebuild (every few answers, on focus, on the
+ * periodic refresh), so the session kept jumping across the backlog. Only ids are read for the whole
+ * backlog; the full rows are loaded for the window alone.
+ */
+function loadRandomNewWindow(
+    params: StudyQueueParams,
+    byNote: boolean,
+    daySeed: string,
+    windowSize: number,
+): QueueCardRow[] {
+    const scope = buildScopeClause(params.selectedSubject, params.selectedTopic, params.selectedDeckName);
+    const ids = getDB().getAllSync<{ id: number; noteId: number; ord: number }>(
+        `SELECT c.id AS id, c.noteId AS noteId, c.ord AS ord
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId
+         WHERE c.queue = 0${scope.sql}`,
+        ...scope.params,
+    );
+    const ranked = ids
+        .map((row) => ({
+            id: Number(row.id),
+            keys: byNote
+                ? [dayShuffleRank(Number(row.noteId), daySeed), Number(row.ord) || 0, Number(row.id)]
+                : [dayShuffleRank(Number(row.id), daySeed), Number(row.id)],
+        }))
+        .sort((a, b) => {
+            for (let index = 0; index < a.keys.length; index++) {
+                if (a.keys[index] !== b.keys[index]) return a.keys[index] - b.keys[index];
+            }
+            return 0;
+        })
+        .slice(0, windowSize)
+        .map((entry) => entry.id);
+    if (ranked.length === 0) return [];
+    const rows = loadRowsByQueue(
+        'c.queue = 0 AND c.id IN (SELECT value FROM json_each(?))', [JSON.stringify(ranked)],
+        params.selectedSubject, params.selectedTopic, params.selectedDeckName, 'c.id ASC', false,
+    );
+    const order = new Map(ranked.map((id, index) => [id, index]));
+    return rows.sort((a, b) => (order.get(a.cardId) ?? 0) - (order.get(b.cardId) ?? 0));
 }
 
 /**
@@ -244,21 +280,28 @@ function applyNewCardOrder(
     cards: StudyCard[],
     settings: AppSettings,
     daySeed: string,
-    newCount: number,
     deckRank: ReadonlyMap<number, number>,
 ): StudyCard[] {
-    const gathered = gatherNewCards(cards, settings, daySeed, newCount, deckRank);
+    const gathered = gatherNewCards(cards, settings, daySeed, deckRank);
     return sortNewCards(gathered, settings.newCardSortOrder ?? 'template', daySeed);
 }
 
 /**
  * Anki v3 "review sort order". The deck rank comes from the deck list so the two deck-aware
- * orders follow the tree the learner sees, which is what Anki's `active_decks` rowid amounts to.
+ * orders follow the tree the learner sees, which is what Anki's `active_decks` rowid amounts to:
+ * the same display walk the new-card gather uses (manual order, parents before their subdecks),
+ * not a flat comparison of full names.
  */
-function applyReviewOrder(cards: StudyCard[], settings: AppSettings, daySeed: string, today: number): StudyCard[] {
+function applyReviewOrder(
+    cards: StudyCard[],
+    settings: AppSettings,
+    daySeed: string,
+    today: number,
+    deckGatherRank: ReadonlyMap<number, number>,
+): StudyCard[] {
     const order = settings.reviewSortOrder ?? 'dueRandom';
     const needsDeckRank = order === 'dueThenDeck' || order === 'deckThenDue';
-    const deckRank = needsDeckRank ? buildDeckRank() : undefined;
+    const deckRank = needsDeckRank ? (deckId: number) => deckGatherRank.get(deckId) ?? UNRANKED : undefined;
     return sortReviewCards(cards, order, {
         daySeed,
         fallbackDay: today,
@@ -270,14 +313,18 @@ function applyReviewOrder(cards: StudyCard[], settings: AppSettings, daySeed: st
     });
 }
 
-/** Display position of each deck, by the same name ordering the deck list uses. */
-function buildDeckRank(): (deckId: number) => number {
-    const ranks = new Map<number, number>();
-    getAllDecks()
-        .slice()
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .forEach((deck, index) => ranks.set(deck.id, index));
-    return (deckId) => ranks.get(deckId) ?? Number.MAX_SAFE_INTEGER;
+/**
+ * The settings a study scope's queue runs with — the reviewer, the deck overview and anything else
+ * that previews a deck's queue must use the same ones. A deck scope uses that deck's own preset,
+ * per-deck limits and today-only limits (read with the collection's rollover hour); a filtered
+ * deck is exempt from daily limits; a course, topic or "all decks" keeps the collection settings.
+ */
+export function studyScopeSettings(settings: AppSettings, deckName: string | null | undefined): AppSettings {
+    if (!deckName) return settings;
+    const deck = getDeckByName(deckName);
+    if (!deck) return settings;
+    if (deck.isFiltered) return { ...settings, dailyReviewLimit: 9999 };
+    return resolveSettingsFromConfig(getDeckConfigForDeck(deck.id, settings.dayRolloverHour), settings);
 }
 
 export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
@@ -299,15 +346,21 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         }
     }
 
-    const newFetchLimit = 200; // A replenished working window, never a daily new-card cap.
+    const newFetchLimit = NEW_CARD_WINDOW;
 
     // Anki: "When this limit is reached, Anki will not show any more review cards for the day,
     // even if there are more waiting." Answered reviews leave the due queue on their own, so
     // without subtracting them the cap would silently refill on every rebuild.
-    const reviewsStudiedToday = params.reviewsStudiedToday ?? (params.selectedDeckName
-        ? getReviewsAnsweredTodayInDeck(params.selectedDeckName, params.settings.dayRolloverHour)
-        : getReviewsAnsweredToday(params.settings.dayRolloverHour));
-    const reviewLimit = Math.max(0, params.settings.dailyReviewLimit - reviewsStudiedToday);
+    //
+    // Only a deck scope has a limit of its own. A course, a topic or "all decks" is not a deck in
+    // Anki's sense: each card there still answers to its own deck and that deck's parents (the
+    // hierarchical limits below), but the Default preset must not cap every deck's reviews at once.
+    const reviewsStudiedToday = params.selectedDeckName
+        ? params.reviewsStudiedToday ?? getReviewsAnsweredTodayInDeck(params.selectedDeckName, params.settings.dayRolloverHour)
+        : 0;
+    const reviewLimit = params.selectedDeckName
+        ? Math.max(0, params.settings.dailyReviewLimit - reviewsStudiedToday)
+        : Number.POSITIVE_INFINITY;
 
     // Anki's "learn ahead limit" (rslib: learn_ahead_secs): intraday learning cards due within
     // this window are gathered too, but they are served strictly AFTER everything else — never
@@ -375,11 +428,14 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
 
     const deckGatherRank = buildDeckGatherRank();
     const gatherOrder = normalizeNewCardGatherOrder(params.settings.newCardGatherOrder);
+    const daySeed = todayLocalYMD(undefined, params.settings.dayRolloverHour);
     const newRows = newFetchLimit <= 0
         ? []
         : gatherOrder === 'deck' || gatherOrder === 'deckThenRandomNotes'
             ? loadNewRowsDeckByDeck(params, deckGatherRank, newFetchLimit)
-            : loadRowsByQueue(
+            : gatherOrder === 'randomCards' || gatherOrder === 'randomNotes'
+                ? loadRandomNewWindow(params, gatherOrder === 'randomNotes', daySeed, newFetchLimit)
+                : loadRowsByQueue(
                 'c.queue = 0',
                 [],
                 params.selectedSubject,
@@ -399,17 +455,15 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     ) : [];
     let newCards = toStudyCards(newRows, params.settings, nowMs, { settingsCache });
 
-    const daySeed = todayLocalYMD(undefined, params.settings.dayRolloverHour);
-
-    reviewCards = applyReviewOrder(reviewCards, params.settings, daySeed, today);
-    newCards = applyNewCardOrder(newCards, params.settings, daySeed, newCount, deckGatherRank);
+    reviewCards = applyReviewOrder(reviewCards, params.settings, daySeed, today, deckGatherRank);
+    newCards = applyNewCardOrder(newCards, params.settings, daySeed, deckGatherRank);
 
     // Resolve the earlier sibling's config for in-memory suppression after limits.
     const deckConfigCache = new Map<number, DeckConfig>();
     const configForDeck = (deckId: number): DeckConfig => {
         let config = deckConfigCache.get(deckId);
         if (!config) {
-            config = getDeckConfigForDeck(deckId);
+            config = getDeckConfigForDeck(deckId, params.settings.dayRolloverHour);
             deckConfigCache.set(deckId, config);
         }
         return config;
@@ -512,7 +566,18 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
 
     let cards: StudyCard[];
     if (params.settings.queueOrder === 'before') {
-        cards = [...learningDueNow, ...newCardsForQueue, ...reviewQueue, ...learningAhead];
+        // "Show new cards before reviews" with no daily new cap would never reach a review while
+        // the backlog lasts, because the window refills on every rebuild. The product rule: each
+        // study day, one window's worth of new cards (counted from the review log, so a rebuild
+        // cannot reset it) comes first; after that the due reviews are served before more new.
+        const newAhead = Math.max(0, NEW_CARD_WINDOW - Math.max(0, params.newCardsStudiedToday ?? 0));
+        cards = [
+            ...learningDueNow,
+            ...newCardsForQueue.slice(0, newAhead),
+            ...reviewQueue,
+            ...newCardsForQueue.slice(newAhead),
+            ...learningAhead,
+        ];
     } else if (params.settings.queueOrder === 'after') {
         cards = [...learningDueNow, ...reviewQueue, ...newCardsForQueue, ...learningAhead];
     } else {
@@ -548,7 +613,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             params.selectedDeckName,
         );
 
-        let tomorrowReviewLimit = params.settings.dailyReviewLimit ?? 200;
+        let tomorrowReviewLimit = params.selectedDeckName ? params.settings.dailyReviewLimit ?? 200 : 0;
         if (params.selectedDeckName) {
             const deck = getDeckByName(params.selectedDeckName);
             if (deck) {

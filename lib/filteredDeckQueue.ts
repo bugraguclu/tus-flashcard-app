@@ -83,17 +83,27 @@ function queueForMembers(
         .filter((card) => (previewDue(card) ?? Number.POSITIVE_INFINITY) <= nowMs)
         .sort((a, b) => previewDue(a)! - previewDue(b)!);
     // New and review cards are intentionally gathered regardless of dueness (preview/review
-    // ahead). With rescheduling on, learning cards still obey their step timer, or a failed card
-    // would immediately loop after every queue refresh. A preview deck ignores it: Anki moves
-    // every card it gathers there into the review queue.
+    // ahead). A learning card the build gathered is dealt straight away too, as Anki does when it
+    // moves one into a filtered deck (FLT-7); once it has been answered in this build it obeys its
+    // step timer, or a failed card would loop after every queue refresh. A preview deck ignores
+    // the timer altogether: Anki moves every card it gathers there into the review queue.
     const previewDeck = deck.reschedule === false;
+    // Answer times are kept in whole seconds (Anki's `lrt`), so compare at that precision.
+    const buildAt = Math.floor((deck.filteredBuildAt ?? 0) / 1000) * 1000;
+    const waitsForStep = (card: typeof gatheredCards[number]) => (
+        !previewDeck && card.state.status === 'learning' && !(buildAt > 0 && (card.state.lastReviewedAtMs || 0) < buildAt)
+    );
     const cards = [...returningPreviews, ...gatheredCards.filter((card) => {
         if (previewDue(card) !== undefined) return false;
-        if (previewDeck || card.state.status !== 'learning') return true;
+        if (!waitsForStep(card)) return true;
         if (card.state.dueTime > 0) return card.state.dueTime <= nowMs;
         return card.state.dueDate <= todayYmd;
     })];
-    const statusOf = (card: typeof gatheredCards[number]) => (previewDue(card) !== undefined ? 'learning' : card.state.status);
+    // A preview deck counts everything it holds as review, as Anki's preview queue does; a card
+    // waiting out a preview delay counts as learning.
+    const statusOf = (card: typeof gatheredCards[number]) => (previewDue(card) !== undefined
+        ? 'learning'
+        : previewDeck ? 'review' : card.state.status);
     const stats = {
         newCount: gatheredCards.filter((card) => statusOf(card) === 'new').length,
         learningCount: gatheredCards.filter((card) => statusOf(card) === 'learning').length,
@@ -101,7 +111,7 @@ function queueForMembers(
     };
 
     const futureLearningTimes = gatheredCards
-        .map((card) => previewDue(card) ?? (!previewDeck && card.state.status === 'learning' ? card.state.dueTime : 0))
+        .map((card) => previewDue(card) ?? (waitsForStep(card) ? card.state.dueTime : 0))
         .filter((dueTime) => dueTime > nowMs);
 
     return {
@@ -125,10 +135,13 @@ export interface FilteredDeckCountCard {
     /** How the home deck counted the card before the filtered deck took it. */
     homeStatus: CardState['status'];
     homeCounted: boolean;
+    /** The home deck counted it as interday learning (queue 3), which spends its review limit. */
+    homeInterday?: boolean;
 }
 
 type FilteredDeckCountDefinition = Pick<Deck,
     | 'id'
+    | 'reschedule'
     | 'searchQuery'
     | 'searchLimit'
     | 'searchOrder'
@@ -237,12 +250,15 @@ function countCardsForMembers(
         // A previewed card waiting out its delay counts as learning, as Anki's preview repeat does.
         // Answering in preview leaves the card itself untouched, so its home deck still counts it
         // as `homeStatus`.
-        const status = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined ? 'learning' : homeStatus;
+        // A preview deck (rescheduling off) counts its other cards as review, like its queue.
+        const status = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined
+            ? 'learning'
+            : deck.reschedule === false ? 'review' : homeStatus;
         const today = localDayNumber(nowMs, settings.dayRolloverHour);
         const homeCounted = row.queue === 0 || (row.queue === 1
             ? row.due <= nowMs + Math.max(0, settings.learnAheadMinutes || 0) * 60000
             : (row.queue === 2 || row.queue === 3) && row.due <= today);
-        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted });
+        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted, homeInterday: row.queue === 3 });
     }
 
     return result;

@@ -1,6 +1,7 @@
 // Reviewer timers: Anki's on-screen answer timer and the "time remaining" estimate.
 
 import type { QueueStats } from './studyRepository';
+import { nextRolloverMs } from './ankiState';
 
 const MINUTE_MS = 60_000;
 
@@ -95,4 +96,29 @@ export function estimateStudyMinutes(
     if (answersLeft === 0) return null;
 
     return Math.max(1, Math.round((answersLeft * averageAnswerMs) / MINUTE_MS));
+}
+
+/**
+ * When the "all done for now" screen should wake up again.
+ *
+ * The queue already deals a learning card once it is due within the learn-ahead limit, so the
+ * countdown runs to that moment — the card's due time minus the limit — rather than to the due
+ * time itself, which overstated the wait by the whole limit. With nothing left today but
+ * tomorrow's cards, it runs to the next rollover.
+ */
+export function reviewerWaitingTargetMs(options: {
+    hasCard: boolean;
+    nextLearningDue: number | null;
+    upcomingCardsCount: number;
+    nowMs: number;
+    learnAheadMinutes: number;
+    rolloverHour: number;
+}): number | null {
+    if (options.hasCard) return null;
+    if (options.nextLearningDue) {
+        const learnAheadMs = Math.max(0, options.learnAheadMinutes || 0) * 60_000;
+        return Math.max(options.nowMs, options.nextLearningDue - learnAheadMs);
+    }
+    if (options.upcomingCardsCount > 0) return nextRolloverMs(options.nowMs, options.rolloverHour);
+    return null;
 }

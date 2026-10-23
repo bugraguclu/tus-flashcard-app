@@ -403,7 +403,12 @@ describe('ANKI_V3 scheduler', () => {
 
     it('formats minutes and days for button labels', () => {
         expect(formatMinutes(5)).toBe('5dk');
-        expect(formatMinutes(90)).toBe('2sa');
+        // Anki's spans: the largest unit that fits, one decimal, no trailing ".0".
+        expect(formatMinutes(90)).toBe('1.5sa');
         expect(formatDays(14)).toContain('14');
+        expect(formatDays(30)).toBe('30 gün');
+        expect(formatDays(45)).toBe('1.5 ay');
+        expect(formatDays(31)).toBe('1 ay');
+        expect(formatDays(400)).toBe('1.1 yıl');
     });
 });

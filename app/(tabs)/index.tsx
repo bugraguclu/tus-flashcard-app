@@ -25,22 +25,18 @@ import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { schedulerForSettings, withClassicReviewContext, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
 import {
-    deleteReviewById,
     getAverageAnswerMs,
     getNewCardsIntroducedTodayInDeck,
     getStudyStreak,
     getTodayAnswerStats,
-    restoreReviewLog,
     type StudyStreak,
 } from '../../lib/reviewLogger';
-import { resolveSettingsFromConfig } from '../../lib/settingsResolver';
 import {
     useAppSettings,
     useCollectionInvalidation,
@@ -48,7 +44,7 @@ import {
     useStudyScope,
 } from '../../contexts/AppContext';
 import type { Grade, ReviewGestureAction, SessionStats, StudyCard } from '../../lib/types';
-import { DEFAULT_DECK_CONFIG, FLAG_COLORS, getDeckDisplayName, type AnkiCard, type CardFlag, type ReviewLog } from '../../lib/models';
+import { DEFAULT_DECK_CONFIG, FLAG_COLORS, getDeckDisplayName, type CardFlag, type ReviewLog } from '../../lib/models';
 import {
     getAnkiCard,
     getCardsForNote,
@@ -77,7 +73,10 @@ import {
 import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
 import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
+import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
+import { DownChevron, ReviewerBackIcon, ReviewerSettingsIcon, UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
 import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
+import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import {
@@ -109,14 +108,15 @@ import {
     answerStudyCard,
     getDeckTotalCardCount,
     getResetCardDefaults,
+    getStudyCardById,
     getStudyQueue,
     getWaitingLearningCardIds,
     resetCardsToNew,
     resolveSettingsForDeck,
     setCardBuried,
     setCardSuspended,
+    studyScopeSettings,
     undoAnswer,
-    type AnswerSideEffects,
     type ResetCardOptions,
 } from '../../lib/studyRepository';
 import { loadBalancerForCard, rebuildLoadBalancer } from '../../lib/loadBalancerSession';
@@ -151,7 +151,7 @@ import { AnkiSpeechQueue } from '../../lib/ankiSpeechQueue';
 import {
     answerTimerSeconds,
     estimateStudyMinutes,
-    formatStopwatch,
+    reviewerWaitingTargetMs,
     shouldClearWhiteboardForCard,
     shouldRunAutoAdvance,
 } from '../../lib/reviewerTimers';
@@ -169,16 +169,29 @@ import {
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
 import { coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
 import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
+import { KeyRepeatGuard, RevealGradeGuard, isAutoRepeatKey } from '../../lib/reviewerInputGuards';
+import { queueWithFocusedCard } from '../../lib/reviewerQueueRefresh';
+import { StudyDayWatcher, startNewStudyDay } from '../../lib/studyDayRollover';
+import { formatPreviewDelay, localizeButtonTimes } from '../../lib/reviewerIntervalLabels';
 import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from '../../lib/reviewerSurface';
 import { ReviewerTtsLifecycle } from '../../lib/reviewerTtsLifecycle';
 import { loadReviewerTtsEnabled, saveReviewerTtsEnabled } from '../../lib/reviewerTtsState';
 import {
-    applyReviewerOpState,
     captureReviewerOpState,
     reviewerOpChangesScheduling,
+    reviewerOpTargetsGone,
     type ReviewerOpChange,
     type ReviewerOpName,
 } from '../../lib/reviewerUndo';
+import {
+    answerUndoCheck,
+    undoEntryOp,
+    type UndoEntry,
+    checkReviewerOpStep,
+    commitReviewerOpStep,
+    pruneStaleReviewerSteps,
+    replayAnswerOptions,
+} from '../../lib/reviewerUndoSteps';
 import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
 import { canonifyTags } from '../../lib/noteTags';
 
@@ -197,73 +210,6 @@ function localizeFilteredDeckDisplayName(displayName: string, locale: 'tr' | 'en
     return displayName.replace(
         /^(?:Filtered Deck|Filtrelenmiş Deste)(?=\s|$)/i,
         localizedPrefix,
-    );
-}
-
-function DownChevron({ color }: { color: string }) {
-    return (
-        <Svg width={14} height={14} viewBox="0 0 14 14">
-            <Path
-                d="M3 5.25 7 9l4-3.75"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
-
-function ReviewerBackIcon({ color }: { color: string }) {
-    return (
-        <Svg width={22} height={22} viewBox="0 0 24 24">
-            <Path
-                d="M15 4 7 12l8 8"
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
-
-/** AnkiDroid-style reviewer action: reverse the most recent grading operation. */
-function UndoReviewIcon({ color }: { color: string }) {
-    return (
-        <Svg width={22} height={22} viewBox="0 0 24 24">
-            <Path
-                d="M9 7H4V2M4.5 7A8 8 0 1 1 6 18"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.9}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
-
-function ReviewerSettingsIcon({ color }: { color: string }) {
-    return (
-        <Svg width={21} height={21} viewBox="0 0 24 24">
-            <Path
-                d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.9}
-            />
-            <Path
-                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.9}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
     );
 }
 
@@ -293,36 +239,6 @@ function KeepAwakeGuard() {
 }
 
 type QueueStats = { newCount: number; learningCount: number; reviewCount: number };
-
-/**
- * One step on the reviewer's undo stack.
- *
- * Anki puts answers and the reviewer's other actions on a single stack, so Ctrl+Z walks back
- * through "Bury Card", "Set Due Date" and "Answer Card" in the order they happened. An answer
- * needs its own shape because undoing it has to replay scheduling side effects; everything else
- * is restored from a plain snapshot of the rows it touched.
- */
-type AnswerUndoEntry = {
-    kind: 'answer';
-    cardId: number;
-    reviewLogId: number;
-    previousSnapshot: AnkiCard;
-    /** Rows the answer changed beyond this card: buried siblings, an added leech tag. */
-    sideEffects: AnswerSideEffects;
-    filteredDeckId?: number;
-    /** A preview answer: its deck, the delays it used and the card's wait before the answer. */
-    preview?: { deckId: number; delays: number[] | undefined; previousDueMs: number | null };
-    grade: Grade;
-    answerTimeMs: number;
-};
-
-type UndoEntry = AnswerUndoEntry | ({ kind: 'op' } & ReviewerOpChange);
-
-/** The operation an undo step would take back, for the Anki-style "Undo Bury Card" label. */
-function undoEntryOp(entry: UndoEntry | undefined): ReviewerOpName | null {
-    if (!entry) return null;
-    return entry.kind === 'op' ? entry.op : 'answer';
-}
 
 /**
  * Today's session numbers, always derived from the review log. The revlog is the durable
@@ -512,6 +428,10 @@ export default function StudyScreen() {
     // held-down grade key cannot rate the same card twice.
     const isMutatingRef = useRef(false);
     const lastGradeTapAtRef = useRef(0);
+    // A double tap on Show Answer must not grade the card with its second tap (CAL-9), and a held
+    // hardware key must not keep answering (CAL-10).
+    const revealGradeGuardRef = useRef(new RevealGradeGuard());
+    const nativeKeyRepeatGuardRef = useRef(new KeyRepeatGuard());
     const appIsActiveRef = useRef(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
     const [appForegrounded, setAppForegrounded] = useState(appIsActiveRef.current);
     const [reviewerFocused, setReviewerFocused] = useState(false);
@@ -629,15 +549,10 @@ export default function StudyScreen() {
 
     // Anki resolves limits per deck: studying a deck uses that deck's daily limits (plus any
     // "today only" boost), and a filtered / custom-study deck is exempt from daily limits.
-    const scopeSettings = useMemo(() => {
-        if (!selectedDeckName) return settings;
-        const deck = getDeckByName(selectedDeckName);
-        if (!deck) return settings;
-        if (deck.isFiltered) {
-            return { ...settings, dailyReviewLimit: 9999 };
-        }
-        return resolveSettingsFromConfig(getDeckConfigForDeck(deck.id, settings.dayRolloverHour), settings);
-    }, [selectedDeckName, settings, collectionVersion]);
+    const scopeSettings = useMemo(
+        () => studyScopeSettings(settings, selectedDeckName),
+        [selectedDeckName, settings, collectionVersion],
+    );
 
     // Filtered deck with "reschedule" off => Anki preview mode: answers never touch cards.
     const previewMode = useMemo(() => {
@@ -652,6 +567,8 @@ export default function StudyScreen() {
         timeboxTrackerRef.current.reset(Date.now());
     }, [selectedSubject, selectedTopic, selectedDeckName, settings.timeboxMinutes]);
 
+    /** The card the next queue build must put on screen: the one an undo just took back. */
+    const focusCardIdRef = useRef<number | null>(null);
     const buildQueue = useCallback((
         newCardsStudiedToday?: number,
         resetCounter: boolean = true,
@@ -694,7 +611,21 @@ export default function StudyScreen() {
         // say) took the drawing with it.
         const holdForDrawing = active != null && whiteboardActiveRef.current;
 
-        if (activeStillQueued || holdForDrawing) {
+        // Undo brings the card it took back to the screen, as Anki's reviewer does, instead of
+        // whatever the rebuilt queue happens to start with (CAL-4).
+        const focusId = focusCardIdRef.current;
+        focusCardIdRef.current = null;
+        const focused = focusId === null ? null : queueWithFocusedCard(
+            sessionCards,
+            focusId,
+            () => getStudyCardById(focusId, scopeSettings),
+        );
+
+        if (focused) {
+            setQueue(focused);
+            setCurrentCard(focused[0]);
+            setShowingAnswer(false);
+        } else if (activeStillQueued || holdForDrawing) {
             setQueue([active!, ...sessionCards.filter((card) => card.cardId !== active!.cardId)]);
         } else {
             setQueue(sessionCards);
@@ -756,6 +687,11 @@ export default function StudyScreen() {
     useEffect(() => {
         if (!hasStudyScope || loading || collectionVersion === lastCollectionVersionRef.current) return;
         lastCollectionVersionRef.current = collectionVersion;
+        // Steps whose rows were deleted elsewhere (Browser, editor, deck delete) can never be
+        // applied again; drop them, and what lies behind them, before the learner reaches them.
+        const isGone = (entry: UndoEntry) => (entry.kind === 'op' ? reviewerOpTargetsGone(entry) : !getAnkiCard(entry.cardId));
+        setUndoStack((prev) => pruneStaleReviewerSteps(prev, isGone));
+        setRedoStack((prev) => pruneStaleReviewerSteps(prev, isGone));
         buildQueue(undefined, false, true);
     }, [hasStudyScope, collectionVersion, loading, buildQueue]);
 
@@ -779,6 +715,27 @@ export default function StudyScreen() {
 
         return () => clearInterval(timer);
     }, [hasStudyScope, loading, buildQueue, refreshSessionStats]);
+
+    // Studying past the rollover starts the new day here as well: buried cards come back,
+    // yesterday's "today only" limits stop applying and the previous day's undo history goes.
+    const onNewStudyDayRef = useRef<() => void>(() => {});
+    onNewStudyDayRef.current = () => {
+        startNewStudyDay(settings.dayRolloverHour);
+        setUndoStack([]);
+        setRedoStack([]);
+        invalidateCollection();
+        refreshSessionStats();
+        buildQueue();
+    };
+    useEffect(() => {
+        if (!hasStudyScope) return;
+        const watcher = new StudyDayWatcher(settings.dayRolloverHour);
+        const timer = setInterval(() => {
+            if (isMutatingRef.current || !watcher.check()) return;
+            onNewStudyDayRef.current();
+        }, 30000);
+        return () => clearInterval(timer);
+    }, [hasStudyScope, settings.dayRolloverHour]);
 
     useEffect(() => {
         if (!currentCard) return;
@@ -841,20 +798,28 @@ export default function StudyScreen() {
     }, [settings.showRemainingTime, averageAnswerMs, queueStats, scopeSettings.learningSteps.length]);
 
     useEffect(() => {
+        if (showingAnswer) revealGradeGuardRef.current.noteRevealed(Date.now());
+        else revealGradeGuardRef.current.noteHidden();
+    }, [showingAnswer, currentCard?.cardId]);
+
+    useEffect(() => {
         if (!showingAnswer) return;
         // The back replaces the front. Start it at the top even if the learner had scrolled
         // deep into a long question, then let the outer reviewer scroll naturally to grades.
         requestAnimationFrame(() => reviewerScrollRef.current?.scrollTo({ y: 0, animated: false }));
     }, [showingAnswer]);
 
-    const waitingTargetMs = useMemo(() => {
-        if (currentCard) return null;
-        if (nextLearningDue) return nextLearningDue;
-        if (upcomingCardsCount > 0) {
-            return nextRolloverMs(Date.now(), settings.dayRolloverHour);
-        }
-        return null;
-    }, [currentCard, nextLearningDue, upcomingCardsCount, settings.dayRolloverHour]);
+    const waitingTargetMs = useMemo(() => reviewerWaitingTargetMs({
+        hasCard: Boolean(currentCard),
+        nextLearningDue,
+        upcomingCardsCount,
+        nowMs: Date.now(),
+        // A filtered deck deals learning cards on their due time, without learn-ahead.
+        learnAheadMinutes: previewMode || (selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)
+            ? 0
+            : scopeSettings.learnAheadMinutes,
+        rolloverHour: settings.dayRolloverHour,
+    }), [currentCard, nextLearningDue, upcomingCardsCount, settings.dayRolloverHour, scopeSettings.learnAheadMinutes, previewMode, selectedDeckName]);
 
     // Rebuild queue when the next learning card becomes due or day rolls over. The newly due card joins the
     // queue behind the card currently being studied, never replacing it mid-answer.
@@ -922,6 +887,7 @@ export default function StudyScreen() {
         const now = Date.now();
         const doubleTapGuard = settings.answerDoubleTapMs ?? 200;
         if (now - lastGradeTapAtRef.current < doubleTapGuard) return;
+        if (!revealGradeGuardRef.current.canGrade(now, doubleTapGuard)) return;
         lastGradeTapAtRef.current = now;
         isMutatingRef.current = true;
 
@@ -943,18 +909,21 @@ export default function StudyScreen() {
             let result;
             try {
                 const previousPreviewDue = previewDeck?.filteredPreviewDue?.[String(currentCard.cardId)] ?? null;
-                result = await commitCollectionWrite(() => {
-                    const answered = answerStudyCard(currentCard.cardId, grade, settings, elapsed, previewDeck
+                result = await commitCollectionWrite(() => answerStudyCard(currentCard.cardId, grade, settings, elapsed, {
+                    ...(previewDeck
                         ? { preview: { delays: previewDeck.previewDelays } }
-                        : { filtered: Boolean(activeFilteredDeck?.isFiltered) });
-                    if (previewDeck) {
-                        setFilteredPreviewDue(previewDeck.id, currentCard.cardId, answered.previewDueMs ?? null);
-                        if (answered.previewDueMs == null) completeFilteredCard(previewDeck.id, currentCard.cardId);
-                    } else if (activeFilteredDeck?.isFiltered && answered.updatedCard.state.status !== 'learning') {
-                        completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
-                    }
-                    return answered;
-                }, (answered) => {
+                        : { filtered: Boolean(activeFilteredDeck?.isFiltered) }),
+                    // The session bookkeeping commits with the answer itself, so a crash can never
+                    // leave an answered card unfinished in its filtered deck.
+                    inTransaction: (outcome) => {
+                        if (previewDeck) {
+                            setFilteredPreviewDue(previewDeck.id, currentCard.cardId, outcome.previewDueMs);
+                            if (outcome.previewDueMs === null) completeFilteredCard(previewDeck.id, currentCard.cardId);
+                        } else if (activeFilteredDeck?.isFiltered && !outcome.isLearning) {
+                            completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
+                        }
+                    },
+                }), (answered) => {
                     undoAnswer(answered.previousAnkiCard, answered.reviewLogId, answered.sideEffects);
                     rebuildLoadBalancer(settings.dayRolloverHour);
                     if (activeFilteredDeck?.isFiltered) restoreFilteredCard(activeFilteredDeck.id, currentCard.cardId);
@@ -998,6 +967,8 @@ export default function StudyScreen() {
                         preview: { deckId: previewDeck.id, delays: previewDeck.previewDelays, previousDueMs },
                         grade,
                         answerTimeMs: elapsed,
+                        filtered: true,
+                        answeredSnapshot: getAnkiCard(currentCard.cardId) ?? undefined,
                     },
                 ]);
             } else {
@@ -1020,9 +991,20 @@ export default function StudyScreen() {
                         filteredDeckId: completesFilteredCard ? activeFilteredDeck?.id : undefined,
                         grade,
                         answerTimeMs: elapsed,
+                        filtered: Boolean(activeFilteredDeck?.isFiltered),
+                        answeredSnapshot: getAnkiCard(currentCard.cardId) ?? undefined,
                     },
                 ]);
             }
+
+            // The answered question is finished with: like AnkiDroid, the board starts clean on
+            // the card's next appearance (after Again it would otherwise sit over the question)
+            // and its stored ink is dropped instead of piling up for every card ever drawn on.
+            if (inkedCardIdRef.current === currentCard.cardId) {
+                whiteboardRef.current?.clear();
+                setWhiteboardHasContent(false);
+            }
+            clearCardWhiteboard(targetDeckId, currentCard.cardId);
 
             // The review log row is already committed, so re-reading it gives exact numbers
             // (reviewed / passed / new-introduced) with no drift to hand-maintain.
@@ -1167,6 +1149,7 @@ export default function StudyScreen() {
         refreshSessionStats,
         l,
         router,
+        targetDeckId,
     ]);
 
     useEffect(() => {
@@ -1183,21 +1166,49 @@ export default function StudyScreen() {
      * an operation that touched the study queues; one that only changed a note redraws the card
      * in place, leaving a revealed answer revealed.
      */
-    const applyReviewerOp = useCallback((change: ReviewerOpChange, direction: 'undo' | 'redo') => {
-        const target = direction === 'undo' ? change.before : change.after;
-        const other = direction === 'undo' ? change.after : change.before;
-        applyReviewerOpState(target, other, {
-            saveCard: saveAnkiCard,
-            saveNote,
-            insertReviewLog: restoreReviewLog,
-            deleteReviewLog: deleteReviewById,
-        });
+    const applyReviewerOp = useCallback(async (change: ReviewerOpChange, direction: 'undo' | 'redo'): Promise<boolean> => {
+        // A step whose card was rescheduled elsewhere is refused whole: restoring part of its
+        // scheduling would write a card state no answer could produce.
+        const check = checkReviewerOpStep(change, direction);
+        if (check !== 'ok') {
+            setUndoStack([]);
+            setRedoStack([]);
+            if (check === 'conflict') {
+                alert(
+                    direction === 'undo' ? l('Geri alınamadı', 'Cannot undo') : l('Yinelenemedi', 'Cannot redo'),
+                    l('Bu kart sonradan başka bir yerde yeniden zamanlandı. Geri alma geçmişi temizlendi.',
+                        'This card was rescheduled elsewhere afterwards. The undo history was cleared.'),
+                );
+            }
+            buildQueue(undefined, false, true);
+            return false;
+        }
+        // One savepoint holds every row of the step, and only a flushed write moves it between
+        // the stacks; a failure leaves the step where it was so it can be tried again.
+        await commitReviewerOpStep(change, direction);
         invalidateCollection();
         if (reviewerOpChangesScheduling(change)) {
+            // Undoing a bury or suspend shows that card again.
+            if (direction === 'undo' && change.before.cards.length > 0) focusCardIdRef.current = change.before.cards[0].id;
             markSchedulingStale();
             buildQueue(undefined, false, true);
         }
-    }, [invalidateCollection, markSchedulingStale, buildQueue]);
+        return true;
+    }, [invalidateCollection, markSchedulingStale, buildQueue, l]);
+
+    const refuseStaleAnswerStep = useCallback((check: 'gone' | 'conflict', direction: 'undo' | 'redo') => {
+        console.warn(`[Study] ${direction} target ${check}, clearing stale undo stack.`);
+        setUndoStack([]);
+        setRedoStack([]);
+        if (check === 'conflict') {
+            alert(
+                l('Geri alınamadı', 'Cannot undo'),
+                l('Bu kart sonradan başka bir yerde yeniden zamanlandı. Geri alma geçmişi temizlendi.',
+                    'This card was rescheduled elsewhere afterwards. The undo history was cleared.'),
+            );
+        }
+        buildQueue();
+    }, [buildQueue, l]);
 
     const undoLast = useCallback(async () => {
         // Same re-entrancy guard as answerCard: repeated Ctrl+Z presses would pop two
@@ -1209,19 +1220,19 @@ export default function StudyScreen() {
             const undo = undoStack[undoStack.length - 1];
 
             if (undo.kind === 'op') {
-                setUndoStack((prev) => prev.slice(0, -1));
-                setRedoStack((prev) => [...prev.slice(-29), undo]);
-                applyReviewerOp(undo, 'undo');
+                if (await applyReviewerOp(undo, 'undo')) {
+                    setUndoStack((prev) => prev.slice(0, -1));
+                    setRedoStack((prev) => [...prev.slice(-29), undo]);
+                }
                 return;
             }
 
             // If the collection was replaced (backup restore, import) the snapshot belongs to
             // a card that no longer exists — drop the stale stack instead of resurrecting it.
-            if (!getAnkiCard(undo.cardId)) {
-                console.warn('[Study] undo target missing, clearing stale undo stack.');
-                setUndoStack([]);
-                setRedoStack([]);
-                buildQueue();
+            // A card rescheduled elsewhere since the answer is refused the same way.
+            const check = answerUndoCheck(undo.cardId, undo.answeredSnapshot);
+            if (check !== 'ok') {
+                refuseStaleAnswerStep(check, 'undo');
                 return;
             }
 
@@ -1236,6 +1247,7 @@ export default function StudyScreen() {
             setRedoStack((prev) => [...prev.slice(-29), undo]);
 
             // Deleting the revlog row already reverted the day's numbers; re-read them.
+            focusCardIdRef.current = undo.cardId;
             const restoredStats = refreshSessionStats();
             markSchedulingStale();
             buildQueue(restoredStats.newCardsToday);
@@ -1245,7 +1257,7 @@ export default function StudyScreen() {
         } finally {
             isMutatingRef.current = false;
         }
-    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, l]);
+    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, refuseStaleAnswerStep, l]);
 
     const redoLast = useCallback(async () => {
         if (redoStack.length === 0 || isMutatingRef.current) return;
@@ -1255,27 +1267,30 @@ export default function StudyScreen() {
             const redo = redoStack[redoStack.length - 1];
 
             if (redo.kind === 'op') {
-                setRedoStack((prev) => prev.slice(0, -1));
-                setUndoStack((prev) => [...prev.slice(-29), redo]);
-                applyReviewerOp(redo, 'redo');
+                if (await applyReviewerOp(redo, 'redo')) {
+                    setRedoStack((prev) => prev.slice(0, -1));
+                    setUndoStack((prev) => [...prev.slice(-29), redo]);
+                }
                 return;
             }
 
-            if (!getAnkiCard(redo.cardId)) {
-                console.warn('[Study] redo target missing, clearing stale redo stack.');
-                setRedoStack([]);
-                buildQueue();
+            // Redo replays the answer on the card as undo left it; anything else means the card
+            // moved on in the meantime.
+            const redoCheck = answerUndoCheck(redo.cardId, redo.previousSnapshot);
+            if (redoCheck !== 'ok') {
+                refuseStaleAnswerStep(redoCheck, 'redo');
                 return;
             }
 
-            const result = await commitCollectionWrite(() => {
-                const answered = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, redo.preview
-                    ? { preview: { delays: redo.preview.delays } }
-                    : {});
-                if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, answered.previewDueMs ?? null);
-                if (redo.filteredDeckId) completeFilteredCard(redo.filteredDeckId, redo.cardId);
-                return answered;
-            }, (answered) => {
+            // The replayed answer keeps the filtered context of the original one, so an early
+            // review in a filtered deck is scheduled (and logged) as early again.
+            const result = await commitCollectionWrite(() => answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, {
+                ...replayAnswerOptions(redo),
+                inTransaction: (outcome) => {
+                    if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, outcome.previewDueMs);
+                    if (redo.filteredDeckId) completeFilteredCard(redo.filteredDeckId, redo.cardId);
+                },
+            }), (answered) => {
                 undoAnswer(answered.previousAnkiCard, answered.reviewLogId, answered.sideEffects);
                 rebuildLoadBalancer(settings.dayRolloverHour);
                 if (redo.filteredDeckId) restoreFilteredCard(redo.filteredDeckId, redo.cardId);
@@ -1297,6 +1312,8 @@ export default function StudyScreen() {
                     preview: redo.preview,
                     grade: redo.grade,
                     answerTimeMs: redo.answerTimeMs,
+                    filtered: redo.filtered,
+                    answeredSnapshot: getAnkiCard(redo.cardId) ?? undefined,
                 },
             ]);
 
@@ -1309,7 +1326,7 @@ export default function StudyScreen() {
         } finally {
             isMutatingRef.current = false;
         }
-    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, l]);
+    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, refuseStaleAnswerStep, l]);
 
     /**
      * Run a reviewer action as an undoable operation, the way Anki runs every one of them.
@@ -1548,12 +1565,7 @@ export default function StudyScreen() {
         if (previewMode) {
             const activeDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
             const delayFor = (grade: number) => previewDelaySecondsForGrade(activeDeck?.previewDelays, grade);
-            const formatDelay = (sec: number) => {
-                if (sec <= 0) return '—';
-                if (sec < 60) return `${sec}sn`;
-                if (sec < 3600) return `${Math.round(sec / 60)}dk`;
-                return `${Math.round(sec / 3600)}sa`;
-            };
+            const formatDelay = (sec: number) => formatPreviewDelay(sec, locale);
             return {
                 again: formatDelay(delayFor(1)),
                 hard: formatDelay(delayFor(2)),
@@ -1574,8 +1586,11 @@ export default function StudyScreen() {
             deckId: currentCard.deckId,
             odid: currentCard.rawCard?.odid ?? 0,
         }, cardSettings.dayRolloverHour, nowMs);
-        return scheduler.previewIntervals(withClassicReviewContext(currentCard.state, Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)), cardSettings, nowMs, { balancer });
-    }, [currentCard, settings, previewMode, selectedDeckName]);
+        return localizeButtonTimes(
+            scheduler.previewIntervals(withClassicReviewContext(currentCard.state, Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)), cardSettings, nowMs, { balancer }),
+            locale,
+        );
+    }, [currentCard, settings, previewMode, selectedDeckName, locale]);
 
     const renderPayload = useMemo(() => {
         if (!currentCard) return null;
@@ -1609,7 +1624,7 @@ export default function StudyScreen() {
         [renderPayload],
     );
     const explicitTtsSides = useMemo(() => {
-        if (!renderPayload) return { question: false, answer: false };
+        if (!renderPayload) return { question: false, answer: false, questionHtml: '', answerHtml: '' };
         const common = {
             deckName: renderPayload.deck?.name,
             clozeOrd: renderPayload.card.ord + 1,
@@ -1622,8 +1637,16 @@ export default function StudyScreen() {
         return {
             question: extractAnkiTtsSegments(question, false).length > 0,
             answer: extractAnkiTtsSegments(answer, false).length > 0,
+            questionHtml: question,
+            answerHtml: answer,
         };
     }, [renderPayload]);
+    // Sound files and speech of one side play one after the other, in the side's own order.
+    const avOrderFor = useCallback((answerSide: boolean) => {
+        const html = answerSide ? explicitTtsSides.answerHtml : explicitTtsSides.questionHtml;
+        const explicit = answerSide ? explicitTtsSides.answer : explicitTtsSides.question;
+        return html ? avPlaybackOrder(html, voicePlaybackEnabled && !explicit) : [];
+    }, [explicitTtsSides, voicePlaybackEnabled]);
     const cardHasAudio = cardHasAttachedMedia || explicitTtsSides.question || explicitTtsSides.answer;
     // Whether the back's OWN content (FrontSide excluded) embeds audio/video — decides where
     // a play signal goes once the answer is shown, so the answer's sound is reachable even
@@ -1647,6 +1670,7 @@ export default function StudyScreen() {
     const questionAudioActiveRef = useRef(false);
     const answerAudioActiveRef = useRef(false);
     const ttsActiveRef = useRef(false);
+    const avSequencerRef = useRef(new AvSequencer());
     const speechQueueRef = useRef<AnkiSpeechQueue | null>(null);
     if (!speechQueueRef.current) {
         speechQueueRef.current = new AnkiSpeechQueue({
@@ -1656,6 +1680,7 @@ export default function StudyScreen() {
             maximumInputLength: Speech.maxSpeechInputLength,
         }, (active) => {
             ttsActiveRef.current = active;
+            avSequencerRef.current.report('tts', active);
         });
     }
     const ttsLifecycleRef = useRef<ReviewerTtsLifecycle | null>(null);
@@ -1671,9 +1696,11 @@ export default function StudyScreen() {
     const [audioPlaybackScope, setAudioPlaybackScope] = useState<ReviewerPlaybackScope>('question');
     const handleQuestionAudioActive = useCallback((active: boolean) => {
         questionAudioActiveRef.current = active;
+        avSequencerRef.current.report('sound', active);
     }, []);
     const handleAnswerAudioActive = useCallback((active: boolean) => {
         answerAudioActiveRef.current = active;
+        avSequencerRef.current.report('sound', active);
     }, []);
 
     // Anki's reviewer top bar: a back arrow leaves study, and flag/more open the options sheet
@@ -1862,15 +1889,32 @@ export default function StudyScreen() {
         if (!next) stopSpeech();
     }, [stopSpeech, voicePlaybackEnabled]);
     const replayAudio = useCallback(() => {
-        setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, cardDeckOptions.skipQuestionWhenReplayingAnswer, false));
-        setAudioSignal((value) => value + 1);
+        const playSounds = () => {
+            setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, cardDeckOptions.skipQuestionWhenReplayingAnswer, false));
+            setAudioSignal((value) => value + 1);
+        };
         // Built-in {{tts}} regions are AV tags in Anki, so R / Replay Audio must replay them even
         // when whole-card text reading is off. Whole-card fallback is replayed only when enabled.
         const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
-        if (sideHasExplicitTts || (voicePlaybackEnabled && !cardHasAttachedMedia)) {
+        const speaks = sideHasExplicitTts || (voicePlaybackEnabled && !cardHasAttachedMedia);
+        avSequencerRef.current.cancel();
+        if (!speaks) {
+            playSounds();
+            return;
+        }
+        // One after the other, in the side's order, rather than both at once.
+        if (cardHasAttachedMedia && avOrderFor(showingAnswer)[0] === 'tts') {
+            speakSide(showingAnswer);
+            avSequencerRef.current.after('tts', playSounds);
+        } else if (cardHasAttachedMedia) {
+            playSounds();
+            avSequencerRef.current.after('sound', () => speakSide(showingAnswer));
+        } else {
+            playSounds();
             speakSide(showingAnswer);
         }
     }, [
+        avOrderFor,
         showingAnswer,
         explicitTtsSides,
         voicePlaybackEnabled,
@@ -2026,8 +2070,9 @@ export default function StudyScreen() {
     ]);
 
     // The whiteboard persists ink per card during the session: advancing to another card
-    // saves any drawing made on the outgoing card, and returning to a card (after a learn-ahead
-    // countdown / study timer expiry, or via review undo) restores its ink.
+    // saves any drawing made on the outgoing card, and returning to a card that was not answered
+    // (after a learn-ahead countdown or study timer expiry) restores its ink. Answering a card
+    // clears its ink (see answerCard).
     useEffect(() => {
         const nextCardId = currentCard?.cardId ?? null;
         const prevCardId = inkedCardIdRef.current;
@@ -2081,12 +2126,26 @@ export default function StudyScreen() {
         const shouldReadWholeCard = voicePlaybackEnabled;
         const shouldAutoPlayExplicitTts = cardDeckOptions.autoPlayAudio && sideHasExplicitTts;
         if (!reviewerFocused || !appForegrounded || (!shouldReadWholeCard && !shouldAutoPlayExplicitTts)) return;
+        // "Interrupt current audio when answering" off lets speech run on into the next side.
+        const cleanup = () => { if (settings.interruptAudioOnAnswer) stopSpeech(); };
+        const order = avOrderFor(showingAnswer);
+        if (cardDeckOptions.autoPlayAudio && order[0] === 'sound' && order.includes('tts')) {
+            // The side's sound files come first; speech starts once they have played.
+            const sequencer = avSequencerRef.current;
+            sequencer.after('sound', () => speakSide(showingAnswer));
+            return () => {
+                sequencer.cancel();
+                cleanup();
+            };
+        }
         const timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
         return () => {
             clearTimeout(timer);
-            stopSpeech();
+            cleanup();
         };
     }, [
+        avOrderFor,
+        settings.interruptAudioOnAnswer,
         voicePlaybackEnabled,
         reviewerFocused,
         appForegrounded,
@@ -2123,13 +2182,21 @@ export default function StudyScreen() {
         if (!reviewerFocused || !appForegrounded || !cardDeckOptions.autoPlayAudio || !cardHasAudio) return;
         // Anki: flipping to the answer auto-plays only the answer side's own sounds.
         if (showingAnswer && !answerSideHasAudio) return;
-        // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously).
-        const timer = setTimeout(() => {
+        const playSounds = () => {
             setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, false, true));
             setAudioSignal((value) => value + 1);
-        }, 450);
+        };
+        const order = avOrderFor(showingAnswer);
+        if (order[0] === 'tts' && order.includes('sound')) {
+            // Speech leads on this side; the sound files wait until it has finished.
+            const sequencer = avSequencerRef.current;
+            sequencer.after('tts', playSounds);
+            return () => sequencer.cancel();
+        }
+        // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously).
+        const timer = setTimeout(playSounds, 450);
         return () => clearTimeout(timer);
-    }, [currentCard?.cardId, showingAnswer, reviewerFocused, appForegrounded, cardDeckOptions.autoPlayAudio, cardHasAudio, answerSideHasAudio]);
+    }, [currentCard?.cardId, showingAnswer, reviewerFocused, appForegrounded, cardDeckOptions.autoPlayAudio, cardHasAudio, answerSideHasAudio, avOrderFor]);
 
     // Deck description (Anki shows it on the deck's study screen).
     const deckDescription = useMemo(() => {
@@ -2317,6 +2384,11 @@ export default function StudyScreen() {
                 return;
             }
             if (!typed && event.altKey) return;
+            // A held key's auto-repeat never acts: holding Space used to answer card after card.
+            if (isAutoRepeatKey(event)) {
+                if (consumedWebKeyRef.current === event.key) consume(event);
+                return;
+            }
             if (handleShortcutKey(event.key)) consume(event);
         };
         const onKeyUp = (event: KeyboardEvent) => {
@@ -2628,6 +2700,14 @@ export default function StudyScreen() {
         : Math.max(insets.bottom, Spacing.md);
     const feedbackBottom = answerBarClearance
         + (toolbarPosition === 'bottom' && settings.showStudyTopBar !== false ? 54 : 0);
+    const statusItems = (
+        <ReviewerStatusItems
+            compact={isCompact}
+            reminder={autoAdvanceReminder}
+            timerSeconds={cardDeckOptions.showTimer && currentCard ? answerSeconds : null}
+            remainingMinutes={remainingMinutes}
+        />
+    );
     const reviewerToolbar = newStudyScreenEnabled && settings.showStudyTopBar !== false ? (
         <View
             style={[
@@ -2671,31 +2751,7 @@ export default function StudyScreen() {
                 <DownChevron color={colors.textMuted} />
             </ReviewerDeckScope>
 
-            <View style={styles.toolbarStatusItems}>
-                {autoAdvanceReminder ? (
-                    <Text style={styles.autoAdvanceReminder} accessibilityLiveRegion="polite">
-                        {l('Süre doldu', 'Time is up')}
-                    </Text>
-                ) : null}
-                {cardDeckOptions.showTimer && currentCard ? (
-                    <Text
-                        style={styles.answerTimer}
-                        accessibilityLabel={l(
-                            `Bu kartta geçen süre: ${answerSeconds} saniye`,
-                            `Time on this card: ${answerSeconds} seconds`,
-                        )}
-                    >{formatStopwatch(answerSeconds)}</Text>
-                ) : null}
-                {remainingMinutes !== null ? (
-                    <Text
-                        style={styles.remainingTime}
-                        accessibilityLabel={l(
-                            `Kalan tahmini süre: ${remainingMinutes} dakika`,
-                            `Estimated time remaining: ${remainingMinutes} minutes`,
-                        )}
-                    >{l(`~${remainingMinutes} dk`, `~${remainingMinutes} min`)}</Text>
-                ) : null}
-            </View>
+            {statusItems}
 
             <View style={styles.toolbarActions}>
                 <TouchableOpacity
@@ -2854,6 +2910,7 @@ export default function StudyScreen() {
                     </View>
                 ) : null}
             </TouchableOpacity>
+            {statusItems}
             <View style={styles.toolbarActions}>
                 <TouchableOpacity
                     style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
@@ -3281,7 +3338,10 @@ export default function StudyScreen() {
                     ref={nativeShortcutCaptureRef}
                     value=""
                     onChangeText={() => undefined}
-                    onKeyPress={(event) => { handleShortcutKey(event.nativeEvent.key); }}
+                    onKeyPress={(event) => {
+                        const key = event.nativeEvent.key;
+                        if (nativeKeyRepeatGuardRef.current.accept(key, Date.now())) handleShortcutKey(key);
+                    }}
                     showSoftInputOnFocus={false}
                     caretHidden
                     autoCapitalize="none"
@@ -3452,7 +3512,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     toolbarIconButton: { width: 42, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     toolbarIconButtonDisabled: { opacity: 0.34 },
     toolbarDeckFallback: { fontSize: 19, color: colors.textMuted },
-    toolbarStatusItems: { flexDirection: isCompact ? 'column' : 'row', alignItems: isCompact ? 'flex-end' : 'center', gap: isCompact ? 2 : 7 },
     toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
     toolbarActionIcon: { fontSize: 23, lineHeight: 25, color: colors.textSecondary },
 
@@ -3687,25 +3746,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     btnTime: { color: colors.white, opacity: 0.85, fontSize: FontSize.sm, fontWeight: '700', fontVariant: ['tabular-nums'] as any },
     btnLabel: { color: colors.white, fontSize: isCompact ? 15 : 16, fontWeight: '800' },
 
-    answerTimer: {
-        flexShrink: 0,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-        color: colors.textSecondary,
-        fontVariant: ['tabular-nums'] as any,
-    },
-    autoAdvanceReminder: {
-        flexShrink: 0,
-        fontSize: FontSize.xs,
-        fontWeight: '700',
-        color: colors.btnHard,
-        backgroundColor: colors.btnHardBg,
-        borderRadius: BorderRadius.full,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        overflow: 'hidden',
-    },
-    remainingTime: { flexShrink: 0, fontSize: FontSize.sm, color: colors.textMuted, fontVariant: ['tabular-nums'] as any },
     queueCounts: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: isCompact ? 7 : 9 },
     queueCount: { fontSize: FontSize.md, fontWeight: '800', fontVariant: ['tabular-nums'] as any },
     queueCountCurrent: { textDecorationLine: 'underline' },

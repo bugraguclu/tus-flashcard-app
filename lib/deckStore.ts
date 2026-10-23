@@ -1,7 +1,6 @@
 import { normalizeDeckName, deckNameKey } from './deckNames';
 import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
-    DEFAULT_DECK_CONFIG,
     getDeckDisplayName,
     getParentDeckName,
     uniqueId,
@@ -10,10 +9,16 @@ import {
 } from './models';
 import { getDB } from './db';
 import { translateActive } from './i18n';
-import { localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
+import { localDayNumber, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 import { markSourcePackageDirty } from './ankiPackageArchive';
 import { clearDeckWhiteboards } from './whiteboardSession';
+import { returnFilteredDeckCardsHome } from './filteredDeckReturn';
+import {
+    clearFilteredDeckMembership,
+    readFilteredDeckMembershipRow,
+    restoreFilteredDeckMembershipRow,
+} from './filteredDeckMembership';
 import {
     assertCatalogDeckMutable,
     assertCatalogDeckNotDeletable,
@@ -223,18 +228,35 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
     assertCatalogDeckMutable(deck);
 
     const affectedDecks = getAllDecks().filter(d => d.id === id || (!deck.isFiltered && d.name.startsWith(`${deck.name}::`))).map(d => d.id);
-    const affectedCards = db.getAllSync<{ id: number; noteId: number }>(`SELECT id, noteId FROM anki_cards WHERE deckId IN (${sqlPlaceholders(affectedDecks.length)})`, ...affectedDecks);
+    // Cards an imported filtered deck holds for these decks belong to them too (`odid`); Anki
+    // deletes a deck's cards wherever they currently sit, so none is stranded without a home.
+    const cardsOfDecksSql = deck.isFiltered
+        ? `deckId IN (${sqlPlaceholders(affectedDecks.length)})`
+        : `deckId IN (${sqlPlaceholders(affectedDecks.length)}) OR COALESCE(json_extract(data, '$.odid'), 0) IN (${sqlPlaceholders(affectedDecks.length)})`;
+    const cardsOfDecksParams = deck.isFiltered ? affectedDecks : [...affectedDecks, ...affectedDecks];
+    const affectedCards = db.getAllSync<{ id: number; noteId: number }>(`SELECT id, noteId FROM anki_cards WHERE ${cardsOfDecksSql}`, ...cardsOfDecksParams);
     const finishDeletion = captureDeletion({ deckIds: affectedDecks, cardIds: affectedCards.map(c => c.id), noteIds: [...new Set(affectedCards.map(c => c.noteId))] });
     db.execSync('BEGIN TRANSACTION;');
     try {
         if (deck.isFiltered) {
-            returnFilteredCardsHome(id);
+            // The same trip home as Empty and Rebuild: original deck, original due, and a
+            // suspension or bury kept.
+            returnFilteredDeckCardsHome(id);
+            const membership = readFilteredDeckMembershipRow(id);
+            clearFilteredDeckMembership(id);
             db.runSync('DELETE FROM decks WHERE id = ?', id);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
             const deletion = finishDeletion();
             db.execSync('COMMIT;');
             forgetWhiteboards([id]);
-            return deletion;
+            return membership === null ? deletion : {
+                cardCount: deletion.cardCount,
+                undo() {
+                    deletion.undo();
+                    // The restored deck gets its fixed build back instead of re-gathering.
+                    restoreFilteredDeckMembershipRow(id, membership);
+                },
+            };
         }
 
         // The deck itself plus every subdeck (matched by the "name::" prefix).
@@ -246,7 +268,9 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
         const deckIds = deckRows.map((row) => row.id);
 
         const cardRows = db.getAllSync<{ id: number; noteId: number }>(
-            `SELECT id, noteId FROM anki_cards WHERE deckId IN (${sqlPlaceholders(deckIds.length)})`,
+            `SELECT id, noteId FROM anki_cards WHERE deckId IN (${sqlPlaceholders(deckIds.length)})
+                OR COALESCE(json_extract(data, '$.odid'), 0) IN (${sqlPlaceholders(deckIds.length)})`,
+            ...deckIds,
             ...deckIds,
         );
         const cardIds = cardRows.map((row) => row.id);
@@ -302,21 +326,6 @@ function forgetWhiteboards(deckIds: number[]): void {
         } catch (e) {
             console.warn('[Deck] Failed to clear whiteboards for deleted deck:', e);
         }
-    }
-}
-
-/** Move a filtered deck's cards back to their original decks, restoring their pre-filter schedule. */
-function returnFilteredCardsHome(filteredDeckId: number): void {
-    const db = getDB();
-    const rows = db.getAllSync<{ data: string }>('SELECT data FROM anki_cards WHERE deckId = ?', filteredDeckId);
-    for (const row of rows) {
-        const card = JSON.parse(row.data) as AnkiCard;
-        card.deckId = card.odid && card.odid > 0 ? card.odid : DEFAULT_DECK_CONFIG.id;
-        if (card.odue && card.odue > 0) card.due = card.odue;
-        card.odid = 0;
-        card.odue = 0;
-        card.queue = restoreQueueFromType(card);
-        saveAnkiCard(card);
     }
 }
 
@@ -671,20 +680,27 @@ export function unburyDeck(deckId: number, rolloverHour: number = 4, kind: 'all'
 
 // ---- Card Counts per Deck ----
 
+/** One deck's raw due counts. `learn` includes the interday learning cards counted separately. */
+export interface DeckDueCounts {
+    new: number;
+    learn: number;
+    review: number;
+    total: number;
+    /** Interday learning cards due today (queue 3); they share the review limit with reviews. */
+    interdayLearn?: number;
+}
+
 export function getCardCountsByDeck(
     nowMs: number = Date.now(),
     rolloverHour: number = 4,
     learnAheadMinutes: number = 0,
-): Map<number, { new: number; learn: number; review: number; total: number }> {
+): Map<number, DeckDueCounts> {
     const db = getDB();
     const today = localDayNumber(nowMs, rolloverHour);
-    // Anki deck-list semantics: intraday learning cards count until the day rolls over, even
-    // while their step timer is still running — the badge answers "how much is left today",
-    // not "what can be dealt this second". Learn-ahead can only widen that window.
-    const learnAheadCutoff = Math.max(
-        nextRolloverMs(nowMs, rolloverHour),
-        nowMs + Math.max(0, learnAheadMinutes) * 60_000,
-    );
+    // The same window the study queue serves from: intraday learning cards count once they are
+    // due now or within the learn-ahead limit (Anki's `learn_ahead_secs`), not hours before. A
+    // badge counting a card due this evening promised a card the reviewer could not deal.
+    const learnAheadCutoff = nowMs + Math.max(0, learnAheadMinutes) * 60_000;
 
     // NOTE: `due` has queue-specific semantics in Anki:
     // - queue=1 (intraday learning): epoch milliseconds
@@ -697,6 +713,7 @@ export function getCardCountsByDeck(
         newCount: number;
         learnCount: number;
         reviewCount: number;
+        interdayLearnCount: number;
     }>(
         `SELECT
             deckId,
@@ -707,15 +724,17 @@ export function getCardCountsByDeck(
                     WHEN queue = 3 AND due <= ? THEN 1
                     ELSE 0
                 END) AS learnCount,
-            SUM(CASE WHEN queue = 2 AND due <= ? THEN 1 ELSE 0 END) AS reviewCount
+            SUM(CASE WHEN queue = 2 AND due <= ? THEN 1 ELSE 0 END) AS reviewCount,
+            SUM(CASE WHEN queue = 3 AND due <= ? THEN 1 ELSE 0 END) AS interdayLearnCount
          FROM anki_cards
          GROUP BY deckId`,
         learnAheadCutoff,
         today,
         today,
+        today,
     );
 
-    const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
+    const counts = new Map<number, DeckDueCounts>();
     for (const row of rows) {
         counts.set(row.deckId, {
             // Keep raw counts here. buildDeckTree applies the selected deck's cap after child
@@ -724,6 +743,7 @@ export function getCardCountsByDeck(
             learn: Number(row.learnCount) || 0,
             review: Number(row.reviewCount) || 0,
             total: Number(row.totalCount) || 0,
+            interdayLearn: Number(row.interdayLearnCount) || 0,
         });
     }
 

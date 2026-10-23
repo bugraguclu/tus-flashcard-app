@@ -13,6 +13,7 @@ export interface DeckListCount {
     learn: number;
     review: number;
     total: number;
+    interdayLearn?: number;
 }
 
 export interface DeckListSnapshot {
@@ -23,7 +24,7 @@ export interface DeckListSnapshot {
 
 /** One focus-scoped repository snapshot for every deck row and filtered-deck membership. */
 export function getDeckListSnapshot(
-    settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes'>,
+    settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes'> & Partial<Pick<AppSettings, 'limitsStartFromTop'>>,
     nowMs: number = Date.now(),
 ): DeckListSnapshot {
     const decks = getAllDecks();
@@ -40,7 +41,10 @@ export function getDeckListSnapshot(
                 home.total = Math.max(0, home.total - 1);
                 if (card.homeCounted) {
                     if (card.homeStatus === 'new') home.new = Math.max(0, home.new - 1);
-                    else if (card.homeStatus === 'learning') home.learn = Math.max(0, home.learn - 1);
+                    else if (card.homeStatus === 'learning') {
+                        home.learn = Math.max(0, home.learn - 1);
+                        if (card.homeInterday) home.interdayLearn = Math.max(0, (home.interdayLearn ?? 0) - 1);
+                    }
                     else home.review = Math.max(0, home.review - 1);
                 }
             }
@@ -54,6 +58,6 @@ export function getDeckListSnapshot(
     return {
         decks,
         counts,
-        tree: buildDeckTree(decks, counts, settings.dayRolloverHour),
+        tree: buildDeckTree(decks, counts, settings.dayRolloverHour, { limitsStartFromTop: settings.limitsStartFromTop === true }),
     };
 }

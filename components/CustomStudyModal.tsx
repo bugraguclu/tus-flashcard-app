@@ -31,6 +31,7 @@ import HeaderBackIcon from './HeaderBackIcon';
 import {
     CUSTOM_STUDY_CRAM_KINDS,
     CUSTOM_STUDY_MAX_TAGS,
+    customStudyDeckName,
     customStudySessionConfig,
     customStudyTagSelection,
     customStudyValueBounds,
@@ -140,7 +141,7 @@ export default function CustomStudyModal({
     onChanged,
     onSessionCreated,
 }: CustomStudyModalProps) {
-    const { t, l } = useI18n();
+    const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const insets = useSafeAreaInsets();
@@ -314,7 +315,7 @@ export default function CustomStudyModal({
                 search: config.search,
                 limit: config.limit,
                 order: config.order,
-            }, getCustomStudySessionToReplace());
+            }, getCustomStudySessionToReplace(customStudyDeckName(locale)));
             if (matches === 0) {
                 alert(
                     t('anki.customStudy'),
@@ -323,13 +324,13 @@ export default function CustomStudyModal({
                 return;
             }
 
-            const session = createOrReplaceCustomStudySession(deck.id, config);
+            const session = createOrReplaceCustomStudySession(deck.id, config, customStudyDeckName(locale));
             if (!session) {
                 alert(
                     t('anki.customStudy'),
                     l(
-                        'Lütfen önce mevcut “Özel Çalışma Oturumu” destesini yeniden adlandırın.',
-                        'Please rename the existing Custom Study deck first.',
+                        `Lütfen önce mevcut “${customStudyDeckName(locale)}” destesini yeniden adlandırın.`,
+                        `Please rename the existing “${customStudyDeckName(locale)}” deck first.`,
                     ),
                 );
                 return;

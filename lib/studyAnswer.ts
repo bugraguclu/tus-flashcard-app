@@ -74,6 +74,25 @@ export interface PreviewAnswerOptions {
     delays: number[] | undefined;
 }
 
+/** How the answer ended, for bookkeeping that must commit together with it. */
+export interface AnswerOutcome {
+    /** The card is still in (re)learning after this answer. */
+    isLearning: boolean;
+    /** A preview answer: when the card comes back, or null when it finished its preview. */
+    previewDueMs: number | null;
+}
+
+export interface AnswerOptions {
+    preview?: PreviewAnswerOptions;
+    filtered?: boolean;
+    /**
+     * Runs inside the answer's own transaction, right before it commits. A filtered deck's
+     * session bookkeeping (a finished card, a preview delay) goes here so that an answer can never
+     * be saved without it — a crash in between used to deal the finished card again.
+     */
+    inTransaction?: (outcome: AnswerOutcome) => void;
+}
+
 /** Bury the answered card's siblings per deck config, reporting the queue each one came from. */
 function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): BuriedSiblingSnapshot[] {
     const siblings = getCardsForNote(answeredCard.noteId);
@@ -112,6 +131,11 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): Bur
 
 /** Tag `handleLeech` appends to a note. Mirrors the literal in noteManager's leech handler. */
 const LEECH_TAG = 'leech';
+
+/** Anki compares tags without regard to case, so "Leech" from another client is the same tag. */
+function hasLeechTag(tags: readonly string[]): boolean {
+    return tags.some((tag) => tag.toLowerCase() === LEECH_TAG);
+}
 
 /**
  * Take back the burying `applySiblingBuryPolicy` performed.
@@ -246,7 +270,7 @@ export function answerStudyCard(
     grade: Grade,
     settings: AppSettings,
     answerTimeMs: number,
-    options: { preview?: PreviewAnswerOptions; filtered?: boolean } = {},
+    options: AnswerOptions = {},
 ): ReviewResult {
     const nowMs = Date.now();
 
@@ -274,7 +298,7 @@ export function answerStudyCard(
     if (options.preview) {
         return answerInPreview(currentAnkiCard, currentState, grade, cardSettings, deckConfig, answerTimeMs, options.preview, nowMs, () => (
             makeStudyCard(getAnkiCard(currentAnkiCard.id) ?? currentAnkiCard, note, noteType, cardSettings, nowMs, true)
-        ));
+        ), options.inTransaction);
     }
 
     const scheduler = schedulerForSettings(cardSettings);
@@ -388,13 +412,21 @@ export function answerStudyCard(
         if (updatedAnkiCard.lapses > currentAnkiCard.lapses && isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
             // `note` was read before any write in this transaction, so its tags are the
             // pre-answer set: record the note only when this answer is what adds the tag.
-            const addsLeechTag = !note.tags.includes(LEECH_TAG);
-            handleLeech(updatedAnkiCard, deckConfig.leechAction);
+            const addsLeechTag = !hasLeechTag(note.tags);
+            if (addsLeechTag || note.tags.includes(LEECH_TAG)) {
+                handleLeech(updatedAnkiCard, deckConfig.leechAction);
+            } else if (deckConfig.leechAction === 'suspend') {
+                // Tagged "Leech" by another client: the same tag, so suspend without adding a
+                // second, lower-case copy.
+                const stored = getAnkiCard(updatedAnkiCard.id);
+                if (stored) saveAnkiCard({ ...stored, queue: -1, mod: nowSecs, usn: -1 });
+            }
             if (addsLeechTag) {
                 sideEffects.leechTaggedNoteId = note.id;
             }
         }
 
+        options.inTransaction?.({ isLearning: scheduleResult.isLearning, previewDueMs: null });
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -441,11 +473,15 @@ function answerInPreview(
     preview: PreviewAnswerOptions,
     nowMs: number,
     studyCard: () => StudyCard,
+    inTransaction?: (outcome: AnswerOutcome) => void,
 ): ReviewResult {
     const nowSecs = Math.floor(nowMs / 1000);
     const secsUntilRollover = Math.floor(nextRolloverMs(nowMs, settings.dayRolloverHour) / 1000) - nowSecs;
     const asRevlogInterval = (secs: number) => learningDelayAsDays(secs, secsUntilRollover) ?? (secs === 0 ? 0 : -secs);
     const delay = previewDelaySecondsForGrade(preview.delays, grade);
+    const previewDueMs = delay === 0
+        ? null
+        : (nowSecs + learningIntervalWithFuzz(ankiCardSeed(card.id, card.reps), delay)) * 1000;
 
     let updated = card;
     if (settings.fsrsEnabled) {
@@ -479,6 +515,7 @@ function answerInPreview(
             deckConfig.maxAnswerSecs,
         ).id;
         sideEffects.buriedSiblings = applySiblingBuryPolicy(card, deckConfig);
+        inTransaction?.({ isLearning: false, previewDueMs });
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -491,9 +528,7 @@ function answerInPreview(
         wasNewCard: false,
         reviewLogId,
         sideEffects,
-        previewDueMs: delay === 0
-            ? null
-            : (nowSecs + learningIntervalWithFuzz(ankiCardSeed(card.id, card.reps), delay)) * 1000,
+        previewDueMs,
     };
 }
 

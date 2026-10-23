@@ -28,6 +28,17 @@ export const CUSTOM_STUDY_MAX_TAGS = 100;
 /** The conventional deck name Anki reuses for every custom study session. */
 export const CUSTOM_STUDY_DECK_NAME = 'Özel Çalışma Oturumu';
 
+/** Anki's English name for the same session, which imported collections usually carry. */
+export const CUSTOM_STUDY_DECK_NAME_EN = 'Custom Study Session';
+
+/** Every name a session may carry; any of them is the session a new Custom Study run rebuilds. */
+export const CUSTOM_STUDY_DECK_NAMES: readonly string[] = [CUSTOM_STUDY_DECK_NAME, CUSTOM_STUDY_DECK_NAME_EN];
+
+/** The name a new session gets: Anki names it in the interface language. */
+export function customStudyDeckName(locale: string): string {
+    return locale === 'tr' ? CUSTOM_STUDY_DECK_NAME : CUSTOM_STUDY_DECK_NAME_EN;
+}
+
 export type CustomStudyOption =
     | 'newLimit'
     | 'reviewLimit'

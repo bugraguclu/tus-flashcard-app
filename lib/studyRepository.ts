@@ -8,6 +8,7 @@ export {
     getWaitingLearningCardIds,
     getStudyCardById,
     getStudyCardByLegacyCardId,
+    studyScopeSettings,
 } from './studyQueue';
 export type {
     QueueStats,

@@ -359,6 +359,10 @@ export function cardStateToAnkiCard(
         updated.queue = queue;
         updated.due = due;
         updated.left = remainingSteps;
+        // A card that has never graduated carries no ease in Anki (factor 0); it receives the
+        // preset's starting ease when it graduates, and reading 0 back falls back to that ease.
+        // Only this write changes: an ease already stored on a learning card is read as before.
+        if (!relearning) updated.factor = 0;
         return updated;
     }
 

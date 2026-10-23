@@ -238,7 +238,8 @@ export default function DecksScreen() {
     const countSettings = useMemo(() => ({
         dayRolloverHour: settings.dayRolloverHour,
         learnAheadMinutes: settings.learnAheadMinutes,
-    }), [settings.dayRolloverHour, settings.learnAheadMinutes]);
+        limitsStartFromTop: settings.limitsStartFromTop,
+    }), [settings.dayRolloverHour, settings.learnAheadMinutes, settings.limitsStartFromTop]);
 
     // Tabs remain mounted while studying. Build the repository snapshot only while this tab is
     // focused, after the native transition has yielded its first frame.

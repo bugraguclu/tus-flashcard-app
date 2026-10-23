@@ -7,6 +7,7 @@
  */
 
 import { AnkiStdRng, ankiCardSeed, ankiFuzzFactor } from './ankiRandom';
+import { nextRolloverMs } from './ankiState';
 
 const HOUR_MS = 3600000;
 export const MINUTES_PER_DAY = 1440;
@@ -40,22 +41,59 @@ export function getToday(rolloverHour: number = 4): string {
     return todayLocalYMD(undefined, rolloverHour);
 }
 
-/** Duration label for a whole-day interval. Turkish strings are the app's UI language. */
+/**
+ * Answer-button time spans, built the way Anki's reviewer builds them: the largest unit that
+ * fits (minutes, hours, days, months of 365/12 days, years), the amount rounded to one decimal and
+ * shown without a trailing ".0". So 90 minutes is "1.5sa" (Anki "1.5h"), 30 days stay "30 gün"
+ * ("30d") and 45 days are "1.5 ay" ("1.5mo"). The labels are produced in Turkish units;
+ * `localizeIntervalLabel` turns them into the English ones.
+ */
+const DAYS_PER_MONTH = 365 / 12;
+
+function spanAmount(value: number): string {
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+/** Duration label for a whole-day interval. */
 export function formatDays(days: number): string {
     if (days <= 0) return '< 1dk';
-    if (days === 1) return '1 gün';
-    if (days < 30) return `${days} gün`;
-    if (days < 365) {
-        const months = days / 30;
-        return months < 1.5 ? '1 ay' : `${Math.round(months)} ay`;
-    }
-    return `${(days / 365).toFixed(1)} yıl`;
+    if (days < DAYS_PER_MONTH) return `${spanAmount(days)} gün`;
+    if (days < 365) return `${spanAmount(days / DAYS_PER_MONTH)} ay`;
+    return `${spanAmount(days / 365)} yıl`;
 }
 
 export function formatMinutes(minutes: number): string {
     if (minutes < 60) return `${Math.round(minutes)}dk`;
-    if (minutes < MINUTES_PER_DAY) return `${Math.round(minutes / 60)}sa`;
-    return formatDays(Math.round(minutes / MINUTES_PER_DAY));
+    if (minutes < MINUTES_PER_DAY) return `${spanAmount(minutes / 60)}sa`;
+    return formatDays(minutes / MINUTES_PER_DAY);
+}
+
+/**
+ * Label of a (re)learning delay. A delay that reaches past the next rollover is stored in days
+ * (`learningDelayAsDays`), so the button shows those days rather than the minutes of the step.
+ * A delay shorter than the learn-ahead limit gets Anki's "<" prefix ("<10m"): the card may come
+ * back before its step has run out.
+ */
+export function formatLearningDelay(minutes: number, nowMs: number, rolloverHour: number, learnAheadMinutes: number = 0): string {
+    const nowSecs = Math.floor(nowMs / 1000);
+    const secsUntilRollover = Math.floor(nextRolloverMs(nowMs, rolloverHour) / 1000) - nowSecs;
+    const days = learningDelayAsDays(Math.round(minutes * 60), secsUntilRollover);
+    if (days !== null) return formatDays(days);
+    return minutes < Math.max(0, learnAheadMinutes) ? `<${formatMinutes(minutes)}` : formatMinutes(minutes);
+}
+
+const ENGLISH_SPAN_UNITS: Record<string, string> = { dk: 'm', sa: 'h', 'gün': 'd', ay: 'mo', 'yıl': 'y', sn: 's' };
+
+/**
+ * The same span in the interface language. Every label above has the shape "<amount><unit>" or
+ * "<amount> <unit>" (or "< 1dk"), so only the unit changes: "10dk" → "10m", "1.5 ay" → "1.5mo".
+ */
+export function localizeIntervalLabel(label: string, locale: string): string {
+    if (locale === 'tr') return label;
+    const match = label.match(/^(<\s?)?(\d+(?:\.\d+)?)\s?(dk|sa|gün|ay|yıl|sn)$/);
+    if (!match) return label;
+    return `${match[1] ? '<' : ''}${match[2]}${ENGLISH_SPAN_UNITS[match[3]]}`;
 }
 
 const f32 = Math.fround;
@@ -240,13 +278,15 @@ export interface DueRange {
 }
 
 /**
- * Parse Anki's Set Due Date syntax: `5`, `3-7`, `-2`, and an optional trailing `!`.
+ * Parse Anki's Set Due Date syntax: `5`, `3-7`, and an optional trailing `!`.
  *
  * The same grammar backs the browser dialog and the reviewer sheet, because in Anki they are the
  * same dialog. `!` means "also make the interval this many days"; a range picks a day inside it.
  */
 export function parseDueRange(input: string): DueRange | null {
-    const match = input.trim().match(/^(-?\d+)(?:\s*-\s*(-?\d+))?\s*(!)?$/);
+    // Anki accepts only non-negative days written together: "5", "3-7", "0!", "1-3!". A negative
+    // day, spaces around the dash or before "!" are rejected rather than guessed at.
+    const match = input.trim().match(/^(\d+)(?:-(\d+))?(!)?$/);
     if (!match) return null;
     const first = Number(match[1]);
     const second = match[2] === undefined ? first : Number(match[2]);

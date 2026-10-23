@@ -14,6 +14,7 @@ import {
     addDaysLocalYMD,
     constrainInterval,
     formatDays,
+    formatLearningDelay,
     formatMinutes,
     getToday,
     hardDelayMinutes,
@@ -28,22 +29,16 @@ const EASE_FACTOR_AGAIN_DELTA = -0.20;
 const EASE_FACTOR_HARD_DELTA = -0.15;
 const EASE_FACTOR_EASY_DELTA = 0.15;
 
-/** Clamp an interval to [1, maxInterval]. */
-function clampInterval(interval: number, settings: AppSettings): number {
-    return Math.max(1, Math.min(settings.maxInterval, Math.round(interval)));
-}
-
 /**
- * Post-lapse review interval: the old interval scaled by the lapse multiplier, floored at
- * minLapseInterval and clamped (rslib answering.rs `lapsed_interval`). Shared by the Again
- * button preview and the actual review-answer path so the label always matches scheduling.
+ * Post-lapse review interval: the old interval scaled by the lapse multiplier ("New interval"),
+ * kept between the minimum lapse interval and the maximum interval, and fuzzed like any review
+ * interval (Anki's SM-2 `failing_review_interval` goes through `with_review_fuzz`). Fuzz only
+ * moves intervals of 2.5 days and more, so the default 0% multiplier is unaffected. Shared by the
+ * Again button preview and the answer path so the label always matches scheduling.
  */
-function lapsedReviewInterval(currentInterval: number, settings: AppSettings): number {
+function lapsedReviewInterval(currentInterval: number, settings: AppSettings, fuzz?: ReviewFuzz): number {
     const cur = Math.max(1, currentInterval || 1);
-    return clampInterval(
-        Math.max(settings.minLapseInterval, Math.round(cur * settings.lapseIntervalMultiplier)),
-        settings,
-    );
+    return constrainInterval(cur * settings.lapseIntervalMultiplier, settings.minLapseInterval, settings.maxInterval, fuzz);
 }
 
 /**
@@ -101,10 +96,17 @@ function computeReviewIntervals(
     return { hard, good, easy };
 }
 
-/** Relearning Easy interval: the preserved lapse interval + 1 day. */
-function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): number {
-    const relearnGood = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
-    return clampInterval(relearnGood + 1, settings);
+/**
+ * The interval a relearning card returns to review on: the one its lapse already settled. The
+ * minimum lapse interval was applied when the card lapsed and is not applied a second time here.
+ */
+function relearnedInterval(cs: CardState): number {
+    return Math.max(1, Math.round(cs.interval || 1));
+}
+
+/** Relearning Easy interval: the preserved lapse interval + 1 day, as Anki adds it (no clamp). */
+function computeRelearningEasyInterval(cs: CardState): number {
+    return relearnedInterval(cs) + 1;
 }
 
 /**
@@ -144,7 +146,7 @@ const AnkiV3Engine: SchedulerEngine = {
         const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
         const fuzz = reviewFuzzFor(cs.cardId, cs.repetition, context?.balancer ?? null);
 
-        if (isRelearning) return ankiV3Relearning(cs, grade, settings, now, elapsedDays);
+        if (isRelearning) return ankiV3Relearning(cs, grade, settings, now, elapsedDays, fuzz);
         if (isLearning) return ankiV3Learning(cs, grade, settings, now, elapsedDays, fuzz);
         return ankiV3Review(cs, grade, settings, now, elapsedDays, fuzz);
     },
@@ -153,8 +155,9 @@ const AnkiV3Engine: SchedulerEngine = {
         const now = nowMs ?? Date.now();
         // Use exactly the answer path, including the card-id/reps fuzz and load balancer.
         const results = ([1, 2, 3, 4] as const).map((grade) => AnkiV3Engine.schedule(cs, grade, settings, now, context));
+        // A step that reaches past the next rollover is stored in days, so it is labelled in days.
         const label = (result: ScheduleResult) => result.isLearning
-            ? formatMinutes(result.minutesUntilDue ?? 0)
+            ? formatLearningDelay(result.minutesUntilDue ?? 0, now, settings.dayRolloverHour, settings.learnAheadMinutes)
             : formatDays(result.interval);
         const minutes = (result: ScheduleResult) => result.isLearning
             ? result.minutesUntilDue ?? 0
@@ -286,6 +289,7 @@ function ankiV3Relearning(
     settings: AppSettings,
     now: number,
     elapsedDays: number,
+    fuzz: ReviewFuzz,
 ): ScheduleResult {
     const steps = settings.lapseSteps;
     const step = cs.relearningStep;
@@ -294,7 +298,7 @@ function ankiV3Relearning(
     // With no relearning steps left to run, Anki returns the card to review on the interval it
     // was given when it lapsed (rslib states/relearning.rs, SM-2 branch).
     if (steps.length === 0 && grade !== 4) {
-        const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
+        const relearnInterval = relearnedInterval(cs);
         return {
             interval: relearnInterval,
             isLearning: false,
@@ -310,11 +314,15 @@ function ankiV3Relearning(
     }
 
     if (grade === 1) {
+        // Failing a relearning step lapses the pending interval once more: "New interval" applies
+        // to it again (with fuzz), without counting another lapse or touching the ease.
+        const reduced = lapsedReviewInterval(cs.interval, settings, fuzz);
         return {
             interval: 0,
             isLearning: true,
             minutesUntilDue: steps[0] || 1,
             stateUpdates: {
+                interval: reduced,
                 relearningStep: 0,
                 learningStep: -1,
                 status: 'learning',
@@ -356,7 +364,7 @@ function ankiV3Relearning(
             };
         }
 
-        const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
+        const relearnInterval = relearnedInterval(cs);
         return {
             interval: relearnInterval,
             isLearning: false,
@@ -372,7 +380,7 @@ function ankiV3Relearning(
     }
 
     // Easy: graduate with interval + 1. Anki does not change ease here.
-    const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
+    const relearnEasyInterval = computeRelearningEasyInterval(cs);
     return {
         interval: relearnEasyInterval,
         isLearning: false,
@@ -400,7 +408,7 @@ function ankiV3Review(
     const lapseSteps = settings.lapseSteps;
 
     if (grade === 1) {
-        const newInterval = lapsedReviewInterval(cur, settings);
+        const newInterval = lapsedReviewInterval(cur, settings, fuzz);
         const newEase = Math.max(MINIMUM_EASE_FACTOR, ef + EASE_FACTOR_AGAIN_DELTA);
         const lapses = (cs.lapses || 0) + 1;
 
