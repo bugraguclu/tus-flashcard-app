@@ -57,6 +57,7 @@ export {
     saveDeckConfig,
     getDecksUsingConfig,
     createPreset,
+    createDefaultPreset,
     renamePreset,
     restoreDeckConfigDefaults,
     deletePreset,

@@ -27,11 +27,11 @@ import {
     getDecksUsingConfig,
     saveDeckConfig,
     createPreset,
+    createDefaultPreset,
     renamePreset,
     restoreDeckConfigDefaults,
     deletePreset,
     assignDeckConfig,
-    applyConfigToSubdecks,
     setDeckDescription,
     getDeckTodayLimits,
     setDeckTodayLimits,
@@ -86,6 +86,7 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { createDeckOptionsStyles } from '../components/deck-options/deckOptionsStyles';
 import { DeckOptionsContext } from '../components/deck-options/DeckOptionsContext';
 import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck-options/multiplierBounds';
+import { applyDeckOptionsToSubdecks } from '../lib/deckSubdeckOptions';
 import {
     Field,
     FieldAdvice,
@@ -170,6 +171,10 @@ export default function DeckOptionsScreen() {
     const [presetActionsOpen, setPresetActionsOpen] = useState(false);
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameText, setRenameText] = useState('');
+    // Add Preset asks for a name first (DST-8); removed presets are deleted on save (P3).
+    const [newPresetOpen, setNewPresetOpen] = useState(false);
+    const [newPresetName, setNewPresetName] = useState('');
+    const [pendingPresetDeletions, setPendingPresetDeletions] = useState<number[]>([]);
     const initialScope = (params.scope === 'deck' || params.scope === 'today') ? params.scope : 'preset';
     const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
     // Anki opens desired retention on "This deck" when the deck carries its own value.
@@ -252,7 +257,7 @@ export default function DeckOptionsScreen() {
     });
     // A reschedule request is an unsaved change like any other: it starts off, so it can only
     // be on because the learner turned it on, and Save is what carries it out.
-    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave;
+    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave || pendingPresetDeletions.length > 0;
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -294,6 +299,7 @@ export default function DeckOptionsScreen() {
             nextTodayLimits,
         );
         setActiveDeckId(nextDeck.id);
+        setPendingPresetDeletions([]);
         setConfigId(nextConfigId);
         setForm(nextForm);
         setSavedSnapshot(snapshotForm(nextConfigId, nextForm));
@@ -716,8 +722,9 @@ export default function DeckOptionsScreen() {
             const fsrsInputsBefore = fsrsDeckInputsByDeck();
             db.execSync('BEGIN TRANSACTION;');
             transactionOpen = true;
+            for (const removedId of pendingPresetDeletions) if (removedId !== configId) deletePreset(removedId);
             saveDeckConfig(updated);
-            if (deck.configId !== configId) assignDeckConfig(deck.id, configId);
+            if ((getDeck(deck.id) ?? deck).configId !== configId) assignDeckConfig(deck.id, configId);
             setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, validation.integers.deckReviewLimit);
             setDeckDesiredRetention(deck.id, validation.decimals.deckDesiredRetention);
             setDeckTodayLimits(
@@ -735,9 +742,17 @@ export default function DeckOptionsScreen() {
                 limitsStartFromTop: form.limitsStartFromTop,
                 fsrsEnabled: form.fsrsEnabled,
             });
-            if (includeSubdecks) subdecksChanged = applyConfigToSubdecks(deck.id);
+            if (includeSubdecks) {
+                subdecksChanged = applyDeckOptionsToSubdecks(deck.id, {
+                    deckNewLimit: validation.integers.deckNewLimit,
+                    deckReviewLimit: validation.integers.deckReviewLimit,
+                    todayNewLimit: validation.integers.todayNewLimit,
+                    todayReviewLimit: validation.integers.todayReviewLimit,
+                }, settings.dayRolloverHour);
+            }
             db.execSync('COMMIT;');
             transactionOpen = false;
+            setPendingPresetDeletions([]);
 
             // Anki recomputes memory states only for the decks whose FSRS inputs this save
             // changed — every deck when FSRS was just switched on — and rewrites those decks' due
@@ -815,12 +830,30 @@ export default function DeckOptionsScreen() {
             : l('Ayarlar güvenle kaydedildi.', 'Settings were saved safely.'));
     };
 
-    const handleAddPreset = () => {
-        const create = () => {
-            const preset = createPreset(getDeckDisplayName(deck.name), DEFAULT_DECK_CONFIG.id);
+    const createNamedPreset = () => {
+        const name = newPresetName.trim();
+        if (!name) {
+            alert(l('Geçersiz ad', 'Invalid name'), l('Ayar grubu adı boş olamaz.', 'The preset name cannot be empty.'));
+            return;
+        }
+        try {
+            // Anki starts a new preset from the built-in defaults, not from another preset.
+            const preset = createDefaultPreset(name);
             assignDeckConfig(deck.id, preset.id);
             applyPresetSelection(preset.id, true);
+            setPendingPresetDeletions([]);
+            setNewPresetOpen(false);
             markSchedulingStale();
+        } catch (error) {
+            console.warn('[DeckOptions] add preset failed:', error);
+            alert(t('common.error'), l('Ayar grubu oluşturulamadı.', 'Could not create the preset.'));
+        }
+    };
+
+    const handleAddPreset = () => {
+        const create = () => {
+            setNewPresetName(getDeckDisplayName(deck.name));
+            setNewPresetOpen(true);
         };
         if (!isDirty) create();
         else confirm(
@@ -834,6 +867,7 @@ export default function DeckOptionsScreen() {
     const handleClonePreset = () => {
         const clone = () => {
             const preset = createPreset(l(`${getDeckDisplayName(deck.name)} ayarları`, `${getDeckDisplayName(deck.name)} options`), configId);
+            setPendingPresetDeletions([]);
             assignDeckConfig(deck.id, preset.id);
             applyPresetSelection(preset.id, true);
             markSchedulingStale();
@@ -894,11 +928,14 @@ export default function DeckOptionsScreen() {
         }
         confirm(
             l('Ayar grubunu sil', 'Delete Preset'),
-            l(`“${presetName}” silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`, `“${presetName}” will be deleted; ${usedBy} decks using it will return to the default preset.`),
+            l(
+                `“${presetName}” kaydettiğinizde silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`,
+                `“${presetName}” will be deleted when you save; ${usedBy} decks using it will return to the default preset.`,
+            ),
             () => {
-                deletePreset(configId);
-                markSchedulingStale();
-                applyPresetSelection(DEFAULT_DECK_CONFIG.id, true);
+                // As in Anki, removal is part of the unsaved form: leaving without saving keeps it.
+                setPendingPresetDeletions((ids) => (ids.includes(configId) ? ids : [...ids, configId]));
+                applyPresetSelection(DEFAULT_DECK_CONFIG.id);
             },
             { destructive: true },
         );
@@ -1534,8 +1571,8 @@ export default function DeckOptionsScreen() {
 
             </ScrollView>
 
-            {presetActionsOpen ? (
-                <PresetActionsMenu
+            <PresetActionsMenu
+                    visible={presetActionsOpen}
                     actions={[
                         { label: l('Kaydet', 'Save'), action: handleSave },
                         // Changing the preset has its own row at the top of the screen now,
@@ -1550,7 +1587,6 @@ export default function DeckOptionsScreen() {
                     onClose={() => setPresetActionsOpen(false)}
                     styles={styles}
                 />
-            ) : null}
 
             {deckPickerOpen ? (
                 <DeckPickerModal
@@ -1592,8 +1628,22 @@ export default function DeckOptionsScreen() {
             {presetPickerOpen ? (
                 <PresetPickerModal
                     activePresetId={configId}
+                    hiddenPresetIds={pendingPresetDeletions}
                     onPick={switchPreset}
                     onClose={() => setPresetPickerOpen(false)}
+                    styles={styles}
+                    l={l}
+                    t={t}
+                />
+            ) : null}
+
+            {newPresetOpen ? (
+                <RenamePresetModal
+                    title={l('Ayar grubu ekle', 'Add Preset')}
+                    value={newPresetName}
+                    onChangeValue={setNewPresetName}
+                    onSave={createNamedPreset}
+                    onClose={() => setNewPresetOpen(false)}
                     styles={styles}
                     l={l}
                     t={t}
