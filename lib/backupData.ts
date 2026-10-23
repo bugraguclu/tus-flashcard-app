@@ -3,7 +3,6 @@ import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, Card } from './types';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
-import { setDbSetting } from './dbSettings';
 import {
     CATALOG_PROGRESS_KEY,
     encodeCatalogProgress,
@@ -104,7 +103,7 @@ function sanitizeObject<T>(obj: T): T {
  * Full-collection snapshot, minus the purchased card pack.
  *
  * The pack's notes and cards are ~6.4 MB of the collection and can always be reinstalled from
- * the bundled package, so copying them into every weekly backup would waste tens of megabytes and
+ * the bundled package, so copying them into every backup would waste tens of megabytes and
  * would also spread paid content as plain text. What cannot be recreated — the learner's own
  * decks and notes, their review log, and their scheduling progress on catalog cards — is kept.
  */
@@ -113,7 +112,7 @@ export async function exportAllData(): Promise<string> {
     const sessionStats = await loadSessionStats();
 
     let schemaVersion = 0;
-    const catalogProgress: CatalogProgress = {};
+    let catalogProgress: CatalogProgress = {};
     const catalogLearnerData = emptyCatalogLearnerData();
     let tables = {
         note_types: [] as any[],
@@ -129,6 +128,13 @@ export async function exportAllData(): Promise<string> {
     try {
         const db = getDB();
 
+        catalogProgress = parseCatalogProgress(db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_PROGRESS_KEY)?.value);
+        const pendingRaw = db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_LEARNER_DATA_KEY)?.value;
+        if (pendingRaw) {
+            const pending = JSON.parse(pendingRaw);
+            Object.assign(catalogLearnerData.notes, pending.notes ?? {});
+            Object.assign(catalogLearnerData.cards, pending.cards ?? {});
+        }
         schemaVersion = dbGetSchemaVersion();
         const catalogNoteIds = new Set<number>();
         const notes = db.getAllSync<any>('SELECT * FROM notes ORDER BY id').filter((row) => {
@@ -303,6 +309,11 @@ function importCanonicalTables(data: any): void {
             db.runSync('INSERT INTO session_stats (date, data) VALUES (?, ?)', row.date, row.data);
         }
 
+        const restoredProgress = parseCatalogProgress(
+            typeof data.catalogProgress === 'object' && data.catalogProgress !== null ? JSON.stringify(data.catalogProgress) : null,
+        );
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_LEARNER_DATA_KEY, JSON.stringify(data.catalogLearnerData ?? emptyCatalogLearnerData()));
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -385,17 +396,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             if (data.sessionStats) {
                 await saveSessionStats(data.sessionStats as SessionStats);
             }
-            // The backup deliberately omits the purchased pack; hand its scheduling state to the
-            // installer, which re-applies it card by card the next time the pack is installed.
-            const restoredProgress = parseCatalogProgress(
-                typeof data.catalogProgress === 'object' && data.catalogProgress !== null
-                    ? JSON.stringify(data.catalogProgress)
-                    : null,
-            );
-            // Always replace the pending progress map; otherwise an empty/older
-            // backup could inherit progress left over from the collection it replaced.
-            setDbSetting(CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
-            setDbSetting(CATALOG_LEARNER_DATA_KEY, JSON.stringify(data.catalogLearnerData ?? emptyCatalogLearnerData()));
+            // Catalog progress and overlays were persisted with the canonical table transaction.
             await clearLegacyCardStates();
             await saveCustomCards([]);
             return true;

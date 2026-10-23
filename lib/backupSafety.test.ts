@@ -82,3 +82,29 @@ it('migrates schema-9 filtered deck order when restoring into an already-current
     expect(await importAllData(JSON.stringify(data))).toBe(true);
     expect(JSON.parse(h.db.getFirstSync('SELECT data FROM decks WHERE id = 12').data).searchOrder).toBe(6);
 });
+it('preserves pending catalog learner data when making a backup before content reinstall', async () => {
+    const { CATALOG_PROGRESS_KEY } = await import('./catalogRows');
+    const { CATALOG_LEARNER_DATA_KEY } = await import('./backupCatalogLearnerData');
+    const progress = { '31': [2, 2, 12, 21, 2350, 4, 1, 0, 0, 0, 0, 0] };
+    const learner = { notes: { g: ['marked'] }, cards: { '31': '{"s":10}' } };
+    h.db.runSync('INSERT INTO settings VALUES (?, ?)', CATALOG_PROGRESS_KEY, JSON.stringify(progress));
+    h.db.runSync('INSERT INTO settings VALUES (?, ?)', CATALOG_LEARNER_DATA_KEY, JSON.stringify(learner));
+    const data = JSON.parse(await exportAllData());
+    expect(data.catalogProgress).toEqual(progress); expect(data.catalogLearnerData).toEqual(learner);
+});
+it('keeps unapplied catalog metadata pending when only some content is installed', async () => {
+    const { CATALOG_LEARNER_DATA_KEY, applyPendingCatalogLearnerData } = await import('./backupCatalogLearnerData');
+    h.db.runSync('INSERT INTO settings VALUES (?, ?)', CATALOG_LEARNER_DATA_KEY, JSON.stringify({ notes: { g: ['marked'], missing: ['later'] }, cards: {} }));
+    h.db.runSync('INSERT INTO notes (id, data) VALUES (1, ?)', JSON.stringify({ id: 1, guid: 'g', catalogPack: 'bka-tus', tags: [] }));
+    applyPendingCatalogLearnerData();
+    expect(JSON.parse(h.db.getFirstSync('SELECT value FROM settings WHERE key = ?', CATALOG_LEARNER_DATA_KEY).value).notes).toEqual({ missing: ['later'] });
+});
+it('rolls canonical restore back when catalog-progress persistence fails', async () => {
+    const { importAllData } = await import('./backupData'); const { CATALOG_PROGRESS_KEY } = await import('./catalogRows');
+    const data = JSON.parse(await exportAllData()); delete data.settings;
+    h.db.runSync('INSERT INTO notes (id, data) VALUES (999, ?)', '{"old":true}');
+    const run = h.db.runSync;
+    h.db.runSync = (sql: string, ...params: any[]) => { if (params[0] === CATALOG_PROGRESS_KEY) throw new Error('disk full'); return run(sql, ...params); };
+    expect(await importAllData(JSON.stringify(data))).toBe(false);
+    expect(h.db.getFirstSync('SELECT data FROM notes WHERE id = 999')).not.toBeNull();
+});
