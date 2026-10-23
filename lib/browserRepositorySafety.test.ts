@@ -7,7 +7,7 @@ import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {} }));
 import { getBrowserCardCount, getBrowserCards, getBrowserRowIdsMatchingText, getDeckTotalCardCount } from './browserRepository';
-import { DEFAULT_SETTINGS } from './types';
+import { DEFAULT_SETTINGS } from './settingsStore';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });

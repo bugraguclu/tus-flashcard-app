@@ -113,6 +113,7 @@ export function createStatsScreenStyles(colors: ColorScheme, isCompact: boolean)
     },
     pickerTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800' },
     pickerClose: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
+    streakScopeNote: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
     pickerCloseText: { color: colors.textMuted, fontSize: 30, lineHeight: 32, fontWeight: '300' },
     pickerScroll: { paddingVertical: Spacing.xs },
     pickerRow: {

@@ -278,12 +278,13 @@ describe('review and added history', () => {
         });
     });
 
-    it('dates an imported card by when it was added here, not by its Anki id', () => {
+    it('dates a card by its id, the creation time Anki keeps through import (ARA-10)', () => {
         const sourceIdFrom2020 = new Date(2020, 0, 10, 12).getTime();
         addCard(sourceIdFrom2020, 1, { type: 0, queue: 0, due: 1, createdAt: at(21, 15) });
         expect(getAddedDays(null, ROLLOVER)).toEqual([
+            { day: localDayNumber(sourceIdFrom2020, ROLLOVER), count: 1 },
+            // Ids 1 and 2 are not timestamps, so those cards keep their local insertion day.
             { day: TODAY - 21, count: 2 },
-            { day: TODAY - 1, count: 1 },
         ]);
     });
 
