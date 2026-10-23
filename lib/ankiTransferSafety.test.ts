@@ -216,3 +216,13 @@ it('keeps source new-note order and a shared sibling position when importing wit
     expect(cards.find(card => card.id === 901)!.due).toBe(1);
     expect(cards.filter(card => card.noteId === 701).map(card => card.due)).toEqual([2, 2]);
 });
+it('does not mark a media-rename fixup as a local note edit that blocks the next author update', async () => {
+    const data = source(); const bytes = await pkg(data);
+    h.media.set('heart.png', new Uint8Array([9]));
+    await importApkg(bytes, options);
+    expect(getAllNotes()[0].mod).toBe(100);
+    data.notes[0].mod = 200; data.notes[0].fields[2] = 'Author update';
+    const update = await pkg(data); h.media.set('heart.png', new Uint8Array([9]));
+    expect(await importApkg(update, options)).toMatchObject({ updated: 1 });
+    expect(getAllNotes()[0].fields[2]).toBe('Author update');
+});

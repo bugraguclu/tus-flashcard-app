@@ -773,7 +773,7 @@
       "url": "https://docs.ankiweb.net/importing/packaged-decks.html",
       "useFor": [
         "GUID update conflicts skip incoming cards",
-        "duplicate re-import repairs missing media",
+        "duplicate re-import repairs missing media; rename fixups preserve author update timestamps",
         "negative/zero review-day offsets and original learning due units, progress stripping and note-scoped sibling export; lib/ankiTransferSafety.test.ts"
       ]
     },

@@ -183,7 +183,7 @@ export function rewriteImportedMediaReferences(packageId: string, renames: Recor
         // unquoted attribute, a `url(…)`, or a name written with its entities escaped.
         const fields = note.fields.map((field) => rewriteMediaReferences(field, renames));
         if (fields.every((field, index) => field === note.fields[index])) continue;
-        note = { ...note, fields, mod: Math.floor(Date.now() / 1000), usn: -1 };
+        note = { ...note, fields, usn: -1 };
         db.runSync(
             'UPDATE notes SET data = ?, updated_at = ?, usn = -1 WHERE id = ?',
             JSON.stringify(note), Date.now(), note.id,
