@@ -27,3 +27,12 @@ describe('attachment filenames', () => {
         expect(sanitizeUntrustedHtml('<img src="50%%2Fx.png">')).toContain('src="#"');
     });
 });
+
+describe('style attribute scrubbing (SAB-13)', () => {
+    it('drops only the url-bearing declarations of a style attribute', () => {
+        expect(sanitizeUntrustedHtml('<b style="background:url(bg.png);color:red">x</b>')).toBe('<b style="color:red">x</b>');
+        expect(sanitizeUntrustedHtml('<b style="background:url(bg.png)">x</b>')).toBe('<b>x</b>');
+        expect(sanitizeUntrustedHtml('<b style="color:red;background:\\75 rl(evil.png)">x</b>')).toBe('<b style="color:red">x</b>');
+        expect(sanitizeUntrustedHtml('<b style="content:&quot;a;b&quot;;background:url(javascript:alert(1))">x</b>')).not.toMatch(/url|javascript/i);
+    });
+});

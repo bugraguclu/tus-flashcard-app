@@ -86,7 +86,16 @@ function scrubTagAttributes(tag: string): string {
         const plainName = decodeSecurityEntities(name).toLowerCase();
 
         if (/^on[a-z0-9_-]*$/.test(plainName) || plainName === 'srcdoc' || plainName === 'srcset') { changed = true; continue; }
-        if (plainName === 'style' && isDangerousStyle(value)) { changed = true; continue; }
+        if (plainName === 'style' && isDangerousStyle(value)) {
+            // Keep the declarations that are safe on their own, so `background:url(bg.png);
+            // color:red` still shows red (SAB-13). Only whole `;`-separated pieces are dropped,
+            // and none of the patterns checked contains a `;`, so the kept pieces cannot join
+            // into one that would have been refused.
+            changed = true;
+            const kept = value.split(';').filter((piece) => !isDangerousStyle(piece)).join(';');
+            if (kept.trim().replace(/;/g, '').trim()) rebuilt += ` ${name}="${kept.replace(/"/g, '&quot;')}"`;
+            continue;
+        }
 
         const unsafeUrl = plainName === 'href'
             ? !isSafeLinkUrl(value)
