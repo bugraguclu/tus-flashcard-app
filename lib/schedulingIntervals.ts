@@ -72,12 +72,15 @@ export function formatMinutes(minutes: number): string {
 /**
  * Label of a (re)learning delay. A delay that reaches past the next rollover is stored in days
  * (`learningDelayAsDays`), so the button shows those days rather than the minutes of the step.
+ * A delay shorter than the learn-ahead limit gets Anki's "<" prefix ("<10m"): the card may come
+ * back before its step has run out.
  */
-export function formatLearningDelay(minutes: number, nowMs: number, rolloverHour: number): string {
+export function formatLearningDelay(minutes: number, nowMs: number, rolloverHour: number, learnAheadMinutes: number = 0): string {
     const nowSecs = Math.floor(nowMs / 1000);
     const secsUntilRollover = Math.floor(nextRolloverMs(nowMs, rolloverHour) / 1000) - nowSecs;
     const days = learningDelayAsDays(Math.round(minutes * 60), secsUntilRollover);
-    return days === null ? formatMinutes(minutes) : formatDays(days);
+    if (days !== null) return formatDays(days);
+    return minutes < Math.max(0, learnAheadMinutes) ? `<${formatMinutes(minutes)}` : formatMinutes(minutes);
 }
 
 const ENGLISH_SPAN_UNITS: Record<string, string> = { dk: 'm', sa: 'h', 'gün': 'd', ay: 'mo', 'yıl': 'y', sn: 's' };

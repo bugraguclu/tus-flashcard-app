@@ -88,6 +88,13 @@ describe('answer-button labels', () => {
         expect(preview.good).toBe('1 gün');
     });
 
+    it('prefixes a step shorter than the learn-ahead limit with "<"', () => {
+        const now = nextRolloverMs(Date.now(), settings.dayRolloverHour) - 6 * 3_600_000;
+        expect(formatLearningDelay(10, now, settings.dayRolloverHour, 20)).toBe('<10dk');
+        expect(formatLearningDelay(30, now, settings.dayRolloverHour, 20)).toBe('30dk');
+        expect(localizeIntervalLabel('<10dk', 'en')).toBe('<10m');
+    });
+
     it('follows Anki\'s span units and the interface language', () => {
         expect(formatMinutes(90)).toBe('1.5sa');
         expect(formatDays(30)).toBe('30 gün');

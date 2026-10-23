@@ -157,7 +157,7 @@ const AnkiV3Engine: SchedulerEngine = {
         const results = ([1, 2, 3, 4] as const).map((grade) => AnkiV3Engine.schedule(cs, grade, settings, now, context));
         // A step that reaches past the next rollover is stored in days, so it is labelled in days.
         const label = (result: ScheduleResult) => result.isLearning
-            ? formatLearningDelay(result.minutesUntilDue ?? 0, now, settings.dayRolloverHour)
+            ? formatLearningDelay(result.minutesUntilDue ?? 0, now, settings.dayRolloverHour, settings.learnAheadMinutes)
             : formatDays(result.interval);
         const minutes = (result: ScheduleResult) => result.isLearning
             ? result.minutesUntilDue ?? 0
