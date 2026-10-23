@@ -73,3 +73,28 @@ export function hasExplicitStudyScope(
     );
 }
 
+
+const DESCRIPTION_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/**
+ * A deck description as readable text. Anki shows the description as HTML (imported shared decks
+ * use it for headings, lists and links); the overview renders native text, so line-level tags
+ * become line breaks and other markup is dropped instead of being shown as raw tags (DST-11).
+ */
+export function deckDescriptionText(html: string): string {
+    return html
+        .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<li\b[^>]*>/gi, '\n• ')
+        .replace(/<\/?(?:p|div|h[1-6]|ul|ol|li|tr|table|blockquote|pre|hr)\b[^>]*>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, entity: string) => {
+            if (!entity.startsWith('#')) return DESCRIPTION_ENTITIES[entity.toLowerCase()] ?? whole;
+            const n = entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+            return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : whole;
+        })
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}

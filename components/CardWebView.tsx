@@ -269,6 +269,7 @@ export default function CardWebView({
             : undefined,
         omitFrontSide,
         cardFlag: card.flags & 0b111,
+        cardId: card.id,
         nightMode: isDark,
         platformClasses: ankiPlatformClasses(),
     });

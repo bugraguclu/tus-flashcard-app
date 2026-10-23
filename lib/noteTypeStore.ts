@@ -1,4 +1,5 @@
-import { deleteCardRows } from './noteDeletion';
+import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
+import { sortFieldText } from './noteChecksum';
 import { mapNoteTypeFields, mapNoteTypeCardOrd, NoteTypeChangeConfirmationRequired } from './noteTypeChange';
 import {
     checksumField,
@@ -95,13 +96,24 @@ export function getNoteTypeChangeDeletionCount(noteIds: number[], targetNoteType
 
 /**
  * Convert notes to another note type while preserving the scheduling of every card that can be
- * mapped to a target template. Fields with the same name are mapped first; remaining fields fall
- * use each still-unused source field. Cards match by template name, including blank mapped
- * templates; only explicitly confirmed unmapped cards are removed with their history retained.
+ * mapped to a target template. Fields and standard templates map by name first, then each
+ * still-unused source slot by position (Anki's default mapping); converting into a cloze type
+ * keeps every card, cloze → standard keeps the ordinals the target has templates for. Only
+ * explicitly confirmed unmapped cards are removed, with their review history retained.
  */
 export function changeNotesType(noteIds: number[], targetNoteTypeId: number, options: { allowCardDeletion?: boolean } = {}): number {
+    return changeNotesTypeUndoable(noteIds, targetNoteTypeId, options).changed;
+}
+
+export interface NoteTypeChangeResult extends DeletionUndo {
+    /** Notes converted. `cardCount` is the number of cards removed. */
+    changed: number;
+}
+
+/** As changeNotesType, plus a one-shot undo that restores the notes and cards as they were. */
+export function changeNotesTypeUndoable(noteIds: number[], targetNoteTypeId: number, options: { allowCardDeletion?: boolean } = {}): NoteTypeChangeResult {
     const targetType = getNoteType(targetNoteTypeId);
-    if (!targetType) return 0;
+    if (!targetType) return { changed: 0, cardCount: 0, undo() {} };
 
     const uniqueNoteIds = [...new Set(noteIds)];
     for (const noteId of uniqueNoteIds) {
@@ -112,6 +124,10 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number, opt
     if (cardsToDelete && !options.allowCardDeletion) throw new NoteTypeChangeConfirmationRequired(cardsToDelete);
     const db = getDB();
     let changed = 0;
+    let removed = 0;
+    const createdCardIds: number[] = [];
+    const existingCardIds = uniqueNoteIds.flatMap((noteId) => getCardsForNote(noteId).map((card) => card.id));
+    const finishCapture = captureDeletion({ noteIds: uniqueNoteIds, cardIds: existingCardIds });
 
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -126,7 +142,7 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number, opt
 
             note.noteTypeId = targetType.id;
             note.fields = fields;
-            note.sfld = fields[targetType.sortFieldIdx] || fields[0] || '';
+            note.sfld = sortFieldText(fields, targetType.sortFieldIdx);
             note.csum = checksumField(fields[0] ?? '');
             note.mod = Math.floor(Date.now() / 1000);
             note.usn = -1;
@@ -142,27 +158,29 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number, opt
             const keptOrds = new Set<number>();
             for (const { card, ord } of mapped) {
                 if (ord === null) {
-                    deleteCardRows([card.id]);
+                    removed += deleteCardRows([card.id]);
                 } else {
                     keptOrds.add(ord);
                     saveAnkiCard({ ...card, ord, mod: Math.floor(Date.now() / 1000), usn: -1 });
                 }
             }
             if (!requiredOrds.length && !keptOrds.size) requiredOrds.push(0);
-            for (const ord of requiredOrds) if (!keptOrds.has(ord)) createCardForNote(note, destinationDeckId, ord);
+            for (const ord of requiredOrds) {
+                if (!keptOrds.has(ord)) createdCardIds.push(createCardForNote(note, destinationDeckId, ord).id);
+            }
 
             for (const card of getCardsForNote(note.id)) {
                 dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
             }
             changed += 1;
         }
+        const undo = finishCapture(createdCardIds);
         db.execSync('COMMIT;');
+        return { changed, cardCount: removed, undo: () => undo.undo() };
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
     }
-
-    return changed;
 }
 
 export interface EmptyCardEntry {

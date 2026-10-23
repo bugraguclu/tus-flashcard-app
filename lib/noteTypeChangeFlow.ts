@@ -5,7 +5,7 @@
  * https://docs.ankiweb.net/browsing.html#changing-the-note-type
  */
 import { formatCount, type SupportedLocale } from './i18n';
-import { changeNotesType, getNoteTypeChangeDeletionCount } from './noteTypeStore';
+import { changeNotesTypeUndoable, getNoteTypeChangeDeletionCount, type NoteTypeChangeResult } from './noteTypeStore';
 
 export interface NoteTypeChangeSteps {
     /** Runs the conversion behind the caller's refresh and error alert. */
@@ -14,11 +14,17 @@ export interface NoteTypeChangeSteps {
     confirmCardRemoval: (cardCount: number, onConfirm: () => void) => void;
     countRemovedCards?: (noteIds: number[], targetNoteTypeId: number) => number;
     convert?: (noteIds: number[], targetNoteTypeId: number, options?: { allowCardDeletion?: boolean }) => number;
+    /** Receives the finished conversion so the caller can offer its one-shot Undo. */
+    offerUndo?: (result: NoteTypeChangeResult) => void;
 }
 
 export function changeNoteTypeWithConfirmation(noteIds: number[], targetNoteTypeId: number, steps: NoteTypeChangeSteps): void {
     const countRemovedCards = steps.countRemovedCards ?? getNoteTypeChangeDeletionCount;
-    const convert = steps.convert ?? changeNotesType;
+    const convert = steps.convert ?? ((ids: number[], target: number, options?: { allowCardDeletion?: boolean }) => {
+        const result = changeNotesTypeUndoable(ids, target, options);
+        if (result.changed > 0) steps.offerUndo?.(result);
+        return result.changed;
+    });
 
     let removed = 0;
     try {

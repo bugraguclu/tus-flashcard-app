@@ -22,3 +22,32 @@ describe('editor source preservation across a harmless text edit', () => {
   expect(restoreEditorSource(prepared.html, prepared.preserved)).toBe(source);
  });
 });
+describe('P0-4 edge cases', () => {
+ it('leaves a [sound:] marker inside an attribute value as part of its tag', () => {
+  const source = '<img alt="[sound:a.mp3]" src="x.png"> text [sound:b.mp3]';
+  const prepared = prepareEditorContent(source, 'test');
+  expect(prepared.html).toMatch(/^<img alt="&#91;sound:a\.mp3\]" src="x\.png"/);
+  const expected = '<img alt="[sound:a.mp3]" src="x.png"> edited [sound:b.mp3]';
+  expect(restoreEditorSource(prepared.html.replace(' text ', ' edited '), prepared.preserved)).toBe(expected);
+  // A browser serializes the inert copy with the bracket decoded; the saved field is the same.
+  expect(restoreEditorSource(prepared.html.replace(' text ', ' edited ').replace('&#91;', '['), prepared.preserved)).toBe(expected);
+ });
+ it('does not save a placeholder copied from another field', () => {
+  const other = prepareEditorContent('<svg><path d="M0 0"/></svg> [sound:c.mp3] <a href="http://x.test">l</a>', 'other');
+  const own = prepareEditorContent('Mine', 'own');
+  const restored = restoreEditorSource(`${own.html} ${other.html}`, own.preserved);
+  expect(restored).not.toMatch(/tus-source|◈/);
+  expect(restored).toContain('[sound:c.mp3]');
+  expect(restored).toMatch(/^Mine /);
+ });
+});
+describe('plain-text stand-in before the rich editor is ready (EDT-8)', async () => {
+ const { isPlainFieldText } = await import('./richTextEditorContent');
+ it('only lets a field without markup be typed into', () => {
+  expect(isPlainFieldText('Kalp kapakçıkları')).toBe(true);
+  expect(isPlainFieldText('')).toBe(true);
+  expect(isPlainFieldText('<b>kalp</b>')).toBe(false);
+  expect(isPlainFieldText('a &amp; b')).toBe(false);
+  expect(isPlainFieldText('[sound:x.mp3]')).toBe(false);
+ });
+});

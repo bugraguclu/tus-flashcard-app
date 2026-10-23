@@ -34,8 +34,12 @@ function isSafeLocalMediaUrl(value: string): boolean {
     if (isSafeDataMediaUrl(normalized)) return true;
     // Anki package media is a flat filename namespace. Reject schemes, absolute paths,
     // traversal, query strings and encoded separators before the WebView sees them.
+    // A literal `%` that starts no escape ("50% off.png") is an ordinary filename character;
+    // only the escapes that do decode can hide a separator, so check those decoded.
     let decoded = normalized;
-    try { decoded = decodeURIComponent(normalized); } catch { return false; }
+    try { decoded = decodeURIComponent(normalized); } catch {
+        decoded = normalized.replace(/%([0-9a-fA-F]{2})/g, (_escape, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+    }
     return !/[\\/:?#]/.test(decoded) && decoded !== '.' && decoded !== '..';
 }
 
@@ -82,7 +86,16 @@ function scrubTagAttributes(tag: string): string {
         const plainName = decodeSecurityEntities(name).toLowerCase();
 
         if (/^on[a-z0-9_-]*$/.test(plainName) || plainName === 'srcdoc' || plainName === 'srcset') { changed = true; continue; }
-        if (plainName === 'style' && isDangerousStyle(value)) { changed = true; continue; }
+        if (plainName === 'style' && isDangerousStyle(value)) {
+            // Keep the declarations that are safe on their own, so `background:url(bg.png);
+            // color:red` still shows red (SAB-13). Only whole `;`-separated pieces are dropped,
+            // and none of the patterns checked contains a `;`, so the kept pieces cannot join
+            // into one that would have been refused.
+            changed = true;
+            const kept = value.split(';').filter((piece) => !isDangerousStyle(piece)).join(';');
+            if (kept.trim().replace(/;/g, '').trim()) rebuilt += ` ${name}="${kept.replace(/"/g, '&quot;')}"`;
+            continue;
+        }
 
         const unsafeUrl = plainName === 'href'
             ? !isSafeLinkUrl(value)

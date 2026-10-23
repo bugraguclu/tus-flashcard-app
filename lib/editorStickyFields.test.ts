@@ -67,20 +67,22 @@ describe('editorStickyFields', () => {
         expect(loaded.question?.value).not.toContain('<img');
     });
 
-    it('persists and loads note-type-aware sticky fields', () => {
+    it('persists and loads note-type sticky fields verbatim, media and links included (EDT-5)', () => {
+        const kept = '<img src="diagram.png"> Kalp <a href="https://example.test">link</a>';
         saveNoteTypeStickyFields(100, {
-            0: { pinned: true, value: 'Kelime <img src="word.png">' },
+            0: { pinned: true, value: kept },
             1: { pinned: false, value: 'Anlam' },
             2: { pinned: true, value: 'Örnek Cümle [sound:ex.mp3]' },
         });
 
         const loaded = loadNoteTypeStickyFields(100);
-        expect(loaded[0]?.pinned).toBe(true);
-        expect(loaded[0]?.value).toBe('Kelime');
-        expect(loaded[0]?.value).not.toContain('<img');
+        expect(loaded[0]).toEqual({ pinned: true, value: kept });
         expect(loaded[1]).toBeUndefined();
-        expect(loaded[2]?.pinned).toBe(true);
-        expect(loaded[2]?.value).toBe('Örnek Cümle');
-        expect(loaded[2]?.value).not.toContain('[sound:');
+        expect(loaded[2]).toEqual({ pinned: true, value: 'Örnek Cümle [sound:ex.mp3]' });
+    });
+
+    it("pins the fields the note type marks sticky, as Anki's Add screen does", () => {
+        const type = { id: 101, fields: [{ name: 'A', ord: 0, sticky: true, rtl: false }, { name: 'B', ord: 1, sticky: false, rtl: false }] } as any;
+        expect(loadNoteTypeStickyFields(101, type)).toEqual({ 0: { pinned: true, value: '' } });
     });
 });

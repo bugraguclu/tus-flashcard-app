@@ -1,4 +1,5 @@
 import { getDbSetting, setDbSetting } from './storage';
+import type { NoteType } from './models';
 
 export type EditorField = 'question' | 'answer' | 'reverseAnswer';
 
@@ -31,9 +32,21 @@ export function stripMediaFromStickyText(html: string): string {
 /**
  * Load persisted sticky editor fields for a specific note type.
  * Returns a map of fieldOrd -> { pinned: boolean, value: string }.
+ * As in Anki (EDT-5), a field is pinned when the note type marks it sticky, and a pinned value
+ * comes back exactly as it was saved, media and links included.
  * Falls back to legacy v1 sticky values for default basic types if v2 is not yet populated.
  */
-export function loadNoteTypeStickyFields(noteTypeId: number): Record<number, StickyFieldEntry> {
+export function loadNoteTypeStickyFields(noteTypeId: number, noteType?: NoteType | null): Record<number, StickyFieldEntry> {
+    const withTypeFlags = (entries: Record<number, StickyFieldEntry>) => {
+        for (const field of noteType?.fields ?? []) {
+            if (field.sticky && !entries[field.ord]) entries[field.ord] = { pinned: true, value: '' };
+        }
+        return entries;
+    };
+    return withTypeFlags(loadStoredNoteTypeStickyFields(noteTypeId));
+}
+
+function loadStoredNoteTypeStickyFields(noteTypeId: number): Record<number, StickyFieldEntry> {
     try {
         const rawV2 = getDbSetting(DYNAMIC_STICKY_FIELDS_KEY);
         if (rawV2) {
@@ -44,10 +57,7 @@ export function loadNoteTypeStickyFields(noteTypeId: number): Record<number, Sti
                 if (key.startsWith(prefix) && entry && typeof entry.value === 'string') {
                     const ord = Number(key.slice(prefix.length));
                     if (Number.isFinite(ord)) {
-                        result[ord] = {
-                            pinned: Boolean(entry.pinned),
-                            value: stripMediaFromStickyText(entry.value),
-                        };
+                        result[ord] = { pinned: Boolean(entry.pinned), value: entry.value };
                     }
                 }
             }
@@ -73,7 +83,7 @@ export function loadNoteTypeStickyFields(noteTypeId: number): Record<number, Sti
 }
 
 /**
- * Persist sticky fields for a specific note type, stripping media tags.
+ * Persist sticky fields for a specific note type, keeping each value verbatim as Anki does.
  */
 export function saveNoteTypeStickyFields(
     noteTypeId: number,
@@ -95,10 +105,7 @@ export function saveNoteTypeStickyFields(
         for (const [ordStr, entry] of Object.entries(fields)) {
             const ord = Number(ordStr);
             if (Number.isFinite(ord) && entry.pinned) {
-                all[`${noteTypeId}:${ord}`] = {
-                    pinned: true,
-                    value: stripMediaFromStickyText(entry.value || ''),
-                };
+                all[`${noteTypeId}:${ord}`] = { pinned: true, value: entry.value || '' };
             }
         }
 

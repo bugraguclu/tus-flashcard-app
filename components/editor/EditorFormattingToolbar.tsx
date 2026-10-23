@@ -22,7 +22,8 @@ interface EditorFormattingToolbarProps {
     tools: Record<EditorToolKey, FormattingTool>;
     formatState: EditorFormatState;
     isCloze: boolean;
-    onCloze: () => void;
+    /** `same` (long press) reuses the highest cloze number instead of the next one. */
+    onCloze: (same?: boolean) => void;
     customButtons: CustomToolbarButton[];
     onCustomButtonPress: (button: CustomToolbarButton) => void;
     onCustomButtonLongPress: (button: CustomToolbarButton) => void;
@@ -81,10 +82,13 @@ export function EditorFormattingToolbar({
             {showsClozeTool && (
                 <TouchableOpacity
                     style={[styles.formatButton, buttonWidthStyle]}
-                    onPress={onCloze}
+                    onPress={() => onCloze(false)}
+                    onLongPress={() => onCloze(true)}
                     accessibilityRole="button"
                     accessibilityLabel={l('Boşluk ekle', 'Add cloze deletion')}
-                    accessibilityHint={l('Metin alanındaki seçimi bir sonraki boşluk numarasıyla kapatır', 'Wraps the Text field selection in the next cloze number')}
+                    accessibilityHint={l('Seçimi bir sonraki boşluk numarasıyla kapatır; basılı tutunca aynı numarayı kullanır', 'Wraps the selection in the next cloze number; press and hold to reuse the same number')}
+                    accessibilityActions={[{ name: 'longpress', label: l('Aynı numarayla boşluk ekle', 'Add cloze with the same number') }]}
+                    onAccessibilityAction={(event) => { if (event.nativeEvent.actionName === 'longpress') onCloze(true); }}
                 >
                     <Text style={styles.customFormatButtonText}>[…]</Text>
                 </TouchableOpacity>

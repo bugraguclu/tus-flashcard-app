@@ -324,7 +324,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                         label={l('Notu sil', 'Delete note')}
                                         onPress={() => confirmAndClose(
                                             l('Notu sil', 'Delete note'),
-                                            l('Bu not kalıcı olarak silinecek. Bu işlem geri alınamaz.', 'This note will be permanently deleted. This cannot be undone.'),
+                                            l('Bu not ve kartları silinecek. Silme sonrasında geri alabilirsiniz.', 'This note and its cards will be deleted. You can undo after deletion.'),
                                             props.onDeleteNote,
                                             true,
                                         )}

@@ -770,6 +770,17 @@ export default function SettingsScreen() {
         if (repair.orphanNotesDeleted > 0) {
             lines.push(l(`${repair.orphanNotesDeleted} kartsız not silindi.`, `Deleted ${repair.orphanNotesDeleted} notes that had no cards.`));
         }
+        if (repair.orphanNotesRecovered > 0) {
+            lines.push(repair.recoveryDeckName
+                ? l(
+                    `${repair.orphanNotesRecovered} kartsız notun ilk kartı yeniden oluşturuldu; kartlar “${repair.recoveryDeckName}” destesinde.`,
+                    `Recreated the first card of ${repair.orphanNotesRecovered} notes that had no cards; the cards are in “${repair.recoveryDeckName}”.`,
+                )
+                : l(
+                    `${repair.orphanNotesRecovered} kartsız notun ilk kartı yeniden oluşturuldu.`,
+                    `Recreated the first card of ${repair.orphanNotesRecovered} notes that had no cards.`,
+                ));
+        }
         if (repair.strandedCardsRehomed > 0) {
             lines.push(repair.recoveryDeckName
                 ? l(
@@ -888,8 +899,8 @@ export default function SettingsScreen() {
                     ...describeFindings(findings),
                     '',
                     l(
-                        'Sahipsiz kartlar ve kartsız notlar silinecek, destesi kayıp kartlar kurtarılacak.',
-                        'Orphaned cards and notes without cards will be deleted, and cards whose deck is gone will be rescued.',
+                        'Sahipsiz kartlar silinecek; kartsız notların ilk kartı yeniden oluşturulacak ve destesi kayıp kartlar kurtarılacak. Not metni silinmez.',
+                        'Orphaned cards will be deleted; notes without cards get their first card back, and cards whose deck is gone will be rescued. No note text is deleted.',
                     ),
                 ].join('\n')
                 : l('Onarılacak bozuk satır bulunamadı.', 'No broken rows were found to repair.');
@@ -1063,7 +1074,7 @@ export default function SettingsScreen() {
                 />
                 <ToggleRow
                     label={l('Pano görsellerini PNG olarak yapıştır', 'Paste clipboard images as PNG')}
-                    summary={l('Editöre yapıştırılan görseli koleksiyon medyasına dönüştürür; çevrimdışı ve dışa aktarmada korunur.', 'Converts pasted images into collection media so they remain available offline and in exports.')}
+                    summary={l('Yapıştırılan görseller her zaman koleksiyon medyasına kaydedilir: açıkken PNG, kapalıyken JPEG olarak.', 'Pasted images are always saved as collection media: as PNG when on, as JPEG when off.')}
                     value={Boolean(settings.pasteClipboardImagesAsPng)}
                     onChange={(value) => updateSetting('pasteClipboardImagesAsPng', value)}
                     styles={styles}

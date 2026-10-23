@@ -20,10 +20,12 @@ import {
     emptyFilteredDeck,
     rebuildFilteredDeck,
     unburyDeck,
+    getBuriedKindsForDeck,
 } from '../lib/deckManager';
 import { FILTERED_SEARCH_ORDER } from '../lib/filteredDeckOptions';
 import { getDeckDisplayName } from '../lib/models';
-import { alert, confirm } from '../lib/confirm';
+import { deckDescriptionText } from '../lib/deckNavigation';
+import { alert, choose, confirm } from '../lib/confirm';
 import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
@@ -111,11 +113,32 @@ export default function DeckOverviewScreen() {
 
     const totalReady = queue ? queue.cards.length : 0;
 
-    const handleUnbury = () => {
-        const count = unburyDeck(deck.id, settings.dayRolloverHour);
+    const unburyKind = (kind: 'all' | 'manual' | 'siblings') => {
+        const count = unburyDeck(deck.id, settings.dayRolloverHour, kind);
         bumpDataVersion();
         setRefreshToken((value) => value + 1);
         alert(l('Gömülü kartlar açıldı', 'Cards Unburied'), l(`${count} kart yeniden çalışılabilir.`, `${count} ${count === 1 ? 'card is' : 'cards are'} available to study again.`));
+    };
+
+    // Anki asks which kind to unbury when the deck holds both manually buried cards and buried
+    // siblings; with only one kind there is nothing to choose.
+    const handleUnbury = async () => {
+        const kinds = getBuriedKindsForDeck(deck.id);
+        if (!kinds.manual || !kinds.siblings) { unburyKind('all'); return; }
+        const all = await choose(
+            l('Gömülüleri aç', 'Unbury'),
+            l(`${kinds.manual} kart elle, ${kinds.siblings} kart kardeşi yüzünden gömülü.`, `${kinds.manual} cards are buried manually and ${kinds.siblings} as siblings.`),
+            l('Tümünü aç', 'Unbury all'),
+            l('Türünü seç', 'Choose a kind'),
+        );
+        if (all) { unburyKind('all'); return; }
+        const manual = await choose(
+            l('Gömülüleri aç', 'Unbury'),
+            l('Hangi gömülü kartlar açılsın?', 'Which buried cards should be unburied?'),
+            l(`Elle gömülenler (${kinds.manual})`, `Manually buried (${kinds.manual})`),
+            l(`Gömülü kardeşler (${kinds.siblings})`, `Buried siblings (${kinds.siblings})`),
+        );
+        unburyKind(manual ? 'manual' : 'siblings');
     };
 
     const handleRebuild = () => {
@@ -189,7 +212,7 @@ export default function DeckOverviewScreen() {
                 {deck.description ? (
                     <View style={styles.descriptionCard}>
                         <Text style={styles.descriptionLabel}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
-                        <Text style={styles.description}>{deck.description}</Text>
+                        <Text style={styles.description}>{deckDescriptionText(deck.description)}</Text>
                     </View>
                 ) : null}
 
@@ -227,7 +250,7 @@ export default function DeckOverviewScreen() {
                 )}
 
                 {buriedCount > 0 && (
-                    <TouchableOpacity style={styles.unburyBtn} onPress={handleUnbury}>
+                    <TouchableOpacity style={styles.unburyBtn} onPress={() => { void handleUnbury(); }}>
                         <Text style={styles.unburyText}>💤 {l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}</Text>
                     </TouchableOpacity>
                 )}

@@ -49,3 +49,32 @@ it('rolls back the preset together with card counters on a write failure', () =>
  expect(getDeckConfig(1).learningSteps).toEqual([1,10]);
  expect(getAnkiCard(cards[0].id)?.left).toBe(1);
 });
+
+describe('Change Deck to a deck on another preset', () => {
+ it('remaps the remaining steps and undo restores them', async () => {
+  const { moveCardsToDeck, undoCardsMovedToDeck } = await import('./noteStore');
+  saveDeckConfig({ ...DEFAULT_DECK_CONFIG, learningSteps: [1, 10] });
+  saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 2, learningSteps: [1, 10, 60] });
+  const from = createDeck('From');
+  const to = createDeck('To');
+  assignDeckConfig(to.id, 2);
+  const { cards } = createNote(BUILTIN_NOTE_TYPES[0], ['Front', 'Back'], from.id);
+  saveAnkiCard({ ...cards[0], type: 1, queue: 1, left: 1, due: 1792700000 });
+  const moves = moveCardsToDeck([cards[0].id], to.id);
+  expect(getAnkiCard(cards[0].id)).toMatchObject({ deckId: to.id, left: 2, due: 1792700000, queue: 1 });
+  undoCardsMovedToDeck(moves);
+  expect(getAnkiCard(cards[0].id)).toMatchObject({ deckId: from.id, left: 1 });
+ });
+ it('leaves review cards and same-preset moves alone', async () => {
+  const { moveCardsToDeck } = await import('./noteStore');
+  saveDeckConfig({ ...DEFAULT_DECK_CONFIG, learningSteps: [1, 10] });
+  const from = createDeck('From');
+  const to = createDeck('To');
+  const { cards } = createNote(BUILTIN_NOTE_TYPES[1], ['Front', 'Back'], from.id);
+  saveAnkiCard({ ...cards[0], type: 1, queue: 1, left: 1 });
+  saveAnkiCard({ ...cards[1], type: 2, queue: 2, left: 0, ivl: 5 });
+  moveCardsToDeck(cards.map(c => c.id), to.id);
+  expect(getAnkiCard(cards[0].id)?.left).toBe(1);
+  expect(getAnkiCard(cards[1].id)?.left).toBe(0);
+ });
+});

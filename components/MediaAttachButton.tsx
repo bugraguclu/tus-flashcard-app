@@ -8,7 +8,7 @@ import { alert, choose } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { readUriBytes } from '../lib/files';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
-import { mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
+import { attachmentMediaFilename, mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
 import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
@@ -110,7 +110,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         try {
             // Brackets come out before the file is stored, not just before it is referenced, so a
             // `[sound:…]` marker and the file on disk cannot end up disagreeing.
-            const filename = soundSafeMediaFilename(sanitizeMediaFilename(`${Date.now()}_${name}`));
+            const filename = soundSafeMediaFilename(attachmentMediaFilename(`${Date.now()}_${name}`));
             await saveMediaFromUri(filename, uri);
             onInsert(mediaReferenceSnippet(kind, filename, name));
         } catch (e) {

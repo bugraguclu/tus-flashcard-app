@@ -1,4 +1,4 @@
-import { checksumFieldText, firstFieldChecksums } from './noteChecksum';
+import { checksumFieldText, firstFieldChecksums, sortFieldText } from './noteChecksum';
 import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
     generateGuid,
@@ -12,6 +12,7 @@ import {
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { updateAnkiCardData } from './fsrsCardData';
+import { learningLeftAfterDeckMove } from './deckPresetSteps';
 import { buildFtsPrefixQuery, getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
@@ -86,20 +87,31 @@ export function saveNote(note: Note): void {
 }
 
 export function deleteNote(id: number): DeletionUndo {
-    assertCatalogNoteNotDeletable(id);
-    assertCatalogNoteMutable(id);
+    return deleteNotes([id]);
+}
+
+/** Delete notes with all their cards as one transaction and one undo (review history is kept). */
+export function deleteNotes(noteIds: number[]): DeletionUndo {
+    const ids = [...new Set(noteIds)];
+    for (const id of ids) {
+        assertCatalogNoteNotDeletable(id);
+        assertCatalogNoteMutable(id);
+    }
     const db = getDB();
-    const ids = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id).map(row => row.id);
-    const finishDeletion = captureDeletion({ noteIds: [id], cardIds: ids });
+    const cardIdsOf = () => (ids.length
+        ? db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId IN (SELECT value FROM json_each(?)) ORDER BY id', JSON.stringify(ids)).map(row => Number(row.id))
+        : []);
+    const finishDeletion = captureDeletion({ noteIds: ids, cardIds: cardIdsOf() });
     db.execSync('BEGIN TRANSACTION;');
     try {
-        const cardRows = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id);
-        const cardIds = cardRows.map((row) => row.id);
-
-        deleteCardRows(cardIds);
-        db.runSync('DELETE FROM notes WHERE id = ?', id);
-
-        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', id);
+        deleteCardRows(cardIdsOf());
+        const existing = ids.length
+            ? db.getAllSync<{ id: number }>('SELECT id FROM notes WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id', JSON.stringify(ids)).map(row => Number(row.id))
+            : [];
+        if (existing.length) {
+            db.runSync('DELETE FROM notes WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(existing));
+            db.runSync('INSERT INTO graves (oid, type, usn) SELECT value, 1, -1 FROM json_each(?)', JSON.stringify(existing));
+        }
 
         const deletion = finishDeletion();
         db.execSync('COMMIT;');
@@ -119,7 +131,7 @@ export function createNote(
     guid?: string,
 ): { note: Note; cards: AnkiCard[] } {
     const now = uniqueId();
-    const sfld = fields[noteType.sortFieldIdx] || fields[0] || '';
+    const sfld = sortFieldText(fields, noteType.sortFieldIdx);
 
     const note: Note = {
         id: now,
@@ -144,6 +156,8 @@ export function createNote(
 /** Generate cards for a note based on its note type */
 export function generateCardsForNote(note: Note, noteType: NoteType, deckId: number): AnkiCard[] {
     const cards: AnkiCard[] = [];
+    // Anki gives every card of a newly added note the same new-card position.
+    const position = nextNewCardPosition();
 
     if (noteType.kind === 'cloze') {
         // One card per cloze number, over the field the template actually clozes.
@@ -151,14 +165,14 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
         const clozeNumbers = numbers.length ? numbers : [1];
 
         for (const clozeNum of clozeNumbers) {
-            const card = createCardForNote(note, deckId, clozeNum - 1);
+            const card = createCardForNote(note, deckId, clozeNum - 1, position);
             cards.push(card);
         }
     } else {
         // Standard: one card per template
         for (let i = 0; i < noteType.templates.length; i++) {
             if (shouldGenerateCard(noteType, note, i)) {
-                const card = createCardForNote(note, deckId, i);
+                const card = createCardForNote(note, deckId, i, position);
                 cards.push(card);
             }
         }
@@ -199,7 +213,7 @@ function nextNewCardPosition(): number {
     return (row?.maxDue ?? 0) + 1;
 }
 
-export function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
+export function createCardForNote(note: Note, deckId: number, ord: number, position?: number): AnkiCard {
     const id = generateUniqueCardId();
     const card: AnkiCard = {
         id,
@@ -210,7 +224,7 @@ export function createCardForNote(note: Note, deckId: number, ord: number): Anki
         usn: -1,
         type: 0,     // new
         queue: 0,     // new
-        due: nextNewCardPosition(),  // new-card position
+        due: position ?? nextNewCardPosition(),  // new-card position
         ivl: 0,
         factor: 0,
         reps: 0,
@@ -404,6 +418,9 @@ export interface CardDeckMoveSnapshot {
     previousAnkiData?: string;
     /** The data column the move wrote, so undo can tell whether anything touched it since. */
     movedAnkiData?: string;
+    /** Remaining-steps counter before/after the move remapped it to the new preset's steps. */
+    previousLeft?: number;
+    movedLeft?: number;
 }
 
 /**
@@ -426,7 +443,7 @@ export function moveCardsToDeck(
     const moves = uniqueCardIds
         .map((cardId) => getAnkiCard(cardId))
         .filter((card): card is AnkiCard => card !== null && card.deckId !== targetDeckId)
-        .map((card) => ({
+        .map((card): CardDeckMoveSnapshot => ({
             cardId: card.id,
             previousDeckId: card.deckId,
             targetDeckId,
@@ -448,7 +465,9 @@ export function moveCardsToDeck(
         for (const move of moves) {
             const card = getAnkiCard(move.cardId);
             if (!card) continue;
-            saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, mod: nowSec, usn: -1 });
+            const left = learningLeftAfterDeckMove(card, card.deckId, targetDeckId);
+            if (left !== card.left) { move.previousLeft = card.left; move.movedLeft = left; }
+            saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, left, mod: nowSec, usn: -1 });
         }
         if (options.withinTransaction) {
             options.withinTransaction();
@@ -477,7 +496,8 @@ export function undoCardsMovedToDeck(moves: CardDeckMoveSnapshot[]): number {
             if (!card) continue;
             // The FSRS values come back only if nothing (an answer, say) has rewritten them since.
             const ankiData = card.ankiData === move.movedAnkiData ? move.previousAnkiData : card.ankiData;
-            saveAnkiCard({ ...card, deckId: move.previousDeckId, ankiData, mod: nowSec, usn: -1 });
+            const left = move.movedLeft !== undefined && card.left === move.movedLeft ? move.previousLeft ?? card.left : card.left;
+            saveAnkiCard({ ...card, deckId: move.previousDeckId, ankiData, left, mod: nowSec, usn: -1 });
             restored += 1;
         }
         db.execSync('COMMIT;');
@@ -540,9 +560,11 @@ export function handleLeech(card: AnkiCard, action: 'suspend' | 'tag' = 'suspend
     }
     // Tag the note
     const note = getNote(card.noteId);
-    if (note && !note.tags.includes('leech')) {
+    // Anki's tags are case-insensitive: an existing "Leech" tag is not added again.
+    if (note && !note.tags.some((tag) => tag.toLowerCase() === 'leech')) {
         note.tags.push('leech');
         note.mod = Math.floor(Date.now() / 1000);
+        note.usn = -1;
         saveNote(note);
     }
 }

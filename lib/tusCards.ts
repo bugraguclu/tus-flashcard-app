@@ -6,13 +6,15 @@ import {
     type Note,
     type AnkiCard,
 } from './models';
-import { firstFieldChecksums } from './noteChecksum';
+import { firstFieldChecksums, sortFieldText } from './noteChecksum';
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { getDB } from './db';
 import { TUS_CARDS } from './data';
 import { resolveSubjectDeckId } from './subjects';
 import { isCatalogCard, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
 import { getNoteType } from './noteTypeStore';
+import { updateAnkiCardData } from './fsrsCardData';
+import { learningLeftAfterDeckMove } from './deckPresetSteps';
 import {
     createCardForNote,
     createNote,
@@ -233,7 +235,7 @@ export function updateTusCardByCardId(
     }
 
     note.fields = fields;
-    note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
+    note.sfld = sortFieldText(fields, noteType?.sortFieldIdx ?? 0);
     note.csum = checksumField(fields[0]);
     if (input.tags) {
         note.tags = input.tags;
@@ -267,10 +269,14 @@ export function updateTusCardByCardId(
 
     // Fields belong to the note; deck placement belongs to each generated card. An unchanged
     // picker value is not a request to gather siblings that may live in other decks.
+    // Moving the card is Change Deck: as moveCardsToDeck does, drop the FSRS memory state (the
+    // destination may use another preset) and remap the remaining learning steps.
     if (destinationDeckId !== card.deckId && getAnkiCard(cardId)) {
         saveAnkiCard({
             ...card,
             deckId: destinationDeckId,
+            ankiData: updateAnkiCardData(card.ankiData, { stability: null, difficulty: null, desiredRetention: null, decay: null }),
+            left: learningLeftAfterDeckMove(card, card.deckId, destinationDeckId),
             mod: Math.floor(Date.now() / 1000),
             usn: -1,
         });

@@ -15,9 +15,13 @@ vi.mock('./db', () => ({
             }
             return null;
         },
+        getAllSync: (sql: string, ...params: any[]) => {
+            if (/SELECT id FROM anki_cards WHERE id IN/.test(sql)) return (JSON.parse(params[0]) as number[]).map((id) => ({ id }));
+            return [];
+        },
         runSync: (sql: string, ...params: any[]) => {
             dbCalls.push(sql);
-            if (failOnCard !== null && /DELETE FROM anki_cards/.test(sql) && params[0] === failOnCard) throw new Error('write failed');
+            if (failOnCard !== null && /DELETE FROM anki_cards/.test(sql) && (JSON.parse(params[0]) as number[]).includes(failOnCard)) throw new Error('write failed');
             if (/INSERT OR REPLACE INTO notes/.test(sql)) {
                 const [id, , , , , data] = params;
                 store.set(id as number, JSON.parse(data as string));
@@ -76,8 +80,9 @@ describe('note marking (Anki-style "marked" tag)', () => {
 
         expect(dbCalls[0]).toBe('BEGIN TRANSACTION;');
         expect(dbCalls.at(-1)).toBe('COMMIT;');
-        expect(dbCalls.filter((sql) => /DELETE FROM anki_cards/.test(sql))).toHaveLength(2);
-        expect(dbCalls.filter((sql) => /INSERT INTO graves/.test(sql))).toHaveLength(2);
+        // Both distinct cards go in one batched statement each.
+        expect(dbCalls.filter((sql) => /DELETE FROM anki_cards/.test(sql))).toHaveLength(1);
+        expect(dbCalls.filter((sql) => /INSERT INTO graves/.test(sql))).toHaveLength(1);
     });
 
     it('rolls back when a bulk empty-card deletion fails', () => {

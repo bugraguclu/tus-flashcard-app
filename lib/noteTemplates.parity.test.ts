@@ -7,8 +7,39 @@ import { renameField, removeField } from './noteTypeEditor';
 const base = BUILTIN_NOTE_TYPES.find(t => t.id === 1)!;
 const note: Note = { id: 1, guid: 'g', noteTypeId: 1, fields: ['', 'answer'], tags: ['tagged'], sfld: '', csum: 0, mod: 0, usn: -1, flags: 0 };
 describe('template generation and conditional field content', () => {
- it.each(['Question: {{Front}}', '<img src="_logo.png">{{Front}}', '{{CardFlag}}{{Front}}'])('ignores static template content: %s', qfmt => {
+ it.each(['Question: {{Front}}', '<img src="_logo.png">{{Front}}', '{{FrontSide}}{{Front}}'])('ignores static template content: %s', qfmt => {
   expect(shouldGenerateCard({ ...base, templates: [{ ...base.templates[0], qfmt }] }, note, 0)).toBe(false);
+ });
+ // rslib cardgen: card-level special fields count as filled; Tags only when the note has tags.
+ it.each(['Card', 'CardFlag', 'Deck', 'Subdeck', 'Type', 'CardID'])('treats the special field %s as filled', name => {
+  expect(shouldGenerateCard({ ...base, templates: [{ ...base.templates[0], qfmt: `{{${name}}}{{Front}}` }] }, note, 0)).toBe(true);
+  expect(shouldGenerateCard({ ...base, templates: [{ ...base.templates[0], qfmt: `{{#${name}}}{{Back}}{{/${name}}}` }] }, note, 0)).toBe(true);
+  expect(shouldGenerateCard({ ...base, templates: [{ ...base.templates[0], qfmt: `{{^${name}}}{{Back}}{{/${name}}}{{Front}}` }] }, note, 0)).toBe(false);
+ });
+ it('does not count Tags on an untagged note, and lets a real field shadow a special name', () => {
+  const tags = { ...base, templates: [{ ...base.templates[0], qfmt: '{{Tags}}' }] };
+  expect(shouldGenerateCard(tags, { ...note, tags: [] }, 0)).toBe(false);
+  const deckField = { ...base, fields: [{ ...base.fields[0], name: 'Deck' }, base.fields[1]], templates: [{ ...base.templates[0], qfmt: '{{Deck}}' }] };
+  expect(shouldGenerateCard(deckField, note, 0)).toBe(false);
+  expect(shouldGenerateCard(deckField, { ...note, fields: ['x', ''] }, 0)).toBe(true);
+ });
+ it.each(['<div class="x"></div>', '<br class="x">', '\u00a0', '<p></p>'])('counts markup Anki does not treat as blank: %s', value => {
+  expect(shouldGenerateCard(base, { ...note, fields: [value === '\\u00a0' ? '\u00a0' : value, ''] }, 0)).toBe(true);
+ });
+ it.each(['', ' \n', '<br>', '<BR />', '</div><div>', '<div/>'])('treats bare br/div and ASCII whitespace as blank: %j', value => {
+  expect(shouldGenerateCard(base, { ...note, fields: [value, ''] }, 0)).toBe(false);
+ });
+ it('evaluates {{#cN}} as true only on the card for cloze N (SAB-12)', () => {
+  const cloze = BUILTIN_NOTE_TYPES.find(t => t.id === 3)!;
+  const type = { ...cloze, templates: [{ ...cloze.templates[0], qfmt: '{{cloze:Text}}{{#c1}}ONE{{/c1}}{{^c2}}NOT2{{/c2}}' }] };
+  const clozeNote = { ...note, noteTypeId: 3, fields: ['{{c1::a}} {{c2::b}}', ''] };
+  const first = renderCardHtml(type, clozeNote, 0, 'question');
+  const second = renderCardHtml(type, clozeNote, 1, 'question');
+  expect(first).toContain('ONE'); expect(first).toContain('NOT2');
+  expect(second).not.toContain('ONE'); expect(second).not.toContain('NOT2');
+ });
+ it('renders {{CardID}}', () => {
+  expect(renderCardHtml({ ...base, templates: [{ ...base.templates[0], qfmt: 'id={{CardID}}' }] }, note, 0, 'question', { cardId: 42 })).toContain('id=42');
  });
  it.each(['&nbsp;', '<b></b>'])('counts the original populated field %s', value => {
   expect(shouldGenerateCard(base, { ...note, fields: [value, ''] }, 0)).toBe(true);

@@ -823,7 +823,8 @@
       "useFor": [
         "editing adds cards without automatic deletion",
         "multi-field cloze ordinals and preserving cardless notes",
-        "explicit confirmation before removing unmapped card templates"
+        "explicit confirmation before removing unmapped card templates",
+        "default Change Note Type template map: name first, then unused templates by position; cloze conversions keep ordinals"
       ]
     },
     {
@@ -854,7 +855,8 @@
       "url": "https://docs.ankiweb.net/getting-started.html#decks",
       "useFor": [
         "normalized hierarchy component names",
-        "case-insensitive creation lookup and case-exact legacy subtree mutation"
+        "case-insensitive creation lookup and case-exact legacy subtree mutation",
+        "deck chooser selects an existing deck by name; rename onto an existing name is refused; new decks use preset 1"
       ]
     },
     {
@@ -877,7 +879,8 @@
       "useFor": [
         "unsigned SHA1 first-four-byte checksum",
         "normalized first field duplicate warning",
-        "read old local checksums without rewriting content"
+        "read old local checksums without rewriting content",
+        "strip_html_preserving_media_filenames (rslib/src/text.rs) and htmlescape HTML 4 strict entity decoding, behaviour only"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },
@@ -898,7 +901,8 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/card/mod.rs",
       "useFor": [
         "preserve last passed delay when preset learning steps change",
-        "remap learning and relearning counters without reinterpreting due units"
+        "remap learning and relearning counters without reinterpreting due units",
+        "Change Deck remaps remaining learning steps to the destination preset"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },
@@ -941,7 +945,9 @@
       "useFor": [
         "real fields shadow special field names",
         "stock typed-answer back uses Front",
-        "preserve existing stored templates during definition fixes"
+        "preserve existing stored templates during definition fixes",
+        "card generation counts special fields as filled (Tags only when tagged, never FrontSide); blank fields are only ASCII whitespace and bare br/div (rslib template field_is_empty, behaviour only)",
+        "{{#cN}} is true on the card for cloze N; {{CardID}} renders the card id"
       ]
     },
     {
@@ -993,7 +999,8 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/fields.py",
       "useFor": [
         "rename a field once with its final name",
-        "refuse a field name another field already uses, ignoring case"
+        "refuse a field name another field already uses, ignoring case",
+        "Fields dialog refuses names starting with #, ^ or / and names containing : { } \" ; template save errors for unknown fields, unclosed sections, no front field and missing cloze (https://docs.ankiweb.net/templates/errors.html)"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },

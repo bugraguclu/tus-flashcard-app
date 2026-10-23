@@ -67,11 +67,47 @@ it('rolls back a failed bulk removal, including graves, while retaining history'
     const { note, cards } = createNote(BUILTIN_NOTE_TYPES.find(t => t.id === 2)!, ['Front', 'Back'], deck.id);
     const original = db.runSync;
     holder.db = { ...db, runSync(sql: string, ...params: any[]) {
-        if (sql.startsWith('DELETE FROM anki_cards') && params[0] === cards[1].id) throw new Error('injected failure');
+        if (sql.startsWith('DELETE FROM anki_cards') && String(params[0]).includes(String(cards[1].id))) throw new Error('injected failure');
         return original(sql, ...params);
     } };
     expect(() => deleteNote(note.id)).toThrow('injected failure');
     expect(getCardsForNote(note.id)).toHaveLength(2);
     expect(getNote(note.id)).not.toBeNull();
     expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
+});
+
+it('deletes a browser selection of notes as one transaction with one undo', async () => {
+    const { deleteNotes } = await import('./noteStore');
+    const deck = createDeck('Bulk');
+    const type = BUILTIN_NOTE_TYPES.find(t => t.id === 2)!;
+    const a = createNote(type, ['A', 'a'], deck.id);
+    const b = createNote(type, ['B', 'b'], deck.id);
+    db.runSync('INSERT INTO revlog (id, cardId) VALUES (?, ?)', 9, a.cards[0].id);
+    const deletion = deleteNotes([a.note.id, b.note.id, a.note.id]);
+    expect(deletion.cardCount).toBe(4);
+    expect(getNote(a.note.id)).toBeNull();
+    expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(6);
+    expect(db.getAllSync('SELECT * FROM revlog')).toHaveLength(1);
+    deletion.undo();
+    expect(getCardsForNote(a.note.id)).toHaveLength(2);
+    expect(getCardsForNote(b.note.id)).toHaveLength(2);
+    expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
+});
+
+it('gives every card of a new note the same new-card position, and the next note the next one', () => {
+    const deck = createDeck('Positions');
+    const type = BUILTIN_NOTE_TYPES.find(t => t.id === 2)!;
+    const a = createNote(type, ['A', 'a'], deck.id).cards;
+    const b = createNote(type, ['B', 'b'], deck.id).cards;
+    expect(a[0].due).toBe(a[1].due);
+    expect(b[0].due).toBe(b[1].due);
+    expect(b[0].due).toBe(a[0].due + 1);
+});
+
+it('does not add a second leech tag beside a differently cased one', async () => {
+    const { handleLeech } = await import('./noteStore');
+    const deck = createDeck('Leech');
+    const { note, cards } = createNote(BUILTIN_NOTE_TYPES[0], ['F', 'B'], deck.id, ['Leech']);
+    handleLeech(cards[0], 'tag');
+    expect(getNote(note.id)?.tags).toEqual(['Leech']);
 });

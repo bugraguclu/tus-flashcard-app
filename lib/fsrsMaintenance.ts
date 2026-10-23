@@ -385,6 +385,22 @@ export function moveCardsToDeckWithFsrs(
     });
 }
 
+/**
+ * The editor's deck picker moves one card outside `moveCardsToDeck`; with FSRS on, finish that
+ * move the way Change Deck does by deriving the memory state of memory-less cards in the target
+ * deck at once. Returns whether a recompute ran.
+ */
+export function recomputeMemoryAfterDeckMove(
+    settings: AppSettings,
+    previousDeckId: number | undefined,
+    targetDeckId: number,
+    nowMs: number = Date.now(),
+): boolean {
+    if (settings.fsrsEnabled !== true || previousDeckId === undefined || previousDeckId === targetDeckId) return false;
+    rebuildFsrsMemoryStates(settings, { deckIds: [targetDeckId], withoutMemoryStateOnly: true }, nowMs);
+    return true;
+}
+
 /** The FSRS inputs one deck schedules with, as far as deciding what a save must recompute. */
 export interface FsrsDeckInputs {
     params: string;

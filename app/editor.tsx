@@ -49,10 +49,12 @@ import {
     getCardsForNote,
     getNote,
     getNoteType,
+    saveNoteType,
     searchIndexCardFromNote,
     setNoteTagsByCardId,
 } from '../lib/noteManager';
-import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
+import { setFieldSticky } from '../lib/noteTypeEditor';
+import { getAllDecks, getDeck, getDeckByName, createOrSelectDeck } from '../lib/deckManager';
 import { safeExternalCallbackUrl } from '../lib/externalLinking';
 import { goBackOr } from '../lib/backNavigation';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note, type NoteTypeField } from '../lib/models';
@@ -70,8 +72,9 @@ import { commitCollectionWrite } from '../lib/collectionWrite';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { useI18n } from '../hooks/useI18n';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
-import { clozeFieldIndex, countCardsForNote } from '../lib/templates';
+import { clozeFieldIndex, countCardsForNote, nextClozeNumber } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
+import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
@@ -284,7 +287,7 @@ export default function EditorScreen() {
     }, [selectedNoteType]);
 
     const stickyFieldDefaults = useMemo(
-        () => (routeCardId ? {} : loadNoteTypeStickyFields(cardTypeId)),
+        () => (routeCardId ? {} : loadNoteTypeStickyFields(cardTypeId, getNoteType(cardTypeId))),
         [routeCardId, cardTypeId],
     );
 
@@ -541,7 +544,7 @@ export default function EditorScreen() {
         const count = newType.fields.length;
         const nextFields = new Array(count).fill('').map((_, i) => fieldValuesRef.current[i] || '');
 
-        const stickyDefaults = routeCardId ? {} : loadNoteTypeStickyFields(newId);
+        const stickyDefaults = routeCardId ? {} : loadNoteTypeStickyFields(newId, newType);
         for (let i = 0; i < count; i++) {
             if (!nextFields[i] && stickyDefaults[i]?.value) {
                 nextFields[i] = stickyDefaults[i].value;
@@ -586,6 +589,15 @@ export default function EditorScreen() {
             if (next.has(fieldOrd)) next.delete(fieldOrd);
             else next.add(fieldOrd);
             persistStickyFieldValues(next);
+            // The pin is the note type's sticky flag in Anki, so it follows the type everywhere.
+            try {
+                const type = getNoteType(cardTypeId);
+                const updated = type ? setFieldSticky(type, fieldOrd, next.has(fieldOrd)) : null;
+                if (type && updated && updated !== type) saveNoteType(updated);
+            } catch (error) {
+                // A protected catalog note type keeps its flags; the local pin still applies.
+                console.warn('[Editor] could not store the sticky flag on the note type:', error);
+            }
             return next;
         });
     };
@@ -914,6 +926,7 @@ export default function EditorScreen() {
             }
             if (isEditing && routeCardId) {
                 const updated = await commitCollectionWrite(() => {
+                    const previousDeckId = getAnkiCard(routeCardId)?.deckId;
                     const result = updateTusCardByCardId(routeCardId, {
                         question: currentFields[0] || '',
                         answer: currentFields[1] || '',
@@ -926,6 +939,9 @@ export default function EditorScreen() {
                         for (const sibling of getCardsForNote(result.note.id)) {
                             dbUpsertFtsCard(searchIndexCardFromNote(result.note, sibling.id));
                         }
+                        // A deck change is Change Deck: with FSRS on, the moved card's memory state
+                        // is recomputed at once from its history with the destination preset.
+                        recomputeMemoryAfterDeckMove(loadSettings(), previousDeckId, targetDeck.id);
                     }
                     return result;
                 });
@@ -1338,12 +1354,15 @@ export default function EditorScreen() {
                     tools={toolsByKey}
                     formatState={formatState}
                     isCloze={isCloze}
-                    onCloze={() => {
+                    onCloze={(same) => {
                         // The toolbar only offers this button on a cloze note, so the type is known here.
+                        // As in Anki, the cloze goes into the field being edited and is numbered over
+                        // every field of the note; a long press reuses the highest number (EDT-3).
                         if (!selectedNoteType) return;
-                        const targetIndex = clozeFieldIndex(selectedNoteType);
+                        flushFieldEdits();
+                        const targetIndex = fieldEditorRefs.current[activeFieldIndex] ? activeFieldIndex : clozeFieldIndex(selectedNoteType);
                         const targetEditor = fieldEditorRefs.current[targetIndex] ?? getActiveEditor();
-                        targetEditor?.runCommand('cloze');
+                        targetEditor?.runCommand('cloze', String(nextClozeNumber(fieldValuesRef.current, same)));
                     }}
                     customButtons={customToolbarButtons}
                     onCustomButtonPress={(button) => wrapEditorSelection(button.prefix, button.suffix)}
@@ -1577,7 +1596,7 @@ export default function EditorScreen() {
                     setShowDeckPicker(false);
                 }}
                 onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
+                    const created = createOrSelectDeck(name);
                     bumpDataVersion();
                     return created.name;
                 }}

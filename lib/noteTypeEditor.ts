@@ -16,9 +16,23 @@ import {
     type NoteTypeTemplate,
 } from './models';
 import { getCardsForNote, saveNote, saveNoteType, searchIndexCardFromNote } from './noteManager';
+import { fieldNameSyntaxError, type FieldNameSyntaxError } from './noteTypeValidation';
+import { sortFieldText } from './noteChecksum';
 
 function reindex<T extends { ord: number }>(items: T[]): T[] {
     return items.map((item, i) => ({ ...item, ord: i }));
+}
+
+/**
+ * Keep the imported source model's per-field options (font, size, description, exclude from
+ * search, field id) attached to the same fields after a structural edit. Export merges them by
+ * position, so without this a reorder or removal would move them onto another field (SAB-14).
+ */
+function withRawFieldOrder(nt: NoteType, reorder: (raw: unknown[]) => unknown[]): Pick<NoteType, 'ankiRaw'> | Record<string, never> {
+    const raw = nt.ankiRaw;
+    if (!raw || !Array.isArray(raw.flds)) return {};
+    const padded = Array.from({ length: Math.max(raw.flds.length, nt.fields.length) }, (_, i) => (raw.flds as unknown[])[i] ?? {});
+    return { ankiRaw: { ...raw, flds: reorder(padded.slice(0, nt.fields.length)) } };
 }
 
 function touch(nt: NoteType, patch: Partial<NoteType>): NoteType {
@@ -71,14 +85,15 @@ export function findFieldNameConflict(nt: NoteType, ord: number, name: string): 
 export function renameField(nt: NoteType, ord: number, name: string): NoteType {
     const trimmed = name.trim();
     const current = nt.fields.find((f) => f.ord === ord);
-    if (!trimmed || !current || trimmed === current.name || findFieldNameConflict(nt, ord, trimmed)) return nt;
+    if (!trimmed || !current || trimmed === current.name || findFieldNameConflict(nt, ord, trimmed) || fieldNameSyntaxError(trimmed)) return nt;
     const fields = nt.fields.map((f) => (f.ord === ord ? { ...f, name: trimmed } : f));
     return touch(nt, { fields, templates: rewriteFieldReferences(nt, current.name, trimmed) });
 }
 
 export type FieldRenameOutcome =
     | { status: 'renamed' | 'unchanged'; noteType: NoteType }
-    | { status: 'duplicate'; noteType: NoteType; conflict: NoteTypeField };
+    | { status: 'duplicate'; noteType: NoteType; conflict: NoteTypeField }
+    | { status: 'invalid'; noteType: NoteType; reason: FieldNameSyntaxError };
 
 /**
  * Applies a field name the learner finished typing (on blur or Return). The editor keeps the
@@ -88,6 +103,9 @@ export type FieldRenameOutcome =
 export function commitFieldRename(nt: NoteType, ord: number, draft: string): FieldRenameOutcome {
     const conflict = draft.trim() ? findFieldNameConflict(nt, ord, draft) : undefined;
     if (conflict) return { status: 'duplicate', noteType: nt, conflict };
+    const unchanged = draft.trim() === nt.fields.find((f) => f.ord === ord)?.name;
+    const reason = unchanged ? null : fieldNameSyntaxError(draft);
+    if (reason) return { status: 'invalid', noteType: nt, reason };
     const noteType = renameField(nt, ord, draft);
     return { status: noteType === nt ? 'unchanged' : 'renamed', noteType };
 }
@@ -97,6 +115,13 @@ function uniqueFieldName(nt: NoteType, name: string): string {
     let candidate = name;
     for (let n = 2; findFieldNameConflict(nt, -1, candidate); n++) candidate = `${name} ${n}`;
     return candidate;
+}
+
+/** Anki's per-field "Remember last input when adding" flag, which the Add screen's pin toggles. */
+export function setFieldSticky(nt: NoteType, ord: number, sticky: boolean): NoteType {
+    const current = nt.fields.find((f) => f.ord === ord);
+    if (!current || Boolean(current.sticky) === sticky) return nt;
+    return touch(nt, { fields: nt.fields.map((f) => (f.ord === ord ? { ...f, sticky } : f)) });
 }
 
 export function setSortField(nt: NoteType, ord: number): NoteType {
@@ -129,7 +154,7 @@ export function addField(nt: NoteType, name: string): FieldEdit {
         rtl: false,
     };
     return {
-        noteType: touch(nt, { fields: reindex([...nt.fields, field]) }),
+        noteType: touch(nt, { fields: reindex([...nt.fields, field]), ...withRawFieldOrder(nt, (raw) => [...raw, {}]) }),
         migrate: (values) => [...values, ''],
     };
 }
@@ -143,7 +168,12 @@ export function removeField(nt: NoteType, ord: number): FieldEdit {
     else if (sortFieldIdx > ord) sortFieldIdx -= 1;
 
     return {
-        noteType: touch(nt, { fields: reindex(nt.fields.filter((f) => f.ord !== ord)), templates: rewriteFieldReferences(nt, nt.fields[ord].name, null), sortFieldIdx }),
+        noteType: touch(nt, {
+            fields: reindex(nt.fields.filter((f) => f.ord !== ord)),
+            templates: rewriteFieldReferences(nt, nt.fields[ord].name, null),
+            sortFieldIdx,
+            ...withRawFieldOrder(nt, (raw) => raw.filter((_, i) => i !== ord)),
+        }),
         migrate: (values) => values.filter((_, i) => i !== ord),
     };
 }
@@ -166,7 +196,7 @@ export function moveField(nt: NoteType, fromOrd: number, toOrd: number): FieldEd
     const sortFieldIdx = Math.max(0, newOrder.indexOf(nt.sortFieldIdx));
 
     return {
-        noteType: touch(nt, { fields: reindex(reorder(nt.fields)), sortFieldIdx }),
+        noteType: touch(nt, { fields: reindex(reorder(nt.fields)), sortFieldIdx, ...withRawFieldOrder(nt, reorder) }),
         migrate: (values) => reorder(values),
     };
 }
@@ -184,7 +214,7 @@ export function applyFieldEdit(noteTypeId: number, edit: FieldEdit): number {
             const note = JSON.parse(row.data) as Note;
             const fields = edit.migrate(note.fields);
             note.fields = fields;
-            note.sfld = fields[sortFieldIdx] || fields[0] || '';
+            note.sfld = sortFieldText(fields, sortFieldIdx);
             note.csum = checksumField(fields[0] ?? '');
             note.mod = Math.floor(Date.now() / 1000);
             note.usn = -1;

@@ -30,7 +30,7 @@ import {
     type ResetCardOptions,
 } from '../lib/studyRepository';
 import { useI18n } from '../hooks/useI18n';
-import { createDeck, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
+import { getDeck, getDeckByName, createOrSelectDeck } from '../lib/deckManager';
 import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
 import {
     getAllTags,
@@ -1076,7 +1076,7 @@ export default function BrowserScreen() {
                 onClose={() => setDeckScopePickerVisible(false)}
                 onSelect={handlePickDeckScope}
                 onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
+                    const created = createOrSelectDeck(name);
                     bumpDataVersion();
                     return created.name;
                 }}
@@ -1321,7 +1321,7 @@ export default function BrowserScreen() {
                     if (deck) moveSelectionToDeck(deck.id);
                 }}
                 onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
+                    const created = createOrSelectDeck(name);
                     bumpDataVersion();
                     return created.name;
                 }}

@@ -23,22 +23,21 @@ import {
     getDeck,
     getAllDecks,
     getDeckByName,
-    createDeck,
-    getAvailableDeckName,
     getDeckConfig,
     getDecksUsingConfig,
     saveDeckConfig,
     createPreset,
+    createDefaultPreset,
     renamePreset,
     restoreDeckConfigDefaults,
     deletePreset,
     assignDeckConfig,
-    applyConfigToSubdecks,
     setDeckDescription,
     getDeckTodayLimits,
     setDeckTodayLimits,
     setDeckLimitOverrides,
     setDeckDesiredRetention,
+    createOrSelectDeck,
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
 import HeaderBackIcon from '../components/HeaderBackIcon';
@@ -88,6 +87,9 @@ import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { createDeckOptionsStyles } from '../components/deck-options/deckOptionsStyles';
 import { DeckOptionsContext } from '../components/deck-options/DeckOptionsContext';
+import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck-options/multiplierBounds';
+import { applyDeckOptionsToSubdecks } from '../lib/deckSubdeckOptions';
+import { effectiveLimitScope, limitsForScope, scopeDropsOverride } from '../components/deck-options/limitScope';
 import {
     Field,
     FieldAdvice,
@@ -172,7 +174,13 @@ export default function DeckOptionsScreen() {
     const [presetActionsOpen, setPresetActionsOpen] = useState(false);
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameText, setRenameText] = useState('');
-    const initialScope = (params.scope === 'deck' || params.scope === 'today') ? params.scope : 'preset';
+    // Add Preset asks for a name first (DST-8); removed presets are deleted on save (P3).
+    const [newPresetOpen, setNewPresetOpen] = useState(false);
+    const [newPresetName, setNewPresetName] = useState('');
+    const [pendingPresetDeletions, setPendingPresetDeletions] = useState<number[]>([]);
+    const initialScope = (params.scope === 'deck' || params.scope === 'today')
+        ? params.scope
+        : effectiveLimitScope(form.deckReviewLimit, form.todayReviewLimit);
     const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
     // Anki opens desired retention on "This deck" when the deck carries its own value.
     const [retentionScope, setRetentionScope] = useState<'preset' | 'deck'>(
@@ -254,7 +262,8 @@ export default function DeckOptionsScreen() {
     });
     // A reschedule request is an unsaved change like any other: it starts off, so it can only
     // be on because the learner turned it on, and Save is what carries it out.
-    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave;
+    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave || pendingPresetDeletions.length > 0
+        || scopeDropsOverride(reviewLimitScope, form.deckReviewLimit, form.todayReviewLimit);
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -296,6 +305,8 @@ export default function DeckOptionsScreen() {
             nextTodayLimits,
         );
         setActiveDeckId(nextDeck.id);
+        setPendingPresetDeletions([]);
+        setReviewLimitScope(effectiveLimitScope(nextForm.deckReviewLimit, nextForm.todayReviewLimit));
         setConfigId(nextConfigId);
         setForm(nextForm);
         setSavedSnapshot(snapshotForm(nextConfigId, nextForm));
@@ -459,15 +470,21 @@ export default function DeckOptionsScreen() {
         else hiddenInteger('minIvl', 1, 36500, stored.minIvl);
         if (shows('newIvlPercent')) integer('newIvlPercent', 0, 100);
         else hiddenInteger('newIvlPercent', 0, 100, Math.round((stored.newIvlPercent ?? 0) * 100));
-        // The multiplier bounds are Anki's, widened wherever this app was already more permissive
-        // so that a preset which arrived in a package can still be saved without being retyped.
-        if (shows('startingEase')) decimal('startingEase', 1.3, 5);
+        // The multiplier bounds are Anki's (DST-10), so a value typed here survives the trip to
+        // Anki. A stored value from the older, wider ranges is kept when left untouched rather
+        // than silently changed; editing it asks for a value inside Anki's range.
+        const ankiDecimal = (key: keyof typeof MULTIPLIER_BOUNDS, storedValue: number) => {
+            const kept = untouchedLegacyMultiplier(key, String(form[key]), storedValue);
+            if (kept !== undefined) decimals[key] = kept;
+            else decimal(key, MULTIPLIER_BOUNDS[key].min, MULTIPLIER_BOUNDS[key].max);
+        };
+        if (shows('startingEase')) ankiDecimal('startingEase', stored.startingEase / 1000);
         else hiddenDecimal('startingEase', 1.3, 5, stored.startingEase / 1000);
         if (shows('easyBonus')) decimal('easyBonus', 1, 5);
         else hiddenDecimal('easyBonus', 1, 5, stored.easyBonus);
-        if (shows('hardIvl')) decimal('hardIvl', 0.5, 2);
+        if (shows('hardIvl')) ankiDecimal('hardIvl', stored.hardIvl);
         else hiddenDecimal('hardIvl', 0.5, 2, stored.hardIvl);
-        if (shows('ivlModifier')) decimal('ivlModifier', 0.1, 3);
+        if (shows('ivlModifier')) ankiDecimal('ivlModifier', stored.ivlModifier);
         else hiddenDecimal('ivlModifier', 0.1, 3, stored.ivlModifier);
 
         if (shows('desiredRetention')) {
@@ -714,14 +731,17 @@ export default function DeckOptionsScreen() {
             const fsrsInputsBefore = fsrsDeckInputsByDeck();
             db.execSync('BEGIN TRANSACTION;');
             transactionOpen = true;
+            for (const removedId of pendingPresetDeletions) if (removedId !== configId) deletePreset(removedId);
             saveDeckConfig(updated);
-            if (deck.configId !== configId) assignDeckConfig(deck.id, configId);
-            setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, validation.integers.deckReviewLimit);
+            if ((getDeck(deck.id) ?? deck).configId !== configId) assignDeckConfig(deck.id, configId);
+            // The selected tab decides which review limit applies (DST-7).
+            const reviewLimits = limitsForScope(reviewLimitScope, validation.integers.deckReviewLimit, validation.integers.todayReviewLimit);
+            setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, reviewLimits.deck);
             setDeckDesiredRetention(deck.id, validation.decimals.deckDesiredRetention);
             setDeckTodayLimits(
                 deck.id,
                 validation.integers.todayNewLimit,
-                validation.integers.todayReviewLimit,
+                reviewLimits.today,
                 settings.dayRolloverHour,
             );
             setDeckDescription(deck.id, form.description);
@@ -733,9 +753,17 @@ export default function DeckOptionsScreen() {
                 limitsStartFromTop: form.limitsStartFromTop,
                 fsrsEnabled: form.fsrsEnabled,
             });
-            if (includeSubdecks) subdecksChanged = applyConfigToSubdecks(deck.id);
+            if (includeSubdecks) {
+                subdecksChanged = applyDeckOptionsToSubdecks(deck.id, {
+                    deckNewLimit: validation.integers.deckNewLimit,
+                    deckReviewLimit: reviewLimits.deck,
+                    todayNewLimit: validation.integers.todayNewLimit,
+                    todayReviewLimit: reviewLimits.today,
+                }, settings.dayRolloverHour);
+            }
             db.execSync('COMMIT;');
             transactionOpen = false;
+            setPendingPresetDeletions([]);
 
             // Anki recomputes memory states only for the decks whose FSRS inputs this save
             // changed — every deck when FSRS was just switched on — and rewrites those decks' due
@@ -813,12 +841,30 @@ export default function DeckOptionsScreen() {
             : l('Ayarlar güvenle kaydedildi.', 'Settings were saved safely.'));
     };
 
-    const handleAddPreset = () => {
-        const create = () => {
-            const preset = createPreset(getDeckDisplayName(deck.name), DEFAULT_DECK_CONFIG.id);
+    const createNamedPreset = () => {
+        const name = newPresetName.trim();
+        if (!name) {
+            alert(l('Geçersiz ad', 'Invalid name'), l('Ayar grubu adı boş olamaz.', 'The preset name cannot be empty.'));
+            return;
+        }
+        try {
+            // Anki starts a new preset from the built-in defaults, not from another preset.
+            const preset = createDefaultPreset(name);
             assignDeckConfig(deck.id, preset.id);
             applyPresetSelection(preset.id, true);
+            setPendingPresetDeletions([]);
+            setNewPresetOpen(false);
             markSchedulingStale();
+        } catch (error) {
+            console.warn('[DeckOptions] add preset failed:', error);
+            alert(t('common.error'), l('Ayar grubu oluşturulamadı.', 'Could not create the preset.'));
+        }
+    };
+
+    const handleAddPreset = () => {
+        const create = () => {
+            setNewPresetName(getDeckDisplayName(deck.name));
+            setNewPresetOpen(true);
         };
         if (!isDirty) create();
         else confirm(
@@ -832,6 +878,7 @@ export default function DeckOptionsScreen() {
     const handleClonePreset = () => {
         const clone = () => {
             const preset = createPreset(l(`${getDeckDisplayName(deck.name)} ayarları`, `${getDeckDisplayName(deck.name)} options`), configId);
+            setPendingPresetDeletions([]);
             assignDeckConfig(deck.id, preset.id);
             applyPresetSelection(preset.id, true);
             markSchedulingStale();
@@ -892,11 +939,14 @@ export default function DeckOptionsScreen() {
         }
         confirm(
             l('Ayar grubunu sil', 'Delete Preset'),
-            l(`“${presetName}” silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`, `“${presetName}” will be deleted; ${usedBy} decks using it will return to the default preset.`),
+            l(
+                `“${presetName}” kaydettiğinizde silinecek; bu grubu kullanan ${usedBy} deste varsayılan ayarlara dönecek.`,
+                `“${presetName}” will be deleted when you save; ${usedBy} decks using it will return to the default preset.`,
+            ),
             () => {
-                deletePreset(configId);
-                markSchedulingStale();
-                applyPresetSelection(DEFAULT_DECK_CONFIG.id, true);
+                // As in Anki, removal is part of the unsaved form: leaving without saving keeps it.
+                setPendingPresetDeletions((ids) => (ids.includes(configId) ? ids : [...ids, configId]));
+                applyPresetSelection(DEFAULT_DECK_CONFIG.id);
             },
             { destructive: true },
         );
@@ -1503,10 +1553,10 @@ export default function DeckOptionsScreen() {
                     reads one, so Anki hides them rather than leaving dials that turn nothing. */}
                 {!form.fsrsEnabled ? (
                     <>
-                        <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,30–5,00 arası. Örn. 2,50', 'Between 1.30 and 5.00. E.g. 2.50')} />
+                        <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,31–5,00 arası. Örn. 2,50', 'Between 1.31 and 5.00. E.g. 2.50')} />
                         <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} hint={l('1,00–5,00 arası. Varsayılan 1,30', 'Between 1.00 and 5.00. Default 1.30')} />
-                        <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} hint={l('0,50–2,00 arası. Varsayılan 1,20', 'Between 0.50 and 2.00. Default 1.20')} />
-                        <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
+                        <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} hint={l('0,50–1,30 arası. Varsayılan 1,20', 'Between 0.50 and 1.30. Default 1.20')} />
+                        <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} hint={l('0,50–2,00 arası. Varsayılan 1,00', 'Between 0.50 and 2.00. Default 1.00')} />
                         <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
                     </>
                 ) : (
@@ -1532,8 +1582,8 @@ export default function DeckOptionsScreen() {
 
             </ScrollView>
 
-            {presetActionsOpen ? (
-                <PresetActionsMenu
+            <PresetActionsMenu
+                    visible={presetActionsOpen}
                     actions={[
                         { label: l('Kaydet', 'Save'), action: handleSave },
                         // Changing the preset has its own row at the top of the screen now,
@@ -1548,7 +1598,6 @@ export default function DeckOptionsScreen() {
                     onClose={() => setPresetActionsOpen(false)}
                     styles={styles}
                 />
-            ) : null}
 
             {deckPickerOpen ? (
                 <DeckPickerModal
@@ -1575,7 +1624,7 @@ export default function DeckOptionsScreen() {
                     }}
                     onCreateDeck={(name) => {
                         try {
-                            const created = createDeck(getAvailableDeckName(name));
+                            const created = createOrSelectDeck(name);
                             setDeckRevision((v) => v + 1);
                             invalidateCollection();
                             return created.name;
@@ -1590,8 +1639,22 @@ export default function DeckOptionsScreen() {
             {presetPickerOpen ? (
                 <PresetPickerModal
                     activePresetId={configId}
+                    hiddenPresetIds={pendingPresetDeletions}
                     onPick={switchPreset}
                     onClose={() => setPresetPickerOpen(false)}
+                    styles={styles}
+                    l={l}
+                    t={t}
+                />
+            ) : null}
+
+            {newPresetOpen ? (
+                <RenamePresetModal
+                    title={l('Ayar grubu ekle', 'Add Preset')}
+                    value={newPresetName}
+                    onChangeValue={setNewPresetName}
+                    onSave={createNamedPreset}
+                    onClose={() => setNewPresetOpen(false)}
                     styles={styles}
                     l={l}
                     t={t}

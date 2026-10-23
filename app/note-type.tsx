@@ -28,13 +28,15 @@ import {
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import { FieldNameInput } from '../components/note-type/FieldNameInput';
+import { fieldNameSyntaxMessage, noteTypeProblemMessage } from '../components/note-type/noteTypeProblemText';
+import { validateNoteType } from '../lib/noteTypeValidation';
 import { useI18n } from '../hooks/useI18n';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 
 const MONOSPACE = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
-function makePreview(nt: NoteType, exampleSuffix: string): { note: Note; card: AnkiCard } {
+function makePreview(nt: NoteType, exampleSuffix: string, ord: number): { note: Note; card: AnkiCard } {
     const note: Note = {
         id: 0,
         guid: 'preview',
@@ -42,12 +44,14 @@ function makePreview(nt: NoteType, exampleSuffix: string): { note: Note; card: A
         mod: 0,
         usn: -1,
         tags: [],
-        fields: nt.fields.map((f) => `${f.name} ${exampleSuffix}`),
+        fields: nt.fields.map((f, i) => (nt.kind === 'cloze' && i === 0
+            ? `{{c${ord + 1}::${f.name}}} ${exampleSuffix}`
+            : `${f.name} ${exampleSuffix}`)),
         sfld: '',
         csum: 0,
         flags: 0,
     };
-    return { note, card: { id: 0, noteId: 0, deckId: 1, ord: 0 } as unknown as AnkiCard };
+    return { note, card: { id: 0, noteId: 0, deckId: 1, ord } as unknown as AnkiCard };
 }
 
 export default function NoteTypeScreen() {
@@ -61,6 +65,8 @@ export default function NoteTypeScreen() {
     const id = Number(Array.isArray(params.id) ? params.id[0] : params.id);
     const [nt, setNt] = useState<NoteType | null>(null);
     const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+    // Which card template the editor shows; Anki's Cards screen lists every one (SAB-9).
+    const [templateIndex, setTemplateIndex] = useState(0);
 
     useEffect(() => {
         const loaded = getNoteType(id);
@@ -80,7 +86,11 @@ export default function NoteTypeScreen() {
         message: l('Kaydetmeden not türü düzenleme ekranından çıkılsın mı?', 'Leave the note type editor without saving?'),
     });
 
-    const preview = useMemo(() => (nt ? makePreview(nt, l('örneği', 'example')) : null), [nt, l]);
+    const shownTemplateIndex = nt && templateIndex < nt.templates.length ? templateIndex : 0;
+    const preview = useMemo(
+        () => (nt ? makePreview(nt, l('örneği', 'example'), nt.kind === 'cloze' ? 0 : nt.templates[shownTemplateIndex]?.ord ?? 0) : null),
+        [nt, l, shownTemplateIndex],
+    );
 
     if (!nt || !preview) {
         return (
@@ -90,7 +100,7 @@ export default function NoteTypeScreen() {
         );
     }
 
-    const template = nt.templates[0];
+    const template = nt.templates[shownTemplateIndex];
     // Cloze cards are generated from the {{c1::…}} markers in the cloze field, so reordering or
     // removing fields would desync the generated cards. Only cosmetic edits are allowed for them.
     const isCloze = nt.kind === 'cloze';
@@ -135,10 +145,22 @@ export default function NoteTypeScreen() {
             );
             return;
         }
+        if (outcome.status === 'invalid') {
+            alert(l('Geçersiz alan adı', 'Invalid Field Name'), fieldNameSyntaxMessage(outcome.reason, l));
+            return;
+        }
         if (outcome.status === 'renamed') setNt(outcome.noteType);
     };
 
     const handleSave = () => {
+        const problems = validateNoteType(nt);
+        if (problems.length) {
+            alert(
+                l('Not türü kaydedilemedi', 'Cannot Save Note Type'),
+                problems.slice(0, 6).map((problem) => `• ${noteTypeProblemMessage(problem, l)}`).join('\n'),
+            );
+            return;
+        }
         try {
             saveNoteType(nt);
             setSavedSnapshot(stableSnapshot(nt));
@@ -203,6 +225,26 @@ export default function NoteTypeScreen() {
                     </TouchableOpacity>
                 )}
 
+                {nt.templates.length > 1 && (
+                    <>
+                        <Text style={styles.label}>{l('KART TÜRLERİ', 'CARD TYPES')}</Text>
+                        <View style={styles.templateTabs} accessibilityRole="tablist">
+                            {nt.templates.map((entry, index) => (
+                                <TouchableOpacity
+                                    key={entry.ord}
+                                    style={[styles.templateTab, index === shownTemplateIndex && styles.templateTabActive]}
+                                    onPress={() => setTemplateIndex(index)}
+                                    accessibilityRole="tab"
+                                    accessibilityState={{ selected: index === shownTemplateIndex }}
+                                >
+                                    <Text style={[styles.templateTabText, index === shownTemplateIndex && styles.templateTabTextActive]}>
+                                        {index + 1}: {entry.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </>
+                )}
                 {template && (
                     <>
                         <Text style={styles.label}>{l('ÖN YÜZ (SORU)', 'FRONT TEMPLATE')}</Text>
@@ -292,6 +334,18 @@ function createStyles(colors: ColorScheme) {
         justifyContent: 'center',
     },
     iconBtnDisabled: { opacity: 0.35 },
+    templateTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    templateTab: {
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.sm,
+        paddingVertical: 6,
+        paddingHorizontal: Spacing.sm,
+        backgroundColor: colors.bgCard,
+    },
+    templateTabActive: { borderColor: colors.accent },
+    templateTabText: { fontSize: FontSize.sm, color: colors.textSecondary },
+    templateTabTextActive: { color: colors.accent, fontWeight: '600' },
     iconText: { fontSize: 16, color: colors.textSecondary },
     removeText: { color: colors.badgeNew },
     addFieldBtn: {

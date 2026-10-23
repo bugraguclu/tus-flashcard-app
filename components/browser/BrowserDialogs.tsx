@@ -19,7 +19,7 @@ import type { BrowserTableMode, ResetCardOptions } from '../../lib/studyReposito
 import { localizeNoteTypeName, type SupportedLocale } from '../../lib/i18n';
 import { changeNoteTypeWithConfirmation, noteTypeChangeRemovalPrompt } from '../../lib/noteTypeChangeFlow';
 import CardWebView from '../../components/CardWebView';
-import { alert, confirm } from '../../lib/confirm';
+import { alert, choose, confirm } from '../../lib/confirm';
 import {
     gradeSelectedNow,
     parseDueRange,
@@ -60,7 +60,7 @@ export function ChangeNoteTypeModal({
                 <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowNoteTypePicker(false)} />
                 <View style={styles.modalCard} accessibilityViewIsModal>
                     <Text style={styles.modalTitle}>{l('Not türünü değiştir', 'Change Note Type')}</Text>
-                    <Text style={styles.modalCaption}>{l('Alanlar önce adına, sonra sırasına göre eşleştirilir. Yeni not türünde eşleşen bir şablonu olan kartlar zamanlamasını korur; diğer kartlar silinmeden önce onayınız istenir.', 'Fields are matched by name, then by order. Cards with a matching template in the new note type keep their scheduling; you are asked before any other card is removed.')}</Text>
+                    <Text style={styles.modalCaption}>{l('Alanlar ve şablonlar önce adına, sonra sırasına göre eşleştirilir. Yeni not türünde eşleşen bir şablonu olan kartlar zamanlamasını korur; diğer kartlar silinmeden önce onayınız istenir ve değişikliği sonra geri alabilirsiniz.', 'Fields and templates are matched by name, then by order. Cards with a matching template in the new note type keep their scheduling; you are asked before any other card is removed, and you can undo the change afterwards.')}</Text>
                     <ScrollView style={styles.pickerList}>
                         {selectableNoteTypes.map((noteType) => (
                             <TouchableOpacity
@@ -73,6 +73,17 @@ export function ChangeNoteTypeModal({
                                         confirmCardRemoval: (cardCount, onConfirm) => {
                                             const prompt = noteTypeChangeRemovalPrompt(cardCount, l, locale);
                                             confirm(prompt.title, prompt.message, onConfirm, { destructive: true });
+                                        },
+                                        offerUndo: (result) => {
+                                            void choose(
+                                                l('Not türü değiştirildi', 'Note Type Changed'),
+                                                l(`${result.changed} not dönüştürüldü.`, result.changed === 1 ? '1 note converted.' : `${result.changed} notes converted.`),
+                                                l('Geri al', 'Undo'),
+                                                l('Bitti', 'Done'),
+                                            ).then((undo) => {
+                                                // The selection runner refreshes and reports a refused undo.
+                                                if (undo) runSelectionAction(() => result.undo());
+                                            });
                                         },
                                     });
                                 }}

@@ -4,6 +4,10 @@
  */
 import { sanitizeUntrustedHtml } from './templates';
 export type PreservedEditorSource = Record<string, { kind: 'node' | 'tag'; source: string; safe?: string }>;
+/** A field the plain-text stand-in can edit without touching markup: no tags, entities or media. */
+export function isPlainFieldText(value: string): boolean {
+    return !/[<>&]|\[sound:/i.test(value);
+}
 export interface PreparedEditorContent { html: string; original: string; preserved: PreservedEditorSource }
 export function prepareEditorContent(source: string, namespace = `e${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`): PreparedEditorContent {
     const preserved: PreservedEditorSource = {};
@@ -15,10 +19,15 @@ export function prepareEditorContent(source: string, namespace = `e${Date.now().
     };
     let html = source.replace(/<\s*(script|svg|math|style|iframe|object|embed|frame|frameset|form)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, raw => remember(raw, '◈'));
     html = html.replace(/<\/?\s*(?:script|svg|math|style|iframe|object|embed|frame|frameset|form|meta|link|base)\b[^>]*>/gi, raw => remember(raw, '◈'));
-    html = html.replace(/\[sound:([^\]]+)\]/gi, raw => remember(raw, sanitizeUntrustedHtml(raw)));
+    // Only text-level sound markers: one inside an attribute value (an alt or title, say) is part
+    // of that tag and must not have a placeholder element written into the middle of it.
+    html = html.replace(/(<[a-zA-Z!\/?][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>)|\[sound:([^\]]+)\]/gi, (raw, tag?: string) => (
+        tag ? raw : remember(raw, sanitizeUntrustedHtml(raw))));
     html = html.replace(/<[a-zA-Z!\/?][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/g, raw => {
         if (/^<\/?tus-source\b/i.test(raw)) return raw;
-        const safe = sanitizeUntrustedHtml(raw);
+        // The display sanitizer turns [sound:x] into a player; inside an attribute that would
+        // break the tag, so the displayed copy carries it as inert text (restored on save).
+        const safe = sanitizeUntrustedHtml(raw.replace(/\[sound:/gi, '&#91;sound:'));
         if (safe === raw) return raw;
         if (!safe || /^<\//.test(raw)) return remember(raw);
         const id = `${namespace}-${sequence++}`;
@@ -39,12 +48,18 @@ export const EDITOR_SOURCE_RESTORE_SCRIPT = String.raw`function restoreEditorSou
         }
         return result;
     };
-    let result = html.replace(/<tus-source\b[^>]*data-tus-source=["']([^"']+)["'][^>]*>[\s\S]*?<\/tus-source>/gi, (tag, id) => preserved[id]?.kind === 'node' ? preserved[id].source : tag);
+    // A placeholder this field does not own (copied from another field) cannot be restored: an
+    // inert one goes, and a sound player becomes its [sound:x] marker again.
+    let result = html.replace(/<tus-source\b[^>]*data-tus-source=["']([^"']+)["'][^>]*>([\s\S]*?)<\/tus-source>/gi, (tag, id, inner) => {
+        if (preserved[id]?.kind === 'node') return preserved[id].source;
+        const sound = inner.match(/^\s*<audio\b[^>]*\ssrc=["']([^"']+)["']/i);
+        return sound ? '[sound:' + sound[1].replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&amp;/g, '&') + ']' : '';
+    });
     result = result.replace(/<[a-zA-Z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/g, tag => {
         const id = tag.match(/\sdata-tus-source=["']([^"']+)["']/i)?.[1];
         const entry = id ? preserved[id] : undefined;
         if (!entry || entry.kind !== 'tag')
-            return tag;
+            return id ? tag.replace(/\sdata-tus-source=["'][^"']+["']/i, '') : tag;
         let restored = tag.replace(/\sdata-tus-source=["'][^"']+["']/i, '');
         const current = attributes(restored);
         const safe = attributes(entry.safe ?? '');

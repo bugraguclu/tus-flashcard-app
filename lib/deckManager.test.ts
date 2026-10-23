@@ -37,6 +37,15 @@ const fakeDb = {
     },
     getAllSync(sql: string, ...params: any[]) {
         if (sql.includes('SELECT data FROM decks ORDER BY name')) return state.decks.map(d => ({ data: JSON.stringify(d) }));
+        if (sql.includes('SELECT id, name FROM decks ORDER BY id')) return [...state.decks].sort((a, b) => a.id - b.id).map(d => ({ id: d.id, name: d.name }));
+        if (sql.includes('SELECT id FROM anki_cards WHERE id IN')) {
+            const ids = JSON.parse(params[0]) as number[];
+            return state.cards.filter((c) => ids.includes(c.id)).map((c) => ({ id: c.id }));
+        }
+        if (sql.includes('SELECT id FROM notes') && sql.includes('NOT EXISTS')) {
+            const ids = JSON.parse(params[0]) as number[];
+            return state.notes.filter((n) => ids.includes(n.id) && !state.cards.some((c) => c.noteId === n.id)).map((n) => ({ id: n.id }));
+        }
         if (sql.includes('FROM decks WHERE id = ? OR instr(name, ?) = 1')) {
             const prefix = unescapePrefix(String(params[1]));
             return state.decks
@@ -51,6 +60,17 @@ const fakeDb = {
         return [];
     },
     runSync(sql: string, ...params: any[]) {
+        // Batched statements bind one JSON array of ids.
+        if (sql.includes('json_each(?)')) params = (JSON.parse(params[0]) as (number | string)[]).map((id) => (sql.includes('cards_fts') ? String(id) : Number(id)));
+        if (sql.startsWith('INSERT INTO graves') && sql.includes('SELECT value')) {
+            const type = Number(sql.match(/SELECT value,\s*(\d+),/)?.[1] ?? -1);
+            for (const oid of params) state.graves.push({ oid, type });
+            return;
+        }
+        if (sql.startsWith('DELETE FROM notes') && sql.includes('json_each')) {
+            state.notes = state.notes.filter((n) => !params.includes(n.id));
+            return;
+        }
         if (sql.startsWith('DELETE FROM revlog')) {
             state.revlog = state.revlog.filter((id) => !params.includes(id));
         } else if (sql.startsWith('DELETE FROM cards_fts')) {
@@ -139,7 +159,7 @@ describe('deckManager', () => {
 
     it('P5: renameDeck refuses to collide with an existing deck', () => {
         state.decks = [{ id: 1, name: 'A' }, { id: 2, name: 'B' }];
-        expect(() => renameDeck(1, 'B')).toThrow(/already exists/);
+        expect(() => renameDeck(1, 'B')).toThrow(/already exists|zaten var/);
         // A rename to its own name is a no-op (no throw).
         expect(() => renameDeck(1, 'A')).not.toThrow();
     });

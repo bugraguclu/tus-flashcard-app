@@ -60,6 +60,19 @@ export function createPreset(name: string, cloneFromId: number = DEFAULT_DECK_CO
     return preset;
 }
 
+/** Anki's "Add Preset": a new preset with the built-in defaults, not a copy of another one. */
+export function createDefaultPreset(name: string): DeckConfig {
+    const preset: DeckConfig = {
+        ...DEFAULT_DECK_CONFIG,
+        id: uniqueId(),
+        name: name.normalize('NFC').trim() || 'Yeni Ayar Grubu',
+        mod: Math.floor(Date.now() / 1000),
+        usn: -1,
+    };
+    saveDeckConfig(preset);
+    return preset;
+}
+
 export function renamePreset(configId: number, name: string): void {
     const config = getDeckConfig(configId);
     const nextName = name.normalize('NFC').trim();

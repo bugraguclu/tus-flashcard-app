@@ -13,12 +13,14 @@ export {
     deleteDeck,
     renameDeck,
     createDeck,
+    createOrSelectDeck,
     setDeckDescription,
     moveDeckUnder,
     reorderDeckRelative,
     setDeckCollapsed,
     getBuriedCountForDeck,
     unburyDeck,
+    getBuriedKindsForDeck,
     getCardCountsByDeck,
 } from './deckStore';
 export {
@@ -55,6 +57,7 @@ export {
     saveDeckConfig,
     getDecksUsingConfig,
     createPreset,
+    createDefaultPreset,
     renamePreset,
     restoreDeckConfigDefaults,
     deletePreset,

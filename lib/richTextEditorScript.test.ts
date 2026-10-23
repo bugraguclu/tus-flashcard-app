@@ -11,7 +11,7 @@ import { cspHashSource } from './sha256';
 type Listener = (event: any) => void;
 
 /** Just enough of a document for the field script to start, take input and report back. */
-function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 'web') {
+function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 'web', extras: { selection?: unknown; execCommand?: (command: string, ui: boolean, value: string) => boolean } = {}) {
     const posted: { message: unknown; targetOrigin?: string }[] = [];
     const listeners = new Map<string, Listener[]>();
     const on = (type: string, listener: Listener) => {
@@ -35,7 +35,9 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         getElementById: (id: string) => (
             id === RICH_TEXT_EDITOR_CONFIG_ID ? configElement : id === 'editor' ? editor : null
         ),
-        getSelection: () => null,
+        getSelection: () => extras.selection ?? null,
+        execCommand: extras.execCommand,
+        createRange: () => ({ selectNodeContents: () => undefined, collapse: () => undefined, cloneRange() { return this; } }),
         hasFocus: () => false,
         addEventListener: on,
         createElement: () => {
@@ -44,10 +46,11 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
                 get innerHTML() { return inner; },
                 set innerHTML(value: string) { inner = value; },
                 querySelectorAll: () => [],
+                appendChild: (fragment: { html?: string }) => { inner += fragment.html ?? ''; },
             };
         },
     };
-    const window: Record<string, unknown> = { addEventListener: () => undefined };
+    const window: Record<string, unknown> = { addEventListener: () => undefined, getSelection: () => extras.selection ?? null };
     if (host === 'native') {
         window.ReactNativeWebView = { postMessage: (message: string) => posted.push({ message: JSON.parse(message) }) };
     } else {
@@ -74,6 +77,7 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         editorHtml: () => html,
         setEditorHtml: (value: string) => { html = value; },
         readHtml: () => (window.__tusEditorReadHtml as () => unknown)(),
+        command: (payload: { command: string; value?: string }) => (window.__tusEditorCommand as (p: unknown) => void)(payload),
     };
 }
 
@@ -158,5 +162,62 @@ describe('rich text field config', () => {
         expect(json).not.toMatch(/<\/script/i);
         expect(json).not.toContain('<');
         expect(JSON.parse(json)).toEqual(config);
+    });
+});
+
+describe('cloze button (EDT-3)', () => {
+    const selectionOf = (html: string) => ({
+        rangeCount: 1,
+        isCollapsed: false,
+        getRangeAt: () => ({ cloneContents: () => ({ html }) }),
+        removeAllRanges: () => undefined,
+        addRange: () => undefined,
+    });
+    it('wraps the selection with its formatting and media in the number the host asks for', () => {
+        const calls: [string, string][] = [];
+        const run = runEditorScript(baseConfig, 'native', {
+            selection: selectionOf('<b>kalp</b> <img src="x.png">'),
+            execCommand: (command, _ui, value) => { calls.push([command, value]); return true; },
+        });
+        run.command({ command: 'cloze', value: '3' });
+        expect(calls).toContainEqual(['insertHTML', '{{c3::<b>kalp</b> <img src="x.png">}}']);
+    });
+    it('falls back to the field\'s own next number', () => {
+        const calls: [string, string][] = [];
+        const run = runEditorScript({ ...baseConfig, html: '{{c2::a}}' }, 'native', {
+            selection: selectionOf('b'),
+            execCommand: (command, _ui, value) => { calls.push([command, value]); return true; },
+        });
+        run.command({ command: 'cloze' });
+        expect(calls).toContainEqual(['insertHTML', '{{c3::b}}']);
+    });
+});
+
+describe('cloze numbering across fields', async () => {
+    const { nextClozeNumber } = await import('./templates');
+    it('counts every field, and reuses the highest number on request', () => {
+        expect(nextClozeNumber(['{{c1::a}}', 'Extra {{c4::b}}'])).toBe(5);
+        expect(nextClozeNumber(['{{c1::a}}', 'Extra {{c4::b}}'], true)).toBe(4);
+        expect(nextClozeNumber(['', ''])).toBe(1);
+        expect(nextClozeNumber(['', ''], true)).toBe(1);
+    });
+});
+
+describe('pasted pictures (EDT-7)', () => {
+    it('stores a pasted picture as media whether or not PNG paste is on', () => {
+        expect(RICH_TEXT_EDITOR_SCRIPT).not.toContain('if (!config.pasteImagesAsPng) return;');
+        expect(RICH_TEXT_EDITOR_SCRIPT).toContain("canvas.toDataURL('image/jpeg', 0.9)");
+        expect(RICH_TEXT_EDITOR_SCRIPT).toContain("canvas.toDataURL('image/png')");
+    });
+    it('intercepts an image paste even with PNG paste off', () => {
+        const prevented: string[] = [];
+        const run = runEditorScript(baseConfig, 'native');
+        (globalThis as any).FileReader = class { readAsDataURL() { /* never loads in this stub */ } };
+        run.dispatch('paste', {
+            clipboardData: { items: [{ kind: 'file', type: 'image/png', getAsFile: () => ({}) }] },
+            preventDefault: () => prevented.push('paste'),
+        });
+        delete (globalThis as any).FileReader;
+        expect(prevented).toEqual(['paste']);
     });
 });
