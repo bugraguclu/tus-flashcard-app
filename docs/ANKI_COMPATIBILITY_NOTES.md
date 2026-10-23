@@ -111,8 +111,10 @@ change. What that pins:
   adoption rule remain. Four recorded collections (`test/fixtures/anki-26.09-optimize.json`)
   include 64/65 and 255/256/257 review boundaries; five additional seeded collections up to
   1,500 cards / 6,440 items were measured. Maximum parameter error was 4.76837158203125e-7;
-  evaluation matches within 1e-6 (`lib/fsrsTraining.test.ts`). Production card ids come from
-  FSRS-A's separate collector metadata integration; merge that change before this optimizer.
+  evaluation matches within 1e-6 (`lib/fsrsTraining.test.ts`). The collector supplies original
+  card ids as non-persisted metadata (FSRS-A integration `aa7cf78`); the oracle tests use the
+  production collector directly. An interleaved-history test in `lib/fsrsMaintenance.test.ts`
+  protects card identity while preserving review-log order.
 - the browser's retrievability column sort and a filtered deck's gather orders
   (`lib/ankiSortKeys.ts`): Anki's `extract_fsrs_retrievability`,
   `extract_fsrs_relative_retrievability` and `fnvhash` tiebreak, computed in f32 in JS because

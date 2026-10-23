@@ -255,6 +255,27 @@ describe('training items', () => {
         expect(reviews).toBe(3);
     });
 
+    it('keeps the original card identity on interleaved training items for the 6.6.2 optimizer', () => {
+        insertCard(2101);
+        insertRevlog(2101, [
+            { daysAgo: 30, ease: 3, ivl: 1, type: REVLOG_KIND.learning },
+            { daysAgo: 29, ease: 3, ivl: 3, type: REVLOG_KIND.review },
+            { daysAgo: 26, ease: 3, ivl: 8, type: REVLOG_KIND.review },
+        ]);
+        insertCard(2102);
+        insertRevlog(2102, [
+            { daysAgo: 28, ease: 3, ivl: 1, type: REVLOG_KIND.learning },
+            { daysAgo: 27, ease: 2, ivl: 2, type: REVLOG_KIND.review },
+        ]);
+        const { items, reviews } = collectFsrsTrainingItems([1], settings, 0, NOW);
+        expect(items.map((item) => item.cardId)).toEqual([2101, 2102, 2101]);
+        expect(items.map((item) => item.length)).toEqual([2, 2, 3]);
+        expect(items.map((item) => item.revlogId)).toEqual([
+            NOW - 29 * DAY_MS, NOW - 27 * DAY_MS, NOW - 26 * DAY_MS,
+        ]);
+        expect(reviews).toBe(5);
+    });
+
     it('leaves out suspended cards, as Anki\'s default search does', () => {
         insertCard(2003);
         insertRevlog(2003, [

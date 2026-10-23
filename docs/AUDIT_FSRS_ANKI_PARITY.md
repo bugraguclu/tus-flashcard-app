@@ -652,9 +652,9 @@ kimliği olmadan çalıştığı için yeni fixture yalnız üretim koleksiyonla
   Varsayılan ve optimize parametrelerin log loss'u 1·10⁻⁶ içinde. 26.05 optimizer kayıtları
   tarihsel fixture'da kalıyor; güncel optimizer testi onlara karşı çalışmıyor.
 - **FSRS-A bağlantısı:** `collectFsrsTrainingItems` her öğeye gerçek `cardId` taşımalı. Aynı
-  uzunluktaki kartların kimlik sırası, grupların sınırını belirliyor. Bu collector değişikliği
-  A'nın dosyasında, ayrı commit olarak yapılacak; B testleri fixture'daki revlog→kart eşlemesi
-  ile bu alanı veriyor. Birleştirmede önce A'nın metadata commit'i alınmalı.
+  uzunluktaki kartların kimlik sırası, grupların sınırını belirliyor. A'nın `aa7cf78` commit'indeki collector değişikliği B dalına alındı. Özgün kimliği ve
+  revlog sırasını koruyan SQLite testi var. B oracle testi artık kart kimliğini kendisi
+  eklemiyor; üretim collector'ının çıktısını doğrudan eğitiyor ve her kimliği doğruluyor.
 - Saf hesap değişikliği; iPhone arayüzü ve parametre kayıt yolu değişmediği için yeni cihaz
   smoke testi gerekmiyor. `npm run quality` (tsc, tüm deterministik testler, iOS/kaynak kaydı)
   160 dosyada 1 680 testle geçti; `lib/fsrsTraining.test.ts` yeni oracle'a karşı 8 testle geçti.
