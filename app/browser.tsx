@@ -34,7 +34,6 @@ import { createDeck, getAvailableDeckName, getDeck, getDeckByName } from '../lib
 import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
 import {
     getAllTags,
-    moveCardsToDeck,
     setCardFlag,
     undoCardsMovedToDeck,
     updateNotesTags,
@@ -48,6 +47,7 @@ import { alert } from '../lib/confirm';
 import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { expandSelectedCardsToNotes, toggleSelectedSuspend } from '../lib/browserSelection';
+import { moveCardsToDeckWithFsrs } from '../lib/fsrsMaintenance';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import {
     getBrowserScopeSnapshot,
@@ -754,7 +754,7 @@ export default function BrowserScreen() {
             return;
         }
         try {
-            const move = moveCardsToDeck(selectedActionCardIds, targetDeckId);
+            const move = moveCardsToDeckWithFsrs(selectedActionCardIds, targetDeckId, settings);
             if (move.length > 0) setLastDeckMove(move);
         } catch (e) {
             alert(t('common.error'), userFacingErrorMessage(e, l('Kartlar taşınamadı.', 'Cards could not be moved.')));
@@ -763,7 +763,7 @@ export default function BrowserScreen() {
         closeSelection();
         bumpDataVersion();
         reload();
-    }, [selectedActionCardIds, hasCatalogCardsSelected, hasCatalogNotesSelected, closeSelection, bumpDataVersion, reload, l, t]);
+    }, [selectedActionCardIds, hasCatalogCardsSelected, hasCatalogNotesSelected, closeSelection, bumpDataVersion, reload, l, t, settings]);
 
     const undoDeckMove = useCallback(() => {
         setShowOverflowMenu(false);

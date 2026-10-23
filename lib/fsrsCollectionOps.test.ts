@@ -17,9 +17,11 @@ vi.mock('./db', () => ({
 
 import { localDayNumber } from './ankiState';
 import { parseDueRange, setSelectedDueDate } from './browserSelection';
+import { matchingCollectionCardIds } from './collectionCardSearch';
 import { saveDeck, saveDeckConfig } from './deckManager';
+import { moveCardsToDeckWithFsrs } from './fsrsMaintenance';
 import { DEFAULT_DECK_CONFIG, type AnkiCard } from './models';
-import { getAnkiCard, saveAnkiCard, saveNote, saveNoteType } from './noteManager';
+import { getAnkiCard, saveAnkiCard, saveNote, saveNoteType, undoCardsMovedToDeck } from './noteManager';
 import { DEFAULT_SETTINGS } from './settingsStore';
 import { answerStudyCard } from './studyRepository';
 import type { AppSettings, Grade } from './types';
@@ -114,4 +116,72 @@ describe('Set Due Date (Anki 26.09.3 oracle)', () => {
             });
         }
     });
+});
+
+function insertRevlog(cardId: number, entries: any[]) {
+    for (const e of entries) runtime.db.runSync(
+        'INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, -1, ?, ?, ?, ?, ?, ?)',
+        e.id, cardId, e.ease, e.ivl, e.lastIvl, e.factor, e.time, e.type,
+    );
+}
+
+describe('Change Deck (Anki 26.09.3 oracle)', () => {
+    const SOURCE = 10;
+    const TARGET = 20;
+    const CHILD = 21;
+    const deckOf: Record<string, number> = {
+        movedWithMemory: SOURCE, movedNoMemory: SOURCE, movedNew: SOURCE,
+        targetNoMemory: TARGET, targetWithMemory: TARGET, childNoMemory: CHILD,
+    };
+
+    function seed(entry: any): Record<string, number> {
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 2, name: 'Target preset', fsrsParams: entry.params, desiredRetention: entry.desiredRetention });
+        saveDeck({ id: SOURCE, name: 'Source', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        saveDeck({ id: TARGET, name: 'Target', configId: 2, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        saveDeck({ id: CHILD, name: 'Target::Child', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
+        saveNoteType({ id: 4, name: 'Basic', flds: [{ name: 'Front', ord: 0 }], fields: [{ name: 'Front', ord: 0 }], tmpls: [], templates: [] } as any);
+        const appToday = localDayNumber(entry.timing.nowMs, fixture.meta.rolloverHour);
+        const ids: Record<string, number> = {};
+        Object.entries(entry.cards).forEach(([name, card]: [string, any], index) => {
+            const cid = 3000 + index;
+            ids[name] = cid;
+            saveNote({ id: cid, guid: `g${cid}`, noteTypeId: 4, mod: 0, usn: -1, tags: [], fields: ['q'], sfld: 'q', csum: 0, flags: 0 } as any);
+            saveAnkiCard(appCard(cid, card.before, entry.timing.today, appToday, deckOf[name]));
+            insertRevlog(cid, card.revlog);
+        });
+        return ids;
+    }
+
+    for (const fsrs of [true, false]) {
+        it(`clears the moved cards and ${fsrs ? 'recomputes memory-less target-deck cards' : 'computes nothing'} with FSRS ${fsrs ? 'on' : 'off'}`, () => {
+            const entry = fixture.changeDeck.find((e: any) => e.fsrs === fsrs);
+            vi.setSystemTime(entry.timing.nowMs);
+            const ids = seed(entry);
+            const before = Object.fromEntries(Object.entries(ids).map(([name, cid]) => [name, getAnkiCard(cid)!]));
+
+            const moves = moveCardsToDeckWithFsrs([ids.movedWithMemory, ids.movedNoMemory, ids.movedNew], TARGET, settingsFor(fsrs));
+
+            expect(moves).toHaveLength(entry.moved);
+            for (const [name, cid] of Object.entries(ids)) {
+                const after = getAnkiCard(cid)!;
+                expect(storedData(cid), name).toEqual(entry.cards[name].after.data);
+                // No rescheduling: interval and due stay as they were.
+                expect({ ivl: after.ivl, due: after.due }, name).toEqual({ ivl: before[name].ivl, due: before[name].due });
+            }
+            if (fsrs) {
+                // Search sees the recomputed state straight away.
+                expect(matchingCollectionCardIds('prop:s>0').sort()).toEqual(
+                    [ids.movedWithMemory, ids.movedNoMemory, ids.targetNoMemory, ids.targetWithMemory].sort(),
+                );
+            }
+
+            // Undo puts back the deck and the data each moved card had before the move.
+            undoCardsMovedToDeck(moves);
+            for (const name of ['movedWithMemory', 'movedNoMemory', 'movedNew']) {
+                const after = getAnkiCard(ids[name])!;
+                expect({ deckId: after.deckId, ankiData: after.ankiData }, name)
+                    .toEqual({ deckId: SOURCE, ankiData: before[name].ankiData });
+            }
+        });
+    }
 });
