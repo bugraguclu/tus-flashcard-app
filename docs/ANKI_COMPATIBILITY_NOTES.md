@@ -209,6 +209,8 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## Browser, card/note table modes, tags, flags, marks, suspend/bury, reposition
 
+Browser operations retain the original new-card position through Set Due Date, sample due ranges independently and reposition selected siblings by note rather than assigning each sibling a separate position (`lib/browserSelection.test.ts`).
+
 `lib/collectionCardSearch.ts` is the shared evaluator for browser and filtered SQL searches; exported SQL helper signatures remain unchanged. Plain terms search substrings in every stored note field, including fields whose note-type definition is incomplete, excluding tags/deck names/serialized metadata; ASCII case folding is default and `nc:` opts into accent folding. Unicode hierarchical tag/deck names are compared in JS, including tag-picker filters on SQLite without ICU. Invalid structured terms, regexes, quotes and groups throw `SearchSyntaxError`; the browser shows an error and clears stale cards/selection. `lib/searchParitySafety.test.ts` compares both consumers. The evaluator currently scans collection rows and materializes matching IDs using `json_each(?)`; indexed/streaming evaluation for very large collections is a remaining performance gate.
 
 **Status:** Implemented subset

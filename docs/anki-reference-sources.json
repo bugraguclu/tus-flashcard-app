@@ -498,7 +498,7 @@
       "priority": 3,
       "platform": "cross-platform manual rescheduling",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/reviews.rs",
-      "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards"]
+      "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards", "browser preserves original new-card position and samples due ranges; lib/browserSelection.test.ts"]
     },
     {
       "id": "anki-source-csv-import",

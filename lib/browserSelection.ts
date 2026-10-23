@@ -1,7 +1,7 @@
 import type { AppSettings, Grade } from './types';
 import type { AnkiCard, ReviewLog } from './models';
 import { localDayNumber, nextRolloverMs } from './ankiState';
-import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
+import { memoryStateFromCardData, parseAnkiCardData, updateAnkiCardData } from './fsrsCardData';
 import { parseDueRange, setDueDateInterval, type DueRange } from './schedulingIntervals';
 import { logManualEntry, revlogFactorForScheduling } from './reviewLogger';
 import { resolveSettingsForDeck } from './studyCardRows';
@@ -78,9 +78,11 @@ export function repositionSelectedNewCards(
     const cards = selectedCards(cardIds).filter((card) => card.type === 0);
     if (cards.length === 0) return 0;
     const selectedIds = new Set(cards.map((card) => card.id));
+    const notePositions = new Map<number, number>();
+    for (const card of cards) if (!notePositions.has(card.noteId)) notePositions.set(card.noteId, normalizedStart + notePositions.size * normalizedStep);
 
     if (shiftExisting) {
-        const shift = cards.length * normalizedStep;
+        const shift = notePositions.size * normalizedStep;
         const displaced = getAllAnkiCards()
             .filter((card) => card.type === 0 && !selectedIds.has(card.id) && card.due >= normalizedStart)
             .sort((a, b) => b.due - a.due || b.id - a.id);
@@ -89,10 +91,10 @@ export function repositionSelectedNewCards(
         }
     }
 
-    cards.forEach((card, index) => {
+    cards.forEach((card) => {
         saveAnkiCard({
             ...card,
-            due: normalizedStart + index * normalizedStep,
+            due: notePositions.get(card.noteId)!,
             mod: Math.floor(Date.now() / 1000),
             usn: -1,
         });
@@ -108,7 +110,7 @@ export function repositionSelectedNewCards(
  * Returns the bookkeeping revlog rows written, so a caller that offers undo can take them back
  * out again; the browser ignores them.
  */
-export function setSelectedDueDate(cardIds: number[], range: DueRange, settings: AppSettings): ReviewLog[] {
+export function setSelectedDueDate(cardIds: number[], range: DueRange, settings: AppSettings, random: () => number = Math.random): ReviewLog[] {
     const cards = selectedCards(cardIds);
     const nowMs = Date.now();
     const today = localDayNumber(nowMs, settings.dayRolloverHour);
@@ -116,9 +118,8 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
     const span = range.maxDays - range.minDays + 1;
     const written: ReviewLog[] = [];
 
-    cards.forEach((card, index) => {
-        // Stable spread makes a range useful and repeatable without clumping every card on one day.
-        const days = range.minDays + (span <= 1 ? 0 : index % span);
+    cards.forEach((card) => {
+        const days = range.minDays + (span <= 1 ? 0 : Math.min(span - 1, Math.floor(random() * span)));
         const cardData = parseAnkiCardData(card.ankiData);
         const memory = memoryStateFromCardData(cardData);
         const currentDue = card.odid ? card.odue : card.due;
@@ -142,6 +143,7 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
 
         const updated: AnkiCard = {
             ...card,
+            ankiData: card.type === 0 ? updateAnkiCardData(card.ankiData, { originalPosition: card.odid ? card.odue : card.due }) : card.ankiData,
             type: 2,
             queue: 2,
             due: today + days,
