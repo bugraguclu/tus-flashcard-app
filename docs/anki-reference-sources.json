@@ -904,6 +904,17 @@
         "stock typed-answer back uses Front",
         "preserve existing stored templates during definition fixes"
       ]
+    },
+    {
+      "id": "anki-ai1-note-mutation-preflight",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/browsing.html#changing-the-note-type",
+      "useFor": [
+        "preflight all unmapped cards in a bulk type change",
+        "require explicit destructive confirmation",
+        "rollback editor defaults with a failed new-note write"
+      ]
     }
   ],
   "requiredDocs": [

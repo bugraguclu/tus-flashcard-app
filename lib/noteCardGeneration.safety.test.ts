@@ -80,3 +80,14 @@ it('detects imported SHA1 checksums and legacy local notes through equivalent fi
  db.runSync('UPDATE notes SET csum = ? WHERE id = ?', 42, legacy.note.id);
  expect(findDuplicateNote(1, 'kalp')?.noteId).toBe(legacy.note.id);
 });
+
+it('reports the total unmapped card count before any bulk note-type conversion', () => {
+ const a = noteOf(builtin(2), ['Front A','Back A']);
+ const b = noteOf(builtin(2), ['Front B','Back B']);
+ let count = 0;
+ try { changeNotesType([a.note.id, b.note.id], 1); }
+ catch (error) { count = (error as {cardCount:number}).cardCount; }
+ expect(count).toBe(2);
+ expect(getNote(a.note.id)?.noteTypeId).toBe(2);
+ expect(getNote(b.note.id)?.noteTypeId).toBe(2);
+});

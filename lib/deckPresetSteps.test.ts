@@ -34,3 +34,18 @@ it('remaps steps when a deck is assigned to a different preset', () => {
  assignDeckConfig(deck.id, 2);
  expect(getAnkiCard(cards[0].id)?.left).toBe(2);
 });
+
+it('rolls back the preset together with card counters on a write failure', () => {
+ saveDeckConfig({ ...DEFAULT_DECK_CONFIG, learningSteps: [1,10] });
+ const deck = createDeck('Atomic');
+ const { cards } = createNote(BUILTIN_NOTE_TYPES[0], ['Front','Back'], deck.id);
+ saveAnkiCard({ ...cards[0], type: 1, queue: 1, left: 1 });
+ const original = db.runSync;
+ h.db = { ...db, runSync(sql: string, ...params: any[]) {
+  if (sql.startsWith('UPDATE anki_cards SET "left"')) throw new Error('injected failure');
+  return original(sql, ...params);
+ } };
+ expect(() => saveDeckConfig({ ...DEFAULT_DECK_CONFIG, learningSteps: [1,10,60] })).toThrow('injected failure');
+ expect(getDeckConfig(1).learningSteps).toEqual([1,10]);
+ expect(getAnkiCard(cards[0].id)?.left).toBe(1);
+});

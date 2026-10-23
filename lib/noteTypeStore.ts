@@ -78,11 +78,26 @@ export function saveNoteType(nt: NoteType): void {
     );
 }
 
+/** Read-only preflight for the browser's destructive confirmation. */
+export function getNoteTypeChangeDeletionCount(noteIds: number[], targetNoteTypeId: number): number {
+    const target = getNoteType(targetNoteTypeId);
+    if (!target) return 0;
+    let count = 0;
+    for (const id of new Set(noteIds)) {
+        const note = getNote(id);
+        if (!note || note.noteTypeId === targetNoteTypeId) continue;
+        const source = getNoteType(note.noteTypeId);
+        if (!source) continue;
+        count += getCardsForNote(id).filter(card => mapNoteTypeCardOrd(source, target, card.ord) === null).length;
+    }
+    return count;
+}
+
 /**
  * Convert notes to another note type while preserving the scheduling of every card that can be
  * mapped to a target template. Fields with the same name are mapped first; remaining fields fall
- * back to their ordinal. Existing cards are reused in order, surplus cards are removed, and only
- * genuinely new target cards start with new scheduling.
+ * use each still-unused source field. Cards match by template name, including blank mapped
+ * templates; only explicitly confirmed unmapped cards are removed with their history retained.
  */
 export function changeNotesType(noteIds: number[], targetNoteTypeId: number, options: { allowCardDeletion?: boolean } = {}): number {
     const targetType = getNoteType(targetNoteTypeId);
@@ -93,6 +108,8 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number, opt
         assertCatalogNoteTypeNotChangeable(noteId);
     }
 
+    const cardsToDelete = getNoteTypeChangeDeletionCount(uniqueNoteIds, targetNoteTypeId);
+    if (cardsToDelete && !options.allowCardDeletion) throw new NoteTypeChangeConfirmationRequired(cardsToDelete);
     const db = getDB();
     let changed = 0;
 
@@ -106,8 +123,6 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number, opt
             const fields = mapNoteTypeFields(sourceType, targetType, note.fields);
             const existingCards = getCardsForNote(note.id).sort((a, b) => a.ord - b.ord || a.id - b.id);
             const mapped = existingCards.map(card => ({ card, ord: mapNoteTypeCardOrd(sourceType, targetType, card.ord) }));
-            const removed = mapped.filter(entry => entry.ord === null);
-            if (removed.length && !options.allowCardDeletion) throw new NoteTypeChangeConfirmationRequired(removed.length);
 
             note.noteTypeId = targetType.id;
             note.fields = fields;

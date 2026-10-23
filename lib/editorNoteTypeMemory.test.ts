@@ -17,3 +17,12 @@ describe('last successful Add note type', () => {
   expect(getEditorNoteType(10, [1,7])).toBe(1);
  });
 });
+
+it('restores both remembered values when a new-note durable save is rolled back', () => {
+ rememberEditorNoteType(10, 1);
+ rememberEditorNoteType(11, 3);
+ const rollback = rememberEditorNoteType(10, 7);
+ rollback();
+ expect(getEditorNoteType(10, [1,3,7])).toBe(1);
+ expect(getEditorNoteType(12, [1,3,7])).toBe(3);
+});

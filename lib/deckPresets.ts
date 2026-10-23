@@ -106,12 +106,12 @@ export function assignDeckConfig(deckId: number, configId: number): void {
     const db = getDB();
     db.execSync('SAVEPOINT assign_deck_preset;');
     try {
-    deck.configId = configId;
-    deck.mod = Math.floor(Date.now() / 1000);
-    deck.usn = -1;
-    saveDeck(deck);
-    remapDeckLearningSteps([deck.id], before, after);
-    db.execSync('RELEASE SAVEPOINT assign_deck_preset;');
+        deck.configId = configId;
+        deck.mod = Math.floor(Date.now() / 1000);
+        deck.usn = -1;
+        saveDeck(deck);
+        remapDeckLearningSteps([deck.id], before, after);
+        db.execSync('RELEASE SAVEPOINT assign_deck_preset;');
     } catch (error) {
         db.execSync('ROLLBACK TO SAVEPOINT assign_deck_preset; RELEASE SAVEPOINT assign_deck_preset;');
         throw error;

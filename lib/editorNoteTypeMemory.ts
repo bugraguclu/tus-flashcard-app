@@ -9,7 +9,13 @@ export function getEditorNoteType(deckId: number | null, availableIds: number[])
     return availableIds.includes(1) ? 1 : availableIds[0] ?? 1;
 }
 /** Called inside the successful Add mutation, before its durable flush. */
-export function rememberEditorNoteType(deckId: number, noteTypeId: number): void {
+export function rememberEditorNoteType(deckId: number, noteTypeId: number): () => void {
+    const previousDeck = getDbSetting(key(deckId));
+    const previousGlobal = getDbSetting(GLOBAL);
     setDbSetting(key(deckId), String(noteTypeId));
     setDbSetting(GLOBAL, String(noteTypeId));
+    return () => {
+        setDbSetting(key(deckId), previousDeck ?? "");
+        setDbSetting(GLOBAL, previousGlobal ?? "");
+    };
 }

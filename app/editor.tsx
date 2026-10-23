@@ -930,6 +930,7 @@ export default function EditorScreen() {
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => goBackOr(router));
             } else {
+                let rollbackNoteTypeMemory: (() => void) | undefined;
                 const created = await commitCollectionWrite(() => {
                     const result = createTusCard({
                         question: currentFields[0] || '',
@@ -945,9 +946,12 @@ export default function EditorScreen() {
                         dbUpsertFtsCard(searchIndexCardFromNote(result.note, generatedCard.id));
                     }
                     persistStickyFieldValues();
-                    rememberEditorNoteType(targetDeck.id, cardTypeId);
+                    rollbackNoteTypeMemory = rememberEditorNoteType(targetDeck.id, cardTypeId);
                     return result;
-                }, (result) => { deleteTusCardByCardId(result.card.id); });
+                }, (result) => {
+                    deleteTusCardByCardId(result.card.id);
+                    rollbackNoteTypeMemory?.();
+                });
                 resetDraftBaseline(savedDraft);
                 setSavedNoteId(created.note.id);
                 bumpDataVersion();
