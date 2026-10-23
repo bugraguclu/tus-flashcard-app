@@ -22,6 +22,7 @@ import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type Color
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import HeaderBackIcon from './HeaderBackIcon';
+import PencilGlyph from './PencilGlyph';
 import { parseDueRange } from '../lib/schedulingIntervals';
 import type { ResetCardOptions } from '../lib/resetCards';
 
@@ -525,6 +526,8 @@ function OptionSwitch({ styles, colors, label, value, onChange }: {
 }
 
 function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
+    if (name === 'edit' || name === 'stylus') return <PencilGlyph color={color} />;
+
     const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     return (
         <Svg width={24} height={24} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
@@ -538,8 +541,6 @@ function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
             )}
             {name === 'clear' && <Path d="m5 9 3-5h8l3 5-4 11H9L5 9Zm1 0h12M10 12v5m4-5v5" {...common} />}
             {name === 'save' && <Path d="M5 3h12l2 2v16H5V3Zm3 0v6h8V3M8 21v-7h8v7" {...common} />}
-            {name === 'stylus' && <Path d="m4 20 4.2-1 10.9-11a2.1 2.1 0 0 0-3-3L5.2 16 4 20Zm10.4-13.2 3 3" {...common} />}
-            {name === 'edit' && <Path d="m4 20 4.2-1 10.9-11a2.1 2.1 0 0 0-3-3L5.2 16 4 20Zm10.4-13.2 3 3" {...common} />}
             {name === 'add' && <Path d="M12 5v14M5 12h14" {...common} />}
             {name === 'tag' && <Path d="M4 5h9l7 7-8 8-8-8V5Zm4 4h.01" {...common} />}
             {name === 'bury' && (

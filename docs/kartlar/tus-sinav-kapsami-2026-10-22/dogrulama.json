@@ -1,0 +1,15 @@
+{
+  "unique_records": 100,
+  "all_periods_20_records": true,
+  "all_note_ids_and_card_memberships_verified": true,
+  "official_question_numbers_pages_answers_verified": true,
+  "counts": {
+    "related": 58,
+    "direct": 28,
+    "no_evidence": 7,
+    "indirect": 6,
+    "excluded": 1
+  },
+  "catalog_sha256": "7428ba681ef026f805ac73796798054f2da82150a7b12c8b51017b2bfd7865a9",
+  "not_validated": "Independent subject expert semantic adjudication; pre-exam snapshot; complete exam coverage"
+}
