@@ -57,6 +57,23 @@ export interface CardMatcherOptions {
 }
 
 /**
+ * What a compiled query reads beyond a card's own scheduling columns, deck name and note type, so
+ * a collection-wide scan can leave the rest unloaded (lib/collectionCardSearch.ts). Each term
+ * below marks what its predicate reads; a context built without a part it did not mark must give
+ * the same answer as one built with everything.
+ */
+export interface CardSearchNeeds {
+    /** Note field contents (`fields`, `text`): plain text, `nc:`, `re:`, `w:` and `Field:` terms. */
+    fields: boolean;
+    /** The note's tags, for `tag:`. */
+    tags: boolean;
+    /** The note's edit time, for `edited:`. */
+    noteEdited: boolean;
+    /** The card's FSRS blob (memory state, decay, recorded review time), for `prop:s/d/r`. */
+    cardData: boolean;
+}
+
+/**
  * What one term says about one card. `undefined` means the context cannot tell — a `rated:`
  * without a review-log lookup, an `added:` on a card loaded without its creation stamp — and
  * also stands for a term that narrows nothing, such as an empty or half-typed one.
@@ -158,13 +175,14 @@ function statePredicate(state: string, options: CardMatcherOptions): TermTest | 
     }
 }
 
-function propPredicate(body: string, options: CardMatcherOptions): TermTest | null {
+function propPredicate(body: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest | null {
     const match = body.match(/^(ivl|reps|lapses|ease|pos|due|s|d|r)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
     if (!match) return null;
 
     const [, key, op, rawValue] = match;
     const value = Number(rawValue);
     if (!Number.isFinite(value)) return null;
+    if (key === 's' || key === 'd' || key === 'r') needs.cardData = true;
 
     switch (key) {
         // FSRS properties. Difficulty is written as a 0-1 fraction in searches but stored on the
@@ -241,10 +259,13 @@ function dayWindowPredicate(
     };
 }
 
-function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
+function predicateForTerm(term: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
     if (isQuotedTerm(term) && term.includes(':')) term = unquoteSearchValue(term);
     const separator = term.indexOf(':');
-    if (separator <= 0) return textPredicate(term);
+    if (separator <= 0) {
+        needs.fields = true;
+        return textPredicate(term);
+    }
 
     const prefix = term.slice(0, separator).toLowerCase();
     const body = unquoteSearchValue(term.slice(separator + 1));
@@ -257,6 +278,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
         }
         case 'tag': {
             if (!body) throw new SearchSyntaxError('empty search value');
+            needs.tags = true;
             if (body === 'none') return (card) => card.tags.length === 0;
             const matches = hierarchicalMatcher(body);
             return (card) => card.tags.some(matches);
@@ -269,7 +291,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
             return (card) => (card.flags & 7) === value;
         }
         case 'prop':
-            return propPredicate(body, options) ?? invalidTerm(term);
+            return propPredicate(body, options, needs) ?? invalidTerm(term);
         case 'rated': {
             const [rawDays, rawEase] = body.split(':');
             const days = Number(rawDays);
@@ -290,6 +312,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
         case 'added':
             return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? invalidTerm(term);
         case 'edited':
+            needs.noteEdited = true;
             return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? invalidTerm(term);
         case 'note': {
             if (!body) throw new SearchSyntaxError('empty search value');
@@ -313,6 +336,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
             return (card) => ids.has(card.cardId);
         }
         case 're': {
+            needs.fields = true;
             let regex: RegExp;
             try {
                 regex = new RegExp(body, 'i');
@@ -323,6 +347,7 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
         }
         case 'w': {
             // Whole word rather than the prefix match a bare word gets.
+            needs.fields = true;
             const word = normalizeSearchText(body);
             if (!word) return UNKNOWN;
             return (card) => normalizeSearchText(noteText(card))
@@ -331,10 +356,12 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
         }
         case 'nc':
             // "No combining characters": this app folds diacritics in every search already.
+            needs.fields = true;
             return textPredicate(body, true);
         default: {
             // `Front:dog` searches one field by name; anything else is ordinary text, because a
             // search box should not swallow a colon the learner meant literally.
+            needs.fields = true;
             const fieldKey = foldKey(term.slice(0, separator));
             const test = textPredicate(term.slice(separator + 1));
             return (card) => {
@@ -360,11 +387,20 @@ function predicateForTerm(term: string, options: CardMatcherOptions): TermTest {
  * turning "cannot tell" into "no".
  */
 export function compileCardMatcher(query: string, options: CardMatcherOptions): Predicate | null {
+    return compileCardSearch(query, options).matcher;
+}
+
+/** `compileCardMatcher` plus what the compiled query reads, for scans that load only that. */
+export function compileCardSearch(
+    query: string,
+    options: CardMatcherOptions,
+): { matcher: Predicate | null; needs: CardSearchNeeds } {
+    const needs: CardSearchNeeds = { fields: false, tags: false, noteEdited: false, cardData: false };
     const parsed = parseSearchQuery(query);
-    if (!parsed) return null;
+    if (!parsed) return { matcher: null, needs };
 
     const test = foldSearchNode<TermTest>(parsed, {
-        term: (text) => predicateForTerm(text, options),
+        term: (text) => predicateForTerm(text, options, needs),
         not: (child) => (card) => {
             const verdict = child(card);
             return verdict === undefined ? undefined : !verdict;
@@ -388,6 +424,6 @@ export function compileCardMatcher(query: string, options: CardMatcherOptions): 
             return verdict;
         },
     });
-    if (!test) return null;
-    return (card) => test(card) !== false;
+    if (!test) return { matcher: null, needs };
+    return { matcher: (card) => test(card) !== false, needs };
 }

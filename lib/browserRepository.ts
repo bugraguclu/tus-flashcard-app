@@ -1,4 +1,4 @@
-import { matchingCollectionCardIds } from './collectionCardSearch';
+import { matchingCollectionCardIdsForAll } from './collectionCardSearch';
 import { escapeSearchValue } from './searchQuery';
 import { getDB } from './db';
 import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
@@ -10,7 +10,6 @@ import { getDeckByName } from './deckManager';
 import {
     FSRS_DIFFICULTY_SQL,
     FSRS_STABILITY_SQL,
-    clauseForSearchTerm,
     collectionSearchSettings,
     escapeLikePattern,
 } from './studySearchSql';
@@ -46,7 +45,23 @@ export interface BrowserCardQuery {
     flags?: number[];
 }
 
-function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Array<string | number> } {
+/**
+ * The browser's marked, card-state and tag filters as search terms. They are evaluated together
+ * with any typed search in one pass of the shared evaluator, rather than one collection scan each.
+ */
+function browserFilterSearches(query: BrowserCardQuery): string[] {
+    const searches: string[] = [];
+    if (query.markedOnly) searches.push('tag:marked');
+    if (query.cardState && query.cardState !== 'all') searches.push(`is:${query.cardState}`);
+    const selectedTags = (query.tags ?? []).map(tag => tag.trim()).filter(Boolean);
+    if (selectedTags.length) searches.push(selectedTags.map(tag => `tag:${escapeSearchValue(tag)}`).join(' or '));
+    return searches;
+}
+
+function buildBrowserWhere(
+    query: BrowserCardQuery,
+    { includeSearchFilters = true }: { includeSearchFilters?: boolean } = {},
+): { sql: string; params: Array<string | number> } {
     const clauses: string[] = [];
     const params: Array<string | number> = [];
     const addIds = (column: string, ids: number[] | undefined) => {
@@ -61,18 +76,12 @@ function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Arra
     addIds('c.deckId', query.deckIds);
     addIds('c.id', query.cardIds);
     addIds('n.id', query.noteIds);
-    if (query.markedOnly) {
+    const searches = includeSearchFilters ? browserFilterSearches(query) : [];
+    if (searches.length) {
         clauses.push('c.id IN (SELECT value FROM json_each(?))');
-        params.push(JSON.stringify(matchingCollectionCardIds('tag:marked')));
+        params.push(JSON.stringify(matchingCollectionCardIdsForAll(searches)));
     }
     if (query.suspendedOnly) clauses.push('c.queue = -1');
-    if (query.cardState && query.cardState !== 'all') {
-        const state = clauseForSearchTerm(`is:${query.cardState}`);
-        if (state) {
-            clauses.push(state.sql);
-            params.push(...state.params);
-        }
-    }
     if (query.flags) {
         if (query.flags.length === 0) {
             clauses.push('1 = 0');
@@ -83,11 +92,6 @@ function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Arra
     } else if (query.flag !== null && query.flag !== undefined) {
         clauses.push('(c.flags & 7) = ?');
         params.push(query.flag);
-    }
-    const selectedTags = (query.tags ?? []).map(tag => tag.trim()).filter(Boolean);
-    if (selectedTags.length) {
-        clauses.push('c.id IN (SELECT value FROM json_each(?))');
-        params.push(JSON.stringify(matchingCollectionCardIds(selectedTags.map(tag => `tag:${escapeSearchValue(tag)}`).join(' or '))));
     }
     return { sql: clauses.length ? ` WHERE ${clauses.join(' AND ')}` : '', params };
 }
@@ -170,9 +174,12 @@ interface BrowserNoteRow {
  * The row's current card is always the note's first template card, even when another sibling
  * was the card that matched a flag, queue or search term. This mirrors Anki's RowContext.
  */
-function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
+function getBrowserNoteRows(
+    query: BrowserCardQuery,
+    whereOptions?: { includeSearchFilters?: boolean },
+): BrowserNoteRow[] {
     const db = getDB();
-    const where = buildBrowserWhere(query);
+    const where = buildBrowserWhere(query, whereOptions);
     const direction = query.descending ? 'DESC' : 'ASC';
     const sortSql: Record<BrowserCardSortKey, string> = {
         sortField: 'n.sfld COLLATE NOCASE',
@@ -292,8 +299,9 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
     if (!rawQuery) return [];
 
     const db = getDB();
-    const matchingIds = new Set(matchingCollectionCardIds(rawQuery));
-    const where = buildBrowserWhere(query);
+    // The typed search and the marked/state/tag filters share one pass over the collection.
+    const matchingIds = new Set(matchingCollectionCardIdsForAll([rawQuery, ...browserFilterSearches(query)]));
+    const where = buildBrowserWhere(query, { includeSearchFilters: false });
     const sortSql = BROWSER_SORT_SQL[query.sortKey ?? 'sortField'];
     const direction = query.descending ? 'DESC' : 'ASC';
     const rows = db.getAllSync<{
@@ -355,11 +363,13 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
 
     // The search can match any sibling card, but Anki's Notes-mode table is identified by note
     // IDs and sorted using note aggregates. Do not leak the matching sibling card into the row.
+    // Every matched note already has a card that passed the search filters, so they are not
+    // evaluated a second time here.
     return getBrowserNoteRows({
         ...query,
         cardIds: undefined,
         noteIds: [...matchedNoteIds],
-    }).map((row) => row.noteId);
+    }, { includeSearchFilters: false }).map((row) => row.noteId);
 }
 
 /** @deprecated Prefer getBrowserRowIdsMatchingText(), whose name reflects Notes mode too. */
