@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import initSqlJs from 'sql.js';
 import JSZip from 'jszip';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -466,7 +468,7 @@ describe('lossless Anki package roundtrip', () => {
         const presets = JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf);
         expect(Object.keys(presets)).toEqual(['1']);
         expect(presets['1'].new.perDay).toBe(DEFAULT_DECK_CONFIG.newPerDay);
-        expect(presets['1']).not.toHaveProperty('fsrsParams6');
+        expect(presets['1'].fsrsParams6).toEqual([]);
         const decks = Object.values(JSON.parse(reader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks)) as any[];
         expect(decks.map((deck) => deck.name)).toEqual(expect.arrayContaining(['Medicine', 'Medicine::Cardiology']));
         expect(decks.every((deck) => deck.conf === 1)).toBe(true);
@@ -523,6 +525,54 @@ describe('lossless Anki package roundtrip', () => {
         // Anki reads the cutoff date as midnight UTC (`ignore_revlogs_before_date_to_ms`).
         expect(reimported?.ignoreRevlogsBeforeMs).toBe(Date.UTC(2025, 5, 1));
         expect(parseAnkiCardData(getAllAnkiCards()[0].ankiData).stability).toBeCloseTo(31.7, 4);
+    });
+
+    it('strips only the FSRS parameter lists from presets when scheduling is excluded, as Anki 26.09.3 does', async () => {
+        // Recorded from Anki's own export (scripts/anki-oracle/gen_fsrs_ops.py, ankitects/anki#4721).
+        const oracle = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.09-fsrs-ops.json'), 'utf8'))
+            .exportPresets.withoutScheduling;
+        expect(oracle).toMatchObject({ fsrsWeights: [], fsrsParams5: [], fsrsParams6: [] });
+
+        await importApkg(await fixturePackage(), {
+            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        const config = getAllDeckConfigs()[0];
+        saveDeckConfig({
+            ...config,
+            ankiRaw: { ...config.ankiRaw, fsrsWeights: DEFAULT_FSRS_PARAMETERS.slice(0, 17), fsrsParams5: DEFAULT_FSRS_PARAMETERS.slice(0, 19) },
+            fsrsParams: clampFsrsParameters(DEFAULT_FSRS_PARAMETERS),
+            desiredRetention: 0.87,
+            historicalRetention: 0.82,
+            ignoreRevlogsBeforeMs: Date.UTC(2025, 5, 1),
+        });
+
+        const artifact = await buildAnkiExport('apkg', 'Medicine', true, undefined, {
+            includeScheduling: false,
+            includeDeckConfigs: true,
+        });
+        const zip = await JSZip.loadAsync(artifact.bytes!);
+        const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+        const dconf = Object.values(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)) as any[];
+        reader.close();
+        const exported = dconf.find((entry) => entry.name === config.name);
+        const keys = Object.keys(oracle) as Array<keyof typeof oracle>;
+        expect(Object.fromEntries(keys.map((key) => [key, exported[key]]))).toEqual({
+            fsrsWeights: [], fsrsParams5: [], fsrsParams6: [],
+            desiredRetention: 0.87, sm2Retention: 0.82, ignoreRevlogsBeforeDate: '2025-06-01',
+        });
+
+        // The retention values and the cutoff survive a re-import; the parameters do not.
+        resetCollection();
+        await importApkg(artifact.bytes!, {
+            subject: 'medicine', topic: 'Imported', fileName: 'shared.apkg',
+            openReader: async (bytes) => openReader(bytes),
+        });
+        const reimported = getAllDeckConfigs().find((entry) => entry.name === config.name)!;
+        expect(reimported.fsrsParams ?? []).toEqual([]);
+        expect(reimported.desiredRetention).toBeCloseTo(0.87, 5);
+        expect(reimported.historicalRetention).toBeCloseTo(0.82, 5);
+        expect(reimported.ignoreRevlogsBeforeMs).toBe(Date.UTC(2025, 5, 1));
     });
 
     it('exports a preset\u2019s Easy Days under Anki\u2019s key, over the ones it was imported with', async () => {
