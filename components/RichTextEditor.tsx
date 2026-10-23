@@ -489,14 +489,16 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 onShortcut?.(message.shortcut);
             } else if (message.type === 'state') {
                 onFormatStateChange?.(readEditorFormatState(message.state));
-            } else if (message.type === 'pasteImage' && editable && pasteClipboardImagesAsPng && typeof message.dataUrl === 'string') {
-                const match = message.dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/);
-                if (!match) return;
-                const bytes = base64ToBytes(match[1]);
+            } else if (message.type === 'pasteImage' && editable && typeof message.dataUrl === 'string') {
+                // PNG when "Paste clipboard images as PNG" is on, JPEG otherwise, as in Anki.
+                const match = message.dataUrl.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=\s]+)$/);
+                if (!match || (match[1] === 'png') !== pasteClipboardImagesAsPng) return;
+                const bytes = base64ToBytes(match[2]);
                 if (bytes.length === 0 || bytes.length > 25 * 1024 * 1024) return;
                 const sequence = pastedImageSequenceRef.current++;
-                const filename = `pasted_${Date.now()}_${sequence}.png`;
-                await saveMediaBytes(filename, bytes, 'image/png');
+                const extension = match[1] === 'png' ? 'png' : 'jpg';
+                const filename = `pasted_${Date.now()}_${sequence}.${extension}`;
+                await saveMediaBytes(filename, bytes, `image/${match[1]}`);
                 const snippet = mediaReferenceSnippet('image', filename);
                 runWhenReady({ fn: '__tusEditorInsertHtml', args: [snippet] });
             }

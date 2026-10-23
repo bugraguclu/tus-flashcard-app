@@ -1067,7 +1067,7 @@ export default function SettingsScreen() {
                 />
                 <ToggleRow
                     label={l('Pano görsellerini PNG olarak yapıştır', 'Paste clipboard images as PNG')}
-                    summary={l('Editöre yapıştırılan görseli koleksiyon medyasına dönüştürür; çevrimdışı ve dışa aktarmada korunur.', 'Converts pasted images into collection media so they remain available offline and in exports.')}
+                    summary={l('Yapıştırılan görseller her zaman koleksiyon medyasına kaydedilir: açıkken PNG, kapalıyken JPEG olarak.', 'Pasted images are always saved as collection media: as PNG when on, as JPEG when off.')}
                     value={Boolean(settings.pasteClipboardImagesAsPng)}
                     onChange={(value) => updateSetting('pasteClipboardImagesAsPng', value)}
                     styles={styles}

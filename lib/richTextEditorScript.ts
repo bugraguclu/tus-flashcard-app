@@ -364,7 +364,9 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
       event.preventDefault();
       return;
     }
-    if (!config.pasteImagesAsPng) return;
+    // Anki stores every pasted picture as media: as PNG with "Paste clipboard images as PNG",
+    // otherwise as JPEG (EDT-7). Nothing is left for the sanitizer to turn into src="#".
+    const asPng = !!config.pasteImagesAsPng;
     const items = Array.from((event.clipboardData && event.clipboardData.items) || [])
       .filter(function (item) { return item.kind === 'file' && /^image\\//i.test(item.type || ''); });
     if (!items.length) return;
@@ -386,8 +388,13 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
           canvas.height = Math.max(1, Math.round(sourceHeight * scale));
           const context = canvas.getContext('2d');
           if (!context || !canvas.width || !canvas.height) return;
+          if (!asPng) {
+            // JPEG has no transparency; a transparent area would otherwise turn black.
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+          }
           context.drawImage(image, 0, 0, canvas.width, canvas.height);
-          post({ type: 'pasteImage', dataUrl: canvas.toDataURL('image/png') });
+          post({ type: 'pasteImage', dataUrl: asPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.9) });
         };
         image.src = String(reader.result || '');
       };

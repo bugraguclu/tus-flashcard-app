@@ -202,3 +202,22 @@ describe('cloze numbering across fields', async () => {
         expect(nextClozeNumber(['', ''], true)).toBe(1);
     });
 });
+
+describe('pasted pictures (EDT-7)', () => {
+    it('stores a pasted picture as media whether or not PNG paste is on', () => {
+        expect(RICH_TEXT_EDITOR_SCRIPT).not.toContain('if (!config.pasteImagesAsPng) return;');
+        expect(RICH_TEXT_EDITOR_SCRIPT).toContain("canvas.toDataURL('image/jpeg', 0.9)");
+        expect(RICH_TEXT_EDITOR_SCRIPT).toContain("canvas.toDataURL('image/png')");
+    });
+    it('intercepts an image paste even with PNG paste off', () => {
+        const prevented: string[] = [];
+        const run = runEditorScript(baseConfig, 'native');
+        (globalThis as any).FileReader = class { readAsDataURL() { /* never loads in this stub */ } };
+        run.dispatch('paste', {
+            clipboardData: { items: [{ kind: 'file', type: 'image/png', getAsFile: () => ({}) }] },
+            preventDefault: () => prevented.push('paste'),
+        });
+        delete (globalThis as any).FileReader;
+        expect(prevented).toEqual(['paste']);
+    });
+});
