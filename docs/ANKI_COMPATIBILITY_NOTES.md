@@ -128,16 +128,54 @@ card ids as non-persisted metadata (FSRS-A integration `aa7cf78`); the oracle te
 production collector directly. An interleaved-history test in `lib/fsrsMaintenance.test.ts`
 protects card identity while preserving review-log order.
 
-**Next compatibility gate:** Fifth-pass items 3, 5–8 and 10 are still open: Set Due Date should
-follow the collection FSRS switch and leave new and `ivl = 0` cards at 0; Change Deck should
-recompute memory states; Check Database should repair `lrt`; a future ignore-before date should be
-clamped to today; an export without scheduling should keep the retention values; and the
-retrievability filtered-deck orders should be hidden while FSRS is off. Older known differences
-remain: last-bit memory noise from platform exp/pow; filtered-deck `prop:r` SQL comparisons in
-f64; new-card positions in the due/relative-overdueness orders use the app's epoch; Reset Card
-allocates a missing position from the highest current position rather than Anki's independent
-`nextPos`. The deliberate uncapped daily new-card policy remains unchanged. Retention/true-retention
-graphs and the FSRS simulator are still absent.
+**Collection operations:** `scripts/anki-oracle/gen_fsrs_ops.py` records Anki 26.09.3's own
+results in `test/fixtures/anki-26.09-fsrs-ops.json`; `lib/fsrsCollectionOps.test.ts` replays them
+through SQLite.
+
+- Set Due Date follows the collection FSRS switch, not the card's memory state. With FSRS on, a
+  card in the new queue or with no interval yet, learning cards included, stays at `ivl = 0`, and
+  its first answer starts from the initial parameters. Other cards take the days since `lrt` plus
+  the requested days, or shift by the due-date difference without `lrt`; `!` does not apply.
+  With FSRS off the SM-2 rule applies even to a card that still carries a state. 80 recorded
+  cases: 10 card shapes, both switch positions, inputs `3`, `3!`, `0`, `1!`. Anki's backend
+  rejects a negative day such as `-2`, which this app's dialog accepts; that difference is
+  outside this item and is recorded rather than changed.
+- Change Deck clears the moved cards' FSRS data, then, with FSRS on, gives every card without a
+  memory state in the target deck itself (not its subdecks) a state from its review log under
+  the target preset's parameters, desired retention and decay. Nothing is rescheduled; `lrt` is
+  kept. The move and the recompute are one transaction, and undo restores the moved cards' data.
+  A memory-less card that already sat in the target deck also gets its state, as in Anki, and
+  undo leaves that one in place.
+- Check Database sets each non-new card's `lrt` to its last scheduling-affecting answer after the
+  last reset, corrects a wrong value and removes it when no answer counts. New cards and cards
+  without review-log rows are left alone. The audit counts these cards, the backed-up repair
+  fixes them, and Settings reports both. The answer path stamps `lrt` at the start of the answer,
+  while its review-log id is taken a few milliseconds later; when that crosses a second boundary,
+  the next check corrects `lrt` by one second.
+- A future "Ignore reviews before" date is saved, and used by Optimize, as the collection's today
+  (rollover hour included). The text field clamps a complete future date like a date picker's
+  maximum. Package import reads the date as written.
+- An export without scheduling empties only `fsrsWeights`, `fsrsParams5` and `fsrsParams6`;
+  desired retention, historical retention (`sm2Retention`) and the cutoff are kept, matching the
+  recorded Anki export, and survive a re-import (`lib/ankiPackageRoundtrip.test.ts`).
+- With FSRS off, the filtered deck dialog does not list the two retrievability orders. A deck saved
+  with one shows Random, as Anki's dialog does, and is stored as Random only if the dialog is
+  saved. Until then it keeps the order, round-trips it, and builds with the tiebreak alone
+  (`lib/filteredDeckOptions.test.ts`).
+
+**Next compatibility gate:** All eleven fifth-pass items now have code and automated coverage.
+Older known differences remain: last-bit memory noise from platform exp/pow; filtered-deck
+`prop:r` SQL comparisons in f64; new-card positions in the due/relative-overdueness orders use the
+app's epoch; Reset Card allocates a missing position from the highest current position rather
+than Anki's independent `nextPos`. The deliberate uncapped daily new-card policy remains
+unchanged. Retention/true-retention graphs and the FSRS simulator are still absent.
+
+Named iPhone smokes for the collection operations, not yet run: Set Due Date `3` on a new card
+and on a review card from the reviewer menu and the browser with FSRS on and off, then answer
+the new card; Change Deck of a reviewed card into a deck with another preset, then open Card
+Info and undo; Check Database and "Repair and optimize" on a copy of a collection, reading the
+new summary line; type a future "Ignore reviews before" date and save; open filtered-deck
+options with FSRS off and on.
 
 Named iPhone Card Info smoke still required: open a new card and an answered card without memory,
 close/reopen Card Info, verify Ease with FSRS on/off, whole percentages, back swipe and VoiceOver.

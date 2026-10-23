@@ -135,6 +135,7 @@ describe('collection maintenance (real SQLite)', () => {
                 invalidDueCards: 1,
                 invalidOrdinalCards: 1,
                 orphanedOriginalDueCards: 1,
+                lastReviewTimeCards: 0,
                 unreadableNotes: 1,
             });
             expect(repairableDefectCount(result)).toBe(9);

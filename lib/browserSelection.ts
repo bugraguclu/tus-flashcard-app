@@ -128,7 +128,8 @@ export function setSelectedDueDate(cardIds: number[], range: DueRange, settings:
             : currentDue - today;
 
         const ivl = setDueDateInterval({
-            hasMemoryState: memory !== null,
+            fsrsEnabled: settings.fsrsEnabled === true,
+            isNewQueue: card.queue === 0,
             isReviewOrRelearning: card.type === 2 || card.type === 3,
             currentInterval: card.ivl,
             lastReviewTimeMs: cardData.lastReviewTimeSecs ? cardData.lastReviewTimeSecs * 1000 : null,

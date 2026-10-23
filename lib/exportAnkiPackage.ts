@@ -373,12 +373,14 @@ function deckConfigMap(
             lapse: { ...rawLapse, delays: config.relearningSteps, minInt: config.minIvl, leechFails: config.leechThreshold,
                 leechAction: config.leechAction === 'suspend' ? 0 : 1, mult: config.newIvlPercent },
         };
-        // FSRS parameters describe the learner's scheduling history, and Anki removes them from
-        // a shareable package when scheduling is excluded.
+        // Without scheduling, Anki 26.09.3 empties only the FSRS parameter lists, which were fitted
+        // to the learner's own review history (`clear_fsrs_params`, ankitects/anki#4721): the FSRS-6
+        // list and its FSRS-5 and FSRS-4 fallbacks. Desired retention, historical retention and the
+        // ignore-before date are preset choices and travel with the package.
         if (!includeScheduling) {
-            for (const key of ['fsrsWeights', 'fsrsParams4', 'fsrsParams5', 'fsrsParams6', 'desiredRetention', 'sm2Retention', 'ignoreRevlogsBeforeDate']) {
-                delete (map[String(config.id)] as any)[key];
-            }
+            const preset = map[String(config.id)] as Record<string, unknown>;
+            for (const key of ['fsrsWeights', 'fsrsParams5', 'fsrsParams6']) preset[key] = [];
+            delete preset.fsrsParams4;
         }
     }
     return JSON.stringify(map);

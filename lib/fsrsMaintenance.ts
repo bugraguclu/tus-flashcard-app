@@ -12,10 +12,10 @@ import { ankiCardSeed, ankiFuzzFactor } from './ankiRandom';
 import { localDayNumber, nextRolloverMs } from './ankiState';
 import { getAllDecks, getDeck } from './deckStore';
 import { getAllDeckConfigs } from './deckPresets';
-import { saveAnkiCard } from './noteManager';
+import { moveCardsToDeck, saveAnkiCard, type CardDeckMoveSnapshot } from './noteManager';
 import { DEFAULT_DECK_CONFIG, type AnkiCard } from './models';
 import { fsrsNextInterval, type FsrsMemoryState } from './fsrs';
-import { updateAnkiCardData } from './fsrsCardData';
+import { memoryStateFromCardData, parseAnkiCardData, updateAnkiCardData } from './fsrsCardData';
 import { revlogByCard } from './fsrsCardInputs';
 import {
     moveRescheduledDue,
@@ -52,6 +52,8 @@ export interface FsrsScopeOptions {
      * balancer on (its default, with no switch in the interface). Off only for comparisons.
      */
     loadBalance?: boolean;
+    /** Only cards that carry no memory state (Anki's `-has:memory` scope after Change Deck). */
+    withoutMemoryStateOnly?: boolean;
 }
 
 export interface FsrsRebuildResult {
@@ -128,7 +130,8 @@ export function rebuildFsrsMemoryStates(
     options: FsrsScopeOptions = {},
     nowMs: number = Date.now(),
 ): FsrsRebuildResult {
-    const cards = loadCardsInScope(options.deckIds).filter((card) => card.type !== 0);
+    const cards = loadCardsInScope(options.deckIds).filter((card) => card.type !== 0
+        && (!options.withoutMemoryStateOnly || memoryStateFromCardData(parseAnkiCardData(card.ankiData)) === null));
     const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
     const settingsCache = new Map<number, AppSettings>();
     const result: FsrsRebuildResult = {
@@ -358,6 +361,28 @@ function rescheduleCard(
     };
     logManualEntry(rescheduled, 'rescheduled', newInterval, card.ivl, revlogFactorForScheduling(memory, card.factor));
     return rescheduled;
+}
+
+/**
+ * Change Deck, as Anki 26.09.3 runs it (`Collection::set_deck`, ankitects/anki#5339 and #5500):
+ * the moved cards lose their FSRS data, then — with FSRS on — every card in the target deck
+ * itself (not its subdecks) that has no memory state gets one derived from its review log, under
+ * the target preset's parameters, desired retention and decay. Nothing is rescheduled. Both steps
+ * are one write, so the move and the recompute commit or roll back together, and undo restores
+ * the data each moved card had before.
+ */
+export function moveCardsToDeckWithFsrs(
+    cardIds: number[],
+    targetDeckId: number,
+    settings: AppSettings,
+    nowMs: number = Date.now(),
+): CardDeckMoveSnapshot[] {
+    if (settings.fsrsEnabled !== true) return moveCardsToDeck(cardIds, targetDeckId);
+    return moveCardsToDeck(cardIds, targetDeckId, {
+        withinTransaction: () => {
+            rebuildFsrsMemoryStates(settings, { deckIds: [targetDeckId], withoutMemoryStateOnly: true }, nowMs);
+        },
+    });
 }
 
 /** The FSRS inputs one deck schedules with, as far as deciding what a save must recompute. */

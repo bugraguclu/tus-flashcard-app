@@ -707,6 +707,7 @@ export default function SettingsScreen() {
         `${l('Geçersiz tarihli kart', 'Cards with an invalid due date')}: ${result.invalidDueCards}`,
         `${l('Geçersiz şablon sıralı kart', 'Cards with an invalid template ordinal')}: ${result.invalidOrdinalCards}`,
         `${l('Artık ön-filtre tarihi taşıyan kart', 'Cards keeping a stale pre-filter due')}: ${result.orphanedOriginalDueCards}`,
+        `${l('Son tekrar zamanı hatalı kart', 'Cards with a wrong last review time')}: ${result.lastReviewTimeCards}`,
         `${l('Okunamayan not', 'Unreadable notes')}: ${result.unreadableNotes}`,
     ], [l]);
 
@@ -811,6 +812,12 @@ export default function SettingsScreen() {
             lines.push(l(
                 `${repair.originalDuesCleared} kartın artık ön-filtre tarihi temizlendi.`,
                 `Cleared a stale pre-filter due from ${repair.originalDuesCleared} cards.`,
+            ));
+        }
+        if (repair.lastReviewTimesRepaired > 0) {
+            lines.push(l(
+                `${repair.lastReviewTimesRepaired} kartın son tekrar zamanı tekrar geçmişinden düzeltildi.`,
+                `Fixed the last review time of ${repair.lastReviewTimesRepaired} cards from their review history.`,
             ));
         }
         if (repair.protectedRowsKept > 0) {

@@ -259,19 +259,25 @@ export function parseDueRange(input: string): DueRange | null {
 }
 
 /**
- * The interval `Set Due Date` writes (Anki 26.05, `Card::set_due_date` in
- * `rslib/src/scheduler/reviews.rs`).
+ * The interval `Set Due Date` writes, independently derived from Anki 26.09.3's behaviour
+ * (`Card::set_due_date`, changed by https://github.com/ankitects/anki/pull/4792) and pinned to
+ * outputs recorded from Anki itself in `test/fixtures/anki-26.09-fsrs-ops.json`.
  *
- * What decides is whether the card carries an FSRS memory state, not the collection switch. Such a
- * card keeps describing the whole gap it will go unseen: the days since its recorded last review
- * plus the requested days, or — with no recorded review time — its old interval moved by as many
- * days as its due date moves. The trailing `!` does not apply to it.
+ * What decides is the collection's FSRS switch, not whether the card carries a memory state.
+ * With FSRS on, a card in the new queue or with no interval yet (a learning card, say) stays at 0,
+ * so its first real answer starts from the initial parameters. Any other card keeps describing
+ * the whole gap it will go unseen: the days since its recorded last review plus the requested
+ * days, or — with no recorded review time — its old interval moved by as many days as its due date
+ * moves. The trailing `!` does not apply under FSRS.
  *
- * Any other card takes the requested days (at least one) when it is new or still learning, or when
- * `!` asks for it, and otherwise keeps the interval it earned.
+ * With FSRS off, a card takes the requested days (at least one) when it is new or still learning,
+ * or when `!` asks for it, and otherwise keeps the interval it earned.
  */
 export function setDueDateInterval(options: {
-    hasMemoryState: boolean;
+    /** The collection FSRS switch (`settings.fsrsEnabled`). */
+    fsrsEnabled: boolean;
+    /** The card sits in the new queue. */
+    isNewQueue: boolean;
     isReviewOrRelearning: boolean;
     currentInterval: number;
     /** Epoch ms of the card's recorded last review (Anki's `lrt`), or null when it has none. */
@@ -282,7 +288,8 @@ export function setDueDateInterval(options: {
     requestedDays: number;
     forceInterval: boolean;
 }): number {
-    if (options.hasMemoryState) {
+    if (options.fsrsEnabled) {
+        if (options.isNewQueue || options.currentInterval === 0) return 0;
         if (options.lastReviewTimeMs !== null && options.lastReviewTimeMs > 0) {
             const nextDayAtSecs = Math.floor(options.nextDayAtMs / 1000);
             const lastReviewSecs = Math.floor(options.lastReviewTimeMs / 1000);

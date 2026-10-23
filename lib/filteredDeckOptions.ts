@@ -25,6 +25,29 @@ export const FILTERED_SEARCH_ORDER = {
 export const FILTERED_DECK_ORDER_UI = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 /**
+ * Orders that need FSRS memory states. Anki 26.09.3's filtered deck dialog offers them only while
+ * FSRS is on (ankitects/anki#5407); a deck already set to one keeps it until the dialog is saved,
+ * and building it with FSRS off orders by the tiebreak alone (lib/filteredDeckGather.ts).
+ */
+const FSRS_ONLY_FILTERED_ORDERS: readonly number[] = [
+    FILTERED_SEARCH_ORDER.retrievabilityAscending,
+    FILTERED_SEARCH_ORDER.retrievabilityDescending,
+];
+
+/** The orders the filtered deck dialog lists, in Anki's sequence. */
+export function filteredDeckOrderChoices(fsrsEnabled: boolean): readonly number[] {
+    return fsrsEnabled ? FILTERED_DECK_ORDER_UI : FILTERED_DECK_ORDER_UI.filter((order) => !FSRS_ONLY_FILTERED_ORDERS.includes(order));
+}
+
+/**
+ * The order the dialog shows for a saved one. Like Anki's, it falls back to Random when the saved
+ * order is not offered, so saving the dialog then stores Random; until then the deck keeps its order.
+ */
+export function filteredDeckOrderForDialog(order: number, fsrsEnabled: boolean): number {
+    return filteredDeckOrderChoices(fsrsEnabled).includes(order) ? order : FILTERED_SEARCH_ORDER.random;
+}
+
+/**
  * Card limits a new filtered deck starts with.
  *
  * `Deck::new_filtered` seeds two search terms: the first gathers 100 cards in Random order, the

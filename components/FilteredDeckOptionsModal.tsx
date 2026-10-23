@@ -19,9 +19,10 @@ import { useCollectionInvalidation, useStudyScope } from '../contexts/AppContext
 import { createDeck, getAllDecks, getAvailableDeckName, renameDeck, updateFilteredDeck } from '../lib/deckManager';
 import {
     DEFAULT_SECOND_SEARCH_LIMIT,
-    FILTERED_DECK_ORDER_UI,
     FILTERED_SEARCH_ORDER,
     extractDeckNameFromSearch,
+    filteredDeckOrderChoices,
+    filteredDeckOrderForDialog,
     formatPreviewDelays,
     parsePreviewDelays,
     replaceDeckNameInSearch,
@@ -87,10 +88,10 @@ export default function FilteredDeckOptionsModal({
         setName(deck.name);
         setSearch(deck.searchQuery ?? '');
         setLimit(String(deck.searchLimit ?? 100));
-        setOrder(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due);
+        setOrder(filteredDeckOrderForDialog(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due, settings.fsrsEnabled === true));
         setSearch2(deck.searchQuery2 ?? '');
         setLimit2(String(deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT));
-        setOrder2(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due);
+        setOrder2(filteredDeckOrderForDialog(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due, settings.fsrsEnabled === true));
         setSecondEnabled(Boolean(deck.searchQuery2?.trim()));
         setReschedule(deck.reschedule ?? true);
         setPreviewDelays(formatPreviewDelays(deck.previewDelays));
@@ -529,7 +530,7 @@ export default function FilteredDeckOptionsModal({
                         >
                             <Text style={styles.pickerTitle}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
                             <ScrollView showsVerticalScrollIndicator={false}>
-                                {FILTERED_DECK_ORDER_UI.map((value) => (
+                                {filteredDeckOrderChoices(settings.fsrsEnabled === true).map((value) => (
                                     <TouchableOpacity key={value} style={[styles.pickerOption, selectedOrder === value && styles.pickerOptionSelected]} onPress={() => chooseOrder(value)}>
                                         <Text style={[styles.pickerOptionText, selectedOrder === value && styles.pickerOptionTextSelected]}>{filteredOrderLabel(locale, value)}</Text>
                                         {selectedOrder === value && <Text style={styles.check}>✓</Text>}

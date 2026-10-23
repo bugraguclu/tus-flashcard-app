@@ -412,10 +412,15 @@ export interface CardDeckMoveSnapshot {
  * The caller owns the undo stack, while this function keeps the database write atomic and
  * returns the original deck of every card. Scheduling is kept as it was, but the FSRS memory
  * state, desired retention and decay are dropped, as Anki's `Card::set_deck` does: the card may
- * now follow another preset, so its state is derived again from its review log, under that
- * preset's parameters, when it is next answered.
+ * now follow another preset. `withinTransaction` runs after the move and before the commit, so a
+ * caller can derive the states again under the new preset as part of the same write
+ * (`moveCardsToDeckWithFsrs`); the snapshots then record the data it left on each moved card.
  */
-export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDeckMoveSnapshot[] {
+export function moveCardsToDeck(
+    cardIds: number[],
+    targetDeckId: number,
+    options: { withinTransaction?: () => void } = {},
+): CardDeckMoveSnapshot[] {
     assertCatalogCardsMovable(cardIds, targetDeckId);
     const uniqueCardIds = [...new Set(cardIds)];
     const moves = uniqueCardIds
@@ -444,6 +449,10 @@ export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDe
             const card = getAnkiCard(move.cardId);
             if (!card) continue;
             saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, mod: nowSec, usn: -1 });
+        }
+        if (options.withinTransaction) {
+            options.withinTransaction();
+            for (const move of moves) move.movedAnkiData = getAnkiCard(move.cardId)?.ankiData ?? move.movedAnkiData;
         }
         db.execSync('COMMIT;');
     } catch (error) {

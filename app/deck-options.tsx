@@ -68,12 +68,14 @@ import {
     FSRS_DEFAULT_HISTORICAL_RETENTION,
     FSRS_DESIRED_RETENTION_MAX,
     FSRS_DESIRED_RETENTION_MIN,
+    clampFsrsCutoffDate,
     formatFsrsCutoffDate,
     formatFsrsParameterText,
     parseFsrsCutoffDate,
     parseFsrsParameterText,
 } from '../lib/fsrs';
 import { optimizeFsrsPreset } from '../lib/fsrsOptimizer';
+import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
 import {
     clearFsrsMemoryStates,
     decksNeedingMemoryRecompute,
@@ -368,6 +370,8 @@ export default function DeckOptionsScreen() {
         );
     }
 
+    // Anki limits "Ignore reviews before" to the collection's today (ankitects/anki#5294).
+    const cutoffLatest = dayNumberToYmd(localDayNumber(Date.now(), settings.dayRolloverHour));
     const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
         setSaveState('idle');
         setSaveMessage('');
@@ -548,7 +552,7 @@ export default function DeckOptionsScreen() {
                 settings,
                 currentParameters: current,
                 relearningStepsMinutes: parseAnkiStepText(form.relearningSteps, true) ?? [],
-                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore) ?? 0,
+                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore, cutoffLatest) ?? 0,
                 onProgress: (done, total) => {
                     setOptimizeProgress(done / total);
                     return !stopOptimizingRef.current;
@@ -696,7 +700,7 @@ export default function DeckOptionsScreen() {
                 fsrsParams: parseFsrsParameterText(form.fsrsParams) ?? undefined,
                 desiredRetention: decimal('desiredRetention'),
                 historicalRetention: decimal('historicalRetention'),
-                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore) ?? 0,
+                ignoreRevlogsBeforeMs: parseFsrsCutoffDate(form.ignoreRevlogsBefore, cutoffLatest) ?? 0,
                 // Stamped only by a run of the optimizer, so the "time to optimize again" nudge
                 // measures the age of the fit rather than the age of the last unrelated save.
                 fsrsParamsOptimizedAtMs: optimizedAtMs ?? base.fsrsParamsOptimizedAtMs,
@@ -1292,7 +1296,7 @@ export default function DeckOptionsScreen() {
                                 kind="text"
                                 label={l('Şu tarihten önceki tekrarları yok say', 'Ignore reviews before')}
                                 value={form.ignoreRevlogsBefore}
-                                onChange={(value) => set('ignoreRevlogsBefore', value)}
+                                onChange={(value) => set('ignoreRevlogsBefore', clampFsrsCutoffDate(value, cutoffLatest))}
                                 hint={l('YYYY-AA-GG. Boş bırakılırsa tüm geçmiş kullanılır.', 'YYYY-MM-DD. Leave empty to use the whole history.')}
                             />
                         </>
