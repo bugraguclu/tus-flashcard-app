@@ -100,4 +100,3 @@ export function gatherFilteredTermCardIds(
     const limit = Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(term.limit ?? 100)));
     return keyed.slice(0, limit).map((entry) => entry.id);
 }
-
