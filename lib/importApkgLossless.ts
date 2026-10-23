@@ -17,6 +17,7 @@ import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './ty
 import { ankiDueDayToLocal } from './importApkgProgress';
 import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
+import { deckNameKey } from './deckNames';
 import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
 import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import { parsePreviewDelays } from './filteredDeckOptions';
@@ -51,6 +52,16 @@ function sourceOriginalDueToLocal(row: any, crt: number, nowMs: number, rollover
     const type = numberValue(row.type);
     if ((type === 1 || type === 3) && odue >= 1_000_000_000) return odue * 1000;
     return type === 1 || type === 2 || type === 3 ? ankiDueDayToLocal(odue, crt, nowMs, rolloverHour) : odue;
+}
+
+/**
+ * The v1 scheduler kept a relearning card as a review card (type 2) in a learning queue; v2 and
+ * later give it its own type 3, which is what Anki's own upgrade does. A type-2 card in a
+ * learning queue exists only in a v1 collection, so it is converted whatever the package says.
+ */
+function upgradedCardType(type: number, queue: number): CardType {
+    const clamped = Math.min(3, Math.max(0, type)) as CardType;
+    return clamped === 2 && (queue === 1 || queue === 3) ? 3 : clamped;
 }
 
 function serializeTags(tags: string[]): string {
@@ -232,10 +243,34 @@ export function importAnkiReaderLossless(
             cardRows.map((row) => ({ did: numberValue(row.did), odid: numberValue(row.odid) })),
             { withScheduling, hasOwnDefaultDeck: existingDecks.some((row) => row.id === ANKI_DEFAULT_DECK_ID) },
         );
-        for (const [sourceKey, raw] of Object.entries(meta.decks)) {
+        // Deck names are matched as Anki matches them, ignoring case: "medicine::Cardio" joins an
+        // existing "Medicine" rather than creating a second tree that differs only in case. A
+        // deck renamed below (an incompatible deck of the same name exists) takes its subdecks.
+        const knownDeckNames = new Set(existingDecks.map((row) => row.name));
+        const foldedDeckNames = new Map<string, string>();
+        for (const row of existingDecks) if (!foldedDeckNames.has(deckNameKey(row.name))) foldedDeckNames.set(deckNameKey(row.name), row.name);
+        const rememberDeckName = (name: string) => {
+            knownDeckNames.add(name);
+            if (!foldedDeckNames.has(deckNameKey(name))) foldedDeckNames.set(deckNameKey(name), name);
+        };
+        const renamedDeckPaths = new Map<string, string>();
+        const resolveDeckPath = (raw: string): string => {
+            const parts = raw.split('::');
+            let path = '';
+            for (const part of parts) {
+                const candidate = path ? `${path}::${part}` : part;
+                const renamed = renamedDeckPaths.get(candidate);
+                path = renamed ?? (knownDeckNames.has(candidate) ? candidate : foldedDeckNames.get(deckNameKey(candidate)) ?? candidate);
+            }
+            return path;
+        };
+        const sourceDecks = Object.entries(meta.decks)
+            .sort(([, left], [, right]) => String(left.name || '').split('::').length - String(right.name || '').split('::').length);
+        for (const [sourceKey, raw] of sourceDecks) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
             if (decksToImport && !decksToImport.has(sourceId)) continue;
-            const sourceName = String(raw.name || 'Anki Deck');
+            const packageName = String(raw.name || 'Anki Deck');
+            const sourceName = resolveDeckPath(packageName);
             const sourceFiltered = numberValue(raw.dyn) === 1;
             const compatible = (row: { data: string }): boolean => {
                 try { return (JSON.parse(row.data) as Deck).isFiltered === sourceFiltered; }
@@ -258,6 +293,8 @@ export function importAnkiReaderLossless(
                 while (reservedDeckNames.has(name)) name = `${base} ${suffix++}`;
             }
             reservedDeckNames.add(name);
+            if (name !== sourceName) renamedDeckPaths.set(sourceName, name);
+            rememberDeckName(name);
             const targetId = samePackage?.id ?? sameIdentity?.id ?? sameName?.id ?? nextFreeId('decks', sourceId, reservedDecks);
             deckMap.set(sourceId, targetId);
             importedDeckNames.add(name);
@@ -448,7 +485,7 @@ export function importAnkiReaderLossless(
                 ord: numberValue(row.ord),
                 mod: numberValue(row.mod),
                 usn: numberValue(row.usn, -1),
-                type: withScheduling ? Math.min(3, Math.max(0, numberValue(row.type))) as CardType : 0,
+                type: withScheduling ? upgradedCardType(numberValue(row.type), numberValue(row.queue)) : 0,
                 queue: withScheduling ? Math.min(4, Math.max(-3, numberValue(row.queue))) as CardQueue : 0,
                 due: withScheduling ? sourceDueToLocal(row, meta.crt, nowMs, rolloverHour) : newPositionsByNote.get(targetNoteId)!,
                 ivl: withScheduling ? numberValue(row.ivl) : 0,
@@ -484,7 +521,13 @@ export function importAnkiReaderLossless(
         for (const row of withScheduling ? revlogRows : []) {
             const targetCardId = cardIdMap.get(numberValue(row.cid));
             if (!targetCardId) continue;
-            const targetReviewId = nextFreeId('revlog', numberValue(row.id), reservedRevlog);
+            // A review id is the time it was given. One already in the collection is that same
+            // review (a re-import), and Anki skips it; rekeying it to now made it look like an
+            // answer given today.
+            const targetReviewId = numberValue(row.id);
+            if (!Number.isSafeInteger(targetReviewId) || targetReviewId <= 0 || reservedRevlog.has(targetReviewId)
+                || db.getFirstSync('SELECT 1 AS found FROM revlog WHERE id = ? LIMIT 1', targetReviewId)) continue;
+            reservedRevlog.add(targetReviewId);
             db.runSync(
                 `INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,

@@ -16,6 +16,11 @@ export function getLegacyFileSystem(): LegacyFileSystem {
     return _fs;
 }
 
+/** Tests run without the native module: they hand in a stand-in instead. */
+export function setLegacyFileSystemForTesting(fs: unknown): void {
+    _fs = fs as LegacyFileSystem;
+}
+
 export function assertKnownFileSize(size: number | null | undefined, maxBytes: number): void {
     if (typeof size === 'number' && Number.isFinite(size) && size > maxBytes) {
         throw new Error('FILE_TOO_LARGE');
@@ -94,10 +99,39 @@ export async function readUriBytes(uri: string, maxBytes?: number): Promise<Uint
     const location = toFileUri(uri);
     await assertNativeUriSize(location, maxBytes);
     const fs = getLegacyFileSystem();
+    const info = await fs.getInfoAsync(location).catch(() => null);
+    const size = info && info.exists && !info.isDirectory && 'size' in info ? Number(info.size) : NaN;
+    if (Number.isSafeInteger(size) && size > NATIVE_READ_CHUNK_BYTES) {
+        return readNativeBytesInChunks(location, size, maxBytes);
+    }
     const encoded = await fs.readAsStringAsync(location, { encoding: fs.EncodingType.Base64 });
     const bytes = base64ToBytes(encoded);
     if (maxBytes) assertKnownFileSize(bytes.byteLength, maxBytes);
     return bytes;
+}
+
+/** A multiple of 3, so every chunk's base64 decodes on its own. */
+const NATIVE_READ_CHUNK_BYTES = 6 * 1024 * 1024;
+
+/**
+ * Read a large file a few megabytes at a time into one buffer. Reading it whole goes through a
+ * base64 string a third larger than the file plus its decoded copy, which a large package can
+ * make too big for the phone to hold at once.
+ */
+async function readNativeBytesInChunks(location: string, size: number, maxBytes?: number): Promise<Uint8Array> {
+    if (maxBytes) assertKnownFileSize(size, maxBytes);
+    const fs = getLegacyFileSystem();
+    const output = new Uint8Array(size);
+    let offset = 0;
+    while (offset < size) {
+        const length = Math.min(NATIVE_READ_CHUNK_BYTES, size - offset);
+        const chunk = base64ToBytes(await fs.readAsStringAsync(location, { encoding: fs.EncodingType.Base64, position: offset, length }));
+        if (chunk.length === 0) break;
+        output.set(chunk.subarray(0, Math.min(chunk.length, size - offset)), offset);
+        offset += chunk.length;
+    }
+    if (offset !== size) throw new Error('FILE_READ_FAILED');
+    return output;
 }
 
 function downloadBlobWeb(fileName: string, blob: Blob): void {

@@ -11,17 +11,18 @@ import type { JSZipType } from './apkgFormat';
  * passes, and the renames written back into the imported notes.
  */
 
-// Media caps: one runaway file must not exhaust storage, and the total stays inside
-// what IndexedDB (web) comfortably holds.
+// Media caps: one runaway file must not exhaust storage. Files are inflated and written one at a
+// time, so the totals bound disk use rather than memory; large shared medical decks carry tens of
+// thousands of images (AKT-14).
 const MEDIA_MANIFEST_NAME = 'media';
 
-const MAX_MEDIA_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_MEDIA_FILE_BYTES = 100 * 1024 * 1024;
 
-const MAX_MEDIA_TOTAL_BYTES = 200 * 1024 * 1024;
+const MAX_MEDIA_TOTAL_BYTES = 2 * 1024 * 1024 * 1024;
 
-const MAX_MEDIA_MANIFEST_BYTES = 5 * 1024 * 1024;
+const MAX_MEDIA_MANIFEST_BYTES = 20 * 1024 * 1024;
 
-const MAX_MEDIA_FILES = 20_000;
+const MAX_MEDIA_FILES = 200_000;
 
 /**
  * Copies the package's media files (numeric zip entries mapped by the `media`
