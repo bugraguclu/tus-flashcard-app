@@ -246,7 +246,7 @@ export function decayFromParameters(params: readonly number[] | undefined | null
 
 /** The model's curve factor (`power_forgetting_curve`): e^(ln 0.9 / -w20) - 1, in f32. */
 function modelCurveFactor(w20: number): number {
-    return sub(exp(mul(div(1, -w20), LN_0_9)), 1);
+    return sub(exp(div(LN_0_9, -w20)), 1);
 }
 
 /** Retrievability after `elapsed` days as the model sees it during a review. */
@@ -389,7 +389,7 @@ function stabilityShortTerm(w: readonly number[], stability: number, rating: Fsr
 /** Difficulty moves less near the edges of its range, so it cannot be pinned at 1 or 10. */
 function nextDifficulty(w: readonly number[], difficulty: number, rating: FsrsRating): number {
     const delta = mul(-w[6], sub(rating, 3));
-    return add(difficulty, mul(add(-difficulty, 10), div(delta, 9)));
+    return add(difficulty, div(mul(add(-difficulty, 10), delta), 9));
 }
 
 /** Every review pulls difficulty back toward the value an "Easy" first answer would have set. */

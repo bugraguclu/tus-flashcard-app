@@ -708,7 +708,7 @@ yok. Önem sırasıyla 11 fark:
 - **Uygulama:** `lib/filteredDeckOptions.ts:25` (`FILTERED_DECK_ORDER_UI`) 11 sıranın hepsini her
   zaman listeliyor (`components/FilteredDeckOptionsModal.tsx:518`).
 
-## 11. f32 işlem sırası — çok düşük
+## 11. f32 işlem sırası — çok düşük — kapatıldı
 
 - **Anki 26.09.3:** fsrs-rs 6.6.2'nin skaler modeli doğrusal sönümlemeyi `((10 − D) · ΔD) / 9`,
   eğri katsayısını `exp(ln 0.9 / −w20) − 1` olarak hesaplıyor.
@@ -829,3 +829,14 @@ asıl ön ayarı kullanması da kapsanıyor.
 **Koşulmayan hedefli iPhone smoke:** yeni kart ve hafızası silinmiş cevaplı kartta Kart bilgisi
 aç/kapat; FSRS açık/kapalı Kolaylık görünümü; tam yüzde; geri kaydırma ve VoiceOver. Bu eksik
 canlı doğrulama nedeniyle iPhone yayın kapısı açık kalır.
+
+### Madde 11 sonucu — 23 Ekim 2026
+
+Yeni Anki'nin 3.000 durum çıktısı üzerinde eski ve önerilen skaler sıra karşılaştırıldı. Yeni
+sıranın Anki ile tam eşleştiği, eskisinin ayrıldığı 415 difficulty ve 24 stability çıktısı
+bulundu. Sabit üretici indekslerinden altı vektör (8, 28, 564; üç difficulty ve üç stability)
+`scalarOrderProbes` olarak yeni fixture'a eklendi; beklenen değerler yalnız Anki çıktısından
+alınıyor. Tam f32 eşitliği isteyen test eski kodda kaldı, iki işlem sırası düzeltildikten sonra
+geçti. Eğri faktöründe `ln 0.9 / -w20`; difficulty'de önce çarpım sonra 9'a bölme uygulanıyor.
+Odaklı iki dosyada 35 test geçti. Platform exp/pow'undan gelen genel son-bit farkı hâlâ
+belgelenmiş toleransla ölçülüyor; seçilen altı vektör genel tam parite iddiası değildir.

@@ -27,7 +27,7 @@ vi.mock('./db', () => ({
 import { ankiCardSeed, ankiFuzzFactor } from './ankiRandom';
 import { ankiCardToCardState, localDayNumber } from './ankiState';
 import { saveDeck, saveDeckConfig } from './deckManager';
-import { normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
+import { fsrsNextStates, normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
 import { parseAnkiCardData } from './fsrsCardData';
 import { rebuildFsrsMemoryStates } from './fsrsMaintenance';
 import { fsrsMemoryStateForCard, fsrsReviewHistory } from './fsrsMemory';
@@ -129,6 +129,18 @@ describe('answer buttons', () => {
                     expectClose(actual.memory.difficulty, expected.d, `${label} difficulty`);
                 }
             });
+        }
+    });
+});
+
+describe('scalar f32 operation order', () => {
+    it('matches the exact Anki 26.09.3 states that distinguish the old Burn order', () => {
+        expect(fixture.scalarOrderProbes).toHaveLength(6);
+        for (const entry of fixture.scalarOrderProbes) {
+            const states = fsrsNextStates(normalizeFsrsParameters(entry.params), entry.memory,
+                entry.desiredRetention, entry.elapsedDays);
+            const actual = states[entry.button as keyof typeof states].memory[entry.field as 'stability' | 'difficulty'];
+            expect(actual, `case ${entry.caseIndex} ${entry.button} ${entry.field}`).toBe(Math.fround(entry.expected));
         }
     });
 });

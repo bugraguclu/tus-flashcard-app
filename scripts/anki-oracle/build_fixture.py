@@ -75,6 +75,24 @@ def compact_resched_round(rnd):
     }
 
 
+# Fixed cases from seed 31's 3000-state run. These distinguish 6.6.2's scalar f32 order
+# from the old Burn order; expected numbers are copied only from Anki's backend output.
+scalar_probes = []
+for index, button, field in [(8, "again", "difficulty"), (28, "hard", "difficulty"),
+                              (28, "easy", "difficulty"), (564, "again", "stability"),
+                              (564, "hard", "stability"), (564, "good", "stability")]:
+    case = next(c for c in states["cases"] if c["index"] == index)
+    data = case["card"]["data"]
+    scalar_probes.append({
+        "caseIndex": index, "params": case["config"]["params"],
+        "memory": {"stability": data["s"], "difficulty": data["d"]},
+        "desiredRetention": case["config"]["desiredRetention"],
+        "elapsedDays": max(0, (case["timing"]["nextDayAt"] - data["lrt"]) // 86400),
+        "button": button, "field": field,
+        "expected": case["out"][button]["s" if field == "stability" else "d"],
+    })
+
+
 fixture = {
     "meta": {"anki": states["meta"]["anki"], "buildhash": states["meta"]["buildhash"], "fsrs": "6.6.2",
              "rand": "0.9.4", "timezone": "Europe/Istanbul", "rolloverHour": 4},
@@ -88,6 +106,7 @@ fixture = {
                 | {"timing": {"today": c["timing"]["today"], "answeredAtMs": c["timing"]["answeredAtMs"]}}
                 for c in pick(answers["cases"], 100)],
     "fuzz": pick(fuzz["cases"], 120),
+    "scalarOrderProbes": scalar_probes,
     "loadBalancer": [],
     "reschedule": resched["rounds"][:1],
     "rescheduleBalanced": [compact_resched_round(r) for r in resched_lb["rounds"][:1]],
