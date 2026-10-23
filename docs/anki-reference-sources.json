@@ -872,6 +872,17 @@
         "one transactional card-row deletion primitive",
         "retain deleted-card history and record only real deleted IDs"
       ]
+    },
+    {
+      "id": "anki-ai1-deletion-hardening",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "useFor": [
+        "keep the default destination deck available",
+        "restore deleted deck state and local board settings",
+        "atomic deletion failure and exact-prefix buried counts"
+      ]
     }
   ],
   "requiredDocs": [

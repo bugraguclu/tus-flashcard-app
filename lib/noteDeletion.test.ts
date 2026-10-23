@@ -52,3 +52,26 @@ describe('deletion retains history and offers conflict-safe undo', () => {
         expect(db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id)?.data).toBe('{}');
     });
 });
+
+it('restores deck whiteboard preferences when deck deletion is undone', () => {
+    const { deck } = fixture();
+    const key = `tus_whiteboard_deck_v1:${deck.id}`;
+    db.runSync('INSERT INTO settings (key,value) VALUES (?,?)', key, '{"enabled":true}');
+    const result = deleteDeck(deck.id);
+    result!.undo();
+    expect(db.getFirstSync<{value:string}>('SELECT value FROM settings WHERE key = ?', key)?.value).toBe('{"enabled":true}');
+});
+
+it('rolls back a failed bulk removal, including graves, while retaining history', () => {
+    const deck = createDeck('Atomic');
+    const { note, cards } = createNote(BUILTIN_NOTE_TYPES.find(t => t.id === 2)!, ['Front', 'Back'], deck.id);
+    const original = db.runSync;
+    holder.db = { ...db, runSync(sql: string, ...params: any[]) {
+        if (sql.startsWith('DELETE FROM anki_cards') && params[0] === cards[1].id) throw new Error('injected failure');
+        return original(sql, ...params);
+    } };
+    expect(() => deleteNote(note.id)).toThrow('injected failure');
+    expect(getCardsForNote(note.id)).toHaveLength(2);
+    expect(getNote(note.id)).not.toBeNull();
+    expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
+});

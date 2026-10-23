@@ -13,6 +13,9 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
         const row = db.getFirstSync<Row>(`SELECT * FROM ${table} WHERE id = ?`, id);
         return row ? [row] : [];
     }) }));
+    const boardSettings = (ids.deckIds ?? []).flatMap(id => [`tus_whiteboard_deck_v1:${id}`, `tus_whiteboard_cards_v1:${id}`]).map(key => ({
+        key, before: db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key),
+    }));
     const fts = (ids.cardIds ?? []).flatMap((id) => db.getAllSync<Row>('SELECT * FROM cards_fts WHERE card_id = ?', String(id)));
     const graveStart = db.getFirstSync<{ n: number }>('SELECT COALESCE(MAX(rowid), 0) AS n FROM graves')?.n ?? 0;
     return () => {
@@ -27,6 +30,10 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
                     const current = db.getFirstSync<Row>(`SELECT * FROM ${table} WHERE id = ?`, row.id);
                     if (JSON.stringify(current) !== JSON.stringify(after[ti][ri])) throw new Error('An affected row has changed. Undo was cancelled.');
                 }));
+                for (const setting of boardSettings) {
+                    const current = db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', setting.key);
+                    if (current?.value && current.value !== setting.before?.value) throw new Error('Whiteboard preferences changed. Undo was cancelled.');
+                }
                 for (const { table, rows } of before) for (const row of rows) {
                     const columns = Object.keys(row);
                     db.runSync(`INSERT OR REPLACE INTO ${table} (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`, ...Object.values(row));
@@ -35,6 +42,10 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
                 for (const row of fts) {
                     const columns = Object.keys(row);
                     db.runSync(`INSERT INTO cards_fts (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`, ...Object.values(row));
+                }
+                for (const setting of boardSettings) {
+                    if (setting.before) db.runSync('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)', setting.key, setting.before.value);
+                    else db.runSync('DELETE FROM settings WHERE key = ?', setting.key);
                 }
                 for (const grave of graves) db.runSync('DELETE FROM graves WHERE rowid = ?', grave.rowid);
                 db.execSync('COMMIT;');

@@ -202,9 +202,10 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
             returnFilteredCardsHome(id);
             db.runSync('DELETE FROM decks WHERE id = ?', id);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
+            const deletion = finishDeletion();
             db.execSync('COMMIT;');
             forgetWhiteboards([id]);
-            return finishDeletion();
+            return deletion;
         }
 
         // The deck itself plus every subdeck (matched by the "name::" prefix).
@@ -237,13 +238,20 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
         }
 
         for (const deckId of deckIds) {
-            db.runSync('DELETE FROM decks WHERE id = ?', deckId);
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', deckId);
+            if (deckId === 1) {
+                const defaultNameOwner = getDeckByName('Default');
+                const name = defaultNameOwner && defaultNameOwner.id !== 1 ? getAvailableDeckName('Default') : 'Default';
+                saveDeck({ ...getDeck(1)!, name, mod: Math.floor(Date.now() / 1000), usn: -1 });
+            } else {
+                db.runSync('DELETE FROM decks WHERE id = ?', deckId);
+                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', deckId);
+            }
         }
 
+        const deletion = finishDeletion();
         db.execSync('COMMIT;');
         forgetWhiteboards(deckIds);
-        return finishDeletion();
+        return deletion;
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
@@ -566,7 +574,7 @@ export function getBuriedCountForDeck(deckId: number): number {
         `SELECT COUNT(*) AS cnt
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.instr(name, ?) = 1)`,
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
         deck.name,
         `${deck.name}::`,
     );
@@ -583,7 +591,7 @@ export function unburyDeck(deckId: number, rolloverHour: number = 4): number {
         `SELECT c.data AS data
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.instr(name, ?) = 1)`,
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
         deck.name,
         `${deck.name}::`,
     );

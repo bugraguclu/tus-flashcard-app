@@ -122,6 +122,8 @@ retention/true-retention graphs and the FSRS simulator
 
 ## Hierarchical decks and presets
 
+Deletion undo also restores persistent per-deck whiteboard preferences/ink. Injected write failures roll back note/card/grave changes. The default deck ID 1 remains available after its contents are removed, with its name reset to Default (a free suffix is used on a legacy name collision); undo restores its previous name and subtree. Exact-prefix buried-card count/unbury queries have real SQLite regression coverage.
+
 Changing learning/relearning steps or assigning another preset remaps the remaining-step counter from the last passed delay, including suspended/buried cards and cards temporarily in a filtered deck (home preset). Config and card writes share a savepoint; due values and queue units are unchanged (`lib/deckPresetSteps.test.ts`).
 
 Deck creation trims and NFC-normalizes every `::` component (empty components become `blank`) and resolves case variants to the existing deck, including Unicode lowercase matching. Deletion, rename and unbury select legacy descendants using SQLite `instr` with the exact stored prefix, so case-colliding legacy trees and literal `%`/`_` names cannot be mixed (`lib/deckNames.safety.test.ts`). The Decks create flow accepts hierarchy paths. Query consumers outside `deckStore` still require the same exact-prefix treatment when legacy case collisions exist.

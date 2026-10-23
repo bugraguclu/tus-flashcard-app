@@ -4,7 +4,7 @@ import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
-import { createDeck, deleteDeck, getDeck, getDeckByName, renameDeck } from './deckStore';
+import { createDeck, deleteDeck, getDeck, getDeckByName, renameDeck, getBuriedCountForDeck, unburyDeck } from './deckStore';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -39,4 +39,26 @@ describe('normalized deck names and exact legacy subtrees', () => {
   expect(getDeck(11)?.name).toBe('Zoo::Cells');
   expect(getDeck(13)?.name).toBe('bio::Genes');
  });
+});
+
+import { createNote, saveAnkiCard, getAnkiCard } from './noteStore';
+import { BUILTIN_NOTE_TYPES } from './models';
+it('counts and unburies only the exact legacy subtree', () => {
+ legacy(10, 'Bio'); legacy(11, 'Bio::Cells'); legacy(12, 'bio'); legacy(13, 'bio::Genes');
+ const a = createNote(BUILTIN_NOTE_TYPES[0], ['A','B'], 11).cards[0];
+ const b = createNote(BUILTIN_NOTE_TYPES[0], ['C','D'], 13).cards[0];
+ saveAnkiCard({ ...a, queue: -3 }); saveAnkiCard({ ...b, queue: -3 });
+ expect(getBuriedCountForDeck(10)).toBe(1);
+ expect(unburyDeck(10)).toBe(1);
+ expect(getAnkiCard(b.id)?.queue).toBe(-3);
+});
+
+it('keeps default deck id 1 available after deleting its contents', () => {
+ legacy(1, 'Renamed Default'); legacy(2, 'Renamed Default::Child');
+ const result = deleteDeck(1);
+ expect(getDeck(1)?.name).toBe('Default');
+ expect(getDeck(2)).toBeNull();
+ result!.undo();
+ expect(getDeck(1)?.name).toBe('Renamed Default');
+ expect(getDeck(2)?.name).toBe('Renamed Default::Child');
 });

@@ -8,6 +8,7 @@ let failOnCard: number | null = null;
 vi.mock('./db', () => ({
     getDB: () => ({
         getFirstSync: (sql: string, id: number) => {
+            if (/FROM anki_cards WHERE id = \?/.test(sql)) return { id, data: JSON.stringify({ id, noteId: id }) };
             if (/FROM notes WHERE id = \?/.test(sql)) {
                 const note = store.get(id);
                 return note ? { data: JSON.stringify(note) } : null;
@@ -16,7 +17,7 @@ vi.mock('./db', () => ({
         },
         runSync: (sql: string, ...params: any[]) => {
             dbCalls.push(sql);
-            if (failOnCard !== null && /DELETE FROM revlog/.test(sql) && params[0] === failOnCard) throw new Error('write failed');
+            if (failOnCard !== null && /DELETE FROM anki_cards/.test(sql) && params[0] === failOnCard) throw new Error('write failed');
             if (/INSERT OR REPLACE INTO notes/.test(sql)) {
                 const [id, , , , , data] = params;
                 store.set(id as number, JSON.parse(data as string));
@@ -71,7 +72,7 @@ describe('note marking (Anki-style "marked" tag)', () => {
     });
 
     it('deletes a bulk empty-card selection in one transaction', () => {
-        deleteAnkiCardsOnly([10, 11, 10]);
+        deleteAnkiCardsOnly([10, 11, 10], { preserveNotes: false });
 
         expect(dbCalls[0]).toBe('BEGIN TRANSACTION;');
         expect(dbCalls.at(-1)).toBe('COMMIT;');
@@ -82,7 +83,7 @@ describe('note marking (Anki-style "marked" tag)', () => {
     it('rolls back when a bulk empty-card deletion fails', () => {
         failOnCard = 11;
 
-        expect(() => deleteAnkiCardsOnly([10, 11])).toThrow('write failed');
+        expect(() => deleteAnkiCardsOnly([10, 11], { preserveNotes: false })).toThrow('write failed');
         expect(dbCalls[0]).toBe('BEGIN TRANSACTION;');
         expect(dbCalls.at(-1)).toBe('ROLLBACK;');
     });

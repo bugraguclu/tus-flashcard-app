@@ -101,8 +101,9 @@ export function deleteNote(id: number): DeletionUndo {
 
         db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', id);
 
+        const deletion = finishDeletion();
         db.execSync('COMMIT;');
-        return finishDeletion();
+        return deletion;
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
