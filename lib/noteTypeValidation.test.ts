@@ -52,3 +52,20 @@ describe('save validation (SAB-10)', () => {
         expect(validateNoteType({ ...cloze, templates: [{ ...cloze.templates[0], qfmt: '{{cloze:Text}}{{#c1}}x{{/c1}}' }] })).toEqual([]);
     });
 });
+
+describe('imported per-field options follow their field (SAB-14)', async () => {
+    const { addField, moveField, removeField } = await import('./noteTypeEditor');
+    const imported: NoteType = { ...basic, fields: [...basic.fields, { ...basic.fields[1], name: 'Extra', ord: 2 }], ankiRaw: { flds: [{ font: 'F', description: 'front' }, { font: 'B', size: 30 }, { font: 'E', excludeFromSearch: true }] } };
+    it('moves, removes and appends raw field options with the fields', () => {
+        const moved = moveField(imported, 2, 0).noteType;
+        expect(moved.fields.map(f => f.name)).toEqual(['Extra', 'Front', 'Back']);
+        expect((moved.ankiRaw!.flds as { font: string }[]).map(f => f.font)).toEqual(['E', 'F', 'B']);
+        const removed = removeField(imported, 0).noteType;
+        expect((removed.ankiRaw!.flds as { font: string }[]).map(f => f.font)).toEqual(['B', 'E']);
+        const added = addField(imported, 'New').noteType;
+        expect(added.ankiRaw!.flds).toEqual([...(imported.ankiRaw!.flds as unknown[]), {}]);
+    });
+    it('leaves a note type without source options alone', () => {
+        expect(moveField(basic, 1, 0).noteType.ankiRaw).toBeUndefined();
+    });
+});

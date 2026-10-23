@@ -23,6 +23,18 @@ function reindex<T extends { ord: number }>(items: T[]): T[] {
     return items.map((item, i) => ({ ...item, ord: i }));
 }
 
+/**
+ * Keep the imported source model's per-field options (font, size, description, exclude from
+ * search, field id) attached to the same fields after a structural edit. Export merges them by
+ * position, so without this a reorder or removal would move them onto another field (SAB-14).
+ */
+function withRawFieldOrder(nt: NoteType, reorder: (raw: unknown[]) => unknown[]): Pick<NoteType, 'ankiRaw'> | Record<string, never> {
+    const raw = nt.ankiRaw;
+    if (!raw || !Array.isArray(raw.flds)) return {};
+    const padded = Array.from({ length: Math.max(raw.flds.length, nt.fields.length) }, (_, i) => (raw.flds as unknown[])[i] ?? {});
+    return { ankiRaw: { ...raw, flds: reorder(padded.slice(0, nt.fields.length)) } };
+}
+
 function touch(nt: NoteType, patch: Partial<NoteType>): NoteType {
     return { ...nt, ...patch, mod: Math.floor(Date.now() / 1000) };
 }
@@ -142,7 +154,7 @@ export function addField(nt: NoteType, name: string): FieldEdit {
         rtl: false,
     };
     return {
-        noteType: touch(nt, { fields: reindex([...nt.fields, field]) }),
+        noteType: touch(nt, { fields: reindex([...nt.fields, field]), ...withRawFieldOrder(nt, (raw) => [...raw, {}]) }),
         migrate: (values) => [...values, ''],
     };
 }
@@ -156,7 +168,12 @@ export function removeField(nt: NoteType, ord: number): FieldEdit {
     else if (sortFieldIdx > ord) sortFieldIdx -= 1;
 
     return {
-        noteType: touch(nt, { fields: reindex(nt.fields.filter((f) => f.ord !== ord)), templates: rewriteFieldReferences(nt, nt.fields[ord].name, null), sortFieldIdx }),
+        noteType: touch(nt, {
+            fields: reindex(nt.fields.filter((f) => f.ord !== ord)),
+            templates: rewriteFieldReferences(nt, nt.fields[ord].name, null),
+            sortFieldIdx,
+            ...withRawFieldOrder(nt, (raw) => raw.filter((_, i) => i !== ord)),
+        }),
         migrate: (values) => values.filter((_, i) => i !== ord),
     };
 }
@@ -179,7 +196,7 @@ export function moveField(nt: NoteType, fromOrd: number, toOrd: number): FieldEd
     const sortFieldIdx = Math.max(0, newOrder.indexOf(nt.sortFieldIdx));
 
     return {
-        noteType: touch(nt, { fields: reindex(reorder(nt.fields)), sortFieldIdx }),
+        noteType: touch(nt, { fields: reindex(reorder(nt.fields)), sortFieldIdx, ...withRawFieldOrder(nt, reorder) }),
         migrate: (values) => reorder(values),
     };
 }
