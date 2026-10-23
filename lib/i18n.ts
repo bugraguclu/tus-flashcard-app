@@ -57,6 +57,10 @@ const tr = {
     'anki.invalidSearchTitle': 'Geçersiz arama',
     'anki.invalidSearchMessage': 'Bu arama okunamadı. Terimleri, tırnakları ve parantezleri kontrol edin.\n\n{{search}}',
 
+    'backup.notRestorableTitle': 'Önce onarın',
+    'backup.notRestorableMessage': 'Koleksiyonda hasarlı satırlar olduğu için geri yüklenebilir bir güvenlik yedeği alınamadı; hiçbir şey değiştirilmedi. Önce Ayarlar’daki “Onar ve optimize et” ile onarın. Okunamayan notlar kalırsa daha eski bir yedeği geri yükleyin.',
+    'backup.recoveryCopySaved': 'Koleksiyonda hasarlı satırlar olduğu için bir kurtarma kopyası kaydedildi. Paylaş ile dışa aktarılabilir ama doğrudan geri yüklenemez. Ayarlar’daki “Onar ve optimize et” ile onarın.',
+
     'root.errorTitle': 'Beklenmeyen Bir Hata Oluştu',
     'root.errorDescription': 'Uygulama çalışırken beklenmeyen bir durumla karşılaşıldı. Verileriniz güvende ve korunuyor.',
     'root.databaseError': 'Veritabanı başlatılamadı',
@@ -227,6 +231,10 @@ const en: Record<TranslationKey, string> = {
     'anki.filteredDeck': 'Filtered Deck',
     'anki.invalidSearchTitle': 'Invalid search',
     'anki.invalidSearchMessage': 'This search could not be read. Check the terms, quotes and parentheses.\n\n{{search}}',
+
+    'backup.notRestorableTitle': 'Repair First',
+    'backup.notRestorableMessage': 'The collection has damaged rows, so a restorable safety backup could not be made and nothing was changed. Run “Repair and optimize” in Settings first. If unreadable notes remain, restore an earlier backup.',
+    'backup.recoveryCopySaved': 'The collection has damaged rows, so a recovery copy was saved. It can be exported with Share but cannot be restored directly. Run “Repair and optimize” in Settings.',
 
     'root.errorTitle': 'Something went wrong',
     'root.errorDescription': 'An unexpected issue occurred while running the app. Your data is safe and intact.',

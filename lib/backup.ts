@@ -75,6 +75,24 @@ export interface BackupDeps {
 export interface CreateBackupOptions {
     /** A user-facing name. The .json extension is optional and is normalized on write. */
     name?: string;
+    /**
+     * Refuse, writing nothing, when the collection can only be saved as a recovery copy. Set by
+     * the destructive operations that are not a way out of a damaged collection (Reset, collection
+     * replacement): their safety backup must be one the learner can restore.
+     */
+    requireRestorable?: boolean;
+}
+
+/**
+ * The collection has rows the strict restore validation rejects, so its snapshot would be a
+ * recovery copy (raw rows kept verbatim, shareable but never restorable). Thrown before anything
+ * is written or changed; the message tells the learner to run Repair first.
+ */
+export class BackupNotRestorableError extends Error {
+    constructor(public readonly reason: string) {
+        super(translateActive('backup.notRestorableMessage'));
+        this.name = 'BackupNotRestorableError';
+    }
 }
 
 export type BackupNameErrorCode = 'empty' | 'too-long' | 'invalid-extension' | 'invalid-characters' | 'invalid-name' | 'duplicate';
@@ -172,12 +190,31 @@ export function validateBackupContents(contents: string): { valid: true } | { va
     }
 }
 
-function assertValidBackupContents(contents: string, allowRecovery = false): void {
-    if (allowRecovery) {
+/** Why a well-formed recovery snapshot of this app was written, or null for anything else. */
+function recoverySnapshotReason(contents: string): string | null {
+    try {
         const data = JSON.parse(contents);
-        if (data.recoveryOnly === true && data.canonical === true && data.version === 6
-            && data.tables && ['notes', 'anki_cards', 'note_types', 'decks', 'deck_configs', 'revlog', 'graves', 'session_stats'].every(key => Array.isArray(data.tables[key]))) return;
-    }
+        if (data?.recoveryOnly === true && data.canonical === true && data.version === 6 && data.tables
+            && ['notes', 'anki_cards', 'note_types', 'decks', 'deck_configs', 'revlog', 'graves', 'session_stats'].every(key => Array.isArray(data.tables[key]))) {
+            return typeof data.recoveryReason === 'string' ? data.recoveryReason : 'recovery-only';
+        }
+    } catch { /* not a recovery snapshot */ }
+    return null;
+}
+
+/**
+ * Check a freshly exported snapshot before it is written: restorable, or a recovery copy of a
+ * collection with damaged rows (kept, but never offered as a restore point). Anything else throws.
+ */
+function snapshotRestorability(contents: string): { restorable: true } | { restorable: false; reason: string } {
+    const result = validateBackupContents(contents);
+    if (result.valid) return { restorable: true };
+    const reason = recoverySnapshotReason(contents);
+    if (reason === null) throw new Error(`Invalid backup contents: ${result.reason}`);
+    return { restorable: false, reason };
+}
+
+function assertValidBackupContents(contents: string): void {
     const result = validateBackupContents(contents);
     if (!result.valid) throw new Error(`Invalid backup contents: ${result.reason}`);
 }
@@ -318,11 +355,15 @@ function parseTimestamp(preRestoreName: string): number {
     return match ? Number(match[1]) : 0;
 }
 
-/** Write today's snapshot unconditionally (manual backup / due auto backup). */
+/**
+ * Write today's snapshot unconditionally (manual backup / due auto backup). `restorable` is false
+ * when a damaged row made it a recovery copy; with `requireRestorable` that case throws
+ * `BackupNotRestorableError` instead, and nothing is written.
+ */
 export async function createBackupNow(
     deps: BackupDeps = {},
     options: CreateBackupOptions = {},
-): Promise<{ fileName: string }> {
+): Promise<{ fileName: string; restorable: boolean }> {
     const d = resolveDeps(deps);
     const now = d.now();
     const customName = options.name === undefined ? undefined : normalizeManualBackupName(options.name);
@@ -338,7 +379,8 @@ export async function createBackupNow(
     }
 
     const json = await d.exportData();
-    assertValidBackupContents(json, true);
+    const snapshot = snapshotRestorability(json);
+    if (!snapshot.restorable && options.requireRestorable) throw new BackupNotRestorableError(snapshot.reason);
     await d.store.write(fileName, json);
     // Mark the time only after the write succeeds, so a failure retries next launch.
     d.setLastBackupAt(String(now.getTime()));
@@ -349,7 +391,7 @@ export async function createBackupNow(
         console.warn('[Backup] prune failed:', e);
     }
 
-    return { fileName };
+    return { fileName, restorable: snapshot.restorable };
 }
 
 let _autoBackupInFlight: Promise<{ didRun: boolean; fileName?: string }> | null = null;
@@ -452,8 +494,10 @@ export async function importBackupContents(
     // A web tab that is not the writer would restore into memory only and lose it on reload.
     if (!d.isWriter()) throw new Error(translateActive('root.readOnlyTabAction'));
 
+    // Restoring a chosen backup is a way out of a damaged collection, so the copy of what it
+    // replaces may be a recovery copy: it keeps the damaged rows verbatim and stays shareable.
     const currentContents = await d.exportData();
-    assertValidBackupContents(currentContents, true);
+    snapshotRestorability(currentContents);
     const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
     await d.store.write(preRestoreName, currentContents);
 

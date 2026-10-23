@@ -76,6 +76,7 @@ import {
 } from '../lib/studyNotificationPolicy';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
 import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
+import { BackupNotRestorableError } from '../lib/backup';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { useRepeatPress } from '../hooks/useRepeatPress';
@@ -750,6 +751,7 @@ export default function SettingsScreen() {
     const describeOptimizeResult = useCallback((
         result: DatabaseOptimizeResult,
         backupFileName: string,
+        backupRestorable: boolean,
     ) => {
         const { repair } = result;
         const lines: string[] = [];
@@ -836,7 +838,12 @@ export default function SettingsScreen() {
             lines.push('', l(`Tamamlanamayan adımlar: ${names}.`, `Steps that did not finish: ${names}.`));
         }
 
-        lines.push('', l(`Güvenlik yedeği: ${backupFileName}`, `Safety backup: ${backupFileName}`));
+        lines.push('', backupRestorable
+            ? l(`Güvenlik yedeği: ${backupFileName}`, `Safety backup: ${backupFileName}`)
+            : l(
+                `Kurtarma kopyası: ${backupFileName}. Hasarlı satırları olduğu gibi içerir; Yedekler’den paylaşılabilir ama doğrudan geri yüklenemez.`,
+                `Recovery copy: ${backupFileName}. It keeps the damaged rows as they were; it can be shared from Backups but cannot be restored directly.`,
+            ));
         return lines.join('\n');
     }, [l, stepLabel]);
 
@@ -891,21 +898,27 @@ export default function SettingsScreen() {
             try {
                 // Allow the busy state to paint before synchronous SQLite maintenance.
                 await new Promise((resolve) => setTimeout(resolve, 0));
-                const { backupFileName, result } = await optimizeDatabaseWithBackup();
+                const { backupFileName, backupRestorable, result } = await optimizeDatabaseWithBackup();
                 // Deleted, moved and reindexed rows all invalidate what the open screens are showing.
                 if (repairChangedRows(result.repair) || result.ftsReindexed > 0) invalidateCollection();
                 alert(
                     result.failedSteps.length > 0
                         ? l('Kısmen tamamlandı', 'Partly Completed')
                         : l('Optimizasyon tamamlandı', 'Optimization Complete'),
-                    describeOptimizeResult(result, backupFileName),
+                    describeOptimizeResult(result, backupFileName, backupRestorable),
                 );
             } catch (error) {
                 console.warn('[Settings] database optimization failed:', error);
                 const retained = error instanceof MaintenanceWorkflowError ? error.backupFileName : undefined;
+                const retainedRestorable = !(error instanceof MaintenanceWorkflowError) || error.backupRestorable !== false;
                 alert(
                     l('Optimizasyon tamamlanamadı', 'Optimization Failed'),
-                    retained
+                    retained && !retainedRestorable
+                        ? l(
+                            `Onarım başlatıldı ama tamamlanamadı. ${retained} kurtarma kopyası korundu; hasarlı satırları içerdiği için Yedekler’den yalnızca paylaşılabilir, doğrudan geri yüklenemez.`,
+                            `The repair started but did not finish. Recovery copy ${retained} was retained; because it keeps the damaged rows it can be shared from Backups but not restored directly.`,
+                        )
+                    : retained
                         ? l(
                             `Onarım başlatıldı ama tamamlanamadı. ${retained} güvenlik yedeği korundu; Yedekler ekranından geri yükleyebilirsiniz.`,
                             `The repair started but did not finish. Safety backup ${retained} was retained; you can restore it from Backups.`,
@@ -956,6 +969,10 @@ export default function SettingsScreen() {
                     );
                 } catch (error) {
                     console.warn('[Settings] reset progress failed:', error);
+                    if (error instanceof ResetWorkflowError && error.cause instanceof BackupNotRestorableError) {
+                        alert(t('backup.notRestorableTitle'), t('backup.notRestorableMessage'));
+                        return;
+                    }
                     const retained = error instanceof ResetWorkflowError && error.backupFileName;
                     alert(
                         l('Sıfırlama tamamlanamadı', 'Reset Failed'),
@@ -968,7 +985,7 @@ export default function SettingsScreen() {
                 }
             })();
         }, { destructive: true });
-    }, [invalidateCollection, l, maintenanceAction, refreshCatalogAccess, refreshData]);
+    }, [invalidateCollection, l, maintenanceAction, refreshCatalogAccess, refreshData, t]);
 
     const renderGeneral = useCallback(() => (
         <>

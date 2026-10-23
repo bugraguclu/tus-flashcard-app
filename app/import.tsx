@@ -29,7 +29,8 @@ import {
     type ImportOptions,
     type MatchScope,
 } from '../lib/importNotes';
-import { importApkg, MAX_APKG_BYTES } from '../lib/importApkg';
+import { MAX_APKG_BYTES } from '../lib/importApkg';
+import { importPackageWithBackup } from '../lib/packageImportWorkflow';
 import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
@@ -40,7 +41,7 @@ import { useI18n } from '../hooks/useI18n';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
 import ImportLogView, { type ImportLogExtraLine } from '../components/ImportLogView';
-import { createBackupNow } from '../lib/backup';
+import { BackupNotRestorableError, createBackupNow } from '../lib/backup';
 import {
     ALL_IMPORT_MIME_TYPES,
     importFileNameFromUri,
@@ -360,10 +361,10 @@ export default function ImportScreen() {
                 let next: ImportOutcome | null = null;
 
                 if (packageImport && file.bytes) {
-                    // A package can update existing notes as well as add new ones. Snapshot every
-                    // package import so an unexpected device/storage failure is recoverable.
-                    await createBackupNow();
-                    const result = await importApkg(file.bytes, {
+                    // A package can update existing notes as well as add new ones, so every package
+                    // import is snapshotted first. A .colpkg replacement needs a restorable snapshot
+                    // and stops before reading the package when a damaged row prevents one.
+                    const result = await importPackageWithBackup(file.bytes, {
                         // `subject`/`topic` are the built-in TUS catalog's own navigation taxonomy; the
                         // screen dropped the chips that once set them because they mean nothing for a
                         // learner's own file. The deck name is passed so an imported note still files
@@ -421,6 +422,10 @@ export default function ImportScreen() {
             }
         } catch (error) {
             console.warn('[Import] import failed:', error);
+            if (error instanceof BackupNotRestorableError) {
+                alert(t('backup.notRestorableTitle'), t('backup.notRestorableMessage'));
+                return;
+            }
             alert(t('common.error'), userFacingErrorMessage(
                 error,
                 l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.'),
