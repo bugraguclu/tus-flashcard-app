@@ -168,6 +168,8 @@ Deletion keeps lifetime review history. Note/editor and deck-list deletion retur
 
 ## Note types, conditional templates, cloze, typed answer
 
+Saving a cloze note without any deletion now asks before keeping the note text and safety card 1. The decision checks all template-referenced cloze fields, so a valid deletion in an additional field does not trigger a false warning (`lib/editorClozeWarning.test.ts`). Empty Cards also detects static text around an empty replacement (BAK-9).
+
 Bulk type conversion exposes `getNoteTypeChangeDeletionCount` for a read-only total before any mutation; the default call throws `NoteTypeChangeConfirmationRequired` with that total if unmapped cards would be removed. Add-screen type-memory changes are rolled back when durable new-note saving fails. Atomicity is covered for note deletion and preset/card-counter saves. Browser confirmation/Undo wiring belongs to AI-3; reviewer deletion Undo belongs to AI-2.
 
 Real note fields now take precedence over same-named special fields (SAB-11). The built-in Basic typed-answer definition uses Front on the back instead of FrontSide (SAB-15), avoiding duplicate comparisons in Anki; existing stored/imported user templates are not migrated. Typed-answer and sanitizer helpers were moved into independent modules, with the old templates API re-exported and no import cycle; templates.ts is below 800 lines.

@@ -924,6 +924,17 @@
       "useFor": [
         "normalize deep deck paths without repeated per-ancestor database reads"
       ]
+    },
+    {
+      "id": "anki-ai1-clozeless-warning",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/editing.html#cloze-deletion",
+      "useFor": [
+        "warn before retaining a clozeless note",
+        "create first card only after the user elects to keep the note",
+        "detect empty replacements behind static template labels"
+      ]
     }
   ],
   "requiredDocs": [

@@ -91,3 +91,11 @@ it('reports the total unmapped card count before any bulk note-type conversion',
  expect(getNote(a.note.id)?.noteTypeId).toBe(2);
  expect(getNote(b.note.id)?.noteTypeId).toBe(2);
 });
+
+it('finds empty cards even when their template surrounds the blank field with static text (BAK-9)', () => {
+ const type = { ...builtin(1), id: 111, templates: [{ ...builtin(1).templates[0], qfmt: 'Soru: {{Front}}' }] };
+ saveNoteType(type);
+ const { note, cards } = noteOf(type, ['Question','Valuable answer']);
+ saveNote({ ...note, fields: ['', 'Valuable answer'] });
+ expect(findEmptyCards().map(entry => entry.cardId)).toContain(cards[0].id);
+});

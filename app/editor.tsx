@@ -1,3 +1,4 @@
+import { needsClozeWarning } from '../lib/editorClozeWarning';
 import { getEditorNoteType, rememberEditorNoteType } from '../lib/editorNoteTypeMemory';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -17,7 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeColors } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
-import { confirm, alert, choose } from '../lib/confirm';
+import { confirm, confirmAsync, alert, choose } from '../lib/confirm';
 import {
     calloutHtml,
     changeTextCase,
@@ -903,6 +904,14 @@ export default function EditorScreen() {
 
         saveInFlightRef.current = true;
         try {
+            if (selectedNoteType && needsClozeWarning(selectedNoteType, mockNote)) {
+                const keep = await confirmAsync(
+                    l('Kapama bulunamadı', 'No Cloze Deletion'),
+                    l('Bu notta kapama yok. Metin ve ilk kartı yine de kaydedilsin mi? Kapama eklemek için metni seçip […] düğmesine dokunabilirsiniz.',
+                        'This note has no cloze deletion. Save its text and first card anyway? To add a deletion, select text and tap […].'),
+                );
+                if (!keep) return;
+            }
             if (isEditing && routeCardId) {
                 const updated = await commitCollectionWrite(() => {
                     const result = updateTusCardByCardId(routeCardId, {
