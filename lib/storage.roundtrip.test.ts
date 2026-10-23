@@ -232,6 +232,9 @@ vi.mock('./deckManager', () => ({
     saveDeckConfig: vi.fn(),
 }));
 
+// settingsStore reads presets from deckPresets directly; share the barrel mock above.
+vi.mock('./deckPresets', () => import('./deckManager'));
+
 vi.mock('./legacyMigration', () => ({
     migrateLegacyCardStatesToAnki: vi.fn(),
     migrateLegacyCustomCardsToAnki: vi.fn(),
