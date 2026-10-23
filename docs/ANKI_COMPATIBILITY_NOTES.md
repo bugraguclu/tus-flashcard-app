@@ -146,6 +146,8 @@ retention/true-retention graphs and the FSRS simulator
 
 **Gather order:** every order but random is computed in JS from Anki's own keys, including the retrievability pair and relative overdueness, which Anki takes from registered SQL functions, and the `fnvhash(c.id, c.mod)` tiebreak (`lib/filteredDeckQueue.ts`, `lib/ankiSortKeys.ts`). With FSRS off the retrievability pair keeps only the tiebreak, as upstream. Checked against a filtered deck Anki 26.05 built for each order: the same cards in the same order (`lib/ankiSortKeys.test.ts`).
 
+**Invalid searches:** the filtered-deck, Custom Study and Browse-to-filter dialogs check a search with the strict parser before saving it and name the search they refuse, as Anki refuses to build from a search it cannot parse. A search already saved before the parser became strict is not migrated: every collection read (deck list counts, study queue, rebuild, excluded count) treats it as matching no card instead of failing, so one such deck cannot blank the deck list or stop the reviewer (`lib/filteredSearchSafety.test.ts`). The browser still reports the error.
+
 **Next compatibility gate:** For a new card, the due and relative-overdueness orders read the queue position as a day number. Anki counts those days from the collection's creation and this app from 1970, so a new card whose position is beyond the collection's age in days is gathered first here and last in Anki. A filtered deck is never written to an exported package and its cards return to their home deck; upstream instead exports it as filtered when every original deck is present, and otherwise converts it to a regular deck keeping the cards inside it
 
 ## Custom study dialog

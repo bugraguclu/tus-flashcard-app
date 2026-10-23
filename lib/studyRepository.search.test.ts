@@ -37,6 +37,7 @@ import { saveDeck, saveDeckConfig } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
 import { localDayNumber, nextRolloverMs } from './ankiState';
 import { getBrowserScopeSnapshot, getBrowserScreenSnapshot } from './screenSnapshots';
+import { isValidSearchQuery } from './searchValidation';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -472,9 +473,12 @@ describe('prop: numeric card properties', () => {
         expect(search('prop:ivl!=4')).toBe(2);
     });
 
-    it('rejects malformed or unsupported properties before gathering cards', () => {
-        expect(() => search('prop:stability>2')).toThrow();
-        expect(() => search('prop:ivl')).toThrow();
+    it('gathers no card for malformed or unsupported properties, which the dialogs reject', () => {
+        // A saved search is not migrated, so the count path matches nothing instead of throwing.
+        expect(search('prop:stability>2')).toBe(0);
+        expect(search('prop:ivl')).toBe(0);
+        expect(isValidSearchQuery('prop:stability>2')).toBe(false);
+        expect(isValidSearchQuery('prop:ivl')).toBe(false);
     });
 
     it('combines with the other search terms', () => {

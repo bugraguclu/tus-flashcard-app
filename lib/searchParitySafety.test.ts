@@ -7,6 +7,7 @@ vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteF
 import { BUILTIN_NOTE_TYPES } from './models';
 import { buildFilteredSearchClause } from './studySearchSql';
 import { getBrowserCardCount, getBrowserRowIdsMatchingText } from './browserRepository';
+import { SearchSyntaxError } from './searchQuery';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
 beforeEach(() => {
@@ -29,9 +30,10 @@ it.each([['dog', [11]], ['art', [11]], ['fourth-field', [11]], ['guid', []], ['f
     expect(getBrowserRowIdsMatchingText({}, String(query)).sort()).toEqual(ids);
     expect(sqlSearch(String(query)).sort()).toEqual(ids);
 });
-it.each(['is:suspend', 'flag:9', 'prop:rated=0', 're:"("', 'rated:0', 'dog or', '(dog', 'dog )'])('rejects invalid search %s in both consumers', (query) => {
-    expect(() => getBrowserRowIdsMatchingText({}, query)).toThrow();
-    expect(() => sqlSearch(query)).toThrow();
+it.each(['is:suspend', 'flag:9', 'prop:rated=0', 're:"("', 'rated:0', 'dog or', '(dog', 'dog )'])('rejects invalid search %s in the browser and matches nothing in SQL', (query) => {
+    expect(() => getBrowserRowIdsMatchingText({}, query)).toThrow(SearchSyntaxError);
+    // Saved filtered-deck searches are not migrated: an invalid one gathers no card, never throws.
+    expect(sqlSearch(query)).toEqual([]);
 });
 it('filters Unicode hierarchical tags without ICU and matches marked tags case-insensitively', () => {
     expect(getBrowserCardCount({ tags: ['ünite::immünoloji'] })).toBe(1);

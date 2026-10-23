@@ -52,6 +52,7 @@ import {
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { getAllTags } from '../lib/noteManager';
 import { getFilteredDeckGatherCount } from '../lib/studyRepository';
+import { isValidSearchQuery } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
 import SwipeDismissSheet from './SwipeDismissSheet';
 
@@ -298,6 +299,12 @@ export default function CustomStudyModal({
     const buildSession = (request: CustomStudyRequest) => {
         const config = customStudySessionConfig(request, deck.name);
         if (!config) return;
+        // The session's search is composed from the deck and tag names; collection reads would
+        // treat one the parser cannot read as matching nothing, so say so instead of saving it.
+        if (!isValidSearchQuery(config.search)) {
+            alert(t('anki.invalidSearchTitle'), t('anki.invalidSearchMessage', { search: config.search }));
+            return;
+        }
 
         try {
             // Anki refuses to build an empty session and leaves the dialog open so the criteria

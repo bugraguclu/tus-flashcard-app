@@ -54,6 +54,8 @@ const tr = {
     'anki.showAnswer': 'Cevabı göster',
     'anki.customStudy': 'Özel çalışma',
     'anki.filteredDeck': 'Filtrelenmiş deste',
+    'anki.invalidSearchTitle': 'Geçersiz arama',
+    'anki.invalidSearchMessage': 'Bu arama okunamadı. Terimleri, tırnakları ve parantezleri kontrol edin.\n\n{{search}}',
 
     'root.errorTitle': 'Beklenmeyen Bir Hata Oluştu',
     'root.errorDescription': 'Uygulama çalışırken beklenmeyen bir durumla karşılaşıldı. Verileriniz güvende ve korunuyor.',
@@ -223,6 +225,8 @@ const en: Record<TranslationKey, string> = {
     'anki.showAnswer': 'Show Answer',
     'anki.customStudy': 'Custom Study',
     'anki.filteredDeck': 'Filtered Deck',
+    'anki.invalidSearchTitle': 'Invalid search',
+    'anki.invalidSearchMessage': 'This search could not be read. Check the terms, quotes and parentheses.\n\n{{search}}',
 
     'root.errorTitle': 'Something went wrong',
     'root.errorDescription': 'An unexpected issue occurred while running the app. Your data is safe and intact.',

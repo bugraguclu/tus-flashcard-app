@@ -1,4 +1,5 @@
 import { matchingCollectionCardIds } from './collectionCardSearch';
+import { SearchSyntaxError } from './searchQuery';
 export { collectionSearchSettings } from './searchCollectionSettings';
 
 
@@ -26,10 +27,25 @@ export function clauseForSearchTerm(term: string): SearchFragment | null {
     return { sql: filtered.clauses[0], params: filtered.params };
 }
 
-/** One shared JS evaluator; SQLite receives a parameterized ID set without ICU/UDFs. */
+/**
+ * One shared JS evaluator; SQLite receives a parameterized ID set without ICU/UDFs.
+ *
+ * A search the strict parser rejects matches no card here rather than throwing. Filtered decks
+ * keep the search they were saved with, so one written before the parser became strict (or by
+ * another client) would otherwise fail the deck list, the reviewer and every dialog that counts
+ * it. The clause keeps its usual shape, because an empty clause list means "no filter" to the
+ * callers. The browser reports the error instead (lib/browserRepository.ts), and the save dialogs
+ * check a search before storing it (lib/searchValidation.ts).
+ */
 export function buildFilteredSearchClause(searchQuery: string): { clauses: string[]; params: Array<string | number> } {
     if (!searchQuery.trim()) return { clauses: [], params: [] };
-    const ids = matchingCollectionCardIds(searchQuery);
+    let ids: number[];
+    try {
+        ids = matchingCollectionCardIds(searchQuery);
+    } catch (error) {
+        if (!(error instanceof SearchSyntaxError)) throw error;
+        ids = [];
+    }
     return { clauses: ['c.id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))'], params: [JSON.stringify(ids)] };
 }
 
