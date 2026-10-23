@@ -59,7 +59,7 @@ New-card loading uses a 200-card replenished working window and SQL LIMIT, with 
 
 **Evidence:** per-card preset resolution, reviewer timer/auto-advance behavior and package round-trip tests
 
-Manual answer replay plays question then answer audio, or only the answer when skip-question is enabled. Automatic answer playback excludes FrontSide audio while the displayed answer retains FrontSide content. The single card frame gets an explicit playback playlist; it does not route signals to a nonexistent question frame. Per-card presets and the global sound toggle control autoplay. Menus (including their Set Due Date/tag/reset dialogs), deck/catalog/custom-study pickers, route blur, backgrounding and whiteboard use block Auto Advance. Route blur cancels the active dwell (`lib/reviewerAudio.test.ts`, `lib/reviewerTimers.test.ts`).
+Manual answer replay plays question then answer audio, or only the answer when skip-question is enabled. Automatic answer playback excludes FrontSide audio while the displayed answer retains FrontSide content. The single card frame gets an explicit playback playlist; it does not route signals to a nonexistent question frame. Per-card presets and the global sound toggle control autoplay. Menus (including their Set Due Date/tag/reset dialogs), deck/catalog/custom-study pickers, route blur, backgrounding and whiteboard use block Auto Advance. A side owns its dwell clock: menus, route blur and backgrounding pause its accumulated time; only changing the card/side or dwell settings resets it (`lib/reviewerAudio.test.ts`, `lib/reviewerTimers.test.ts`, `lib/reviewerDwellTimer.test.ts`).
 
 **Next compatibility gate:** Keep the study-session activation boundary explicit
 

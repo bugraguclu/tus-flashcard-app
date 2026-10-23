@@ -136,6 +136,7 @@ import { BKA_CATALOG_PACK, getBkaCatalogTier } from '../../lib/bkaCatalog';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
+import { useReviewerDwellTimer } from '../../lib/reviewerDwellTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
 import { TimeboxTracker } from '../../lib/timebox';
 import {
@@ -1490,13 +1491,10 @@ export default function StudyScreen() {
     // timer answer the card mid-stroke threw the drawing away with no undo. The timer is paused
     // rather than reset, so the dwell resumes where it stopped once drawing mode is closed. The
     // per-card review stopwatch keeps running — Anki measures answering by wall clock.
-    useEffect(() => {
-        autoAdvanceTimerRef.current.setActive(!autoAdvanceBlocked, Date.now());
-    }, [autoAdvanceBlocked]);
+    useReviewerDwellTimer(autoAdvanceTimerRef, currentCard?.cardId, showingAnswer, settings.autoAdvance, autoAdvanceSeconds, autoAdvanceBlocked);
 
     useEffect(() => {
         if (!settings.autoAdvance || !currentCard || autoAdvanceSeconds <= 0 || autoAdvanceBlocked) return;
-        autoAdvanceTimerRef.current.reset(Date.now(), !autoAdvanceBlocked);
         const targetMs = autoAdvanceSeconds * 1000;
         const timer = setInterval(() => {
             // The dwell timer and audio run in parallel. If audio outlasts the configured dwell,

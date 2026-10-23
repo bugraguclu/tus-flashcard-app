@@ -822,7 +822,7 @@
       "url": "https://docs.ankiweb.net/deck-options.html#audio",
       "useFor": [
         "manual replay question then answer; skip question; automatic answer excludes FrontSide audio",
-        "auto advance yields to reviewer focus and modal interaction; reviewerAudio.test.ts and reviewerTimers.test.ts"
+        "auto advance yields to reviewer focus and modal interaction without losing accumulated side time; reviewerAudio.test.ts, reviewerTimers.test.ts and reviewerDwellTimer.test.ts"
       ]
     },
     {
