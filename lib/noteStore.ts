@@ -12,6 +12,7 @@ import {
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { updateAnkiCardData } from './fsrsCardData';
+import { learningLeftAfterDeckMove } from './deckPresetSteps';
 import { buildFtsPrefixQuery, getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
@@ -415,6 +416,9 @@ export interface CardDeckMoveSnapshot {
     previousAnkiData?: string;
     /** The data column the move wrote, so undo can tell whether anything touched it since. */
     movedAnkiData?: string;
+    /** Remaining-steps counter before/after the move remapped it to the new preset's steps. */
+    previousLeft?: number;
+    movedLeft?: number;
 }
 
 /**
@@ -432,7 +436,7 @@ export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDe
     const moves = uniqueCardIds
         .map((cardId) => getAnkiCard(cardId))
         .filter((card): card is AnkiCard => card !== null && card.deckId !== targetDeckId)
-        .map((card) => ({
+        .map((card): CardDeckMoveSnapshot => ({
             cardId: card.id,
             previousDeckId: card.deckId,
             targetDeckId,
@@ -454,7 +458,9 @@ export function moveCardsToDeck(cardIds: number[], targetDeckId: number): CardDe
         for (const move of moves) {
             const card = getAnkiCard(move.cardId);
             if (!card) continue;
-            saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, mod: nowSec, usn: -1 });
+            const left = learningLeftAfterDeckMove(card, card.deckId, targetDeckId);
+            if (left !== card.left) { move.previousLeft = card.left; move.movedLeft = left; }
+            saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, left, mod: nowSec, usn: -1 });
         }
         db.execSync('COMMIT;');
     } catch (error) {
@@ -479,7 +485,8 @@ export function undoCardsMovedToDeck(moves: CardDeckMoveSnapshot[]): number {
             if (!card) continue;
             // The FSRS values come back only if nothing (an answer, say) has rewritten them since.
             const ankiData = card.ankiData === move.movedAnkiData ? move.previousAnkiData : card.ankiData;
-            saveAnkiCard({ ...card, deckId: move.previousDeckId, ankiData, mod: nowSec, usn: -1 });
+            const left = move.movedLeft !== undefined && card.left === move.movedLeft ? move.previousLeft ?? card.left : card.left;
+            saveAnkiCard({ ...card, deckId: move.previousDeckId, ankiData, left, mod: nowSec, usn: -1 });
             restored += 1;
         }
         db.execSync('COMMIT;');

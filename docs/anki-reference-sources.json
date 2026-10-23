@@ -900,7 +900,8 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/card/mod.rs",
       "useFor": [
         "preserve last passed delay when preset learning steps change",
-        "remap learning and relearning counters without reinterpreting due units"
+        "remap learning and relearning counters without reinterpreting due units",
+        "Change Deck remaps remaining learning steps to the destination preset"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },
