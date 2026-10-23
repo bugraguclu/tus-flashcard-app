@@ -20,7 +20,7 @@ export class SearchSyntaxError extends Error {
     constructor(detail: string) { super(`Invalid search: ${detail}`); this.name = 'SearchSyntaxError'; }
 }
 
-export function tokenizeSearch(query: string): string[] {
+function searchTokens(query: string, strictQuotes: boolean): string[] {
     const tokens: string[] = []; let token = ''; let quoted = false;
     const flush = () => { if (token) tokens.push(token); token = ''; };
     for (let i = 0; i < query.length; i++) {
@@ -35,9 +35,12 @@ export function tokenizeSearch(query: string): string[] {
         }
         token += ch;
     }
-    if (quoted) throw new SearchSyntaxError('unclosed quote');
+    if (quoted && strictQuotes) throw new SearchSyntaxError('unclosed quote');
     flush(); return tokens;
 }
+
+/** Picker helpers also tokenize drafts; only a complete query enforces balanced quotes. */
+export function tokenizeSearch(query: string): string[] { return searchTokens(query, false); }
 
 /**
  * Anki's escaping, which the two functions below are the two halves of.
@@ -130,7 +133,7 @@ function parseExpression(tokens: string[], cursor: { index: number }): SearchNod
  * every caller reads as "no filter".
  */
 export function parseSearchQuery(query: string): SearchNode | null {
-    const tokens = tokenizeSearch(query); const cursor = { index: 0 };
+    const tokens = searchTokens(query, true); const cursor = { index: 0 };
     const parsed = parseExpression(tokens, cursor);
     if (cursor.index !== tokens.length) throw new SearchSyntaxError('unexpected closing group');
     return parsed;

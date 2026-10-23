@@ -86,3 +86,7 @@ describe('folding', () => {
         })).toBeNull();
     });
 });
+it('can tokenize an unfinished picker query while the complete evaluator still rejects it', () => {
+    expect(tokenizeSearch('deck:"unfinished')).toEqual(['deck:"unfinished']);
+    expect(() => parseSearchQuery('deck:"unfinished')).toThrow();
+});

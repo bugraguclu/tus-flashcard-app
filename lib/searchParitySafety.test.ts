@@ -48,3 +48,9 @@ it('keeps every stored field searchable even when the note-type field list is in
     expect(getBrowserRowIdsMatchingText({}, 'fourth-field')).toEqual([11]);
     expect(sqlSearch('fourth-field')).toEqual([11]);
 });
+it('ignores manual reschedules when finding the first real introduction', () => {
+    h.db.runSync('INSERT INTO revlog (id, cardId, ease, type) VALUES (?, 11, 0, 4)', Date.now() - 3 * 86400000);
+    h.db.runSync('INSERT INTO revlog (id, cardId, ease, type) VALUES (?, 11, 3, 0)', Date.now() - 1000);
+    expect(getBrowserRowIdsMatchingText({}, 'introduced:1')).toEqual([11]);
+    expect(sqlSearch('introduced:1')).toEqual([11]);
+});

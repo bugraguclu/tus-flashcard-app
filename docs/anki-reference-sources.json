@@ -796,7 +796,7 @@
       "useFor": [
         "one evaluator for browser and filtered searches",
         "all-field substring search without metadata, including incomplete note-type field lists",
-        "Unicode names, explicit nc accent folding and invalid-query errors; lib/searchParitySafety.test.ts"
+        "Unicode names, explicit nc accent folding and invalid-query errors, while picker draft tokenization stays safe; lib/searchParitySafety.test.ts and lib/searchQuery.test.ts"
       ]
     },
     {
