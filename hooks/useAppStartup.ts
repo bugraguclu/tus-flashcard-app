@@ -11,6 +11,7 @@ import {
 import { initDB, dbIndexAllCards, getDB } from '../lib/db';
 import { createDeck, getDeckByName } from '../lib/deckManager';
 import { runDailyMaintenance } from '../lib/maintenance';
+import { pruneQueueBookkeeping } from '../lib/queueBookkeeping';
 import { createBackupNow, runAutoBackupIfDue, type AutoBackupOptions } from '../lib/backup';
 import {
     canRunAutoBackup,
@@ -130,6 +131,13 @@ async function runStartupCore(): Promise<void> {
     const { unburiedCount, didRun } = runDailyMaintenance();
     if (didRun) {
         console.log(`[App] Maintenance ran: ${unburiedCount} cards unburied.`);
+    }
+    // Drop queue bookkeeping rows (interday usage, orphaned filtered builds) that can no longer be
+    // read, so they neither grow forever nor survive a deck that is gone.
+    try {
+        pruneQueueBookkeeping(loadSettings().dayRolloverHour);
+    } catch (e) {
+        console.warn('[App] Queue bookkeeping prune failed:', e);
     }
 
     console.log(`[App] Başlangıç tamamlandı: ${Math.round((Date.now() - startedAt) / 100) / 10}s`);
