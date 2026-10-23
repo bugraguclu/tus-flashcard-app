@@ -10,9 +10,7 @@ import { DEFAULT_SECOND_SEARCH_LIMIT, FILTERED_SEARCH_ORDER } from './filteredDe
 import { getDB } from './db';
 import { loadSettings } from './settingsStore';
 import { clearFilteredDeckMembership, filteredDeckMemberIds } from './filteredDeckMembership';
-import { restoreQueueFromType } from './ankiState';
-import { saveAnkiCard } from './noteStore';
-import type { AnkiCard } from './models';
+import { returnFilteredDeckCardsHome } from './filteredDeckReturn';
 import { getDeck, getDeckByName, nextSiblingSortOrderForAppend, saveDeck } from './deckStore';
 
 /**
@@ -295,12 +293,5 @@ export function createOrReplaceCustomStudySession(
 
 /** Empty/rebuild also releases cards physically held by imported Anki filtered decks. */
 function returnImportedFilteredCardsHome(deckId: number, cardId?: number): void {
-    const sql = 'SELECT data FROM anki_cards WHERE deckId = ?' + (cardId === undefined ? '' : ' AND id = ?');
-    for (const row of getDB().getAllSync<{ data: string }>(sql, deckId, ...(cardId === undefined ? [] : [cardId]))) {
-        const card = JSON.parse(row.data) as AnkiCard;
-        const due = card.odue || (card.type === 0 ? Math.max(1, card.due) : card.due);
-        const home = { ...card, deckId: card.odid > 0 ? card.odid : 1, due, odid: 0, odue: 0 };
-        if (card.queue >= 0) home.queue = restoreQueueFromType(home);
-        saveAnkiCard(home);
-    }
+    returnFilteredDeckCardsHome(deckId, cardId);
 }

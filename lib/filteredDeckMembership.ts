@@ -22,6 +22,18 @@ export function clearFilteredDeckMembership(id: number): void {
     getDB().runSync('DELETE FROM settings WHERE key = ?', key(id));
 }
 
+/** Settings-table prefix of the stored builds; `pruneQueueBookkeeping` removes orphaned rows. */
+export const FILTERED_MEMBERSHIP_KEY_PREFIX = 'filtered_membership_v1:';
+
+/** The stored build row exactly as it is, so a deck deletion can be undone with it. */
+export function readFilteredDeckMembershipRow(id: number): string | null {
+    return getDB().getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key(id))?.value ?? null;
+}
+
+export function restoreFilteredDeckMembershipRow(id: number, value: string): void {
+    getDB().runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key(id), value);
+}
+
 /** Reservations from persisted builds; completed slots stay empty until Rebuild. */
 export function reservedFilteredCardIds(exceptDeckId?: number): number[] {
     const ids = new Set<number>();

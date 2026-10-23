@@ -10,7 +10,8 @@ import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState
 
 const HOUR_MS = 3600000;
 
-function startOfStudyDayMs(atMs: number, rolloverHour: number): number {
+/** Epoch ms at which the study day containing `atMs` began. */
+export function startOfStudyDayMs(atMs: number, rolloverHour: number): number {
     const shifted = new Date(atMs - rolloverHour * HOUR_MS);
     return new Date(
         shifted.getFullYear(),
