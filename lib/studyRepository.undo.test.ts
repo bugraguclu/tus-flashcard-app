@@ -261,10 +261,9 @@ describe('undoAnswer', () => {
         const result = answerStudyCard(10, 3, settings, 1200);
 
         expect(shared.cards.get(11)?.queue).toBe(-2);
-        expect(shared.cards.get(12)?.queue).toBe(-2);
+        expect(shared.cards.get(12)?.queue).toBe(3);
         expect(result.sideEffects.buriedSiblings).toEqual([
             { cardId: 11, queue: 0 },
-            { cardId: 12, queue: 3 },
         ]);
 
         shared.txLog = [];

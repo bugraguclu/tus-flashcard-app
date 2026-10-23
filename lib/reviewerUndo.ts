@@ -2,13 +2,8 @@
  * Undo/redo for the reviewer actions that are not answers.
  *
  * Anki treats Bury, Suspend, Mark, Set Due Date, Forget and a tag edit as ordinary undoable
- * operations: each one lands on the same stack the answers use, and Ctrl+Z steps back through
- * all of them in order. Answers already have a bespoke undo here (it has to replay scheduling
- * side effects), so this module covers the rest with the simplest thing that is exactly right —
- * a snapshot of the rows the action touched, taken on both sides of the change.
- *
- * Storing both sides is what makes redo free: undo writes `before` over `after`, redo writes
- * `after` over `before`, and one applier serves both directions.
+ * operations. Answers have a bespoke undo; other reviewer operations capture both sides so
+ * undo/redo can merge only their delta into existing rows, preserving later edits and deletions.
  */
 
 import type { AnkiCard, Note, ReviewLog } from './models';

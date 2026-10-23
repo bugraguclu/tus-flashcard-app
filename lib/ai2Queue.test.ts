@@ -104,4 +104,15 @@ describe('AI-2 bounded unlimited study queue', () => {
         expect(queue.cards.filter((card) => card.state.status === 'review').map((card) => card.state.interval)).toEqual([1, 1]);
     });
 
+    // https://docs.ankiweb.net/manual/deck-options#burying
+    it.each([0, 2, 3] as const)('queue %s cannot bury an earlier sibling queue', (queue) => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        saveDeckConfig({ ...deckConfig, buryNewSiblings: true, buryReviewSiblings: true, buryInterdayLearningSiblings: true });
+        const earlier = queue === 0 ? [2, 3] as const : queue === 2 ? [3] as const : [];
+        saveAnkiCard(makeCard(1010, 101, 7, { type: queue === 0 ? 0 : queue === 2 ? 2 : 1, queue, due: today, ivl: 10, left: 1, factor: 2500 }));
+        earlier.forEach((siblingQueue, index) => saveAnkiCard(makeCard(1011 + index, 101, 7, { type: siblingQueue === 2 ? 2 : 1, queue: siblingQueue, due: today, ivl: 10, left: 1 })));
+        answerStudyCard(1010, 3, settings, 100);
+        earlier.forEach((siblingQueue, index) => expect(getAnkiCard(1011 + index)!.queue).toBe(siblingQueue));
+    });
+
 });

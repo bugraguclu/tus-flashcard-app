@@ -84,8 +84,10 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): Bur
         buried.push({ cardId: sibling.id, queue: sibling.queue });
     };
 
+    const priority = (queue: number) => queue === 1 ? 0 : queue === 3 ? 1 : queue === 2 ? 2 : 3;
+    const answeredQueue = answeredCard.queue < 0 ? restoreQueueFromType(answeredCard) : answeredCard.queue;
     for (const sibling of siblings) {
-        if (sibling.id === answeredCard.id || sibling.queue < 0) {
+        if (sibling.id === answeredCard.id || sibling.queue < 0 || priority(sibling.queue) < priority(answeredQueue)) {
             continue;
         }
 

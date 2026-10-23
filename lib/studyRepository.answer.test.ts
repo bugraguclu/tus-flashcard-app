@@ -211,7 +211,7 @@ describe('answerStudyCard', () => {
         shared.cards.set(10, baseCard(10, 1, 2, 2));
         // Sibling intraday learning (should stay untouched by interday bury policy).
         shared.cards.set(11, { ...baseCard(11, 1, 1, 1), left: 2001, due: Date.now() + 60000 });
-        // Sibling interday learning (should be buried).
+        // Earlier interday learning has priority over this review and stays active.
         shared.cards.set(12, { ...baseCard(12, 1, 3, 1), left: 1001, due: 999999 });
     });
 
@@ -230,8 +230,8 @@ describe('answerStudyCard', () => {
         expect(updated.reps).toBeGreaterThan(5);
         expect(updated.queue).toBe(2);
 
-        // Bury policy: interday-learning sibling sched-buried (-2), intraday sibling untouched.
-        expect(shared.cards.get(12)?.queue).toBe(-2);
+        // A review cannot bury earlier interday or intraday learning siblings.
+        expect(shared.cards.get(12)?.queue).toBe(3);
         expect(shared.cards.get(11)?.queue).toBe(1);
 
         expect(result.reviewLogId).toBeGreaterThan(1000);

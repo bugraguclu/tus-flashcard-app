@@ -3,11 +3,7 @@ import type { DeckConfig } from './models';
 import { ymdToLocalDayNumber } from './ankiState';
 import { fsrsRelativeRetrievability, fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview } from './fsrs';
 
-/**
- * Spread `newCards` evenly across `reviewCards`, matching Anki's "mix with reviews" default.
- * With 50 reviews and 10 new, a new card lands roughly every 5th review; any remainder trails
- * at the end. Order within each list is preserved.
- */
+/** A fixed review/new cadence for the product's uncapped new-card policy. */
 export function interleaveNewWithReviews(reviewCards: StudyCard[], newCards: StudyCard[]): StudyCard[] {
     if (newCards.length === 0) return reviewCards;
     if (reviewCards.length === 0) return newCards;
@@ -79,7 +75,7 @@ export function splitIntradayLearning(
 /**
  * Place interday (day-boundary) learning cards relative to the review queue, mirroring Anki's
  * "interday learning/review order" (rslib ReviewMix). 'mix' — Anki's default — spreads them
- * evenly through the reviews exactly the way new cards are mixed in; the other two options keep
+ * proportionally through the reviews; the other two options keep
  * each group contiguous. Intraday learning cards are unaffected: their step timer always wins.
  */
 export function mixInterdayLearning(
