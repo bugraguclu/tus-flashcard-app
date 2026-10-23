@@ -168,6 +168,7 @@ import {
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
 import { coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
 import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
+import { formatPreviewDelay, localizeButtonTimes } from '../../lib/reviewerIntervalLabels';
 import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from '../../lib/reviewerSurface';
 import { ReviewerTtsLifecycle } from '../../lib/reviewerTtsLifecycle';
 import { loadReviewerTtsEnabled, saveReviewerTtsEnabled } from '../../lib/reviewerTtsState';
@@ -1586,12 +1587,7 @@ export default function StudyScreen() {
         if (previewMode) {
             const activeDeck = selectedDeckName ? getDeckByName(selectedDeckName) : null;
             const delayFor = (grade: number) => previewDelaySecondsForGrade(activeDeck?.previewDelays, grade);
-            const formatDelay = (sec: number) => {
-                if (sec <= 0) return '—';
-                if (sec < 60) return `${sec}sn`;
-                if (sec < 3600) return `${Math.round(sec / 60)}dk`;
-                return `${Math.round(sec / 3600)}sa`;
-            };
+            const formatDelay = (sec: number) => formatPreviewDelay(sec, locale);
             return {
                 again: formatDelay(delayFor(1)),
                 hard: formatDelay(delayFor(2)),
@@ -1612,8 +1608,11 @@ export default function StudyScreen() {
             deckId: currentCard.deckId,
             odid: currentCard.rawCard?.odid ?? 0,
         }, cardSettings.dayRolloverHour, nowMs);
-        return scheduler.previewIntervals(withClassicReviewContext(currentCard.state, Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)), cardSettings, nowMs, { balancer });
-    }, [currentCard, settings, previewMode, selectedDeckName]);
+        return localizeButtonTimes(
+            scheduler.previewIntervals(withClassicReviewContext(currentCard.state, Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)), cardSettings, nowMs, { balancer }),
+            locale,
+        );
+    }, [currentCard, settings, previewMode, selectedDeckName, locale]);
 
     const renderPayload = useMemo(() => {
         if (!currentCard) return null;

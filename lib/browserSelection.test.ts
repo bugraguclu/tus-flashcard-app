@@ -92,15 +92,17 @@ beforeEach(() => {
 });
 
 describe('parseDueRange', () => {
-    it('accepts Anki single-day, range, negative, and force-interval syntax', () => {
+    it('accepts Anki single-day, range and force-interval syntax', () => {
         expect(parseDueRange('5')).toEqual({ minDays: 5, maxDays: 5, forceInterval: false });
         expect(parseDueRange('7-3!')).toEqual({ minDays: 3, maxDays: 7, forceInterval: true });
-        expect(parseDueRange('-2')).toEqual({ minDays: -2, maxDays: -2, forceInterval: false });
+        expect(parseDueRange(' 0 ')).toEqual({ minDays: 0, maxDays: 0, forceInterval: false });
     });
 
-    it('rejects malformed input', () => {
+    it('rejects malformed input, as Anki\'s due-date parser does', () => {
         expect(parseDueRange('tomorrow')).toBeNull();
         expect(parseDueRange('2..5')).toBeNull();
+        // Anki's grammar is digits, an optional "-digits" and an optional "!", nothing between.
+        for (const input of ['-2', '1 - 7', '3 !', '-3--1']) expect(parseDueRange(input)).toBeNull();
     });
 });
 

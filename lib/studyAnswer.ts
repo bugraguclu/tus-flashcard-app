@@ -113,6 +113,11 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): Bur
 /** Tag `handleLeech` appends to a note. Mirrors the literal in noteManager's leech handler. */
 const LEECH_TAG = 'leech';
 
+/** Anki compares tags without regard to case, so "Leech" from another client is the same tag. */
+function hasLeechTag(tags: readonly string[]): boolean {
+    return tags.some((tag) => tag.toLowerCase() === LEECH_TAG);
+}
+
 /**
  * Take back the burying `applySiblingBuryPolicy` performed.
  *
@@ -388,8 +393,15 @@ export function answerStudyCard(
         if (updatedAnkiCard.lapses > currentAnkiCard.lapses && isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
             // `note` was read before any write in this transaction, so its tags are the
             // pre-answer set: record the note only when this answer is what adds the tag.
-            const addsLeechTag = !note.tags.includes(LEECH_TAG);
-            handleLeech(updatedAnkiCard, deckConfig.leechAction);
+            const addsLeechTag = !hasLeechTag(note.tags);
+            if (addsLeechTag || note.tags.includes(LEECH_TAG)) {
+                handleLeech(updatedAnkiCard, deckConfig.leechAction);
+            } else if (deckConfig.leechAction === 'suspend') {
+                // Tagged "Leech" by another client: the same tag, so suspend without adding a
+                // second, lower-case copy.
+                const stored = getAnkiCard(updatedAnkiCard.id);
+                if (stored) saveAnkiCard({ ...stored, queue: -1, mod: nowSecs, usn: -1 });
+            }
             if (addsLeechTag) {
                 sideEffects.leechTaggedNoteId = note.id;
             }
