@@ -125,6 +125,8 @@ export interface FilteredDeckCountCard {
     /** How the home deck counted the card before the filtered deck took it. */
     homeStatus: CardState['status'];
     homeCounted: boolean;
+    /** The home deck counted it as interday learning (queue 3), which spends its review limit. */
+    homeInterday?: boolean;
 }
 
 type FilteredDeckCountDefinition = Pick<Deck,
@@ -242,7 +244,7 @@ function countCardsForMembers(
         const homeCounted = row.queue === 0 || (row.queue === 1
             ? row.due <= nowMs + Math.max(0, settings.learnAheadMinutes || 0) * 60000
             : (row.queue === 2 || row.queue === 3) && row.due <= today);
-        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted });
+        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted, homeInterday: row.queue === 3 });
     }
 
     return result;

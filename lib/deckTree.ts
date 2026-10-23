@@ -1,6 +1,6 @@
 import { getParentDeckName, type Deck } from './models';
 import { getTodayLimitUsageByDeck } from './reviewLogger';
-import { compareDeckDisplayOrder } from './deckStore';
+import { compareDeckDisplayOrder, type DeckDueCounts } from './deckStore';
 import { getDeckConfigForDeck } from './deckLimits';
 
 /**
@@ -99,10 +99,19 @@ export function decksInDisplayOrder(decks: readonly Deck[]): Deck[] {
     return ordered;
 }
 
+export interface DeckTreeOptions {
+    /**
+     * Anki's "limits start from top": a subdeck's row also answers to the limits of the decks
+     * above it, as studying it would.
+     */
+    limitsStartFromTop?: boolean;
+}
+
 export function buildDeckTree(
     decks: Deck[],
-    cardCounts?: Map<number, { new: number; learn: number; review: number; total: number }>,
+    cardCounts?: Map<number, DeckDueCounts>,
     rolloverHour: number = 4,
+    options: DeckTreeOptions = {},
 ): DeckTreeNode[] {
     // Legacy collections without a manual position stay alphabetical. As soon as the user
     // reorders siblings, their persisted sortOrder takes precedence.
@@ -110,9 +119,11 @@ export function buildDeckTree(
 
     // Build tree
     const nodeMap = new Map<string, DeckTreeNode>();
+    /** Interday learning inside each node's learn count; it spends the review limit. */
+    const interdayOf = new Map<DeckTreeNode, number>();
 
     for (const deck of sorted) {
-        const counts = cardCounts?.get(deck.id) || { new: 0, learn: 0, review: 0, total: 0 };
+        const counts: DeckDueCounts = cardCounts?.get(deck.id) || { new: 0, learn: 0, review: 0, total: 0 };
         const node: DeckTreeNode = {
             deck,
             children: [],
@@ -122,6 +133,7 @@ export function buildDeckTree(
             reviewCount: counts.review,
             totalCards: counts.total,
         };
+        interdayOf.set(node, Math.max(0, Math.min(counts.learn, counts.interdayLearn ?? 0)));
         nodeMap.set(deck.name, node);
     }
 
@@ -162,6 +174,7 @@ export function buildDeckTree(
             node.learnCount += child.learnCount;
             node.reviewCount += child.reviewCount;
             node.totalCards += child.totalCards;
+            interdayOf.set(node, (interdayOf.get(node) ?? 0) + (interdayOf.get(child) ?? 0));
             const childUsed = spent.get(child.deck.name);
             if (childUsed) {
                 used.newIntroduced += childUsed.newIntroduced;
@@ -170,13 +183,36 @@ export function buildDeckTree(
         }
 
         // Review counts reflect the parent's remaining daily allowance across its children.
-        // New cards stay uncapped, matching the overview and study queue.
+        // Interday learning cards spend that allowance first, as the study queue gathers them
+        // (Anki: they are "subject to the review limit"). New cards stay uncapped, matching the
+        // overview and study queue.
         if (!node.deck.isFiltered) {
             const config = getDeckConfigForDeck(node.deck.id, rolloverHour);
-            node.reviewCount = Math.min(node.reviewCount, Math.max(0, config.maxReviewsPerDay - used.reviewsAnswered));
+            capReviewWork(node, Math.max(0, config.maxReviewsPerDay - used.reviewsAnswered));
         }
     }
+
+    /** Fit a node's interday learning and reviews, in that order, into `allowance`. */
+    function capReviewWork(node: DeckTreeNode, allowance: number): void {
+        const interday = interdayOf.get(node) ?? 0;
+        const shownInterday = Math.min(interday, allowance);
+        node.learnCount -= interday - shownInterday;
+        node.reviewCount = Math.min(node.reviewCount, allowance - shownInterday);
+        interdayOf.set(node, shownInterday);
+    }
     roots.forEach(aggregateCounts);
+
+    // With "limits start from top" a subdeck can never offer more review work than the deck above
+    // it, because studying the subdeck spends the parent's limits as well.
+    if (options.limitsStartFromTop) {
+        const capFromTop = (node: DeckTreeNode, parent: DeckTreeNode | null) => {
+            if (parent && !node.deck.isFiltered) {
+                capReviewWork(node, (interdayOf.get(parent) ?? 0) + parent.reviewCount);
+            }
+            node.children.forEach((child) => capFromTop(child, node.deck.isFiltered ? parent : node));
+        };
+        roots.forEach((root) => capFromTop(root, null));
+    }
 
     return roots;
 }

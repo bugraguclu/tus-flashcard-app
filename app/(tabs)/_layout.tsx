@@ -201,13 +201,13 @@ export default function TabLayout() {
                 settings.dayRolloverHour,
                 settings.learnAheadMinutes,
             );
-            const rawTree = buildDeckTree(decks, counts, settings.dayRolloverHour);
+            const rawTree = buildDeckTree(decks, counts, settings.dayRolloverHour, { limitsStartFromTop: settings.limitsStartFromTop === true });
             return prioritizeDeckTree(rawTree, activeDeckName);
         } catch (e) {
             console.warn('[Layout] sidebar deck tree failed:', e);
             return [];
         }
-    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes]);
+    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes, settings.limitsStartFromTop]);
 
     // Reveal only the selected deck's ancestor chain. Opening every parent in a large catalog
     // would flood the drawer with unrelated branches; manual expansion of siblings is preserved.

@@ -9,7 +9,7 @@ import {
     type AnkiCard,
 } from './models';
 import { getDB } from './db';
-import { localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
+import { localDayNumber, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 import { markSourcePackageDirty } from './ankiPackageArchive';
 import { clearDeckWhiteboards } from './whiteboardSession';
@@ -609,20 +609,27 @@ export function unburyDeck(deckId: number, rolloverHour: number = 4): number {
 
 // ---- Card Counts per Deck ----
 
+/** One deck's raw due counts. `learn` includes the interday learning cards counted separately. */
+export interface DeckDueCounts {
+    new: number;
+    learn: number;
+    review: number;
+    total: number;
+    /** Interday learning cards due today (queue 3); they share the review limit with reviews. */
+    interdayLearn?: number;
+}
+
 export function getCardCountsByDeck(
     nowMs: number = Date.now(),
     rolloverHour: number = 4,
     learnAheadMinutes: number = 0,
-): Map<number, { new: number; learn: number; review: number; total: number }> {
+): Map<number, DeckDueCounts> {
     const db = getDB();
     const today = localDayNumber(nowMs, rolloverHour);
-    // Anki deck-list semantics: intraday learning cards count until the day rolls over, even
-    // while their step timer is still running — the badge answers "how much is left today",
-    // not "what can be dealt this second". Learn-ahead can only widen that window.
-    const learnAheadCutoff = Math.max(
-        nextRolloverMs(nowMs, rolloverHour),
-        nowMs + Math.max(0, learnAheadMinutes) * 60_000,
-    );
+    // The same window the study queue serves from: intraday learning cards count once they are
+    // due now or within the learn-ahead limit (Anki's `learn_ahead_secs`), not hours before. A
+    // badge counting a card due this evening promised a card the reviewer could not deal.
+    const learnAheadCutoff = nowMs + Math.max(0, learnAheadMinutes) * 60_000;
 
     // NOTE: `due` has queue-specific semantics in Anki:
     // - queue=1 (intraday learning): epoch milliseconds
@@ -635,6 +642,7 @@ export function getCardCountsByDeck(
         newCount: number;
         learnCount: number;
         reviewCount: number;
+        interdayLearnCount: number;
     }>(
         `SELECT
             deckId,
@@ -645,15 +653,17 @@ export function getCardCountsByDeck(
                     WHEN queue = 3 AND due <= ? THEN 1
                     ELSE 0
                 END) AS learnCount,
-            SUM(CASE WHEN queue = 2 AND due <= ? THEN 1 ELSE 0 END) AS reviewCount
+            SUM(CASE WHEN queue = 2 AND due <= ? THEN 1 ELSE 0 END) AS reviewCount,
+            SUM(CASE WHEN queue = 3 AND due <= ? THEN 1 ELSE 0 END) AS interdayLearnCount
          FROM anki_cards
          GROUP BY deckId`,
         learnAheadCutoff,
         today,
         today,
+        today,
     );
 
-    const counts = new Map<number, { new: number; learn: number; review: number; total: number }>();
+    const counts = new Map<number, DeckDueCounts>();
     for (const row of rows) {
         counts.set(row.deckId, {
             // Keep raw counts here. buildDeckTree applies the selected deck's cap after child
@@ -662,6 +672,7 @@ export function getCardCountsByDeck(
             learn: Number(row.learnCount) || 0,
             review: Number(row.reviewCount) || 0,
             total: Number(row.totalCount) || 0,
+            interdayLearn: Number(row.interdayLearnCount) || 0,
         });
     }
 
