@@ -619,17 +619,36 @@ export function getBuriedCountForDeck(deckId: number): number {
     return row?.cnt ?? 0;
 }
 
-/** Anki's overview "Unbury": wake every buried card in the deck subtree now instead of at rollover. */
-export function unburyDeck(deckId: number, rolloverHour: number = 4): number {
+/** Buried cards in the deck subtree by kind: manual (queue -3) and buried siblings (queue -2). */
+export function getBuriedKindsForDeck(deckId: number): { manual: number; siblings: number } {
+    const deck = getDeck(deckId);
+    if (!deck) return { manual: 0, siblings: 0 };
+    const row = getDB().getFirstSync<{ manual: number | null; siblings: number | null }>(
+        `SELECT SUM(c.queue = -3) AS manual, SUM(c.queue = -2) AS siblings
+         FROM anki_cards c
+         JOIN decks d ON d.id = c.deckId
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
+        deck.name,
+        `${deck.name}::`,
+    );
+    return { manual: Number(row?.manual ?? 0), siblings: Number(row?.siblings ?? 0) };
+}
+
+/**
+ * Anki's overview "Unbury": wake buried cards in the deck subtree now instead of at rollover —
+ * all of them, only the manually buried ones, or only the buried siblings.
+ */
+export function unburyDeck(deckId: number, rolloverHour: number = 4, kind: 'all' | 'manual' | 'siblings' = 'all'): number {
     const deck = getDeck(deckId);
     if (!deck) return 0;
 
     const db = getDB();
+    const queues = kind === 'manual' ? '(-3)' : kind === 'siblings' ? '(-2)' : '(-2, -3)';
     const rows = db.getAllSync<{ data: string }>(
         `SELECT c.data AS data
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
+         WHERE c.queue IN ${queues} AND (d.name = ? OR instr(d.name, ?) = 1)`,
         deck.name,
         `${deck.name}::`,
     );

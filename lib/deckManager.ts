@@ -20,6 +20,7 @@ export {
     setDeckCollapsed,
     getBuriedCountForDeck,
     unburyDeck,
+    getBuriedKindsForDeck,
     getCardCountsByDeck,
 } from './deckStore';
 export {
