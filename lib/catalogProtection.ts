@@ -58,7 +58,7 @@ export function isCatalogStudyAvailable(): boolean {
     return getDB().getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_INSTALL_KEY)?.value === 'trial';
 }
 
-function isTrialLearnerEdit(table: 'notes' | 'anki_cards', value: Note | AnkiCard, allowed: ReadonlySet<string>): boolean {
+function isTrialLearnerEdit(table: 'notes' | 'anki_cards' | 'decks', value: Note | AnkiCard | Deck, allowed: ReadonlySet<string>): boolean {
     if (!isCatalogStudyAvailable()) return false;
     const row = getDB().getFirstSync<{ data: string }>(`SELECT data FROM ${table} WHERE id = ?`, value.id);
     if (!row) return false;
@@ -70,6 +70,11 @@ function isTrialLearnerEdit(table: 'notes' | 'anki_cards', value: Note | AnkiCar
 }
 const LEARNER_CARD_FIELDS = new Set(['type', 'queue', 'due', 'ivl', 'factor', 'reps', 'lapses', 'left', 'odue', 'odid', 'lastReview', 'ankiData', 'flags', 'mod', 'usn']);
 const LEARNER_NOTE_FIELDS = new Set(['tags', 'mod', 'usn']);
+/**
+ * A deck row's pure view state: whether the learner has its subdecks folded away in the deck list.
+ * Changing it never touches catalog content, so a trial learner may fold the catalog's decks.
+ */
+const LEARNER_DECK_FIELDS = new Set(['collapsed', 'mod', 'usn']);
 
 function parseOwnedRow(table: 'notes' | 'decks' | 'deck_configs' | 'note_types', id: number): boolean {
     const row = getDB().getFirstSync<{ data: string }>(`SELECT data FROM ${table} WHERE id = ?`, id);
@@ -133,7 +138,10 @@ export function assertCatalogCardMutable(value: AnkiCard | number): void {
     if (typeof value !== 'number' && isCatalogCard(value) && isTrialLearnerEdit('anki_cards', value, LEARNER_CARD_FIELDS)) return;
     assertMutable(isCatalogCard(value));
 }
-export function assertCatalogDeckMutable(value: Deck | number): void { assertMutable(isCatalogDeck(value)); }
+export function assertCatalogDeckMutable(value: Deck | number): void {
+    if (typeof value !== 'number' && isCatalogDeck(value) && isTrialLearnerEdit('decks', value, LEARNER_DECK_FIELDS)) return;
+    assertMutable(isCatalogDeck(value));
+}
 export function assertCatalogDeckConfigMutable(value: DeckConfig | number): void { assertMutable(isCatalogDeckConfig(value)); }
 export function assertCatalogNoteTypeMutable(value: NoteType | number): void { assertMutable(isCatalogNoteType(value)); }
 

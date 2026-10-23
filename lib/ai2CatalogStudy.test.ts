@@ -30,3 +30,17 @@ it('trial study permission does not unlock content, card creation or identity ch
     expect(() => saveAnkiCard(makeCard(9999, 101, 7))).toThrow(PaidCatalogProtectionError);
     expect(() => saveAnkiCard({ ...getAnkiCard(1010)!, ord: 5 })).toThrow(PaidCatalogProtectionError);
 });
+it('a trial learner may fold catalog decks without unlocking them', async () => {
+    const { getDeck, renameDeck, saveDeck, setDeckCollapsed } = await import('./deckManager');
+    db.runSync('UPDATE decks SET data = ? WHERE id = ?', JSON.stringify({ ...getDeck(7), catalogPack: CATALOG_PACK_ID }), 7);
+    expect(() => setDeckCollapsed(7, true)).not.toThrow();
+    expect(getDeck(7)!.collapsed).toBe(true);
+    expect(() => setDeckCollapsed(7, false)).not.toThrow();
+    // Anything beyond the fold state stays locked.
+    expect(() => saveDeck({ ...getDeck(7)!, description: 'edited', collapsed: true })).toThrow(PaidCatalogProtectionError);
+    expect(() => saveDeck({ ...getDeck(7)!, reviewLimit: 5 })).toThrow(PaidCatalogProtectionError);
+    expect(() => renameDeck(7, 'Renamed')).toThrow();
+    // Without a trial installed nothing about the deck may change.
+    db.runSync('DELETE FROM settings WHERE key = ?', CATALOG_INSTALL_KEY);
+    expect(() => setDeckCollapsed(7, true)).toThrow(PaidCatalogProtectionError);
+});
