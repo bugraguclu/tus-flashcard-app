@@ -395,41 +395,31 @@ export function renameDeck(id: number, newName: string): void {
 
 export function createDeck(name: string, configId?: number): Deck {
     name = canonicalDeckPath(name);
-    // Deck names are unique in Anki: return the existing deck instead of creating a duplicate.
     const existing = getDeckByName(name);
     if (existing) return existing;
 
-    // Anki filtered decks are always top-level and may not contain regular subdecks.
-    let ancestorName = getParentDeckName(name);
-    while (ancestorName) {
-        const ancestor = getDeckByName(ancestorName);
-        if (ancestor?.isFiltered) {
-            throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
-        }
-        ancestorName = getParentDeckName(ancestorName);
+    // Validate and resolve each ancestor once, then create missing parents top-down. Re-entering
+    // createDeck for every parent used to repeat all earlier prefix queries at every depth.
+    const byName = new Map(getAllDecks().map(deck => [deck.name, deck]));
+    const parts = name.split('::');
+    const paths = parts.map((_, index) => parts.slice(0, index + 1).join('::'));
+    for (const path of paths.slice(0, -1)) {
+        if (byName.get(path)?.isFiltered) throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
     }
-
-    const now = uniqueId();
-    const parent = getParentDeckName(name);
-    const deck: Deck = {
-        id: now,
-        name,
-        configId: configId || 1,
-        mod: Math.floor(now / 1000),
-        usn: -1,
-        description: '',
-        collapsed: false,
-        isFiltered: false,
-        sortOrder: nextSiblingSortOrderForAppend(parent),
-    };
-    saveDeck(deck);
-
-    // Ensure parent decks exist
-    if (parent && !getDeckByName(parent)) {
-        createDeck(parent, configId);
+    let destination: Deck | undefined;
+    for (const path of paths) {
+        const found = byName.get(path);
+        if (found) { destination = found; continue; }
+        const now = uniqueId();
+        destination = {
+            id: now, name: path, configId: configId || 1,
+            mod: Math.floor(now / 1000), usn: -1, description: '', collapsed: false,
+            isFiltered: false, sortOrder: nextSiblingSortOrderForAppend(getParentDeckName(path)),
+        };
+        saveDeck(destination);
+        byName.set(path, destination);
     }
-
-    return deck;
+    return destination!;
 }
 
 export function compareDeckDisplayOrder(a: Deck, b: Deck): number {

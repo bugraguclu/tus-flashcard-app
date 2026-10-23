@@ -935,6 +935,17 @@
         "create first card only after the user elects to keep the note",
         "detect empty replacements behind static template labels"
       ]
+    },
+    {
+      "id": "anki-ai1-cardless-note-repair",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "retain note text during database repair",
+        "recreate the first card of a readable cardless note",
+        "report recovered notes separately from deletion"
+      ]
     }
   ],
   "requiredDocs": [
