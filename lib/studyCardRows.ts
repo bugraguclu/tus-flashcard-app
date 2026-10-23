@@ -471,11 +471,11 @@ export function toStudyCards(
                 noteTypeCache.set(note.noteTypeId, noteType);
             }
 
-            const cardSettings = resolveSettingsForDeck(row.deckId, baseSettings, settingsCache);
+            let cardSettings = resolveSettingsForDeck(row.deckId, baseSettings, settingsCache);
             // Parse the full card blob for learning queues (left/decode needed), under FSRS (the
             // memory state and last review time live in it, and the answer buttons read them), or
             // when the caller explicitly needs a full raw card object.
-            const needsFullCard = options.includeRawCard
+            const needsFullCard = Boolean(row.cardData) || options.includeRawCard
                 || cardSettings.fsrsEnabled === true
                 || row.queue === 1
                 || row.queue === 3
@@ -492,6 +492,8 @@ export function toStudyCards(
             } else {
                 card = makeShallowCardFromRow(row, nowMs);
             }
+
+            if (card.odid) cardSettings = resolveSettingsForDeck(card.odid, baseSettings, settingsCache);
 
             acc.push(makeStudyCard(
                 card,

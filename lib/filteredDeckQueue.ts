@@ -13,8 +13,7 @@ import { loadRowsByQueue, toStudyCards, type QueueCardRow } from './studyCardRow
 import { buildFilteredSearchClause } from './studySearchSql';
 
 /**
- * Filtered decks as queries: which cards a filtered deck's searches gather, in Anki's gather
- * orders, and the counts its options screen shows.
+ * Filtered-deck build membership, serving order and counters. Searches run only for a new build.
  */
 
 /** Queue rows for these cards, in the order given. */
@@ -116,6 +115,7 @@ export interface FilteredDeckCountCard {
     status: CardState['status'];
     /** How the home deck counted the card before the filtered deck took it. */
     homeStatus: CardState['status'];
+    homeCounted: boolean;
 }
 
 type FilteredDeckCountDefinition = Pick<Deck,
@@ -158,6 +158,7 @@ export function getFilteredDeckCountCards(
         homeDeckId: number;
         type: number;
         queue: number;
+        due: number;
         noteData: string;
         noteTypeData: string;
     };
@@ -172,7 +173,7 @@ export function getFilteredDeckCountCards(
     for (let index = 0; index < uniqueIds.length; index += 400) {
         const chunk = uniqueIds.slice(index, index + 400);
         for (const row of getDB().getAllSync<Omit<BatchRow, 'filteredDeckId'>>(
-            `SELECT c.id AS cardId, c.deckId AS homeDeckId, c.type AS type, c.queue AS queue,
+            `SELECT c.id AS cardId, c.deckId AS homeDeckId, c.type AS type, c.queue AS queue, c.due AS due,
                 n.data AS noteData, nt.data AS noteTypeData
              FROM anki_cards c
              JOIN notes n ON n.id = c.noteId
@@ -194,7 +195,6 @@ export function getFilteredDeckCountCards(
         const deck = deckById.get(row.filteredDeckId);
         if (!deck || row.queue < 0) continue;
         if ((deck.filteredDoneCardIds ?? []).includes(row.cardId)) continue;
-        if (row.cardId > (deck.filteredBuildAt ?? nowMs) + 999) continue;
 
         const seen = seenByFilteredDeck.get(deck.id) ?? new Set<number>();
         seenByFilteredDeck.set(deck.id, seen);
@@ -220,7 +220,11 @@ export function getFilteredDeckCountCards(
         // Answering in preview leaves the card itself untouched, so its home deck still counts it
         // as `homeStatus`.
         const status = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined ? 'learning' : homeStatus;
-        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus });
+        const today = localDayNumber(nowMs, settings.dayRolloverHour);
+        const homeCounted = row.queue === 0 || (row.queue === 1
+            ? row.due <= nowMs + Math.max(0, settings.learnAheadMinutes || 0) * 60000
+            : (row.queue === 2 || row.queue === 3) && row.due <= today);
+        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted });
     }
 
     return result;

@@ -9,7 +9,8 @@ import { createFilteredDeck, updateFilteredDeck, rebuildFilteredDeck, emptyFilte
 import { getStudyQueue } from './studyQueue';
 import { getAnkiCard, saveAnkiCard } from './noteManager';
 import { answerStudyCard, undoAnswer } from './studyAnswer';
-import { localDayNumber } from './ankiState';
+import { getDeckListSnapshot } from './deckListSnapshot';
+import { dayNumberToYmd, localDayNumber } from './ankiState';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -61,10 +62,27 @@ describe('AI-2 fixed filtered builds', () => {
         const deck = createFilteredDeck('Session', 'nid:101', 1);
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
         saveAnkiCard(makeCard(1010, 101, deck.id, { odid: 7, odue: today + 1, type: 2, queue: 2, due: -100000, ivl: 1, factor: 2500 }));
+        const shown = getStudyQueue({ settings, selectedDeckName: 'Session' }).cards.find((card) => card.cardId === 1010)!;
+        expect(shown.state.dueDate).toBe(dayNumberToYmd(today + 1));
         const result = answerStudyCard(1010, 3, settings, 100);
         expect(getAnkiCard(1010)).toMatchObject({ deckId: 7, odid: 0, odue: 0, due: today + 1, ivl: 1 });
         undoAnswer(result.previousAnkiCard, result.reviewLogId, result.sideEffects);
         expect(getAnkiCard(1010)).toMatchObject({ deckId: deck.id, odid: 7, odue: today + 1, due: -100000, ivl: 1 });
+    });
+
+    it('a future filtered review does not subtract an unrelated due review from the home count', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        saveAnkiCard({ ...getAnkiCard(1010)!, type: 2, queue: 2, due: today + 10, ivl: 10 });
+        saveAnkiCard({ ...getAnkiCard(1020)!, type: 2, queue: 2, due: today, ivl: 10 });
+        createFilteredDeck('Ahead', 'nid:101', 1);
+        expect(getDeckListSnapshot(settings).counts.get(7)!.review).toBe(1);
+    });
+
+    it('fixed membership counts card IDs independently of their timestamp-shaped value', () => {
+        saveAnkiCard(makeCard(Date.now() + 86400000, 101, 7));
+        const deck = createFilteredDeck('Session', 'nid:101', 10);
+        expect(ids('Session')).toHaveLength(2);
+        expect(getDeckListSnapshot(settings).counts.get(deck.id)!.total).toBe(2);
     });
 
 });
