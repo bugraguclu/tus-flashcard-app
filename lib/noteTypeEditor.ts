@@ -16,6 +16,7 @@ import {
     type NoteTypeTemplate,
 } from './models';
 import { getCardsForNote, saveNote, saveNoteType, searchIndexCardFromNote } from './noteManager';
+import { fieldNameSyntaxError, type FieldNameSyntaxError } from './noteTypeValidation';
 
 function reindex<T extends { ord: number }>(items: T[]): T[] {
     return items.map((item, i) => ({ ...item, ord: i }));
@@ -71,14 +72,15 @@ export function findFieldNameConflict(nt: NoteType, ord: number, name: string): 
 export function renameField(nt: NoteType, ord: number, name: string): NoteType {
     const trimmed = name.trim();
     const current = nt.fields.find((f) => f.ord === ord);
-    if (!trimmed || !current || trimmed === current.name || findFieldNameConflict(nt, ord, trimmed)) return nt;
+    if (!trimmed || !current || trimmed === current.name || findFieldNameConflict(nt, ord, trimmed) || fieldNameSyntaxError(trimmed)) return nt;
     const fields = nt.fields.map((f) => (f.ord === ord ? { ...f, name: trimmed } : f));
     return touch(nt, { fields, templates: rewriteFieldReferences(nt, current.name, trimmed) });
 }
 
 export type FieldRenameOutcome =
     | { status: 'renamed' | 'unchanged'; noteType: NoteType }
-    | { status: 'duplicate'; noteType: NoteType; conflict: NoteTypeField };
+    | { status: 'duplicate'; noteType: NoteType; conflict: NoteTypeField }
+    | { status: 'invalid'; noteType: NoteType; reason: FieldNameSyntaxError };
 
 /**
  * Applies a field name the learner finished typing (on blur or Return). The editor keeps the
@@ -88,6 +90,9 @@ export type FieldRenameOutcome =
 export function commitFieldRename(nt: NoteType, ord: number, draft: string): FieldRenameOutcome {
     const conflict = draft.trim() ? findFieldNameConflict(nt, ord, draft) : undefined;
     if (conflict) return { status: 'duplicate', noteType: nt, conflict };
+    const unchanged = draft.trim() === nt.fields.find((f) => f.ord === ord)?.name;
+    const reason = unchanged ? null : fieldNameSyntaxError(draft);
+    if (reason) return { status: 'invalid', noteType: nt, reason };
     const noteType = renameField(nt, ord, draft);
     return { status: noteType === nt ? 'unchanged' : 'renamed', noteType };
 }

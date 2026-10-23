@@ -997,7 +997,8 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/fields.py",
       "useFor": [
         "rename a field once with its final name",
-        "refuse a field name another field already uses, ignoring case"
+        "refuse a field name another field already uses, ignoring case",
+        "Fields dialog refuses names starting with #, ^ or / and names containing : { } \" ; template save errors for unknown fields, unclosed sections, no front field and missing cloze (https://docs.ankiweb.net/templates/errors.html)"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },
