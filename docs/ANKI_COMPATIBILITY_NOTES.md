@@ -101,13 +101,18 @@ change. What that pins:
   a separate `nextPos` counter;
 - retrievability for card info, the review sort orders and `prop:r`: seconds since `lrt`, the
   card's own decay (0.5 when it has none);
-- "Optimize" (`lib/fsrsTraining.ts`, `lib/fsrsPretrain.ts`, `lib/fsrsOptimizer.ts`): Anki's
-  `compute_params` around fsrs-rs 5.2.0's trainer. It gathers the preset's unsuspended cards,
-  builds items as `fsrs_items_for_training` does, drops outliers, pre-trains the starting
-  stabilities, and trains five epochs of Burn 0.17.1's Adam on shuffled length-sorted batches
-  (seed 2023) with the cosine learning rate and the L2 pull. It keeps the best epoch and adopts
-  the result only when its log loss beats the current parameters. On items recorded from Anki,
-  every parameter lands within 5e-7 of Anki's (`lib/fsrsTraining.test.ts`);
+- "Optimize" (`lib/fsrsTraining.ts`, `lib/fsrsTrainingModel.ts`, `lib/fsrsPretrain.ts`):
+  Anki 26.09.3's production path around fsrs-rs 6.6.2. It retains outlier filtering and
+  pre-training, then trains eight epochs over whole-card windows (at most 512 predictions),
+  excluding prefixes longer than 256 reviews after recency weighting. Analytic gradients and
+  Adam moments use f64, the forward model and stored updates f32; the last epoch is used.
+  Same-day Hard has the stability floor. Evaluation sums weighted BCE sequentially in f32,
+  while the trainer clamps probabilities for finite derivatives. Cancellation and the existing
+  adoption rule remain. Four recorded collections (`test/fixtures/anki-26.09-optimize.json`)
+  include 64/65 and 255/256/257 review boundaries; five additional seeded collections up to
+  1,500 cards / 6,440 items were measured. Maximum parameter error was 4.76837158203125e-7;
+  evaluation matches within 1e-6 (`lib/fsrsTraining.test.ts`). Production card ids come from
+  FSRS-A's separate collector metadata integration; merge that change before this optimizer.
 - the browser's retrievability column sort and a filtered deck's gather orders
   (`lib/ankiSortKeys.ts`): Anki's `extract_fsrs_retrievability`,
   `extract_fsrs_relative_retrievability` and `fnvhash` tiebreak, computed in f32 in JS because
@@ -120,13 +125,12 @@ are not correctly rounded (intervals never differed in the recorded vectors); a 
 for a card within about a second of the threshold. Still to add:
 retention/true-retention graphs and the FSRS simulator
 
-Against the current release, Anki 26.09.3 (fsrs-rs 6.6.2), the app has not been re-measured and
-is known to differ (fifth pass in `docs/AUDIT_FSRS_ANKI_PARITY.md`, read from source on
-2026-10-22): a same-day Hard no longer lowers stability; review fuzz keeps the previous interval
+Against the current release, Anki 26.09.3 (fsrs-rs 6.6.2), the optimizer was measured on
+2026-10-23 as above. The scheduling areas remain at their separate gates and are known to
+differ (fifth pass in `docs/AUDIT_FSRS_ANKI_PARITY.md`, read from source on 2026-10-22): a same-day Hard no longer lowers stability; review fuzz keeps the previous interval
 when it is still inside the new fuzz window, also when rescheduling; Set Due Date follows the
-collection FSRS switch and leaves new and `ivl = 0` cards at 0; "Optimize" trains with fsrs-rs
-6.6.2's procedure (8 epochs, per-card batches); Change Deck recomputes memory states; Check
-Database repairs `lrt`; a future ignore-before date is clamped to today; an export without
+collection FSRS switch and leaves new and `ivl = 0` cards at 0; Change Deck recomputes memory
+states; Check Database repairs `lrt`; a future ignore-before date is clamped to today; an export without
 scheduling keeps the retention values; card info computes a missing state and hides ease under
 FSRS; and the retrievability filtered-deck orders are hidden while FSRS is off. Re-recording the
 fixtures with Anki 26.09.3 through `scripts/anki-oracle/` comes before fixing these, because the

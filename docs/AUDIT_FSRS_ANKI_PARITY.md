@@ -554,7 +554,7 @@ yok. Önem sırasıyla 11 fark:
 | 1 | **Yüksek** | Aynı gün "Zor" | Stabiliteyi düşürmez (`rating >= 2` tabanı) | Düşürür: S × 0.43–0.74 | `lib/fsrs.ts:378-387`, `lib/fsrsTraining.ts:189` |
 | 2 | **Orta** | Fuzz tabanı | Büyümeyen aralıkta önceki aralık pencere içindeyse korunur | Korunmaz; yeniden planlamada aralık ayrıca kesiliyor | `lib/fsrsScheduler.ts:268-272`, `lib/fsrsMaintenance.ts:339-340` |
 | 3 | **Orta** | Son tarihi ayarla | Koleksiyonun FSRS anahtarına bakar; yeni ve `ivl = 0` kart 0'da kalır | Kartın hafıza durumuna bakar; yeni karta gün sayısı yazar | `lib/browserSelection.ts:130`, `lib/schedulingIntervals.ts:273-296` |
-| 4 | **Orta** | Optimize et | fsrs-rs 6.6.2 eğitimi, 8 tur, kart bazlı gruplar | 26.05'in eğitimi, 5 tur | `lib/fsrsTraining.ts:37-41` |
+| 4 | **Orta** | Optimize et — kapatıldı (FSRS-B; collector bağlantısı FSRS-A) | fsrs-rs 6.6.2 eğitimi, 8 tur, kart bazlı gruplar | 26.09.3 referansı, en büyük fark 4.77·10⁻⁷ | `lib/fsrsTraining.ts:37-41` |
 | 5 | Düşük–orta | Desteyi değiştir | Hafıza durumu hemen yeniden hesaplanır | Silinir, ilk cevapta türetilir | `lib/noteStore.ts:407-450` |
 | 6 | Düşük–orta | Veritabanı kontrolü | Bozuk `lrt`'yi revlog'dan onarır | `lrt`'ye bakmaz | `lib/maintenance.ts` |
 | 7 | Düşük | "Şu tarihten önceki tekrarları yok say" | Gelecek tarih bugüne çekilir | Gelecek tarih kabul edilir | `app/deck-options.tsx:504-507, 551, 699` |
@@ -630,22 +630,34 @@ yok. Önem sırasıyla 11 fark:
   durumu üretmez. Uygulamada ise `ivl = 3` yazılan kart cevaplanırken hiç kazanmadığı bu 3 günlük
   aralıktan SM-2 tahminiyle (S ≈ 3) başlatılıyor (`lib/fsrsScheduler.ts:118-128`).
 
-## 4. "Optimize et" 26.05'in eğitimini çalıştırıyor — orta
+## 4. "Optimize et" 26.05'in eğitimini çalıştırıyor — kapatıldı (FSRS-B)
 
-- **Anki 26.09.3:** `compute_params`, fsrs-rs 6.6.2'nin `compute_parameters`'ını kart
-  kimlikleriyle ve `num_epochs: 8` ile çağırıyor (`rslib/src/scheduler/fsrs/params.rs`). fsrs-rs
-  6.x eğitimi baştan yazdı:
-  - Burn kalktı, türevler analitik.
-  - Her kartın öğeleri tek bir pencere dizisinde toplanıyor; gruplar en çok 512 tahminlik.
-  - 256 tekrardan uzun öğeler atılıyor (5.2.0'da 64).
-  - Gruplar rand 0.10'un `StdRng`'siyle (tohum 2023) karıştırılıyor.
-  - Turlar arası doğrulama yok, son turun parametreleri alınıyor.
-  - İleri hesapta aynı gün Zor tabanı var (madde 1).
-- **Uygulama:** `lib/fsrsTraining.ts` 26.05'in yolunu taşıyor: 5 tur, en çok 64 tekrar
-  (`:37-41`), Burn 0.17.1 Adam'ı, en iyi turun seçimi ve `rating >= 3` (`:189`). 26.05'e karşı
-  sonuç 5·10⁻⁷ içinde.
-- **Sonuç:** aynı geçmiş için "Optimize et" Anki 26.09.3'ten farklı parametreler üretir. Farkın
-  büyüklüğü ölçülemedi, çünkü yerelde 26.09.3 yok.
+23 Ekim 2026: Anki 26.09.3 (29bb700b) kuruldu; üretim `compute_fsrs_params` yolu
+`gen_optimize.py` ile çalıştırıldı. Öğelerden hesaplayan test yardımcısı hâlâ beş tur ve kart
+kimliği olmadan çalıştığı için yeni fixture yalnız üretim koleksiyonlarını kullanıyor.
+
+- `lib/fsrsTraining.ts` artık fsrs-rs 6.6.2'nin sekiz turlu son-tur eğitimini, kart bazlı
+  pencerelerini, 256 tekrar sınırını, f64 HostAdam'ı ve f64 analitik gradyanlarını kullanıyor.
+  İleri model `lib/fsrsTrainingModel.ts` içinde f32; aynı gün Zor tabanı `rating >= 2`.
+  Öğe ağırlıkları ve L2 çekimi korunuyor. Gruplar rand 0.10'un seed 2023 sırasıyla karışıyor.
+- `evaluate`/log loss, yeni skaler ileri model ve sıralı f32 toplamla güncellendi. Eğitimde
+  olasılık tabanı var, değerlendirmede yok. Parametre benimseme, iptal, arayüz ve kayıt akışı
+  korunuyor. Her iki modülün başlığında BSD-3-Clause lisansının tam bildirimi var.
+- Önce yeni fixture'a bağlı testler eklendi: eski kodda 3 test kaldı; örneğin 150 kartta w0
+  farkı 0.0029258281, 400 kartta 0.0239510611 ve küçük örnekte log loss farkı 0.0011608601.
+- Kaydedilen fixture: 40, 150, 400 kart ve uzun geçmişli 150 kart; sırasıyla 112, 731, 1668,
+  664 öğe. Uzun geçmiş 64/65 ve 255/256/257 sınırlarını gerçek Anki çıktısıyla sabitliyor.
+  Ek tohum 7 ölçümü: 40/150/400/900/1500 kart, 107–6440 öğe. Dokuz koleksiyondaki 21
+  parametrenin en büyük mutlak farkı **4.76837158203125·10⁻⁷**; hedef 5·10⁻⁷ sağlandı.
+  Varsayılan ve optimize parametrelerin log loss'u 1·10⁻⁶ içinde. 26.05 optimizer kayıtları
+  tarihsel fixture'da kalıyor; güncel optimizer testi onlara karşı çalışmıyor.
+- **FSRS-A bağlantısı:** `collectFsrsTrainingItems` her öğeye gerçek `cardId` taşımalı. Aynı
+  uzunluktaki kartların kimlik sırası, grupların sınırını belirliyor. Bu collector değişikliği
+  A'nın dosyasında, ayrı commit olarak yapılacak; B testleri fixture'daki revlog→kart eşlemesi
+  ile bu alanı veriyor. Birleştirmede önce A'nın metadata commit'i alınmalı.
+- Saf hesap değişikliği; iPhone arayüzü ve parametre kayıt yolu değişmediği için yeni cihaz
+  smoke testi gerekmiyor. `npm run quality` (tsc, tüm deterministik testler, iOS/kaynak kaydı)
+  160 dosyada 1 680 testle geçti; `lib/fsrsTraining.test.ts` yeni oracle'a karşı 8 testle geçti.
 
 ## 5. Desteyi değiştirmek hafıza durumunu yeniden hesaplamıyor — düşük–orta
 
