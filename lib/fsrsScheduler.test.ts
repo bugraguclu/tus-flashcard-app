@@ -217,6 +217,18 @@ describe('FSRS button labels', () => {
         expect(preview.good).toBe('10dk');
         expect(preview.againMinutes).toBe(1);
     });
+
+    // Same rules as the classic engine (lib/schedulingIntervals.ts formatLearningDelay): a step
+    // inside the learn-ahead limit gets "<", a step past the next rollover is stored and shown in days.
+    it('marks steps inside the learn-ahead limit and shows steps past the rollover in days', () => {
+        const ahead = FsrsEngine.previewIntervals(newCard(), { ...fsrsSettings, learnAheadMinutes: 20 }, NOW);
+        expect(ahead.again).toBe('<1dk');
+        expect(ahead.good).toBe('<10dk');
+
+        const longSteps = FsrsEngine.previewIntervals(newCard(), { ...fsrsSettings, learningSteps: [1, 2880] }, NOW);
+        expect(longSteps.again).toBe('1dk');
+        expect(longSteps.good).toBe(formatDays(2));
+    });
 });
 
 describe('FSRS short-term scheduling', () => {

@@ -29,6 +29,7 @@ import {
     constrainInterval,
     constrainedFuzzBounds,
     formatDays,
+    formatLearningDelay,
     formatMinutes,
     hardDelaySecs,
     learningStepSecs,
@@ -365,9 +366,13 @@ function scheduleResultFor(
     };
 }
 
-function labelFor(outcome: FsrsOutcome): string {
+/**
+ * A step past the next rollover is stored in days (lib/studyAnswer.ts), so it is labelled in days,
+ * and a step inside the learn-ahead limit gets Anki's "<" prefix, exactly as the classic engine.
+ */
+function labelFor(outcome: FsrsOutcome, nowMs: number, settings: AppSettings): string {
     return outcome.kind === 'learning'
-        ? formatMinutes((outcome.secs ?? 0) / 60)
+        ? formatLearningDelay((outcome.secs ?? 0) / 60, nowMs, settings.dayRolloverHour, settings.learnAheadMinutes)
         : formatDays(outcome.intervalDays);
 }
 
@@ -390,10 +395,10 @@ export const FsrsEngine: SchedulerEngine = {
         const [again, hard] = [outcomes[1], outcomes[2]];
 
         return {
-            again: labelFor(again),
-            hard: labelFor(hard),
-            good: labelFor(outcomes[3]),
-            easy: labelFor(outcomes[4]),
+            again: labelFor(again, now, settings),
+            hard: labelFor(hard, now, settings),
+            good: labelFor(outcomes[3], now, settings),
+            easy: labelFor(outcomes[4], now, settings),
             againMinutes: again.kind === 'learning'
                 ? (again.secs ?? 0) / 60
                 : again.intervalDays * MINUTES_PER_DAY,
