@@ -41,3 +41,13 @@ describe('P0-4 edge cases', () => {
   expect(restored).toMatch(/^Mine /);
  });
 });
+describe('plain-text stand-in before the rich editor is ready (EDT-8)', async () => {
+ const { isPlainFieldText } = await import('./richTextEditorContent');
+ it('only lets a field without markup be typed into', () => {
+  expect(isPlainFieldText('Kalp kapakçıkları')).toBe(true);
+  expect(isPlainFieldText('')).toBe(true);
+  expect(isPlainFieldText('<b>kalp</b>')).toBe(false);
+  expect(isPlainFieldText('a &amp; b')).toBe(false);
+  expect(isPlainFieldText('[sound:x.mp3]')).toBe(false);
+ });
+});

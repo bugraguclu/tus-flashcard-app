@@ -16,7 +16,7 @@ import {
 } from '../lib/richTextEditorScript';
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { editorFieldFontFamily } from '../lib/editorFieldStyle';
-import { prepareEditorContent } from '../lib/richTextEditorContent';
+import { isPlainFieldText, prepareEditorContent } from '../lib/richTextEditorContent';
 import WebHtmlFrame from './WebHtmlFrame';
 import {
     embeddedWebViewLayout,
@@ -580,8 +580,11 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     <TextInput
                         ref={fallbackInputRef}
                         value={value}
-                        editable={editable}
-                        selectTextOnFocus={editable}
+                        // The stand-in shows the stored HTML as plain text. Typing into it would
+                        // rewrite markup the learner cannot see, so a formatted field waits for
+                        // the rich editor, and focusing never selects (and so replaces) the whole
+                        // field (EDT-8).
+                        editable={editable && isPlainFieldText(value)}
                         onChangeText={onChange}
                         onFocus={() => {
                             fallbackFocusedRef.current = true;

@@ -4,6 +4,10 @@
  */
 import { sanitizeUntrustedHtml } from './templates';
 export type PreservedEditorSource = Record<string, { kind: 'node' | 'tag'; source: string; safe?: string }>;
+/** A field the plain-text stand-in can edit without touching markup: no tags, entities or media. */
+export function isPlainFieldText(value: string): boolean {
+    return !/[<>&]|\[sound:/i.test(value);
+}
 export interface PreparedEditorContent { html: string; original: string; preserved: PreservedEditorSource }
 export function prepareEditorContent(source: string, namespace = `e${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`): PreparedEditorContent {
     const preserved: PreservedEditorSource = {};
