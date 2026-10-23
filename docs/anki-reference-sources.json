@@ -1122,8 +1122,67 @@
         "future_due: learning timestamps, original due, buried/suspended exclusions and integer daily load",
         "intervals include review and relearning across queues",
         "card_counts separates new, learn, relearn, young, mature, suspended and buried; retain compatibility with existing empty snapshots",
-        "answer buttons exclude cram/manual and invalid ratings; lib/statsAuditSafety.test.ts"
+        "answer buttons count learning, relearning and filtered answers as learning and skip manual rows and invalid ratings; lib/statsAuditSafety.test.ts"
       ]
+    },
+    {
+      "id": "anki-transfer-search-language",
+      "priority": 1,
+      "platform": "cross-platform search syntax",
+      "url": "https://docs.ankiweb.net/searching.html",
+      "useFor": [
+        "field searches match the whole field; * and _ wildcards and their backslash escapes; front:, front:_*, front:*, fr*:, field:re:, field:nc:",
+        "plain text reads stored field HTML plus the formatting-free sort field; entities searched as written",
+        "tag:re:, tag:*, w: with wildcards, sc:, deck:*, deck:filtered, preset:, has-cd:, prop:cdn/cds, prop:rated, prop:resched; lib/searchSyntax.test.ts",
+        "deliberate superset: full Unicode case folding with the Turkish i forms folded together; accents still need nc:"
+      ]
+    },
+    {
+      "id": "anki-source-search-sqlwriter",
+      "priority": 3,
+      "platform": "cross-platform search evaluation",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/search/sqlwriter.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["deck: matches home and filtered decks", "tag:* matches every note", "added: reads the card id", "edited: reads the note mod", "dupe:, mid:, did:, resched:"]
+    },
+    {
+      "id": "anki-source-sort-cards",
+      "priority": 3,
+      "platform": "cross-platform reposition",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/new.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["siblings share a position", "randomize order", "shift by step times selected cards", "one undoable operation", "remembered shift/randomize choices; lib/browserReposition.test.ts"]
+    },
+    {
+      "id": "anki-source-csv-metadata",
+      "priority": 3,
+      "platform": "cross-platform text import defaults",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/metadata.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["delimiter guess: first of tab, pipe, semicolon, colon, comma, space in the first 8 KiB", "#columns name mapping", "tags column after the last mapped field", "#if matches, #match scope and the legacy tags: line; lib/transferRemaining.test.ts"]
+    },
+    {
+      "id": "anki-source-buttons-hours-graphs",
+      "priority": 3,
+      "platform": "cross-platform statistics windows",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/stats/graphs/buttons.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["Answer Buttons and Hourly Breakdown windows of 30, 90 and 365 days before the next rollover (also rslib/src/stats/graphs/hours.rs)", "filtered answers in the learning column; lib/statsAuditSafety.test.ts"]
+    },
+    {
+      "id": "anki-manual-check-media",
+      "priority": 1,
+      "platform": "cross-platform media maintenance",
+      "url": "https://docs.ankiweb.net/media.html#checking-media",
+      "useFor": ["unused and missing media report", "files starting with _ are kept", "unused files go to a trash that can be restored; lib/mediaCheck.test.ts"]
+    },
+    {
+      "id": "anki-source-colpkg-legacy-config",
+      "priority": 3,
+      "platform": "cross-platform collection package",
+      "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/collection.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["legacy col.conf keys (schedVer, rollover, nextPos, curDeck) and col.tags registry in schema-11 packages; lib/transferRemaining.test.ts"]
     }
   ],
   "requiredDocs": [
