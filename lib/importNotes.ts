@@ -8,6 +8,7 @@
 import { getDB } from './db';
 import { checksumField, type Note, type NoteType } from './models';
 import { firstFieldChecksums } from './noteChecksum';
+import { stripHtmlForSearch } from './searchGlob';
 import { createNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
 import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited } from './importDelimited';
 import { createDeck, getAllDecks } from './deckManager';
@@ -271,7 +272,8 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 ...existing,
                 fields,
                 tags: uniqueTags([...finalTags, ...updatedTags]),
-                sfld: fields[activeNoteType.sortFieldIdx] || fields[0] || '',
+                // Anki's sort field holds the text without formatting (media file names kept), EDT-9.
+                sfld: stripHtmlForSearch(fields[activeNoteType.sortFieldIdx] || fields[0] || ''),
                 csum: checksumField(fields[0] ?? ''),
                 mod: Math.floor(Date.now() / 1000),
                 usn: -1,

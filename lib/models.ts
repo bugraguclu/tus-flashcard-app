@@ -23,6 +23,8 @@ export interface NoteTypeTemplate {
     ord: number;
     qfmt: string;        // question (front) template, mustache syntax
     afmt: string;        // answer (back) template
+    /** Anki's per-template deck override (`did`), as a local deck id; set by package import. */
+    deckOverrideId?: number;
 }
 
 export interface NoteType {

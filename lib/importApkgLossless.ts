@@ -18,6 +18,7 @@ import { ankiDueDayToLocal } from './importApkgProgress';
 import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
 import { deckNameKey } from './deckNames';
+import { stripHtmlForSearch } from './searchGlob';
 import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
 import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import { parsePreviewDelays } from './filteredDeckOptions';
@@ -137,6 +138,7 @@ export function importAnkiReaderLossless(
             }
         }
         const reservedTypeNames = new Set(existingNoteTypes.map((row) => row.name));
+        const writtenNoteTypeIds = new Set<number>();
         for (const [sourceKey, raw] of Object.entries(meta.models)) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
             const samePackage = existingNoteTypes.find((row) => {
@@ -167,6 +169,7 @@ export function importAnkiReaderLossless(
                     'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, 0)',
                     noteType.id, noteType.name, JSON.stringify(noteType), nowMs, numberValue(raw.usn, -1),
                 );
+                writtenNoteTypeIds.add(noteType.id);
             } else {
                 try {
                     const current = JSON.parse(existing.data) as NoteType;
@@ -187,6 +190,7 @@ export function importAnkiReaderLossless(
                             'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, 0)',
                             duplicate.id, duplicate.name, JSON.stringify(duplicate), nowMs, -1,
                         );
+                        writtenNoteTypeIds.add(duplicate.id);
                     }
                     const shouldUpdate = sameShape && (
                         updateNoteTypes === 'always'
@@ -197,6 +201,7 @@ export function importAnkiReaderLossless(
                             'UPDATE note_types SET name = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0 WHERE id = ?',
                             incoming.name, JSON.stringify(incoming), nowMs, -1, targetId,
                         );
+                        writtenNoteTypeIds.add(targetId);
                     }
                 } catch { /* malformed local note types remain untouched */ }
             }
@@ -354,6 +359,30 @@ export function importAnkiReaderLossless(
             installedNames.add(parentName);
         }
 
+        // A template's deck override names a deck of the package; point it at the deck that deck
+        // became here, or drop it when the package's deck did not come along (Anki then ignores it).
+        const localDeckForSource = (sourceDeckId: number): number | undefined => deckMap.get(sourceDeckId)
+            ?? existingDecks.flatMap((row) => {
+                try {
+                    const parsed = JSON.parse(row.data) as Deck;
+                    return parsed.sourcePackageId === packageId && numberValue(parsed.ankiRaw?.id) === sourceDeckId ? [row.id] : [];
+                } catch { return []; }
+            })[0];
+        for (const typeId of writtenNoteTypeIds) {
+            const row = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', typeId);
+            if (!row) continue;
+            const type = JSON.parse(row.data) as NoteType;
+            let changed = false;
+            type.templates = type.templates.map((template) => {
+                if (template.deckOverrideId === undefined) return template;
+                changed = true;
+                const local = localDeckForSource(template.deckOverrideId);
+                const { deckOverrideId: _source, ...rest } = template;
+                return local === undefined ? rest : { ...rest, deckOverrideId: local };
+            });
+            if (changed) db.runSync('UPDATE note_types SET data = ? WHERE id = ?', JSON.stringify(type), typeId);
+        }
+
         const existingNotesByGuid = new Map<string, { id: number; note: Note }>();
         for (const row of db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM notes')) {
             try {
@@ -405,7 +434,7 @@ export function importAnkiReaderLossless(
                     usn: -1,
                     tags,
                     fields,
-                    sfld: String(row.sfld ?? fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? ''),
+                    sfld: String(row.sfld ?? stripHtmlForSearch(fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? '')),
                     csum: numberValue(row.csum),
                     flags: numberValue(row.flags),
                     ankiData: String(row.data ?? ''),
@@ -429,7 +458,7 @@ export function importAnkiReaderLossless(
                 usn: numberValue(row.usn, -1),
                 tags,
                 fields,
-                sfld: String(row.sfld ?? fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? ''),
+                sfld: String(row.sfld ?? stripHtmlForSearch(fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? '')),
                 csum: numberValue(row.csum),
                 flags: numberValue(row.flags),
                 ankiData: String(row.data ?? ''),

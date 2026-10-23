@@ -176,7 +176,7 @@ function scopedData(
     };
 }
 
-function modelMap(noteTypes: NoteType[]): string {
+function modelMap(noteTypes: NoteType[], exportedDeckIds: ReadonlySet<number>): string {
     const now = Math.floor(Date.now() / 1000);
     const map: Record<string, unknown> = {};
     for (const type of noteTypes) {
@@ -197,7 +197,8 @@ function modelMap(noteTypes: NoteType[]): string {
             tmpls: type.templates.map((template, index) => ({
                 ...(rawTemplates[index] ?? {}),
                 name: template.name, ord: template.ord, qfmt: template.qfmt, afmt: template.afmt,
-                did: rawTemplates[index]?.did ?? null,
+                // The deck override, when its deck is in the package; a stale source id never is.
+                did: template.deckOverrideId !== undefined && exportedDeckIds.has(template.deckOverrideId) ? template.deckOverrideId : null,
                 bqfmt: rawTemplates[index]?.bqfmt ?? '', bafmt: rawTemplates[index]?.bafmt ?? '',
             })),
         };
@@ -588,7 +589,7 @@ async function buildPackage(
         db.runSync('INSERT INTO col VALUES (?, ?, ?, ?, 11, 0, 0, 0, ?, ?, ?, ?, ?)',
             1, collectionCreation, now, now,
             format === 'colpkg' ? collectionConfig(exportedCards, rolloverHour, now) : '{}',
-            modelMap(noteTypes),
+            modelMap(noteTypes, new Set(decks.map((deck) => deck.id))),
             deckMap(decks, includeScheduling, includeDeckConfigs),
             deckConfigMap(decks, source.deckConfigs, includeScheduling, includeDeckConfigs), tagRegistry(notes));
         for (const note of notes) {

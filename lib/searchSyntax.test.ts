@@ -225,9 +225,28 @@ describe('collection scan', () => {
         expect(ids('deck:current')).toEqual([NOW - 1000]);
     });
 
+    it('includes a learning card due today in prop:due<=0 for the collection scan (filtered SQL path)', () => {
+        h.db.runSync('UPDATE anki_cards SET type = 1, queue = 1, due = ? WHERE id = 77', Date.now() + 60_000);
+        expect(ids('prop:due<=0')).toEqual([77]);
+        expect(ids('prop:due<=0 is:learn')).toEqual([77]);
+    });
+
     it('finds manual reschedules', () => {
         expect(ids('resched:1')).toEqual([NOW - 1000]);
         expect(ids('prop:resched=0')).toEqual([NOW - 1000]);
         expect(ids('rated:1')).toEqual([]);
+    });
+});
+
+describe('prop:due on learning cards (FLT-9)', () => {
+    const learning = (dueMs: number) => card({ type: 1, queue: 1, due: dueMs });
+    it('reads an intraday learning card due today as day 0', () => {
+        const laterToday = OPTIONS.nowMs + 3_600_000;
+        expect(matches('prop:due=0', learning(laterToday))).toBe(true);
+        expect(matches('prop:due<=0', learning(laterToday))).toBe(true);
+        expect(matches('prop:due>=1', learning(laterToday))).toBe(false);
+        expect(matches('prop:due=-2', learning(OPTIONS.dayCutoffMs + 86_400_000 - 2.5 * 86_400_000))).toBe(true);
+        expect(matches('prop:due=0', card({ type: 2, queue: 2, due: OPTIONS.today }))).toBe(true);
+        expect(matches('prop:due=0', card({ type: 0, queue: 0, due: 100 }))).toBe(false);
     });
 });

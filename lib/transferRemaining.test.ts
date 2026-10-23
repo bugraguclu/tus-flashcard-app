@@ -156,3 +156,42 @@ describe('note text export scope (B13)', () => {
         expect(getNoteIdsInDeck('TUS').size).toBe(1);
     });
 });
+
+describe('sort field and template deck override', () => {
+    it('stores the sort field without formatting when a text import updates a note (EDT-9)', async () => {
+        importDelimitedNotes('#html:true\n#separator:tab\n<b>Kalp</b>\tbir', { noteType: noteType(), deckId: 1 });
+        importDelimitedNotes('#html:true\n#separator:tab\n<b>Kalp</b>\t<i>iki</i>', { noteType: noteType(), deckId: 1 });
+        const note = getAllNotes().find((entry) => entry.fields[0] === '<b>Kalp</b>')!;
+        expect(note.fields[1]).toBe('<i>iki</i>');
+        expect(h.db.getFirstSync('SELECT sfld FROM notes WHERE id = ?', note.id).sfld).toBe('Kalp');
+    });
+
+    it('remaps a template deck override to the local deck on import and keeps it on export (EDT-4)', async () => {
+        saveDeck(deck(704, 'Local deck with the same id'));
+        const data = source([deck(703, 'Transfer'), deck(704, 'Transfer::Target')]);
+        data.noteTypes[0].templates[0] = { ...data.noteTypes[0].templates[0], deckOverrideId: 704 };
+        data.cards.push({ ...data.cards[0], id: 705, deckId: 704, ord: 0, noteId: 701 } as AnkiCard);
+        data.cards = [data.cards[1]];
+        const exported = await packageCol(await pkg(data));
+        expect(exported.decks.find((entry) => entry.name === 'Transfer::Target')).toBeTruthy();
+        await importApkg(await pkg(data), options);
+        const target = getAllDecks().find((entry) => entry.name === 'Transfer::Target')!;
+        expect(target.id).not.toBe(704);
+        const stored = JSON.parse(h.db.getFirstSync('SELECT data FROM note_types WHERE name = ?', 'Transfer').data);
+        expect(stored.templates[0].deckOverrideId).toBe(target.id);
+
+        const reexport = await JSZip.loadAsync((await buildAnkiExport('apkg', undefined, false)).bytes!);
+        const reader = await openSqlJsReader(await reexport.file('collection.anki21')!.async('uint8array'));
+        const models = Object.values(JSON.parse(reader.getFirstSync<any>('SELECT models FROM col')!.models)) as any[];
+        reader.close();
+        expect(models.find((model) => model.name === 'Transfer').tmpls[0].did).toBe(target.id);
+    });
+
+    it('never carries an override for a deck outside the package', async () => {
+        const data = source();
+        data.noteTypes[0].templates[0] = { ...data.noteTypes[0].templates[0], deckOverrideId: 999 };
+        await importApkg(await pkg(data), options);
+        const stored = JSON.parse(h.db.getFirstSync('SELECT data FROM note_types WHERE name = ?', 'Transfer').data);
+        expect(stored.templates[0].deckOverrideId).toBeUndefined();
+    });
+});

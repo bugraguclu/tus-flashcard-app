@@ -274,8 +274,16 @@ function propPredicate(body: string, options: CardMatcherOptions, needs: CardSea
         case 'resched':
             return revlogDayPredicate(key, op, value, options);
         case 'due': {
+            // Review and day-learning cards compare their due day with today. An intraday learning
+            // (or preview) card's due time is read as whole days from the next rollover, truncated
+            // toward zero as Anki's SQL division does, so a learning card due today is day 0 (FLT-9).
             const compare = numericComparison(op, Math.trunc(value));
-            return (card) => (card.queue === 2 || card.queue === 3) && compare(card.due - options.today);
+            const nextDayAtSecs = Math.floor((options.dayCutoffMs + DAY_MS) / 1000);
+            return (card) => {
+                if (card.queue === 2 || card.queue === 3) return compare(card.due - options.today);
+                if (card.queue === 1 || card.queue === 4) return compare(Math.trunc((Math.floor(card.due / 1000) - nextDayAtSecs) / 86_400));
+                return false;
+            };
         }
         case 'ease': {
             // "prop:ease=2.5" is stored as factor 2500 — Anki multiplies by 1000.
