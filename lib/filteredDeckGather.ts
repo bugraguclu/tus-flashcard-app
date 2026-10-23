@@ -69,7 +69,8 @@ export function gatherFilteredTermCardIds(
     excludedIds: readonly number[] = [],
 ): number[] {
     const filtered = buildFilteredSearchClause(term.search);
-    const exclusion = excludedIds.length ? ` AND c.id NOT IN (${excludedIds.map(() => '?').join(',')})` : '';
+    // One JSON parameter, not one `?` per card: reservations can outgrow SQLite's variable limit.
+    const exclusion = excludedIds.length ? ' AND c.id NOT IN (SELECT value FROM json_each(?))' : '';
     const where = filtered.clauses.length > 0 ? filtered.clauses.join(' AND ') : '1=1';
     const lastReview = term.order === FILTERED_SEARCH_ORDER.oldestReviewedFirst
         ? '(SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id)'
@@ -83,7 +84,7 @@ export function gatherFilteredTermCardIds(
          JOIN note_types nt ON nt.id = n.noteTypeId
          JOIN decks d ON d.id = c.deckId
          WHERE c.queue >= 0 AND COALESCE(json_extract(d.data, '$.isFiltered'), 0) = 0 AND ${where}${exclusion}`,
-        ...filtered.params, ...excludedIds,
+        ...filtered.params, ...(excludedIds.length ? [JSON.stringify(excludedIds)] : []),
     );
     const keysOf = gatherOrderKeys(term.order, Boolean(settings.fsrsEnabled), nowMs, localDayNumber(nowMs, settings.dayRolloverHour));
     const keyed = rows.map((row) => ({

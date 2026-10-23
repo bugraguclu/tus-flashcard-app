@@ -181,10 +181,12 @@ export function buildScopeClause(
     const clauses: string[] = [];
     const params: Array<string | number> = [];
     // Ordinary study excludes fixed filtered reservations. Browser searches keep their own scope.
+    // A build has no size limit, so the ids travel as one JSON parameter: one `?` per card would
+    // break past SQLite's 32,766 bound variables.
     const reserved = excludeReservations ? reservedFilteredCardIds() : [];
     if (reserved.length) {
-        clauses.push(`c.id NOT IN (${reserved.map(() => '?').join(',')})`);
-        params.push(...reserved);
+        clauses.push('c.id NOT IN (SELECT value FROM json_each(?))');
+        params.push(JSON.stringify(reserved));
     }
 
 
