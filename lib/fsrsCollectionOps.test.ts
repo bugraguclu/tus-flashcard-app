@@ -20,6 +20,8 @@ import { parseDueRange, setSelectedDueDate } from './browserSelection';
 import { matchingCollectionCardIds } from './collectionCardSearch';
 import { saveDeck, saveDeckConfig } from './deckManager';
 import { formatFsrsCutoffDate, parseFsrsCutoffDate } from './fsrs';
+import { gatherFilteredTermCardIds } from './filteredDeckGather';
+import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { moveCardsToDeckWithFsrs } from './fsrsMaintenance';
 import { checkDatabase, repairDatabase } from './maintenance';
 import { DEFAULT_DECK_CONFIG, type AnkiCard } from './models';
@@ -225,5 +227,27 @@ describe('Ignore reviews before (Anki 26.09.3 oracle)', () => {
         for (const [typed, saved] of Object.entries(entry.saved) as Array<[string, string]>) {
             expect(formatFsrsCutoffDate(parseFsrsCutoffDate(typed, latest)), typed).toBe(saved);
         }
+    });
+});
+
+describe('Retrievability filtered-deck orders with FSRS off', () => {
+    it('keeps building a deck already set to one, ordering by the tiebreak alone, as Anki does', () => {
+        const nowMs = Date.UTC(2026, 9, 23, 12);
+        vi.setSystemTime(nowMs);
+        const today = localDayNumber(nowMs, 4);
+        saveNoteType({ id: 4, name: 'Basic', flds: [{ name: 'Front', ord: 0 }], fields: [{ name: 'Front', ord: 0 }], tmpls: [], templates: [] } as any);
+        // Stabilities 2, 20 and 200 days, all reviewed ten days ago: retrievability falls with stability.
+        [2, 20, 200].forEach((stability, index) => {
+            const cid = 5000 + index;
+            saveNote({ id: cid, guid: `g${cid}`, noteTypeId: 4, mod: 0, usn: -1, tags: [], fields: ['q'], sfld: 'q', csum: 0, flags: 0 } as any);
+            saveAnkiCard(appCard(cid, { type: 2, queue: 2, due: 0, ivl: 10, factor: 2500, reps: 3, lapses: 0, left: 0,
+                data: { s: stability, d: 5, decay: 0.154, lrt: Math.floor(nowMs / 1000) - 10 * 86_400 } }, 0, today));
+        });
+        const term = { search: 'deck:Default', order: FILTERED_SEARCH_ORDER.retrievabilityAscending, limit: 100 };
+        expect(gatherFilteredTermCardIds(term, { dayRolloverHour: 4, fsrsEnabled: true }, nowMs)).toEqual([5000, 5001, 5002]);
+        const withoutFsrs = gatherFilteredTermCardIds(term, { dayRolloverHour: 4, fsrsEnabled: false }, nowMs);
+        expect([...withoutFsrs].sort()).toEqual([5000, 5001, 5002]);
+        expect(withoutFsrs).toEqual(gatherFilteredTermCardIds({ ...term, order: FILTERED_SEARCH_ORDER.retrievabilityDescending },
+            { dayRolloverHour: 4, fsrsEnabled: false }, nowMs));
     });
 });

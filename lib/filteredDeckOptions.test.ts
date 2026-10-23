@@ -9,6 +9,8 @@ import {
     extractDeckNameFromSearch,
     FILTERED_DECK_ORDER_UI,
     FILTERED_SEARCH_ORDER,
+    filteredDeckOrderChoices,
+    filteredDeckOrderForDialog,
     formatPreviewDelays,
     parsePreviewDelays,
     previewDelaySecondsForGrade,
@@ -68,6 +70,19 @@ describe('filtered deck gather order ordinals', () => {
             relativeOverdueness: 10,
         });
         expect([...FILTERED_DECK_ORDER_UI]).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+
+    // Anki 26.09.3's filtered deck dialog (ankitects/anki#5407, qt/aqt/filtered_deck.py).
+    it('offers the two retrievability orders only while FSRS is on', () => {
+        expect([...filteredDeckOrderChoices(true)]).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        expect([...filteredDeckOrderChoices(false)]).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 10]);
+    });
+
+    it('shows a saved retrievability order as Random while FSRS is off, as Anki’s dialog does', () => {
+        expect(filteredDeckOrderForDialog(FILTERED_SEARCH_ORDER.retrievabilityAscending, false)).toBe(FILTERED_SEARCH_ORDER.random);
+        expect(filteredDeckOrderForDialog(FILTERED_SEARCH_ORDER.retrievabilityDescending, false)).toBe(FILTERED_SEARCH_ORDER.random);
+        expect(filteredDeckOrderForDialog(FILTERED_SEARCH_ORDER.retrievabilityDescending, true)).toBe(FILTERED_SEARCH_ORDER.retrievabilityDescending);
+        expect(filteredDeckOrderForDialog(FILTERED_SEARCH_ORDER.relativeOverdueness, false)).toBe(FILTERED_SEARCH_ORDER.relativeOverdueness);
     });
 
     it('maps each legacy ordinal onto the order it used to mean', () => {
