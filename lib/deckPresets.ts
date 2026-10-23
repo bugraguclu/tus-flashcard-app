@@ -1,3 +1,4 @@
+import { remapDeckLearningSteps } from './deckPresetSteps';
 import { DEFAULT_DECK_CONFIG, uniqueId, type Deck, type DeckConfig } from './models';
 import { getDB } from './db';
 import { markSourcePackageDirty } from './ankiPackageArchive';
@@ -31,10 +32,17 @@ export function saveDeckConfig(config: DeckConfig): void {
             markSourcePackageDirty((JSON.parse(existing.data) as DeckConfig).sourcePackageId);
         } catch { /* malformed legacy blobs are replaced below */ }
     }
-    db.runSync(
-        'INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)',
-        config.id, JSON.stringify(config)
-    );
+    let before: DeckConfig | null = null;
+    try { if (existing?.data) before = JSON.parse(existing.data); } catch { /* No recoverable old steps. */ }
+    db.execSync('SAVEPOINT save_deck_preset;');
+    try {
+        db.runSync('INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)', config.id, JSON.stringify(config));
+        if (before) remapDeckLearningSteps(getDecksUsingConfig(config.id).map(d => d.id), before, config);
+        db.execSync('RELEASE SAVEPOINT save_deck_preset;');
+    } catch (error) {
+        db.execSync('ROLLBACK TO SAVEPOINT save_deck_preset; RELEASE SAVEPOINT save_deck_preset;');
+        throw error;
+    }
 }
 
 // ---- Presets (Anki: deck options presets shared across decks) ----
@@ -93,10 +101,21 @@ export function deletePreset(configId: number): void {
 export function assignDeckConfig(deckId: number, configId: number): void {
     const deck = getDeck(deckId);
     if (!deck) return;
-    deck.configId = configId;
-    deck.mod = Math.floor(Date.now() / 1000);
-    deck.usn = -1;
-    saveDeck(deck);
+    const before = getDeckConfig(deck.configId || DEFAULT_DECK_CONFIG.id);
+    const after = getDeckConfig(configId);
+    const db = getDB();
+    db.execSync('SAVEPOINT assign_deck_preset;');
+    try {
+        deck.configId = configId;
+        deck.mod = Math.floor(Date.now() / 1000);
+        deck.usn = -1;
+        saveDeck(deck);
+        remapDeckLearningSteps([deck.id], before, after);
+        db.execSync('RELEASE SAVEPOINT assign_deck_preset;');
+    } catch (error) {
+        db.execSync('ROLLBACK TO SAVEPOINT assign_deck_preset; RELEASE SAVEPOINT assign_deck_preset;');
+        throw error;
+    }
 }
 
 /** Anki's "save to all subdecks": every subdeck adopts this deck's preset. */
@@ -109,10 +128,7 @@ export function applyConfigToSubdecks(deckId: number): number {
     for (const candidate of getAllDecks()) {
         if (!candidate.name.startsWith(prefix) || candidate.isFiltered) continue;
         if ((candidate.configId || DEFAULT_DECK_CONFIG.id) === (deck.configId || DEFAULT_DECK_CONFIG.id)) continue;
-        candidate.configId = deck.configId || DEFAULT_DECK_CONFIG.id;
-        candidate.mod = Math.floor(Date.now() / 1000);
-        candidate.usn = -1;
-        saveDeck(candidate);
+        assignDeckConfig(candidate.id, deck.configId || DEFAULT_DECK_CONFIG.id);
         changed++;
     }
     return changed;

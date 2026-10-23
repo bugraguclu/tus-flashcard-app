@@ -33,11 +33,70 @@ export function setCss(nt: NoteType, css: string): NoteType {
     return touch(nt, { css });
 }
 
+/** SAB-1: field edits update references on both template sides. */
+function rewriteFieldReferences(nt: NoteType, from: string, to: string | null): NoteType['templates'] {
+    const rewrite = (source: string) => source.replace(/\{\{([^{}]+)\}\}/g, (token, body: string) => {
+        const trimmed = body.trim();
+        if (['#', '^', '/'].includes(trimmed[0])) {
+            if (trimmed.slice(1).trim() !== from) return token;
+            return to === null ? '' : `{{${trimmed[0]}${to}}}`;
+        }
+        const parts = trimmed.split(':');
+        if (parts[parts.length - 1].trim() !== from) return token;
+        if (to === null) return '';
+        parts[parts.length - 1] = to;
+        return `{{${parts.join(':')}}}`;
+    });
+    return nt.templates.map(t => ({ ...t, qfmt: rewrite(t.qfmt), afmt: rewrite(t.afmt) }));
+}
+
+const fieldNameKey = (name: string) => name.trim().normalize('NFC').toLowerCase();
+
+/**
+ * The other field that already uses `name`, if any. Anki keeps field names unique within a note
+ * type regardless of case: its Fields dialog refuses such a name ("That field name is already
+ * used") and the collection layer never stores two names that differ only in case. A field may
+ * still change the case of its own name.
+ */
+export function findFieldNameConflict(nt: NoteType, ord: number, name: string): NoteTypeField | undefined {
+    const key = fieldNameKey(name);
+    return nt.fields.find((f) => f.ord !== ord && fieldNameKey(f.name) === key);
+}
+
+/**
+ * Renames one field and rewrites its template references from its current name. Returns the
+ * note type unchanged for a blank, unchanged or already-used name, so a duplicate can never fold
+ * two fields' references into one.
+ */
 export function renameField(nt: NoteType, ord: number, name: string): NoteType {
     const trimmed = name.trim();
-    if (!trimmed) return nt;
+    const current = nt.fields.find((f) => f.ord === ord);
+    if (!trimmed || !current || trimmed === current.name || findFieldNameConflict(nt, ord, trimmed)) return nt;
     const fields = nt.fields.map((f) => (f.ord === ord ? { ...f, name: trimmed } : f));
-    return touch(nt, { fields });
+    return touch(nt, { fields, templates: rewriteFieldReferences(nt, current.name, trimmed) });
+}
+
+export type FieldRenameOutcome =
+    | { status: 'renamed' | 'unchanged'; noteType: NoteType }
+    | { status: 'duplicate'; noteType: NoteType; conflict: NoteTypeField };
+
+/**
+ * Applies a field name the learner finished typing (on blur or Return). The editor keeps the
+ * keystrokes as a draft and calls this once, so references move straight from the original name
+ * to the final one instead of through every intermediate name.
+ */
+export function commitFieldRename(nt: NoteType, ord: number, draft: string): FieldRenameOutcome {
+    const conflict = draft.trim() ? findFieldNameConflict(nt, ord, draft) : undefined;
+    if (conflict) return { status: 'duplicate', noteType: nt, conflict };
+    const noteType = renameField(nt, ord, draft);
+    return { status: noteType === nt ? 'unchanged' : 'renamed', noteType };
+}
+
+/** `name`, or `name 2`, `name 3`, … when another field already uses it. */
+function uniqueFieldName(nt: NoteType, name: string): string {
+    let candidate = name;
+    for (let n = 2; findFieldNameConflict(nt, -1, candidate); n++) candidate = `${name} ${n}`;
+    return candidate;
 }
 
 export function setSortField(nt: NoteType, ord: number): NoteType {
@@ -64,7 +123,7 @@ const identityEdit = (nt: NoteType): FieldEdit => ({ noteType: nt, migrate: (val
 
 export function addField(nt: NoteType, name: string): FieldEdit {
     const field: NoteTypeField = {
-        name: name.trim() || `Alan ${nt.fields.length + 1}`,
+        name: uniqueFieldName(nt, name.trim() || `Alan ${nt.fields.length + 1}`),
         ord: nt.fields.length,
         sticky: false,
         rtl: false,
@@ -84,7 +143,7 @@ export function removeField(nt: NoteType, ord: number): FieldEdit {
     else if (sortFieldIdx > ord) sortFieldIdx -= 1;
 
     return {
-        noteType: touch(nt, { fields: reindex(nt.fields.filter((f) => f.ord !== ord)), sortFieldIdx }),
+        noteType: touch(nt, { fields: reindex(nt.fields.filter((f) => f.ord !== ord)), templates: rewriteFieldReferences(nt, nt.fields[ord].name, null), sortFieldIdx }),
         migrate: (values) => values.filter((_, i) => i !== ord),
     };
 }

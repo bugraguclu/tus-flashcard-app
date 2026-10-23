@@ -16,7 +16,7 @@ import {
 } from '../lib/richTextEditorScript';
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { editorFieldFontFamily } from '../lib/editorFieldStyle';
-import { sanitizeUntrustedHtml } from '../lib/templates';
+import { prepareEditorContent } from '../lib/richTextEditorContent';
 import WebHtmlFrame from './WebHtmlFrame';
 import {
     embeddedWebViewLayout,
@@ -100,7 +100,6 @@ function safeJsValue(value: string): string {
     return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
 }
 
-const MAX_EDITOR_HTML_CHARS = 2 * 1024 * 1024;
 const MAX_EDITOR_MESSAGE_CHARS = 36 * 1024 * 1024;
 
 function createEditorNonce(): string {
@@ -127,7 +126,7 @@ function editorDocument(
     hostOrigin?: string,
 ): string {
     const policy = editorContentSecurityPolicy(nonce);
-    const safeValue = sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS);
+    const prepared = prepareEditorContent(value);
     const fieldFontFamily = editorFieldFontFamily(fontFamily);
     return `<!doctype html>
 <html>
@@ -165,7 +164,8 @@ function editorDocument(
 <body>
   <div id="editor" dir="${rtl ? 'rtl' : 'auto'}" contenteditable="${editable ? 'true' : 'false'}" autocapitalize="${capitalizeSentences ? 'sentences' : 'none'}" spellcheck="true" data-placeholder=${safeJsValue(placeholder)}></div>
   <script type="application/json" id="${RICH_TEXT_EDITOR_CONFIG_ID}">${richTextEditorConfigJson({
-    html: safeValue,
+    html: prepared.html,
+    preserved: prepared.preserved,
     minHeight,
     editable,
     pasteImagesAsPng: pasteClipboardImagesAsPng,
@@ -399,7 +399,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         },
         insertHtml: (html) => {
             if (!editable) return;
-            runWhenReady({ fn: '__tusEditorInsertHtml', args: [sanitizeUntrustedHtml(html)] });
+            runWhenReady({ fn: '__tusEditorInsertHtml', args: [prepareEditorContent(html)] });
         },
         wrapSelection: (prefix, suffix) => {
             if (!editable) return;
@@ -433,12 +433,12 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
      * rather than written back over it.
      */
     const acceptDocumentChange = (html: string, seq: unknown) => {
-        if (!editable || html.length > MAX_EDITOR_HTML_CHARS) return;
+        if (!editable) return;
         if (typeof seq === 'number') {
             if (seq <= lastChangeSeqRef.current) return;
             lastChangeSeqRef.current = seq;
         }
-        const safeHtml = sanitizeUntrustedHtml(stripPendingStyleMarkers(html));
+        const safeHtml = stripPendingStyleMarkers(html);
         lastEditorValueRef.current = safeHtml;
         onChange(safeHtml);
     };
@@ -447,7 +447,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         if (value === lastEditorValueRef.current) return;
         lastEditorValueRef.current = value;
         if (!editorReadyRef.current) return;
-        callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(value).slice(0, MAX_EDITOR_HTML_CHARS)] });
+        callEditor({ fn: '__tusEditorSetHtml', args: [prepareEditorContent(value)] });
     }, [value]);
 
     const handleMessage = async (data: string) => {
@@ -470,7 +470,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 lastChangeSeqRef.current = 0;
                 const latestValue = latestValueRef.current;
                 lastEditorValueRef.current = latestValue;
-                callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(latestValue).slice(0, MAX_EDITOR_HTML_CHARS)] });
+                callEditor({ fn: '__tusEditorSetHtml', args: [prepareEditorContent(latestValue)] });
                 const pending = pendingCallsRef.current;
                 pendingCallsRef.current = [];
                 pending.forEach(callEditor);
@@ -590,7 +590,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                         onBlur={() => {
                             fallbackFocusedRef.current = false;
                             if (editorReadyRef.current) {
-                                callEditor({ fn: '__tusEditorSetHtml', args: [sanitizeUntrustedHtml(latestValueRef.current).slice(0, MAX_EDITOR_HTML_CHARS)] });
+                                callEditor({ fn: '__tusEditorSetHtml', args: [prepareEditorContent(latestValueRef.current)] });
                                 completeHandoff();
                             }
                             if (mountPendingRef.current) {

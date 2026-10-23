@@ -138,7 +138,7 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
                 name: 'Card 1',
                 ord: 0,
                 qfmt: '{{Front}}\n\n{{type:Back}}',
-                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{type:Back}}',
+                afmt: '{{Front}}\n\n<hr id=answer>\n\n{{type:Back}}',
             },
         ],
         css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }`,
@@ -179,7 +179,7 @@ export interface Note {
     tags: string[];
     fields: string[];    // values, in NoteType.fields order
     sfld: string;        // sort-field value
-    csum: number;        // FNV-1a hash of the first field for dup detection (not Anki's SHA1 csum)
+    csum: number;        // Anki's first-field checksum (lib/noteChecksum.ts); older local notes may hold the legacy FNV value
     flags: number;       // reserved; color flags live on the card (AnkiCard.flags)
     /** Anki's opaque notes.data column. */
     ankiData?: string;
@@ -498,15 +498,7 @@ export function generateGuid(): string {
     return result;
 }
 
-export function checksumField(field: string): number {
-    let hash = 0x811c9dc5; // FNV offset basis
-    const str = field.trim();
-    for (let i = 0; i < str.length; i++) {
-        hash ^= str.charCodeAt(i);
-        hash = Math.imul(hash, 0x01000193); // FNV prime
-    }
-    return Math.abs(hash | 0);
-}
+export { ankiFieldChecksum as checksumField } from './noteChecksum';
 
 /** Parse a deck hierarchy: "A::B::C" -> ["A", "A::B", "A::B::C"]. */
 export function getDeckAncestors(name: string): string[] {

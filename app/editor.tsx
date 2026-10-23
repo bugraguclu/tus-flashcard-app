@@ -1,3 +1,5 @@
+import { needsClozeWarning } from '../lib/editorClozeWarning';
+import { getEditorNoteType, rememberEditorNoteType } from '../lib/editorNoteTypeMemory';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
@@ -16,7 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeColors } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
-import { confirm, alert, choose } from '../lib/confirm';
+import { confirm, confirmAsync, alert, choose } from '../lib/confirm';
 import {
     calloutHtml,
     changeTextCase,
@@ -68,7 +70,7 @@ import { commitCollectionWrite } from '../lib/collectionWrite';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { useI18n } from '../hooks/useI18n';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
-import { clozeFieldIndex, countCardsForNote, sanitizeUntrustedHtml } from '../lib/templates';
+import { clozeFieldIndex, countCardsForNote } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
@@ -252,7 +254,7 @@ export default function EditorScreen() {
         };
     });
     const [formatState, setFormatState] = useState<EditorFormatState>(EMPTY_EDITOR_FORMAT_STATE);
-    const [cardTypeId, setCardTypeId] = useState(() => routeNoteTypeId ?? 1);
+    const [cardTypeId, setCardTypeId] = useState(() => routeNoteTypeId ?? getEditorNoteType(targetDeckId, getAllNoteTypes().filter(nt => !isLegacyTusNoteType(nt)).map(nt => nt.id)));
 
     const selectedNoteType = useMemo(
         () => getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId) ?? null,
@@ -870,8 +872,8 @@ export default function EditorScreen() {
         const latestFields = fieldValuesRef.current;
         const savedDraft = draftFromFields(latestFields);
         const currentFields = selectedNoteType
-            ? selectedNoteType.fields.map((_, i) => (latestFields[i] || '').trim())
-            : latestFields.map((f) => f.trim());
+            ? selectedNoteType.fields.map((_, i) => latestFields[i] || '')
+            : [...latestFields];
 
         const mockNote: Note = {
             id: 0,
@@ -902,6 +904,14 @@ export default function EditorScreen() {
 
         saveInFlightRef.current = true;
         try {
+            if (selectedNoteType && needsClozeWarning(selectedNoteType, mockNote)) {
+                const keep = await confirmAsync(
+                    l('Kapama bulunamadı', 'No Cloze Deletion'),
+                    l('Bu notta kapama yok. Metin ve ilk kartı yine de kaydedilsin mi? Kapama eklemek için metni seçip […] düğmesine dokunabilirsiniz.',
+                        'This note has no cloze deletion. Save its text and first card anyway? To add a deletion, select text and tap […].'),
+                );
+                if (!keep) return;
+            }
             if (isEditing && routeCardId) {
                 const updated = await commitCollectionWrite(() => {
                     const result = updateTusCardByCardId(routeCardId, {
@@ -929,6 +939,7 @@ export default function EditorScreen() {
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => goBackOr(router));
             } else {
+                let rollbackNoteTypeMemory: (() => void) | undefined;
                 const created = await commitCollectionWrite(() => {
                     const result = createTusCard({
                         question: currentFields[0] || '',
@@ -944,8 +955,12 @@ export default function EditorScreen() {
                         dbUpsertFtsCard(searchIndexCardFromNote(result.note, generatedCard.id));
                     }
                     persistStickyFieldValues();
+                    rollbackNoteTypeMemory = rememberEditorNoteType(targetDeck.id, cardTypeId);
                     return result;
-                }, (result) => deleteTusCardByCardId(result.card.id));
+                }, (result) => {
+                    deleteTusCardByCardId(result.card.id);
+                    rollbackNoteTypeMemory?.();
+                });
                 resetDraftBaseline(savedDraft);
                 setSavedNoteId(created.note.id);
                 bumpDataVersion();
@@ -1002,21 +1017,25 @@ export default function EditorScreen() {
             l('Notu sil', 'Delete Note'),
             siblingCount > 1
                 ? l(
-                    `Bu not ve ondan üretilen ${siblingCount} kart silinsin mi? Bu işlem geri alınamaz.`,
-                    `Delete this note and the ${siblingCount} cards it generates? This cannot be undone.`,
+                    `Bu not ve ondan üretilen ${siblingCount} kart silinsin mi? Silme sonrasında geri alabilirsiniz.`,
+                    `Delete this note and the ${siblingCount} cards it generates? You can undo after deletion.`,
                 )
                 : l(
-                    'Bu not silinsin mi? Bu işlem geri alınamaz.',
-                    'Delete this note? This cannot be undone.',
+                    'Bu not silinsin mi? Silme sonrasında geri alabilirsiniz.',
+                    'Delete this note? You can undo after deletion.',
                 ),
             () => {
                 try {
-                    deleteTusCardByCardId(routeCardId);
+                    const deletion = deleteTusCardByCardId(routeCardId);
                     // The note is gone, so the unsaved-changes guard must not stop the screen from
                     // closing over a draft that no longer has anything to be saved into.
                     resetDraftBaseline(draftFromFields(fieldValuesRef.current));
                     bumpDataVersion();
-                    alert(l('Silindi', 'Deleted'), l('Not silindi.', 'Note deleted.'), () => goBackOr(router));
+                    void choose(l('Silindi', 'Deleted'), l(`${deletion?.cardCount ?? siblingCount} kart silindi.`, `${deletion?.cardCount ?? siblingCount} cards deleted.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
+                        if (!undo) { goBackOr(router); return; }
+                        try { deletion?.undo(); bumpDataVersion(); }
+                        catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
+                    });
                 } catch (e) {
                     console.warn('[Editor] delete failed:', e);
                     alert(t('common.error'), l('Not silinemedi.', 'Could not delete the note.'));
@@ -1486,8 +1505,7 @@ export default function EditorScreen() {
                 value={htmlEditorValue}
                 onChangeValue={setHtmlEditorValue}
                 onSave={() => {
-                    const sanitized = sanitizeUntrustedHtml(htmlEditorValue);
-                    handleFieldChange(activeFieldIndex, sanitized);
+                    handleFieldChange(activeFieldIndex, htmlEditorValue);
                     setShowHtmlEditor(false);
                 }}
                 onClose={() => setShowHtmlEditor(false)}

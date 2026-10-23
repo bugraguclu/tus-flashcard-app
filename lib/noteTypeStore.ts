@@ -1,3 +1,5 @@
+import { deleteCardRows } from './noteDeletion';
+import { mapNoteTypeFields, mapNoteTypeCardOrd, NoteTypeChangeConfirmationRequired } from './noteTypeChange';
 import {
     checksumField,
     BUILTIN_NOTE_TYPES,
@@ -6,7 +8,7 @@ import {
     type NoteType,
     type AnkiCard,
 } from './models';
-import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
+import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { dbUpsertFtsCard, getDB } from './db';
 import { resolveSubjectDeckId } from './subjects';
 import { markSourcePackageDirty } from './ankiPackageArchive';
@@ -76,13 +78,28 @@ export function saveNoteType(nt: NoteType): void {
     );
 }
 
+/** Read-only preflight for the browser's destructive confirmation. */
+export function getNoteTypeChangeDeletionCount(noteIds: number[], targetNoteTypeId: number): number {
+    const target = getNoteType(targetNoteTypeId);
+    if (!target) return 0;
+    let count = 0;
+    for (const id of new Set(noteIds)) {
+        const note = getNote(id);
+        if (!note || note.noteTypeId === targetNoteTypeId) continue;
+        const source = getNoteType(note.noteTypeId);
+        if (!source) continue;
+        count += getCardsForNote(id).filter(card => mapNoteTypeCardOrd(source, target, card.ord) === null).length;
+    }
+    return count;
+}
+
 /**
  * Convert notes to another note type while preserving the scheduling of every card that can be
  * mapped to a target template. Fields with the same name are mapped first; remaining fields fall
- * back to their ordinal. Existing cards are reused in order, surplus cards are removed, and only
- * genuinely new target cards start with new scheduling.
+ * use each still-unused source field. Cards match by template name, including blank mapped
+ * templates; only explicitly confirmed unmapped cards are removed with their history retained.
  */
-export function changeNotesType(noteIds: number[], targetNoteTypeId: number): number {
+export function changeNotesType(noteIds: number[], targetNoteTypeId: number, options: { allowCardDeletion?: boolean } = {}): number {
     const targetType = getNoteType(targetNoteTypeId);
     if (!targetType) return 0;
 
@@ -91,6 +108,8 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
         assertCatalogNoteTypeNotChangeable(noteId);
     }
 
+    const cardsToDelete = getNoteTypeChangeDeletionCount(uniqueNoteIds, targetNoteTypeId);
+    if (cardsToDelete && !options.allowCardDeletion) throw new NoteTypeChangeConfirmationRequired(cardsToDelete);
     const db = getDB();
     let changed = 0;
 
@@ -101,14 +120,9 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
             const sourceType = note ? getNoteType(note.noteTypeId) : null;
             if (!note || !sourceType || note.noteTypeId === targetNoteTypeId) continue;
 
-            const sourceByName = new Map(
-                sourceType.fields.map((field, index) => [field.name.normalize('NFC').toLocaleLowerCase(), index]),
-            );
-            const fields = targetType.fields.map((field, index) => {
-                const sameNameIndex = sourceByName.get(field.name.normalize('NFC').toLocaleLowerCase());
-                if (sameNameIndex !== undefined) return note.fields[sameNameIndex] ?? '';
-                return note.fields[index] ?? '';
-            });
+            const fields = mapNoteTypeFields(sourceType, targetType, note.fields);
+            const existingCards = getCardsForNote(note.id).sort((a, b) => a.ord - b.ord || a.id - b.id);
+            const mapped = existingCards.map(card => ({ card, ord: mapNoteTypeCardOrd(sourceType, targetType, card.ord) }));
 
             note.noteTypeId = targetType.id;
             note.fields = fields;
@@ -118,33 +132,24 @@ export function changeNotesType(noteIds: number[], targetNoteTypeId: number): nu
             note.usn = -1;
             saveNote(note);
 
-            const existingCards = getCardsForNote(note.id).sort((a, b) => a.ord - b.ord || a.id - b.id);
             const requiredOrds = targetType.kind === 'cloze'
-                ? extractClozeNumbers(fields[clozeFieldIndex(targetType)] || '').map((number) => number - 1)
+                ? clozeNumbersForNote(targetType, note).map((number) => number - 1)
                 : targetType.templates
                     .filter((template) => shouldGenerateCard(targetType, note, template.ord))
                     .map((template) => template.ord);
             const destinationDeckId = existingCards[0]?.deckId ?? resolveSubjectDeckId('custom');
 
-            requiredOrds.forEach((ord, index) => {
-                const existing = existingCards[index];
-                if (existing) {
-                    saveAnkiCard({
-                        ...existing,
-                        ord,
-                        mod: Math.floor(Date.now() / 1000),
-                        usn: -1,
-                    });
+            const keptOrds = new Set<number>();
+            for (const { card, ord } of mapped) {
+                if (ord === null) {
+                    deleteCardRows([card.id]);
                 } else {
-                    createCardForNote(note, destinationDeckId, ord);
+                    keptOrds.add(ord);
+                    saveAnkiCard({ ...card, ord, mod: Math.floor(Date.now() / 1000), usn: -1 });
                 }
-            });
-            for (const surplus of existingCards.slice(requiredOrds.length)) {
-                db.runSync('DELETE FROM revlog WHERE cardId = ?', surplus.id);
-                db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(surplus.id));
-                db.runSync('DELETE FROM anki_cards WHERE id = ?', surplus.id);
-                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', surplus.id);
             }
+            if (!requiredOrds.length && !keptOrds.size) requiredOrds.push(0);
+            for (const ord of requiredOrds) if (!keptOrds.has(ord)) createCardForNote(note, destinationDeckId, ord);
 
             for (const card of getCardsForNote(note.id)) {
                 dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
@@ -203,8 +208,7 @@ export function findEmptyCards(): EmptyCardEntry[] {
         const question = note.fields[0] || note.sfld || '';
 
         if (noteType.kind === 'cloze') {
-            const text = note.fields[clozeFieldIndex(noteType)] || '';
-            if (!extractClozeNumbers(text).includes(row.ord + 1)) {
+            if (!clozeNumbersForNote(noteType, note).includes(row.ord + 1)) {
                 results.push({ cardId: row.cardId, noteId: note.id, question, reason: 'Kapama numarası artık metinde yok' });
             }
             continue;

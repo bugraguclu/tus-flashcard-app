@@ -17,9 +17,9 @@ import type { StudyCard, AppSettings } from '../../lib/types';
 import type { Note, AnkiCard, Deck, NoteType } from '../../lib/models';
 import type { BrowserTableMode, ResetCardOptions } from '../../lib/studyRepository';
 import { localizeNoteTypeName, type SupportedLocale } from '../../lib/i18n';
-import { changeNotesType } from '../../lib/noteManager';
+import { changeNoteTypeWithConfirmation, noteTypeChangeRemovalPrompt } from '../../lib/noteTypeChangeFlow';
 import CardWebView from '../../components/CardWebView';
-import { alert } from '../../lib/confirm';
+import { alert, confirm } from '../../lib/confirm';
 import {
     gradeSelectedNow,
     parseDueRange,
@@ -60,7 +60,7 @@ export function ChangeNoteTypeModal({
                 <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowNoteTypePicker(false)} />
                 <View style={styles.modalCard} accessibilityViewIsModal>
                     <Text style={styles.modalTitle}>{l('Not türünü değiştir', 'Change Note Type')}</Text>
-                    <Text style={styles.modalCaption}>{l('Aynı adlı alanlar eşleştirilir; kartların mevcut zamanlaması korunur.', 'Fields with matching names are mapped; existing card scheduling is preserved.')}</Text>
+                    <Text style={styles.modalCaption}>{l('Alanlar önce adına, sonra sırasına göre eşleştirilir. Yeni not türünde eşleşen bir şablonu olan kartlar zamanlamasını korur; diğer kartlar silinmeden önce onayınız istenir.', 'Fields are matched by name, then by order. Cards with a matching template in the new note type keep their scheduling; you are asked before any other card is removed.')}</Text>
                     <ScrollView style={styles.pickerList}>
                         {selectableNoteTypes.map((noteType) => (
                             <TouchableOpacity
@@ -68,7 +68,13 @@ export function ChangeNoteTypeModal({
                                 style={styles.pickerRow}
                                 onPress={() => {
                                     setShowNoteTypePicker(false);
-                                    runSelectionAction(() => changeNotesType(selectedNoteIds, noteType.id));
+                                    changeNoteTypeWithConfirmation(selectedNoteIds, noteType.id, {
+                                        run: runSelectionAction,
+                                        confirmCardRemoval: (cardCount, onConfirm) => {
+                                            const prompt = noteTypeChangeRemovalPrompt(cardCount, l, locale);
+                                            confirm(prompt.title, prompt.message, onConfirm, { destructive: true });
+                                        },
+                                    });
                                 }}
                             >
                                 <Text style={styles.pickerRowText}>{localizeNoteTypeName(locale, noteType.name)}</Text>

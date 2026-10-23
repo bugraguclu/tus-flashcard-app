@@ -18,6 +18,7 @@ function unescapePrefix(pattern: string): string {
 const fakeDb = {
     execSync: () => {},
     getFirstSync(sql: string, ...params: any[]) {
+        if (sql.includes('SELECT id FROM anki_cards WHERE id = ?')) return state.cards.find(c => c.id === params[0]) ?? null;
         if (sql.includes('FROM decks WHERE id = ?')) {
             const deck = state.decks.find((d) => d.id === params[0]);
             return deck ? { data: JSON.stringify(deck) } : null;
@@ -35,7 +36,8 @@ const fakeDb = {
         return null;
     },
     getAllSync(sql: string, ...params: any[]) {
-        if (sql.includes('FROM decks WHERE id = ? OR name LIKE ?')) {
+        if (sql.includes('SELECT data FROM decks ORDER BY name')) return state.decks.map(d => ({ data: JSON.stringify(d) }));
+        if (sql.includes('FROM decks WHERE id = ? OR instr(name, ?) = 1')) {
             const prefix = unescapePrefix(String(params[1]));
             return state.decks
                 .filter((d) => d.id === params[0] || d.name.startsWith(prefix))
@@ -115,13 +117,13 @@ describe('deckManager', () => {
         expect(state.cards.map((c) => c.id)).toEqual([13]);
         // Note 100 had no cards left -> deleted; note 200 still has card 13 -> kept.
         expect(state.notes.map((n) => n.id)).toEqual([200]);
-        // Decks TUS and TUS::Anatomi removed; "Other" remains.
-        expect(state.decks.map((d) => d.id)).toEqual([99]);
+        // The default id stays available; its child is removed and Other remains.
+        expect(state.decks.map((d) => d.id).sort((a,b) => a-b)).toEqual([1,99]);
 
         // Tombstones: cards (type 0), the orphaned note (type 1), decks (type 2).
         expect(state.graves.filter((g) => g.type === 0).map((g) => g.oid).sort()).toEqual([10, 11, 12]);
         expect(state.graves.filter((g) => g.type === 1).map((g) => g.oid)).toEqual([100]);
-        expect(state.graves.filter((g) => g.type === 2).map((g) => g.oid).sort()).toEqual([1, 2]);
+        expect(state.graves.filter((g) => g.type === 2).map((g) => g.oid).sort()).toEqual([2]);
 
         // The board rows of a deleted deck and its subdecks go with it, or the ink and the pen
         // colour of a deck nobody can open again stay in the settings table forever.

@@ -1,3 +1,5 @@
+import { normalizeDeckName, deckNameKey } from './deckNames';
+import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
     DEFAULT_DECK_CONFIG,
     getDeckDisplayName,
@@ -25,11 +27,6 @@ import {
  * per-deck counts and burying that go with them.
  */
 
-/** Escape LIKE wildcards so deck names containing %, _ or \ match literally (paired with ESCAPE). */
-function escapeLikePattern(value: string): string {
-    return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-}
-
 function sqlPlaceholders(count: number): string {
     return Array.from({ length: count }, () => '?').join(', ');
 }
@@ -52,8 +49,28 @@ export function getDeck(id: number): Deck | null {
 
 export function getDeckByName(name: string): Deck | null {
     const db = getDB();
-    const row = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', name);
+    const normalized = normalizeDeckName(name);
+    const exact = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', normalized);
+    if (exact) return JSON.parse(exact.data);
+    const key = deckNameKey(normalized);
+    const row = db.getAllSync<{ name: string; data: string }>('SELECT name, data FROM decks ORDER BY id')
+        .find(entry => deckNameKey(entry.name) === key);
     return row ? JSON.parse(row.data) : null;
+}
+
+function canonicalDeckPath(name: string): string {
+    // Resolve all ancestors from one snapshot rather than querying each prefix recursively.
+    const rows = getDB().getAllSync<{ name: string }>('SELECT name FROM decks ORDER BY id');
+    const exact = new Set(rows.map(row => row.name));
+    const folded = new Map<string, string>();
+    for (const row of rows) if (!folded.has(deckNameKey(row.name))) folded.set(deckNameKey(row.name), row.name);
+    const parts = normalizeDeckName(name).split('::');
+    let path = '';
+    for (const part of parts) {
+        const candidate = path ? `${path}::${part}` : part;
+        path = exact.has(candidate) ? candidate : folded.get(deckNameKey(candidate)) ?? candidate;
+    }
+    return path;
 }
 
 function deckNameWithNumericSuffix(name: string, suffix: number): string {
@@ -65,6 +82,7 @@ function deckNameWithNumericSuffix(name: string, suffix: number): string {
 
 /** Return the requested deck path, or the first free PC-style `(n)` variant of its leaf name. */
 export function getAvailableDeckName(name: string): string {
+    name = canonicalDeckPath(name);
     if (!getDeckByName(name)) return name;
 
     let suffix = 1;
@@ -112,6 +130,8 @@ export function getAvailableDeckSubtreeName(deckId: number, desiredName: string)
 
 export function saveDeck(deck: Deck): void {
     assertCatalogDeckMutable(deck);
+    const collision = getDeckByName(deck.name);
+    if (collision && collision.id !== deck.id) throw new Error(`A deck named "${deck.name}" already exists.`);
     const db = getDB();
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', deck.id);
     if (existing?.data) {
@@ -171,29 +191,33 @@ export function initializeDeckDisclosureDefaults(): void {
  * note left with no cards). Everything runs in one transaction and writes sync tombstones
  * (grave types: 0=card, 1=note, 2=deck).
  */
-export function deleteDeck(id: number): void {
+export function deleteDeck(id: number): DeletionUndo | undefined {
     assertCatalogDeckNotDeletable(id);
     const db = getDB();
     const deck = getDeck(id);
     if (!deck) return;
     assertCatalogDeckMutable(deck);
 
+    const affectedDecks = getAllDecks().filter(d => d.id === id || (!deck.isFiltered && d.name.startsWith(`${deck.name}::`))).map(d => d.id);
+    const affectedCards = db.getAllSync<{ id: number; noteId: number }>(`SELECT id, noteId FROM anki_cards WHERE deckId IN (${sqlPlaceholders(affectedDecks.length)})`, ...affectedDecks);
+    const finishDeletion = captureDeletion({ deckIds: affectedDecks, cardIds: affectedCards.map(c => c.id), noteIds: [...new Set(affectedCards.map(c => c.noteId))] });
     db.execSync('BEGIN TRANSACTION;');
     try {
         if (deck.isFiltered) {
             returnFilteredCardsHome(id);
             db.runSync('DELETE FROM decks WHERE id = ?', id);
             db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', id);
+            const deletion = finishDeletion();
             db.execSync('COMMIT;');
             forgetWhiteboards([id]);
-            return;
+            return deletion;
         }
 
         // The deck itself plus every subdeck (matched by the "name::" prefix).
         const deckRows = db.getAllSync<{ id: number }>(
-            "SELECT id FROM decks WHERE id = ? OR name LIKE ? ESCAPE '\\'",
+            "SELECT id FROM decks WHERE id = ? OR instr(name, ?) = 1",
             id,
-            `${escapeLikePattern(`${deck.name}::`)}%`,
+            `${deck.name}::`,
         );
         const deckIds = deckRows.map((row) => row.id);
 
@@ -204,15 +228,7 @@ export function deleteDeck(id: number): void {
         const cardIds = cardRows.map((row) => row.id);
         const noteIds = [...new Set(cardRows.map((row) => row.noteId))];
 
-        if (cardIds.length > 0) {
-            const placeholders = sqlPlaceholders(cardIds.length);
-            db.runSync(`DELETE FROM revlog WHERE cardId IN (${placeholders})`, ...cardIds);
-            db.runSync(`DELETE FROM cards_fts WHERE card_id IN (${placeholders})`, ...cardIds.map(String));
-            db.runSync(`DELETE FROM anki_cards WHERE id IN (${placeholders})`, ...cardIds);
-            for (const cardId of cardIds) {
-                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', cardId);
-            }
-        }
+        deleteCardRows(cardIds);
 
         // A note is deleted only once it has no cards left in any other deck.
         for (const noteId of noteIds) {
@@ -227,12 +243,20 @@ export function deleteDeck(id: number): void {
         }
 
         for (const deckId of deckIds) {
-            db.runSync('DELETE FROM decks WHERE id = ?', deckId);
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', deckId);
+            if (deckId === 1) {
+                const defaultNameOwner = getDeckByName('Default');
+                const name = defaultNameOwner && defaultNameOwner.id !== 1 ? getAvailableDeckName('Default') : 'Default';
+                saveDeck({ ...getDeck(1)!, name, mod: Math.floor(Date.now() / 1000), usn: -1 });
+            } else {
+                db.runSync('DELETE FROM decks WHERE id = ?', deckId);
+                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 2, -1)', deckId);
+            }
         }
 
+        const deletion = finishDeletion();
         db.execSync('COMMIT;');
         forgetWhiteboards(deckIds);
+        return deletion;
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
@@ -270,6 +294,7 @@ function returnFilteredCardsHome(filteredDeckId: number): void {
 }
 
 export function renameDeck(id: number, newName: string): void {
+    newName = normalizeDeckName(newName);
     assertCatalogDeckNotRenamable(id);
     const db = getDB();
     const deck = getDeck(id);
@@ -289,9 +314,9 @@ export function renameDeck(id: number, newName: string): void {
     const subtree = db.getAllSync<{ id: number; name: string }>(
         `SELECT id, name
          FROM decks
-         WHERE id = ? OR name LIKE ? ESCAPE '\\'`,
+         WHERE id = ? OR instr(name, ?) = 1`,
         id,
-        `${escapeLikePattern(oldPrefix)}%`,
+        oldPrefix,
     );
     const subtreeIds = new Set(subtree.map((row) => row.id));
     for (const row of subtree) {
@@ -333,10 +358,10 @@ export function renameDeck(id: number, newName: string): void {
         const rows = db.getAllSync<{ id: number; name: string; data: string }>(
             `SELECT id, name, data
              FROM decks
-             WHERE id = ? OR name LIKE ? ESCAPE '\\'
+             WHERE id = ? OR instr(name, ?) = 1
              ORDER BY LENGTH(name) ASC`,
             id,
-            `${escapeLikePattern(oldPrefix)}%`,
+            oldPrefix,
         );
 
         for (const row of rows) {
@@ -369,41 +394,32 @@ export function renameDeck(id: number, newName: string): void {
 }
 
 export function createDeck(name: string, configId?: number): Deck {
-    // Deck names are unique in Anki: return the existing deck instead of creating a duplicate.
+    name = canonicalDeckPath(name);
     const existing = getDeckByName(name);
     if (existing) return existing;
 
-    // Anki filtered decks are always top-level and may not contain regular subdecks.
-    let ancestorName = getParentDeckName(name);
-    while (ancestorName) {
-        const ancestor = getDeckByName(ancestorName);
-        if (ancestor?.isFiltered) {
-            throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
-        }
-        ancestorName = getParentDeckName(ancestorName);
+    // Validate and resolve each ancestor once, then create missing parents top-down. Re-entering
+    // createDeck for every parent used to repeat all earlier prefix queries at every depth.
+    const byName = new Map(getAllDecks().map(deck => [deck.name, deck]));
+    const parts = name.split('::');
+    const paths = parts.map((_, index) => parts.slice(0, index + 1).join('::'));
+    for (const path of paths.slice(0, -1)) {
+        if (byName.get(path)?.isFiltered) throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
     }
-
-    const now = uniqueId();
-    const parent = getParentDeckName(name);
-    const deck: Deck = {
-        id: now,
-        name,
-        configId: configId || 1,
-        mod: Math.floor(now / 1000),
-        usn: -1,
-        description: '',
-        collapsed: false,
-        isFiltered: false,
-        sortOrder: nextSiblingSortOrderForAppend(parent),
-    };
-    saveDeck(deck);
-
-    // Ensure parent decks exist
-    if (parent && !getDeckByName(parent)) {
-        createDeck(parent, configId);
+    let destination: Deck | undefined;
+    for (const path of paths) {
+        const found = byName.get(path);
+        if (found) { destination = found; continue; }
+        const now = uniqueId();
+        destination = {
+            id: now, name: path, configId: configId || 1,
+            mod: Math.floor(now / 1000), usn: -1, description: '', collapsed: false,
+            isFiltered: false, sortOrder: nextSiblingSortOrderForAppend(getParentDeckName(path)),
+        };
+        saveDeck(destination);
+        byName.set(path, destination);
     }
-
-    return deck;
+    return destination!;
 }
 
 export function compareDeckDisplayOrder(a: Deck, b: Deck): number {
@@ -553,9 +569,9 @@ export function getBuriedCountForDeck(deckId: number): number {
         `SELECT COUNT(*) AS cnt
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
         deck.name,
-        `${escapeLikePattern(deck.name)}::%`,
+        `${deck.name}::`,
     );
     return row?.cnt ?? 0;
 }
@@ -570,9 +586,9 @@ export function unburyDeck(deckId: number, rolloverHour: number = 4): number {
         `SELECT c.data AS data
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
+         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
         deck.name,
-        `${escapeLikePattern(deck.name)}::%`,
+        `${deck.name}::`,
     );
     if (rows.length === 0) return 0;
 

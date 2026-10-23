@@ -1,3 +1,4 @@
+import { deleteCardRows } from './noteDeletion';
 /**
  * Collection maintenance, in ascending order of consequence:
  *
@@ -16,7 +17,8 @@ import { Platform } from 'react-native';
 import { localDayNumber, restoreQueueFromType } from './ankiState';
 import { isCatalogNote } from './catalogProtection';
 import { dbIndexAllCards, getDB } from './db';
-import type { AnkiCard, Deck } from './models';
+import { createCardForNote } from './noteStore';
+import type { AnkiCard, Deck, Note } from './models';
 import { DEFAULT_DECK_CONFIG, uniqueId } from './models';
 import { todayLocalYMD } from './scheduler';
 import { getSearchIndexCards, unburyAllCards } from './noteManager';
@@ -290,8 +292,10 @@ export const RECOVERY_DECK_NAME = 'Kurtarılan Kartlar';
 export interface DatabaseRepairResult {
     /** Cards deleted because no live note owned them. */
     orphanCardsDeleted: number;
-    /** Notes deleted because they had no cards left to study. */
+    /** Legacy counter retained for callers; cardless notes are never deleted. */
     orphanNotesDeleted: number;
+    /** Cardless notes rescued by recreating their first card. */
+    orphanNotesRecovered: number;
     /** Cards moved into a real deck after the deck they pointed at disappeared. */
     strandedCardsRehomed: number;
     /** Cards whose leftover filtered-deck bookkeeping was cleared. */
@@ -318,6 +322,7 @@ export function emptyRepairResult(): DatabaseRepairResult {
     return {
         orphanCardsDeleted: 0,
         orphanNotesDeleted: 0,
+        orphanNotesRecovered: 0,
         strandedCardsRehomed: 0,
         filteredLeftoversCleared: 0,
         intervalsClamped: 0,
@@ -334,7 +339,7 @@ export function emptyRepairResult(): DatabaseRepairResult {
 /** True when the repair actually rewrote something, so callers know to refresh the collection. */
 export function repairChangedRows(result: DatabaseRepairResult): boolean {
     return result.orphanCardsDeleted > 0
-        || result.orphanNotesDeleted > 0
+        || result.orphanNotesRecovered > 0
         || result.strandedCardsRehomed > 0
         || result.filteredLeftoversCleared > 0
         || result.intervalsClamped > 0;
@@ -466,8 +471,8 @@ export function repairDatabase(): DatabaseRepairResult {
     const orphanCards = db.getAllSync<{ id: number; noteId: number }>(
         `SELECT c.id AS id, c.noteId AS noteId FROM anki_cards c WHERE ${ORPHAN_CARDS_WHERE}`,
     );
-    const orphanNotes = db.getAllSync<{ id: number }>(
-        `SELECT n.id AS id FROM notes n WHERE ${ORPHAN_NOTES_WHERE}`,
+    const orphanNotes = db.getAllSync<{ id: number; data: string }>(
+        `SELECT n.id AS id, n.data AS data FROM notes n WHERE ${ORPHAN_NOTES_WHERE}`,
     );
     // json_extract raises on a malformed blob, and a card can be stranded *and* unreadable; the
     // CASE keeps that card in the work list instead of failing the whole repair on its behalf.
@@ -518,9 +523,7 @@ export function repairDatabase(): DatabaseRepairResult {
                 result.protectedRowsKept += 1;
                 continue;
             }
-            db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(card.id));
-            db.runSync('DELETE FROM anki_cards WHERE id = ?', card.id);
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 0, -1)', card.id);
+            deleteCardRows([card.id]);
             result.orphanCardsDeleted += 1;
         }
 
@@ -529,9 +532,13 @@ export function repairDatabase(): DatabaseRepairResult {
                 result.protectedRowsKept += 1;
                 continue;
             }
-            db.runSync('DELETE FROM notes WHERE id = ?', note.id);
-            db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', note.id);
-            result.orphanNotesDeleted += 1;
+            let parsed: Note;
+            try { parsed = JSON.parse(note.data); }
+            catch { continue; } // Unreadable text stays available for recovery from backup.
+            if (!Array.isArray(parsed.fields)) continue;
+            // https://docs.ankiweb.net/templates/generation.html: a retained note must remain reachable.
+            createCardForNote(parsed, resolveRecoveryDeck(), 0);
+            result.orphanNotesRecovered += 1;
         }
 
         for (const card of strandedCards) {

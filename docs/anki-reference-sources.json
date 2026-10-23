@@ -804,6 +804,198 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/data/web/css/webview.scss",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default page text colour that follows the theme (body color: var(--fg))", "a note type's own colour rules outranking that default"]
+    },
+    {
+      "id": "anki-ai1-deletion-history",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/stats.html",
+      "useFor": [
+        "retain deleted-card revlog in lifetime collection statistics",
+        "transactional deletion and conflict-safe local undo"
+      ]
+    },
+    {
+      "id": "anki-ai1-card-generation",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "editing adds cards without automatic deletion",
+        "multi-field cloze ordinals and preserving cardless notes",
+        "explicit confirmation before removing unmapped card templates"
+      ]
+    },
+    {
+      "id": "anki-ai1-empty-card-preservation",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "explicit empty-card deletion",
+        "default preservation of the last card",
+        "regenerate first card instead of deleting a cardless note"
+      ]
+    },
+    {
+      "id": "anki-ai1-editor-source",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/editing.html#html-editing",
+      "useFor": [
+        "source HTML is stored independently of the safe editor view",
+        "preserve bracketed sound markers and imported links/math/styles"
+      ]
+    },
+    {
+      "id": "anki-ai1-deck-names",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "useFor": [
+        "normalized hierarchy component names",
+        "case-insensitive creation lookup and case-exact legacy subtree mutation"
+      ]
+    },
+    {
+      "id": "anki-ai1-template-rules",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "field-name reference updates",
+        "field-based generation ignoring literal content",
+        "conditional div/br blanks",
+        "typed comparison in FrontSide and a single type:cloze input"
+      ]
+    },
+    {
+      "id": "anki-ai1-note-checksum",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/notes/mod.rs",
+      "useFor": [
+        "unsigned SHA1 first-four-byte checksum",
+        "normalized first field duplicate warning",
+        "read old local checksums without rewriting content"
+      ],
+      "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
+    },
+    {
+      "id": "anki-ai1-editor-type-memory",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/editing.html",
+      "useFor": [
+        "last successful Add note type per deck and collection",
+        "fallback when a remembered note type is no longer available"
+      ]
+    },
+    {
+      "id": "anki-ai1-preset-steps",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/card/mod.rs",
+      "useFor": [
+        "preserve last passed delay when preset learning steps change",
+        "remap learning and relearning counters without reinterpreting due units"
+      ],
+      "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
+    },
+    {
+      "id": "anki-ai1-central-card-deletion",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/stats.html",
+      "useFor": [
+        "one transactional card-row deletion primitive",
+        "retain deleted-card history and record only real deleted IDs"
+      ]
+    },
+    {
+      "id": "anki-ai1-deletion-hardening",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "useFor": [
+        "keep the default destination deck available",
+        "restore deleted deck state and local board settings",
+        "atomic deletion failure and exact-prefix buried counts"
+      ]
+    },
+    {
+      "id": "anki-ai1-editor-build-csp",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://www.w3.org/TR/CSP3/",
+      "useFor": [
+        "identical inherited script hash across server and client targets",
+        "preserve source while keeping active content inert"
+      ]
+    },
+    {
+      "id": "anki-ai1-template-special-fields",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/fields.html",
+      "useFor": [
+        "real fields shadow special field names",
+        "stock typed-answer back uses Front",
+        "preserve existing stored templates during definition fixes"
+      ]
+    },
+    {
+      "id": "anki-ai1-note-mutation-preflight",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/browsing.html#changing-the-note-type",
+      "useFor": [
+        "preflight all unmapped cards in a bulk type change",
+        "require explicit destructive confirmation",
+        "rollback editor defaults with a failed new-note write"
+      ]
+    },
+    {
+      "id": "anki-ai1-deep-deck-paths",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "useFor": [
+        "normalize deep deck paths without repeated per-ancestor database reads"
+      ]
+    },
+    {
+      "id": "anki-ai1-clozeless-warning",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/editing.html#cloze-deletion",
+      "useFor": [
+        "warn before retaining a clozeless note",
+        "create first card only after the user elects to keep the note",
+        "detect empty replacements behind static template labels"
+      ]
+    },
+    {
+      "id": "anki-ai1-cardless-note-repair",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "useFor": [
+        "retain note text during database repair",
+        "recreate the first card of a readable cardless note",
+        "report recovered notes separately from deletion"
+      ]
+    },
+    {
+      "id": "anki-ai1-field-rename",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/fields.py",
+      "useFor": [
+        "rename a field once with its final name",
+        "refuse a field name another field already uses, ignoring case"
+      ],
+      "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     }
   ],
   "requiredDocs": [

@@ -251,7 +251,7 @@ describe('typed-answer (type:Field)', () => {
         expect(getTypeAnswerField({ qfmt: '{{type:Front}}' })).toBe('Front');
     });
 
-    it('renders cloze question with [...] when typing is disabled (neverTypeAnswer / no input)', () => {
+    it('renders no duplicate cloze sentence from a type-only prompt without in-card typing', () => {
         const clozeNoteType: NoteType = {
             id: 800,
             name: 'Cloze Type',
@@ -275,8 +275,8 @@ describe('typed-answer (type:Field)', () => {
 
         // Question side without typeAnswerInput (neverTypeAnswer = true)
         const qHtml = renderCardHtml(clozeNoteType, note, 0, 'question');
-        expect(qHtml).toContain('Türkiye\'nin başkenti');
-        expect(qHtml).toContain('[şehir]');
+        expect(qHtml).not.toContain('Türkiye\'nin başkenti');
+        expect(qHtml).not.toContain('[şehir]');
         expect(qHtml).not.toContain('<input');
         expect(qHtml).not.toContain('>Ankara<');
 
@@ -287,7 +287,7 @@ describe('typed-answer (type:Field)', () => {
         expect(aHtml).toContain('<code id="typeans" class="typeanswer">Ankara</code>');
     });
 
-    it('replaces cloze [...] deletion with in-card input when typeAnswerInput is provided', () => {
+    it('renders only the input at a type:cloze prompt', () => {
         const clozeNoteType: NoteType = {
             id: 800,
             name: 'Cloze Type',
@@ -312,7 +312,7 @@ describe('typed-answer (type:Field)', () => {
         const html = renderCardHtml(clozeNoteType, note, 0, 'question', {
             typeAnswerInput: { token: 'tok-1', placeholder: 'Yazınız' },
         });
-        expect(html).toContain('Türkiye\'nin başkenti');
+        expect(html).not.toContain('Türkiye\'nin başkenti');
         expect(html).toContain('id="typeans"');
         expect(html).toContain('data-tus-type-answer-token="tok-1"');
         expect(html).toContain('placeholder="Yazınız"');

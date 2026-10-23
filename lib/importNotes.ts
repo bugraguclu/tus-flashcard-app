@@ -7,6 +7,7 @@
 
 import { getDB } from './db';
 import { checksumField, type Note, type NoteType } from './models';
+import { firstFieldChecksums } from './noteChecksum';
 import { createNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
 import { parseDelimited } from './importDelimited';
 import { createDeck, getAllDecks } from './deckManager';
@@ -77,11 +78,12 @@ export type DelimitedImportPreview = Omit<ImportResult, 'indexed'>;
 
 function firstFieldMatch(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): Note | undefined {
     const target = firstField.trim();
-    const candidates = getDB().getAllSync<{ data: string }>(
+    // A note saved before the switch to Anki's checksum still carries the legacy value.
+    const candidates = firstFieldChecksums(firstField).flatMap((csum) => getDB().getAllSync<{ data: string }>(
         'SELECT data FROM notes WHERE csum = ? AND noteTypeId = ?',
-        checksumField(firstField),
+        csum,
         noteTypeId,
-    );
+    ));
     return candidates.flatMap((row) => {
         try {
             const note = JSON.parse(row.data) as Note;

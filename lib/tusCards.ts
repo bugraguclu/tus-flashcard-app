@@ -6,7 +6,8 @@ import {
     type Note,
     type AnkiCard,
 } from './models';
-import { clozeFieldIndex, extractClozeNumbers, shouldGenerateCard } from './templates';
+import { firstFieldChecksums } from './noteChecksum';
+import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { getDB } from './db';
 import { TUS_CARDS } from './data';
 import { resolveSubjectDeckId } from './subjects';
@@ -15,7 +16,6 @@ import { getNoteType } from './noteTypeStore';
 import {
     createCardForNote,
     createNote,
-    deleteAnkiCardOnly,
     deleteNote,
     getAnkiCard,
     getCardsForNote,
@@ -106,20 +106,20 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
 /**
  * Find an existing bundled/basic card by its question (first field), matching how Anki dedupes text imports
  * (first field within a note type). Returns the primary card id of the first match, or null.
- * The `csum` filter narrows candidates in SQL; the exact trimmed compare then rejects hash
- * collisions, exactly like `firstFieldExists` in the import path.
+ * The `csum` filter narrows candidates in SQL, accepting Anki's checksum and the legacy local one;
+ * the exact trimmed compare then rejects hash collisions, exactly like the import path.
  */
 export function findTusCardIdByFirstField(question: string): number | null {
     const db = getDB();
     const target = question.trim();
-    const rows = db.getAllSync<{ cardId: number; noteData: string }>(
+    const rows = firstFieldChecksums(question).flatMap((csum) => db.getAllSync<{ cardId: number; noteData: string }>(
         `SELECT c.id AS cardId, n.data AS noteData
          FROM notes n
          JOIN anki_cards c ON c.noteId = n.id
          WHERE n.csum = ? AND n.noteTypeId IN (1, 4)
          ORDER BY c.ord`,
-        checksumField(question),
-    );
+        csum,
+    ));
 
     for (const row of rows) {
         try {
@@ -250,11 +250,10 @@ export function updateTusCardByCardId(
     const destinationDeckId = input.deckId
         ?? (input.subject ? resolveSubjectDeckId(input.subject) : card.deckId);
 
-    // Optional reverse and Cloze fields can add/remove generated cards. Keep existing cards'
-    // scheduling by ordinal, create only missing ordinals, and delete only now-invalid siblings.
+    // Edits add missing ordinals and preserve every existing card and its scheduling.
     if (noteType) {
         const requiredOrds = noteType.kind === 'cloze'
-            ? extractClozeNumbers(fields[clozeFieldIndex(noteType)] || '').map((number) => number - 1)
+            ? clozeNumbersForNote(noteType, note).map((number) => number - 1)
             : noteType.templates
                 .filter((template) => shouldGenerateCard(noteType, note, template.ord))
                 .map((template) => template.ord);
@@ -263,9 +262,7 @@ export function updateTusCardByCardId(
         for (const ord of requiredOrds) {
             if (!existingByOrd.has(ord)) createCardForNote(note, destinationDeckId, ord);
         }
-        for (const [ord, sibling] of existingByOrd) {
-            if (!requiredOrds.includes(ord)) deleteAnkiCardOnly(sibling.id);
-        }
+        // Empty siblings remain until the learner explicitly runs Empty Cards.
     }
 
     // Fields belong to the note; deck placement belongs to each generated card. An unchanged
@@ -283,8 +280,8 @@ export function updateTusCardByCardId(
     return { note, card: updatedCard };
 }
 
-export function deleteTusCardByCardId(cardId: number): void {
+export function deleteTusCardByCardId(cardId: number) {
     const card = getAnkiCard(cardId);
     if (!card) return;
-    deleteNote(card.noteId);
+    return deleteNote(card.noteId);
 }
