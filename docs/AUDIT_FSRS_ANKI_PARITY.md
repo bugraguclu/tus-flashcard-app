@@ -551,17 +551,17 @@ yok. Önem sırasıyla 11 fark:
 
 | # | Önem | Konu | Anki 26.09.3 | Uygulama | Dosya |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **Yüksek** | Aynı gün "Zor" | Stabiliteyi düşürmez (`rating >= 2` tabanı) | Düşürür: S × 0.43–0.74 | `lib/fsrs.ts:378-387`, `lib/fsrsTraining.ts:189` |
-| 2 | **Orta** | Fuzz tabanı | Büyümeyen aralıkta önceki aralık pencere içindeyse korunur | Korunmaz; yeniden planlamada aralık ayrıca kesiliyor | `lib/fsrsScheduler.ts:268-272`, `lib/fsrsMaintenance.ts:339-340` |
+| 1 | **Yüksek** | Aynı gün "Zor" — kapatıldı (A zamanlama; eğitim B) | Stabiliteyi düşürmez (`rating >= 2` tabanı) | Düşürür: S × 0.43–0.74 | `lib/fsrs.ts:378-387`, `lib/fsrsTraining.ts:189` |
+| 2 | **Orta** | Fuzz tabanı — kapatıldı | Büyümeyen aralıkta önceki aralık pencere içindeyse korunur | Korunmaz; yeniden planlamada aralık ayrıca kesiliyor | `lib/fsrsScheduler.ts:268-272`, `lib/fsrsMaintenance.ts:339-340` |
 | 3 | **Orta** | Son tarihi ayarla | Koleksiyonun FSRS anahtarına bakar; yeni ve `ivl = 0` kart 0'da kalır | Kartın hafıza durumuna bakar; yeni karta gün sayısı yazar | `lib/browserSelection.ts:130`, `lib/schedulingIntervals.ts:273-296` |
 | 4 | **Orta** | Optimize et | fsrs-rs 6.6.2 eğitimi, 8 tur, kart bazlı gruplar | 26.05'in eğitimi, 5 tur | `lib/fsrsTraining.ts:37-41` |
 | 5 | Düşük–orta | Desteyi değiştir | Hafıza durumu hemen yeniden hesaplanır | Silinir, ilk cevapta türetilir | `lib/noteStore.ts:407-450` |
 | 6 | Düşük–orta | Veritabanı kontrolü | Bozuk `lrt`'yi revlog'dan onarır | `lrt`'ye bakmaz | `lib/maintenance.ts` |
 | 7 | Düşük | "Şu tarihten önceki tekrarları yok say" | Gelecek tarih bugüne çekilir | Gelecek tarih kabul edilir | `app/deck-options.tsx:504-507, 551, 699` |
 | 8 | Düşük | Zamanlamasız dışa aktarma | Yalnızca parametre listeleri silinir | DR, geçmiş hatırlama ve tarih de silinir | `lib/exportAnkiPackage.ts:372-378` |
-| 9 | Düşük | Kart bilgisi | Eksik durumu hesaplar; FSRS'te Kolaylık gizli | Yalnızca saklı durum; Kolaylık hep görünür | `app/card-info.tsx:86-95, 241, 258` |
+| 9 | Düşük | Kart bilgisi — kısmen (kod/test tamam; iPhone smoke bekliyor) | Eksik durumu hesaplar; FSRS'te Kolaylık gizli | Yalnızca saklı durum; Kolaylık hep görünür | `app/card-info.tsx:86-95, 241, 258` |
 | 10 | Düşük | Filtreli deste sıraları | FSRS kapalıyken hatırlanabilirlik sıraları gizli | Hep 11 sıra | `lib/filteredDeckOptions.ts:25` |
-| 11 | Çok düşük | f32 işlem sırası | 6.6.2'nin skaler sırası | 5.2.0'ın Burn sırası | `lib/fsrs.ts:248-250, 389-393` |
+| 11 | Çok düşük | f32 işlem sırası — kapatıldı | 6.6.2'nin skaler sırası | 5.2.0'ın Burn sırası | `lib/fsrs.ts:248-250, 389-393` |
 
 ## 1. Aynı gün "Zor" stabiliteyi düşürüyor — yüksek — kapatıldı (FSRS-A zamanlama)
 
@@ -848,3 +848,37 @@ ekliyor. `fsrsMemory.ts`, eğitim algoritması ve kart verisi değişmiyor. İki
 revlog zamanlarında kimlik, uzunluk ve kronolojik sıra test edildi; önce kimlikler undefined
 olarak kaldı, bağlantıdan sonra geçti. Toplam cevap sayısı ve askıdaki kartların dışlanması
 korundu. Bu küçük bağlantı A'nın sahip olduğu `fsrsMaintenance.ts` dosyasında ayrı commit'tir.
+
+## FSRS-A sonuç kaydı — 23 Ekim 2026
+
+Dal: `codex/fsrs-a-26-09`, taban: `ready` / `3821196`. Ana checkout'taki kullanıcı değişikliklerine
+dokunulmadı; commit'ler yerel, push ve PR yok.
+
+| Madde | Sonuç | Otomatik kanıt | Kalan |
+| --- | --- | --- | --- |
+| 1 | A zamanlama kapatıldı | `fsrs.test.ts` aynı gün tabanı ve 26.09.3 hafıza/tam cevap oracle'ı | Optimizer ileri hesabı B'nin |
+| 2 | Kapatıldı | `fsrsScheduler.test.ts` üç referans değer + üst sınır; `fsrsAnkiParity.test.ts` cevap ve dengeli/dengesiz yeniden planlama | Yok (kayıtlı vektörlerde) |
+| 9 | Kısmen: kod ve otomatik test tamam | `fsrsCardInfo.test.ts` 5 ekran/SQLite testi; yazma yok | Hedefli iPhone/VoiceOver smoke koşulmadı |
+| 11 | Kapatıldı | `fsrsAnkiParity.test.ts` 6 tam f32 probe | Genel exp/pow son-bit toleransı sürüyor |
+
+| Adım | `npm run quality` |
+| --- | --- |
+| Yeni fixture, ürün kodu öncesi | TypeScript geçti; 160 dosyada 1.674 geçti / 4 kaldı |
+| Madde 1 sonrası | TypeScript geçti; 1.676 geçti / 2 fuzz testi kaldı |
+| Madde 2 sonrası | 160 dosya, 1.679 test; TypeScript ve iOS/kaynak kaydı geçti |
+| Madde 9 sonrası | 161 dosya, 1.684 test; TypeScript ve iOS/kaynak kaydı geçti |
+| Madde 11 sonrası | 161 dosya, 1.685 test; TypeScript ve iOS/kaynak kaydı geçti |
+| cardId bağlantısı sonrası | 161 dosya, 1.686 test; TypeScript ve iOS/kaynak kaydı geçti |
+
+`npm run build:web` üretim paketini ve 22 rotayı, `/card-info` dâhil, başarıyla üretti. Bu
+web derlemesi iPhone smoke yerine sayılmadı. Yeni referansın 15 testi (altı f32 vektörünü
+içeren bir testle birlikte) geçti; raporda olmayan ek davranış farkı kalmadı.
+
+FSRS-B'ye Anki kurulumu ve `aa7cf78` kimlik bağlantısı iletildi. B, bu bağlantıyı alıp gerçek
+collector çıktısını artık elle kimlik eklemeden eğittiğini ve kendi testlerinin geçtiğini
+bildirdi. A dalı optimizer uygulamasını veya `gen_optimize.py` dosyasını içermiyor.
+Birleştirme sırasında A zamanlama kanıtları ile B optimizer kanıtları aynı FSRS belge
+bölümünde korunmalı; metadata bağlantısının B'deki karşılığı tekrar uygulanmamalı.
+
+Diğer AI'lara ait 3, 5, 6, 7, 8 ve 10. maddelere dokunulmadı. Günlük yeni kart sınırı
+geri getirilmedi. Tam Anki paritesi iddia edilmiyor.
