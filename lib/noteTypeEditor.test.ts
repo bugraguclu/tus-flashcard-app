@@ -22,6 +22,8 @@ import {
     removeField,
     moveField,
     renameField,
+    commitFieldRename,
+    findFieldNameConflict,
     updateTemplate,
     renameNoteType,
     setCss,
@@ -58,6 +60,43 @@ describe('cosmetic transforms', () => {
         expect(renameField(makeNoteType(), 1, '  ').fields[1].name).toBe('Cevap');
     });
 
+    it('refuses a name another field already has, ignoring case as Anki does', () => {
+        const nt = makeNoteType();
+        expect(findFieldNameConflict(nt, 1, 'Soru')?.ord).toBe(0);
+        expect(findFieldNameConflict(nt, 1, '  sORU ')?.ord).toBe(0);
+        expect(renameField(nt, 1, 'Soru')).toBe(nt);
+        expect(renameField(nt, 1, 'kaynak')).toBe(nt);
+        // A field may still change the case of its own name.
+        expect(findFieldNameConflict(nt, 1, 'CEVAP')).toBeUndefined();
+        expect(renameField(nt, 1, 'CEVAP').fields[1].name).toBe('CEVAP');
+    });
+
+    it('commits a draft name once and rewrites references from the original name to the final one', () => {
+        // Basic's front is "Front"; typing "Front2" into "Back" passes through "Front" on the way.
+        const nt = makeNoteType({
+            fields: [
+                { name: 'Front', ord: 0, sticky: false, rtl: false },
+                { name: 'Back', ord: 1, sticky: false, rtl: false },
+            ],
+            templates: [{ name: 'Card 1', ord: 0, qfmt: '{{Front}}', afmt: '{{FrontSide}}<hr id=answer>{{Back}}' }],
+        });
+
+        const intermediate = commitFieldRename(nt, 1, 'Front');
+        expect(intermediate).toMatchObject({ status: 'duplicate', conflict: { ord: 0, name: 'Front' } });
+        expect(intermediate.noteType).toBe(nt);
+
+        const committed = commitFieldRename(nt, 1, ' Front2 ');
+        expect(committed.status).toBe('renamed');
+        expect(committed.noteType.fields.map((f) => f.name)).toEqual(['Front', 'Front2']);
+        expect(committed.noteType.templates[0]).toMatchObject({
+            qfmt: '{{Front}}',
+            afmt: '{{FrontSide}}<hr id=answer>{{Front2}}',
+        });
+
+        expect(commitFieldRename(nt, 1, 'Back')).toMatchObject({ status: 'unchanged', noteType: nt });
+        expect(commitFieldRename(nt, 1, '   ')).toMatchObject({ status: 'unchanged', noteType: nt });
+    });
+
     it('updates a template and sets css', () => {
         const nt = updateTemplate(makeNoteType(), 0, { afmt: '{{Cevap}}!' });
         expect(nt.templates[0].afmt).toBe('{{Cevap}}!');
@@ -80,6 +119,13 @@ describe('addField', () => {
             ['İpucu', 3],
         ]);
         expect(migrate(['a', 'b', 'c'])).toEqual(['a', 'b', 'c', '']);
+    });
+
+    it('numbers a repeated default name so field names stay unique', () => {
+        const once = addField(makeNoteType(), 'Yeni alan').noteType;
+        const twice = addField(once, 'Yeni alan').noteType;
+        expect(twice.fields.map((f) => f.name)).toEqual(['Soru', 'Cevap', 'Kaynak', 'Yeni alan', 'Yeni alan 2']);
+        expect(addField(makeNoteType(), 'soru').noteType.fields[3].name).toBe('soru 2');
     });
 });
 

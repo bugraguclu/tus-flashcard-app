@@ -946,6 +946,17 @@
         "recreate the first card of a readable cardless note",
         "report recovered notes separately from deletion"
       ]
+    },
+    {
+      "id": "anki-ai1-field-rename",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/fields.py",
+      "useFor": [
+        "rename a field once with its final name",
+        "refuse a field name another field already uses, ignoring case"
+      ],
+      "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     }
   ],
   "requiredDocs": [

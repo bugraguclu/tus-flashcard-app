@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -16,7 +16,7 @@ import { useCollectionInvalidation } from '../contexts/AppContext';
 import { getNoteType, saveNoteType } from '../lib/noteManager';
 import {
     renameNoteType,
-    renameField,
+    commitFieldRename,
     updateTemplate,
     setCss,
     addField,
@@ -27,6 +27,7 @@ import {
 } from '../lib/noteTypeEditor';
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
+import { FieldNameInput } from '../components/note-type/FieldNameInput';
 import { useI18n } from '../hooks/useI18n';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
@@ -67,7 +68,13 @@ export default function NoteTypeScreen() {
         setSavedSnapshot(loaded ? stableSnapshot(loaded) : null);
     }, [id]);
 
-    const isDirty = hasSnapshotChanged(savedSnapshot, nt);
+    // Field names are typed as drafts and renamed on blur; a pending draft is unsaved work too.
+    const [pendingFieldNames, setPendingFieldNames] = useState(0);
+    const handleFieldNamePending = useCallback((pending: boolean) => {
+        setPendingFieldNames((count) => Math.max(0, count + (pending ? 1 : -1)));
+    }, []);
+
+    const isDirty = hasSnapshotChanged(savedSnapshot, nt) || pendingFieldNames > 0;
     useUnsavedChangesGuard(isDirty, {
         title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
         message: l('Kaydetmeden not türü düzenleme ekranından çıkılsın mı?', 'Leave the note type editor without saving?'),
@@ -117,6 +124,20 @@ export default function NoteTypeScreen() {
         );
     };
 
+    const handleCommitFieldName = (ord: number, draft: string) => {
+        const outcome = commitFieldRename(nt, ord, draft);
+        if (outcome.status === 'duplicate') {
+            const current = nt.fields.find((field) => field.ord === ord)?.name ?? '';
+            const taken = outcome.conflict.name;
+            alert(
+                l('Alan adı kullanılıyor', 'Field Name Already Used'),
+                l(`“${taken}” adı başka bir alanda kullanılıyor. Alan “${current}” adını korudu.`, `Another field is already named “${taken}”. The field keeps the name “${current}”.`),
+            );
+            return;
+        }
+        if (outcome.status === 'renamed') setNt(outcome.noteType);
+    };
+
     const handleSave = () => {
         try {
             saveNoteType(nt);
@@ -144,10 +165,12 @@ export default function NoteTypeScreen() {
                 <Text style={styles.label}>{l('ALANLAR', 'FIELDS')}</Text>
                 {nt.fields.map((field, i) => (
                     <View key={field.ord} style={styles.fieldRow}>
-                        <TextInput
+                        <FieldNameInput
                             style={[styles.input, styles.fieldName]}
-                            value={field.name}
-                            onChangeText={(text) => setNt(renameField(nt, field.ord, text))}
+                            name={field.name}
+                            onCommit={(draft) => handleCommitFieldName(field.ord, draft)}
+                            onPendingChange={handleFieldNamePending}
+                            accessibilityLabel={l(`Alan adı: ${field.name}`, `Field name: ${field.name}`)}
                         />
                         <TouchableOpacity
                             style={[styles.iconBtn, (i === 0 || isCloze) && styles.iconBtnDisabled]}
