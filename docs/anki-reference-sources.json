@@ -557,8 +557,8 @@
       "priority": 2,
       "platform": "desktop and shared core, the current release (2026-09-23) the fifth FSRS audit pass compares against",
       "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src",
-      "license": "AGPL-3.0-or-later; behavior reference only, outputs recorded from Anki 26.09.3 (29bb700b) on 2026-10-23 by scripts/anki-oracle",
-      "useFor": ["FSRS-A oracle in test/fixtures/anki-26.09-fsrs.json: states, memory replay, answers, fuzz, load balancing, rescheduling, Reset Card, preview and sort keys; optimizer excluded", "minimum_review_fuzz_interval keeping the previous interval inside the bounded fuzz window (#4826), independently implemented for answers and rescheduling and verified by the 26.09 oracle", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792)", "Change Deck recomputing memory states in the target deck (#5339, #5500)", "Check Database repairing lrt (#4648)", "future ignore-before dates clamped to today (#5294)", "export without scheduling clearing only FSRS parameter lists (#4721)", "card info computing a missing memory state without saving it, hiding ease under FSRS and showing whole percentages (#5326, #5648, #5277); covered by lib/fsrsCardInfo.test.ts", "retrievability filtered-deck orders hidden without FSRS (#5407)", "compute_params training with card ids and 8 epochs; collectFsrsTrainingItems supplies non-persisted cardId metadata, covered by an interleaved-history test"]
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 (29bb700b) on 2026-10-23 by scripts/anki-oracle (FSRS-A scheduling fixture) and gen_optimize.py (FSRS-B optimizer fixture)",
+      "useFor": ["FSRS-A oracle in test/fixtures/anki-26.09-fsrs.json: states, memory replay, answers, fuzz, load balancing, rescheduling, Reset Card, preview and sort keys; optimizer excluded", "minimum_review_fuzz_interval keeping the previous interval inside the bounded fuzz window (#4826), independently implemented for answers and rescheduling and verified by the 26.09 oracle", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792)", "Change Deck recomputing memory states in the target deck (#5339, #5500)", "Check Database repairing lrt (#4648)", "future ignore-before dates clamped to today (#5294)", "export without scheduling clearing only FSRS parameter lists (#4721)", "card info computing a missing memory state without saving it, hiding ease under FSRS and showing whole percentages (#5326, #5648, #5277); covered by lib/fsrsCardInfo.test.ts", "retrievability filtered-deck orders hidden without FSRS (#5407)", "compute_params training with card ids and 8 epochs; recorded in test/fixtures/anki-26.09-optimize.json; collectFsrsTrainingItems supplies non-persisted cardId metadata, covered by an interleaved-history test"]
     },
     {
       "id": "fsrs-rs-6.6.2",
@@ -721,9 +721,25 @@
       "useFor": ["compute_parameters: outlier filter, pre-training, recency weights, batching, five epochs, best epoch", "parameter_initialization.rs ternary search and smooth_and_fill", "batch_shuffle.rs and cosine_annealing.rs", "evaluate log loss"]
     },
     {
+      "id": "fsrs-rs-6.6.2-training",
+      "priority": 2,
+      "platform": "FSRS optimizer Anki 26.09.3 runs",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/v6.6.2/src/training.rs",
+      "license": "BSD-3-Clause; ported with complete license notice in fsrsTraining.ts and fsrsTrainingModel.ts",
+      "useFor": ["eight epochs selected by Anki's production caller", "card-id ordered window groups, 512 predictions, max sequence length 256", "analytic.rs f32 forward and f64 analytic gradients", "HostAdam f64 moments and f32 update subtraction", "last epoch rather than validation selection", "sequential f32 evaluate log loss; fixture anki-26.09-optimize.json"]
+    },
+    {
+      "id": "rand-0.10.0-shuffle",
+      "priority": 3,
+      "platform": "fsrs-rs 6.6.2 optimizer batch shuffle",
+      "url": "https://github.com/rust-random/rand/blob/0.10.0/src/seq/increasing_uniform.rs",
+      "license": "MIT OR Apache-2.0; existing independent ChaCha12/PCG32 and IncreasingUniform implementation matches the new Anki optimizer output",
+      "useFor": ["StdRng seed 2023 and SliceRandom::shuffle order for card-window batches"]
+    },
+    {
       "id": "burn-0.17.1-adam",
       "priority": 3,
-      "platform": "Optimizer fsrs-rs trains with",
+      "platform": "Historical Anki 26.05 optimizer, replaced by HostAdam in fsrs-rs 6.6.2",
       "url": "https://github.com/tracel-ai/burn/blob/v0.17.1/crates/burn-core/src/optim/adam.rs",
       "license": "MIT OR Apache-2.0; algorithm reimplemented in f32, verified against Anki output",
       "useFor": ["Adam moments and bias correction in f32", "clamp and mask_where gradients (autodiff defaults)"]
@@ -731,7 +747,7 @@
     {
       "id": "rand-0.9.4-shuffle",
       "priority": 3,
-      "platform": "Batch shuffling fsrs-rs relies on",
+      "platform": "Historical fsrs-rs 5.2.0 batch shuffling",
       "url": "https://github.com/rust-random/rand/blob/0.9.4/src/seq/increasing_uniform.rs",
       "license": "MIT OR Apache-2.0; algorithm reimplemented, verified against Anki output",
       "useFor": ["SliceRandom::shuffle through IncreasingUniform"]

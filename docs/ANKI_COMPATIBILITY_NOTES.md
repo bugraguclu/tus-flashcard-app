@@ -63,8 +63,9 @@ Real-SQLite tests in `lib/studyQueue.dailyLimits.test.ts` cover 128 available ne
 
 ## FSRS
 
-**Status:** Implemented (FSRS-6). FSRS-A's scheduling corrections are measured against Anki
-26.09.3 (29bb700b, fsrs-rs 6.6.2), recorded on 2026-10-23; this is not full client parity.
+**Status:** Implemented (FSRS-6). Scheduling (FSRS-A) and the optimizer (FSRS-B) are measured
+against Anki 26.09.3 (29bb700b, fsrs-rs 6.6.2), recorded on 2026-10-23; this is not full client
+parity.
 
 **Evidence:** `scripts/anki-oracle/` runs Anki's own bundled interpreter/backend against temporary
 collections. The ten existing generators ran without API changes. `build_fixture.py` checks the
@@ -100,22 +101,35 @@ is on, even for a new card; retrievability is a whole percentage. `lib/fsrsCardI
 the screen against SQLite and a 26.09.3 memory vector, proves zero writes and unchanged card
 JSON, and covers stored decay, FSRS off and filtered-card home-preset lookup.
 
-**Optimizer boundary:** FSRS-B owns `lib/fsrsTraining.ts`, its tests, `gen_optimize.py` and its new
-reference. The collector now carries each item's original `cardId` as non-persisted metadata for
-per-card grouping, with an interleaved-history regression in `lib/fsrsMaintenance.test.ts`.
-FSRS-A does not change or claim 26.09.3 parity for that trainer. The retained 26.05
-reference describes fsrs-rs 5.2.0/Burn 0.17.1, five epochs and best-epoch selection.
+**Optimizer:** "Optimize" (`lib/fsrsTraining.ts`, `lib/fsrsTrainingModel.ts`, `lib/fsrsPretrain.ts`):
+Anki 26.09.3's production path around fsrs-rs 6.6.2. It retains outlier filtering and
+pre-training, then trains eight epochs over whole-card windows (at most 512 predictions),
+excluding prefixes longer than 256 reviews after recency weighting. Analytic gradients and
+Adam moments use f64, the forward model and stored updates f32; the last epoch is used.
+Same-day Hard has the stability floor. Evaluation sums weighted BCE sequentially in f32,
+while the trainer clamps probabilities for finite derivatives. Cancellation and the existing
+adoption rule remain. Four recorded collections (`test/fixtures/anki-26.09-optimize.json`)
+include 64/65 and 255/256/257 review boundaries; five additional seeded collections up to
+1,500 cards / 6,440 items were measured. Maximum parameter error was 4.76837158203125e-7;
+evaluation matches within 1e-6 (`lib/fsrsTraining.test.ts`). The collector supplies original
+card ids as non-persisted metadata (FSRS-A integration `aa7cf78`); the oracle tests use the
+production collector directly. An interleaved-history test in `lib/fsrsMaintenance.test.ts`
+protects card identity while preserving review-log order.
 
-**Next compatibility gate:** Fifth-pass items 3–8 and 10 are assigned to other work and are not
-closed here. Older known differences remain: last-bit memory noise from platform exp/pow;
-filtered-deck `prop:r` SQL comparisons in f64; new-card positions in the due/relative-overdueness
-orders use the app's epoch; Reset Card allocates a missing position from the highest current
-position rather than Anki's independent `nextPos`. The deliberate uncapped daily new-card policy
-remains unchanged. Retention/true-retention graphs and the FSRS simulator are still absent.
+**Next compatibility gate:** Fifth-pass items 3, 5–8 and 10 are still open: Set Due Date should
+follow the collection FSRS switch and leave new and `ivl = 0` cards at 0; Change Deck should
+recompute memory states; Check Database should repair `lrt`; a future ignore-before date should be
+clamped to today; an export without scheduling should keep the retention values; and the
+retrievability filtered-deck orders should be hidden while FSRS is off. Older known differences
+remain: last-bit memory noise from platform exp/pow; filtered-deck `prop:r` SQL comparisons in
+f64; new-card positions in the due/relative-overdueness orders use the app's epoch; Reset Card
+allocates a missing position from the highest current position rather than Anki's independent
+`nextPos`. The deliberate uncapped daily new-card policy remains unchanged. Retention/true-retention
+graphs and the FSRS simulator are still absent.
 
 Named iPhone Card Info smoke still required: open a new card and an answered card without memory,
 close/reopen Card Info, verify Ease with FSRS on/off, whole percentages, back swipe and VoiceOver.
-That native smoke has not been run in this change. Deterministic screen tests do not replace it.
+That native smoke has not been run. Deterministic screen tests do not replace it.
 
 Full item-by-item status and before/after evidence are in `docs/AUDIT_FSRS_ANKI_PARITY.md`.
 

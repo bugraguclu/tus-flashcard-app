@@ -1,9 +1,10 @@
 """Oracle for FSRS optimization: the parameters Anki trains from simulated review histories.
 
-Two kinds of cases: `compute_fsrs_params_from_items` on item lists (fsrs-rs's trainer alone), and
-`compute_fsrs_params` on a whole collection (Anki's item gathering, training and adoption rule),
-with Anki's log loss for the default and the resulting parameters.
+Anki 26.09.3 collections exercise its production path: card ids, eight epochs,
+relearning-step bounds, adoption and evaluation. The item-only backend helper uses
+five epochs without card ids, so it is deliberately excluded from this fixture.
 """
+import importlib.metadata
 import json
 import math
 import os
@@ -13,14 +14,21 @@ import tempfile
 import time
 
 from anki.collection import Collection
-from anki import scheduler_pb2
 
 SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 OUT = sys.argv[2] if len(sys.argv) > 2 else "optimize.json"
 # "small" keeps the committed fixture compact; the default sizes are for measuring.
 SMALL = len(sys.argv) > 3 and sys.argv[3] == "small"
-CASES = [(40, 6), (400, 10)] if SMALL else [(40, 6), (150, 8), (400, 10), (900, 12), (1500, 9)]
-COLLECTIONS = [150] if SMALL else [300, 700]
+CASES = [(40, 6), (150, 10), (400, 14)]
+if SMALL:
+    CASES += [(150, 10, "long-history")]
+else:
+    CASES += [(900, 16), (1500, 9)]
+os.environ["TZ"] = "Europe/Istanbul"
+time.tzset()
+VERSION = importlib.metadata.version("anki")
+if tuple(map(int, VERSION.split("."))) != (26, 9, 3):
+    raise RuntimeError(f"Anki 26.09.3 required, got {VERSION}")
 rng = random.Random(SEED)
 DEFAULT = [0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796,
            1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542]
@@ -45,7 +53,7 @@ def init_d(w, r):
 def step(w, s, d, t, r):
     if t == 0:
         inc = math.exp(w[17] * (r - 3 + w[18])) * s ** -w[19]
-        if r >= 3:
+        if r >= 2:
             inc = max(inc, 1)
         s2 = s * inc
     else:
@@ -68,7 +76,7 @@ def simulate_card(w, spaced):
     s, d = w[first - 1], init_d(w, first)
     reviews = [(first, 0, 0)]
     for _ in range(rng.choice([0, 0, 1, 2]) if first < 4 else 0):
-        r = rng.choices([1, 3], weights=[0.2, 0.8])[0]
+        r = rng.choices([1, 2, 3], weights=[0.2, 0.2, 0.6])[0]
         s, d = step(w, s, d, 0, r)
         reviews.append((r, 0, 0))
     for _ in range(spaced):
@@ -83,45 +91,12 @@ def simulate_card(w, spaced):
     return reviews
 
 
-def items_of(reviews):
-    items = []
-    for index in range(1, len(reviews)):
-        if reviews[index][1] > 0:
-            items.append([[r, t] for r, t, _ in reviews[:index + 1]])
-    return items
-
-
-def from_items_case(cards, spaced_max):
-    """Card histories, and the items drawn from them as (card, length) pairs in shuffled order."""
-    w = learner()
-    histories = []
-    items = []
-    for _ in range(cards):
-        reviews = simulate_card(w, rng.randrange(1, spaced_max))
-        histories.append([[r, t] for r, t, _ in reviews])
-        for index in range(1, len(reviews)):
-            if reviews[index][1] > 0:
-                items.append([len(histories) - 1, index + 1])
-    rng.shuffle(items)
-    return histories, items
-
-
 def main():
-    work = tempfile.mkdtemp(prefix="anki-oracle-")
-    col = Collection(os.path.join(work, "col.anki2"))
-    cases = []
-    for cards, spaced_max in CASES:
-        histories, items = from_items_case(cards, spaced_max)
-        request = [scheduler_pb2.FsrsItem(reviews=[scheduler_pb2.FsrsReview(rating=r, delta_t=t)
-                                                   for r, t in histories[card][:length]])
-                   for card, length in items]
-        response = col._backend.compute_fsrs_params_from_items(items=request)
-        cases.append({"histories": histories, "items": items, "params": list(response.params)})
-        print(f"from items: {len(items)} items")
-
     # A whole collection: cards with logs, trained through Anki's own gathering and adoption.
     collections = []
-    for cards in COLLECTIONS:
+    for case in CASES:
+        cards, spaced_max = case[:2]
+        boundary = len(case) > 2
         col2 = Collection(os.path.join(tempfile.mkdtemp(prefix="anki-oracle-"), "col.anki2"))
         did = col2.decks.id("Default")
         model = col2.models.by_name("Basic")
@@ -134,13 +109,22 @@ def main():
             note["Front"] = f"o{n}"
             col2.add_note(note, did)
             cid = note.card_ids()[0]
-            reviews = simulate_card(w, rng.randrange(1, 10))
+            reviews = simulate_card(w, rng.randrange(1, spaced_max))
+            if boundary and n == 0:
+                # Score prefixes at lengths 64, 65, 255, 256 and 257. This proves
+                # that the old 64-review ceiling is gone and the new 256 ceiling
+                # excludes only the final prefix, after recency weighting.
+                reviews = [(3, 0, 0)] + [
+                    (2 if index % 3 else 3, 1 if index in (1, 63, 64, 254, 255, 256) else 0,
+                     1 if index in (1, 63, 64, 254, 255, 256) else 2)
+                    for index in range(1, 257)
+                ]
             total_days = sum(t for _, t, _ in reviews)
             day = rng.randrange(total_days + 1, total_days + 400)
             stamp = now_ms - day * 86_400_000 + rng.randrange(0, 3_600_000)
             entries = []
             for r, t, kind in reviews:
-                stamp += t * 86_400_000 + rng.randrange(60_000, 600_000)
+                stamp += t * 86_400_000 + (1000 if boundary and n == 0 else rng.randrange(60_000, 600_000))
                 while stamp in used:
                     stamp += 1
                 used.add(stamp)
@@ -151,24 +135,31 @@ def main():
             col2.db.execute("update cards set type=2, queue=2, due=?, ivl=1, factor=2500, reps=? where id=?",
                             col2.sched.today + rng.randrange(0, 30), len(reviews), cid)
             logged.append({"cid": cid, "nid": note.id, "entries": entries})
-        steps = rng.choice([1, 2])
-        response = col2._backend.compute_fsrs_params(search="deck:Default", current_params=[],
+        steps = 2 if cards == 400 else 1
+        response = col2._backend.compute_fsrs_params(search="deck:Default", current_params=[1.0],
                                                      ignore_revlogs_before_ms=0, num_of_relearning_steps=steps,
                                                      health_check=False)
+        # An invalid parameter-list length bypasses adoption and records the trained vector.
+        # Also record the real Optimize button's default-parameter adoption decision.
+        adopted = col2._backend.compute_fsrs_params(search="deck:Default", current_params=[],
+                                                   ignore_revlogs_before_ms=0, num_of_relearning_steps=steps,
+                                                   health_check=False)
         evaluations = {}
         for label, params in [("default", DEFAULT), ("result", list(response.params))]:
             evaluation = col2._backend.evaluate_params_legacy(params=params, search="deck:Default",
                                                                ignore_revlogs_before_ms=0)
             evaluations[label] = evaluation.log_loss
         timing = col2._backend.sched_timing_today()
-        collections.append({"cards": logged, "numRelearningSteps": steps, "params": list(response.params),
-                            "fsrsItems": response.fsrs_items, "logLoss": evaluations,
+        collections.append({"name": "long-history" if boundary else f"cards-{cards}", "cards": logged, "numRelearningSteps": steps, "params": list(response.params),
+                            "adoptedDefault": list(adopted.params), "fsrsItems": response.fsrs_items, "logLoss": evaluations,
                             "nextDayAt": timing.next_day_at, "nowMs": now_ms})
         col2.close()
-        print(f"collection: {cards} cards, {response.fsrs_items} items")
-    col.close()
+        print(f"collection: {cards} cards, {response.fsrs_items} items, boundary={boundary}")
     with open(OUT, "w") as handle:
-        json.dump({"fromItems": cases, "collections": collections}, handle)
+        json.dump({"meta": {"ankiVersion": VERSION, "fsrsVersion": "6.6.2", "epochs": 8,
+                            "seed": SEED, "timezone": "Europe/Istanbul", "rolloverHour": 4,
+                            "generator": "scripts/anki-oracle/gen_optimize.py"},
+                   "collections": collections}, handle, separators=(",", ":"))
     print(f"wrote {OUT}")
 
 
