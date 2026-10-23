@@ -689,7 +689,7 @@ yok. Önem sırasıyla 11 fark:
   varsayılanını alıyor. Koddaki "Anki removes them" yorumu Anki'nin davranışını olduğundan geniş
   anlatıyor.
 
-## 9. Kart bilgisi — düşük
+## 9. Kart bilgisi — düşük — kapatıldı (kod ve otomatik test; iPhone smoke bekliyor)
 
 - **Anki 26.09.3:** FSRS açıksa ve kart cevaplanmış ama hafıza durumu yoksa, kart bilgisi durumu
   revlog'dan hesaplayıp gösteriyor; karta yazmıyor
@@ -816,3 +816,16 @@ Anki'nin (2.7269483, 4) → 4, (2.7269483, 5) → 0 ve (4.591988, 4) → 5 vekt�
 aralık testi önce kaldı, düzeltmeden sonra geçti (`lib/fsrsScheduler.test.ts`). Altı odaklı
 dosyada 46 test ve 26.09.3 oracle'ının 14 testinin tamamı geçti. Başlangıçtaki dört fark
 madde 1 ve 2 ile açıklanıp kapandı; rapor dışında yeni davranış farkı çıkmadı.
+
+### Madde 9 sonucu — 23 Ekim 2026
+
+Eksik durum mevcut `withFsrsInputs` salt okunur yoluyla, kartın asıl deste ön ayarı kullanılarak
+gösterim için hesaplanıyor. Hesaplanan durum saklanmıyor. FSRS açıkken yeni kartta bile Kolaylık
+gizli; hatırlanabilirlik tam yüzde. `lib/fsrsCardInfo.test.ts`: önce dört beklenen hata görüldü,
+düzeltmeden sonra beş ekran testi geçti. SQLite yazma casusu ve kartın önce/sonra eşitliği
+açılışın kayıt yapmadığını doğruluyor; 26.09.3 hafıza vektörü, saklı decay ve filtreli kartın
+asıl ön ayarı kullanması da kapsanıyor.
+
+**Koşulmayan hedefli iPhone smoke:** yeni kart ve hafızası silinmiş cevaplı kartta Kart bilgisi
+aç/kapat; FSRS açık/kapalı Kolaylık görünümü; tam yüzde; geri kaydırma ve VoiceOver. Bu eksik
+canlı doğrulama nedeniyle iPhone yayın kapısı açık kalır.

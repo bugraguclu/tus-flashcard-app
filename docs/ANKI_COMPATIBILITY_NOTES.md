@@ -152,6 +152,15 @@ and permits a real decrease. Anki's three upstream assertions and a capped-windo
 `lib/fsrsScheduler.test.ts`; all 14 new-oracle tests now pass, including balanced rescheduling.
 No extra baseline difference appeared after these two corrections.
 
+**FSRS-A item 9:** Card Info derives missing memory through the existing read-only review-input
+path and the home deck's preset, including filtered cards. It never saves the computed state.
+Ease is hidden while FSRS is on, including new cards; retrievability uses whole percentages.
+`lib/fsrsCardInfo.test.ts` renders the screen against SQLite and a 26.09.3 memory vector, asserts
+zero writes, and covers stored state/decay, FSRS off and original-preset lookup. Named iPhone
+smoke still required: open Card Info for a new card and an answered card without memory, close
+and reopen, verify Ease visibility with FSRS on/off, whole percentages, back swipe and VoiceOver.
+That native smoke has not been run in this change.
+
 ## Hierarchical decks and presets
 
 **Status:** Implemented
