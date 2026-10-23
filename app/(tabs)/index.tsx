@@ -954,18 +954,21 @@ export default function StudyScreen() {
             let result;
             try {
                 const previousPreviewDue = previewDeck?.filteredPreviewDue?.[String(currentCard.cardId)] ?? null;
-                result = await commitCollectionWrite(() => {
-                    const answered = answerStudyCard(currentCard.cardId, grade, settings, elapsed, previewDeck
+                result = await commitCollectionWrite(() => answerStudyCard(currentCard.cardId, grade, settings, elapsed, {
+                    ...(previewDeck
                         ? { preview: { delays: previewDeck.previewDelays } }
-                        : { filtered: Boolean(activeFilteredDeck?.isFiltered) });
-                    if (previewDeck) {
-                        setFilteredPreviewDue(previewDeck.id, currentCard.cardId, answered.previewDueMs ?? null);
-                        if (answered.previewDueMs == null) completeFilteredCard(previewDeck.id, currentCard.cardId);
-                    } else if (activeFilteredDeck?.isFiltered && answered.updatedCard.state.status !== 'learning') {
-                        completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
-                    }
-                    return answered;
-                }, (answered) => {
+                        : { filtered: Boolean(activeFilteredDeck?.isFiltered) }),
+                    // The session bookkeeping commits with the answer itself, so a crash can never
+                    // leave an answered card unfinished in its filtered deck.
+                    inTransaction: (outcome) => {
+                        if (previewDeck) {
+                            setFilteredPreviewDue(previewDeck.id, currentCard.cardId, outcome.previewDueMs);
+                            if (outcome.previewDueMs === null) completeFilteredCard(previewDeck.id, currentCard.cardId);
+                        } else if (activeFilteredDeck?.isFiltered && !outcome.isLearning) {
+                            completeFilteredCard(activeFilteredDeck.id, currentCard.cardId);
+                        }
+                    },
+                }), (answered) => {
                     undoAnswer(answered.previousAnkiCard, answered.reviewLogId, answered.sideEffects);
                     rebuildLoadBalancer(settings.dayRolloverHour);
                     if (activeFilteredDeck?.isFiltered) restoreFilteredCard(activeFilteredDeck.id, currentCard.cardId);
@@ -1311,14 +1314,15 @@ export default function StudyScreen() {
                 return;
             }
 
-            const result = await commitCollectionWrite(() => {
-                // The replayed answer keeps the filtered context of the original one, so an early
-                // review in a filtered deck is scheduled (and logged) as early again.
-                const answered = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, replayAnswerOptions(redo));
-                if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, answered.previewDueMs ?? null);
-                if (redo.filteredDeckId) completeFilteredCard(redo.filteredDeckId, redo.cardId);
-                return answered;
-            }, (answered) => {
+            // The replayed answer keeps the filtered context of the original one, so an early
+            // review in a filtered deck is scheduled (and logged) as early again.
+            const result = await commitCollectionWrite(() => answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, {
+                ...replayAnswerOptions(redo),
+                inTransaction: (outcome) => {
+                    if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, outcome.previewDueMs);
+                    if (redo.filteredDeckId) completeFilteredCard(redo.filteredDeckId, redo.cardId);
+                },
+            }), (answered) => {
                 undoAnswer(answered.previousAnkiCard, answered.reviewLogId, answered.sideEffects);
                 rebuildLoadBalancer(settings.dayRolloverHour);
                 if (redo.filteredDeckId) restoreFilteredCard(redo.filteredDeckId, redo.cardId);

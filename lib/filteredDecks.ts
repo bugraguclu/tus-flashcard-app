@@ -1,5 +1,6 @@
 import {
     CUSTOM_STUDY_DECK_NAME,
+    CUSTOM_STUDY_DECK_NAMES,
     CUSTOM_STUDY_MAX_VALUE,
     EMPTY_CUSTOM_STUDY_DEFAULTS,
     type CustomStudyDefaults,
@@ -26,7 +27,9 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         configId: 1,
         mod: Math.floor(now / 1000),
         usn: -1,
-        description: 'Filtered deck',
+        // Anki leaves a new filtered deck's description empty; a fixed English sentence showed
+        // up on the overview in every language.
+        description: '',
         collapsed: false,
         isFiltered: true,
         searchQuery,
@@ -166,10 +169,22 @@ export function restoreFilteredCard(deckId: number, cardId: number): boolean {
 /** Anki reuses one conventional deck name for every custom study session. */
 export const CUSTOM_STUDY_PREFIX = CUSTOM_STUDY_DECK_NAME;
 
+/**
+ * The filtered deck holding the current custom study session: the one named `preferredName`, or
+ * failing that one carrying the session's name in the other language (an imported Anki "Custom
+ * Study Session", or one created before the interface language changed).
+ */
+function findCustomStudySession(preferredName: string): Deck | null {
+    for (const name of [preferredName, ...CUSTOM_STUDY_DECK_NAMES.filter((known) => known !== preferredName)]) {
+        const deck = getDeckByName(name);
+        if (deck?.isFiltered) return deck;
+    }
+    return null;
+}
+
 /** The session a new Custom Study run rebuilds in place, so its cards count as gatherable. */
-export function getCustomStudySessionToReplace(): number | undefined {
-    const existing = getDeckByName(CUSTOM_STUDY_PREFIX);
-    return existing?.isFiltered ? existing.id : undefined;
+export function getCustomStudySessionToReplace(preferredName: string = CUSTOM_STUDY_PREFIX): number | undefined {
+    return findCustomStudySession(preferredName)?.id;
 }
 
 function customStudyDefaultsKey(deckId: number): string {
@@ -236,14 +251,14 @@ export function rememberCustomStudyTags(deckId: number, includeTags: string[], e
 export function createOrReplaceCustomStudySession(
     baseDeckId: number,
     config: CustomStudySessionConfig,
+    name: string = CUSTOM_STUDY_PREFIX,
 ): Deck | null {
     const base = getDeck(baseDeckId);
     if (!base || base.isFiltered) return null;
 
-    const name = CUSTOM_STUDY_PREFIX;
     const sanitizedLimit = Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(config.limit) || CUSTOM_STUDY_MAX_VALUE));
 
-    const existing = getDeckByName(name);
+    const existing = findCustomStudySession(name) ?? getDeckByName(name);
     if (existing?.isFiltered) {
         // Anki does not merge a new custom study run into the session deck's current settings: it
         // swaps the deck's whole filtered config for the one this run built
