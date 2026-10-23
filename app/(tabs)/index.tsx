@@ -38,7 +38,6 @@ import {
     getTodayAnswerStats,
     type StudyStreak,
 } from '../../lib/reviewLogger';
-import { resolveSettingsFromConfig } from '../../lib/settingsResolver';
 import {
     useAppSettings,
     useCollectionInvalidation,
@@ -114,6 +113,7 @@ import {
     resolveSettingsForDeck,
     setCardBuried,
     setCardSuspended,
+    studyScopeSettings,
     undoAnswer,
     type AnswerSideEffects,
     type ResetCardOptions,
@@ -639,15 +639,10 @@ export default function StudyScreen() {
 
     // Anki resolves limits per deck: studying a deck uses that deck's daily limits (plus any
     // "today only" boost), and a filtered / custom-study deck is exempt from daily limits.
-    const scopeSettings = useMemo(() => {
-        if (!selectedDeckName) return settings;
-        const deck = getDeckByName(selectedDeckName);
-        if (!deck) return settings;
-        if (deck.isFiltered) {
-            return { ...settings, dailyReviewLimit: 9999 };
-        }
-        return resolveSettingsFromConfig(getDeckConfigForDeck(deck.id, settings.dayRolloverHour), settings);
-    }, [selectedDeckName, settings, collectionVersion]);
+    const scopeSettings = useMemo(
+        () => studyScopeSettings(settings, selectedDeckName),
+        [selectedDeckName, settings, collectionVersion],
+    );
 
     // Filtered deck with "reschedule" off => Anki preview mode: answers never touch cards.
     const previewMode = useMemo(() => {

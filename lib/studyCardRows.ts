@@ -426,7 +426,9 @@ export function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?
         return cache.get(deckId)!;
     }
 
-    const config = getDeckConfigForDeck(deckId);
+    // Today-only limits are stamped with the study day, so they must be read with the
+    // collection's own rollover hour rather than the 4 AM default.
+    const config = getDeckConfigForDeck(deckId, base.dayRolloverHour);
     const resolved = resolveSettingsFromConfig(config, base);
     // Anki's `effective_desired_retention`: the deck's own target wins over its preset's.
     const deckRetention = getDeck(deckId)?.desiredRetention;

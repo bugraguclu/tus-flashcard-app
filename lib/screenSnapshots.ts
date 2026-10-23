@@ -31,6 +31,7 @@ import {
     getBrowserRowIdsMatchingText,
     getFilteredDeckCardIds,
     getStudyQueue,
+    studyScopeSettings,
     type BrowserCardQuery,
 } from './studyRepository';
 import { getAllSubjects } from './subjects';
@@ -343,7 +344,9 @@ export function getDeckOverviewSnapshot(
     if (!deck) return { deck: null, queue: null, buriedCount: 0 };
     let queue: ReturnType<typeof getStudyQueue> | null = null;
     try {
-        queue = getStudyQueue({ settings, selectedDeckName: deck.name });
+        // The overview previews the reviewer's queue, so it runs with the reviewer's settings:
+        // the deck's own preset and limits, not the collection's Default.
+        queue = getStudyQueue({ settings: studyScopeSettings(settings, deck.name), selectedDeckName: deck.name });
     } catch (error) {
         console.warn('[DeckOverview] queue peek failed:', error);
     }

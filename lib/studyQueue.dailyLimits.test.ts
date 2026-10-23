@@ -132,7 +132,7 @@ describe('queue counters and daily limits', () => {
         saveAnkiCard(makeCard(1020, 102, 7, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500, reps: 3 }));
         const limited: AppSettings = { ...settings, dailyReviewLimit: 2 };
 
-        const fresh = getStudyQueue({ settings: limited });
+        const fresh = getStudyQueue({ settings: limited, selectedDeckName: 'Python' });
         expect(servedReviewIds(fresh)).toHaveLength(2);
         expect(fresh.stats.reviewCount).toBe(2);
         expect(fresh.heldBackReviewCount).toBe(0);
@@ -146,12 +146,12 @@ describe('queue counters and daily limits', () => {
             9999,
         );
 
-        const partlySpent = getStudyQueue({ settings: limited });
+        const partlySpent = getStudyQueue({ settings: limited, selectedDeckName: 'Python' });
         expect(servedReviewIds(partlySpent)).toHaveLength(1);
         expect(partlySpent.stats.reviewCount).toBe(1);
         expect(partlySpent.heldBackReviewCount).toBe(1);
 
-        const fullySpent = getStudyQueue({ settings: limited, reviewsStudiedToday: 2 });
+        const fullySpent = getStudyQueue({ settings: limited, selectedDeckName: 'Python', reviewsStudiedToday: 2 });
         expect(servedReviewIds(fullySpent)).toHaveLength(0);
         expect(fullySpent.stats.reviewCount).toBe(0);
         expect(fullySpent.heldBackReviewCount).toBe(2);

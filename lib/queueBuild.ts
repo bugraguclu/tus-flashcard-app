@@ -284,6 +284,20 @@ export function shuffleNewCardsByNote(cards: StudyCard[], daySeed: string): Stud
 }
 
 /**
+ * Shuffle cards one by one into an order that holds for the whole study day. Every card's place
+ * comes from a hash of its own id and the day, so removing the cards already answered (or
+ * reading a different window of the backlog) never reshuffles the rest.
+ */
+export function shuffleNewCardsStable(cards: StudyCard[], daySeed: string): StudyCard[] {
+    return sortByKeys(cards, (card) => [fnvHash(card.cardId, daySeed)]);
+}
+
+/** The day's stable shuffle rank of a card or note id, shared by the SQL window and the sort. */
+export function dayShuffleRank(id: number, daySeed: string): number {
+    return fnvHash(id, daySeed);
+}
+
+/**
  * Anki's new card sort orders (rslib scheduler/queue/builder/sorting.rs). These run *after* the
  * cards have been gathered, and only reorder what the gather step produced — which is why
  * "noSort" is a real option rather than a no-op placeholder.
