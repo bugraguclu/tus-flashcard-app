@@ -179,9 +179,12 @@ export default function StatsScreen() {
 
     const cardCountRows = useMemo(() => ([
         { key: 'mature', label: l('Olgun', 'Mature'), count: ankiStats.cardCounts.mature, color: colors.badgeReview },
-        { key: 'youngLearn', label: l('Genç + Öğrenme', 'Young + Learn'), count: ankiStats.cardCounts.youngLearn, color: colors.badgeLearn },
+        { key: 'young', label: l('Genç', 'Young'), count: ankiStats.cardCounts.young, color: colors.accent },
+        { key: 'learn', label: l('Öğrenme', 'Learning'), count: ankiStats.cardCounts.learn, color: colors.badgeLearn },
+        { key: 'relearn', label: l('Yeniden öğrenme', 'Relearning'), count: ankiStats.cardCounts.relearn, color: colors.btnAgain },
         { key: 'unseen', label: l('Görülmemiş', 'Unseen'), count: ankiStats.cardCounts.unseen, color: colors.badgeNew },
-        { key: 'suspendedBuried', label: l('Askıda + Gömülü', 'Suspended + Buried'), count: ankiStats.cardCounts.suspendedBuried, color: colors.textMuted },
+        { key: 'suspended', label: l('Askıda', 'Suspended'), count: ankiStats.cardCounts.suspended, color: colors.textMuted },
+        { key: 'buried', label: l('Gömülü', 'Buried'), count: ankiStats.cardCounts.buried, color: colors.textSecondary },
     ]), [ankiStats.cardCounts, colors, l]);
 
     const handleBack = () => {
@@ -395,7 +398,7 @@ export default function StatsScreen() {
                     />
                     <View style={styles.metricRow}>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(showBacklog ? ankiStats.futureDueWithBacklogTotal : ankiStats.futureDueTotal)}</Text><Text style={styles.metricLabel}>{l('Toplam', 'Total')}</Text></View>
-                        <View style={styles.metricItem}><Text style={styles.metricValue}>{formatDecimal(ankiStats.dailyLoad, locale, 1, true)}</Text><Text style={styles.metricLabel}>{l('Günlük yük', 'Daily load')}</Text></View>
+                        <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.dailyLoad)}</Text><Text style={styles.metricLabel}>{l('Günlük yük', 'Daily load')}</Text></View>
                         <View style={styles.metricItem}><Text style={styles.metricValue}>{countValue(ankiStats.dueTomorrow)}</Text><Text style={styles.metricLabel}>{l('Yarın', 'Tomorrow')}</Text></View>
                         {showBacklog && (
                             <View style={styles.metricItem}>

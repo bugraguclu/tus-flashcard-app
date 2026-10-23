@@ -810,6 +810,18 @@
         "legacy and modern optional deck limits; https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
         "media preservation independent of renderer execution; lib/ankiTransferSafety.test.ts"
       ]
+    },
+    {
+      "id": "anki-ai3-statistics-audit",
+      "priority": 3,
+      "platform": "cross-platform statistics graph semantics",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/stats/graphs",
+      "useFor": [
+        "future_due: learning timestamps, original due, buried/suspended exclusions and integer daily load",
+        "intervals include review and relearning across queues",
+        "card_counts separates new, learn, relearn, young, mature, suspended and buried",
+        "answer buttons exclude cram/manual and invalid ratings; lib/statsAuditSafety.test.ts"
+      ]
     }
   ],
   "requiredDocs": [
