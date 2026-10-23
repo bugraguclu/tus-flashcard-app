@@ -13,6 +13,8 @@
 
 import { getDB } from './db';
 import type { AnkiCard } from './models';
+import type { Grade } from './types';
+import type { AnswerSideEffects } from './studyAnswer';
 import { getAnkiCard, saveAnkiCard, saveNote } from './noteManager';
 import { deleteReviewById, restoreReviewLog } from './reviewLogger';
 import { commitCollectionWrite } from './collectionWrite';
@@ -22,8 +24,43 @@ import {
     reviewerOpTargetsGone,
     type ReviewerOpApplyResult,
     type ReviewerOpChange,
+    type ReviewerOpName,
     type ReviewerOpWriters,
 } from './reviewerUndo';
+
+/**
+ * One step on the reviewer's undo stack.
+ *
+ * Anki puts answers and the reviewer's other actions on a single stack, so Ctrl+Z walks back
+ * through "Bury Card", "Set Due Date" and "Answer Card" in the order they happened. An answer
+ * needs its own shape because undoing it has to replay scheduling side effects; everything else
+ * is restored from a plain snapshot of the rows it touched.
+ */
+export type AnswerUndoEntry = {
+    kind: 'answer';
+    cardId: number;
+    reviewLogId: number;
+    previousSnapshot: AnkiCard;
+    /** Rows the answer changed beyond this card: buried siblings, an added leech tag. */
+    sideEffects: AnswerSideEffects;
+    filteredDeckId?: number;
+    /** A preview answer: its deck, the delays it used and the card's wait before the answer. */
+    preview?: { deckId: number; delays: number[] | undefined; previousDueMs: number | null };
+    grade: Grade;
+    answerTimeMs: number;
+    /** The answer ran in a filtered deck, so its redo must schedule it there too (early review). */
+    filtered?: boolean;
+    /** The card as the answer left it; undo refuses once something else rescheduled it. */
+    answeredSnapshot?: AnkiCard;
+};
+
+export type UndoEntry = AnswerUndoEntry | ({ kind: 'op' } & ReviewerOpChange);
+
+/** The operation an undo step would take back, for the Anki-style "Undo Bury Card" label. */
+export function undoEntryOp(entry: UndoEntry | undefined): ReviewerOpName | null {
+    if (!entry) return null;
+    return entry.kind === 'op' ? entry.op : 'answer';
+}
 
 let savepointDepth = 0;
 
