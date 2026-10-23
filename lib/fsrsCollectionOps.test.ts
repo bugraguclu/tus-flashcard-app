@@ -20,6 +20,7 @@ import { parseDueRange, setSelectedDueDate } from './browserSelection';
 import { matchingCollectionCardIds } from './collectionCardSearch';
 import { saveDeck, saveDeckConfig } from './deckManager';
 import { moveCardsToDeckWithFsrs } from './fsrsMaintenance';
+import { checkDatabase, repairDatabase } from './maintenance';
 import { DEFAULT_DECK_CONFIG, type AnkiCard } from './models';
 import { getAnkiCard, saveAnkiCard, saveNote, saveNoteType, undoCardsMovedToDeck } from './noteManager';
 import { DEFAULT_SETTINGS } from './settingsStore';
@@ -184,4 +185,33 @@ describe('Change Deck (Anki 26.09.3 oracle)', () => {
             }
         });
     }
+});
+
+describe('Check Database last review time (Anki 26.09.3 oracle)', () => {
+    it('sets, corrects and removes lrt from the review log the way Anki does, and only reports what it fixes', () => {
+        const entry = fixture.lrtRepair;
+        vi.setSystemTime(entry.timing.nowMs);
+        const appToday = localDayNumber(entry.timing.nowMs, fixture.meta.rolloverHour);
+        const ids: Record<string, number> = {};
+        saveNoteType({ id: 4, name: 'Basic', flds: [{ name: 'Front', ord: 0 }], fields: [{ name: 'Front', ord: 0 }], tmpls: [], templates: [] } as any);
+        Object.entries(entry.cards).forEach(([name, card]: [string, any], index) => {
+            const cid = 4000 + index;
+            ids[name] = cid;
+            saveNote({ id: cid, guid: `g${cid}`, noteTypeId: 4, mod: 0, usn: -1, tags: [], fields: ['q'], sfld: 'q', csum: 0, flags: 0 } as any);
+            saveAnkiCard(appCard(cid, card.before, entry.timing.today, appToday));
+            insertRevlog(cid, card.revlog);
+        });
+        const changed = Object.keys(ids).filter((name) => entry.cards[name].before.data.lrt !== entry.cards[name].after.data.lrt);
+        expect(changed.sort()).toEqual(['crammingAfter', 'filteredRescheduling', 'lrtInFuture', 'missingLrt',
+            'onlyManual', 'rescheduledAfter', 'resetThenSetDue', 'wrongLrt']);
+
+        expect(checkDatabase().lastReviewTimeCards).toBe(changed.length);
+        expect(repairDatabase().lastReviewTimesRepaired).toBe(changed.length);
+        for (const [name, cid] of Object.entries(ids)) {
+            expect(storedData(cid), name).toEqual(entry.cards[name].after.data);
+        }
+        // Anki's second check reports nothing more to fix; neither does ours.
+        expect(entry.secondMessage).not.toMatch(/last review time/);
+        expect(checkDatabase().lastReviewTimeCards).toBe(0);
+    });
 });

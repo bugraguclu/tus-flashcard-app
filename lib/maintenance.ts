@@ -22,6 +22,7 @@ import type { AnkiCard, Deck, Note } from './models';
 import { DEFAULT_DECK_CONFIG, uniqueId } from './models';
 import { todayLocalYMD } from './scheduler';
 import { getSearchIndexCards, unburyAllCards } from './noteManager';
+import { lastReviewTimeDefects, repairLastReviewTime } from './maintenanceLastReview';
 import { getDbSetting, loadSettings, setDbSetting } from './storage';
 
 type Db = ReturnType<typeof getDB>;
@@ -203,6 +204,16 @@ const UNREADABLE_NOTES_WHERE = `n.tombstone = 0
       AND CASE WHEN json_valid(n.data) = 0 THEN 1
                ELSE json_type(n.data, '$.fields') IS NOT 'array' END`;
 
+/** Like countRows, for a defect found in code rather than by one WHERE clause. */
+function countDefects(count: () => number): number {
+    try {
+        return count();
+    } catch (e) {
+        console.warn('[Maintenance] audit query failed:', e);
+        return 0;
+    }
+}
+
 function countRows(db: Db, from: string, where: string): number {
     try {
         return db.getFirstSync<{ cnt: number }>(`SELECT COUNT(*) AS cnt FROM ${from} WHERE ${where}`)?.cnt ?? 0;
@@ -234,6 +245,8 @@ export interface DatabaseCheckResult {
     invalidOrdinalCards: number;
     /** Live cards holding a pre-filter due while nothing says they were ever in a filtered deck. */
     orphanedOriginalDueCards: number;
+    /** Live non-new cards whose FSRS last review time (`lrt`) disagrees with their review log. */
+    lastReviewTimeCards: number;
     /** Live notes whose stored JSON no longer parses. Reported only. */
     unreadableNotes: number;
 }
@@ -243,7 +256,8 @@ export function repairableDefectCount(result: DatabaseCheckResult): number {
     return result.orphanCards + result.orphanNotes + result.strandedCards
         + result.filteredLeftoverCards + result.invalidIntervalCards
         + result.highPositionNewCards + result.invalidDueCards
-        + result.invalidOrdinalCards + result.orphanedOriginalDueCards;
+        + result.invalidOrdinalCards + result.orphanedOriginalDueCards
+        + result.lastReviewTimeCards;
 }
 
 /** Every defect the audit found, whether or not the repair can fix it. */
@@ -282,6 +296,7 @@ export function checkDatabase(): DatabaseCheckResult {
         invalidDueCards: countRows(db, 'anki_cards c', invalidDueCardsWhere(localDayNumber(Date.now(), loadSettings().dayRolloverHour))),
         invalidOrdinalCards: countRows(db, 'anki_cards c', INVALID_ORDINAL_CARDS_WHERE),
         orphanedOriginalDueCards: countRows(db, 'anki_cards c', ORPHANED_ORIGINAL_DUE_CARDS_WHERE),
+        lastReviewTimeCards: countDefects(() => lastReviewTimeDefects(db).length),
         unreadableNotes: countRows(db, 'notes n', UNREADABLE_NOTES_WHERE),
     };
 }
@@ -310,6 +325,8 @@ export interface DatabaseRepairResult {
     ordinalsClamped: number;
     /** Cards whose leftover pre-filter due was cleared. */
     originalDuesCleared: number;
+    /** Cards whose FSRS last review time was set from, or removed for want of, their review log. */
+    lastReviewTimesRepaired: number;
     /** Rows left untouched on purpose because the paid catalog owns them. */
     protectedRowsKept: number;
     /** Notes whose JSON cannot be parsed; counted so the UI can say they need manual attention. */
@@ -330,6 +347,7 @@ export function emptyRepairResult(): DatabaseRepairResult {
         duesRepaired: 0,
         ordinalsClamped: 0,
         originalDuesCleared: 0,
+        lastReviewTimesRepaired: 0,
         protectedRowsKept: 0,
         unreadableNotes: 0,
         recoveryDeckName: null,
@@ -342,7 +360,8 @@ export function repairChangedRows(result: DatabaseRepairResult): boolean {
         || result.orphanNotesRecovered > 0
         || result.strandedCardsRehomed > 0
         || result.filteredLeftoversCleared > 0
-        || result.intervalsClamped > 0;
+        || result.intervalsClamped > 0
+        || result.lastReviewTimesRepaired > 0;
 }
 
 function deckNameTaken(db: Db, name: string): boolean {
@@ -498,7 +517,8 @@ export function repairDatabase(): DatabaseRepairResult {
     const propertyDefects = countRows(db, 'anki_cards c', HIGH_POSITION_NEW_CARDS_WHERE)
         + countRows(db, 'anki_cards c', invalidDueCardsWhere(today))
         + countRows(db, 'anki_cards c', INVALID_ORDINAL_CARDS_WHERE)
-        + countRows(db, 'anki_cards c', ORPHANED_ORIGINAL_DUE_CARDS_WHERE);
+        + countRows(db, 'anki_cards c', ORPHANED_ORIGINAL_DUE_CARDS_WHERE)
+        + countDefects(() => lastReviewTimeDefects(db).length);
 
     if (orphanCards.length === 0 && orphanNotes.length === 0 && strandedCards.length === 0
         && filteredLeftovers.length === 0 && invalidIntervals.length === 0 && propertyDefects === 0) {
@@ -611,6 +631,12 @@ export function repairDatabase(): DatabaseRepairResult {
                 card.id,
             );
             result.originalDuesCleared += 1;
+        }
+
+        // Last, so a card another repair rewrote is measured as it now stands.
+        for (const defect of lastReviewTimeDefects(db)) {
+            repairLastReviewTime(db, defect);
+            result.lastReviewTimesRepaired += 1;
         }
 
         db.execSync('COMMIT;');
