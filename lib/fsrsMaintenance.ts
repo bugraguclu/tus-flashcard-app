@@ -34,7 +34,7 @@ import {
     type FsrsReviewHistory,
     type FsrsTrainingItem,
 } from './fsrsMemory';
-import { desiredRetentionFor, fsrsParametersFor, recordedDecayFor } from './fsrsScheduler';
+import { desiredRetentionFor, fsrsParametersFor, minimumReviewFuzzInterval, recordedDecayFor } from './fsrsScheduler';
 import { withReviewFuzz } from './schedulingIntervals';
 import { rustSortUnstableIndicesByKey } from './rustSortUnstable';
 import { resolveSettingsForDeck } from './studyCardRows';
@@ -337,7 +337,7 @@ function rescheduleCard(
 
     const interval = fsrsNextInterval(memory.stability, desiredRetention, params[20]);
     const previousInterval = Math.max(0, lastReview.previousInterval);
-    const minimum = Math.max(1, Math.trunc(interval) > previousInterval ? previousInterval + 1 : 0);
+    const minimum = Math.max(1, minimumReviewFuzzInterval(interval, previousInterval, settings.maxInterval));
     const seed = ankiCardSeed(card.id, Math.max(0, card.reps - 1));
     const presetId = getDeck(card.odid || card.deckId)?.configId || DEFAULT_DECK_CONFIG.id;
 
@@ -445,14 +445,15 @@ export function clearFsrsMemoryStates(nowMs: number = Date.now()): number {
  * The optimizer's training items for these decks, as Anki's `compute_params` gathers them with
  * its default search (`preset:"name" -is:suspended`): every unsuspended card, each card's log made
  * into items by `fsrs_items_for_training`, all ordered by the review that ends them. `reviews` is
- * how many answers the items draw on.
+ * how many answers the items draw on. `cardId` is training metadata for the 6.6.2 trainer
+ * to group each card's windows; it is not persisted and does not change review-log ordering.
  */
 export function collectFsrsTrainingItems(
     deckIds: number[],
     settings: AppSettings,
     ignoreRevlogsBeforeMs: number,
     nowMs: number = Date.now(),
-): { items: FsrsTrainingItem[]; reviews: number } {
+): { items: Array<FsrsTrainingItem & { cardId: number }>; reviews: number } {
     const scope = deckScopeClause(deckIds);
     const rows = getDB().getAllSync<{ id: number; cardId: number; ease: number; ivl: number; factor: number; type: number }>(
         `SELECT r.id, r.cardId, r.ease, r.ivl, r.factor, r.type
@@ -471,11 +472,11 @@ export function collectFsrsTrainingItems(
     }
 
     const nextDayAtMs = nextRolloverMs(nowMs, settings.dayRolloverHour);
-    const items: FsrsTrainingItem[] = [];
+    const items: Array<FsrsTrainingItem & { cardId: number }> = [];
     let reviews = 0;
-    for (const entries of byCard.values()) {
+    for (const [cardId, entries] of byCard) {
         const card = fsrsTrainingItemsForCard(entries, nextDayAtMs, ignoreRevlogsBeforeMs);
-        items.push(...card.items);
+        items.push(...card.items.map((item) => ({ ...item, cardId })));
         reviews += card.answers;
     }
     items.sort((a, b) => a.revlogId - b.revlogId);

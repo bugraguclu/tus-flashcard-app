@@ -1,4 +1,4 @@
-// Anki's sort keys against Anki 26.05 itself. The fixture's `sortKeys` block holds, for cards
+// Anki's sort keys against Anki 26.09.3 itself. The fixture's `sortKeys` block holds, for cards
 // with mixed decays, review times and states, the values Anki's own SQL functions returned
 // (`extract_fsrs_retrievability`, `extract_fsrs_relative_retrievability`, `fnvhash`), the order
 // of its browser's retrievability column, and the cards a filtered deck gathered for every
@@ -31,7 +31,7 @@ import { saveAnkiCard, saveNote, saveNoteType } from './noteManager';
 import { DEFAULT_SETTINGS } from './settingsStore';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the fixture is plain recorded JSON */
-const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.05-fsrs.json'), 'utf8'));
+const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.09-fsrs.json'), 'utf8'));
 const recorded = fixture.sortKeys;
 const ROLLOVER = fixture.meta.rolloverHour as number;
 const NOW_MS = recorded.now * 1000;

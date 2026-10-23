@@ -1,5 +1,5 @@
-// FSRS parity with Anki itself. Every expected value in test/fixtures/anki-26.05-fsrs.json was
-// written by Anki 26.05 (fsrs-rs 5.2.0, rand 0.9.4) through its own backend; scripts/anki-oracle/
+// FSRS parity with Anki itself. Every expected value in test/fixtures/anki-26.09-fsrs.json was
+// written by Anki 26.09.3 (fsrs-rs 6.6.2, rand 0.9.4) through its own backend; scripts/anki-oracle/
 // regenerates the file from an installed copy of Anki. The fixture holds outputs only, no Anki code.
 //
 // Intervals, step delays, fuzz, load-balanced days, card fields and review-log rows must match
@@ -27,7 +27,7 @@ vi.mock('./db', () => ({
 import { ankiCardSeed, ankiFuzzFactor } from './ankiRandom';
 import { ankiCardToCardState, localDayNumber } from './ankiState';
 import { saveDeck, saveDeckConfig } from './deckManager';
-import { normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
+import { fsrsNextStates, normalizeFsrsParameters, parseFsrsCutoffDate } from './fsrs';
 import { parseAnkiCardData } from './fsrsCardData';
 import { rebuildFsrsMemoryStates } from './fsrsMaintenance';
 import { fsrsMemoryStateForCard, fsrsReviewHistory } from './fsrsMemory';
@@ -42,7 +42,7 @@ import { answerStudyCard } from './studyRepository';
 import type { AppSettings, CardState } from './types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the fixture is plain recorded JSON */
-const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.05-fsrs.json'), 'utf8'));
+const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.09-fsrs.json'), 'utf8'));
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 const previousTimezone = process.env.TZ;
@@ -129,6 +129,18 @@ describe('answer buttons', () => {
                     expectClose(actual.memory.difficulty, expected.d, `${label} difficulty`);
                 }
             });
+        }
+    });
+});
+
+describe('scalar f32 operation order', () => {
+    it('matches the exact Anki 26.09.3 states that distinguish the old Burn order', () => {
+        expect(fixture.scalarOrderProbes).toHaveLength(6);
+        for (const entry of fixture.scalarOrderProbes) {
+            const states = fsrsNextStates(normalizeFsrsParameters(entry.params), entry.memory,
+                entry.desiredRetention, entry.elapsedDays);
+            const actual = states[entry.button as keyof typeof states].memory[entry.field as 'stability' | 'difficulty'];
+            expect(actual, `case ${entry.caseIndex} ${entry.button} ${entry.field}`).toBe(Math.fround(entry.expected));
         }
     });
 });

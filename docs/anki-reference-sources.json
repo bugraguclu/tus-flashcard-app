@@ -557,8 +557,8 @@
       "priority": 2,
       "platform": "desktop and shared core, the current release (2026-09-23) the fifth FSRS audit pass compares against",
       "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src",
-      "license": "AGPL-3.0-or-later; behavior reference only, read as a 26.05..26.09.3 diff, no oracle run yet",
-      "useFor": ["minimum_review_fuzz_interval keeping the previous interval inside the fuzz window (#4826)", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792)", "Change Deck recomputing memory states in the target deck (#5339, #5500)", "Check Database repairing lrt (#4648)", "future ignore-before dates clamped to today (#5294)", "export without scheduling clearing only FSRS parameter lists (#4721)", "card info computing a missing memory state and hiding ease under FSRS (#5326, #5648, #5277)", "retrievability filtered-deck orders hidden without FSRS (#5407)", "compute_params training with card ids and 8 epochs"]
+      "license": "AGPL-3.0-or-later; behavior reference only, outputs recorded from Anki 26.09.3 (29bb700b) on 2026-10-23 by scripts/anki-oracle",
+      "useFor": ["FSRS-A oracle in test/fixtures/anki-26.09-fsrs.json: states, memory replay, answers, fuzz, load balancing, rescheduling, Reset Card, preview and sort keys; optimizer excluded", "minimum_review_fuzz_interval keeping the previous interval inside the bounded fuzz window (#4826), independently implemented for answers and rescheduling and verified by the 26.09 oracle", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792)", "Change Deck recomputing memory states in the target deck (#5339, #5500)", "Check Database repairing lrt (#4648)", "future ignore-before dates clamped to today (#5294)", "export without scheduling clearing only FSRS parameter lists (#4721)", "card info computing a missing memory state without saving it, hiding ease under FSRS and showing whole percentages (#5326, #5648, #5277); covered by lib/fsrsCardInfo.test.ts", "retrievability filtered-deck orders hidden without FSRS (#5407)", "compute_params training with card ids and 8 epochs; collectFsrsTrainingItems supplies non-persisted cardId metadata, covered by an interleaved-history test"]
     },
     {
       "id": "fsrs-rs-6.6.2",
@@ -566,7 +566,7 @@
       "platform": "scheduler algorithm, the version Anki 26.09 and later build with",
       "url": "https://github.com/open-spaced-repetition/fsrs-rs/tree/v6.6.2/src",
       "license": "BSD-3-Clause; algorithm reference, implemented independently",
-      "useFor": ["short-term stability floor for Hard, Good and Easy (#376)", "scalar f32 operation order (curve factor ln 0.9 / decay, linear damping ((10 - D) * dD) / 9)", "unit-test vectors for memory state, next states, next interval, memory_state_from_sm2 and next difficulty", "compute_parameters: per-card windowed batches, max_seq_len 256, analytic gradients, rand 0.10 shuffle, no per-epoch validation"]
+      "useFor": ["short-term stability floor for Hard, Good and Easy (#376), implemented and covered by lib/fsrs.test.ts and the 26.09 oracle", "scalar f32 operation order (curve factor ln 0.9 / decay, linear damping ((10 - D) * dD) / 9), verified by six exact Anki 26.09.3 scalarOrderProbes in lib/fsrsAnkiParity.test.ts", "unit-test vectors for memory state, next states, next interval, memory_state_from_sm2 and next difficulty", "compute_parameters: per-card windowed batches, max_seq_len 256, analytic gradients, rand 0.10 shuffle, no per-epoch validation"]
     },
     {
       "id": "rand-0.9.4",

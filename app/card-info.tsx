@@ -16,10 +16,12 @@ import { getReviewsForCard } from '../lib/reviewLogger';
 import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import { fsrsRetrievabilityAfterSeconds } from '../lib/fsrs';
-import { fsrsLastReviewTimeMs } from '../lib/fsrsCardInputs';
+import { fsrsLastReviewTimeMs, withFsrsInputs } from '../lib/fsrsCardInputs';
+import { recordedDecayFor } from '../lib/fsrsScheduler';
+import { resolveSettingsForDeck } from '../lib/studyCardRows';
 import { memoryStateFromCardData, parseAnkiCardData } from '../lib/fsrsCardData';
 import { cardFlagName, localizeNoteTypeName } from '../lib/i18n';
-import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
+import { ankiCardToCardState, dayNumberToYmd, localDayNumber } from '../lib/ankiState';
 import { useAppSettings } from '../contexts/AppContext';
 import LeechExplainer from '../components/LeechExplainer';
 
@@ -80,17 +82,23 @@ export default function CardInfoScreen() {
 
     const { card, note, noteType, deck, reviews, createdAt, modifiedAt } = payload;
 
-    // FSRS state, when the card has been scheduled by it. Retrievability is "how likely you are to
-    // remember this right now": Anki's card info reads it from the seconds since the last review
-    // (the card's `lrt`, else its newest answer in the log) on the card's own decay.
+    // Card Info projects a missing memory state from history with the home preset, without
+    // persisting it. Reuse the read-only inputs path used before answering, so cutoff dates and
+    // SM-2 fallback stay consistent. Opening this screen must never reschedule a card.
+    const nowMs = Date.now();
     const cardData = parseAnkiCardData(card.ankiData);
-    const memory = memoryStateFromCardData(cardData);
+    const storedMemory = memoryStateFromCardData(cardData);
+    const deckSettings = resolveSettingsForDeck(card.odid || card.deckId, settings);
+    const memory = storedMemory ?? (settings.fsrsEnabled && card.type !== 0
+        ? withFsrsInputs(ankiCardToCardState(card, deckSettings, nowMs), card, deckSettings, nowMs).memoryState
+        : null);
     const lastReviewMs = memory ? fsrsLastReviewTimeMs(card) : 0;
+    const decay = storedMemory ? cardData.decay : recordedDecayFor(deckSettings);
     const retrievability = memory
         ? fsrsRetrievabilityAfterSeconds(
             memory,
-            Math.floor(Date.now() / 1000) - Math.floor(lastReviewMs / 1000),
-            cardData.decay,
+            Math.floor(nowMs / 1000) - Math.floor(lastReviewMs / 1000),
+            decay,
         )
         : null;
 
@@ -238,7 +246,9 @@ export default function CardInfoScreen() {
                     <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
                     <InfoRow label={l('Sonraki gösterim', 'Due')} value={dueLabel} />
                     <InfoRow label={l('Aralık', 'Interval')} value={card.ivl ? formatIvl(card.ivl) : '—'} />
-                    <InfoRow label={l('Kolaylık', 'Ease')} value={card.factor > 0 ? `${(card.factor / 10).toFixed(0)}%` : '—'} />
+                    {!settings.fsrsEnabled && (
+                        <InfoRow label={l('Kolaylık', 'Ease')} value={card.factor > 0 ? `${(card.factor / 10).toFixed(0)}%` : '—'} />
+                    )}
                     <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
                     <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
                 </View>
@@ -257,7 +267,7 @@ export default function CardInfoScreen() {
                         {retrievability !== null && (
                             <InfoRow
                                 label={l('Hatırlanabilirlik', 'Retrievability')}
-                                value={`${(retrievability * 100).toFixed(1)}%`}
+                                value={`${(retrievability * 100).toFixed(0)}%`}
                             />
                         )}
                         {cardData.desiredRetention !== undefined && (

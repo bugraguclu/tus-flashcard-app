@@ -1,4 +1,4 @@
-// Reset Card (formerly Forget) against Anki 26.05's own results. Every expected card and review
+// Reset Card (formerly Forget) against Anki 26.09.3's own results. Every expected card and review
 // log row in the fixture's `resetCards` cases was written by Anki's `schedule_cards_as_new`, for
 // cards of every type, some inside a filtered deck, with all four combinations of its options.
 
@@ -25,7 +25,7 @@ import { saveAnkiCard } from './noteManager';
 import { DEFAULT_RESET_CARD_OPTIONS, getResetCardDefaults, resetCardsToNew } from './resetCards';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the fixture is plain recorded JSON */
-const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.05-fsrs.json'), 'utf8'));
+const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.09-fsrs.json'), 'utf8'));
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 
