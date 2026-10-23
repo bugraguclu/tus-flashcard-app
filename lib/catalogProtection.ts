@@ -64,6 +64,7 @@ function isTrialLearnerEdit(table: 'notes' | 'anki_cards', value: Note | AnkiCar
     if (!row) return false;
     const previous = JSON.parse(row.data) as Record<string, unknown>;
     const next = value as unknown as Record<string, unknown>;
+    if (table === 'notes' && JSON.stringify(previous.tags) === JSON.stringify(next.tags)) return false;
     return [...new Set([...Object.keys(previous), ...Object.keys(next)])]
         .every((key) => allowed.has(key) || JSON.stringify(previous[key]) === JSON.stringify(next[key]));
 }

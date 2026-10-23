@@ -25,6 +25,7 @@ it('trial catalog cards remain studyable and answers persist', () => {
     expect(getAnkiCard(1010)!.reps).toBe(1);
 });
 it('trial study permission does not unlock content, card creation or identity changes', () => {
+    expect(() => saveNote(getNote(101)!)).toThrow(PaidCatalogProtectionError);
     expect(() => saveNote({ ...getNote(101)!, fields: ['replaced'] })).toThrow(PaidCatalogProtectionError);
     expect(() => saveAnkiCard(makeCard(9999, 101, 7))).toThrow(PaidCatalogProtectionError);
     expect(() => saveAnkiCard({ ...getAnkiCard(1010)!, ord: 5 })).toThrow(PaidCatalogProtectionError);

@@ -832,7 +832,7 @@
       "url": "https://docs.ankiweb.net/studying.html",
       "useFor": [
         "study progress separated from catalog content ownership; trial existing-card scheduling only",
-        "ai2CatalogStudy.test.ts verifies study and rejects content/identity/new-card mutation"
+        "ai2CatalogStudy.test.ts verifies study/tag deltas and rejects generic note saves, content/identity/new-card mutation"
       ]
     }
   ],
