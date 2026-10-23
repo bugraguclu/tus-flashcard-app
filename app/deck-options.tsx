@@ -23,8 +23,6 @@ import {
     getDeck,
     getAllDecks,
     getDeckByName,
-    createDeck,
-    getAvailableDeckName,
     getDeckConfig,
     getDecksUsingConfig,
     saveDeckConfig,
@@ -39,6 +37,7 @@ import {
     setDeckTodayLimits,
     setDeckLimitOverrides,
     setDeckDesiredRetention,
+    createOrSelectDeck,
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
 import HeaderBackIcon from '../components/HeaderBackIcon';
@@ -1571,7 +1570,7 @@ export default function DeckOptionsScreen() {
                     }}
                     onCreateDeck={(name) => {
                         try {
-                            const created = createDeck(getAvailableDeckName(name));
+                            const created = createOrSelectDeck(name);
                             setDeckRevision((v) => v + 1);
                             invalidateCollection();
                             return created.name;

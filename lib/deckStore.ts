@@ -9,6 +9,7 @@ import {
     type AnkiCard,
 } from './models';
 import { getDB } from './db';
+import { translateActive } from './i18n';
 import { localDayNumber, nextRolloverMs, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 import { markSourcePackageDirty } from './ankiPackageArchive';
@@ -52,10 +53,28 @@ export function getDeckByName(name: string): Deck | null {
     const normalized = normalizeDeckName(name);
     const exact = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE name = ?', normalized);
     if (exact) return JSON.parse(exact.data);
+    // Case and Unicode folding happen in JS (SQLite's lower() is ASCII-only); scan names only and
+    // read the one matching blob.
     const key = deckNameKey(normalized);
-    const row = db.getAllSync<{ name: string; data: string }>('SELECT name, data FROM decks ORDER BY id')
+    const match = db.getAllSync<{ id: number; name: string }>('SELECT id, name FROM decks ORDER BY id')
         .find(entry => deckNameKey(entry.name) === key);
-    return row ? JSON.parse(row.data) : null;
+    return match ? getDeck(match.id) : null;
+}
+
+/** One snapshot of every deck name, resolving names as getDeckByName does, for batch checks. */
+function deckNameIndex(): (name: string) => number | undefined {
+    const rows = getDB().getAllSync<{ id: number; name: string }>('SELECT id, name FROM decks ORDER BY id');
+    const exact = new Map<string, number>();
+    const folded = new Map<string, number>();
+    for (const row of rows) {
+        if (!exact.has(row.name)) exact.set(row.name, row.id);
+        const key = deckNameKey(row.name);
+        if (!folded.has(key)) folded.set(key, row.id);
+    }
+    return (name) => {
+        const normalized = normalizeDeckName(name);
+        return exact.get(normalized) ?? folded.get(deckNameKey(normalized));
+    };
 }
 
 function canonicalDeckPath(name: string): string {
@@ -104,12 +123,13 @@ function getAvailableSubtreeName(deck: Deck, desiredName: string): string {
         entry.id === deck.id || entry.name.startsWith(subtreePrefix)
     ));
     const subtreeIds = new Set(subtree.map((entry) => entry.id));
+    const lookup = deckNameIndex();
     const collides = (candidateRoot: string) => subtree.some((entry) => {
         const candidateName = entry.id === deck.id
             ? candidateRoot
             : `${candidateRoot}::${entry.name.slice(subtreePrefix.length)}`;
-        const existing = getDeckByName(candidateName);
-        return Boolean(existing && !subtreeIds.has(existing.id));
+        const existing = lookup(candidateName);
+        return existing !== undefined && !subtreeIds.has(existing);
     });
 
     if (!collides(desiredName)) return desiredName;
@@ -130,10 +150,14 @@ export function getAvailableDeckSubtreeName(deckId: number, desiredName: string)
 
 export function saveDeck(deck: Deck): void {
     assertCatalogDeckMutable(deck);
-    const collision = getDeckByName(deck.name);
-    if (collision && collision.id !== deck.id) throw new Error(`A deck named "${deck.name}" already exists.`);
     const db = getDB();
-    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM decks WHERE id = ?', deck.id);
+    const existing = db.getFirstSync<{ name: string; data: string }>('SELECT name, data FROM decks WHERE id = ?', deck.id);
+    // Only creating a deck or renaming it into another deck's name collides. A legacy deck whose
+    // stored name differs from another only by case or outer spaces must still save as itself.
+    if (!existing || existing.name !== deck.name) {
+        const collision = getDeckByName(deck.name);
+        if (collision && collision.id !== deck.id) throw new Error(translateActive('decks.nameExists', { name: deck.name }));
+    }
     if (existing?.data) {
         try {
             markSourcePackageDirty((JSON.parse(existing.data) as Deck).sourcePackageId);
@@ -231,14 +255,17 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
         deleteCardRows(cardIds);
 
         // A note is deleted only once it has no cards left in any other deck.
-        for (const noteId of noteIds) {
-            const remaining = db.getFirstSync<{ cnt: number }>(
-                'SELECT COUNT(*) AS cnt FROM anki_cards WHERE noteId = ?',
-                noteId,
-            );
-            if (!remaining || remaining.cnt === 0) {
-                db.runSync('DELETE FROM notes WHERE id = ?', noteId);
-                db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', noteId);
+        if (noteIds.length) {
+            const orphaned = db.getAllSync<{ id: number }>(
+                `SELECT id FROM notes
+                 WHERE id IN (SELECT value FROM json_each(?))
+                   AND NOT EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = notes.id)
+                 ORDER BY id`,
+                JSON.stringify(noteIds),
+            ).map((row) => Number(row.id));
+            if (orphaned.length) {
+                db.runSync('DELETE FROM notes WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(orphaned));
+                db.runSync('INSERT INTO graves (oid, type, usn) SELECT value, 1, -1 FROM json_each(?)', JSON.stringify(orphaned));
             }
         }
 
@@ -295,6 +322,10 @@ function returnFilteredCardsHome(filteredDeckId: number): void {
 
 export function renameDeck(id: number, newName: string): void {
     newName = normalizeDeckName(newName);
+    // Ancestors take the stored case of existing decks, as createDeck resolves them; the
+    // renamed deck's own leaf keeps the case the learner typed.
+    const typedParent = getParentDeckName(newName);
+    if (typedParent) newName = `${canonicalDeckPath(typedParent)}::${getDeckDisplayName(newName)}`;
     assertCatalogDeckNotRenamable(id);
     const db = getDB();
     const deck = getDeck(id);
@@ -303,9 +334,10 @@ export function renameDeck(id: number, newName: string): void {
     if (newName === deck.name) return;
 
     // Deck names are unique; refuse to rename onto an existing (different) deck.
-    const collision = getDeckByName(newName);
-    if (collision && collision.id !== id) {
-        throw new Error(`A deck named "${newName}" already exists.`);
+    const lookup = deckNameIndex();
+    const collision = lookup(newName);
+    if (collision !== undefined && collision !== id) {
+        throw new Error(translateActive('decks.nameExists', { name: newName }));
     }
 
     // Validate every descendant before creating a missing target parent. A root-only collision
@@ -323,9 +355,9 @@ export function renameDeck(id: number, newName: string): void {
         const resolvedName = row.id === id
             ? newName
             : `${newName}::${row.name.slice(oldPrefix.length)}`;
-        const target = getDeckByName(resolvedName);
-        if (target && !subtreeIds.has(target.id)) {
-            throw new Error(`A deck named "${resolvedName}" already exists.`);
+        const target = lookup(resolvedName);
+        if (target !== undefined && !subtreeIds.has(target)) {
+            throw new Error(translateActive('decks.nameExists', { name: resolvedName }));
         }
     }
 
@@ -347,7 +379,8 @@ export function renameDeck(id: number, newName: string): void {
             ancestorName = getParentDeckName(ancestorName);
         }
 
-        if (!getDeckByName(newParentName)) createDeck(newParentName, deck.configId);
+        // A missing parent is a new deck, so it starts on the default preset as in Anki.
+        if (!getDeckByName(newParentName)) createDeck(newParentName);
     }
 
     const nowSec = Math.floor(Date.now() / 1000);
@@ -420,6 +453,16 @@ export function createDeck(name: string, configId?: number): Deck {
         byName.set(path, destination);
     }
     return destination!;
+}
+
+/**
+ * A deck picker's "create": an existing deck of that name (any case) is selected, as Anki's
+ * chooser does, instead of creating a numbered copy. A filtered deck cannot be chosen.
+ */
+export function createOrSelectDeck(name: string): Deck {
+    const existing = getDeckByName(canonicalDeckPath(name));
+    if (existing?.isFiltered) throw new Error(translateActive('decks.filteredNameExists', { name: existing.name }));
+    return existing ?? createDeck(name);
 }
 
 export function compareDeckDisplayOrder(a: Deck, b: Deck): number {

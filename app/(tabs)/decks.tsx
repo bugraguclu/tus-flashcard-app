@@ -34,7 +34,7 @@ import {
     getAllDecks,
     getDeckByName,
     getAvailableDeckName,
-    getAvailableDeckSubtreeName,
+    getDeck,
     createDeck,
     createFilteredDeck,
     deleteDeck,
@@ -48,6 +48,7 @@ import {
     emptyFilteredDeck,
     reorderDeckRelative,
     type DeckTreeNode,
+    createOrSelectDeck,
 } from '../../lib/deckManager';
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
 import { alert, confirm, choose } from '../../lib/confirm';
@@ -621,17 +622,17 @@ export default function DecksScreen() {
 
     const handleCreateSubdeck = () => {
         if (modal?.kind !== 'create-subdeck') return;
-        const leafName = normalizeDeckLeafInput(newSubdeckName);
-        if (!leafName) {
+        if (!normalizeDeckLeafInput(newSubdeckName)) {
             alert(t('common.error'), l('Alt deste adı boş olamaz.', 'The subdeck name cannot be empty.'));
             return;
         }
 
-        const fullName = `${modal.deck.name}::${leafName}`;
+        // `::` nests further, as in the top-level Add. An existing name selects that deck, and a
+        // new deck starts on the default preset, as in Anki.
+        const fullName = `${modal.deck.name}::${newSubdeckName.trim()}`;
 
         try {
-            const availableName = getAvailableDeckName(fullName);
-            createDeck(availableName, modal.deck.configId);
+            createDeck(fullName);
             setDeckCollapsed(modal.deck.id, false);
             updateExpandedDecks((prev) => {
                 const next = new Set(prev);
@@ -808,15 +809,16 @@ export default function DecksScreen() {
 
     const handleRename = () => {
         if (modal?.kind !== 'rename') return;
-        const nextLeafName = normalizeDeckLeafInput(renameText);
-        if (!nextLeafName) return;
+        if (!normalizeDeckLeafInput(renameText)) return;
         const parentName = getParentDeckName(modal.deck.name);
-        const nextName = parentName ? `${parentName}::${nextLeafName}` : nextLeafName;
+        // `::` in the new name nests, as in the top-level Add; renaming onto an existing deck is
+        // refused with a message, as in Anki, rather than picking a numbered name.
+        const nextName = parentName ? `${parentName}::${renameText.trim()}` : renameText.trim();
 
         try {
-            const availableName = getAvailableDeckSubtreeName(modal.deck.id, nextName);
-            renameDeck(modal.deck.id, availableName);
-            updateExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, availableName));
+            renameDeck(modal.deck.id, nextName);
+            const renamedName = getDeck(modal.deck.id)?.name ?? nextName;
+            updateExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, renamedName));
             setModal(null);
             refresh();
         } catch (e) {
@@ -2165,7 +2167,7 @@ export default function DecksScreen() {
                         }}
                         onCreateDeck={(name) => {
                             try {
-                                const created = createDeck(getAvailableDeckName(name));
+                                const created = createOrSelectDeck(name);
                                 refresh();
                                 invalidateCollection();
                                 return created.name;

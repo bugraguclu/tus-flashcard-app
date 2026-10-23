@@ -79,6 +79,8 @@ const tr = {
     'root.noteTypes': 'Not türleri',
     'root.editNoteType': 'Not türünü düzenle',
     'noteTypes.changeNeedsConfirmation': 'Not türünü değiştirmek {{count}} kartı silecek; önce bunu onaylamanız gerekiyor.',
+    'decks.nameExists': '“{{name}}” adında bir deste zaten var.',
+    'decks.filteredNameExists': '“{{name}}” bir filtreli deste; kartlar oraya taşınamaz.',
 
     'settings.title': '⚙️ Ayarlar',
     'settings.appearance': '🎨 Görünüm ve dil',
@@ -255,6 +257,8 @@ const en: Record<TranslationKey, string> = {
     'root.noteTypes': 'Note Types',
     'root.editNoteType': 'Edit Note Type',
     'noteTypes.changeNeedsConfirmation': 'Changing the note type would remove {{count}} card(s), so it needs your confirmation first.',
+    'decks.nameExists': 'A deck named “{{name}}” already exists.',
+    'decks.filteredNameExists': '“{{name}}” is a filtered deck, so cards cannot be placed in it.',
 
     'settings.title': '⚙️ Settings',
     'settings.appearance': '🎨 Appearance & Language',

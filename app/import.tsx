@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useThemeColors } from '../constants/theme';
-import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
+import { getAllDecks, getDeck, getDeckByName, createOrSelectDeck } from '../lib/deckManager';
 import { resolveInitialTargetDeckId } from '../lib/importTargetDeck';
 import { alert, confirmAsync } from '../lib/confirm';
 import { assertKnownFileSize, readUriBytes, readUriText } from '../lib/files';
@@ -963,7 +963,7 @@ export default function ImportScreen() {
                         setShowDeckPicker(false);
                     }}
                     onCreateDeck={(name) => {
-                        const created = createDeck(getAvailableDeckName(name));
+                        const created = createOrSelectDeck(name);
                         bumpDataVersion();
                         return created.name;
                     }}

@@ -13,6 +13,7 @@ export {
     deleteDeck,
     renameDeck,
     createDeck,
+    createOrSelectDeck,
     setDeckDescription,
     moveDeckUnder,
     reorderDeckRelative,

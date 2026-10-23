@@ -855,7 +855,8 @@
       "url": "https://docs.ankiweb.net/getting-started.html#decks",
       "useFor": [
         "normalized hierarchy component names",
-        "case-insensitive creation lookup and case-exact legacy subtree mutation"
+        "case-insensitive creation lookup and case-exact legacy subtree mutation",
+        "deck chooser selects an existing deck by name; rename onto an existing name is refused; new decks use preset 1"
       ]
     },
     {

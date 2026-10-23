@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
-import { createDeck, getAvailableDeckName } from '../lib/deckManager';
+import { createOrSelectDeck } from '../lib/deckManager';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import WeekStreakStrip from '../components/WeekStreakStrip';
 import ClassicStatsBarChart from '../components/stats/ClassicStatsBarChart';
@@ -579,7 +579,7 @@ export default function StatsScreen() {
                 onClose={() => setDeckPickerVisible(false)}
                 onSelect={handlePickDeck}
                 onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
+                    const created = createOrSelectDeck(name);
                     bumpDataVersion();
                     return created.name;
                 }}

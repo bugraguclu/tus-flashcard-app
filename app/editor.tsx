@@ -52,7 +52,7 @@ import {
     searchIndexCardFromNote,
     setNoteTagsByCardId,
 } from '../lib/noteManager';
-import { createDeck, getAllDecks, getAvailableDeckName, getDeck, getDeckByName } from '../lib/deckManager';
+import { getAllDecks, getDeck, getDeckByName, createOrSelectDeck } from '../lib/deckManager';
 import { safeExternalCallbackUrl } from '../lib/externalLinking';
 import { goBackOr } from '../lib/backNavigation';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note, type NoteTypeField } from '../lib/models';
@@ -1577,7 +1577,7 @@ export default function EditorScreen() {
                     setShowDeckPicker(false);
                 }}
                 onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
+                    const created = createOrSelectDeck(name);
                     bumpDataVersion();
                     return created.name;
                 }}

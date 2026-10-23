@@ -63,9 +63,7 @@ import {
 } from '../../lib/noteManager';
 import {
     completeFilteredCard,
-    createDeck,
     getAllDecks,
-    getAvailableDeckName,
     getBuriedCountForDeck,
     getDeck,
     getDeckByName,
@@ -74,6 +72,7 @@ import {
     restoreFilteredCard,
     setFilteredPreviewDue,
     unburyDeck,
+    createOrSelectDeck,
 } from '../../lib/deckManager';
 import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
@@ -3375,7 +3374,7 @@ export default function StudyScreen() {
                 onClose={() => setDeckPickerVisible(false)}
                 onSelect={handlePickDeck}
                 onCreateDeck={(name) => {
-                    const created = createDeck(getAvailableDeckName(name));
+                    const created = createOrSelectDeck(name);
                     invalidateCollection();
                     return created.name;
                 }}

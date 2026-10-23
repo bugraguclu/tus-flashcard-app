@@ -67,7 +67,7 @@ it('rolls back a failed bulk removal, including graves, while retaining history'
     const { note, cards } = createNote(BUILTIN_NOTE_TYPES.find(t => t.id === 2)!, ['Front', 'Back'], deck.id);
     const original = db.runSync;
     holder.db = { ...db, runSync(sql: string, ...params: any[]) {
-        if (sql.startsWith('DELETE FROM anki_cards') && params[0] === cards[1].id) throw new Error('injected failure');
+        if (sql.startsWith('DELETE FROM anki_cards') && String(params[0]).includes(String(cards[1].id))) throw new Error('injected failure');
         return original(sql, ...params);
     } };
     expect(() => deleteNote(note.id)).toThrow('injected failure');
