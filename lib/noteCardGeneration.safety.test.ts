@@ -16,6 +16,7 @@ afterEach(() => db.close());
 
 import { updateTusCardByCardId } from './tusCards';
 import { findEmptyCards, changeNotesType, saveNoteType } from './noteTypeStore';
+import { NoteTypeChangeConfirmationRequired } from './noteTypeChange';
 import type { NoteType } from './models';
 const builtin = (id: number) => BUILTIN_NOTE_TYPES.find(t => t.id === id)!;
 function noteOf(type: NoteType, fields: string[]) { return createNote(type, fields, createDeck('Cards').id); }
@@ -64,7 +65,7 @@ describe('non-destructive card generation', () => {
  it('refuses unmapped-card deletion without confirmation and preserves revlog after confirmation', () => {
   const { note, cards } = noteOf(builtin(2), ['Front', 'Back']);
   db.runSync('INSERT INTO revlog (id, cardId) VALUES (?, ?)', 321, cards[1].id);
-  expect(() => changeNotesType([note.id], 1)).toThrow(/confirm/i);
+  expect(() => changeNotesType([note.id], 1)).toThrow(NoteTypeChangeConfirmationRequired);
   expect(getNote(note.id)?.noteTypeId).toBe(2);
   changeNotesType([note.id], 1, { allowCardDeletion: true });
   expect(getCardsForNote(note.id)).toHaveLength(1);

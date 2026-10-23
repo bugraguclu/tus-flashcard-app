@@ -72,6 +72,7 @@ const tr = {
     'root.backups': 'Yedekler',
     'root.noteTypes': 'Not türleri',
     'root.editNoteType': 'Not türünü düzenle',
+    'noteTypes.changeNeedsConfirmation': 'Not türünü değiştirmek {{count}} kartı silecek; önce bunu onaylamanız gerekiyor.',
 
     'settings.title': '⚙️ Ayarlar',
     'settings.appearance': '🎨 Görünüm ve dil',
@@ -241,6 +242,7 @@ const en: Record<TranslationKey, string> = {
     'root.backups': 'Backups',
     'root.noteTypes': 'Note Types',
     'root.editNoteType': 'Edit Note Type',
+    'noteTypes.changeNeedsConfirmation': 'Changing the note type would remove {{count}} card(s), so it needs your confirmation first.',
 
     'settings.title': '⚙️ Settings',
     'settings.appearance': '🎨 Appearance & Language',

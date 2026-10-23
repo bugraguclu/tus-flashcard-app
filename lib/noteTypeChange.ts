@@ -1,4 +1,5 @@
 /** Independently derived name-first mapping; https://docs.ankiweb.net/browsing.html#changing-the-note-type */
+import { translateActive } from './i18n';
 import type { NoteType } from './models';
 export function mapNoteTypeFields(source: NoteType, target: NoteType, values: string[]): string[] {
     const used = new Set<number>();
@@ -23,9 +24,10 @@ export function mapNoteTypeCardOrd(source: NoteType, target: NoteType, ord: numb
     const name = source.templates.find(t => t.ord === ord)?.name;
     return target.templates.find(t => t.name === name)?.ord ?? null;
 }
+/** Thrown when a conversion would remove cards without `allowCardDeletion`; its message is user-facing. */
 export class NoteTypeChangeConfirmationRequired extends Error {
     constructor(public readonly cardCount: number) {
-        super(`Confirmation required: changing note type would delete ${cardCount} unmapped cards.`);
+        super(translateActive('noteTypes.changeNeedsConfirmation', { count: cardCount }));
         this.name = 'NoteTypeChangeConfirmationRequired';
     }
 }
