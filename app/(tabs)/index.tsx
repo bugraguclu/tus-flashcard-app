@@ -32,12 +32,10 @@ import { schedulerForSettings, withClassicReviewContext, todayLocalYMD } from '.
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
 import {
-    deleteReviewById,
     getAverageAnswerMs,
     getNewCardsIntroducedTodayInDeck,
     getStudyStreak,
     getTodayAnswerStats,
-    restoreReviewLog,
     type StudyStreak,
 } from '../../lib/reviewLogger';
 import { resolveSettingsFromConfig } from '../../lib/settingsResolver';
@@ -174,12 +172,19 @@ import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from 
 import { ReviewerTtsLifecycle } from '../../lib/reviewerTtsLifecycle';
 import { loadReviewerTtsEnabled, saveReviewerTtsEnabled } from '../../lib/reviewerTtsState';
 import {
-    applyReviewerOpState,
     captureReviewerOpState,
     reviewerOpChangesScheduling,
+    reviewerOpTargetsGone,
     type ReviewerOpChange,
     type ReviewerOpName,
 } from '../../lib/reviewerUndo';
+import {
+    answerUndoCheck,
+    checkReviewerOpStep,
+    commitReviewerOpStep,
+    pruneStaleReviewerSteps,
+    replayAnswerOptions,
+} from '../../lib/reviewerUndoSteps';
 import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
 import { canonifyTags } from '../../lib/noteTags';
 
@@ -315,6 +320,10 @@ type AnswerUndoEntry = {
     preview?: { deckId: number; delays: number[] | undefined; previousDueMs: number | null };
     grade: Grade;
     answerTimeMs: number;
+    /** The answer ran in a filtered deck, so its redo must schedule it there too (early review). */
+    filtered?: boolean;
+    /** The card as the answer left it; undo refuses once something else rescheduled it. */
+    answeredSnapshot?: AnkiCard;
 };
 
 type UndoEntry = AnswerUndoEntry | ({ kind: 'op' } & ReviewerOpChange);
@@ -757,6 +766,11 @@ export default function StudyScreen() {
     useEffect(() => {
         if (!hasStudyScope || loading || collectionVersion === lastCollectionVersionRef.current) return;
         lastCollectionVersionRef.current = collectionVersion;
+        // Steps whose rows were deleted elsewhere (Browser, editor, deck delete) can never be
+        // applied again; drop them, and what lies behind them, before the learner reaches them.
+        const isGone = (entry: UndoEntry) => (entry.kind === 'op' ? reviewerOpTargetsGone(entry) : !getAnkiCard(entry.cardId));
+        setUndoStack((prev) => pruneStaleReviewerSteps(prev, isGone));
+        setRedoStack((prev) => pruneStaleReviewerSteps(prev, isGone));
         buildQueue(undefined, false, true);
     }, [hasStudyScope, collectionVersion, loading, buildQueue]);
 
@@ -999,6 +1013,8 @@ export default function StudyScreen() {
                         preview: { deckId: previewDeck.id, delays: previewDeck.previewDelays, previousDueMs },
                         grade,
                         answerTimeMs: elapsed,
+                        filtered: true,
+                        answeredSnapshot: getAnkiCard(currentCard.cardId) ?? undefined,
                     },
                 ]);
             } else {
@@ -1021,6 +1037,8 @@ export default function StudyScreen() {
                         filteredDeckId: completesFilteredCard ? activeFilteredDeck?.id : undefined,
                         grade,
                         answerTimeMs: elapsed,
+                        filtered: Boolean(activeFilteredDeck?.isFiltered),
+                        answeredSnapshot: getAnkiCard(currentCard.cardId) ?? undefined,
                     },
                 ]);
             }
@@ -1184,21 +1202,47 @@ export default function StudyScreen() {
      * an operation that touched the study queues; one that only changed a note redraws the card
      * in place, leaving a revealed answer revealed.
      */
-    const applyReviewerOp = useCallback((change: ReviewerOpChange, direction: 'undo' | 'redo') => {
-        const target = direction === 'undo' ? change.before : change.after;
-        const other = direction === 'undo' ? change.after : change.before;
-        applyReviewerOpState(target, other, {
-            saveCard: saveAnkiCard,
-            saveNote,
-            insertReviewLog: restoreReviewLog,
-            deleteReviewLog: deleteReviewById,
-        });
+    const applyReviewerOp = useCallback(async (change: ReviewerOpChange, direction: 'undo' | 'redo'): Promise<boolean> => {
+        // A step whose card was rescheduled elsewhere is refused whole: restoring part of its
+        // scheduling would write a card state no answer could produce.
+        const check = checkReviewerOpStep(change, direction);
+        if (check !== 'ok') {
+            setUndoStack([]);
+            setRedoStack([]);
+            if (check === 'conflict') {
+                alert(
+                    direction === 'undo' ? l('Geri alınamadı', 'Cannot undo') : l('Yinelenemedi', 'Cannot redo'),
+                    l('Bu kart sonradan başka bir yerde yeniden zamanlandı. Geri alma geçmişi temizlendi.',
+                        'This card was rescheduled elsewhere afterwards. The undo history was cleared.'),
+                );
+            }
+            buildQueue(undefined, false, true);
+            return false;
+        }
+        // One savepoint holds every row of the step, and only a flushed write moves it between
+        // the stacks; a failure leaves the step where it was so it can be tried again.
+        await commitReviewerOpStep(change, direction);
         invalidateCollection();
         if (reviewerOpChangesScheduling(change)) {
             markSchedulingStale();
             buildQueue(undefined, false, true);
         }
-    }, [invalidateCollection, markSchedulingStale, buildQueue]);
+        return true;
+    }, [invalidateCollection, markSchedulingStale, buildQueue, l]);
+
+    const refuseStaleAnswerStep = useCallback((check: 'gone' | 'conflict', direction: 'undo' | 'redo') => {
+        console.warn(`[Study] ${direction} target ${check}, clearing stale undo stack.`);
+        setUndoStack([]);
+        setRedoStack([]);
+        if (check === 'conflict') {
+            alert(
+                l('Geri alınamadı', 'Cannot undo'),
+                l('Bu kart sonradan başka bir yerde yeniden zamanlandı. Geri alma geçmişi temizlendi.',
+                    'This card was rescheduled elsewhere afterwards. The undo history was cleared.'),
+            );
+        }
+        buildQueue();
+    }, [buildQueue, l]);
 
     const undoLast = useCallback(async () => {
         // Same re-entrancy guard as answerCard: repeated Ctrl+Z presses would pop two
@@ -1210,19 +1254,19 @@ export default function StudyScreen() {
             const undo = undoStack[undoStack.length - 1];
 
             if (undo.kind === 'op') {
-                setUndoStack((prev) => prev.slice(0, -1));
-                setRedoStack((prev) => [...prev.slice(-29), undo]);
-                applyReviewerOp(undo, 'undo');
+                if (await applyReviewerOp(undo, 'undo')) {
+                    setUndoStack((prev) => prev.slice(0, -1));
+                    setRedoStack((prev) => [...prev.slice(-29), undo]);
+                }
                 return;
             }
 
             // If the collection was replaced (backup restore, import) the snapshot belongs to
             // a card that no longer exists — drop the stale stack instead of resurrecting it.
-            if (!getAnkiCard(undo.cardId)) {
-                console.warn('[Study] undo target missing, clearing stale undo stack.');
-                setUndoStack([]);
-                setRedoStack([]);
-                buildQueue();
+            // A card rescheduled elsewhere since the answer is refused the same way.
+            const check = answerUndoCheck(undo.cardId, undo.answeredSnapshot);
+            if (check !== 'ok') {
+                refuseStaleAnswerStep(check, 'undo');
                 return;
             }
 
@@ -1246,7 +1290,7 @@ export default function StudyScreen() {
         } finally {
             isMutatingRef.current = false;
         }
-    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, l]);
+    }, [undoStack, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, refuseStaleAnswerStep, l]);
 
     const redoLast = useCallback(async () => {
         if (redoStack.length === 0 || isMutatingRef.current) return;
@@ -1256,23 +1300,25 @@ export default function StudyScreen() {
             const redo = redoStack[redoStack.length - 1];
 
             if (redo.kind === 'op') {
-                setRedoStack((prev) => prev.slice(0, -1));
-                setUndoStack((prev) => [...prev.slice(-29), redo]);
-                applyReviewerOp(redo, 'redo');
+                if (await applyReviewerOp(redo, 'redo')) {
+                    setRedoStack((prev) => prev.slice(0, -1));
+                    setUndoStack((prev) => [...prev.slice(-29), redo]);
+                }
                 return;
             }
 
-            if (!getAnkiCard(redo.cardId)) {
-                console.warn('[Study] redo target missing, clearing stale redo stack.');
-                setRedoStack([]);
-                buildQueue();
+            // Redo replays the answer on the card as undo left it; anything else means the card
+            // moved on in the meantime.
+            const redoCheck = answerUndoCheck(redo.cardId, redo.previousSnapshot);
+            if (redoCheck !== 'ok') {
+                refuseStaleAnswerStep(redoCheck, 'redo');
                 return;
             }
 
             const result = await commitCollectionWrite(() => {
-                const answered = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, redo.preview
-                    ? { preview: { delays: redo.preview.delays } }
-                    : {});
+                // The replayed answer keeps the filtered context of the original one, so an early
+                // review in a filtered deck is scheduled (and logged) as early again.
+                const answered = answerStudyCard(redo.cardId, redo.grade, settings, redo.answerTimeMs, replayAnswerOptions(redo));
                 if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, answered.previewDueMs ?? null);
                 if (redo.filteredDeckId) completeFilteredCard(redo.filteredDeckId, redo.cardId);
                 return answered;
@@ -1298,6 +1344,8 @@ export default function StudyScreen() {
                     preview: redo.preview,
                     grade: redo.grade,
                     answerTimeMs: redo.answerTimeMs,
+                    filtered: redo.filtered,
+                    answeredSnapshot: getAnkiCard(redo.cardId) ?? undefined,
                 },
             ]);
 
@@ -1310,7 +1358,7 @@ export default function StudyScreen() {
         } finally {
             isMutatingRef.current = false;
         }
-    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, l]);
+    }, [redoStack, settings, buildQueue, markSchedulingStale, refreshSessionStats, applyReviewerOp, refuseStaleAnswerStep, l]);
 
     /**
      * Run a reviewer action as an undoable operation, the way Anki runs every one of them.
