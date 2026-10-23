@@ -649,6 +649,23 @@ export async function saveSettingsDurably(settings: AppSettings): Promise<SaveSe
     }
 }
 
+/**
+ * Write the settings rows inside a transaction the caller owns (a restore writes them with the
+ * collection it restores). Returns the validated settings that were written.
+ */
+export function writeSettingsRows(settings: AppSettings): AppSettings {
+    const validated = validateSettings(settings as unknown as Record<string, unknown>);
+    syncDefaultDeckConfig(validated);
+    persistAppSettingsMeta(validated);
+    settingsWriteGeneration += 1;
+    return validated;
+}
+
+/** Today's session stats row, inside a transaction the caller owns. */
+export function writeSessionStatsRow(stats: SessionStats, rolloverHour: number = loadSettings().dayRolloverHour): void {
+    saveSessionStatsToDb(todayLocalYMD(undefined, rolloverHour), stats);
+}
+
 export function saveSettings(settings: AppSettings): SaveSettingsResult {
     const db = getDB();
     let transactionStarted = false;

@@ -1,31 +1,26 @@
 import { CATALOG_LEARNER_DATA_KEY, emptyCatalogLearnerData } from './backupCatalogLearnerData';
+import { isQueueBookkeepingEntry, QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, Card } from './types';
-import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
-import {
-    CATALOG_PROGRESS_KEY,
-    encodeCatalogProgress,
-    hasStudyProgress,
-    isCatalogPackRow,
-    parseCatalogProgress,
-    type CatalogProgress,
-} from './catalogRows';
+import { dbIndexAllCards, getDB, initDB } from './db';
+import { CATALOG_PROGRESS_KEY, parseCatalogProgress } from './catalogRows';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from './legacyMigration';
 import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
-import { canonicalBackupContainsCatalog, isProtectedCatalogGuid } from './catalogProtection';
+import { canonicalBackupContainsCatalog } from './catalogProtection';
 import { validateCanonicalBackupData } from './backupValidation';
 import {
     DEFAULT_SETTINGS,
     KEYS,
     clearLegacyCardStates,
-    loadSessionStats,
     loadSettings,
     saveCustomCards,
     saveSessionStats,
     saveSettings,
     validateSettings,
+    writeSessionStatsRow,
+    writeSettingsRows,
 } from './settingsStore';
 
 /**
@@ -99,106 +94,19 @@ function sanitizeObject<T>(obj: T): T {
     return clean as T;
 }
 
-/**
- * Full-collection snapshot, minus the purchased card pack.
- *
- * The pack's notes and cards are ~6.4 MB of the collection and can always be reinstalled from
- * the bundled package, so copying them into every backup would waste tens of megabytes and
- * would also spread paid content as plain text. What cannot be recreated — the learner's own
- * decks and notes, their review log, and their scheduling progress on catalog cards — is kept.
- */
-export async function exportAllData(): Promise<string> {
-    const settings = loadSettings();
-    const sessionStats = await loadSessionStats();
-
-    let schemaVersion = 0;
-    let catalogProgress: CatalogProgress = {};
-    const catalogLearnerData = emptyCatalogLearnerData();
-    let tables = {
-        note_types: [] as any[],
-        notes: [] as any[],
-        anki_cards: [] as any[],
-        decks: [] as any[],
-        deck_configs: [] as any[],
-        revlog: [] as any[],
-        graves: [] as any[],
-        session_stats: [] as any[],
-    };
-
-    try {
-        const db = getDB();
-
-        catalogProgress = parseCatalogProgress(db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_PROGRESS_KEY)?.value);
-        const pendingRaw = db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_LEARNER_DATA_KEY)?.value;
-        if (pendingRaw) {
-            const pending = JSON.parse(pendingRaw);
-            Object.assign(catalogLearnerData.notes, pending.notes ?? {});
-            Object.assign(catalogLearnerData.cards, pending.cards ?? {});
-        }
-        schemaVersion = dbGetSchemaVersion();
-        const catalogNoteIds = new Set<number>();
-        const notes = db.getAllSync<any>('SELECT * FROM notes ORDER BY id').filter((row) => {
-            if (isCatalogPackRow(row.data)) {
-                catalogNoteIds.add(Number(row.id));
-                const note = JSON.parse(row.data);
-                catalogLearnerData.notes[note.guid || String(row.id)] = note.tags ?? [];
-                return false;
-            }
-            try {
-                const note = JSON.parse(row.data);
-                if (isProtectedCatalogGuid(note?.guid)) {
-                    catalogNoteIds.add(Number(row.id));
-                    catalogLearnerData.notes[note.guid || String(row.id)] = note.tags ?? [];
-                    return false;
-                }
-            } catch { /* malformed rows handled elsewhere */ }
-            return true;
-        });
-        const cards = db.getAllSync<any>('SELECT * FROM anki_cards ORDER BY id').filter((row) => {
-            if (!catalogNoteIds.has(Number(row.noteId))) return true;
-            try {
-                const card = JSON.parse(row.data);
-                if (hasStudyProgress(card)) catalogProgress[String(row.id)] = encodeCatalogProgress(card);
-                if (typeof card.ankiData === 'string') catalogLearnerData.cards[String(row.id)] = card.ankiData;
-            } catch { /* an unreadable row simply carries no progress worth restoring */ }
-            return false;
-        });
-        // Note types, decks and deck presets stay in full: they are a few kilobytes, and dropping
-        // one would orphan a learner's own note or card that happens to reference it.
-        tables = {
-            note_types: db.getAllSync('SELECT * FROM note_types ORDER BY id'),
-            notes,
-            anki_cards: cards,
-            decks: db.getAllSync('SELECT * FROM decks ORDER BY id'),
-            deck_configs: db.getAllSync('SELECT * FROM deck_configs ORDER BY id'),
-            revlog: db.getAllSync('SELECT * FROM revlog ORDER BY id'),
-            graves: db.getAllSync('SELECT * FROM graves'),
-            session_stats: db.getAllSync('SELECT * FROM session_stats ORDER BY date'),
-        };
-    } catch (e) {
-        console.warn('[Storage] exportAllData DB access failed:', e);
-        throw e;
-    }
-
-    const validation = validateCanonicalBackupData({ canonical: true, tables });
-    return JSON.stringify({
-        ...(!validation.valid ? { recoveryOnly: true, recoveryReason: validation.reason } : {}),
-        version: 6,
-        schema_version: schemaVersion,
-        exportDate: new Date().toISOString(),
-        canonical: true,
-        settings,
-        sessionStats,
-        catalogProgress,
-        catalogLearnerData,
-        tables,
-    });
-}
+// The snapshot itself is written in chunks by lib/backupSnapshot.ts; this module keeps its old API.
+export { exportAllData, exportAllDataChunks } from './backupSnapshot';
 
 function isCanonicalImport(data: any): boolean {
     return Boolean(data?.canonical && data?.tables && typeof data.tables === 'object');
 }
 
+/**
+ * Replace the collection with a canonical snapshot in one transaction: the tables, the settings
+ * and today's session stats, the catalog overlays and the queue bookkeeping rows. Nothing the
+ * learner would see as "the restore" happens after COMMIT, so a failure either leaves the old
+ * collection or reports a restore that has fully happened.
+ */
 function importCanonicalTables(data: any): void {
     initDB();
     const db = getDB();
@@ -313,7 +221,31 @@ function importCanonicalTables(data: any): void {
             typeof data.catalogProgress === 'object' && data.catalogProgress !== null ? JSON.stringify(data.catalogProgress) : null,
         );
         db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
-        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_LEARNER_DATA_KEY, JSON.stringify(data.catalogLearnerData ?? emptyCatalogLearnerData()));
+        const learnerData = data.catalogLearnerData && typeof data.catalogLearnerData === 'object'
+            ? data.catalogLearnerData
+            : emptyCatalogLearnerData();
+        const takenAt = Date.parse(String(data.exportDate ?? ''));
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_LEARNER_DATA_KEY, JSON.stringify({
+            notes: learnerData.notes ?? {}, cards: learnerData.cards ?? {},
+            ...(Number.isFinite(takenAt) ? { takenAt } : {}),
+        }));
+
+        // Filtered-deck membership and the review allowance are keyed by deck and review ids,
+        // which the restore brings back; rows of the replaced collection would be stale.
+        for (const prefix of QUEUE_BOOKKEEPING_PREFIXES) {
+            db.runSync('DELETE FROM settings WHERE substr(key, 1, ?) = ?', prefix.length, prefix);
+        }
+        const bookkeeping = data.queueBookkeeping && typeof data.queueBookkeeping === 'object' ? data.queueBookkeeping : {};
+        for (const [key, value] of Object.entries(bookkeeping)) {
+            if (isQueueBookkeepingEntry(key, value)) db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, value);
+        }
+
+        if (data.settings) {
+            const settings = writeSettingsRows(validateSettings(data.settings));
+            if (data.sessionStats) writeSessionStatsRow(data.sessionStats as SessionStats, settings.dayRolloverHour);
+        } else if (data.sessionStats) {
+            writeSessionStatsRow(data.sessionStats as SessionStats);
+        }
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -389,16 +321,15 @@ export async function importAllData(jsonString: string): Promise<boolean> {
                 }
             }
             importCanonicalTables(data);
-            if (data.settings) {
-                data.settings = validateSettings(data.settings);
-                saveSettings(data.settings);
+            // The restore has committed. What is left is clearing pre-SQLite storage that the
+            // app no longer reads; a failure there must not report the restore as failed, and the
+            // next restore or reset clears it again.
+            try {
+                await clearLegacyCardStates();
+                await saveCustomCards([]);
+            } catch (error) {
+                console.warn('[Storage] legacy storage cleanup after restore failed:', error);
             }
-            if (data.sessionStats) {
-                await saveSessionStats(data.sessionStats as SessionStats);
-            }
-            // Catalog progress and overlays were persisted with the canonical table transaction.
-            await clearLegacyCardStates();
-            await saveCustomCards([]);
             return true;
         }
 

@@ -1,4 +1,3 @@
-import { applyPendingCatalogLearnerData } from '../lib/backupCatalogLearnerData';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
@@ -30,6 +29,7 @@ import {
 } from '../lib/backup';
 import { useI18n } from '../hooks/useI18n';
 import ScreenHeader from '../components/ScreenHeader';
+import MediaCheckSection from '../components/backups/MediaCheckSection';
 
 function formatSize(bytes: number): string {
     if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -66,7 +66,6 @@ export default function BackupsScreen() {
         setLoading(true);
         setLoadError(false);
         try {
-            applyPendingCatalogLearnerData();
             setBackups(await listBackups());
         } catch (e) {
             console.warn('[Backups] list failed:', e);
@@ -163,11 +162,11 @@ export default function BackupsScreen() {
                     try {
                         const result = await importBackupContents(contents);
                         // Backups leave the purchased pack out, so a restore has to put it back:
-                        // this reinstalls it for an entitled learner and re-applies their progress.
+                        // this reinstalls it for an entitled learner, and the installation puts
+                        // their tags and card data back on (lib/bkaCatalog.ts).
                         await reload();
                         if (result.ok) {
                             await refreshCatalogAccess();
-                            applyPendingCatalogLearnerData();
                             refreshData();
                             bumpDataVersion();
                             alert(t('common.completed'), l('Yedek geri yüklendi.', 'Backup restored.'));
@@ -290,6 +289,8 @@ export default function BackupsScreen() {
                         </View>
                     </View>
                 ))}
+
+                <MediaCheckSection disabled={busy} />
             </ScrollView>
         </SafeAreaView>
     );

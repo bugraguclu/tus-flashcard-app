@@ -12,16 +12,28 @@ export function normalizeBackupPolicy(raw: Partial<Policy>): Policy {
     return result;
 }
 
+/**
+ * Anki keeps every backup from today and yesterday. Each snapshot here is a full, uncompressed
+ * JSON copy of the collection (and the folder is part of the iPhone's own device backup), so the
+ * newest 24 of those two days are kept — twelve hours of 30-minute snapshots. Automatic backups
+ * are also skipped when nothing changed since the last one (lib/backup.ts).
+ */
+export const MAX_RECENT_BACKUPS = 24;
+
 interface Snapshot { name: string; createdAt: number }
-/** Keep all snapshots today/yesterday, then one per older day, week and month. */
+/** Keep the newest snapshots of today/yesterday, then one per older day, week and month. */
 export function retainedBackupNames(snapshots: Snapshot[], now: Date, policy: Policy): Set<string> {
     const sorted = [...snapshots].sort((a, b) => b.createdAt - a.createdAt || b.name.localeCompare(a.name));
     const retained = new Set<string>();
+    let recent = 0;
     const yesterday = new Date(now); yesterday.setHours(0, 0, 0, 0); yesterday.setDate(yesterday.getDate() - 1);
     const days = new Set<string>(); const weeks = new Set<string>(); const months = new Set<string>();
     for (const snapshot of sorted) {
         const date = new Date(snapshot.createdAt);
-        if (date >= yesterday) { retained.add(snapshot.name); continue; }
+        if (date >= yesterday) {
+            if (recent < MAX_RECENT_BACKUPS) { recent++; retained.add(snapshot.name); }
+            continue;
+        }
         const day = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
         const monday = new Date(date); monday.setDate(date.getDate() - (date.getDay() + 6) % 7); monday.setHours(0, 0, 0, 0);
         const week = String(monday.getTime()); const month = `${date.getFullYear()}-${date.getMonth()}`;

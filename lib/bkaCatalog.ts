@@ -41,6 +41,7 @@ import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { humanizeCardText } from './displayText';
 import { preserveCatalogNoteEdits } from './catalogNoteEdits';
+import { applyPendingCatalogLearnerData } from './backupCatalogLearnerData';
 
 /** Marks every row this module owns, so removal can never reach the learner's own content. */
 export const BKA_CATALOG_PACK = CATALOG_PACK_ID;
@@ -962,6 +963,14 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     else {
         getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
         getDB().runSync('DELETE FROM settings WHERE key = ?', SEPARATE_TRIAL_LAYOUT_KEY);
+    }
+    // A restored backup's tags and card data for the pack go back on as soon as the pack is
+    // installed, wherever the installation was started (startup, purchase, restore), so a later
+    // study session can never be rolled back by an overlay still waiting to be applied.
+    try {
+        applyPendingCatalogLearnerData();
+    } catch (error) {
+        console.warn('[BKA] restored learner data could not be applied:', error);
     }
 
     console.log(

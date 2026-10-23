@@ -17,6 +17,8 @@ import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './ty
 import { ankiDueDayToLocal } from './importApkgProgress';
 import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
+import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
+import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import { parsePreviewDelays } from './filteredDeckOptions';
 import {
     FIELD_SEPARATOR,
@@ -116,6 +118,12 @@ export function importAnkiReaderLossless(
                 DELETE FROM cards_fts;
                 DELETE FROM session_stats;
             `);
+            // State that belonged to the replaced collection: a backup's pending catalog overlay
+            // and the queue's per-deck / per-answer bookkeeping rows.
+            db.runSync('DELETE FROM settings WHERE key = ?', CATALOG_LEARNER_DATA_KEY);
+            for (const prefix of QUEUE_BOOKKEEPING_PREFIXES) {
+                db.runSync('DELETE FROM settings WHERE substr(key, 1, ?) = ?', prefix.length, prefix);
+            }
         }
         const reservedTypeNames = new Set(existingNoteTypes.map((row) => row.name));
         for (const [sourceKey, raw] of Object.entries(meta.models)) {

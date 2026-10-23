@@ -63,8 +63,11 @@ export async function preserveOriginalAnkiPackage(
     options: { fileName?: string; noteCount: number; cardCount: number; exactEligible: boolean },
 ): Promise<AnkiSourcePackageMeta> {
     const id = sourcePackageId(bytes);
-    const archiveName = `${ARCHIVE_PREFIX}${id}.apkg`;
-    await saveMediaBytes(archiveName, bytes, 'application/zip');
+    // The copy is only ever read back for a byte-identical export, which an import that changed
+    // anything (progress left out, notes updated, media renamed) can never offer. Keeping it
+    // anyway doubled the storage of every such deck for nothing (AKT-13).
+    const archiveName = options.exactEligible ? `${ARCHIVE_PREFIX}${id}.apkg` : '';
+    if (archiveName) await saveMediaBytes(archiveName, bytes, 'application/zip');
     const meta: AnkiSourcePackageMeta = {
         id,
         fileName: sanitizeMediaFilename(options.fileName || 'anki-import.apkg'),
@@ -101,7 +104,7 @@ export async function pristineOriginalForExport(
     const id = [...packageIds][0];
     if (!id) return null;
     const meta = readMeta(id);
-    if (!meta || meta.dirty || !meta.exactEligible) return null;
+    if (!meta || meta.dirty || !meta.exactEligible || !meta.archiveName) return null;
     if (notes.length !== meta.noteCount || cards.length !== meta.cardCount) return null;
     const bytes = await readMediaBytes(meta.archiveName);
     return bytes ? { fileName: meta.fileName, bytes } : null;

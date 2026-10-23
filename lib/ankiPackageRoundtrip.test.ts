@@ -736,6 +736,8 @@ describe('lossless Anki package roundtrip', () => {
             'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (99, ?, ?, 0, -1, 0)',
             'Local Only', JSON.stringify({ id: 99, name: 'Local Only', configId: 1, isFiltered: false }),
         );
+        // State of the replaced collection that must not survive into the new one.
+        db.runSync("INSERT INTO settings (key, value) VALUES ('tus_backup_catalog_learner_data_v1', '{\"notes\":{},\"cards\":{\"1\":\"x\"}}'), ('filtered_membership_v1:99', '{}'), ('interday_review_usage:5', '1')");
 
         const result = await importApkg(await fixturePackage(), {
             subject: 'ignored',
@@ -750,5 +752,6 @@ describe('lossless Anki package roundtrip', () => {
         expect(getAllDecks().map((deck) => deck.name)).not.toContain('Local Only');
         expect(getAllDecks().map((deck) => deck.name)).toEqual(expect.arrayContaining(['Medicine', 'Medicine::Cardiology']));
         expect(db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM revlog')?.count).toBe(1);
+        expect(db.getAllSync("SELECT key FROM settings WHERE key LIKE 'tus_backup_catalog%' OR key LIKE 'filtered_membership%' OR key LIKE 'interday_review%'")).toEqual([]);
     });
 });
