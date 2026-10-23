@@ -4,7 +4,7 @@ import type { Deck, Note } from './models';
 import { localDayNumber } from './ankiState';
 import { todayLocalYMD } from './scheduler';
 import { getDeckByName } from './deckStore';
-import { filteredDeckMemberIds } from './filteredDeckMembership';
+import { filteredDeckMemberIds, gatherFilteredDeckMemberIds } from './filteredDeckMembership';
 import { gatherFilteredTermCardIds } from './filteredDeckGather';
 export { gatherFilteredTermCardIds } from './filteredDeckGather';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
@@ -49,6 +49,15 @@ type FilteredDeckQueueDefinition = { id?: number } & Pick<Deck,
 >;
 
 export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: AppSettings, nowMs: number): StudyQueueResult {
+    return queueForMembers(deck, filteredDeckMemberIds(deck, settings, nowMs), settings, nowMs);
+}
+
+function queueForMembers(
+    deck: FilteredDeckQueueDefinition,
+    memberIds: readonly number[],
+    settings: AppSettings,
+    nowMs: number,
+): StudyQueueResult {
     if (deck.filteredDeckEmpty) {
         return {
             cards: [],
@@ -62,7 +71,7 @@ export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settin
     }
 
     const completedIds = new Set(deck.filteredDoneCardIds ?? []);
-    const rows = queueRowsInOrder(filteredDeckMemberIds(deck, settings, nowMs))
+    const rows = queueRowsInOrder(memberIds)
         .filter((row) => row.queue >= 0 && !completedIds.has(row.cardId));
 
     const gatheredCards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map() });
@@ -145,6 +154,15 @@ export function getFilteredDeckCountCards(
     settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes' | 'fsrsEnabled'>,
     nowMs: number = Date.now(),
 ): Map<number, FilteredDeckCountCard[]> {
+    return countCardsForMembers(decks, (deck) => filteredDeckMemberIds(deck, settings, nowMs), settings, nowMs);
+}
+
+function countCardsForMembers(
+    decks: ReadonlyArray<FilteredDeckCountDefinition>,
+    memberIdsOf: (deck: FilteredDeckCountDefinition) => readonly number[],
+    settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes' | 'fsrsEnabled'>,
+    nowMs: number,
+): Map<number, FilteredDeckCountCard[]> {
     const result = new Map<number, FilteredDeckCountCard[]>();
     const activeDecks = decks.filter((deck) => {
         result.set(deck.id, []);
@@ -166,7 +184,7 @@ export function getFilteredDeckCountCards(
     // Each term's cards in gather order, deck by deck and term by term, as Anki builds them.
     const gathered: Array<{ filteredDeckId: number; cardId: number }> = [];
     for (const deck of activeDecks) {
-        for (const cardId of filteredDeckMemberIds(deck, settings, nowMs)) gathered.push({ filteredDeckId: deck.id, cardId });
+        for (const cardId of memberIdsOf(deck)) gathered.push({ filteredDeckId: deck.id, cardId });
     }
     const details = new Map<number, Omit<BatchRow, 'filteredDeckId'>>();
     const uniqueIds = [...new Set(gathered.map((entry) => entry.cardId))];
@@ -243,18 +261,24 @@ export function getFilteredDeckCardIds(deckName: string, settings: AppSettings):
     return (queue.allSessionCards ?? queue.cards).map((card) => card.cardId);
 }
 
-/** Count the cards a filtered-deck configuration would gather without mutating the collection. */
+/**
+ * Count the cards a filtered-deck configuration would gather without mutating the collection.
+ * `rebuiltDeckId` names the filtered deck this configuration would rebuild: its current cards
+ * return home first, so they count; every other filtered deck keeps its reservation.
+ */
 export function getFilteredDeckMatchCount(
     settings: AppSettings,
     options: Pick<Deck, 'searchQuery' | 'searchLimit' | 'searchOrder' | 'searchQuery2' | 'searchLimit2' | 'searchOrder2'>,
+    rebuiltDeckId?: number,
 ): number {
     const nowMs = Date.now();
-    const preview = buildFilteredDeckQueue({
+    const definition = {
         ...options,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
         filteredBuildAt: nowMs,
-    }, settings, nowMs);
+    };
+    const preview = queueForMembers(definition, gatherFilteredDeckMemberIds(definition, settings, nowMs, rebuiltDeckId), settings, nowMs);
     return preview.allSessionCards?.length ?? preview.cards.length;
 }
 
@@ -263,21 +287,31 @@ export function getFilteredDeckMatchCount(
  * study session whose search returns nothing, so the dialog asks this before creating the deck.
  * Counting through the deck-list path keeps the answer identical to what the session will hold —
  * suspended, buried and locked catalog cards are excluded — without materializing study cards.
+ * `rebuiltDeckId` is the existing session the new one would replace; its cards count, and the
+ * probe never stores a membership of its own.
  */
 export function getFilteredDeckGatherCount(
     settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes' | 'fsrsEnabled'>,
     term: { search: string; limit: number; order: number },
+    rebuiltDeckId?: number,
 ): number {
+    const nowMs = Date.now();
     const probeDeckId = -1;
-    const counts = getFilteredDeckCountCards([{
+    const probe = {
         id: probeDeckId,
         searchQuery: term.search,
         searchLimit: term.limit,
         searchOrder: term.order,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
-        filteredBuildAt: Date.now(),
-    }], settings);
+        filteredBuildAt: nowMs,
+    };
+    const counts = countCardsForMembers(
+        [probe],
+        () => gatherFilteredDeckMemberIds(probe, settings, nowMs, rebuiltDeckId),
+        settings,
+        nowMs,
+    );
     return counts.get(probeDeckId)?.length ?? 0;
 }
 

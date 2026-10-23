@@ -129,7 +129,8 @@ export default function FilteredDeckOptionsModal({
             return;
         }
 
-        const matchCount = getFilteredDeckMatchCount(settings, options);
+        // Rebuilding first returns this deck's own cards home, so they count as matches.
+        const matchCount = getFilteredDeckMatchCount(settings, options, deck.id);
         if (!allowEmpty && matchCount === 0) {
             alert(
                 l('Eşleşen kart yok', 'No matching cards'),
@@ -163,7 +164,7 @@ export default function FilteredDeckOptionsModal({
             searchQuery: query.trim(),
             searchLimit: 9999,
             searchOrder: 0,
-        });
+        }, deck.id);
         alert(
             l('Arama filtresi', 'Search filter'),
             l(

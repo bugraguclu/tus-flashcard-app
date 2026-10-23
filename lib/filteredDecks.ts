@@ -168,6 +168,12 @@ export function restoreFilteredCard(deckId: number, cardId: number): boolean {
 /** Anki reuses one conventional deck name for every custom study session. */
 export const CUSTOM_STUDY_PREFIX = CUSTOM_STUDY_DECK_NAME;
 
+/** The session a new Custom Study run rebuilds in place, so its cards count as gatherable. */
+export function getCustomStudySessionToReplace(): number | undefined {
+    const existing = getDeckByName(CUSTOM_STUDY_PREFIX);
+    return existing?.isFiltered ? existing.id : undefined;
+}
+
 function customStudyDefaultsKey(deckId: number): string {
     return `deck_custom_study:${deckId}`;
 }

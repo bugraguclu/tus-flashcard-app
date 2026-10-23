@@ -538,17 +538,18 @@ export default function DecksScreen() {
         router.setParams({ createFilter: undefined, filterSearch: undefined } as any);
     }, [createFilterToken, initialFilterSearch, router]);
 
-    const getPendingFilteredDeckMatchCount = () => getFilteredDeckMatchCount(settings, {
+    // An edited deck releases its own cards when it is rebuilt, so they count as matches.
+    const getPendingFilteredDeckMatchCount = (rebuiltDeckId?: number) => getFilteredDeckMatchCount(settings, {
         searchQuery: filterSearch.trim(),
         searchLimit: parseCount(filterLimit, 100) || 100,
         searchOrder: filterOrder,
         searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
         searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
         searchOrder2: filterOrder2,
-    });
+    }, rebuiltDeckId);
 
-    const canBuildPendingFilteredDeck = () => {
-        if (filterAllowEmpty || getPendingFilteredDeckMatchCount() > 0) return true;
+    const canBuildPendingFilteredDeck = (rebuiltDeckId?: number) => {
+        if (filterAllowEmpty || getPendingFilteredDeckMatchCount(rebuiltDeckId) > 0) return true;
         alert(
             l('Eşleşen kart yok', 'No matching cards'),
             l(
@@ -777,7 +778,7 @@ export default function DecksScreen() {
                 );
                 return;
             }
-            if (!canBuildPendingFilteredDeck()) return;
+            if (!canBuildPendingFilteredDeck(modal.deck.id)) return;
             if (nextName !== modal.deck.name) renameDeck(modal.deck.id, nextName);
             updateFilteredDeck(modal.deck.id, {
                 searchQuery: filterSearch.trim(),
@@ -1664,7 +1665,7 @@ export default function DecksScreen() {
                 searchQuery: search.trim(),
                 searchLimit: 9999,
                 searchOrder: 0,
-            });
+            }, deck?.id);
             alert(
                 l('Arama filtresi', 'Search filter'),
                 l(

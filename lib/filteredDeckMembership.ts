@@ -35,16 +35,31 @@ export function reservedFilteredCardIds(exceptDeckId?: number): number[] {
     return [...ids];
 }
 
+/**
+ * The cards a build of this definition would gather now, without storing anything. Only the
+ * reservations of other filtered decks are left out: `ownerDeckId` is the deck being built or the
+ * one a rebuild would replace, whose own cards that rebuild releases first.
+ */
+export function gatherFilteredDeckMemberIds(
+    deck: Definition,
+    settings: SearchSettings,
+    nowMs: number,
+    ownerDeckId: number | undefined = deck.id,
+): number[] {
+    const excluded = reservedFilteredCardIds(ownerDeckId);
+    const ids = gatherFilteredTermCardIds({ search: deck.searchQuery ?? '', order: deck.searchOrder, limit: deck.searchLimit }, settings, nowMs, excluded);
+    if (deck.searchQuery2?.trim()) {
+        ids.push(...gatherFilteredTermCardIds({ search: deck.searchQuery2, order: deck.searchOrder2, limit: deck.searchLimit2 }, settings, nowMs, [...excluded, ...ids]));
+    }
+    return ids;
+}
+
 /** Build once, at Create/Rebuild; legacy virtual decks are initialized on first access. */
 export function filteredDeckMemberIds(deck: Definition, settings: SearchSettings, nowMs: number): number[] {
     if (deck.filteredDeckEmpty) return [];
     const stored = read(deck);
     if (stored) return stored.ids;
-    const excluded = reservedFilteredCardIds(deck.id);
-    const ids = gatherFilteredTermCardIds({ search: deck.searchQuery ?? '', order: deck.searchOrder, limit: deck.searchLimit }, settings, nowMs, excluded);
-    if (deck.searchQuery2?.trim()) {
-        ids.push(...gatherFilteredTermCardIds({ search: deck.searchQuery2, order: deck.searchOrder2, limit: deck.searchLimit2 }, settings, nowMs, [...excluded, ...ids]));
-    }
+    const ids = gatherFilteredDeckMemberIds(deck, settings, nowMs);
     if (deck.id !== undefined) {
         // Imported packages may already hold cards physically in the filtered deck.
         for (const row of getDB().getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE deckId = ? ORDER BY due, id', deck.id)) {
