@@ -1,3 +1,4 @@
+import { withoutPackageSchedulingData } from './importApkgCardData';
 import { readLegacyCollectionMeta, numberValue, importedNoteType, importedDeckConfig, importedDeck } from './importApkgMetadata';
 import { sameImportedNoteShape, importedPresetKey } from './importApkgIdentity';
 import { searchIndexCardFromNote } from './noteManager';
@@ -35,7 +36,7 @@ function sourceDueToLocal(row: any, crt: number, nowMs: number, rolloverHour: nu
     const queue = numberValue(row.queue);
     const type = numberValue(row.type);
     const effectiveQueue = queue < 0
-        ? (type === 0 ? 0 : type === 2 ? 2 : (due > 0 && due < 1_000_000 ? 3 : 1))
+        ? (type === 0 ? 0 : type === 2 ? 2 : (Math.abs(due) < 1_000_000 ? 3 : 1))
         : queue;
     if (effectiveQueue === 2 || effectiveQueue === 3) return ankiDueDayToLocal(due, crt, nowMs, rolloverHour);
     if (effectiveQueue === 1) return due > 0 ? due * 1000 : nowMs;
@@ -46,7 +47,8 @@ function sourceOriginalDueToLocal(row: any, crt: number, nowMs: number, rollover
     const odue = numberValue(row.odue);
     if (!odue) return 0;
     const type = numberValue(row.type);
-    return type === 2 || type === 3 ? ankiDueDayToLocal(odue, crt, nowMs, rolloverHour) : odue;
+    if ((type === 1 || type === 3) && odue >= 1_000_000_000) return odue * 1000;
+    return type === 1 || type === 2 || type === 3 ? ankiDueDayToLocal(odue, crt, nowMs, rolloverHour) : odue;
 }
 
 function serializeTags(tags: string[]): string {
@@ -418,11 +420,17 @@ export function importAnkiReaderLossless(
             'SELECT MAX(due) AS maxDue FROM anki_cards WHERE type = 0',
         )?.maxDue ?? 0) + 1;
         let progressCards = 0;
-        for (const row of cardRows) {
+        const newPositionsByNote = new Map<number, number>();
+        const rowsInOrder = withScheduling ? cardRows : [...cardRows].sort((a, b) => {
+            const position = (row: any) => numberValue(row.type) === 0 ? numberValue(row.odid) ? numberValue(row.odue) : numberValue(row.due) : Number.MAX_SAFE_INTEGER;
+            return position(a) - position(b) || numberValue(a.id) - numberValue(b.id);
+        });
+        for (const row of rowsInOrder) {
             const targetNoteId = noteIdMap.get(numberValue(row.nid));
             if (!targetNoteId) continue;
             const cardKey = `${targetNoteId}\0${numberValue(row.ord)}`;
             if (existingCardKeys.has(cardKey)) continue;
+            if (!withScheduling && !newPositionsByNote.has(targetNoteId)) newPositionsByNote.set(targetNoteId, newPosition++);
             const sourceCardId = numberValue(row.id);
             const targetCardId = nextFreeId('anki_cards', sourceCardId, reservedCards);
             const card: AnkiCard = {
@@ -434,7 +442,7 @@ export function importAnkiReaderLossless(
                 usn: numberValue(row.usn, -1),
                 type: withScheduling ? Math.min(3, Math.max(0, numberValue(row.type))) as CardType : 0,
                 queue: withScheduling ? Math.min(4, Math.max(-3, numberValue(row.queue))) as CardQueue : 0,
-                due: withScheduling ? sourceDueToLocal(row, meta.crt, nowMs, rolloverHour) : newPosition++,
+                due: withScheduling ? sourceDueToLocal(row, meta.crt, nowMs, rolloverHour) : newPositionsByNote.get(targetNoteId)!,
                 ivl: withScheduling ? numberValue(row.ivl) : 0,
                 factor: withScheduling ? numberValue(row.factor) : 0,
                 reps: withScheduling ? numberValue(row.reps) : 0,
@@ -447,7 +455,7 @@ export function importAnkiReaderLossless(
                 // (flag 1 plus a reserved bit) is red in Anki, and clamping turned it turquoise.
                 flags: (withScheduling ? numberValue(row.flags) & 0b111 : 0) as CardFlag,
                 lastReview: withScheduling ? lastReviewByCard.get(sourceCardId) ?? 0 : 0,
-                ankiData: String(row.data ?? ''),
+                ankiData: withScheduling ? String(row.data ?? '') : withoutPackageSchedulingData(String(row.data ?? '')),
                 sourcePackageId: packageId,
             };
             db.runSync(

@@ -1,3 +1,4 @@
+import { withoutPackageSchedulingData } from './importApkgCardData';
 /** Anki-compatible package and plain-text export. Packages use Anki's schema-11
  * interchange database under the scheduler-v2 collection name understood by
  * current Anki, AnkiMobile and AnkiDroid. */
@@ -142,8 +143,8 @@ function scopedData(
             throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
         }
         const deckIds = new Set(allDecks.filter((deck) => selected.has(deck.id)).map((deck) => deck.id));
-        const scopedCards = cards.filter((card) => deckIds.has(card.deckId));
-        const noteIds = new Set(scopedCards.map((card) => card.noteId));
+        const noteIds = new Set(cards.filter((card) => deckIds.has(card.deckId)).map((card) => card.noteId));
+        const scopedCards = cards.filter((card) => noteIds.has(card.noteId));
         const exportedDeckIds = new Set(scopedCards.map((card) => card.deckId));
         return {
             notes: notes.filter((note) => noteIds.has(note.id)),
@@ -492,6 +493,7 @@ async function buildPackage(
             odid: 0,
             flags: 0 as const,
             lastReview: 0,
+            ankiData: withoutPackageSchedulingData(card.ankiData),
         }));
     const decks = scoped.decks;
     const exportedCards = returnCardsToHomeDeck(cards, decks);

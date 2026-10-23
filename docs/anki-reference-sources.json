@@ -774,7 +774,7 @@
       "useFor": [
         "GUID update conflicts skip incoming cards",
         "duplicate re-import repairs missing media",
-        "negative review-day offsets and inactive learning due units; lib/ankiTransferSafety.test.ts"
+        "negative/zero review-day offsets and original learning due units, progress stripping and note-scoped sibling export; lib/ankiTransferSafety.test.ts"
       ]
     },
     {

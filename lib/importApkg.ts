@@ -386,7 +386,8 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
                 fileName: options.fileName,
                 noteCount: result.added,
                 cardCount: result.cardsImported ?? 0,
-                exactEligible: result.structurePreserved === true
+                exactEligible: options.withScheduling !== false && options.withDeckConfigs !== false
+                    && result.structurePreserved === true
                     && result.added === result.totalNotes
                     && (result.updated ?? 0) === 0
                     && (result.cardsImported ?? -1) === sourceCardCount

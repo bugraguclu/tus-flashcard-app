@@ -62,7 +62,7 @@ describe('package update safety', () => {
 });
 describe('scheduled package due units', () => {
     it.each([
-        [2, 2, -10], [1, 3, 3], [1, -1, 3], [1, -2, 3], [3, -3, 3], [2, -1, -10],
+        [2, 2, -10], [1, 3, 3], [1, -1, 3], [1, -1, -1], [1, -2, 0], [1, -2, 3], [3, -3, 3], [2, -1, -10],
     ])('preserves type %i / queue %i day due offset %i, including overdue days', async (type, queue, offset) => {
         const data = source();
         data.cards[0] = { ...data.cards[0], type, queue, due: localDayNumber(Date.now(), 4) + offset, ivl: 5 } as AnkiCard;
@@ -171,4 +171,48 @@ describe('text picker priority and HTML detection', () => {
         expect(await importMediaFromZip(zip)).toMatchObject({ imported: 4, skipped: 0 });
         expect(new TextDecoder().decode(h.media.get('mask.svg'))).toBe('original bytes 0');
     });
+});
+
+describe('original learning due unit preservation', () => {
+    it.each([1, 3])('preserves the original day due of type %i', async (type) => {
+        const data = source();
+        data.cards[0] = { ...data.cards[0], type, queue: -1, due: localDayNumber(Date.now(), 4) + 2, odid: 703, odue: localDayNumber(Date.now(), 4) + 3 } as AnkiCard;
+        await importApkg(await pkg(data), options);
+        expect(getAllAnkiCards()[0].odue).toBe(data.cards[0].odue);
+    });
+    it.each([1, 3])('preserves the original intraday due of type %i', async (type) => {
+        const data = source(); const due = Math.floor(Date.now() / 1000) * 1000 + 60000;
+        data.cards[0] = { ...data.cards[0], type, queue: -1, due, odid: 703, odue: due } as AnkiCard;
+        await importApkg(await pkg(data), options);
+        expect(getAllAnkiCards()[0].odue).toBe(due);
+    });
+});
+describe('progress removal and deck-scoped package export', () => {
+    it('does not resurrect source progress through pristine-package export after an import without progress', async () => {
+        const data = source(); data.notes[0].tags.push('marked');
+        data.cards[0] = { ...data.cards[0], type: 2, queue: 2, due: localDayNumber(Date.now(), 4), ivl: 10, reps: 5, ankiData: '{"s":10,"d":5,"lrt":100,"pos":2,"custom":"keep"}' };
+        await importApkg(await pkg(data), { ...options, withScheduling: false });
+        const artifact = await buildAnkiExport('apkg', undefined, true);
+        const zip = await JSZip.loadAsync(artifact.bytes!); const reader = await openSqlJsReader(await zip.file('collection.anki21')!.async('uint8array'));
+        expect(reader.getFirstSync<any>('SELECT type, reps FROM cards')).toMatchObject({ type: 0, reps: 0 });
+        expect(JSON.parse(reader.getFirstSync<any>('SELECT data FROM cards')!.data)).toEqual({ custom: 'keep' });
+        expect(reader.getFirstSync<any>('SELECT tags FROM notes')!.tags).not.toContain('marked'); reader.close();
+    });
+    it('preserves reverse siblings in another deck when the deck-tree selection contains their note', async () => {
+        const data = source(); data.noteTypes[0].templates.push({ ...data.noteTypes[0].templates[0], ord: 1, name: 'Reverse' });
+        data.decks.push({ ...data.decks[0], id: 800, name: 'Other' });
+        data.cards.push({ ...data.cards[0], id: 801, ord: 1, deckId: 800 });
+        const artifact = await buildAnkiExport('apkg', undefined, false, undefined, { selectedDeckIds: [703] }, data);
+        expect(artifact.cardCount).toBe(2);
+    });
+});
+it('keeps source new-note order and a shared sibling position when importing without progress', async () => {
+    const data = source(); data.cards[0].due = 20;
+    data.noteTypes[0].templates.push({ ...data.noteTypes[0].templates[0], ord: 1, name: 'Reverse' });
+    data.notes.push({ ...data.notes[0], id: 900, guid: 'other-guid', fields: ['Other', 'Back', 'Extra'] });
+    data.cards.push({ ...data.cards[0], id: 901, noteId: 900, due: 3 }, { ...data.cards[0], id: 902, ord: 1 });
+    await importApkg(await pkg(data), { ...options, withScheduling: false });
+    const cards = getAllAnkiCards();
+    expect(cards.find(card => card.id === 901)!.due).toBe(1);
+    expect(cards.filter(card => card.noteId === 701).map(card => card.due)).toEqual([2, 2]);
 });
