@@ -1,4 +1,4 @@
-import { restoreEditorSource, type PreservedEditorSource } from './richTextEditorContent';
+import { EDITOR_SOURCE_RESTORE_SCRIPT, type PreservedEditorSource } from './richTextEditorContent';
 import { richTextBridgeScript } from './richTextCommands';
 import { cspHashSource } from './sha256';
 
@@ -41,7 +41,8 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
 (function () {
   const configElement = document.getElementById('${RICH_TEXT_EDITOR_CONFIG_ID}');
   const config = JSON.parse((configElement && configElement.textContent) || '{}');
-  const restoreSource = ${restoreEditorSource.toString()};
+  ${EDITOR_SOURCE_RESTORE_SCRIPT}
+  const restoreSource = restoreEditorSource;
   let preserved = config.preserved || {};
   const editable = config.editable !== false;
   const minHeight = Number(config.minHeight) || 0;

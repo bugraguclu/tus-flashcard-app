@@ -28,10 +28,10 @@ export function prepareEditorContent(source: string, namespace = `e${Date.now().
     return { html: sanitizeUntrustedHtml(html), original: source, preserved };
 }
 
-/** Self-contained because the same function is embedded in the trusted editor script. */
-export function restoreEditorSource(html: string, preserved: PreservedEditorSource): string {
-    const attributes = (tag: string) => {
-        const result = new Map<string, { raw: string; value: string }>();
+/** Literal browser source: its text and CSP hash must survive server/client compilation. */
+export const EDITOR_SOURCE_RESTORE_SCRIPT = String.raw`function restoreEditorSource(html, preserved) {
+    const attributes = (tag) => {
+        const result = new Map();
         const head = tag.match(/^<[^\s/>]+/)?.[0].length ?? 0;
         for (const match of tag.slice(head).matchAll(/\s+([^\s=/>]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/g)) {
             const rawValue = match[2] ?? '';
@@ -39,21 +39,25 @@ export function restoreEditorSource(html: string, preserved: PreservedEditorSour
         }
         return result;
     };
-    let result = html.replace(/<tus-source\b[^>]*data-tus-source=["']([^"']+)["'][^>]*>[\s\S]*?<\/tus-source>/gi, (tag, id: string) => preserved[id]?.kind === 'node' ? preserved[id].source : tag);
+    let result = html.replace(/<tus-source\b[^>]*data-tus-source=["']([^"']+)["'][^>]*>[\s\S]*?<\/tus-source>/gi, (tag, id) => preserved[id]?.kind === 'node' ? preserved[id].source : tag);
     result = result.replace(/<[a-zA-Z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/g, tag => {
         const id = tag.match(/\sdata-tus-source=["']([^"']+)["']/i)?.[1];
         const entry = id ? preserved[id] : undefined;
-        if (!entry || entry.kind !== 'tag') return tag;
+        if (!entry || entry.kind !== 'tag')
+            return tag;
         let restored = tag.replace(/\sdata-tus-source=["'][^"']+["']/i, '');
         const current = attributes(restored);
         const safe = attributes(entry.safe ?? '');
         for (const [name, original] of attributes(entry.source)) {
-            if (current.get(name)?.value !== safe.get(name)?.value) continue;
+            if (current.get(name)?.value !== safe.get(name)?.value)
+                continue;
             const existing = current.get(name);
-            if (existing) restored = restored.replace(existing.raw, original.raw);
-            else restored = restored.replace(/\s*\/?>$/, end => original.raw + end);
+            if (existing)
+                restored = restored.replace(existing.raw, original.raw);
+            else
+                restored = restored.replace(/\s*\/?>$/, end => original.raw + end);
         }
         return restored;
     });
     return result;
-}
+}`;

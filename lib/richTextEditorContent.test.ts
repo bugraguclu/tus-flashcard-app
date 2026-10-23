@@ -1,6 +1,7 @@
 // Source fields and sound markers: https://docs.ankiweb.net/editing.html#html-editing
 import { describe, expect, it } from 'vitest';
-import { prepareEditorContent, restoreEditorSource } from './richTextEditorContent';
+import { prepareEditorContent, EDITOR_SOURCE_RESTORE_SCRIPT } from './richTextEditorContent';
+const restoreEditorSource = new Function('html', 'preserved', EDITOR_SOURCE_RESTORE_SCRIPT + '; return restoreEditorSource(html, preserved);');
 describe('editor source preservation across a harmless text edit', () => {
  it.each([
   '[sound:üfürüm.mp3]', '<a href="http://example.test">link</a>', '<a href="mailto:a@example.test">mail</a>',

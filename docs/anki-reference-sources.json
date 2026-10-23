@@ -883,6 +883,16 @@
         "restore deleted deck state and local board settings",
         "atomic deletion failure and exact-prefix buried counts"
       ]
+    },
+    {
+      "id": "anki-ai1-editor-build-csp",
+      "priority": 3,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://www.w3.org/TR/CSP3/",
+      "useFor": [
+        "identical inherited script hash across server and client targets",
+        "preserve source while keeping active content inert"
+      ]
     }
   ],
   "requiredDocs": [
