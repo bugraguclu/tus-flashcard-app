@@ -159,6 +159,17 @@ export function undoAnswer(snapshot: AnkiCard, reviewLogId: number, sideEffects?
     for (const key of ['type', 'queue', 'due', 'ivl', 'factor', 'reps', 'lapses', 'left', 'lastReview'] as const) {
         Object.assign(restored, { [key]: snapshot[key] });
     }
+    if (snapshot.odid) {
+        const filteredStillExists = getDB().getFirstSync<{ id: number }>('SELECT id FROM decks WHERE id = ?', snapshot.deckId);
+        if (filteredStillExists && (current.deckId === snapshot.deckId || current.deckId === snapshot.odid)) {
+            restored.deckId = snapshot.deckId;
+            restored.odid = snapshot.odid;
+            restored.odue = snapshot.odue;
+        } else {
+            restored.due = snapshot.odue;
+            restored.queue = snapshot.queue < 0 ? snapshot.queue : restoreQueueFromType({ ...snapshot, due: snapshot.odue });
+        }
+    }
     const oldData = parseAnkiCardData(snapshot.ankiData);
     restored.ankiData = updateAnkiCardData(current.ankiData, {
         stability: oldData.stability ?? null, difficulty: oldData.difficulty ?? null,
@@ -307,6 +318,15 @@ export function answerStudyCard(
     };
 
     const converted = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
+    if (currentAnkiCard.odid) {
+        if (scheduleResult.isLearning) converted.odue = converted.due;
+        else {
+            converted.deckId = currentAnkiCard.odid;
+            converted.odid = 0;
+            converted.odue = 0;
+        }
+    }
+
     const updatedAnkiCard: AnkiCard = {
         ...converted,
         // Anki records the answer time on the card itself (`lrt`), which FSRS reads back, and

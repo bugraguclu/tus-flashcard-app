@@ -132,6 +132,7 @@ export function completeFilteredCard(deckId: number, cardId: number): boolean {
     if (!deck?.isFiltered) return false;
     const completed = new Set(deck.filteredDoneCardIds ?? []);
     if (completed.has(cardId)) return false;
+    returnImportedFilteredCardsHome(deckId, cardId);
     completed.add(cardId);
     deck.filteredDoneCardIds = [...completed];
     deck.usn = -1;
@@ -287,8 +288,9 @@ export function createOrReplaceCustomStudySession(
 }
 
 /** Empty/rebuild also releases cards physically held by imported Anki filtered decks. */
-function returnImportedFilteredCardsHome(deckId: number): void {
-    for (const row of getDB().getAllSync<{ data: string }>('SELECT data FROM anki_cards WHERE deckId = ?', deckId)) {
+function returnImportedFilteredCardsHome(deckId: number, cardId?: number): void {
+    const sql = 'SELECT data FROM anki_cards WHERE deckId = ?' + (cardId === undefined ? '' : ' AND id = ?');
+    for (const row of getDB().getAllSync<{ data: string }>(sql, deckId, ...(cardId === undefined ? [] : [cardId]))) {
         const card = JSON.parse(row.data) as AnkiCard;
         const due = card.odue || (card.type === 0 ? Math.max(1, card.due) : card.due);
         const home = { ...card, deckId: card.odid > 0 ? card.odid : 1, due, odid: 0, odue: 0 };

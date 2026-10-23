@@ -791,7 +791,7 @@
       "platform": "cross-platform filtered deck lifecycle",
       "url": "https://docs.ankiweb.net/filtered-decks.html#home-decks",
       "useFor": [
-        "fixed build membership, reservations, Empty/Rebuild, second-term exclusions; ai2Filtered.test.ts",
+        "fixed build membership, reservations, Empty/Rebuild, second-term exclusions and physical odue scheduling/undo; ai2Filtered.test.ts",
         "documented local virtual membership divergence from did/odid/odue movement"
       ]
     },

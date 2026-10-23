@@ -158,6 +158,12 @@ export function ankiCardToCardState(
     settings: AppSettings,
     nowMs: number = Date.now(),
 ): CardState {
+    // A physical filtered card stores its home schedule in odue; due is a temporary
+    // gather position. Preserve the existing local unit when decoding that schedule.
+    if (card.odid) {
+        const home = { ...card, due: card.odue };
+        card = { ...home, queue: card.queue < 0 ? card.queue : restoreQueueFromType(home, settings.dayRolloverHour, nowMs) };
+    }
     const todayNumber = localDayNumber(nowMs, settings.dayRolloverHour);
 
     const suspended = card.queue === -1;

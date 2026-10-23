@@ -8,6 +8,7 @@ import { seedBase, settings, makeCard } from '../test/studyQueueFixtures';
 import { createFilteredDeck, updateFilteredDeck, rebuildFilteredDeck, emptyFilteredDeck, completeFilteredCard } from './filteredDecks';
 import { getStudyQueue } from './studyQueue';
 import { getAnkiCard, saveAnkiCard } from './noteManager';
+import { answerStudyCard, undoAnswer } from './studyAnswer';
 import { localDayNumber } from './ankiState';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -56,4 +57,14 @@ describe('AI-2 fixed filtered builds', () => {
         createFilteredDeck('Session', '"deck:Python::Modüller & Hata Ayıklama" is:new', 10);
         expect(ids('Session').sort()).toEqual([1010, 1020]);
     });
+    it('answers an imported physical review using home due and returns its new schedule home', () => {
+        const deck = createFilteredDeck('Session', 'nid:101', 1);
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        saveAnkiCard(makeCard(1010, 101, deck.id, { odid: 7, odue: today + 1, type: 2, queue: 2, due: -100000, ivl: 1, factor: 2500 }));
+        const result = answerStudyCard(1010, 3, settings, 100);
+        expect(getAnkiCard(1010)).toMatchObject({ deckId: 7, odid: 0, odue: 0, due: today + 1, ivl: 1 });
+        undoAnswer(result.previousAnkiCard, result.reviewLogId, result.sideEffects);
+        expect(getAnkiCard(1010)).toMatchObject({ deckId: deck.id, odid: 7, odue: today + 1, due: -100000, ivl: 1 });
+    });
+
 });
