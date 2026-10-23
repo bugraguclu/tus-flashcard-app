@@ -879,7 +879,8 @@
       "useFor": [
         "unsigned SHA1 first-four-byte checksum",
         "normalized first field duplicate warning",
-        "read old local checksums without rewriting content"
+        "read old local checksums without rewriting content",
+        "strip_html_preserving_media_filenames (rslib/src/text.rs) and htmlescape HTML 4 strict entity decoding, behaviour only"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },
