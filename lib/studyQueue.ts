@@ -5,7 +5,6 @@ import { ankiCardIdFromLegacyCardId, localDayNumber, nextRolloverMs } from './an
 import { todayLocalYMD } from './scheduler';
 import { getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
-    applyHierarchicalLimit,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
     mixInterdayLearning,
@@ -30,6 +29,7 @@ import {
     countRowsByQueue,
     loadNextLearningDue,
     loadRowsByQueue,
+    loadReviewCandidates,
     resolveSettingsForDeck,
     toStudyCards,
     type QueueCardRow,
@@ -277,21 +277,6 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         'c.due ASC',
     );
 
-    const reviewFetchLimit = reviewLimit > 0 ? Math.max(reviewLimit * 4, reviewLimit + 100) : 0;
-
-    const reviewRows = reviewFetchLimit > 0
-        ? loadRowsByQueue(
-            'c.queue = 2 AND c.due <= ?',
-            [today],
-            params.selectedSubject,
-            params.selectedTopic,
-            params.selectedDeckName,
-            'c.due ASC',
-            false,
-            reviewFetchLimit,
-        )
-        : [];
-
     const newRows = newFetchLimit > 0
         ? loadRowsByQueue(
             'c.queue = 0',
@@ -309,7 +294,9 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
     let learningCards = [...intradayLearningCards, ...interdayLearningCards];
 
-    let reviewCards = toStudyCards(reviewRows, params.settings, nowMs, { settingsCache });
+    let reviewCards = reviewLimit > 0 ? loadReviewCandidates(
+        params.settings, nowMs, today, params.selectedSubject, params.selectedTopic, params.selectedDeckName, settingsCache,
+    ) : [];
     let newCards = toStudyCards(newRows, params.settings, nowMs, { settingsCache });
 
     const daySeed = todayLocalYMD(undefined, params.settings.dayRolloverHour);
@@ -384,14 +371,28 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         return limit;
     };
 
-    // Interday learning consumes the same global and hierarchical review allowance first.
-    const limited = applyHierarchicalLimit([...interdayLearningCards, ...reviewCards], reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
-    const selectedIds = new Set(limited.map((card) => card.cardId));
-    learningCards = [...intradayLearningCards, ...interdayLearningCards.filter((card) => selectedIds.has(card.cardId))];
-    let reviewCardsForQueue = reviewCards.filter((card) => selectedIds.has(card.cardId));
-    let newCardsForQueue = newCards;
-    ({ learning: learningCards, reviews: reviewCardsForQueue, news: newCardsForQueue } =
-        buryBuildTimeSiblings(learningCards, reviewCardsForQueue, newCardsForQueue, configForDeck, () => {}));
+    // A skipped sibling or a deck that has spent its cap consumes no global slot.
+    let reviewsTaken = 0;
+    const reviewsTakenByKey = new Map<string, number>();
+    const acceptWithinLimits = (card: StudyCard): boolean => {
+        if (card.state.status === 'new' || (card.state.status === 'learning' && card.state.dueTime > 0)) return true;
+        const keys = deckKeysForCard(card);
+        if (reviewsTaken >= reviewLimit || keys.some((key) => (reviewsTakenByKey.get(key) ?? 0) >= reviewLimitForDeckKey(key))) return false;
+        reviewsTaken++;
+        for (const key of keys) reviewsTakenByKey.set(key, (reviewsTakenByKey.get(key) ?? 0) + 1);
+        return true;
+    };
+    const selected = buryBuildTimeSiblings(learningCards, reviewCards, newCards, configForDeck, () => {}, acceptWithinLimits);
+    learningCards = selected.learning;
+    const newCardsForQueue = selected.news;
+    const selectedReviewIds = selected.reviews.map((card) => card.cardId);
+    const hydrated = new Map<number, StudyCard>();
+    for (let offset = 0; offset < selectedReviewIds.length; offset += 400) {
+        const ids = selectedReviewIds.slice(offset, offset + 400);
+        const rows = loadRowsByQueue(`c.id IN (${ids.map(() => '?').join(',')})`, ids);
+        for (const card of toStudyCards(rows, params.settings, nowMs, { settingsCache })) hydrated.set(card.cardId, card);
+    }
+    const reviewCardsForQueue = selectedReviewIds.flatMap((id) => hydrated.get(id) ?? []);
 
     // Anki serving order (rslib scheduler/queue/mod.rs `iter`): intraday learning cards whose
     // timer has expired lead, then the main queue, and intraday learning cards still inside the

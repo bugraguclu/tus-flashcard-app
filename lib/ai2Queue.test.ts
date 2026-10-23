@@ -82,4 +82,26 @@ describe('AI-2 bounded unlimited study queue', () => {
         expect(newQuery[0]).not.toContain('nt.data AS noteTypeData');
     });
 
+    it('suppressed review siblings do not waste the review allowance', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        saveDeckConfig({ ...deckConfig, buryReviewSiblings: true });
+        saveAnkiCard({ ...getAnkiCard(1010)!, type: 2, queue: 2, due: today - 2, ivl: 10 });
+        saveAnkiCard(makeCard(1011, 101, 7, { ord: 1, type: 2, queue: 2, due: today - 2, ivl: 10 }));
+        saveAnkiCard({ ...getAnkiCard(1020)!, type: 2, queue: 2, due: today, ivl: 10 });
+        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2 } });
+        expect(queue.stats.reviewCount).toBe(2);
+        expect(queue.cards.filter((card) => card.state.status === 'review').map((card) => card.noteId).sort()).toEqual([101, 102]);
+    });
+    it('interval order considers the full due backlog before cutting to the review limit', () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        for (let id = 200; id < 325; id++) {
+            saveNote(makeNote(id, [], ['Question', 'Answer']));
+            saveAnkiCard(makeCard(id * 10, id, 7, { type: 2, queue: 2, due: today - 5, ivl: 100 }));
+        }
+        saveAnkiCard({ ...getAnkiCard(1010)!, type: 2, queue: 2, due: today, ivl: 1 });
+        saveAnkiCard({ ...getAnkiCard(1020)!, type: 2, queue: 2, due: today, ivl: 1 });
+        const queue = getStudyQueue({ settings: { ...settings, dailyReviewLimit: 2, reviewSortOrder: 'intervalsAsc' } });
+        expect(queue.cards.filter((card) => card.state.status === 'review').map((card) => card.state.interval)).toEqual([1, 1]);
+    });
+
 });

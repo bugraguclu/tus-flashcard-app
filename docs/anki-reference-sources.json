@@ -811,7 +811,7 @@
       "platform": "cross-platform study queue",
       "url": "https://docs.ankiweb.net/deck-options.html",
       "useFor": [
-        "interday learning shares review limits; learn-ahead counts; alphabetic deck gathering; in-memory sibling suppression",
+        "interday learning shares review limits; learn-ahead counts; alphabetic deck gathering; in-memory sibling suppression without slot loss; full lightweight review-key gather before limits",
         "documented product divergence: unlimited new cards, 200-card gather window, fixed 1:1 new/review mix; ai2Queue.test.ts"
       ]
     },

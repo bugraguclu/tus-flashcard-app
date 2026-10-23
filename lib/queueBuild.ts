@@ -320,18 +320,14 @@ export function sortNewCards(
 }
 
 
-/**
- * Anki build-time sibling burying: never show two cards of the same note in one session. The
- * first card of each note (learning first, then reviews, then new) is kept; later siblings are
- * buried until the next day when the deck's matching toggle is on. `bury` persists the bury and
- * the kept pools are returned.
- */
+/** Suppress siblings in memory, considering only cards that fit the active limits. */
 export function buryBuildTimeSiblings(
     learning: StudyCard[],
     reviews: StudyCard[],
     news: StudyCard[],
     configForDeck: (deckId: number) => DeckConfig,
-    bury: (cardId: number) => void,
+    _bury: (cardId: number) => void,
+    accept: (card: StudyCard) => boolean = () => true,
 ): { learning: StudyCard[]; reviews: StudyCard[]; news: StudyCard[] } {
     const seenNotes = new Map<number, StudyCard>();
 
@@ -350,14 +346,10 @@ export function buryBuildTimeSiblings(
     const pass = (pool: StudyCard[]): StudyCard[] => {
         const kept: StudyCard[] = [];
         for (const card of pool) {
-            if (!seenNotes.has(card.noteId)) {
-                seenNotes.set(card.noteId, card);
-                kept.push(card);
-            } else if (shouldBury(card)) {
-                // Suppress in memory only. Answering persists scheduler burying.
-            } else {
-                kept.push(card);
-            }
+            if (seenNotes.has(card.noteId) && shouldBury(card)) continue;
+            if (!accept(card)) continue;
+            if (!seenNotes.has(card.noteId)) seenNotes.set(card.noteId, card);
+            kept.push(card);
         }
         return kept;
     };

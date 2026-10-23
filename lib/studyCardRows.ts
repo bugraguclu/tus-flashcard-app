@@ -10,6 +10,7 @@ import { resolveSettingsFromConfig } from './settingsResolver';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import { buildFilteredSearchClause, escapeLikePattern } from './studySearchSql';
 import { reservedFilteredCardIds } from './filteredDeckMembership';
+import { CATALOG_PACK_ID } from './catalogRows';
 
 /**
  * Loading study cards: the queue rows read from the collection, the note payload each row
@@ -280,6 +281,44 @@ export function loadRowsByQueue(
         ...scope.params,
         ...limitParams,
     );
+}
+
+/** Gather scheduler keys across the review backlog without loading fields or templates. */
+export function loadReviewCandidates(
+    baseSettings: AppSettings,
+    nowMs: number,
+    today: number,
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+    settingsCache: Map<number, AppSettings> = new Map(),
+): StudyCard[] {
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const catalogAllowed = isCatalogStudyAvailable();
+    const rows = getDB().getAllSync<{ data: string }>(
+        `SELECT c.data FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId
+         WHERE c.queue = 2 AND c.due <= ?${scope.sql}
+         ${catalogAllowed ? '' : "AND COALESCE(json_extract(n.data, '$.catalogPack'), '') != ?"}`,
+        today, ...scope.params, ...(catalogAllowed ? [] : [CATALOG_PACK_ID]),
+    );
+    return rows.flatMap((row): StudyCard[] => {
+        try {
+            const card = JSON.parse(row.data) as AnkiCard;
+            const settings = resolveSettingsForDeck(card.odid || card.deckId, baseSettings, settingsCache);
+            return [{
+                cardId: card.id, legacyCardId: legacyCardIdFromAnkiCardId(card.id),
+                noteId: card.noteId, deckId: card.deckId, templateOrd: card.ord,
+                subject: '', topic: '', question: '', answer: '', noteMarked: false,
+                state: withFsrsInputs(ankiCardToCardState(card, settings, nowMs), card, settings, nowMs),
+            }];
+        } catch (error) {
+            console.warn('[StudyRepo] Skipping corrupt review candidate:', error);
+            return [];
+        }
+    });
 }
 
 /**
