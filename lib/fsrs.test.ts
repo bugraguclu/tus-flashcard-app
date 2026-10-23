@@ -12,6 +12,7 @@ import {
     fsrsMemoryStateFromSm2,
     fsrsNextInterval,
     fsrsNextStates,
+    clampFsrsCutoffDate,
     formatFsrsCutoffDate,
     formatFsrsParameterText,
     fsrsRetrievability,
@@ -253,6 +254,23 @@ describe('ignore-before cutoff date', () => {
         expect(parseFsrsCutoffDate(undefined)).toBeUndefined();
         expect(formatFsrsCutoffDate(undefined)).toBe('');
         expect(formatFsrsCutoffDate(0)).toBe('');
+    });
+
+    // Anki 26.09.3 clamps a future cutoff to today when deck options are saved (ankitects/anki#5294).
+    it('clamps a future cutoff to the latest allowed date when saving, and leaves others alone', () => {
+        expect(parseFsrsCutoffDate('2099-01-01', '2026-10-23')).toBe(Date.UTC(2026, 9, 23));
+        expect(parseFsrsCutoffDate('2026-10-23', '2026-10-23')).toBe(Date.UTC(2026, 9, 23));
+        expect(parseFsrsCutoffDate('2020-05-06', '2026-10-23')).toBe(Date.UTC(2020, 4, 6));
+        expect(parseFsrsCutoffDate('', '2026-10-23')).toBeUndefined();
+        // Without a limit (package import) the value is read as written.
+        expect(parseFsrsCutoffDate('2099-01-01')).toBe(Date.UTC(2099, 0, 1));
+    });
+
+    it('limits a typed date like a date picker maximum without disturbing partial input', () => {
+        expect(clampFsrsCutoffDate('2099-01-01', '2026-10-23')).toBe('2026-10-23');
+        expect(clampFsrsCutoffDate('2099-01-0', '2026-10-23')).toBe('2099-01-0');
+        expect(clampFsrsCutoffDate('2026-10-22', '2026-10-23')).toBe('2026-10-22');
+        expect(clampFsrsCutoffDate('', '2026-10-23')).toBe('');
     });
 });
 

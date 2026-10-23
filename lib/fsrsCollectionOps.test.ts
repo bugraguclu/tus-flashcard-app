@@ -15,10 +15,11 @@ vi.mock('./db', () => ({
     dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {}, dbSearchCards: () => [],
 }));
 
-import { localDayNumber } from './ankiState';
+import { dayNumberToYmd, localDayNumber } from './ankiState';
 import { parseDueRange, setSelectedDueDate } from './browserSelection';
 import { matchingCollectionCardIds } from './collectionCardSearch';
 import { saveDeck, saveDeckConfig } from './deckManager';
+import { formatFsrsCutoffDate, parseFsrsCutoffDate } from './fsrs';
 import { moveCardsToDeckWithFsrs } from './fsrsMaintenance';
 import { checkDatabase, repairDatabase } from './maintenance';
 import { DEFAULT_DECK_CONFIG, type AnkiCard } from './models';
@@ -213,5 +214,16 @@ describe('Check Database last review time (Anki 26.09.3 oracle)', () => {
         // Anki's second check reports nothing more to fix; neither does ours.
         expect(entry.secondMessage).not.toMatch(/last review time/);
         expect(checkDatabase().lastReviewTimeCards).toBe(0);
+    });
+});
+
+describe('Ignore reviews before (Anki 26.09.3 oracle)', () => {
+    it('saves a future date as the collection today, and past or empty dates unchanged', () => {
+        const entry = fixture.futureCutoff;
+        // The deck options screen limits the date to this day, computed with the rollover hour.
+        const latest = dayNumberToYmd(localDayNumber(entry.timing.nowMs, fixture.meta.rolloverHour));
+        for (const [typed, saved] of Object.entries(entry.saved) as Array<[string, string]>) {
+            expect(formatFsrsCutoffDate(parseFsrsCutoffDate(typed, latest)), typed).toBe(saved);
+        }
     });
 });

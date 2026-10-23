@@ -564,8 +564,17 @@ export function formatFsrsCutoffDate(timestampMs: number | undefined | null): st
     return `${date.getUTCFullYear()}-${month}-${day}`;
 }
 
-export function parseFsrsCutoffDate(text: string | undefined | null): number | undefined {
+/**
+ * Midnight UTC of a YYYY-MM-DD cutoff, or undefined when the text is not a real date.
+ *
+ * `latestYmd` is the deck-options save path: Anki 26.09.3 replaces a cutoff later than the
+ * collection's today with today (`update_deck_configs`, ankitects/anki#5294), because a future
+ * date would make Optimize and memory recomputation ignore the whole history. Callers without
+ * it (package import) keep the value as written.
+ */
+export function parseFsrsCutoffDate(text: string | undefined | null, latestYmd?: string): number | undefined {
     if (typeof text !== 'string') return undefined;
+    if (latestYmd !== undefined) text = clampFsrsCutoffDate(text, latestYmd);
     const match = text.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!match) return undefined;
     const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
@@ -575,4 +584,14 @@ export function parseFsrsCutoffDate(text: string | undefined | null): number | u
         return undefined;
     }
     return parsed;
+}
+
+/**
+ * The cutoff text a date input may hold: a complete date later than `latestYmd` becomes
+ * `latestYmd`, which works like a date picker's maximum. Anything else is returned unchanged, so
+ * typing and format validation are unaffected.
+ */
+export function clampFsrsCutoffDate(text: string, latestYmd: string): string {
+    const trimmed = text.trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) && trimmed > latestYmd ? latestYmd : text;
 }
