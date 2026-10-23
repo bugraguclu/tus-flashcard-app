@@ -6,12 +6,13 @@ import type { StudyCard, AppSettings } from '../../lib/types';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import type { BrowserCardSortKey, BrowserTableMode } from '../../lib/studyRepository';
 import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
-import { deleteNote, type CardDeckMoveSnapshot } from '../../lib/noteManager';
+import { deleteNotes, type CardDeckMoveSnapshot } from '../../lib/noteManager';
 import { setDbSetting } from '../../lib/storage';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import GearGlyph from '../../components/GearGlyph';
 import FlagGlyph from '../../components/FlagGlyph';
-import { alert, confirm } from '../../lib/confirm';
+import { alert, choose, confirm } from '../../lib/confirm';
+import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
@@ -193,12 +194,22 @@ export function SelectionMenuModal({
                                 setShowSelectionMenu(false);
                                 confirm(
                                     l('Notları sil', 'Delete Notes'),
-                                    l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar kalıcı olarak silinecek.`, `${selectedNoteIds.length} notes and all cards belonging to them will be permanently deleted.`),
+                                    l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar silinecek. Silme sonrasında geri alabilirsiniz.`, `${selectedNoteIds.length} notes and all cards belonging to them will be deleted. You can undo after deletion.`),
                                     () => {
                                         try {
-                                            for (const noteId of selectedNoteIds) deleteNote(noteId);
+                                            const deletion = deleteNotes(selectedNoteIds);
                                             closeSelection();
                                             refreshSelection();
+                                            void choose(
+                                                l('Silindi', 'Deleted'),
+                                                l(`${deletion.cardCount} kart silindi.`, `${deletion.cardCount} cards deleted.`),
+                                                l('Geri al', 'Undo'),
+                                                l('Bitti', 'Done'),
+                                            ).then((undo) => {
+                                                if (!undo) return;
+                                                try { deletion.undo(); refreshSelection(); }
+                                                catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
+                                            });
                                         } catch (error) {
                                             console.warn('[Browser] delete selected notes failed:', error);
                                             alert(t('common.error'), l('Notlar silinemedi.', 'The notes could not be deleted.'));

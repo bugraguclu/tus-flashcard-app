@@ -86,20 +86,31 @@ export function saveNote(note: Note): void {
 }
 
 export function deleteNote(id: number): DeletionUndo {
-    assertCatalogNoteNotDeletable(id);
-    assertCatalogNoteMutable(id);
+    return deleteNotes([id]);
+}
+
+/** Delete notes with all their cards as one transaction and one undo (review history is kept). */
+export function deleteNotes(noteIds: number[]): DeletionUndo {
+    const ids = [...new Set(noteIds)];
+    for (const id of ids) {
+        assertCatalogNoteNotDeletable(id);
+        assertCatalogNoteMutable(id);
+    }
     const db = getDB();
-    const ids = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id).map(row => row.id);
-    const finishDeletion = captureDeletion({ noteIds: [id], cardIds: ids });
+    const cardIdsOf = () => (ids.length
+        ? db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId IN (SELECT value FROM json_each(?)) ORDER BY id', JSON.stringify(ids)).map(row => Number(row.id))
+        : []);
+    const finishDeletion = captureDeletion({ noteIds: ids, cardIds: cardIdsOf() });
     db.execSync('BEGIN TRANSACTION;');
     try {
-        const cardRows = db.getAllSync<{ id: number }>('SELECT id FROM anki_cards WHERE noteId = ?', id);
-        const cardIds = cardRows.map((row) => row.id);
-
-        deleteCardRows(cardIds);
-        db.runSync('DELETE FROM notes WHERE id = ?', id);
-
-        db.runSync('INSERT INTO graves (oid, type, usn) VALUES (?, 1, -1)', id);
+        deleteCardRows(cardIdsOf());
+        const existing = ids.length
+            ? db.getAllSync<{ id: number }>('SELECT id FROM notes WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id', JSON.stringify(ids)).map(row => Number(row.id))
+            : [];
+        if (existing.length) {
+            db.runSync('DELETE FROM notes WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(existing));
+            db.runSync('INSERT INTO graves (oid, type, usn) SELECT value, 1, -1 FROM json_each(?)', JSON.stringify(existing));
+        }
 
         const deletion = finishDeletion();
         db.execSync('COMMIT;');

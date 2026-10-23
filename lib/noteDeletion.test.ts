@@ -75,3 +75,21 @@ it('rolls back a failed bulk removal, including graves, while retaining history'
     expect(getNote(note.id)).not.toBeNull();
     expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
 });
+
+it('deletes a browser selection of notes as one transaction with one undo', async () => {
+    const { deleteNotes } = await import('./noteStore');
+    const deck = createDeck('Bulk');
+    const type = BUILTIN_NOTE_TYPES.find(t => t.id === 2)!;
+    const a = createNote(type, ['A', 'a'], deck.id);
+    const b = createNote(type, ['B', 'b'], deck.id);
+    db.runSync('INSERT INTO revlog (id, cardId) VALUES (?, ?)', 9, a.cards[0].id);
+    const deletion = deleteNotes([a.note.id, b.note.id, a.note.id]);
+    expect(deletion.cardCount).toBe(4);
+    expect(getNote(a.note.id)).toBeNull();
+    expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(6);
+    expect(db.getAllSync('SELECT * FROM revlog')).toHaveLength(1);
+    deletion.undo();
+    expect(getCardsForNote(a.note.id)).toHaveLength(2);
+    expect(getCardsForNote(b.note.id)).toHaveLength(2);
+    expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
+});

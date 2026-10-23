@@ -1456,10 +1456,16 @@ export default function StudyScreen() {
             alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları silinemez.', 'Built-in TUS cards cannot be deleted.'));
             return;
         }
-        deleteNote(currentCard.noteId);
+        const deletion = deleteNote(currentCard.noteId);
         invalidateCollection();
         buildQueue();
-    }, [currentCard, invalidateCollection, buildQueue, l]);
+        // The same one-shot Undo the editor and deck list offer after a deletion.
+        void choose(l('Not silindi', 'Note Deleted'), l(`${deletion.cardCount} kart silindi.`, `${deletion.cardCount} cards deleted.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
+            if (!undo) return;
+            try { deletion.undo(); invalidateCollection(); buildQueue(); }
+            catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
+        });
+    }, [currentCard, invalidateCollection, buildQueue, l, t]);
 
     // Anki Auto Advance. The preset owns the dwell times and the follow-up action; the
     // reviewer's own switch decides whether any of it runs. Zero seconds disables that half, so a
