@@ -105,6 +105,13 @@ function uniqueFieldName(nt: NoteType, name: string): string {
     return candidate;
 }
 
+/** Anki's per-field "Remember last input when adding" flag, which the Add screen's pin toggles. */
+export function setFieldSticky(nt: NoteType, ord: number, sticky: boolean): NoteType {
+    const current = nt.fields.find((f) => f.ord === ord);
+    if (!current || Boolean(current.sticky) === sticky) return nt;
+    return touch(nt, { fields: nt.fields.map((f) => (f.ord === ord ? { ...f, sticky } : f)) });
+}
+
 export function setSortField(nt: NoteType, ord: number): NoteType {
     if (ord < 0 || ord >= nt.fields.length) return nt;
     return touch(nt, { sortFieldIdx: ord });

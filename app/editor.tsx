@@ -49,9 +49,11 @@ import {
     getCardsForNote,
     getNote,
     getNoteType,
+    saveNoteType,
     searchIndexCardFromNote,
     setNoteTagsByCardId,
 } from '../lib/noteManager';
+import { setFieldSticky } from '../lib/noteTypeEditor';
 import { getAllDecks, getDeck, getDeckByName, createOrSelectDeck } from '../lib/deckManager';
 import { safeExternalCallbackUrl } from '../lib/externalLinking';
 import { goBackOr } from '../lib/backNavigation';
@@ -284,7 +286,7 @@ export default function EditorScreen() {
     }, [selectedNoteType]);
 
     const stickyFieldDefaults = useMemo(
-        () => (routeCardId ? {} : loadNoteTypeStickyFields(cardTypeId)),
+        () => (routeCardId ? {} : loadNoteTypeStickyFields(cardTypeId, getNoteType(cardTypeId))),
         [routeCardId, cardTypeId],
     );
 
@@ -541,7 +543,7 @@ export default function EditorScreen() {
         const count = newType.fields.length;
         const nextFields = new Array(count).fill('').map((_, i) => fieldValuesRef.current[i] || '');
 
-        const stickyDefaults = routeCardId ? {} : loadNoteTypeStickyFields(newId);
+        const stickyDefaults = routeCardId ? {} : loadNoteTypeStickyFields(newId, newType);
         for (let i = 0; i < count; i++) {
             if (!nextFields[i] && stickyDefaults[i]?.value) {
                 nextFields[i] = stickyDefaults[i].value;
@@ -586,6 +588,15 @@ export default function EditorScreen() {
             if (next.has(fieldOrd)) next.delete(fieldOrd);
             else next.add(fieldOrd);
             persistStickyFieldValues(next);
+            // The pin is the note type's sticky flag in Anki, so it follows the type everywhere.
+            try {
+                const type = getNoteType(cardTypeId);
+                const updated = type ? setFieldSticky(type, fieldOrd, next.has(fieldOrd)) : null;
+                if (type && updated && updated !== type) saveNoteType(updated);
+            } catch (error) {
+                // A protected catalog note type keeps its flags; the local pin still applies.
+                console.warn('[Editor] could not store the sticky flag on the note type:', error);
+            }
             return next;
         });
     };
