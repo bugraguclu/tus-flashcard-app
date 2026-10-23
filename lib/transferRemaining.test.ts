@@ -138,6 +138,11 @@ describe('collection package (AKT-12, B14)', () => {
         expect(col.decks.find((entry) => entry.name === 'Session')).toMatchObject({ dyn: 1, terms: [['deck:Transfer', 50, 1]] });
         expect(col.revlog.map((row) => row.cid).sort()).toEqual([702, 999]);
 
+        // The package imports back as a collection replacement with the filtered deck's terms.
+        await importApkg(await pkg(data, 'colpkg'), { ...options, fileName: 'c.colpkg', replaceCollection: true, withScheduling: true, withDeckConfigs: true });
+        expect(getAllDecks().find((entry) => entry.name === 'Session')).toMatchObject({ isFiltered: true, searchQuery: 'deck:Transfer', searchLimit: 50 });
+        expect(h.db.getFirstSync('SELECT COUNT(*) AS n FROM revlog').n).toBe(2);
+
         const apkg = await packageCol(await pkg(data));
         expect(apkg.decks.map((entry) => entry.name)).not.toContain('Session');
         expect(apkg.revlog.map((row) => row.cid)).toEqual([702]);

@@ -519,7 +519,10 @@ export function importAnkiReaderLossless(
         const reservedRevlog = new Set<number>();
         let progressReviews = 0;
         for (const row of withScheduling ? revlogRows : []) {
-            const targetCardId = cardIdMap.get(numberValue(row.cid));
+            // A collection package is the whole collection, history of deleted cards included, and
+            // replacing the collection keeps it as Anki does; a deck package brings only the
+            // history of the cards it adds.
+            const targetCardId = cardIdMap.get(numberValue(row.cid)) ?? (options.replaceCollection ? numberValue(row.cid) : undefined);
             if (!targetCardId) continue;
             // A review id is the time it was given. One already in the collection is that same
             // review (a re-import), and Anki skips it; rekeying it to now made it look like an
