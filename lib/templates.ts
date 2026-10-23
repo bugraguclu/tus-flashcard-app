@@ -256,6 +256,8 @@ export interface RenderContext {
     generating?: boolean;
     /** Anki's {{CardFlag}}: renders as "flag0".."flag7". */
     cardFlag?: number;
+    /** Anki's {{CardID}}. */
+    cardId?: number;
     /** What the user typed for a {{type:Field}} prompt, once the answer side is shown.
      *  undefined = not answered yet (question side, or no typed-answer field on this card). */
     typedAnswer?: string;
@@ -330,9 +332,14 @@ function parseConditionalNodes(template: string): ConditionalNode[] {
     return root.children;
 }
 
-/** The editor's blank div/br wrappers are empty; other original field HTML still counts. */
-function isAnkiFieldEmpty(value: string): boolean {
-    return value.replace(/<\/?div\b[^>]*>|<br\s*\/?>/gi, '').trim() === '';
+/**
+ * Anki's field emptiness: only ASCII whitespace and bare `<br>`/`<div>` tags (open or close,
+ * with an optional space and slash, any case). A tag with attributes, `&nbsp;`, a literal
+ * U+00A0 or any other markup counts as content.
+ */
+const ANKI_EMPTY_FIELD = /^(?:[ \t\n\v\f\r]|<\/?(?:br|div) ?\/?>)*$/i;
+export function isAnkiFieldEmpty(value: string): boolean {
+    return ANKI_EMPTY_FIELD.test(value);
 }
 
 function renderConditionalNodes(nodes: ConditionalNode[], fields: Record<string, string>): string {
@@ -505,9 +512,12 @@ export function renderTemplate(template: string, ctx: RenderContext): string {
         Subdeck: deckName.split('::').pop() || '',
         Card: ctx.cardName || '',
         CardFlag: `flag${ctx.cardFlag ?? 0}`,
+        CardID: ctx.cardId === undefined ? '' : String(ctx.cardId),
         FrontSide: ctx.frontSide || '',
     };
-    const conditionalFields = { ...specialFields, ...ctx.fields };
+    // Anki makes `{{#cN}}` true on the card for cloze N (a real field named cN wins).
+    const clozeKey: Record<string, string> = ctx.clozeOrd ? { [`c${ctx.clozeOrd}`]: '1' } : {};
+    const conditionalFields = { ...specialFields, ...clozeKey, ...ctx.fields };
     let result = renderConditionalNodes(parseConditionalNodes(template), conditionalFields);
 
     if (ctx.omitFrontSide) {
@@ -571,6 +581,8 @@ export function renderCardHtml(
         omitFrontSide?: boolean;
         /** Anki's {{CardFlag}} value, 0 when the card carries no flag. */
         cardFlag?: number;
+        /** Anki's {{CardID}} value. */
+        cardId?: number;
         /** Adds Anki's `nightMode night_mode` body classes so note types can theme themselves. */
         nightMode?: boolean;
         /** Anki's document classes: "mobile iphone", "mobile ipad", "mobile android", "mac"… */
@@ -601,6 +613,7 @@ export function renderCardHtml(
         clozeOrd,
         side: 'question',
         cardFlag: options?.cardFlag,
+        cardId: options?.cardId,
         typeAnswerInput: options?.typeAnswerInput,
     };
     const shell = {
@@ -673,10 +686,15 @@ export function shouldGenerateCard(
     }
 
     // SAB-2: only populated field replacements count, before applying display filters.
-    // Static template text/media and generated special fields cannot make an empty card valid.
+    // Static template text/media cannot make an empty card valid.
     const template = noteType.templates.find(t => t.ord === templateOrd);
     if (!template) return false;
-    const fields: Record<string, string> = { Tags: note.tags.join(' ') };
+    // Anki counts the card-level special fields as filled (Tags only when the note has tags,
+    // never FrontSide); a real field of the same name replaces the special one.
+    const fields: Record<string, string> = {
+        Card: 'x', CardFlag: 'x', Deck: 'x', Subdeck: 'x', Type: 'x', CardID: 'x',
+        Tags: note.tags.join(' '),
+    };
     noteType.fields.forEach((field, index) => { fields[field.name] = note.fields[index] || ''; });
     const active = renderConditionalNodes(parseConditionalNodes(template.qfmt), fields);
     return [...active.matchAll(/\{\{([^{}]+?)\}\}/g)].some(match => {

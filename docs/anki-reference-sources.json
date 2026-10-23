@@ -942,7 +942,9 @@
       "useFor": [
         "real fields shadow special field names",
         "stock typed-answer back uses Front",
-        "preserve existing stored templates during definition fixes"
+        "preserve existing stored templates during definition fixes",
+        "card generation counts special fields as filled (Tags only when tagged, never FrontSide); blank fields are only ASCII whitespace and bare br/div (rslib template field_is_empty, behaviour only)",
+        "{{#cN}} is true on the card for cloze N; {{CardID}} renders the card id"
       ]
     },
     {
