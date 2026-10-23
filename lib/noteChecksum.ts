@@ -50,3 +50,28 @@ export function ankiFieldChecksum(field: string): number {
     }
     return state[0] >>> 0;
 }
+
+/**
+ * The FNV-1a value earlier versions of this app stored as a note's `csum`, over the trimmed raw
+ * first field. Notes saved then keep it until they are next edited, and no migration rewrites
+ * them, so lookups must still accept it. For lookups only: never store it on a note.
+ */
+export function legacyFieldChecksum(field: string): number {
+    let hash = 0x811c9dc5;
+    const text = field.trim();
+    for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return Math.abs(hash | 0);
+}
+
+/**
+ * Every `csum` a stored note with this first field may carry: Anki's checksum, then the legacy
+ * local one. A checksum only narrows candidates; callers still compare the first field itself.
+ */
+export function firstFieldChecksums(field: string): number[] {
+    const current = ankiFieldChecksum(field);
+    const legacy = legacyFieldChecksum(field);
+    return legacy === current ? [current] : [current, legacy];
+}

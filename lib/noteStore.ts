@@ -1,4 +1,4 @@
-import { checksumFieldText } from './noteChecksum';
+import { checksumFieldText, firstFieldChecksums } from './noteChecksum';
 import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
     generateGuid,
@@ -639,9 +639,10 @@ export function findDuplicateNote(
     if (!target.trim()) return null;
 
     const db = getDB();
-    const csum = checksumField(firstFieldValue);
-
-    const rows = db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
+    // Checksums only narrow the indexed lookup; the stripped first field decides. A note saved
+    // before the switch to Anki's checksum is found by its legacy value, so no note-type scan is
+    // needed (this runs on every keystroke in the editor's first field).
+    const rows = firstFieldChecksums(firstFieldValue).flatMap((csum) => db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
         `SELECT n.id AS noteId, c.id AS cardId, d.name AS deckName, n.data AS noteData
          FROM notes n
          LEFT JOIN anki_cards c ON c.noteId = n.id AND c.ord = 0
@@ -649,19 +650,9 @@ export function findDuplicateNote(
          WHERE n.csum = ? AND n.noteTypeId = ? ${excludeNoteId ? 'AND n.id != ?' : ''}
          LIMIT 10`,
         ...(excludeNoteId ? [csum, noteTypeId, excludeNoteId] : [csum, noteTypeId]),
-    );
+    ));
 
-    // Old local collections used FNV checksums. Read fallback rows without rewriting a collection
-    // during a read-only duplicate check; new/imported SHA1 rows keep the indexed fast path.
-    const fallback = () => db.getAllSync<{ noteId: number; cardId: number | null; deckName: string | null; noteData: string }>(
-        `SELECT n.id AS noteId, c.id AS cardId, d.name AS deckName, n.data AS noteData
-         FROM notes n LEFT JOIN anki_cards c ON c.noteId = n.id AND c.ord = 0
-         LEFT JOIN decks d ON d.id = c.deckId
-         WHERE n.noteTypeId = ? AND n.csum != ? ${excludeNoteId ? 'AND n.id != ?' : ''}`,
-        ...(excludeNoteId ? [noteTypeId, csum, excludeNoteId] : [noteTypeId, csum]),
-    );
-    function* candidates() { yield* rows; yield* fallback(); }
-    for (const row of candidates()) {
+    for (const row of rows) {
         try {
             const parsed = JSON.parse(row.noteData) as { fields?: string[] };
             const field0 = parsed.fields?.[0];

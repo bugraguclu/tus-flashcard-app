@@ -179,7 +179,7 @@ export interface Note {
     tags: string[];
     fields: string[];    // values, in NoteType.fields order
     sfld: string;        // sort-field value
-    csum: number;        // FNV-1a hash of the first field for dup detection (not Anki's SHA1 csum)
+    csum: number;        // Anki's first-field checksum (lib/noteChecksum.ts); older local notes may hold the legacy FNV value
     flags: number;       // reserved; color flags live on the card (AnkiCard.flags)
     /** Anki's opaque notes.data column. */
     ankiData?: string;

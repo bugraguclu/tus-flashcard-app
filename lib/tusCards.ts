@@ -6,6 +6,7 @@ import {
     type Note,
     type AnkiCard,
 } from './models';
+import { firstFieldChecksums } from './noteChecksum';
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { getDB } from './db';
 import { TUS_CARDS } from './data';
@@ -105,20 +106,20 @@ export function migrateTusCardsToNotes(): { notesCreated: number; cardsCreated: 
 /**
  * Find an existing bundled/basic card by its question (first field), matching how Anki dedupes text imports
  * (first field within a note type). Returns the primary card id of the first match, or null.
- * The `csum` filter narrows candidates in SQL; the exact trimmed compare then rejects hash
- * collisions, exactly like `firstFieldExists` in the import path.
+ * The `csum` filter narrows candidates in SQL, accepting Anki's checksum and the legacy local one;
+ * the exact trimmed compare then rejects hash collisions, exactly like the import path.
  */
 export function findTusCardIdByFirstField(question: string): number | null {
     const db = getDB();
     const target = question.trim();
-    const rows = db.getAllSync<{ cardId: number; noteData: string }>(
+    const rows = firstFieldChecksums(question).flatMap((csum) => db.getAllSync<{ cardId: number; noteData: string }>(
         `SELECT c.id AS cardId, n.data AS noteData
          FROM notes n
          JOIN anki_cards c ON c.noteId = n.id
          WHERE n.csum = ? AND n.noteTypeId IN (1, 4)
          ORDER BY c.ord`,
-        checksumField(question),
-    );
+        csum,
+    ));
 
     for (const row of rows) {
         try {
