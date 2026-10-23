@@ -34,8 +34,12 @@ function isSafeLocalMediaUrl(value: string): boolean {
     if (isSafeDataMediaUrl(normalized)) return true;
     // Anki package media is a flat filename namespace. Reject schemes, absolute paths,
     // traversal, query strings and encoded separators before the WebView sees them.
+    // A literal `%` that starts no escape ("50% off.png") is an ordinary filename character;
+    // only the escapes that do decode can hide a separator, so check those decoded.
     let decoded = normalized;
-    try { decoded = decodeURIComponent(normalized); } catch { return false; }
+    try { decoded = decodeURIComponent(normalized); } catch {
+        decoded = normalized.replace(/%([0-9a-fA-F]{2})/g, (_escape, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+    }
     return !/[\\/:?#]/.test(decoded) && decoded !== '.' && decoded !== '..';
 }
 

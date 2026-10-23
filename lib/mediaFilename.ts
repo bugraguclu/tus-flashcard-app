@@ -74,3 +74,17 @@ function decodeUriComponentSafely(value: string): string {
         return value;
     }
 }
+
+/**
+ * A name for a newly attached file that every reference form can carry: the characters Anki's
+ * media check removes from filenames (`[]<>:"/?*^\|` and control characters) are dropped, and
+ * `%` and `#`, which a URL would read as an escape or a fragment, become `_` (EDT-6). The file
+ * is stored under this name, so the file and the field's reference always agree.
+ */
+export function attachmentMediaFilename(name: string): string {
+    const cleaned = sanitizeMediaFilename(name)
+        .replace(/[[\]<>:"/?*^\\|]/g, '')
+        .replace(/[%#]/g, '_')
+        .replace(/[. ]+$/, '');
+    return cleaned || 'media';
+}
