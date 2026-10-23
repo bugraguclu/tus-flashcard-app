@@ -98,10 +98,20 @@ function buildBrowserWhere(
     return { sql: clauses.length ? ` WHERE ${clauses.join(' AND ')}` : '', params };
 }
 
+/**
+ * Anki's Due column orders new cards, then learning, then review cards, and within each by due.
+ * `due` holds three units — a queue position, an epoch-ms time for intraday learning, a day
+ * number — so the ms form is read as days and the card type leads the key (ARA-7). One scalar
+ * key, so a descending sort reverses the whole order.
+ */
+function dueSortKey(alias: string): string {
+    return `(${alias}.type * 1000000000 + CASE WHEN ${alias}.due >= 1000000000 THEN ${alias}.due / 86400000.0 ELSE ${alias}.due END)`;
+}
+
 const BROWSER_SORT_SQL: Record<BrowserCardSortKey, string> = {
     sortField: 'n.sfld COLLATE NOCASE',
     cardType: 'c.ord',
-    due: 'c.due',
+    due: dueSortKey('c'),
     deck: 'd.name COLLATE NOCASE',
     created: 'c.noteId',
     modified: 'c.updated_at',
@@ -186,7 +196,7 @@ function getBrowserNoteRows(
     const sortSql: Record<BrowserCardSortKey, string> = {
         sortField: 'n.sfld COLLATE NOCASE',
         cardType: 'COUNT(c_all.id)',
-        due: 'MIN(CASE WHEN c_all.type != 0 AND c_all.queue >= 0 THEN c_all.due END)',
+        due: `MIN(CASE WHEN c_all.type != 0 AND c_all.queue >= 0 THEN ${dueSortKey('c_all')} END)`,
         deck: "CASE WHEN COUNT(DISTINCT c_all.deckId) > 1 THEN printf('(%d)', COUNT(DISTINCT c_all.deckId)) ELSE MIN(d_all.name) END COLLATE NOCASE",
         created: 'n.id',
         modified: 'MAX(c_all.updated_at)',

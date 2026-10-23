@@ -18,6 +18,7 @@ import { useThemeColors } from '../constants/theme';
 import { SearchSyntaxError } from '../lib/searchQuery';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import { setSearchCurrentDeckName } from '../lib/collectionCardSearch';
+import { flagForSelection } from '../lib/browserFlags';
 import { localDayNumber, nextRolloverMs } from '../lib/ankiState';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import type { StudyCard } from '../lib/types';
@@ -142,7 +143,8 @@ export default function BrowserScreen() {
     const [showRepositionDialog, setShowRepositionDialog] = useState(false);
     const [repositionStart, setRepositionStart] = useState('1');
     const [repositionStep, setRepositionStep] = useState('1');
-    const [repositionShiftExisting, setRepositionShiftExisting] = useState(true);
+    // Anki remembers the choice and starts with it off.
+    const [repositionShiftExisting, setRepositionShiftExisting] = useState(() => readBrowserBoolean('browser_reposition_shift', false));
     const [showDueDialog, setShowDueDialog] = useState(false);
     const [resetDialogOptions, setResetDialogOptions] = useState<ResetCardOptions | null>(null);
     const [dueInput, setDueInput] = useState('0');
@@ -713,7 +715,8 @@ export default function BrowserScreen() {
 
     const applyFlag = useCallback((flag: CardFlag) => {
         if (flagPickerMode === 'selection') {
-            for (const cardId of selectedActionCardIds) setCardFlag(cardId, flag);
+            const applied = flagForSelection(selectedActionCardIds, flag);
+            for (const cardId of selectedActionCardIds) setCardFlag(cardId, applied);
             bumpDataVersion();
             reload();
         }

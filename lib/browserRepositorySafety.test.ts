@@ -41,3 +41,17 @@ describe('browser listing', () => {
         expect(getBrowserCardCount({ deckIds: [...cardIds] })).toBe(3);
     });
 });
+
+describe('browser due sort (ARA-7)', () => {
+    it('orders new, then learning, then review cards, whatever unit due is stored in', () => {
+        h.db.runSync('DELETE FROM anki_cards');
+        const insert = (id: number, type: number, queue: number, due: number) => h.db.runSync(
+            'INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data) VALUES (?, 1, 1, 0, ?, ?, ?, 1, 2500, 1, 0, 0, ?)',
+            id, type, queue, due, JSON.stringify({ id }));
+        insert(1, 2, 2, 20_400);                  // review due in ten days
+        insert(2, 0, 0, 25_000);                  // new card at position 25000
+        insert(3, 1, 1, Date.now() + 300_000);    // learning card due in five minutes
+        expect(getBrowserRowIdsMatchingText({ sortKey: 'due' }, 'n*')).toEqual([2, 3, 1]);
+        expect(getBrowserRowIdsMatchingText({ sortKey: 'due', descending: true }, 'n*')).toEqual([1, 3, 2]);
+    });
+});
