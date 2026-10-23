@@ -181,8 +181,11 @@ export function removeTagFromNote(noteId: number, tag: string): void {
 /** Reserved tag mirroring Anki's note "mark" (star) feature. */
 export const MARKED_TAG = 'marked';
 
+/** Anki compares tags case-insensitively, so an imported "Marked" counts as the mark too. */
+const isMarkedTag = (tag: string) => tag.toLowerCase() === MARKED_TAG;
+
 export function isNoteMarked(note: Note): boolean {
-    return note.tags.includes(MARKED_TAG);
+    return note.tags.some(isMarkedTag);
 }
 
 /** Toggles the reserved "marked" tag on a note. Returns the new marked state. */
@@ -193,7 +196,10 @@ export function toggleNoteMark(noteId: number): boolean {
     if (willMark) {
         addTagToNote(noteId, MARKED_TAG);
     } else {
-        removeTagFromNote(noteId, MARKED_TAG);
+        // Unmarking removes every case variant, or a "Marked" tag would keep the note marked.
+        note.tags = note.tags.filter((tag) => !isMarkedTag(tag));
+        note.mod = Math.floor(Date.now() / 1000);
+        saveNote(note);
     }
     return willMark;
 }

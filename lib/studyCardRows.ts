@@ -4,7 +4,7 @@ import type { CardState, AppSettings, StudyCard } from './types';
 import type { AnkiCard, Note, NoteType } from './models';
 import { ankiCardToCardState, legacyCardIdFromAnkiCardId } from './ankiState';
 import { withFsrsInputs } from './fsrsCardInputs';
-import { getAnkiCard, MARKED_TAG } from './noteManager';
+import { getAnkiCard, isNoteMarked } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
@@ -463,7 +463,7 @@ export function makeStudyCard(
         topic: payload.topic,
         question: payload.question,
         answer: payload.answer,
-        noteMarked: note.tags.includes(MARKED_TAG),
+        noteMarked: isNoteMarked(note),
         templateOrd: card.ord,
         // TODO(boundary): remove CardState materialization from queue path once scheduler works directly on AnkiCard.
         state: stateOverride ?? withFsrsInputs(ankiCardToCardState(card, settings, nowMs), card, settings, nowMs),

@@ -71,6 +71,16 @@ describe('note marking (Anki-style "marked" tag)', () => {
         expect(store.get(1)!.tags).toEqual(expect.arrayContaining(['anatomi', MARKED_TAG]));
     });
 
+    // Anki's tags are case-insensitive: an imported "Marked" is the mark, and unmarking clears it.
+    it('treats any case of the marked tag as the mark and unmarks every variant', () => {
+        store.set(1, note({ tags: ['Marked', 'anatomi'] }));
+        expect(isNoteMarked(store.get(1)!)).toBe(true);
+
+        expect(toggleNoteMark(1)).toBe(false);
+        expect(store.get(1)!.tags).toEqual(['anatomi']);
+        expect(isNoteMarked(store.get(1)!)).toBe(false);
+    });
+
     it('is a no-op when the note does not exist', () => {
         expect(toggleNoteMark(999)).toBe(false);
     });
