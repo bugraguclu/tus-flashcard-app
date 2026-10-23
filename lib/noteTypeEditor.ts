@@ -17,6 +17,7 @@ import {
 } from './models';
 import { getCardsForNote, saveNote, saveNoteType, searchIndexCardFromNote } from './noteManager';
 import { fieldNameSyntaxError, type FieldNameSyntaxError } from './noteTypeValidation';
+import { sortFieldText } from './noteChecksum';
 
 function reindex<T extends { ord: number }>(items: T[]): T[] {
     return items.map((item, i) => ({ ...item, ord: i }));
@@ -189,7 +190,7 @@ export function applyFieldEdit(noteTypeId: number, edit: FieldEdit): number {
             const note = JSON.parse(row.data) as Note;
             const fields = edit.migrate(note.fields);
             note.fields = fields;
-            note.sfld = fields[sortFieldIdx] || fields[0] || '';
+            note.sfld = sortFieldText(fields, sortFieldIdx);
             note.csum = checksumField(fields[0] ?? '');
             note.mod = Math.floor(Date.now() / 1000);
             note.usn = -1;

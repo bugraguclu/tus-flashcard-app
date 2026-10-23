@@ -140,3 +140,12 @@ export function firstFieldChecksums(field: string): number[] {
     const legacy = legacyFieldChecksum(field);
     return legacy === current ? [current] : [current, legacy];
 }
+
+/**
+ * The note's sort field (`sfld`) as Anki stores it: the sort field's text with HTML stripped and
+ * media filenames kept, so `<b>Zebra</b>` sorts as "Zebra" (EDT-9). Falls back to the first field
+ * when the sort field is empty, as this app always has.
+ */
+export function sortFieldText(fields: string[], sortFieldIdx: number): string {
+    return checksumFieldText(fields[sortFieldIdx] || fields[0] || '');
+}

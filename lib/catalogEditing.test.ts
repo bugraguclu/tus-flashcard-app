@@ -49,7 +49,7 @@ describe('purchased catalog note editing', () => {
 
         expect(getNote(note.id)).toMatchObject({
             guid: note.guid, noteTypeId: note.noteTypeId, catalogPack: CATALOG_PACK_ID,
-            fields, tags: ['kendi-etiketim'], sfld: fields[0],
+            fields, tags: ['kendi-etiketim'], sfld: 'Yeni soru', // Anki's sort field is the HTML-stripped text (EDT-9)
         });
         expect(getCardsForNote(note.id).map((sibling) => sibling.id)).toEqual(cards.map((sibling) => sibling.id));
     });

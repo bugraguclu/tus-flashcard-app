@@ -6,7 +6,7 @@ import {
     type Note,
     type AnkiCard,
 } from './models';
-import { firstFieldChecksums } from './noteChecksum';
+import { firstFieldChecksums, sortFieldText } from './noteChecksum';
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { getDB } from './db';
 import { TUS_CARDS } from './data';
@@ -235,7 +235,7 @@ export function updateTusCardByCardId(
     }
 
     note.fields = fields;
-    note.sfld = fields[noteType?.sortFieldIdx ?? 0] || fields[0];
+    note.sfld = sortFieldText(fields, noteType?.sortFieldIdx ?? 0);
     note.csum = checksumField(fields[0]);
     if (input.tags) {
         note.tags = input.tags;

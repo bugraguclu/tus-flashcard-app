@@ -1,4 +1,4 @@
-import { checksumFieldText, firstFieldChecksums } from './noteChecksum';
+import { checksumFieldText, firstFieldChecksums, sortFieldText } from './noteChecksum';
 import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
     generateGuid,
@@ -131,7 +131,7 @@ export function createNote(
     guid?: string,
 ): { note: Note; cards: AnkiCard[] } {
     const now = uniqueId();
-    const sfld = fields[noteType.sortFieldIdx] || fields[0] || '';
+    const sfld = sortFieldText(fields, noteType.sortFieldIdx);
 
     const note: Note = {
         id: now,

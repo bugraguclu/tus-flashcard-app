@@ -1,4 +1,5 @@
 import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
+import { sortFieldText } from './noteChecksum';
 import { mapNoteTypeFields, mapNoteTypeCardOrd, NoteTypeChangeConfirmationRequired } from './noteTypeChange';
 import {
     checksumField,
@@ -141,7 +142,7 @@ export function changeNotesTypeUndoable(noteIds: number[], targetNoteTypeId: num
 
             note.noteTypeId = targetType.id;
             note.fields = fields;
-            note.sfld = fields[targetType.sortFieldIdx] || fields[0] || '';
+            note.sfld = sortFieldText(fields, targetType.sortFieldIdx);
             note.csum = checksumField(fields[0] ?? '');
             note.mod = Math.floor(Date.now() / 1000);
             note.usn = -1;
