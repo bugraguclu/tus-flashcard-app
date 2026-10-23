@@ -101,7 +101,7 @@ describe('review limits start from top', () => {
         expect(queue.stats.reviewCount).toBe(3);
     });
 
-    it('lets the parent cap the subdeck once the switch is on', () => {
+    it('preserves uncapped new cards even when parent limits start from top', () => {
         seedSubdeckWithStricterParent();
 
         const queue = getStudyQueue({

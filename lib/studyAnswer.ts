@@ -15,7 +15,7 @@ import { previewDelaySecondsForGrade } from './filteredDeckOptions';
 import { recordedDecayFor } from './fsrsScheduler';
 import { withFsrsInputs } from './fsrsCardInputs';
 import { loadBalancerForCard, recordLoadBalancedAnswer } from './loadBalancerSession';
-import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD } from './scheduler';
+import { addDaysLocalYMD, schedulerForSettings, todayLocalYMD, withClassicReviewContext } from './scheduler';
 import { learningDelayAsDays, learningIntervalWithFuzz, learningStepSecs } from './schedulingIntervals';
 import {
     buryCard,
@@ -29,7 +29,7 @@ import {
     saveNote,
 } from './noteManager';
 import { getDeckConfigForDeck } from './deckManager';
-import { deleteReviewById, logReview, revlogFactorForAnswer } from './reviewLogger';
+import { deleteReviewById, logReview, revlogFactorForAnswer, INTERDAY_REVIEW_USAGE_PREFIX } from './reviewLogger';
 import { makeStudyCard, resolveSettingsForDeck } from './studyCardRows';
 
 /**
@@ -84,8 +84,10 @@ function applySiblingBuryPolicy(answeredCard: AnkiCard, config: DeckConfig): Bur
         buried.push({ cardId: sibling.id, queue: sibling.queue });
     };
 
+    const priority = (queue: number) => queue === 1 ? 0 : queue === 3 ? 1 : queue === 2 ? 2 : 3;
+    const answeredQueue = answeredCard.queue < 0 ? restoreQueueFromType(answeredCard) : answeredCard.queue;
     for (const sibling of siblings) {
-        if (sibling.id === answeredCard.id || sibling.queue < 0) {
+        if (sibling.id === answeredCard.id || sibling.queue < 0 || priority(sibling.queue) < priority(answeredQueue)) {
             continue;
         }
 
@@ -152,13 +154,38 @@ function removeAddedLeechTag(noteId: number): void {
  * single operation, so all of it commits or none of it does.
  */
 export function undoAnswer(snapshot: AnkiCard, reviewLogId: number, sideEffects?: AnswerSideEffects): void {
+    const current = getAnkiCard(snapshot.id);
+    if (!current || current.noteId !== snapshot.noteId) return;
+    const restored = { ...current };
+    // Answer undo owns scheduling, never the note, deck, flag or template ordinal.
+    for (const key of ['type', 'queue', 'due', 'ivl', 'factor', 'reps', 'lapses', 'left', 'lastReview'] as const) {
+        Object.assign(restored, { [key]: snapshot[key] });
+    }
+    if (snapshot.odid) {
+        const filteredStillExists = getDB().getFirstSync<{ id: number }>('SELECT id FROM decks WHERE id = ?', snapshot.deckId);
+        if (filteredStillExists && (current.deckId === snapshot.deckId || current.deckId === snapshot.odid)) {
+            restored.deckId = snapshot.deckId;
+            restored.odid = snapshot.odid;
+            restored.odue = snapshot.odue;
+        } else {
+            restored.due = snapshot.odue;
+            restored.queue = snapshot.queue < 0 ? snapshot.queue : restoreQueueFromType({ ...snapshot, due: snapshot.odue });
+        }
+    }
+    const oldData = parseAnkiCardData(snapshot.ankiData);
+    restored.ankiData = updateAnkiCardData(current.ankiData, {
+        stability: oldData.stability ?? null, difficulty: oldData.difficulty ?? null,
+        desiredRetention: oldData.desiredRetention ?? null, decay: oldData.decay ?? null,
+        lastReviewTimeSecs: oldData.lastReviewTimeSecs ?? null,
+        originalPosition: oldData.originalPosition ?? null,
+    });
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
 
     try {
         // Restoring the snapshot already un-suspends a card the leech action suspended, because
         // the snapshot carries the queue the card had before this answer.
-        saveAnkiCard(snapshot, { replaceData: true });
+        saveAnkiCard(restored, { replaceData: true });
         deleteReviewById(reviewLogId);
         restoreBuriedSiblings(sideEffects?.buriedSiblings ?? []);
         if (sideEffects?.leechTaggedNoteId !== undefined) {
@@ -191,10 +218,11 @@ function answerRevlogFields(
     today: number,
     secsUntilRollover: number,
     ivl: number,
+    filtered: boolean,
 ): { type: 0 | 1 | 2 | 3; ivl: number; lastIvl: number; factor: number } {
     let type: 0 | 1 | 2 | 3 = 0;
     if (before.type === 3) type = 2;
-    else if (before.type === 2) type = (before.odid ? before.odue : before.due) > today ? 3 : 1;
+    else if (before.type === 2) type = filtered && (before.odid ? before.odue : before.due) > today ? 3 : 1;
 
     let lastIvl = 0;
     if (before.type === 2) {
@@ -218,7 +246,7 @@ export function answerStudyCard(
     grade: Grade,
     settings: AppSettings,
     answerTimeMs: number,
-    options: { preview?: PreviewAnswerOptions } = {},
+    options: { preview?: PreviewAnswerOptions; filtered?: boolean } = {},
 ): ReviewResult {
     const nowMs = Date.now();
 
@@ -232,7 +260,7 @@ export function answerStudyCard(
         throw new Error(`Note not found for card: ${cardId}`);
     }
 
-    const cardSettings = resolveSettingsForDeck(currentAnkiCard.deckId, settings);
+    const cardSettings = resolveSettingsForDeck(currentAnkiCard.odid || currentAnkiCard.deckId, settings);
     const rolloverHour = cardSettings.dayRolloverHour;
     const currentState = withFsrsInputs(
         ankiCardToCardState(currentAnkiCard, cardSettings, nowMs),
@@ -241,7 +269,7 @@ export function answerStudyCard(
         nowMs,
     );
     const noteType = getNoteType(note.noteTypeId);
-    const deckConfig = getDeckConfigForDeck(currentAnkiCard.deckId);
+    const deckConfig = getDeckConfigForDeck(currentAnkiCard.odid || currentAnkiCard.deckId);
 
     if (options.preview) {
         return answerInPreview(currentAnkiCard, currentState, grade, cardSettings, deckConfig, answerTimeMs, options.preview, nowMs, () => (
@@ -251,7 +279,7 @@ export function answerStudyCard(
 
     const scheduler = schedulerForSettings(cardSettings);
     const balancer = loadBalancerForCard(currentAnkiCard, rolloverHour, nowMs);
-    const scheduleResult = scheduler.schedule(currentState, grade, cardSettings, nowMs, { balancer });
+    const scheduleResult = scheduler.schedule(withClassicReviewContext(currentState, Boolean(options.filtered || currentAnkiCard.odid)), grade, cardSettings, nowMs, { balancer });
 
     const nowSecs = Math.floor(nowMs / 1000);
     const today = localDayNumber(nowMs, rolloverHour);
@@ -281,6 +309,8 @@ export function answerStudyCard(
     const nextState: CardState = {
         ...currentState,
         ...scheduleResult.stateUpdates,
+        suspended: false,
+        buried: false,
         // Anki counts every answer, learning steps included.
         repetition: (currentState.repetition || 0) + 1,
         // With FSRS off, an answer leaves no memory state or desired retention behind, as in Anki.
@@ -290,6 +320,15 @@ export function answerStudyCard(
     };
 
     const converted = cardStateToAnkiCard(currentAnkiCard, nextState, cardSettings, nowMs);
+    if (currentAnkiCard.odid) {
+        if (scheduleResult.isLearning) converted.odue = converted.due;
+        else {
+            converted.deckId = currentAnkiCard.odid;
+            converted.odid = 0;
+            converted.odue = 0;
+        }
+    }
+
     const updatedAnkiCard: AnkiCard = {
         ...converted,
         // Anki records the answer time on the card itself (`lrt`), which FSRS reads back, and
@@ -311,6 +350,7 @@ export function answerStudyCard(
         today,
         secsUntilRollover,
         scheduleResult.isLearning ? (learningDays ?? -learningSecs) : updatedAnkiCard.ivl,
+        Boolean(options.filtered || currentAnkiCard.odid),
     );
 
     const db = getDB();
@@ -334,6 +374,11 @@ export function answerStudyCard(
             deckConfig.maxAnswerSecs,
         );
         reviewLogId = reviewLog.id;
+        if (currentAnkiCard.queue === 3) {
+            // The revlog kind cannot distinguish interday from intraday learning. Keep a
+            // local counter marker without changing Anki's portable history columns.
+            db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', `${INTERDAY_REVIEW_USAGE_PREFIX}${reviewLogId}`, '1');
+        }
 
         sideEffects.buriedSiblings = applySiblingBuryPolicy(currentAnkiCard, deckConfig);
 

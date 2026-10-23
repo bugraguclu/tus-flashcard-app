@@ -7,7 +7,7 @@ import type {
     AlgorithmType,
     AppSettings,
 } from './types';
-import { elapsedStudyDays } from './ankiState';
+import { elapsedStudyDays, localDayNumber, ymdToLocalDayNumber } from './ankiState';
 import { FsrsEngine } from './fsrsScheduler';
 import {
     MINUTES_PER_DAY,
@@ -65,10 +65,9 @@ function computeReviewIntervals(
     const max = settings.maxInterval;
     const daysLate = elapsedDays - cur;
 
-    // Early path (answered before due). Guard elapsedDays > 0 to avoid false early detection
-    // for cards with no review history.
-    if (daysLate < 0 && elapsedDays > 0) {
-        const elapsed = Math.max(1, elapsedDays);
+    // Only filtered review contexts may carry negative days-late, even at zero elapsed days.
+    if (daysLate < 0) {
+        const elapsed = Math.max(0, elapsedDays);
         const scheduled = cur;
 
         const hard = constrainInterval(
@@ -113,7 +112,18 @@ function computeRelearningEasyInterval(cs: CardState, settings: AppSettings): nu
  * cards with no recorded review time (ankiState `elapsedSinceLastReview`), so a card imported
  * without a review log still reports a real elapsed count instead of "answered today".
  */
+export function withClassicReviewContext(cs: CardState, filtered: boolean): CardState {
+    return Object.assign({}, cs, { filteredReview: filtered });
+}
+
 function elapsedDaysFor(cs: CardState, now: number, settings: AppSettings): number {
+    if (cs.status === 'review') {
+        const today = localDayNumber(now, settings.dayRolloverHour);
+        const due = ymdToLocalDayNumber(cs.dueDate, today);
+        const daysLate = today - due;
+        const filtered = (cs as CardState & { filteredReview?: boolean }).filteredReview;
+        return Math.max(0, cs.interval + (filtered ? daysLate : Math.max(0, daysLate)));
+    }
     if (cs.lastReviewedAtMs && cs.lastReviewedAtMs > 0) {
         return elapsedStudyDays(cs.lastReviewedAtMs, now, settings.dayRolloverHour);
     }
@@ -139,79 +149,19 @@ const AnkiV3Engine: SchedulerEngine = {
         return ankiV3Review(cs, grade, settings, now, elapsedDays, fuzz);
     },
 
-    previewIntervals: (cs, settings, nowMs): IntervalPreview => {
-        const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const elapsedDays = elapsedDaysFor(cs, now, settings);
-        const learningSteps = settings.learningSteps;
-        const lapseSteps = settings.lapseSteps;
-        const isRelearning = cs.relearningStep !== undefined && cs.relearningStep >= 0;
-        const isLearning = cs.status === 'new' || (cs.learningStep !== undefined && cs.learningStep >= 0);
-
-        if (isLearning && !isRelearning && learningSteps.length === 0) {
-            const graduating = `${settings.graduatingInterval} gün`;
-            return {
-                again: graduating,
-                hard: graduating,
-                good: graduating,
-                easy: `${settings.easyInterval} gün`,
-                againMinutes: settings.graduatingInterval * MINUTES_PER_DAY,
-            };
-        }
-
-        if (isLearning && !isRelearning) {
-            const step = cs.learningStep || 0;
-            const nextMin = learningSteps[step + 1] ?? null;
-            const hardMin = hardDelayMinutes(learningSteps, step);
-
-            return {
-                again: formatMinutes(learningSteps[0] || 1),
-                hard: formatMinutes(hardMin),
-                good: nextMin !== null ? formatMinutes(nextMin) : `${settings.graduatingInterval} gün`,
-                easy: `${settings.easyInterval} gün`,
-                againMinutes: learningSteps[0] || 1,
-                hardMinutes: hardMin,
-            };
-        }
-
-        if (isRelearning && lapseSteps.length === 0) {
-            const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
-            return {
-                again: formatDays(relearnInterval),
-                hard: formatDays(relearnInterval),
-                good: formatDays(relearnInterval),
-                easy: formatDays(computeRelearningEasyInterval(cs, settings)),
-                againMinutes: relearnInterval * MINUTES_PER_DAY,
-            };
-        }
-
-        if (isRelearning) {
-            const step = cs.relearningStep;
-            const nextMin = lapseSteps[step + 1] ?? null;
-            const hardMin = hardDelayMinutes(lapseSteps, step);
-            const relearnInterval = clampInterval(Math.max(settings.minLapseInterval, cs.interval || 1), settings);
-            const relearnEasyInterval = computeRelearningEasyInterval(cs, settings);
-
-            return {
-                again: formatMinutes(lapseSteps[0] || 1),
-                hard: formatMinutes(hardMin),
-                good: nextMin !== null ? formatMinutes(nextMin) : `${relearnInterval} gün`,
-                easy: `${relearnEasyInterval} gün`,
-                againMinutes: lapseSteps[0] || 1,
-                hardMinutes: hardMin,
-            };
-        }
-
-        // Review state: unfuzzed base intervals for the button labels.
-        const preview = computeReviewIntervals(cs, settings, elapsedDays);
-        // With no relearning steps, Again returns to review with the reduced interval (days),
-        // so label it as days rather than the first relearning step.
-        const lapsedInterval = lapsedReviewInterval(cs.interval, settings);
+    previewIntervals: (cs, settings, nowMs, context): IntervalPreview => {
+        const now = nowMs ?? Date.now();
+        // Use exactly the answer path, including the card-id/reps fuzz and load balancer.
+        const results = ([1, 2, 3, 4] as const).map((grade) => AnkiV3Engine.schedule(cs, grade, settings, now, context));
+        const label = (result: ScheduleResult) => result.isLearning
+            ? formatMinutes(result.minutesUntilDue ?? 0)
+            : formatDays(result.interval);
+        const minutes = (result: ScheduleResult) => result.isLearning
+            ? result.minutesUntilDue ?? 0
+            : result.interval * MINUTES_PER_DAY;
         return {
-            again: lapseSteps.length === 0 ? formatDays(lapsedInterval) : formatMinutes(lapseSteps[0] || 1),
-            hard: formatDays(preview.hard),
-            good: formatDays(preview.good),
-            easy: formatDays(preview.easy),
-            againMinutes: lapseSteps.length === 0 ? lapsedInterval * MINUTES_PER_DAY : lapseSteps[0] || 1,
+            again: label(results[0]), hard: label(results[1]), good: label(results[2]), easy: label(results[3]),
+            againMinutes: minutes(results[0]), hardMinutes: minutes(results[1]),
         };
     },
 };

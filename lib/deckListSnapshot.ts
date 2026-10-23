@@ -38,9 +38,11 @@ export function getDeckListSnapshot(
             const home = counts.get(card.homeDeckId);
             if (home) {
                 home.total = Math.max(0, home.total - 1);
-                if (card.homeStatus === 'new') home.new = Math.max(0, home.new - 1);
-                else if (card.homeStatus === 'learning') home.learn = Math.max(0, home.learn - 1);
-                else home.review = Math.max(0, home.review - 1);
+                if (card.homeCounted) {
+                    if (card.homeStatus === 'new') home.new = Math.max(0, home.new - 1);
+                    else if (card.homeStatus === 'learning') home.learn = Math.max(0, home.learn - 1);
+                    else home.review = Math.max(0, home.review - 1);
+                }
             }
             if (card.status === 'new') filteredCount.new += 1;
             else if (card.status === 'learning') filteredCount.learn += 1;

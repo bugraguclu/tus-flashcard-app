@@ -7,8 +7,10 @@ import { withFsrsInputs } from './fsrsCardInputs';
 import { getAnkiCard, MARKED_TAG } from './noteManager';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
-import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
+import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import { buildFilteredSearchClause, escapeLikePattern } from './studySearchSql';
+import { reservedFilteredCardIds } from './filteredDeckMembership';
+import { CATALOG_PACK_ID } from './catalogRows';
 
 /**
  * Loading study cards: the queue rows read from the collection, the note payload each row
@@ -174,9 +176,19 @@ export function buildScopeClause(
     selectedSubject?: string | null,
     selectedTopic?: string | null,
     selectedDeckName?: string | null,
+    excludeReservations: boolean = true,
 ): { sql: string; params: Array<string | number> } {
     const clauses: string[] = [];
     const params: Array<string | number> = [];
+    // Ordinary study excludes fixed filtered reservations. Browser searches keep their own scope.
+    // A build has no size limit, so the ids travel as one JSON parameter: one `?` per card would
+    // break past SQLite's 32,766 bound variables.
+    const reserved = excludeReservations ? reservedFilteredCardIds() : [];
+    if (reserved.length) {
+        clauses.push('c.id NOT IN (SELECT value FROM json_each(?))');
+        params.push(JSON.stringify(reserved));
+    }
+
 
     if (selectedDeckName) {
         const selectedDeck = getDeckByName(selectedDeckName);
@@ -234,9 +246,10 @@ export function loadRowsByQueue(
     orderBy: string = 'c.id ASC',
     includeCardBlob: boolean = true,
     limit?: number,
+    excludeReservations: boolean = true,
 ): QueueCardRow[] {
     const db = getDB();
-    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName, excludeReservations);
     const cardDataSelect = includeCardBlob ? 'c.data' : 'NULL';
     const hasLimit = Number.isFinite(limit) && (limit as number) > 0;
     const limitSql = hasLimit ? ' LIMIT ?' : '';
@@ -259,7 +272,7 @@ export function loadRowsByQueue(
             c.flags AS flags,
             ${cardDataSelect} AS cardData,
             n.data AS noteData,
-            nt.data AS noteTypeData
+            NULL AS noteTypeData
          FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          JOIN note_types nt ON nt.id = n.noteTypeId
@@ -270,6 +283,44 @@ export function loadRowsByQueue(
         ...scope.params,
         ...limitParams,
     );
+}
+
+/** Gather scheduler keys across the review backlog without loading fields or templates. */
+export function loadReviewCandidates(
+    baseSettings: AppSettings,
+    nowMs: number,
+    today: number,
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+    settingsCache: Map<number, AppSettings> = new Map(),
+): StudyCard[] {
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const catalogAllowed = isCatalogStudyAvailable();
+    const rows = getDB().getAllSync<{ data: string }>(
+        `SELECT c.data FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId
+         WHERE c.queue = 2 AND c.due <= ?${scope.sql}
+         ${catalogAllowed ? '' : "AND COALESCE(json_extract(n.data, '$.catalogPack'), '') != ?"}`,
+        today, ...scope.params, ...(catalogAllowed ? [] : [CATALOG_PACK_ID]),
+    );
+    return rows.flatMap((row): StudyCard[] => {
+        try {
+            const card = JSON.parse(row.data) as AnkiCard;
+            const settings = resolveSettingsForDeck(card.odid || card.deckId, baseSettings, settingsCache);
+            return [{
+                cardId: card.id, legacyCardId: legacyCardIdFromAnkiCardId(card.id),
+                noteId: card.noteId, deckId: card.deckId, templateOrd: card.ord,
+                subject: '', topic: '', question: '', answer: '', noteMarked: false,
+                state: withFsrsInputs(ankiCardToCardState(card, settings, nowMs), card, settings, nowMs),
+            }];
+        } catch (error) {
+            console.warn('[StudyRepo] Skipping corrupt review candidate:', error);
+            return [];
+        }
+    });
 }
 
 /**
@@ -300,6 +351,29 @@ export function countRowsByQueue(
     );
 
     return row?.cnt ?? 0;
+}
+
+/** `countRowsByQueue`, split by the deck each card sits in. */
+export function countRowsByDeck(
+    queueSql: string,
+    queueParams: Array<string | number>,
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+): Map<number, number> {
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const rows = getDB().getAllSync<{ deckId: number; cnt: number }>(
+        `SELECT c.deckId AS deckId, COUNT(*) AS cnt
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId
+         WHERE ${queueSql}${scope.sql}
+         GROUP BY c.deckId`,
+        ...queueParams,
+        ...scope.params,
+    );
+    return new Map(rows.map((row) => [Number(row.deckId), Number(row.cnt)]));
 }
 
 function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
@@ -401,7 +475,7 @@ export function toStudyCards(
     options: { includeRawCard?: boolean; includeRawNote?: boolean; settingsCache?: Map<number, AppSettings> } = {},
 ): StudyCard[] {
     const settingsCache = options.settingsCache ?? new Map<number, AppSettings>();
-    const catalogUnlocked = isPaidCatalogUnlocked();
+    const catalogUnlocked = isCatalogStudyAvailable();
     const noteCache = new Map<number, Note>();
     const noteTypeCache = new Map<number, NoteType | null>();
 
@@ -417,15 +491,16 @@ export function toStudyCards(
             if (!catalogUnlocked && isCatalogNote(note)) return acc;
             let noteType = noteTypeCache.get(note.noteTypeId);
             if (noteType === undefined) {
-                noteType = row.noteTypeData ? (JSON.parse(row.noteTypeData) as NoteType) : null;
+                const rawType = row.noteTypeData ?? getDB().getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', note.noteTypeId)?.data;
+                noteType = rawType ? JSON.parse(rawType) as NoteType : null;
                 noteTypeCache.set(note.noteTypeId, noteType);
             }
 
-            const cardSettings = resolveSettingsForDeck(row.deckId, baseSettings, settingsCache);
+            let cardSettings = resolveSettingsForDeck(row.deckId, baseSettings, settingsCache);
             // Parse the full card blob for learning queues (left/decode needed), under FSRS (the
             // memory state and last review time live in it, and the answer buttons read them), or
             // when the caller explicitly needs a full raw card object.
-            const needsFullCard = options.includeRawCard
+            const needsFullCard = Boolean(row.cardData) || options.includeRawCard
                 || cardSettings.fsrsEnabled === true
                 || row.queue === 1
                 || row.queue === 3
@@ -442,6 +517,8 @@ export function toStudyCards(
             } else {
                 card = makeShallowCardFromRow(row, nowMs);
             }
+
+            if (card.odid) cardSettings = resolveSettingsForDeck(card.odid, baseSettings, settingsCache);
 
             acc.push(makeStudyCard(
                 card,

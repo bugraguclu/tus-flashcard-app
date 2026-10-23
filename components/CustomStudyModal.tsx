@@ -46,6 +46,7 @@ import {
     getAllDecks,
     getCardCountsByDeck,
     getCustomStudyDefaults,
+    getCustomStudySessionToReplace,
     rememberCustomStudyExtend,
     rememberCustomStudyTags,
 } from '../lib/deckManager';
@@ -301,11 +302,12 @@ export default function CustomStudyModal({
         try {
             // Anki refuses to build an empty session and leaves the dialog open so the criteria
             // can be widened, rather than creating a deck with nothing in it.
+            // The run rebuilds the existing session in place, so that session's cards count.
             const matches = getFilteredDeckGatherCount(settings, {
                 search: config.search,
                 limit: config.limit,
                 order: config.order,
-            });
+            }, getCustomStudySessionToReplace());
             if (matches === 0) {
                 alert(
                     t('anki.customStudy'),

@@ -34,6 +34,7 @@ export {
     rememberCustomStudyExtend,
     rememberCustomStudyTags,
     createOrReplaceCustomStudySession,
+    getCustomStudySessionToReplace,
 } from './filteredDecks';
 export type {
     FilteredDeckOptions,
@@ -43,6 +44,7 @@ export {
     getPopulatedDecksForScope,
     buildDeckTree,
     flattenDeckTree,
+    decksInDisplayOrder,
 } from './deckTree';
 export type {
     DeckTreeNode,

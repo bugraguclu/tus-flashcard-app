@@ -68,6 +68,37 @@ export function getPopulatedDecksForScope(
     return candidates.filter((deck) => populatedNames.has(deck.name));
 }
 
+/**
+ * Every deck in the order the deck list shows it, collapsed branches included: siblings by
+ * `compareDeckDisplayOrder`, each deck straight after its parent and before the parent's next
+ * sibling. A deck whose parent is missing stands among the roots, as in `buildDeckTree`.
+ */
+export function decksInDisplayOrder(decks: readonly Deck[]): Deck[] {
+    const sorted = [...decks].sort(compareDeckDisplayOrder);
+    const names = new Set(sorted.map((deck) => deck.name));
+    const childrenOf = new Map<string | null, Deck[]>();
+    for (const deck of sorted) {
+        const parent = getParentDeckName(deck.name);
+        const key = parent && names.has(parent) ? parent : null;
+        const siblings = childrenOf.get(key);
+        if (siblings) siblings.push(deck);
+        else childrenOf.set(key, [deck]);
+    }
+    const ordered: Deck[] = [];
+    const walked = new Set<string>();
+    const walk = (parent: string | null) => {
+        for (const deck of childrenOf.get(parent) ?? []) {
+            ordered.push(deck);
+            // Two rows sharing a name must not list the same subdecks twice.
+            if (walked.has(deck.name)) continue;
+            walked.add(deck.name);
+            walk(deck.name);
+        }
+    };
+    walk(null);
+    return ordered;
+}
+
 export function buildDeckTree(
     decks: Deck[],
     cardCounts?: Map<number, { new: number; learn: number; review: number; total: number }>,

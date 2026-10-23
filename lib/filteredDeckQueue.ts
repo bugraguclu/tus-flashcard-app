@@ -1,121 +1,27 @@
 import { getDB } from './db';
-import { ankiCardRelativeRetrievability, ankiCardRetrievability, ankiFnvHash, compareSqlAscending } from './ankiSortKeys';
-import { CUSTOM_STUDY_MAX_VALUE } from './customStudy';
-import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import type { CardState, AppSettings } from './types';
 import type { Deck, Note } from './models';
 import { localDayNumber } from './ankiState';
 import { todayLocalYMD } from './scheduler';
-import { getDeckByName } from './deckManager';
-import { isCatalogNote, isPaidCatalogUnlocked } from './catalogProtection';
+import { getDeckByName } from './deckStore';
+import { filteredDeckMemberIds, gatherFilteredDeckMemberIds } from './filteredDeckMembership';
+import { gatherFilteredTermCardIds } from './filteredDeckGather';
+export { gatherFilteredTermCardIds } from './filteredDeckGather';
+import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import type { StudyQueueResult } from './studyQueue';
 import { loadRowsByQueue, toStudyCards, type QueueCardRow } from './studyCardRows';
 import { buildFilteredSearchClause } from './studySearchSql';
 
 /**
- * Filtered decks as queries: which cards a filtered deck's searches gather, in Anki's gather
- * orders, and the counts its options screen shows.
+ * Filtered-deck build membership, serving order and counters. Searches run only for a new build.
  */
-
-interface GatherRow {
-    cardId: number;
-    noteId: number;
-    ord: number;
-    due: number;
-    ivl: number;
-    lapses: number;
-    mod: number | null;
-    odue: number | null;
-    ankiData: string | null;
-    lastReviewId: number | null;
-}
-
-type GatherKey = { value: number | bigint | null; descending?: boolean };
-
-/** This app keeps an intraday due in epoch milliseconds; Anki keeps it in seconds. */
-const DUE_IN_MILLISECONDS_ABOVE = 100_000_000_000;
-
-/**
- * The sort keys of one gather order, keyed by Anki's `SearchTerm.Order` ordinal, as
- * `order_and_limit_for_search` (rslib/src/storage/card/filtered.rs) defines them. Anki's two
- * retrievability orders are empty while FSRS is off, which leaves only the tiebreak.
- */
-function gatherOrderKeys(order: number | undefined, fsrs: boolean, nowMs: number, today: number): (row: GatherRow) => GatherKey[] {
-    switch (order) {
-        // A card never reviewed has no review-log row, and SQLite puts that NULL first.
-        case FILTERED_SEARCH_ORDER.oldestReviewedFirst: return (row) => [{ value: row.lastReviewId }];
-        case FILTERED_SEARCH_ORDER.random: return () => [{ value: Math.random() }];
-        case FILTERED_SEARCH_ORDER.intervalsAscending: return (row) => [{ value: row.ivl }];
-        case FILTERED_SEARCH_ORDER.intervalsDescending: return (row) => [{ value: row.ivl, descending: true }];
-        case FILTERED_SEARCH_ORDER.lapses: return (row) => [{ value: row.lapses, descending: true }];
-        case FILTERED_SEARCH_ORDER.added: return (row) => [{ value: row.noteId }, { value: row.ord }];
-        case FILTERED_SEARCH_ORDER.reverseAdded: return (row) => [{ value: row.noteId, descending: true }, { value: row.ord }];
-        case FILTERED_SEARCH_ORDER.retrievabilityAscending:
-            return fsrs ? (row) => [{ value: ankiCardRetrievability(row, nowMs, today) }] : () => [];
-        case FILTERED_SEARCH_ORDER.retrievabilityDescending:
-            return fsrs ? (row) => [{ value: ankiCardRetrievability(row, nowMs, today), descending: true }] : () => [];
-        case FILTERED_SEARCH_ORDER.relativeOverdueness:
-            return (row) => [{ value: ankiCardRelativeRetrievability(row, nowMs, today) }];
-        // Due order puts a review card's day number on the clock an intraday card is timed on.
-        default: {
-            const nowSecs = Math.floor(nowMs / 1000);
-            return (row) => {
-                const due = row.due > DUE_IN_MILLISECONDS_ABOVE ? Math.floor(row.due / 1000) : row.due;
-                return [{ value: due > 1_000_000_000 ? due : (due - today) * 86_400 + nowSecs }, { value: row.ord }];
-            };
-        }
-    }
-}
-
-/**
- * The cards one filtered-deck term gathers, in the order Anki moves them into the deck: the
- * term's order, then `fnvhash(c.id, c.mod)`, cut at the term's limit. Suspended and buried cards
- * are never gathered. Anki's retrievability orders and its tiebreak are Rust functions SQLite
- * does not have, so every matching card is keyed and ordered here.
- */
-export function gatherFilteredTermCardIds(
-    term: { search: string; order: number | undefined; limit: number | undefined },
-    settings: Pick<AppSettings, 'dayRolloverHour' | 'fsrsEnabled'>,
-    nowMs: number,
-): number[] {
-    const filtered = buildFilteredSearchClause(term.search);
-    const where = filtered.clauses.length > 0 ? filtered.clauses.join(' AND ') : '1=1';
-    const lastReview = term.order === FILTERED_SEARCH_ORDER.oldestReviewedFirst
-        ? '(SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id)'
-        : 'NULL';
-    const rows = getDB().getAllSync<GatherRow>(
-        `SELECT c.id AS cardId, c.noteId AS noteId, c.ord AS ord, c.due AS due, c.ivl AS ivl,
-            c.lapses AS lapses, json_extract(c.data, '$.mod') AS mod, json_extract(c.data, '$.odue') AS odue,
-            json_extract(c.data, '$.ankiData') AS ankiData, ${lastReview} AS lastReviewId
-         FROM anki_cards c
-         JOIN notes n ON n.id = c.noteId
-         JOIN note_types nt ON nt.id = n.noteTypeId
-         JOIN decks d ON d.id = c.deckId
-         WHERE c.queue >= 0 AND ${where}`,
-        ...filtered.params,
-    );
-    const keysOf = gatherOrderKeys(term.order, Boolean(settings.fsrsEnabled), nowMs, localDayNumber(nowMs, settings.dayRolloverHour));
-    const keyed = rows.map((row) => ({
-        id: row.cardId,
-        keys: [...keysOf(row), { value: ankiFnvHash([row.cardId, Number(row.mod) || 0]) }],
-    }));
-    keyed.sort((a, b) => {
-        for (let index = 0; index < a.keys.length; index++) {
-            const order = compareSqlAscending(a.keys[index].value, b.keys[index].value);
-            if (order !== 0) return a.keys[index].descending ? -order : order;
-        }
-        return 0;
-    });
-    const limit = Math.max(1, Math.min(CUSTOM_STUDY_MAX_VALUE, Math.floor(term.limit ?? 100)));
-    return keyed.slice(0, limit).map((entry) => entry.id);
-}
 
 /** Queue rows for these cards, in the order given. */
 function queueRowsInOrder(cardIds: readonly number[]): QueueCardRow[] {
     const byId = new Map<number, QueueCardRow>();
     for (let index = 0; index < cardIds.length; index += 400) {
         const chunk = cardIds.slice(index, index + 400);
-        for (const row of loadRowsByQueue(`c.id IN (${chunk.map(() => '?').join(', ')})`, [...chunk], null, null, null)) {
+        for (const row of loadRowsByQueue(`c.id IN (${chunk.map(() => '?').join(', ')})`, [...chunk], null, null, null, 'c.id ASC', true, undefined, false)) {
             byId.set(Number(row.cardId), row);
         }
     }
@@ -128,7 +34,7 @@ function queueRowsInOrder(cardIds: readonly number[]): QueueCardRow[] {
  * ordered and capped per filter group. Suspended/buried cards stay out. Daily limits do
  * not apply (Anki: filtered decks are exempt).
  */
-type FilteredDeckQueueDefinition = Pick<Deck,
+type FilteredDeckQueueDefinition = { id?: number } & Pick<Deck,
     | 'searchQuery'
     | 'searchLimit'
     | 'searchOrder'
@@ -143,6 +49,15 @@ type FilteredDeckQueueDefinition = Pick<Deck,
 >;
 
 export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: AppSettings, nowMs: number): StudyQueueResult {
+    return queueForMembers(deck, filteredDeckMemberIds(deck, settings, nowMs), settings, nowMs);
+}
+
+function queueForMembers(
+    deck: FilteredDeckQueueDefinition,
+    memberIds: readonly number[],
+    settings: AppSettings,
+    nowMs: number,
+): StudyQueueResult {
     if (deck.filteredDeckEmpty) {
         return {
             cards: [],
@@ -156,18 +71,8 @@ export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settin
     }
 
     const completedIds = new Set(deck.filteredDoneCardIds ?? []);
-    const buildAt = deck.filteredBuildAt ?? nowMs;
-    const gatherGroup = (search: string, order: number | undefined, limit: number | undefined): QueueCardRow[] =>
-        queueRowsInOrder(gatherFilteredTermCardIds({ search, order, limit }, settings, nowMs))
-            .filter((row) => !completedIds.has(row.cardId) && row.cardId <= buildAt + 999);
-
-    const rows = gatherGroup(deck.searchQuery ?? '', deck.searchOrder, deck.searchLimit);
-    if (deck.searchQuery2?.trim()) {
-        const seen = new Set(rows.map((row) => row.cardId));
-        for (const row of gatherGroup(deck.searchQuery2, deck.searchOrder2, deck.searchLimit2)) {
-            if (!seen.has(row.cardId)) rows.push(row);
-        }
-    }
+    const rows = queueRowsInOrder(memberIds)
+        .filter((row) => row.queue >= 0 && !completedIds.has(row.cardId));
 
     const gatheredCards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map() });
     const todayYmd = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
@@ -219,6 +124,7 @@ export interface FilteredDeckCountCard {
     status: CardState['status'];
     /** How the home deck counted the card before the filtered deck took it. */
     homeStatus: CardState['status'];
+    homeCounted: boolean;
 }
 
 type FilteredDeckCountDefinition = Pick<Deck,
@@ -248,6 +154,15 @@ export function getFilteredDeckCountCards(
     settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes' | 'fsrsEnabled'>,
     nowMs: number = Date.now(),
 ): Map<number, FilteredDeckCountCard[]> {
+    return countCardsForMembers(decks, (deck) => filteredDeckMemberIds(deck, settings, nowMs), settings, nowMs);
+}
+
+function countCardsForMembers(
+    decks: ReadonlyArray<FilteredDeckCountDefinition>,
+    memberIdsOf: (deck: FilteredDeckCountDefinition) => readonly number[],
+    settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes' | 'fsrsEnabled'>,
+    nowMs: number,
+): Map<number, FilteredDeckCountCard[]> {
     const result = new Map<number, FilteredDeckCountCard[]>();
     const activeDecks = decks.filter((deck) => {
         result.set(deck.id, []);
@@ -261,6 +176,7 @@ export function getFilteredDeckCountCards(
         homeDeckId: number;
         type: number;
         queue: number;
+        due: number;
         noteData: string;
         noteTypeData: string;
     };
@@ -268,22 +184,14 @@ export function getFilteredDeckCountCards(
     // Each term's cards in gather order, deck by deck and term by term, as Anki builds them.
     const gathered: Array<{ filteredDeckId: number; cardId: number }> = [];
     for (const deck of activeDecks) {
-        const terms = [
-            { search: deck.searchQuery ?? '', order: deck.searchOrder, limit: deck.searchLimit },
-            ...(deck.searchQuery2?.trim()
-                ? [{ search: deck.searchQuery2, order: deck.searchOrder2, limit: deck.searchLimit2 }]
-                : []),
-        ];
-        for (const term of terms) {
-            for (const cardId of gatherFilteredTermCardIds(term, settings, nowMs)) gathered.push({ filteredDeckId: deck.id, cardId });
-        }
+        for (const cardId of memberIdsOf(deck)) gathered.push({ filteredDeckId: deck.id, cardId });
     }
     const details = new Map<number, Omit<BatchRow, 'filteredDeckId'>>();
     const uniqueIds = [...new Set(gathered.map((entry) => entry.cardId))];
     for (let index = 0; index < uniqueIds.length; index += 400) {
         const chunk = uniqueIds.slice(index, index + 400);
         for (const row of getDB().getAllSync<Omit<BatchRow, 'filteredDeckId'>>(
-            `SELECT c.id AS cardId, c.deckId AS homeDeckId, c.type AS type, c.queue AS queue,
+            `SELECT c.id AS cardId, c.deckId AS homeDeckId, c.type AS type, c.queue AS queue, c.due AS due,
                 n.data AS noteData, nt.data AS noteTypeData
              FROM anki_cards c
              JOIN notes n ON n.id = c.noteId
@@ -299,13 +207,12 @@ export function getFilteredDeckCountCards(
     const deckById = new Map(activeDecks.map((deck) => [deck.id, deck]));
     const seenByFilteredDeck = new Map<number, Set<number>>();
     const claimedCardIds = new Set<number>();
-    const catalogUnlocked = isPaidCatalogUnlocked();
+    const catalogUnlocked = isCatalogStudyAvailable();
 
     for (const row of rows) {
         const deck = deckById.get(row.filteredDeckId);
-        if (!deck) continue;
+        if (!deck || row.queue < 0) continue;
         if ((deck.filteredDoneCardIds ?? []).includes(row.cardId)) continue;
-        if (row.cardId > (deck.filteredBuildAt ?? nowMs) + 999) continue;
 
         const seen = seenByFilteredDeck.get(deck.id) ?? new Set<number>();
         seenByFilteredDeck.set(deck.id, seen);
@@ -331,7 +238,11 @@ export function getFilteredDeckCountCards(
         // Answering in preview leaves the card itself untouched, so its home deck still counts it
         // as `homeStatus`.
         const status = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined ? 'learning' : homeStatus;
-        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus });
+        const today = localDayNumber(nowMs, settings.dayRolloverHour);
+        const homeCounted = row.queue === 0 || (row.queue === 1
+            ? row.due <= nowMs + Math.max(0, settings.learnAheadMinutes || 0) * 60000
+            : (row.queue === 2 || row.queue === 3) && row.due <= today);
+        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted });
     }
 
     return result;
@@ -350,18 +261,24 @@ export function getFilteredDeckCardIds(deckName: string, settings: AppSettings):
     return (queue.allSessionCards ?? queue.cards).map((card) => card.cardId);
 }
 
-/** Count the cards a filtered-deck configuration would gather without mutating the collection. */
+/**
+ * Count the cards a filtered-deck configuration would gather without mutating the collection.
+ * `rebuiltDeckId` names the filtered deck this configuration would rebuild: its current cards
+ * return home first, so they count; every other filtered deck keeps its reservation.
+ */
 export function getFilteredDeckMatchCount(
     settings: AppSettings,
     options: Pick<Deck, 'searchQuery' | 'searchLimit' | 'searchOrder' | 'searchQuery2' | 'searchLimit2' | 'searchOrder2'>,
+    rebuiltDeckId?: number,
 ): number {
     const nowMs = Date.now();
-    const preview = buildFilteredDeckQueue({
+    const definition = {
         ...options,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
         filteredBuildAt: nowMs,
-    }, settings, nowMs);
+    };
+    const preview = queueForMembers(definition, gatherFilteredDeckMemberIds(definition, settings, nowMs, rebuiltDeckId), settings, nowMs);
     return preview.allSessionCards?.length ?? preview.cards.length;
 }
 
@@ -370,21 +287,31 @@ export function getFilteredDeckMatchCount(
  * study session whose search returns nothing, so the dialog asks this before creating the deck.
  * Counting through the deck-list path keeps the answer identical to what the session will hold —
  * suspended, buried and locked catalog cards are excluded — without materializing study cards.
+ * `rebuiltDeckId` is the existing session the new one would replace; its cards count, and the
+ * probe never stores a membership of its own.
  */
 export function getFilteredDeckGatherCount(
     settings: Pick<AppSettings, 'dayRolloverHour' | 'learnAheadMinutes' | 'fsrsEnabled'>,
     term: { search: string; limit: number; order: number },
+    rebuiltDeckId?: number,
 ): number {
+    const nowMs = Date.now();
     const probeDeckId = -1;
-    const counts = getFilteredDeckCountCards([{
+    const probe = {
         id: probeDeckId,
         searchQuery: term.search,
         searchLimit: term.limit,
         searchOrder: term.order,
         filteredDeckEmpty: false,
         filteredDoneCardIds: [],
-        filteredBuildAt: Date.now(),
-    }], settings);
+        filteredBuildAt: nowMs,
+    };
+    const counts = countCardsForMembers(
+        [probe],
+        () => gatherFilteredDeckMemberIds(probe, settings, nowMs, rebuiltDeckId),
+        settings,
+        nowMs,
+    );
     return counts.get(probeDeckId)?.length ?? 0;
 }
 

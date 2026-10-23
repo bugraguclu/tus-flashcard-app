@@ -8,6 +8,11 @@ import {
 import { uniqueId, type Deck } from './models';
 import { DEFAULT_SECOND_SEARCH_LIMIT, FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { getDB } from './db';
+import { loadSettings } from './settingsStore';
+import { clearFilteredDeckMembership, filteredDeckMemberIds } from './filteredDeckMembership';
+import { restoreQueueFromType } from './ankiState';
+import { saveAnkiCard } from './noteStore';
+import type { AnkiCard } from './models';
 import { getDeck, getDeckByName, nextSiblingSortOrderForAppend, saveDeck } from './deckStore';
 
 /**
@@ -39,6 +44,7 @@ export function createFilteredDeck(name: string, searchQuery: string, limit?: nu
         sortOrder: nextSiblingSortOrderForAppend(null),
     };
     saveDeck(deck);
+    filteredDeckMemberIds(deck, loadSettings(), Date.now());
     return deck;
 }
 
@@ -74,6 +80,9 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
         deck.previewDelays = options.previewDelays;
     }
     deck.filteredAllowEmpty = options.allowEmpty ?? false;
+    // Saving options starts a new fixed build.
+    clearFilteredDeckMembership(deckId);
+    returnImportedFilteredCardsHome(deckId);
     // Saving filtered-deck options is Anki's Build/Rebuild action.
     deck.filteredDeckEmpty = false;
     deck.filteredDoneCardIds = [];
@@ -82,12 +91,15 @@ export function updateFilteredDeck(deckId: number, options: FilteredDeckOptions)
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
     saveDeck(deck);
+    filteredDeckMemberIds(deck, loadSettings(), Date.now());
 }
 
 /** Empty a filtered deck without deleting its saved search or the cards in their home decks. */
 export function emptyFilteredDeck(deckId: number): boolean {
     const deck = getDeck(deckId);
     if (!deck?.isFiltered) return false;
+    returnImportedFilteredCardsHome(deckId);
+    clearFilteredDeckMembership(deckId);
     deck.filteredDeckEmpty = true;
     deck.filteredDoneCardIds = [];
     deck.filteredPreviewDue = {};
@@ -99,6 +111,8 @@ export function emptyFilteredDeck(deckId: number): boolean {
 
 /** Rebuild a previously emptied filtered deck from its saved search. */
 export function rebuildFilteredDeck(deckId: number): boolean {
+    returnImportedFilteredCardsHome(deckId);
+    clearFilteredDeckMembership(deckId);
     const deck = getDeck(deckId);
     if (!deck?.isFiltered) return false;
     deck.filteredDeckEmpty = false;
@@ -108,6 +122,7 @@ export function rebuildFilteredDeck(deckId: number): boolean {
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
     saveDeck(deck);
+    filteredDeckMemberIds(deck, loadSettings(), Date.now());
     return true;
 }
 
@@ -117,6 +132,7 @@ export function completeFilteredCard(deckId: number, cardId: number): boolean {
     if (!deck?.isFiltered) return false;
     const completed = new Set(deck.filteredDoneCardIds ?? []);
     if (completed.has(cardId)) return false;
+    returnImportedFilteredCardsHome(deckId, cardId);
     completed.add(cardId);
     deck.filteredDoneCardIds = [...completed];
     deck.usn = -1;
@@ -151,6 +167,12 @@ export function restoreFilteredCard(deckId: number, cardId: number): boolean {
 
 /** Anki reuses one conventional deck name for every custom study session. */
 export const CUSTOM_STUDY_PREFIX = CUSTOM_STUDY_DECK_NAME;
+
+/** The session a new Custom Study run rebuilds in place, so its cards count as gatherable. */
+export function getCustomStudySessionToReplace(): number | undefined {
+    const existing = getDeckByName(CUSTOM_STUDY_PREFIX);
+    return existing?.isFiltered ? existing.id : undefined;
+}
 
 function customStudyDefaultsKey(deckId: number): string {
     return `deck_custom_study:${deckId}`;
@@ -247,6 +269,9 @@ export function createOrReplaceCustomStudySession(
         existing.mod = Math.floor(Date.now() / 1000);
         existing.usn = -1;
         saveDeck(existing);
+        clearFilteredDeckMembership(existing.id);
+        returnImportedFilteredCardsHome(existing.id);
+        filteredDeckMemberIds(existing, loadSettings(), Date.now());
         return existing;
     }
 
@@ -263,5 +288,19 @@ export function createOrReplaceCustomStudySession(
     session.filteredPreviewDue = {};
     session.filteredBuildAt = Date.now();
     saveDeck(session);
+    clearFilteredDeckMembership(session.id);
+    filteredDeckMemberIds(session, loadSettings(), Date.now());
     return session;
+}
+
+/** Empty/rebuild also releases cards physically held by imported Anki filtered decks. */
+function returnImportedFilteredCardsHome(deckId: number, cardId?: number): void {
+    const sql = 'SELECT data FROM anki_cards WHERE deckId = ?' + (cardId === undefined ? '' : ' AND id = ?');
+    for (const row of getDB().getAllSync<{ data: string }>(sql, deckId, ...(cardId === undefined ? [] : [cardId]))) {
+        const card = JSON.parse(row.data) as AnkiCard;
+        const due = card.odue || (card.type === 0 ? Math.max(1, card.due) : card.due);
+        const home = { ...card, deckId: card.odid > 0 ? card.odid : 1, due, odid: 0, odue: 0 };
+        if (card.queue >= 0) home.queue = restoreQueueFromType(home);
+        saveAnkiCard(home);
+    }
 }

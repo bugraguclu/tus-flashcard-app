@@ -996,6 +996,75 @@
         "refuse a field name another field already uses, ignoring case"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
+    },
+    {
+      "id": "anki-ai2-undo-and-day-learning",
+      "priority": 1,
+      "platform": "cross-platform reviewer and scheduling",
+      "url": "https://docs.ankiweb.net/studying.html#undo",
+      "useFor": [
+        "reviewer operation delta undo without resurrecting deleted rows; ai2Safety.test.ts",
+        "deck-options day boundaries: interday due stays a day number; Grade Now resumes scheduling"
+      ]
+    },
+    {
+      "id": "anki-ai2-filter-search",
+      "priority": 1,
+      "platform": "cross-platform filtered search",
+      "url": "https://docs.ankiweb.net/searching.html",
+      "useFor": [
+        "quoted key:value terms, wildcard decks, note/card/field/nid/introduced searches; ai2FilteredSearch.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai2-filter-membership",
+      "priority": 1,
+      "platform": "cross-platform filtered deck lifecycle",
+      "url": "https://docs.ankiweb.net/filtered-decks.html#home-decks",
+      "useFor": [
+        "fixed build membership, reservations, Empty/Rebuild, second-term exclusions, home due counters/presets and physical odue materialization/undo; ai2Filtered.test.ts",
+        "documented local virtual membership divergence from did/odid/odue movement"
+      ]
+    },
+    {
+      "id": "anki-ai2-classic-early-and-labels",
+      "priority": 1,
+      "platform": "cross-platform classic scheduling",
+      "url": "https://docs.ankiweb.net/filtered-decks.html#reviewing-ahead",
+      "useFor": [
+        "zero-elapsed early review only in filtered contexts; due-based elapsed days",
+        "answer labels use the same deterministic fuzz and load balancer as scheduling; ai2Scheduling.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai2-queue-limits-and-bury",
+      "priority": 1,
+      "platform": "cross-platform study queue",
+      "url": "https://docs.ankiweb.net/deck-options.html",
+      "useFor": [
+        "interday learning shares review limits; learn-ahead counts; deck gathering in deck-list order (newCardDeckOrder.test.ts); in-memory sibling suppression without slot loss; full lightweight review-key gather before limits; answer-time intraday/interday/review/new bury priority",
+        "documented product divergence: unlimited new cards, 200-card gather window, fixed 1:1 new/review mix; ai2Queue.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai2-reviewer-audio-and-focus",
+      "priority": 1,
+      "platform": "iPhone reviewer audio and auto advance",
+      "url": "https://docs.ankiweb.net/deck-options.html#audio",
+      "useFor": [
+        "manual replay question then answer; skip question; automatic answer excludes FrontSide audio",
+        "auto advance yields to reviewer focus and modal interaction without losing accumulated side time; reviewerAudio.test.ts, reviewerTimers.test.ts and reviewerDwellTimer.test.ts"
+      ]
+    },
+    {
+      "id": "tus-ai2-catalog-student-state",
+      "priority": 1,
+      "platform": "local catalog product policy",
+      "url": "https://docs.ankiweb.net/studying.html",
+      "useFor": [
+        "study progress separated from catalog content ownership; trial existing-card scheduling only",
+        "ai2CatalogStudy.test.ts verifies study/tag deltas and rejects generic note saves, content/identity/new-card mutation"
+      ]
     }
   ],
   "requiredDocs": [

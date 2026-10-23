@@ -110,12 +110,13 @@ describe('queue counters and daily limits', () => {
         expect(db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM revlog')?.count).toBe(20);
     });
 
-    it('counts an intraday learning card due later today in learningCount', () => {
+    it('excludes intraday learning beyond the learn-ahead window from learningCount', () => {
+        // Anki counts intraday learning only up to now + the learn-ahead limit (audit KUY-5).
         const dueMs = Date.now() + 10 * 60_000;
         saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: dueMs, left: 1001 }));
 
         const result = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
-        expect(result.stats.learningCount).toBe(1);
+        expect(result.stats.learningCount).toBe(0);
         // Still not served: the step timer has not expired and learn-ahead is 0.
         expect(result.cards).toHaveLength(0);
         expect(result.nextLearningDue).toBe(dueMs);

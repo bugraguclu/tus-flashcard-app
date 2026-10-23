@@ -111,17 +111,17 @@ describe('buryBuildTimeSiblings', () => {
     const allOn = { buryNewSiblings: true, buryReviewSiblings: true, buryInterdayLearningSiblings: true } as DeckConfig;
     const config = () => allOn;
 
-    it('keeps one card per note and buries the rest', () => {
+    it('keeps one card per note without persisting bury state', () => {
         const buried: number[] = [];
         const reviews = [sib(1, 100, 'review'), sib(2, 100, 'review'), sib(3, 200, 'review')];
 
         const result = buryBuildTimeSiblings([], reviews, [], config, (id) => buried.push(id));
 
         expect(result.reviews.map((c) => c.cardId)).toEqual([1, 3]); // first of each note kept
-        expect(buried).toEqual([2]);                                 // the duplicate sibling buried
+        expect(buried).toEqual([]);                                 // the duplicate sibling buried
     });
 
-    it('buries a new sibling of an already-seen review (learning > review > new)', () => {
+    it('suppresses a new sibling in memory (learning > review > new)', () => {
         const buried: number[] = [];
         const learning = [sib(1, 100, 'learning', Date.now())]; // intraday learning of note 100
         const news = [sib(2, 100, 'new')];                      // its new sibling
@@ -130,7 +130,7 @@ describe('buryBuildTimeSiblings', () => {
 
         expect(result.learning.map((c) => c.cardId)).toEqual([1]);
         expect(result.news).toHaveLength(0);
-        expect(buried).toEqual([2]);
+        expect(buried).toEqual([]);
     });
 
     it('respects the per-type toggle: keeps duplicates when burying is off', () => {

@@ -4,10 +4,8 @@ import type { AppSettings, StudyCard } from './types';
 import { getDeckAncestors, type DeckConfig } from './models';
 import { ankiCardIdFromLegacyCardId, localDayNumber, nextRolloverMs } from './ankiState';
 import { todayLocalYMD } from './scheduler';
-import { buryCard } from './noteManager';
-import { getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
+import { decksInDisplayOrder, getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
-    applyHierarchicalLimit,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
     mixInterdayLearning,
@@ -25,12 +23,15 @@ import {
 } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { buildFilteredDeckQueue } from './filteredDeckQueue';
+import { filteredDeckMemberIds } from './filteredDeckMembership';
 import { rebuildLoadBalancer } from './loadBalancerSession';
 import {
     buildScopeClause,
+    countRowsByDeck,
     countRowsByQueue,
     loadNextLearningDue,
     loadRowsByQueue,
+    loadReviewCandidates,
     resolveSettingsForDeck,
     toStudyCards,
     type QueueCardRow,
@@ -101,13 +102,26 @@ function deterministicShuffle<T>(items: T[], seedKey: string): T[] {
     return result;
 }
 
+const UNRANKED = Number.MAX_SAFE_INTEGER;
+
 /**
- * Group new cards course-by-course and topic-by-topic, in the order the course defines its
- * topics — the way Anki's v3 scheduler gathers new cards subdeck by subdeck. A stable sort
- * preserves the position (or shuffled) order inside each topic, so finishing "Tanımlama"
- * moves the queue to "Parametreler", skipping topics with nothing left to introduce.
+ * Where each deck stands in the deck list — siblings by the learner's own order (alphabetical in a
+ * collection nobody reordered), a parent before its subdecks. Anki's "Deck" gather walks the deck
+ * tree the same way, so the paid catalog's curriculum (its topics are ordered subdecks) arrives in
+ * course order. One map serves the SQL window and the in-memory sort, so they cannot disagree.
  */
-function sortNewCardsByCourseOrder(cards: StudyCard[]): StudyCard[] {
+function buildDeckGatherRank(): Map<number, number> {
+    const ranks = new Map<number, number>();
+    decksInDisplayOrder(getAllDecks()).forEach((deck, index) => ranks.set(deck.id, index));
+    return ranks;
+}
+
+/**
+ * Deck by deck in deck-list order; inside one deck, course by course and topic by topic in the
+ * order a course lists its topics, so finishing "Tanımlama" moves on to "Parametreler". The stable
+ * tiebreak keeps the position (or shuffled) order the cards arrived in.
+ */
+function sortNewCardsByDeckOrder(cards: StudyCard[], deckRank: ReadonlyMap<number, number>): StudyCard[] {
     if (cards.length <= 1) return cards;
 
     const subjects = getAllSubjects();
@@ -116,20 +130,21 @@ function sortNewCardsByCourseOrder(cards: StudyCard[]): StudyCard[] {
     for (const subject of subjects) {
         subject.topics.forEach((topic, index) => topicRank.set(`${subject.id}::${topic}`, index));
     }
-
-    const UNKNOWN = Number.MAX_SAFE_INTEGER;
     return cards
-        .map((card, index) => ({ card, index }))
+        .map((card, index) => ({
+            card,
+            keys: [
+                deckRank.get(card.deckId) ?? UNRANKED,
+                subjectRank.get(card.subject) ?? UNRANKED,
+                topicRank.get(`${card.subject}::${card.topic}`) ?? UNRANKED,
+                index,
+            ],
+        }))
         .sort((a, b) => {
-            const subjectDelta = (subjectRank.get(a.card.subject) ?? UNKNOWN)
-                - (subjectRank.get(b.card.subject) ?? UNKNOWN);
-            if (subjectDelta !== 0) return subjectDelta;
-
-            const topicDelta = (topicRank.get(`${a.card.subject}::${a.card.topic}`) ?? UNKNOWN)
-                - (topicRank.get(`${b.card.subject}::${b.card.topic}`) ?? UNKNOWN);
-            if (topicDelta !== 0) return topicDelta;
-
-            return a.index - b.index;
+            for (let key = 0; key < a.keys.length; key++) {
+                if (a.keys[key] !== b.keys[key]) return a.keys[key] - b.keys[key];
+            }
+            return 0;
         })
         .map((entry) => entry.card);
 }
@@ -139,7 +154,13 @@ function sortNewCardsByCourseOrder(cards: StudyCard[]): StudyCard[] {
  * what order they arrive. The two position orders are already satisfied by the SQL the rows were
  * loaded with (`newRowOrderSql`), so they only have to leave the list alone.
  */
-function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
+function gatherNewCards(
+    cards: StudyCard[],
+    settings: AppSettings,
+    daySeed: string,
+    newCount: number,
+    deckRank: ReadonlyMap<number, number>,
+): StudyCard[] {
     const seed = `${daySeed}-${newCount}`;
 
     switch (normalizeNewCardGatherOrder(settings.newCardGatherOrder)) {
@@ -152,13 +173,13 @@ function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: stri
             return shuffleNewCardsByNote(cards, seed);
         case 'deckThenRandomNotes':
             // Deck by deck as usual, but the notes inside a deck arrive in a shuffled order.
-            return sortNewCardsByCourseOrder(shuffleNewCardsByNote(cards, seed));
+            return sortNewCardsByDeckOrder(shuffleNewCardsByNote(cards, seed), deckRank);
         case 'deck':
         default: {
             const base = settings.newCardOrder === 'random'
                 ? deterministicShuffle(cards, seed)
                 : cards;
-            return sortNewCardsByCourseOrder(base);
+            return sortNewCardsByDeckOrder(base, deckRank);
         }
     }
 }
@@ -169,9 +190,49 @@ function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: stri
  * whenever the fetch is capped.
  */
 function newRowOrderSql(settings: AppSettings): string {
-    return normalizeNewCardGatherOrder(settings.newCardGatherOrder) === 'descendingPosition'
-        ? 'c.due DESC, c.id DESC'
-        : 'c.due ASC, c.id ASC';
+    const order = normalizeNewCardGatherOrder(settings.newCardGatherOrder);
+    if (order === 'descendingPosition') return 'c.due DESC, c.id DESC';
+    if (order === 'randomCards' || order === 'randomNotes') return 'RANDOM()';
+    return 'c.due ASC, c.id ASC';
+}
+
+/**
+ * The new-card window for the deck gather orders, filled the way Anki gathers them: deck by deck
+ * in deck-list order, each deck from its lowest position, until the window is full. One query
+ * reads the decks that fit whole and a second the deck where the window runs out, so the window
+ * is chosen by the same deck rank the in-memory sort applies afterwards. Ordering the SQL by deck
+ * name instead would put Ç, İ, Ö, Ş and Ü after Z and fill the window from the wrong decks.
+ */
+function loadNewRowsDeckByDeck(
+    params: StudyQueueParams,
+    deckRank: ReadonlyMap<number, number>,
+    windowSize: number,
+): QueueCardRow[] {
+    const { selectedSubject, selectedTopic, selectedDeckName } = params;
+    const counts = countRowsByDeck('c.queue = 0', [], selectedSubject, selectedTopic, selectedDeckName);
+    const decks = [...counts.keys()]
+        .sort((a, b) => (deckRank.get(a) ?? UNRANKED) - (deckRank.get(b) ?? UNRANKED) || a - b);
+    const whole: number[] = [];
+    let room = windowSize;
+    let partial: number | null = null;
+    for (const deckId of decks) {
+        if (room <= 0) break;
+        const count = counts.get(deckId) ?? 0;
+        if (count > room) {
+            partial = deckId;
+            break;
+        }
+        whole.push(deckId);
+        room -= count;
+    }
+    const load = (queueSql: string, queueParams: Array<string | number>, limit: number) => loadRowsByQueue(
+        queueSql, queueParams, selectedSubject, selectedTopic, selectedDeckName, 'c.due ASC, c.id ASC', false, limit,
+    );
+    const rows = whole.length > 0
+        ? load('c.queue = 0 AND c.deckId IN (SELECT value FROM json_each(?))', [JSON.stringify(whole)], windowSize)
+        : [];
+    if (partial !== null) rows.push(...load('c.queue = 0 AND c.deckId = ?', [partial], room));
+    return rows;
 }
 
 /**
@@ -179,8 +240,14 @@ function newRowOrderSql(settings: AppSettings): string {
  * what order they arrive, then a sort step that reorders the gathered set. Keeping them apart is
  * what makes "order gathered" a meaningful option rather than a no-op.
  */
-function applyNewCardOrder(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
-    const gathered = gatherNewCards(cards, settings, daySeed, newCount);
+function applyNewCardOrder(
+    cards: StudyCard[],
+    settings: AppSettings,
+    daySeed: string,
+    newCount: number,
+    deckRank: ReadonlyMap<number, number>,
+): StudyCard[] {
+    const gathered = gatherNewCards(cards, settings, daySeed, newCount, deckRank);
     return sortNewCards(gathered, settings.newCardSortOrder ?? 'template', daySeed);
 }
 
@@ -220,6 +287,10 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // Anki builds its load balancer together with the study queue, from the counts of that moment.
     rebuildLoadBalancer(params.settings.dayRolloverHour, nowMs);
 
+    for (const deck of getAllDecks()) {
+        if (deck.isFiltered) filteredDeckMemberIds(deck, params.settings, nowMs);
+    }
+
     // Filtered decks bypass the daily queue entirely: their saved search IS the session.
     if (params.selectedDeckName) {
         const selectedDeck = getDeckByName(params.selectedDeckName);
@@ -227,6 +298,8 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
             return buildFilteredDeckQueue(selectedDeck, params.settings, nowMs);
         }
     }
+
+    const newFetchLimit = 200; // A replenished working window, never a daily new-card cap.
 
     // Anki: "When this limit is reached, Anki will not show any more review cards for the day,
     // even if there are more waiting." Answered reviews leave the due queue on their own, so
@@ -242,15 +315,12 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // gathered at all and the UI counts down until the first one is due.
     const learnAheadCutoff = nowMs + Math.max(0, params.settings.learnAheadMinutes || 0) * 60000;
 
-    // The displayed learning count follows Anki's deck list: every intraday learning card due
-    // before the day rolls over counts, including ones whose step timer is still running. Only
-    // the serving cutoff (learnAheadCutoff) decides what is actually dealt right now.
-    const endOfDayMs = nextRolloverMs(nowMs, params.settings.dayRolloverHour);
+    // Count only intraday cards inside the learn-ahead window.
 
     // Count with SQL first (scales better than loading full queue).
     const intradayLearningCount = countRowsByQueue(
         'c.queue = 1 AND c.due < ?',
-        [Math.max(endOfDayMs, learnAheadCutoff)],
+        [learnAheadCutoff + 1],
         params.selectedSubject,
         params.selectedTopic,
         params.selectedDeckName,
@@ -303,45 +373,38 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         'c.due ASC',
     );
 
-    const reviewFetchLimit = reviewLimit > 0 ? Math.max(reviewLimit * 4, reviewLimit + 100) : 0;
-
-    const reviewRows = reviewFetchLimit > 0
-        ? loadRowsByQueue(
-            'c.queue = 2 AND c.due <= ?',
-            [today],
-            params.selectedSubject,
-            params.selectedTopic,
-            params.selectedDeckName,
-            'c.due ASC',
-            false,
-            reviewFetchLimit,
-        )
-        : [];
-
-    // No numeric stand-in for infinity: all eligible new cards remain available, including
-    // collections whose saved preset, deck or today-only metadata still says 20 (or zero).
-    const newRows = loadRowsByQueue(
-        'c.queue = 0',
-        [],
-        params.selectedSubject,
-        params.selectedTopic,
-        params.selectedDeckName,
-        newRowOrderSql(params.settings),
-    );
+    const deckGatherRank = buildDeckGatherRank();
+    const gatherOrder = normalizeNewCardGatherOrder(params.settings.newCardGatherOrder);
+    const newRows = newFetchLimit <= 0
+        ? []
+        : gatherOrder === 'deck' || gatherOrder === 'deckThenRandomNotes'
+            ? loadNewRowsDeckByDeck(params, deckGatherRank, newFetchLimit)
+            : loadRowsByQueue(
+                'c.queue = 0',
+                [],
+                params.selectedSubject,
+                params.selectedTopic,
+                params.selectedDeckName,
+                newRowOrderSql(params.settings),
+                false,
+                newFetchLimit,
+            );
 
     const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs, { settingsCache });
     const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
     let learningCards = [...intradayLearningCards, ...interdayLearningCards];
 
-    let reviewCards = toStudyCards(reviewRows, params.settings, nowMs, { settingsCache });
+    let reviewCards = reviewLimit > 0 ? loadReviewCandidates(
+        params.settings, nowMs, today, params.selectedSubject, params.selectedTopic, params.selectedDeckName, settingsCache,
+    ) : [];
     let newCards = toStudyCards(newRows, params.settings, nowMs, { settingsCache });
 
     const daySeed = todayLocalYMD(undefined, params.settings.dayRolloverHour);
 
     reviewCards = applyReviewOrder(reviewCards, params.settings, daySeed, today);
-    newCards = applyNewCardOrder(newCards, params.settings, daySeed, newCount);
+    newCards = applyNewCardOrder(newCards, params.settings, daySeed, newCount, deckGatherRank);
 
-    // Build-time sibling burying happens before limits so a buried sibling never wastes a slot.
+    // Resolve the earlier sibling's config for in-memory suppression after limits.
     const deckConfigCache = new Map<number, DeckConfig>();
     const configForDeck = (deckId: number): DeckConfig => {
         let config = deckConfigCache.get(deckId);
@@ -351,8 +414,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         }
         return config;
     };
-    ({ learning: learningCards, reviews: reviewCards, news: newCards } =
-        buryBuildTimeSiblings(learningCards, reviewCards, newCards, configForDeck, (cardId) => buryCard(cardId, true)));
+
 
     // Hierarchical daily limits: a card counts against its deck and every ancestor deck.
     // Anki's collection-wide "limits start from top" decides how far up that chain goes — with it
@@ -409,36 +471,28 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         return limit;
     };
 
-    let reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
-
-    // Fallback for strict per-deck limits: if the limited fetch under-fills, do one full fetch.
-    // Siblings buried above are persisted, so a full re-fetch stays free of sibling pairs.
-    if (reviewCardsForQueue.length < Math.min(reviewLimit, reviewCount) && reviewRows.length < reviewCount) {
-        reviewCards = applyReviewOrder(
-            toStudyCards(
-                loadRowsByQueue(
-                    'c.queue = 2 AND c.due <= ?',
-                    [today],
-                    params.selectedSubject,
-                    params.selectedTopic,
-                    params.selectedDeckName,
-                    'c.due ASC',
-                    false,
-                ),
-                params.settings,
-                nowMs,
-                { settingsCache },
-            ),
-            params.settings,
-            daySeed,
-            today,
-        );
-        reviewCardsForQueue = applyHierarchicalLimit(reviewCards, reviewLimit, deckKeysForCard, reviewLimitForDeckKey);
+    // A skipped sibling or a deck that has spent its cap consumes no global slot.
+    let reviewsTaken = 0;
+    const reviewsTakenByKey = new Map<string, number>();
+    const acceptWithinLimits = (card: StudyCard): boolean => {
+        if (card.state.status === 'new' || (card.state.status === 'learning' && card.state.dueTime > 0)) return true;
+        const keys = deckKeysForCard(card);
+        if (reviewsTaken >= reviewLimit || keys.some((key) => (reviewsTakenByKey.get(key) ?? 0) >= reviewLimitForDeckKey(key))) return false;
+        reviewsTaken++;
+        for (const key of keys) reviewsTakenByKey.set(key, (reviewsTakenByKey.get(key) ?? 0) + 1);
+        return true;
+    };
+    const selected = buryBuildTimeSiblings(learningCards, reviewCards, newCards, configForDeck, () => {}, acceptWithinLimits);
+    learningCards = selected.learning;
+    const newCardsForQueue = selected.news;
+    const selectedReviewIds = selected.reviews.map((card) => card.cardId);
+    const hydrated = new Map<number, StudyCard>();
+    for (let offset = 0; offset < selectedReviewIds.length; offset += 400) {
+        const ids = selectedReviewIds.slice(offset, offset + 400);
+        const rows = loadRowsByQueue(`c.id IN (${ids.map(() => '?').join(',')})`, ids);
+        for (const card of toStudyCards(rows, params.settings, nowMs, { settingsCache })) hydrated.set(card.cardId, card);
     }
-
-    // Review caps cannot reintroduce a cap on new cards, even in older collections that
-    // stored newCardsIgnoreReviewLimit=false. Burying and scope filtering still apply.
-    const newCardsForQueue = newCards;
+    const reviewCardsForQueue = selectedReviewIds.flatMap((id) => hydrated.get(id) ?? []);
 
     // Anki serving order (rslib scheduler/queue/mod.rs `iter`): intraday learning cards whose
     // timer has expired lead, then the main queue, and intraday learning cards still inside the
@@ -477,7 +531,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     // raw backlog. The uncapped remainder feeds the "held back" message instead of silently
     // inflating the badge past what the queue will ever serve. Learning cards have no daily
     // limit in Anki, so that count stays raw.
-    const servableNewCount = newCardsForQueue.length;
+    const servableNewCount = Math.max(0, newCount - (newCards.length - newCardsForQueue.length));
     const servableReviewCount = reviewCardsForQueue.length;
     const heldBackNewCount = 0;
     const heldBackReviewCount = Math.max(0, reviewCount - servableReviewCount);
@@ -513,7 +567,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         cards,
         stats: {
             newCount: servableNewCount,
-            learningCount: intradayLearningCount + interdayLearningCount,
+            learningCount: learningCards.length,
             reviewCount: servableReviewCount,
         },
         nextLearningDue,

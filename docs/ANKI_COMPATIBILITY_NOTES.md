@@ -10,6 +10,10 @@ one for the area you are changing.
 
 **Evidence:** `lib/scheduler.ts`, scheduler and repository tests
 
+Grade Now clears suspend/bury flags before encoding every scheduling column. Unsuspend/unbury preserves day-number due values in queue 3, including overdue learning cards (`lib/ai2Safety.test.ts`).
+
+Classic review elapsed days come from interval minus days until due, independent of manual/review-log timestamps. Only a filtered context uses early-review formulas, including zero elapsed days. Day labels call the exact scheduling path with the same card-ID/repetition fuzz seed and balancer (`lib/ai2Scheduling.test.ts`).
+
 **Next compatibility gate:** Keep golden interval/rollover tests
 
 ## Answer buttons, next times, counts, undo
@@ -25,23 +29,29 @@ revlog, buried siblings and filtered-build bookkeeping so retry cannot count the
 `lib/collectionWrite.test.ts` covers pending/error acknowledgement and rejection before mutation
 in a read-only tab.
 
+Undo applies only the operation delta to existing rows, preserving later note fields, unrelated tags, deck and flag edits; deleted cards are never recreated. Answer undo restores scheduling and known scheduler data while preserving opaque card data. This is a reviewer-local stack, not Anki's collection-wide undo stack (`lib/ai2Safety.test.ts`).
+
 **Next compatibility gate:** iPhone smoke in both classic and redesigned modes on each reviewer change
 
 ## Daily limits, learning steps, lapses, leeches, burying
 
 **Status:** Implemented with uncapped new cards (deliberate product policy, 2026-10-21)
 
-**Evidence:** TusAnkiM no longer applies a daily new-card quota. Every eligible new card remains available in collection, deck, subdeck, subject and topic scopes, even after 20 introductions, with a stored zero/today-only/parent limit, or with the legacy “new cards ignore review limit” preference off. Queue loading has no replacement numeric cap, and deck-list new counts are uncapped. Deck Options explains that new cards are unlimited instead of offering a quota, the reviewer has no new-quota completion screen, and Custom Study omits “increase today's new card limit”. Existing preset, per-deck and today-only new limits and the collection preference remain interchange metadata for backup/package round trips; they are not rewritten or reinterpreted as different units. This intentionally differs from the [Anki daily-limit semantics](https://docs.ankiweb.net/manual/deck-options#daily-limits).
+**Evidence:** TusAnkiM no longer applies a daily new-card quota. Every eligible new card remains available in collection, deck, subdeck, subject and topic scopes, even after 20 introductions, with a stored zero/today-only/parent limit, or with the legacy “new cards ignore review limit” preference off. Queue loading has no replacement daily cap (a 200-card working window is refilled as cards are studied), and deck-list new counts are uncapped. Deck Options explains that new cards are unlimited instead of offering a quota, the reviewer has no new-quota completion screen, and Custom Study omits “increase today's new card limit”. Existing preset, per-deck and today-only new limits and the collection preference remain interchange metadata for backup/package round trips; they are not rewritten or reinterpreted as different units. This intentionally differs from the [Anki daily-limit semantics](https://docs.ankiweb.net/manual/deck-options#daily-limits).
 
 Real-SQLite tests in `lib/studyQueue.dailyLimits.test.ts` cover 128 available new cards despite exhausted legacy limits, 21 actual answers followed by rebuilding and undo, unchanged imported metadata, and continued review-limit enforcement. `lib/deckManager.options.test.ts` covers uncapped deck-tree new counts, including legacy boosts and already-introduced cards. Learning steps, lapses, leeches, sibling burying and review caps retain their existing behavior. Deck-option advice remains non-blocking; advice based on a new-card quota is not shown. “Limits start from top” is off by default and governs review caps when enabled (`lib/studyRepository.scope.test.ts`).
 
-**Next compatibility gate:** Preserve selected-deck/subdeck review limits and lossless new-limit interchange metadata. Verify on iPhone that a collection with a legacy 20-card preset can reveal, grade and undo beyond the twentieth new card without a quota message.
+New cards have no daily cap (product decision 2026-10-21); imported new limits remain metadata. Intraday counts stop at now plus learn-ahead. Interday learning consumes the global and hierarchical review limit before reviews; answered interday cards leave local per-revlog settings markers so the allowance does not refill after restart, and undo deletes its marker. Queue building suppresses siblings in memory while applying limits, using the earlier accepted sibling's preset; skipped siblings spend no review slots; answers persist burying only for the same or later eligible category. Priority is intraday, interday, review, then new; a new/review answer cannot bury an earlier-category sibling (`lib/ai2Queue.test.ts`).
+
+**Next compatibility gate:** Preserve selected-deck/subdeck review limits and lossless new-limit interchange metadata. Deck-list counts (`lib/deckTree.ts`, `lib/deckStore.ts`) still need the study queue's learn-ahead cutoff and interday-learning review accounting. The local interday usage markers are not yet part of full backup/restore; they do not alter portable revlog kinds. Verify on iPhone that a collection with a legacy 20-card preset can reveal, grade and undo beyond the twentieth new card without a quota message.
 
 ## Display/gather/sort order and learn-ahead
 
-**Status:** Implemented
+**Status:** Implemented with bounded new-card window
 
 **Evidence:** six gather orders, five new-card sort orders, interday/review ordering and queue tests. All thirteen of Anki's review orders are offered, including the two retrievability orders, which appear only while FSRS is on because only then does a card carry the memory state they read (`reviewSortOrderChoices`). The scheduler decides what three of them mean, as `review_order_sql(order, timing, fsrs)` does: with FSRS on the two ease orders sort by difficulty in the opposite direction — and are relabelled for it — while relative overdueness is measured against retrievability, `-(R^(-1/decay) - 1) / (DR^(-1/decay) - 1)`, falling back to the interval measure for a card FSRS has never scheduled. A card with no memory state stands where SQLite's NULL would (`lib/queueBuild.test.ts`). A preset left on a retrievability order moves to relative overdueness if FSRS is switched off, and the ordinals still round-trip through `.apkg` (`lib/exportReviewOrder.test.ts`)
+
+New-card loading uses a 200-card replenished working window and SQL LIMIT, with one cached note-type read per type rather than one JSON payload per row. Deck gathering walks the decks in the deck list's order — siblings as the learner arranged them (alphabetical until reordered), each parent before its subdecks — so the catalog's topic subdecks arrive in course order; inside one deck a course's topics keep their listed order, then position. The window is filled deck by deck in that same order, never by deck-name collation, which misplaces Ç, İ, Ö, Ş and Ü (`lib/newCardDeckOrder.test.ts`). Sorting by template applies within the working window so later card types are not held behind the entire uncapped backlog. Mix uses a fixed 1:1 review/new cadence regardless of new-card total. These are explicit product differences from Anki's finite daily-new gather (`lib/ai2Queue.test.ts`). Review gather sorts lightweight scheduler keys across the entire due backlog before the limit, then loads fields/templates only for selected cards; interval/ease/retrievability orders cannot be truncated by an earlier due-date fetch window.
 
 **Next compatibility gate:** Keep the queue's meaning and the dropdown's label in step whenever either changes
 
@@ -50,6 +60,8 @@ Real-SQLite tests in `lib/studyQueue.dailyLimits.test.ts` cover 128 available ne
 **Status:** Implemented
 
 **Evidence:** per-card preset resolution, reviewer timer/auto-advance behavior and package round-trip tests
+
+Manual answer replay plays question then answer audio, or only the answer when skip-question is enabled. Automatic answer playback excludes FrontSide audio while the displayed answer retains FrontSide content. The single card frame gets an explicit playback playlist; it does not route signals to a nonexistent question frame. Per-card presets and the global sound toggle control autoplay. Menus (including their Set Due Date/tag/reset dialogs), deck/catalog/custom-study pickers, route blur, backgrounding and whiteboard use block Auto Advance. A side owns its dwell clock: menus, route blur and backgrounding pause its accumulated time; only changing the card/side or dwell settings resets it (`lib/reviewerAudio.test.ts`, `lib/reviewerTimers.test.ts`, `lib/reviewerDwellTimer.test.ts`).
 
 **Next compatibility gate:** Keep the study-session activation boundary explicit
 
@@ -163,9 +175,17 @@ Deletion keeps lifetime review history. Note/editor and deck-list deletion retur
 
 ## Filtered decks and custom study
 
-**Status:** Implemented
+**Status:** Implemented subset: fixed virtual membership
 
 **Evidence:** Context-preserving overview panels, two independent filters, all 11 gather search orders (0..10) stored with Anki's own ordinals (migration 10), rescheduling/preview modes whose Again/Hard/Good delays mirror Anki's `preview_again_secs`/`preview_hard_secs`/`preview_good_secs` (read from `Deck.Filtered` fields 7/5/6, which `decks.proto` numbers out of order; an omitted field imports as zero exactly as proto3 and Anki's schema-11 serde defaults leave it, and `60`/`600`/`0` are used only when creating a deck, matching `Deck::new_filtered`, whose second search term also starts at 20 cards) with Easy always retiring the card as `preview_filter.rs` does, gather orders built from `rslib/src/storage/card/filtered.rs` including its note-id/ordinal added order and its single timeline for due order, reviewer session countdown timers, excluded-card reporting, in-app help, deck manager, `lib/filteredDeckOptions.test.ts`, `lib/studyRepository.scope.test.ts`, and reviewer preview queue tests. An emptied filtered deck opened from the deck list offers Rebuild rather than Add Card, since tapping a deck now opens study instead of the overview. The study screen's finished state carries the actions Anki shows around its congrats page (`CongratsPage.svelte` and the overview's bottom bar): Custom Study for a regular deck, Rebuild for a filtered deck, and Unbury when the deck has buried cards. A filtered deck gathers its cards by search, so one that runs dry ends on the finished state rather than on the empty-deck state with Add Card. Custom Study opens over the reviewer and its session is studied in place.
+
+**Membership:** Create/Build/Rebuild saves ordered card IDs once in collection settings. Queue refreshes, answers, search changes on the card and rollover never refill that build. Completed cards leave it; Empty releases reservations. Normal study excludes reserved cards and a second filtered build cannot claim them. The second filter applies its limit after excluding the first filter's cards. Imported physical filtered cards are visible in their session and Empty/Rebuild returns them home without clearing suspend/bury (`lib/ai2Filtered.test.ts`). Materialization and scheduling read the home due in `odue`, not a negative gather position; graduation returns the new schedule home, while ongoing learning updates `odue`. Physical cards use the home preset for scheduling, answer-time caps and sibling-bury settings. Undo restores the physical transport state only while the filtered deck still exists and no later move chose another destination.
+
+Filtered counts subtract a reservation from the home due/learn-ahead counter only if that card was included there, so a future review cannot consume another due review. Stored membership, rather than timestamp-shaped card IDs, determines the build count (`lib/ai2Filtered.test.ts`).
+
+This remains a virtual model: local cards retain their home `did` and do not use Anki's `odid`/`odue` transport. Export/search/browser behavior must account for this documented difference. Imported `odue` conversions are owned by package import; this change does not guess or reinterpret broken persisted units.
+
+**Filtered search:** SQL accepts whole quoted deck terms, wildcard deck names, note types, template names/numbers, note IDs, named fields and introduction windows (`lib/ai2FilteredSearch.test.ts`). Search interfaces remain unchanged; full search grammar/Unicode normalization is still subject to the Browser compatibility gate.
 
 **Preview answers:** an answer in a deck with rescheduling off follows `apply_preview_state`. The card's schedule, repetitions and review time stay as they were. The answer is logged as a filtered review with no ease (`ivl` the preview delay, `lastIvl` the Again delay, negative seconds or days past the rollover), which FSRS and the optimizer skip as cramming and which counts as studied today but never as introducing a card. Siblings are buried, and under FSRS the card gets the preset's decay and any missing memory state, as for every Anki answer. A delayed card waits on the deck (`filteredPreviewDue`) with Anki's learning-step fuzz, across restarts, and comes back ahead of the rest. A preview answer can be undone. Checked against 72 answers recorded from Anki 26.05 (`lib/previewAnswers.test.ts`).
 
@@ -440,6 +460,8 @@ Readable cardless notes are rescued by creating card 1 in the recovery deck; the
 **Status:** Product-specific catalog only
 
 **Evidence:** Purchased catalog notes use the normal editor save path: all text/HTML fields, formatting, attachments, cloze deletions and tags are editable; the content-protection banner is removed. Trial content remains read-only with its separate tag-only write path. Existing card IDs, scheduling and review history survive field edits, and cloze edits add missing ordinals while retaining empty siblings for Empty Cards (`lib/catalogEditing.test.ts`). The editor's clear-fields and formatting controls are available after unlock (`lib/catalogEditorMenu.test.ts`). Locally edited fields are marked on the note; a full-to-full bundled package refresh preserves those fields, tags and generated cards while refreshing untouched notes (`lib/bkaCatalog.install.test.ts`). GUID, note type, catalog ownership, deck placement, note/deck deletion, duplication and import/export restrictions remain product-specific and are enforced in the data layer; this field-editing change does not remove them. Tags and flags remain learner metadata on both tiers, including mixed personal/catalog selections (`lib/catalogProtection.test.ts`, `lib/noteManager.catalogTags.test.ts`).
+
+Trial scheduling writes are permitted only on an existing card with unchanged identity/content metadata; new cards and ordinal/ownership changes stay blocked. A trial may materialize its installed cards for study and retain answer/revlog progress without granting field editing. Learner tags and flags stay independent of content access; a generic trial note save still fails unless it actually changes tags (`lib/ai2CatalogStudy.test.ts`).
 
 **Named iPhone smoke — purchased catalog editing:** After unlocking the full catalog, open a note from the reviewer and browser. Verify the protection banner is absent; edit text, apply bold, attach an image/audio clip, add/remove one cloze deletion, save immediately, then force-quit/relaunch and review offline. Confirm the edited content and retained sibling's review state survive. On a trial install, verify fields remain read-only and tags still save. Run the Media/editor and Purchase/catalog rows of `IOS_RELEASE_CHECKLIST.md`; physical-device execution remains required before release.
 

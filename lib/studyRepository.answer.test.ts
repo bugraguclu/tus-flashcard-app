@@ -211,7 +211,7 @@ describe('answerStudyCard', () => {
         shared.cards.set(10, baseCard(10, 1, 2, 2));
         // Sibling intraday learning (should stay untouched by interday bury policy).
         shared.cards.set(11, { ...baseCard(11, 1, 1, 1), left: 2001, due: Date.now() + 60000 });
-        // Sibling interday learning (should be buried).
+        // Earlier interday learning has priority over this review and stays active.
         shared.cards.set(12, { ...baseCard(12, 1, 3, 1), left: 1001, due: 999999 });
     });
 
@@ -230,8 +230,8 @@ describe('answerStudyCard', () => {
         expect(updated.reps).toBeGreaterThan(5);
         expect(updated.queue).toBe(2);
 
-        // Bury policy: interday-learning sibling sched-buried (-2), intraday sibling untouched.
-        expect(shared.cards.get(12)?.queue).toBe(-2);
+        // A review cannot bury earlier interday or intraday learning siblings.
+        expect(shared.cards.get(12)?.queue).toBe(3);
         expect(shared.cards.get(11)?.queue).toBe(1);
 
         expect(result.reviewLogId).toBeGreaterThan(1000);
@@ -258,7 +258,7 @@ describe('answerStudyCard', () => {
             lastReview: Date.now() - 2 * 86400000,
         });
 
-        answerStudyCard(30, 3, settings, 900);
+        answerStudyCard(30, 3, settings, 900, { filtered: true });
         const updated = shared.cards.get(30)!;
 
         // Anki's early-review Good is max(elapsed x ease, scheduled) — rslib review.rs
@@ -278,7 +278,7 @@ describe('answerStudyCard', () => {
             lastReview: 0,
         });
 
-        answerStudyCard(31, 3, settings, 900);
+        answerStudyCard(31, 3, settings, 900, { filtered: true });
         const updated = shared.cards.get(31)!;
 
         // 8 days elapsed x 2.5 = 20, which ties the scheduled interval — an on-time answer would
@@ -369,7 +369,7 @@ describe('answerStudyCard', () => {
     it('logs a review answered before its due day as a filtered review', () => {
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
         shared.cards.set(23, { ...baseCard(23, 1, 2, 2), due: today + 4, ivl: 10 });
-        answerStudyCard(23, 3, settings, 800);
+        answerStudyCard(23, 3, settings, 800, { filtered: true });
         expect(shared.lastRevlogType).toBe(3);
 
         shared.cards.set(24, { ...baseCard(24, 1, 2, 2), due: today, ivl: 10 });
@@ -428,6 +428,7 @@ describe('undoAnswer', () => {
 
     it('rolls back without deleting review history when the card cannot be restored', () => {
         shared.throwOnSave = true;
+        shared.cards.set(10, baseCard(10, 1, 2, 2));
 
         expect(() => undoAnswer(baseCard(10, 1, 2, 2), 1234)).toThrow('save failed');
         expect(deleteReviewById).not.toHaveBeenCalled();

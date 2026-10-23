@@ -91,3 +91,12 @@ describe('reviewer whiteboard ink lifetime', () => {
         expect(shouldClearWhiteboardForCard(12, 12)).toBe(false);
     });
 });
+
+// https://docs.ankiweb.net/deck-options.html#auto-advance
+it('auto advance cannot act behind a menu, modal, another route or the background', () => {
+    for (const state of [
+        { focused: false, foregrounded: true, surfaceOpen: false },
+        { focused: true, foregrounded: false, surfaceOpen: false },
+        { focused: true, foregrounded: true, surfaceOpen: true },
+    ]) expect(shouldRunAutoAdvance(90000, 1000, false, false, false, state)).toBe(false);
+});

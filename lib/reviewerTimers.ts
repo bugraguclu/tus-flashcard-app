@@ -42,7 +42,9 @@ export function shouldRunAutoAdvance(
     waitForAudio: boolean,
     audioActive: boolean,
     drawingActive: boolean,
+    interaction: { focused: boolean; foregrounded: boolean; surfaceOpen: boolean } = { focused: true, foregrounded: true, surfaceOpen: false },
 ): boolean {
+    if (!interaction.focused || !interaction.foregrounded || interaction.surfaceOpen) return false;
     if (drawingActive) return false;
     if (Math.max(0, elapsedMs) < Math.max(0, targetMs)) return false;
     return !waitForAudio || !audioActive;

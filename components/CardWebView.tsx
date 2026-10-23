@@ -3,6 +3,7 @@ import { Linking, Platform, StyleSheet, useWindowDimensions } from 'react-native
 import { WebView } from 'react-native-webview';
 import { isLegacyTusNoteType, type NoteType, type Note, type AnkiCard, type Deck } from '../lib/models';
 import { renderCardHtml } from '../lib/templates';
+import { reviewerMediaHtml, type ReviewerPlaybackScope } from '../lib/reviewerAudio';
 import { catalogCardCss, documentCss, legacyTusCardCss, reviewerCanvasCss } from '../lib/cardAppearance';
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors } from '../constants/theme';
@@ -158,6 +159,7 @@ interface CardWebViewProps {
     onTypeAnswerSubmit?: (value: string) => void;
     /** Bump to (re)play the side's audio/video attachments in order (deck audio settings / R key). */
     playAudioSignal?: number;
+    audioPlaybackScope?: ReviewerPlaybackScope;
     /** Bump to pause every audio/video attachment on this side. */
     pauseAudioSignal?: number;
     /** Reports whether this side still has sound playing — drives Anki's "wait for audio". */
@@ -207,6 +209,7 @@ export default function CardWebView({
     onTypedAnswerChange,
     onTypeAnswerSubmit,
     playAudioSignal,
+    audioPlaybackScope,
     pauseAudioSignal,
     onAudioActiveChange,
     omitFrontSide,
@@ -434,52 +437,67 @@ export default function CardWebView({
         };
     }, [html]);
 
-    // Play this side's audio/video attachments in document order, each starting when the
-    // previous ends (Anki plays a side's sounds sequentially). Autoplay policies can still
-    // veto a play() without recent user interaction — best effort, never an error.
     useEffect(() => {
         if (!playAudioSignal) return;
-
-        if (Platform.OS === 'web') {
-            const doc = iframeRef.current?.contentDocument;
-            if (!doc) return;
-            const media = Array.from(doc.querySelectorAll('audio, video')) as HTMLMediaElement[];
-            media.forEach((element) => {
-                element.pause();
-                element.onended = null;
-            });
-            const playAt = (index: number) => {
-                if (index >= media.length) {
-                    audioActiveRef.current?.(false);
-                    return;
-                }
-                const element = media[index];
-                element.currentTime = 0;
-                if (element.tagName.toLowerCase() === 'audio' && !element.playbackRate) {
-                    element.playbackRate = audioPlaybackRate || 1.0;
-                }
-                element.onended = () => playAt(index + 1);
-                element.play().catch(() => { /* blocked by autoplay policy */ });
-            };
-            audioActiveRef.current?.(media.length > 0);
-            playAt(0);
-            return;
-        }
-
-        // Native: the injected chain posts AUDIO:1 / AUDIO:0 so the reviewer knows when the
-        // side has fallen silent, which is what "wait for audio" waits on.
-        audioActiveRef.current?.(true);
-
-        webViewRef.current?.injectJavaScript(
-            '(function(){var l=document.querySelectorAll("audio,video");var a=[];' +
-            'for(var i=0;i<l.length;i++){a.push(l[i]);l[i].pause();l[i].onended=null;}' +
-            'function s(v){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage("AUDIO:"+v);}' +
-            'function p(i){if(i>=a.length){s(0);return;}var m=a[i];m.currentTime=0;' +
-            'if(m.tagName.toLowerCase()==="audio"&&!m.playbackRate){m.playbackRate=' + JSON.stringify(audioPlaybackRate || 1.0) + ';}' +
-            'm.onended=function(){p(i+1);};m.onerror=function(){p(i+1);};' +
-            'var pr=m.play();if(pr&&pr.catch)pr.catch(function(){p(i+1);});}' +
-            's(a.length>0?1:0);p(0);})();true;',
+        let cancelled = false;
+        let cleanup: (() => void) | undefined;
+        const options = { deckName: deck?.name, clozeOrd: card.ord + 1 };
+        const playlistHtml = reviewerMediaHtml(
+            renderCardHtml(noteType, note, card.ord, 'question', options),
+            renderCardHtml(noteType, note, card.ord, 'answer', { ...options, omitFrontSide: true }),
+            audioPlaybackScope ?? side,
         );
+        if (Platform.OS === 'web') {
+            void resolveWebMediaInHtml(playlistHtml).then((resolved) => {
+                if (cancelled) return;
+                const doc = iframeRef.current?.contentDocument;
+                if (!doc) return;
+                const holder = doc.createElement('div');
+                holder.hidden = true;
+                holder.innerHTML = resolved;
+                const visible = Array.from(doc.querySelectorAll('audio, video')) as HTMLMediaElement[];
+                const requested = Array.from(holder.querySelectorAll('audio, video')) as HTMLMediaElement[];
+                const used = new Set<HTMLMediaElement>();
+                const media = requested.map((item) => {
+                    const existing = visible.find((element) => !used.has(element) && element.tagName === item.tagName && element.getAttribute('src') === item.getAttribute('src'));
+                    const element = existing ?? item;
+                    used.add(element);
+                    return element;
+                });
+                doc.body.appendChild(holder);
+                const playAt = (index: number) => {
+                    if (cancelled) return;
+                    if (index >= media.length) { audioActiveRef.current?.(false); return; }
+                    const element = media[index];
+                    element.currentTime = 0;
+                    element.playbackRate = audioPlaybackRate || 1;
+                    element.onended = element.onerror = () => playAt(index + 1);
+                    void element.play().catch(() => playAt(index + 1));
+                };
+                audioActiveRef.current?.(media.length > 0);
+                playAt(0);
+                cleanup = () => {
+                    for (const element of media) { element.onended = element.onerror = null; element.pause(); }
+                    holder.remove();
+                    audioActiveRef.current?.(false);
+                };
+            }).catch(() => audioActiveRef.current?.(false));
+        } else {
+            audioActiveRef.current?.(true);
+            webViewRef.current?.injectJavaScript(
+                '(function(){var gen=window.__tusAudioGeneration=(window.__tusAudioGeneration||0)+1;var old=document.getElementById("tus-replay-media");if(old)old.remove();' +
+                'var l=Array.from(document.querySelectorAll("audio,video"));l.forEach(function(m){m.pause();m.onended=null;});' +
+                'var h=document.createElement("div");h.id="tus-replay-media";h.hidden=true;h.innerHTML=' + JSON.stringify(playlistHtml) + ';' +
+                'var used=[];var a=Array.from(h.querySelectorAll("audio,video")).map(function(m){var v=l.find(function(x){return used.indexOf(x)<0&&x.tagName===m.tagName&&x.getAttribute("src")===m.getAttribute("src");});v=v||m;used.push(v);return v;});document.body.appendChild(h);' +
+                'function s(v){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage("AUDIO:"+v);}' +
+                'function p(i){if(gen!==window.__tusAudioGeneration)return;if(i>=a.length){s(0);return;}var m=a[i];m.currentTime=0;m.playbackRate=' + JSON.stringify(audioPlaybackRate || 1) + ';' +
+                'm.onended=function(){p(i+1);};m.onerror=function(){p(i+1);};var pr=m.play();if(pr&&pr.catch)pr.catch(function(){p(i+1);});}' +
+                's(a.length>0?1:0);p(0);})();true;',
+            );
+        }
+        return () => { cancelled = true; cleanup?.(); };
+        // Playback begins only on a fresh signal; rerenders never restart a playlist.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [playAudioSignal, audioPlaybackRate]);
 
     useEffect(() => {
@@ -489,7 +507,7 @@ export default function CardWebView({
             const doc = iframeRef.current?.contentDocument;
             if (!doc) return;
             for (const element of Array.from(doc.querySelectorAll('audio, video')) as HTMLMediaElement[]) {
-                element.onended = null;
+                element.onended = element.onerror = null;
                 element.pause();
             }
             audioActiveRef.current?.(false);
@@ -499,8 +517,8 @@ export default function CardWebView({
         audioActiveRef.current?.(false);
 
         webViewRef.current?.injectJavaScript(
-            '(function(){var l=document.querySelectorAll("audio,video");' +
-            'for(var i=0;i<l.length;i++){l[i].onended=null;l[i].pause();}})();true;',
+            '(function(){window.__tusAudioGeneration=(window.__tusAudioGeneration||0)+1;var l=document.querySelectorAll("audio,video");' +
+            'for(var i=0;i<l.length;i++){l[i].onended=null;l[i].onerror=null;l[i].pause();}})();true;',
         );
     }, [pauseAudioSignal]);
 
