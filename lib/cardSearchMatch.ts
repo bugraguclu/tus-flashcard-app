@@ -2,10 +2,14 @@
 //
 // Every collection search uses this term evaluator. The SQL adapter materializes its ID set,
 // so browser and filtered searches agree without SQLite ICU or platform-specific functions.
+// Behaviour reference: https://docs.ankiweb.net/searching.html; pinned by lib/searchSyntax.test.ts.
 
 import { fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview, type FsrsMemoryState } from './fsrs';
-import { normalizeSearchText } from './searchText';
-import { foldSearchNode, isQuotedTerm, parseSearchQuery, SearchSyntaxError, unquoteSearchValue } from './searchQuery';
+import { foldSearchNode, parseSearchQuery, SearchSyntaxError } from './searchQuery';
+import {
+    firstUnescapedColon, globMatcher, hierarchicalGlobMatcher, searchRegex, stripHtmlForSearch,
+    stripSearchQuotes, unescapeSearchText, withoutClozeMarkup, wordMatcher,
+} from './searchGlob';
 
 /** Everything a search term may ask about one card. */
 export interface CardSearchContext {
@@ -26,8 +30,23 @@ export interface CardSearchContext {
     flags: number;
     /** Note fields by name, for `Front:dog` and `re:` searches. */
     fields?: Record<string, string>;
+    /** The note's raw field values in order, which plain text, `dupe:` and the sort field read. */
+    fieldList?: string[];
+    /** Index of the note type's sort field in `fieldList`. */
+    sortFieldIndex?: number;
+    noteTypeId?: number;
     noteTypeName?: string;
     templateName?: string;
+    /** The card's deck id, and for a card physically in a filtered deck its home deck. */
+    deckId?: number;
+    homeDeckId?: number;
+    homeDeckName?: string;
+    /** Filtered decks the card is a member of (virtual membership or physical placement). */
+    filteredDeckNames?: string[];
+    /** The options preset of the card's (home) deck, for `preset:`. */
+    presetName?: string;
+    /** Anki's custom scheduling data (`cd` in the card's data blob), for `has-cd:` and `prop:cd*`. */
+    customData?: Record<string, unknown> | null;
     /** Epoch ms the card was added, for `added:N`. */
     createdAtMs?: number;
     /** Epoch ms the note was last edited, for `edited:N`. */
@@ -42,6 +61,9 @@ export interface CardSearchContext {
     lastReviewTimeSecs?: number;
 }
 
+/** Which review-log rows a lookup reads: real answers, or manual reschedules. */
+export type RevlogLookupKind = 'rated' | 'resched';
+
 export interface CardMatcherOptions {
     /** Today's study day number, for `is:due` and `prop:due`. */
     today: number;
@@ -54,6 +76,13 @@ export interface CardMatcherOptions {
     ratedWithin?: (cardId: number, days: number, ease: number | null) => boolean;
     /** First answered within N days — needs the review log. */
     introducedWithin?: (cardId: number, days: number) => boolean;
+    /**
+     * The study days (0 today, -1 yesterday, …) on which the card was answered or manually
+     * rescheduled, for `prop:rated`, `prop:resched` and `resched:`.
+     */
+    revlogDayOffsets?: (cardId: number, kind: RevlogLookupKind) => readonly number[];
+    /** The deck `deck:current` means; null or absent reads as the whole collection. */
+    currentDeckName?: string | null;
 }
 
 /**
@@ -69,8 +98,10 @@ export interface CardSearchNeeds {
     tags: boolean;
     /** The note's edit time, for `edited:`. */
     noteEdited: boolean;
-    /** The card's FSRS blob (memory state, decay, recorded review time), for `prop:s/d/r`. */
+    /** The card's data blob (memory state, decay, review time, custom data), for `prop:s/d/r/cd*`. */
     cardData: boolean;
+    /** Filtered-deck membership, home decks and presets, for `deck:` and `preset:`. */
+    decks?: boolean;
 }
 
 /**
@@ -87,34 +118,6 @@ function invalidTerm(term: string): never { throw new SearchSyntaxError(term); }
 
 const DAY_MS = 86_400_000;
 
-function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Comparison key for names and field values. The same folding the rest of the app searches with
- * (lib/searchText) is used on both sides, so `deck:cografya` finds "Coğrafya" and a field search
- * is not defeated by markup or by an ASCII keyboard.
- */
-function foldKey(value: string): string {
-    return value.normalize('NFC').toLocaleLowerCase('tr');
-}
-
-/** Anki's `*` wildcard, compiled once per term. Without a `*` the comparison is a plain equality. */
-function wildcardMatcher(pattern: string): (value: string) => boolean {
-    const folded = foldKey(pattern);
-    if (!folded.includes('*')) return (value) => foldKey(value) === folded;
-    const regex = new RegExp(`^${folded.split('*').map(escapeRegExp).join('.*')}$`);
-    return (value) => regex.test(foldKey(value));
-}
-
-/** `deck:X` and `tag:X` both match the name itself and everything nested under it. */
-function hierarchicalMatcher(pattern: string): (value: string) => boolean {
-    const matches = wildcardMatcher(pattern);
-    const prefix = `${foldKey(pattern)}::`;
-    return (value) => matches(value) || foldKey(value).startsWith(prefix);
-}
-
 function numericComparison(op: string, value: number): (candidate: number) => boolean {
     switch (op) {
         case '>=': return (candidate) => candidate >= value;
@@ -126,30 +129,41 @@ function numericComparison(op: string, value: number): (candidate: number) => bo
     }
 }
 
-function idList(value: string): Set<number> {
-    return new Set(value.split(',').map((entry) => Number(entry.trim())).filter(Number.isFinite));
+function idList(term: string, value: string): Set<number> {
+    const entries = value.split(',').map((entry) => entry.trim());
+    if (!entries.every((entry) => /^\d+$/.test(entry))) return invalidTerm(term);
+    return new Set(entries.map(Number));
 }
 
-function noteText(card: CardSearchContext): string {
-    return card.fields ? Object.values(card.fields).join(' ') : card.text;
+/** The note's raw fields, in order. */
+function rawFields(card: CardSearchContext): string[] {
+    if (card.fieldList) return card.fieldList;
+    return card.fields ? Object.values(card.fields) : [card.text];
 }
 
 /**
- * Everything a bare word searches: the rendered card, its tags and its deck. Anki's browser also
- * searches collection metadata, and the app's existing search box has always included these.
+ * What a plain-text term reads, as Anki's `n.sfld like … or n.flds like …`: every field's raw
+ * content joined by Anki's field separator, so formatting is searched as written (`&amp;`, not
+ * `&`), plus the sort field with its formatting removed, so a word formatted mid-way through is
+ * still found there.
  */
-/** Field contents only; metadata, deck names and tags have their own search terms. */
-function fieldText(value: string, noCombining = false): string {
-    let text = value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#0?39;/g, "'");
-    if (noCombining) text = text.normalize('NFD').replace(/\p{M}/gu, '');
-    return text.replace(/[A-Z]/g, ch => ch.toLowerCase());
+function plainTextViews(card: CardSearchContext): string[] {
+    const fields = rawFields(card);
+    const sort = card.fieldList ? card.fieldList[card.sortFieldIndex ?? 0] : undefined;
+    return sort === undefined ? [fields.join('\x1f')] : [fields.join('\x1f'), stripHtmlForSearch(sort)];
 }
-function textPredicate(term: string, noCombining = false): TermTest {
-    const value = unquoteSearchValue(term);
+
+function textPredicate(rawValue: string, view: 'plain' | 'nc' | 'sc' = 'plain'): TermTest {
+    const value = stripSearchQuotes(rawValue);
     if (!value) throw new SearchSyntaxError('empty text term');
-    const pattern = fieldText(value, noCombining);
-    const regex = new RegExp(pattern.split('*').map(part => part.split('_').map(escapeRegExp).join('.')).join('.*'), 's');
-    return card => (card.fields ? Object.values(card.fields) : [card.text]).some(field => regex.test(fieldText(field, noCombining)));
+    const matches = globMatcher(value, { anchored: false, noCombining: view === 'nc' });
+    if (view === 'sc') {
+        return (card) => {
+            const fields = rawFields(card).map(withoutClozeMarkup);
+            return matches(fields.join('\x1f')) || fields.some((field) => matches(stripHtmlForSearch(field)));
+        };
+    }
+    return (card) => plainTextViews(card).some(matches);
 }
 
 function statePredicate(state: string, options: CardMatcherOptions): TermTest | null {
@@ -175,11 +189,50 @@ function statePredicate(state: string, options: CardMatcherOptions): TermTest | 
     }
 }
 
+/** `prop:cdn:key>5` and `prop:cds:key=text`: Anki's custom scheduling data. */
+function customDataPredicate(body: string, needs: CardSearchNeeds): TermTest | null {
+    const numeric = body.match(/^cdn:([\w-]+)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/i);
+    if (numeric) {
+        needs.cardData = true;
+        const [, key, op, raw] = numeric;
+        const compare = numericComparison(op, Number(raw));
+        return (card) => {
+            if (card.customData === undefined) return undefined;
+            const value = card.customData?.[key];
+            return typeof value === 'number' && compare(value);
+        };
+    }
+    const text = body.match(/^cds:([\w-]+)(!=|=)(.*)$/is);
+    if (text) {
+        needs.cardData = true;
+        const [, key, op, pattern] = text;
+        const matches = globMatcher(stripSearchQuotes(pattern), { anchored: true });
+        return (card) => {
+            if (card.customData === undefined) return undefined;
+            const value = card.customData?.[key];
+            if (typeof value !== 'string') return false;
+            return op === '=' ? matches(value) : !matches(value);
+        };
+    }
+    return null;
+}
+
+/** `prop:rated` / `prop:resched`: a day relative to today, 0 being today and -1 yesterday. */
+function revlogDayPredicate(kind: RevlogLookupKind, op: string, value: number, options: CardMatcherOptions): TermTest {
+    const compare = numericComparison(op, Math.trunc(value));
+    const lookup = options.revlogDayOffsets;
+    if (!lookup) return UNKNOWN;
+    return (card) => lookup(card.cardId, kind).some(compare);
+}
+
 function propPredicate(body: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest | null {
-    const match = body.match(/^(ivl|reps|lapses|ease|pos|due|s|d|r)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/);
+    const custom = customDataPredicate(body, needs);
+    if (custom) return custom;
+    const match = body.match(/^(ivl|reps|lapses|ease|pos|due|s|d|r|rated|resched)(>=|<=|!=|=|>|<)(-?\d+(?:\.\d+)?)$/i);
     if (!match) return null;
 
-    const [, key, op, rawValue] = match;
+    const [, rawKey, op, rawValue] = match;
+    const key = rawKey.toLowerCase();
     const value = Number(rawValue);
     if (!Number.isFinite(value)) return null;
     if (key === 's' || key === 'd' || key === 'r') needs.cardData = true;
@@ -217,6 +270,9 @@ function propPredicate(body: string, options: CardMatcherOptions, needs: CardSea
                 return compare(fsrsRetrievabilityAfterSeconds(card.memoryState, seconds, card.decay));
             };
         }
+        case 'rated':
+        case 'resched':
+            return revlogDayPredicate(key, op, value, options);
         case 'due': {
             const compare = numericComparison(op, Math.trunc(value));
             return (card) => (card.queue === 2 || card.queue === 3) && compare(card.due - options.today);
@@ -259,29 +315,107 @@ function dayWindowPredicate(
     };
 }
 
-function predicateForTerm(term: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
-    if (isQuotedTerm(term) && term.includes(':')) term = unquoteSearchValue(term);
-    const separator = term.indexOf(':');
+/** `rated:N[:ease]` and `resched:N`: anything logged within the last N days. */
+function daysArgument(term: string, raw: string): number {
+    const days = Number(raw);
+    if (!/^\d+$/.test(raw) || days <= 0) return invalidTerm(term);
+    return days;
+}
+
+/** `deck:` — the deck itself, everything under it, and the filtered decks the card is in. */
+function deckPredicate(term: string, body: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
+    if (!body) throw new SearchSyntaxError('empty search value');
+    if (body === '*') return () => true;
+    needs.decks = true;
+    const keyword = body.toLowerCase();
+    if (keyword === 'filtered') {
+        return (card) => (card.filteredDeckNames === undefined ? undefined : card.filteredDeckNames.length > 0);
+    }
+    if (keyword === 'current') {
+        const current = options.currentDeckName;
+        if (!current) return () => true;
+        const matches = hierarchicalGlobMatcher(current.replace(/[\\*_"]/g, '\\$&'));
+        return (card) => matches(card.deckName) || (card.homeDeckName !== undefined && matches(card.homeDeckName));
+    }
+    const matches = hierarchicalGlobMatcher(body);
+    return (card) => matches(card.deckName)
+        || (card.homeDeckName !== undefined && matches(card.homeDeckName))
+        || (card.filteredDeckNames ?? []).some(matches);
+}
+
+function tagPredicate(term: string, body: string, needs: CardSearchNeeds): TermTest {
+    if (!body) throw new SearchSyntaxError('empty search value');
+    needs.tags = true;
+    const keyword = body.toLowerCase();
+    if (keyword === 'none') return (card) => card.tags.length === 0;
+    if (body === '*') return () => true;
+    if (keyword.startsWith('re:')) {
+        let regex: RegExp;
+        try { regex = searchRegex(unescapeRegexValue(body.slice(3))); } catch { return invalidTerm(term); }
+        return (card) => card.tags.some((tag) => regex.test(tag));
+    }
+    const matches = hierarchicalGlobMatcher(body);
+    return (card) => card.tags.some(matches);
+}
+
+/**
+ * `Front:dog` compares the whole field (`Front:*dog*` for "contains"), `Front:` finds an empty
+ * field, `Front:_*` a non-empty one and `Front:*` any note that has the field. Field names take
+ * wildcards too (`fr*:dog`). `Front:re:…` and `Front:nc:…` read the field as a regex and without
+ * accents. Field contents are compared as stored, formatting included, as Anki does.
+ */
+function fieldPredicate(term: string, name: string, rawValue: string, needs: CardSearchNeeds): TermTest {
+    needs.fields = true;
+    const nameMatches = globMatcher(name, { anchored: true });
+    const value = stripSearchQuotes(rawValue);
+    const lower = value.toLowerCase();
+    let test: (field: string) => boolean;
+    if (lower.startsWith('re:')) {
+        let regex: RegExp;
+        try { regex = searchRegex(unescapeRegexValue(value.slice(3))); } catch { return invalidTerm(term); }
+        test = (field) => regex.test(field);
+    } else if (lower.startsWith('nc:')) {
+        test = globMatcher(value.slice(3), { anchored: true, noCombining: true });
+    } else {
+        test = globMatcher(value, { anchored: true });
+    }
+    return (card) => {
+        if (!card.fields) return undefined;
+        const matching = Object.entries(card.fields).filter(([fieldName]) => nameMatches(fieldName));
+        return matching.some(([, field]) => test(field));
+    };
+}
+
+/** A `re:` value is raw text: only an escaped quote is unescaped, as the manual says. */
+function unescapeRegexValue(value: string): string {
+    return value.replace(/\\"/g, '"');
+}
+
+function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
+    let term = rawTerm;
+    const wholeQuoted = term.length >= 2 && term.startsWith('"') && term.endsWith('"');
+    if (wholeQuoted && firstUnescapedColon(term) > 0) term = stripSearchQuotes(term);
+    const separator = firstUnescapedColon(term);
     if (separator <= 0) {
         needs.fields = true;
         return textPredicate(term);
     }
 
-    const prefix = term.slice(0, separator).toLowerCase();
-    const body = unquoteSearchValue(term.slice(separator + 1));
+    const rawKey = term.slice(0, separator);
+    const prefix = rawKey.toLowerCase();
+    const rawBody = term.slice(separator + 1);
+    const body = stripSearchQuotes(rawBody);
 
     switch (prefix) {
-        case 'deck': {
+        case 'deck':
+            return deckPredicate(term, body, options, needs);
+        case 'tag':
+            return tagPredicate(term, body, needs);
+        case 'preset': {
             if (!body) throw new SearchSyntaxError('empty search value');
-            const matches = hierarchicalMatcher(body);
-            return (card) => matches(card.deckName);
-        }
-        case 'tag': {
-            if (!body) throw new SearchSyntaxError('empty search value');
-            needs.tags = true;
-            if (body === 'none') return (card) => card.tags.length === 0;
-            const matches = hierarchicalMatcher(body);
-            return (card) => card.tags.some(matches);
+            needs.decks = true;
+            const matches = globMatcher(body, { anchored: true });
+            return (card) => (card.presetName === undefined ? undefined : matches(card.presetName));
         }
         case 'is':
             return statePredicate(body.toLowerCase(), options) ?? invalidTerm(term);
@@ -293,21 +427,26 @@ function predicateForTerm(term: string, options: CardMatcherOptions, needs: Card
         case 'prop':
             return propPredicate(body, options, needs) ?? invalidTerm(term);
         case 'rated': {
-            const [rawDays, rawEase] = body.split(':');
-            const days = Number(rawDays);
-            if (!Number.isInteger(days) || days <= 0 || body.split(':').length > 2) return invalidTerm(term);
-            const ease = rawEase === undefined ? null : Number(rawEase);
-            if (ease !== null && (!Number.isInteger(ease) || ease < 1 || ease > 4)) return invalidTerm(term);
+            const parts = body.split(':');
+            if (parts.length > 2) return invalidTerm(term);
+            const days = daysArgument(term, parts[0]);
+            const ease = parts[1] === undefined ? null : Number(parts[1]);
+            if (ease !== null && (!/^\d$/.test(parts[1]) || ease < 1 || ease > 4)) return invalidTerm(term);
             const lookup = options.ratedWithin;
             if (!lookup) return UNKNOWN;
-            return (card) => lookup(card.cardId, Math.floor(days), ease);
+            return (card) => lookup(card.cardId, days, ease);
+        }
+        case 'resched': {
+            const days = daysArgument(term, body);
+            const lookup = options.revlogDayOffsets;
+            if (!lookup) return UNKNOWN;
+            return (card) => lookup(card.cardId, 'resched').some((offset) => offset > -days);
         }
         case 'introduced': {
-            const days = Number(body);
+            const days = daysArgument(term, body);
             const lookup = options.introducedWithin;
-            if (!Number.isInteger(days) || days <= 0) return invalidTerm(term);
             if (!lookup) return UNKNOWN;
-            return (card) => lookup(card.cardId, Math.floor(days));
+            return (card) => lookup(card.cardId, days);
         }
         case 'added':
             return dayWindowPredicate(body, options, (card) => card.createdAtMs) ?? invalidTerm(term);
@@ -316,62 +455,85 @@ function predicateForTerm(term: string, options: CardMatcherOptions, needs: Card
             return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? invalidTerm(term);
         case 'note': {
             if (!body) throw new SearchSyntaxError('empty search value');
-            const matches = wildcardMatcher(body);
+            const matches = globMatcher(body, { anchored: true });
             return (card) => (card.noteTypeName === undefined ? undefined : matches(card.noteTypeName));
         }
         case 'card': {
             if (!body) throw new SearchSyntaxError('empty search value');
             // Anki accepts a template name or its 1-based number.
-            const ordinal = Number(body);
-            if (Number.isInteger(ordinal) && ordinal > 0) return (card) => card.templateOrd === ordinal - 1;
-            const matches = wildcardMatcher(body);
+            if (/^\d+$/.test(body) && Number(body) > 0) {
+                const ordinal = Number(body);
+                return (card) => card.templateOrd === ordinal - 1;
+            }
+            const matches = globMatcher(body, { anchored: true });
             return (card) => (card.templateName === undefined ? undefined : matches(card.templateName));
         }
         case 'nid': {
-            const ids = idList(body);
+            const ids = idList(term, body);
             return (card) => ids.has(card.noteId);
         }
         case 'cid': {
-            const ids = idList(body);
+            const ids = idList(term, body);
             return (card) => ids.has(card.cardId);
+        }
+        case 'mid': {
+            const ids = idList(term, body);
+            return (card) => (card.noteTypeId === undefined ? undefined : ids.has(card.noteTypeId));
+        }
+        case 'did': {
+            // The deck itself, not its children; a card in a filtered deck also counts for its home.
+            const ids = idList(term, body);
+            needs.decks = true;
+            return (card) => (card.deckId === undefined
+                ? undefined
+                : ids.has(card.deckId) || (card.homeDeckId !== undefined && ids.has(card.homeDeckId)));
+        }
+        case 'dupe': {
+            // `dupe:<note type id>,<first field>`: notes of that type whose first field, without
+            // formatting, is exactly the text. The Browser's "Find Duplicates" writes these.
+            const comma = body.indexOf(',');
+            if (comma <= 0 || !/^\d+$/.test(body.slice(0, comma))) return invalidTerm(term);
+            needs.fields = true;
+            const noteTypeId = Number(body.slice(0, comma));
+            const text = stripHtmlForSearch(unescapeSearchText(body.slice(comma + 1)));
+            return (card) => {
+                if (card.noteTypeId === undefined || !card.fields) return undefined;
+                return card.noteTypeId === noteTypeId && stripHtmlForSearch(rawFields(card)[0] ?? '') === text;
+            };
+        }
+        case 'has-cd': {
+            if (!body) throw new SearchSyntaxError('empty search value');
+            needs.cardData = true;
+            const key = unescapeSearchText(body);
+            return (card) => (card.customData === undefined
+                ? undefined
+                : card.customData !== null && Object.prototype.hasOwnProperty.call(card.customData, key));
         }
         case 're': {
             needs.fields = true;
             let regex: RegExp;
             try {
-                regex = new RegExp(body, 'i');
+                regex = searchRegex(unescapeRegexValue(body));
             } catch {
                 return invalidTerm(term);
             }
-            return (card) => regex.test(noteText(card));
+            return (card) => regex.test(rawFields(card).join('\x1f'));
         }
         case 'w': {
-            // Whole word rather than the prefix match a bare word gets.
             needs.fields = true;
-            const word = normalizeSearchText(body);
-            if (!word) return UNKNOWN;
-            return (card) => normalizeSearchText(noteText(card))
-                .split(/[^\p{L}\p{N}]+/u)
-                .some((candidate) => candidate === word);
+            if (!body) throw new SearchSyntaxError('empty search value');
+            const matches = wordMatcher(body);
+            return (card) => rawFields(card).some(matches);
         }
         case 'nc':
-            // "No combining characters": this app folds diacritics in every search already.
             needs.fields = true;
-            return textPredicate(body, true);
-        default: {
-            // `Front:dog` searches one field by name; anything else is ordinary text, because a
-            // search box should not swallow a colon the learner meant literally.
+            return textPredicate(rawBody, 'nc');
+        case 'sc':
             needs.fields = true;
-            const fieldKey = foldKey(term.slice(0, separator));
-            const test = textPredicate(term.slice(separator + 1));
-            return (card) => {
-                if (!card.fields) return undefined;
-                const entry = Object.entries(card.fields)
-                    .find(([name]) => foldKey(name) === fieldKey);
-                if (!entry) return false;
-                return test({ ...card, fields: { field: entry[1] } });
-            };
-        }
+            return textPredicate(rawBody, 'sc');
+        default:
+            // Any other key names a field, as in Anki: `Front:dog`, `fr*:dog`, `Front:`.
+            return fieldPredicate(term, rawKey, rawBody, needs);
     }
 }
 
@@ -395,7 +557,7 @@ export function compileCardSearch(
     query: string,
     options: CardMatcherOptions,
 ): { matcher: Predicate | null; needs: CardSearchNeeds } {
-    const needs: CardSearchNeeds = { fields: false, tags: false, noteEdited: false, cardData: false };
+    const needs: CardSearchNeeds = { fields: false, tags: false, noteEdited: false, cardData: false, decks: false };
     const parsed = parseSearchQuery(query);
     if (!parsed) return { matcher: null, needs };
 

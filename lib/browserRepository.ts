@@ -11,7 +11,7 @@ import {
     FSRS_DIFFICULTY_SQL,
     FSRS_STABILITY_SQL,
     collectionSearchSettings,
-    escapeLikePattern,
+    cardJsonSql,
 } from './studySearchSql';
 import { toStudyCards, type QueueCardRow } from './studyCardRows';
 
@@ -70,8 +70,10 @@ function buildBrowserWhere(
             clauses.push('1 = 0');
             return;
         }
-        clauses.push(`${column} IN (${ids.map(() => '?').join(', ')})`);
-        params.push(...ids);
+        // One JSON parameter, not one variable per id: a filtered deck or a large selection can
+        // exceed SQLite's bound-variable limit (32,766).
+        clauses.push(`${column} IN (SELECT CAST(value AS INTEGER) FROM json_each(?))`);
+        params.push(JSON.stringify(ids));
     };
     addIds('c.deckId', query.deckIds);
     addIds('c.id', query.cardIds);
@@ -245,7 +247,7 @@ function getBrowserNoteRows(
         const chunk = noteIds.slice(index, index + 400);
         for (const card of db.getAllSync<RetrievabilityInputs & { noteId: number }>(
             `SELECT c.id AS cardId, c.noteId AS noteId, c.due AS due, c.ivl AS ivl,
-                json_extract(c.data, '$.odue') AS odue, json_extract(c.data, '$.ankiData') AS ankiData
+                ${cardJsonSql('$.odue')} AS odue, ${cardJsonSql('$.ankiData')} AS ankiData
              FROM anki_cards c WHERE c.noteId IN (${chunk.map(() => '?').join(', ')})`,
             ...chunk,
         )) {
@@ -333,9 +335,9 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
             c.ivl AS ivl, c.factor AS factor, c.reps AS reps, c.lapses AS lapses,
             c.flags AS flags, c.created_at AS createdAt,
             n.updated_at AS noteEditedAt,
-            json_extract(c.data, '$.ankiData') AS ankiData,
-            json_extract(c.data, '$.lastReview') AS lastReview,
-            json_extract(c.data, '$.odue') AS odue
+            ${cardJsonSql('$.ankiData')} AS ankiData,
+            ${cardJsonSql('$.lastReview')} AS lastReview,
+            ${cardJsonSql('$.odue')} AS odue
          ${BROWSER_FROM}
          ${where.sql}
          ORDER BY ${sortSql} ${direction}, c.id ${direction}`,
@@ -474,7 +476,7 @@ function browserRowsByRetrievability(
 ): Array<QueueCardRow & { noteTypeId: number }> {
     const inputs = db.getAllSync<RetrievabilityInputs>(
         `SELECT c.id AS cardId, c.due AS due, c.ivl AS ivl,
-            json_extract(c.data, '$.odue') AS odue, json_extract(c.data, '$.ankiData') AS ankiData
+            ${cardJsonSql('$.odue')} AS odue, ${cardJsonSql('$.ankiData')} AS ankiData
          ${BROWSER_FROM}
          ${where.sql}`,
         ...where.params,
@@ -534,9 +536,9 @@ export function getDeckTotalCardCount(deckName: string | null): number {
         `SELECT COUNT(*) as cnt
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE d.name = ? OR d.name LIKE ? ESCAPE '\\'`,
+         WHERE d.name = ? OR instr(d.name, ?) = 1`,
         deckName,
-        `${escapeLikePattern(deckName)}::%`,
+        `${deckName}::`,
     );
     return row?.cnt ?? 0;
 }

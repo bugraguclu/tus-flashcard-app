@@ -26,11 +26,11 @@ function sqlSearch(query: string) {
     const f = buildFilteredSearchClause(query);
     return h.db.getAllSync(`SELECT c.id FROM anki_cards c JOIN notes n ON n.id = c.noteId JOIN note_types nt ON nt.id = n.noteTypeId JOIN decks d ON d.id = c.deckId WHERE ${f.clauses.join(' AND ') || '1'}`, ...f.params).map((row: any) => row.id);
 }
-it.each([['dog', [11]], ['art', [11]], ['fourth-field', [11]], ['guid', []], ['fields', []], ['Genel', []], ['anatomi', []], ['resume', []], ['nc:resume', [12]], ['note:Probe', [11, 12]], ['Tag:ünite', [11]], ['"deck:Tıp"', [11, 12]], ['Front:dog', [11]], ['w:dog', []]])('uses the same field-based semantics for %s', (query, ids) => {
+it.each([['dog', [11]], ['art', [11]], ['fourth-field', [11]], ['guid', []], ['fields', []], ['Genel', []], ['anatomi', []], ['resume', []], ['nc:resume', [12]], ['note:Probe', [11, 12]], ['Tag:ünite', [11]], ['"deck:Tıp"', [11, 12]], ['Front:dog', []], ['Front:*dog*', [11]], ['front:"underdog kart"', [11]], ['w:dog', []]])('uses the same field-based semantics for %s', (query, ids) => {
     expect(getBrowserRowIdsMatchingText({}, String(query)).sort()).toEqual(ids);
     expect(sqlSearch(String(query)).sort()).toEqual(ids);
 });
-it.each(['is:suspend', 'flag:9', 'prop:rated=0', 're:"("', 'rated:0', 'dog or', '(dog', 'dog )'])('rejects invalid search %s in the browser and matches nothing in SQL', (query) => {
+it.each(['is:suspend', 'flag:9', 'prop:rated=x', 're:"("', 'rated:0', 'dog or', '(dog', 'dog )'])('rejects invalid search %s in the browser and matches nothing in SQL', (query) => {
     expect(() => getBrowserRowIdsMatchingText({}, query)).toThrow(SearchSyntaxError);
     // Saved filtered-deck searches are not migrated: an invalid one gathers no card, never throws.
     expect(sqlSearch(query)).toEqual([]);

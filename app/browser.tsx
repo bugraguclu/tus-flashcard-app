@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
 import { SearchSyntaxError } from '../lib/searchQuery';
+import { isValidSearchQuery } from '../lib/searchValidation';
+import { setSearchCurrentDeckName } from '../lib/collectionCardSearch';
 import { localDayNumber, nextRolloverMs } from '../lib/ankiState';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import type { StudyCard } from '../lib/types';
@@ -110,6 +112,8 @@ export default function BrowserScreen() {
     const [rawQuery, setRawQuery] = useState(initialRouteSearch);
     const [showSearchHelp, setShowSearchHelp] = useState(false);
     const [searchQuery, setSearchQuery] = useState(initialRouteSearch);
+    // A half-typed term (`is:` on the way to `is:new`) keeps the last valid results and selection.
+    const [searchDraftInvalid, setSearchDraftInvalid] = useState(false);
     const [markedOnly, setMarkedOnly] = useState(false);
     const [suspendedOnly, setSuspendedOnly] = useState(false);
     const [tagFilters, setTagFilters] = useState<string[]>([]);
@@ -488,8 +492,17 @@ export default function BrowserScreen() {
     const handleSearch = useCallback((text: string) => {
         setRawQuery(text);
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => setSearchQuery(text), 200);
+        debounceRef.current = setTimeout(() => {
+            const valid = isValidSearchQuery(text);
+            setSearchDraftInvalid(!valid);
+            if (valid) setSearchQuery(text);
+        }, 200);
     }, []);
+
+    useEffect(() => {
+        setSearchCurrentDeckName(deckName);
+        return () => setSearchCurrentDeckName(null);
+    }, [deckName]);
 
     /** Append a term tapped in the help sheet to whatever is already in the search box. */
     const appendSearchTerm = useCallback((term: string) => {
@@ -499,7 +512,8 @@ export default function BrowserScreen() {
     }, [rawQuery, handleSearch]);
 
     const filteredCards = useMemo(() => {
-        if (loading || browserSnapshotError) return [];
+        // While the next snapshot loads the previous rows stay on screen rather than blanking.
+        if (browserSnapshotError) return [];
         let cards = visibleAllCards;
 
         // Notes-mode rows are already the authoritative, deduplicated database result. A note
@@ -968,6 +982,11 @@ export default function BrowserScreen() {
                         <Text style={styles.searchHelpButtonText}>?</Text>
                     </TouchableOpacity>
                 </Pressable>
+                {searchDraftInvalid && rawQuery.trim().length > 0 && (
+                    <Text style={styles.searchDraftHint} accessibilityLiveRegion="polite">
+                        {l('Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor.', 'Search is not valid yet; showing the last valid results.')}
+                    </Text>
+                )}
             </View>
 
             {scopeHasCards && (

@@ -94,6 +94,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         justifyContent: 'center',
         backgroundColor: colors.bgInput,
     },
+    searchDraftHint: { marginHorizontal: 4, marginTop: 4, fontSize: FontSize.xs, color: colors.textMuted },
     searchClearButtonText: { fontSize: 13, fontWeight: '700', color: colors.textMuted, lineHeight: 15 },
     searchInput: {
         flex: 1,

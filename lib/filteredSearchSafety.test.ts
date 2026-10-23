@@ -31,7 +31,7 @@ import {
 import { getBrowserRowIdsMatchingText } from './browserRepository';
 import { SearchSyntaxError } from './searchQuery';
 
-const INVALID_SEARCHES = ['is:suspend', 'rated:0', 'tag:a or', 'prop:rated=0', 'deck:"Tip', 'is:due (deck:x'];
+const INVALID_SEARCHES = ['is:suspend', 'rated:0', 'tag:a or', 'prop:rated=x', 'deck:"Tip', 'is:due (deck:x'];
 
 const settings = { dayRolloverHour: 4, learnAheadMinutes: 0, fsrsEnabled: false } as const;
 

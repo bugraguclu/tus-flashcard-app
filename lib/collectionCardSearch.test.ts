@@ -9,7 +9,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {} }));
 
-import { matchingCollectionCardIds } from './collectionCardSearch';
+import { cardAddedMs, matchingCollectionCardIds, noteEditedMs } from './collectionCardSearch';
 import { compileCardMatcher } from './cardSearchMatch';
 import { getBrowserCardCount, getBrowserRowIdsMatchingText } from './browserRepository';
 import { localDayNumber, nextRolloverMs } from './ankiState';
@@ -60,7 +60,7 @@ beforeEach(() => {
     for (let id = 1; id <= 12; id++) {
         const tags = id % 3 === 0 ? [] : id % 3 === 1 ? ['marked', 'Ünite::İmmünoloji'] : ['fizik'];
         const fields = [`soru ${id} <b>résumé</b>`, id % 2 ? 'answer text' : 'başka cevap'];
-        notes.push([id, id % 4 === 0 ? 2 : 1, JSON.stringify({ id, guid: `g${id}`, noteTypeId: 1, mod: 1_700_000_000 + id, tags, fields }), id % 5 === 0 ? 0 : NOW - id * 3_600_000]);
+        notes.push([id, id % 4 === 0 ? 2 : 1, JSON.stringify({ id, guid: `g${id}`, noteTypeId: 1, mod: id % 5 === 0 ? 1_700_000_000 + id : Math.floor((NOW - id * 3_600_000) / 1000), tags, fields }), id % 5 === 0 ? 0 : NOW - id * 3_600_000]);
     }
     notes.push([13, 1, '{broken', NOW]); // unreadable note
     notes.push([14, 1, JSON.stringify({ id: 14, tags: ['marked'] }), NOW]); // no field list
@@ -117,7 +117,7 @@ function referenceIds(query: string): number[] {
             cardId: row.id, noteId: row.noteId, deckName: row.deckName, text: note.fields.join(' '), tags: note.tags ?? [],
             templateOrd: row.ord, queue: row.queue, type: row.type, due: row.due, ivl: row.ivl, factor: row.factor,
             reps: row.reps, lapses: row.lapses, flags: row.flags, fields, noteTypeName: type.name, templateName: type.templates[row.ord]?.name,
-            createdAtMs: row.created_at || row.id, noteEditedAtMs: row.noteEditedAt || (note.mod ? note.mod * 1000 : 0),
+            createdAtMs: cardAddedMs(row.id, row.created_at, nowMs), noteEditedAtMs: noteEditedMs(note, row.noteEditedAt),
             memoryState: memoryStateFromCardData(fsrs), decay: fsrs.decay, lastReviewedAtMs: card.lastReview,
             lastReviewTimeSecs: fsrs.lastReviewTimeSecs,
         })) ids.push(row.id);
