@@ -159,6 +159,8 @@ Deletion keeps lifetime review history. Note deletion from the editor, the revie
 
 **Status:** Implemented
 
+Starting ease (1.31–5), Hard interval (0.5–1.3) and Interval modifier (0.5–2) now accept only Anki's ranges, so a typed value is not reset when the preset reaches Anki; a stored value from the older wider ranges is kept unchanged while untouched (DST-10, `lib/deckOptionsMultiplierBounds.test.ts`).
+
 **Evidence:** validated/atomic Deck Options save flow, searchable deck picker, explicit deck-vs-preset labels, preset rename scoped to the selected config, hierarchical deck rename with subtree/collision protection, deck manager, deck-options form and deck-navigation tests. Which settings the screen shows follows the scheduler in use, as Anki's `{#if !$fsrs}` gates do: the ease multipliers, graduating and easy intervals and the lapse minimum are hidden while FSRS is on, and the FSRS inputs while it is off. A hidden field keeps its stored value through a save and can never report an error, because an error the learner cannot see is one they cannot fix (`isDeckOptionFieldVisible`)
 
 **Layout smoke (2026-10-16):** Decks shares the name/new/learning/review columns between phone and web, with common header/count widths and bounded compact indentation. The named production-web and iPhone-simulator checks, screenshots and physical-device limits are recorded in [Mobile layout review](ui-layout-review/README.md). This is product-specific presentation; deck hierarchy, count calculation and scheduling semantics are unchanged.

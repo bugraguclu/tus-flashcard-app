@@ -85,6 +85,7 @@ import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { createDeckOptionsStyles } from '../components/deck-options/deckOptionsStyles';
 import { DeckOptionsContext } from '../components/deck-options/DeckOptionsContext';
+import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck-options/multiplierBounds';
 import {
     Field,
     FieldAdvice,
@@ -454,15 +455,21 @@ export default function DeckOptionsScreen() {
         else hiddenInteger('minIvl', 1, 36500, stored.minIvl);
         if (shows('newIvlPercent')) integer('newIvlPercent', 0, 100);
         else hiddenInteger('newIvlPercent', 0, 100, Math.round((stored.newIvlPercent ?? 0) * 100));
-        // The multiplier bounds are Anki's, widened wherever this app was already more permissive
-        // so that a preset which arrived in a package can still be saved without being retyped.
-        if (shows('startingEase')) decimal('startingEase', 1.3, 5);
+        // The multiplier bounds are Anki's (DST-10), so a value typed here survives the trip to
+        // Anki. A stored value from the older, wider ranges is kept when left untouched rather
+        // than silently changed; editing it asks for a value inside Anki's range.
+        const ankiDecimal = (key: keyof typeof MULTIPLIER_BOUNDS, storedValue: number) => {
+            const kept = untouchedLegacyMultiplier(key, String(form[key]), storedValue);
+            if (kept !== undefined) decimals[key] = kept;
+            else decimal(key, MULTIPLIER_BOUNDS[key].min, MULTIPLIER_BOUNDS[key].max);
+        };
+        if (shows('startingEase')) ankiDecimal('startingEase', stored.startingEase / 1000);
         else hiddenDecimal('startingEase', 1.3, 5, stored.startingEase / 1000);
         if (shows('easyBonus')) decimal('easyBonus', 1, 5);
         else hiddenDecimal('easyBonus', 1, 5, stored.easyBonus);
-        if (shows('hardIvl')) decimal('hardIvl', 0.5, 2);
+        if (shows('hardIvl')) ankiDecimal('hardIvl', stored.hardIvl);
         else hiddenDecimal('hardIvl', 0.5, 2, stored.hardIvl);
-        if (shows('ivlModifier')) decimal('ivlModifier', 0.1, 3);
+        if (shows('ivlModifier')) ankiDecimal('ivlModifier', stored.ivlModifier);
         else hiddenDecimal('ivlModifier', 0.1, 3, stored.ivlModifier);
 
         if (shows('desiredRetention')) {
@@ -1498,10 +1505,10 @@ export default function DeckOptionsScreen() {
                     reads one, so Anki hides them rather than leaving dials that turn nothing. */}
                 {!form.fsrsEnabled ? (
                     <>
-                        <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,30–5,00 arası. Örn. 2,50', 'Between 1.30 and 5.00. E.g. 2.50')} />
+                        <Field field="startingEase" kind="decimal" label={l('Başlangıç kolaylığı', 'Starting ease')} value={form.startingEase} onChange={(t) => set('startingEase', t)} hint={l('1,31–5,00 arası. Örn. 2,50', 'Between 1.31 and 5.00. E.g. 2.50')} />
                         <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} hint={l('1,00–5,00 arası. Varsayılan 1,30', 'Between 1.00 and 5.00. Default 1.30')} />
-                        <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} hint={l('0,50–2,00 arası. Varsayılan 1,20', 'Between 0.50 and 2.00. Default 1.20')} />
-                        <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} />
+                        <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} hint={l('0,50–1,30 arası. Varsayılan 1,20', 'Between 0.50 and 1.30. Default 1.20')} />
+                        <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} hint={l('0,50–2,00 arası. Varsayılan 1,00', 'Between 0.50 and 2.00. Default 1.00')} />
                         <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
                     </>
                 ) : (
