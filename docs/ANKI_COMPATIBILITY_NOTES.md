@@ -370,7 +370,7 @@ async operation/commit boundary shared by both formats.
 
 ## Statistics and card info
 
-`lib/statsAuditSafety.test.ts` covers intraday/original due projection, the inclusive upper horizon, backlog older than a year, integer daily load, exclusion of cram/manual/invalid ratings from Answer Buttons, inactive review/relearning intervals and seven distinct Card Counts categories. All-history Future Due has no ten-year cap; chart bucketing remains bounded while preserving totals. These calculations follow independently derived graph behavior; the current manual describes some older graph groupings, so the source registry also names the shared-core graph references.
+`lib/statsAuditSafety.test.ts` covers intraday/original due projection, the inclusive upper horizon, backlog older than a year, integer daily load, exclusion of cram/manual/invalid ratings from Answer Buttons, inactive review/relearning intervals and seven distinct Card Counts categories. Added count fields are optional at the API boundary so existing empty/loading snapshots remain valid; the screen renders absent initial values as zero. All-history Future Due has no ten-year cap; chart bucketing remains bounded while preserving totals. These calculations follow independently derived graph behavior; the current manual describes some older graph groupings, so the source registry also names the shared-core graph references.
 
 **Status:** Implemented subset
 

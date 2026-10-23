@@ -179,12 +179,12 @@ export default function StatsScreen() {
 
     const cardCountRows = useMemo(() => ([
         { key: 'mature', label: l('Olgun', 'Mature'), count: ankiStats.cardCounts.mature, color: colors.badgeReview },
-        { key: 'young', label: l('Genç', 'Young'), count: ankiStats.cardCounts.young, color: colors.accent },
-        { key: 'learn', label: l('Öğrenme', 'Learning'), count: ankiStats.cardCounts.learn, color: colors.badgeLearn },
-        { key: 'relearn', label: l('Yeniden öğrenme', 'Relearning'), count: ankiStats.cardCounts.relearn, color: colors.btnAgain },
+        { key: 'young', label: l('Genç', 'Young'), count: ankiStats.cardCounts.young ?? 0, color: colors.accent },
+        { key: 'learn', label: l('Öğrenme', 'Learning'), count: ankiStats.cardCounts.learn ?? 0, color: colors.badgeLearn },
+        { key: 'relearn', label: l('Yeniden öğrenme', 'Relearning'), count: ankiStats.cardCounts.relearn ?? 0, color: colors.btnAgain },
         { key: 'unseen', label: l('Görülmemiş', 'Unseen'), count: ankiStats.cardCounts.unseen, color: colors.badgeNew },
-        { key: 'suspended', label: l('Askıda', 'Suspended'), count: ankiStats.cardCounts.suspended, color: colors.textMuted },
-        { key: 'buried', label: l('Gömülü', 'Buried'), count: ankiStats.cardCounts.buried, color: colors.textSecondary },
+        { key: 'suspended', label: l('Askıda', 'Suspended'), count: ankiStats.cardCounts.suspended ?? 0, color: colors.textMuted },
+        { key: 'buried', label: l('Gömülü', 'Buried'), count: ankiStats.cardCounts.buried ?? 0, color: colors.textSecondary },
     ]), [ankiStats.cardCounts, colors, l]);
 
     const handleBack = () => {

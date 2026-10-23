@@ -819,7 +819,7 @@
       "useFor": [
         "future_due: learning timestamps, original due, buried/suspended exclusions and integer daily load",
         "intervals include review and relearning across queues",
-        "card_counts separates new, learn, relearn, young, mature, suspended and buried",
+        "card_counts separates new, learn, relearn, young, mature, suspended and buried; retain compatibility with existing empty snapshots",
         "answer buttons exclude cram/manual and invalid ratings; lib/statsAuditSafety.test.ts"
       ]
     }

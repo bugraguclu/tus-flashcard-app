@@ -34,11 +34,11 @@ export interface AnswerButtonPoint {
 
 export interface CardCountStats {
     mature: number;
-    young: number;
-    learn: number;
-    relearn: number;
-    suspended: number;
-    buried: number;
+    young?: number;
+    learn?: number;
+    relearn?: number;
+    suspended?: number;
+    buried?: number;
     /** Legacy aggregate aliases for existing consumers. */
     youngLearn: number;
     unseen: number;
