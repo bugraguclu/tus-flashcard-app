@@ -34,7 +34,7 @@ import {
     type FsrsReviewHistory,
     type FsrsTrainingItem,
 } from './fsrsMemory';
-import { desiredRetentionFor, fsrsParametersFor, recordedDecayFor } from './fsrsScheduler';
+import { desiredRetentionFor, fsrsParametersFor, minimumReviewFuzzInterval, recordedDecayFor } from './fsrsScheduler';
 import { withReviewFuzz } from './schedulingIntervals';
 import { rustSortUnstableIndicesByKey } from './rustSortUnstable';
 import { resolveSettingsForDeck } from './studyCardRows';
@@ -337,7 +337,7 @@ function rescheduleCard(
 
     const interval = fsrsNextInterval(memory.stability, desiredRetention, params[20]);
     const previousInterval = Math.max(0, lastReview.previousInterval);
-    const minimum = Math.max(1, Math.trunc(interval) > previousInterval ? previousInterval + 1 : 0);
+    const minimum = Math.max(1, minimumReviewFuzzInterval(interval, previousInterval, settings.maxInterval));
     const seed = ankiCardSeed(card.id, Math.max(0, card.reps - 1));
     const presetId = getDeck(card.odid || card.deckId)?.configId || DEFAULT_DECK_CONFIG.id;
 

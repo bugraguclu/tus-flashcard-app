@@ -146,6 +146,12 @@ FSRS; and the retrievability filtered-deck orders are hidden while FSRS is off. 
 26.09.3 memory replay and whole-answer vectors now pass. Two fuzz-related oracle tests remain
 for item 2. The optimizer's independent forward model is FSRS-B's work.
 
+**FSRS-A item 2:** `minimumReviewFuzzInterval` is shared by answering and rescheduling. It rounds
+the candidate before the growth test, preserves the old interval inside the bounded fuzz window,
+and permits a real decrease. Anki's three upstream assertions and a capped-window case pass in
+`lib/fsrsScheduler.test.ts`; all 14 new-oracle tests now pass, including balanced rescheduling.
+No extra baseline difference appeared after these two corrections.
+
 ## Hierarchical decks and presets
 
 **Status:** Implemented

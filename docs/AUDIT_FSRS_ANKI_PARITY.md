@@ -588,7 +588,7 @@ yok. Önem sırasıyla 11 fark:
   tekrarlar). Ayrıca revlog'dan yeniden hesaplanan hafıza durumları (ön ayar kaydı, deste
   değişimi) ve "Optimize et".
 
-## 2. Fuzz, büyümeyen bir aralığı geri çekebiliyor — orta
+## 2. Fuzz, büyümeyen bir aralığı geri çekebiliyor — orta — kapatıldı
 
 - **Anki 26.09.3:** `minimum_review_fuzz_interval` 26.08 ile geldi
   ([#4826](https://github.com/ankitects/anki/pull/4826)). Taban üç durumda belirleniyor. Yeni
@@ -807,3 +807,12 @@ kaydedilecek, kapsam dışı kod değiştirilmeyecek.
 stabilite değerinde Hard/Good/Easy tabanı ve Again düşüşü geçti. Yeni oracle'da hafıza geçmişi
 ve tam cevap testi geçti; 14 testin 12'si geçiyor. İki kalan test madde 2'nin cevap ve dengeli
 yeniden planlama fuzz tabanında. `fsrsTraining.ts` içindeki karşılık FSRS-B'ye bırakıldı.
+
+### Madde 2 sonucu — 23 Ekim 2026
+
+Cevap ve yeniden planlama aynı `minimumReviewFuzzInterval` hesabını kullanıyor. Üç dal ve azami
+aralığa göre pencere kontrolü uygulandı; kesme yerine f32 aralığın yuvarlanması esas alınıyor.
+Anki'nin (2.7269483, 4) → 4, (2.7269483, 5) → 0 ve (4.591988, 4) → 5 vektörleri ve azami
+aralık testi önce kaldı, düzeltmeden sonra geçti (`lib/fsrsScheduler.test.ts`). Altı odaklı
+dosyada 46 test ve 26.09.3 oracle'ının 14 testinin tamamı geçti. Başlangıçtaki dört fark
+madde 1 ve 2 ile açıklanıp kapandı; rapor dışında yeni davranış farkı çıkmadı.

@@ -6,7 +6,7 @@
  * raw interval per button, and the surrounding state machine decides whether that interval keeps
  * the card in (re)learning or sends it back to review.
  *
- * The state machine follows Anki 26.05's `rslib/src/scheduler/states/{learning,review,relearning}.rs`
+ * The state machine follows Anki 26.09.3's `rslib/src/scheduler/states/{learning,review,relearning}.rs`
  * outcome for outcome: step delays in whole seconds, the same fuzz and load balancer, the interval
  * a relearning card keeps, and the ease factor each transition leaves behind.
  */
@@ -27,6 +27,7 @@ import { nextRolloverMs } from './ankiState';
 import {
     MINUTES_PER_DAY,
     constrainInterval,
+    constrainedFuzzBounds,
     formatDays,
     formatMinutes,
     hardDelaySecs,
@@ -153,6 +154,19 @@ function wholeDays(interval: number): number {
     return Math.max(1, Math.sign(interval) * Math.round(Math.abs(interval)));
 }
 
+/**
+ * Minimum for review and preset-reschedule fuzz, independently derived from Anki 26.09.3's
+ * behavior: a rounded increase must grow, an overlapping window must hold the old interval,
+ * and a genuinely smaller window may shrink it. The maximum limits that overlap too.
+ * https://github.com/ankitects/anki/blob/26.09.3/rslib/src/scheduler/states/fuzz.rs
+ */
+export function minimumReviewFuzzInterval(interval: number, previousInterval: number, maximum: number): number {
+    const rounded = Math.max(0, Math.round(Math.fround(interval)));
+    if (rounded > previousInterval) return previousInterval + 1;
+    const window = constrainedFuzzBounds(interval, 1, maximum);
+    return previousInterval <= window.upper ? previousInterval : 0;
+}
+
 /** A graduation or relearning exit: the rounded FSRS interval, fuzzed within [minimum, maximum]. */
 function fuzzedReviewDays(interval: number, branching: Branching, minimum = 1): number {
     return withReviewFuzz(branching.fuzz, wholeDays(interval), minimum, Math.max(1, branching.maxInterval));
@@ -265,8 +279,8 @@ function reviewOutcomes(cs: CardState, settings: AppSettings, branching: Branchi
         again = { kind: 'review', ...lapsed };
     }
 
-    // Passing intervals chain, and fuzz may not take a grown interval back below the old one.
-    const floorFor = (interval: number) => (wholeDays(interval) > scheduledDays ? scheduledDays + 1 : 0);
+    // Passing intervals chain; an overlapping fuzz window also preserves the old interval.
+    const floorFor = (interval: number) => minimumReviewFuzzInterval(interval, scheduledDays, branching.maxInterval);
     const hard = constrainInterval(states.hard.interval, Math.max(floorFor(states.hard.interval), 1), branching.maxInterval, fuzz);
     const good = constrainInterval(states.good.interval, Math.max(floorFor(states.good.interval), hard + 1), branching.maxInterval, fuzz);
     const easy = constrainInterval(states.easy.interval, Math.max(floorFor(states.easy.interval), good + 1), branching.maxInterval, fuzz);

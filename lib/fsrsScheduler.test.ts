@@ -5,7 +5,7 @@ import {
     fsrsNextInterval,
     fsrsNextStates,
 } from './fsrs';
-import { FsrsEngine, fsrsAllowsShortTerm } from './fsrsScheduler';
+import { FsrsEngine, fsrsAllowsShortTerm, minimumReviewFuzzInterval } from './fsrsScheduler';
 import { formatDays, schedulerForSettings } from './scheduler';
 import {
     constrainInterval,
@@ -340,6 +340,15 @@ describe('review interval fuzz', () => {
         expect(withReviewFuzz(null, 0.1, 1, 100)).toBe(1);
         expect(withReviewFuzz(null, 101, 1, 100)).toBe(100);
         expect(constrainInterval(37, 1, 1000, { factor: 0.5 })).toBe(37);
+    });
+
+    // Recorded upstream assertions: round before comparing, preserve the old interval only
+    // inside the bounded fuzz window. See Anki 26.09.3 scheduler/states/fuzz.rs.
+    it('preserves the previous review interval only while it remains inside the fuzz window', () => {
+        expect(minimumReviewFuzzInterval(2.7269483, 4, 36500)).toBe(4);
+        expect(minimumReviewFuzzInterval(2.7269483, 5, 36500)).toBe(0);
+        expect(minimumReviewFuzzInterval(4.591988, 4, 36500)).toBe(5);
+        expect(minimumReviewFuzzInterval(2.7269483, 4, 3)).toBe(0);
     });
 
     // `passing_fsrs_review_intervals`: a passing interval that grew past the card's current one
