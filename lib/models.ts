@@ -138,7 +138,7 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
                 name: 'Card 1',
                 ord: 0,
                 qfmt: '{{Front}}\n\n{{type:Back}}',
-                afmt: '{{FrontSide}}\n\n<hr id=answer>\n\n{{type:Back}}',
+                afmt: '{{Front}}\n\n<hr id=answer>\n\n{{type:Back}}',
             },
         ],
         css: `.card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }`,

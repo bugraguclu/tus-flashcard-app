@@ -43,3 +43,13 @@ describe('field references and typed answers', () => {
   expect(html.match(/<input/g)).toHaveLength(1);
  });
 });
+
+it('lets real note fields shadow same-named special fields (SAB-11)', () => {
+ expect(renderTemplate('{{Type}} / {{Deck}}', { fields: { Type: 'noun', Deck: 'field value' }, typeName: 'Basic', deckName: 'My Deck' })).toBe('noun / field value');
+});
+
+it('uses the stock typed-answer back without copying a second type marker through FrontSide (SAB-15)', () => {
+ const type = BUILTIN_NOTE_TYPES.find(t => t.id === 8)!;
+ expect(type.templates[0].afmt).toContain('{{Front}}');
+ expect(type.templates[0].afmt).not.toContain('{{FrontSide}}');
+});

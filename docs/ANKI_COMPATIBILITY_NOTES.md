@@ -166,6 +166,8 @@ Deletion keeps lifetime review history. Note/editor and deck-list deletion retur
 
 ## Note types, conditional templates, cloze, typed answer
 
+Real note fields now take precedence over same-named special fields (SAB-11). The built-in Basic typed-answer definition uses Front on the back instead of FrontSide (SAB-15), avoiding duplicate comparisons in Anki; existing stored/imported user templates are not migrated. Typed-answer and sanitizer helpers were moved into independent modules, with the old templates API re-exported and no import cycle; templates.ts is below 800 lines.
+
 The Add screen remembers the last successfully added note type per destination deck, falling back to the collection last-used type and then Basic when unavailable. Route-specified types still establish the entry scope; failed/abandoned additions do not select a new default (`lib/editorNoteTypeMemory.test.ts`).
 
 Duplicate detection now uses an unsigned SHA1 prefix over the HTML-free, NFC-normalized first field, including media filenames, and compares normalized text after the checksum lookup. A read-only fallback recognizes older local FNV rows without a destructive migration (`lib/noteChecksum.test.ts`, real SQLite imported/legacy fixture). Common named and numeric HTML entities are decoded; the full HTML5 named-entity table remains a compatibility gate.

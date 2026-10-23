@@ -893,6 +893,17 @@
         "identical inherited script hash across server and client targets",
         "preserve source while keeping active content inert"
       ]
+    },
+    {
+      "id": "anki-ai1-template-special-fields",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/templates/fields.html",
+      "useFor": [
+        "real fields shadow special field names",
+        "stock typed-answer back uses Front",
+        "preserve existing stored templates during definition fixes"
+      ]
     }
   ],
   "requiredDocs": [
