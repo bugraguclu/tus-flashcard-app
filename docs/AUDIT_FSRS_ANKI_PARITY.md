@@ -553,14 +553,14 @@ yok. Önem sırasıyla 11 fark:
 | --- | --- | --- | --- | --- | --- |
 | 1 | **Yüksek** | Aynı gün "Zor" — kapatıldı (A zamanlama; eğitim B) | Stabiliteyi düşürmez (`rating >= 2` tabanı) | Düşürür: S × 0.43–0.74 | `lib/fsrs.ts:378-387`, `lib/fsrsTraining.ts:189` |
 | 2 | **Orta** | Fuzz tabanı — kapatıldı | Büyümeyen aralıkta önceki aralık pencere içindeyse korunur | Korunmaz; yeniden planlamada aralık ayrıca kesiliyor | `lib/fsrsScheduler.ts:268-272`, `lib/fsrsMaintenance.ts:339-340` |
-| 3 | **Orta** | Son tarihi ayarla | Koleksiyonun FSRS anahtarına bakar; yeni ve `ivl = 0` kart 0'da kalır | Kartın hafıza durumuna bakar; yeni karta gün sayısı yazar | `lib/browserSelection.ts:130`, `lib/schedulingIntervals.ts:273-296` |
+| 3 | **Orta** | Son tarihi ayarla — kapatıldı | Koleksiyonun FSRS anahtarına bakar; yeni ve `ivl = 0` kart 0'da kalır | Kartın hafıza durumuna bakar; yeni karta gün sayısı yazar | `lib/browserSelection.ts:130`, `lib/schedulingIntervals.ts:273-296` |
 | 4 | **Orta** | Optimize et — kapatıldı (FSRS-B; collector bağlantısı FSRS-A) | fsrs-rs 6.6.2 eğitimi, 8 tur, kart bazlı gruplar | 26.09.3 referansı, en büyük fark 4.77·10⁻⁷ | `lib/fsrsTraining.ts:37-41` |
-| 5 | Düşük–orta | Desteyi değiştir | Hafıza durumu hemen yeniden hesaplanır | Silinir, ilk cevapta türetilir | `lib/noteStore.ts:407-450` |
-| 6 | Düşük–orta | Veritabanı kontrolü | Bozuk `lrt`'yi revlog'dan onarır | `lrt`'ye bakmaz | `lib/maintenance.ts` |
-| 7 | Düşük | "Şu tarihten önceki tekrarları yok say" | Gelecek tarih bugüne çekilir | Gelecek tarih kabul edilir | `app/deck-options.tsx:504-507, 551, 699` |
-| 8 | Düşük | Zamanlamasız dışa aktarma | Yalnızca parametre listeleri silinir | DR, geçmiş hatırlama ve tarih de silinir | `lib/exportAnkiPackage.ts:372-378` |
+| 5 | Düşük–orta | Desteyi değiştir — kapatıldı | Hafıza durumu hemen yeniden hesaplanır | Silinir, ilk cevapta türetilir | `lib/noteStore.ts:407-450` |
+| 6 | Düşük–orta | Veritabanı kontrolü — kapatıldı | Bozuk `lrt`'yi revlog'dan onarır | `lrt`'ye bakmaz | `lib/maintenance.ts` |
+| 7 | Düşük | "Şu tarihten önceki tekrarları yok say" — kapatıldı | Gelecek tarih bugüne çekilir | Gelecek tarih kabul edilir | `app/deck-options.tsx:504-507, 551, 699` |
+| 8 | Düşük | Zamanlamasız dışa aktarma — kapatıldı | Yalnızca parametre listeleri silinir | DR, geçmiş hatırlama ve tarih de silinir | `lib/exportAnkiPackage.ts:372-378` |
 | 9 | Düşük | Kart bilgisi — kısmen (kod/test tamam; iPhone smoke bekliyor) | Eksik durumu hesaplar; FSRS'te Kolaylık gizli | Yalnızca saklı durum; Kolaylık hep görünür | `app/card-info.tsx:86-95, 241, 258` |
-| 10 | Düşük | Filtreli deste sıraları | FSRS kapalıyken hatırlanabilirlik sıraları gizli | Hep 11 sıra | `lib/filteredDeckOptions.ts:25` |
+| 10 | Düşük | Filtreli deste sıraları — kapatıldı | FSRS kapalıyken hatırlanabilirlik sıraları gizli | Hep 11 sıra | `lib/filteredDeckOptions.ts:25` |
 | 11 | Çok düşük | f32 işlem sırası — kapatıldı | 6.6.2'nin skaler sırası | 5.2.0'ın Burn sırası | `lib/fsrs.ts:248-250, 389-393` |
 
 ## 1. Aynı gün "Zor" stabiliteyi düşürüyor — yüksek — kapatıldı (FSRS-A zamanlama)
@@ -608,7 +608,7 @@ yok. Önem sırasıyla 11 fark:
   yukarı fuzz'lanmışsa, kart erken tekrarlanmışsa ya da hedef hatırlama veya parametreler
   değiştiyse.
 
-## 3. Son tarihi ayarla FSRS altında 26.05 kuralıyla çalışıyor — orta
+## 3. Son tarihi ayarla FSRS altında 26.05 kuralıyla çalışıyor — orta — kapatıldı
 
 - **Anki 26.09.3:** kural artık kartın hafıza durumuna değil, koleksiyonun FSRS anahtarına bakıyor
   ([#4792](https://github.com/ankitects/anki/pull/4792), 26.08). FSRS açıkken yeni kart ve
@@ -670,7 +670,7 @@ Yeniden üretme (Anki 26.09.3 ile, depo kökünde):
 FSRS_OPTIMIZE_FIXTURE=/private/tmp/fsrs-b-large-optimize.json npm test -- --run lib/fsrsTraining.test.ts
 ```
 
-## 5. Desteyi değiştirmek hafıza durumunu yeniden hesaplamıyor — düşük–orta
+## 5. Desteyi değiştirmek hafıza durumunu yeniden hesaplamıyor — düşük–orta — kapatıldı
 
 - **Anki 26.09.3:** FSRS açıkken "Desteyi değiştir" kartların FSRS verisini siliyor. Hemen ardından
   hedef destedeki (alt desteler hariç) hafızasız kartların durumunu hedef ön ayarın parametreleri,
@@ -684,7 +684,7 @@ FSRS_OPTIMIZE_FIXTURE=/private/tmp/fsrs-b-large-optimize.json npm test -- --run 
   `prop:d` ve `prop:r` aramaları, hatırlanabilirlik sıralaması ve filtreli deste sıraları kartı
   durumsuz sayıyor.
 
-## 6. Veritabanı kontrolü `lrt`'yi onarmıyor — düşük–orta
+## 6. Veritabanı kontrolü `lrt`'yi onarmıyor — düşük–orta — kapatıldı
 
 - **Anki 26.09.3:** "Veritabanını kontrol et" her yeni olmayan kartın `lrt`'sini revlog'daki son
   zamanlamayı etkileyen cevabın zamanına eşitliyor. Yanlış değeri düzeltiyor; son sıfırlamadan sonra
@@ -694,7 +694,7 @@ FSRS_OPTIMIZE_FIXTURE=/private/tmp/fsrs-b-large-optimize.json npm test -- --run 
   düzenleme) yanlış aralık ve hatırlanabilirlik verir. Anki bunu artık onarabiliyor, uygulama
   onaramıyor.
 
-## 7. Gelecek tarihli "şu tarihten önceki tekrarları yok say" — düşük
+## 7. Gelecek tarihli "şu tarihten önceki tekrarları yok say" — düşük — kapatıldı
 
 - **Anki 26.09.3:** kaydederken gelecekteki tarih bugüne çekiliyor, tarih seçicinin üst sınırı da
   bugün ([#5294](https://github.com/ankitects/anki/pull/5294), 26.09).
@@ -703,7 +703,7 @@ FSRS_OPTIMIZE_FIXTURE=/private/tmp/fsrs-b-large-optimize.json npm test -- --run 
 - **Etki:** gelecekteki bir tarih bütün geçmişi yok sayar. "Optimize et" ve yeniden hesaplama boş
   geçmişle çalışır.
 
-## 8. Zamanlamasız dışa aktarma fazlasını siliyor — düşük
+## 8. Zamanlamasız dışa aktarma fazlasını siliyor — düşük — kapatıldı
 
 - **Anki 26.09.3:** zamanlamasız dışa aktarmada ön ayarlardan yalnızca FSRS parametre listeleri
   (4, 5 ve 6) siliniyor. Hedef hatırlama, geçmiş hatırlama ve yok sayma tarihi kalıyor
@@ -723,7 +723,7 @@ FSRS_OPTIMIZE_FIXTURE=/private/tmp/fsrs-b-large-optimize.json npm test -- --run 
 - **Uygulama:** `app/card-info.tsx:86-95` yalnızca kartta saklı durumu gösteriyor. `:241`
   Kolaylık'ı her zaman gösteriyor. `:258` hatırlanabilirliği bir ondalıkla yazıyor.
 
-## 10. Filtreli deste sıraları FSRS kapalıyken — düşük
+## 10. Filtreli deste sıraları FSRS kapalıyken — düşük — kapatıldı
 
 - **Anki 26.09.3:** FSRS kapalıyken "Hatırlanabilirlik artan" ve "Hatırlanabilirlik azalan"
   sıraları filtreli deste penceresinde gizli
@@ -905,3 +905,38 @@ bölümünde korunmalı; metadata bağlantısının B'deki karşılığı tekrar
 
 Diğer AI'lara ait 3, 5, 6, 7, 8 ve 10. maddelere dokunulmadı. Günlük yeni kart sınırı
 geri getirilmedi. Tam Anki paritesi iddia edilmiyor.
+
+## Kalan maddeler 3, 5, 6, 7, 8 ve 10 — 23 Ekim 2026
+
+Dal: `claude/remaining-fsrs`, taban: `master` / `e0d4f7c`. Beklenen değerler Anki 26.09.3'ün
+(29bb700b) kendi arka ucundan kaydedildi: `scripts/anki-oracle/gen_fsrs_ops.py`, Europe/Istanbul,
+geçiş saati 4. Çıktı `test/fixtures/anki-26.09-fsrs-ops.json`; `lib/fsrsCollectionOps.test.ts`
+bunları gerçek SQLite üzerinde yeniden oynatıyor. Anki kodu kopyalanmadı; yalnızca çıktılar
+kaydedildi. Her madde için test önce eski kodda kaldı, düzeltmeden sonra geçti.
+
+| Madde | Commit | Otomatik kanıt | Not |
+| --- | --- | --- | --- |
+| 3 | `51fde77` | 80 kayıtlı Son tarihi ayarla durumu (10 kart şekli × FSRS açık/kapalı × `3`, `3!`, `0`, `1!`) ve ardından gelen ilk cevap; `browserSelection.test.ts` birim durumları | Anki arka ucu `-2` gibi negatif günü reddediyor, uygulama kabul ediyor; bu maddenin dışında, değiştirilmedi |
+| 5 | `89f4929` | Kayıtlı Desteyi değiştir çıktısı, FSRS açık ve kapalı: taşınan durumlu/durumsuz/yeni kart, hedefteki durumlu/durumsuz kart, alt deste kartı; yeniden planlama yok, `prop:s` araması ve geri alma | Hedef destede önceden duran durumsuz kart da Anki'deki gibi durum alır; geri alma yalnız taşınan kartları geri koyar |
+| 6 | `5819679` | 11 kart şeklinde kayıtlı onarım (yanlış, eksik, doğru, sıfırlama sonrası son tarih, yalnız elle, cramming, yeniden planlanmış ve yeniden planlayan filtreli satır, revlog yok, yeni kart, gelecekteki `lrt`): aynı 8 kart değişiyor, her `lrt` eşleşiyor, ikinci kontrol temiz | Ayarlar özetine birer yerelleştirilmiş satır eklendi |
+| 7 | `056aaa2` | Kayıtlı kaydetme: `2099-01-01` → `2026-10-23`, geçmiş ve boş tarih aynen; `fsrs.test.ts` birim durumları | Metin alanı tam bir gelecek tarihi bugüne çeker; paket içe aktarma tarihi olduğu gibi okur |
+| 8 | `fe370bf` | `ankiPackageRoundtrip.test.ts`: dışa aktarılan anahtarlar kayıtlı Anki dışa aktarımıyla aynı (üç liste boş, DR 0.87, geçmiş 0.82, tarih korunur); yeniden içe aktarmada değerler kalıyor | Yanıltıcı yorum düzeltildi |
+| 10 | `f498790` | `filteredDeckOptions.test.ts`: FSRS kapalıyken 9 sıra, kayıtlı hatırlanabilirlik sırası Rastgele görünür; SQLite toplama testi: böyle bir deste FSRS kapalıyken de oluşur | Anki'nin `qt/aqt/filtered_deck.py` davranışı: diyalog kaydedilene kadar saklı sıra değişmez |
+
+Yeniden üretme (depo kökünde; zaman damgaları değişir, testler göreli karşılaştırır):
+
+```sh
+./scripts/anki-oracle/build-host.sh
+(cd scripts/anki-oracle && ./run.sh gen_fsrs_ops.py ../../test/fixtures/anki-26.09-fsrs-ops.json)
+```
+
+Ek bulgu (madde 6): cevap yolu `lrt`'yi cevabın başındaki saniyeden yazıyor, revlog kimliği birkaç
+milisaniye sonra alınıyor. Bu iki an farklı saniyelere düşerse sonraki veritabanı kontrolü `lrt`'yi
+bir saniye düzeltir. Etki ihmal edilebilir; cevap yolu bu turda değiştirilmedi.
+
+**Koşulmayan hedefli iPhone smoke:** okuyucu menüsünden ve tarayıcıdan FSRS açık/kapalı Son tarihi
+ayarla ve yeni kartın ilk cevabı; başka ön ayarlı desteye taşıma, Kart bilgisi ve geri alma;
+bir koleksiyon kopyasında Veritabanını kontrol et ve Onar ve optimize et özeti; gelecekteki
+yok sayma tarihini yazıp kaydetme; FSRS kapalı/açık filtreli deste seçenekleri. Tam Anki
+paritesi iddia edilmiyor.
+
