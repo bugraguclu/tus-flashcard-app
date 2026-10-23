@@ -104,6 +104,7 @@ function scopedData(
     deckName?: string,
     selectedCardIds?: number[],
     selectedDeckIds?: number[],
+    includeFilteredDecks = false,
 ): { notes: Note[]; cards: AnkiCard[]; decks: Deck[] } {
     const rawNotes = source.notes;
     const protectedNoteIds = new Set(rawNotes.filter(isCatalogNote).map((note) => note.id));
@@ -112,6 +113,7 @@ function scopedData(
     const cards = rawCards.filter((card) => !protectedNoteIds.has(card.noteId));
     const rawDecks = source.decks.filter((deck) => !deck.isFiltered);
     const allDecks = rawDecks.filter((deck) => !isCatalogDeck(deck));
+    const wholeCollection = includeFilteredDecks && !deckName && !selectedCardIds && !selectedDeckIds;
     const withParents = (directDeckIds: Set<number>): Deck[] => {
         const includedNames = new Set(
             allDecks.filter((deck) => directDeckIds.has(deck.id)).flatMap((deck) => {
@@ -152,6 +154,12 @@ function scopedData(
             decks: withParents(exportedDeckIds),
         };
     }
+    // A collection package keeps its filtered decks too, as Anki's collection export does. Their
+    // membership is virtual here, so cards stay in their home decks and Anki shows the deck empty
+    // until it is rebuilt; a card imported while physically in a filtered deck stays in it.
+    if (wholeCollection) {
+        return { notes, cards, decks: [...allDecks, ...source.decks.filter((deck) => deck.isFiltered && !isCatalogDeck(deck))] };
+    }
     if (!deckName) return { notes, cards, decks: allDecks };
     const rawDeckIds = new Set(rawDecks.filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`)).map((deck) => deck.id));
     if (rawCards.some((card) => rawDeckIds.has(card.deckId) && protectedNoteIds.has(card.noteId))) {
@@ -168,7 +176,7 @@ function scopedData(
     };
 }
 
-function modelMap(noteTypes: NoteType[]): string {
+function modelMap(noteTypes: NoteType[], exportedDeckIds: ReadonlySet<number>): string {
     const now = Math.floor(Date.now() / 1000);
     const map: Record<string, unknown> = {};
     for (const type of noteTypes) {
@@ -189,7 +197,8 @@ function modelMap(noteTypes: NoteType[]): string {
             tmpls: type.templates.map((template, index) => ({
                 ...(rawTemplates[index] ?? {}),
                 name: template.name, ord: template.ord, qfmt: template.qfmt, afmt: template.afmt,
-                did: rawTemplates[index]?.did ?? null,
+                // The deck override, when its deck is in the package; a stale source id never is.
+                did: template.deckOverrideId !== undefined && exportedDeckIds.has(template.deckOverrideId) ? template.deckOverrideId : null,
                 bqfmt: rawTemplates[index]?.bqfmt ?? '', bafmt: rawTemplates[index]?.bafmt ?? '',
             })),
         };
@@ -407,6 +416,42 @@ function schemaSql(): string {
     `;
 }
 
+/** The legacy `col.tags` registry: every tag the exported notes use, so Anki's sidebar lists them. */
+function tagRegistry(notes: Note[]): string {
+    const tags: Record<string, number> = {};
+    for (const note of notes) for (const tag of note.tags) if (tag) tags[tag] = 0;
+    return JSON.stringify(tags);
+}
+
+/**
+ * The legacy `col.conf` a collection package needs. Without `schedVer` Anki reads the collection
+ * as the retired v1 scheduler and converts it; the rollover hour decides where its days begin, and
+ * `nextPos` where the next new card goes.
+ */
+function collectionConfig(cards: AnkiCard[], rolloverHour: number, nowMs: number): string {
+    const nextPos = cards.reduce((max, card) => (card.type === 0 ? Math.max(max, card.due) : max), 0) + 1;
+    return JSON.stringify({
+        schedVer: 2,
+        sched2021: true,
+        rollover: rolloverHour,
+        creationOffset: new Date(nowMs).getTimezoneOffset(),
+        localOffset: new Date(nowMs).getTimezoneOffset(),
+        nextPos,
+        curDeck: 1,
+        activeDecks: [1],
+        newSpread: 0,
+        collapseTime: 1200,
+        timeLim: 0,
+        estTimes: true,
+        dueCounts: true,
+        curModel: null,
+        sortType: 'noteFld',
+        sortBackwards: false,
+        addToCur: true,
+        dayLearnFirst: false,
+    });
+}
+
 function ankiDue(card: AnkiCard, collectionDay: number): number {
     if (card.queue === 1 || (card.queue < 0 && (card.type === 1 || card.type === 3) && card.due >= 1_000_000_000)) {
         return Math.floor(card.due / 1000);
@@ -470,7 +515,7 @@ async function buildPackage(
     packageOptions: AnkiPackageExportOptions = {},
     allowPristineOriginal = false,
 ): Promise<ExportArtifact> {
-    const scoped = scopedData(source, deckName, selectedCardIds, packageOptions.selectedDeckIds);
+    const scoped = scopedData(source, deckName, selectedCardIds, packageOptions.selectedDeckIds, format === 'colpkg');
     const includeScheduling = format === 'colpkg' || packageOptions.includeScheduling !== false;
     const includeDeckConfigs = format === 'colpkg' || packageOptions.includeDeckConfigs !== false;
     const notes = includeScheduling
@@ -544,9 +589,11 @@ async function buildPackage(
     try {
         db.execSync(schemaSql());
         db.runSync('INSERT INTO col VALUES (?, ?, ?, ?, 11, 0, 0, 0, ?, ?, ?, ?, ?)',
-            1, collectionCreation, now, now, '{}', modelMap(noteTypes),
+            1, collectionCreation, now, now,
+            format === 'colpkg' ? collectionConfig(exportedCards, rolloverHour, now) : '{}',
+            modelMap(noteTypes, new Set(decks.map((deck) => deck.id))),
             deckMap(decks, includeScheduling, includeDeckConfigs),
-            deckConfigMap(decks, source.deckConfigs, includeScheduling, includeDeckConfigs), '{}');
+            deckConfigMap(decks, source.deckConfigs, includeScheduling, includeDeckConfigs), tagRegistry(notes));
         for (const note of notes) {
             const tags = note.tags.length ? ` ${note.tags.join(' ')} ` : '';
             db.runSync('INSERT INTO notes VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -561,7 +608,9 @@ async function buildPackage(
         if (includeScheduling) {
             const cardIds = new Set(exportedCards.map((card) => card.id));
             for (const row of source.revlog) {
-                if (!cardIds.has(row.cardId)) continue;
+                // A collection package keeps the review history of deleted cards, as Anki's does;
+                // a deck package carries only the history of the cards it contains.
+                if (format !== 'colpkg' && !cardIds.has(row.cardId)) continue;
                 db.runSync('INSERT INTO revlog VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     row.id, row.cardId, row.usn ?? -1, row.ease, row.ivl, row.lastIvl, row.factor, row.time, row.type);
             }

@@ -17,6 +17,8 @@ vi.mock('./noteManager', () => ({
     saveAnkiCard: (card: AnkiCard) => harness.cards.set(card.id, { ...card }),
 }));
 
+vi.mock('./db', () => ({ getDB: () => ({ execSync: () => {} }) }));
+
 vi.mock('./reviewLogger', () => ({
     logManualEntry: vi.fn(() => ({ id: 1 })),
     // The real rule, reduced to what these tests look at: FSRS cards log their difficulty.
@@ -136,7 +138,8 @@ describe('browser selection scheduling operations', () => {
 
         expect(repositionSelectedNewCards([3, 4], 2, 1, true)).toBe(1);
         expect(harness.cards.get(3)?.due).toBe(2);
-        expect(harness.cards.get(2)?.due).toBe(3);
+        // Anki shifts by step × every selected card, the review card included.
+        expect(harness.cards.get(2)?.due).toBe(4);
         expect(harness.cards.get(4)?.due).toBe(99);
     });
 
@@ -275,9 +278,9 @@ it('samples each due day independently across the whole requested range', () => 
     setSelectedDueDate([1, 2, 3], { minDays: 2, maxDays: 4, forceInterval: false }, settings, () => 0.99);
     expect([...harness.cards.values()].map(card => card.due)).toEqual(Array(3).fill(localDayNumber(Date.now(), 4) + 4));
 });
-it('repositions selected siblings together and shifts by the number of notes', () => {
+it('repositions selected siblings together and shifts by step × selected cards, as Anki does', () => {
     harness.cards.set(1, card(1, { noteId: 10 })); harness.cards.set(2, card(2, { noteId: 10, ord: 1 }));
     harness.cards.set(3, card(3, { noteId: 20, due: 10 }));
     expect(repositionSelectedNewCards([1, 2], 5, 2, true)).toBe(2);
-    expect([...harness.cards.values()].map(card => card.due)).toEqual([5, 5, 12]);
+    expect([...harness.cards.values()].map(card => card.due)).toEqual([5, 5, 14]);
 });

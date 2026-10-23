@@ -326,6 +326,7 @@ export default function StatsScreen() {
                     <View style={styles.streakHeader}>
                         <View>
                             <Text style={styles.sectionTitle} accessibilityRole="header">{l('Çalışma serisi', 'Study streak')}</Text>
+                            <Text style={styles.streakScopeNote}>{l('Tüm koleksiyon', 'Whole collection')}</Text>
                         </View>
                         <View style={styles.bestBadge}>
                             <Text style={styles.bestBadgeLabel}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>

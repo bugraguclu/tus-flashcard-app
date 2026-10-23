@@ -68,7 +68,7 @@ Shortcuts exist only on iPhone.
 - Note types with conditional templates, cloze deletions, typed-answer and reversed cards
 - A rich text editor with formatting, lists, tables, links, callouts and a raw HTML view, plus
   images, audio recording and photo annotation
-- A card browser with Anki's search syntax (`deck:`, `tag:`, `is:`, `prop:`, `added:` and more),
+- A card browser with most of Anki's search syntax (`deck:`, `tag:`, `is:`, `prop:`, `added:`, field searches and more; the differences are listed in [the compatibility notes](docs/ANKI_COMPATIBILITY_NOTES.md#browser-cardnote-table-modes-tags-flags-marks-suspendbury-reposition)),
   flags, tags, suspend, bury and reposition
 
 <p align="center">

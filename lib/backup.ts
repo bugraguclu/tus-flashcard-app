@@ -1,8 +1,9 @@
 /**
  * Automatic collection backups.
  *
- * A full-collection JSON snapshot (exportAllData, the canonical v6 format) is
- * written every configured interval (30 minutes by default). Startup and every app foreground may call
+ * A full-collection JSON snapshot (the canonical v6 format, written in chunks by
+ * lib/backupSnapshot.ts) is written every configured interval (30 minutes by default) when the
+ * collection changed since the last one. Startup and every app foreground may call
  * runAutoBackupIfDue() safely; a timestamp guard prevents duplicate work. Today/yesterday plus daily, weekly and monthly
  * restore points are retained. Every restore first snapshots the current state, so a
  * restore is itself undoable.
@@ -18,10 +19,11 @@
 
 import { Platform } from 'react-native';
 import { todayLocalYMD } from './scheduler';
-import { isPrimaryTab } from './db';
+import { getDB, isPrimaryTab } from './db';
 import { getLegacyFileSystem } from './files';
 import { translateActive } from './i18n';
-import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting } from './storage';
+import { importAllData, loadSettings, getDbSetting, setDbSetting } from './storage';
+import { exportAllDataChunks, type CollectionSnapshot } from './backupSnapshot';
 import { canonicalBackupContainsCatalog } from './catalogProtection';
 import { normalizeBackupPolicy, retainedBackupNames } from './backupPolicy';
 import { validateCanonicalBackupData } from './backupValidation';
@@ -54,6 +56,8 @@ export interface BackupStore {
     list(): Promise<BackupInfo[]>;
     read(name: string): Promise<string>;
     write(name: string, contents: string): Promise<void>;
+    /** Write a snapshot given as consecutive chunks, without joining them into one string. */
+    writeChunks?(name: string, chunks: readonly string[]): Promise<void>;
     remove(name: string): Promise<void>;
 }
 
@@ -61,7 +65,14 @@ export interface BackupDeps {
     store?: BackupStore;
     now?: () => Date;
     exportData?: () => Promise<string>;
+    /** The snapshot as chunks; defaults to the chunked exporter unless `exportData` is given. */
+    exportSnapshot?: () => Promise<CollectionSnapshot>;
     importData?: (json: string) => Promise<boolean>;
+    /**
+     * Identifies the collection's current content within this app session, or null when that
+     * cannot be told. An automatic backup is skipped when it equals the token of the last backup.
+     */
+    changeToken?: () => string | null;
     getLastBackupAt?: () => string | null;
     setLastBackupAt?: (timestamp: string) => void;
     rolloverHour?: () => number;
@@ -282,11 +293,53 @@ function createNativeStore(): BackupStore {
                 throw error;
             }
         },
+        async writeChunks(name, chunks) {
+            const dir = await ensureNativeBackupDir();
+            const fs = getLegacyFileSystem();
+            const target = `${dir}${name}`;
+            const temp = `${dir}.${name}.${Date.now()}.tmp`;
+            try {
+                // Appended chunk by chunk, so no string the size of the collection is built.
+                await fs.writeAsStringAsync(temp, chunks[0] ?? '');
+                for (let index = 1; index < chunks.length; index++) {
+                    await fs.writeAsStringAsync(temp, chunks[index], { append: true });
+                }
+                await fs.moveAsync({ from: temp, to: target });
+            } catch (error) {
+                try {
+                    await fs.deleteAsync(temp, { idempotent: true });
+                } catch { /* best-effort cleanup */ }
+                throw error;
+            }
+        },
         remove(name) {
             return getLegacyFileSystem().deleteAsync(`${getNativeBackupDir()}${name}`, { idempotent: true });
         },
     };
 }
+
+async function writeSnapshot(store: BackupStore, name: string, chunks: readonly string[]): Promise<void> {
+    if (store.writeChunks) await store.writeChunks(name, chunks);
+    else await store.write(name, chunks.join(''));
+}
+
+/** Distinguishes this app session's database connection from the previous one. */
+const SESSION_TOKEN = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
+/**
+ * Rows changed through this session's connection (SQLite's `total_changes()`): unchanged between
+ * two calls means nothing was written in between. A new app session always reads as changed.
+ */
+function defaultChangeToken(): string | null {
+    try {
+        const row = getDB().getFirstSync<{ n: number }>('SELECT total_changes() AS n');
+        return row ? `${SESSION_TOKEN}:${row.n}` : null;
+    } catch {
+        return null;
+    }
+}
+
+let lastBackupChangeToken: string | null = null;
 
 function createDefaultStore(): BackupStore {
     if (Platform.OS === 'web') {
@@ -299,7 +352,8 @@ function createDefaultStore(): BackupStore {
 interface ResolvedDeps {
     store: BackupStore;
     now: () => Date;
-    exportData: () => Promise<string>;
+    exportSnapshot: () => Promise<CollectionSnapshot>;
+    changeToken: () => string | null;
     importData: (json: string) => Promise<boolean>;
     getLastBackupAt: () => string | null;
     setLastBackupAt: (timestamp: string) => void;
@@ -314,7 +368,16 @@ function resolveDeps(deps: BackupDeps): ResolvedDeps {
     return {
         store: deps.store ?? createDefaultStore(),
         now: deps.now ?? (() => new Date()),
-        exportData: deps.exportData ?? exportAllData,
+        exportSnapshot: deps.exportSnapshot ?? (deps.exportData
+            ? async () => {
+                const json = await deps.exportData!();
+                const restorability = snapshotRestorability(json);
+                return restorability.restorable
+                    ? { chunks: [json], restorable: true }
+                    : { chunks: [json], restorable: false, reason: restorability.reason };
+            }
+            : exportAllDataChunks),
+        changeToken: deps.changeToken ?? (deps.exportData || deps.exportSnapshot ? () => null : defaultChangeToken),
         importData: deps.importData ?? importAllData,
         getLastBackupAt: deps.getLastBackupAt ?? (() => getDbSetting(GUARD_KEY)),
         setLastBackupAt: deps.setLastBackupAt ?? ((timestamp) => setDbSetting(GUARD_KEY, timestamp)),
@@ -378,12 +441,12 @@ export async function createBackupNow(
         throw new BackupNameError('duplicate', 'A backup with this name already exists.');
     }
 
-    const json = await d.exportData();
-    const snapshot = snapshotRestorability(json);
-    if (!snapshot.restorable && options.requireRestorable) throw new BackupNotRestorableError(snapshot.reason);
-    await d.store.write(fileName, json);
+    const snapshot = await d.exportSnapshot();
+    if (!snapshot.restorable && options.requireRestorable) throw new BackupNotRestorableError(snapshot.reason ?? 'recovery-only');
+    await writeSnapshot(d.store, fileName, snapshot.chunks);
     // Mark the time only after the write succeeds, so a failure retries next launch.
     d.setLastBackupAt(String(now.getTime()));
+    lastBackupChangeToken = d.changeToken();
 
     try {
         await pruneBackups(d.store, d.maxCopies?.(), d.now());
@@ -443,6 +506,10 @@ export function runAutoBackupIfDue(
             }
         }
 
+        // Nothing written since the last backup of this session: another copy would be identical.
+        const token = d.changeToken();
+        if (token !== null && token === lastBackupChangeToken) return { didRun: false };
+
         const { fileName } = await createBackupNow(deps);
         return { didRun: true, fileName };
     })().finally(() => {
@@ -496,10 +563,9 @@ export async function importBackupContents(
 
     // Restoring a chosen backup is a way out of a damaged collection, so the copy of what it
     // replaces may be a recovery copy: it keeps the damaged rows verbatim and stays shareable.
-    const currentContents = await d.exportData();
-    snapshotRestorability(currentContents);
+    const current = await d.exportSnapshot();
     const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
-    await d.store.write(preRestoreName, currentContents);
+    await writeSnapshot(d.store, preRestoreName, current.chunks);
 
     const ok = await d.importData(contents);
     if (!ok && JSON.parse(contents).canonical !== true) {
@@ -507,7 +573,7 @@ export async function importBackupContents(
         // after rejection would itself delete/reinstall catalog rows. Only legacy imports need
         // an automatic compensating restore because they can mutate before returning false.
         try {
-            await d.importData(currentContents);
+            await d.importData(current.chunks.join(''));
         } catch (error) {
             console.error('[Backup] automatic restore rollback failed:', error);
         }

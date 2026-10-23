@@ -7,9 +7,9 @@
 
 import { getDB } from './db';
 import { checksumField, type Note, type NoteType } from './models';
-import { firstFieldChecksums } from './noteChecksum';
+import { checksumFieldText, firstFieldChecksums } from './noteChecksum';
 import { createNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
-import { delimitedContainsHtml, parseDelimited } from './importDelimited';
+import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited } from './importDelimited';
 import { createDeck, getAllDecks } from './deckManager';
 import { assertNoProtectedCatalogGuids } from './catalogProtection';
 import { ImportLogBuilder, type ImportLog } from './importLog';
@@ -170,10 +170,15 @@ function fieldsForRow(row: string[], noteType: NoteType, fieldColumns?: number[]
     return fields;
 }
 
-/** Unmapped fields are absent input; a mapped empty cell is an explicit replacement. */
-function mergeExistingRow(existing: Note, fields: string[], tags: string[], fieldColumns: number[] | undefined, replaceTags: boolean): void {
+/**
+ * Unmapped fields are absent input, and so is a column the row is too short to have: both keep
+ * the existing value, as Anki's importer leaves a field it was given nothing for. A mapped cell
+ * that is present but empty is an explicit replacement.
+ */
+function mergeExistingRow(existing: Note, fields: string[], tags: string[], fieldColumns: number[] | undefined, replaceTags: boolean, rowLength: number): void {
     for (let index = 0; index < fields.length; index++) {
-        if (fieldColumns && !(fieldColumns[index] >= 0)) fields[index] = existing.fields[index] ?? '';
+        const column = fieldColumns ? fieldColumns[index] : index;
+        if (!(column >= 0) || column >= rowLength) fields[index] = existing.fields[index] ?? '';
     }
     if (!replaceTags) tags.splice(0, tags.length, ...uniqueTags([...(existing.tags ?? []), ...tags]));
 }
@@ -254,7 +259,7 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
-            mergeExistingRow(existing, fields, finalTags, fieldColumns, Boolean(tagsColumn || rowTags));
+            mergeExistingRow(existing, fields, finalTags, fieldColumns, Boolean(tagsColumn || rowTags), row.length);
             if (sameFieldsAndTags(existing, fields, finalTags)) {
                 // An unchanged match is "already present" in Anki's log, not an update: rewriting
                 // it would bump `mod` and make a re-import look like it changed the collection.
@@ -266,7 +271,8 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 ...existing,
                 fields,
                 tags: uniqueTags([...finalTags, ...updatedTags]),
-                sfld: fields[activeNoteType.sortFieldIdx] || fields[0] || '',
+                // Anki's sort field holds the text without formatting (media file names kept), EDT-9.
+                sfld: checksumFieldText(fields[activeNoteType.sortFieldIdx] || fields[0] || ''),
                 csum: checksumField(fields[0] ?? ''),
                 mod: Math.floor(Date.now() / 1000),
                 usn: -1,
@@ -339,7 +345,6 @@ interface PreparedDelimitedImport {
 function prepareDelimitedImport(text: string, options: ImportOptions): PreparedDelimitedImport {
     const parsed = parseDelimited(text, options.delimiter ? { delimiter: options.delimiter } : {});
     const { guidColumn, deckColumn, notetypeColumn } = parsed.metadata;
-    const tagsColumn = options.tagsColumn ?? parsed.metadata.tagsColumn;
     const incomingGuids = guidColumn ? parsed.rows.map((row) => row[guidColumn - 1] ?? '') : undefined;
     // Check before resolving/creating destination decks, so a rejected paid-text export is a
     // complete no-op instead of leaving empty attacker-chosen deck rows behind.
@@ -356,6 +361,12 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
     // falls back to whatever the learner chose there. A `#notetype column` names a type per row,
     // and Anki skips a row naming one the collection lacks instead of guessing another type.
     const globalNoteType = options.useFileDefaults ? findNoteType(parsed.metadata.notetype) ?? options.noteType : options.noteType;
+    // Anki's defaults for a file with one note type: `#columns:` names, then a trailing tags column.
+    const columnCount = parsed.metadata.columns?.length || parsed.rows[0]?.length || 0;
+    const fileDefaults = !options.fieldColumns && !notetypeColumn
+        ? defaultDelimitedMapping(parsed.metadata, columnCount, globalNoteType.fields.map((field) => field.name))
+        : undefined;
+    const tagsColumn = options.tagsColumn ?? parsed.metadata.tagsColumn ?? fileDefaults?.tagsColumn;
     const rowNoteTypes = notetypeColumn
         ? parsed.rows.map((row) => {
             const raw = row[notetypeColumn - 1]?.trim();
@@ -370,6 +381,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
         ...(rowNoteTypes ?? []).map((type) => type?.fields.length ?? 0),
     );
     const fieldColumns = options.fieldColumns
+        ?? fileDefaults?.fieldColumns
         ?? deriveFieldColumns(maxFieldCount, guidColumn, tagsColumn, deckColumn, notetypeColumn);
 
     // Fields are rendered as HTML by the reviewer. Escape literal markup when Anki's
@@ -433,8 +445,8 @@ function previewPreparedRows(
     deckId: number,
     rowDeckIds?: number[],
 ): Pick<DelimitedImportPreview, 'added' | 'updated' | 'duplicates' | 'emptyRows' | 'failed' | 'log'> {
-    const duplicateResolution = options.allowDuplicates ? 'duplicate' : (options.duplicateResolution ?? 'update');
-    const matchScope = options.matchScope ?? 'notetype';
+    const duplicateResolution = options.allowDuplicates ? 'duplicate' : (options.duplicateResolution ?? prepared.metadata.ifMatches ?? 'update');
+    const matchScope = options.matchScope ?? prepared.metadata.matchScope ?? 'notetype';
     const log = new ImportLogBuilder();
     const counts = { added: 0, updated: 0, duplicates: 0, emptyRows: 0, failed: 0, log: log.result() };
     const existingGuids = prepared.rowGuids ? new Map(getAllNotes().map((note) => [note.guid, note])) : null;
@@ -495,7 +507,7 @@ function previewPreparedRows(
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
-            mergeExistingRow(existing, fields, finalTags, prepared.fieldColumns, Boolean(prepared.tagsColumn));
+            mergeExistingRow(existing, fields, finalTags, prepared.fieldColumns, Boolean(prepared.tagsColumn), row.length);
             if (sameFieldsAndTags(existing, fields, finalTags)) {
                 counts.duplicates++;
                 log.record('duplicate', fields, existing.id);
@@ -543,8 +555,8 @@ export function importDelimitedNotes(text: string, options: ImportOptions): Impo
             updatedTags: options.updatedTags,
             tagsColumn: prepared.tagsColumn,
             allowDuplicates: options.allowDuplicates,
-            duplicateResolution: options.duplicateResolution,
-            matchScope: options.matchScope,
+            duplicateResolution: options.duplicateResolution ?? prepared.metadata.ifMatches,
+            matchScope: options.matchScope ?? prepared.metadata.matchScope,
             rowGuids: prepared.rowGuids,
             rowNoteTypes: prepared.rowNoteTypes,
             rowDeckIds: decks.rowDeckIds,

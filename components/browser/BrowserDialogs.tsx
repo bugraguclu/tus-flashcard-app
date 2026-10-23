@@ -23,7 +23,6 @@ import { alert, choose, confirm } from '../../lib/confirm';
 import {
     gradeSelectedNow,
     parseDueRange,
-    repositionSelectedNewCards,
     resetSelectedProgress,
     setSelectedDueDate,
 } from '../../lib/browserSelection';
@@ -102,73 +101,8 @@ export function ChangeNoteTypeModal({
     );
 }
 
-interface RepositionModalProps {
-    l: BrowserI18n['l'];
-    refreshSelection: () => void;
-    repositionShiftExisting: boolean;
-    repositionStart: string;
-    repositionStep: string;
-    selectedActionCardIds: number[];
-    setRepositionShiftExisting: Dispatch<SetStateAction<boolean>>;
-    setRepositionStart: Dispatch<SetStateAction<string>>;
-    setRepositionStep: Dispatch<SetStateAction<string>>;
-    setShowRepositionDialog: Dispatch<SetStateAction<boolean>>;
-    showRepositionDialog: boolean;
-    styles: BrowserStyles;
-    t: BrowserI18n['t'];
-}
-
-/** Anki's Reposition for the selected new cards. */
-export function RepositionModal({
-    l,
-    refreshSelection,
-    repositionShiftExisting,
-    repositionStart,
-    repositionStep,
-    selectedActionCardIds,
-    setRepositionShiftExisting,
-    setRepositionStart,
-    setRepositionStep,
-    setShowRepositionDialog,
-    showRepositionDialog,
-    styles,
-    t,
-}: RepositionModalProps) {
-    return (
-        <Modal visible={showRepositionDialog} transparent animationType="fade" onRequestClose={() => setShowRepositionDialog(false)}>
-            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowRepositionDialog(false)} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Yeniden Konumlandır', 'Reposition')}</Text>
-                    <Text style={styles.modalCaption}>{l('Yalnızca seçili yeni kartlar etkilenir.', 'Only selected new cards are affected.')}</Text>
-                    <Text style={styles.fieldLabel}>{l('Başlangıç konumu', 'Start position')}</Text>
-                    <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
-                    <Text style={styles.fieldLabel}>{l('Adım', 'Step')}</Text>
-                    <TextInput style={styles.dialogInput} value={repositionStep} onChangeText={(value) => setRepositionStep(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
-                    <TouchableOpacity style={styles.checkboxRow} onPress={() => setRepositionShiftExisting((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: repositionShiftExisting }} aria-checked={repositionShiftExisting}>
-                        <View style={[styles.checkbox, repositionShiftExisting && styles.checkboxChecked]}>{repositionShiftExisting ? <Text style={styles.checkboxTick}>✓</Text> : null}</View>
-                        <Text style={styles.checkboxLabel}>{l('Mevcut kartların konumunu kaydır', 'Shift position of existing cards')}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.dialogActions}>
-                        <TouchableOpacity style={styles.dialogButton} onPress={() => setShowRepositionDialog(false)}><Text style={styles.dialogButtonText}>{t('common.cancel')}</Text></TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.dialogButton, styles.dialogButtonPrimary]}
-                            onPress={() => {
-                                const count = repositionSelectedNewCards(selectedActionCardIds, Number(repositionStart), Number(repositionStep), repositionShiftExisting);
-                                setShowRepositionDialog(false);
-                                if (count === 0) {
-                                    alert(l('Yeni kart yok', 'No new cards'), l('Seçimde yeniden konumlandırılabilecek yeni kart bulunmuyor.', 'The selection contains no new cards that can be repositioned.'));
-                                    return;
-                                }
-                                refreshSelection();
-                            }}
-                        ><Text style={styles.dialogButtonPrimaryText}>{l('Uygula', 'Apply')}</Text></TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
-    );
-}
+// Reposition lives in its own file (randomize, remembered choices, undo).
+export { RepositionModal } from './RepositionModal';
 
 interface ResetCardsModalProps {
     l: BrowserI18n['l'];

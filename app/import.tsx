@@ -34,7 +34,7 @@ import { importPackageWithBackup } from '../lib/packageImportWorkflow';
 import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
-import { delimitedContainsHtml, parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
+import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
 import { dbUpsertFtsCard, readOnlyTabMessage } from '../lib/db';
 import { commitCollectionWrite } from '../lib/collectionWrite';
 import { useI18n } from '../hooks/useI18n';
@@ -183,18 +183,24 @@ export default function ImportScreen() {
     const visibleColumnCount = Math.min(columnCount, MAX_PREVIEW_COLUMNS);
 
     /**
-     * Anki's default mapping walks the non-meta columns in order onto the note type's fields and
-     * leaves anything past them ignored — it never guesses that a trailing column is tags.
+     * Anki's default mapping (lib/importDelimited.ts): fields by `#columns:` name or in column
+     * order, and the first free column after them as tags.
      */
     const defaultMapping = useMemo(() => {
         const mapping = new Map<number, ColumnMapping>();
-        let fieldIndex = 0;
-        for (let column = 0; column < columnCount; column++) {
-            if (metaColumns.has(column)) continue;
-            mapping.set(column, fieldIndex < selectedNoteType.fields.length ? `field:${fieldIndex++}` : 'none');
-        }
+        if (!metadata) return mapping;
+        const defaults = defaultDelimitedMapping(metadata, columnCount, selectedNoteType.fields.map((field) => field.name));
+        for (let column = 0; column < columnCount; column++) if (!metaColumns.has(column)) mapping.set(column, 'none');
+        defaults.fieldColumns.forEach((column, index) => { if (column >= 0 && !metaColumns.has(column)) mapping.set(column, `field:${index}`); });
+        if (defaults.tagsColumn && !metaColumns.has(defaults.tagsColumn - 1)) mapping.set(defaults.tagsColumn - 1, 'tags');
         return mapping;
-    }, [columnCount, metaColumns, selectedNoteType]);
+    }, [columnCount, metaColumns, metadata, selectedNoteType]);
+
+    // `#if matches:` and `#match scope:` preselect the matching choices, as in Anki.
+    useEffect(() => {
+        if (metadata?.ifMatches) setDuplicateResolution(metadata.ifMatches);
+        if (metadata?.matchScope) setMatchScope(metadata.matchScope);
+    }, [metadata?.ifMatches, metadata?.matchScope]);
 
     const mappingFor = (column: number): ColumnMapping => columnMappings[column] ?? defaultMapping.get(column) ?? 'none';
 
@@ -562,6 +568,12 @@ export default function ImportScreen() {
             lines.push({ tone: 'warning', text: l(
                 `${summary.withMedia} not medya kullanıyor; medya dosyaları içe aktarılamadı.`,
                 `${summary.withMedia} notes reference media; the media files could not be imported.`,
+            ) });
+        }
+        if (summary.structurePreserved === false) {
+            lines.push({ tone: 'warning', text: l(
+                'Paketin deste ve not türü bilgisi okunamadı; notlar basitleştirilmiş not türleriyle içe aktarıldı.',
+                'The package\'s deck and note type data could not be read; notes were imported with simplified note types.',
             ) });
         }
         if (summary.structurePreserved) {

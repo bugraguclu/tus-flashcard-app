@@ -51,14 +51,86 @@ function commonSyncFields(row: Row): boolean {
         && (row.tombstone === undefined || row.tombstone === 0 || row.tombstone === 1);
 }
 
-function uniquePositiveIds(rows: Row[], key: string): boolean {
-    const ids = new Set<number>();
-    for (const row of rows) {
-        const id = row[key];
-        if (!integer(id, true) || ids.has(Number(id))) return false;
-        ids.add(Number(id));
+type TableName = (typeof CANONICAL_BACKUP_TABLES)[number];
+
+const ID_TABLES: readonly TableName[] = ['note_types', 'notes', 'anki_cards', 'decks', 'deck_configs', 'revlog'];
+const CONTENT_ORDER: readonly string[] = ['note_types', 'notes', 'anki_cards', 'decks', 'duplicate-deck-name', 'deck_configs', 'revlog', 'graves', 'session_stats'];
+const SCHEDULER_KEYS = ['ord', 'type', 'queue', 'due', 'ivl', 'factor', 'reps', 'lapses', 'flags'] as const;
+const REVLOG_KEYS = ['cardId', 'usn', 'ease', 'ivl', 'lastIvl', 'factor', 'time', 'type'] as const;
+
+function validContent(table: TableName, row: Row): boolean {
+    switch (table) {
+        case 'note_types': return text(row.name, 4096) && jsonObject(row.data, 5 * 1024 * 1024) && commonSyncFields(row);
+        case 'notes': return integer(row.noteTypeId, true) && text(row.sfld, 2 * 1024 * 1024)
+            && integer(row.csum) && text(row.tags, 1024 * 1024) && jsonObject(row.data, 10 * 1024 * 1024)
+            && commonSyncFields(row);
+        case 'anki_cards': return integer(row.noteId, true) && integer(row.deckId, true)
+            && SCHEDULER_KEYS.every((key) => integer(row[key]))
+            && (row.left === undefined || integer(row.left)) && jsonObject(row.data, 2 * 1024 * 1024)
+            && (row.created_at === undefined || integer(row.created_at)) && commonSyncFields(row);
+        case 'decks': return text(row.name, 4096) && jsonObject(row.data, 2 * 1024 * 1024) && commonSyncFields(row);
+        case 'deck_configs': return jsonObject(row.data, 2 * 1024 * 1024);
+        case 'revlog': return REVLOG_KEYS.every((key) => integer(row[key]));
+        case 'graves': return integer(row.oid, true) && integer(row.usn)
+            && integer(row.type) && Number(row.type) >= 0 && Number(row.type) <= 2;
+        case 'session_stats': return text(row.date, 32) && jsonObject(row.data, 2 * 1024 * 1024);
     }
-    return true;
+}
+
+/**
+ * The strict restore validation, fed one page of rows at a time so a large collection can be
+ * checked while it is written out in chunks (lib/backupData.ts) without holding every row. The
+ * reason reported is the one the whole-file check would report: shape problems first, then ids,
+ * then row contents in table order, then orphans.
+ */
+export interface CanonicalBackupValidator {
+    add(table: TableName, rows: readonly unknown[]): void;
+    finish(): Validation;
+}
+
+export function createCanonicalBackupValidator(): CanonicalBackupValidator {
+    let best: { rank: number; reason: string } | null = null;
+    const fail = (rank: number, reason: string) => {
+        if (!best || rank < best.rank) best = { rank, reason };
+    };
+    const counts = new Map<TableName, number>();
+    const ids = new Map<TableName, Set<number>>(ID_TABLES.map((table) => [table, new Set<number>()]));
+    const deckNames = new Set<unknown>();
+    const noteTypeRefs: number[] = [];
+    const cardRefs: Array<[number, number]> = [];
+    return {
+        add(table, rows) {
+            const position = CANONICAL_BACKUP_TABLES.indexOf(table);
+            const count = (counts.get(table) ?? 0) + rows.length;
+            counts.set(table, count);
+            if (count > TABLE_LIMITS[table]) fail(position * 3 + 1, `too-many-rows:${table}`);
+            const seen = ids.get(table);
+            for (const value of rows) {
+                if (!isRow(value)) { fail(position * 3 + 2, `invalid-row:${table}`); continue; }
+                if (seen) {
+                    const id = value.id;
+                    if (!integer(id, true) || seen.has(Number(id))) fail(1000 + ID_TABLES.indexOf(table), `invalid-id:${table}`);
+                    else seen.add(Number(id));
+                }
+                if (!validContent(table, value)) fail(2000 + CONTENT_ORDER.indexOf(table), `invalid-row:${table}`);
+                if (table === 'decks') {
+                    if (deckNames.has(value.name)) fail(2000 + CONTENT_ORDER.indexOf('duplicate-deck-name'), 'duplicate-deck-name');
+                    deckNames.add(value.name);
+                }
+                if (table === 'notes') noteTypeRefs.push(Number(value.noteTypeId));
+                if (table === 'anki_cards') cardRefs.push([Number(value.noteId), Number(value.deckId)]);
+            }
+        },
+        finish() {
+            const noteTypeIds = ids.get('note_types')!;
+            const noteIds = ids.get('notes')!;
+            const deckIds = ids.get('decks')!;
+            if (noteTypeRefs.some((id) => !noteTypeIds.has(id))) fail(3000, 'orphan-note');
+            if (cardRefs.some(([noteId, deckId]) => !noteIds.has(noteId) || !deckIds.has(deckId))) fail(3001, 'orphan-card');
+            const result = best as { rank: number; reason: string } | null;
+            return result ? { valid: false, reason: result.reason } : { valid: true };
+        },
+    };
 }
 
 /** Strictly validate canonical SQLite rows before any restore mutates app state. */
@@ -68,71 +140,9 @@ export function validateCanonicalBackupData(data: unknown): Validation {
     }
     const tables = data.tables;
     for (const name of CANONICAL_BACKUP_TABLES) {
-        const rows = tables[name];
-        if (!Array.isArray(rows)) return { valid: false, reason: `invalid-table:${name}` };
-        if (rows.length > TABLE_LIMITS[name]) return { valid: false, reason: `too-many-rows:${name}` };
-        if (!rows.every(isRow)) return { valid: false, reason: `invalid-row:${name}` };
+        if (!Array.isArray(tables[name])) return { valid: false, reason: `invalid-table:${name}` };
     }
-
-    const noteTypes = tables.note_types as Row[];
-    const notes = tables.notes as Row[];
-    const cards = tables.anki_cards as Row[];
-    const decks = tables.decks as Row[];
-    const configs = tables.deck_configs as Row[];
-    const revlog = tables.revlog as Row[];
-    const graves = tables.graves as Row[];
-    const stats = tables.session_stats as Row[];
-
-    for (const [name, rows, key] of [
-        ['note_types', noteTypes, 'id'], ['notes', notes, 'id'], ['anki_cards', cards, 'id'],
-        ['decks', decks, 'id'], ['deck_configs', configs, 'id'], ['revlog', revlog, 'id'],
-    ] as const) {
-        if (!uniquePositiveIds(rows, key)) return { valid: false, reason: `invalid-id:${name}` };
-    }
-
-    if (!noteTypes.every((row) => text(row.name, 4096) && jsonObject(row.data, 5 * 1024 * 1024) && commonSyncFields(row))) {
-        return { valid: false, reason: 'invalid-row:note_types' };
-    }
-    if (!notes.every((row) => integer(row.noteTypeId, true) && text(row.sfld, 2 * 1024 * 1024)
-        && integer(row.csum) && text(row.tags, 1024 * 1024) && jsonObject(row.data, 10 * 1024 * 1024)
-        && commonSyncFields(row))) {
-        return { valid: false, reason: 'invalid-row:notes' };
-    }
-    const schedulerKeys = ['ord', 'type', 'queue', 'due', 'ivl', 'factor', 'reps', 'lapses', 'flags'] as const;
-    if (!cards.every((row) => integer(row.noteId, true) && integer(row.deckId, true)
-        && schedulerKeys.every((key) => integer(row[key]))
-        && (row.left === undefined || integer(row.left)) && jsonObject(row.data, 2 * 1024 * 1024)
-        && (row.created_at === undefined || integer(row.created_at)) && commonSyncFields(row))) {
-        return { valid: false, reason: 'invalid-row:anki_cards' };
-    }
-    if (!decks.every((row) => text(row.name, 4096) && jsonObject(row.data, 2 * 1024 * 1024) && commonSyncFields(row))) {
-        return { valid: false, reason: 'invalid-row:decks' };
-    }
-    if (new Set(decks.map((row) => row.name)).size !== decks.length) {
-        return { valid: false, reason: 'duplicate-deck-name' };
-    }
-    if (!configs.every((row) => jsonObject(row.data, 2 * 1024 * 1024))) {
-        return { valid: false, reason: 'invalid-row:deck_configs' };
-    }
-    const revlogKeys = ['cardId', 'usn', 'ease', 'ivl', 'lastIvl', 'factor', 'time', 'type'] as const;
-    if (!revlog.every((row) => revlogKeys.every((key) => integer(row[key])))) {
-        return { valid: false, reason: 'invalid-row:revlog' };
-    }
-    if (!graves.every((row) => integer(row.oid, true) && integer(row.usn)
-        && integer(row.type) && Number(row.type) >= 0 && Number(row.type) <= 2)) {
-        return { valid: false, reason: 'invalid-row:graves' };
-    }
-    if (!stats.every((row) => text(row.date, 32) && jsonObject(row.data, 2 * 1024 * 1024))) {
-        return { valid: false, reason: 'invalid-row:session_stats' };
-    }
-
-    const noteTypeIds = new Set(noteTypes.map((row) => Number(row.id)));
-    const noteIds = new Set(notes.map((row) => Number(row.id)));
-    const deckIds = new Set(decks.map((row) => Number(row.id)));
-    if (notes.some((row) => !noteTypeIds.has(Number(row.noteTypeId)))) return { valid: false, reason: 'orphan-note' };
-    if (cards.some((row) => !noteIds.has(Number(row.noteId)) || !deckIds.has(Number(row.deckId)))) {
-        return { valid: false, reason: 'orphan-card' };
-    }
-
-    return { valid: true };
+    const validator = createCanonicalBackupValidator();
+    for (const name of CANONICAL_BACKUP_TABLES) validator.add(name, tables[name] as unknown[]);
+    return validator.finish();
 }

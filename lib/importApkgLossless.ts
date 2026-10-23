@@ -17,6 +17,10 @@ import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './ty
 import { ankiDueDayToLocal } from './importApkgProgress';
 import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
+import { deckNameKey } from './deckNames';
+import { checksumFieldText } from './noteChecksum';
+import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
+import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import { parsePreviewDelays } from './filteredDeckOptions';
 import {
     FIELD_SEPARATOR,
@@ -49,6 +53,16 @@ function sourceOriginalDueToLocal(row: any, crt: number, nowMs: number, rollover
     const type = numberValue(row.type);
     if ((type === 1 || type === 3) && odue >= 1_000_000_000) return odue * 1000;
     return type === 1 || type === 2 || type === 3 ? ankiDueDayToLocal(odue, crt, nowMs, rolloverHour) : odue;
+}
+
+/**
+ * The v1 scheduler kept a relearning card as a review card (type 2) in a learning queue; v2 and
+ * later give it its own type 3, which is what Anki's own upgrade does. A type-2 card in a
+ * learning queue exists only in a v1 collection, so it is converted whatever the package says.
+ */
+function upgradedCardType(type: number, queue: number): CardType {
+    const clamped = Math.min(3, Math.max(0, type)) as CardType;
+    return clamped === 2 && (queue === 1 || queue === 3) ? 3 : clamped;
 }
 
 function serializeTags(tags: string[]): string {
@@ -116,8 +130,15 @@ export function importAnkiReaderLossless(
                 DELETE FROM cards_fts;
                 DELETE FROM session_stats;
             `);
+            // State that belonged to the replaced collection: a backup's pending catalog overlay
+            // and the queue's per-deck / per-answer bookkeeping rows.
+            db.runSync('DELETE FROM settings WHERE key = ?', CATALOG_LEARNER_DATA_KEY);
+            for (const prefix of QUEUE_BOOKKEEPING_PREFIXES) {
+                db.runSync('DELETE FROM settings WHERE substr(key, 1, ?) = ?', prefix.length, prefix);
+            }
         }
         const reservedTypeNames = new Set(existingNoteTypes.map((row) => row.name));
+        const writtenNoteTypeIds = new Set<number>();
         for (const [sourceKey, raw] of Object.entries(meta.models)) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
             const samePackage = existingNoteTypes.find((row) => {
@@ -148,6 +169,7 @@ export function importAnkiReaderLossless(
                     'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, 0)',
                     noteType.id, noteType.name, JSON.stringify(noteType), nowMs, numberValue(raw.usn, -1),
                 );
+                writtenNoteTypeIds.add(noteType.id);
             } else {
                 try {
                     const current = JSON.parse(existing.data) as NoteType;
@@ -168,6 +190,7 @@ export function importAnkiReaderLossless(
                             'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, 0)',
                             duplicate.id, duplicate.name, JSON.stringify(duplicate), nowMs, -1,
                         );
+                        writtenNoteTypeIds.add(duplicate.id);
                     }
                     const shouldUpdate = sameShape && (
                         updateNoteTypes === 'always'
@@ -178,6 +201,7 @@ export function importAnkiReaderLossless(
                             'UPDATE note_types SET name = ?, data = ?, updated_at = ?, usn = ?, tombstone = 0 WHERE id = ?',
                             incoming.name, JSON.stringify(incoming), nowMs, -1, targetId,
                         );
+                        writtenNoteTypeIds.add(targetId);
                     }
                 } catch { /* malformed local note types remain untouched */ }
             }
@@ -224,10 +248,34 @@ export function importAnkiReaderLossless(
             cardRows.map((row) => ({ did: numberValue(row.did), odid: numberValue(row.odid) })),
             { withScheduling, hasOwnDefaultDeck: existingDecks.some((row) => row.id === ANKI_DEFAULT_DECK_ID) },
         );
-        for (const [sourceKey, raw] of Object.entries(meta.decks)) {
+        // Deck names are matched as Anki matches them, ignoring case: "medicine::Cardio" joins an
+        // existing "Medicine" rather than creating a second tree that differs only in case. A
+        // deck renamed below (an incompatible deck of the same name exists) takes its subdecks.
+        const knownDeckNames = new Set(existingDecks.map((row) => row.name));
+        const foldedDeckNames = new Map<string, string>();
+        for (const row of existingDecks) if (!foldedDeckNames.has(deckNameKey(row.name))) foldedDeckNames.set(deckNameKey(row.name), row.name);
+        const rememberDeckName = (name: string) => {
+            knownDeckNames.add(name);
+            if (!foldedDeckNames.has(deckNameKey(name))) foldedDeckNames.set(deckNameKey(name), name);
+        };
+        const renamedDeckPaths = new Map<string, string>();
+        const resolveDeckPath = (raw: string): string => {
+            const parts = raw.split('::');
+            let path = '';
+            for (const part of parts) {
+                const candidate = path ? `${path}::${part}` : part;
+                const renamed = renamedDeckPaths.get(candidate);
+                path = renamed ?? (knownDeckNames.has(candidate) ? candidate : foldedDeckNames.get(deckNameKey(candidate)) ?? candidate);
+            }
+            return path;
+        };
+        const sourceDecks = Object.entries(meta.decks)
+            .sort(([, left], [, right]) => String(left.name || '').split('::').length - String(right.name || '').split('::').length);
+        for (const [sourceKey, raw] of sourceDecks) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
             if (decksToImport && !decksToImport.has(sourceId)) continue;
-            const sourceName = String(raw.name || 'Anki Deck');
+            const packageName = String(raw.name || 'Anki Deck');
+            const sourceName = resolveDeckPath(packageName);
             const sourceFiltered = numberValue(raw.dyn) === 1;
             const compatible = (row: { data: string }): boolean => {
                 try { return (JSON.parse(row.data) as Deck).isFiltered === sourceFiltered; }
@@ -250,6 +298,8 @@ export function importAnkiReaderLossless(
                 while (reservedDeckNames.has(name)) name = `${base} ${suffix++}`;
             }
             reservedDeckNames.add(name);
+            if (name !== sourceName) renamedDeckPaths.set(sourceName, name);
+            rememberDeckName(name);
             const targetId = samePackage?.id ?? sameIdentity?.id ?? sameName?.id ?? nextFreeId('decks', sourceId, reservedDecks);
             deckMap.set(sourceId, targetId);
             importedDeckNames.add(name);
@@ -309,6 +359,30 @@ export function importAnkiReaderLossless(
             installedNames.add(parentName);
         }
 
+        // A template's deck override names a deck of the package; point it at the deck that deck
+        // became here, or drop it when the package's deck did not come along (Anki then ignores it).
+        const localDeckForSource = (sourceDeckId: number): number | undefined => deckMap.get(sourceDeckId)
+            ?? existingDecks.flatMap((row) => {
+                try {
+                    const parsed = JSON.parse(row.data) as Deck;
+                    return parsed.sourcePackageId === packageId && numberValue(parsed.ankiRaw?.id) === sourceDeckId ? [row.id] : [];
+                } catch { return []; }
+            })[0];
+        for (const typeId of writtenNoteTypeIds) {
+            const row = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', typeId);
+            if (!row) continue;
+            const type = JSON.parse(row.data) as NoteType;
+            let changed = false;
+            type.templates = type.templates.map((template) => {
+                if (template.deckOverrideId === undefined) return template;
+                changed = true;
+                const local = localDeckForSource(template.deckOverrideId);
+                const { deckOverrideId: _source, ...rest } = template;
+                return local === undefined ? rest : { ...rest, deckOverrideId: local };
+            });
+            if (changed) db.runSync('UPDATE note_types SET data = ? WHERE id = ?', JSON.stringify(type), typeId);
+        }
+
         const existingNotesByGuid = new Map<string, { id: number; note: Note }>();
         for (const row of db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM notes')) {
             try {
@@ -360,7 +434,7 @@ export function importAnkiReaderLossless(
                     usn: -1,
                     tags,
                     fields,
-                    sfld: String(row.sfld ?? fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? ''),
+                    sfld: String(row.sfld ?? checksumFieldText(fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? '')),
                     csum: numberValue(row.csum),
                     flags: numberValue(row.flags),
                     ankiData: String(row.data ?? ''),
@@ -384,7 +458,7 @@ export function importAnkiReaderLossless(
                 usn: numberValue(row.usn, -1),
                 tags,
                 fields,
-                sfld: String(row.sfld ?? fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? ''),
+                sfld: String(row.sfld ?? checksumFieldText(fields[numberValue(modelRaw?.sortf)] ?? fields[0] ?? '')),
                 csum: numberValue(row.csum),
                 flags: numberValue(row.flags),
                 ankiData: String(row.data ?? ''),
@@ -440,7 +514,7 @@ export function importAnkiReaderLossless(
                 ord: numberValue(row.ord),
                 mod: numberValue(row.mod),
                 usn: numberValue(row.usn, -1),
-                type: withScheduling ? Math.min(3, Math.max(0, numberValue(row.type))) as CardType : 0,
+                type: withScheduling ? upgradedCardType(numberValue(row.type), numberValue(row.queue)) : 0,
                 queue: withScheduling ? Math.min(4, Math.max(-3, numberValue(row.queue))) as CardQueue : 0,
                 due: withScheduling ? sourceDueToLocal(row, meta.crt, nowMs, rolloverHour) : newPositionsByNote.get(targetNoteId)!,
                 ivl: withScheduling ? numberValue(row.ivl) : 0,
@@ -474,9 +548,18 @@ export function importAnkiReaderLossless(
         const reservedRevlog = new Set<number>();
         let progressReviews = 0;
         for (const row of withScheduling ? revlogRows : []) {
-            const targetCardId = cardIdMap.get(numberValue(row.cid));
+            // A collection package is the whole collection, history of deleted cards included, and
+            // replacing the collection keeps it as Anki does; a deck package brings only the
+            // history of the cards it adds.
+            const targetCardId = cardIdMap.get(numberValue(row.cid)) ?? (options.replaceCollection ? numberValue(row.cid) : undefined);
             if (!targetCardId) continue;
-            const targetReviewId = nextFreeId('revlog', numberValue(row.id), reservedRevlog);
+            // A review id is the time it was given. One already in the collection is that same
+            // review (a re-import), and Anki skips it; rekeying it to now made it look like an
+            // answer given today.
+            const targetReviewId = numberValue(row.id);
+            if (!Number.isSafeInteger(targetReviewId) || targetReviewId <= 0 || reservedRevlog.has(targetReviewId)
+                || db.getFirstSync('SELECT 1 AS found FROM revlog WHERE id = ? LIMIT 1', targetReviewId)) continue;
+            reservedRevlog.add(targetReviewId);
             db.runSync(
                 `INSERT INTO revlog (id, cardId, usn, ease, ivl, lastIvl, factor, time, type)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,

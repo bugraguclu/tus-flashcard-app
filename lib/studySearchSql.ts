@@ -58,7 +58,7 @@ export function buildFilteredSearchClause(searchQuery: string): { clauses: strin
  * `parseAnkiCardData` reads it here.
  */
 function fsrsCardDataSql(key: 's' | 'd' | 'lrt' | 'decay'): string {
-    const blob = "json_extract(c.data, '$.ankiData')";
+    const blob = `(CASE WHEN json_valid(c.data) THEN json_extract(c.data, '$.ankiData') END)`;
     return `(CASE WHEN json_valid(${blob}) THEN CAST(json_extract(${blob}, '$.${key}') AS REAL) END)`;
 }
 
@@ -69,4 +69,12 @@ function fsrsMemoryStateSql(key: 's' | 'd'): string {
 export const FSRS_STABILITY_SQL = fsrsMemoryStateSql('s');
 
 export const FSRS_DIFFICULTY_SQL = fsrsMemoryStateSql('d');
+
+/**
+ * One key of the card's own JSON, or NULL when that JSON is unreadable. A bare `json_extract`
+ * throws on a malformed blob and would fail the whole browser listing for one damaged card.
+ */
+export function cardJsonSql(path: string, column = 'c.data'): string {
+    return `(CASE WHEN json_valid(${column}) THEN json_extract(${column}, '${path}') END)`;
+}
 

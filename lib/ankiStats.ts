@@ -18,6 +18,12 @@ export interface StatsDateRange {
     endMs: number;
     /** Calendar days the range covers, or null for all history. */
     spanDays: number | null;
+    /**
+     * Where the Answer Buttons and Hourly Breakdown windows start. Anki measures those two in
+     * whole days back from the next rollover (30, 90 or 365), while the per-day graphs show 31,
+     * 90 or 365 study days including today. Absent means `startMs`.
+     */
+    answerWindowStartMs?: number;
 }
 
 export interface StatsSeriesPoint {
@@ -140,12 +146,14 @@ export function resolveStatsDateRange(
     }
 
     const days = key === 'week' ? 7 : key === 'month' ? 31 : key === 'threeMonths' ? 90 : 365;
+    const answerDays = key === 'month' ? 30 : days;
     const todayStart = currentStudyDayStart(nowMs, rolloverHour);
     const start = new Date(todayStart);
     return {
         startMs: new Date(start.getFullYear(), start.getMonth(), start.getDate() - (days - 1), rolloverHour).getTime(),
         endMs: endOfToday,
         spanDays: days,
+        answerWindowStartMs: endOfToday - answerDays * DAY_MS,
     };
 }
 
@@ -161,25 +169,24 @@ export function rangeStudyDays(range: StatsDateRange, rolloverHour: number, firs
     return { firstDay: localDayNumber(range.startMs, rolloverHour), lastDay };
 }
 
-function escapeLikePattern(value: string): string {
-    return value.replace(/[\\%_]/g, (character) => `\\${character}`);
-}
-
 function deckClause(deckName: string | null, cardAlias: string = 'c', scopedCardIds?: number[]) {
     if (scopedCardIds !== undefined) {
         const cardIds = [...new Set(scopedCardIds.filter(Number.isFinite).map(Math.trunc))];
         if (cardIds.length === 0) return { join: '', where: 'AND 1 = 0', params: [] as unknown[] };
+        // One JSON parameter rather than one variable per card: a large filtered deck would
+        // pass SQLite's bound-variable limit.
         return {
             join: '',
-            where: `AND ${cardAlias}.id IN (${cardIds.map(() => '?').join(', ')})`,
-            params: cardIds,
+            where: `AND ${cardAlias}.id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))`,
+            params: [JSON.stringify(cardIds)] as unknown[],
         };
     }
     if (!deckName) return { join: '', where: '', params: [] as unknown[] };
+    // Deck names are case-sensitive; `tus` must not take in "TUS::Dahiliye" (LIKE folds ASCII case).
     return {
         join: `JOIN decks d ON d.id = ${cardAlias}.deckId`,
-        where: `AND (d.name = ? OR d.name LIKE ? ESCAPE '\\')`,
-        params: [deckName, `${escapeLikePattern(deckName)}::%`],
+        where: 'AND (d.name = ? OR instr(d.name, ?) = 1)',
+        params: [deckName, `${deckName}::`],
     };
 }
 
@@ -196,8 +203,15 @@ function studyDaySql(msExpression: string): string {
     return `CAST(julianday(date((${msExpression}) / 1000 - ?, 'unixepoch', 'localtime')) - 2440587.5 AS INTEGER)`;
 }
 
-/** When a card was added here; an imported card's id records when it was made in Anki instead. */
-const CARD_ADDED_MS = 'COALESCE(NULLIF(c.created_at, 0), c.id)';
+/**
+ * When a card was added, as Anki reads it: the card id, which is its creation time in epoch ms
+ * and survives import. A card whose id is not a plausible time (some generated catalog ids) falls
+ * back to the local insertion stamp. Mirrors `cardAddedMs` in lib/collectionCardSearch.ts.
+ */
+function cardAddedMsSql(): string {
+    const latest = Date.now() + DAY_MS;
+    return `(CASE WHEN c.id BETWEEN 946684800000 AND ${latest} THEN c.id ELSE COALESCE(NULLIF(c.created_at, 0), c.id) END)`;
+}
 
 function toNumber(value: unknown): number {
     const parsed = Number(value);
@@ -229,12 +243,13 @@ function getFutureDue(
     const nextDay = nextRolloverMs(Date.now(), rolloverHour);
     const rows = db.getAllSync<{ type: number; queue: number; due: number; ivl: number; homeDue: number | null }>(
         `SELECT c.type, c.queue, c.due, c.ivl,
-            CASE WHEN json_valid(c.data) AND json_extract(c.data, '$.odid') != 0 THEN json_extract(c.data, '$.odue') END AS homeDue
+            CASE WHEN json_valid(c.data) AND json_extract(c.data, '$.odid') != 0 THEN NULLIF(json_extract(c.data, '$.odue'), 0) END AS homeDue
          FROM anki_cards c ${deck.join} WHERE c.type != 0 AND c.queue != -1 ${deck.where}`,
         ...deck.params,
     );
     const projected = rows.map(row => {
-        const due = row.homeDue ?? row.due;
+        // A filtered card without a stored original due (0) is read where it is, not as day 0.
+        const due = row.homeDue || row.due;
         return { ...row, offset: due >= 1_000_000_000 ? Math.trunc((due - nextDay) / DAY_MS) : due - today };
     });
     const dueRows = projected.filter(row => !((row.queue === -2 || row.queue === -3) && row.offset <= 0));
@@ -265,14 +280,14 @@ function getAnswerButtons(deckName: string | null, range: StatsDateRange, scoped
     const deck = deckClause(deckName, 'c', scopedCardIds);
     const rows = db.getAllSync<{ ease: 1 | 2 | 3 | 4; category: 0 | 1 | 2; count: number }>(
         `SELECT r.ease AS ease,
-                CASE WHEN r.type IN (0, 2) THEN 0 WHEN r.lastIvl < ${MATURE_MIN_IVL} THEN 1 ELSE 2 END AS category,
+                CASE WHEN r.type IN (0, 2, 3) THEN 0 WHEN r.lastIvl < ${MATURE_MIN_IVL} THEN 1 ELSE 2 END AS category,
                 COUNT(*) AS count
          FROM revlog r
          ${revlogCardJoin(deckName, scopedCardIds)}
          ${deck.join}
-         WHERE r.ease BETWEEN 1 AND 4 AND r.type IN (0, 1, 2) AND r.id >= ? AND r.id < ? ${deck.where}
+         WHERE r.ease BETWEEN 1 AND 4 AND r.type IN (0, 1, 2, 3) AND r.id >= ? AND r.id < ? ${deck.where}
          GROUP BY category, r.ease ORDER BY r.ease, category`,
-        range.startMs, range.endMs, ...deck.params,
+        range.answerWindowStartMs ?? range.startMs, range.endMs, ...deck.params,
     );
     const result: AnswerButtonPoint[] = [1, 2, 3, 4].map((ease) => ({
         ease: ease as 1 | 2 | 3 | 4,
@@ -335,7 +350,7 @@ function getCardCounts(deckName: string | null, scopedCardIds?: number[]): CardC
             COALESCE(SUM(CASE WHEN c.queue = -1 THEN 1 ELSE 0 END), 0) AS suspended,
             COALESCE(SUM(CASE WHEN c.queue IN (-2, -3) THEN 1 ELSE 0 END), 0) AS buried,
             COALESCE(SUM(CASE WHEN c.queue >= 0 AND (c.type IN (1, 3) OR (c.type = 2 AND c.ivl < ${MATURE_MIN_IVL})) THEN 1 ELSE 0 END), 0) AS youngLearn,
-            COALESCE(SUM(CASE WHEN c.queue = 0 THEN 1 ELSE 0 END), 0) AS unseen,
+            COALESCE(SUM(CASE WHEN c.type = 0 AND c.queue >= 0 THEN 1 ELSE 0 END), 0) AS unseen,
             COALESCE(SUM(CASE WHEN c.queue IN (-1, -2, -3) THEN 1 ELSE 0 END), 0) AS suspendedBuried,
             COUNT(c.id) AS totalCards,
             COUNT(DISTINCT c.noteId) AS totalNotes
@@ -430,7 +445,7 @@ export function getAddedDays(deckName: string | null, rolloverHour: number, scop
     const db = getDB();
     const deck = deckClause(deckName, 'c', scopedCardIds);
     const rows = db.getAllSync<{ day: number; count: number }>(
-        `SELECT ${studyDaySql(CARD_ADDED_MS)} AS day, COUNT(*) AS count
+        `SELECT ${studyDaySql(cardAddedMsSql())} AS day, COUNT(*) AS count
          FROM anki_cards c ${deck.join}
          WHERE 1 = 1 ${deck.where}
          GROUP BY day
@@ -458,7 +473,7 @@ export function getAddedCardDeckNames(
          FROM anki_cards c
          JOIN decks home ON home.id = c.deckId
          ${deck.join}
-         WHERE ${studyDaySql(CARD_ADDED_MS)} BETWEEN ? AND ? ${deck.where}
+         WHERE ${studyDaySql(cardAddedMsSql())} BETWEEN ? AND ? ${deck.where}
          ORDER BY home.name`,
         rolloverHour * 3600, firstDay, lastDay, ...deck.params,
     );
@@ -482,7 +497,7 @@ export function getHourBreakdown(deckName: string | null, range: StatsDateRange,
          WHERE r.ease BETWEEN 1 AND 4 AND r.type BETWEEN 0 AND 2
            AND r.id >= ? AND r.id < ? ${deck.where}
          GROUP BY hour`,
-        range.startMs, range.endMs, ...deck.params,
+        range.answerWindowStartMs ?? range.startMs, range.endMs, ...deck.params,
     );
     const hours: HourBucket[] = Array.from({ length: 24 }, (_, hour) => ({ hour, total: 0, correct: 0 }));
     for (const row of rows) {

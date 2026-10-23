@@ -292,6 +292,8 @@ export function importedNoteType(raw: Record<string, any>, id: number, packageId
             ord: numberValue(template?.ord, index),
             qfmt: String(template?.qfmt ?? ''),
             afmt: String(template?.afmt ?? ''),
+            // The package's own deck id; the importer remaps it to the local deck (or drops it).
+            ...(numberValue(template?.did) > 0 ? { deckOverrideId: numberValue(template.did) } : {}),
         })),
         css: String(raw.css ?? ''),
         sortFieldIdx: numberValue(raw.sortf),

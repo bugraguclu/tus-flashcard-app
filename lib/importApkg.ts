@@ -38,7 +38,12 @@ const LEGACY_COLLECTION_NAME = 'collection.anki21';
 
 const OLDEST_COLLECTION_NAME = 'collection.anki2';
 
-export const MAX_APKG_BYTES = 200 * 1024 * 1024;
+// The package is held in memory while it is imported (read in chunks, lib/files.ts), so this is
+// the size an iPhone can hold beside the app, not a format limit.
+export const MAX_APKG_BYTES = 400 * 1024 * 1024;
+
+/** Larger packages are not kept as a second, byte-identical copy (AKT-13). */
+const MAX_PRESERVED_PACKAGE_BYTES = 64 * 1024 * 1024;
 
 // Cap the decompressed collection before handing it to sql.js, which would copy the whole
 // database into its WASM heap. The SQLite itself (no media) is normally tiny.
@@ -362,7 +367,9 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
         if (!lossless && options.replaceCollection) {
             throw new Error('Bu modern .colpkg sürümü tam koleksiyon değiştirme için henüz desteklenmiyor; eski Anki sürümleriyle uyumlu dışa aktarımı seçin.');
         }
-        result = lossless ?? importAnkiReader(reader, options);
+        if (!lossless) console.warn('[ApkgImport] package metadata unreadable; importing with the simplified importer');
+        // Said in the result, so the import summary can warn that note types were simplified.
+        result = lossless ?? { ...importAnkiReader(reader, options), structurePreserved: false };
     } finally {
         reader.close();
     }
@@ -386,7 +393,8 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
                 fileName: options.fileName,
                 noteCount: result.added,
                 cardCount: result.cardsImported ?? 0,
-                exactEligible: options.withScheduling !== false && options.withDeckConfigs !== false
+                exactEligible: zipBytes.length <= MAX_PRESERVED_PACKAGE_BYTES
+                    && options.withScheduling !== false && options.withDeckConfigs !== false
                     && result.structurePreserved === true
                     && result.added === result.totalNotes
                     && (result.updated ?? 0) === 0

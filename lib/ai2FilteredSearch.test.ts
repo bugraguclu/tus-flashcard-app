@@ -22,8 +22,10 @@ describe('AI-2 filtered SQL terms', () => {
         ['note:TUS', [1010, 1020, 1030]],
         ['card:1', [1010, 1020, 1030]],
         ['nid:101,102', [1010, 1020]],
-        ['Soru:randint', [1010]],
-        ['-Soru:randint', [1020, 1030]],
+        // Anki compares the whole field; `*` marks the part that may differ.
+        ['Soru:*randint*', [1010]],
+        ['-Soru:*randint*', [1020, 1030]],
+        ['Soru:randint', []],
     ])('gathers %s', (query, expected) => {
         createFilteredDeck('Session', query, 10);
         expect(ids('Session').sort()).toEqual(expected);

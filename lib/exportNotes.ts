@@ -73,14 +73,14 @@ export interface NoteTextExportData {
 
 /** Note ids that have at least one card inside the deck subtree (Anki's per-deck export scope). */
 export function getNoteIdsInDeck(deckName: string): Set<number> {
-    const escaped = deckName.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+    // Exact, case-sensitive subtree: LIKE would also take in "TUS::…" for a deck named "tus".
     const rows = getDB().getAllSync<{ noteId: number }>(
         `SELECT DISTINCT c.noteId AS noteId
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE d.name = ? OR d.name LIKE ? ESCAPE '\\'`,
+         WHERE d.name = ? OR instr(d.name, ?) = 1`,
         deckName,
-        `${escaped}::%`,
+        `${deckName}::`,
     );
     return new Set(rows.map((row) => row.noteId));
 }

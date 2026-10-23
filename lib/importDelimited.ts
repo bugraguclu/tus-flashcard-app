@@ -20,6 +20,10 @@ export interface DelimitedMetadata {
     notetypeColumn?: number;
     deck?: string;
     notetype?: string;
+    /** `#if matches:` — what to do with a note that already exists. */
+    ifMatches?: 'update' | 'preserve' | 'duplicate';
+    /** `#match scope:` — whether a match must also be in the same deck. */
+    matchScope?: 'notetype' | 'notetypeAndDeck';
 }
 
 export interface ParsedDelimited {
@@ -38,8 +42,11 @@ const NAMED_SEPARATORS: Record<string, string> = {
     pipe: '|',
 };
 
-// Delimiters tried when no `#separator:` directive is present.
-const AUTO_DELIMITERS = ['\t', ',', ';'];
+// Delimiters tried when no `#separator:` directive is present, in Anki's order: the first one
+// that occurs in the first 8 KiB of data wins (rslib text/csv/metadata.rs, behaviour only). So a
+// Turkish spreadsheet row `Kalbin, akciğerin…?;Pompa, solunum` is read as semicolon-separated.
+const AUTO_DELIMITERS = ['\t', '|', ';', ':', ',', ' '];
+const DELIMITER_SAMPLE_CHARS = 8 * 1024;
 
 export type SeparatorChoiceId = 'comma' | 'semicolon' | 'tab' | 'space' | 'pipe' | 'colon';
 
@@ -68,28 +75,9 @@ function resolveSeparator(raw: string): string | undefined {
     return raw.length > 0 ? raw[0] : undefined;
 }
 
-function detectDelimiter(line: string): string {
-    let best = ',';
-    let bestCount = 0;
-    for (const candidate of AUTO_DELIMITERS) {
-        let count = 0;
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            const c = line[i];
-            if (c === '"') inQuotes = !inQuotes;
-            else if (c === candidate && !inQuotes) count++;
-        }
-        if (count > bestCount) {
-            bestCount = count;
-            best = candidate;
-        }
-    }
-    return best;
-}
-
-function firstDataLine(text: string): string {
-    const nl = text.indexOf('\n');
-    return (nl === -1 ? text : text.slice(0, nl)).replace(/\r$/, '');
+function detectDelimiter(sample: string): string {
+    const head = sample.slice(0, DELIMITER_SAMPLE_CHARS);
+    return AUTO_DELIMITERS.find((candidate) => head.includes(candidate)) ?? ' ';
 }
 
 /** Parse a leading `#…` directive line, returning the raw `#columns:` value when present. */
@@ -138,6 +126,19 @@ function parseMetaLine(line: string, metadata: DelimitedMetadata): string | unde
         case 'notetype column': {
             const n = parseInt(value, 10);
             if (n > 0) metadata.notetypeColumn = n;
+            return undefined;
+        }
+        case 'if matches': {
+            const choice = value.toLowerCase();
+            if (choice === 'update current') metadata.ifMatches = 'update';
+            else if (choice === 'keep current') metadata.ifMatches = 'preserve';
+            else if (choice === 'keep both') metadata.ifMatches = 'duplicate';
+            return undefined;
+        }
+        case 'match scope': {
+            const scope = value.toLowerCase().replace(/\s+/g, ' ');
+            if (scope === 'notetype') metadata.matchScope = 'notetype';
+            else if (scope === 'notetype + deck') metadata.matchScope = 'notetypeAndDeck';
             return undefined;
         }
         case 'columns':
@@ -242,8 +243,16 @@ export function parseDelimited(text: string, options: { delimiter?: string } = {
     let commentLines = 0;
     let columnsRaw: string | undefined;
 
-    // Leading `#…` lines are directives/comments; consume them before parsing data.
+    // Anki still reads the old first-line `tags:a b` header (no leading #).
     let pos = 0;
+    const legacyTags = /^tags:(.*)(?:\r?\n|$)/i.exec(src);
+    if (legacyTags) {
+        metadata.tags = legacyTags[1].trim().split(/\s+/).filter(Boolean);
+        commentLines++;
+        pos = legacyTags[0].length;
+    }
+
+    // Leading `#…` lines are directives/comments; consume them before parsing data.
     while (pos < src.length && src[pos] === '#') {
         let end = src.indexOf('\n', pos);
         if (end === -1) end = src.length;
@@ -255,7 +264,7 @@ export function parseDelimited(text: string, options: { delimiter?: string } = {
     }
 
     const dataText = src.slice(pos);
-    const delimiter = options.delimiter ?? metadata.separator ?? detectDelimiter(firstDataLine(dataText));
+    const delimiter = options.delimiter ?? metadata.separator ?? detectDelimiter(dataText);
 
     const rows = csvParse(dataText, delimiter, () => {
         commentLines++;
@@ -269,4 +278,48 @@ export function parseDelimited(text: string, options: { delimiter?: string } = {
 /** Anki preselects Allow HTML when a preview field contains a tag. Explicit choices win. */
 export function delimitedContainsHtml(rows: readonly (readonly string[])[]): boolean {
     return rows.slice(0, 25).some(row => row.some(value => /<\/?[a-z][^>]*>/i.test(value)));
+}
+
+/**
+ * Anki's default column mapping for a file with one note type. When `#columns:` names columns,
+ * each field takes the column labelled exactly with its name; otherwise fields take the non-meta
+ * columns in order. The first field always gets a column. Without a `#tags column:`, the first
+ * free column after the last mapped field is the tags column, when the file has one.
+ */
+export function defaultDelimitedMapping(
+    metadata: DelimitedMetadata,
+    columnCount: number,
+    fieldNames: readonly string[],
+): { fieldColumns: number[]; tagsColumn?: number } {
+    const meta = new Set([metadata.guidColumn, metadata.deckColumn, metadata.notetypeColumn, metadata.tagsColumn]
+        .filter((column): column is number => Boolean(column))
+        .map((column) => column - 1));
+    const free = (column: number) => !meta.has(column);
+    const labels = metadata.columns ?? [];
+    const fieldColumns: number[] = new Array(fieldNames.length).fill(-1);
+    if (labels.some((label) => label.trim() !== '')) {
+        fieldNames.forEach((name, index) => {
+            const column = labels.findIndex((label, at) => label.trim() === name && free(at));
+            if (column >= 0) fieldColumns[index] = column;
+        });
+    } else {
+        let column = 0;
+        for (let index = 0; index < fieldNames.length; index++) {
+            while (column < columnCount && !free(column)) column++;
+            if (column >= columnCount) break;
+            fieldColumns[index] = column++;
+        }
+    }
+    if (fieldNames.length > 0 && fieldColumns[0] < 0) {
+        let column = 0;
+        while (!free(column) || fieldColumns.includes(column)) column++;
+        fieldColumns[0] = column;
+    }
+    let tagsColumn = metadata.tagsColumn;
+    if (!tagsColumn && !metadata.notetypeColumn) {
+        let candidate = Math.max(-1, ...fieldColumns) + 1;
+        while (candidate < columnCount && !free(candidate)) candidate++;
+        if (candidate < columnCount) tagsColumn = candidate + 1;
+    }
+    return { fieldColumns, ...(tagsColumn ? { tagsColumn } : {}) };
 }

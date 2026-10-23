@@ -63,44 +63,8 @@ export function toggleSelectedBury(cardIds: number[], rolloverHour: number): num
     return cards.length;
 }
 
-/**
- * Reposition selected new cards in their current browser order. When shifting is enabled, cards
- * already at/after the insertion point are moved out of the inserted range first.
- */
-export function repositionSelectedNewCards(
-    cardIds: number[],
-    start: number,
-    step: number,
-    shiftExisting: boolean,
-): number {
-    const normalizedStart = Math.max(1, Math.floor(start) || 1);
-    const normalizedStep = Math.max(1, Math.floor(step) || 1);
-    const cards = selectedCards(cardIds).filter((card) => card.type === 0);
-    if (cards.length === 0) return 0;
-    const selectedIds = new Set(cards.map((card) => card.id));
-    const notePositions = new Map<number, number>();
-    for (const card of cards) if (!notePositions.has(card.noteId)) notePositions.set(card.noteId, normalizedStart + notePositions.size * normalizedStep);
-
-    if (shiftExisting) {
-        const shift = notePositions.size * normalizedStep;
-        const displaced = getAllAnkiCards()
-            .filter((card) => card.type === 0 && !selectedIds.has(card.id) && card.due >= normalizedStart)
-            .sort((a, b) => b.due - a.due || b.id - a.id);
-        for (const card of displaced) {
-            saveAnkiCard({ ...card, due: card.due + shift, mod: Math.floor(Date.now() / 1000), usn: -1 });
-        }
-    }
-
-    cards.forEach((card) => {
-        saveAnkiCard({
-            ...card,
-            due: notePositions.get(card.noteId)!,
-            mod: Math.floor(Date.now() / 1000),
-            usn: -1,
-        });
-    });
-    return cards.length;
-}
+// Reposition lives in lib/browserReposition.ts (one transaction, Anki's shift, undo).
+export { repositionSelectedNewCards } from './browserReposition';
 
 /**
  * Apply Anki's Set Due Date semantics, including ranges and the interval-forcing `!`

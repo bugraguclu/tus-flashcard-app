@@ -2,8 +2,10 @@ import type JSZip from 'jszip';
 import type { JSZipObject } from 'jszip';
 import { Decompress, decompress } from 'fzstd';
 
-export const MAX_ARCHIVE_ENTRIES = 20_000;
-export const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 450 * 1024 * 1024;
+// Entries are inflated one at a time, so these bound disk use and zip-bomb exposure rather than
+// memory; the compression-ratio and per-entry checks below still apply to every entry.
+export const MAX_ARCHIVE_ENTRIES = 200_000;
+export const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024;
 export const MAX_ZIP_ENTRY_BYTES = 220 * 1024 * 1024;
 const MAX_COMPRESSION_RATIO = 300;
 
