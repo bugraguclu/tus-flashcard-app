@@ -840,3 +840,11 @@ alınıyor. Tam f32 eşitliği isteyen test eski kodda kaldı, iki işlem sıras
 geçti. Eğri faktöründe `ln 0.9 / -w20`; difficulty'de önce çarpım sonra 9'a bölme uygulanıyor.
 Odaklı iki dosyada 35 test geçti. Platform exp/pow'undan gelen genel son-bit farkı hâlâ
 belgelenmiş toleransla ölçülüyor; seçilen altı vektör genel tam parite iddiası değildir.
+
+### FSRS-B entegrasyon notu — kart kimliği
+
+B'nin yeni eğiticisi için `collectFsrsTrainingItems` her öğeye kalıcı olmayan `cardId` alanı
+ekliyor. `fsrsMemory.ts`, eğitim algoritması ve kart verisi değişmiyor. İki kartın iç içe geçmiş
+revlog zamanlarında kimlik, uzunluk ve kronolojik sıra test edildi; önce kimlikler undefined
+olarak kaldı, bağlantıdan sonra geçti. Toplam cevap sayısı ve askıdaki kartların dışlanması
+korundu. Bu küçük bağlantı A'nın sahip olduğu `fsrsMaintenance.ts` dosyasında ayrı commit'tir.

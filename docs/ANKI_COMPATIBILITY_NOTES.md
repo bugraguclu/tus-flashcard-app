@@ -99,7 +99,9 @@ the screen against SQLite and a 26.09.3 memory vector, proves zero writes and un
 JSON, and covers stored decay, FSRS off and filtered-card home-preset lookup.
 
 **Optimizer boundary:** FSRS-B owns `lib/fsrsTraining.ts`, its tests, `gen_optimize.py` and its new
-reference. FSRS-A does not change or claim 26.09.3 parity for that trainer. The retained 26.05
+reference. The collector now carries each item's original `cardId` as non-persisted metadata for
+per-card grouping, with an interleaved-history regression in `lib/fsrsMaintenance.test.ts`.
+FSRS-A does not change or claim 26.09.3 parity for that trainer. The retained 26.05
 reference describes fsrs-rs 5.2.0/Burn 0.17.1, five epochs and best-epoch selection.
 
 **Next compatibility gate:** Fifth-pass items 3–8 and 10 are assigned to other work and are not
