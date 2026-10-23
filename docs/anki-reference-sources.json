@@ -487,6 +487,20 @@
       "useFor": ["FSRS passing interval chaining", "deck options skipped under FSRS", "failing review interval", "leech threshold"]
     },
     {
+      "id": "anki-remaining-queue-reviewer",
+      "priority": 3,
+      "platform": "cross-platform queue, filtered-deck and reviewer semantics",
+      "url": "https://docs.ankiweb.net/deck-options.html#lapses",
+      "useFor": [
+        "New interval applied with review fuzz on lapse and on a failed relearning step; lib/schedulerLapse.test.ts",
+        "interday learning subject to the review limit in deck-list counts; https://docs.ankiweb.net/deck-options.html#daily-limits; lib/deckListCounts.test.ts",
+        "learning cards moved into a filtered deck take the gather position as due; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/card.rs; lib/filteredSessionRemaining.test.ts",
+        "collection-wide undo cleared behind a change it cannot undo; https://docs.ankiweb.net/studying.html#editing-and-more; lib/reviewerUndoSafety.test.ts",
+        "audio tags of one side played in sequence; https://docs.ankiweb.net/templates/fields.html#text-to-speech; lib/reviewerAvSequence.test.ts",
+        "answer button time spans and the learn-ahead '<' prefix; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/timespan.rs; lib/schedulerLapse.test.ts"
+      ]
+    },
+    {
       "id": "anki-source-fsrs-memory-state",
       "priority": 3,
       "platform": "cross-platform FSRS memory state and rescheduling",
