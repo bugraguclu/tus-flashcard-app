@@ -156,6 +156,8 @@ export function createNote(
 /** Generate cards for a note based on its note type */
 export function generateCardsForNote(note: Note, noteType: NoteType, deckId: number): AnkiCard[] {
     const cards: AnkiCard[] = [];
+    // Anki gives every card of a newly added note the same new-card position.
+    const position = nextNewCardPosition();
 
     if (noteType.kind === 'cloze') {
         // One card per cloze number, over the field the template actually clozes.
@@ -163,14 +165,14 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
         const clozeNumbers = numbers.length ? numbers : [1];
 
         for (const clozeNum of clozeNumbers) {
-            const card = createCardForNote(note, deckId, clozeNum - 1);
+            const card = createCardForNote(note, deckId, clozeNum - 1, position);
             cards.push(card);
         }
     } else {
         // Standard: one card per template
         for (let i = 0; i < noteType.templates.length; i++) {
             if (shouldGenerateCard(noteType, note, i)) {
-                const card = createCardForNote(note, deckId, i);
+                const card = createCardForNote(note, deckId, i, position);
                 cards.push(card);
             }
         }
@@ -211,7 +213,7 @@ function nextNewCardPosition(): number {
     return (row?.maxDue ?? 0) + 1;
 }
 
-export function createCardForNote(note: Note, deckId: number, ord: number): AnkiCard {
+export function createCardForNote(note: Note, deckId: number, ord: number, position?: number): AnkiCard {
     const id = generateUniqueCardId();
     const card: AnkiCard = {
         id,
@@ -222,7 +224,7 @@ export function createCardForNote(note: Note, deckId: number, ord: number): Anki
         usn: -1,
         type: 0,     // new
         queue: 0,     // new
-        due: nextNewCardPosition(),  // new-card position
+        due: position ?? nextNewCardPosition(),  // new-card position
         ivl: 0,
         factor: 0,
         reps: 0,
@@ -549,9 +551,11 @@ export function handleLeech(card: AnkiCard, action: 'suspend' | 'tag' = 'suspend
     }
     // Tag the note
     const note = getNote(card.noteId);
-    if (note && !note.tags.includes('leech')) {
+    // Anki's tags are case-insensitive: an existing "Leech" tag is not added again.
+    if (note && !note.tags.some((tag) => tag.toLowerCase() === 'leech')) {
         note.tags.push('leech');
         note.mod = Math.floor(Date.now() / 1000);
+        note.usn = -1;
         saveNote(note);
     }
 }

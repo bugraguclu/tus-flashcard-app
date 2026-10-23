@@ -93,3 +93,21 @@ it('deletes a browser selection of notes as one transaction with one undo', asyn
     expect(getCardsForNote(b.note.id)).toHaveLength(2);
     expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(0);
 });
+
+it('gives every card of a new note the same new-card position, and the next note the next one', () => {
+    const deck = createDeck('Positions');
+    const type = BUILTIN_NOTE_TYPES.find(t => t.id === 2)!;
+    const a = createNote(type, ['A', 'a'], deck.id).cards;
+    const b = createNote(type, ['B', 'b'], deck.id).cards;
+    expect(a[0].due).toBe(a[1].due);
+    expect(b[0].due).toBe(b[1].due);
+    expect(b[0].due).toBe(a[0].due + 1);
+});
+
+it('does not add a second leech tag beside a differently cased one', async () => {
+    const { handleLeech } = await import('./noteStore');
+    const deck = createDeck('Leech');
+    const { note, cards } = createNote(BUILTIN_NOTE_TYPES[0], ['F', 'B'], deck.id, ['Leech']);
+    handleLeech(cards[0], 'tag');
+    expect(getNote(note.id)?.tags).toEqual(['Leech']);
+});
