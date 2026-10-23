@@ -19,8 +19,10 @@ SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 OUT = sys.argv[2] if len(sys.argv) > 2 else "optimize.json"
 # "small" keeps the committed fixture compact; the default sizes are for measuring.
 SMALL = len(sys.argv) > 3 and sys.argv[3] == "small"
-CASES = [(40, 6), (150, 10), (400, 14), (150, 10, "long-history")]
-if not SMALL:
+CASES = [(40, 6), (150, 10), (400, 14)]
+if SMALL:
+    CASES += [(150, 10, "long-history")]
+else:
     CASES += [(900, 16), (1500, 9)]
 os.environ["TZ"] = "Europe/Istanbul"
 time.tzset()

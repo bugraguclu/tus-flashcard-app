@@ -35,8 +35,7 @@ beforeAll(async () => {
 });
 afterAll(() => { process.env.TZ = previousTimezone; });
 
-// Align explicit card ids with the collected prefixes. FSRS-A owns the collector's
-// metadata addition; this keeps B's oracle replay independent of that parallel change.
+// Replay the production collector, including original card identity metadata.
 function collectionItems(entry: any): (FsrsTrainingItem & { cardId: number })[] {
     dbHolder.db = createAppDb(SQL);
     saveDeck({ id: 1, name: 'Default', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false });
@@ -57,7 +56,8 @@ function collectionItems(entry: any): (FsrsTrainingItem & { cardId: number })[] 
     const { items } = collectFsrsTrainingItems([1], { ...DEFAULT_SETTINGS, dayRolloverHour: fixture.meta.rolloverHour }, 0,
         entry.nextDayAt * 1000 - 3_600_000);
     expect(items.length).toBe(entry.fsrsItems);
-    return items.map((item) => ({ ...item, cardId: ids.get(item.revlogId)! }));
+    for (const item of items) expect(item.cardId).toBe(ids.get(item.revlogId));
+    return items;
 }
 
 function expectParameters(actual: number[] | null, expected: number[], label: string) {

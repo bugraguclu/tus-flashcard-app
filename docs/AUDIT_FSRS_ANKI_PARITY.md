@@ -652,12 +652,23 @@ kimliği olmadan çalıştığı için yeni fixture yalnız üretim koleksiyonla
   Varsayılan ve optimize parametrelerin log loss'u 1·10⁻⁶ içinde. 26.05 optimizer kayıtları
   tarihsel fixture'da kalıyor; güncel optimizer testi onlara karşı çalışmıyor.
 - **FSRS-A bağlantısı:** `collectFsrsTrainingItems` her öğeye gerçek `cardId` taşımalı. Aynı
-  uzunluktaki kartların kimlik sırası, grupların sınırını belirliyor. A'nın `aa7cf78` commit'indeki collector değişikliği B dalına alındı. Özgün kimliği ve
+  uzunluktaki kartların kimlik sırası, grupların sınırını belirliyor. A'nın `aa7cf78` commit'indeki
+  collector değişikliği B dalına `f579c83` olarak alındı. Özgün kimliği ve
   revlog sırasını koruyan SQLite testi var. B oracle testi artık kart kimliğini kendisi
   eklemiyor; üretim collector'ının çıktısını doğrudan eğitiyor ve her kimliği doğruluyor.
 - Saf hesap değişikliği; iPhone arayüzü ve parametre kayıt yolu değişmediği için yeni cihaz
   smoke testi gerekmiyor. `npm run quality` (tsc, tüm deterministik testler, iOS/kaynak kaydı)
-  160 dosyada 1 680 testle geçti; `lib/fsrsTraining.test.ts` yeni oracle'a karşı 8 testle geçti.
+  160 dosyada 1 681 testle geçti; `lib/fsrsTraining.test.ts` kayıtlı oracle'a karşı 8,
+  ek büyük oracle'a karşı 9 testle geçti. Collector'ın gerçek çıktısıyla iki koşu da temiz.
+
+Yeniden üretme (Anki 26.09.3 ile, depo kökünde):
+
+```sh
+./scripts/anki-oracle/build-host.sh
+./scripts/anki-oracle/run.sh scripts/anki-oracle/gen_optimize.py 1 test/fixtures/anki-26.09-optimize.json small
+./scripts/anki-oracle/run.sh scripts/anki-oracle/gen_optimize.py 7 /private/tmp/fsrs-b-large-optimize.json
+FSRS_OPTIMIZE_FIXTURE=/private/tmp/fsrs-b-large-optimize.json npm test -- --run lib/fsrsTraining.test.ts
+```
 
 ## 5. Desteyi değiştirmek hafıza durumunu yeniden hesaplamıyor — düşük–orta
 
