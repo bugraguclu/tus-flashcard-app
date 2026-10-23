@@ -18,6 +18,13 @@ one for the area you are changing.
 
 **Evidence:** opt-in redesigned reviewer with a preserved classic fallback, compact toolbar/footer, directional feedback, `lib/reviewerPresentation.test.ts`, review logger and repository tests
 
+Web answers, undo and redo wait for the IndexedDB snapshot before publishing completion or
+advancing the queue. Failed answer persistence restores the card (including optional `ankiData`),
+revlog, buried siblings and filtered-build bookkeeping so retry cannot count the answer twice.
+`lib/webDb.test.ts` exercises the real scheduler against the acknowledged stored bytes;
+`lib/collectionWrite.test.ts` covers pending/error acknowledgement and rejection before mutation
+in a read-only tab.
+
 **Next compatibility gate:** iPhone smoke in both classic and redesigned modes on each reviewer change
 
 ## Daily limits, learning steps, lapses, leeches, burying
@@ -115,11 +122,25 @@ are not correctly rounded (intervals never differed in the recorded vectors); a 
 for a card within about a second of the threshold. Still to add:
 retention/true-retention graphs and the FSRS simulator
 
+Against the current release, Anki 26.09.3 (fsrs-rs 6.6.2), the app has not been re-measured and
+is known to differ (fifth pass in `docs/AUDIT_FSRS_ANKI_PARITY.md`, read from source on
+2026-10-22): a same-day Hard no longer lowers stability; review fuzz keeps the previous interval
+when it is still inside the new fuzz window, also when rescheduling; Set Due Date follows the
+collection FSRS switch and leaves new and `ivl = 0` cards at 0; "Optimize" trains with fsrs-rs
+6.6.2's procedure (8 epochs, per-card batches); Change Deck recomputes memory states; Check
+Database repairs `lrt`; a future ignore-before date is clamped to today; an export without
+scheduling keeps the retention values; card info computes a missing state and hides ease under
+FSRS; and the retrievability filtered-deck orders are hidden while FSRS is off. Re-recording the
+fixtures with Anki 26.09.3 through `scripts/anki-oracle/` comes before fixing these, because the
+first two fixes change vectors the 26.05 fixtures pin.
+
 ## Hierarchical decks and presets
 
 **Status:** Implemented
 
 **Evidence:** validated/atomic Deck Options save flow, searchable deck picker, explicit deck-vs-preset labels, preset rename scoped to the selected config, hierarchical deck rename with subtree/collision protection, deck manager, deck-options form and deck-navigation tests. Which settings the screen shows follows the scheduler in use, as Anki's `{#if !$fsrs}` gates do: the ease multipliers, graduating and easy intervals and the lapse minimum are hidden while FSRS is on, and the FSRS inputs while it is off. A hidden field keeps its stored value through a save and can never report an error, because an error the learner cannot see is one they cannot fix (`isDeckOptionFieldVisible`)
+
+**Layout smoke (2026-10-16):** Decks shares the name/new/learning/review columns between phone and web, with common header/count widths and bounded compact indentation. The named production-web and iPhone-simulator checks, screenshots and physical-device limits are recorded in [Mobile layout review](ui-layout-review/README.md). This is product-specific presentation; deck hierarchy, count calculation and scheduling semantics are unchanged.
 
 **Next compatibility gate:** Continue parent/subdeck limit tests
 
@@ -156,6 +177,13 @@ retention/true-retention graphs and the FSRS simulator
 **Status:** Implemented
 
 **Evidence:** AnkiMobile-aligned rich text editing toolbar grouped into Home/Styles/Insert tabs (Anki's own inline formats, lists, four paragraph alignments and indent/outdent as in `ts/routes/editor/editor-toolbar`; plus local additions Anki's editor does not have — block styles, quote, code block, table, validated http/https/mailto link, callout and font size — with MathJax and a raw HTML source editor), whose insertions are pinned by `lib/editorToolbar.test.ts` to pass the field sanitizer unchanged, note-type template aware card generation validation (a note saves whenever any template would generate a card, so an empty front is allowed when the reversed card generates — a deliberate divergence: Anki's `note_fields_check` tests only whether the first field is blank and refuses the note either way), native or template-positioned `#typeans` input, optional focus, token-bound/bounded WebView bridge, template, bridge, settings round-trip and note manager tests; dynamic note-type picker exposing all collection note types with field/template counts and `/note-types` management shortcut; dynamic multi-field editor rendering arbitrary N-fields with per-field sticky pinning (`lib/editorStickyFields.ts`), individual media attachment, localized labels, and the note type's own per-field font, size and right-to-left flag — the three values an imported collection carries on every field. A size or a family that a collection built elsewhere leaves unset, or writes outside anything a phone should render, falls back to the editor's own preference rather than being applied literally, and a family name is reduced to the characters a CSS family can hold before it is written into the field's stylesheet (`lib/editorFieldStyle.ts`, `lib/editorFieldStyle.test.ts`). The cloze button sits on the tab the toolbar opens on, which is the tab the save-time error tells the learner to look at, and adding a note offers to stay on the screen for the next one as Anki's Add dialog does — the pinned fields keep their values, the deck, note type and tags stay chosen. Real-time first-field duplicate detection (`findDuplicateNote`) matching AnkiMobile non-blocking warning badge with target deck reporting (`lib/editorDynamicFields.test.ts`)
+
+Editing fields updates the shared note while preserving each existing card's deck and scheduling.
+Choosing a different destination moves the selected card; newly generated cards use that
+destination. `lib/noteManager.newTypes.test.ts` covers siblings stored in different decks.
+Editor success, draft-baseline reset and external callbacks follow durable storage completion;
+a read-only tab is rejected before note/tag mutation. A failed new-note flush removes its
+unacknowledged rows so retry creates one note.
 
 **Next compatibility gate:** Validate more add-on filters and complex templates
 
@@ -290,6 +318,12 @@ large-package smoke
 
 **Evidence:** `/import` is file-first like Anki's: the extension chooses the importer and the option list that follows, and every import ends on an Import Log that files each note into Anki's own buckets (added, updated, already present, first field matched, note type changed, note type missing, deck missing, empty first field) with an expandable sample per bucket. Package imports add Anki's learning-progress, deck-preset and update-notes/update-note-types choices. `lib/importLog.test.ts`, `lib/importFile.test.ts`
 
+The Import Log is displayed only after all package/text import steps, indexing and any collection
+replacement reconciliation have reached durable storage. Storage errors remain recoverable errors
+on the import screen; read-only tabs cannot start the operation. `lib/webDb.test.ts` verifies that
+a text import exists in the acknowledged snapshot, and `lib/collectionWrite.test.ts` verifies the
+async operation/commit boundary shared by both formats.
+
 **Next compatibility gate:** "Merge note types" is not offered: a schema-conflicting note type is imported as a separate copy instead, so no inert control is shown. Re-importing the same package does not pile up copies of it — a note type is looked up by source package plus source id, so the second import resolves to the one the first created; it is a different export of the same deck that produces a second note type, which is what Anki's non-merge mode does too. Add an iPhone smoke test for the mapping table and the log
 
 ## iOS Files “Open in” hand-off
@@ -321,6 +355,8 @@ large-package smoke
 **Status:** Implemented subset
 
 **Evidence:** tapping a deck in the deck list switches straight to study mode as AnkiMobile does, with the deck overview kept in the deck's ••• menu, and the reviewer's back button pops back to that list instead of stacking a second one, while the overview's Study Now closes the overview and opens study over the same list; persisted classic/redesigned reviewer opt-in; AnkiMobile-aligned, separately configurable question/answer 3×3 tap zones with assignable Add note action; interactive card-element pass-through; adjustable swipe sensitivity and edge-only vertical swipes; independent Flag/Tools surfaces; `lib/reviewerTouchControls.test.ts`, `lib/reviewerAddNote.test.ts`, `lib/reviewerSurface.test.ts`, storage round-trip, strict HTTPS/Shortcuts callback parsing and media-audit tests. The web build answers the same x-callback requests at `/x-callback-url?action=addnote|search&…` (a browser cannot own `tusankim:`); the query is turned back into the `tusankim://` URL and read by the same parser and route resolver (`externalAppUrlFromQuery`, `lib/externalActionRoute.ts`, `lib/externalLinking.test.ts`). On iPhone a `tusankim://x-callback-url/<action>` request is opened only by `app/_layout.tsx`; the router ignores it, so no "Sayfa bulunamadı" page is left beneath the editor or browser, and an incomplete request is ignored (`lib/nativeIntent.test.ts`)
+
+**Toolbar smoke (2026-10-16):** On the redesigned phone reviewer, an enabled deck title remains above the remaining counts and an enabled remaining-time estimate stays visible; disabling either preference still hides it. Compact toolbar actions can wrap. The [named layout checks](ui-layout-review/README.md) cover production-web widths, picker interaction, classic/redesigned reveal/grade/undo and simulator themes/text size. Physical-iPhone gestures and VoiceOver remain release gates.
 
 **Next compatibility gate:** Add a native Share extension before broader parity claims
 
@@ -370,7 +406,9 @@ large-package smoke
 
 **Status:** Product-specific catalog only
 
-**Evidence:** BKA catalog tests. The protection is enforced where the rows are written, not by hiding buttons: `assertCatalogCardsMovable`, `assertCatalogNoteContentMutable` and `assertCatalogDeckNotDeletable` are called from `lib/noteManager.ts` and `lib/deckManager.ts` themselves, and the export functions re-check independently of the picker that filters catalog decks out. What the catalog owns is its content — the fields, the note type, the guid, the deck it lives in. What the learner owns is their own study metadata, so flags carry no assertion at all and tags are written through `setNoteTags`, a path that re-reads the stored row and swaps only the tag list, on the trial tier as well as the full one. A selection mixing personal and catalog notes tags all of them rather than rolling the batch back (`lib/catalogProtection.test.ts`, `lib/noteManager.catalogTags.test.ts`)
+**Evidence:** Purchased catalog notes use the normal editor save path: all text/HTML fields, formatting, attachments, cloze deletions and tags are editable; the content-protection banner is removed. Trial content remains read-only with its separate tag-only write path. Existing card IDs, scheduling and review history survive field edits, and cloze edits add/remove only the affected siblings (`lib/catalogEditing.test.ts`). The editor's clear-fields and formatting controls are available after unlock (`lib/catalogEditorMenu.test.ts`). Locally edited fields are marked on the note; a full-to-full bundled package refresh preserves those fields, tags and generated cards while refreshing untouched notes (`lib/bkaCatalog.install.test.ts`). GUID, note type, catalog ownership, deck placement, note/deck deletion, duplication and import/export restrictions remain product-specific and are enforced in the data layer; this field-editing change does not remove them. Tags and flags remain learner metadata on both tiers, including mixed personal/catalog selections (`lib/catalogProtection.test.ts`, `lib/noteManager.catalogTags.test.ts`).
+
+**Named iPhone smoke — purchased catalog editing:** After unlocking the full catalog, open a note from the reviewer and browser. Verify the protection banner is absent; edit text, apply bold, attach an image/audio clip, add/remove one cloze deletion, save immediately, then force-quit/relaunch and review offline. Confirm the edited content and retained sibling's review state survive. On a trial install, verify fields remain read-only and tags still save. Run the Media/editor and Purchase/catalog rows of `IOS_RELEASE_CHECKLIST.md`; physical-device execution remains required before release.
 
 **Next compatibility gate:** Do not present it as AnkiWeb shared decks
 

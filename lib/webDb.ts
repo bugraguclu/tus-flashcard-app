@@ -193,7 +193,9 @@ function flushPersist(): void {
         try {
             void writeSnapshot(_idbConnection, _sqlDb.export(), false)
                 .catch((e) => console.warn('[WebDB] Failed to persist database to IndexedDB:', e));
-            _saveDirty = false;
+            // A pending explicit flush must still wait for a snapshot containing the latest
+            // edits. The independent pagehide write must not clear its queued-save barrier.
+            _saveDirty = Boolean(_saveInFlight);
             return;
         } catch {
             _idbConnection = null;

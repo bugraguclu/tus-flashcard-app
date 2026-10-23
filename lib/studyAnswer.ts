@@ -158,7 +158,7 @@ export function undoAnswer(snapshot: AnkiCard, reviewLogId: number, sideEffects?
     try {
         // Restoring the snapshot already un-suspends a card the leech action suspended, because
         // the snapshot carries the queue the card had before this answer.
-        saveAnkiCard(snapshot);
+        saveAnkiCard(snapshot, { replaceData: true });
         deleteReviewById(reviewLogId);
         restoreBuriedSiblings(sideEffects?.buriedSiblings ?? []);
         if (sideEffects?.leechTaggedNoteId !== undefined) {

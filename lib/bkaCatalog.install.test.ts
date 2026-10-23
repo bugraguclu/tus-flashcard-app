@@ -72,7 +72,7 @@ import {
     uninstallBkaCatalog,
 } from './bkaCatalog';
 import { BKA_MANIFEST } from './bkaManifest';
-import { getAllNotes, saveNote } from './noteManager';
+import { getAllNotes, getNote, getCardsForNote, saveNote, updateTusCardByCardId } from './noteManager';
 import { getBrowserCardCount, getBrowserCardIdsMatchingText, getBrowserCards } from './studyRepository';
 import { DEFAULT_SETTINGS } from './storage';
 
@@ -324,7 +324,7 @@ describe('BKA catalog installation', () => {
         expect(JSON.parse(restored.data).factor).toBe(2350);
     }, 120_000);
 
-    it('refreshes an install that came from an older package, keeping study progress', async () => {
+    it('refreshes an older package while keeping learner field edits, generated cards and study progress', async () => {
         await installBkaCatalog();
         const studied = db.getFirstSync<{ id: number; data: string }>(
             'SELECT id, data FROM anki_cards WHERE id != ?', LEARNER.cardId)!;
@@ -333,6 +333,16 @@ describe('BKA catalog installation', () => {
             JSON.stringify({ ...JSON.parse(studied.data), type: 2, queue: 2, due: 12, ivl: 21, factor: 2350, reps: 4, lapses: 1 }),
             studied.id,
         );
+
+        const editedNote = getNote(JSON.parse(studied.data).noteId)!;
+        const fields = [...editedNote.fields];
+        fields[0] = '{{c1::Kendi açıklamam}} {{c99::Ek boşluk}}';
+        updateTusCardByCardId(studied.id, {
+            question: fields[0], answer: fields[1] ?? '', fieldValues: fields, tags: ['kendi-etiketim'],
+        });
+        const editedCards = getCardsForNote(editedNote.id);
+        const expectedCount = getInstalledBkaCardCount();
+        expect(needsBkaCatalogInstall()).toBe(false);
 
         // Installing again with nothing changed is a no-op: the package marker still matches.
         expect((await installBkaCatalog()).installed).toBe(false);
@@ -346,7 +356,10 @@ describe('BKA catalog installation', () => {
 
         const refreshed = await installBkaCatalog();
         expect(refreshed.installed).toBe(true);
-        expect(refreshed.cards).toBe(BKA_MANIFEST.totals.cards);
+        expect(refreshed.cards).toBe(expectedCount);
+        expect(getNote(editedNote.id)?.fields).toEqual(fields);
+        expect(getNote(editedNote.id)?.tags).toEqual(['kendi-etiketim']);
+        expect(getCardsForNote(editedNote.id)).toEqual(editedCards);
         expect(refreshed.restoredProgress).toBe(1);
 
         const restored = db.getFirstSync<{ ivl: number; reps: number }>(

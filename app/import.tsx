@@ -35,6 +35,7 @@ import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
 import { dbUpsertFtsCard, readOnlyTabMessage } from '../lib/db';
+import { commitCollectionWrite } from '../lib/collectionWrite';
 import { useI18n } from '../hooks/useI18n';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
@@ -339,74 +340,82 @@ export default function ImportScreen() {
         };
     };
 
+    const importInFlightRef = useRef(false);
+
     const runImport = async (textOptions: ImportOptions | null, backupFirst: boolean) => {
-        if (!file) return;
+        if (!file || importInFlightRef.current) return;
         const readOnly = readOnlyTabMessage();
         if (readOnly) {
             alert(t('common.error'), readOnly);
             return;
         }
+        importInFlightRef.current = true;
         setImporting(true);
         // Let the spinner paint before the synchronous, possibly large import blocks the thread.
         await new Promise((resolve) => setTimeout(resolve, 0));
 
         try {
-            let indexed: SearchIndexCard[] = [];
-            let next: ImportOutcome | null = null;
+            const next = await commitCollectionWrite(async () => {
+                let indexed: SearchIndexCard[] = [];
+                let next: ImportOutcome | null = null;
 
-            if (packageImport && file.bytes) {
-                // A package can update existing notes as well as add new ones. Snapshot every
-                // package import so an unexpected device/storage failure is recoverable.
-                await createBackupNow();
-                const result = await importApkg(file.bytes, {
-                    // `subject`/`topic` are the built-in TUS catalog's own navigation taxonomy; the
-                    // screen dropped the chips that once set them because they mean nothing for a
-                    // learner's own file. The deck name is passed so an imported note still files
-                    // itself under the deck it landed in rather than under an empty bucket.
-                    subject: targetDeck?.name ?? 'genel',
-                    topic: 'Genel',
-                    rolloverHour: settings.dayRolloverHour,
-                    fileName: file.name,
-                    withScheduling: file.type === 'colpkg' ? true : withScheduling,
-                    withDeckConfigs: file.type === 'colpkg' ? true : withDeckConfigs,
-                    updateNotes,
-                    updateNoteTypes,
-                    replaceCollection: file.type === 'colpkg',
-                });
-                indexed = result.indexed;
-                next = {
-                    log: importLogFromCounts(
-                        {
-                            added: result.added,
-                            updated: result.updated ?? 0,
-                            duplicate: result.duplicates,
-                            emptyFirstField: result.emptyRows,
+                if (packageImport && file.bytes) {
+                    // A package can update existing notes as well as add new ones. Snapshot every
+                    // package import so an unexpected device/storage failure is recoverable.
+                    await createBackupNow();
+                    const result = await importApkg(file.bytes, {
+                        // `subject`/`topic` are the built-in TUS catalog's own navigation taxonomy; the
+                        // screen dropped the chips that once set them because they mean nothing for a
+                        // learner's own file. The deck name is passed so an imported note still files
+                        // itself under the deck it landed in rather than under an empty bucket.
+                        subject: targetDeck?.name ?? 'genel',
+                        topic: 'Genel',
+                        rolloverHour: settings.dayRolloverHour,
+                        fileName: file.name,
+                        withScheduling: file.type === 'colpkg' ? true : withScheduling,
+                        withDeckConfigs: file.type === 'colpkg' ? true : withDeckConfigs,
+                        updateNotes,
+                        updateNoteTypes,
+                        replaceCollection: file.type === 'colpkg',
+                    });
+                    indexed = result.indexed;
+                    next = {
+                        log: importLogFromCounts(
+                            {
+                                added: result.added,
+                                updated: result.updated ?? 0,
+                                duplicate: result.duplicates,
+                                emptyFirstField: result.emptyRows,
+                            },
+                            result.totalNotes,
+                        ),
+                        package: {
+                            cardsImported: result.cardsImported,
+                            progressCards: result.progressCards,
+                            progressReviews: result.progressReviews,
+                            mediaImported: result.mediaImported,
+                            mediaSkipped: result.mediaSkipped,
+                            mediaRenamed: result.mediaRenamed,
+                            withMedia: result.withMedia,
+                            structurePreserved: result.structurePreserved,
                         },
-                        result.totalNotes,
-                    ),
-                    package: {
-                        cardsImported: result.cardsImported,
-                        progressCards: result.progressCards,
-                        progressReviews: result.progressReviews,
-                        mediaImported: result.mediaImported,
-                        mediaSkipped: result.mediaSkipped,
-                        mediaRenamed: result.mediaRenamed,
-                        withMedia: result.withMedia,
-                        structurePreserved: result.structurePreserved,
-                    },
-                };
-            } else if (file.text !== null && textOptions) {
-                if (backupFirst) await createBackupNow();
-                const result = importDelimitedNotes(file.text, textOptions);
-                indexed = result.indexed;
-                next = { log: result.log };
-            }
+                    };
+                } else if (file.text !== null && textOptions) {
+                    if (backupFirst) await createBackupNow();
+                    const result = importDelimitedNotes(file.text, textOptions);
+                    indexed = result.indexed;
+                    next = { log: result.log };
+                }
 
+                if (next) {
+                    // Index only the imported cards, not the whole collection (native FTS; no-op on web).
+                    for (const card of indexed) dbUpsertFtsCard(card);
+                    if (file.type === 'colpkg') await refreshCatalogAccess();
+                }
+                return next;
+            });
             if (next) {
-                // Index only the imported cards, not the whole collection (native FTS; no-op on web).
-                for (const card of indexed) dbUpsertFtsCard(card);
                 bumpDataVersion();
-                if (file.type === 'colpkg') await refreshCatalogAccess();
                 setOutcome(next);
             }
         } catch (error) {
@@ -416,6 +425,7 @@ export default function ImportScreen() {
                 l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.'),
             ));
         } finally {
+            importInFlightRef.current = false;
             setImporting(false);
         }
     };

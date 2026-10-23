@@ -21,6 +21,7 @@ import {
     assertCatalogNoteMutable,
     assertCatalogNoteNotDeletable,
     isCatalogCard,
+    isCatalogNote,
     PaidCatalogProtectionError,
 } from './catalogProtection';
 
@@ -56,6 +57,10 @@ export function saveNote(note: Note): void {
         try {
             const parsed = JSON.parse(existing.data) as Note;
             assertCatalogNoteContentMutable(note, parsed);
+            if (isCatalogNote(parsed) && (parsed.catalogFieldsEdited
+                || JSON.stringify(note.fields) !== JSON.stringify(parsed.fields))) {
+                note.catalogFieldsEdited = true;
+            }
             markSourcePackageDirty(parsed.sourcePackageId);
         } catch (e) {
             if (e instanceof PaidCatalogProtectionError) throw e;
@@ -255,7 +260,7 @@ export function getCardsForDeck(deckId: number): AnkiCard[] {
     return rows.map(r => JSON.parse(r.data));
 }
 
-export function saveAnkiCard(card: AnkiCard): void {
+export function saveAnkiCard(card: AnkiCard, options: { replaceData?: boolean } = {}): void {
     assertCatalogCardMutable(card);
     const db = getDB();
     const nowMs = Date.now();
@@ -299,9 +304,10 @@ export function saveAnkiCard(card: AnkiCard): void {
         }
     }
 
-    // Preserve any forward-compat keys the stored blob may carry that aren't on AnkiCard.
+    // Ordinary edits preserve forward-compat keys. A complete undo snapshot must also remove
+    // optional scheduling data introduced by the rejected/undone answer (such as lrt and pos).
     let serializedData = JSON.stringify(card);
-    if (existing?.data) {
+    if (existing?.data && !options.replaceData) {
         try {
             const existingParsed = JSON.parse(existing.data) as Record<string, unknown>;
             serializedData = JSON.stringify({ ...existingParsed, ...card });
@@ -681,9 +687,8 @@ export function deleteAnkiCardOnly(cardId: number): void {
 /** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
 export function deleteAnkiCardsOnly(cardIds: number[]): void {
     if (cardIds.length === 0) return;
-    if (cardIds.some(isCatalogCard)) {
-        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez.');
-    }
+    // Editing cloze fields can remove a generated sibling after the catalog is unlocked.
+    for (const cardId of cardIds) assertCatalogCardMutable(cardId);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {

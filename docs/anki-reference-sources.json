@@ -43,7 +43,7 @@
       "priority": 1,
       "platform": "cross-platform note/card semantics",
       "url": "https://docs.ankiweb.net/editing.html",
-      "useFor": ["adding notes", "generated cards", "note fields", "editing notes"]
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "shared note fields versus independent sibling card deck placement"]
     },
     {
       "id": "anki-manual-collection-packages",
@@ -120,21 +120,21 @@
       "priority": 1,
       "platform": "iOS and iPadOS note/card editing",
       "url": "https://docs.ankimobile.net/editing.html",
-      "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study"]
+      "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study", "iPhone note-field editing and formatting controls"]
     },
     {
       "id": "ankimobile-deck-list",
       "priority": 1,
       "platform": "iOS and iPadOS deck list",
       "url": "https://docs.ankimobile.net/deck-list.html",
-      "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target"]
+      "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target", "deck count categories; TusAnkiM column layout is product-specific"]
     },
     {
       "id": "ankimobile-study-screen",
       "priority": 1,
       "platform": "iOS and iPadOS reviewer layout",
       "url": "https://docs.ankimobile.net/study-screen.html",
-      "useFor": ["remaining counts at the bottom of the study screen", "answer buttons in the bottom area", "next times above the answer buttons", "tap anywhere to show the answer"]
+      "useFor": ["remaining counts at the bottom of the study screen", "count visibility; TusAnkiM title/time toolbar layout is product-specific", "answer buttons in the bottom area", "next times above the answer buttons", "tap anywhere to show the answer"]
     },
     {
       "id": "ankimobile-preferences",
@@ -553,6 +553,22 @@
       "useFor": ["f32 operation order of every FSRS-6 formula", "short-term stability floor only for Good and Easy", "memory_state_from_sm2 with exp_m1 and no stability clamp", "current_retrievability for display, search and sort"]
     },
     {
+      "id": "anki-26.09.3-pinned-source",
+      "priority": 2,
+      "platform": "desktop and shared core, the current release (2026-09-23) the fifth FSRS audit pass compares against",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src",
+      "license": "AGPL-3.0-or-later; behavior reference only, read as a 26.05..26.09.3 diff, no oracle run yet",
+      "useFor": ["minimum_review_fuzz_interval keeping the previous interval inside the fuzz window (#4826)", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792)", "Change Deck recomputing memory states in the target deck (#5339, #5500)", "Check Database repairing lrt (#4648)", "future ignore-before dates clamped to today (#5294)", "export without scheduling clearing only FSRS parameter lists (#4721)", "card info computing a missing memory state and hiding ease under FSRS (#5326, #5648, #5277)", "retrievability filtered-deck orders hidden without FSRS (#5407)", "compute_params training with card ids and 8 epochs"]
+    },
+    {
+      "id": "fsrs-rs-6.6.2",
+      "priority": 2,
+      "platform": "scheduler algorithm, the version Anki 26.09 and later build with",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/tree/v6.6.2/src",
+      "license": "BSD-3-Clause; algorithm reference, implemented independently",
+      "useFor": ["short-term stability floor for Hard, Good and Easy (#376)", "scalar f32 operation order (curve factor ln 0.9 / decay, linear damping ((10 - D) * dD) / 9)", "unit-test vectors for memory state, next states, next interval, memory_state_from_sm2 and next difficulty", "compute_parameters: per-card windowed batches, max_seq_len 256, analytic gradients, rand 0.10 shuffle, no per-epoch validation"]
+    },
+    {
       "id": "rand-0.9.4",
       "priority": 3,
       "platform": "Rust random number generation used by Anki's scheduler",
@@ -743,6 +759,13 @@
       "url": "https://github.com/ankitects/anki/blob/main/ts/routes/deck-options/FsrsOptions.svelte",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["default search preset:\"name\" -is:suspended", "relearning steps counted within a day", "already optimal at four decimals", "pressing Optimize again aborts"]
+    },
+    {
+      "id": "indexeddb-transaction-completion",
+      "priority": 3,
+      "platform": "web collection persistence",
+      "url": "https://w3c.github.io/IndexedDB/#transaction-lifetime",
+      "useFor": ["wait for transaction completion before acknowledging a durable save", "propagate aborted writes", "keep reviewer, editor and import completion behind the commit"]
     },
     {
       "id": "html-standard-frame-navigation",

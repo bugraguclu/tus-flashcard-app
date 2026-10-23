@@ -40,6 +40,7 @@ import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { humanizeCardText } from './displayText';
+import { preserveCatalogNoteEdits } from './catalogNoteEdits';
 
 /** Marks every row this module owns, so removal can never reach the learner's own content. */
 export const BKA_CATALOG_PACK = CATALOG_PACK_ID;
@@ -887,8 +888,7 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     ));
     const hasSeparateTrialLayout = tier !== 'trial' || readSetting(SEPARATE_TRIAL_LAYOUT_KEY) === 'true';
     // Cards installed from an older package are refreshed rather than left in place. The
-    // reinstall below stashes and restores study progress, so a correction costs the learner
-    // nothing but the seconds it takes to write the collection.
+    // reinstall below restores study progress and keeps the learner's edited fields/cards.
     const hasCurrentPackage = readSetting(PACKAGE_VERSION_KEY) === BKA_MANIFEST.sha256;
     if (currentTier === tier && installedCards > 0 && !hasLegacyTrialWrapper && hasSeparateTrialLayout
         && hasCurrentPackage) {
@@ -912,6 +912,16 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     const { zip, cachedUri } = await loadBundledPackage();
     const collectionBytes = await extractCollectionFromZip(zip);
 
+    const editedNotes = currentTier === 'full' && tier === 'full'
+        ? parseRows<Note>('notes').map((row) => row.value).filter((note) => isCatalogRow(note) && note.catalogFieldsEdited)
+        : [];
+    const editedNoteIds = new Set(editedNotes.map((note) => note.id));
+    const editedCards = editedNotes.length > 0
+        ? getDB().getAllSync<{ noteId: number; data: string }>('SELECT noteId, data FROM anki_cards')
+            .filter((row) => editedNoteIds.has(Number(row.noteId)))
+            .map((row) => JSON.parse(row.data) as AnkiCard)
+        : [];
+
     // Tier replacement removes only catalog-marked rows and stashes scheduling progress. User
     // decks remain untouched, and matching card ids recover their progress in the new tier.
     if (currentTier !== null || parseRows<Deck>('decks').some((row) => isCatalogRow(row.value))) {
@@ -923,6 +933,7 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     try {
         const full = readBkaCatalog(reader, chooseRootDeckName());
         snapshot = tier === 'full' ? full : buildBkaTrialCatalog(full, chooseTrialRootDeckName());
+        preserveCatalogNoteEdits(snapshot, editedNotes, editedCards);
     } finally {
         reader.close();
     }
@@ -1195,6 +1206,14 @@ export function getInstalledBkaCardCount(): number {
  * learner who deleted the deck after buying it. Either way the next reconciliation reinstalls.
  */
 export function needsBkaCatalogInstall(): boolean {
-    return getBkaCatalogTier() !== 'full'
-        || getInstalledBkaCardCount() !== BKA_CATALOG_EXPECTED.cards;
+    const installedCards = getInstalledBkaCardCount();
+    if (getBkaCatalogTier() !== 'full' || installedCards === 0) return true;
+    if (installedCards === BKA_CATALOG_EXPECTED.cards) return false;
+    // Cloze edits legitimately change the generated-card count. Still detect a missing note or
+    // a note that lost all its cards instead of treating any count mismatch as a lost purchase.
+    const notes = parseRows<Note>('notes').map((row) => row.value).filter(isCatalogRow);
+    if (notes.length !== BKA_CATALOG_EXPECTED.notes || !notes.some((note) => note.catalogFieldsEdited)) return true;
+    const notesWithCards = new Set(getDB().getAllSync<{ noteId: number }>('SELECT DISTINCT noteId FROM anki_cards')
+        .map((row) => Number(row.noteId)));
+    return notes.some((note) => !notesWithCards.has(note.id));
 }

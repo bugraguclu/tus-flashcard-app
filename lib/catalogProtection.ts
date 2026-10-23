@@ -2,7 +2,7 @@
  * Data-layer protection for the paid BKA catalog.
  *
  * UI locks are only presentation. These checks sit beside persistence/import/export so deep
- * links, stale screens and future buttons cannot mutate or copy catalog rows by accident.
+ * links, stale screens and future buttons cannot change locked trial content or copy catalog rows.
  */
 
 import type { AnkiCard, Deck, DeckConfig, Note, NoteType } from './models';
@@ -159,6 +159,10 @@ export function assertCatalogNoteContentMutable(newNote: Note, existingNote: Not
     if (newNote.guid !== existingNote.guid) {
         throw new PaidCatalogProtectionError('Katalog notlarının kimliği değiştirilemez.');
     }
+    if (newNote.catalogPack !== existingNote.catalogPack) {
+        throw new PaidCatalogProtectionError('Katalog notlarının sahipliği değiştirilemez.');
+    }
+    if (isPaidCatalogUnlocked()) return;
     const fieldsA = Array.isArray(newNote.fields) ? newNote.fields : [];
     const fieldsB = Array.isArray(existingNote.fields) ? existingNote.fields : [];
     if (fieldsA.length !== fieldsB.length || fieldsA.some((val, idx) => val !== fieldsB[idx])) {

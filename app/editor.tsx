@@ -59,11 +59,13 @@ import RichTextEditor, {
     type RichTextEditorHandle,
     type RichTextCommand,
 } from '../components/RichTextEditor';
-import { isCatalogCard, isCatalogDeck } from '../lib/catalogProtection';
+import { isCatalogCard, isCatalogDeck, isPaidCatalogUnlocked } from '../lib/catalogProtection';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
 import { dbUpsertFtsCard } from '../lib/db';
+import { commitCollectionWrite } from '../lib/collectionWrite';
+import { userFacingErrorMessage } from '../lib/userFacingError';
 import { useI18n } from '../hooks/useI18n';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
 import { clozeFieldIndex, countCardsForNote, sanitizeUntrustedHtml } from '../lib/templates';
@@ -153,6 +155,8 @@ export default function EditorScreen() {
         if (!routeCardId) return false;
         return isCatalogCard(routeCardId);
     }, [routeCardId, dataVersion]);
+
+    const isContentReadOnly = isCatalog && !isPaidCatalogUnlocked();
 
     const routeDeckId = useMemo(() => parseCardId(params.deckId), [params.deckId]);
     const routeNoteTypeId = useMemo(() => parseCardId(params.noteTypeId), [params.noteTypeId]);
@@ -814,22 +818,25 @@ export default function EditorScreen() {
     };
 
     /**
-     * A catalog note's fields, note type and deck are all locked, so the only thing that can be
-     * dirty on this screen is the tag list. It is written through `setNoteTagsByCardId`, which
-     * touches tags and nothing else, instead of the full save path that refuses a protected note.
+     * Trial notes keep the narrow tag-only path. Purchased notes use the normal field save.
      */
-    const handleSaveCatalogTags = () => {
-        if (!routeCardId) return;
+    const saveInFlightRef = useRef(false);
+
+    const handleSaveCatalogTags = async () => {
+        if (!routeCardId || saveInFlightRef.current) return;
+        saveInFlightRef.current = true;
         dismissEditorKeyboard();
         setShowOverflowMenu(false);
         try {
-            setNoteTagsByCardId(routeCardId, noteTags);
+            await commitCollectionWrite(() => setNoteTagsByCardId(routeCardId, noteTags));
             resetDraftBaseline(currentDraft);
             bumpDataVersion();
             alert(t('common.completed'), l('Etiketler kaydedildi.', 'Tags saved.'), () => goBackOr(router));
         } catch (e) {
             console.warn('[Editor] catalog tag save failed:', e);
-            alert(t('common.error'), l('Etiketler kaydedilemedi.', 'Could not save the tags.'));
+            alert(t('common.error'), userFacingErrorMessage(e, l('Etiketler kaydedilemedi.', 'Could not save the tags.')));
+        } finally {
+            saveInFlightRef.current = false;
         }
     };
 
@@ -851,8 +858,9 @@ export default function EditorScreen() {
         requestAnimationFrame(() => fieldEditorRefs.current[0]?.focus());
     };
 
-    const handleSave = () => {
-        if (isCatalog) {
+    const handleSave = async () => {
+        if (saveInFlightRef.current) return;
+        if (isContentReadOnly) {
             handleSaveCatalogTags();
             return;
         }
@@ -892,15 +900,24 @@ export default function EditorScreen() {
             return;
         }
 
+        saveInFlightRef.current = true;
         try {
             if (isEditing && routeCardId) {
-                const updated = updateTusCardByCardId(routeCardId, {
-                    question: currentFields[0] || '',
-                    answer: currentFields[1] || '',
-                    tags: noteTags,
-                    reverseAnswer: cardTypeId === 7 ? currentFields[2] : undefined,
-                    deckId: targetDeck.id,
-                    fieldValues: currentFields,
+                const updated = await commitCollectionWrite(() => {
+                    const result = updateTusCardByCardId(routeCardId, {
+                        question: currentFields[0] || '',
+                        answer: currentFields[1] || '',
+                        tags: noteTags,
+                        reverseAnswer: cardTypeId === 7 ? currentFields[2] : undefined,
+                        deckId: targetDeck.id,
+                        fieldValues: currentFields,
+                    });
+                    if (result) {
+                        for (const sibling of getCardsForNote(result.note.id)) {
+                            dbUpsertFtsCard(searchIndexCardFromNote(result.note, sibling.id));
+                        }
+                    }
+                    return result;
                 });
 
                 if (!updated) {
@@ -908,30 +925,27 @@ export default function EditorScreen() {
                     return;
                 }
 
-                // Sibling cards indexing
-                for (const sibling of getCardsForNote(updated.note.id)) {
-                    dbUpsertFtsCard(searchIndexCardFromNote(updated.note, sibling.id));
-                }
-
                 resetDraftBaseline(savedDraft);
                 bumpDataVersion();
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => goBackOr(router));
             } else {
-                const created = createTusCard({
-                    question: currentFields[0] || '',
-                    answer: currentFields[1] || '',
-                    tags: noteTags,
-                    deckId: targetDeck.id,
-                    noteTypeId: cardTypeId,
-                    reverseAnswer: cardTypeId === 7 ? currentFields[2] : undefined,
-                    fieldValues: currentFields,
-                });
+                const created = await commitCollectionWrite(() => {
+                    const result = createTusCard({
+                        question: currentFields[0] || '',
+                        answer: currentFields[1] || '',
+                        tags: noteTags,
+                        deckId: targetDeck.id,
+                        noteTypeId: cardTypeId,
+                        reverseAnswer: cardTypeId === 7 ? currentFields[2] : undefined,
+                        fieldValues: currentFields,
+                    });
 
-                for (const generatedCard of created.cards) {
-                    dbUpsertFtsCard(searchIndexCardFromNote(created.note, generatedCard.id));
-                }
-
-                persistStickyFieldValues();
+                    for (const generatedCard of result.cards) {
+                        dbUpsertFtsCard(searchIndexCardFromNote(result.note, generatedCard.id));
+                    }
+                    persistStickyFieldValues();
+                    return result;
+                }, (result) => deleteTusCardByCardId(result.card.id));
                 resetDraftBaseline(savedDraft);
                 setSavedNoteId(created.note.id);
                 bumpDataVersion();
@@ -964,7 +978,9 @@ export default function EditorScreen() {
             }
         } catch (e) {
             console.warn('[Editor] save failed:', e);
-            alert(t('common.error'), l('Not kaydedilemedi.', 'Could not save the note.'));
+            alert(t('common.error'), userFacingErrorMessage(e, l('Not kaydedilemedi.', 'Could not save the note.')));
+        } finally {
+            saveInFlightRef.current = false;
         }
     };
 
@@ -1048,13 +1064,12 @@ export default function EditorScreen() {
                     {isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
                 </Text>
                 <View style={styles.headerSpacer} />
-                {/* On a catalog note only the tags can be dirty, so the button appears once they are. */}
-                {(!isCatalog || isDirty) && (
+                {(!isContentReadOnly || isDirty) && (
                     <TouchableOpacity
                         style={styles.headerAction}
                         onPress={handleSave}
                         accessibilityRole="button"
-                        accessibilityLabel={isCatalog
+                        accessibilityLabel={isContentReadOnly
                             ? l('Etiketleri kaydet', 'Save tags')
                             : isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
                     >
@@ -1146,20 +1161,6 @@ export default function EditorScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {isCatalog && (
-                    <View style={styles.catalogProtectedBanner} accessibilityRole="summary">
-                        <Text style={styles.catalogProtectedBadge}>
-                            {l('🔒 Dahili TUS Kartı (İçerik Korumalıdır)', '🔒 Built-in TUS Card (Content Protected)')}
-                        </Text>
-                        <Text style={styles.catalogProtectedDescription}>
-                            {l(
-                                'TUS ders notları telif hakkı ile korunmaktadır. Kart içeriği değiştirilemez; ancak kendi etiketlerinizi ve bayraklarınızı ekleyebilirsiniz.',
-                                'TUS study notes are copyrighted. Card content cannot be modified; however, you can still add your personal tags and flags.',
-                            )}
-                        </Text>
-                    </View>
-                )}
-
                 {fieldsToRender.map((field, index) => {
                     const localizedName = localizeFieldName(locale, field.name);
                     const isPinned = pinnedFields.has(field.ord);
@@ -1176,7 +1177,7 @@ export default function EditorScreen() {
                         <React.Fragment key={`${selectedNoteType?.id ?? cardTypeId}-field-${field.ord}-${index}`}>
                             <View style={styles.fieldLabelRow}>
                                 <Text style={styles.fieldName}>{localizedName}</Text>
-                                {!isCatalog && (
+                                {!isContentReadOnly && (
                                     <View style={styles.fieldActions}>
                                         <TouchableOpacity
                                             style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
@@ -1201,10 +1202,10 @@ export default function EditorScreen() {
                                     fieldEditorRefs.current[index] = el;
                                 }}
                                 value={fieldValues[index] || ''}
-                                editable={!isCatalog}
+                                editable={!isContentReadOnly}
                                 onChange={(val) => handleFieldChange(index, val)}
                                 onFocus={() => {
-                                    if (isCatalog) return;
+                                    if (isContentReadOnly) return;
                                     setActiveFieldIndex(index);
                                     // The toolbar now belongs to this field, so it is blanked until this field's
                                     // own document answers instead of showing the previous field's state.
@@ -1311,7 +1312,7 @@ export default function EditorScreen() {
                 />
             </ScrollView>
 
-            {!isCatalog && editorPreferences.toolbarVisible && (
+            {!isContentReadOnly && editorPreferences.toolbarVisible && (
                 <EditorFormattingToolbar
                     toolbarTab={toolbarTab}
                     onSelectTab={setToolbarTab}
@@ -1339,7 +1340,7 @@ export default function EditorScreen() {
                 />
             )}
 
-            {!isCatalog && !editorPreferences.toolbarVisible && (
+            {!isContentReadOnly && !editorPreferences.toolbarVisible && (
                 <StandaloneKeyboardDoneBar
                     onPress={dismissEditorKeyboard}
                     colors={colors}
@@ -1354,6 +1355,7 @@ export default function EditorScreen() {
                 <EditorOverflowMenu
                     topInset={insets.top}
                     isCatalog={isCatalog}
+                    contentReadOnly={isContentReadOnly}
                     isEditing={isEditing}
                     preferences={editorPreferences}
                     onUpdatePreferences={updateEditorPreferences}

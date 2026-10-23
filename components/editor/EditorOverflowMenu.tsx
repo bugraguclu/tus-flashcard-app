@@ -7,6 +7,7 @@ import type { EditorStyles } from './editorStyles';
 interface EditorOverflowMenuProps extends Pick<EditorI18n, 'l'> {
     topInset: number;
     isCatalog: boolean;
+    contentReadOnly: boolean;
     isEditing: boolean;
     preferences: EditorPreferences;
     onUpdatePreferences: (patch: Partial<EditorPreferences>) => void;
@@ -21,6 +22,7 @@ interface EditorOverflowMenuProps extends Pick<EditorI18n, 'l'> {
 export function EditorOverflowMenu({
     topInset,
     isCatalog,
+    contentReadOnly,
     isEditing,
     preferences,
     onUpdatePreferences,
@@ -39,8 +41,7 @@ export function EditorOverflowMenu({
                 accessibilityLabel={l('Seçenekler menüsünü kapat', 'Close options menu')}
             />
             <View style={styles.overflowMenu} accessibilityViewIsModal>
-                {/* A catalog note's fields are read-only, so neither of these applies to it. */}
-                {!isCatalog && (
+                {!contentReadOnly && (
                     <TouchableOpacity
                         style={styles.overflowItem}
                         onPress={onClearFields}
@@ -58,7 +59,7 @@ export function EditorOverflowMenu({
                         <Text style={[styles.overflowItemText, styles.dangerText]}>{l('Notu sil', 'Delete note')}</Text>
                     </TouchableOpacity>
                 )}
-                {!isCatalog && <View style={styles.overflowSeparator} />}
+                {!contentReadOnly && <View style={styles.overflowSeparator} />}
                 <TouchableOpacity
                     style={styles.overflowItem}
                     onPress={onOpenFontSize}
@@ -79,7 +80,7 @@ export function EditorOverflowMenu({
                         {preferences.capitalizeSentences && <Text style={styles.overflowCheckboxMark}>✓</Text>}
                     </View>
                 </TouchableOpacity>
-                {!isCatalog && (
+                {!contentReadOnly && (
                     <TouchableOpacity
                         style={styles.overflowItem}
                         onPress={() => onUpdatePreferences({ toolbarVisible: !preferences.toolbarVisible })}
@@ -93,7 +94,7 @@ export function EditorOverflowMenu({
                         </View>
                     </TouchableOpacity>
                 )}
-                {!isCatalog && (
+                {!contentReadOnly && (
                     <TouchableOpacity
                         style={[styles.overflowItem, !preferences.toolbarVisible && styles.overflowItemDisabled]}
                         disabled={!preferences.toolbarVisible}
