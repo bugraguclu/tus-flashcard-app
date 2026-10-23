@@ -781,3 +781,21 @@ npm run quality
 ```
 
 Çalıştırılmayan: Anki 26.09.3'ün kendisi (yerelde 26.05 kurulu).
+
+
+## FSRS-A yeni referans — 23 Ekim 2026
+
+`ready` tabanından `codex/fsrs-a-26-09` dalı. Resmî Apple Silicon paketi kuruldu; Hakkında
+penceresinde **26.09.3 (29bb700b)** ve Python 3.13.15 doğrulandı, uygulama açılıp normal çıkışla
+kapatıldı. `build-host.sh` yeni uygulamaya karşı derlendi. On üretici, geçici koleksiyonlarla ve
+Europe/Istanbul saat diliminde çalıştı; API uyarlaması gerekmedi. `build_fixture.py` 26.09.3
+sürümünü denetler ve optimizer bölümünü dışarıda bırakır. Yeni çıktı:
+`test/fixtures/anki-26.09-fsrs.json` (fsrs-rs 6.6.2; Anki zamanlayıcısının rand'ı 0.9.4;
+optimizer'ın ayrı rand'ı 0.10.1). 26.05 paketleri ve optimizer fixture'ı korunuyor.
+
+Ürün kodunu değiştirmeden yeni referansa bağlanan dört dosya: **10 test geçti, 4 test kaldı**.
+Geçenler: Reset Card, önizleme, sıralama anahtarları, fuzz RNG, yük dengeleyici seçimleri ve
+dengesiz yeniden planlama. Kalanlar: cevap düğmeleri (bir Zor aralığı 12 yerine 24), hafıza
+geçmişi, tam cevap (17 yerine 20 gün) ve dengeli yeniden planlama (18 yerine 20 gün). Madde 1 ve
+2 düzeltildikten sonra aynı veriler tekrar koşulacak; açıklanmayan fark yeni madde olarak
+kaydedilecek, kapsam dışı kod değiştirilmeyecek.

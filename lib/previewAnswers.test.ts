@@ -1,4 +1,4 @@
-// Answers in a preview filtered deck (rescheduling off) against Anki 26.05 itself. Each recorded
+// Answers in a preview filtered deck (rescheduling off) against Anki 26.09.3 itself. Each recorded
 // answer in the fixture's `previewAnswers` holds the card Anki answered, the review-log row it
 // wrote and the card afterwards: held back in the preview-repeat queue with a fuzzed due time, or
 // back in its home deck when the answer finished the preview.
@@ -29,7 +29,7 @@ import { DEFAULT_SETTINGS } from './settingsStore';
 import { answerStudyCard } from './studyRepository';
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the fixture is plain recorded JSON */
-const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.05-fsrs.json'), 'utf8'));
+const fixture = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.09-fsrs.json'), 'utf8'));
 const ROLLOVER = fixture.meta.rolloverHour as number;
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;

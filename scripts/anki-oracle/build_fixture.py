@@ -1,4 +1,4 @@
-"""Assemble test/fixtures/anki-26.05-fsrs.json from the generators' output files.
+"""Assemble test/fixtures/anki-26.09-fsrs.json from the generators' output files.
 
 Usage (from scripts/anki-oracle, after running the generators):
     ./run.sh gen_states.py 31 3000 states.json
@@ -11,8 +11,7 @@ Usage (from scripts/anki-oracle, after running the generators):
     ./run.sh gen_forget.py 3 60 forget.json
     ./run.sh gen_sortkeys.py 5 120 sortkeys.json
     ./run.sh gen_preview.py 4 6 preview.json
-    ./run.sh gen_optimize.py 8 optimize.json small
-    python3 build_fixture.py ../../test/fixtures/anki-26.05-fsrs.json
+    python3 build_fixture.py ../../test/fixtures/anki-26.09-fsrs.json
 """
 import json
 import random
@@ -59,7 +58,9 @@ def compact(node):
 states, memory, answers = load("states.json"), load("memory.json"), load("answers.json")
 fuzz, lb, resched = load("fuzz.json"), load("lb.json"), load("resched.json")
 resched_lb, forget, sortkeys = load("resched_lb.json"), load("forget.json"), load("sortkeys.json")
-preview, optimize = load("preview.json"), load("optimize.json")
+preview = load("preview.json")
+if states["meta"]["anki"] != "26.09.3":
+    raise SystemExit("FSRS-A requires an Anki 26.09.3 oracle run")
 
 
 def compact_resched_round(rnd):
@@ -75,7 +76,7 @@ def compact_resched_round(rnd):
 
 
 fixture = {
-    "meta": {"anki": states["meta"]["anki"], "buildhash": states["meta"]["buildhash"], "fsrs": "5.2.0",
+    "meta": {"anki": states["meta"]["anki"], "buildhash": states["meta"]["buildhash"], "fsrs": "6.6.2",
              "rand": "0.9.4", "timezone": "Europe/Istanbul", "rolloverHour": 4},
     "states": [{"config": c["config"], "timing": c["timing"], "card": c["card"],
                 "out": {b: {k: c["out"][b][k] for k in ("kind", "days", "secs", "s", "d") if k in c["out"][b]}
@@ -93,7 +94,6 @@ fixture = {
     "resetCards": forget["cases"],
     "sortKeys": sortkeys,
     "previewAnswers": preview["rounds"],
-    "optimize": optimize,
 }
 for rnd in lb["rounds"][:3]:
     window = [[c["id"], c["nid"], c["due"] - rnd["today"]] for c in rnd["snapshot"] if 0 <= c["due"] - rnd["today"] < 99]
