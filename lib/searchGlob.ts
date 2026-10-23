@@ -91,7 +91,16 @@ export function globMatcher(pattern: string, options: GlobOptions): (value: stri
 export function hierarchicalGlobMatcher(pattern: string): (value: string) => boolean {
     const source = globRegexSource(foldCase(pattern));
     const regex = new RegExp(`^(?:${source})(?:::.*)?$`, 'su');
-    return (value) => regex.test(foldCase(value));
+    // Deck and tag names repeat across every card of a scan; each distinct name is folded once.
+    const verdicts = new Map<string, boolean>();
+    return (value) => {
+        let verdict = verdicts.get(value);
+        if (verdict === undefined) {
+            verdict = regex.test(foldCase(value));
+            if (verdicts.size < 50_000) verdicts.set(value, verdict);
+        }
+        return verdict;
+    };
 }
 
 /**
