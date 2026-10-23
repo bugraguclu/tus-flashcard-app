@@ -1,15 +1,15 @@
 /**
  * FSRS-6 (Free Spaced Repetition Scheduler), implemented from the published algorithm.
  *
- * Behaviour follows open-spaced-repetition/fsrs-rs 5.2.0 (`src/model.rs`, `src/inference.rs`,
- * `src/parameter_clipper.rs`, BSD-3-Clause), the version Anki 26.05 schedules with, and Anki's use
+ * Behaviour follows open-spaced-repetition/fsrs-rs 6.6.2 (`src/model.rs`, `src/inference.rs`,
+ * `src/parameter_clipper.rs`, BSD-3-Clause), the version Anki 26.09.3 schedules with, and Anki's use
  * of it in `rslib/src/scheduler/`. Nothing is copied; the equations are the published FSRS-6 ones.
  *
  * fsrs-rs computes in 32-bit floats, so every step here does too (`Math.fround` after each
  * operation, in upstream's order). Rounding each step to f32 is exact for +, -, * and /, and for
- * exp, pow and ln it agrees with a correctly rounded f32 result, so memory states match Anki's to
- * the last bit in practice and whole-day intervals round the same way. lib/fsrsAnkiParity.test.ts
- * pins this against output recorded from Anki itself.
+ * exp, pow and ln the platform can differ in the last bits. lib/fsrsAnkiParity.test.ts compares
+ * memory states within the documented tolerance and pins whole-day intervals against output
+ * recorded from Anki itself; this is not a claim of full client parity.
  *
  * The model keeps two numbers per card:
  *   stability  (S) — days until recall probability falls to 90%
@@ -376,13 +376,13 @@ function stabilityAfterFailure(
 }
 
 /**
- * Same-day repeats move stability by a much smaller factor than a spaced review. Only Good and
- * Easy are held at or above the current stability; Again and Hard may lower it
- * (`stability_short_term`, `rating >= 3`).
+ * Same-day repeats move stability by a much smaller factor than a spaced review. Every passing
+ * answer (Hard, Good, Easy) holds or increases stability; only Again may lower it
+ * (fsrs-rs 6.6.2 `stability_short_term`, `rating >= 2`).
  */
 function stabilityShortTerm(w: readonly number[], stability: number, rating: FsrsRating): number {
     let increase = mul(exp(mul(w[17], add(sub(rating, 3), w[18]))), pow(stability, -w[19]));
-    if (rating >= 3) increase = Math.max(increase, 1);
+    if (rating >= 2) increase = Math.max(increase, 1);
     return mul(stability, increase);
 }
 

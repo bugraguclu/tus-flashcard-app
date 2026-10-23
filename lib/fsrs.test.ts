@@ -297,20 +297,21 @@ describe('FSRS-6 golden vectors', () => {
         expect(lapsed.stability).toBeLessThan(1);
     });
 
-    // A same-day repeat uses S' = S * e^(w17 * (G - 3 + w18)) * S^-w19, and upstream floors the
-    // multiplier at 1 only for Good and Easy (`rating >= 3`), so those two can only hold or raise
-    // stability while Hard and Again may lower it. Anki 26.05 confirms Hard lowering it: a card at
-    // S = 20 answered Hard a second time the same day drops to about 10.
-    // https://github.com/open-spaced-repetition/fsrs-rs/blob/main/src/model.rs (stability_short_term)
-    it('floors the same-day multiplier at 1 for Good and Easy but not for Hard or Again', () => {
-        const before = { stability: 20, difficulty: 5 };
-        for (const rating of [3, 4] as const) {
-            expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, rating, false).stability)
-                .toBeGreaterThanOrEqual(before.stability);
+    // Anki 26.09.3 / fsrs-rs 6.6.2 floors every passing same-day answer at the
+    // previous stability. Only Again may shrink it (the 26.05 Hard behavior was different).
+    // https://github.com/open-spaced-repetition/fsrs-rs/blob/v6.6.2/src/model.rs
+    it('floors the same-day multiplier for Hard, Good and Easy, while Again may lower it', () => {
+        for (const stability of [0.05, 2.3065, 3, 5, 20, 200]) {
+            const before = { stability, difficulty: 5 };
+            for (const rating of [2, 3, 4] as const) {
+                expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, rating, false).stability)
+                    .toBeGreaterThanOrEqual(Math.fround(stability));
+            }
+            expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, 1, false).stability)
+                .toBeLessThan(before.stability);
         }
-        expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, 2, false).stability).toBeCloseTo(10.030085, 5);
-        expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, before, 0, 1, false).stability)
-            .toBeLessThan(before.stability);
+        expect(fsrsStep(DEFAULT_FSRS_PARAMETERS, { stability: 20, difficulty: 5 }, 0, 2, false).stability)
+            .toBe(20);
     });
 
 });

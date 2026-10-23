@@ -559,7 +559,7 @@
       "platform": "scheduler algorithm, the version Anki 26.09 and later build with",
       "url": "https://github.com/open-spaced-repetition/fsrs-rs/tree/v6.6.2/src",
       "license": "BSD-3-Clause; algorithm reference, implemented independently",
-      "useFor": ["short-term stability floor for Hard, Good and Easy (#376)", "scalar f32 operation order (curve factor ln 0.9 / decay, linear damping ((10 - D) * dD) / 9)", "unit-test vectors for memory state, next states, next interval, memory_state_from_sm2 and next difficulty", "compute_parameters: per-card windowed batches, max_seq_len 256, analytic gradients, rand 0.10 shuffle, no per-epoch validation"]
+      "useFor": ["short-term stability floor for Hard, Good and Easy (#376), implemented and covered by lib/fsrs.test.ts and the 26.09 oracle", "scalar f32 operation order (curve factor ln 0.9 / decay, linear damping ((10 - D) * dD) / 9)", "unit-test vectors for memory state, next states, next interval, memory_state_from_sm2 and next difficulty", "compute_parameters: per-card windowed batches, max_seq_len 256, analytic gradients, rand 0.10 shuffle, no per-epoch validation"]
     },
     {
       "id": "rand-0.9.4",

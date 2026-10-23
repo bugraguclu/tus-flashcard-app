@@ -563,7 +563,7 @@ yok. Önem sırasıyla 11 fark:
 | 10 | Düşük | Filtreli deste sıraları | FSRS kapalıyken hatırlanabilirlik sıraları gizli | Hep 11 sıra | `lib/filteredDeckOptions.ts:25` |
 | 11 | Çok düşük | f32 işlem sırası | 6.6.2'nin skaler sırası | 5.2.0'ın Burn sırası | `lib/fsrs.ts:248-250, 389-393` |
 
-## 1. Aynı gün "Zor" stabiliteyi düşürüyor — yüksek
+## 1. Aynı gün "Zor" stabiliteyi düşürüyor — yüksek — kapatıldı (FSRS-A zamanlama)
 
 - **Anki 26.09.3:** fsrs-rs 6.6.2'nin `stability_short_term`'ü aynı gün çarpanını `rating >= 2` için
   1'e tabanlıyor. Zor, İyi ve Kolay stabiliteyi düşüremez, yalnızca Tekrar düşürür. Kural fsrs-rs
@@ -799,3 +799,11 @@ dengesiz yeniden planlama. Kalanlar: cevap düğmeleri (bir Zor aralığı 12 ye
 geçmişi, tam cevap (17 yerine 20 gün) ve dengeli yeniden planlama (18 yerine 20 gün). Madde 1 ve
 2 düzeltildikten sonra aynı veriler tekrar koşulacak; açıklanmayan fark yeni madde olarak
 kaydedilecek, kapsam dışı kod değiştirilmeyecek.
+
+### Madde 1 sonucu — 23 Ekim 2026
+
+`lib/fsrs.ts` aynı gün tabanı `rating >= 2` oldu. Eski 26.05 iddiasını taşıyan
+`lib/fsrs.test.ts` testi de yeni referansa çevrildi: düzeltme öncesinde kaldı, sonrasında altı
+stabilite değerinde Hard/Good/Easy tabanı ve Again düşüşü geçti. Yeni oracle'da hafıza geçmişi
+ve tam cevap testi geçti; 14 testin 12'si geçiyor. İki kalan test madde 2'nin cevap ve dengeli
+yeniden planlama fuzz tabanında. `fsrsTraining.ts` içindeki karşılık FSRS-B'ye bırakıldı.

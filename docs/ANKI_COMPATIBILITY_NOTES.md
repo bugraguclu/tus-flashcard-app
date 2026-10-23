@@ -82,8 +82,8 @@ through `answerStudyCard` on SQLite, comparing every card column, `cards.data` k
 column; `fuzz_delta` for card ids up to 2^52; load-balanced days; and rescheduling after a preset
 change. What that pins:
 
-- FSRS-6 in fsrs-rs's own f32 operation order (`lib/fsrs.ts`), with the short-term floor only on
-  Good and Easy, the mean reversion to an Easy start, and `memory_state_from_sm2` as upstream;
+- FSRS-6 in fsrs-rs's own f32 operation order (`lib/fsrs.ts`), with the 26.09.3 short-term floor on
+  Hard, Good and Easy, the mean reversion to an Easy start, and `memory_state_from_sm2` as upstream;
 - Anki's rounding of stored states (`s` 4, `d` 3, `dr` 2, `decay` 3 decimals), which the next
   answer starts from;
 - days elapsed as whole days from the last review to the next rollover, from `lrt` or else the
@@ -140,6 +140,11 @@ collection FSRS switch and leaves new and `ivl = 0` cards at 0; "Optimize" train
 Database repairs `lrt`; a future ignore-before date is clamped to today; an export without
 scheduling keeps the retention values; card info computes a missing state and hides ease under
 FSRS; and the retrievability filtered-deck orders are hidden while FSRS is off. The 26.09.3 reference is now recorded; corrections follow the measured differences.
+
+**FSRS-A item 1:** same-day Hard now holds or raises stability (`rating >= 2`). The regression in
+`lib/fsrs.test.ts` first failed against the old rule, then passed for six starting stabilities;
+26.09.3 memory replay and whole-answer vectors now pass. Two fuzz-related oracle tests remain
+for item 2. The optimizer's independent forward model is FSRS-B's work.
 
 ## Hierarchical decks and presets
 
