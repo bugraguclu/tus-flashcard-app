@@ -174,20 +174,30 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
     reportHeight();
   }
 
-  function insertCloze() {
+  // The host passes the number, counted over every field of the note as Anki does; the field's
+  // own count is only a fallback. The selection keeps its formatting and media (EDT-3).
+  function insertCloze(requested) {
     restoreSelection();
     const selection = window.getSelection();
-    const selectedText = selection && selection.rangeCount ? selection.toString() : '';
+    let selectedHtml = '';
+    if (selection && selection.rangeCount && !selection.isCollapsed) {
+      const holder = document.createElement('div');
+      holder.appendChild(selection.getRangeAt(0).cloneContents());
+      selectedHtml = holder.innerHTML;
+    }
     const used = Array.from(editor.innerHTML.matchAll(/\\{\\{c(\\d+)::/gi)).map(function (match) { return Number(match[1]) || 0; });
-    const next = used.length ? Math.max.apply(null, used) + 1 : 1;
+    const asked = Number(requested);
+    const next = asked > 0 && Math.floor(asked) === asked ? asked : (used.length ? Math.max.apply(null, used) + 1 : 1);
     bridge.editDocument(function () {
-      return document.execCommand('insertText', false, '{{c' + next + '::' + selectedText + '}}');
+      return selectedHtml
+        ? document.execCommand('insertHTML', false, '{{c' + next + '::' + selectedHtml + '}}')
+        : document.execCommand('insertText', false, '{{c' + next + '::}}');
     });
   }
 
   window.__tusEditorCommand = function (payload) {
     if (payload.command === 'cloze') {
-      insertCloze();
+      insertCloze(payload.value);
     } else {
       const result = bridge.runCommand(payload.command, payload.value || null);
       if (payload.command === 'hiliteColor' && !result.applied) {

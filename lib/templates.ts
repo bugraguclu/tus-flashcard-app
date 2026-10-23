@@ -189,6 +189,15 @@ export function extractClozeNumbers(text: string): number[] {
 }
 
 /**
+ * The number Anki's cloze button uses: one past the highest cloze number in any field of the
+ * note, or (Anki's "same cloze" shortcut) the highest number itself; 1 for a note without any.
+ */
+export function nextClozeNumber(fields: string[], same = false): number {
+    const highest = Math.max(0, ...fields.flatMap((field) => extractClozeNumbers(field || '')));
+    return same ? Math.max(1, highest) : highest + 1;
+}
+
+/**
  * Index of the field a cloze note type clozes over, resolved from the `cloze` (or `cloze-only`)
  * filter in its template — Anki's source of truth. Filters chain, so `{{edit:cloze:Text}}` and
  * `{{cloze:Text}}` resolve identically. Falls back to a field literally named "Text", then to the

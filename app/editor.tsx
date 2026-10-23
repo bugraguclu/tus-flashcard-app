@@ -72,7 +72,7 @@ import { commitCollectionWrite } from '../lib/collectionWrite';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { useI18n } from '../hooks/useI18n';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
-import { clozeFieldIndex, countCardsForNote } from '../lib/templates';
+import { clozeFieldIndex, countCardsForNote, nextClozeNumber } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
@@ -1349,12 +1349,15 @@ export default function EditorScreen() {
                     tools={toolsByKey}
                     formatState={formatState}
                     isCloze={isCloze}
-                    onCloze={() => {
+                    onCloze={(same) => {
                         // The toolbar only offers this button on a cloze note, so the type is known here.
+                        // As in Anki, the cloze goes into the field being edited and is numbered over
+                        // every field of the note; a long press reuses the highest number (EDT-3).
                         if (!selectedNoteType) return;
-                        const targetIndex = clozeFieldIndex(selectedNoteType);
+                        flushFieldEdits();
+                        const targetIndex = fieldEditorRefs.current[activeFieldIndex] ? activeFieldIndex : clozeFieldIndex(selectedNoteType);
                         const targetEditor = fieldEditorRefs.current[targetIndex] ?? getActiveEditor();
-                        targetEditor?.runCommand('cloze');
+                        targetEditor?.runCommand('cloze', String(nextClozeNumber(fieldValuesRef.current, same)));
                     }}
                     customButtons={customToolbarButtons}
                     onCustomButtonPress={(button) => wrapEditorSelection(button.prefix, button.suffix)}
