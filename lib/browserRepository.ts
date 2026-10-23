@@ -1,19 +1,19 @@
+import { matchingCollectionCardIdsForAll } from './collectionCardSearch';
+import { escapeSearchValue } from './searchQuery';
 import { getDB } from './db';
 import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
 import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import type { AppSettings, StudyCard } from './types';
 import type { Note, NoteType } from './models';
 import { localDayNumber, nextRolloverMs } from './ankiState';
-import { compileCardMatcher, type CardSearchContext } from './cardSearchMatch';
 import { getDeckByName } from './deckManager';
 import {
     FSRS_DIFFICULTY_SQL,
     FSRS_STABILITY_SQL,
-    clauseForSearchTerm,
     collectionSearchSettings,
     escapeLikePattern,
 } from './studySearchSql';
-import { parseNotePayload, toStudyCards, type QueueCardRow } from './studyCardRows';
+import { toStudyCards, type QueueCardRow } from './studyCardRows';
 
 /**
  * The card browser's queries: search, sort columns, table mode, paging and counts.
@@ -45,7 +45,23 @@ export interface BrowserCardQuery {
     flags?: number[];
 }
 
-function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Array<string | number> } {
+/**
+ * The browser's marked, card-state and tag filters as search terms. They are evaluated together
+ * with any typed search in one pass of the shared evaluator, rather than one collection scan each.
+ */
+function browserFilterSearches(query: BrowserCardQuery): string[] {
+    const searches: string[] = [];
+    if (query.markedOnly) searches.push('tag:marked');
+    if (query.cardState && query.cardState !== 'all') searches.push(`is:${query.cardState}`);
+    const selectedTags = (query.tags ?? []).map(tag => tag.trim()).filter(Boolean);
+    if (selectedTags.length) searches.push(selectedTags.map(tag => `tag:${escapeSearchValue(tag)}`).join(' or '));
+    return searches;
+}
+
+function buildBrowserWhere(
+    query: BrowserCardQuery,
+    { includeSearchFilters = true }: { includeSearchFilters?: boolean } = {},
+): { sql: string; params: Array<string | number> } {
     const clauses: string[] = [];
     const params: Array<string | number> = [];
     const addIds = (column: string, ids: number[] | undefined) => {
@@ -60,17 +76,12 @@ function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Arra
     addIds('c.deckId', query.deckIds);
     addIds('c.id', query.cardIds);
     addIds('n.id', query.noteIds);
-    if (query.markedOnly) {
-        clauses.push("n.tags LIKE '% marked %'");
+    const searches = includeSearchFilters ? browserFilterSearches(query) : [];
+    if (searches.length) {
+        clauses.push('c.id IN (SELECT value FROM json_each(?))');
+        params.push(JSON.stringify(matchingCollectionCardIdsForAll(searches)));
     }
     if (query.suspendedOnly) clauses.push('c.queue = -1');
-    if (query.cardState && query.cardState !== 'all') {
-        const state = clauseForSearchTerm(`is:${query.cardState}`);
-        if (state) {
-            clauses.push(state.sql);
-            params.push(...state.params);
-        }
-    }
     if (query.flags) {
         if (query.flags.length === 0) {
             clauses.push('1 = 0');
@@ -81,20 +92,6 @@ function buildBrowserWhere(query: BrowserCardQuery): { sql: string; params: Arra
     } else if (query.flag !== null && query.flag !== undefined) {
         clauses.push('(c.flags & 7) = ?');
         params.push(query.flag);
-    }
-    const tagClauses: string[] = [];
-    const tagParams: string[] = [];
-    for (const rawTag of query.tags ?? []) {
-        const tag = rawTag.trim().toLocaleLowerCase('en-US').replace(/[\\%_]/g, (ch) => `\\${ch}`);
-        if (!tag) continue;
-        tagClauses.push("(LOWER(n.tags) LIKE ? ESCAPE '\\' OR LOWER(n.tags) LIKE ? ESCAPE '\\')");
-        tagParams.push(`% ${tag} %`, `% ${tag}::%`);
-    }
-    if (tagClauses.length > 0) {
-        // AnkiDroid's multi-select tag filter joins selected tags with OR. Requiring every tag
-        // would make ordinary category selections unexpectedly empty.
-        clauses.push(`(${tagClauses.join(' OR ')})`);
-        params.push(...tagParams);
     }
     return { sql: clauses.length ? ` WHERE ${clauses.join(' AND ')}` : '', params };
 }
@@ -177,9 +174,12 @@ interface BrowserNoteRow {
  * The row's current card is always the note's first template card, even when another sibling
  * was the card that matched a flag, queue or search term. This mirrors Anki's RowContext.
  */
-function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
+function getBrowserNoteRows(
+    query: BrowserCardQuery,
+    whereOptions?: { includeSearchFilters?: boolean },
+): BrowserNoteRow[] {
     const db = getDB();
-    const where = buildBrowserWhere(query);
+    const where = buildBrowserWhere(query, whereOptions);
     const direction = query.descending ? 'DESC' : 'ASC';
     const sortSql: Record<BrowserCardSortKey, string> = {
         sortField: 'n.sfld COLLATE NOCASE',
@@ -272,6 +272,14 @@ function getBrowserNoteRows(query: BrowserCardQuery): BrowserNoteRow[] {
     );
 }
 
+/**
+ * Return only the ordered row IDs for a browser text search: card IDs in Cards mode and note
+ * IDs in Notes mode. This follows the architecture used by
+ * Anki's desktop browser and AnkiDroid: search/sort the lightweight identifier list first, then
+ * hydrate row content only as pages become visible.
+ *
+ * All fields and structured terms use collectionCardSearch, also used by filtered decks.
+ */
 function loadJsonRowsByIds(db: ReturnType<typeof getDB>, table: 'notes' | 'note_types', ids: number[]): Map<number, string> {
     const result = new Map<number, string>();
     for (let index = 0; index < ids.length; index += 400) {
@@ -285,34 +293,15 @@ function loadJsonRowsByIds(db: ReturnType<typeof getDB>, table: 'notes' | 'note_
     return result;
 }
 
-/**
- * Return only the ordered row IDs for a browser text search: card IDs in Cards mode and note
- * IDs in Notes mode. This follows the architecture used by
- * Anki's desktop browser and AnkiDroid: search/sort the lightweight identifier list first, then
- * hydrate row content only as pages become visible.
- *
- * Keep the app's existing search semantics exactly: Turkish/ASCII-insensitive prefix matching
- * across rendered question/answer projections, topic, deck path and tags. Notes and note types
- * are parsed once even when they generate multiple cards.
- */
+
 export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuery: string): number[] {
     const rawQuery = searchQuery.trim();
     if (!rawQuery) return [];
 
     const db = getDB();
-    const nowMs = Date.now();
-    const { rolloverHour, learnAheadMinutes } = collectionSearchSettings();
-    const matcher = compileCardMatcher(rawQuery, {
-        today: localDayNumber(nowMs, rolloverHour),
-        nowMs,
-        learnAheadMinutes,
-        dayCutoffMs: nextRolloverMs(nowMs, rolloverHour) - 86_400_000,
-        ratedWithin: reviewLogLookup(db, rolloverHour),
-        introducedWithin: firstReviewLookup(db, rolloverHour),
-    });
-    if (!matcher) return [];
-
-    const where = buildBrowserWhere(query);
+    // The typed search and the marked/state/tag filters share one pass over the collection.
+    const matchingIds = new Set(matchingCollectionCardIdsForAll([rawQuery, ...browserFilterSearches(query)]));
+    const where = buildBrowserWhere(query, { includeSearchFilters: false });
     const sortSql = BROWSER_SORT_SQL[query.sortKey ?? 'sortField'];
     const direction = query.descending ? 'DESC' : 'ASC';
     const rows = db.getAllSync<{
@@ -361,44 +350,12 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
         ));
     }
 
-    const noteData = loadJsonRowsByIds(db, 'notes', [...new Set(rows.map((row) => row.noteId))]);
-    const noteTypeData = loadJsonRowsByIds(db, 'note_types', [...new Set(rows.map((row) => row.noteTypeId))]);
-    const parsedByNoteId = new Map<number, ParsedSearchNote | null>();
     const matchedNoteIds = new Set<number>();
     const ids: number[] = [];
-
     for (const row of rows) {
-        let parsed = parsedByNoteId.get(row.noteId);
-        if (parsed === undefined) {
-            const storedNote = noteData.get(row.noteId);
-            const storedType = noteTypeData.get(row.noteTypeId);
-            try {
-                const note = storedNote ? JSON.parse(storedNote) as Note : null;
-                const noteType = storedType ? JSON.parse(storedType) as NoteType : null;
-                const payload = note && noteType ? parseNotePayload(note, noteType) : null;
-                parsed = note && noteType && payload
-                    ? {
-                        note,
-                        noteType,
-                        text: [payload.question, payload.answer, payload.topic].join(' '),
-                        // Built once per note: a note with siblings would otherwise rebuild the
-                        // same field map for every card it generated.
-                        fields: Object.fromEntries(
-                            noteType.fields.map((field, index) => [field.name, note.fields[index] ?? '']),
-                        ),
-                    }
-                    : null;
-            } catch {
-                parsed = null;
-            }
-            parsedByNoteId.set(row.noteId, parsed);
-        }
-        if (!parsed) continue;
-
-        if (matcher(browserSearchContext(row, parsed))) {
-            matchedNoteIds.add(row.noteId);
-            if (query.tableMode !== 'notes') ids.push(row.cardId);
-        }
+        if (!matchingIds.has(row.cardId)) continue;
+        matchedNoteIds.add(row.noteId);
+        if (query.tableMode !== 'notes') ids.push(row.cardId);
     }
 
     if (query.tableMode !== 'notes') return ids;
@@ -406,106 +363,18 @@ export function getBrowserRowIdsMatchingText(query: BrowserCardQuery, searchQuer
 
     // The search can match any sibling card, but Anki's Notes-mode table is identified by note
     // IDs and sorted using note aggregates. Do not leak the matching sibling card into the row.
+    // Every matched note already has a card that passed the search filters, so they are not
+    // evaluated a second time here.
     return getBrowserNoteRows({
         ...query,
         cardIds: undefined,
         noteIds: [...matchedNoteIds],
-    }).map((row) => row.noteId);
+    }, { includeSearchFilters: false }).map((row) => row.noteId);
 }
 
 /** @deprecated Prefer getBrowserRowIdsMatchingText(), whose name reflects Notes mode too. */
 export function getBrowserCardIdsMatchingText(query: BrowserCardQuery, searchQuery: string): number[] {
     return getBrowserRowIdsMatchingText(query, searchQuery);
-}
-
-interface ParsedSearchNote {
-    note: Note;
-    noteType: NoteType;
-    /** Rendered question, answer and topic — what a bare search word matches. */
-    text: string;
-    fields: Record<string, string>;
-}
-
-/** One card, in the shape the search terms read (lib/cardSearchMatch.ts). */
-function browserSearchContext(
-    row: {
-        cardId: number; noteId: number; deckName: string; ord: number; type: number; queue: number;
-        due: number; ivl: number; factor: number; reps: number; lapses: number; flags: number;
-        createdAt: number; noteEditedAt: number;
-        ankiData?: string | null; lastReview?: number | null;
-    },
-    parsed: ParsedSearchNote,
-): CardSearchContext {
-    const { note, noteType, text, fields } = parsed;
-    const fsrsData = parseAnkiCardData(row.ankiData ?? undefined);
-
-    return {
-        cardId: row.cardId,
-        noteId: row.noteId,
-        deckName: row.deckName,
-        text,
-        tags: note.tags,
-        templateOrd: row.ord,
-        queue: row.queue,
-        type: row.type,
-        due: row.due,
-        ivl: row.ivl,
-        factor: row.factor,
-        reps: row.reps,
-        lapses: row.lapses,
-        flags: row.flags,
-        fields,
-        noteTypeName: noteType.name,
-        templateName: noteType.templates[row.ord]?.name,
-        // Cards imported before the created_at column existed fall back to their id, which is the
-        // epoch millisecond Anki assigned when the card was made.
-        createdAtMs: Number(row.createdAt) || row.cardId,
-        noteEditedAtMs: Number(row.noteEditedAt) || (note.mod ? note.mod * 1000 : undefined),
-        // FSRS state for prop:s / prop:d / prop:r.
-        memoryState: memoryStateFromCardData(fsrsData),
-        decay: fsrsData.decay,
-        lastReviewedAtMs: Number(row.lastReview) || undefined,
-        lastReviewTimeSecs: fsrsData.lastReviewTimeSecs,
-    };
-}
-
-/** `rated:N[:E]` — one query per distinct window, reused for every card in the result. */
-function reviewLogLookup(db: ReturnType<typeof getDB>, rolloverHour: number) {
-    const cache = new Map<string, Set<number>>();
-    return (cardId: number, days: number, ease: number | null): boolean => {
-        const key = `${days}:${ease ?? ''}`;
-        let matched = cache.get(key);
-        if (!matched) {
-            const cutoff = nextRolloverMs(Date.now(), rolloverHour) - days * 86_400_000;
-            const rows = ease !== null && Number.isInteger(ease) && ease >= 1 && ease <= 4
-                ? db.getAllSync<{ cardId: number }>(
-                    'SELECT DISTINCT cardId FROM revlog WHERE id >= ? AND ease = ?', cutoff, ease)
-                : db.getAllSync<{ cardId: number }>(
-                    'SELECT DISTINCT cardId FROM revlog WHERE id >= ? AND ease > 0', cutoff);
-            matched = new Set(rows.map((row) => Number(row.cardId)));
-            cache.set(key, matched);
-        }
-        return matched.has(cardId);
-    };
-}
-
-/** `introduced:N` — cards whose first-ever answer falls inside the window. */
-function firstReviewLookup(db: ReturnType<typeof getDB>, rolloverHour: number) {
-    const cache = new Map<number, Set<number>>();
-    return (cardId: number, days: number): boolean => {
-        let matched = cache.get(days);
-        if (!matched) {
-            const cutoff = nextRolloverMs(Date.now(), rolloverHour) - days * 86_400_000;
-            const rows = db.getAllSync<{ cardId: number }>(
-                `SELECT cardId FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog GROUP BY cardId)
-                 WHERE firstReview >= ?`,
-                cutoff,
-            );
-            matched = new Set(rows.map((row) => Number(row.cardId)));
-            cache.set(days, matched);
-        }
-        return matched.has(cardId);
-    };
 }
 
 export function getBrowserCards(settings: AppSettings, query: BrowserCardQuery = {}): StudyCard[] {

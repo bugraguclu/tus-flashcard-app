@@ -54,6 +54,8 @@ export interface ApkgImportResult {
     /** Existing notes whose content was replaced from the package. */
     updated?: number;
     duplicates: number;
+    /** Schema-conflicting GUID matches, also included in duplicates for legacy callers. */
+    conflicting?: number;
     emptyRows: number;
     clozeImported: number;
     /** Source cards imported without regenerating template/card identities. */

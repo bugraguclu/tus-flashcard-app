@@ -16,9 +16,31 @@ export type SearchNode =
  * parenthesis, and the `-` that negates whichever of those follows it. A phrase may carry an
  * escaped quote — `deck:"My \"Best\" Deck"` — so the phrase ends at the first unescaped quote.
  */
-export function tokenizeSearch(query: string): string[] {
-    return query.trim().match(/-?\(|\)|-?(?:[^\s()"]+|"(?:\\[\s\S]|[^"\\])*")+/g) ?? [];
+export class SearchSyntaxError extends Error {
+    constructor(detail: string) { super(`Invalid search: ${detail}`); this.name = 'SearchSyntaxError'; }
 }
+
+function searchTokens(query: string, strictQuotes: boolean): string[] {
+    const tokens: string[] = []; let token = ''; let quoted = false;
+    const flush = () => { if (token) tokens.push(token); token = ''; };
+    for (let i = 0; i < query.length; i++) {
+        const ch = query[i];
+        if (ch === '\\' && i + 1 < query.length) { token += ch + query[++i]; continue; }
+        if (ch === '"') { quoted = !quoted; token += ch; continue; }
+        if (!quoted && /\s/.test(ch)) { flush(); continue; }
+        if (!quoted && (ch === '(' || ch === ')')) {
+            if (ch === '(' && token === '-') { tokens.push('-('); token = ''; }
+            else { flush(); tokens.push(ch); }
+            continue;
+        }
+        token += ch;
+    }
+    if (quoted && strictQuotes) throw new SearchSyntaxError('unclosed quote');
+    flush(); return tokens;
+}
+
+/** Picker helpers also tokenize drafts; only a complete query enforces balanced quotes. */
+export function tokenizeSearch(query: string): string[] { return searchTokens(query, false); }
 
 /**
  * Anki's escaping, which the two functions below are the two halves of.
@@ -77,48 +99,32 @@ export function isQuotedTerm(value: string): boolean {
 }
 
 function parseExpression(tokens: string[], cursor: { index: number }): SearchNode | null {
-    const orParts: SearchNode[] = [];
-    let andParts: SearchNode[] = [];
-
-    const flushAnd = () => {
-        if (andParts.length === 0) return;
-        orParts.push(andParts.length === 1 ? andParts[0] : { kind: 'and', children: andParts });
-        andParts = [];
-    };
-
-    while (cursor.index < tokens.length) {
-        const token = tokens[cursor.index];
-        if (token === ')') break;
-        cursor.index += 1;
-
-        const keyword = token.toLowerCase();
-        if (keyword === 'or') {
-            flushAnd();
-            continue;
-        }
-        if (keyword === 'and') continue;
-
-        const negated = token.startsWith('-') && token.length > 1;
-        const body = negated ? token.slice(1) : token;
-
-        let node: SearchNode | null;
+    const primary = (): SearchNode => {
+        const token = tokens[cursor.index++];
+        if (!token || token === ')' || /^(and|or)$/i.test(token) || token === '-') throw new SearchSyntaxError('expected a search term');
+        const negated = token.startsWith('-'); const body = negated ? token.slice(1) : token;
+        let node: SearchNode;
         if (body === '(') {
-            node = parseExpression(tokens, cursor);
-            // Consume the matching ')'. An unbalanced search simply ends here: Anki's own parser
-            // is forgiving, and a half-typed query should narrow results rather than throw.
-            if (tokens[cursor.index] === ')') cursor.index += 1;
-        } else {
-            node = { kind: 'term', text: body };
+            const group = or();
+            if (tokens[cursor.index++] !== ')') throw new SearchSyntaxError('unclosed group');
+            node = group;
+        } else node = { kind: 'term', text: body };
+        return negated ? { kind: 'not', child: node } : node;
+    };
+    const and = (): SearchNode => {
+        const children = [primary()];
+        while (cursor.index < tokens.length && tokens[cursor.index] !== ')' && tokens[cursor.index].toLowerCase() !== 'or') {
+            if (tokens[cursor.index].toLowerCase() === 'and') cursor.index++;
+            children.push(primary());
         }
-
-        if (!node) continue;
-        andParts.push(negated ? { kind: 'not', child: node } : node);
-    }
-
-    flushAnd();
-
-    if (orParts.length === 0) return null;
-    return orParts.length === 1 ? orParts[0] : { kind: 'or', children: orParts };
+        return children.length === 1 ? children[0] : { kind: 'and', children };
+    };
+    const or = (): SearchNode => {
+        const children = [and()];
+        while (tokens[cursor.index]?.toLowerCase() === 'or') { cursor.index++; children.push(and()); }
+        return children.length === 1 ? children[0] : { kind: 'or', children };
+    };
+    return tokens.length ? or() : null;
 }
 
 /**
@@ -127,7 +133,10 @@ function parseExpression(tokens: string[], cursor: { index: number }): SearchNod
  * every caller reads as "no filter".
  */
 export function parseSearchQuery(query: string): SearchNode | null {
-    return parseExpression(tokenizeSearch(query), { index: 0 });
+    const tokens = searchTokens(query, true); const cursor = { index: 0 };
+    const parsed = parseExpression(tokens, cursor);
+    if (cursor.index !== tokens.length) throw new SearchSyntaxError('unexpected closing group');
+    return parsed;
 }
 
 /**

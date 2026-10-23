@@ -29,6 +29,7 @@ import {
 import { filteredOrderLabel } from '../lib/i18n';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../lib/studyRepository';
+import { findInvalidFilteredSearch } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
 import DeckPickerModal from './DeckPickerModal';
 import SwipeDismissSheet from './SwipeDismissSheet';
@@ -122,12 +123,22 @@ export default function FilteredDeckOptionsModal({
     const validLimits = /^\d{1,5}$/.test(limit) && (!secondEnabled || /^\d{1,5}$/.test(limit2));
     const saveDisabled = !name.trim() || !search.trim() || !validLimits;
 
+    // Collection reads treat an unreadable search as matching nothing, so the learner is told here.
+    const rejectInvalidSearch = (searches: Array<string | undefined>): boolean => {
+        const invalid = findInvalidFilteredSearch(searches);
+        if (invalid === null) return false;
+        Keyboard.dismiss();
+        alert(t('anki.invalidSearchTitle'), t('anki.invalidSearchMessage', { search: invalid.trim() }));
+        return true;
+    };
+
     const saveAndRebuild = () => {
         const nextName = name.trim();
         if (nextName.includes('::')) {
             alert(t('common.error'), l('Filtrelenmiş deste başka bir destenin alt destesi olamaz.', 'A filtered deck cannot be a subdeck.'));
             return;
         }
+        if (rejectInvalidSearch([options.searchQuery, options.searchQuery2])) return;
 
         // Rebuilding first returns this deck's own cards home, so they count as matches.
         const matchCount = getFilteredDeckMatchCount(settings, options, deck.id);
@@ -160,6 +171,7 @@ export default function FilteredDeckOptionsModal({
 
     const showSearchInfo = (query: string) => {
         Keyboard.dismiss();
+        if (rejectInvalidSearch([query])) return;
         const matchCount = getFilteredDeckMatchCount(settings, {
             searchQuery: query.trim(),
             searchLimit: 9999,
@@ -175,6 +187,7 @@ export default function FilteredDeckOptionsModal({
     };
 
     const showExcluded = () => {
+        if (rejectInvalidSearch([search, ...(secondEnabled ? [search2] : [])])) return;
         const count = getFilteredDeckExcludedCount([search, ...(secondEnabled ? [search2] : [])]);
         alert(
             l(`${count} kart dahil edilemiyor`, `${count} cards are excluded`),

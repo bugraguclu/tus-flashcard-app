@@ -247,3 +247,21 @@ describe('setDueDateInterval', () => {
         })).toBe(0);
     });
 });
+// Independently derived Set Due Date/Reposition regressions:
+// https://docs.ankiweb.net/browsing.html#cards
+it('retains a new card position so Reset Card can restore it after Set Due Date', () => {
+    harness.cards.set(1, card(1, { due: 42, ankiData: '{"custom":"keep"}' }));
+    setSelectedDueDate([1], { minDays: 3, maxDays: 3, forceInterval: false }, settings);
+    expect(JSON.parse(harness.cards.get(1)!.ankiData!)).toMatchObject({ pos: 42, custom: 'keep' });
+});
+it('samples each due day independently across the whole requested range', () => {
+    for (const id of [1, 2, 3]) harness.cards.set(id, card(id));
+    setSelectedDueDate([1, 2, 3], { minDays: 2, maxDays: 4, forceInterval: false }, settings, () => 0.99);
+    expect([...harness.cards.values()].map(card => card.due)).toEqual(Array(3).fill(localDayNumber(Date.now(), 4) + 4));
+});
+it('repositions selected siblings together and shifts by the number of notes', () => {
+    harness.cards.set(1, card(1, { noteId: 10 })); harness.cards.set(2, card(2, { noteId: 10, ord: 1 }));
+    harness.cards.set(3, card(3, { noteId: 20, due: 10 }));
+    expect(repositionSelectedNewCards([1, 2], 5, 2, true)).toBe(2);
+    expect([...harness.cards.values()].map(card => card.due)).toEqual([5, 5, 12]);
+});

@@ -1,7 +1,8 @@
+import { CATALOG_LEARNER_DATA_KEY, emptyCatalogLearnerData } from './backupCatalogLearnerData';
+import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CardState, SessionStats, Card } from './types';
 import { dbGetSchemaVersion, dbIndexAllCards, getDB, initDB } from './db';
-import { setDbSetting } from './dbSettings';
 import {
     CATALOG_PROGRESS_KEY,
     encodeCatalogProgress,
@@ -84,9 +85,7 @@ export async function resetAllData(): Promise<void> {
 }
 
 // --- Export / Import ---
-const MAX_IMPORT_SIZE = 50 * 1024 * 1024;
-
- // 50 MB limit
+const MAX_IMPORT_SIZE = 512 * 1024 * 1024;
 
 /** Sanitize imported object to prevent prototype pollution */
 function sanitizeObject<T>(obj: T): T {
@@ -104,7 +103,7 @@ function sanitizeObject<T>(obj: T): T {
  * Full-collection snapshot, minus the purchased card pack.
  *
  * The pack's notes and cards are ~6.4 MB of the collection and can always be reinstalled from
- * the bundled package, so copying them into every weekly backup would waste tens of megabytes and
+ * the bundled package, so copying them into every backup would waste tens of megabytes and
  * would also spread paid content as plain text. What cannot be recreated — the learner's own
  * decks and notes, their review log, and their scheduling progress on catalog cards — is kept.
  */
@@ -114,6 +113,7 @@ export async function exportAllData(): Promise<string> {
 
     let schemaVersion = 0;
     let catalogProgress: CatalogProgress = {};
+    const catalogLearnerData = emptyCatalogLearnerData();
     let tables = {
         note_types: [] as any[],
         notes: [] as any[],
@@ -128,17 +128,27 @@ export async function exportAllData(): Promise<string> {
     try {
         const db = getDB();
 
+        catalogProgress = parseCatalogProgress(db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_PROGRESS_KEY)?.value);
+        const pendingRaw = db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', CATALOG_LEARNER_DATA_KEY)?.value;
+        if (pendingRaw) {
+            const pending = JSON.parse(pendingRaw);
+            Object.assign(catalogLearnerData.notes, pending.notes ?? {});
+            Object.assign(catalogLearnerData.cards, pending.cards ?? {});
+        }
         schemaVersion = dbGetSchemaVersion();
         const catalogNoteIds = new Set<number>();
         const notes = db.getAllSync<any>('SELECT * FROM notes ORDER BY id').filter((row) => {
             if (isCatalogPackRow(row.data)) {
                 catalogNoteIds.add(Number(row.id));
+                const note = JSON.parse(row.data);
+                catalogLearnerData.notes[note.guid || String(row.id)] = note.tags ?? [];
                 return false;
             }
             try {
                 const note = JSON.parse(row.data);
                 if (isProtectedCatalogGuid(note?.guid)) {
                     catalogNoteIds.add(Number(row.id));
+                    catalogLearnerData.notes[note.guid || String(row.id)] = note.tags ?? [];
                     return false;
                 }
             } catch { /* malformed rows handled elsewhere */ }
@@ -149,6 +159,7 @@ export async function exportAllData(): Promise<string> {
             try {
                 const card = JSON.parse(row.data);
                 if (hasStudyProgress(card)) catalogProgress[String(row.id)] = encodeCatalogProgress(card);
+                if (typeof card.ankiData === 'string') catalogLearnerData.cards[String(row.id)] = card.ankiData;
             } catch { /* an unreadable row simply carries no progress worth restoring */ }
             return false;
         });
@@ -166,10 +177,12 @@ export async function exportAllData(): Promise<string> {
         };
     } catch (e) {
         console.warn('[Storage] exportAllData DB access failed:', e);
-        // If DB is not ready, fallback to metadata-only export.
+        throw e;
     }
 
+    const validation = validateCanonicalBackupData({ canonical: true, tables });
     return JSON.stringify({
+        ...(!validation.valid ? { recoveryOnly: true, recoveryReason: validation.reason } : {}),
         version: 6,
         schema_version: schemaVersion,
         exportDate: new Date().toISOString(),
@@ -177,6 +190,7 @@ export async function exportAllData(): Promise<string> {
         settings,
         sessionStats,
         catalogProgress,
+        catalogLearnerData,
         tables,
     });
 }
@@ -295,6 +309,11 @@ function importCanonicalTables(data: any): void {
             db.runSync('INSERT INTO session_stats (date, data) VALUES (?, ?)', row.date, row.data);
         }
 
+        const restoredProgress = parseCatalogProgress(
+            typeof data.catalogProgress === 'object' && data.catalogProgress !== null ? JSON.stringify(data.catalogProgress) : null,
+        );
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CATALOG_LEARNER_DATA_KEY, JSON.stringify(data.catalogLearnerData ?? emptyCatalogLearnerData()));
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -329,7 +348,7 @@ function hasValidCanonicalTableShape(data: any): boolean {
 export async function importAllData(jsonString: string): Promise<boolean> {
     try {
         if (jsonString.length > MAX_IMPORT_SIZE) {
-            console.error(`Import: Dosya çok büyük (${(jsonString.length / 1024 / 1024).toFixed(1)} MB > 50 MB limit)`);
+            console.error(`Import: Dosya çok büyük (${(jsonString.length / 1024 / 1024).toFixed(1)} MB > 512 MiB limit)`);
             return false;
         }
 
@@ -349,6 +368,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
         if (isCanonicalImport(data)) {
             // Validate the complete container before touching settings or tables.
             // This keeps truncated/hand-edited files as a true no-op.
+            if (data.recoveryOnly === true) return false;
             const validation = validateCanonicalBackupData(data);
             if (!validation.valid || !hasValidCanonicalTableShape(data)) {
                 console.error(`Import: Geçersiz canonical yedek (${validation.valid ? 'shape' : validation.reason})`);
@@ -359,6 +379,15 @@ export async function importAllData(jsonString: string): Promise<boolean> {
                 return false;
             }
 
+            if (Number.isInteger(data.schema_version) && data.schema_version <= 9) {
+                for (const row of data.tables.decks) {
+                    const deck = JSON.parse(row.data);
+                    if (deck.isFiltered === true) {
+                        for (const key of ['searchOrder', 'searchOrder2']) if (deck[key] != null) deck[key] = ankiFilteredOrderFromLegacy(deck[key]);
+                        row.data = JSON.stringify(deck);
+                    }
+                }
+            }
             importCanonicalTables(data);
             if (data.settings) {
                 data.settings = validateSettings(data.settings);
@@ -367,16 +396,7 @@ export async function importAllData(jsonString: string): Promise<boolean> {
             if (data.sessionStats) {
                 await saveSessionStats(data.sessionStats as SessionStats);
             }
-            // The backup deliberately omits the purchased pack; hand its scheduling state to the
-            // installer, which re-applies it card by card the next time the pack is installed.
-            const restoredProgress = parseCatalogProgress(
-                typeof data.catalogProgress === 'object' && data.catalogProgress !== null
-                    ? JSON.stringify(data.catalogProgress)
-                    : null,
-            );
-            // Always replace the pending progress map; otherwise an empty/older
-            // backup could inherit progress left over from the collection it replaced.
-            setDbSetting(CATALOG_PROGRESS_KEY, JSON.stringify(restoredProgress));
+            // Catalog progress and overlays were persisted with the canonical table transaction.
             await clearLegacyCardStates();
             await saveCustomCards([]);
             return true;

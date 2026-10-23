@@ -367,9 +367,9 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
         reader.close();
     }
 
-    // Media only matters when the package contributed notes; a fully duplicate
-    // re-import must not rewrite stored files.
-    if (result.added > 0 || (result.updated ?? 0) > 0) {
+    // A duplicate re-import can repair missing media or add a missing card. The media store
+    // compares existing bytes and safely renames conflicts; note counts cannot gate recovery.
+    {
         const media = await importMediaFromZip(zip, true);
         result.mediaImported = media.imported;
         result.mediaSkipped = media.skipped;
@@ -386,7 +386,8 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
                 fileName: options.fileName,
                 noteCount: result.added,
                 cardCount: result.cardsImported ?? 0,
-                exactEligible: result.structurePreserved === true
+                exactEligible: options.withScheduling !== false && options.withDeckConfigs !== false
+                    && result.structurePreserved === true
                     && result.added === result.totalNotes
                     && (result.updated ?? 0) === 0
                     && (result.cardsImported ?? -1) === sourceCardCount

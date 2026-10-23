@@ -6,7 +6,7 @@ import * as Sharing from 'expo-sharing';
 import { BorderRadius, FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { alert } from '../lib/confirm';
 import { getLegacyFileSystem, shareOrDownloadFileWeb } from '../lib/files';
-import { buildAnkiExport, type AnkiExportFormat, type ExportCollectionSource } from '../lib/exportAnkiPackage';
+import { buildAnkiExport, type AnkiExportFormat, type ExportArtifact, type ExportCollectionSource } from '../lib/exportAnkiPackage';
 import { bytesToBase64 } from '../lib/mediaStore';
 import { useI18n } from '../hooks/useI18n';
 import { getDbSetting } from '../lib/storage';
@@ -36,6 +36,7 @@ export default function ExportScreen() {
     const backupExport = Boolean(backupName);
     const selectionExport = params.selection === 'browser';
     const [backupSource, setBackupSource] = useState<ExportCollectionSource | undefined>();
+    const [recoveryArtifact, setRecoveryArtifact] = useState<ExportArtifact | undefined>();
     const [sourceLoading, setSourceLoading] = useState(backupExport);
     const [sourceError, setSourceError] = useState<string | null>(null);
     const selectedCardIds = useMemo(() => {
@@ -102,10 +103,17 @@ export default function ExportScreen() {
         let cancelled = false;
         setSourceLoading(true);
         setSourceError(null);
+        setRecoveryArtifact(undefined);
         void readBackup(backupName)
-            .then((contents) => parseBackupExportSource(contents, backupName))
+            .then((contents) => {
+                if (JSON.parse(contents)?.recoveryOnly === true) {
+                    if (!cancelled) setRecoveryArtifact({ fileName: backupName, mimeType: 'application/json', text: contents });
+                    return undefined;
+                }
+                return parseBackupExportSource(contents, backupName);
+            })
             .then((source) => {
-                if (cancelled) return;
+                if (cancelled || !source) return;
                 setBackupSource(source);
                 const deckIds = source.decks
                     .filter((deck) => !deck.isFiltered && !isCatalogDeck(deck))
@@ -146,7 +154,7 @@ export default function ExportScreen() {
     }, [deckName, l]);
 
     const handleExport = async () => {
-        if (backupExport && !backupSource) {
+        if (backupExport && !backupSource && !recoveryArtifact) {
             alert(t('common.error'), sourceError ?? l('Yedek henüz hazırlanmadı.', 'The backup is not ready yet.'));
             return;
         }
@@ -154,7 +162,7 @@ export default function ExportScreen() {
             alert(t('common.error'), l('Dışa aktarılacak seçili kart bulunamadı.', 'No selected cards are available to export.'));
             return;
         }
-        if (!selectionExport && selectedDeckIds.size === 0) {
+        if (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0) {
             alert(t('common.error'), l('Dışa aktarılacak en az bir deste seçin.', 'Select at least one deck to export.'));
             return;
         }
@@ -164,7 +172,7 @@ export default function ExportScreen() {
         setBusy(true);
         setSummary(null);
         try {
-            const artifact = await buildAnkiExport(format, unchangedDeckScope ? deckName : undefined, includeMedia, selectedCardIds, {
+            const artifact = recoveryArtifact ?? await buildAnkiExport(format, unchangedDeckScope ? deckName : undefined, includeMedia, selectedCardIds, {
                 selectedDeckIds: selectionExport || format === 'colpkg' ? undefined : [...selectedDeckIds],
                 includeScheduling,
                 includeDeckConfigs,
@@ -237,6 +245,7 @@ export default function ExportScreen() {
                 {sourceLoading ? <ActivityIndicator style={styles.sourceLoader} color={colors.accent} /> : null}
                 {sourceError ? <Text style={styles.sourceError}>{sourceError}</Text> : null}
                 {!sourceLoading && !sourceError ? <>
+                {recoveryArtifact ? <Text style={styles.backupNoticeText}>{l('Bu kopya hasarlı satırları kurtarma için saklar. Ham JSON dosyasını paylaşabilirsiniz; doğrudan geri yüklenemez.', 'This copy preserves damaged rows for recovery. You can share the raw JSON file; it cannot be restored directly.')}</Text> : <>
                 {!selectionExport ? (
                     <DeckExportSelector
                         decks={exportableDecks}
@@ -316,14 +325,15 @@ export default function ExportScreen() {
                     </View>
                 )}
 
+                </>}
                 <View style={styles.actions}>
                     <TouchableOpacity
-                        style={[styles.actionButton, (!selectionExport && selectedDeckIds.size === 0) && styles.actionButtonDisabled]}
+                        style={[styles.actionButton, (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0) && styles.actionButtonDisabled]}
                         onPress={handleExport}
-                        disabled={busy || (!selectionExport && selectedDeckIds.size === 0)}
+                        disabled={busy || (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0)}
                         accessibilityRole="button"
                         accessibilityLabel={l('Dışa aktar', 'Export')}
-                        accessibilityState={{ disabled: busy || (!selectionExport && selectedDeckIds.size === 0), busy }}
+                        accessibilityState={{ disabled: busy || (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0), busy }}
                     >
                         {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.actionText}>{l('Dışa aktar', 'Export')}</Text>}
                     </TouchableOpacity>

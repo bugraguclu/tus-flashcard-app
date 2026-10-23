@@ -52,6 +52,7 @@ import {
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
 import { alert, confirm, choose } from '../../lib/confirm';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../../lib/studyRepository';
+import { findInvalidFilteredSearch } from '../../lib/searchValidation';
 import {
     useAppSettings,
     useCatalogStatus,
@@ -536,7 +537,17 @@ export default function DecksScreen() {
         searchOrder2: filterOrder2,
     }, rebuiltDeckId);
 
+    // Collection reads treat an unreadable search as matching nothing, so the learner is told here.
+    const rejectInvalidFilterSearch = (searches: Array<string | undefined>): boolean => {
+        const invalid = findInvalidFilteredSearch(searches);
+        if (invalid === null) return false;
+        Keyboard.dismiss();
+        alert(t('anki.invalidSearchTitle'), t('anki.invalidSearchMessage', { search: invalid.trim() }));
+        return true;
+    };
+
     const canBuildPendingFilteredDeck = (rebuiltDeckId?: number) => {
+        if (rejectInvalidFilterSearch([filterSearch, filterSecondEnabled ? filterSearch2 : undefined])) return false;
         if (filterAllowEmpty || getPendingFilteredDeckMatchCount(rebuiltDeckId) > 0) return true;
         alert(
             l('Eşleşen kart yok', 'No matching cards'),
@@ -1624,6 +1635,7 @@ export default function DecksScreen() {
         };
         const showSearchInfo = (search: string) => {
             Keyboard.dismiss();
+            if (rejectInvalidFilterSearch([search])) return;
             const matchCount = getFilteredDeckMatchCount(settings, {
                 searchQuery: search.trim(),
                 searchLimit: 9999,

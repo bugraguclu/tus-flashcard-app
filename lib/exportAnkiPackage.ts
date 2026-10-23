@@ -1,3 +1,4 @@
+import { withoutPackageSchedulingData } from './importApkgCardData';
 /** Anki-compatible package and plain-text export. Packages use Anki's schema-11
  * interchange database under the scheduler-v2 collection name understood by
  * current Anki, AnkiMobile and AnkiDroid. */
@@ -142,8 +143,8 @@ function scopedData(
             throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
         }
         const deckIds = new Set(allDecks.filter((deck) => selected.has(deck.id)).map((deck) => deck.id));
-        const scopedCards = cards.filter((card) => deckIds.has(card.deckId));
-        const noteIds = new Set(scopedCards.map((card) => card.noteId));
+        const noteIds = new Set(cards.filter((card) => deckIds.has(card.deckId)).map((card) => card.noteId));
+        const scopedCards = cards.filter((card) => noteIds.has(card.noteId));
         const exportedDeckIds = new Set(scopedCards.map((card) => card.deckId));
         return {
             notes: notes.filter((note) => noteIds.has(note.id)),
@@ -204,6 +205,8 @@ function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: 
         // The deck's own desired retention is written from the deck below, never from a stale copy.
         const raw: Record<string, unknown> = { ...(deck.ankiRaw ?? {}) };
         delete raw.desiredRetention;
+        delete raw.newLimit;
+        delete raw.reviewLimit;
         delete raw.desiredRetentionExact;
         map[String(deck.id)] = {
             ...raw,
@@ -211,6 +214,7 @@ function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: 
             ...(includeDeckConfigs && !deck.isFiltered && deck.desiredRetention !== undefined
                 ? { desiredRetention: Math.round(deck.desiredRetention * 100) }
                 : {}),
+            ...(includeDeckConfigs && !deck.isFiltered ? { newLimit: deck.newLimit, reviewLimit: deck.reviewLimit } : {}),
             id: deck.id, name: deck.name, mod: deck.mod, usn: deck.usn ?? -1, desc: deck.description || '',
             dyn: exportsAsFiltered ? 1 : 0,
             collapsed: includeScheduling ? deck.collapsed : false,
@@ -405,7 +409,7 @@ function ankiDue(card: AnkiCard, collectionDay: number): number {
     if (card.queue === 1 || (card.queue < 0 && (card.type === 1 || card.type === 3) && card.due >= 1_000_000_000)) {
         return Math.floor(card.due / 1000);
     }
-    if (card.queue === 2 || card.queue === 3 || card.type === 2 || card.type === 3) return Math.max(0, card.due - collectionDay);
+    if (card.queue === 2 || card.queue === 3 || card.type === 2 || card.type === 3 || card.type === 1) return card.due - collectionDay;
     return card.due;
 }
 
@@ -446,7 +450,8 @@ function returnCardsToHomeDeck(cards: AnkiCard[], decks: Deck[]): AnkiCard[] {
 
 function ankiOriginalDue(card: AnkiCard, collectionDay: number): number {
     if (!card.odue) return 0;
-    return card.type === 2 || card.type === 3 ? Math.max(0, card.odue - collectionDay) : card.odue;
+    if ((card.type === 1 || card.type === 3) && card.odue >= 1_000_000_000) return Math.floor(card.odue / 1000);
+    return card.type === 1 || card.type === 2 || card.type === 3 ? card.odue - collectionDay : card.odue;
 }
 
 function collectionCreationSeconds(collectionDay: number, rolloverHour: number): number {
@@ -488,6 +493,7 @@ async function buildPackage(
             odid: 0,
             flags: 0 as const,
             lastReview: 0,
+            ankiData: withoutPackageSchedulingData(card.ankiData),
         }));
     const decks = scoped.decks;
     const exportedCards = returnCardsToHomeDeck(cards, decks);

@@ -265,3 +265,8 @@ export function parseDelimited(text: string, options: { delimiter?: string } = {
 
     return { rows, delimiter, metadata, commentLines };
 }
+
+/** Anki preselects Allow HTML when a preview field contains a tag. Explicit choices win. */
+export function delimitedContainsHtml(rows: readonly (readonly string[])[]): boolean {
+    return rows.slice(0, 25).some(row => row.some(value => /<\/?[a-z][^>]*>/i.test(value)));
+}

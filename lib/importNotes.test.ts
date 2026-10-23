@@ -194,13 +194,13 @@ describe('importDelimitedNotes', () => {
         createNoteMock.mockImplementationOnce(() => {
             throw new Error('boom');
         });
-        expect(() => importDelimitedNotes('#deck:Imported\nA,B', { noteType: NT, deckId: 1 })).toThrow('boom');
+        expect(() => importDelimitedNotes('#deck:Imported\nA,B', { noteType: NT, deckId: 1, useFileDefaults: true })).toThrow('boom');
         expect(h.store.createdDecks).toEqual(['Imported']);
         expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'CREATE DECK:Imported', 'ROLLBACK;']);
     });
 
     it('commits directive deck creation and note writes together', () => {
-        const result = importDelimitedNotes('#deck:Imported\nA,B', { noteType: NT, deckId: 1 });
+        const result = importDelimitedNotes('#deck:Imported\nA,B', { noteType: NT, deckId: 1, useFileDefaults: true });
         expect(result.added).toBe(1);
         expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'CREATE DECK:Imported', 'COMMIT;']);
         expect(createNoteMock.mock.calls[0][2]).toBe(99);

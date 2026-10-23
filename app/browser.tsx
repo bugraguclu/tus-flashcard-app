@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
-import { compileCardMatcher } from '../lib/cardSearchMatch';
+import { SearchSyntaxError } from '../lib/searchQuery';
 import { localDayNumber, nextRolloverMs } from '../lib/ankiState';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import type { StudyCard } from '../lib/types';
@@ -279,16 +279,6 @@ export default function BrowserScreen() {
     const scopeHasCards = browserSnapshot?.scopeHasCards ?? false;
     const visibleAllCards = allCards;
     const deckById = useMemo(() => new Map(allDecks.map((deck) => [deck.id, deck])), [allDecks]);
-    // Anki's search language, compiled once per query (lib/cardSearchMatch.ts).
-    const pageMatcher = useMemo(() => {
-        const nowMs = Date.now();
-        return compileCardMatcher(searchQuery.trim(), {
-            today: localDayNumber(nowMs, settings.dayRolloverHour),
-            nowMs,
-            learnAheadMinutes: settings.learnAheadMinutes,
-            dayCutoffMs: nextRolloverMs(nowMs, settings.dayRolloverHour) - 86_400_000,
-        });
-    }, [searchQuery, settings.dayRolloverHour, settings.learnAheadMinutes]);
     const tagCollectionScope = useMemo(() => ({
         deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
         cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
@@ -358,7 +348,7 @@ export default function BrowserScreen() {
         pageGenerationRef.current.cancel();
         pageLoadInProgressRef.current = false;
         setLoadingMore(false);
-        if (!browserSnapshot) return;
+        if (loading || !browserSnapshot) return;
         loadedCountRef.current = browserSnapshot.cards.length;
         totalCardCountRef.current = browserSnapshot.totalCardCount;
         setAllCards(browserSnapshot.cards);
@@ -369,11 +359,15 @@ export default function BrowserScreen() {
             && browserSnapshot.cards.length > 0,
         );
         setLoadingError(null);
-    }, [browserSnapshot, browserSnapshotKey]);
+    }, [browserSnapshot, browserSnapshotKey, loading]);
 
     useEffect(() => {
         if (!browserSnapshotError) return;
-        setLoadingError(userFacingErrorMessage(
+        setAllCards([]);
+        setTotalCardCount(0);
+        setHasMoreCards(false);
+        setSelectedCardIds(new Set());
+        setLoadingError(browserSnapshotError instanceof SearchSyntaxError ? l('Geçersiz arama. Terimleri, tırnakları ve parantezleri kontrol edin.', 'Invalid search. Check the terms, quotes and parentheses.') : userFacingErrorMessage(
             browserSnapshotError,
             l('Kartlar yüklenemedi. Lütfen tekrar deneyin.', 'Cards could not be loaded. Please try again.'),
         ));
@@ -505,7 +499,7 @@ export default function BrowserScreen() {
     }, [rawQuery, handleSearch]);
 
     const filteredCards = useMemo(() => {
-        const query = searchQuery.trim();
+        if (loading || browserSnapshotError) return [];
         let cards = visibleAllCards;
 
         // Notes-mode rows are already the authoritative, deduplicated database result. A note
@@ -547,30 +541,8 @@ export default function BrowserScreen() {
             cards = cards.filter((card) => selectedFlags.has(((card.rawCard?.flags ?? 0) & 0b111) as CardFlag));
         }
 
-        if (query && pageMatcher) {
-            // The authoritative result is the id list the database search produced; this pass only
-            // keeps an already-loaded page from contradicting it while a new search is in flight.
-            // Terms this context cannot answer (rated:, introduced:) pass through untouched.
-            cards = cards.filter((card) => pageMatcher({
-                cardId: card.cardId,
-                noteId: card.noteId,
-                deckName: deckById.get(card.deckId)?.name ?? '',
-                text: [card.question, card.answer, card.topic].join(' '),
-                tags: noteTagsById.get(card.noteId) ?? [],
-                templateOrd: card.templateOrd,
-                queue: card.rawCard?.queue ?? 0,
-                type: card.rawCard?.type ?? 0,
-                due: card.rawCard?.due ?? 0,
-                ivl: card.rawCard?.ivl ?? 0,
-                factor: card.rawCard?.factor ?? 0,
-                reps: card.rawCard?.reps ?? 0,
-                lapses: card.rawCard?.lapses ?? 0,
-                flags: card.rawCard?.flags ?? 0,
-            }));
-        }
-
         return cards;
-    }, [visibleAllCards, tableMode, filteredScopeCardIds, scopedDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery, pageMatcher, noteTagsById, deckById]);
+    }, [visibleAllCards, tableMode, filteredScopeCardIds, scopedDeckIds, markedOnly, suspendedOnly, tagFilters, flagFilters, loading, browserSnapshotError, noteTagsById, deckById]);
 
     useEffect(() => {
         if (loading || cardsSnapshotKey !== browserSnapshotKey) return;

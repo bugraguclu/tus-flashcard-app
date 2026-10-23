@@ -191,6 +191,8 @@ This remains a virtual model: local cards retain their home `did` and do not use
 
 **Gather order:** every order but random is computed in JS from Anki's own keys, including the retrievability pair and relative overdueness, which Anki takes from registered SQL functions, and the `fnvhash(c.id, c.mod)` tiebreak (`lib/filteredDeckQueue.ts`, `lib/ankiSortKeys.ts`). With FSRS off the retrievability pair keeps only the tiebreak, as upstream. Checked against a filtered deck Anki 26.05 built for each order: the same cards in the same order (`lib/ankiSortKeys.test.ts`).
 
+**Invalid searches:** the filtered-deck, Custom Study and Browse-to-filter dialogs check a search with the strict parser before saving it and name the search they refuse, as Anki refuses to build from a search it cannot parse. A search already saved before the parser became strict is not migrated: every collection read (deck list counts, study queue, rebuild, excluded count) treats it as matching no card instead of failing, so one such deck cannot blank the deck list or stop the reviewer (`lib/filteredSearchSafety.test.ts`). The browser still reports the error.
+
 **Next compatibility gate:** For a new card, the due and relative-overdueness orders read the queue position as a day number. Anki counts those days from the collection's creation and this app from 1970, so a new card whose position is beyond the collection's age in days is gathered first here and last in Anki. A filtered deck is never written to an exported package and its cards return to their home deck; upstream instead exports it as filtered when every original deck is present, and otherwise converts it to a regular deck keeping the cards inside it
 
 ## Custom study dialog
@@ -272,13 +274,17 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## Browser, card/note table modes, tags, flags, marks, suspend/bury, reposition
 
+Browser operations retain the original new-card position through Set Due Date, sample due ranges independently and reposition selected siblings by note rather than assigning each sibling a separate position (`lib/browserSelection.test.ts`).
+
+`lib/collectionCardSearch.ts` is the shared evaluator for browser and filtered SQL searches; exported SQL helper signatures remain unchanged. Plain terms search substrings in every stored note field, including fields whose note-type definition is incomplete, excluding tags/deck names/serialized metadata; ASCII case folding is default and `nc:` opts into accent folding. Unicode hierarchical tag/deck names are compared in JS, including tag-picker filters on SQLite without ICU. Invalid complete structured terms, regexes, quotes and groups throw `SearchSyntaxError`; picker tokenization remains tolerant of unfinished drafts; the browser shows an error and clears stale cards/selection. `lib/searchParitySafety.test.ts` compares both consumers. The evaluator currently scans collection rows and materializes matching IDs using `json_each(?)`. The scan reads card columns only: each note type is read once per search, notes once each and only when a term reads note content, the card blob only for `prop:s/d/r`, and the browser's marked/state/tag filters share one pass (`lib/collectionCardSearch.test.ts` pins identical results against the full-row evaluator). Indexed/streaming evaluation for very large collections is a remaining performance gate.
+
 **Status:** Implemented subset
 
 **User journey regression (2026-10-21):** The browser header counts rows matching the active text search, deck and other filters, using the same result total as pagination. Web checkbox/radio controls expose explicit `aria-checked` values alongside the existing native accessibility state; the multi-flag group reports `mixed` when partially selected. Named production-browser checks and scope limits are recorded in [USER_JOURNEY_FIXES.md](USER_JOURNEY_FIXES.md). These changes do not expand the supported search grammar or claim native VoiceOver verification.
 
-**Evidence:** In-place searchable deck scope picker with inline create-and-select, scoped tag and multi-flag filters, optional safe audio-filename projection, Notes-mode first-card and aggregate-row semantics, browser/search/table-mode/selection tests. A row out of the queue is tinted rather than faded, as Anki does it: suspended rows take a warm tint and buried rows a neutral one, the text keeps its full contrast, and a selected row still reads as selected because the selection style is applied last. The page already on screen is re-checked with a lighter context than the database search had, so a term that context cannot read (`added:`, `edited:`, `rated:`, `note:`, FSRS `prop:`) is left undecided and stays so under `-`: a negated term no longer empties a page the database search filled (`lib/cardSearchMatch.test.ts`)
+**Evidence:** In-place searchable deck scope picker with inline create-and-select, scoped tag and multi-flag filters, optional safe audio-filename projection, Notes-mode first-card and aggregate-row semantics, browser/search/table-mode/selection tests. A row out of the queue is tinted rather than faded, as Anki does it: suspended rows take a warm tint and buried rows a neutral one, the text keeps its full contrast, and a selected row still reads as selected because the selection style is applied last. Search results are authoritative identifier lists from the shared evaluator. Pending or invalid queries hide stale rows and clear failed-search selections; the screen no longer re-filters a loaded page using an incomplete projection of its note fields. Partial-context library predicates still leave unavailable metadata undecided (`lib/cardSearchMatch.test.ts`).
 
-**Next compatibility gate:** Expand full Anki search grammar and flag naming. Notes mode shows no suspend or bury tint, and should not grow one: upstream decides row colour in `rslib/src/browser_table.rs` `get_row_color`, which in notes mode returns only Marked or Default and reads a card's queue solely in cards mode. Adding a tint there would be a divergence, not a fix
+**Next compatibility gate:** Expand remaining Anki search grammar and flag naming; profile the shared evaluator on large iPhone collections. Notes mode shows no suspend or bury tint, and should not grow one: upstream decides row colour in `rslib/src/browser_table.rs` `get_row_color`, which in notes mode returns only Marked or Default and reads a card's queue solely in cards mode. Adding a tint there would be a divergence, not a fix
 
 ## Empty Cards maintenance
 
@@ -293,6 +299,10 @@ Keep Notes defaults to on: if every card of a note is selected, the lowest-ordin
 **Next compatibility gate:** Add a named iPhone smoke test for VoiceOver, scan failure and destructive deletion
 
 ## `.apkg` import/export with media and scheduling
+
+Author updates match note types by stable id; stable field/template ids distinguish a rename from a schema change. Duplicated schemas retain `originalId` and are reused across author packages. Conflicting GUID notes and all their incoming cards are skipped and logged separately. Equal imported presets are reused; an updated deck using source preset 1, or an import without presets, keeps its local preset and limit overrides. Per-deck new/review overrides, including zero, are read from legacy JSON and modern optional proto fields and written back into packages. Media-name fixups preserve the source note modification stamp so later if-newer author updates are still eligible. All media extensions are preserved as bytes, including SVG image masks; renderer CSP/sanitization and navigation restrictions continue to control execution and opening. `lib/ankiTransferSafety.test.ts`, Anki fixture imports and card-content security tests cover these paths.
+
+Package update regressions (`lib/ankiTransferSafety.test.ts`) cover unchanged GUID matches with missing cards, schema conflicts, media repair on a duplicate import, and indexing before COMMIT. Scheduled exports and re-imports preserve negative/zero day offsets and active/inactive learning due units, including original day/timestamp due values. Progress-free imports retain source new-note order and shared sibling positions, strip remembered scheduling data while preserving opaque add-on keys, and disable pristine-original passthrough. Deck-tree package scope selects notes and retains every sibling card, including siblings in another deck (`lib/ankiTransferSafety.test.ts`).
 
 **Status:** Implemented subset with bounded archive and SQLite validation
 
@@ -349,13 +359,17 @@ large-package smoke
 
 ## `.colpkg` replacement
 
-**Status:** Implemented with explicit destructive confirmation and pre-operation safety backup
+**Status:** Implemented with explicit destructive confirmation and a restorable pre-operation safety backup
 
-**Evidence:** import confirmation and backup tests
+**Evidence:** import confirmation and backup tests. Replacement is not a way out of a damaged collection, so it runs only after a backup that can itself be restored: when a damaged row would leave only a recovery copy, the import stops before reading the package, changes nothing and asks the learner to run Repair first (`lib/packageImportWorkflow.ts`, `lib/destructiveBackupSafety.test.ts`). A merge `.apkg` import may still proceed on a recovery copy.
 
 **Next compatibility gate:** Add real-device large-package smoke
 
 ## CSV/TSV/TXT import/export
+
+Explicit picker note-type/deck choices take precedence over global file headers; `useFileDefaults` opts a non-UI caller into header defaults. Per-row metadata columns remain supported. The initial Allow HTML choice detects tags in the first 25 preview rows unless a header or caller overrides it (`lib/ankiTransferSafety.test.ts`).
+
+Updates preserve unmapped fields and existing tags when no tag column was supplied; an explicitly mapped empty cell clears that field or tag set. Preview and write use the same merge rules. Text exports quote `#` so comment-like GUIDs and first fields survive re-import (`lib/ankiTransferSafety.test.ts`).
 
 **Status:** Implemented; Anki's own option set (separator with override, Allow HTML in fields, note type, deck, Existing notes, Match scope, Tag all notes, Tag updated notes, per-column field mapping) and its per-note outcome buckets. Fields are escaped exactly as Anki's importer does when HTML is off (minimal entity set plus newline → `<br>`), an unchanged match is reported as "already present" instead of being rewritten, a `#notetype column` naming an unknown type skips the row rather than filing it elsewhere, and a plain-text export with HTML excluded reduces fields to text so the `#html:false` header it writes is true. Update preview/confirmation and backup protect matching notes, and deck directives share the note-write transaction
 
@@ -375,7 +389,7 @@ on the import screen; read-only tabs cannot start the operation. `lib/webDb.test
 a text import exists in the acknowledged snapshot, and `lib/collectionWrite.test.ts` verifies the
 async operation/commit boundary shared by both formats.
 
-**Next compatibility gate:** "Merge note types" is not offered: a schema-conflicting note type is imported as a separate copy instead, so no inert control is shown. Re-importing the same package does not pile up copies of it — a note type is looked up by source package plus source id, so the second import resolves to the one the first created; it is a different export of the same deck that produces a second note type, which is what Anki's non-merge mode does too. Add an iPhone smoke test for the mapping table and the log
+**Next compatibility gate:** "Merge note types" is not offered: schema conflicts create a reusable `originalId` copy. Existing conflicting GUID notes are skipped and reported as conflicts; new compatible notes can use that copy. Add an iPhone smoke test for the mapping table and the log.
 
 ## iOS Files “Open in” hand-off
 
@@ -387,9 +401,9 @@ async operation/commit boundary shared by both formats.
 
 ## Local automatic/manual backup and restore
 
-**Status:** Implemented with strict row validation
+**Status:** Implemented with 30-minute default, layered retention and strict restore validation
 
-**Evidence:** backup-validation, backup-source export, backup and storage round-trip tests; Share opens the canonical export workflow over the selected snapshot
+**Evidence:** `lib/backupSafety.test.ts`, backup-validation, backup-source export and storage round-trip tests. Settings retain chosen intervals and copy counts; the formerly forced weekly policy migrates to 30 minutes with 12 daily, 10 weekly and 9 monthly buckets. All snapshots from today/yesterday survive rotation; named manual and pre-restore copies rotate separately. Bad raw rows are preserved in a marked recovery-only JSON snapshot, allowing maintenance/safety backups to proceed; such a file is shared as raw JSON through the canonical export screen and is rejected for direct restore. Only the operations that are a way out of the damage run on such a copy: Repair, and restoring a chosen backup (its pre-restore copy). Reset and collection replacement require a restorable pre-operation backup and otherwise stop, unchanged, with a request to run Repair first; a manual backup that could only be a recovery copy says so instead of reporting a restorable backup, and Backups checks a file before offering to restore it (`lib/destructiveBackupSafety.test.ts`). Read errors abort without creating an empty snapshot. The former 50 MiB JSON ceiling is now 512 MiB; snapshots still serialize synchronously in a quiet study window, so this is not a streaming/raw-SQLite implementation. Backups carry catalog tags and opaque card data separately from protected note fields; the Backups screen applies that overlay after entitlement-controlled content reconciliation, and retries a pending overlay when reopened. Catalog revlog remains in the snapshot. Pending progress/overlays are preserved when backing up before content reinstall; partially installed content clears only applied overlay entries. Progress and overlay settings commit atomically with restored tables, including rollback on a settings write error. Protected-content restore rejection happens before taking a live snapshot or calling the importer. A rejected canonical restore never invokes a second import of the live snapshot; the pre-operation safety copy remains available. Only legacy formats retain the compensating restore path. Schema-9 filtered-order values are migrated before insertion into a current database.
 
 **Next compatibility gate:** Verify export options, Files share destination and plaintext warning per release
 
@@ -431,11 +445,13 @@ Readable cardless notes are rescued by creating card 1 in the recovery deck; the
 
 ## Statistics and card info
 
+`lib/statsAuditSafety.test.ts` covers intraday/original due projection, the inclusive upper horizon, backlog older than a year, integer daily load, exclusion of cram/manual/invalid ratings from Answer Buttons, inactive review/relearning intervals and seven distinct Card Counts categories. Added count fields are optional at the API boundary so existing empty/loading snapshots remain valid; the screen renders absent initial values as zero. All-history Future Due has no ten-year cap; chart bucketing remains bounded while preserving totals. These calculations follow independently derived graph behavior; the current manual describes some older graph groupings, so the source registry also names the shared-core graph references.
+
 **Status:** Implemented subset
 
 **Evidence:** Anki-aligned 12-month default; Today, Future Due, Reviews/Review Time, Answer Buttons, Hourly Breakdown, Review Intervals, Card Counts and Added views, and per-deck progress split by card type. Reviews, Hourly Breakdown and Added read per-day and per-hour aggregates (`lib/ankiStats.ts`) and bucket them into calendar days, weeks and months (`lib/statsSeries.ts`); Hourly Breakdown leaves filtered-deck answers out, as Anki does. A bar of the Added graph opens the card browser on the cards added on its days with the `added:N -added:M` search Anki's graph links to, in the deck those cards share or else in the screen's scope; `lib/statsSeries.test.ts` checks that the search finds exactly the cards the bar counted. Pinned chart readouts, accessible summaries, stats presentation/axis/review logger tests
 
-**Presentation:** Statistics uses a plain surface with section dividers and full-contrast metric labels. Repeated descriptions and interaction instructions are available from the header’s Info sheet, including the period-independent Today/Card Counts semantics and the Review Intervals upper bound. Chart values, default period, scope filtering and calculations are unchanged. Classic chart readouts handle browser MouseEvent coordinates as well as native touch coordinates (`lib/chartPressPoint.test.ts`); a browser click no longer produces a NaN bucket. The named [Statistics simplicity smoke](STATS_UI_VERIFICATION.md) records visual and interaction checks.
+**Presentation:** Statistics uses a plain surface with section dividers and full-contrast metric labels. Repeated descriptions and interaction instructions are available from the header’s Info sheet, including the period-independent Today/Card Counts semantics and the Review Intervals upper bound. The audit fixes above change calculations and Card Counts categories; the default period and local scope controls are preserved. Classic chart readouts handle browser MouseEvent coordinates as well as native touch coordinates (`lib/chartPressPoint.test.ts`); a browser click no longer produces a NaN bucket. The named [Statistics simplicity smoke](STATS_UI_VERIFICATION.md) records visual and interaction checks.
 
 **Next compatibility gate:** Add Calendar, True Retention and FSRS-specific views with reference fixtures before a full-parity claim; the other graphs do not yet open the browser searches Anki's do
 

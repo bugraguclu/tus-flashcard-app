@@ -1,3 +1,4 @@
+import { applyPendingCatalogLearnerData } from '../lib/backupCatalogLearnerData';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
@@ -20,9 +21,11 @@ import {
     deleteBackup,
     displayBackupName,
     getDefaultBackupFileName,
+    importBackupContents,
     isPreRestoreBackup,
     listBackups,
-    restoreBackup,
+    readBackup,
+    validateBackupContents,
     type BackupInfo,
 } from '../lib/backup';
 import { useI18n } from '../hooks/useI18n';
@@ -63,6 +66,7 @@ export default function BackupsScreen() {
         setLoading(true);
         setLoadError(false);
         try {
+            applyPendingCatalogLearnerData();
             setBackups(await listBackups());
         } catch (e) {
             console.warn('[Backups] list failed:', e);
@@ -93,12 +97,18 @@ export default function BackupsScreen() {
                 // automatic naming behavior. A changed value is normalized and namespaced by
                 // the backup layer before it reaches the filesystem.
                 const name = backupName.trim() === defaultBackupName ? undefined : backupName;
-                await createBackupNow({}, { name });
+                const { restorable } = await createBackupNow({}, { name });
                 await reload();
                 const nextDefaultName = getDefaultBackupFileName();
                 setDefaultBackupName(nextDefaultName);
                 setBackupName(nextDefaultName);
-                alert(t('common.completed'), l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'));
+                // A damaged row makes the snapshot a recovery copy, which is never offered as restorable.
+                alert(
+                    restorable ? t('common.completed') : t('backup.notRestorableTitle'),
+                    restorable
+                        ? l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.')
+                        : t('backup.recoveryCopySaved'),
+                );
             } catch (e) {
                 console.warn('[Backups] manual backup failed:', e);
                 const message = e instanceof BackupNameError && e.code === 'duplicate'
@@ -116,33 +126,57 @@ export default function BackupsScreen() {
             }
         });
 
+    const recoveryCopyMessage = () => l('Bu kurtarma kopyası hasarlı satırlar içerir. Paylaş ile ham dosyayı dışa aktarın; doğrudan geri yüklenemez.', 'This recovery copy contains damaged rows. Use Share to export its raw file; it cannot be restored directly.');
+
     const handleRestore = (name: string) => {
         const readOnly = readOnlyTabMessage();
         if (readOnly) {
             alert(t('common.error'), readOnly);
             return;
         }
+        // Read and check the file before offering to replace the collection with it, so a recovery
+        // copy is never presented as a restore point.
+        void withBusy(async () => {
+            let contents: string;
+            try {
+                contents = await readBackup(name);
+            } catch (e) {
+                console.warn('[Backups] read failed:', e);
+                alert(t('common.error'), l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
+                return;
+            }
+            const validation = validateBackupContents(contents);
+            if (!validation.valid) {
+                alert(t('common.error'), validation.reason === 'recovery-only' ? recoveryCopyMessage() : l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
+                return;
+            }
+            confirmRestore(contents);
+        });
+    };
+
+    const confirmRestore = (contents: string) => {
         confirm(
             l('Yedeği geri yükle', 'Restore Backup'),
             l('Bu yedek mevcut koleksiyonun yerini alacak. Geri yüklemeden önce mevcut durumun otomatik bir kopyası oluşturulur.', 'This backup will replace the current collection. A copy of the current state is created automatically before restoring.'),
             () =>
                 void withBusy(async () => {
                     try {
-                        const result = await restoreBackup(name);
+                        const result = await importBackupContents(contents);
                         // Backups leave the purchased pack out, so a restore has to put it back:
                         // this reinstalls it for an entitled learner and re-applies their progress.
                         await reload();
                         if (result.ok) {
                             await refreshCatalogAccess();
+                            applyPendingCatalogLearnerData();
                             refreshData();
                             bumpDataVersion();
                             alert(t('common.completed'), l('Yedek geri yüklendi.', 'Backup restored.'));
                         } else {
-                            alert(t('common.error'), l('Yedek geri yüklenemedi. Mevcut veriler değişmedi.', 'Could not restore the backup. Existing data was not changed.'));
+                            alert(t('common.error'), l('Yedek geri yüklenemedi. İşlem öncesi güvenlik kopyası korundu.', 'Could not restore the backup. The safety copy from before the operation was retained.'));
                         }
                     } catch (e) {
                         console.warn('[Backups] restore failed:', e);
-                        alert(t('common.error'), l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
+                        alert(t('common.error'), e instanceof Error && e.message.includes('recovery-only') ? recoveryCopyMessage() : l('Yedek geri yüklenemedi.', 'Could not restore the backup.'));
                     }
                 }),
             { destructive: true },

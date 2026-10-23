@@ -9,7 +9,7 @@ import { getDB } from './db';
 import { checksumField, type Note, type NoteType } from './models';
 import { firstFieldChecksums } from './noteChecksum';
 import { createNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
-import { parseDelimited } from './importDelimited';
+import { delimitedContainsHtml, parseDelimited } from './importDelimited';
 import { createDeck, getAllDecks } from './deckManager';
 import { assertNoProtectedCatalogGuids } from './catalogProtection';
 import { ImportLogBuilder, type ImportLog } from './importLog';
@@ -53,6 +53,8 @@ export interface ImportOptions {
     /** Anki defaults to updating a same-first-field note in place. */
     duplicateResolution?: DuplicateResolution;
     matchScope?: MatchScope;
+    /** Resolve global #deck/#notetype headers only when no picker choice was made. */
+    useFileDefaults?: boolean;
     /** Overrides the file's #html header. */
     isHtml?: boolean;
     /** Backward-compatible alias for duplicateResolution='duplicate'. */
@@ -168,6 +170,14 @@ function fieldsForRow(row: string[], noteType: NoteType, fieldColumns?: number[]
     return fields;
 }
 
+/** Unmapped fields are absent input; a mapped empty cell is an explicit replacement. */
+function mergeExistingRow(existing: Note, fields: string[], tags: string[], fieldColumns: number[] | undefined, replaceTags: boolean): void {
+    for (let index = 0; index < fields.length; index++) {
+        if (fieldColumns && !(fieldColumns[index] >= 0)) fields[index] = existing.fields[index] ?? '';
+    }
+    if (!replaceTags) tags.splice(0, tags.length, ...uniqueTags([...(existing.tags ?? []), ...tags]));
+}
+
 /** Writes rows while the caller owns the active transaction. */
 function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts {
     const {
@@ -244,6 +254,7 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
+            mergeExistingRow(existing, fields, finalTags, fieldColumns, Boolean(tagsColumn || rowTags));
             if (sameFieldsAndTags(existing, fields, finalTags)) {
                 // An unchanged match is "already present" in Anki's log, not an update: rewriting
                 // it would bump `mod` and make a re-import look like it changed the collection.
@@ -344,7 +355,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
     // A `#notetype:` header only preselects the picker in Anki's import screen, so an unknown name
     // falls back to whatever the learner chose there. A `#notetype column` names a type per row,
     // and Anki skips a row naming one the collection lacks instead of guessing another type.
-    const globalNoteType = findNoteType(parsed.metadata.notetype) ?? options.noteType;
+    const globalNoteType = options.useFileDefaults ? findNoteType(parsed.metadata.notetype) ?? options.noteType : options.noteType;
     const rowNoteTypes = notetypeColumn
         ? parsed.rows.map((row) => {
             const raw = row[notetypeColumn - 1]?.trim();
@@ -363,7 +374,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
 
     // Fields are rendered as HTML by the reviewer. Escape literal markup when Anki's
     // "Allow HTML" setting/header is off, so '<b>' remains visible text.
-    const isHtml = options.isHtml ?? parsed.metadata.html ?? false;
+    const isHtml = options.isHtml ?? parsed.metadata.html ?? delimitedContainsHtml(parsed.rows);
     const specialColumns = new Set([guidColumn, tagsColumn, deckColumn, notetypeColumn]
         .filter((column): column is number => Boolean(column))
         .map((column) => column - 1));
@@ -375,7 +386,7 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
         rows,
         delimiter: parsed.delimiter,
         totalRows: parsed.rows.length,
-        metadata: parsed.metadata,
+        metadata: { ...parsed.metadata, deck: options.useFileDefaults ? parsed.metadata.deck : undefined },
         noteType: globalNoteType,
         rowNoteTypes,
         fieldColumns,
@@ -484,6 +495,7 @@ function previewPreparedRows(
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
+            mergeExistingRow(existing, fields, finalTags, prepared.fieldColumns, Boolean(prepared.tagsColumn));
             if (sameFieldsAndTags(existing, fields, finalTags)) {
                 counts.duplicates++;
                 log.record('duplicate', fields, existing.id);

@@ -210,13 +210,13 @@ describe('Anki graphs', () => {
         expect(beforeToday).toBe(1);
     });
 
-    it('gives Future Due one bar per day of a week-long range', () => {
+    it('includes today through day seven in a week-long Future Due range', () => {
         addDeck(1, 'Dinamik');
         addCard(1, 1, { type: 2, queue: 2, due: localDayNumber(Date.now(), ROLLOVER) + 1, ivl: 10 });
 
         const range = resolveStatsDateRange('week', new Date(), new Date(), ROLLOVER);
         const stats = getAnkiStatsSnapshot('Dinamik', range, ROLLOVER, 'tr-TR');
-        expect(stats.futureDue).toHaveLength(7);
+        expect(stats.futureDue).toHaveLength(8);
         expect(stats.futureDue[1].values).toEqual([1, 0]);
     });
 

@@ -1,3 +1,4 @@
+import { DEFAULT_BACKUP_POLICY, normalizeBackupPolicy } from './backupPolicy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     DEFAULT_FSRS_PARAMETERS,
@@ -122,10 +123,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     showAnswerLongPressMs: 0,
     answerDoubleTapMs: 200,
     autoBackupEnabled: true,
-    backupIntervalMinutes: 10080,
-    backupDailyCopies: 0,
-    backupWeeklyCopies: 7,
-    backupMonthlyCopies: 0,
+    ...DEFAULT_BACKUP_POLICY,
     studyNotificationsEnabled: true,
     studyNotificationThreshold: 0,
     studyNotificationHour: 9,
@@ -507,10 +505,7 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             showAnswerLongPressMs: Math.max(0, Math.min(2000, Number(parsed.showAnswerLongPressMs ?? 0) || 0)),
             answerDoubleTapMs: Math.max(0, Math.min(2000, Number(parsed.answerDoubleTapMs ?? 200) || 0)),
             autoBackupEnabled: parsed.autoBackupEnabled !== false,
-            backupIntervalMinutes: 10080,
-            backupDailyCopies: 0,
-            backupWeeklyCopies: 7,
-            backupMonthlyCopies: 0,
+            ...normalizeBackupPolicy(parsed),
             studyNotificationsEnabled: parsed.studyNotificationsEnabled !== false,
             studyNotificationThreshold: normalizeStudyNotificationThreshold(parsed.studyNotificationThreshold),
             studyNotificationHour: Math.max(0, Math.min(23, Number(parsed.studyNotificationHour ?? 9) || 0)),
@@ -764,10 +759,7 @@ export function validateSettings(settings: Record<string, unknown>): AppSettings
     validated.showAnswerLongPressMs = Math.max(0, Math.min(2000, Number(validated.showAnswerLongPressMs ?? 0) || 0));
     validated.answerDoubleTapMs = Math.max(0, Math.min(2000, Number(validated.answerDoubleTapMs ?? 200) || 0));
     validated.autoBackupEnabled = validated.autoBackupEnabled !== false;
-    validated.backupIntervalMinutes = 10080;
-    validated.backupDailyCopies = 0;
-    validated.backupWeeklyCopies = 7;
-    validated.backupMonthlyCopies = 0;
+    Object.assign(validated, normalizeBackupPolicy(validated));
     validated.studyNotificationsEnabled = validated.studyNotificationsEnabled !== false;
     validated.studyNotificationThreshold = normalizeStudyNotificationThreshold(validated.studyNotificationThreshold);
     validated.studyNotificationHour = Math.max(0, Math.min(23, Number(validated.studyNotificationHour ?? 9) || 0));

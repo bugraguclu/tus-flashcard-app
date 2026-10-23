@@ -590,7 +590,7 @@ describe('lossless Anki package roundtrip', () => {
         expect(reimported.find((entry) => entry.name === DEFAULT_DECK_CONFIG.name)?.buryInterdayLearningSiblings).toBe(true);
     });
 
-    it('exports only cards from the exact deck ids selected in the deck tree', async () => {
+    it('selects notes from exact deck ids and preserves their cards in other decks', async () => {
         await importApkg(await fixturePackage(), {
             subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
             openReader: async (bytes) => openReader(bytes),
@@ -618,10 +618,10 @@ describe('lossless Anki package roundtrip', () => {
         });
         const childZip = await JSZip.loadAsync(childOnly.bytes!);
         const childReader = openReader(await childZip.file('collection.anki21')!.async('uint8array'));
-        expect(childReader.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM cards')?.count).toBe(1);
+        expect(childReader.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM cards')?.count).toBe(2);
         const exportedDecks = Object.values(JSON.parse(childReader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks)) as any[];
         expect(exportedDecks.map((deck) => deck.name)).toEqual(expect.arrayContaining(['Medicine', 'Medicine::Cardiology']));
-        expect(exportedDecks).toHaveLength(2);
+        expect(exportedDecks).toHaveLength(3);
         childReader.close();
     });
 

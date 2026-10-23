@@ -1,4 +1,4 @@
-import { createBackupNow } from './backup';
+import { createBackupNow, type BackupDeps } from './backup';
 import { resetAllData } from './storage';
 
 export class ResetWorkflowError extends Error {
@@ -14,12 +14,20 @@ export class ResetWorkflowError extends Error {
 
 interface ResetWorkflowDeps {
     createBackup?: () => Promise<{ fileName: string }>;
+    /** Storage for the default safety backup; tests inject an in-memory store. */
+    backupDeps?: BackupDeps;
     reset?: () => Promise<void>;
 }
 
-/** The only UI reset entry point: no destructive mutation can start before a durable backup. */
+/**
+ * The only UI reset entry point: no destructive mutation can start before a durable backup.
+ *
+ * Reset is not a way out of a damaged collection, so its safety backup must be restorable: when
+ * a damaged row would leave only a recovery copy, the backup stage fails with
+ * `BackupNotRestorableError` as its cause and nothing is deleted. Repair is the way out.
+ */
 export async function resetAllDataWithBackup(deps: ResetWorkflowDeps = {}): Promise<{ backupFileName: string }> {
-    const createBackup = deps.createBackup ?? createBackupNow;
+    const createBackup = deps.createBackup ?? (() => createBackupNow(deps.backupDeps, { requireRestorable: true }));
     const reset = deps.reset ?? resetAllData;
 
     let backupFileName: string;

@@ -505,7 +505,7 @@
       "priority": 3,
       "platform": "cross-platform manual rescheduling",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/reviews.rs",
-      "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards"]
+      "useFor": ["set due date under FSRS", "the change-interval form", "interval preservation for review cards", "browser preserves original new-card position and samples due ranges; lib/browserSelection.test.ts"]
     },
     {
       "id": "anki-source-csv-import",
@@ -1064,6 +1064,65 @@
       "useFor": [
         "study progress separated from catalog content ownership; trial existing-card scheduling only",
         "ai2CatalogStudy.test.ts verifies study/tag deltas and rejects generic note saves, content/identity/new-card mutation"
+      ]
+    },
+    {
+      "id": "anki-ai3-transfer-safety",
+      "priority": 1,
+      "platform": "cross-platform interchange semantics",
+      "url": "https://docs.ankiweb.net/importing/packaged-decks.html",
+      "useFor": [
+        "GUID update conflicts skip incoming cards",
+        "duplicate re-import repairs missing media; rename fixups preserve author update timestamps",
+        "negative/zero review-day offsets and original learning due units, progress stripping and note-scoped sibling export; lib/ankiTransferSafety.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai3-backup-safety",
+      "priority": 1,
+      "platform": "cross-platform backup behavior",
+      "url": "https://docs.ankiweb.net/backups.html",
+      "useFor": [
+        "30-minute backup default",
+        "today/yesterday and daily/weekly/monthly retention",
+        "learner metadata and pending-overlay recovery without protected catalog fields, atomically persisted during restore; canonical rejection does not rewrite live data; lib/backupSafety.test.ts",
+        "Reset and collection replacement need a restorable pre-operation backup; Repair and backup restore may keep a recovery-only copy; lib/destructiveBackupSafety.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai3-shared-search",
+      "priority": 1,
+      "platform": "cross-platform browser and filtered search",
+      "url": "https://docs.ankiweb.net/searching.html",
+      "useFor": [
+        "one evaluator for browser and filtered searches",
+        "all-field substring search without metadata, including incomplete note-type field lists",
+        "Unicode names, explicit nc accent folding and invalid-query errors, while picker draft tokenization stays safe; lib/searchParitySafety.test.ts and lib/searchQuery.test.ts",
+        "saved invalid filtered searches gather no card instead of failing collection reads; filtered-deck and Custom Study dialogs reject them before saving; lib/filteredSearchSafety.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai3-update-schema",
+      "priority": 3,
+      "platform": "cross-platform package metadata formats",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/notetypes.proto",
+      "useFor": [
+        "stable field/template ids and original_id on imported schema copies",
+        "proto fields: field id 9, template id 8, note type original_id 10",
+        "legacy and modern optional deck limits; https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
+        "media preservation independent of renderer execution; lib/ankiTransferSafety.test.ts"
+      ]
+    },
+    {
+      "id": "anki-ai3-statistics-audit",
+      "priority": 3,
+      "platform": "cross-platform statistics graph semantics",
+      "url": "https://github.com/ankitects/anki/tree/main/rslib/src/stats/graphs",
+      "useFor": [
+        "future_due: learning timestamps, original due, buried/suspended exclusions and integer daily load",
+        "intervals include review and relearning across queues",
+        "card_counts separates new, learn, relearn, young, mature, suspended and buried; retain compatibility with existing empty snapshots",
+        "answer buttons exclude cram/manual and invalid ratings; lib/statsAuditSafety.test.ts"
       ]
     }
   ],

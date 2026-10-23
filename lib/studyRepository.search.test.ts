@@ -37,6 +37,7 @@ import { saveDeck, saveDeckConfig } from './deckManager';
 import { invalidateSubjectsCache } from './subjects';
 import { localDayNumber, nextRolloverMs } from './ankiState';
 import { getBrowserScopeSnapshot, getBrowserScreenSnapshot } from './screenSnapshots';
+import { isValidSearchQuery } from './searchValidation';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -472,10 +473,12 @@ describe('prop: numeric card properties', () => {
         expect(search('prop:ivl!=4')).toBe(2);
     });
 
-    it('ignores a property it does not know instead of matching nothing', () => {
-        // An unparsable term adds no clause, exactly as the other prefixes behave.
-        expect(search('prop:stability>2')).toBe(3);
-        expect(search('prop:ivl')).toBe(3);
+    it('gathers no card for malformed or unsupported properties, which the dialogs reject', () => {
+        // A saved search is not migrated, so the count path matches nothing instead of throwing.
+        expect(search('prop:stability>2')).toBe(0);
+        expect(search('prop:ivl')).toBe(0);
+        expect(isValidSearchQuery('prop:stability>2')).toBe(false);
+        expect(isValidSearchQuery('prop:ivl')).toBe(false);
     });
 
     it('combines with the other search terms', () => {
@@ -531,11 +534,11 @@ describe('the browser search box speaks Anki', () => {
         saveAnkiCard(makeCard(2030, 203, 1, { type: 2, queue: -1, due: 3, ivl: 5, factor: 1800, reps: 9, lapses: 4 }));
     });
 
-    it('still does plain text search the way it always has', () => {
-        // Turkish/ASCII folding and per-word prefix matching are what the app's search box means,
-        // over the rendered card plus its tags and deck — note 202 is tagged "Fizyoloji::Kalp".
-        expect(browserSearch('kalp').sort()).toEqual([2010, 2020]);
-        expect(browserSearch('bobrek')).toEqual([2030]);
+    it('searches field substrings, with accent folding only when nc: is explicit', () => {
+        expect(browserSearch('kalp')).toEqual([2010]);
+        expect(browserSearch('kalb')).toEqual([2020]);
+        expect(browserSearch('bobrek')).toEqual([]);
+        expect(browserSearch('nc:bobrek')).toEqual([2030]);
     });
 
     it('filters by card state instead of looking for the words "is:new"', () => {
@@ -620,7 +623,7 @@ describe('added: narrows a filtered deck to recently created cards', () => {
         expect(search('added:60')).toBe(2);
         // Anki's "preview new cards" session is exactly this pair of terms.
         expect(search('is:new added:1')).toBe(1);
-        expect(search('added:0')).toBe(2);
+        expect(search('added:0')).toBe(1);
     });
 
     it('reaches back as far as the spinner allows, with no year-long ceiling of its own', () => {

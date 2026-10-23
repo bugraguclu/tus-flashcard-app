@@ -34,6 +34,12 @@ export interface AnswerButtonPoint {
 
 export interface CardCountStats {
     mature: number;
+    young?: number;
+    learn?: number;
+    relearn?: number;
+    suspended?: number;
+    buried?: number;
+    /** Legacy aggregate aliases for existing consumers. */
     youngLearn: number;
     unseen: number;
     suspendedBuried: number;
@@ -204,12 +210,9 @@ function parseYmd(value: string): Date {
 }
 
 function futureHorizonDays(range: StatsDateRange, maxFutureDay: number): number {
-    if (range.spanDays !== null) return Math.max(7, range.spanDays);
-    return Math.max(31, Math.min(3_650, maxFutureDay + 1));
+    if (range.spanDays !== null) return Math.max(7, range.spanDays + 1);
+    return Math.max(31, maxFutureDay + 1);
 }
-
-/** How far back the backlog view reaches; Anki caps it at a year of overdue cards. */
-const MAX_BACKLOG_DAYS = 365;
 
 function getFutureDue(
     deckName: string | null,
@@ -222,76 +225,38 @@ function getFutureDue(
     const db = getDB();
     const today = localDayNumber(Date.now(), rolloverHour);
     const deck = deckClause(deckName, 'c', scopedCardIds);
-    const maxRow = db.getFirstSync<{ maxDay: number | null }>(
-        `SELECT MAX(c.due - ?) AS maxDay
-         FROM anki_cards c ${deck.join}
-         WHERE c.queue IN (2, 3) AND c.due >= ? ${deck.where}`,
-        today, today, ...deck.params,
-    );
-    const horizon = futureHorizonDays(range, Math.max(0, maxRow?.maxDay ?? 0));
-
-    // Anki's backlog checkbox extends the same chart to the left: overdue cards keep their real
-    // due day, so they pile up in negative buckets ahead of today rather than being folded into
-    // it. Without the checkbox the chart starts at today, exactly as Anki draws it.
-    const oldestRow = includeBacklog
-        ? db.getFirstSync<{ minDay: number | null }>(
-            `SELECT MIN(c.due - ?) AS minDay
-             FROM anki_cards c ${deck.join}
-             WHERE c.queue IN (2, 3) AND c.due < ? ${deck.where}`,
-            today, today, ...deck.params,
-        )
-        : null;
-    const backlogDays = includeBacklog
-        ? Math.min(MAX_BACKLOG_DAYS, Math.max(0, -(oldestRow?.minDay ?? 0)))
-        : 0;
-
-    const span = horizon + backlogDays;
-    const chunk = span <= 35 ? 1 : span <= 180 ? 7 : span <= 730 ? 14 : 31;
-    // Bucket 0 starts at the oldest day shown, so today keeps a whole bucket boundary.
-    const firstDay = -Math.ceil(backlogDays / chunk) * chunk;
-    const bucketCount = Math.ceil((horizon - firstDay) / chunk);
-    const rows = db.getAllSync<{ bucket: number; young: number; mature: number }>(
-        `SELECT CAST((c.due - ?) / ? AS INTEGER) AS bucket,
-                SUM(CASE WHEN c.ivl < ${MATURE_MIN_IVL} THEN 1 ELSE 0 END) AS young,
-                SUM(CASE WHEN c.ivl >= ${MATURE_MIN_IVL} THEN 1 ELSE 0 END) AS mature
-         FROM anki_cards c ${deck.join}
-         WHERE c.queue IN (2, 3) AND c.due >= ? AND c.due < ? ${deck.where}
-         GROUP BY bucket ORDER BY bucket`,
-        today + firstDay, chunk, today + firstDay, today + horizon, ...deck.params,
-    );
-
-    const rowByBucket = new Map(rows.map((row) => [row.bucket, row]));
-    const points = Array.from({ length: bucketCount }, (_, bucket) => {
-        const row = rowByBucket.get(bucket);
-        const values = [row?.young ?? 0, row?.mature ?? 0];
-        const dayOffset = firstDay + bucket * chunk;
-        const date = parseYmd(dayNumberToYmd(today + dayOffset, rolloverHour));
-        return {
-            label: date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' }),
-            values,
-        };
-    });
-    const todayIndex = Math.round(-firstDay / chunk);
-    const backlogTotal = points
-        .slice(0, todayIndex)
-        .reduce((sum, point) => sum + point.values[0] + point.values[1], 0);
-
-    const dueTomorrow = db.getFirstSync<{ count: number }>(
-        `SELECT COUNT(*) AS count FROM anki_cards c ${deck.join}
-         WHERE c.queue IN (2, 3) AND c.due = ? ${deck.where}`,
-        today + 1, ...deck.params,
-    )?.count ?? 0;
-    const dailyLoad = db.getFirstSync<{ load: number }>(
-        `SELECT COALESCE(SUM(1.0 / CASE WHEN c.ivl < 1 THEN 1 ELSE c.ivl END), 0) AS load
-         FROM anki_cards c ${deck.join}
-         WHERE c.queue IN (2, 3) ${deck.where}`,
+    // Normalize stored due units before grouping; inactive learning retains its day/ms unit.
+    const nextDay = nextRolloverMs(Date.now(), rolloverHour);
+    const rows = db.getAllSync<{ type: number; queue: number; due: number; ivl: number; homeDue: number | null }>(
+        `SELECT c.type, c.queue, c.due, c.ivl,
+            CASE WHEN json_valid(c.data) AND json_extract(c.data, '$.odid') != 0 THEN json_extract(c.data, '$.odue') END AS homeDue
+         FROM anki_cards c ${deck.join} WHERE c.type != 0 AND c.queue != -1 ${deck.where}`,
         ...deck.params,
-    )?.load ?? 0;
-
-    const total = points.reduce(
-        (sum, point) => sum + point.values.reduce((pointSum, value) => pointSum + value, 0),
-        0,
     );
+    const projected = rows.map(row => {
+        const due = row.homeDue ?? row.due;
+        return { ...row, offset: due >= 1_000_000_000 ? Math.trunc((due - nextDay) / DAY_MS) : due - today };
+    });
+    const dueRows = projected.filter(row => !((row.queue === -2 || row.queue === -3) && row.offset <= 0));
+    const horizon = futureHorizonDays(range, dueRows.reduce((max, row) => Math.max(max, row.offset), 0));
+    const oldest = includeBacklog ? dueRows.reduce((min, row) => Math.min(min, row.offset), 0) : 0;
+    const span = horizon - oldest;
+    const chunk = Math.max(span <= 35 ? 1 : span <= 180 ? 7 : span <= 730 ? 14 : 31, Math.ceil(span / 400));
+    const firstDay = Math.floor(oldest / chunk) * chunk;
+    const bucketCount = Math.ceil((horizon - firstDay) / chunk);
+    const counts = Array.from({ length: bucketCount }, () => [0, 0]);
+    for (const row of dueRows) {
+        if (row.offset < firstDay || row.offset >= horizon) continue;
+        counts[Math.floor((row.offset - firstDay) / chunk)][row.ivl < MATURE_MIN_IVL ? 0 : 1]++;
+    }
+    const points = counts.map((values, index) => ({
+        label: parseYmd(dayNumberToYmd(today + firstDay + index * chunk, rolloverHour)).toLocaleDateString(localeTag, { day: 'numeric', month: 'short' }), values,
+    }));
+    const todayIndex = Math.max(0, Math.round(-firstDay / chunk));
+    const backlogTotal = points.slice(0, todayIndex).reduce((sum, point) => sum + point.values[0] + point.values[1], 0);
+    const total = points.reduce((sum, point) => sum + point.values[0] + point.values[1], 0);
+    const dailyLoad = Math.trunc(projected.reduce((sum, row) => sum + 1 / Math.max(1, row.ivl), 0));
+    const dueTomorrow = dueRows.filter(row => row.offset === 1).length;
     return { points, total, dueTomorrow, dailyLoad, todayIndex, backlogTotal };
 }
 
@@ -305,7 +270,7 @@ function getAnswerButtons(deckName: string | null, range: StatsDateRange, scoped
          FROM revlog r
          ${revlogCardJoin(deckName, scopedCardIds)}
          ${deck.join}
-         WHERE r.ease != 0 AND r.id >= ? AND r.id < ? ${deck.where}
+         WHERE r.ease BETWEEN 1 AND 4 AND r.type IN (0, 1, 2) AND r.id >= ? AND r.id < ? ${deck.where}
          GROUP BY category, r.ease ORDER BY r.ease, category`,
         range.startMs, range.endMs, ...deck.params,
     );
@@ -333,13 +298,13 @@ function getIntervals(deckName: string | null, range: StatsDateRange, localeTag:
     const rows = db.getAllSync<{ ivl: number; count: number }>(
         `SELECT c.ivl AS ivl, COUNT(*) AS count
          FROM anki_cards c ${deck.join}
-         WHERE c.queue = 2 ${maxClause} ${deck.where}
+         WHERE c.type IN (2, 3) ${maxClause} ${deck.where}
          GROUP BY c.ivl ORDER BY c.ivl`,
         ...params,
     );
     const summary = db.getFirstSync<{ average: number; longest: number }>(
         `SELECT COALESCE(AVG(c.ivl), 0) AS average, COALESCE(MAX(c.ivl), 0) AS longest
-         FROM anki_cards c ${deck.join} WHERE c.queue = 2 ${deck.where}`,
+         FROM anki_cards c ${deck.join} WHERE c.type IN (2, 3) ${deck.where}`,
         ...deck.params,
     );
     const chunk = limit === null ? Math.max(1, Math.ceil((summary?.longest ?? 1) / 24)) : limit <= 35 ? 1 : limit <= 180 ? 7 : 14;
@@ -363,8 +328,13 @@ function getCardCounts(deckName: string | null, scopedCardIds?: number[]): CardC
     const deck = deckClause(deckName, 'c', scopedCardIds);
     const row = db.getFirstSync<CardCountStats>(
         `SELECT
-            COALESCE(SUM(CASE WHEN c.queue = 2 AND c.ivl >= ${MATURE_MIN_IVL} THEN 1 ELSE 0 END), 0) AS mature,
-            COALESCE(SUM(CASE WHEN c.queue IN (1, 3) OR (c.queue = 2 AND c.ivl < ${MATURE_MIN_IVL}) THEN 1 ELSE 0 END), 0) AS youngLearn,
+            COALESCE(SUM(CASE WHEN c.queue >= 0 AND c.type = 2 AND c.ivl >= ${MATURE_MIN_IVL} THEN 1 ELSE 0 END), 0) AS mature,
+            COALESCE(SUM(CASE WHEN c.queue >= 0 AND c.type = 2 AND c.ivl < ${MATURE_MIN_IVL} THEN 1 ELSE 0 END), 0) AS young,
+            COALESCE(SUM(CASE WHEN c.queue >= 0 AND c.type = 1 THEN 1 ELSE 0 END), 0) AS learn,
+            COALESCE(SUM(CASE WHEN c.queue >= 0 AND c.type = 3 THEN 1 ELSE 0 END), 0) AS relearn,
+            COALESCE(SUM(CASE WHEN c.queue = -1 THEN 1 ELSE 0 END), 0) AS suspended,
+            COALESCE(SUM(CASE WHEN c.queue IN (-2, -3) THEN 1 ELSE 0 END), 0) AS buried,
+            COALESCE(SUM(CASE WHEN c.queue >= 0 AND (c.type IN (1, 3) OR (c.type = 2 AND c.ivl < ${MATURE_MIN_IVL})) THEN 1 ELSE 0 END), 0) AS youngLearn,
             COALESCE(SUM(CASE WHEN c.queue = 0 THEN 1 ELSE 0 END), 0) AS unseen,
             COALESCE(SUM(CASE WHEN c.queue IN (-1, -2, -3) THEN 1 ELSE 0 END), 0) AS suspendedBuried,
             COUNT(c.id) AS totalCards,
@@ -372,7 +342,7 @@ function getCardCounts(deckName: string | null, scopedCardIds?: number[]): CardC
          FROM anki_cards c ${deck.join} WHERE 1 = 1 ${deck.where}`,
         ...deck.params,
     );
-    return row ?? { mature: 0, youngLearn: 0, unseen: 0, suspendedBuried: 0, totalCards: 0, totalNotes: 0 };
+    return row ?? { mature: 0, young: 0, learn: 0, relearn: 0, suspended: 0, buried: 0, youngLearn: 0, unseen: 0, suspendedBuried: 0, totalCards: 0, totalNotes: 0 };
 }
 
 export function getAnkiStatsSnapshot(

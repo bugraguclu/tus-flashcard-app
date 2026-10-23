@@ -2,9 +2,9 @@
  * Automatic collection backups.
  *
  * A full-collection JSON snapshot (exportAllData, the canonical v6 format) is
- * written at most once a week. Startup and every app foreground may call
- * runAutoBackupIfDue() safely; a timestamp guard prevents duplicate work. The newest seven
- * collection snapshots are retained. Every restore first snapshots the current state, so a
+ * written every configured interval (30 minutes by default). Startup and every app foreground may call
+ * runAutoBackupIfDue() safely; a timestamp guard prevents duplicate work. Today/yesterday plus daily, weekly and monthly
+ * restore points are retained. Every restore first snapshots the current state, so a
  * restore is itself undoable.
  *
  * The snapshot reads every table in one synchronous pass, so *when* it runs matters as much
@@ -22,6 +22,8 @@ import { isPrimaryTab } from './db';
 import { getLegacyFileSystem } from './files';
 import { translateActive } from './i18n';
 import { exportAllData, importAllData, loadSettings, getDbSetting, setDbSetting } from './storage';
+import { canonicalBackupContainsCatalog } from './catalogProtection';
+import { normalizeBackupPolicy, retainedBackupNames } from './backupPolicy';
 import { validateCanonicalBackupData } from './backupValidation';
 
 const DAILY_PREFIX = 'tus-backup-';
@@ -29,13 +31,13 @@ const CUSTOM_PREFIX = 'tus-backup-custom-';
 const PRE_RESTORE_PREFIX = 'tus-prerestore-';
 const KEEP_PRE_RESTORE = 3;
 const GUARD_KEY = 'tus_last_auto_backup_at';
-const WEEKLY_INTERVAL_MINUTES = 7 * 24 * 60;
-const KEEP_COLLECTION_BACKUPS = 7;
+
+
 
 // Accept old once-per-day filenames as well as the interval-aware timestamp form.
 const DAILY_NAME_RE = /^tus-backup-\d{4}-\d{2}-\d{2}(?:-\d{6}(?:\d{3})?)?\.json$/;
 const PRE_RESTORE_NAME_RE = /^tus-prerestore-\d+\.json$/;
-const MAX_BACKUP_SIZE = 50 * 1024 * 1024;
+const MAX_BACKUP_SIZE = 512 * 1024 * 1024;
 const MAX_SUPPORTED_BACKUP_VERSION = 6;
 const MAX_MANUAL_BACKUP_NAME_LENGTH = 120;
 const FORBIDDEN_BACKUP_NAME_CHARS = /[<>:"/\\|?*\u0000-\u001F]/u;
@@ -73,6 +75,24 @@ export interface BackupDeps {
 export interface CreateBackupOptions {
     /** A user-facing name. The .json extension is optional and is normalized on write. */
     name?: string;
+    /**
+     * Refuse, writing nothing, when the collection can only be saved as a recovery copy. Set by
+     * the destructive operations that are not a way out of a damaged collection (Reset, collection
+     * replacement): their safety backup must be one the learner can restore.
+     */
+    requireRestorable?: boolean;
+}
+
+/**
+ * The collection has rows the strict restore validation rejects, so its snapshot would be a
+ * recovery copy (raw rows kept verbatim, shareable but never restorable). Thrown before anything
+ * is written or changed; the message tells the learner to run Repair first.
+ */
+export class BackupNotRestorableError extends Error {
+    constructor(public readonly reason: string) {
+        super(translateActive('backup.notRestorableMessage'));
+        this.name = 'BackupNotRestorableError';
+    }
 }
 
 export type BackupNameErrorCode = 'empty' | 'too-long' | 'invalid-extension' | 'invalid-characters' | 'invalid-name' | 'duplicate';
@@ -154,6 +174,8 @@ export function validateBackupContents(contents: string): { valid: true } | { va
         }
 
         if (data.canonical === true) {
+            if (data.recoveryOnly === true) return { valid: false, reason: 'recovery-only' };
+            if (canonicalBackupContainsCatalog(data)) return { valid: false, reason: 'protected-catalog' };
             return validateCanonicalBackupData(data);
         }
 
@@ -166,6 +188,30 @@ export function validateBackupContents(contents: string): { valid: true } | { va
     } catch {
         return { valid: false, reason: 'invalid-json' };
     }
+}
+
+/** Why a well-formed recovery snapshot of this app was written, or null for anything else. */
+function recoverySnapshotReason(contents: string): string | null {
+    try {
+        const data = JSON.parse(contents);
+        if (data?.recoveryOnly === true && data.canonical === true && data.version === 6 && data.tables
+            && ['notes', 'anki_cards', 'note_types', 'decks', 'deck_configs', 'revlog', 'graves', 'session_stats'].every(key => Array.isArray(data.tables[key]))) {
+            return typeof data.recoveryReason === 'string' ? data.recoveryReason : 'recovery-only';
+        }
+    } catch { /* not a recovery snapshot */ }
+    return null;
+}
+
+/**
+ * Check a freshly exported snapshot before it is written: restorable, or a recovery copy of a
+ * collection with damaged rows (kept, but never offered as a restore point). Anything else throws.
+ */
+function snapshotRestorability(contents: string): { restorable: true } | { restorable: false; reason: string } {
+    const result = validateBackupContents(contents);
+    if (result.valid) return { restorable: true };
+    const reason = recoverySnapshotReason(contents);
+    if (reason === null) throw new Error(`Invalid backup contents: ${result.reason}`);
+    return { restorable: false, reason };
 }
 
 function assertValidBackupContents(contents: string): void {
@@ -261,7 +307,7 @@ interface ResolvedDeps {
     isWriter: () => boolean;
     autoBackupEnabled: () => boolean;
     intervalMinutes: () => number;
-    maxCopies: () => number;
+    maxCopies?: () => number;
 }
 
 function resolveDeps(deps: BackupDeps): ResolvedDeps {
@@ -275,8 +321,8 @@ function resolveDeps(deps: BackupDeps): ResolvedDeps {
         rolloverHour: deps.rolloverHour ?? (() => loadSettings().dayRolloverHour),
         isWriter: deps.isWriter ?? (() => Platform.OS !== 'web' || isPrimaryTab()),
         autoBackupEnabled: deps.autoBackupEnabled ?? (() => loadSettings().autoBackupEnabled !== false),
-        intervalMinutes: deps.intervalMinutes ?? (() => WEEKLY_INTERVAL_MINUTES),
-        maxCopies: deps.maxCopies ?? (() => KEEP_COLLECTION_BACKUPS),
+        intervalMinutes: deps.intervalMinutes ?? (() => normalizeBackupPolicy(loadSettings()).backupIntervalMinutes),
+        maxCopies: deps.maxCopies,
     };
 }
 
@@ -287,12 +333,13 @@ function snapshotTime(info: BackupInfo): number {
 }
 
 /** Keep the newest collection snapshots and rotate pre-restore safety copies separately. */
-async function pruneBackups(store: BackupStore, maxCopies: number): Promise<void> {
+async function pruneBackups(store: BackupStore, maxCopies: number | undefined, now: Date): Promise<void> {
     const all = await store.list();
     const snapshots = all
         .filter((b) => DAILY_NAME_RE.test(b.name))
         .sort((a, b) => snapshotTime(b) - snapshotTime(a) || b.name.localeCompare(a.name));
-    const overflow = snapshots.slice(Math.max(0, maxCopies));
+    const retained = maxCopies === undefined ? retainedBackupNames(snapshots.map(info => ({ ...info, createdAt: snapshotTime(info) })), now, normalizeBackupPolicy(loadSettings())) : null;
+    const overflow = retained ? snapshots.filter(info => !retained.has(info.name)) : snapshots.slice(Math.max(0, maxCopies!));
     const preRestore = all
         .filter((b) => PRE_RESTORE_NAME_RE.test(b.name))
         .sort((a, b) => parseTimestamp(b.name) - parseTimestamp(a.name))
@@ -308,11 +355,15 @@ function parseTimestamp(preRestoreName: string): number {
     return match ? Number(match[1]) : 0;
 }
 
-/** Write today's snapshot unconditionally (manual backup / due auto backup). */
+/**
+ * Write today's snapshot unconditionally (manual backup / due auto backup). `restorable` is false
+ * when a damaged row made it a recovery copy; with `requireRestorable` that case throws
+ * `BackupNotRestorableError` instead, and nothing is written.
+ */
 export async function createBackupNow(
     deps: BackupDeps = {},
     options: CreateBackupOptions = {},
-): Promise<{ fileName: string }> {
+): Promise<{ fileName: string; restorable: boolean }> {
     const d = resolveDeps(deps);
     const now = d.now();
     const customName = options.name === undefined ? undefined : normalizeManualBackupName(options.name);
@@ -328,18 +379,19 @@ export async function createBackupNow(
     }
 
     const json = await d.exportData();
-    assertValidBackupContents(json);
+    const snapshot = snapshotRestorability(json);
+    if (!snapshot.restorable && options.requireRestorable) throw new BackupNotRestorableError(snapshot.reason);
     await d.store.write(fileName, json);
     // Mark the time only after the write succeeds, so a failure retries next launch.
     d.setLastBackupAt(String(now.getTime()));
 
     try {
-        await pruneBackups(d.store, d.maxCopies());
+        await pruneBackups(d.store, d.maxCopies?.(), d.now());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }
 
-    return { fileName };
+    return { fileName, restorable: snapshot.restorable };
 }
 
 let _autoBackupInFlight: Promise<{ didRun: boolean; fileName?: string }> | null = null;
@@ -373,7 +425,7 @@ export function runAutoBackupIfDue(
 
         if (options.prune !== false) {
             try {
-                await pruneBackups(d.store, d.maxCopies());
+                await pruneBackups(d.store, d.maxCopies?.(), d.now());
             } catch (error) {
                 console.warn('[Backup] startup prune failed:', error);
             }
@@ -442,16 +494,18 @@ export async function importBackupContents(
     // A web tab that is not the writer would restore into memory only and lose it on reload.
     if (!d.isWriter()) throw new Error(translateActive('root.readOnlyTabAction'));
 
+    // Restoring a chosen backup is a way out of a damaged collection, so the copy of what it
+    // replaces may be a recovery copy: it keeps the damaged rows verbatim and stays shareable.
     const currentContents = await d.exportData();
-    assertValidBackupContents(currentContents);
+    snapshotRestorability(currentContents);
     const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
     await d.store.write(preRestoreName, currentContents);
 
     const ok = await d.importData(contents);
-    if (!ok) {
-        // importAllData is designed to be transactional, but legacy imports and
-        // future migrations may touch more than SQLite. Reapply the known-good
-        // snapshot so a failed attempt cannot leave mixed settings or progress.
+    if (!ok && JSON.parse(contents).canonical !== true) {
+        // Canonical table/progress writes own their transaction. Re-importing a live snapshot
+        // after rejection would itself delete/reinstall catalog rows. Only legacy imports need
+        // an automatic compensating restore because they can mutate before returning false.
         try {
             await d.importData(currentContents);
         } catch (error) {
@@ -460,7 +514,7 @@ export async function importBackupContents(
     }
 
     try {
-        await pruneBackups(d.store, d.maxCopies());
+        await pruneBackups(d.store, d.maxCopies?.(), d.now());
     } catch (e) {
         console.warn('[Backup] prune failed:', e);
     }
