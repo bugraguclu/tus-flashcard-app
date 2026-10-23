@@ -269,7 +269,7 @@ export function answerStudyCard(
         nowMs,
     );
     const noteType = getNoteType(note.noteTypeId);
-    const deckConfig = getDeckConfigForDeck(currentAnkiCard.deckId);
+    const deckConfig = getDeckConfigForDeck(currentAnkiCard.odid || currentAnkiCard.deckId);
 
     if (options.preview) {
         return answerInPreview(currentAnkiCard, currentState, grade, cardSettings, deckConfig, answerTimeMs, options.preview, nowMs, () => (

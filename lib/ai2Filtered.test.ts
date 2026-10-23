@@ -4,13 +4,14 @@ import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbIndexAllCards() {}, dbUpsertFtsCard() {}, dbDeleteFtsCard() {}, dbSearchCards: () => [] }));
-import { seedBase, settings, makeCard } from '../test/studyQueueFixtures';
+import { seedBase, settings, makeCard, deckConfig } from '../test/studyQueueFixtures';
 import { createFilteredDeck, updateFilteredDeck, rebuildFilteredDeck, emptyFilteredDeck, completeFilteredCard } from './filteredDecks';
 import { getStudyQueue } from './studyQueue';
 import { getAnkiCard, saveAnkiCard } from './noteManager';
 import { answerStudyCard, undoAnswer } from './studyAnswer';
 import { getDeckListSnapshot } from './deckListSnapshot';
 import { dayNumberToYmd, localDayNumber } from './ankiState';
+import { getDeck, saveDeck, saveDeckConfig } from './deckManager';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -68,6 +69,16 @@ describe('AI-2 fixed filtered builds', () => {
         expect(getAnkiCard(1010)).toMatchObject({ deckId: 7, odid: 0, odue: 0, due: today + 1, ivl: 1 });
         undoAnswer(result.previousAnkiCard, result.reviewLogId, result.sideEffects);
         expect(getAnkiCard(1010)).toMatchObject({ deckId: deck.id, odid: 7, odue: today + 1, due: -100000, ivl: 1 });
+    });
+
+    it('uses the home preset answer-time cap for imported physical cards', () => {
+        const deck = createFilteredDeck('Session', 'nid:101', 1);
+        saveDeckConfig({ ...deckConfig, maxAnswerSecs: 1 });
+        saveDeckConfig({ ...deckConfig, id: 2, maxAnswerSecs: 60 });
+        saveDeck({ ...getDeck(deck.id)!, configId: 2 });
+        saveAnkiCard(makeCard(1010, 101, deck.id, { odid: 7, odue: localDayNumber(Date.now(), settings.dayRolloverHour), type: 2, queue: 2, due: -100000, ivl: 10, factor: 2500 }));
+        const result = answerStudyCard(1010, 3, settings, 30000);
+        expect(db.getFirstSync<{ time: number }>('SELECT time FROM revlog WHERE id = ?', result.reviewLogId)!.time).toBe(1000);
     });
 
     it('a future filtered review does not subtract an unrelated due review from the home count', () => {
