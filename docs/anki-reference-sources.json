@@ -915,6 +915,15 @@
         "require explicit destructive confirmation",
         "rollback editor defaults with a failed new-note write"
       ]
+    },
+    {
+      "id": "anki-ai1-deep-deck-paths",
+      "priority": 1,
+      "platform": "cross-platform notes, cards and decks",
+      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "useFor": [
+        "normalize deep deck paths without repeated per-ancestor database reads"
+      ]
     }
   ],
   "requiredDocs": [

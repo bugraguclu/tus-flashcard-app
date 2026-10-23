@@ -59,11 +59,16 @@ export function getDeckByName(name: string): Deck | null {
 }
 
 function canonicalDeckPath(name: string): string {
+    // Resolve all ancestors from one snapshot rather than querying each prefix recursively.
+    const rows = getDB().getAllSync<{ name: string }>('SELECT name FROM decks ORDER BY id');
+    const exact = new Set(rows.map(row => row.name));
+    const folded = new Map<string, string>();
+    for (const row of rows) if (!folded.has(deckNameKey(row.name))) folded.set(deckNameKey(row.name), row.name);
     const parts = normalizeDeckName(name).split('::');
     let path = '';
     for (const part of parts) {
         const candidate = path ? `${path}::${part}` : part;
-        path = getDeckByName(candidate)?.name ?? candidate;
+        path = exact.has(candidate) ? candidate : folded.get(deckNameKey(candidate)) ?? candidate;
     }
     return path;
 }

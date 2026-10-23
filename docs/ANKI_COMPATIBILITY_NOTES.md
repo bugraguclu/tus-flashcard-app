@@ -122,6 +122,8 @@ retention/true-retention graphs and the FSRS simulator
 
 ## Hierarchical decks and presets
 
+Normalized ancestor paths are resolved against one deck-name snapshot, keeping the existing 100-level hierarchy regression below the normal test timeout without weakening name normalization or exact legacy subtree rules.
+
 Deletion undo also restores persistent per-deck whiteboard preferences/ink. Injected write failures roll back note/card/grave changes. The default deck ID 1 remains available after its contents are removed, with its name reset to Default (a free suffix is used on a legacy name collision); undo restores its previous name and subtree. Exact-prefix buried-card count/unbury queries have real SQLite regression coverage.
 
 Changing learning/relearning steps or assigning another preset remaps the remaining-step counter from the last passed delay, including suspended/buried cards and cards temporarily in a filtered deck (home preset). Config and card writes share a savepoint; due values and queue units are unchanged (`lib/deckPresetSteps.test.ts`).
