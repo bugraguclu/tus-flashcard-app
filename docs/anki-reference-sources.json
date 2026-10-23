@@ -823,7 +823,8 @@
       "useFor": [
         "editing adds cards without automatic deletion",
         "multi-field cloze ordinals and preserving cardless notes",
-        "explicit confirmation before removing unmapped card templates"
+        "explicit confirmation before removing unmapped card templates",
+        "default Change Note Type template map: name first, then unused templates by position; cloze conversions keep ordinals"
       ]
     },
     {

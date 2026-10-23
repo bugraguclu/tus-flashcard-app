@@ -6,7 +6,9 @@ import { getDB } from './db';
 type Row = Record<string, string | number | null>;
 type Table = 'decks' | 'notes' | 'anki_cards';
 export interface DeletionUndo { cardCount: number; undo(): void }
-export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; cardIds?: number[] }): () => DeletionUndo {
+/** Capture rows before an operation; call the returned function after it (inside the same
+ * transaction). Rows the operation created (`createdCardIds`) are removed again on undo. */
+export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; cardIds?: number[] }): (createdCardIds?: number[]) => DeletionUndo {
     const db = getDB();
     const tables: [Table, number[]][] = [['decks', ids.deckIds ?? []], ['notes', ids.noteIds ?? []], ['anki_cards', ids.cardIds ?? []]];
     const before = tables.map(([table, keys]) => ({ table, rows: keys.flatMap((id) => {
@@ -18,8 +20,9 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
     }));
     const fts = (ids.cardIds ?? []).flatMap((id) => db.getAllSync<Row>('SELECT * FROM cards_fts WHERE card_id = ?', String(id)));
     const graveStart = db.getFirstSync<{ n: number }>('SELECT COALESCE(MAX(rowid), 0) AS n FROM graves')?.n ?? 0;
-    return () => {
+    return (createdCardIds = []) => {
         const after = before.map(({ table, rows }) => rows.map((row) => db.getFirstSync<Row>(`SELECT * FROM ${table} WHERE id = ?`, row.id)));
+        const created = createdCardIds.map((id) => ({ id, row: db.getFirstSync<Row>('SELECT * FROM anki_cards WHERE id = ?', id) }));
         const graves = db.getAllSync<{ rowid: number }>('SELECT rowid FROM graves WHERE rowid > ?', graveStart);
         let used = false;
         return { cardCount: ids.cardIds?.length ?? 0, undo() {
@@ -30,6 +33,10 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
                     const current = db.getFirstSync<Row>(`SELECT * FROM ${table} WHERE id = ?`, row.id);
                     if (JSON.stringify(current) !== JSON.stringify(after[ti][ri])) throw new Error('An affected row has changed. Undo was cancelled.');
                 }));
+                for (const { id, row } of created) {
+                    const current = db.getFirstSync<Row>('SELECT * FROM anki_cards WHERE id = ?', id);
+                    if (JSON.stringify(current) !== JSON.stringify(row)) throw new Error('An affected row has changed. Undo was cancelled.');
+                }
                 for (const setting of boardSettings) {
                     const current = db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', setting.key);
                     if (current?.value && current.value !== setting.before?.value) throw new Error('Whiteboard preferences changed. Undo was cancelled.');
@@ -37,6 +44,10 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
                 for (const { table, rows } of before) for (const row of rows) {
                     const columns = Object.keys(row);
                     db.runSync(`INSERT OR REPLACE INTO ${table} (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`, ...Object.values(row));
+                }
+                for (const { id } of created) {
+                    db.runSync('DELETE FROM anki_cards WHERE id = ?', id);
+                    db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(id));
                 }
                 for (const id of ids.cardIds ?? []) db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(id));
                 for (const row of fts) {
