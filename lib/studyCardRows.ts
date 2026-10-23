@@ -353,6 +353,29 @@ export function countRowsByQueue(
     return row?.cnt ?? 0;
 }
 
+/** `countRowsByQueue`, split by the deck each card sits in. */
+export function countRowsByDeck(
+    queueSql: string,
+    queueParams: Array<string | number>,
+    selectedSubject?: string | null,
+    selectedTopic?: string | null,
+    selectedDeckName?: string | null,
+): Map<number, number> {
+    const scope = buildScopeClause(selectedSubject, selectedTopic, selectedDeckName);
+    const rows = getDB().getAllSync<{ deckId: number; cnt: number }>(
+        `SELECT c.deckId AS deckId, COUNT(*) AS cnt
+         FROM anki_cards c
+         JOIN notes n ON n.id = c.noteId
+         JOIN note_types nt ON nt.id = n.noteTypeId
+         JOIN decks d ON d.id = c.deckId
+         WHERE ${queueSql}${scope.sql}
+         GROUP BY c.deckId`,
+        ...queueParams,
+        ...scope.params,
+    );
+    return new Map(rows.map((row) => [Number(row.deckId), Number(row.cnt)]));
+}
+
 function makeShallowCardFromRow(row: QueueCardRow, nowMs: number): AnkiCard {
     return {
         id: row.cardId,

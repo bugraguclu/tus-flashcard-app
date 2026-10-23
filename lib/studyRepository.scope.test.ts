@@ -672,7 +672,7 @@ describe('deck-list filtered count snapshot', () => {
 });
 
 describe('new-card gathering order', () => {
-    it('serves cards in physical deck order and position inside the deck', () => {
+    it('serves new cards topic by topic in the course order, not raw position order', () => {
         // Position order would be 1005 (Hata Ayıklama), 1010 (random), 1020 (Modüller);
         // the course defines Modüller → random → Hata Ayıklama.
         saveNote(makeNote(105, ['araclar', 'Hata-Ayıklama'], [
@@ -683,7 +683,7 @@ describe('new-card gathering order', () => {
         saveAnkiCard(makeCard(1005, 105, 7));
 
         const queue = getStudyQueue({ settings, selectedSubject: 'araclar' });
-        expect(queue.cards.map((card) => card.cardId)).toEqual([1005, 1010, 1020]);
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1020, 1010, 1005]);
     });
 
     it('walks positions in either direction, and takes the right end when the fetch is capped', () => {

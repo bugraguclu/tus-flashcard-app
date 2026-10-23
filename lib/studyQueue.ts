@@ -1,9 +1,10 @@
 import { getDB } from './db';
+import { getAllSubjects } from './subjects';
 import type { AppSettings, StudyCard } from './types';
 import { getDeckAncestors, type DeckConfig } from './models';
 import { ankiCardIdFromLegacyCardId, localDayNumber, nextRolloverMs } from './ankiState';
 import { todayLocalYMD } from './scheduler';
-import { getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
+import { decksInDisplayOrder, getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
@@ -26,6 +27,7 @@ import { filteredDeckMemberIds } from './filteredDeckMembership';
 import { rebuildLoadBalancer } from './loadBalancerSession';
 import {
     buildScopeClause,
+    countRowsByDeck,
     countRowsByQueue,
     loadNextLearningDue,
     loadRowsByQueue,
@@ -98,17 +100,65 @@ function deterministicShuffle<T>(items: T[], seedKey: string): T[] {
     return result;
 }
 
+const UNRANKED = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Where each deck stands in the deck list — siblings by the learner's own order (alphabetical in a
+ * collection nobody reordered), a parent before its subdecks. Anki's "Deck" gather walks the deck
+ * tree the same way, so the paid catalog's curriculum (its topics are ordered subdecks) arrives in
+ * course order. One map serves the SQL window and the in-memory sort, so they cannot disagree.
+ */
+function buildDeckGatherRank(): Map<number, number> {
+    const ranks = new Map<number, number>();
+    decksInDisplayOrder(getAllDecks()).forEach((deck, index) => ranks.set(deck.id, index));
+    return ranks;
+}
+
+/**
+ * Deck by deck in deck-list order; inside one deck, course by course and topic by topic in the
+ * order a course lists its topics, so finishing "Tanımlama" moves on to "Parametreler". The stable
+ * tiebreak keeps the position (or shuffled) order the cards arrived in.
+ */
+function sortNewCardsByDeckOrder(cards: StudyCard[], deckRank: ReadonlyMap<number, number>): StudyCard[] {
+    if (cards.length <= 1) return cards;
+
+    const subjects = getAllSubjects();
+    const subjectRank = new Map(subjects.map((subject, index) => [subject.id, index]));
+    const topicRank = new Map<string, number>();
+    for (const subject of subjects) {
+        subject.topics.forEach((topic, index) => topicRank.set(`${subject.id}::${topic}`, index));
+    }
+    return cards
+        .map((card, index) => ({
+            card,
+            keys: [
+                deckRank.get(card.deckId) ?? UNRANKED,
+                subjectRank.get(card.subject) ?? UNRANKED,
+                topicRank.get(`${card.subject}::${card.topic}`) ?? UNRANKED,
+                index,
+            ],
+        }))
+        .sort((a, b) => {
+            for (let key = 0; key < a.keys.length; key++) {
+                if (a.keys[key] !== b.keys[key]) return a.keys[key] - b.keys[key];
+            }
+            return 0;
+        })
+        .map((entry) => entry.card);
+}
+
 /**
  * Anki v3 "new card gather order" (proto NewCardGatherPriority): which cards are collected and in
  * what order they arrive. The two position orders are already satisfied by the SQL the rows were
  * loaded with (`newRowOrderSql`), so they only have to leave the list alone.
  */
-function sortByPhysicalDeck(cards: StudyCard[]): StudyCard[] {
-    const rank = buildDeckRank();
-    return [...cards].sort((a, b) => rank(a.deckId) - rank(b.deckId));
-}
-
-function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
+function gatherNewCards(
+    cards: StudyCard[],
+    settings: AppSettings,
+    daySeed: string,
+    newCount: number,
+    deckRank: ReadonlyMap<number, number>,
+): StudyCard[] {
     const seed = `${daySeed}-${newCount}`;
 
     switch (normalizeNewCardGatherOrder(settings.newCardGatherOrder)) {
@@ -121,13 +171,13 @@ function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: stri
             return shuffleNewCardsByNote(cards, seed);
         case 'deckThenRandomNotes':
             // Deck by deck as usual, but the notes inside a deck arrive in a shuffled order.
-            return sortByPhysicalDeck(shuffleNewCardsByNote(cards, seed));
+            return sortNewCardsByDeckOrder(shuffleNewCardsByNote(cards, seed), deckRank);
         case 'deck':
         default: {
             const base = settings.newCardOrder === 'random'
                 ? deterministicShuffle(cards, seed)
                 : cards;
-            return sortByPhysicalDeck(base);
+            return sortNewCardsByDeckOrder(base, deckRank);
         }
     }
 }
@@ -140,9 +190,47 @@ function gatherNewCards(cards: StudyCard[], settings: AppSettings, daySeed: stri
 function newRowOrderSql(settings: AppSettings): string {
     const order = normalizeNewCardGatherOrder(settings.newCardGatherOrder);
     if (order === 'descendingPosition') return 'c.due DESC, c.id DESC';
-    if (order === 'deck' || order === 'deckThenRandomNotes') return 'd.name COLLATE NOCASE ASC, c.due ASC, c.id ASC';
     if (order === 'randomCards' || order === 'randomNotes') return 'RANDOM()';
     return 'c.due ASC, c.id ASC';
+}
+
+/**
+ * The new-card window for the deck gather orders, filled the way Anki gathers them: deck by deck
+ * in deck-list order, each deck from its lowest position, until the window is full. One query
+ * reads the decks that fit whole and a second the deck where the window runs out, so the window
+ * is chosen by the same deck rank the in-memory sort applies afterwards. Ordering the SQL by deck
+ * name instead would put Ç, İ, Ö, Ş and Ü after Z and fill the window from the wrong decks.
+ */
+function loadNewRowsDeckByDeck(
+    params: StudyQueueParams,
+    deckRank: ReadonlyMap<number, number>,
+    windowSize: number,
+): QueueCardRow[] {
+    const { selectedSubject, selectedTopic, selectedDeckName } = params;
+    const counts = countRowsByDeck('c.queue = 0', [], selectedSubject, selectedTopic, selectedDeckName);
+    const decks = [...counts.keys()]
+        .sort((a, b) => (deckRank.get(a) ?? UNRANKED) - (deckRank.get(b) ?? UNRANKED) || a - b);
+    const whole: number[] = [];
+    let room = windowSize;
+    let partial: number | null = null;
+    for (const deckId of decks) {
+        if (room <= 0) break;
+        const count = counts.get(deckId) ?? 0;
+        if (count > room) {
+            partial = deckId;
+            break;
+        }
+        whole.push(deckId);
+        room -= count;
+    }
+    const load = (queueSql: string, queueParams: Array<string | number>, limit: number) => loadRowsByQueue(
+        queueSql, queueParams, selectedSubject, selectedTopic, selectedDeckName, 'c.due ASC, c.id ASC', false, limit,
+    );
+    const rows = whole.length > 0
+        ? load('c.queue = 0 AND c.deckId IN (SELECT value FROM json_each(?))', [JSON.stringify(whole)], windowSize)
+        : [];
+    if (partial !== null) rows.push(...load('c.queue = 0 AND c.deckId = ?', [partial], room));
+    return rows;
 }
 
 /**
@@ -150,8 +238,14 @@ function newRowOrderSql(settings: AppSettings): string {
  * what order they arrive, then a sort step that reorders the gathered set. Keeping them apart is
  * what makes "order gathered" a meaningful option rather than a no-op.
  */
-function applyNewCardOrder(cards: StudyCard[], settings: AppSettings, daySeed: string, newCount: number): StudyCard[] {
-    const gathered = gatherNewCards(cards, settings, daySeed, newCount);
+function applyNewCardOrder(
+    cards: StudyCard[],
+    settings: AppSettings,
+    daySeed: string,
+    newCount: number,
+    deckRank: ReadonlyMap<number, number>,
+): StudyCard[] {
+    const gathered = gatherNewCards(cards, settings, daySeed, newCount, deckRank);
     return sortNewCards(gathered, settings.newCardSortOrder ?? 'template', daySeed);
 }
 
@@ -277,18 +371,22 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         'c.due ASC',
     );
 
-    const newRows = newFetchLimit > 0
-        ? loadRowsByQueue(
-            'c.queue = 0',
-            [],
-            params.selectedSubject,
-            params.selectedTopic,
-            params.selectedDeckName,
-            newRowOrderSql(params.settings),
-            false,
-            newFetchLimit,
-        )
-        : [];
+    const deckGatherRank = buildDeckGatherRank();
+    const gatherOrder = normalizeNewCardGatherOrder(params.settings.newCardGatherOrder);
+    const newRows = newFetchLimit <= 0
+        ? []
+        : gatherOrder === 'deck' || gatherOrder === 'deckThenRandomNotes'
+            ? loadNewRowsDeckByDeck(params, deckGatherRank, newFetchLimit)
+            : loadRowsByQueue(
+                'c.queue = 0',
+                [],
+                params.selectedSubject,
+                params.selectedTopic,
+                params.selectedDeckName,
+                newRowOrderSql(params.settings),
+                false,
+                newFetchLimit,
+            );
 
     const intradayLearningCards = toStudyCards(intradayLearningRows, params.settings, nowMs, { settingsCache });
     const interdayLearningCards = toStudyCards(interdayLearningRows, params.settings, nowMs, { settingsCache });
@@ -302,7 +400,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     const daySeed = todayLocalYMD(undefined, params.settings.dayRolloverHour);
 
     reviewCards = applyReviewOrder(reviewCards, params.settings, daySeed, today);
-    newCards = applyNewCardOrder(newCards, params.settings, daySeed, newCount);
+    newCards = applyNewCardOrder(newCards, params.settings, daySeed, newCount, deckGatherRank);
 
     // Resolve the earlier sibling's config for in-memory suppression after limits.
     const deckConfigCache = new Map<number, DeckConfig>();

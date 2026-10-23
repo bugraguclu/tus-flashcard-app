@@ -44,6 +44,7 @@ export {
     getPopulatedDecksForScope,
     buildDeckTree,
     flattenDeckTree,
+    decksInDisplayOrder,
 } from './deckTree';
 export type {
     DeckTreeNode,
