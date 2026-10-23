@@ -87,6 +87,7 @@ import { createDeckOptionsStyles } from '../components/deck-options/deckOptionsS
 import { DeckOptionsContext } from '../components/deck-options/DeckOptionsContext';
 import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck-options/multiplierBounds';
 import { applyDeckOptionsToSubdecks } from '../lib/deckSubdeckOptions';
+import { effectiveLimitScope, limitsForScope, scopeDropsOverride } from '../components/deck-options/limitScope';
 import {
     Field,
     FieldAdvice,
@@ -175,7 +176,9 @@ export default function DeckOptionsScreen() {
     const [newPresetOpen, setNewPresetOpen] = useState(false);
     const [newPresetName, setNewPresetName] = useState('');
     const [pendingPresetDeletions, setPendingPresetDeletions] = useState<number[]>([]);
-    const initialScope = (params.scope === 'deck' || params.scope === 'today') ? params.scope : 'preset';
+    const initialScope = (params.scope === 'deck' || params.scope === 'today')
+        ? params.scope
+        : effectiveLimitScope(form.deckReviewLimit, form.todayReviewLimit);
     const [reviewLimitScope, setReviewLimitScope] = useState<'preset' | 'deck' | 'today'>(initialScope);
     // Anki opens desired retention on "This deck" when the deck carries its own value.
     const [retentionScope, setRetentionScope] = useState<'preset' | 'deck'>(
@@ -257,7 +260,8 @@ export default function DeckOptionsScreen() {
     });
     // A reschedule request is an unsaved change like any other: it starts off, so it can only
     // be on because the learner turned it on, and Save is what carries it out.
-    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave || pendingPresetDeletions.length > 0;
+    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave || pendingPresetDeletions.length > 0
+        || scopeDropsOverride(reviewLimitScope, form.deckReviewLimit, form.todayReviewLimit);
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -300,6 +304,7 @@ export default function DeckOptionsScreen() {
         );
         setActiveDeckId(nextDeck.id);
         setPendingPresetDeletions([]);
+        setReviewLimitScope(effectiveLimitScope(nextForm.deckReviewLimit, nextForm.todayReviewLimit));
         setConfigId(nextConfigId);
         setForm(nextForm);
         setSavedSnapshot(snapshotForm(nextConfigId, nextForm));
@@ -725,12 +730,14 @@ export default function DeckOptionsScreen() {
             for (const removedId of pendingPresetDeletions) if (removedId !== configId) deletePreset(removedId);
             saveDeckConfig(updated);
             if ((getDeck(deck.id) ?? deck).configId !== configId) assignDeckConfig(deck.id, configId);
-            setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, validation.integers.deckReviewLimit);
+            // The selected tab decides which review limit applies (DST-7).
+            const reviewLimits = limitsForScope(reviewLimitScope, validation.integers.deckReviewLimit, validation.integers.todayReviewLimit);
+            setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, reviewLimits.deck);
             setDeckDesiredRetention(deck.id, validation.decimals.deckDesiredRetention);
             setDeckTodayLimits(
                 deck.id,
                 validation.integers.todayNewLimit,
-                validation.integers.todayReviewLimit,
+                reviewLimits.today,
                 settings.dayRolloverHour,
             );
             setDeckDescription(deck.id, form.description);
@@ -745,9 +752,9 @@ export default function DeckOptionsScreen() {
             if (includeSubdecks) {
                 subdecksChanged = applyDeckOptionsToSubdecks(deck.id, {
                     deckNewLimit: validation.integers.deckNewLimit,
-                    deckReviewLimit: validation.integers.deckReviewLimit,
+                    deckReviewLimit: reviewLimits.deck,
                     todayNewLimit: validation.integers.todayNewLimit,
-                    todayReviewLimit: validation.integers.todayReviewLimit,
+                    todayReviewLimit: reviewLimits.today,
                 }, settings.dayRolloverHour);
             }
             db.execSync('COMMIT;');
