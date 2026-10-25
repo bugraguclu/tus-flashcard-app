@@ -28,6 +28,11 @@ CREATE TABLE anki_cards (
 CREATE TABLE revlog (id INTEGER PRIMARY KEY, cardId INTEGER, usn INTEGER, ease INTEGER, ivl INTEGER, lastIvl INTEGER, factor INTEGER, time INTEGER, type INTEGER);
 CREATE TABLE graves (oid INTEGER, type INTEGER, usn INTEGER);
 CREATE TABLE cards_fts (card_id TEXT);
+CREATE TABLE study_sessions (
+    id INTEGER PRIMARY KEY, subject TEXT NOT NULL, pass INTEGER NOT NULL DEFAULT 1,
+    startMs INTEGER NOT NULL, endMs INTEGER NOT NULL, studyMs INTEGER NOT NULL,
+    breakMs INTEGER NOT NULL DEFAULT 0, source TEXT NOT NULL DEFAULT 'timer'
+);
 `;
 
 export function createAppDb(SQL: SqlJsStatic): SyncDb {

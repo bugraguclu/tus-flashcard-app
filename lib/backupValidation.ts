@@ -1,3 +1,6 @@
+import { isValidStudySessionRecord } from './stopwatch';
+
+/** Tables every canonical backup carries. `study_sessions` is optional and checked on its own. */
 export const CANONICAL_BACKUP_TABLES = [
     'note_types',
     'notes',
@@ -22,6 +25,8 @@ const TABLE_LIMITS: Record<(typeof CANONICAL_BACKUP_TABLES)[number], number> = {
     graves: 5_000_000,
     session_stats: 100_000,
 };
+/** Twenty sessions a day for over twenty years. */
+const STUDY_SESSION_LIMIT = 200_000;
 
 function isRow(value: unknown): value is Row {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -85,6 +90,8 @@ function validContent(table: TableName, row: Row): boolean {
  */
 export interface CanonicalBackupValidator {
     add(table: TableName, rows: readonly unknown[]): void;
+    /** The optional Kronometre `study_sessions` table, checked after the other row contents. */
+    addStudySessions(sessions: unknown): void;
     finish(): Validation;
 }
 
@@ -121,6 +128,20 @@ export function createCanonicalBackupValidator(): CanonicalBackupValidator {
                 if (table === 'anki_cards') cardRefs.push([Number(value.noteId), Number(value.deckId)]);
             }
         },
+        addStudySessions(sessions) {
+            // Kronometre sessions came after this format: a backup made before them has no such
+            // table, and one that has it must hold nothing but well-formed sessions.
+            if (!Array.isArray(sessions)) return fail(2500, 'invalid-table:study_sessions');
+            if (sessions.length > STUDY_SESSION_LIMIT) return fail(2501, 'too-many-rows:study_sessions');
+            const sessionIds = new Set<number>();
+            for (const value of sessions) {
+                if (!isRow(value) || !integer(value.id, true) || sessionIds.has(Number(value.id))) {
+                    return fail(2502, 'invalid-id:study_sessions');
+                }
+                sessionIds.add(Number(value.id));
+            }
+            if (!sessions.every(isValidStudySessionRecord)) fail(2503, 'invalid-row:study_sessions');
+        },
         finish() {
             const noteTypeIds = ids.get('note_types')!;
             const noteIds = ids.get('notes')!;
@@ -144,5 +165,6 @@ export function validateCanonicalBackupData(data: unknown): Validation {
     }
     const validator = createCanonicalBackupValidator();
     for (const name of CANONICAL_BACKUP_TABLES) validator.add(name, tables[name] as unknown[]);
+    if (tables.study_sessions !== undefined) validator.addStudySessions(tables.study_sessions);
     return validator.finish();
 }

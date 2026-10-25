@@ -10,6 +10,8 @@ import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
 import { canonicalBackupContainsCatalog } from './catalogProtection';
 import { validateCanonicalBackupData } from './backupValidation';
+import { normalizeStopwatchPrefs, type StudySessionRecord } from './stopwatch';
+import { replaceStudySessions, saveStopwatchPrefs } from './stopwatchStore';
 import {
     DEFAULT_SETTINGS,
     KEYS,
@@ -45,6 +47,7 @@ export async function resetAllData(): Promise<void> {
             'graves',
             'cards_fts',
             'session_stats',
+            'study_sessions',
             'settings',
         ]) {
             db.execSync(`DELETE FROM ${table};`);
@@ -246,6 +249,13 @@ function importCanonicalTables(data: any): void {
         } else if (data.sessionStats) {
             writeSessionStatsRow(data.sessionStats as SessionStats);
         }
+
+        // A backup made before the Kronometre has no sessions or preferences to give back; the
+        // ones on the device are then kept rather than wiped by a file that never knew about them.
+        if (Array.isArray(data.tables.study_sessions)) {
+            replaceStudySessions(data.tables.study_sessions as StudySessionRecord[]);
+        }
+        if (data.stopwatchPrefs) saveStopwatchPrefs(normalizeStopwatchPrefs(data.stopwatchPrefs));
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -294,6 +304,11 @@ export async function importAllData(jsonString: string): Promise<boolean> {
 
         if (data.settings && typeof data.settings !== 'object') {
             console.error('Import: settings bir obje değil');
+            return false;
+        }
+
+        if (data.stopwatchPrefs !== undefined && (typeof data.stopwatchPrefs !== 'object' || data.stopwatchPrefs === null)) {
+            console.error('Import: stopwatchPrefs bir obje değil');
             return false;
         }
 

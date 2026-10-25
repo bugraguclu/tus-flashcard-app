@@ -17,3 +17,27 @@ export function goBackOr(router: BackNavigator, fallback: string = '/decks'): vo
     }
     router.replace(fallback);
 }
+
+/** The part of a navigation object that tells which screens lie beneath the current one. */
+export interface StackStateReader {
+    getState: () => { index: number; routes: { name: string }[] } | undefined;
+}
+
+/**
+ * Open the screen `routeName` at `href`, or go back to it when it is the screen right beneath
+ * this one. The Kronometre and the study calendar link to each other; without this, every round
+ * trip would push another copy of both onto the stack.
+ */
+export function openOrReturnTo(
+    router: Pick<BackNavigator, 'back'> & { push: (href: any) => void },
+    navigation: StackStateReader,
+    routeName: string,
+    href: string,
+): void {
+    const state = navigation.getState();
+    if (state && state.index > 0 && state.routes[state.index - 1]?.name === routeName) {
+        router.back();
+        return;
+    }
+    router.push(href);
+}

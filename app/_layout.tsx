@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, router as globalRouter, useRouter } from 'expo-router';
+import { Stack, router as globalRouter, useNavigationContainerRef, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -34,6 +34,7 @@ import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
+import { onStopwatchAlertOpened } from '../lib/stopwatchNotifications';
 import { inferImportFileType } from '../lib/importFile';
 import { parseExternalAppUrl } from '../lib/externalLinking';
 import { externalActionRoute } from '../lib/externalActionRoute';
@@ -624,6 +625,13 @@ function AppStack() {
         return onStudyReminderOpened(() => router.replace('/decks' as any));
     }, [router]);
 
+    // A Kronometre block reminder brings the stopwatch to the front, unless it already is.
+    const navigationRef = useNavigationContainerRef();
+    useEffect(() => onStopwatchAlertOpened(() => {
+        const current = navigationRef.getCurrentRoute() as { name?: string } | undefined;
+        if (current?.name !== 'stopwatch') router.push('/stopwatch' as any);
+    }), [router, navigationRef]);
+
     return (
         <>
             {/* Follows the theme the app resolved rather than iOS ("auto"): the in-app Light/Dark
@@ -676,6 +684,14 @@ function AppStack() {
                 />
                 <Stack.Screen
                     name="study-calendar"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="stopwatch"
                     options={{
                         presentation: 'card',
                         gestureEnabled: true,

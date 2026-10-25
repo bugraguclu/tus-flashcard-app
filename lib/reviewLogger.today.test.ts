@@ -177,3 +177,42 @@ describe('getStudiedDaysBetween', () => {
         expect(getStudiedDaysBetween(today - 6, today, rolloverHour).size).toBe(0);
     });
 });
+
+describe('Kronometre sessions in the streak', () => {
+    function sessionAt(startMs: number, studyMs: number, id = startMs) {
+        db.runSync(
+            'INSERT INTO study_sessions (id, subject, pass, startMs, endMs, studyMs, breakMs, source) VALUES (?, ?, 1, ?, ?, ?, 0, ?)',
+            id, 'Fizyoloji', startMs, startMs + studyMs, studyMs, 'timer',
+        );
+    }
+
+    it('keeps the streak going on a day studied only with the stopwatch', () => {
+        const now = Date.now();
+        logAt(now - 1000, 1, 3);
+        sessionAt(now - DAY_MS, 45 * 60_000);
+        logAt(now - 2 * DAY_MS, 2, 3);
+
+        const streak = getStudyStreak(rolloverHour);
+        expect(streak.current).toBe(3);
+        expect(streak.best).toBe(3);
+    });
+
+    it('counts today once a stopwatch session is saved, before any card is answered', () => {
+        const now = Date.now();
+        sessionAt(now - 60 * 60_000, 30 * 60_000);
+        expect(getStudyStreak(rolloverHour)).toMatchObject({ current: 1, studiedToday: true });
+    });
+
+    it('marks stopwatch days in the weekly strip, once per day', () => {
+        const now = Date.now();
+        const today = localDayNumber(now, rolloverHour);
+        logAt(now - 1000, 1, 3);
+        sessionAt(now - 2000, 20 * 60_000);
+        sessionAt(now - 3 * DAY_MS, 20 * 60_000);
+
+        const days = getStudiedDaysBetween(today - 6, today, rolloverHour);
+        expect(days.has(dayNumberToYmd(today, rolloverHour))).toBe(true);
+        expect(days.has(dayNumberToYmd(today - 3, rolloverHour))).toBe(true);
+        expect(days.size).toBe(2);
+    });
+});

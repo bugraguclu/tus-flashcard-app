@@ -8,7 +8,7 @@ import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../con
 import WeekStreakStrip from '../components/WeekStreakStrip';
 import ClassicStatsBarChart from '../components/stats/ClassicStatsBarChart';
 import DeckPickerModal from '../components/DeckPickerModal';
-import HeaderBackIcon from '../components/HeaderBackIcon';
+import HeaderBackIcon, { HeaderForwardIcon } from '../components/HeaderBackIcon';
 import { ChartScrollLockProvider } from '../components/stats/ChartScrollLock';
 import ReviewsSection from '../components/stats/ReviewsSection';
 import HourlySection from '../components/stats/HourlySection';
@@ -322,23 +322,43 @@ export default function StatsScreen() {
                     </View>
                 </View>
 
+                {/* The flame opens the Kronometre, whose sessions keep this streak going too. The
+                    week strip below keeps its own arrows and swipe. */}
                 <View style={styles.streakCard}>
-                    <View style={styles.streakHeader}>
+                    <TouchableOpacity
+                        style={styles.streakHeader}
+                        onPress={() => router.push('/stopwatch' as any)}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel={l(
+                            `Çalışma serisi: ${streak.current} gün, en uzun ${streak.best} gün`,
+                            `Study streak: ${streak.current} days, longest ${streak.best} days`,
+                        )}
+                        accessibilityHint={l('Kronometreyi açar', 'Opens the stopwatch')}
+                    >
                         <View>
-                            <Text style={styles.sectionTitle} accessibilityRole="header">{l('Çalışma serisi', 'Study streak')}</Text>
+                            <View style={styles.streakTitleRow}>
+                                <Text style={styles.sectionTitle}>{l('Çalışma serisi', 'Study streak')}</Text>
+                                <HeaderForwardIcon color={colors.textMuted} size={16} />
+                            </View>
                             <Text style={styles.streakScopeNote}>{l('Tüm koleksiyon', 'Whole collection')}</Text>
                         </View>
                         <View style={styles.bestBadge}>
                             <Text style={styles.bestBadgeLabel}>{l(`En uzun: ${streak.best} gün`, `Longest: ${streak.best} days`)}</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.streakBody}>
-                        <View style={styles.streakInfo}>
+                        <TouchableOpacity
+                            style={styles.streakInfo}
+                            onPress={() => router.push('/stopwatch' as any)}
+                            activeOpacity={0.7}
+                            accessible={false}
+                        >
                             <View style={styles.streakRow}>
                                 <Text style={styles.streakNumber}>{streak.current}</Text>
                                 <Text style={styles.streakUnit}>{l('gün', streak.current === 1 ? 'day' : 'days')}</Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                         <View style={styles.streakStripWrap}>
                             <WeekStreakStrip
                                 rolloverHour={settings.dayRolloverHour}

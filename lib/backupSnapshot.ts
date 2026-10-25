@@ -24,6 +24,8 @@ import {
 import { isProtectedCatalogGuid } from './catalogProtection';
 import { CANONICAL_BACKUP_TABLES, createCanonicalBackupValidator } from './backupValidation';
 import { loadSessionStats, loadSettings } from './settingsStore';
+import type { StopwatchPrefs, StudySessionRecord } from './stopwatch';
+import { loadStopwatchPrefs, readStudySessionsForBackup } from './stopwatchStore';
 
 /** Settings rows the study queue keeps per filtered deck and per review answer. */
 export const QUEUE_BOOKKEEPING_PREFIXES = ['filtered_membership_v1:', 'interday_review_usage:'] as const;
@@ -144,8 +146,25 @@ export async function exportAllDataChunks(): Promise<CollectionSnapshot> {
         throw error;
     }
 
+    // The Kronometre's sessions and preferences are optional parts of the same format, so a build
+    // that predates them still reads this backup, and a backup without them restores without
+    // touching the sessions already on the device. Reading them on their own keeps a failure here
+    // from costing the rest of the backup.
+    let studySessions: StudySessionRecord[] | undefined;
+    let stopwatchPrefs: StopwatchPrefs | undefined;
+    try {
+        studySessions = readStudySessionsForBackup();
+        stopwatchPrefs = loadStopwatchPrefs();
+    } catch (error) {
+        console.warn('[Storage] exportAllData study sessions failed:', error);
+    }
+    if (studySessions) {
+        validator.addStudySessions(studySessions);
+        chunks.push(`,"study_sessions":${JSON.stringify(studySessions)}`);
+    }
+
     const validation = validator.finish();
-    chunks.push(`},"catalogProgress":${JSON.stringify(catalogProgress)},"catalogLearnerData":${JSON.stringify(catalogLearnerData)},"queueBookkeeping":${JSON.stringify(queueBookkeeping)}`);
+    chunks.push(`},"catalogProgress":${JSON.stringify(catalogProgress)},"catalogLearnerData":${JSON.stringify(catalogLearnerData)},"queueBookkeeping":${JSON.stringify(queueBookkeeping)}${stopwatchPrefs ? `,"stopwatchPrefs":${JSON.stringify(stopwatchPrefs)}` : ''}`);
     chunks.push(validation.valid ? '}' : `,"recoveryOnly":true,"recoveryReason":${JSON.stringify(validation.reason)}}`);
     return validation.valid
         ? { chunks, restorable: true }

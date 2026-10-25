@@ -11,13 +11,19 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
 - Screens are expo-router routes in `app/`: the reviewer is `app/(tabs)/index.tsx`, the deck list
   `app/(tabs)/decks.tsx`, the root layout (startup, error screen) `app/_layout.tsx`; every other
   screen is `app/<name>.tsx` (`editor`, `browser`, `deck-options`, `deck-overview`, `import`,
-  `export`, `stats`, `settings`, `backups`, `catalog`, `note-types`, `empty-cards`, ...).
+  `export`, `stats`, `settings`, `backups`, `catalog`, `note-types`, `empty-cards`, `stopwatch`,
+  `study-calendar`, ...).
 - A screen's pieces (dialogs, rows, toolbars, styles) live in `components/<feature>/`: `editor`,
-  `deck-options`, `browser`, `photo-editor`, `import`, `stats`. Shared components sit in `components/`.
+  `deck-options`, `browser`, `photo-editor`, `import`, `stats`, `stopwatch`. Shared components sit in
+  `components/`.
 - Study data: `lib/studyRepository.ts` re-exports `studyQueue` (today's queue), `studyAnswer`
   (answer, undo, suspend, bury), `resetCards` (Reset Card), `filteredDeckQueue`, `browserRepository` (browser queries),
   `studyCardRows` and `studySearchSql` (search to SQL). Queue ordering is `lib/queueBuild.ts`,
   review logging `lib/reviewLogger.ts`.
+- Kronometre (study stopwatch, opened from the Statistics streak card): `lib/stopwatch.ts` (pure
+  state machine, preferences, display), `lib/stopwatchStore.ts` (the `study_sessions` table, its
+  preferences and the running stopwatch), `lib/stopwatchNotifications*.ts` (block reminders);
+  `lib/studyCalendar.ts` merges its sessions with card sessions for the timeline and the calendar.
 - Scheduling: `lib/scheduler.ts` (classic), `lib/fsrs*.ts` (FSRS), `lib/ankiState.ts` (card state,
   day numbers). Reviewer behaviour: `lib/reviewer*.ts`; card rendering `components/CardWebView.tsx`
   with `lib/templates.ts` and `lib/cardAppearance.ts`.

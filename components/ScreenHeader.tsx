@@ -7,10 +7,12 @@ interface ScreenHeaderProps {
     backAccessibilityLabel: string;
     onBack: () => void;
     title: string;
+    /** Icon buttons on the right; without them an empty slot keeps the title's position. */
+    actions?: React.ReactNode;
 }
 
 /** Shared header for full-screen utility workflows such as Browse, Import and Export. */
-export default function ScreenHeader({ backAccessibilityLabel, onBack, title }: ScreenHeaderProps) {
+export default function ScreenHeader({ backAccessibilityLabel, onBack, title, actions }: ScreenHeaderProps) {
     const colors = useThemeColors();
 
     return (
@@ -32,8 +34,29 @@ export default function ScreenHeader({ backAccessibilityLabel, onBack, title }: 
             <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
                 {title}
             </Text>
-            <View style={styles.spacer} />
+            {actions ? <View style={styles.actions}>{actions}</View> : <View style={styles.spacer} />}
         </View>
+    );
+}
+
+interface HeaderIconButtonProps {
+    accessibilityLabel: string;
+    onPress: () => void;
+    children: React.ReactNode;
+}
+
+/** A 44-point icon button for the `actions` slot of `ScreenHeader`. */
+export function HeaderIconButton({ accessibilityLabel, onPress, children }: HeaderIconButtonProps) {
+    return (
+        <TouchableOpacity
+            style={styles.iconButton}
+            onPress={onPress}
+            hitSlop={{ top: 4, right: 4, bottom: 4, left: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+        >
+            {children}
+        </TouchableOpacity>
     );
 }
 
@@ -48,4 +71,6 @@ const styles = StyleSheet.create({
     backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     title: { flex: 1, fontSize: FontSize.xl, fontWeight: '800' },
     spacer: { width: 44 },
+    actions: { flexDirection: 'row', alignItems: 'center' },
+    iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
