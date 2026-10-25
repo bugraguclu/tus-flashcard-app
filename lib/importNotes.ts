@@ -8,7 +8,7 @@
 import { getDB } from './db';
 import { checksumField, type Note, type NoteType } from './models';
 import { checksumFieldText, firstFieldChecksums } from './noteChecksum';
-import { createNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
+import { createNote, generateMissingCardsForNote, getAllNoteTypes, getAllNotes, getCardsForNote, saveNote, searchIndexCardFromNote, type SearchIndexCard } from './noteManager';
 import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited } from './importDelimited';
 import { createDeck, getAllDecks } from './deckManager';
 import { assertNoProtectedCatalogGuids } from './catalogProtection';
@@ -78,7 +78,7 @@ export interface ImportResult {
 
 export type DelimitedImportPreview = Omit<ImportResult, 'indexed'>;
 
-function firstFieldMatch(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): Note | undefined {
+function firstFieldMatches(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): Note[] {
     const target = firstField.trim();
     // A note saved before the switch to Anki's checksum still carries the legacy value.
     const candidates = firstFieldChecksums(firstField).flatMap((csum) => getDB().getAllSync<{ data: string }>(
@@ -94,7 +94,7 @@ function firstFieldMatch(noteTypeId: number, firstField: string, deckId: number,
         } catch {
             return [];
         }
-    }).find((note) => scope === 'notetype' || Boolean(getDB().getFirstSync(
+    }).filter((note) => scope === 'notetype' || Boolean(getDB().getFirstSync(
         'SELECT 1 AS found FROM anki_cards WHERE noteId = ? AND deckId = ? LIMIT 1',
         note.id,
         deckId,
@@ -228,7 +228,7 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
         const finalTags = uniqueTags(noteTags);
 
         const guid = rowGuids?.[r] || undefined;
-        let existing: Note | undefined;
+        let matches: Note[] = [];
         // Anki looks a first field up even when the action is "import as new", so its log can say
         // the note it added collides with one already in the collection.
         let firstFieldCollision = false;
@@ -241,13 +241,15 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 continue;
             }
             seenGuids.add(guid);
-            existing = existingGuids!.get(guid);
+            const match = existingGuids!.get(guid);
+            matches = match ? [match] : [];
         } else {
-            existing = firstFieldMatch(activeNoteType.id, fields[0], activeDeckId, matchScope);
-            firstFieldCollision = Boolean(existing);
-            if (duplicateResolution === 'duplicate') existing = undefined;
+            matches = firstFieldMatches(activeNoteType.id, fields[0], activeDeckId, matchScope);
+            firstFieldCollision = matches.length > 0;
+            if (duplicateResolution === 'duplicate') matches = [];
         }
 
+        const existing = matches[0];
         if (existing) {
             if (existing.noteTypeId !== activeNoteType.id) {
                 counts.duplicates++;
@@ -259,30 +261,42 @@ function writeRows(rows: string[][], options: RowImportOptions): RowImportCounts
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
-            mergeExistingRow(existing, fields, finalTags, fieldColumns, Boolean(tagsColumn || rowTags), row.length);
-            if (sameFieldsAndTags(existing, fields, finalTags)) {
+            let changed: Note | undefined;
+            for (const matched of matches) {
+                // Each matched note keeps its own values in the columns the file leaves unmapped.
+                const noteFields = [...fields];
+                const mergedTags = [...finalTags];
+                mergeExistingRow(matched, noteFields, mergedTags, fieldColumns, Boolean(tagsColumn || rowTags), row.length);
                 // An unchanged match is "already present" in Anki's log, not an update: rewriting
                 // it would bump `mod` and make a re-import look like it changed the collection.
+                const unchanged = sameFieldsAndTags(matched, noteFields, mergedTags);
+                const updatedNote: Note = unchanged ? matched : {
+                    ...matched,
+                    fields: noteFields,
+                    tags: uniqueTags([...mergedTags, ...updatedTags]),
+                    // Anki's sort field holds the text without formatting (media file names kept), EDT-9.
+                    sfld: checksumFieldText(noteFields[activeNoteType.sortFieldIdx] || noteFields[0] || ''),
+                    csum: checksumField(noteFields[0] ?? ''),
+                    mod: Math.floor(Date.now() / 1000),
+                    usn: -1,
+                };
+                if (!unchanged) {
+                    saveNote(updatedNote);
+                    changed ??= updatedNote;
+                }
+                generateMissingCardsForNote(updatedNote, activeNoteType, activeDeckId);
+                for (const card of getCardsForNote(updatedNote.id)) {
+                    counts.indexed.push(searchIndexCardFromNote(updatedNote, card.id));
+                }
+            }
+            // One incoming row can change multiple notes; the log still counts file rows.
+            if (changed) {
+                counts.updated++;
+                log.record('updated', fields, changed.id);
+            } else {
                 counts.duplicates++;
                 log.record('duplicate', fields, existing.id);
-                continue;
             }
-            const updatedNote: Note = {
-                ...existing,
-                fields,
-                tags: uniqueTags([...finalTags, ...updatedTags]),
-                // Anki's sort field holds the text without formatting (media file names kept), EDT-9.
-                sfld: checksumFieldText(fields[activeNoteType.sortFieldIdx] || fields[0] || ''),
-                csum: checksumField(fields[0] ?? ''),
-                mod: Math.floor(Date.now() / 1000),
-                usn: -1,
-            };
-            saveNote(updatedNote);
-            for (const card of getCardsForNote(updatedNote.id)) {
-                counts.indexed.push(searchIndexCardFromNote(updatedNote, card.id));
-            }
-            counts.updated++;
-            log.record('updated', fields, updatedNote.id);
             continue;
         }
 
@@ -453,7 +467,7 @@ function previewPreparedRows(
     const seenGuids = new Set<string>();
     // Rows earlier in the same file are matched too, so a preview of a file that repeats a note
     // predicts the same outcome the write pass will produce.
-    const virtualFirstFields = new Map<string, Note>();
+    const virtualFirstFields = new Map<string, Note[]>();
 
     for (let r = 0; r < prepared.rows.length; r++) {
         const row = prepared.rows[r];
@@ -478,7 +492,7 @@ function previewPreparedRows(
         const finalTags = uniqueTags(rowTags);
 
         const guid = prepared.rowGuids?.[r] || undefined;
-        let existing: Note | undefined;
+        let matches: Note[] = [];
         let firstFieldCollision = false;
         const key = firstFieldPreviewKey(activeNoteType.id, fields[0], activeDeckId, matchScope);
         if (guid) {
@@ -488,14 +502,16 @@ function previewPreparedRows(
                 continue;
             }
             seenGuids.add(guid);
-            existing = existingGuids!.get(guid);
+            const match = existingGuids!.get(guid);
+            matches = match ? [match] : [];
         } else {
-            existing = virtualFirstFields.get(key)
-                ?? firstFieldMatch(activeNoteType.id, fields[0], activeDeckId, matchScope);
-            firstFieldCollision = Boolean(existing);
-            if (duplicateResolution === 'duplicate') existing = undefined;
+            matches = virtualFirstFields.get(key)
+                ?? firstFieldMatches(activeNoteType.id, fields[0], activeDeckId, matchScope);
+            firstFieldCollision = matches.length > 0;
+            if (duplicateResolution === 'duplicate') matches = [];
         }
 
+        const existing = matches[0];
         if (existing) {
             if (existing.noteTypeId !== activeNoteType.id) {
                 counts.duplicates++;
@@ -507,21 +523,28 @@ function previewPreparedRows(
                 log.record(guid ? 'duplicate' : 'firstFieldMatch', fields, existing.id);
                 continue;
             }
-            mergeExistingRow(existing, fields, finalTags, prepared.fieldColumns, Boolean(prepared.tagsColumn), row.length);
-            if (sameFieldsAndTags(existing, fields, finalTags)) {
+            const merged = matches.map((note) => {
+                const noteFields = [...fields];
+                const mergedTags = [...finalTags];
+                mergeExistingRow(note, noteFields, mergedTags, prepared.fieldColumns, Boolean(prepared.tagsColumn), row.length);
+                return { note, fields: noteFields, tags: mergedTags, unchanged: sameFieldsAndTags(note, noteFields, mergedTags) };
+            });
+            const changed = merged.find((match) => !match.unchanged);
+            if (!changed) {
                 counts.duplicates++;
                 log.record('duplicate', fields, existing.id);
                 continue;
             }
-            // A later row matching this one again sees the values this row would have written.
-            if (!guid) virtualFirstFields.set(key, { ...existing, fields, tags: finalTags });
+            // Later rows see all the notes this row would update, including their new tags.
+            if (!guid) virtualFirstFields.set(key, merged.map((match) => match.unchanged
+                ? match.note : { ...match.note, fields: match.fields, tags: uniqueTags([...match.tags, ...(options.updatedTags ?? [])]) }));
             counts.updated++;
-            log.record('updated', fields, existing.id);
+            log.record('updated', fields, changed.note.id);
             continue;
         }
 
         if (!guid) {
-            virtualFirstFields.set(key, { noteTypeId: activeNoteType.id, fields, tags: finalTags } as Note);
+            virtualFirstFields.set(key, [{ noteTypeId: activeNoteType.id, fields, tags: finalTags } as Note]);
         }
         counts.added++;
         log.record(firstFieldCollision ? 'firstFieldMatch' : 'added', fields);

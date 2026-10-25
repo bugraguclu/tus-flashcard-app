@@ -1,3 +1,4 @@
+import { decodeHTMLStrict } from 'entities';
 import { sanitizeMediaFilename } from './mediaFilename';
 
 /** Matches any media reference a field can carry (image/video/audio tag or [sound:] marker). */
@@ -67,28 +68,12 @@ const MEDIA_REFERENCE_RE = new RegExp([
     /(url\(\s*)(?:"([^"]*)"|'([^']*)'|([^"')]*))(\s*\))/,
 ].map((part) => part.source).join('|'), 'gi');
 
-/** The small set of entities an attribute value is written with; enough to recover a filename. */
-function decodeReferenceEntities(value: string): string {
-    return value
-        .replace(/&(?:#(\d+)|#x([0-9a-f]+)|(amp|quot|apos|lt|gt|#0?39));/gi, (match, dec, hex, named) => {
-            if (dec) return String.fromCodePoint(Number(dec));
-            if (hex) return String.fromCodePoint(parseInt(hex, 16));
-            const key = String(named).toLowerCase();
-            if (key === 'amp') return '&';
-            if (key === 'quot') return '"';
-            if (key === 'apos') return "'";
-            if (key === 'lt') return '<';
-            if (key === 'gt') return '>';
-            return match;
-        });
-}
-
 /**
  * The stored filename a reference points at, or null when it points somewhere else entirely — a
  * remote URL, a page anchor, or a path trying to climb out of the media folder.
  */
 export function localMediaFilename(raw: string): string | null {
-    const value = decodeReferenceEntities(raw).trim();
+    const value = decodeHTMLStrict(raw).trim();
     if (!value) return null;
     if (value.startsWith('#') || value.startsWith('?')) return null;
     if (/^(?:[a-z][a-z0-9+.-]*:)/i.test(value)) return null;

@@ -412,6 +412,7 @@ export function renameDeck(id: number, newName: string): void {
                 ? newName
                 : `${newName}::${row.name.slice(oldPrefix.length)}`;
 
+            markSourcePackageDirty(parsed.sourcePackageId);
             parsed.name = resolvedName;
             parsed.mod = nowSec;
             parsed.usn = -1;

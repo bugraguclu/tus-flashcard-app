@@ -35,6 +35,7 @@ vi.mock('./db', () => ({
 
 vi.mock('./noteManager', () => ({
     createNote: vi.fn(),
+    generateMissingCardsForNote: vi.fn(() => []),
     saveNote: vi.fn((note: any) => {
         const index = h.store.notes.findIndex((row) => JSON.parse(row.data).id === note.id);
         const stored = { csum: note.csum, noteTypeId: note.noteTypeId, data: JSON.stringify(note) };
