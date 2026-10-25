@@ -66,6 +66,7 @@ export const EMPTY_ANKI_STATS: AnkiStatsSnapshot = {
         mature: 0,
     })),
     intervals: [],
+    intervalsBeyondRange: 0,
     averageInterval: 0,
     longestInterval: 0,
     cardCounts: { mature: 0, youngLearn: 0, unseen: 0, suspendedBuried: 0, totalCards: 0, totalNotes: 0 },

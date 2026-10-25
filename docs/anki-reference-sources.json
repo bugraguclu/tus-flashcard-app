@@ -548,7 +548,7 @@
       "platform": "cross-platform statistics data",
       "url": "https://github.com/ankitects/anki/tree/main/rslib/src/stats/graphs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["which answers the Reviews graph counts, by kind", "hourly breakdown without filtered-deck answers", "the date the Added graph files a card under"]
+      "useFor": ["which answers the Reviews graph counts, by kind", "hourly breakdown without filtered-deck answers", "the date the Added graph files a card under", "which review cards the Intervals graph counts"]
     },
     {
       "id": "anki-26.05-pinned-source",
@@ -644,7 +644,7 @@
       "platform": "cross-platform statistics presentation",
       "url": "https://github.com/ankitects/anki/tree/main/ts/routes/graphs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["the table under the Reviews graph", "the browser search a bar of the Added graph opens"]
+      "useFor": ["the table under the Reviews graph", "the browser search a bar of the Added graph opens", "continuous interval bins on the Intervals graph"]
     },
     {
       "id": "rust-1.92-sort-unstable",

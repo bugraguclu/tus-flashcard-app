@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { StatsDeckProgress } from '../../lib/screenSnapshots';
+import StatsCard from './StatsCard';
 import { useStatsFormat } from './useStatsFormat';
 
 interface DeckProgressSectionProps {
@@ -22,9 +23,9 @@ export default function DeckProgressSection({ title, decks, onSelectDeck }: Deck
     if (decks.length === 0) return null;
 
     return (
-        <View style={styles.section}>
-            <Text style={styles.heading} accessibilityRole="header">{title}</Text>
-            {decks.map((deck) => {
+        <StatsCard title={title}>
+            <View>
+            {decks.map((deck, index) => {
                 const parts = [
                     { key: 'mature', count: deck.matureCount, color: colors.chartMature },
                     { key: 'young', count: deck.youngCount, color: colors.chartYoung },
@@ -34,7 +35,7 @@ export default function DeckProgressSection({ title, decks, onSelectDeck }: Deck
                 return (
                     <Pressable
                         key={deck.name}
-                        style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+                        style={({ pressed }) => [styles.row, index > 0 && styles.rowDivider, pressed && styles.pressed]}
                         onPress={() => onSelectDeck(deck.name)}
                         accessibilityRole="button"
                         accessibilityLabel={l(
@@ -63,20 +64,15 @@ export default function DeckProgressSection({ title, decks, onSelectDeck }: Deck
                     </Pressable>
                 );
             })}
-        </View>
+            </View>
+        </StatsCard>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        section: { gap: Spacing.sm },
-        heading: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800', marginTop: Spacing.sm },
-        row: {
-            gap: 7,
-            paddingVertical: Spacing.md,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
+        row: { gap: 7, paddingVertical: Spacing.md },
+        rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         pressed: { opacity: 0.7 },
         rowHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         name: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
